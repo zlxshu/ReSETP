@@ -1,0 +1,17 @@
+.DS_Store
+._*
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+build/
+dist/
+*.egg-info/
+
+# Large generated artifacts — tracked outside git
+data/
+models/
+solver/reports/
+*.npy
+*.npz
