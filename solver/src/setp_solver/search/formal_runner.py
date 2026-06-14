@@ -766,6 +766,7 @@ def _run_alns_metrics(
         carbon_weight=carbon_weight,
         carbon_quota_kg=carbon_quota_kg,
         initial_solution=initial_solution,
+        prices=prices,
     )
     elapsed_seconds = time.perf_counter() - started
     best_solution = (

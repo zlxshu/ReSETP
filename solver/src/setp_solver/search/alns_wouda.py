@@ -82,6 +82,7 @@ def run_alns_wouda(
     customer_home_depot: dict[str, str] | None = None,
     initial_solution: Solution | None = None,
     carbon_quota_kg: float = 0.0,
+    prices: Any = DEFAULT_PRICES,
 ) -> AlnsRunResult:
     """Run a small-budget ALNS-Wouda pass on a generated bundle."""
 
@@ -109,6 +110,7 @@ def run_alns_wouda(
     context = EvaluationContext(
         bundle.instance,
         bundle.carbon_profile,
+        prices=prices,
         carbon_weight=carbon_weight,
         budget=EvalBudget(limit=_budget_limit(iterations, eval_budget)),
         # v2026-06-12: Z0a/Z4 expose carbon allowance CE to the common
