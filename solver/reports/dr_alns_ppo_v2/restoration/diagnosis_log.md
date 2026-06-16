@@ -24,3 +24,27 @@
 - Stdout: `gate=PASS_GOLD_RECOMPUTE mean=4878.331796187524 best=4779.053444002934 max_abs_delta=0`
 - Stderr: ``
 - Conclusion: Scoring semantics match gold solutions.
+
+## Phase 2 - 2026-06-16 14:54:39
+
+- Commit: `970a3aabdf5c1bc4eefe4897c6d6ddc4f8b7cf2b`
+- Command: `PYTHONHASHSEED=0 SETP_ALNS_PARALLEL_WORKERS=6 python -m setp_solver.search.winner_restoration run-current --seeds 1,2,3,4,5,6,7,8,9,10 --eval-budget 16000 --max-runtime-seconds 900.0`
+- Stdout: `mean_current=4878.331796 mean_gold=4878.331796 mean_delta=0.000000 classification=not_regressed`
+- Stderr: ``
+- Conclusion: Current winner is not worse than gold on mean; restoration should not change search logic without more evidence.
+
+## Phase 2 - 2026-06-16 15:09:45
+
+- Commit: `970a3aabdf5c1bc4eefe4897c6d6ddc4f8b7cf2b`
+- Command: `PYTHONHASHSEED=0 SETP_ALNS_PARALLEL_WORKERS=6 python -m setp_solver.search.winner_restoration run-current --seeds 1,2,3,4,5,6,7,8,9,10 --eval-budget 16000 --max-runtime-seconds 900.0`
+- Stdout: `mean_current=4878.331796 mean_gold=4878.331796 mean_delta=0.000000 classification=not_regressed`
+- Stderr: ``
+- Conclusion: Current winner is not worse than gold on mean; restoration should not change search logic without more evidence.
+
+## Phase 4/5 - 2026-06-16 15:09:45
+
+- Commit: `970a3aabdf5c1bc4eefe4897c6d6ddc4f8b7cf2b`
+- Command: `python -m setp_solver.search.winner_restoration verify-restored`
+- Stdout: `gate=PASS_RESTORED_BASELINE mean=4878.331796`
+- Stderr: ``
+- Conclusion: Restored winner baseline established.
