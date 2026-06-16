@@ -1,102 +1,27 @@
 {
-  "commit": "e7e173638bcba2bb72ed9fce53b32450a2af74ff",
-  "gate": "HALT_VENV_SELF_CHECK",
-  "phase1_classification": {
-    "classification": "environment_numeric_drift",
-    "conclusion": "System Python and RL venv are each internally deterministic but converge to different anchors; use environment-local gates.",
-    "context_summary": {
-      "system_direct": {
-        "anchor_best_obj": 4779.053444002934,
-        "max_best_obj": 4779.053444002934,
-        "min_best_obj": 4779.053444002934,
-        "python_env": "system",
-        "row_count": 3,
-        "stable": true,
-        "success_count": 3,
-        "zero_violation_count": 3
-      },
-      "system_processpool": {
-        "anchor_best_obj": 4779.053444002934,
-        "max_best_obj": 4779.053444002934,
-        "min_best_obj": 4779.053444002934,
-        "python_env": "system",
-        "row_count": 3,
-        "stable": true,
-        "success_count": 3,
-        "zero_violation_count": 3
-      },
-      "venv_direct": {
-        "anchor_best_obj": 4909.530249672552,
-        "max_best_obj": 4909.530249672552,
-        "min_best_obj": 4909.530249672552,
-        "python_env": "venv",
-        "row_count": 3,
-        "stable": true,
-        "success_count": 3,
-        "zero_violation_count": 3
-      },
-      "venv_evaluate_policy_combo_jobs1": {
-        "anchor_best_obj": 4909.530249672552,
-        "max_best_obj": 4909.530249672552,
-        "min_best_obj": 4909.530249672552,
-        "python_env": "venv",
-        "row_count": 3,
-        "stable": true,
-        "success_count": 3,
-        "zero_violation_count": 3
-      },
-      "venv_evaluate_policy_combo_jobs2": {
-        "anchor_best_obj": 4909.530249672552,
-        "max_best_obj": 4909.530249672552,
-        "min_best_obj": 4909.530249672552,
-        "python_env": "venv",
-        "row_count": 3,
-        "stable": true,
-        "success_count": 3,
-        "zero_violation_count": 3
-      },
-      "venv_evaluate_policy_official_jobs1": {
-        "anchor_best_obj": 4909.530249672552,
-        "max_best_obj": 4909.530249672552,
-        "min_best_obj": 4909.530249672552,
-        "python_env": "venv",
-        "row_count": 3,
-        "stable": true,
-        "success_count": 3,
-        "zero_violation_count": 3
-      },
-      "venv_official_wrapper": {
-        "anchor_best_obj": 4909.530249672552,
-        "max_best_obj": 4909.530249672552,
-        "min_best_obj": 4909.530249672552,
-        "python_env": "venv",
-        "row_count": 3,
-        "stable": true,
-        "success_count": 3,
-        "zero_violation_count": 3
-      }
-    },
-    "failed_contexts": [],
-    "system_anchor": 4779.053444002934,
-    "system_delta_from_gold": 0.0,
-    "unstable_contexts": [],
-    "venv_anchor": 4909.530249672552,
-    "venv_delta_from_gold": 130.47680566961753
-  },
-  "phase4_summary": {
-    "conclusion": "RL venv winner does not pass the same-environment PPO gate.",
-    "fair_sa_best": 5134.05010398579,
-    "fair_sa_mean": 5408.003789193207,
+  "commit": "b777079bd55d83d032a53e6161bdd7d80e45db07",
+  "gate": "PASS_SYSTEM_WORKER_SELF_CHECK",
+  "phase4_system_worker_summary": {
+    "alpha_matches_official_by_seed": true,
+    "alpha_ucb_env_best": 4779.053444002934,
+    "alpha_ucb_env_mean": 4878.331796187524,
+    "alpha_ucb_env_seed_count": 10,
+    "conclusion": "System-Python worker gate passes; PPO lane baselines are back on the audited winner environment.",
+    "crush_pp_vs_fair_sa": 8.764844078861888,
+    "expected_seed_count": 10,
+    "failed_reasons": [],
+    "fair_sa_best": 5166.498854217437,
+    "fair_sa_mean": 5346.986857132418,
     "fair_sa_seed_count": 10,
-    "gate": "HALT_VENV_SELF_CHECK",
-    "winner_beats_fair_sa": false,
-    "winner_best": 4909.530249672552,
-    "winner_mean": 5696.142007406236,
-    "winner_seed_count": 10,
-    "winner_zero_violations": true
+    "gate": "PASS_SYSTEM_WORKER_SELF_CHECK",
+    "official_matches_gold_by_seed": true,
+    "official_winner_best": 4779.053444002934,
+    "official_winner_mean": 4878.331796187524,
+    "official_winner_seed_count": 10,
+    "zero_violations": true
   },
-  "reason": "Environment drift is confirmed, but the RL venv self-check did not pass the venv fairness gate.",
-  "schema_version": "winner-nondeterminism-self-check.v1",
+  "reason": "System-Python worker lane reproduces the winner anchor, beats fair SA, and has zero violations.",
+  "schema_version": "winner-system-worker-self-check.v1",
   "started_training": false,
   "system_reference": {
     "seed2_best_cost": 4779.053444002934,

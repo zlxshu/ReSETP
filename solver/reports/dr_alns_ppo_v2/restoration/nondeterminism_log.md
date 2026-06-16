@@ -67,3 +67,19 @@
 - Stdout: `classification=floating_or_blas_numeric_drift`
 - Stderr: ``
 - Conclusion: NumPy default_rng probes match across environments, so the winner-cost drift is not explained by the sampled RNG stream; the remaining evidence points to numeric/BLAS/Python-version drift.
+
+## Phase 5 system-worker self-check - 2026-06-16 19:57:47
+
+- Commit: `b777079bd55d83d032a53e6161bdd7d80e45db07`
+- Command: `python -m setp_solver.search.winner_nondeterminism system-worker-gate`
+- Stdout: `gate=PASS_SYSTEM_WORKER_SELF_CHECK`
+- Stderr: ``
+- Conclusion: System-Python worker lane reproduces the winner anchor, beats fair SA, and has zero violations.
+
+## Phase 4 system-worker gate - 2026-06-16 19:57:47
+
+- Commit: `b777079bd55d83d032a53e6161bdd7d80e45db07`
+- Command: `python -m setp_solver.search.winner_nondeterminism system-worker-gate --seeds 1,2,3,4,5,6,7,8,9,10 --eval-budget 16000`
+- Stdout: `gate=PASS_SYSTEM_WORKER_SELF_CHECK winner_mean=4878.331796187524 alpha_mean=4878.331796187524 fair_sa_mean=5346.986857132418`
+- Stderr: ``
+- Conclusion: System-Python worker gate passes; PPO lane baselines are back on the audited winner environment.
