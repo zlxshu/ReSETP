@@ -83,3 +83,19 @@
 - Stdout: `gate=PASS_SYSTEM_WORKER_SELF_CHECK winner_mean=4878.331796187524 alpha_mean=4878.331796187524 fair_sa_mean=5346.986857132418`
 - Stderr: ``
 - Conclusion: System-Python worker gate passes; PPO lane baselines are back on the audited winner environment.
+
+## Phase 5 system-worker self-check - 2026-06-16 23:29:47
+
+- Commit: `1c634ee5d8567e2e1409afb3b5dbc2a9b0f12b82`
+- Command: `python -m setp_solver.search.winner_nondeterminism system-worker-gate`
+- Stdout: `gate=PASS_SYSTEM_WORKER_SELF_CHECK`
+- Stderr: ``
+- Conclusion: System-Python worker lane reproduces the winner anchor, beats fair SA, and has zero violations.
+
+## Phase 4 system-worker gate - 2026-06-16 23:29:47
+
+- Commit: `1c634ee5d8567e2e1409afb3b5dbc2a9b0f12b82`
+- Command: `python -m setp_solver.search.winner_nondeterminism system-worker-gate --seeds 1,2,3,4,5,6,7,8,9,10 --eval-budget 16000`
+- Stdout: `gate=PASS_SYSTEM_WORKER_SELF_CHECK winner_mean=4878.331796187524 alpha_mean=4878.331796187524 fair_sa_mean=5346.986857132418`
+- Stderr: ``
+- Conclusion: System-Python worker gate passes; PPO lane baselines are back on the audited winner environment.
