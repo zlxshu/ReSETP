@@ -35,3 +35,27 @@
 - Stdout: `classification=environment_numeric_drift`
 - Stderr: ``
 - Conclusion: System Python and RL venv are each internally deterministic but converge to different anchors; use environment-local gates.
+
+## Phase 4 - 2026-06-16 18:15:02
+
+- Commit: `d07533d54c5da2c1eee6fb428eba6d04602a9e7a`
+- Command: `python -m setp_solver.search.winner_nondeterminism phase4 --seeds 1,2,3,4,5,6,7,8,9,10 --eval-budget 16000`
+- Stdout: `winner_mean=5696.142007406236 sa_mean=None gate=HALT_VENV_SELF_CHECK`
+- Stderr: ``
+- Conclusion: RL venv winner does not pass the same-environment PPO gate.
+
+## Phase 4 - 2026-06-16 18:31:37
+
+- Commit: `e7e173638bcba2bb72ed9fce53b32450a2af74ff`
+- Command: `python -m setp_solver.search.winner_nondeterminism phase4 --seeds 1,2,3,4,5,6,7,8,9,10 --eval-budget 16000`
+- Stdout: `winner_mean=5696.142007406236 sa_mean=5408.003789193207 gate=HALT_VENV_SELF_CHECK`
+- Stderr: ``
+- Conclusion: RL venv winner does not pass the same-environment PPO gate.
+
+## Phase 5 - 2026-06-16 18:31:49
+
+- Commit: `e7e173638bcba2bb72ed9fce53b32450a2af74ff`
+- Command: `python -m setp_solver.search.winner_nondeterminism phase5`
+- Stdout: `gate=HALT_VENV_SELF_CHECK`
+- Stderr: ``
+- Conclusion: Environment drift is confirmed, but the RL venv self-check did not pass the venv fairness gate.
