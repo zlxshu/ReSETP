@@ -1,6 +1,6 @@
 """Winner-kernel restoration diagnostics.
 
-This runner is isolated from formal E1-E7 experiments. It writes only under
+This runner is isolated from formal experiment runners. It writes only under
 ``solver/reports/dr_alns_ppo_v2/restoration`` and never changes model cost or
 constraint semantics.
 """
