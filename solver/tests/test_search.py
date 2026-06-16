@@ -6,7 +6,16 @@ import unittest
 from setp_solver.check import check_solution
 from setp_solver.cost import CARBON_N_SLOTS
 from setp_solver.instance_loader import Instance, Node
-from setp_solver.search.alns_wouda import AlnsState, SearchPolicy, run_alns_wouda, vehicle_type_swap
+from setp_solver.search.alns_wouda import (
+    AlnsState,
+    SearchPolicy,
+    _insertion_options,
+    _adaptive_remove_count,
+    _try_cv_to_ev_candidates,
+    _try_ev_to_cv_candidates,
+    run_alns_wouda,
+    vehicle_type_swap,
+)
 from setp_solver.search.bundle import load_search_bundle
 from setp_solver.search.charging import repair_route_charging
 from setp_solver.search.construction import build_initial_solution
@@ -19,9 +28,11 @@ from setp_solver.search.candidates import (
     solution_to_random_key,
 )
 from setp_solver.search.e5_probe import run_e5_probe, slot_charge_table
-from setp_solver.search.evaluation import EvaluationContext, model_cost, penalized_obj
+from setp_solver.search.evaluation import EvalBudget, EvaluationContext, model_cost, penalized_obj, score_candidate, score_reference
+from setp_solver.search.feasible_repair import enumerate_feasible_insertions, repair_removed_customers
 from setp_solver.search.fleet import FleetLimits, UNBOUNDED_FLEET, fleet_probe_diagnostic, infer_fleet_limits, vehicle_type_semantics_report
 from setp_solver.search.gates import b2_feasible_domain_gate
+from setp_solver.search.root_cause import _breakdown_for, _operator_summary_rows, solution_churn
 from setp_solver.search.scout import scout_reference_algorithms
 from setp_solver.solution import Route, Solution
 
@@ -119,6 +130,60 @@ class SearchGateTests(unittest.TestCase):
         self.assertGreater(sum(action.energy_kwh for action in solution.charging_actions), 0.0)
         self.assertAlmostEqual(penalized_obj(solution, context), model_cost(solution, context), delta=1e-9)
 
+    # v2026-06-15: Root-cause diagnostics measure structural churn on customer
+    # positions only, ignoring depots and charging stations.
+    def test_root_cause_solution_churn_counts_customer_position_changes(self) -> None:
+        bundle = load_search_bundle(FIXTURE_DIR)
+        depot = next(node.node_id for node in bundle.instance.nodes if node.node_type.lower() == "d")
+        station = next(node.node_id for node in bundle.instance.nodes if node.node_type.lower() == "f")
+        customers = [node.node_id for node in bundle.instance.nodes if node.node_type.lower() == "c"][:3]
+        base = Solution(routes=[Route("CV1", "cv", depot, [depot, customers[0], station, customers[1], customers[2], depot])])
+        same_customers_extra_station = Solution(routes=[Route("CV1", "cv", depot, [depot, station, customers[0], customers[1], customers[2], depot])])
+        swapped = Solution(routes=[Route("CV1", "cv", depot, [depot, customers[1], customers[0], customers[2], depot])])
+        moved_route = Solution(
+            routes=[
+                Route("CV1", "cv", depot, [depot, customers[1], customers[2], depot]),
+                Route("CV2", "cv", depot, [depot, customers[0], depot]),
+            ]
+        )
+
+        self.assertEqual(solution_churn(base, same_customers_extra_station, bundle.instance), 0)
+        self.assertEqual(solution_churn(base, swapped, bundle.instance), 2)
+        self.assertEqual(solution_churn(base, moved_route, bundle.instance), 3)
+
+    # v2026-06-15: Diagnostic score breakdowns must distinguish budgeted
+    # candidate scores from free reference/warm-start scoring.
+    def test_root_cause_score_breakdown_reference_does_not_consume_budget(self) -> None:
+        bundle = load_search_bundle(FIXTURE_DIR)
+        solution = build_initial_solution(bundle.instance, bundle.carbon_profile)
+        context = EvaluationContext(bundle.instance, bundle.carbon_profile, budget=EvalBudget(limit=5, target=5))
+
+        score_reference(solution, context)
+        reference = _breakdown_for(solution, context)
+        self.assertEqual(context.budget.count, 0)
+        self.assertTrue(reference.feasible)
+
+        score_candidate(solution, context)
+        candidate = _breakdown_for(solution, context)
+        self.assertEqual(context.budget.count, 1)
+        self.assertEqual(context.score_counts["candidate"], 1)
+        self.assertAlmostEqual(candidate.objective, candidate.raw_cost, delta=1e-9)
+
+    # v2026-06-15: Root-cause operator summary is the H5 evidence source.
+    def test_root_cause_operator_summary_counts_use_accept_and_best(self) -> None:
+        rows = [
+            {"instance": "I", "algorithm": "ALNS-Wouda", "destroy_op": "D1", "repair_op": "R1", "accepted": "True", "improved_best": "False", "churn": "2", "remove_count_q": "3", "feasible": "True", "penalty": "0"},
+            {"instance": "I", "algorithm": "ALNS-Wouda", "destroy_op": "D1", "repair_op": "R1", "accepted": "False", "improved_best": "True", "churn": "0", "remove_count_q": "1", "feasible": "False", "penalty": "100"},
+        ]
+
+        summary = _operator_summary_rows(rows)
+
+        self.assertEqual(len(summary), 1)
+        self.assertEqual(summary[0]["used"], 2)
+        self.assertEqual(summary[0]["accepted"], 1)
+        self.assertEqual(summary[0]["best_improved"], 1)
+        self.assertEqual(summary[0]["avg_churn"], 1.0)
+
     # v2026-06-11: H2 deterministic witness forces a nonzero EV charging seed for E5.
     def test_h2_initial_solution_contains_deterministic_ev_charging_witness(self) -> None:
         bundle = load_search_bundle(FIXTURE_DIR)
@@ -161,18 +226,116 @@ class SearchGateTests(unittest.TestCase):
         self.assertNotEqual(swapped.solution, solution)
         self.assertEqual(check_solution(swapped.solution, bundle.instance), [])
 
+    # v2026-06-14: ALNS-Wouda vehicle_type_swap must consider both CV->EV and
+    # EV->CV candidates and choose using the shared repair scorer.
+    def test_vehicle_type_swap_bidirectional_candidates_use_shared_scorer(self) -> None:
+        import numpy as np
+
+        bundle = load_search_bundle(FIXTURE_DIR)
+        solution = build_initial_solution(bundle.instance, bundle.carbon_profile)
+        policy = SearchPolicy(require_charging_signal=False)
+        expected_rng = np.random.default_rng(2)
+
+        cv_to_ev = _try_cv_to_ev_candidates(AlnsState(solution, EvaluationContext(bundle.instance, bundle.carbon_profile), policy=policy), np.random.default_rng(2))
+        ev_to_cv = _try_ev_to_cv_candidates(AlnsState(solution, EvaluationContext(bundle.instance, bundle.carbon_profile), policy=policy), np.random.default_rng(2))
+        candidates = [
+            *_try_cv_to_ev_candidates(AlnsState(solution, EvaluationContext(bundle.instance, bundle.carbon_profile), policy=policy), expected_rng),
+            *_try_ev_to_cv_candidates(AlnsState(solution, EvaluationContext(bundle.instance, bundle.carbon_profile), policy=policy), expected_rng),
+        ]
+
+        context = EvaluationContext(bundle.instance, bundle.carbon_profile)
+        swapped = vehicle_type_swap(AlnsState(solution, context, policy=policy), np.random.default_rng(2))
+
+        self.assertGreater(len(cv_to_ev), 0)
+        self.assertGreater(len(ev_to_cv), 0)
+        self.assertIn(swapped.solution, candidates)
+        self.assertEqual(context.score_counts["repair_delta"], len(candidates))
+        self.assertEqual(context.score_counts.get("candidate", 0), 0)
+        self.assertEqual(check_solution(swapped.solution, bundle.instance), [])
+
+    # v2026-06-14: Repair insertion ranking scores full CV and EV candidate
+    # solutions through the shared accounting path.
+    def test_alns_wouda_repair_insertions_account_cv_and_ev_scores(self) -> None:
+        bundle = load_search_bundle(FIXTURE_DIR)
+        customer_id = next(node.node_id for node in bundle.instance.nodes if node.node_type.lower() == "c")
+        context = EvaluationContext(bundle.instance, bundle.carbon_profile)
+
+        options = _insertion_options(
+            Solution(),
+            customer_id,
+            context,
+            SearchPolicy(require_charging_signal=False),
+        )
+
+        vehicle_types = {route.vehicle_type.lower() for _, solution in options for route in solution.routes}
+        self.assertIn("cv", vehicle_types)
+        self.assertIn("ev", vehicle_types)
+        self.assertEqual(context.score_counts["repair_delta"], len(options))
+        self.assertEqual(context.score_counts.get("candidate", 0), 0)
+
+    # v2026-06-15: Feasible repair options must be route-locally feasible and
+    # must not consume complete candidate eval budget.
+    def test_feasible_repair_insertions_are_feasible_and_delta_only(self) -> None:
+        bundle = load_search_bundle(FIXTURE_DIR)
+        solution = build_initial_solution(bundle.instance, bundle.carbon_profile)
+        customer_id = next(node.node_id for node in bundle.instance.nodes if node.node_type.lower() == "c")
+        partial_routes = [
+            Route(route.vehicle_id, route.vehicle_type, route.home_depot_id, [node for node in route.node_sequence if node != customer_id])
+            for route in solution.routes
+        ]
+        partial = Solution(routes=[route for route in partial_routes if len([node for node in route.node_sequence if node.startswith("C")]) > 0])
+        context = EvaluationContext(bundle.instance, bundle.carbon_profile, budget=EvalBudget(limit=10, target=10))
+
+        options = enumerate_feasible_insertions(partial, customer_id, context, SearchPolicy(require_charging_signal=False))
+
+        self.assertTrue(options)
+        self.assertGreater(context.score_counts["repair_delta"], 0)
+        self.assertEqual(context.score_counts.get("candidate", 0), 0)
+        repaired = repair_removed_customers(partial, [customer_id], context, SearchPolicy(require_charging_signal=False), mode="regret2")
+        self.assertIsNotNone(repaired)
+        self.assertEqual(check_solution(repaired, bundle.instance), [])
+
+    # v2026-06-15: Destroy scale follows the ALNS strong plan and never falls
+    # back to the old fixed q=1 behavior.
+    def test_alns_wouda_destroy_q_uses_fractional_customer_scale(self) -> None:
+        import numpy as np
+
+        draws = [_adaptive_remove_count(100, np.random.default_rng(seed)) for seed in range(20)]
+        late_draws = [_adaptive_remove_count(100, np.random.default_rng(seed), progress=1.0) for seed in range(20)]
+
+        self.assertTrue(all(10 <= value <= 40 for value in draws))
+        self.assertTrue(any(value > 12 for value in draws))
+        self.assertTrue(all(4 <= value <= 13 for value in late_draws))
+        self.assertTrue(all(value != 1 for value in draws))
+
     # v2026-06-11: G4 ALNS-Wouda smoke test must run through the local package without installation.
     def test_alns_wouda_smoke_returns_feasible_not_worse_than_seed(self) -> None:
         result = run_alns_wouda(FIXTURE_DIR, iterations=1, seed=1)
 
         self.assertTrue(result.feasible)
         self.assertLessEqual(result.best_obj, result.initial_obj + 1e-9)
-        self.assertGreater(result.evaluations, 0)
-        self.assertGreater(result.charging_energy_kwh, 0.0)
+        self.assertEqual(result.evaluations, 1)
+        self.assertEqual(result.actual_moves, 1)
+        self.assertEqual(result.candidate_scores, 1)
+        self.assertGreater(result.repair_scores, 0)
+        self.assertEqual(result.repair_scores, result.repair_delta_count)
+        self.assertIn("destroy", result.operator_counts)
+        self.assertIn("repair", result.operator_counts)
+        self.assertNotIn("identity_repair", result.operator_counts["repair"])
+        self.assertGreaterEqual(result.charging_energy_kwh, 0.0)
+
+    # v2026-06-15: Strong Wouda accounting is one complete score per move.
+    def test_alns_wouda_eval_budget_matches_moves_after_repair_failures(self) -> None:
+        result = run_alns_wouda(FIXTURE_DIR, iterations=None, eval_budget=30, max_runtime_seconds=20.0, seed=1)
+
+        self.assertTrue(result.feasible)
+        self.assertEqual(result.evaluations, 30)
+        self.assertEqual(result.actual_moves, 30)
+        self.assertEqual(result.candidate_scores, 30)
 
     # v2026-06-11: H3 keeps a nonzero EV charging signal after the short ALNS pass.
     def test_h3_short_alns_has_nonzero_charging_signal(self) -> None:
-        result = run_alns_wouda(FIXTURE_DIR, iterations=1, seed=1)
+        result = run_alns_wouda(FIXTURE_DIR, iterations=1, seed=1, policy=SearchPolicy(require_charging_signal=True))
 
         self.assertGreater(result.charging_energy_kwh, 0.0)
 
@@ -265,6 +428,38 @@ class SearchGateTests(unittest.TestCase):
             self.assertGreater(result.search_diagnostics["candidate_feasible"], 0, algorithm)
             self.assertGreater(result.search_diagnostics["candidate_accepted"], 0, algorithm)
             self.assertTrue(result.search_diagnostics["diagnosis"], algorithm)
+
+    # v2026-06-14: Candidate adapters report evals as shared scorer calls, not
+    # as the number of outer moves attempted by their hand-written loops.
+    def test_candidate_adapter_evals_are_shared_scorer_calls(self) -> None:
+        bundle = load_search_bundle(FIXTURE_DIR)
+        warm_start = make_shared_initial_solution(bundle)
+
+        for algorithm in (
+            "VNS@Valdecy",
+            "PyGAD",
+            "scikit-opt-GA",
+            "scikit-opt-SA",
+            "NSGA-II@haris989",
+            "ALNS@wangqianlongucas",
+            "DR-ALNS",
+        ):
+            result = run_candidate(
+                algorithm,
+                FIXTURE_DIR,
+                seed=1,
+                eval_budget=30,
+                max_runtime_seconds=60.0,
+                initial_solution=warm_start,
+            )
+
+            self.assertTrue(result.feasible, algorithm)
+            self.assertEqual(result.evals, result.candidate_scores, algorithm)
+            self.assertGreaterEqual(result.evals, result.actual_moves, algorithm)
+            self.assertGreater(result.candidate_scores, 0, algorithm)
+            if algorithm == "DR-ALNS":
+                self.assertGreater(result.repair_delta_count, 0, algorithm)
+                self.assertEqual(result.repair_scores, result.repair_delta_count, algorithm)
 
 
 if __name__ == "__main__":

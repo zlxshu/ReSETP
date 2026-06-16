@@ -1,0 +1,106 @@
+from __future__ import annotations
+
+import json
+import tempfile
+import unittest
+from pathlib import Path
+
+from setp_solver.search.alns_crush_v2 import (
+    _fair_sa_reference,
+    _wilcoxon_vs_fair_sa,
+    fair_sa_gap,
+    sa_config_diff_from_manifests,
+)
+from setp_solver.search.winner_operators import (
+    WinnerKernelConfig,
+    operator_base_id,
+    winner_operator_module,
+    winner_variant_flags,
+    write_winner_manifest,
+)
+
+
+class AlnsCrushV2Tests(unittest.TestCase):
+    def test_alns_crush_v2_sa_config_diff_detects_budget_mismatch(self) -> None:
+        diff = sa_config_diff_from_manifests(
+            {"eval_budget": 16_000, "max_runtime_seconds": 900},
+            {"eval_budget": 4_000, "max_runtime_seconds": 600},
+        )
+
+        self.assertTrue(diff["phase2_sa_weaker_by_config"])
+        self.assertEqual(diff["eval_budget_delta"], -12_000)
+        self.assertEqual(diff["max_runtime_delta_seconds"], -300.0)
+
+    def test_winner_operator_manifest_has_stable_public_api(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            path = write_winner_manifest(tmp)
+            manifest = json.loads(Path(path).read_text(encoding="utf-8"))
+
+        self.assertEqual(manifest["winner_operator_module"], winner_operator_module)
+        self.assertEqual(manifest["operator_base_id"], operator_base_id)
+        self.assertEqual(
+            manifest["public_api"],
+            [
+                "WinnerKernelConfig",
+                "WinnerOperatorAction",
+                "WinnerOperatorSet",
+                "apply_winner_action",
+                "decode_winner_action",
+                "winner_variant_flags",
+                "run_winner_kernel",
+                "run_winner_kernel_plus_route_elimination",
+                "write_winner_manifest",
+            ],
+        )
+        self.assertIn("Does not change cost.py/check.py/evaluation.py model semantics.", manifest["semantic_guards"])
+
+    def test_winner_variant_flags_disable_harmful_prompt1_addons(self) -> None:
+        default_flags = winner_variant_flags()
+        route_elim_flags = winner_variant_flags(include_route_elimination=True)
+
+        self.assertEqual(default_flags["SETP_ALNS_CRUSH_TRUE_REPAIR"], "0")
+        self.assertEqual(default_flags["SETP_ALNS_CRUSH_TRUE_ACCEPTANCE"], "0")
+        self.assertEqual(default_flags["SETP_ALNS_CRUSH_LOCAL_SEARCH"], "0")
+        self.assertEqual(default_flags["SETP_ALNS_CRUSH_ADAPTIVE_Q"], "0")
+        self.assertEqual(default_flags["SETP_ALNS_CRUSH_ROUTE_ELIMINATION"], "0")
+        self.assertEqual(route_elim_flags["SETP_ALNS_CRUSH_ROUTE_ELIMINATION"], "1")
+        self.assertEqual(WinnerKernelConfig().include_route_elimination, False)
+
+    def test_v2_summary_uses_fair_sa_not_phase2_sa_denominator(self) -> None:
+        fair_summary = [
+            {
+                "variant": "fair_sa",
+                "instance": "toy",
+                "algorithm": "scikit-opt-SA",
+                "n": 2,
+                "mean_total_cost": 100.0,
+                "median_total_cost": 100.0,
+                "best_total_cost": 90.0,
+                "std_total_cost": 14.1421356237,
+                "mean_route_count": 1.0,
+                "median_route_count": 1.0,
+                "zero_violation_count": 2,
+            }
+        ]
+        fair_rows = [
+            {"instance": "toy", "algorithm": "scikit-opt-SA", "seed": 1, "total_cost": 90.0},
+            {"instance": "toy", "algorithm": "scikit-opt-SA", "seed": 2, "total_cost": 110.0},
+        ]
+        reference = _fair_sa_reference(fair_summary, fair_rows, eval_budget=16_000, max_runtime_seconds=900.0)
+        candidate_rows = [
+            {"variant": "winner_kernel_only", "instance": "toy", "algorithm": "ALNS-Wouda", "seed": 1, "total_cost": 89.0},
+            {"variant": "winner_kernel_only", "instance": "toy", "algorithm": "ALNS-Wouda", "seed": 2, "total_cost": 109.0},
+        ]
+
+        wilcoxon = _wilcoxon_vs_fair_sa(candidate_rows, reference)[0]
+        gap = fair_sa_gap(candidate_rows[0], reference)
+
+        self.assertEqual(wilcoxon["baseline"], "fair_scikit-opt-SA_paired_seed")
+        self.assertEqual(wilcoxon["wins_alg_lower"], 2)
+        self.assertEqual(wilcoxon["n_pairs"], 2)
+        self.assertAlmostEqual(wilcoxon["mean_diff_alg_minus_fair_sa"], -1.0)
+        self.assertAlmostEqual(gap, -11.0)
+
+
+if __name__ == "__main__":
+    unittest.main()

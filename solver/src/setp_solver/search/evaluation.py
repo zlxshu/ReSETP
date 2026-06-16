@@ -8,7 +8,7 @@ operators; feasible solutions keep exactly the model objective.
 
 from __future__ import annotations
 
-from dataclasses import dataclass, replace
+from dataclasses import dataclass, field, replace
 from typing import Any
 
 from ..check import FairnessContext, check_solution
@@ -27,11 +27,20 @@ BIG_M = 1_000_000_000.0
 class EvalBudget:
     limit: int
     count: int = 0
+    target: int | None = None
 
     def record(self) -> None:
         self.count += 1
         if self.count > self.limit:
             raise RuntimeError(f"EvalBudget exhausted: {self.count} > {self.limit}")
+
+    @property
+    def target_count(self) -> int:
+        return self.limit if self.target is None else int(self.target)
+
+    @property
+    def reached_target(self) -> bool:
+        return self.count >= self.target_count
 
 
 @dataclass
@@ -48,12 +57,40 @@ class EvaluationContext:
     independent_profit: dict[str, float] | None = None
     fairness_theta: float | None = None
     customer_home_depot: dict[str, str] | None = None
+    repair_delta_mode: str = "fast"
+    score_counts: dict[str, int] = field(default_factory=dict)
+    score_breakdowns: dict[int, dict[str, Any]] = field(default_factory=dict)
+
+
+def score_candidate(solution: Solution, context: EvaluationContext, *, label: str = "candidate") -> float:
+    """Score one complete candidate solution submitted to search selection."""
+
+    if label != "candidate":
+        raise ValueError("score_candidate only accounts complete candidate evaluations; use record_repair_delta for repair-internal scoring")
+    context.score_counts["candidate"] = int(context.score_counts.get("candidate", 0)) + 1
+    return penalized_obj(solution, context)
+
+
+def score_reference(solution: Solution, context: EvaluationContext) -> float:
+    """Score a reference solution without consuming the search eval budget."""
+
+    return _penalized_obj(solution, context, record_budget=False)
+
+
+def record_repair_delta(context: EvaluationContext, *, count: int = 1) -> None:
+    """Record repair-internal delta scoring that is not a full eval."""
+
+    context.score_counts["repair_delta"] = int(context.score_counts.get("repair_delta", 0)) + int(count)
 
 
 def penalized_obj(solution: Solution, context: EvaluationContext) -> float:
     """Return model cost plus ``BIG_M`` per hard violation."""
 
-    if context.budget is not None:
+    return _penalized_obj(solution, context, record_budget=True)
+
+
+def _penalized_obj(solution: Solution, context: EvaluationContext, *, record_budget: bool) -> float:
+    if record_budget and context.budget is not None:
         context.budget.record()
     prices = _prices_with_carbon_weight(context.prices, context.carbon_weight)
     cost = evaluate(
@@ -71,7 +108,16 @@ def penalized_obj(solution: Solution, context: EvaluationContext) -> float:
         fairness_context=fairness_context,
         fairness_enabled=context.fairness_enabled,
     )
-    return float(cost) + BIG_M * len(violations)
+    penalty = BIG_M * len(violations)
+    objective = float(cost) + penalty
+    context.score_breakdowns[id(solution)] = {
+        "raw_cost": float(cost),
+        "objective": float(objective),
+        "penalty": float(penalty),
+        "violation_count": int(len(violations)),
+        "feasible": len(violations) == 0,
+    }
+    return objective
 
 
 def model_cost(solution: Solution, context: EvaluationContext) -> float:

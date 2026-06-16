@@ -3,18 +3,34 @@ from __future__ import annotations
 import csv
 from collections import defaultdict
 from pathlib import Path
-from statistics import mean, pstdev
+from statistics import mean, pstdev, stdev
 
-from .style import LINE_STYLES, MARKERS, PALETTE, cm_to_inch, sample_watermark, save_pdf_png, setup_matplotlib
+from .style import DOUBLE_COL_FIGSIZE, LINE_STYLES, MARKERS, PALETTE, SINGLE_COL_FIGSIZE, cm_to_inch, sample_watermark, save_pdf_png, setup_matplotlib
+
+
+CARBON_MAIN_PRICE_GBP_PER_TONNE = 50.34
+
+ALGORITHM_DISPLAY_LABELS = {
+    "ALNS@wangqianlongucas": "ALNS-WQL",
+    "NSGA-II@haris989": "NSGA-II",
+    "VNS@Valdecy": "VNS",
+    "scikit-opt-GA": "GA",
+    "scikit-opt-SA": "SA",
+}
+
+
+def _algorithm_label(name: str) -> str:
+    return ALGORITHM_DISPLAY_LABELS.get(name, name)
 
 
 def figure_f1_route_map(nodes_csv: str | Path, routes_csv: str | Path, output_stem: str | Path, *, watermark: bool = True) -> tuple[Path, Path]:
     setup_matplotlib()
+    from matplotlib.lines import Line2D
     from matplotlib import pyplot as plt
 
     nodes = {row["node_id"]: row for row in _read_rows(nodes_csv)}
     routes = _read_rows(routes_csv)
-    fig, axes = plt.subplots(1, 2, figsize=cm_to_inch(16.0, 7.2), constrained_layout=True)
+    fig, axes = plt.subplots(1, 2, figsize=DOUBLE_COL_FIGSIZE)
     depot_colors = {"D0": PALETTE["blue"], "D1": PALETTE["green"]}
     route_colors = [PALETTE["blue"], PALETTE["green"], PALETTE["red"], PALETTE["purple"], PALETTE["amber"], PALETTE["gray"]]
 
@@ -32,9 +48,8 @@ def figure_f1_route_map(nodes_csv: str | Path, routes_csv: str | Path, output_st
             color=route_colors[idx % len(route_colors)],
             linestyle="-" if is_cv else "--",
             marker=MARKERS[idx % len(MARKERS)],
-            markersize=3,
-            linewidth=0.95,
-            label=route["route_id"],
+            markersize=2.6,
+            linewidth=0.85,
         )
     _draw_nodes(axes[1], nodes, depot_colors)
     axes[1].set_title("(b) 路线方案")
@@ -44,7 +59,17 @@ def figure_f1_route_map(nodes_csv: str | Path, routes_csv: str | Path, output_st
         ax.set_xlabel("横坐标 / km")
         ax.set_ylabel("纵坐标 / km")
         ax.set_aspect("equal", adjustable="box")
-    axes[1].legend(loc="best", fontsize=7, ncols=1)
+    axes[1].legend(
+        handles=[
+            Line2D([0], [0], color=PALETTE["gray"], linestyle="-", linewidth=0.9, label="燃油车路线"),
+            Line2D([0], [0], color=PALETTE["gray"], linestyle="--", linewidth=0.9, label="电动车路线"),
+        ],
+        loc="upper right",
+        fontsize=7,
+        handlelength=1.5,
+        borderaxespad=0.25,
+    )
+    fig.subplots_adjust(left=0.075, right=0.985, bottom=0.14, top=0.88, wspace=0.24)
     if watermark:
         sample_watermark(axes[0])
     return save_pdf_png(fig, output_stem)
@@ -58,7 +83,7 @@ def figure_f2_algorithm_performance(curves_csv: str | Path, finals_csv: str | Pa
     final_rows = _read_rows(finals_csv)
     algorithms = sorted({row["algorithm"] for row in curve_rows})
     colors = [PALETTE["blue"], PALETTE["green"], PALETTE["red"], PALETTE["purple"]]
-    fig, axes = plt.subplots(1, 2, figsize=cm_to_inch(16.0, 7.0), constrained_layout=True)
+    fig, axes = plt.subplots(1, 2, figsize=DOUBLE_COL_FIGSIZE, constrained_layout=True)
     for idx, algorithm in enumerate(algorithms):
         by_eval: dict[int, list[float]] = defaultdict(list)
         for row in curve_rows:
@@ -70,20 +95,28 @@ def figure_f2_algorithm_performance(curves_csv: str | Path, finals_csv: str | Pa
         ys = [mean(by_eval[x]) for x in xs]
         std = [pstdev(by_eval[x]) if len(by_eval[x]) > 1 else 0.0 for x in xs]
         color = colors[idx % len(colors)]
-        axes[0].step(xs, ys, where="post", color=color, linestyle=LINE_STYLES[idx % len(LINE_STYLES)], marker=MARKERS[idx % len(MARKERS)], markersize=3, label=algorithm)
+        axes[0].step(xs, ys, where="post", color=color, linestyle=LINE_STYLES[idx % len(LINE_STYLES)], marker=MARKERS[idx % len(MARKERS)], markersize=2.7, label=_algorithm_label(algorithm))
         axes[0].fill_between(xs, [y - s for y, s in zip(ys, std)], [y + s for y, s in zip(ys, std)], step="post", color=color, alpha=0.10)
     axes[0].set_title("(a) 收敛曲线")
     axes[0].set_xlabel("评估次数")
     axes[0].set_ylabel("最优目标")
     grouped = [[float(row["final_obj"]) for row in final_rows if row["algorithm"] == algorithm] for algorithm in algorithms]
-    axes[1].boxplot(grouped, labels=algorithms, patch_artist=True)
+    axes[1].boxplot(grouped, tick_labels=[_algorithm_label(algorithm) for algorithm in algorithms], patch_artist=True)
+    axes[1].tick_params(axis="x", rotation=28)
     axes[1].set_title("(b) 终值分布")
     axes[1].set_ylabel("目标")
-    axes[0].legend()
+    axes[0].legend(ncols=2, fontsize=6.8, handlelength=1.35, columnspacing=0.85, borderaxespad=0.2)
     if watermark:
         for ax in axes:
             sample_watermark(ax)
     return save_pdf_png(fig, output_stem)
+
+
+F3_STAGE_LABELS = {"纯油车": "纯油车（同路线动力替换）"}
+
+
+def _f3_stage_label(stage: str) -> str:
+    return F3_STAGE_LABELS.get(stage, stage)
 
 
 def figure_f3_two_layer_waterfall(csv_path: str | Path, output_stem: str | Path) -> tuple[Path, Path]:
@@ -91,9 +124,9 @@ def figure_f3_two_layer_waterfall(csv_path: str | Path, output_stem: str | Path)
     from matplotlib import pyplot as plt
 
     rows = _read_rows(csv_path)
-    labels = [row["stage"] for row in rows]
+    labels = [_f3_stage_label(row["stage"]) for row in rows]
     values = [float(row["total_carbon_kg"]) for row in rows]
-    fig, ax = plt.subplots(figsize=cm_to_inch(8.0, 5.8))
+    fig, ax = plt.subplots(figsize=SINGLE_COL_FIGSIZE, constrained_layout=True)
     xs = list(range(len(values)))
     ax.bar(xs, values, color=[PALETTE["gray"], PALETTE["blue"], PALETTE["green"]], width=0.62)
     for i in range(1, len(values)):
@@ -103,6 +136,8 @@ def figure_f3_two_layer_waterfall(csv_path: str | Path, output_stem: str | Path)
         ax.plot([i - 1, i], [y, y], color="#334155", linewidth=0.9)
         ax.text(i - 0.5, y * 1.01, f"{delta:+.1f} kg ({pct:+.1f}%)", ha="center", fontsize=8)
     ax.set_xticks(xs, labels)
+    ax.tick_params(axis="x", labelsize=7)
+    ax.set_xlabel("阶段（纯油车为同路线动力替换基线）", fontsize=8)
     ax.set_ylabel("总碳 kg")
     ax.set_title("F3 两层减碳瀑布")
     ax.margins(y=0.18)
@@ -114,11 +149,13 @@ def figure_f3_two_layer_bars(csv_path: str | Path, output_stem: str | Path) -> t
     from matplotlib import pyplot as plt
 
     rows = _read_rows(csv_path)
-    labels = [row["stage"] for row in rows]
+    labels = [_f3_stage_label(row["stage"]) for row in rows]
     values = [float(row["total_carbon_kg"]) for row in rows]
-    fig, ax = plt.subplots(figsize=cm_to_inch(8.0, 5.4))
+    fig, ax = plt.subplots(figsize=SINGLE_COL_FIGSIZE, constrained_layout=True)
     ax.bar(range(len(values)), values, color=[PALETTE["gray"], PALETTE["blue"], PALETTE["green"]], width=0.58, edgecolor=PALETTE["dark"], linewidth=0.7)
     ax.set_xticks(range(len(values)), labels)
+    ax.tick_params(axis="x", labelsize=7)
+    ax.set_xlabel("阶段（纯油车为同路线动力替换基线）", fontsize=8)
     ax.set_ylabel("总碳 kg")
     ax.set_title("F3 两层减碳柱图备版")
     for idx, value in enumerate(values):
@@ -133,7 +170,7 @@ def figure_f4_48slot_charging(csv_path: str | Path, output_stem: str | Path) -> 
 
     rows = _read_rows(csv_path)
     scenarios = ["朴素充电", "碳感知充电"]
-    fig, axes = plt.subplots(1, 2, figsize=cm_to_inch(16.0, 6.8), constrained_layout=True)
+    fig, axes = plt.subplots(1, 2, figsize=DOUBLE_COL_FIGSIZE, constrained_layout=True)
     gamma_rows = [row for row in rows if row["scenario"] == scenarios[0]]
     x = [float(row["hour"]) for row in gamma_rows]
     gamma = [float(row["gamma_gco2_per_kwh"]) for row in gamma_rows]
@@ -155,8 +192,8 @@ def figure_f4_48slot_charging(csv_path: str | Path, output_stem: str | Path) -> 
     axes[0].set_xlim(0, 24)
     ax2.set_ylabel("充电 kWh")
     ax2.set_ylim(bottom=0)
-    axes[0].legend(loc="upper left", fontsize=7)
-    ax2.legend(loc="upper right", fontsize=7)
+    axes[0].legend(loc="upper left", fontsize=7, handlelength=1.3)
+    ax2.legend(loc="upper right", fontsize=7, handlelength=1.3)
 
     shares = charging_period_shares(rows)
     bottoms = {scenario: 0.0 for scenario in scenarios}
@@ -184,7 +221,7 @@ def figure_f5_carbon_heatmap(csv_path: str | Path, output_stem: str | Path, *, w
     prices = sorted({row["carbon_price"] for row in rows}, key=float)
     quotas = sorted({row["quota"] for row in rows}, key=float)
     grid = [[_value_for(rows, price, quota, "total_carbon_kg") for price in prices] for quota in quotas]
-    fig, ax = plt.subplots(figsize=cm_to_inch(8.0, 6.2))
+    fig, ax = plt.subplots(figsize=SINGLE_COL_FIGSIZE, constrained_layout=True)
     image = ax.imshow(grid, cmap="YlGnBu", aspect="auto")
     ax.set_xticks(range(len(prices)), prices)
     ax.set_yticks(range(len(quotas)), quotas)
@@ -194,10 +231,103 @@ def figure_f5_carbon_heatmap(csv_path: str | Path, output_stem: str | Path, *, w
     for y, row in enumerate(grid):
         for x, value in enumerate(row):
             ax.text(x, y, f"{value:.0f}", ha="center", va="center", fontsize=8)
-    fig.colorbar(image, ax=ax, label="总碳 kg")
+    fig.colorbar(image, ax=ax, label="总碳 kg", fraction=0.055, pad=0.03)
     if watermark:
         sample_watermark(ax)
     return save_pdf_png(fig, output_stem)
+
+
+def figure_f5b_carbon_stress(means_csv: str | Path, seed_detail_csv: str | Path, output_stem: str | Path) -> tuple[Path, Path]:
+    setup_matplotlib()
+    from matplotlib import pyplot as plt
+
+    points = carbon_stress_points(means_csv, seed_detail_csv)
+    prices = [point["price_gbp_per_tonne"] for point in points]
+    carbon_means = [point["carbon_mean"] for point in points]
+    carbon_stds = [point["carbon_std"] for point in points]
+    ev_counts = [point["ev_count"] for point in points]
+    threshold = 32.0 * CARBON_MAIN_PRICE_GBP_PER_TONNE
+
+    fig, ax = plt.subplots(figsize=SINGLE_COL_FIGSIZE, constrained_layout=True)
+    ax.errorbar(
+        prices,
+        carbon_means,
+        yerr=carbon_stds,
+        color=PALETTE["blue"],
+        marker=MARKERS[0],
+        markersize=4,
+        linestyle=LINE_STYLES[0],
+        linewidth=1.05,
+        capsize=2.4,
+        elinewidth=0.8,
+        label="总碳排放",
+    )
+    ax.set_xscale("log")
+    ax.set_xticks(prices)
+    ax.set_xticklabels([f"{price:.0f}" for price in prices], rotation=32, ha="right")
+    ax.tick_params(axis="x", labelsize=8)
+    ax.set_xlabel("碳价 / $£$/tCO$_2$e")
+    ax.set_ylabel("总碳排放 kgCO$_2$e")
+    ax.set_title("F5b 碳价压力曲线")
+    ax.margins(x=0.05, y=0.18)
+
+    ax2 = ax.twinx()
+    ax2.plot(
+        prices,
+        ev_counts,
+        color=PALETTE["green"],
+        marker=MARKERS[1],
+        markersize=3.8,
+        linestyle=LINE_STYLES[1],
+        linewidth=1.0,
+        label="电动车路线数",
+    )
+    ax2.set_ylabel("电动车路线数")
+
+    ax.axvline(threshold, color=PALETTE["red"], linestyle=LINE_STYLES[1], linewidth=0.85)
+    ax.annotate(
+        "阈值≈30×主值",
+        xy=(threshold, 0.95),
+        xycoords=ax.get_xaxis_transform(),
+        xytext=(4, -4),
+        textcoords="offset points",
+        color=PALETTE["red"],
+        fontsize=8,
+        ha="left",
+        va="top",
+    )
+
+    handles, labels = ax.get_legend_handles_labels()
+    handles2, labels2 = ax2.get_legend_handles_labels()
+    ax.legend(handles + handles2, labels + labels2, loc="best", fontsize=8)
+    return save_pdf_png(fig, output_stem)
+
+
+def carbon_stress_points(means_csv: str | Path, seed_detail_csv: str | Path) -> list[dict[str, float]]:
+    mean_rows = sorted(_read_rows(means_csv), key=lambda row: float(row["carbon_price"]))
+    seed_rows = _read_rows(seed_detail_csv)
+    carbon_by_factor: dict[float, list[float]] = defaultdict(list)
+    for row in seed_rows:
+        factor_text = row.get("carbon_price", row.get("price_factor", ""))
+        carbon_text = row.get("total_carbon_kg", "")
+        if factor_text == "" or carbon_text == "":
+            continue
+        carbon_by_factor[float(factor_text)].append(float(carbon_text))
+
+    points: list[dict[str, float]] = []
+    for row in mean_rows:
+        factor = float(row["carbon_price"])
+        carbon_values = carbon_by_factor.get(factor, [])
+        points.append(
+            {
+                "factor": factor,
+                "price_gbp_per_tonne": factor * CARBON_MAIN_PRICE_GBP_PER_TONNE,
+                "carbon_mean": float(row["total_carbon_kg"]),
+                "carbon_std": stdev(carbon_values) if len(carbon_values) > 1 else 0.0,
+                "ev_count": float(row["ev_count"]),
+            }
+        )
+    return points
 
 
 def figure_f6_fairness_frontier(csv_path: str | Path, output_stem: str | Path, *, watermark: bool = True) -> tuple[Path, Path]:
@@ -213,7 +343,7 @@ def figure_f6_fairness_frontier(csv_path: str | Path, output_stem: str | Path, *
     use_ratio_axis = any(value is not None for value in ratio_values)
     ys = ratio_values if use_ratio_axis else [_float_or_none(row.get("total_cost", row.get("总成本", ""))) for row in rows]
     feasible = [_is_yes(row.get("feasible", row.get("可行", ""))) and y is not None for row, y in zip(rows, ys)]
-    fig, ax = plt.subplots(figsize=cm_to_inch(8.0, 5.6))
+    fig, ax = plt.subplots(figsize=SINGLE_COL_FIGSIZE, constrained_layout=True)
     feasible_x = [x for x, y, ok in zip(xs, ys, feasible) if ok and y is not None]
     feasible_y = [float(y) for y, ok in zip(ys, feasible) if ok and y is not None]
     ax.plot(feasible_x, feasible_y, color=PALETTE["blue"], linestyle="-", marker="o", markersize=4, label="可行前沿")

@@ -9,23 +9,40 @@ Use ``run_alns_wouda`` for the G4 gate.
 from __future__ import annotations
 
 from dataclasses import dataclass, field, replace
+import math
+import os
 from pathlib import Path
 import sys
 import time
 import types
-from typing import Any
+from typing import Any, Callable
 
 import numpy as np
 
 from ..check import check_solution
+from ..cost import evaluate
 from ..instance_loader import Instance
 from ..prices import DEFAULT_PRICES
 from ..solution import Route, Solution
 from .bundle import load_search_bundle
 from .charging import repair_route_charging
 from .construction import build_initial_solution
-from .evaluation import EvalBudget, EvaluationContext, fairness_context_for_solution, penalized_obj
+from .evaluation import BIG_M, EvalBudget, EvaluationContext, fairness_context_for_solution, record_repair_delta, score_candidate, score_reference
+from .feasible_repair import (
+    enumerate_feasible_insertions,
+    nearest_depot_id,
+    repair_removed_customers,
+    route_customers as feasible_route_customers,
+    route_distance as feasible_route_distance,
+)
 from .fleet import FleetLimits, UNBOUNDED_FLEET, infer_fleet_limits, route_ev_energy_summary
+from .local_search import improve_solution_locally
+from .repair_scoring import route_model_cost_delta
+
+
+MAX_VEHICLE_SWAP_CANDIDATES = 8
+MAX_REPAIR_ROUTE_CANDIDATES = 6
+MAX_REPAIR_POSITIONS_PER_ROUTE = 2
 
 
 @dataclass(frozen=True)
@@ -38,7 +55,7 @@ class SearchPolicy:
     cost.py/check.py semantics.
     """
 
-    require_charging_signal: bool = True
+    require_charging_signal: bool = False
     max_cv: int = UNBOUNDED_FLEET
     max_ev: int = UNBOUNDED_FLEET
 
@@ -47,11 +64,14 @@ class SearchPolicy:
 class AlnsState:
     solution: Solution
     context: EvaluationContext
+    objective_value: float | None = None
     removed_customers: tuple[str, ...] = ()
     policy: SearchPolicy = field(default_factory=SearchPolicy)
+    source_solution: Solution | None = None
+    allow_new_route_repair: bool = True
 
     def objective(self) -> float:
-        return penalized_obj(self.solution, self.context)
+        return score_reference(self.solution, self.context) if self.objective_value is None else float(self.objective_value)
 
 
 @dataclass(frozen=True)
@@ -65,6 +85,11 @@ class AlnsRunResult:
     charging_energy_kwh: float = 0.0
     destroy_operator_counts: dict[str, tuple[int, int, int, int]] = field(default_factory=dict)
     repair_operator_counts: dict[str, tuple[int, int, int, int]] = field(default_factory=dict)
+    actual_moves: int = 0
+    candidate_scores: int = 0
+    repair_scores: int = 0
+    repair_delta_count: int = 0
+    operator_counts: dict[str, Any] = field(default_factory=dict)
 
 
 def run_alns_wouda(
@@ -87,14 +112,10 @@ def run_alns_wouda(
     """Run a small-budget ALNS-Wouda pass on a generated bundle."""
 
     _ensure_local_alns_on_path()
-    from alns import ALNS
-    from alns.accept import RecordToRecordTravel
-    from alns.select import RouletteWheel
-    from alns.stop import MaxIterations
 
     bundle = load_search_bundle(bundle_dir)
     limits = infer_fleet_limits(bundle.bundle_dir)
-    search_policy = policy or SearchPolicy(require_charging_signal=True, max_cv=limits.cv, max_ev=limits.ev)
+    search_policy = policy or SearchPolicy(require_charging_signal=False, max_cv=limits.cv, max_ev=limits.ev)
     # v2026-06-12: X1 can seed the cooperative search with the concatenated
     # independent-depot solution, proving theta=1.0 starts from a feasible
     # individual-rational point. Default construction is unchanged.
@@ -112,7 +133,10 @@ def run_alns_wouda(
         bundle.carbon_profile,
         prices=prices,
         carbon_weight=carbon_weight,
-        budget=EvalBudget(limit=_budget_limit(iterations, eval_budget)),
+        budget=EvalBudget(
+            limit=_budget_limit(iterations, eval_budget),
+            target=int(eval_budget) if eval_budget is not None else None,
+        ),
         # v2026-06-12: Z0a/Z4 expose carbon allowance CE to the common
         # evaluator; CE=inf is the no-quota baseline with zero trading cost.
         carbon_quota_kg=float(carbon_quota_kg),
@@ -122,39 +146,19 @@ def run_alns_wouda(
         independent_profit=independent_profit,
         fairness_theta=fairness_theta,
         customer_home_depot=customer_home_depot,
+        repair_delta_mode="exact" if eval_budget is None else "fast",
     )
-    initial_state = AlnsState(initial, context, policy=search_policy)
-    initial_obj = initial_state.objective()
+    initial_obj = score_reference(initial, context)
+    initial_state = AlnsState(initial, context, objective_value=initial_obj, policy=search_policy)
 
-    alns = ALNS(np.random.default_rng(seed))
-    alns.add_destroy_operator(random_customer_removal, name="random_customer_removal")
-    alns.add_destroy_operator(worst_customer_removal, name="worst_customer_removal")
-    alns.add_destroy_operator(vehicle_type_swap_destroy, name="vehicle_type_swap")
-    alns.add_repair_operator(greedy_insert_repair, name="greedy_insert_repair")
-    alns.add_repair_operator(regret2_insert_repair, name="regret2_insert_repair")
-    alns.add_repair_operator(identity_repair, name="identity_repair")
-    coupling = np.array(
-        [
-            [True, True, False],
-            [True, True, False],
-            [False, False, True],
-        ],
-        dtype=bool,
+    run = _run_adaptive_sa_alns(
+        initial_state,
+        seed=seed,
+        iterations=iterations,
+        eval_budget=eval_budget,
+        max_runtime_seconds=max_runtime_seconds,
     )
-    selector = RouletteWheel([20.0, 8.0, 2.0, 0.0], 0.8, 3, 3, op_coupling=coupling)
-    stopping_iterations = iterations if iterations is not None else max(1, int((eval_budget or 3000) / 25))
-    accept = RecordToRecordTravel(
-        start_threshold=1_000_000.0,
-        end_threshold=0.0,
-        step=1_000_000.0 / max(1, stopping_iterations),
-    )
-    stop = (
-        MaxIterations(iterations)
-        if iterations is not None
-        else _EvalOrRuntimeStop(context.budget, int(eval_budget or 3000), max_runtime_seconds)
-    )
-    result = alns.iterate(initial_state, selector, accept, stop)
-    best_state = result.best_state
+    best_state = run["best_state"]
     best_obj = best_state.objective()
     feasible = len(
         check_solution(
@@ -165,6 +169,10 @@ def run_alns_wouda(
             fairness_enabled=fairness_enabled,
         )
     ) == 0
+    destroy_counts = {name: tuple(row) for name, row in run["destroy_counts"].items()}
+    repair_counts = {name: tuple(row) for name, row in run["repair_counts"].items()}
+    actual_moves = sum(sum(row) for row in destroy_counts.values())
+    operator_counts = {"destroy": destroy_counts, "repair": repair_counts}
     return AlnsRunResult(
         initial,
         best_state.solution,
@@ -173,8 +181,13 @@ def run_alns_wouda(
         context.budget.count if context.budget else 0,
         feasible,
         _charging_energy(best_state.solution),
-        _count_table(result.statistics.destroy_operator_counts),
-        _count_table(result.statistics.repair_operator_counts),
+        destroy_counts,
+        repair_counts,
+        actual_moves,
+        int(context.score_counts.get("candidate", 0)),
+        int(context.score_counts.get("repair_delta", 0)),
+        int(context.score_counts.get("repair_delta", 0)),
+        operator_counts,
     )
 
 
@@ -196,7 +209,7 @@ class _EvalOrRuntimeStop:
 
     def __call__(self, rng: np.random.Generator, best: AlnsState, curr: AlnsState) -> bool:
         _ = rng, best, curr
-        if self._budget is not None and self._budget.count >= self._target_evaluations:
+        if self._budget is not None and self._budget.reached_target:
             return True
         return (time.perf_counter() - self._start) >= self._max_runtime_seconds
 
@@ -205,35 +218,358 @@ def _budget_limit(iterations: int | None, eval_budget: int | None) -> int:
     if eval_budget is None:
         return max(1000, int(iterations or 5) * 200)
     target = int(eval_budget)
-    return target + max(100, target // 10)
+    return target + max(1000, target // 10)
 
 
 def _count_table(counts: Any) -> dict[str, tuple[int, int, int, int]]:
     return {str(name): tuple(int(value) for value in row) for name, row in counts.items()}
 
 
+def _target_iterations(iterations: int | None, eval_budget: int | None) -> int:
+    return max(1, int(eval_budget) if eval_budget is not None else int(iterations or 1))
+
+
+def _make_acceptance_criterion(initial_state: AlnsState, target_iterations: int) -> Any:
+    _ensure_local_alns_on_path()
+    if not _flag_enabled("SETP_ALNS_CRUSH_TRUE_ACCEPTANCE"):
+        from alns.accept import HillClimbing
+
+        return HillClimbing()
+    from alns.accept import RecordToRecordTravel
+
+    initial_obj = max(1.0, float(initial_state.objective()))
+    start_threshold = max(5.0, 0.02 * initial_obj)
+    end_threshold = 0.0
+    step = (start_threshold - end_threshold) / max(1, int(target_iterations))
+    return RecordToRecordTravel(
+        start_threshold=start_threshold,
+        end_threshold=end_threshold,
+        step=step,
+        method="linear",
+        cmp_best=False,
+    )
+
+
+def _make_operator_selector(num_destroy: int, num_repair: int) -> Any:
+    _ensure_local_alns_on_path()
+    from alns.select import AlphaUCB
+
+    return AlphaUCB([20.0, 8.0, 2.0, 0.05], alpha=0.08, num_destroy=num_destroy, num_repair=num_repair)
+
+
+def _flag_enabled(name: str) -> bool:
+    return os.environ.get(name, "1").lower() not in {"0", "false", "no"}
+
+
+def _run_adaptive_sa_alns(
+    initial_state: AlnsState,
+    *,
+    seed: int,
+    iterations: int | None,
+    eval_budget: int | None,
+    max_runtime_seconds: float,
+) -> dict[str, Any]:
+    rng = np.random.default_rng(seed)
+    destroy_ops: list[tuple[str, Callable[[AlnsState, np.random.Generator], AlnsState]]] = [
+        ("random_customer_removal", random_customer_removal),
+        ("worst_customer_removal", worst_customer_removal),
+        ("shaw_related_removal", shaw_related_removal),
+        ("whole_route_removal", whole_route_removal),
+        ("route_segment_removal", route_segment_removal),
+        ("vehicle_type_swap", vehicle_type_swap_destroy),
+    ]
+    if _flag_enabled("SETP_ALNS_CRUSH_ROUTE_ELIMINATION"):
+        destroy_ops.insert(4, ("route_elimination_removal", route_elimination_removal))
+    repair_ops: list[tuple[str, Callable[[AlnsState, np.random.Generator], AlnsState]]] = [
+        ("greedy_insert_repair", greedy_insert_repair),
+        ("regret2_insert_repair", regret2_insert_repair),
+        ("regret3_insert_repair", regret3_insert_repair),
+    ]
+    selector = _make_operator_selector(len(destroy_ops), len(repair_ops))
+    acceptance = _make_acceptance_criterion(initial_state, _target_iterations(iterations, eval_budget))
+    destroy_counts = {name: [0, 0, 0, 0] for name, _ in destroy_ops}
+    repair_counts = {name: [0, 0, 0, 0] for name, _ in repair_ops}
+    current = best = initial_state
+    target = int(eval_budget) if eval_budget is not None else int(iterations or 1)
+    started = time.perf_counter()
+    moves = 0
+    while True:
+        if iterations is not None and moves >= int(iterations):
+            break
+        if initial_state.context.budget is not None and initial_state.context.budget.reached_target:
+            break
+        if eval_budget is not None and initial_state.context.budget is not None and initial_state.context.budget.count >= target:
+            break
+        if time.perf_counter() - started >= float(max_runtime_seconds):
+            break
+        moves += 1
+        progress = min(1.0, moves / max(1, target))
+        destroy_idx, repair_idx = selector(rng, best, current)
+        destroy_name, destroy_op = destroy_ops[int(destroy_idx)]
+        repair_name, repair_op = repair_ops[int(repair_idx)]
+        previous_obj = current.objective()
+        previous_best_obj = best.objective()
+        destroyed = destroy_op(current, rng, progress=progress)
+        candidate = repair_op(destroyed, rng)
+        if not candidate.removed_customers and not _hard_violations(candidate.solution, candidate.context) and _solution_changed(current.solution, candidate.solution):
+            improved_solution = improve_solution_locally(candidate.solution, candidate.context)
+            if _solution_changed(candidate.solution, improved_solution):
+                candidate = replace(candidate, solution=improved_solution, objective_value=None)
+        if destroy_name == "route_elimination_removal" and (
+            len(candidate.solution.routes) >= len(current.solution.routes) or candidate.objective() >= previous_obj - 1e-9
+        ):
+            candidate = current
+        if candidate.removed_customers or _hard_violations(candidate.solution, candidate.context) or not _solution_changed(current.solution, candidate.solution):
+            candidate = current
+        candidate_obj = candidate.objective()
+        changed = _solution_changed(current.solution, candidate.solution)
+        accepted = changed and bool(acceptance(rng, best, current, candidate))
+        best_improved = accepted and candidate_obj < previous_best_obj - 1e-9 and not _hard_violations(candidate.solution, candidate.context)
+        better_current = accepted and candidate_obj < previous_obj - 1e-9
+        outcome_idx = 3
+        reward = 0.0
+        if accepted:
+            current = candidate
+            outcome_idx = 2
+            reward = 2.0
+            if better_current:
+                outcome_idx = 1
+                reward = 8.0
+            if best_improved:
+                best = candidate
+                outcome_idx = 0
+                reward = 20.0
+        destroy_counts[destroy_name][outcome_idx] += 1
+        repair_counts[repair_name][outcome_idx] += 1
+        selector.update(candidate, int(destroy_idx), int(repair_idx), outcome_idx)
+    return {
+        "best_state": best,
+        "current_state": current,
+        "destroy_counts": destroy_counts,
+        "repair_counts": repair_counts,
+        "destroy_weights": {},
+        "repair_weights": {},
+        "moves": moves,
+    }
+
+
+def _weighted_operator(
+    rng: np.random.Generator,
+    operators: list[tuple[str, Callable[[AlnsState, np.random.Generator], AlnsState]]],
+    weights: dict[str, float],
+) -> tuple[str, Callable[[AlnsState, np.random.Generator], AlnsState]]:
+    total = sum(max(1e-9, float(weights[name])) for name, _ in operators)
+    pick = float(rng.random()) * total
+    current = 0.0
+    for name, op in operators:
+        current += max(1e-9, float(weights[name]))
+        if current >= pick:
+            return name, op
+    return operators[-1]
+
+
+def _update_weight(weights: dict[str, float], name: str, reward: float) -> None:
+    weights[name] = 0.8 * float(weights[name]) + 0.2 * max(0.05, float(reward))
+
+
+def _adaptive_remove_count(
+    customer_count: int,
+    rng: np.random.Generator,
+    *,
+    progress: float = 0.0,
+    remove_count_q: int | None = None,
+) -> int:
+    if customer_count <= 0:
+        return 0
+    if remove_count_q is not None:
+        return max(1, min(int(remove_count_q), int(customer_count)))
+    if not _flag_enabled("SETP_ALNS_CRUSH_ADAPTIVE_Q"):
+        low = max(2, int(math.ceil(0.10 * customer_count)))
+        high = max(low, int(math.ceil(0.40 * customer_count)))
+        high = min(high, customer_count, 12)
+        low = min(low, high)
+        return int(rng.integers(low, high + 1))
+    phase = min(1.0, max(0.0, float(progress)))
+    low_frac = 0.10 - 0.06 * phase
+    high_frac = 0.40 - 0.28 * phase
+    low = max(2, int(math.ceil(low_frac * customer_count)))
+    high = max(low, int(math.ceil(high_frac * customer_count)))
+    high = min(high, customer_count)
+    low = min(low, high)
+    return int(rng.integers(low, high + 1))
+
+
+def _hard_violations(solution: Solution, context: EvaluationContext) -> list[Any]:
+    return check_solution(
+        solution,
+        context.instance,
+        context.prices,
+        fairness_context=fairness_context_for_solution(solution, context),
+        fairness_enabled=context.fairness_enabled,
+    )
+
+
+def _solution_changed(a: Solution, b: Solution) -> bool:
+    return _solution_signature(a) != _solution_signature(b)
+
+
+def _solution_signature(solution: Solution) -> tuple[Any, ...]:
+    return (
+        tuple((route.vehicle_id, route.vehicle_type.lower(), route.home_depot_id, tuple(route.node_sequence)) for route in solution.routes),
+        tuple((action.vehicle_id, action.station_id, round(float(action.charge_start_second), 6), round(float(action.energy_kwh), 6)) for action in solution.charging_actions),
+    )
+
+
+def _initial_temperature_from_reference(
+    state: AlnsState,
+    seed: int,
+    destroy_ops: list[tuple[str, Callable[[AlnsState, np.random.Generator], AlnsState]]],
+    repair_ops: list[tuple[str, Callable[[AlnsState, np.random.Generator], AlnsState]]],
+) -> float:
+    reference_context = replace(state.context, budget=None, score_counts={}, score_breakdowns={})
+    reference_state = replace(state, context=reference_context)
+    rng = np.random.default_rng(seed)
+    positives: list[float] = []
+    for _ in range(3):
+        _, destroy_op = destroy_ops[int(rng.integers(0, len(destroy_ops)))]
+        _, repair_op = repair_ops[int(rng.integers(0, len(repair_ops)))]
+        candidate = repair_op(destroy_op(reference_state, rng), rng)
+        if candidate.removed_customers or _hard_violations(candidate.solution, candidate.context):
+            continue
+        delta = candidate.objective() - reference_state.objective()
+        if delta > 1e-9:
+            positives.append(float(delta))
+    if not positives:
+        return 250.0
+    positives.sort()
+    typical = positives[len(positives) // 2]
+    return max(1.0, typical / max(1e-9, -math.log(0.4)))
+
+
 def random_customer_removal(state: AlnsState, rng: np.random.Generator, **kwargs: Any) -> AlnsState:
     customers = _customers_in_solution(state.solution, state.context.instance)
     if not customers:
         return state
-    customer_id = str(rng.choice(customers))
-    return _remove_customers(state, [customer_id])
+    q = _adaptive_remove_count(
+        len(customers),
+        rng,
+        progress=float(kwargs.get("progress", 0.0)),
+        remove_count_q=kwargs.get("remove_count_q"),
+    )
+    return _remove_customers(state, [str(customer_id) for customer_id in rng.choice(customers, size=min(q, len(customers)), replace=False)])
 
 
 def worst_customer_removal(state: AlnsState, rng: np.random.Generator, **kwargs: Any) -> AlnsState:
-    _ = rng, kwargs
-    customer_id = _worst_customer_by_distance_contribution(state.solution, state.context.instance)
-    return _remove_customers(state, [customer_id]) if customer_id else state
+    _ = rng
+    ranked = _ranked_customers_by_distance_contribution(state.solution, state.context.instance)
+    if not ranked:
+        return state
+    q = _adaptive_remove_count(
+        len(ranked),
+        rng,
+        progress=float(kwargs.get("progress", 0.0)),
+        remove_count_q=kwargs.get("remove_count_q"),
+    )
+    return _remove_customers(state, [customer_id for _, customer_id in ranked[:q]])
+
+
+def shaw_related_removal(state: AlnsState, rng: np.random.Generator, **kwargs: Any) -> AlnsState:
+    _ = kwargs
+    customers = _customers_in_solution(state.solution, state.context.instance)
+    if not customers:
+        return state
+    q = _adaptive_remove_count(
+        len(customers),
+        rng,
+        progress=float(kwargs.get("progress", 0.0)),
+        remove_count_q=kwargs.get("remove_count_q"),
+    )
+    seed_customer = str(rng.choice(customers))
+    related = sorted(
+        ((_shaw_relatedness(state.solution, state.context.instance, seed_customer, customer_id), customer_id) for customer_id in customers if customer_id != seed_customer),
+        key=lambda item: (item[0], item[1]),
+    )
+    return _remove_customers(state, [seed_customer, *[customer_id for _, customer_id in related[: max(0, q - 1)]]])
+
+
+def multi_customer_removal(state: AlnsState, rng: np.random.Generator, **kwargs: Any) -> AlnsState:
+    _ = kwargs
+    customers = _customers_in_solution(state.solution, state.context.instance)
+    if not customers:
+        return state
+    remove_count = _adaptive_remove_count(
+        len(customers),
+        rng,
+        progress=float(kwargs.get("progress", 0.0)),
+        remove_count_q=kwargs.get("remove_count_q"),
+    )
+    return _remove_customers(state, [str(customer_id) for customer_id in rng.choice(customers, size=remove_count, replace=False)])
+
+
+def route_segment_removal(state: AlnsState, rng: np.random.Generator, **kwargs: Any) -> AlnsState:
+    routes = [route for route in state.solution.routes if _route_customer_ids(route, state.context.instance)]
+    if not routes:
+        return state
+    route = routes[int(rng.integers(0, len(routes)))]
+    customers = _route_customer_ids(route, state.context.instance)
+    start = int(rng.integers(0, len(customers)))
+    q = _adaptive_remove_count(
+        len(_customers_in_solution(state.solution, state.context.instance)),
+        rng,
+        progress=float(kwargs.get("progress", 0.0)),
+        remove_count_q=kwargs.get("remove_count_q"),
+    )
+    max_len = min(q, len(customers) - start)
+    length = int(rng.integers(1, max_len + 1))
+    return _remove_customers(state, customers[start : start + length])
+
+
+def whole_route_removal(state: AlnsState, rng: np.random.Generator, **kwargs: Any) -> AlnsState:
+    _ = kwargs
+    routes = [route for route in state.solution.routes if _route_customer_ids(route, state.context.instance)]
+    if len(routes) < 2:
+        return state
+    route = routes[int(rng.integers(0, len(routes)))]
+    return _remove_customers(state, _route_customer_ids(route, state.context.instance))
+
+
+def route_elimination_removal(state: AlnsState, rng: np.random.Generator, **kwargs: Any) -> AlnsState:
+    """Remove 1-3 weak routes and force repair into the remaining routes."""
+
+    _ = kwargs
+    route_items = [(idx, route) for idx, route in enumerate(state.solution.routes) if _route_customer_ids(route, state.context.instance)]
+    if len(route_items) < 2:
+        return state
+    max_remove = min(3, len(route_items) - 1)
+    remove_count = int(rng.integers(1, max_remove + 1))
+    ranked = sorted(route_items, key=lambda item: _weak_route_key(item[1], state.context.instance))
+    selected = ranked[:remove_count]
+    removed_customers = [
+        customer_id
+        for _, route in selected
+        for customer_id in _route_customer_ids(route, state.context.instance)
+    ]
+    if not removed_customers:
+        return state
+    destroyed = _remove_customers(state, removed_customers)
+    if not _solution_changed(state.solution, destroyed.solution):
+        return state
+    return replace(destroyed, allow_new_route_repair=False)
 
 
 def greedy_insert_repair(state: AlnsState, rng: np.random.Generator, **kwargs: Any) -> AlnsState:
     _ = rng, kwargs
-    return _insert_removed(state, regret=False)
+    return _finalize_candidate_state(_insert_removed(state, mode="greedy"))
 
 
 def regret2_insert_repair(state: AlnsState, rng: np.random.Generator, **kwargs: Any) -> AlnsState:
     _ = rng, kwargs
-    return _insert_removed(state, regret=True)
+    return _finalize_candidate_state(_insert_removed(state, mode="regret2"))
+
+
+def regret3_insert_repair(state: AlnsState, rng: np.random.Generator, **kwargs: Any) -> AlnsState:
+    _ = rng, kwargs
+    return _finalize_candidate_state(_insert_removed(state, mode="regret3"))
 
 
 def vehicle_type_swap_destroy(state: AlnsState, rng: np.random.Generator, **kwargs: Any) -> AlnsState:
@@ -247,7 +583,7 @@ def identity_repair(state: AlnsState, rng: np.random.Generator, **kwargs: Any) -
     """Identity repair paired with ``vehicle_type_swap_destroy`` by coupling."""
 
     _ = rng, kwargs
-    return state
+    return _finalize_candidate_state(state)
 
 
 def vehicle_type_swap(state: AlnsState, rng: np.random.Generator) -> AlnsState:
@@ -259,10 +595,16 @@ def vehicle_type_swap(state: AlnsState, rng: np.random.Generator) -> AlnsState:
     the operator refuses moves that would delete the last nonzero EV charge.
     """
 
-    cv_candidate = _try_cv_to_ev(state, rng)
-    if cv_candidate is not state:
-        return cv_candidate
-    return _try_ev_to_cv(state, rng)
+    candidates = [*_try_cv_to_ev_candidates(state, rng), *_try_ev_to_cv_candidates(state, rng)]
+    if not candidates:
+        return state
+    scored = [(_repair_solution_delta_score(candidate, state.context), candidate) for candidate in candidates]
+    if not scored:
+        return state
+    for _, candidate in sorted(scored, key=lambda item: item[0]):
+        if not check_solution(candidate, state.context.instance, state.context.prices):
+            return replace(state, solution=candidate, objective_value=None)
+    return state
 
 
 def _remove_customers(state: AlnsState, customer_ids: list[str]) -> AlnsState:
@@ -285,7 +627,13 @@ def _remove_customers(state: AlnsState, customer_ids: list[str]) -> AlnsState:
         for action in state.solution.charging_actions
         if action.vehicle_id not in removed_vehicle_ids and action.station_id in {node_id for route in new_routes for node_id in route.node_sequence}
     ]
-    return replace(state, solution=replace(state.solution, routes=new_routes, charging_actions=actions), removed_customers=removed)
+    return replace(
+        state,
+        solution=replace(state.solution, routes=new_routes, charging_actions=actions),
+        objective_value=None,
+        removed_customers=removed,
+        source_solution=state.solution if state.source_solution is None else state.source_solution,
+    )
 
 
 def _would_remove_last_charging_ev_customer(state: AlnsState, customer_ids: set[str]) -> bool:
@@ -303,33 +651,39 @@ def _would_remove_last_charging_ev_customer(state: AlnsState, customer_ids: set[
     return any(customer_id in customer_ids for customer_id in _route_customer_ids(route, state.context.instance))
 
 
-def _insert_removed(state: AlnsState, *, regret: bool) -> AlnsState:
-    current = state.solution
-    removed = list(state.removed_customers)
-    while removed:
-        scored = []
-        for customer_id in removed:
-            options = _insertion_options(current, customer_id, state.context, state.policy)
-            if not options:
-                continue
-            best = options[0]
-            second_obj = options[1][0] if len(options) > 1 else best[0]
-            primary = -(second_obj - best[0]) if regret else best[0]
-            scored.append((primary, best[0], customer_id, best[1]))
-        if not scored:
-            break
-        _, _, customer_id, solution = min(scored)
-        current = solution
-        removed.remove(customer_id)
-    return replace(state, solution=current, removed_customers=tuple(removed))
+def _insert_removed(state: AlnsState, *, mode: str) -> AlnsState:
+    repaired = repair_removed_customers(
+        state.solution,
+        list(state.removed_customers),
+        state.context,
+        state.policy,
+        mode=mode,
+        allow_new_route=state.allow_new_route_repair,
+    )
+    if repaired is None:
+        return replace(
+            state,
+            solution=state.source_solution or state.solution,
+            objective_value=None,
+            removed_customers=(),
+            allow_new_route_repair=True,
+        )
+    return replace(state, solution=repaired, objective_value=None, removed_customers=(), source_solution=None, allow_new_route_repair=True)
 
 
 def _try_cv_to_ev(state: AlnsState, rng: np.random.Generator) -> AlnsState:
+    candidates = _try_cv_to_ev_candidates(state, rng)
+    return state if not candidates else replace(state, solution=candidates[0], objective_value=None)
+
+
+def _try_cv_to_ev_candidates(state: AlnsState, rng: np.random.Generator) -> list[Solution]:
     if _count_routes(state.solution, "ev") >= state.policy.max_ev:
-        return state
+        return []
     routes = list(state.solution.routes)
     indices = [idx for idx, route in enumerate(routes) if route.vehicle_type.lower() == "cv" and _route_customer_ids(route, state.context.instance)]
     rng.shuffle(indices)
+    indices = indices[:MAX_VEHICLE_SWAP_CANDIDATES]
+    candidates: list[Solution] = []
     for idx in indices:
         route = routes[idx]
         ev_id = _next_vehicle_id(state.solution, "EV")
@@ -359,17 +713,23 @@ def _try_cv_to_ev(state: AlnsState, rng: np.random.Generator) -> AlnsState:
         )
         if state.policy.require_charging_signal and not has_charging_signal(candidate):
             continue
-        if not check_solution(candidate, state.context.instance, state.context.prices):
-            return replace(state, solution=candidate)
-    return state
+        candidates.append(candidate)
+    return candidates
 
 
 def _try_ev_to_cv(state: AlnsState, rng: np.random.Generator) -> AlnsState:
+    candidates = _try_ev_to_cv_candidates(state, rng)
+    return state if not candidates else replace(state, solution=candidates[0], objective_value=None)
+
+
+def _try_ev_to_cv_candidates(state: AlnsState, rng: np.random.Generator) -> list[Solution]:
     if _count_routes(state.solution, "cv") >= state.policy.max_cv:
-        return state
+        return []
     routes = list(state.solution.routes)
     indices = [idx for idx, route in enumerate(routes) if route.vehicle_type.lower() == "ev"]
     rng.shuffle(indices)
+    indices = indices[:MAX_VEHICLE_SWAP_CANDIDATES]
+    candidates: list[Solution] = []
     for idx in indices:
         route = routes[idx]
         cv_id = _next_vehicle_id(state.solution, "CV")
@@ -385,9 +745,8 @@ def _try_ev_to_cv(state: AlnsState, rng: np.random.Generator) -> AlnsState:
         candidate = replace(state.solution, routes=candidate_routes, charging_actions=candidate_actions)
         if state.policy.require_charging_signal and not has_charging_signal(candidate):
             continue
-        if not check_solution(candidate, state.context.instance, state.context.prices):
-            return replace(state, solution=candidate)
-    return state
+        candidates.append(candidate)
+    return candidates
 
 
 def _insertion_options(
@@ -396,28 +755,79 @@ def _insertion_options(
     context: EvaluationContext,
     policy: SearchPolicy,
 ) -> list[tuple[float, Solution]]:
-    options: list[tuple[float, Solution]] = []
-    for route_idx, route in enumerate(solution.routes):
-        if route.vehicle_type.lower() != "cv":
-            continue
-        for pos in range(1, len(route.node_sequence)):
-            seq = list(route.node_sequence)
-            seq.insert(pos, customer_id)
-            routes = list(solution.routes)
-            routes[route_idx] = replace(route, node_sequence=seq)
-            candidate = replace(solution, routes=routes)
-            options.append((penalized_obj(candidate, context), candidate))
-    # v2026-06-11: G3/G4 shell respects the same fleet cap as check.py; the
-    # default policy is m^g=10 from paper_main.tex:582-584.
-    if len([route for route in solution.routes if route.vehicle_type.lower() == "cv"]) < policy.max_cv:
-        depot_id = _nearest_depot(customer_id, context.instance)
-        vehicle_id = _next_vehicle_id(solution, "CV")
-        candidate = replace(
-            solution,
-            routes=[*solution.routes, Route(vehicle_id, "cv", depot_id, [depot_id, customer_id, depot_id])],
-        )
-        options.append((penalized_obj(candidate, context), candidate))
-    return sorted(options, key=lambda item: item[0])
+    return [(option.score, option.solution) for option in enumerate_feasible_insertions(solution, customer_id, context, policy)]
+
+
+def _ranked_repair_routes(routes: list[Route], customer_id: str, instance: Instance) -> list[tuple[int, Route]]:
+    scored = [
+        (_route_customer_proximity(route, customer_id, instance), idx, route)
+        for idx, route in enumerate(routes)
+        if len(route.node_sequence) >= 2
+    ]
+    scored.sort(key=lambda item: item[0])
+    return [(idx, route) for _, idx, route in scored[:MAX_REPAIR_ROUTE_CANDIDATES]]
+
+
+def _route_customer_proximity(route: Route, customer_id: str, instance: Instance) -> float:
+    anchors = route.node_sequence[1:-1] or route.node_sequence
+    try:
+        return min(float(instance.distance(customer_id, node_id)) for node_id in anchors)
+    except Exception:
+        return BIG_M
+
+
+def _ranked_insert_positions(route: Route, customer_id: str, instance: Instance) -> list[int]:
+    scored: list[tuple[float, int]] = []
+    for pos in range(1, len(route.node_sequence)):
+        prev_node = route.node_sequence[pos - 1]
+        next_node = route.node_sequence[pos]
+        try:
+            delta = (
+                float(instance.distance(prev_node, customer_id))
+                + float(instance.distance(customer_id, next_node))
+                - float(instance.distance(prev_node, next_node))
+            )
+        except Exception:
+            delta = BIG_M
+        scored.append((delta, pos))
+    scored.sort(key=lambda item: item[0])
+    return [pos for _, pos in scored[:MAX_REPAIR_POSITIONS_PER_ROUTE]]
+
+
+def _finalize_candidate_state(state: AlnsState) -> AlnsState:
+    return replace(state, objective_value=score_candidate(state.solution, state.context), removed_customers=state.removed_customers)
+
+
+def _repair_route_delta_score(
+    route: Route,
+    actions: list[Any],
+    context: EvaluationContext,
+    *,
+    base_route: Route | None = None,
+    base_actions: list[Any] | None = None,
+) -> float:
+    record_repair_delta(context)
+    return route_model_cost_delta(route, actions, context, base_route=base_route, base_actions=base_actions)
+
+
+def _repair_solution_delta_score(solution: Solution, context: EvaluationContext) -> float:
+    record_repair_delta(context)
+    try:
+        if context.repair_delta_mode == "exact":
+            return score_reference(solution, context)
+        return float(evaluate(solution, context.instance, context.carbon_profile, context.prices, carbon_quota_kg=context.carbon_quota_kg)["total_cost"])
+    except Exception:
+        return BIG_M
+
+
+def _route_distance(route: Route, instance: Instance) -> float:
+    return sum(float(instance.distance(a, b)) for a, b in zip(route.node_sequence, route.node_sequence[1:]))
+
+
+def _weak_route_key(route: Route, instance: Instance) -> tuple[float, float, str]:
+    customers = _route_customer_ids(route, instance)
+    distance_per_customer = _route_distance(route, instance) / max(1, len(customers))
+    return (float(len(customers)), -float(distance_per_customer), route.vehicle_id)
 
 
 def _customers_in_solution(solution: Solution, instance: Instance) -> list[str]:
@@ -458,8 +868,13 @@ def _node_type(node_id: str, instance: Instance) -> str:
 
 
 def _worst_customer_by_distance_contribution(solution: Solution, instance: Instance) -> str | None:
+    ranked = _ranked_customers_by_distance_contribution(solution, instance)
+    return None if not ranked else ranked[0][1]
+
+
+def _ranked_customers_by_distance_contribution(solution: Solution, instance: Instance) -> list[tuple[float, str]]:
     node_lookup = {node.node_id: node for node in instance.nodes}
-    worst: tuple[float, str] | None = None
+    ranked: list[tuple[float, str]] = []
     for route in solution.routes:
         seq = route.node_sequence
         for idx in range(1, len(seq) - 1):
@@ -467,9 +882,26 @@ def _worst_customer_by_distance_contribution(solution: Solution, instance: Insta
             if node_lookup.get(node_id) is None or node_lookup[node_id].node_type.lower() != "c":
                 continue
             contribution = instance.distance(seq[idx - 1], node_id) + instance.distance(node_id, seq[idx + 1]) - instance.distance(seq[idx - 1], seq[idx + 1])
-            if worst is None or contribution > worst[0]:
-                worst = (contribution, node_id)
-    return None if worst is None else worst[1]
+            ranked.append((float(contribution), node_id))
+    return sorted(ranked, reverse=True)
+
+
+def _shaw_relatedness(solution: Solution, instance: Instance, seed_customer: str, customer_id: str) -> float:
+    node_lookup = {node.node_id: node for node in instance.nodes}
+    seed = node_lookup[seed_customer]
+    customer = node_lookup[customer_id]
+    route_of: dict[str, int] = {}
+    for idx, route in enumerate(solution.routes):
+        for node_id in _route_customer_ids(route, instance):
+            route_of[node_id] = idx
+    same_route_bonus = 0.0 if route_of.get(seed_customer) == route_of.get(customer_id) else 10_000.0
+    return (
+        float(instance.distance(seed_customer, customer_id))
+        + abs(float(seed.ready_time) - float(customer.ready_time)) * 0.1
+        + abs(float(seed.due_time) - float(customer.due_time)) * 0.05
+        + abs(float(seed.demand) - float(customer.demand)) * 10.0
+        + same_route_bonus
+    )
 
 
 def _nearest_depot(customer_id: str, instance: Instance) -> str:

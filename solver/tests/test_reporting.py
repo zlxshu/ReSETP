@@ -1,10 +1,13 @@
 from __future__ import annotations
 
+import sys
 import tempfile
 import unittest
 from pathlib import Path
 
-from setp_solver.reporting.figures import charging_period_shares
+sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
+
+from setp_solver.reporting.figures import CARBON_MAIN_PRICE_GBP_PER_TONNE, carbon_stress_points, charging_period_shares
 from setp_solver.reporting.samples import build_figure_sources
 from setp_solver.reporting.schema import read_records, write_records
 from setp_solver.reporting.tables import (
@@ -119,9 +122,10 @@ class ReportingOutputTest(unittest.TestCase):
             )
 
             tex = table_t3_algorithm_comparison(path)
-            self.assertIn("\\multicolumn{2}{c}{ALNS}", tex)
-            self.assertIn("\\cmidrule", tex)
-            self.assertIn("相对已观测最优偏差\\%", tex)
+            self.assertIn("算例 & n/d & 算法 & 参考最优", tex)
+            self.assertIn("I1 & 100/2 & ALNS", tex)
+            self.assertIn("I1 & 100/2 & VNS", tex)
+            self.assertIn("偏差\\%", tex)
             self.assertIn("Average", tex)
             self.assertIn("达到最优的算例数", tex)
 
@@ -156,6 +160,65 @@ class ReportingOutputTest(unittest.TestCase):
         shares = charging_period_shares(rows)
         self.assertEqual(shares["朴素充电"], {"谷": 0.30, "平": 0.30, "峰": 0.40})
         self.assertEqual(shares["碳感知充电"], {"谷": 0.80, "平": 0.10, "峰": 0.10})
+
+    def test_f5b_carbon_stress_converts_factor_to_price_axis(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            means = Path(tmp) / "means.csv"
+            seeds = Path(tmp) / "seeds.csv"
+            means.write_text(
+                "carbon_price,total_carbon_kg,ev_count\n"
+                "32,1086.020,57.2\n"
+                "0.831,1293.142,50.6\n",
+                encoding="utf-8",
+            )
+            seeds.write_text(
+                "seed,carbon_price,total_carbon_kg\n"
+                "1,32,1080\n"
+                "2,32,1090\n"
+                "1,0.831,1290\n"
+                "2,0.831,1300\n",
+                encoding="utf-8",
+            )
+
+            points = carbon_stress_points(means, seeds)
+
+        self.assertEqual([point["factor"] for point in points], [0.831, 32.0])
+        self.assertAlmostEqual(points[0]["price_gbp_per_tonne"], 0.831 * CARBON_MAIN_PRICE_GBP_PER_TONNE)
+        self.assertAlmostEqual(points[1]["price_gbp_per_tonne"], 1610.88)
+
+    def test_f5b_carbon_stress_uses_sample_standard_deviation(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            means = Path(tmp) / "means.csv"
+            seeds = Path(tmp) / "seeds.csv"
+            means.write_text("carbon_price,total_carbon_kg,ev_count\n1,1305.473,49.6\n", encoding="utf-8")
+            seeds.write_text(
+                "seed,carbon_price,total_carbon_kg\n"
+                "1,1,10\n"
+                "2,1,20\n"
+                "3,1,30\n",
+                encoding="utf-8",
+            )
+
+            points = carbon_stress_points(means, seeds)
+
+        self.assertAlmostEqual(points[0]["carbon_std"], 10.0)
+        self.assertEqual(points[0]["carbon_mean"], 1305.473)
+
+    def test_f5b_carbon_stress_accepts_price_factor_diagnostics_without_carbon_values(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            means = Path(tmp) / "means.csv"
+            seeds = Path(tmp) / "diagnostics.csv"
+            means.write_text("carbon_price,total_carbon_kg,ev_count\n0.831,1293.142,50.6\n", encoding="utf-8")
+            seeds.write_text(
+                "seed,price_factor,quota_factor,objective_carbon_price,actual_evals,feasible\n"
+                "1,0.831,0.8,0.04183254,16006,是\n",
+                encoding="utf-8",
+            )
+
+            points = carbon_stress_points(means, seeds)
+
+        self.assertEqual(points[0]["factor"], 0.831)
+        self.assertEqual(points[0]["carbon_std"], 0.0)
 
     def test_f6_source_uses_cost_ratio_to_independent_operation(self) -> None:
         root = Path(__file__).resolve().parents[2]

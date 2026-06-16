@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import csv
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
 
@@ -31,10 +31,14 @@ class Instance:
     diesel_l_per_meter: float | None = None
     ev_kwh_per_meter: float | None = None
     unit_distance_cost_per_meter: float | None = None
+    _node_index: dict[str, int] = field(init=False, repr=False, compare=False)
+
+    def __post_init__(self) -> None:
+        object.__setattr__(self, "_node_index", {node.node_id: idx for idx, node in enumerate(self.nodes)})
 
     @property
     def node_index(self) -> dict[str, int]:
-        return {node.node_id: idx for idx, node in enumerate(self.nodes)}
+        return self._node_index
 
     def distance(self, from_node_id: str, to_node_id: str) -> float:
         index = self.node_index

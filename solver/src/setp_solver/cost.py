@@ -36,6 +36,7 @@ CARBON_SLOT_SECONDS = 1800.0
 CARBON_N_SLOTS = 18
 # v2026-06-11: make NESO gCO2/kWh -> kgCO2e/kWh conversion explicit.
 GCO2_PER_KGCO2 = 1000.0
+_CARBON_PROFILE_SORT_CACHE: dict[int, tuple[list[dict[str, Any]], list[dict[str, Any]], list[float]]] = {}
 
 
 @dataclass(frozen=True)
@@ -544,12 +545,21 @@ def _carbon_row_for_slot_index(carbon_profile: list[dict[str, Any]], slot_index:
 def _previous_hold_carbon_row(carbon_profile: list[dict[str, Any]], second: float) -> dict[str, Any]:
     if not carbon_profile:
         raise ValueError("carbon_profile is required when charging actions are present")
-    rows = sorted(carbon_profile, key=lambda row: float(row["horizon_second_start"]))
-    starts = [float(row["horizon_second_start"]) for row in rows]
+    rows, starts = _sorted_carbon_profile_rows(carbon_profile)
     idx = bisect_right(starts, second) - 1
     if idx < 0:
         raise ValueError("charge_start_second is before the first carbon profile slot")
     return rows[idx]
+
+
+def _sorted_carbon_profile_rows(carbon_profile: list[dict[str, Any]]) -> tuple[list[dict[str, Any]], list[float]]:
+    cached = _CARBON_PROFILE_SORT_CACHE.get(id(carbon_profile))
+    if cached is not None and cached[0] is carbon_profile:
+        return cached[1], cached[2]
+    rows = sorted(carbon_profile, key=lambda row: float(row["horizon_second_start"]))
+    starts = [float(row["horizon_second_start"]) for row in rows]
+    _CARBON_PROFILE_SORT_CACHE[id(carbon_profile)] = (carbon_profile, rows, starts)
+    return rows, starts
 
 
 def _price(prices: PriceParameters | dict[str, float] | Any, name: str) -> float:

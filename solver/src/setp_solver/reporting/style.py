@@ -16,8 +16,8 @@ PALETTE = {
 
 LINE_STYLES = ["-", "--", "-.", ":"]
 MARKERS = ["o", "s", "^", "D", "v", "P"]
-SINGLE_COL_FIGSIZE = (3.15, 2.35)
-DOUBLE_COL_FIGSIZE = (6.30, 3.80)
+SINGLE_COL_FIGSIZE = (3.55, 2.45)
+DOUBLE_COL_FIGSIZE = (6.65, 3.90)
 
 
 def setup_matplotlib() -> str:
@@ -37,15 +37,21 @@ def setup_matplotlib() -> str:
             "axes.edgecolor": "#1A1A1A",
             "axes.labelcolor": "#1A1A1A",
             "axes.titleweight": "normal",
+            "axes.titlesize": 8.5,
+            "axes.labelsize": 8.0,
             "axes.grid": True,
             "axes.linewidth": 0.8,
+            "font.size": 8.0,
             "grid.color": "#D0D0D0",
             "grid.linewidth": 0.45,
             "grid.alpha": 0.70,
             "legend.frameon": False,
+            "legend.fontsize": 7.0,
             "lines.linewidth": 0.9,
             "patch.linewidth": 0.8,
+            "xtick.labelsize": 7.0,
             "xtick.major.width": 0.8,
+            "ytick.labelsize": 7.0,
             "ytick.major.width": 0.8,
             "mathtext.fontset": "stix",
             "pdf.fonttype": 42,

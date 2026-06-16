@@ -7,12 +7,14 @@ from typing import Any
 
 from .converters import convert_legacy_reports
 from .figures import (
+    carbon_stress_points,
     figure_f1_route_map,
     figure_f2_algorithm_performance,
     figure_f3_two_layer_bars,
     figure_f3_two_layer_waterfall,
     figure_f4_48slot_charging,
     figure_f5_carbon_heatmap,
+    figure_f5b_carbon_stress,
     figure_f6_fairness_frontier,
 )
 from .registry import RUNNERS, get_runner, register_runner
@@ -92,20 +94,21 @@ def run_formal_backfill(args: argparse.Namespace) -> dict[str, Any]:
     formal_dir = Path(getattr(args, "formal_dir", "") or repo_root / "solver" / "reports" / "formal")
     tables_out = output_dir / "formal_backfill" / "tables"
     figures_out = output_dir / "formal_backfill" / "figures"
+    fallback_formal_dir = repo_root / "solver" / "reports" / "formal"
     missing: list[str] = []
     tex_paths: dict[str, Path] = {}
     table_sources = {
-        "T1": formal_dir / "tables" / "t1_instances.csv",
-        "T3": formal_dir / "tables" / "t3_algorithm_comparison.csv",
-        "T4": formal_dir / "tables" / "t4_solution_decomposition.csv",
-        "T5": formal_dir / "tables" / "t5_ablation.csv",
-        "T6": formal_dir / "tables" / "t6_two_layer_carbon.csv",
-        "T7": formal_dir / "tables" / "t7_carbon_sensitivity.csv",
-        "T8": formal_dir / "tables" / "t8_fairness_threshold.csv",
-        "T9": formal_dir / "tables" / "t9_dynamic.csv",
+        "T1": _first_existing(formal_dir / "tables" / "t1_instances.csv", fallback_formal_dir / "tables" / "t1_instances.csv"),
+        "T3": _first_existing(formal_dir / "tables" / "t3_algorithm_comparison.csv", fallback_formal_dir / "tables" / "t3_algorithm_comparison.csv"),
+        "T4": _first_existing(formal_dir / "tables" / "t4_solution_decomposition.csv", fallback_formal_dir / "tables" / "t4_solution_decomposition.csv"),
+        "T5": _first_existing(formal_dir / "tables" / "t5_ablation.csv", fallback_formal_dir / "tables" / "t5_ablation.csv"),
+        "T6": _first_existing(formal_dir / "tables" / "t6_two_layer_carbon.csv", fallback_formal_dir / "tables" / "t6_two_layer_carbon.csv"),
+        "T7": _first_existing(formal_dir / "tables" / "t7_carbon_sensitivity.csv", fallback_formal_dir / "tables" / "t7_carbon_sensitivity.csv"),
+        "T8": _first_existing(formal_dir / "tables" / "t8_fairness_threshold.csv", fallback_formal_dir / "tables" / "t8_fairness_threshold.csv"),
+        "T9": _first_existing(formal_dir / "tables" / "t9_dynamic.csv", fallback_formal_dir / "tables" / "t9_dynamic.csv"),
     }
     for table_id, source in table_sources.items():
-        if not source.exists():
+        if source is None:
             missing.append(f"{table_id}:{source}")
             continue
         tex_path = tables_out / f"{table_id.lower()}_{_table_slug(table_id)}.tex"
@@ -113,36 +116,46 @@ def run_formal_backfill(args: argparse.Namespace) -> dict[str, Any]:
         tex_paths[table_id] = tex_path
 
     figure_paths: dict[str, tuple[Path, Path]] = {}
-    f1_nodes = formal_dir / "figures" / "f1_route_nodes.csv"
-    f1_routes = formal_dir / "figures" / "f1_route_lines.csv"
-    if f1_nodes.exists() and f1_routes.exists():
+    f1_nodes = _first_existing(formal_dir / "figures" / "f1_route_nodes.csv", fallback_formal_dir / "figures" / "f1_route_nodes.csv")
+    f1_routes = _first_existing(formal_dir / "figures" / "f1_route_lines.csv", fallback_formal_dir / "figures" / "f1_route_lines.csv")
+    if f1_nodes is not None and f1_routes is not None:
         figure_paths["F1"] = figure_f1_route_map(f1_nodes, f1_routes, figures_out / "f1_route_map", watermark=False)
     else:
         missing.append(f"F1:{f1_nodes},{f1_routes}")
-    f2_curves = formal_dir / "figures" / "f2_algorithm_curves.csv"
-    f2_finals = formal_dir / "figures" / "f2_algorithm_finals.csv"
-    if f2_curves.exists() and f2_finals.exists():
+    f2_curves = _first_existing(formal_dir / "figures" / "f2_algorithm_curves.csv", fallback_formal_dir / "figures" / "f2_algorithm_curves.csv")
+    f2_finals = _first_existing(formal_dir / "figures" / "f2_algorithm_finals.csv", fallback_formal_dir / "figures" / "f2_algorithm_finals.csv")
+    if f2_curves is not None and f2_finals is not None:
         figure_paths["F2"] = figure_f2_algorithm_performance(f2_curves, f2_finals, figures_out / "f2_algorithm_performance", watermark=False)
     else:
         missing.append(f"F2:{f2_curves},{f2_finals}")
-    f3 = formal_dir / "figures" / "f3_two_layer_carbon.csv"
-    if f3.exists():
+    f3 = _first_existing(formal_dir / "figures" / "f3_two_layer_carbon.csv", fallback_formal_dir / "figures" / "f3_two_layer_carbon.csv")
+    if f3 is not None:
         figure_paths["F3"] = figure_f3_two_layer_waterfall(f3, figures_out / "f3_two_layer_carbon_waterfall")
         figure_paths["F3B"] = figure_f3_two_layer_bars(f3, figures_out / "f3_two_layer_carbon_bars")
     else:
         missing.append(f"F3:{f3}")
-    f4 = formal_dir / "figures" / "f4_48slot_charging.csv"
-    if f4.exists():
+    f4 = _first_existing(formal_dir / "figures" / "f4_48slot_charging.csv", fallback_formal_dir / "figures" / "f4_48slot_charging.csv")
+    if f4 is not None:
         figure_paths["F4"] = figure_f4_48slot_charging(f4, figures_out / "f4_48slot_charging")
     else:
         missing.append(f"F4:{f4}")
-    f5 = formal_dir / "figures" / "f5_carbon_heatmap.csv"
-    if f5.exists():
+    f5 = _first_existing(formal_dir / "figures" / "f5_carbon_heatmap.csv", fallback_formal_dir / "figures" / "f5_carbon_heatmap.csv")
+    if f5 is not None:
         figure_paths["F5"] = figure_f5_carbon_heatmap(f5, figures_out / "f5_carbon_heatmap", watermark=False)
     else:
         missing.append(f"F5:{f5}")
-    f6 = formal_dir / "figures" / "f6_fairness_frontier.csv"
-    if f6.exists():
+    stress_dir = repo_root / "solver" / "reports" / "parallel_r2_stress_final"
+    f5b_means = stress_dir / "t7b_carbon_stress.csv"
+    f5b_seed_detail = _first_existing(
+        stress_dir / "combined" / "tables" / "t7_carbon_sensitivity_seed_detail.csv",
+        stress_dir / "combined" / "tables" / "e4_carbon_price_diagnostics.csv",
+    )
+    if f5b_means.exists() and f5b_seed_detail is not None:
+        figure_paths["F5B"] = figure_f5b_carbon_stress(f5b_means, f5b_seed_detail, figures_out / "f5b_carbon_stress")
+    else:
+        missing.append(f"F5B:{f5b_means},{f5b_seed_detail or stress_dir / 'combined' / 'tables'}")
+    f6 = _first_existing(formal_dir / "figures" / "f6_fairness_frontier.csv", fallback_formal_dir / "figures" / "f6_fairness_frontier.csv")
+    if f6 is not None:
         figure_paths["F6"] = figure_f6_fairness_frontier(f6, figures_out / "f6_fairness_frontier", watermark=False)
     else:
         missing.append(f"F6:{f6}")
@@ -153,6 +166,32 @@ def run_formal_backfill(args: argparse.Namespace) -> dict[str, Any]:
     gate = "PASS" if not missing else "HALT_Z5"
     summary_path.write_text(_formal_summary_markdown(gate, formal_dir, tex_paths, figure_paths, missing, paper_copies), encoding="utf-8")
     return {"gate": gate, "formal_dir": formal_dir, "tex": tex_paths, "figures": figure_paths, "missing": missing, "paper_copies": paper_copies, "summary": summary_path}
+
+
+@register_runner("f5b-carbon-stress")
+def run_f5b_carbon_stress(args: argparse.Namespace) -> dict[str, Any]:
+    repo_root = Path(args.repo_root)
+    stress_dir = repo_root / "solver" / "reports" / "parallel_r2_stress_final"
+    means_csv = stress_dir / "t7b_carbon_stress.csv"
+    seed_detail_csv = _first_existing(
+        stress_dir / "combined" / "tables" / "t7_carbon_sensitivity_seed_detail.csv",
+        stress_dir / "combined" / "tables" / "e4_carbon_price_diagnostics.csv",
+    )
+    if seed_detail_csv is None:
+        raise FileNotFoundError("missing F5b seed detail CSV under parallel_r2_stress_final/combined/tables")
+    output_stem = stress_dir / "combined" / "figures" / "f5b_carbon_stress"
+    figure_paths = figure_f5b_carbon_stress(means_csv, seed_detail_csv, output_stem)
+
+    paper_dir = repo_root / "docs" / "paper_submission_final" / "generated_figures"
+    paper_dir.mkdir(parents=True, exist_ok=True)
+    paper_pdf = paper_dir / "figure_f5b_carbon_stress.pdf"
+    shutil.copy2(figure_paths[0], paper_pdf)
+    return {
+        "sources": {"means": means_csv, "seed_detail": seed_detail_csv},
+        "figures": figure_paths,
+        "paper_pdf": paper_pdf,
+        "points": carbon_stress_points(means_csv, seed_detail_csv),
+    }
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -187,6 +226,22 @@ def _console_summary(name: str, result: dict[str, Any]) -> str:
         return f"HALT_FOR_USER 汇总：{result['summary']}"
     if name == "formal-backfill":
         return f"GATE Z5 {result['gate']} 汇总：{result['summary']}"
+    if name == "f5b-carbon-stress":
+        lines = [
+            "F5b carbon stress 已完成：",
+            f"- source means: {result['sources']['means']}",
+            f"- source seed_detail: {result['sources']['seed_detail']}",
+            f"- pdf: {result['figures'][0]}",
+            f"- png: {result['figures'][1]}",
+            f"- paper pdf: {result['paper_pdf']}",
+            "- points (factor, price_gbp_per_tonne, carbon_mean, carbon_std, ev_count):",
+        ]
+        for point in result["points"]:
+            lines.append(
+                f"  ({point['factor']:g}, {point['price_gbp_per_tonne']:.0f}, "
+                f"{point['carbon_mean']:.3f}, {point['carbon_std']:.3f}, {point['ev_count']:.1f})"
+            )
+        return "\n".join(lines)
     return f"{name} 已完成：{result}"
 
 
@@ -229,10 +284,13 @@ def _copy_selected_formal_outputs_to_paper(
 ) -> dict[str, Path]:
     copied: dict[str, Path] = {}
     table_targets = {
+        "T1": "t1_instances.tex",
         "T3": "t3_algorithm_comparison.tex",
         "T4": "t4_solution_decomposition.tex",
         "T5": "t5_ablation.tex",
+        "T6": "t6_two_layer_carbon.tex",
         "T7": "t7_carbon_sensitivity.tex",
+        "T8": "t8_fairness_threshold.tex",
         "T9": "t9_dynamic.tex",
     }
     table_dir = repo_root / "docs" / "paper_submission_final" / "generated_tables"
@@ -249,7 +307,12 @@ def _copy_selected_formal_outputs_to_paper(
     figure_targets = {
         "F1": "figure_f1_route_map",
         "F2": "figure_f2_algorithm_performance",
+        "F3": "figure_f3_two_layer_carbon_waterfall",
+        "F3B": "figure_f3_two_layer_carbon_bars",
+        "F4": "figure_f4_48slot_charging",
         "F5": "figure_f5_carbon_heatmap",
+        "F5B": "figure_f5b_carbon_stress",
+        "F6": "figure_f6_fairness_frontier",
     }
     for figure_id, stem in figure_targets.items():
         paths = figure_paths.get(figure_id)
@@ -261,6 +324,13 @@ def _copy_selected_formal_outputs_to_paper(
             shutil.copy2(source, target)
             copied[f"{figure_id}{suffix}"] = target
     return copied
+
+
+def _first_existing(*paths: Path) -> Path | None:
+    for path in paths:
+        if path.exists():
+            return path
+    return None
 
 
 def _summary_markdown(w0: dict[str, Any], w1: dict[str, Any], w2: dict[str, Any]) -> str:

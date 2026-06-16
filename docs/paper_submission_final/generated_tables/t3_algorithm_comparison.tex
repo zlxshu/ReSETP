@@ -1,12 +1,40 @@
-\begin{tabular}{@{}lllllllllllllllllll@{}}
+\begin{tabular}{@{}lllp{0.18\linewidth}rrr@{}}
 \toprule
-算例 & n/d & 参考最优(来源算法) & \multicolumn{2}{c}{ALNS-Wouda} & \multicolumn{2}{c}{VNS@Valdecy} & \multicolumn{2}{c}{PyGAD} & \multicolumn{2}{c}{scikit-opt-GA} & \multicolumn{2}{c}{scikit-opt-SA} & \multicolumn{2}{c}{ALNS@wangqianlongucas} & \multicolumn{2}{c}{NSGA-II@haris989} & \multicolumn{2}{c}{DR-ALNS}\\
-\cmidrule(lr){4-5} \cmidrule(lr){6-7} \cmidrule(lr){8-9} \cmidrule(lr){10-11} \cmidrule(lr){12-13} \cmidrule(lr){14-15} \cmidrule(lr){16-17} \cmidrule(lr){18-19}
- &  &  & 相对已观测最优偏差\% & 时间s & 相对已观测最优偏差\% & 时间s & 相对已观测最优偏差\% & 时间s & 相对已观测最优偏差\% & 时间s & 相对已观测最优偏差\% & 时间s & 相对已观测最优偏差\% & 时间s & 相对已观测最优偏差\% & 时间s & 相对已观测最优偏差\% & 时间s\\
+算例 & n/d & 算法 & 参考最优 & 偏差\% & 时间s & 评估次数\\
 \midrule
-100-01-24h & 100/2 & 5185.131944 & 17.786 & 95.591 & 4.123 & 75.415 & 19.983 & 106.82 & 20.027 & 104.668 & 3.173 & 227.755 & 22.013 & 183.838 & 3.493 & 300.087 & 0.571 & 297.189\\
-L-main & 219/2 & 8195.600605 & 9.01 & 332.556 & 10.253 & 295.855 & 16.9 & 300.017 & 17.182 & 300.013 & 6.952 & 300.04 & 16.424 & 300.029 & 6.195 & 300.417 & 1.788 & 300.14\\
-Average &  &  & 13.398 & 214.073 & 7.188 & 185.635 & 18.441 & 203.418 & 18.605 & 202.34 & 5.062 & 263.897 & 19.219 & 241.934 & 4.844 & 300.252 & 1.18 & 298.664\\
-达优次数 &  &  & 0 &  & 0 &  & 0 &  & 0 &  & 0 &  & 0 &  & 0 &  & 2 & \\
+100-01-24h & 100/2 & ALNS-Wouda & 5076.19 & 20.313 & 90.564 & 16040.4\\
+100-01-24h & 100/2 & VNS@Valdecy & 5076.19 & 6.358 & 71.473 & 16001.0\\
+100-01-24h & 100/2 & PyGAD & 5076.19 & 22.558 & 102.269 & 16001.0\\
+100-01-24h & 100/2 & scikit-opt-GA & 5076.19 & 22.603 & 100.664 & 16001.0\\
+100-01-24h & 100/2 & scikit-opt-SA & 5076.19 & 5.387 & 225.06 & 16001.0\\
+100-01-24h & 100/2 & ALNS@wangqianlongucas & 5076.19 & 24.631 & 182.116 & 16001.0\\
+100-01-24h & 100/2 & NSGA-II@haris989 & 5076.19 & 3.06 & 467.323 & 4002\\
+100-01-24h & 100/2 & DR-ALNS & 5076.19 & 1.998 & 352.195 & 16001.0\\
+\addlinespace[1pt]
+L-main & 219/2 & ALNS-Wouda & 8094.363 & 10.373 & 533.562 & 16037.5\\
+L-main & 219/2 & VNS@Valdecy & 8094.363 & 11.57 & 295.053 & 16001.0\\
+L-main & 219/2 & PyGAD & 8094.363 & 18.3 & 435.116 & 16001.0\\
+L-main & 219/2 & scikit-opt-GA & 8094.363 & 18.566 & 425.941 & 16001.0\\
+L-main & 219/2 & scikit-opt-SA & 8094.363 & 1.726 & 1495.903 & 16001.0\\
+L-main & 219/2 & ALNS@wangqianlongucas & 8094.363 & 17.881 & 893.876 & 16001.0\\
+L-main & 219/2 & NSGA-II@haris989 & 8094.363 & 2.509 & 1800.433 & 2659.2\\
+L-main & 219/2 & DR-ALNS & 8094.363 & 1.554 & 1361.951 & 16001.0\\
+\addlinespace[1pt]
+Average &  & ALNS-Wouda &  & 15.343 & 312.063 & \\
+Average &  & VNS@Valdecy &  & 8.964 & 183.263 & \\
+Average &  & PyGAD &  & 20.429 & 268.692 & \\
+Average &  & scikit-opt-GA &  & 20.584 & 263.303 & \\
+Average &  & scikit-opt-SA &  & 3.557 & 860.481 & \\
+Average &  & ALNS@wangqianlongucas &  & 21.256 & 537.996 & \\
+Average &  & NSGA-II@haris989 &  & 2.784 & 1133.878 & \\
+Average &  & DR-ALNS &  & 1.776 & 857.073 & \\
+达优次数 &  & ALNS-Wouda &  & 0 &  & \\
+达优次数 &  & VNS@Valdecy &  & 0 &  & \\
+达优次数 &  & PyGAD &  & 0 &  & \\
+达优次数 &  & scikit-opt-GA &  & 0 &  & \\
+达优次数 &  & scikit-opt-SA &  & 1 &  & \\
+达优次数 &  & ALNS@wangqianlongucas &  & 0 &  & \\
+达优次数 &  & NSGA-II@haris989 &  & 0 &  & \\
+达优次数 &  & DR-ALNS &  & 1 &  & \\
 \bottomrule
 \end{tabular}

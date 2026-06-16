@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 import math
 from pathlib import Path
 import tempfile
@@ -25,6 +26,7 @@ from setp_solver.search.formal_runner import (
     _e2_final_rows,
     _e3_table_rows,
     _e3_variant_specs,
+    _f2_final_rows,
     _flatten_run_row,
     _prices_with_carbon_price_factor,
     run_e0_gate,
@@ -206,15 +208,193 @@ class FormalRunnerTests(unittest.TestCase):
             best_solution=solution,
             history=[{"eval": 7, "best_obj": 123.0}],
             status="completed",
+            actual_moves=3,
+            candidate_scores=4,
+            repair_scores=3,
+            repair_delta_count=3,
+            operator_counts={"relocate": 2, "repair": 1},
         )
 
         with patch.object(formal_runner, "run_candidate", return_value=fake):
             result = formal_runner._run_algorithm_once("Alg1", FIXTURE_DIR, seed=1, eval_budget=7, max_runtime_seconds=2.0)
 
         self.assertEqual(result["actual_evals"], 7)
+        self.assertEqual(result["actual_moves"], 3)
+        self.assertEqual(result["candidate_scores"], 4)
+        self.assertEqual(result["repair_scores"], 3)
+        self.assertEqual(result["repair_delta_count"], 3)
+        self.assertEqual(result["operator_counts"], {"relocate": 2, "repair": 1})
         self.assertIn("best_solution", result)
         self.assertIn("metrics", result)
         self.assertEqual(result["best_solution"]["routes"][0]["vehicle_id"], "CV1")
+
+    # v2026-06-14: F2 validation finals carry the fair-budget accounting
+    # counters without altering the legacy T3 table shape.
+    def test_f2_final_rows_include_move_and_score_accounting(self) -> None:
+        rows = [
+            {
+                "instance": "A",
+                "algorithm": "Alg1",
+                "seed": 1,
+                "actual_evals": 11,
+                "result": {
+                    "feasible": True,
+                    "best_cost": 100.0,
+                    "elapsed_seconds": 1.5,
+                    "actual_moves": 5,
+                    "candidate_scores": 6,
+                    "repair_scores": 5,
+                    "repair_delta_count": 5,
+                },
+            }
+        ]
+
+        final_rows = _f2_final_rows(rows)
+
+        self.assertEqual(final_rows[0]["actual_evals"], 11)
+        self.assertEqual(final_rows[0]["actual_moves"], 5)
+        self.assertEqual(final_rows[0]["candidate_scores"], 6)
+        self.assertEqual(final_rows[0]["repair_scores"], 5)
+        self.assertEqual(final_rows[0]["repair_delta_count"], 5)
+
+    # v2026-06-14: ALNS_FIX is validation-only and writes the requested fair
+    # benchmark artifacts without touching solver/reports/formal.
+    def test_alns_fix_validation_writes_isolated_outputs(self) -> None:
+        def fake_e2(repo_root, output_dir, *, seeds, eval_budget, max_runtime_seconds):
+            _ = repo_root, seeds, eval_budget, max_runtime_seconds
+            out = Path(output_dir)
+            (out / "figures").mkdir(parents=True, exist_ok=True)
+            (out / "tables").mkdir(parents=True, exist_ok=True)
+            (out / "figures" / "f2_algorithm_finals.csv").write_text("instance,algorithm,seed\n", encoding="utf-8")
+            (out / "figures" / "f2_algorithm_curves.csv").write_text("instance,algorithm,seed,evals,best_obj\n", encoding="utf-8")
+            key = {
+                "experiment": "E2",
+                "instance": "L-main",
+                "algorithm": "ALNS-Wouda",
+                "seed": 1,
+                "variant": "formal",
+            }
+            result = {
+                "feasible": True,
+                "best_cost": 100.0,
+                "evals": 40,
+                "actual_moves": 5,
+                "candidate_scores": 10,
+                "repair_scores": 30,
+                "repair_delta_count": 30,
+                "ev_routes": 2,
+                "charging_event_count": 3,
+                "route_count": 8,
+                "elapsed_seconds": 1.2,
+                "history": [],
+            }
+            manifest = {
+                "schema_version": "setp-formal-runner-ledger.v1",
+                "runs": [
+                    {
+                        "key": key,
+                        "key_id": "E2|L-main|ALNS-Wouda|1|formal",
+                        "status": "completed",
+                        "elapsed_seconds": 1.2,
+                        "result": result,
+                        "skipped": False,
+                    }
+                ],
+            }
+            (out / "formal_runner_manifest.json").write_text(json.dumps(manifest), encoding="utf-8")
+            return {
+                "run_count": 1,
+                "manifest": str(out / "formal_runner_manifest.json"),
+                "finals": [
+                    {
+                        "instance": "Average",
+                        "ALNS-Wouda|相对已观测最优偏差\\%": 3.0,
+                    }
+                ],
+            }
+
+        before = {
+            ("L-main", 1): {
+                "instance": "L-main",
+                "algorithm": "ALNS-Wouda",
+                "seed": 1,
+                "result": {
+                    "feasible": True,
+                    "best_cost": 120.0,
+                    "actual_moves": 2,
+                    "candidate_scores": 4,
+                    "repair_scores": 20,
+                    "repair_delta_count": 20,
+                    "ev_routes": 1,
+                    "charging_event_count": 1,
+                    "route_count": 9,
+                    "elapsed_seconds": 2.0,
+                },
+            }
+        }
+
+        with tempfile.TemporaryDirectory() as tmp:
+            out = Path(tmp) / "alns_fix_validation"
+            with patch.object(formal_runner, "run_e2_algorithm_comparison", fake_e2), patch.object(
+                formal_runner,
+                "_load_prior_alns_wouda_rows",
+                return_value=before,
+            ):
+                result = formal_runner.run_alns_fix_validation(REPO_ROOT, out, seeds=[1], eval_budget=40, max_runtime_seconds=60.0)
+
+            self.assertEqual(result["gate"], "PASS")
+            self.assertTrue((out / "formal_runner_manifest.json").exists())
+            self.assertTrue((out / "tables" / "alns_wouda_before_after.csv").exists())
+            self.assertTrue((out / "tables" / "t3_fair_budget_algorithm_comparison.csv").exists())
+            self.assertTrue((out / "figures" / "f2_fair_budget_finals.csv").exists())
+            self.assertTrue((out / "figures" / "f2_fair_budget_curves.csv").exists())
+            self.assertIn("Gate: `PASS`", (out / "README.md").read_text(encoding="utf-8"))
+            before_after = (out / "tables" / "alns_wouda_before_after.csv").read_text(encoding="utf-8")
+            self.assertIn("before", before_after)
+            self.assertIn("after", before_after)
+
+    # v2026-06-15: ALNS_ROOT_CAUSE is a diagnostic-only runner stage and must
+    # delegate to the isolated root-cause output path.
+    def test_alns_root_cause_stage_uses_isolated_diagnostic_runner(self) -> None:
+        calls = []
+
+        def fake_root_cause(repo_root, output_dir, *, seeds, eval_budget, max_runtime_seconds):
+            calls.append(
+                {
+                    "repo_root": Path(repo_root),
+                    "output_dir": Path(output_dir),
+                    "seeds": seeds,
+                    "eval_budget": eval_budget,
+                    "max_runtime_seconds": max_runtime_seconds,
+                }
+            )
+            Path(output_dir).mkdir(parents=True, exist_ok=True)
+            (Path(output_dir) / "diagnostic_manifest.json").write_text("{}", encoding="utf-8")
+            return {"gate": "PASS", "run_count": 6, "manifest": str(Path(output_dir) / "diagnostic_manifest.json")}
+
+        with tempfile.TemporaryDirectory() as tmp, patch.object(formal_runner, "run_alns_root_cause_diagnostics", fake_root_cause):
+            out = Path(tmp) / "alns_root_cause"
+            code = formal_runner.main(
+                [
+                    "ALNS_ROOT_CAUSE",
+                    "--repo-root",
+                    str(REPO_ROOT),
+                    "--output-dir",
+                    str(out),
+                    "--eval-budget",
+                    "20",
+                    "--max-runtime-seconds",
+                    "2",
+                    "--seeds",
+                    "1",
+                ]
+            )
+
+            self.assertEqual(code, 0)
+            self.assertEqual(calls[0]["output_dir"], out)
+            self.assertEqual(calls[0]["seeds"], [1])
+            self.assertEqual(calls[0]["eval_budget"], 20)
+            self.assertTrue((out / "diagnostic_manifest.json").exists())
 
     # v2026-06-12: W2 E7 must inherit the formal 16000-eval/300s default口径.
     def test_e7_dynamic_default_budget_matches_w2_contract(self) -> None:

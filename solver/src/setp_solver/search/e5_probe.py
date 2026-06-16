@@ -94,12 +94,13 @@ def run_e5_probe(
     bundle = load_search_bundle(bundle_dir)
     real_budget_mode = iterations is None
     check_k0 = real_budget_mode if enforce_k0 is None else enforce_k0
+    probe_policy = policy or SearchPolicy(require_charging_signal=True)
     carbon_on = run_alns_wouda(
         bundle_dir,
         iterations=iterations,
         seed=seed,
         carbon_weight=1.0,
-        policy=policy,
+        policy=probe_policy,
         eval_budget=eval_budget if real_budget_mode else None,
         max_runtime_seconds=max_runtime_seconds,
     )
@@ -108,7 +109,7 @@ def run_e5_probe(
         iterations=iterations,
         seed=seed,
         carbon_weight=0.0,
-        policy=policy,
+        policy=probe_policy,
         eval_budget=eval_budget if real_budget_mode else None,
         max_runtime_seconds=max_runtime_seconds,
     )

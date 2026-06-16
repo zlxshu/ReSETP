@@ -1,12 +1,12 @@
-\begin{tabular}{@{}llllllll@{}}
+\begin{tabular}{@{}p{0.25\linewidth}rrrrrrrl@{}}
 \toprule
-消融层级 & 最优 & 均值 & std & 相对完整模型变化\% & 电车数 & 跨场数 & $\min\Pi/\Pi^0$\\
+消融层级 & 最优 & 均值 & std & 总碳kg & 相对完整模型变化\% & 电车数 & 跨场数 & $\min\Pi/\Pi^0$\\
 \midrule
-M0 independent\_zero\_gamma\_no\_quota\_no\_fairness & 8462.401 & 8840.816 & 178.966 & 1.853 & 49.8 &  & 1.0\\
-M1 cooperative\_zero\_gamma\_no\_quota\_no\_fairness & 8646.626 & 9043.556 & 181.126 & 4.189 & 39.2 &  & \\
-M2 cooperative\_mean\_gamma\_no\_quota\_no\_fairness & 8646.626 & 9043.556 & 181.126 & 4.189 & 39.2 &  & \\
-M3 cooperative\_time\_varying\_gamma\_no\_quota\_no\_fairness & 8601.82 & 8949.212 & 157.112 & 3.102 & 44.6 &  & \\
-M4 plus\_carbon\_trading & 8615.083 & 8970.095 & 180.869 & 3.343 & 43.8 &  & \\
-M5 plus\_fairness & 8405.064 & 8679.937 & 168.016 & 0.0 & 54.9 &  & 1.0085\\
+M0 independent zero gamma no quota no fairness & 8462.401 & 8840.816 & 178.966 & 961.274 & 1.987 & 49.8 & 0 & 1\\
+M1 cooperative zero gamma no quota no fairness & 8462.401 & 8844.605 & 164.82 & 864.068 & 2.031 & 52.1 & 0.4 & \\
+M2 cooperative mean gamma no quota no fairness & 8462.401 & 8844.605 & 164.82 & 1206.297 & 2.031 & 52.1 & 0.4 & \\
+M3 cooperative time varying gamma no quota no fairness & 8462.401 & 8746.346 & 136.058 & 1259.251 & 0.897 & 50.1 & 0.2 & \\
+M4 plus carbon trading & 8456.195 & 8794.212 & 164.289 & 1264.372 & 1.45 & 50 & 0.2 & \\
+M5 plus fairness & 8405.064 & 8668.561 & 161.401 & 1061.532 & 0 & 55.1 & 0 & 1.008\\
 \bottomrule
 \end{tabular}

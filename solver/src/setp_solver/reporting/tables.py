@@ -93,7 +93,7 @@ TABLE_SPECS: dict[str, list[ColumnSpec]] = {
 
 
 def table_t1_instances(csv_path: str | Path) -> str:
-    return csv_to_booktabs(csv_path, TABLE_SPECS["T1"])
+    return csv_to_booktabs(csv_path, TABLE_SPECS["T1"], col_format=r"@{}lrrrrrrcrl@{}")
 
 
 def table_t2_parameters(csv_path: str | Path) -> str:
@@ -101,7 +101,7 @@ def table_t2_parameters(csv_path: str | Path) -> str:
 
 
 def table_t3_algorithm_comparison(csv_path: str | Path) -> str:
-    return grouped_csv_to_booktabs(
+    return grouped_csv_to_long_booktabs(
         csv_path,
         # v2026-06-13: Formal CSV stores base columns as field names; labels are
         # rendered via _base_header_label so values are not blanked.
@@ -115,7 +115,7 @@ def table_t4_solution_decomposition(csv_path: str | Path) -> str:
 
 
 def table_t5_ablation(csv_path: str | Path) -> str:
-    return csv_to_booktabs(csv_path, TABLE_SPECS["T5"])
+    return csv_to_booktabs(csv_path, TABLE_SPECS["T5"], col_format=r"@{}p{0.25\linewidth}rrrrrrrl@{}", table_id="T5")
 
 
 def table_t6_two_layer_carbon(csv_path: str | Path) -> str:
@@ -130,15 +130,15 @@ def table_t7_carbon_sensitivity(csv_path: str | Path) -> str:
             base_headers=["碳价"],
             group_metric_headers=["总成本", "油耗", "电费", "碳交易成本", "总碳", "电车数"],
         )
-    return csv_to_booktabs(csv_path, TABLE_SPECS["T7"])
+    return csv_to_booktabs(csv_path, TABLE_SPECS["T7"], col_format=r"@{}rrrrrrrrc@{}", table_id="T7")
 
 
 def table_t8_fairness_threshold(csv_path: str | Path) -> str:
-    return csv_to_booktabs(csv_path, TABLE_SPECS["T8"])
+    return csv_to_booktabs(csv_path, TABLE_SPECS["T8"], col_format=r"@{}rp{0.23\linewidth}rrrrc@{}", table_id="T8")
 
 
 def table_t9_dynamic(csv_path: str | Path) -> str:
-    return csv_to_booktabs(csv_path, TABLE_SPECS["T9"])
+    return csv_to_booktabs(csv_path, TABLE_SPECS["T9"], col_format=r"@{}llcrrrrrc@{}", table_id="T9")
 
 
 TABLE_BUILDERS = {
@@ -154,17 +154,59 @@ TABLE_BUILDERS = {
 }
 
 
-def csv_to_booktabs(csv_path: str | Path, columns: list[ColumnSpec]) -> str:
+def csv_to_booktabs(csv_path: str | Path, columns: list[ColumnSpec], *, col_format: str | None = None, table_id: str | None = None) -> str:
     rows = read_rows(csv_path)
-    col_format = "@{}" + "l" * len(columns) + "@{}"
+    col_format = col_format or "@{}" + "l" * len(columns) + "@{}"
     lines = [f"\\begin{{tabular}}{{{col_format}}}", "\\toprule"]
     lines.append(" & ".join(header for _, header in columns) + r"\\")
     lines.append("\\midrule")
     if not rows:
         lines.append(r"\multicolumn{" + str(len(columns)) + r"}{l}{无可用行}\\")
     for row in rows:
-        lines.append(" & ".join(_latex_cell(_cell_value(row, field, header)) for field, header in columns) + r"\\")
+        lines.append(" & ".join(_latex_cell(_display_value(table_id, field, _cell_value(row, field, header))) for field, header in columns) + r"\\")
     lines.extend(["\\bottomrule", "\\end{tabular}", ""])
+    return "\n".join(lines)
+
+
+def grouped_csv_to_long_booktabs(csv_path: str | Path, *, base_headers: list[str], group_metric_headers: list[str]) -> str:
+    fieldnames, rows = _read_rows_with_fieldnames(csv_path)
+    groups = _grouped_headers(fieldnames, base_headers)
+    metric_headers = [metric for metric in group_metric_headers if any(f"{group}|{metric}" in fieldnames for group, _ in groups)]
+    lines = [
+        r"\begin{tabular}{@{}lllp{0.18\linewidth}rrr@{}}",
+        r"\toprule",
+        "算例 & n/d & 算法 & 参考最优 & 偏差\\% & 时间s & 评估次数\\\\",
+        r"\midrule",
+    ]
+    if not rows:
+        lines.append(r"\multicolumn{7}{l}{无可用行}\\")
+    for row in rows:
+        instance = _base_header_value(row, "instance")
+        for group, _ in groups:
+            values = {
+                "相对已观测最优偏差\\%": row.get(f"{group}|相对已观测最优偏差\\%", ""),
+                "时间s": row.get(f"{group}|时间s", ""),
+                "实际评估次数": row.get(f"{group}|实际评估次数", ""),
+            }
+            if not any(values.get(metric, "") for metric in metric_headers):
+                continue
+            lines.append(
+                " & ".join(
+                    [
+                        _latex_cell(instance),
+                        _latex_cell(_base_header_value(row, "n_d")),
+                        _latex_cell(group),
+                        _latex_cell(_display_value("T3", "reference_best", _base_header_value(row, "reference_best"))),
+                        _latex_cell(_display_value("T3", "gap", values["相对已观测最优偏差\\%"])),
+                        _latex_cell(_display_value("T3", "time", values["时间s"])),
+                        _latex_cell(_display_value("T3", "evals", values["实际评估次数"])),
+                    ]
+                )
+                + r"\\"
+            )
+        if instance not in {"", "Average", "达优次数", "达到最优的算例数"}:
+            lines.append(r"\addlinespace[1pt]")
+    lines.extend([r"\bottomrule", r"\end{tabular}", ""])
     return "\n".join(lines)
 
 
@@ -239,6 +281,43 @@ def _latex_cell(value: object) -> str:
     for old, new in replacements.items():
         text = text.replace(old, new)
     return text
+
+
+def _display_value(table_id: str | None, field: str, value: object) -> str:
+    text = "" if value is None else str(value).strip()
+    if text == "":
+        return ""
+    if table_id == "T5" and field == "step":
+        return _compact_ablation_label(text)
+    if table_id == "T9" and field in {"stage_cost", "cumulative_cost", "cumulative_carbon_kg"}:
+        return _format_number(text, digits=1)
+    if table_id in {"T3", "T5", "T7", "T8"} and field not in {"step", "pi_ratio_by_depot", "feasible"}:
+        return _format_number(text, digits=3)
+    if table_id == "T9" and field == "feasible":
+        return {"True": "是", "False": "否"}.get(text, text)
+    return text
+
+
+def _format_number(text: str, *, digits: int) -> str:
+    try:
+        value = float(text)
+    except ValueError:
+        return text
+    if abs(value) >= 10000:
+        return f"{value:.1f}"
+    formatted = f"{value:.{digits}f}"
+    return formatted.rstrip("0").rstrip(".")
+
+
+def _compact_ablation_label(text: str) -> str:
+    if " " in text:
+        code, detail = text.split(" ", 1)
+    elif "_" in text:
+        code, detail = text.split("_", 1)
+    else:
+        return text
+    compact = detail.replace("_", " ")
+    return f"{code} {compact}"
 
 
 def _cell_value(row: dict[str, str], field: str, header: str) -> str:

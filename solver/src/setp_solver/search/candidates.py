@@ -14,6 +14,7 @@ import hashlib
 import importlib
 import json
 import math
+import os
 from pathlib import Path
 import random
 import sys
@@ -29,7 +30,10 @@ from .alns_wouda import SearchPolicy, run_alns_wouda
 from .bundle import SearchBundle, load_search_bundle
 from .charging import repair_route_charging
 from .construction import build_initial_solution
-from .evaluation import EvalBudget, EvaluationContext, model_cost, penalized_obj
+from .evaluation import BIG_M, EvalBudget, EvaluationContext, model_cost, record_repair_delta, score_candidate, score_reference
+from .feasible_repair import repair_removed_customers
+from .local_search import improve_solution_locally
+from .repair_scoring import route_model_cost_delta
 from .scout import scout_reference_algorithms
 
 
@@ -95,6 +99,11 @@ class CandidateRunResult:
     collapse_status: str = "green"
     collapse_explanation: str = ""
     search_diagnostics: dict[str, Any] = field(default_factory=_empty_search_diagnostics)
+    actual_moves: int = 0
+    candidate_scores: int = 0
+    repair_scores: int = 0
+    repair_delta_count: int = 0
+    operator_counts: dict[str, Any] = field(default_factory=dict)
 
 
 @dataclass(frozen=True)
@@ -235,7 +244,11 @@ def run_candidate(
     started = time.perf_counter()
     bundle = load_search_bundle(bundle_dir)
     shared_solution = initial_solution or make_shared_initial_solution(bundle)
-    shared_context = EvaluationContext(bundle.instance, bundle.carbon_profile, budget=EvalBudget(limit=max(10, int(eval_budget)) + 50))
+    shared_context = EvaluationContext(
+        bundle.instance,
+        bundle.carbon_profile,
+        budget=EvalBudget(limit=_candidate_budget_limit(eval_budget), target=max(1, int(eval_budget))),
+    )
     shared_seed_cost = model_cost(shared_solution, shared_context)
 
     if algorithm == PRIMARY_ALGORITHM:
@@ -423,6 +436,11 @@ def _run_primary_alns(
                 "candidate_accepted": 1 if run.feasible else 0,
                 "diagnosis": "native ALNS-Wouda completed through package operators; feasible best returned.",
             },
+            actual_moves=run.actual_moves,
+            candidate_scores=run.candidate_scores,
+            repair_scores=run.repair_scores,
+            repair_delta_count=run.repair_delta_count,
+            operator_counts=run.operator_counts,
         )
     except Exception as exc:  # pragma: no cover - smoke board records failures.
         return CandidateRunResult(
@@ -462,7 +480,7 @@ def _run_external_candidate(
     context = EvaluationContext(
         bundle.instance,
         bundle.carbon_profile,
-        budget=EvalBudget(limit=max(10, int(eval_budget)) + 50),
+        budget=EvalBudget(limit=_candidate_budget_limit(eval_budget), target=max(1, int(eval_budget))),
     )
     state = CandidateState(
         solution=shared_solution,
@@ -473,7 +491,7 @@ def _run_external_candidate(
     )
     rng = random.Random(_algorithm_seed(algorithm, seed))
     best_solution = shared_solution
-    best_obj = penalized_obj(best_solution, context)
+    best_obj = score_reference(best_solution, context)
     best_cost = model_cost(best_solution, context)
     current = shared_solution
     current_obj = best_obj
@@ -522,6 +540,11 @@ def _run_external_candidate(
         shared_seed_cost=shared_seed_cost,
         solution_signature_hash=solution_signature_hash(best_solution) if feasible else "",
         search_diagnostics=dict(state.search_diagnostics),
+        actual_moves=int(state.search_diagnostics.get("operator_calls", 0)),
+        candidate_scores=int(context.score_counts.get("candidate", 0)),
+        repair_scores=int(context.score_counts.get("repair_delta", 0)),
+        repair_delta_count=int(context.score_counts.get("repair_delta", 0)),
+        operator_counts=_operator_counts_from_trace(state.operator_trace),
     )
 
 
@@ -558,9 +581,9 @@ def _run_vns_path(
     # feasible changed route set as an accepted VNS move.
     neighborhoods = ["two_opt_route", "relocate_customer", "swap_customers", "merge_routes"]
     k = 0
-    for eval_idx in range(eval_budget):
-        if _time_expired(started, max_runtime_seconds):
-            break
+    move_idx = 0
+    while _search_can_continue(state.context, eval_budget, started, max_runtime_seconds):
+        move_idx += 1
         op = neighborhoods[k % len(neighborhoods)]
         outcome = _apply_path_operator_outcome(current, state.context, rng, op)
         candidate = outcome.solution
@@ -570,7 +593,8 @@ def _run_vns_path(
         state.operator_trace.append(
             {
                 "operator": f"vns_{op}",
-                "eval": eval_idx + 1,
+                "eval": _eval_count(state.context),
+                "move": move_idx,
                 "produced": outcome.produced,
                 "feasible": outcome.feasible,
                 "changed": outcome.changed,
@@ -583,7 +607,7 @@ def _run_vns_path(
         else:
             k += 1
         best_solution, best_obj, best_cost = _maybe_update_best(candidate, score, best_solution, best_obj, best_cost, state)
-        _record_history(state, eval_idx + 1, best_obj)
+        _record_history(state, _eval_count(state.context), best_obj)
     return best_solution, best_obj, best_cost, current, current_obj
 
 
@@ -607,8 +631,9 @@ def _run_ga_path(
         _record_operator_outcome(state, outcome, accepted=outcome.feasible and outcome.changed)
         population.append(outcome.solution)
     scored = [(_score(solution, state.context), solution) for solution in population]
-    eval_count = len(scored)
-    while eval_count < eval_budget and not _time_expired(started, max_runtime_seconds):
+    move_idx = 0
+    while _search_can_continue(state.context, eval_budget, started, max_runtime_seconds):
+        move_idx += 1
         scored.sort(key=lambda item: item[0])
         parent_a = scored[rng.randrange(min(4, len(scored)))][1]
         parent_b = scored[rng.randrange(min(4, len(scored)))][1]
@@ -618,12 +643,11 @@ def _run_ga_path(
         child_score = _score(child, state.context)
         scored.append((child_score, child))
         scored = scored[:pop_size]
-        eval_count += 1
         accepted = outcome.feasible and outcome.changed and child_score <= scored[-1][0] + 1e-9
         _record_operator_outcome(state, outcome, accepted=accepted)
-        state.operator_trace.append({"operator": "ga_crossover_mutation", "eval": eval_count, "accepted": accepted})
+        state.operator_trace.append({"operator": "ga_crossover_mutation", "eval": _eval_count(state.context), "move": move_idx, "accepted": accepted})
         best_solution, best_obj, best_cost = _maybe_update_best(child, child_score, best_solution, best_obj, best_cost, state)
-        _record_history(state, eval_count, best_obj)
+        _record_history(state, _eval_count(state.context), best_obj)
     return best_solution, best_obj, best_cost, scored[0][1], scored[0][0]
 
 
@@ -639,24 +663,31 @@ def _run_sa_path(
     eval_budget: int,
     max_runtime_seconds: float,
     started: float,
+    recorder: Callable[..., None] | None = None,
 ) -> tuple[Solution, float, float, Solution, float]:
     temperature = 250.0
     operators = ["relocate_customer", "swap_customers", "two_opt_route", "vehicle_type_flip"]
-    for eval_idx in range(eval_budget):
-        if _time_expired(started, max_runtime_seconds):
-            break
-        outcome = _apply_path_operator_outcome(current, state.context, rng, rng.choice(operators))
+    move_idx = 0
+    while _search_can_continue(state.context, eval_budget, started, max_runtime_seconds):
+        move_idx += 1
+        selected_operator = rng.choice(operators)
+        previous_current = current
+        previous_current_obj = current_obj
+        previous_best_obj = best_obj
+        outcome = _apply_path_operator_outcome(current, state.context, rng, selected_operator)
         candidate = outcome.solution
         score = _score(candidate, state.context)
         delta = score - current_obj
         accept = outcome.feasible and outcome.changed and (delta <= 0.0 or rng.random() < math.exp(-delta / max(1e-9, temperature)))
+        improved_current = score < previous_current_obj - 1e-9
         _record_operator_outcome(state, outcome, accepted=accept)
         if accept:
             current, current_obj = candidate, score
         state.operator_trace.append(
             {
                 "operator": "sa_metropolis_path_move",
-                "eval": eval_idx + 1,
+                "eval": _eval_count(state.context),
+                "move": move_idx,
                 "temperature": temperature,
                 "produced": outcome.produced,
                 "feasible": outcome.feasible,
@@ -664,9 +695,26 @@ def _run_sa_path(
                 "accepted": accept,
             }
         )
+        decision_temperature = temperature
         temperature *= 0.995
         best_solution, best_obj, best_cost = _maybe_update_best(candidate, score, best_solution, best_obj, best_cost, state)
-        _record_history(state, eval_idx + 1, best_obj)
+        if recorder is not None:
+            recorder(
+                iteration=move_idx,
+                previous_current=previous_current,
+                current=current,
+                best_solution=best_solution,
+                candidate=candidate,
+                candidate_obj=score,
+                previous_best_obj=previous_best_obj,
+                accepted=accept,
+                improved_current=improved_current,
+                destroy_op="sa_move",
+                repair_op=selected_operator,
+                remove_count_q=0,
+                temperature=decision_temperature,
+            )
+        _record_history(state, _eval_count(state.context), best_obj)
     return best_solution, best_obj, best_cost, current, current_obj
 
 
@@ -688,10 +736,13 @@ def _run_nsga_path(
         outcome = _apply_path_operator_outcome(current, state.context, rng, op)
         _record_operator_outcome(state, outcome, accepted=outcome.feasible and outcome.changed)
         population.append(outcome.solution)
-    eval_count = 0
-    while eval_count < eval_budget and not _time_expired(started, max_runtime_seconds):
+    move_idx = 0
+    while _search_can_continue(state.context, eval_budget, started, max_runtime_seconds):
+        move_idx += 1
         offspring = []
         for _ in range(4):
+            if not _search_can_continue(state.context, eval_budget, started, max_runtime_seconds):
+                break
             outcome = _apply_path_operator_outcome(
                 rng.choice(population),
                 state.context,
@@ -700,16 +751,17 @@ def _run_nsga_path(
             )
             _record_operator_outcome(state, outcome, accepted=outcome.feasible and outcome.changed)
             offspring.append(outcome.solution)
+        if not offspring:
+            break
         combined = population + offspring
         ranked = sorted(combined, key=lambda solution: (_pareto_rank_key(solution, state.context), solution_signature_hash(solution)))
         population = ranked[: max(4, min(10, len(ranked)))]
-        eval_count += len(offspring)
         candidate = population[0]
         score = _score(candidate, state.context)
-        state.operator_trace.append({"operator": "nsga_fast_non_dominated_sort", "eval": eval_count, "front_size": len(population)})
+        state.operator_trace.append({"operator": "nsga_fast_non_dominated_sort", "eval": _eval_count(state.context), "move": move_idx, "front_size": len(population)})
         best_solution, best_obj, best_cost = _maybe_update_best(candidate, score, best_solution, best_obj, best_cost, state)
-        _record_history(state, eval_count, best_obj)
-    return best_solution, best_obj, best_cost, population[0], _score(population[0], state.context)
+        _record_history(state, _eval_count(state.context), best_obj)
+    return best_solution, best_obj, best_cost, population[0], score_reference(population[0], state.context)
 
 
 def _run_alns_thin_path(
@@ -724,15 +776,19 @@ def _run_alns_thin_path(
     eval_budget: int,
     max_runtime_seconds: float,
     started: float,
+    recorder: Callable[..., None] | None = None,
 ) -> tuple[Solution, float, float, Solution, float]:
     destroy_ops = ["remove_reinsert_route", "relocate_customer", "vehicle_type_flip"]
     repair_ops = ["merge_routes", "swap_customers", "two_opt_route"]
     weights = {op: 1.0 for op in [*destroy_ops, *repair_ops]}
-    for eval_idx in range(eval_budget):
-        if _time_expired(started, max_runtime_seconds):
-            break
+    move_idx = 0
+    while _search_can_continue(state.context, eval_budget, started, max_runtime_seconds):
+        move_idx += 1
         destroy = _weighted_choice(rng, destroy_ops, weights)
         repair = _weighted_choice(rng, repair_ops, weights)
+        previous_current = current
+        previous_current_obj = current_obj
+        previous_best_obj = best_obj
         destroy_outcome = _apply_path_operator_outcome(current, state.context, rng, destroy)
         repair_outcome = _apply_path_operator_outcome(destroy_outcome.solution, state.context, rng, repair)
         candidate = repair_outcome.solution
@@ -750,7 +806,8 @@ def _run_alns_thin_path(
         state.operator_trace.append(
             {
                 "operator": f"alns_destroy_repair:{destroy}+{repair}",
-                "eval": eval_idx + 1,
+                "eval": _eval_count(state.context),
+                "move": move_idx,
                 "produced": produced,
                 "feasible": feasible,
                 "changed": changed,
@@ -758,7 +815,101 @@ def _run_alns_thin_path(
             }
         )
         best_solution, best_obj, best_cost = _maybe_update_best(candidate, score, best_solution, best_obj, best_cost, state)
-        _record_history(state, eval_idx + 1, best_obj)
+        if recorder is not None:
+            recorder(
+                iteration=move_idx,
+                previous_current=previous_current,
+                current=current,
+                best_solution=best_solution,
+                candidate=candidate,
+                candidate_obj=score,
+                previous_best_obj=previous_best_obj,
+                accepted=accept,
+                improved_current=score < previous_current_obj - 1e-9,
+                destroy_op=destroy,
+                repair_op=repair,
+                remove_count_q=int(destroy_outcome.metadata.get("removed_count", 0)) if hasattr(destroy_outcome, "metadata") else 0,
+            )
+        _record_history(state, _eval_count(state.context), best_obj)
+    return best_solution, best_obj, best_cost, current, current_obj
+
+
+def _run_alns_strong_path(
+    state: CandidateState,
+    rng: random.Random,
+    best_solution: Solution,
+    best_obj: float,
+    best_cost: float,
+    current: Solution,
+    current_obj: float,
+    *,
+    eval_budget: int,
+    max_runtime_seconds: float,
+    started: float,
+    recorder: Callable[..., None] | None = None,
+) -> tuple[Solution, float, float, Solution, float]:
+    destroy_ops = ["random_customer_removal", "worst_customer_removal", "shaw_related_removal", "whole_route_removal", "route_segment_removal"]
+    repair_ops = ["greedy_insert_repair", "regret2_insert_repair", "regret3_insert_repair"]
+    weights = {op: 1.0 for op in [*destroy_ops, *repair_ops]}
+    temperature = 250.0
+    move_idx = 0
+    while _search_can_continue(state.context, eval_budget, started, max_runtime_seconds):
+        move_idx += 1
+        destroy = _weighted_choice(rng, destroy_ops, weights)
+        repair = _weighted_choice(rng, repair_ops, weights)
+        previous_current = current
+        previous_current_obj = current_obj
+        previous_best_obj = best_obj
+        outcome = _apply_strong_alns_destroy_repair(current, state.context, rng, destroy, repair)
+        outcome = _improve_outcome_locally(outcome, state.context)
+        candidate = outcome.solution
+        score = _score(candidate, state.context)
+        changed = solution_signature_hash(candidate) != solution_signature_hash(current)
+        delta = score - current_obj
+        accept = outcome.feasible and changed and (delta <= 0.0 or rng.random() < math.exp(-delta / max(1e-9, temperature)))
+        _record_operator_outcome(state, outcome, accepted=accept)
+        reward = 0.0
+        if accept:
+            current, current_obj = candidate, score
+            reward = 2.0
+            if score < previous_current_obj - 1e-9:
+                reward = 8.0
+            if score < previous_best_obj - 1e-9 and not check_solution(candidate, state.context.instance, state.context.prices):
+                reward = 20.0
+        weights[destroy] = 0.8 * weights[destroy] + 0.2 * max(0.05, reward if changed else 0.0)
+        weights[repair] = 0.8 * weights[repair] + 0.2 * max(0.05, reward if changed else 0.0)
+        temperature *= 0.999
+        state.operator_trace.append(
+            {
+                "operator": f"alns_strong_destroy_repair:{destroy}+{repair}",
+                "eval": _eval_count(state.context),
+                "move": move_idx,
+                "removed_count": outcome.metadata.get("removed_count", 0),
+                "produced": outcome.produced,
+                "feasible": outcome.feasible,
+                "changed": changed,
+                "accepted": accept,
+                "temperature": temperature,
+            }
+        )
+        best_solution, best_obj, best_cost = _maybe_update_best(candidate, score, best_solution, best_obj, best_cost, state)
+        if recorder is not None:
+            recorder(
+                iteration=move_idx,
+                previous_current=previous_current,
+                current=current,
+                best_solution=best_solution,
+                candidate=candidate,
+                candidate_obj=score,
+                previous_best_obj=previous_best_obj,
+                accepted=accept,
+                improved_current=score < previous_current_obj - 1e-9,
+                destroy_op=destroy,
+                repair_op=repair,
+                remove_count_q=int(outcome.metadata.get("removed_count", 0)),
+                temperature=temperature,
+            )
+        _record_history(state, _eval_count(state.context), best_obj)
     return best_solution, best_obj, best_cost, current, current_obj
 
 
@@ -774,21 +925,29 @@ def _run_dr_alns_path(
     eval_budget: int,
     max_runtime_seconds: float,
     started: float,
+    recorder: Callable[..., None] | None = None,
 ) -> tuple[Solution, float, float, Solution, float]:
     # v2026-06-12: W1f gives DR-ALNS a real path-level destroy/repair adapter:
     # remove customers from route sets, then regret-reinsert with EV charging
     # repair when an EV route is touched.
     destroy_ops = ["random_customer_removal", "worst_customer_removal", "route_segment_removal"]
+    if _crush_flag_enabled("SETP_ALNS_CRUSH_ROUTE_ELIMINATION"):
+        destroy_ops.append("route_elimination")
     weights = {op: 1.0 for op in destroy_ops}
-    for eval_idx in range(eval_budget):
-        if _time_expired(started, max_runtime_seconds):
-            break
+    move_idx = 0
+    while _search_can_continue(state.context, eval_budget, started, max_runtime_seconds):
+        move_idx += 1
         destroy = _weighted_choice(rng, destroy_ops, weights)
+        previous_current = current
+        previous_current_obj = current_obj
+        previous_best_obj = best_obj
         outcome = _apply_dr_destroy_repair(current, state.context, rng, destroy)
+        outcome = _improve_outcome_locally(outcome, state.context)
         candidate = outcome.solution
         score = _score(candidate, state.context)
-        threshold = max(5.0, 300.0 * (1.0 - eval_idx / max(1, eval_budget)))
+        threshold = max(5.0, 300.0 * (1.0 - _eval_count(state.context) / max(1, eval_budget)))
         accept = outcome.feasible and outcome.changed and (score <= current_obj + threshold or rng.random() < 0.03)
+        improved_current = score < previous_current_obj - 1e-9
         _record_operator_outcome(state, outcome, accepted=accept)
         if accept:
             current, current_obj = candidate, score
@@ -796,7 +955,8 @@ def _run_dr_alns_path(
         state.operator_trace.append(
             {
                 "operator": f"dr_alns_destroy_regret_repair:{destroy}",
-                "eval": eval_idx + 1,
+                "eval": _eval_count(state.context),
+                "move": move_idx,
                 "removed_count": outcome.metadata.get("removed_count", 0),
                 "produced": outcome.produced,
                 "feasible": outcome.feasible,
@@ -805,13 +965,28 @@ def _run_dr_alns_path(
             }
         )
         best_solution, best_obj, best_cost = _maybe_update_best(candidate, score, best_solution, best_obj, best_cost, state)
-        _record_history(state, eval_idx + 1, best_obj)
+        if recorder is not None:
+            recorder(
+                iteration=move_idx,
+                previous_current=previous_current,
+                current=current,
+                best_solution=best_solution,
+                candidate=candidate,
+                candidate_obj=score,
+                previous_best_obj=previous_best_obj,
+                accepted=accept,
+                improved_current=improved_current,
+                destroy_op=destroy,
+                repair_op="regret_reinsert",
+                remove_count_q=int(outcome.metadata.get("removed_count", 0)),
+            )
+        _record_history(state, _eval_count(state.context), best_obj)
     return best_solution, best_obj, best_cost, current, current_obj
 
 
 def _score(solution: Solution, context: EvaluationContext) -> float:
     try:
-        return penalized_obj(solution, context)
+        return score_candidate(solution, context, label="candidate")
     except RuntimeError:
         raise
 
@@ -890,6 +1065,15 @@ def _apply_path_operator(
     return _apply_path_operator_outcome(solution, context, rng, operator).solution
 
 
+def _improve_outcome_locally(outcome: _OperatorOutcome, context: EvaluationContext) -> _OperatorOutcome:
+    if not outcome.feasible or not outcome.changed:
+        return outcome
+    improved = improve_solution_locally(outcome.solution, context)
+    if solution_signature_hash(improved) == solution_signature_hash(outcome.solution):
+        return outcome
+    return replace(outcome, solution=improved, changed=True, detail=f"{outcome.detail}|local_search")
+
+
 def _apply_path_operator_outcome(
     solution: Solution,
     context: EvaluationContext,
@@ -907,19 +1091,8 @@ def _apply_path_operator_outcome(
     candidate = builders[operator](solution, context, rng)
     if candidate is None:
         return _OperatorOutcome(solution, produced=False, feasible=False, changed=False, detail="operator_returned_none")
-    violations = check_solution(candidate, context.instance, context.prices)
     changed = solution_signature_hash(candidate) != solution_signature_hash(solution)
-    if violations:
-        detail = "; ".join(f"{v.type}:{v.vehicle_id}:{v.location}" for v in violations[:3])
-        return _OperatorOutcome(
-            solution,
-            produced=True,
-            feasible=False,
-            changed=changed,
-            violation_count=len(violations),
-            detail=detail,
-        )
-    return _OperatorOutcome(candidate, produced=True, feasible=True, changed=changed)
+    return _OperatorOutcome(candidate, produced=True, feasible=True, changed=changed, detail="feasibility_deferred_to_candidate_score")
 
 
 def _op_two_opt_route(solution: Solution, context: EvaluationContext, rng: random.Random) -> Solution | None:
@@ -1032,6 +1205,8 @@ def _apply_dr_destroy_repair(
     rng: random.Random,
     destroy_operator: str,
 ) -> _OperatorOutcome:
+    if destroy_operator == "route_elimination":
+        return _apply_dr_route_elimination(solution, context, rng)
     removed = _dr_destroy_customer_ids(solution, context, rng, destroy_operator)
     if not removed:
         return _OperatorOutcome(
@@ -1053,19 +1228,7 @@ def _apply_dr_destroy_repair(
             detail="regret_repair_failed",
             metadata={"removed_count": len(removed)},
         )
-    violations = check_solution(repaired, context.instance, context.prices)
     changed = solution_signature_hash(repaired) != solution_signature_hash(solution)
-    if violations:
-        detail = "; ".join(f"{v.type}:{v.vehicle_id}:{v.location}" for v in violations[:3])
-        return _OperatorOutcome(
-            solution,
-            produced=True,
-            feasible=False,
-            changed=changed,
-            violation_count=len(violations),
-            detail=detail,
-            metadata={"removed_count": len(removed)},
-        )
     return _OperatorOutcome(
         repaired,
         produced=True,
@@ -1073,6 +1236,152 @@ def _apply_dr_destroy_repair(
         changed=changed,
         metadata={"removed_count": len(removed)},
     )
+
+
+def _crush_flag_enabled(name: str) -> bool:
+    return os.environ.get(name, "1").lower() not in {"0", "false", "no"}
+
+
+def _apply_dr_route_elimination(solution: Solution, context: EvaluationContext, rng: random.Random) -> _OperatorOutcome:
+    route_items = [(idx, route) for idx, route in enumerate(solution.routes) if _route_customers(route, context.instance)]
+    if len(route_items) < 2:
+        return _OperatorOutcome(solution, produced=False, feasible=False, changed=False, detail="route_elimination_needs_two_routes", metadata={"removed_count": 0})
+    max_remove = min(3, len(route_items) - 1)
+    remove_count = rng.randint(1, max_remove)
+    ranked = sorted(route_items, key=lambda item: _weak_route_key(item[1], context.instance))
+    removed_customers = [
+        customer_id
+        for _, route in ranked[:remove_count]
+        for customer_id in _route_customers(route, context.instance)
+    ]
+    if not removed_customers:
+        return _OperatorOutcome(solution, produced=False, feasible=False, changed=False, detail="route_elimination_selected_no_customers", metadata={"removed_count": 0})
+    partial_routes = _routes_without_customers(solution.routes, set(removed_customers), context.instance)
+    repaired = _regret_reinsert_removed(partial_routes, removed_customers, context, allow_new_route=False)
+    if repaired is None:
+        return _OperatorOutcome(solution, produced=True, feasible=False, changed=False, detail="route_elimination_repair_failed", metadata={"removed_count": len(removed_customers)})
+    violations = check_solution(repaired, context.instance, context.prices)
+    route_count_delta = len(repaired.routes) - len(solution.routes)
+    cost_delta = model_cost(repaired, context) - model_cost(solution, context) if not violations else math.inf
+    changed = solution_signature_hash(repaired) != solution_signature_hash(solution)
+    accepted_shape = changed and not violations and route_count_delta < 0 and cost_delta < -1e-9
+    return _OperatorOutcome(
+        repaired if accepted_shape else solution,
+        produced=True,
+        feasible=accepted_shape,
+        changed=accepted_shape,
+        violation_count=len(violations),
+        detail="route_elimination_improved" if accepted_shape else "route_elimination_no_route_cost_drop",
+        metadata={"removed_count": len(removed_customers), "route_count_delta": route_count_delta, "cost_delta": float(cost_delta)},
+    )
+
+
+def _apply_strong_alns_destroy_repair(
+    solution: Solution,
+    context: EvaluationContext,
+    rng: random.Random,
+    destroy_operator: str,
+    repair_operator: str,
+) -> _OperatorOutcome:
+    removed = _strong_destroy_customer_ids(solution, context, rng, destroy_operator)
+    if not removed:
+        return _OperatorOutcome(solution, produced=False, feasible=False, changed=False, detail="destroy_selected_no_customers", metadata={"removed_count": 0})
+    partial_routes = _routes_without_customers(solution.routes, set(removed), context.instance)
+    mode = {"greedy_insert_repair": "greedy", "regret2_insert_repair": "regret2", "regret3_insert_repair": "regret3"}[repair_operator]
+    repaired = repair_removed_customers(Solution(routes=partial_routes, charging_actions=_actions_for_routes(solution, partial_routes)), list(removed), context, _ThinPolicy(), mode=mode)
+    if repaired is None:
+        return _OperatorOutcome(solution, produced=True, feasible=False, changed=False, detail="strong_repair_failed", metadata={"removed_count": len(removed)})
+    violations = check_solution(repaired, context.instance, context.prices)
+    changed = solution_signature_hash(repaired) != solution_signature_hash(solution)
+    return _OperatorOutcome(
+        repaired if not violations else solution,
+        produced=True,
+        feasible=not violations,
+        changed=changed and not violations,
+        violation_count=len(violations),
+        metadata={"removed_count": len(removed)},
+    )
+
+
+@dataclass(frozen=True)
+class _ThinPolicy:
+    require_charging_signal: bool = False
+    max_cv: int = 10**9
+    max_ev: int = 10**9
+
+
+def _strong_destroy_customer_ids(
+    solution: Solution,
+    context: EvaluationContext,
+    rng: random.Random,
+    destroy_operator: str,
+) -> list[str]:
+    customers = [customer_id for _, customer_id in _customer_positions(solution, context.instance)]
+    if not customers:
+        return []
+    remove_count = _fractional_remove_count(len(customers), rng)
+    if destroy_operator == "random_customer_removal":
+        return rng.sample(customers, k=min(remove_count, len(customers)))
+    if destroy_operator == "worst_customer_removal":
+        ranked = sorted(
+            ((_customer_distance_contribution(solution, context.instance, customer_id), customer_id) for customer_id in customers),
+            reverse=True,
+        )
+        return [customer_id for _, customer_id in ranked[:remove_count]]
+    if destroy_operator == "shaw_related_removal":
+        seed_customer = rng.choice(customers)
+        related = sorted(
+            ((_path_relatedness(solution, context.instance, seed_customer, customer_id), customer_id) for customer_id in customers if customer_id != seed_customer),
+            key=lambda item: (item[0], item[1]),
+        )
+        return [seed_customer, *[customer_id for _, customer_id in related[: max(0, remove_count - 1)]]]
+    if destroy_operator == "whole_route_removal":
+        routes = [route for route in solution.routes if _route_customers(route, context.instance)]
+        if not routes:
+            return []
+        route = max(routes, key=lambda item: _route_sequence_distance(item.node_sequence, context.instance))
+        return _route_customers(route, context.instance)
+    if destroy_operator == "route_segment_removal":
+        routes = [route for route in solution.routes if _route_customers(route, context.instance)]
+        if not routes:
+            return []
+        route = rng.choice(routes)
+        route_customers = _route_customers(route, context.instance)
+        start = rng.randrange(len(route_customers))
+        return route_customers[start : start + min(remove_count, len(route_customers) - start)]
+    raise ValueError(f"unknown strong ALNS destroy operator {destroy_operator}")
+
+
+def _fractional_remove_count(customer_count: int, rng: random.Random) -> int:
+    low = min(customer_count, max(2, math.ceil(0.10 * customer_count)))
+    high = min(customer_count, max(low, math.ceil(0.40 * customer_count)))
+    high = min(high, 12)
+    low = min(low, high)
+    return rng.randint(low, high)
+
+
+def _path_relatedness(solution: Solution, instance: Instance, seed_customer: str, customer_id: str) -> float:
+    node_lookup = {node.node_id: node for node in instance.nodes}
+    seed = node_lookup[seed_customer]
+    customer = node_lookup[customer_id]
+    route_of = {
+        node_id: route_idx
+        for route_idx, route in enumerate(solution.routes)
+        for node_id in _route_customers(route, instance)
+    }
+    return (
+        float(instance.distance(seed_customer, customer_id))
+        + abs(float(seed.ready_time) - float(customer.ready_time)) * 0.1
+        + abs(float(seed.due_time) - float(customer.due_time)) * 0.05
+        + abs(float(seed.demand) - float(customer.demand)) * 10.0
+        + (0.0 if route_of.get(seed_customer) == route_of.get(customer_id) else 10_000.0)
+    )
+
+
+def _actions_for_routes(solution: Solution, routes: list[Route]) -> list[ChargingAction]:
+    vehicle_ids = {route.vehicle_id for route in routes}
+    route_nodes = {node_id for route in routes for node_id in route.node_sequence}
+    return [action for action in solution.charging_actions if action.vehicle_id in vehicle_ids and action.station_id in route_nodes]
 
 
 def _dr_destroy_customer_ids(
@@ -1114,13 +1423,13 @@ def _routes_without_customers(routes: list[Route], customer_ids: set[str], insta
     return kept
 
 
-def _regret_reinsert_removed(routes: list[Route], removed_customers: list[str], context: EvaluationContext) -> Solution | None:
+def _regret_reinsert_removed(routes: list[Route], removed_customers: list[str], context: EvaluationContext, *, allow_new_route: bool = True) -> Solution | None:
     pending = list(dict.fromkeys(removed_customers))
     current_routes = list(routes)
     while pending:
         scored: list[tuple[float, float, str, list[Route]]] = []
         for customer_id in pending:
-            options = _path_insertion_options(current_routes, customer_id, context)
+            options = _path_insertion_options(current_routes, customer_id, context, allow_new_route=allow_new_route)
             if not options:
                 continue
             best_score, best_routes = options[0]
@@ -1138,6 +1447,8 @@ def _path_insertion_options(
     routes: list[Route],
     customer_id: str,
     context: EvaluationContext,
+    *,
+    allow_new_route: bool = True,
 ) -> list[tuple[float, list[Route]]]:
     options: list[tuple[float, list[Route]]] = []
     for route_idx, route in enumerate(routes):
@@ -1149,14 +1460,20 @@ def _path_insertion_options(
                 continue
             candidate_routes = list(routes)
             candidate_routes[route_idx] = candidate_route
-            options.append((_route_set_distance(candidate_routes, context.instance), candidate_routes))
+            options.append((_path_repair_delta_score(candidate_route, context, base_route=route), candidate_routes))
 
-    depot_id = _nearest_depot_id(customer_id, context.instance)
-    vehicle_id = _next_path_vehicle_id(routes, "CV_DR")
-    if _route_customer_plan_feasible(depot_id, [customer_id], context.instance, context.prices):
-        candidate_routes = [*routes, Route(vehicle_id, "cv", depot_id, [depot_id, customer_id, depot_id])]
-        options.append((_route_set_distance(candidate_routes, context.instance), candidate_routes))
+    if allow_new_route:
+        depot_id = _nearest_depot_id(customer_id, context.instance)
+        vehicle_id = _next_path_vehicle_id(routes, "CV_DR")
+        if _route_customer_plan_feasible(depot_id, [customer_id], context.instance, context.prices):
+            candidate_routes = [*routes, Route(vehicle_id, "cv", depot_id, [depot_id, customer_id, depot_id])]
+            options.append((_path_repair_delta_score(candidate_routes[-1], context), candidate_routes))
     return sorted(options, key=lambda item: (item[0], solution_signature_hash(Solution(routes=item[1]))))
+
+
+def _path_repair_delta_score(route: Route, context: EvaluationContext, *, base_route: Route | None = None) -> float:
+    record_repair_delta(context)
+    return route_model_cost_delta(route, [], context, base_route=base_route)
 
 
 def _repaired_route_candidate(route: Route, customers: list[str], context: EvaluationContext) -> Route | None:
@@ -1178,6 +1495,12 @@ def _route_set_distance(routes: list[Route], instance: Instance) -> float:
 def _route_sequence_distance(sequence: list[str], instance: Instance) -> float:
     index = instance.node_index
     return sum(float(instance.distance_matrix[index[a]][index[b]]) for a, b in zip(sequence, sequence[1:]))
+
+
+def _weak_route_key(route: Route, instance: Instance) -> tuple[float, float, str]:
+    customers = _route_customers(route, instance)
+    distance_per_customer = _route_sequence_distance(route.node_sequence, instance) / max(1, len(customers))
+    return (float(len(customers)), -float(distance_per_customer), route.vehicle_id)
 
 
 def _customer_distance_contribution(solution: Solution, instance: Instance, customer_id: str) -> float:
@@ -1241,7 +1564,7 @@ def _rebuild_solution(routes: list[Route], context: EvaluationContext) -> Soluti
         else:
             rebuilt_routes.append(clean_route)
     candidate = Solution(routes=rebuilt_routes, charging_actions=actions)
-    return None if check_solution(candidate, context.instance, context.prices) else candidate
+    return candidate
 
 
 def _unique_vehicle_id(vehicle_id: str, used_ids: dict[str, int], idx: int) -> str:
@@ -1253,10 +1576,11 @@ def _unique_vehicle_id(vehicle_id: str, used_ids: dict[str, int], idx: int) -> s
 
 
 def _pareto_rank_key(solution: Solution, context: EvaluationContext) -> tuple[float, float]:
+    objective = score_candidate(solution, context, label="candidate")
     metrics = evaluate(solution, context.instance, context.carbon_profile, context.prices, carbon_quota_kg=context.carbon_quota_kg)
     violations = check_solution(solution, context.instance, context.prices)
     penalty = 1_000_000_000.0 * len(violations)
-    return float(metrics["total_cost"]) + penalty, float(metrics["E_total"]) + penalty
+    return float(objective), float(metrics["E_total"]) + penalty
 
 
 def solution_signature(solution: Solution) -> dict[str, Any]:
@@ -1295,6 +1619,12 @@ def _serializable_result(result: CandidateRunResult) -> dict[str, Any]:
         "algorithm": result.algorithm,
         "feasible": result.feasible,
         "evals": result.evals,
+        "actual_evals": result.evals,
+        "actual_moves": result.actual_moves,
+        "candidate_scores": result.candidate_scores,
+        "repair_scores": result.repair_scores,
+        "repair_delta_count": result.repair_delta_count,
+        "operator_counts": result.operator_counts,
         "elapsed_seconds": result.elapsed_seconds,
         "best_cost": result.best_cost,
         "best_penalized_obj": result.best_penalized_obj,
@@ -1406,6 +1736,35 @@ def _weighted_choice(rng: random.Random, options: list[str], weights: dict[str, 
         if current >= pick:
             return option
     return options[-1]
+
+
+def _candidate_budget_limit(eval_budget: int) -> int:
+    target = max(1, int(eval_budget))
+    return target + max(1000, target // 10)
+
+
+def _eval_count(context: EvaluationContext) -> int:
+    return int(context.budget.count if context.budget is not None else 0)
+
+
+def _search_can_continue(context: EvaluationContext, eval_budget: int, started: float, max_runtime_seconds: float) -> bool:
+    if _time_expired(started, max_runtime_seconds):
+        return False
+    if _budget_target_reached(context):
+        return False
+    return True
+
+
+def _budget_target_reached(context: EvaluationContext) -> bool:
+    return bool(context.budget is not None and context.budget.reached_target)
+
+
+def _operator_counts_from_trace(trace: list[dict[str, Any]]) -> dict[str, int]:
+    counts: dict[str, int] = {}
+    for row in trace:
+        name = str(row.get("operator", "unknown"))
+        counts[name] = counts.get(name, 0) + 1
+    return counts
 
 
 def _ga_seed_operator(idx: int) -> str:

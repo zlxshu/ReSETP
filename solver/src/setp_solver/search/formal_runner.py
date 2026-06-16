@@ -29,6 +29,7 @@ from ..solution import ChargingAction, CrossSiteService, Route, Solution
 from .alns_wouda import SearchPolicy, run_alns_wouda
 from .bundle import load_search_bundle
 from .candidates import PRIMARY_ALGORITHM, Z1_CANDIDATES, run_candidate
+from .candidates import make_shared_initial_solution
 from .dynamic import (
     DynamicEvent,
     RollingParameters,
@@ -42,6 +43,7 @@ from .e5_ablation import run_e5_charging_ablation
 from .evaluation import EvaluationContext, fairness_context_for_solution
 from .fairness import build_concatenated_independent_seed, infer_customer_home_depots, run_equal_budget_fairness_comparison, run_independent_profit_baselines
 from .gates import b2_feasible_domain_gate
+from .root_cause import WANG_ROOT_CAUSE_ALGORITHMS, run_alns_root_cause_diagnostics
 
 
 RunCallable = Callable[[], dict[str, Any]]
@@ -225,6 +227,10 @@ def run_e2_algorithm_comparison(
         "100-01-24h": root / "models" / "data_bundle" / "generated_instances" / "E-UK100_01__d2_s3_seed1_24h_20251113",
     }
     algorithms = [PRIMARY_ALGORITHM, *Z1_CANDIDATES]
+    initial_solutions = {
+        instance_name: make_shared_initial_solution(load_search_bundle(bundle_dir))
+        for instance_name, bundle_dir in instances.items()
+    }
     run_rows: list[dict[str, Any]] = []
     for instance_name, bundle_dir in instances.items():
         for algorithm in algorithms:
@@ -238,6 +244,7 @@ def run_e2_algorithm_comparison(
                         seed=seed,
                         eval_budget=eval_budget,
                         max_runtime_seconds=max_runtime_seconds,
+                        initial_solution=initial_solutions[instance_name],
                     ),
                 )
                 run_rows.append(_flatten_run_row(key, row))
@@ -247,6 +254,125 @@ def run_e2_algorithm_comparison(
     _write_csv(out / "figures" / "f2_algorithm_curves.csv", _f2_curve_rows(run_rows))
     _write_e2_solution_outputs(root, out, run_rows)
     return {"run_count": len(run_rows), "finals": finals, "manifest": str(ledger.path)}
+
+
+def run_alns_fix_validation(
+    repo_root: str | Path,
+    output_dir: str | Path,
+    *,
+    seeds: list[int] | None = None,
+    eval_budget: int = 16_000,
+    max_runtime_seconds: float = 300.0,
+) -> dict[str, Any]:
+    """Run a fair-budget E2 validation into an isolated output directory."""
+
+    root = Path(repo_root)
+    out = Path(output_dir)
+    result = run_e2_algorithm_comparison(root, out, seeds=seeds, eval_budget=eval_budget, max_runtime_seconds=max_runtime_seconds)
+    run_rows = _load_run_rows_from_manifest(out / "formal_runner_manifest.json")
+    before_rows = _load_prior_alns_wouda_rows(root)
+    before_after = _alns_wouda_before_after_rows(run_rows, before_rows)
+    _write_csv(out / "tables" / "alns_wouda_before_after.csv", before_after)
+    _write_csv(out / "tables" / "t3_fair_budget_algorithm_comparison.csv", result["finals"])
+    shutil.copyfile(out / "figures" / "f2_algorithm_finals.csv", out / "figures" / "f2_fair_budget_finals.csv")
+    shutil.copyfile(out / "figures" / "f2_algorithm_curves.csv", out / "figures" / "f2_fair_budget_curves.csv")
+    gate = _alns_fix_validation_gate(result["finals"])
+    (out / "README.md").write_text(_alns_fix_validation_readme(eval_budget, max_runtime_seconds, gate, result), encoding="utf-8")
+    return {
+        **result,
+        "gate": gate,
+        "before_after": str(out / "tables" / "alns_wouda_before_after.csv"),
+        "fair_t3": str(out / "tables" / "t3_fair_budget_algorithm_comparison.csv"),
+    }
+
+
+def run_alns_strong_validation(
+    repo_root: str | Path,
+    output_dir: str | Path,
+    *,
+    target_algorithm: str,
+    seeds: list[int] | None = None,
+    eval_budget: int = 16_000,
+    max_runtime_seconds: float = 300.0,
+) -> dict[str, Any]:
+    out = Path(output_dir)
+    algorithms = [target_algorithm, "DR-ALNS", "scikit-opt-SA"]
+    result = run_alns_root_cause_diagnostics(
+        repo_root,
+        out,
+        seeds=seeds or [1, 2, 3],
+        eval_budget=eval_budget,
+        max_runtime_seconds=max_runtime_seconds,
+        algorithms=algorithms,
+    )
+    gate = _alns_strong_gate(out, target_algorithm)
+    manifest_path = out / "strong_validation_manifest.json"
+    manifest = {
+        "schema_version": "setp-alns-strong-validation.v1",
+        "target_algorithm": target_algorithm,
+        "gate": gate,
+        "root_cause_manifest": result.get("manifest"),
+        "eval_budget": int(eval_budget),
+        "max_runtime_seconds": float(max_runtime_seconds),
+    }
+    manifest_path.write_text(json.dumps(manifest, ensure_ascii=False, indent=2), encoding="utf-8")
+    (out / "README.md").write_text(_alns_strong_readme(target_algorithm, eval_budget, max_runtime_seconds, gate), encoding="utf-8")
+    return {**result, "gate": gate, "strong_manifest": str(manifest_path)}
+
+
+def run_alns_wang_root_cause(
+    repo_root: str | Path,
+    output_dir: str | Path,
+    *,
+    seeds: list[int] | None = None,
+    eval_budget: int = 16_000,
+    max_runtime_seconds: float = 300.0,
+) -> dict[str, Any]:
+    result = run_alns_root_cause_diagnostics(
+        repo_root,
+        output_dir,
+        seeds=seeds or [1],
+        eval_budget=eval_budget,
+        max_runtime_seconds=max_runtime_seconds,
+        algorithms=WANG_ROOT_CAUSE_ALGORITHMS,
+    )
+    gate = _wang_root_cause_gate(Path(output_dir))
+    manifest_path = Path(output_dir) / "wang_root_cause_manifest.json"
+    manifest_path.write_text(
+        json.dumps({"schema_version": "setp-wang-root-cause.v1", "gate": gate, "root_cause_manifest": result.get("manifest")}, ensure_ascii=False, indent=2),
+        encoding="utf-8",
+    )
+    return {**result, "gate": gate, "wang_manifest": str(manifest_path)}
+
+
+def run_alns_wang_strong_validation(
+    repo_root: str | Path,
+    output_dir: str | Path,
+    *,
+    root_cause_dir: str | Path | None = None,
+    seeds: list[int] | None = None,
+    eval_budget: int = 16_000,
+    max_runtime_seconds: float = 300.0,
+) -> dict[str, Any]:
+    source = Path(root_cause_dir) if root_cause_dir else Path(repo_root) / "solver" / "reports" / "alns_wang_root_cause"
+    root_gate = _wang_root_cause_gate(source) if source.exists() else "HALT_WANG_ROOT_CAUSE_MISSING"
+    out = Path(output_dir)
+    out.mkdir(parents=True, exist_ok=True)
+    if root_gate != "PASS_WANG_SAME_ROOT_CAUSE":
+        manifest_path = out / "strong_validation_manifest.json"
+        manifest_path.write_text(
+            json.dumps({"schema_version": "setp-wang-strong-validation.v1", "gate": "HALT_WANG_DIFFERENT_ROOT_CAUSE_NEEDS_PLAN", "root_cause_gate": root_gate}, ensure_ascii=False, indent=2),
+            encoding="utf-8",
+        )
+        return {"gate": "HALT_WANG_DIFFERENT_ROOT_CAUSE_NEEDS_PLAN", "strong_manifest": str(manifest_path)}
+    return run_alns_strong_validation(
+        repo_root,
+        out,
+        target_algorithm="ALNS@wangqianlongucas-strong",
+        seeds=seeds or [1, 2, 3],
+        eval_budget=eval_budget,
+        max_runtime_seconds=max_runtime_seconds,
+    )
 
 
 def run_e1_main_and_counterfactuals(
@@ -362,6 +488,8 @@ def run_e4_carbon_sensitivity(
     seeds: list[int] | None = None,
     eval_budget: int = 16_000,
     max_runtime_seconds: float = 300.0,
+    carbon_price_factors: list[float] | None = None,
+    quota_factors: list[float] | None = None,
 ) -> dict[str, Any]:
     """Run E4 carbon-price by quota grid with fairness off."""
 
@@ -376,8 +504,8 @@ def run_e4_carbon_sensitivity(
         max_runtime_seconds=max_runtime_seconds,
     )
     base_emissions = float(baseline["baseline_emissions_kg"])
-    carbon_prices = [0.5, 1.0, 2.0, 4.0]
-    quotas = [0.5, 0.8, 1.0, 1.2]
+    carbon_prices = carbon_price_factors if carbon_price_factors else [0.5, 1.0, 2.0, 4.0]
+    quotas = quota_factors if quota_factors else [0.5, 0.8, 1.0, 1.2]
     run_seeds = seeds or list(range(1, 6))
     ledger = ResumeLedger(out / "formal_runner_manifest.json")
     rows = []
@@ -542,19 +670,33 @@ def run_e7_dynamic(
 
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description="Run resumable SETP formal experiments.")
-    parser.add_argument("stage", choices=["E0", "E1", "E2", "E3", "E4", "E5", "E6", "E7"])
+    parser.add_argument("stage", choices=["E0", "E1", "E2", "E3", "E4", "E5", "E6", "E7", "ALNS_FIX", "ALNS_ROOT_CAUSE", "ALNS_WOUDA_STRONG", "ALNS_WANG_ROOT_CAUSE", "ALNS_WANG_STRONG"])
     parser.add_argument("--repo-root", default=str(Path(__file__).resolve().parents[4]))
     parser.add_argument("--output-dir", default=str(Path(__file__).resolve().parents[4] / "solver" / "reports" / "formal"))
     parser.add_argument("--eval-budget", type=int, default=16_000)
     parser.add_argument("--max-runtime-seconds", type=float, default=300.0)
     parser.add_argument("--seeds", default="1,2,3,4,5,6,7,8,9,10")
     parser.add_argument("--variants", default="")
+    parser.add_argument("--carbon-price-factors", default="")
+    parser.add_argument("--quota-factors", default="")
     args = parser.parse_args(argv)
     seeds = [int(item) for item in args.seeds.split(",") if item.strip()]
     variants = [item.strip() for item in args.variants.split(",") if item.strip()]
+    cpf = [float(x) for x in args.carbon_price_factors.split(",") if x.strip()] or None
+    qf = [float(x) for x in args.quota_factors.split(",") if x.strip()] or None
     out = Path(args.output_dir)
     if args.stage == "E0":
         result = run_e0_gate(args.repo_root, out / "tables" / "t1_instances.csv")
+    elif args.stage == "ALNS_FIX":
+        result = run_alns_fix_validation(args.repo_root, out, seeds=seeds, eval_budget=args.eval_budget, max_runtime_seconds=args.max_runtime_seconds)
+    elif args.stage == "ALNS_ROOT_CAUSE":
+        result = run_alns_root_cause_diagnostics(args.repo_root, out, seeds=seeds, eval_budget=args.eval_budget, max_runtime_seconds=args.max_runtime_seconds)
+    elif args.stage == "ALNS_WOUDA_STRONG":
+        result = run_alns_strong_validation(args.repo_root, out, target_algorithm=PRIMARY_ALGORITHM, seeds=seeds, eval_budget=args.eval_budget, max_runtime_seconds=args.max_runtime_seconds)
+    elif args.stage == "ALNS_WANG_ROOT_CAUSE":
+        result = run_alns_wang_root_cause(args.repo_root, out, seeds=seeds, eval_budget=args.eval_budget, max_runtime_seconds=args.max_runtime_seconds)
+    elif args.stage == "ALNS_WANG_STRONG":
+        result = run_alns_wang_strong_validation(args.repo_root, out, seeds=seeds, eval_budget=args.eval_budget, max_runtime_seconds=args.max_runtime_seconds)
     elif args.stage == "E1":
         result = run_e1_main_and_counterfactuals(args.repo_root, out, seed=seeds[0], eval_budget=args.eval_budget, max_runtime_seconds=args.max_runtime_seconds)
     elif args.stage == "E2":
@@ -562,7 +704,16 @@ def main(argv: list[str] | None = None) -> int:
     elif args.stage == "E3":
         result = run_e3_ablation(args.repo_root, out, seeds=seeds, variants_filter=variants or None, eval_budget=args.eval_budget, max_runtime_seconds=args.max_runtime_seconds)
     elif args.stage == "E4":
-        result = run_e4_carbon_sensitivity(args.repo_root, out, seed=seeds[0], seeds=seeds, eval_budget=args.eval_budget, max_runtime_seconds=args.max_runtime_seconds)
+        result = run_e4_carbon_sensitivity(
+            args.repo_root,
+            out,
+            seed=seeds[0],
+            seeds=seeds,
+            eval_budget=args.eval_budget,
+            max_runtime_seconds=args.max_runtime_seconds,
+            carbon_price_factors=cpf,
+            quota_factors=qf,
+        )
     elif args.stage == "E5":
         result = run_e5_formal(args.repo_root, out)
     elif args.stage == "E6":
@@ -581,6 +732,7 @@ def _run_algorithm_once(
     seed: int,
     eval_budget: int,
     max_runtime_seconds: float,
+    initial_solution: Solution | None = None,
 ) -> dict[str, Any]:
     bundle = load_search_bundle(bundle_dir)
     result = run_candidate(
@@ -589,6 +741,7 @@ def _run_algorithm_once(
         seed=seed,
         eval_budget=eval_budget,
         max_runtime_seconds=max_runtime_seconds,
+        initial_solution=initial_solution,
     )
     best_solution = result.best_solution
     metrics = (
@@ -607,6 +760,11 @@ def _run_algorithm_once(
         "feasible": bool(result.feasible and not violations),
         "evals": result.evals,
         "actual_evals": result.evals,
+        "actual_moves": result.actual_moves,
+        "candidate_scores": result.candidate_scores,
+        "repair_scores": result.repair_scores,
+        "repair_delta_count": result.repair_delta_count,
+        "operator_counts": result.operator_counts,
         "elapsed_seconds": result.elapsed_seconds,
         "best_cost": float(metrics["total_cost"]) if metrics else result.best_cost,
         "best_penalized_obj": result.best_penalized_obj,
@@ -1223,6 +1381,196 @@ def _solution_from_dict(payload: dict[str, Any]) -> Solution:
     )
 
 
+def _load_run_rows_from_manifest(manifest_path: str | Path) -> list[dict[str, Any]]:
+    path = Path(manifest_path)
+    if not path.exists():
+        return []
+    payload = json.loads(path.read_text(encoding="utf-8"))
+    rows = []
+    for row in payload.get("runs", []):
+        key_payload = row.get("key", {})
+        if not key_payload:
+            continue
+        key = RunKey(
+            str(key_payload["experiment"]),
+            str(key_payload["instance"]),
+            str(key_payload["algorithm"]),
+            int(key_payload["seed"]),
+            str(key_payload["variant"]),
+        )
+        rows.append(_flatten_run_row(key, row))
+    return rows
+
+
+def _load_prior_alns_wouda_rows(repo_root: Path) -> dict[tuple[str, int], dict[str, Any]]:
+    rows: dict[tuple[str, int], dict[str, Any]] = {}
+    for path in sorted((repo_root / "solver" / "reports" / "parallel_r2_full" / "units").glob("e2_s*/formal_runner_manifest.json")):
+        for row in _load_run_rows_from_manifest(path):
+            if row["algorithm"] == PRIMARY_ALGORITHM and _run_feasible_with_cost(row):
+                rows[(row["instance"], int(row["seed"]))] = row
+    formal_manifest = repo_root / "solver" / "reports" / "formal" / "formal_runner_manifest.json"
+    for row in _load_run_rows_from_manifest(formal_manifest):
+        if row["algorithm"] == PRIMARY_ALGORITHM and _run_feasible_with_cost(row):
+            rows.setdefault((row["instance"], int(row["seed"])), row)
+    return rows
+
+
+def _alns_wouda_before_after_rows(run_rows: list[dict[str, Any]], before_rows: dict[tuple[str, int], dict[str, Any]]) -> list[dict[str, Any]]:
+    references = {
+        instance: min(float(row["result"]["best_cost"]) for row in rows if _run_feasible_with_cost(row))
+        for instance, rows in _group_by_instance(run_rows).items()
+        if any(_run_feasible_with_cost(row) for row in rows)
+    }
+    out: list[dict[str, Any]] = []
+    after_rows = [row for row in run_rows if row["algorithm"] == PRIMARY_ALGORITHM]
+    for after in sorted(after_rows, key=lambda row: (row["instance"], int(row["seed"]))):
+        key = (after["instance"], int(after["seed"]))
+        before = before_rows.get(key)
+        if before is not None:
+            out.append(_validation_comparison_row("before", before, references.get(before["instance"], 0.0)))
+        out.append(_validation_comparison_row("after", after, references.get(after["instance"], 0.0)))
+    return out
+
+
+def _validation_comparison_row(variant: str, row: dict[str, Any], reference: float) -> dict[str, Any]:
+    result = row.get("result", {})
+    cost = float(result["best_cost"]) if result.get("best_cost") not in (None, "") else 0.0
+    gap = (cost - reference) / reference * 100.0 if reference else ""
+    return {
+        "variant": variant,
+        "instance": row["instance"],
+        "seed": row["seed"],
+        "algorithm": row["algorithm"],
+        "best_cost": round(cost, 6) if cost else "",
+        "gap_to_observed_best_pct": round(gap, 3) if gap != "" else "",
+        "actual_evals": row.get("actual_evals", result.get("actual_evals", "")),
+        "actual_moves": result.get("actual_moves", ""),
+        "candidate_scores": result.get("candidate_scores", ""),
+        "repair_scores": result.get("repair_scores", ""),
+        "repair_delta_count": result.get("repair_delta_count", result.get("repair_scores", "")),
+        "ev_routes": result.get("ev_routes", ""),
+        "charging_events": result.get("charging_event_count", ""),
+        "route_count": result.get("route_count", ""),
+        "elapsed_seconds": result.get("elapsed_seconds", ""),
+        "feasible": result.get("feasible", False),
+    }
+
+
+def _group_by_instance(run_rows: list[dict[str, Any]]) -> dict[str, list[dict[str, Any]]]:
+    grouped: dict[str, list[dict[str, Any]]] = {}
+    for row in run_rows:
+        grouped.setdefault(row["instance"], []).append(row)
+    return grouped
+
+
+def _alns_fix_validation_gate(finals: list[dict[str, Any]]) -> str:
+    average = next((row for row in finals if row.get("instance") == "Average"), {})
+    gap = average.get(f"{PRIMARY_ALGORITHM}|相对已观测最优偏差\\%")
+    if gap in ("", None):
+        return "HALT_ALNS_FIX_NO_AVERAGE"
+    return "PASS" if float(gap) <= 5.0 else "HALT_ALNS_FIX_TARGET_MISS"
+
+
+def _read_csv_rows(path: Path) -> list[dict[str, str]]:
+    if not path.exists():
+        return []
+    with path.open(newline="", encoding="utf-8") as handle:
+        return list(csv.DictReader(handle))
+
+
+def _alns_strong_gate(output_dir: Path, target_algorithm: str) -> str:
+    summary = _read_csv_rows(output_dir / "tables" / "root_cause_summary.csv")
+    operators = _read_csv_rows(output_dir / "tables" / "operator_summary.csv")
+    target_rows = [row for row in summary if row.get("algorithm") == target_algorithm]
+    sa_rows = [row for row in summary if row.get("algorithm") == "scikit-opt-SA"]
+    if not target_rows or not sa_rows:
+        return "HALT_ALNS_STRONG_MISSING_ROWS"
+    target_gap = mean(float(row["final_gap_pct"]) for row in target_rows)
+    sa_gap = mean(float(row["final_gap_pct"]) for row in sa_rows)
+    churn = mean(float(row["churn_rate"]) for row in target_rows)
+    target_ops = [row for row in operators if row.get("algorithm") == target_algorithm]
+    total_uses = sum(int(row["used"]) for row in target_ops)
+    top_share = max((int(row["used"]) for row in target_ops), default=0) / max(1, total_uses)
+    non_swap = [row for row in target_ops if row.get("destroy_op") != "vehicle_type_swap"]
+    non_swap_uses = sum(int(row["used"]) for row in non_swap)
+    non_swap_feasible = (
+        sum(float(row["feasible_rate"]) * int(row["used"]) for row in non_swap) / max(1, non_swap_uses)
+        if non_swap
+        else 0.0
+    )
+    if non_swap_feasible <= 0.9:
+        return "HALT_WOUDA_STRONG_TARGET_MISS" if target_algorithm == PRIMARY_ALGORITHM else "HALT_WANG_STRONG_TARGET_MISS"
+    if churn < 0.25:
+        return "HALT_WOUDA_STRONG_TARGET_MISS" if target_algorithm == PRIMARY_ALGORITHM else "HALT_WANG_STRONG_TARGET_MISS"
+    if top_share >= 0.5:
+        return "HALT_WOUDA_STRONG_TARGET_MISS" if target_algorithm == PRIMARY_ALGORITHM else "HALT_WANG_STRONG_TARGET_MISS"
+    if target_gap > sa_gap + 1e-9:
+        return "HALT_WOUDA_STRONG_TARGET_MISS" if target_algorithm == PRIMARY_ALGORITHM else "HALT_WANG_STRONG_TARGET_MISS"
+    return "PASS"
+
+
+def _wang_root_cause_gate(output_dir: Path) -> str:
+    summary = _read_csv_rows(output_dir / "tables" / "root_cause_summary.csv")
+    operators = _read_csv_rows(output_dir / "tables" / "operator_summary.csv")
+    target = "ALNS@wangqianlongucas"
+    target_rows = [row for row in summary if row.get("algorithm") == target]
+    if not target_rows:
+        return "HALT_WANG_ROOT_CAUSE_MISSING"
+    churn = mean(float(row["churn_rate"]) for row in target_rows)
+    target_ops = [row for row in operators if row.get("algorithm") == target]
+    total_uses = sum(int(row["used"]) for row in target_ops)
+    top_share = max((int(row["used"]) for row in target_ops), default=0) / max(1, total_uses)
+    non_swap_uses = total_uses
+    non_swap_feasible = (
+        sum(float(row["feasible_rate"]) * int(row["used"]) for row in target_ops) / max(1, non_swap_uses)
+        if target_ops
+        else 0.0
+    )
+    return "PASS_WANG_SAME_ROOT_CAUSE" if (non_swap_feasible < 0.5 or top_share > 0.7 or churn < 0.1) else "HALT_WANG_DIFFERENT_ROOT_CAUSE_NEEDS_PLAN"
+
+
+def _alns_strong_readme(target_algorithm: str, eval_budget: int, max_runtime_seconds: float, gate: str) -> str:
+    stage = "ALNS_WOUDA_STRONG" if target_algorithm == PRIMARY_ALGORITHM else "ALNS_WANG_STRONG"
+    return "\n".join(
+        [
+            f"# {stage} Validation",
+            "",
+            f"Gate: `{gate}`",
+            "",
+            "This directory is validation-only and does not replace formal reports or manuscript tables.",
+            "",
+            "```bash",
+            f"PYTHONPATH=solver/src python -m setp_solver.search.formal_runner {stage} --eval-budget {int(eval_budget)} --max-runtime-seconds {float(max_runtime_seconds)} --seeds 1,2,3",
+            "```",
+            "",
+            "Acceptance checks: non-swap repair feasibility > 0.9, churn >= 0.25, top operator-pair share < 0.5, and average gap no worse than scikit-opt-SA.",
+        ]
+    )
+
+
+def _alns_fix_validation_readme(eval_budget: int, max_runtime_seconds: float, gate: str, result: dict[str, Any]) -> str:
+    return "\n".join(
+        [
+            "# ALNS Fair-Budget Validation",
+            "",
+            f"Gate: `{gate}`",
+            "",
+            "Budget accounting: each full candidate solution submitted to the search selection/acceptance step counts as one `actual_evals`; repair-internal delta scoring is reported as `repair_delta_count` and mirrored in legacy `repair_scores`, but it does not consume eval budget.",
+            "",
+            "Suggested command:",
+            "",
+            "```bash",
+            f"PYTHONPATH=solver/src python -m setp_solver.search.formal_runner ALNS_FIX --output-dir solver/reports/alns_fix_validation --eval-budget {int(eval_budget)} --max-runtime-seconds {float(max_runtime_seconds)}",
+            "```",
+            "",
+            f"Run count: `{result.get('run_count', '')}`",
+            f"Manifest: `{result.get('manifest', '')}`",
+            "",
+            "This directory is validation-only and does not replace formal paper tables or figures.",
+        ]
+    )
+
+
 def _flatten_run_row(key: RunKey, row: dict[str, Any]) -> dict[str, Any]:
     result = dict(row.get("result", {}))
     actual_evals = _actual_evals_from_result(result)
@@ -1648,6 +1996,10 @@ def _f2_final_rows(run_rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
             "final_obj": row.get("result", {}).get("best_cost", ""),
             "elapsed_seconds": row.get("result", {}).get("elapsed_seconds", ""),
             "actual_evals": row.get("actual_evals", row.get("result", {}).get("actual_evals", "")),
+            "actual_moves": row.get("result", {}).get("actual_moves", ""),
+            "candidate_scores": row.get("result", {}).get("candidate_scores", ""),
+            "repair_scores": row.get("result", {}).get("repair_scores", ""),
+            "repair_delta_count": row.get("result", {}).get("repair_delta_count", row.get("result", {}).get("repair_scores", "")),
             "feasible": row.get("result", {}).get("feasible", False),
         }
         for row in run_rows

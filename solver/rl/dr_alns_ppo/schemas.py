@@ -1,0 +1,40 @@
+from __future__ import annotations
+
+from dataclasses import dataclass, field
+from typing import Any
+
+
+@dataclass(frozen=True)
+class DecodedAction:
+    destroy_id: str
+    repair_id: str
+    q_ratio: float | None
+    threshold_ratio: float
+    raw: tuple[int, ...]
+    control_mode: str = "ppo_full"
+
+
+@dataclass(frozen=True)
+class WorkerRequest:
+    request_id: int
+    op: str
+    action: dict[str, Any]
+    current_solution: dict[str, Any] | None = None
+
+
+@dataclass(frozen=True)
+class CandidateResponse:
+    request_id: int
+    ok: bool
+    accepted: bool
+    improved_current: bool
+    improved_best: bool
+    actual_evals: int
+    current_obj: float
+    best_obj: float
+    candidate_obj: float
+    violation_count: int
+    metrics: dict[str, float] = field(default_factory=dict)
+    solution: dict[str, Any] = field(default_factory=dict)
+    trace: dict[str, Any] = field(default_factory=dict)
+    error: str = ""
