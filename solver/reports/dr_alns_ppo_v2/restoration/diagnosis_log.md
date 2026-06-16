@@ -48,3 +48,19 @@
 - Stdout: `gate=PASS_RESTORED_BASELINE mean=4878.331796`
 - Stderr: ``
 - Conclusion: Restored winner baseline established.
+
+## Phase 2 - 2026-06-16 15:34:33
+
+- Commit: `024579d026fcf2770a1e2aff03f6138eea46c25d`
+- Command: `PYTHONHASHSEED=0 SETP_ALNS_PARALLEL_WORKERS=6 python -m setp_solver.search.winner_restoration run-current --seeds 1,2,3,4,5,6,7,8,9,10 --eval-budget 16000 --max-runtime-seconds 900.0`
+- Stdout: `mean_current=4878.331796 mean_gold=4878.331796 mean_delta=0.000000 classification=not_regressed`
+- Stderr: ``
+- Conclusion: Current winner is not worse than gold on mean; restoration should not change search logic without more evidence.
+
+## Phase 4/5 - 2026-06-16 15:34:33
+
+- Commit: `024579d026fcf2770a1e2aff03f6138eea46c25d`
+- Command: `python -m setp_solver.search.winner_restoration verify-restored`
+- Stdout: `gate=PASS_RESTORED_BASELINE mean=4878.331796`
+- Stderr: ``
+- Conclusion: Restored winner baseline established.
