@@ -12,12 +12,34 @@ def test_build_manifest_has_disjoint_train_and_held_out_bundles() -> None:
     assert set(manifest["train"]).isdisjoint(set(manifest["held_out"]))
     assert set(manifest["train"]).isdisjoint(set(manifest["formal_eval"]))
     assert set(manifest["held_out"]).isdisjoint(set(manifest["formal_eval"]))
-    assert len(manifest["train"]) == 4
+    assert len(manifest["train"]) == 3
     assert len(manifest["held_out"]) == 1
     assert len(manifest["formal_eval"]) == 2
+    assert "models/data_bundle/generated_instances/E-UK100_02__u0_seed2_24h_20251113" in manifest["train"]
+    assert "models/data_bundle/generated_instances/E-UK24h-三班-150" in manifest["train"]
+    assert "models/data_bundle/generated_instances/E-UK24h-三班-200" in manifest["train"]
+    assert not any("verify" in bundle or "demo" in bundle or "E-UK25" in bundle for bundle in manifest["train"])
+    assert not any("E-UK100_01" in bundle for bundle in manifest["train"])
     assert "models/data_bundle/generated_instances/E-UK100_03__u0_seed3_24h_20251113" in manifest["held_out"]
     assert "models/data_bundle/generated_instances/E-UK100_01__d2_s3_seed1_24h_20251113" in manifest["formal_eval"]
     assert "models/data_bundle/generated_instances/E-UK24h-三班-01" in manifest["formal_eval"]
+
+
+@pytest.mark.parametrize(
+    "bundle",
+    [
+        "models/data_bundle/generated_instances/verify_20251113",
+        "models/data_bundle/generated_instances/demo_carbon",
+        "models/data_bundle/generated_instances/E-UK25_01__d2_s3_seed1",
+        "models/data_bundle/generated_instances/E-UK100_01__u0_seed1_24h_20251113",
+    ],
+)
+def test_manifest_rejects_toy_or_10001_near_neighbor_training_bundles(bundle: str) -> None:
+    manifest = build_manifest()
+    manifest["train"] = [bundle]
+
+    with pytest.raises(ValueError, match="Forbidden training bundle"):
+        validate_manifest(manifest, root=Path.cwd())
 
 
 def test_manifest_validation_checks_required_bundle_files(tmp_path: Path) -> None:

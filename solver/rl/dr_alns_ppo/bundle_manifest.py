@@ -9,10 +9,9 @@ from typing import Any
 SCHEMA_VERSION = "dr-alns-ppo-bundle-manifest.v1"
 
 TRAIN_BUNDLES = (
-    "models/data_bundle/generated_instances/verify_20251113",
-    "models/data_bundle/generated_instances/verify_20251113_evheavy",
-    "models/data_bundle/generated_instances/demo_carbon",
     "models/data_bundle/generated_instances/E-UK100_02__u0_seed2_24h_20251113",
+    "models/data_bundle/generated_instances/E-UK24h-三班-150",
+    "models/data_bundle/generated_instances/E-UK24h-三班-200",
 )
 
 HELD_OUT_BUNDLES = (
@@ -26,9 +25,13 @@ FORMAL_EVAL_BUNDLES = (
 
 EXCLUDED_FROM_TRAINING_REASON = {
     "100-01/L-main only": "single-main-case training would overfit and is not evidence of general DRL control",
+    "verify/demo/25c bundles": "toy and verification bundles are not representative 100-customer SETP training cases",
+    "E-UK100_01 near-neighbors": "100-01 is reserved for formal generalization checks and must not leak into training",
+    "real3 pilot caveat": "three clean real training bundles are enough for the learning-signal pilot but not for a paper-grade full training claim",
 }
 
 REQUIRED_BUNDLE_FILES = ("instance.json", "distance_matrix.npy", "carbon_profile.csv")
+FORBIDDEN_TRAINING_MARKERS = ("verify", "demo", "E-UK25", "E-UK100_01")
 
 
 def build_manifest() -> dict[str, Any]:
@@ -58,6 +61,11 @@ def validate_manifest(manifest: dict[str, Any], *, root: str | Path = ".") -> No
     if missing:
         details = "; ".join(f"{bundle}: {', '.join(files)}" for bundle, files in missing.items())
         raise FileNotFoundError(f"Missing required bundle files: {details}")
+
+    forbidden = sorted(bundle for bundle in train if _forbidden_training_reason(bundle))
+    if forbidden:
+        details = "; ".join(f"{bundle}: {_forbidden_training_reason(bundle)}" for bundle in forbidden)
+        raise ValueError(f"Forbidden training bundle(s): {details}")
 
 
 def missing_bundle_files(bundle_dirs: list[str] | tuple[str, ...], *, root: str | Path = ".") -> dict[str, list[str]]:
@@ -95,6 +103,13 @@ def _checked_bundle_list(manifest: dict[str, Any], key: str) -> list[str]:
     if not isinstance(value, list) or not all(isinstance(item, str) for item in value):
         raise ValueError(f"Manifest field {key!r} must be a list of bundle path strings")
     return value
+
+
+def _forbidden_training_reason(bundle_dir: str) -> str:
+    for marker in FORBIDDEN_TRAINING_MARKERS:
+        if marker in bundle_dir:
+            return f"contains {marker!r}"
+    return ""
 
 
 def _parse_args(argv: list[str] | None = None) -> argparse.Namespace:

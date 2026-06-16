@@ -183,6 +183,8 @@ def parse_algorithms(value: str) -> tuple[str, ...]:
 
 
 def _selected_bundles(manifest: dict[str, Any], split: str) -> list[str]:
+    if split == "train":
+        return list(manifest["train"])
     if split == "held_out":
         return list(manifest["held_out"])
     if split == "formal_eval":
@@ -211,7 +213,7 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         default="random_full,alpha_ucb_env",
         help="Comma-separated algorithms: random_full,alpha_ucb_env,official_winner_kernel,ppo_full,ppo_operator_only.",
     )
-    parser.add_argument("--split", choices=("held_out", "formal_eval", "all"), default="held_out")
+    parser.add_argument("--split", choices=("train", "held_out", "formal_eval", "all"), default="held_out")
     parser.add_argument("--bundle-filter", help="Comma-separated substrings used to narrow the selected split.")
     parser.add_argument("--eval-budget", type=int, default=16000)
     parser.add_argument("--seeds", default="1,2,3")
