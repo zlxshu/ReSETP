@@ -19,3 +19,19 @@
   - `.git/objects/pack/._pack-cede3e596865a3149f2ebebc8b3db2d85090359b.pack`
 - Cleanup command: `find .git/objects/pack -maxdepth 1 -type f -name '._pack-*' -print -delete`.
 - Scope guard: do not modify dependencies, do not start PPO training, and do not change model semantics or formal experiment outputs.
+
+## Phase 1 - 2026-06-16 17:55:55
+
+- Commit: `1ba776d758054072d935c97c1f0f3d1f448fd643`
+- Command: `python -m setp_solver.search.winner_nondeterminism phase1 --seed 2 --eval-budget 16000 --max-runtime-seconds 900.0 --repeats 3 --workers 3`
+- Stdout: `classification=environment_numeric_drift system=4779.053444002934 venv=4909.530249672552`
+- Stderr: ``
+- Conclusion: System Python and RL venv are each internally deterministic but converge to different anchors; use environment-local gates.
+
+## Phase 2/3 - 2026-06-16 17:56:16
+
+- Commit: `1ba776d758054072d935c97c1f0f3d1f448fd643`
+- Command: `python -m setp_solver.search.winner_nondeterminism phase2-skipped`
+- Stdout: `classification=environment_numeric_drift`
+- Stderr: ``
+- Conclusion: System Python and RL venv are each internally deterministic but converge to different anchors; use environment-local gates.
