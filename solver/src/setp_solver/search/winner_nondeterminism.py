@@ -623,6 +623,9 @@ import json
 import sys
 from setp_solver.search.alns_crush import INSTANCE_DIRS
 from setp_solver.search.candidates import run_candidate, solution_signature_hash
+from setp_solver.search.bundle import load_search_bundle
+from setp_solver.check import check_solution
+from setp_solver.prices import DEFAULT_PRICES
 seed = int(sys.argv[1])
 eval_budget = int(sys.argv[2])
 max_runtime_seconds = float(sys.argv[3])
@@ -633,12 +636,14 @@ result = run_candidate(
     eval_budget=eval_budget,
     max_runtime_seconds=max_runtime_seconds,
 )
+bundle = load_search_bundle(INSTANCE_DIRS["100-01-24h"])
+violations = check_solution(result.best_solution, bundle.instance, DEFAULT_PRICES) if result.best_solution is not None else ["missing_solution"]
 payload = {
     "success": result.best_solution is not None,
-    "best_obj": float(result.best_obj),
+    "best_obj": float(result.best_cost) if result.best_cost is not None else float("nan"),
     "evaluations": int(result.evals),
     "candidate_scores": int(result.candidate_scores),
-    "violation_count": int(result.violations),
+    "violation_count": len(violations),
     "feasible": bool(result.feasible),
     "solution_signature_hash": solution_signature_hash(result.best_solution) if result.best_solution is not None else "",
     "operator_base_id": "",
