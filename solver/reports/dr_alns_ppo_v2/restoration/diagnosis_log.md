@@ -16,3 +16,11 @@
 - Snapshot staging policy: include restoration-relevant code/reports/instances, exclude `.venv`, `__pycache__`, `._*`, and do not add new Reference Algorithm files.
 - Safety snapshot commit: `2aeb65ed98de78ad38bcd0fb14e63ec9c010c247` (`Snapshot degraded winner kernel + PPO v2 wiring before restoration`).
 - Commit created a new macOS AppleDouble pack metadata set under `.git/objects/pack/._pack-7c6b...`; it was cleaned with the same `rm -f .git/objects/pack/._pack-*` pattern before continuing.
+
+## Phase 1 - 2026-06-16 14:35:32
+
+- Commit: `6725e800649ef7c2db37254c0704caf03f7ff353`
+- Command: `python -m setp_solver.search.winner_restoration verify-gold`
+- Stdout: `gate=PASS_GOLD_RECOMPUTE mean=4878.331796187524 best=4779.053444002934 max_abs_delta=0`
+- Stderr: ``
+- Conclusion: Scoring semantics match gold solutions.
