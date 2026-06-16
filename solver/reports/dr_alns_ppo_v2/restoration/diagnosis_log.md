@@ -14,3 +14,5 @@
 - Post-cleanup observation: `git status --short --untracked-files=all` no longer emits non-monotonic pack index errors.
 - Important current-state correction: restoration started from HEAD `802d06f`, not `520e8a2`; the degraded winner/PPO code is already tracked in HEAD, while models and solver reports are ignored by `.gitignore` and must be force-added selectively.
 - Snapshot staging policy: include restoration-relevant code/reports/instances, exclude `.venv`, `__pycache__`, `._*`, and do not add new Reference Algorithm files.
+- Safety snapshot commit: `2aeb65ed98de78ad38bcd0fb14e63ec9c010c247` (`Snapshot degraded winner kernel + PPO v2 wiring before restoration`).
+- Commit created a new macOS AppleDouble pack metadata set under `.git/objects/pack/._pack-7c6b...`; it was cleaned with the same `rm -f .git/objects/pack/._pack-*` pattern before continuing.
