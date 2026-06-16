@@ -105,11 +105,9 @@ def build_vec_env(
     control_mode: str,
     output_dir: Path,
     vec_env: str,
+    env_repeats: int = 1,
 ):
-    env_specs = [
-        {"bundle": bundle_dir, "seed": int(seed) + idx}
-        for idx, bundle_dir in enumerate(bundles)
-    ]
+    env_specs = build_env_specs(bundles, seed=seed, env_repeats=env_repeats)
     factories = [
         make_env(
             spec["bundle"],
@@ -132,6 +130,20 @@ def build_vec_env(
     return monitor, env_specs
 
 
+def build_env_specs(bundles: list[str], *, seed: int, env_repeats: int = 1) -> list[dict[str, Any]]:
+    if int(env_repeats) < 1:
+        raise ValueError("--env-repeats must be >= 1")
+    return [
+        {
+            "bundle": bundle_dir,
+            "seed": int(seed) + repeat_idx * len(bundles) + bundle_idx,
+            "repeat": repeat_idx,
+        }
+        for repeat_idx in range(int(env_repeats))
+        for bundle_idx, bundle_dir in enumerate(bundles)
+    ]
+
+
 def train(args: argparse.Namespace) -> None:
     output_dir = Path(args.output_dir)
     output_dir.mkdir(parents=True, exist_ok=True)
@@ -147,6 +159,7 @@ def train(args: argparse.Namespace) -> None:
             control_mode=args.control_mode,
             output_dir=output_dir,
             vec_env=args.vec_env,
+            env_repeats=args.env_repeats,
         )
         model = PPO(
             "MlpPolicy",
@@ -168,6 +181,7 @@ def train(args: argparse.Namespace) -> None:
             "control_mode": args.control_mode,
             "policy": "MlpPolicy",
             "vec_env": args.vec_env,
+            "env_repeats": int(args.env_repeats),
             "n_steps": int(args.n_steps),
             "batch_size": int(args.batch_size),
             "n_epochs": int(args.n_epochs),
@@ -195,6 +209,12 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser.add_argument("--base-temperature", type=float, default=100.0)
     parser.add_argument("--control-mode", choices=("ppo_full", "operator_only"), default="ppo_full")
     parser.add_argument("--vec-env", choices=("subproc", "dummy"), default="subproc")
+    parser.add_argument(
+        "--env-repeats",
+        type=int,
+        default=1,
+        help="Repeat the training bundle list with distinct seeds to increase vectorized environment parallelism.",
+    )
     parser.add_argument("--n-steps", type=int, default=1024)
     parser.add_argument("--batch-size", type=int, default=256)
     parser.add_argument("--n-epochs", type=int, default=5)
