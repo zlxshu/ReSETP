@@ -57,15 +57,15 @@ def validate_manifest(manifest: dict[str, Any], *, root: str | Path = ".") -> No
         joined = ", ".join(duplicates)
         raise ValueError(f"Bundle appears more than once: {joined}")
 
-    missing = missing_bundle_files(all_bundles, root=root)
-    if missing:
-        details = "; ".join(f"{bundle}: {', '.join(files)}" for bundle, files in missing.items())
-        raise FileNotFoundError(f"Missing required bundle files: {details}")
-
     forbidden = sorted(bundle for bundle in train if _forbidden_training_reason(bundle))
     if forbidden:
         details = "; ".join(f"{bundle}: {_forbidden_training_reason(bundle)}" for bundle in forbidden)
         raise ValueError(f"Forbidden training bundle(s): {details}")
+
+    missing = missing_bundle_files(all_bundles, root=root)
+    if missing:
+        details = "; ".join(f"{bundle}: {', '.join(files)}" for bundle, files in missing.items())
+        raise FileNotFoundError(f"Missing required bundle files: {details}")
 
 
 def missing_bundle_files(bundle_dirs: list[str] | tuple[str, ...], *, root: str | Path = ".") -> dict[str, list[str]]:

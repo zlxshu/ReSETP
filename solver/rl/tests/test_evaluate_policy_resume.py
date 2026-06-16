@@ -1,7 +1,17 @@
 import csv
 import json
 
-from dr_alns_ppo.evaluate_policy import filter_tasks_for_resume, load_existing_rows
+from dr_alns_ppo.evaluate_policy import _selected_bundles, filter_tasks_for_resume, load_existing_rows
+
+
+def test_selected_bundles_supports_train_split():
+    manifest = {
+        "train": ["train-a", "train-b"],
+        "held_out": ["held-a"],
+        "formal_eval": ["formal-a"],
+    }
+
+    assert _selected_bundles(manifest, "train") == ["train-a", "train-b"]
 
 
 def test_filter_tasks_for_resume_keeps_completed_rows():

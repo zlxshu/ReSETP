@@ -1,10 +1,9 @@
 {
   "schema_version": "dr-alns-ppo-bundle-manifest.v1",
   "train": [
-    "models/data_bundle/generated_instances/verify_20251113",
-    "models/data_bundle/generated_instances/verify_20251113_evheavy",
-    "models/data_bundle/generated_instances/demo_carbon",
-    "models/data_bundle/generated_instances/E-UK100_02__u0_seed2_24h_20251113"
+    "models/data_bundle/generated_instances/E-UK100_02__u0_seed2_24h_20251113",
+    "models/data_bundle/generated_instances/E-UK24h-三班-150",
+    "models/data_bundle/generated_instances/E-UK24h-三班-200"
   ],
   "held_out": [
     "models/data_bundle/generated_instances/E-UK100_03__u0_seed3_24h_20251113"
@@ -14,6 +13,9 @@
     "models/data_bundle/generated_instances/E-UK24h-三班-01"
   ],
   "excluded_from_training_reason": {
-    "100-01/L-main only": "single-main-case training would overfit and is not evidence of general DRL control"
+    "100-01/L-main only": "single-main-case training would overfit and is not evidence of general DRL control",
+    "verify/demo/25c bundles": "toy and verification bundles are not representative 100-customer SETP training cases",
+    "E-UK100_01 near-neighbors": "100-01 is reserved for formal generalization checks and must not leak into training",
+    "real3 pilot caveat": "three clean real training bundles are enough for the learning-signal pilot but not for a paper-grade full training claim"
   }
 }
