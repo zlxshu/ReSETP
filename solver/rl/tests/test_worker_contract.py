@@ -4,8 +4,10 @@ import subprocess
 import sys
 from pathlib import Path
 
+import pytest
+
 from dr_alns_ppo.action_space import decode_action
-from dr_alns_ppo.worker_client import WorkerClient, _worker_env
+from dr_alns_ppo.worker_client import WorkerClient, _worker_env, resolve_worker_python
 
 FIXTURE_DIR = "models/data_bundle/generated_instances/verify_20251113"
 REPO_ROOT = Path(__file__).resolve().parents[3]
@@ -25,6 +27,8 @@ def test_worker_step_counts_one_candidate_eval() -> None:
     assert response["repair_delta_count"] > 0
     assert response["trace"]["operator_base_id"] == "winner_kernel_v1"
     assert response["trace"]["winner_operator_module"] == "setp_solver.search.winner_operators"
+    assert response["trace"]["worker_python_executable"]
+    assert response["trace"]["worker_numpy_version"]
     assert response["trace"]["destroy_id"] == "random_customer_removal"
     assert response["trace"]["repair_id"] == "regret2_insert_repair"
     assert response["trace"]["actual_evals_added"] == 1
@@ -192,6 +196,20 @@ def test_worker_client_does_not_inherit_pythonpath(monkeypatch) -> None:
     assert "/tmp/should-not-leak" not in env["PYTHONPATH"]
     assert str(REPO_ROOT / "solver" / "rl") in env["PYTHONPATH"].split(os.pathsep)
     assert str(REPO_ROOT / "solver" / "src") in env["PYTHONPATH"].split(os.pathsep)
+
+
+def test_worker_python_env_override_is_used(monkeypatch) -> None:
+    monkeypatch.setenv("SETP_WORKER_PYTHON", sys.executable)
+
+    assert resolve_worker_python(REPO_ROOT) == Path(sys.executable).resolve()
+
+
+def test_worker_python_env_override_rejects_missing_path(monkeypatch, tmp_path) -> None:
+    missing = tmp_path / "missing-python"
+    monkeypatch.setenv("SETP_WORKER_PYTHON", str(missing))
+
+    with pytest.raises(RuntimeError, match="non-executable Python"):
+        resolve_worker_python(REPO_ROOT)
 
 
 def test_worker_client_close_reaps_already_exited_worker() -> None:

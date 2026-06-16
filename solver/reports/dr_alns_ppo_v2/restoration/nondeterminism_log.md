@@ -59,3 +59,11 @@
 - Stdout: `gate=HALT_VENV_SELF_CHECK`
 - Stderr: ``
 - Conclusion: Environment drift is confirmed, but the RL venv self-check did not pass the venv fairness gate.
+
+## Reproducibility note - 2026-06-16 19:18:11
+
+- Commit: `cc7b0485e76f33ae210d1dd2571fcfe613fe1f79`
+- Command: `python -m setp_solver.search.winner_nondeterminism reproducibility-note`
+- Stdout: `classification=floating_or_blas_numeric_drift`
+- Stderr: ``
+- Conclusion: NumPy default_rng probes match across environments, so the winner-cost drift is not explained by the sampled RNG stream; the remaining evidence points to numeric/BLAS/Python-version drift.

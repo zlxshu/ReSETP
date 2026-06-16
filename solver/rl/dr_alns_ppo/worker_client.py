@@ -6,10 +6,15 @@ import subprocess
 import sys
 import tempfile
 from dataclasses import asdict
+from functools import lru_cache
 from pathlib import Path
 from typing import Any
 
 from .schemas import DecodedAction
+
+
+RESTORATION_FINGERPRINT = Path("solver/reports/dr_alns_ppo_v2/restoration/phase1_env_fingerprints.json")
+WORKER_PYTHON_ENV = "SETP_WORKER_PYTHON"
 
 
 class WorkerClient:
@@ -19,8 +24,10 @@ class WorkerClient:
         self._stderr = tempfile.TemporaryFile(mode="w+t", encoding="utf-8")
         self._repo_root = _repo_root()
         resolved_bundle_dir = _resolve_bundle_dir(bundle_dir, self._repo_root)
+        worker_python = resolve_worker_python(self._repo_root)
+        self.worker_python = str(worker_python)
         cmd = [
-            sys.executable,
+            str(worker_python),
             "-m",
             "dr_alns_ppo.worker",
             "--bundle-dir",
@@ -134,7 +141,7 @@ class WorkerClient:
             pass
 
 
-__all__ = ["WorkerClient"]
+__all__ = ["WorkerClient", "resolve_worker_python", "_worker_env"]
 
 
 def _repo_root() -> Path:
@@ -146,6 +153,96 @@ def _resolve_bundle_dir(bundle_dir: str | Path, repo_root: Path) -> Path:
     if not path.is_absolute():
         path = repo_root / path
     return path.resolve()
+
+
+def resolve_worker_python(repo_root: Path | None = None) -> Path:
+    """Resolve the Python interpreter used by solver workers.
+
+    The PPO process may run inside the RL venv, but solver workers should use
+    the system Python environment that produced the audited winner baseline.
+    """
+
+    root = _repo_root() if repo_root is None else Path(repo_root)
+    configured = os.environ.get(WORKER_PYTHON_ENV)
+    if configured:
+        candidate = Path(configured).expanduser()
+        if not candidate.is_absolute():
+            candidate = (Path.cwd() / candidate).resolve()
+        else:
+            candidate = candidate.resolve()
+        _require_executable(candidate, source=WORKER_PYTHON_ENV)
+        return candidate
+    auto = _auto_worker_python(root)
+    if auto is not None:
+        return auto
+    print(
+        "WARNING: SETP worker using current Python interpreter; if this is the RL venv, "
+        "winner-kernel costs may drift from the system-Python anchor. "
+        f"Set {WORKER_PYTHON_ENV} to the audited system Python.",
+        file=sys.stderr,
+    )
+    return Path(sys.executable).resolve()
+
+
+@lru_cache(maxsize=8)
+def _auto_worker_python(repo_root_text: str | Path) -> Path | None:
+    root = Path(repo_root_text)
+    candidates: list[Path] = []
+    fingerprint = root / RESTORATION_FINGERPRINT
+    if fingerprint.exists():
+        try:
+            payload = json.loads(fingerprint.read_text(encoding="utf-8"))
+            executable = payload.get("fingerprints", {}).get("system", {}).get("executable")
+            if executable:
+                candidates.append(Path(str(executable)))
+        except Exception:
+            pass
+    candidates.extend(
+        [
+            Path("/opt/anaconda3/bin/python"),
+            Path("/opt/homebrew/bin/python3"),
+            Path("/usr/local/bin/python3"),
+            Path("/usr/bin/python3"),
+        ]
+    )
+    seen: set[str] = set()
+    for candidate in candidates:
+        resolved = candidate.expanduser().resolve()
+        if str(resolved) in seen:
+            continue
+        seen.add(str(resolved))
+        if not _is_executable(resolved):
+            continue
+        if _candidate_can_import_worker(resolved, root):
+            return resolved
+    return None
+
+
+def _require_executable(path: Path, *, source: str) -> None:
+    if not _is_executable(path):
+        raise RuntimeError(f"{source} points to a non-executable Python: {path}")
+
+
+def _is_executable(path: Path) -> bool:
+    return path.exists() and path.is_file() and os.access(path, os.X_OK)
+
+
+@lru_cache(maxsize=16)
+def _candidate_can_import_worker(python_exe: Path, repo_root: Path) -> bool:
+    proc = subprocess.run(
+        [
+            str(python_exe),
+            "-c",
+            "import numpy; import setp_solver; import dr_alns_ppo.worker; print('ok')",
+        ],
+        cwd=repo_root,
+        env=_worker_env(repo_root),
+        text=True,
+        capture_output=True,
+        check=False,
+        timeout=30.0,
+    )
+    return proc.returncode == 0
 
 
 def _worker_env(repo_root: Path) -> dict[str, str]:

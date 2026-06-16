@@ -33,6 +33,11 @@ OPERATOR_SET = WinnerOperatorSet.create()
 DESTROY_IDS = [name for name, _ in OPERATOR_SET.destroy_ops]
 REPAIR_IDS = [name for name, _ in OPERATOR_SET.repair_ops]
 MAX_THRESHOLD_RATIO = 0.02
+RUNTIME_TRACE = {
+    "worker_python_executable": sys.executable,
+    "worker_python_version": sys.version,
+    "worker_numpy_version": np.__version__,
+}
 
 
 @dataclass
@@ -141,6 +146,7 @@ class JsonlWorker:
             "solution": solution_to_json(state.current_solution),
             "trace": {
                 **winner_trace,
+                **RUNTIME_TRACE,
                 "op": "step",
                 "step_index": int(state.step_index),
                 "operator_base_id": operator_base_id,
@@ -242,6 +248,7 @@ class JsonlWorker:
             "metrics": summary["metrics"],
             "solution": solution_to_json(state.current_solution),
             "trace": {
+                **RUNTIME_TRACE,
                 "op": op,
                 "operator_base_id": operator_base_id,
                 "winner_operator_module": winner_operator_module,

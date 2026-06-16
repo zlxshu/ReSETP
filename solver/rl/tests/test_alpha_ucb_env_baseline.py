@@ -14,6 +14,8 @@ def test_alpha_ucb_env_uses_winner_kernel_trace_and_budget() -> None:
     assert row["candidate_scores"] == 5
     assert row["operator_base_id"] == "winner_kernel_v1"
     assert row["control_mode"] == "kernel_default"
+    assert row["worker_python_executable"]
+    assert row["worker_numpy_version"]
     assert row["feasible"] is True
     assert set(row["destroy_counts"]).issubset(
         {
@@ -35,4 +37,6 @@ def test_official_winner_kernel_anchor_returns_same_audit_base() -> None:
     assert row["candidate_scores"] == 5
     assert row["operator_base_id"] == "winner_kernel_v1"
     assert row["control_mode"] == "official_kernel"
+    assert row["worker_python_executable"]
+    assert row["worker_numpy_version"]
     assert row["feasible"] is True

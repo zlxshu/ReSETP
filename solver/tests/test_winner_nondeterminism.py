@@ -5,9 +5,11 @@ import unittest
 
 from setp_solver.search.winner_nondeterminism import (
     RESTORATION_DIR,
+    classify_reproducibility_root_cause,
     classify_context_matrix,
     collect_env_fingerprint,
     self_check_gate_for_summary,
+    self_check_gate_for_system_worker_summary,
 )
 
 
@@ -67,6 +69,35 @@ class WinnerNondeterminismTests(unittest.TestCase):
         self.assertEqual(
             self_check_gate_for_summary(classification, {"gate": "HALT_VENV_SELF_CHECK"}),
             "HALT_VENV_SELF_CHECK",
+        )
+
+    def test_reproducibility_root_cause_detects_rng_stream_drift(self) -> None:
+        result = classify_reproducibility_root_cause(
+            {
+                "system": {"numpy_version": "2.3.5", "integers": [1], "random": [0.1], "choice": [2]},
+                "venv": {"numpy_version": "1.26.4", "integers": [9], "random": [0.2], "choice": [3]},
+            }
+        )
+
+        self.assertEqual(result["classification"], "numpy_rng_stream_drift")
+        self.assertFalse(result["rng_probe_equal"])
+
+    def test_reproducibility_root_cause_detects_numeric_drift_when_rng_matches(self) -> None:
+        probe = {"numpy_version": "2.3.5", "integers": [1], "random": [0.1], "choice": [2]}
+
+        result = classify_reproducibility_root_cause({"system": probe, "venv": dict(probe, numpy_version="1.26.4")})
+
+        self.assertEqual(result["classification"], "floating_or_blas_numeric_drift")
+        self.assertTrue(result["rng_probe_equal"])
+
+    def test_system_worker_gate_requires_pass_summary(self) -> None:
+        self.assertEqual(
+            self_check_gate_for_system_worker_summary({"gate": "PASS_SYSTEM_WORKER_SELF_CHECK"}),
+            "PASS_SYSTEM_WORKER_SELF_CHECK",
+        )
+        self.assertEqual(
+            self_check_gate_for_system_worker_summary({"gate": "HALT_SYSTEM_WORKER_SELF_CHECK"}),
+            "HALT_SYSTEM_WORKER_SELF_CHECK",
         )
 
     def test_nondeterminism_reports_stay_under_restoration_dir(self) -> None:

@@ -12,6 +12,7 @@ from typing import Any, Callable
 from stable_baselines3 import PPO
 
 from .env import SetpAlnsEnv
+from .worker_client import _worker_env, resolve_worker_python
 
 
 RESULT_COLUMNS = [
@@ -32,6 +33,9 @@ RESULT_COLUMNS = [
     "destroy_counts",
     "repair_counts",
     "q_ratio_counts",
+    "worker_python_executable",
+    "worker_python_version",
+    "worker_numpy_version",
 ]
 
 
@@ -129,38 +133,79 @@ def run_official_winner_kernel(
     eval_budget: int,
     max_runtime_seconds: float = 900.0,
 ) -> dict[str, Any]:
-    from setp_solver.search.candidates import solution_signature_hash as solver_solution_signature_hash
-    from setp_solver.search.winner_operators import WinnerKernelConfig, operator_base_id, run_winner_kernel
+    repo_root = _repo_root()
+    worker_python = resolve_worker_python(repo_root)
+    script = r"""
+import json
+import sys
+from pathlib import Path
 
-    result = run_winner_kernel(
-        bundle_dir,
-        config=WinnerKernelConfig(
-            seed=int(seed),
-            eval_budget=int(eval_budget),
-            max_runtime_seconds=float(max_runtime_seconds),
-        ),
-    )
-    solution = result["best_solution"]
+import numpy as np
+
+from setp_solver.search.candidates import solution_signature_hash
+from setp_solver.search.winner_operators import WinnerKernelConfig, operator_base_id, run_winner_kernel
+
+bundle_dir = Path(sys.argv[1])
+seed = int(sys.argv[2])
+eval_budget = int(sys.argv[3])
+max_runtime_seconds = float(sys.argv[4])
+result = run_winner_kernel(
+    bundle_dir,
+    config=WinnerKernelConfig(
+        seed=seed,
+        eval_budget=eval_budget,
+        max_runtime_seconds=max_runtime_seconds,
+    ),
+)
+solution = result["best_solution"]
+payload = {
+    "algorithm": "official_winner_kernel",
+    "bundle": str(bundle_dir),
+    "seed": seed,
+    "eval_budget": eval_budget,
+    "best_obj": float(result["best_cost"]),
+    "actual_evals": int(result["evaluations"]),
+    "candidate_scores": int(result["evaluations"]),
+    "repair_delta_count": 0,
+    "operator_base_id": operator_base_id,
+    "control_mode": "official_kernel",
+    "violation_count": int(result["violation_count"]),
+    "feasible": bool(result["feasible"]),
+    "solution_signature_hash": solution_signature_hash(solution),
+    "operator_counts": {},
+    "destroy_counts": {},
+    "repair_counts": {},
+    "q_ratio_counts": {},
+    "worker_python_executable": sys.executable,
+    "worker_python_version": sys.version,
+    "worker_numpy_version": np.__version__,
+}
+print(json.dumps(payload, ensure_ascii=False, sort_keys=True, separators=(",", ":")))
+"""
+    bundle_path = str(_resolve_path(bundle_dir, repo_root))
+    try:
+        proc = subprocess.run(
+            [str(worker_python), "-c", script, bundle_path, str(seed), str(eval_budget), str(max_runtime_seconds)],
+            cwd=repo_root,
+            env=_worker_env(repo_root),
+            text=True,
+            capture_output=True,
+            check=False,
+            timeout=max(60.0, float(max_runtime_seconds) + 120.0),
+        )
+    except subprocess.TimeoutExpired as exc:
+        raise RuntimeError(
+            f"official winner subprocess timed out after {exc.timeout}s for bundle={bundle_dir} seed={seed}"
+        ) from exc
+    if proc.returncode != 0:
+        raise RuntimeError(f"official winner subprocess failed rc={proc.returncode}: {proc.stderr[-4000:]}")
+    lines = [line for line in proc.stdout.splitlines() if line.strip()]
+    if not lines:
+        raise RuntimeError(f"official winner subprocess produced no JSON output; stderr={proc.stderr[-4000:]}")
+    row = json.loads(lines[-1])
+    row["bundle"] = bundle_dir
     return normalize_result_row(
-        {
-            "algorithm": "official_winner_kernel",
-            "bundle": bundle_dir,
-            "seed": seed,
-            "eval_budget": eval_budget,
-            "best_obj": float(result["best_cost"]),
-            "actual_evals": int(result["evaluations"]),
-            "candidate_scores": int(result["evaluations"]),
-            "repair_delta_count": 0,
-            "operator_base_id": operator_base_id,
-            "control_mode": "official_kernel",
-            "violation_count": int(result["violation_count"]),
-            "feasible": bool(result["feasible"]),
-            "solution_signature_hash": solver_solution_signature_hash(solution),
-            "operator_counts": {},
-            "destroy_counts": {},
-            "repair_counts": {},
-            "q_ratio_counts": {},
-        }
+        row
     )
 
 
@@ -255,6 +300,9 @@ def normalize_result_row(row: dict[str, Any]) -> dict[str, Any]:
     normalized["repair_delta_count"] = int(normalized["repair_delta_count"])
     normalized["operator_base_id"] = str(normalized.get("operator_base_id", "") or "")
     normalized["control_mode"] = str(normalized.get("control_mode", "") or "")
+    normalized["worker_python_executable"] = str(normalized.get("worker_python_executable", "") or "")
+    normalized["worker_python_version"] = str(normalized.get("worker_python_version", "") or "")
+    normalized["worker_numpy_version"] = str(normalized.get("worker_numpy_version", "") or "")
     normalized["violation_count"] = int(normalized.get("violation_count", 0) or 0)
     normalized["feasible"] = _coerce_bool(normalized["feasible"])
     for key in ("operator_counts", "destroy_counts", "repair_counts", "q_ratio_counts"):
@@ -323,6 +371,9 @@ def _run_env_policy(
         "destroy_counts": destroy_counts,
         "repair_counts": repair_counts,
         "q_ratio_counts": q_ratio_counts,
+        "worker_python_executable": str((last_response.get("trace", {}) or {}).get("worker_python_executable", "")),
+        "worker_python_version": str((last_response.get("trace", {}) or {}).get("worker_python_version", "")),
+        "worker_numpy_version": str((last_response.get("trace", {}) or {}).get("worker_numpy_version", "")),
     }
     return normalize_result_row(row)
 

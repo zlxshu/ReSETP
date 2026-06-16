@@ -32,6 +32,9 @@ DEFAULT_EVAL_BUDGET = 16_000
 DEFAULT_MAX_RUNTIME_SECONDS = 900.0
 DEFAULT_SEED = 2
 EPS = 1e-9
+FAIR_SA_REFERENCE = Path("solver/reports/alns_crush_v2/task1/fair_sa_reference_costs.json")
+RESTORED_GOLD_BY_SEED = Path("solver/reports/dr_alns_ppo_v2/restoration/phase2_current_vs_gold.csv")
+WORKER_PYTHON_ENV = "SETP_WORKER_PYTHON"
 
 
 @dataclass(frozen=True)
@@ -308,6 +311,166 @@ def write_phase5_self_check(
     return result
 
 
+def write_reproducibility_note(repo_root: str | Path, output_dir: str | Path) -> dict[str, Any]:
+    """Write the system-vs-venv reproducibility note without changing dependencies."""
+
+    root = Path(repo_root)
+    out = _ensure_output_dir(output_dir)
+    fingerprints = collect_env_fingerprint(root, out)
+    probes = {
+        "system": _rng_probe_for_python(root, _python_for_env(root, "system"), _pythonpath_for_env(root, "system")),
+        "venv": _rng_probe_for_python(root, _python_for_env(root, "venv"), _pythonpath_for_env(root, "venv")),
+    }
+    classification = classify_reproducibility_root_cause(probes)
+    result = {
+        "schema_version": "winner-reproducibility-note.v1",
+        "commit": _git(["rev-parse", "HEAD"], root).strip(),
+        "classification": classification,
+        "fingerprints": fingerprints["fingerprints"],
+        "rng_probes": probes,
+        "gold_standard_environment": {
+            "python_executable": fingerprints["fingerprints"]["system"].get("executable"),
+            "python_version": fingerprints["fingerprints"]["system"].get("python_version"),
+            "numpy_version": fingerprints["fingerprints"]["system"].get("numpy_version"),
+        },
+        "dependency_policy": "Do not modify the RL venv in this task; pin the system solver numpy version in reproduction docs.",
+    }
+    _write_json(out / "reproducibility_note.json", result)
+    (out / "reproducibility_note.md").write_text(_reproducibility_note_markdown(result), encoding="utf-8")
+    append_log(
+        out,
+        phase="Reproducibility note",
+        command="python -m setp_solver.search.winner_nondeterminism reproducibility-note",
+        stdout=f"classification={classification['classification']}",
+        stderr="",
+        conclusion=str(classification["conclusion"]),
+    )
+    return result
+
+
+def run_phase4_system_worker_gate(
+    repo_root: str | Path,
+    output_dir: str | Path,
+    *,
+    seeds: list[int],
+    eval_budget: int = DEFAULT_EVAL_BUDGET,
+    max_runtime_seconds: float = DEFAULT_MAX_RUNTIME_SECONDS,
+    workers: int = 1,
+) -> dict[str, Any]:
+    """Run the PPO lane through system-Python workers and build the new gate."""
+
+    root = Path(repo_root)
+    out = _ensure_output_dir(output_dir)
+    system_python = _python_for_env(root, "system")
+    started = time.perf_counter()
+    eval_payloads = _run_tasks(
+        [int(seed) for seed in seeds],
+        lambda seed: _run_evaluate_policy(
+            root,
+            out / "phase4_system_worker_eval" / f"seed{seed}",
+            seed=int(seed),
+            eval_budget=int(eval_budget),
+            max_runtime_seconds=float(max_runtime_seconds),
+            algorithms="official_winner_kernel,alpha_ucb_env",
+            jobs=1,
+            python_env="venv",
+            worker_python=system_python,
+        ),
+        workers=int(workers),
+    )
+    rows: list[dict[str, Any]] = []
+    for payload in eval_payloads:
+        for raw in payload.get("algorithm_rows", []):
+            rows.append(_system_worker_row_from_eval_policy(raw, payload))
+
+    sa_rows = _run_tasks(
+        [int(seed) for seed in seeds],
+        lambda seed: _run_system_fair_sa_task(
+            root,
+            seed=int(seed),
+            eval_budget=int(eval_budget),
+            max_runtime_seconds=float(max_runtime_seconds),
+            system_python=system_python,
+        ),
+        workers=int(workers),
+    )
+    rows.extend(sa_rows)
+    rows.sort(key=lambda row: (str(row["algorithm"]), int(row["seed"])))
+    summary = _system_worker_summary(rows, root=root)
+    result = {
+        "schema_version": "winner-system-worker-gate.v1",
+        "commit": _git(["rev-parse", "HEAD"], root).strip(),
+        "worker_python": str(system_python),
+        "eval_budget": int(eval_budget),
+        "max_runtime_seconds": float(max_runtime_seconds),
+        "elapsed_seconds": time.perf_counter() - started,
+        "summary": summary,
+        "rows": rows,
+    }
+    _write_csv(out / "phase4_system_worker_matrix.csv", rows)
+    _write_json(out / "phase4_system_worker_matrix.json", result)
+    _write_json(out / "system_worker_anchor.json", result)
+    (out / "phase4_system_worker_matrix.md").write_text(_system_worker_report(result), encoding="utf-8")
+    self_check = write_phase5_system_worker_self_check(root, out, result)
+    result["self_check_gate"] = self_check["gate"]
+    append_log(
+        out,
+        phase="Phase 4 system-worker gate",
+        command=(
+            "python -m setp_solver.search.winner_nondeterminism system-worker-gate "
+            f"--seeds {','.join(str(seed) for seed in seeds)} --eval-budget {eval_budget}"
+        ),
+        stdout=(
+            f"gate={summary.get('gate')} winner_mean={summary.get('official_winner_mean')} "
+            f"alpha_mean={summary.get('alpha_ucb_env_mean')} fair_sa_mean={summary.get('fair_sa_mean')}"
+        ),
+        stderr="",
+        conclusion=str(summary.get("conclusion", "")),
+    )
+    return result
+
+
+def write_phase5_system_worker_self_check(
+    repo_root: str | Path,
+    output_dir: str | Path,
+    phase4_system_worker: dict[str, Any],
+) -> dict[str, Any]:
+    """Write the PPO self-check for the system-worker architecture."""
+
+    root = Path(repo_root)
+    out = _ensure_output_dir(output_dir)
+    summary = dict(phase4_system_worker.get("summary") or {})
+    gate = self_check_gate_for_system_worker_summary(summary)
+    if gate == "PASS_SYSTEM_WORKER_SELF_CHECK":
+        reason = "System-Python worker lane reproduces the winner anchor, beats fair SA, and has zero violations."
+    else:
+        reason = str(summary.get("conclusion") or "System-Python worker self-check did not pass.")
+    result = {
+        "schema_version": "winner-system-worker-self-check.v1",
+        "commit": _git(["rev-parse", "HEAD"], root).strip(),
+        "gate": gate,
+        "started_training": False,
+        "reason": reason,
+        "phase4_system_worker_summary": summary,
+        "system_reference": {
+            "seed2_best_cost": GOLD_SEED2_COST,
+            "ten_seed_mean_cost": GOLD_MEAN_COST,
+        },
+    }
+    _write_json(out / "phase5_self_check.json", result)
+    _write_json(out / "self_check.json", result)
+    (out / "gate_report.md").write_text(_system_worker_gate_report(result), encoding="utf-8")
+    append_log(
+        out,
+        phase="Phase 5 system-worker self-check",
+        command="python -m setp_solver.search.winner_nondeterminism system-worker-gate",
+        stdout=f"gate={gate}",
+        stderr="",
+        conclusion=reason,
+    )
+    return result
+
+
 def classify_context_matrix(rows: list[dict[str, Any]]) -> dict[str, Any]:
     """Classify whether the matrix shows code nondeterminism or environment drift."""
 
@@ -367,6 +530,40 @@ def self_check_gate_for_summary(classification: dict[str, Any], phase4_summary: 
     if classification.get("classification") == "deterministic_same_anchor":
         return "PASS_SYSTEM_ANCHOR_SELF_CHECK"
     return "HALT_CODE_NONDETERMINISM"
+
+
+def classify_reproducibility_root_cause(probes: dict[str, dict[str, Any]]) -> dict[str, Any]:
+    """Classify whether the environment drift is visible in NumPy RNG streams."""
+
+    system = probes.get("system") or {}
+    venv = probes.get("venv") or {}
+    rng_fields = ("integers", "random", "choice")
+    rng_equal = all(system.get(field) == venv.get(field) for field in rng_fields)
+    if rng_equal:
+        classification = "floating_or_blas_numeric_drift"
+        conclusion = (
+            "NumPy default_rng probes match across environments, so the winner-cost drift is not explained "
+            "by the sampled RNG stream; the remaining evidence points to numeric/BLAS/Python-version drift."
+        )
+    else:
+        classification = "numpy_rng_stream_drift"
+        conclusion = (
+            "NumPy default_rng probes differ across environments; same seed can drive a different ALNS "
+            "trajectory before any BLAS-level effects."
+        )
+    return {
+        "classification": classification,
+        "conclusion": conclusion,
+        "system_numpy_version": system.get("numpy_version"),
+        "venv_numpy_version": venv.get("numpy_version"),
+        "rng_probe_equal": rng_equal,
+    }
+
+
+def self_check_gate_for_system_worker_summary(summary: dict[str, Any]) -> str:
+    """Pure helper for the system-worker PPO gate."""
+
+    return "PASS_SYSTEM_WORKER_SELF_CHECK" if summary.get("gate") == "PASS_SYSTEM_WORKER_SELF_CHECK" else "HALT_SYSTEM_WORKER_SELF_CHECK"
 
 
 def _run_context_once(
@@ -470,6 +667,7 @@ def _run_evaluate_policy(
     algorithms: str,
     jobs: int,
     python_env: str,
+    worker_python: Path | None = None,
 ) -> dict[str, Any]:
     output_dir.mkdir(parents=True, exist_ok=True)
     command = [
@@ -495,10 +693,13 @@ def _run_evaluate_policy(
         "--official-max-runtime-seconds",
         str(max_runtime_seconds),
     ]
+    env = _env_for_pythonpath(root, _pythonpath_for_env(root, python_env))
+    if worker_python is not None:
+        env[WORKER_PYTHON_ENV] = str(worker_python)
     proc = _run_command(
         command,
         cwd=root,
-        env=_env_for_pythonpath(root, _pythonpath_for_env(root, python_env)),
+        env=env,
         timeout=max(60.0, max_runtime_seconds * max(1, len(algorithms.split(","))) + 180.0),
     )
     csv_path = output_dir / "comparison.csv"
@@ -654,6 +855,45 @@ print(json.dumps(payload, ensure_ascii=False, sort_keys=True))
 """
 
 
+def _run_system_fair_sa_task(
+    root: Path,
+    *,
+    seed: int,
+    eval_budget: int,
+    max_runtime_seconds: float,
+    system_python: Path,
+) -> dict[str, Any]:
+    payload = _run_python_json(
+        root,
+        system_python,
+        _pythonpath_for_env(root, "system"),
+        _sa_script(),
+        [str(seed), str(eval_budget), str(max_runtime_seconds)],
+        timeout=max(60.0, max_runtime_seconds + 120.0),
+    )
+    row = _system_worker_row_from_payload("scikit-opt-SA", payload, seed)
+    row["python_env"] = "system"
+    row["worker_python_executable"] = str(system_python)
+    return row
+
+
+def _rng_probe_for_python(root: Path, python_exe: Path, pythonpath: str) -> dict[str, Any]:
+    script = r"""
+import json
+import numpy as np
+rng = np.random.default_rng(2)
+payload = {
+    "numpy_version": np.__version__,
+    "bit_generator": type(rng.bit_generator).__name__,
+    "integers": rng.integers(0, 1000000, size=24).tolist(),
+    "random": [float(value) for value in rng.random(24)],
+    "choice": rng.choice(17, size=24, replace=True).tolist(),
+}
+print(json.dumps(payload, ensure_ascii=False, sort_keys=True))
+"""
+    return _run_python_json(root, python_exe, pythonpath, script, [], timeout=60.0)
+
+
 def _fingerprint_for_python(root: Path, python_exe: Path, pythonpath: str) -> dict[str, Any]:
     script = r"""
 import contextlib
@@ -795,6 +1035,54 @@ def _phase4_row_from_eval_policy(row: dict[str, Any]) -> dict[str, Any]:
     }
 
 
+def _system_worker_row_from_eval_policy(row: dict[str, Any], payload: dict[str, Any]) -> dict[str, Any]:
+    return {
+        "algorithm": str(row.get("algorithm", "")),
+        "seed": _int(row.get("seed")),
+        "python_env": "venv_parent_system_worker",
+        "success": bool(payload.get("success", False)),
+        "best_obj": _float(row.get("best_obj")),
+        "evaluations": _int(row.get("actual_evals")),
+        "candidate_scores": _int(row.get("candidate_scores")),
+        "repair_delta_count": _int(row.get("repair_delta_count")),
+        "violation_count": _int(row.get("violation_count")),
+        "feasible": _coerce_bool(row.get("feasible")),
+        "solution_signature_hash": str(row.get("solution_signature_hash", "")),
+        "operator_base_id": str(row.get("operator_base_id", "")),
+        "control_mode": str(row.get("control_mode", "")),
+        "worker_python_executable": str(row.get("worker_python_executable", "")),
+        "worker_python_version": str(row.get("worker_python_version", "")),
+        "worker_numpy_version": str(row.get("worker_numpy_version", "")),
+        "returncode": int(payload.get("returncode", 0)),
+        "stderr_tail": str(payload.get("stderr_tail", ""))[-500:],
+        "stdout_tail": str(payload.get("stdout_tail", ""))[-500:],
+    }
+
+
+def _system_worker_row_from_payload(algorithm: str, payload: dict[str, Any], seed: int) -> dict[str, Any]:
+    return {
+        "algorithm": algorithm,
+        "seed": int(seed),
+        "python_env": "system",
+        "success": bool(payload.get("success", False)),
+        "best_obj": _float(payload.get("best_obj")),
+        "evaluations": _int(payload.get("evaluations")),
+        "candidate_scores": _int(payload.get("candidate_scores")),
+        "repair_delta_count": _int(payload.get("repair_delta_count")),
+        "violation_count": _int(payload.get("violation_count")),
+        "feasible": _coerce_bool(payload.get("feasible")),
+        "solution_signature_hash": str(payload.get("solution_signature_hash", "")),
+        "operator_base_id": str(payload.get("operator_base_id", "")),
+        "control_mode": str(payload.get("control_mode", "")),
+        "worker_python_executable": str(payload.get("worker_python_executable", "")),
+        "worker_python_version": str(payload.get("worker_python_version", "")),
+        "worker_numpy_version": str(payload.get("worker_numpy_version", "")),
+        "returncode": int(payload.get("returncode", 0)),
+        "stderr_tail": str(payload.get("stderr_tail", ""))[-500:],
+        "stdout_tail": str(payload.get("stdout_tail", ""))[-500:],
+    }
+
+
 def _context_summary(rows: list[dict[str, Any]]) -> dict[str, Any]:
     successes = [row for row in rows if bool(row.get("success"))]
     values = [float(row["best_obj"]) for row in successes if math.isfinite(float(row["best_obj"]))]
@@ -844,6 +1132,115 @@ def _phase4_summary(rows: list[dict[str, Any]]) -> dict[str, Any]:
         "winner_beats_fair_sa": beats_sa,
         "conclusion": "RL venv winner is internally usable for the PPO gate." if gate.startswith("PASS") else "RL venv winner does not pass the same-environment PPO gate.",
     }
+
+
+def _system_worker_summary(rows: list[dict[str, Any]], *, root: Path) -> dict[str, Any]:
+    by_alg: dict[str, list[dict[str, Any]]] = {}
+    for row in rows:
+        by_alg.setdefault(str(row["algorithm"]), []).append(row)
+    official_rows = sorted(by_alg.get("official_winner_kernel", []), key=lambda row: int(row["seed"]))
+    alpha_rows = sorted(by_alg.get("alpha_ucb_env", []), key=lambda row: int(row["seed"]))
+    sa_rows = sorted(by_alg.get("scikit-opt-SA", []), key=lambda row: int(row["seed"]))
+    official_costs = _successful_costs(official_rows)
+    alpha_costs = _successful_costs(alpha_rows)
+    sa_costs = _successful_costs(sa_rows)
+    gold_by_seed = _gold_costs_by_seed(root)
+    official_gold_matches = _rows_match_reference(official_rows, gold_by_seed)
+    official_by_seed = {int(row["seed"]): float(row["best_obj"]) for row in official_rows if row.get("success")}
+    alpha_matches_official = _rows_match_reference(alpha_rows, official_by_seed)
+    zero_violations = all(int(row.get("violation_count", 1)) == 0 for row in rows if row.get("success"))
+    expected_count = len(gold_by_seed) or 10
+    full_counts = (
+        len(official_costs) == expected_count
+        and len(alpha_costs) == expected_count
+        and len(sa_costs) == expected_count
+    )
+    official_mean = statistics.fmean(official_costs) if official_costs else None
+    alpha_mean = statistics.fmean(alpha_costs) if alpha_costs else None
+    fair_sa_mean = statistics.fmean(sa_costs) if sa_costs else _fair_sa_mean_reference(root)
+    crush_pp = None
+    if official_mean is not None and fair_sa_mean is not None and abs(fair_sa_mean) > EPS:
+        crush_pp = (fair_sa_mean - official_mean) / abs(fair_sa_mean) * 100.0
+    winner_crushes_sa = crush_pp is not None and crush_pp > 1.0
+    gate_ok = bool(full_counts and zero_violations and official_gold_matches and alpha_matches_official and winner_crushes_sa)
+    failed_reasons: list[str] = []
+    if not full_counts:
+        failed_reasons.append("missing 10-seed rows for one or more algorithms")
+    if not zero_violations:
+        failed_reasons.append("nonzero violations present")
+    if not official_gold_matches:
+        failed_reasons.append("official winner does not match restored gold by seed")
+    if not alpha_matches_official:
+        failed_reasons.append("alpha_ucb_env does not match official winner by seed")
+    if not winner_crushes_sa:
+        failed_reasons.append("official winner does not beat fair SA by >1pp")
+    return {
+        "gate": "PASS_SYSTEM_WORKER_SELF_CHECK" if gate_ok else "HALT_SYSTEM_WORKER_SELF_CHECK",
+        "official_winner_seed_count": len(official_costs),
+        "alpha_ucb_env_seed_count": len(alpha_costs),
+        "fair_sa_seed_count": len(sa_costs),
+        "official_winner_mean": official_mean,
+        "alpha_ucb_env_mean": alpha_mean,
+        "fair_sa_mean": fair_sa_mean,
+        "official_winner_best": min(official_costs) if official_costs else None,
+        "alpha_ucb_env_best": min(alpha_costs) if alpha_costs else None,
+        "fair_sa_best": min(sa_costs) if sa_costs else None,
+        "crush_pp_vs_fair_sa": crush_pp,
+        "zero_violations": zero_violations,
+        "official_matches_gold_by_seed": official_gold_matches,
+        "alpha_matches_official_by_seed": alpha_matches_official,
+        "expected_seed_count": expected_count,
+        "failed_reasons": failed_reasons,
+        "conclusion": (
+            "System-Python worker gate passes; PPO lane baselines are back on the audited winner environment."
+            if gate_ok
+            else "System-Python worker gate did not pass: " + "; ".join(failed_reasons)
+        ),
+    }
+
+
+def _successful_costs(rows: list[dict[str, Any]]) -> list[float]:
+    return [float(row["best_obj"]) for row in rows if row.get("success") and math.isfinite(float(row["best_obj"]))]
+
+
+def _rows_match_reference(rows: list[dict[str, Any]], reference: dict[int, float]) -> bool:
+    if not rows or not reference:
+        return False
+    for row in rows:
+        if not row.get("success"):
+            return False
+        seed = int(row["seed"])
+        if seed not in reference:
+            return False
+        if abs(float(row["best_obj"]) - float(reference[seed])) > EPS:
+            return False
+    return True
+
+
+def _gold_costs_by_seed(root: Path) -> dict[int, float]:
+    path = root / RESTORED_GOLD_BY_SEED
+    if not path.exists():
+        return {}
+    rows = _read_csv(path)
+    result: dict[int, float] = {}
+    for row in rows:
+        seed = _int(row.get("seed"))
+        if seed:
+            result[seed] = _float(row.get("gold_total_cost") or row.get("total_cost"))
+    return result
+
+
+def _fair_sa_mean_reference(root: Path) -> float | None:
+    path = root / FAIR_SA_REFERENCE
+    if not path.exists():
+        return None
+    try:
+        payload = json.loads(path.read_text(encoding="utf-8"))
+        return float(
+            payload["instances"]["100-01-24h"]["scikit-opt-SA"]["mean_total_cost"]
+        )
+    except Exception:
+        return None
 
 
 def _phase1_report(result: dict[str, Any]) -> str:
@@ -910,6 +1307,33 @@ def _phase4_report(result: dict[str, Any]) -> str:
     return "\n".join(lines)
 
 
+def _system_worker_report(result: dict[str, Any]) -> str:
+    summary = result["summary"]
+    lines = [
+        "# Phase 4 System-Worker Matrix",
+        "",
+        f"- gate: `{summary['gate']}`",
+        f"- worker_python: `{result.get('worker_python')}`",
+        f"- official_winner_mean: {summary.get('official_winner_mean')}",
+        f"- alpha_ucb_env_mean: {summary.get('alpha_ucb_env_mean')}",
+        f"- fair_sa_mean: {summary.get('fair_sa_mean')}",
+        f"- crush_pp_vs_fair_sa: {summary.get('crush_pp_vs_fair_sa')}",
+        f"- official_matches_gold_by_seed: {summary.get('official_matches_gold_by_seed')}",
+        f"- alpha_matches_official_by_seed: {summary.get('alpha_matches_official_by_seed')}",
+        f"- zero_violations: {summary.get('zero_violations')}",
+        f"- conclusion: {summary.get('conclusion')}",
+        "",
+        "## Rows",
+    ]
+    for row in result["rows"]:
+        lines.append(
+            f"- {row['algorithm']} seed {row['seed']}: success={row['success']} "
+            f"best={row['best_obj']} evals={row['evaluations']} violations={row['violation_count']} "
+            f"worker={row.get('worker_python_executable', '')}"
+        )
+    return "\n".join(lines)
+
+
 def _gate_report(result: dict[str, Any]) -> str:
     return "\n".join(
         [
@@ -923,6 +1347,76 @@ def _gate_report(result: dict[str, Any]) -> str:
             f"- system_10seed_reference: {result['system_reference']['ten_seed_mean_cost']}",
         ]
     )
+
+
+def _system_worker_gate_report(result: dict[str, Any]) -> str:
+    summary = result["phase4_system_worker_summary"]
+    return "\n".join(
+        [
+            "# Winner System-Worker PPO Gate",
+            "",
+            f"- gate: `{result['gate']}`",
+            f"- started_training: `{result['started_training']}`",
+            f"- reason: {result['reason']}",
+            f"- official_winner_mean: {summary.get('official_winner_mean')}",
+            f"- alpha_ucb_env_mean: {summary.get('alpha_ucb_env_mean')}",
+            f"- fair_sa_mean: {summary.get('fair_sa_mean')}",
+            f"- crush_pp_vs_fair_sa: {summary.get('crush_pp_vs_fair_sa')}",
+            f"- official_matches_gold_by_seed: {summary.get('official_matches_gold_by_seed')}",
+            f"- alpha_matches_official_by_seed: {summary.get('alpha_matches_official_by_seed')}",
+            f"- zero_violations: {summary.get('zero_violations')}",
+            f"- system_seed2_reference: {result['system_reference']['seed2_best_cost']}",
+            f"- system_10seed_reference: {result['system_reference']['ten_seed_mean_cost']}",
+        ]
+    )
+
+
+def _reproducibility_note_markdown(result: dict[str, Any]) -> str:
+    classification = result["classification"]
+    system = result["fingerprints"]["system"]
+    venv = result["fingerprints"]["venv"]
+    gold = result["gold_standard_environment"]
+    return "\n".join(
+        [
+            "# Winner Kernel Reproducibility Note",
+            "",
+            f"- classification: `{classification['classification']}`",
+            f"- conclusion: {classification['conclusion']}",
+            f"- rng_probe_equal: `{classification['rng_probe_equal']}`",
+            "",
+            "## Gold Standard Environment",
+            "",
+            f"- python_executable: `{gold.get('python_executable')}`",
+            f"- python_version: `{gold.get('python_version')}`",
+            f"- numpy_version: `{gold.get('numpy_version')}`",
+            "",
+            "## RL Venv Environment",
+            "",
+            f"- python_executable: `{venv.get('executable')}`",
+            f"- python_version: `{venv.get('python_version')}`",
+            f"- numpy_version: `{venv.get('numpy_version')}`",
+            "",
+            "## BLAS Summary",
+            "",
+            f"- system_blas_excerpt: `{_blas_excerpt(system.get('numpy_show_config', ''))}`",
+            f"- venv_blas_excerpt: `{_blas_excerpt(venv.get('numpy_show_config', ''))}`",
+            "",
+            "## Reproducibility Policy",
+            "",
+            "Formal solver/winner experiments should bind the audited system Python environment above. "
+            "For paper reproducibility, pin that Python/numpy stack in documentation; this task does not modify "
+            "the RL venv dependencies.",
+        ]
+    )
+
+
+def _blas_excerpt(text: Any) -> str:
+    value = str(text).replace("\n", " ")
+    for marker in ("name: openblas", '"name": "openblas64"', "openblas configuration"):
+        idx = value.find(marker)
+        if idx >= 0:
+            return value[idx : idx + 220]
+    return value[:220]
 
 
 def append_log(output_dir: str | Path, *, phase: str, command: str, stdout: str, stderr: str, conclusion: str) -> None:
@@ -969,10 +1463,26 @@ def _ensure_output_dir(output_dir: str | Path) -> Path:
 
 def _python_for_env(root: Path, python_env: str) -> Path:
     if python_env == "system":
-        return Path(sys.executable)
+        return _system_python(root)
     if python_env == "venv":
         return root / "solver" / "rl" / ".venv" / "bin" / "python"
     raise ValueError(f"unknown python_env: {python_env}")
+
+
+def _system_python(root: Path) -> Path:
+    fingerprint = root / RESTORATION_DIR / "phase1_env_fingerprints.json"
+    if fingerprint.exists():
+        try:
+            payload = json.loads(fingerprint.read_text(encoding="utf-8"))
+            executable = payload.get("fingerprints", {}).get("system", {}).get("executable")
+            if executable and Path(str(executable)).exists():
+                return Path(str(executable)).resolve()
+        except Exception:
+            pass
+    for candidate in (Path("/opt/anaconda3/bin/python"), Path("/opt/homebrew/bin/python3"), Path("/usr/local/bin/python3")):
+        if candidate.exists():
+            return candidate.resolve()
+    return Path(sys.executable).resolve()
 
 
 def _pythonpath_for_env(root: Path, python_env: str) -> str:
@@ -1075,7 +1585,19 @@ def _parse_seed_list(value: str) -> list[int]:
 
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description="Diagnose winner-kernel determinism across Python contexts.")
-    parser.add_argument("stage", choices=["fingerprint", "phase1", "phase2-skipped", "phase4", "phase5", "run-all"])
+    parser.add_argument(
+        "stage",
+        choices=[
+            "fingerprint",
+            "phase1",
+            "phase2-skipped",
+            "phase4",
+            "phase5",
+            "reproducibility-note",
+            "system-worker-gate",
+            "run-all",
+        ],
+    )
     parser.add_argument("--repo-root", default=str(_repo_root()))
     parser.add_argument("--output-dir", default=str(_repo_root() / RESTORATION_DIR))
     parser.add_argument("--seed", type=int, default=DEFAULT_SEED)
@@ -1116,6 +1638,17 @@ def main(argv: list[str] | None = None) -> int:
         phase4_path = out / "phase4_determinism_matrix.json"
         phase4 = json.loads(phase4_path.read_text(encoding="utf-8")) if phase4_path.exists() else None
         result = write_phase5_self_check(root, out, phase1, phase4)
+    elif args.stage == "reproducibility-note":
+        result = write_reproducibility_note(root, out)
+    elif args.stage == "system-worker-gate":
+        result = run_phase4_system_worker_gate(
+            root,
+            out,
+            seeds=_parse_seed_list(args.seeds),
+            eval_budget=args.eval_budget,
+            max_runtime_seconds=args.max_runtime_seconds,
+            workers=args.workers,
+        )
     else:
         phase1 = run_phase1_matrix(
             root,
@@ -1130,7 +1663,8 @@ def main(argv: list[str] | None = None) -> int:
         phase4: dict[str, Any] | None = None
         if classification["classification"] == "environment_numeric_drift":
             write_skipped_bisect(root, out, classification)
-            phase4 = run_phase4_venv_anchor(
+            write_reproducibility_note(root, out)
+            phase4 = run_phase4_system_worker_gate(
                 root,
                 out,
                 seeds=_parse_seed_list(args.seeds),
@@ -1140,7 +1674,10 @@ def main(argv: list[str] | None = None) -> int:
             )
         elif classification["classification"] == "deterministic_same_anchor":
             write_skipped_bisect(root, out, classification)
-        result = write_phase5_self_check(root, out, phase1, phase4)
+        if phase4 and phase4.get("schema_version") == "winner-system-worker-gate.v1":
+            result = write_phase5_system_worker_self_check(root, out, phase4)
+        else:
+            result = write_phase5_self_check(root, out, phase1, phase4)
     print(f"GATE WINNER_NONDETERMINISM {args.stage} {json.dumps(_brief_result(result), ensure_ascii=False)}")
     return 0
 
