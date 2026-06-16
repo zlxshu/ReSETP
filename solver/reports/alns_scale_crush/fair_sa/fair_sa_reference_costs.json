@@ -1,0 +1,63 @@
+{
+  "schema_version": "setp-alns-crush-v2-fair-sa-reference.v1",
+  "baseline_algorithm": "scikit-opt-SA",
+  "eval_budget": 16000,
+  "max_runtime_seconds": 900.0,
+  "instances": {
+    "Scale-150": {
+      "scikit-opt-SA": {
+        "variant": "fair_sa",
+        "instance": "Scale-150",
+        "algorithm": "scikit-opt-SA",
+        "n": 10,
+        "mean_total_cost": 5754.712075312877,
+        "median_total_cost": 5745.034953614895,
+        "best_total_cost": 5670.4808069655355,
+        "std_total_cost": 55.47609147043493,
+        "mean_route_count": 49.8,
+        "median_route_count": 50.0,
+        "zero_violation_count": 10,
+        "seed_total_costs": {
+          "1": 5684.899495079595,
+          "2": 5744.20930268489,
+          "3": 5732.934720955716,
+          "4": 5808.337984577725,
+          "5": 5807.620689569678,
+          "6": 5805.30070990587,
+          "7": 5718.47295098704,
+          "8": 5829.0034878578135,
+          "9": 5745.860604544901,
+          "10": 5670.4808069655355
+        }
+      }
+    },
+    "Scale-200": {
+      "scikit-opt-SA": {
+        "variant": "fair_sa",
+        "instance": "Scale-200",
+        "algorithm": "scikit-opt-SA",
+        "n": 10,
+        "mean_total_cost": 7601.90753348803,
+        "median_total_cost": 7603.50949208766,
+        "best_total_cost": 7461.505018913264,
+        "std_total_cost": 105.65229067230214,
+        "mean_route_count": 61.9,
+        "median_route_count": 62.0,
+        "zero_violation_count": 10,
+        "seed_total_costs": {
+          "1": 7657.168036646306,
+          "2": 7711.198199886941,
+          "3": 7491.397691388925,
+          "4": 7653.480141476766,
+          "5": 7553.538842698554,
+          "6": 7774.630105573372,
+          "7": 7673.607188062776,
+          "8": 7461.505018913264,
+          "9": 7504.5148374292485,
+          "10": 7538.035272804138
+        }
+      }
+    }
+  },
+  "row_count": 20
+}

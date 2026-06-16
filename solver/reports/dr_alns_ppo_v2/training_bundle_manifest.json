@@ -1,0 +1,19 @@
+{
+  "schema_version": "dr-alns-ppo-bundle-manifest.v1",
+  "train": [
+    "models/data_bundle/generated_instances/verify_20251113",
+    "models/data_bundle/generated_instances/verify_20251113_evheavy",
+    "models/data_bundle/generated_instances/demo_carbon",
+    "models/data_bundle/generated_instances/E-UK100_02__u0_seed2_24h_20251113"
+  ],
+  "held_out": [
+    "models/data_bundle/generated_instances/E-UK100_03__u0_seed3_24h_20251113"
+  ],
+  "formal_eval": [
+    "models/data_bundle/generated_instances/E-UK100_01__d2_s3_seed1_24h_20251113",
+    "models/data_bundle/generated_instances/E-UK24h-三班-01"
+  ],
+  "excluded_from_training_reason": {
+    "100-01/L-main only": "single-main-case training would overfit and is not evidence of general DRL control"
+  }
+}

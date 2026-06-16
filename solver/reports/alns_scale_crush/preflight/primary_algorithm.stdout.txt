@@ -1,0 +1,39 @@
+solver/src/setp_solver/search/alns_scale_crush.py:145:            "Does not modify PRIMARY_ALGORITHM.",
+solver/src/setp_solver/search/alns_scale_crush.py:440:        "primary_algorithm": ["rg", "-n", "PRIMARY_ALGORITHM", "solver/src", "solver/tests"],
+solver/src/setp_solver/search/candidates.py:40:PRIMARY_ALGORITHM = "ALNS-Wouda"
+solver/src/setp_solver/search/candidates.py:254:    if algorithm == PRIMARY_ALGORITHM:
+solver/src/setp_solver/search/candidates.py:289:    algorithms = [PRIMARY_ALGORITHM, *Z1_CANDIDATES]
+solver/src/setp_solver/search/candidates.py:304:    alns_row = next((row for row in rows if row["algorithm"] == PRIMARY_ALGORITHM), None)
+solver/src/setp_solver/search/candidates.py:311:    candidate_count = sum(1 for row in rows if row["algorithm"] != PRIMARY_ALGORITHM and row["feasible"])
+solver/src/setp_solver/search/candidates.py:414:            algorithm=PRIMARY_ALGORITHM,
+solver/src/setp_solver/search/candidates.py:447:            algorithm=PRIMARY_ALGORITHM,
+solver/src/setp_solver/search/alns_crush_v3.py:414:            "Did not change PRIMARY_ALGORITHM.",
+solver/src/setp_solver/search/formal_runner.py:31:from .candidates import PRIMARY_ALGORITHM, Z1_CANDIDATES, run_candidate
+solver/src/setp_solver/search/formal_runner.py:229:    algorithms = [PRIMARY_ALGORITHM, *Z1_CANDIDATES]
+solver/src/setp_solver/search/formal_runner.py:406:        key = RunKey("E1", "L-main", PRIMARY_ALGORITHM, seed, variant)
+solver/src/setp_solver/search/formal_runner.py:460:            key = RunKey("E3", "L-main", PRIMARY_ALGORITHM, seed, code)
+solver/src/setp_solver/search/formal_runner.py:516:                key = RunKey("E4", "L-main", PRIMARY_ALGORITHM, run_seed, variant)
+solver/src/setp_solver/search/formal_runner.py:562:            key = RunKey("E6", "L-main", PRIMARY_ALGORITHM, seed, f"theta={theta:.2f}")
+solver/src/setp_solver/search/formal_runner.py:636:        key = RunKey("E7", "L-main", PRIMARY_ALGORITHM, run_seed, "dynamic")
+solver/src/setp_solver/search/formal_runner.py:695:        result = run_alns_strong_validation(args.repo_root, out, target_algorithm=PRIMARY_ALGORITHM, seeds=seeds, eval_budget=args.eval_budget, max_runtime_seconds=args.max_runtime_seconds)
+solver/src/setp_solver/search/formal_runner.py:1409:            if row["algorithm"] == PRIMARY_ALGORITHM and _run_feasible_with_cost(row):
+solver/src/setp_solver/search/formal_runner.py:1413:        if row["algorithm"] == PRIMARY_ALGORITHM and _run_feasible_with_cost(row):
+solver/src/setp_solver/search/formal_runner.py:1425:    after_rows = [row for row in run_rows if row["algorithm"] == PRIMARY_ALGORITHM]
+solver/src/setp_solver/search/formal_runner.py:1468:    gap = average.get(f"{PRIMARY_ALGORITHM}|相对已观测最优偏差\\%")
+solver/src/setp_solver/search/formal_runner.py:1502:        return "HALT_WOUDA_STRONG_TARGET_MISS" if target_algorithm == PRIMARY_ALGORITHM else "HALT_WANG_STRONG_TARGET_MISS"
+solver/src/setp_solver/search/formal_runner.py:1504:        return "HALT_WOUDA_STRONG_TARGET_MISS" if target_algorithm == PRIMARY_ALGORITHM else "HALT_WANG_STRONG_TARGET_MISS"
+solver/src/setp_solver/search/formal_runner.py:1506:        return "HALT_WOUDA_STRONG_TARGET_MISS" if target_algorithm == PRIMARY_ALGORITHM else "HALT_WANG_STRONG_TARGET_MISS"
+solver/src/setp_solver/search/formal_runner.py:1508:        return "HALT_WOUDA_STRONG_TARGET_MISS" if target_algorithm == PRIMARY_ALGORITHM else "HALT_WANG_STRONG_TARGET_MISS"
+solver/src/setp_solver/search/formal_runner.py:1533:    stage = "ALNS_WOUDA_STRONG" if target_algorithm == PRIMARY_ALGORITHM else "ALNS_WANG_STRONG"
+solver/src/setp_solver/search/formal_runner.py:1681:    preferred = [PRIMARY_ALGORITHM, *Z1_CANDIDATES]
+solver/src/setp_solver/search/formal_runner.py:1730:        and row["algorithm"] == PRIMARY_ALGORITHM
+solver/src/setp_solver/search/formal_runner.py:1750:        {"metric": "e2_best source", "value": f"E2 {PRIMARY_ALGORITHM} seed={best['seed']}", "share_pct": ""},
+solver/src/setp_solver/search/root_cause.py:31:    PRIMARY_ALGORITHM,
+solver/src/setp_solver/search/root_cause.py:44:ROOT_CAUSE_ALGORITHMS = [PRIMARY_ALGORITHM, "DR-ALNS", "scikit-opt-SA"]
+solver/src/setp_solver/search/root_cause.py:224:    if algorithm == PRIMARY_ALGORITHM:
+solver/src/setp_solver/search/root_cause.py:307:                algorithm=PRIMARY_ALGORITHM,
+solver/src/setp_solver/search/root_cause.py:333:    trace_path = _trace_path(trace_dir, instance_name, PRIMARY_ALGORITHM, seed)
+solver/src/setp_solver/search/root_cause.py:337:        algorithm=PRIMARY_ALGORITHM,
+solver/src/setp_solver/search/root_cause.py:759:    alns_rows = [row for row in summary_rows if row["algorithm"] == PRIMARY_ALGORITHM]
+solver/src/setp_solver/search/root_cause.py:795:        if row["algorithm"] != PRIMARY_ALGORITHM:
+solver/src/setp_solver/search/root_cause.py:828:    alns_op_rows = [row for row in operator_rows if row["algorithm"] == PRIMARY_ALGORITHM]

@@ -1,0 +1,15 @@
+source,algorithm,bundle_filter,seed,eval_budget,best_obj,actual_evals,candidate_scores,operator_base_id,control_mode,violation_count,gate_note
+preflight_100_01,alpha_ucb_env,E-UK100_01,1,20,6589.063717041644,20,20,winner_kernel_v1,kernel_default,0,alpha matches official at tiny budget
+preflight_100_01,official_winner_kernel,E-UK100_01,1,20,6589.063717041644,20,20,winner_kernel_v1,official_kernel,0,official anchor tiny-budget row
+preflight_100_01,random_full,E-UK100_01,1,20,5618.472200682593,20,20,winner_kernel_v1,ppo_full,0,random imports winner module
+self_check_100_01_aborted,alpha_ucb_env,E-UK100_01,1,16000,5954.73383353001,16000,16000,winner_kernel_v1,kernel_default,0,matches same-seed official but outside expected winner level
+self_check_100_01_aborted,official_winner_kernel,E-UK100_01,1,16000,5954.73383353001,16000,16000,winner_kernel_v1,official_kernel,0,outside expected winner level
+self_check_100_01_aborted,alpha_ucb_env,E-UK100_01,2,16000,4909.530249672551,16000,16000,winner_kernel_v1,kernel_default,0,matches same-seed official but differs from TaskA seed2 reference
+self_check_100_01_aborted,official_winner_kernel,E-UK100_01,2,16000,4909.530249672552,16000,16000,winner_kernel_v1,official_kernel,0,differs from TaskA seed2 reference 4779.053444002934
+self_check_100_01_aborted,alpha_ucb_env,E-UK100_01,3,16000,5773.3819464782055,16000,16000,winner_kernel_v1,kernel_default,0,matches same-seed official but outside expected winner level
+self_check_100_01_aborted,official_winner_kernel,E-UK100_01,3,16000,5773.3819464782055,16000,16000,winner_kernel_v1,official_kernel,0,outside expected winner level
+self_check_100_01_aborted,alpha_ucb_env,E-UK100_01,4,16000,6024.488077952977,16000,16000,winner_kernel_v1,kernel_default,0,matches same-seed official but outside expected winner level
+self_check_100_01_aborted,official_winner_kernel,E-UK100_01,4,16000,6024.488077952977,16000,16000,winner_kernel_v1,official_kernel,0,outside expected winner level
+self_check_100_01_aborted,alpha_ucb_env,E-UK100_01,5,16000,6062.672019121483,16000,16000,winner_kernel_v1,kernel_default,0,matches same-seed official but outside expected winner level
+self_check_100_01_aborted,official_winner_kernel,E-UK100_01,5,16000,6062.672019121483,16000,16000,winner_kernel_v1,official_kernel,0,outside expected winner level
+self_check_100_01_hashseed0_seed2,official_winner_kernel,E-UK100_01,2,16000,4909.530249672552,16000,16000,winner_kernel_v1,official_kernel,0,fixed PYTHONHASHSEED=0 still differs from TaskA reference

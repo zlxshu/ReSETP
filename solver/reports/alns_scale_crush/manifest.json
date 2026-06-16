@@ -1,0 +1,51 @@
+{
+  "schema_version": "setp-alns-scale-crush.v1",
+  "runner": "setp_solver.search.alns_scale_crush",
+  "started_unix": 943925.458785875,
+  "elapsed_seconds": 3487.3278358329553,
+  "instances": {
+    "Scale-150": "models/data_bundle/generated_instances/E-UK24h-三班-150",
+    "Scale-200": "models/data_bundle/generated_instances/E-UK24h-三班-200"
+  },
+  "seeds": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9,
+    10
+  ],
+  "eval_budget": 16000,
+  "max_runtime_seconds": 900.0,
+  "fair_sa": {
+    "gate": "TASK1_COMPLETE",
+    "manifest": "solver/reports/alns_scale_crush/fair_sa/manifest.json",
+    "elapsed_seconds": 1447.7799877499929
+  },
+  "winner_operator_module": "setp_solver.search.winner_operators",
+  "operator_base_id": "winner_kernel_v1",
+  "semantic_guards": [
+    "Does not modify cost.py/check.py/evaluation.py model semantics.",
+    "Does not modify PRIMARY_ALGORITHM.",
+    "Does not run formal E1-E7.",
+    "Only winner_kernel_only is compared with fair scikit-opt-SA; no route-elimination, true-cost repair, RRT/AlphaUCB, or local-search add-ons are introduced."
+  ],
+  "zero_violation_gate": true,
+  "expected_row_count": 40,
+  "actual_row_count": 40,
+  "outputs": [
+    "instance_stats.csv",
+    "cost_breakdown.csv",
+    "summary.csv",
+    "wilcoxon_vs_fair_sa.csv",
+    "route_headroom.csv",
+    "reference_costs.json",
+    "final_report.md"
+  ],
+  "report_recomputed_unix": 1781588822.185198,
+  "wilcoxon_directional_tests": "less and greater one-sided tests are both reported for scale verdict integrity"
+}

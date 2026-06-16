@@ -1,0 +1,52 @@
+{
+  "gate": "PASS_STEP_API_WIRING",
+  "winner_operator_module": "setp_solver.search.winner_operators",
+  "operator_base_id": "winner_kernel_v1",
+  "manifest_path": "/Volumes/移动硬盘（512G）/ReSETP/solver/reports/alns_crush_v2/winner_operator_manifest.json",
+  "required_public_api": [
+    "WinnerOperatorAction",
+    "WinnerOperatorSet",
+    "decode_winner_action",
+    "apply_winner_action"
+  ],
+  "manifest_public_api": [
+    "WinnerKernelConfig",
+    "WinnerOperatorAction",
+    "WinnerOperatorSet",
+    "apply_winner_action",
+    "decode_winner_action",
+    "winner_variant_flags",
+    "run_winner_kernel",
+    "run_winner_kernel_plus_route_elimination",
+    "write_winner_manifest"
+  ],
+  "destroy_operator_ids": [
+    "random_customer_removal",
+    "worst_customer_removal",
+    "shaw_related_removal",
+    "whole_route_removal",
+    "route_segment_removal",
+    "vehicle_type_swap"
+  ],
+  "repair_operator_ids": [
+    "greedy_insert_repair",
+    "regret2_insert_repair",
+    "regret3_insert_repair"
+  ],
+  "action_space_nvec": [
+    6,
+    3,
+    10,
+    100
+  ],
+  "contract_test_command": "PYTHONPATH=solver/rl:solver/src:models/src solver/rl/.venv/bin/python -m pytest solver/rl/tests/test_winner_operator_adapter.py -q",
+  "contract_test_observed_stdout": "3 passed",
+  "reproduction_command": "PYTHONPATH=solver/src:models/src python - <<'PY' ... run_winner_kernel(E-UK100_01, seed=2, eval_budget=16000) ... PY",
+  "reproduction_observed": {
+    "best_cost": 4779.053444002934,
+    "evaluations": 16000,
+    "feasible": true,
+    "violation_count": 0,
+    "operator_base_id": "winner_kernel_v1"
+  }
+}
