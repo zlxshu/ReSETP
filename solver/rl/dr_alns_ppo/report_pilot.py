@@ -32,6 +32,7 @@ def build_pilot_report(
         system_worker_python=system_worker_python,
     )
     verdict = classify_pilot(
+        episode_count=int(reward["episode_count"]),
         reward_up=bool(reward["reward_up"]),
         train_close_alpha=bool(train["ppo_close_to_alpha"]),
         train_beats_random=bool(train["ppo_beats_random"]),
@@ -141,12 +142,18 @@ def integrity_summary(rows: list[dict[str, Any]], *, system_worker_python: str =
 
 def classify_pilot(
     *,
+    episode_count: int,
     reward_up: bool,
     train_close_alpha: bool,
     train_beats_random: bool,
     formal_10001_close_alpha: bool,
     integrity_ok: bool,
 ) -> dict[str, str]:
+    if int(episode_count) == 0:
+        return {
+            "verdict": "HALT_EPISODE_FRAGMENTATION",
+            "reason": "Training monitor has zero completed episodes; the PPO run cannot be interpreted as valid learning.",
+        }
     if not integrity_ok:
         return {
             "verdict": "HALT_INTEGRITY",

@@ -726,6 +726,7 @@ def _tiny_train_command(*, manifest_path: Path, output_dir: Path, eval_budget: i
         "dummy",
         "--schedule",
         "bucketed",
+        "--allow-fragmented-phases",
         "--env-repeats",
         "1",
         "--n-steps",

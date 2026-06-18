@@ -49,6 +49,30 @@ def test_pilot_report_weak_when_reward_flat_or_train_not_close() -> None:
     assert report["reward_trend"]["reward_up"] is False
 
 
+def test_report_pilot_halts_when_monitor_has_zero_episodes() -> None:
+    report = build_pilot_report(
+        monitor_rows=[],
+        train_rows=_comparison_rows(ppo=103.0, alpha=100.0, random=130.0),
+        formal_10001_rows=_comparison_rows(ppo=104.0, alpha=100.0, random=130.0),
+        held_out_rows=_comparison_rows(ppo=104.0, alpha=100.0, random=130.0),
+    )
+
+    assert report["verdict"] == "HALT_EPISODE_FRAGMENTATION"
+    assert report["reward_trend"]["episode_count"] == 0
+
+
+def test_report_pilot_accepts_episode_safe_monitor_before_quality_verdict() -> None:
+    report = build_pilot_report(
+        monitor_rows=[{"r": "100.0"}, {"r": "100.0"}, {"r": "99.0"}],
+        train_rows=_comparison_rows(ppo=120.0, alpha=100.0, random=130.0),
+        formal_10001_rows=_comparison_rows(ppo=120.0, alpha=100.0, random=130.0),
+        held_out_rows=_comparison_rows(ppo=120.0, alpha=100.0, random=130.0),
+    )
+
+    assert report["reward_trend"]["episode_count"] == 3
+    assert report["verdict"] == "WEAK"
+
+
 def test_pilot_report_halts_on_non_system_worker_or_violation() -> None:
     rows = _comparison_rows(ppo=103.0, alpha=100.0, random=130.0)
     rows[0]["worker_python_executable"] = "/tmp/venv/bin/python"

@@ -180,12 +180,213 @@ def build_bucketed_phase_plan(
     return phases
 
 
+def episode_env_count(bundles: list[str], *, env_repeats: int) -> int:
+    if not bundles:
+        raise ValueError("at least one training bundle is required")
+    if int(env_repeats) < 1:
+        raise ValueError("--env-repeats must be >= 1")
+    return len(bundles) * int(env_repeats)
+
+
+def active_env_count(schedule: str, bundles: list[str], *, env_repeats: int) -> int:
+    if str(schedule) == "mixed":
+        return episode_env_count(bundles, env_repeats=env_repeats)
+    if str(schedule) in {"bucketed", "episode_bucketed"}:
+        if int(env_repeats) < 1:
+            raise ValueError("--env-repeats must be >= 1")
+        return int(env_repeats)
+    raise ValueError(f"unknown schedule: {schedule}")
+
+
+def min_timesteps_for_episode_wave(eval_budget: int, n_envs: int) -> int:
+    if int(eval_budget) < 1:
+        raise ValueError("--eval-budget must be >= 1")
+    if int(n_envs) < 1:
+        raise ValueError("n_envs must be >= 1")
+    return int(eval_budget) * int(n_envs)
+
+
+def build_episode_bucketed_phase_plan(
+    bundles: list[str],
+    *,
+    total_timesteps: int,
+    eval_budget: int,
+    env_repeats: int,
+    episodes_per_phase: int = 1,
+) -> list[dict[str, Any]]:
+    if not bundles:
+        raise ValueError("at least one training bundle is required")
+    if int(total_timesteps) < 1:
+        raise ValueError("--timesteps must be >= 1")
+    if int(episodes_per_phase) < 1:
+        raise ValueError("--episodes-per-phase must be >= 1")
+    phase_timesteps = int(eval_budget) * int(env_repeats) * int(episodes_per_phase)
+    if phase_timesteps < 1:
+        raise ValueError("episode_bucketed phase timesteps must be >= 1")
+    phases: list[dict[str, Any]] = []
+    scheduled = 0
+    phase_index = 0
+    while scheduled < int(total_timesteps):
+        bundle = bundles[phase_index % len(bundles)]
+        phases.append(
+            {
+                "phase_index": phase_index,
+                "bundle": bundle,
+                "requested_timesteps": phase_timesteps,
+                "rollout_timesteps": phase_timesteps,
+            }
+        )
+        scheduled += phase_timesteps
+        phase_index += 1
+    return phases
+
+
+def episode_safety_metadata(
+    *,
+    schedule: str,
+    bundles: list[str],
+    timesteps: int,
+    eval_budget: int,
+    n_steps: int,
+    env_repeats: int,
+    allow_fragmented_phases: bool,
+    episodes_per_phase: int,
+) -> dict[str, Any]:
+    n_envs = active_env_count(schedule, bundles, env_repeats=env_repeats)
+    min_wave = min_timesteps_for_episode_wave(eval_budget, n_envs)
+    if str(schedule) == "mixed":
+        safe = int(timesteps) >= min_wave
+        reason = (
+            f"mixed schedule has {n_envs} parallel envs and at least one full episode wave"
+            if safe
+            else f"mixed schedule needs at least {min_wave} timesteps for one full episode wave"
+        )
+    elif str(schedule) == "bucketed":
+        safe = int(n_steps) >= int(eval_budget)
+        if safe:
+            reason = f"bucketed phase n_steps={int(n_steps)} reaches eval_budget={int(eval_budget)}"
+        elif allow_fragmented_phases:
+            reason = "fragmented bucketed phase explicitly allowed for diagnostics"
+        else:
+            reason = f"fragmented bucketed phase: n_steps={int(n_steps)} < eval_budget={int(eval_budget)}"
+    elif str(schedule) == "episode_bucketed":
+        safe = int(episodes_per_phase) >= 1
+        reason = (
+            f"episode_bucketed phase runs {int(episodes_per_phase)} complete episode wave(s) per env"
+            if safe
+            else "episode_bucketed requires --episodes-per-phase >= 1"
+        )
+    else:
+        raise ValueError(f"unknown schedule: {schedule}")
+    return {
+        "n_envs": n_envs,
+        "min_timesteps_for_one_episode_wave": min_wave,
+        "episode_safe": bool(safe),
+        "schedule_safety_reason": reason,
+        "allow_fragmented_phases": bool(allow_fragmented_phases),
+        "episodes_per_phase": int(episodes_per_phase),
+    }
+
+
+def validate_episode_safe_config(
+    *,
+    schedule: str,
+    bundles: list[str],
+    total_timesteps: int,
+    eval_budget: int,
+    n_steps: int,
+    env_repeats: int,
+    allow_fragmented_phases: bool,
+    episodes_per_phase: int,
+) -> None:
+    metadata = episode_safety_metadata(
+        schedule=schedule,
+        bundles=bundles,
+        timesteps=total_timesteps,
+        eval_budget=eval_budget,
+        n_steps=n_steps,
+        env_repeats=env_repeats,
+        allow_fragmented_phases=allow_fragmented_phases,
+        episodes_per_phase=episodes_per_phase,
+    )
+    if schedule == "mixed" and not metadata["episode_safe"]:
+        raise ValueError(str(metadata["schedule_safety_reason"]))
+    if schedule == "bucketed" and not metadata["episode_safe"] and not bool(allow_fragmented_phases):
+        raise ValueError(str(metadata["schedule_safety_reason"]))
+    if schedule == "episode_bucketed" and not metadata["episode_safe"]:
+        raise ValueError(str(metadata["schedule_safety_reason"]))
+
+
+def build_training_config(
+    *,
+    manifest: str,
+    train_bundles: list[str],
+    timesteps: int,
+    eval_budget: int,
+    seed: int,
+    base_temperature: float,
+    control_mode: str,
+    vec_env: str,
+    schedule: str,
+    env_repeats: int,
+    n_steps: int,
+    batch_size: int,
+    n_epochs: int,
+    learning_rate: float,
+    allow_fragmented_phases: bool,
+    episodes_per_phase: int,
+    phase_count: int | None = None,
+) -> dict[str, Any]:
+    config = {
+        "manifest": str(manifest),
+        "train_bundles": list(train_bundles),
+        "timesteps": int(timesteps),
+        "eval_budget": int(eval_budget),
+        "seed": int(seed),
+        "base_temperature": float(base_temperature),
+        "control_mode": control_mode,
+        "policy": "MlpPolicy",
+        "vec_env": vec_env,
+        "env_repeats": int(env_repeats),
+        "schedule": schedule,
+        "n_steps": int(n_steps),
+        "batch_size": int(batch_size),
+        "n_epochs": int(n_epochs),
+        "learning_rate": float(learning_rate),
+    }
+    if phase_count is not None:
+        config["phase_count"] = int(phase_count)
+    config.update(
+        episode_safety_metadata(
+            schedule=schedule,
+            bundles=list(train_bundles),
+            timesteps=timesteps,
+            eval_budget=eval_budget,
+            n_steps=n_steps,
+            env_repeats=env_repeats,
+            allow_fragmented_phases=allow_fragmented_phases,
+            episodes_per_phase=episodes_per_phase,
+        )
+    )
+    return config
+
+
 def train(args: argparse.Namespace) -> None:
     output_dir = Path(args.output_dir)
     output_dir.mkdir(parents=True, exist_ok=True)
     manifest = load_manifest(args.manifest)
     train_bundles = list(manifest["train"])
-    if args.schedule == "bucketed":
+    validate_episode_safe_config(
+        schedule=args.schedule,
+        bundles=train_bundles,
+        total_timesteps=int(args.timesteps),
+        eval_budget=int(args.eval_budget),
+        n_steps=int(args.n_steps),
+        env_repeats=int(args.env_repeats),
+        allow_fragmented_phases=bool(args.allow_fragmented_phases),
+        episodes_per_phase=int(args.episodes_per_phase),
+    )
+    if args.schedule in {"bucketed", "episode_bucketed"}:
         train_bucketed(args, train_bundles, output_dir)
         return
     venv = None
@@ -210,23 +411,24 @@ def train(args: argparse.Namespace) -> None:
             n_epochs=args.n_epochs,
             learning_rate=args.learning_rate,
         )
-        config = {
-            "manifest": str(args.manifest),
-            "train_bundles": train_bundles,
-            "timesteps": int(args.timesteps),
-            "eval_budget": int(args.eval_budget),
-            "seed": int(args.seed),
-            "base_temperature": float(args.base_temperature),
-            "control_mode": args.control_mode,
-            "policy": "MlpPolicy",
-            "vec_env": args.vec_env,
-            "env_repeats": int(args.env_repeats),
-            "schedule": args.schedule,
-            "n_steps": int(args.n_steps),
-            "batch_size": int(args.batch_size),
-            "n_epochs": int(args.n_epochs),
-            "learning_rate": float(args.learning_rate),
-        }
+        config = build_training_config(
+            manifest=str(args.manifest),
+            train_bundles=train_bundles,
+            timesteps=int(args.timesteps),
+            eval_budget=int(args.eval_budget),
+            seed=int(args.seed),
+            base_temperature=float(args.base_temperature),
+            control_mode=args.control_mode,
+            vec_env=args.vec_env,
+            schedule=args.schedule,
+            env_repeats=int(args.env_repeats),
+            n_steps=int(args.n_steps),
+            batch_size=int(args.batch_size),
+            n_epochs=int(args.n_epochs),
+            learning_rate=float(args.learning_rate),
+            allow_fragmented_phases=bool(args.allow_fragmented_phases),
+            episodes_per_phase=int(args.episodes_per_phase),
+        )
         (output_dir / "training_config.json").write_text(
             json.dumps(config, ensure_ascii=False, indent=2) + "\n",
             encoding="utf-8",
@@ -240,30 +442,40 @@ def train(args: argparse.Namespace) -> None:
 
 
 def train_bucketed(args: argparse.Namespace, train_bundles: list[str], output_dir: Path) -> None:
-    phases = build_bucketed_phase_plan(
-        train_bundles,
-        total_timesteps=int(args.timesteps),
-        n_steps=int(args.n_steps),
+    if args.schedule == "episode_bucketed":
+        phases = build_episode_bucketed_phase_plan(
+            train_bundles,
+            total_timesteps=int(args.timesteps),
+            eval_budget=int(args.eval_budget),
+            env_repeats=int(args.env_repeats),
+            episodes_per_phase=int(args.episodes_per_phase),
+        )
+    else:
+        phases = build_bucketed_phase_plan(
+            train_bundles,
+            total_timesteps=int(args.timesteps),
+            n_steps=int(args.n_steps),
+            env_repeats=int(args.env_repeats),
+        )
+    config = build_training_config(
+        manifest=str(args.manifest),
+        train_bundles=train_bundles,
+        timesteps=int(args.timesteps),
+        eval_budget=int(args.eval_budget),
+        seed=int(args.seed),
+        base_temperature=float(args.base_temperature),
+        control_mode=args.control_mode,
+        vec_env=args.vec_env,
+        schedule=args.schedule,
         env_repeats=int(args.env_repeats),
+        n_steps=int(args.n_steps),
+        batch_size=int(args.batch_size),
+        n_epochs=int(args.n_epochs),
+        learning_rate=float(args.learning_rate),
+        allow_fragmented_phases=bool(args.allow_fragmented_phases),
+        episodes_per_phase=int(args.episodes_per_phase),
+        phase_count=len(phases),
     )
-    config = {
-        "manifest": str(args.manifest),
-        "train_bundles": train_bundles,
-        "timesteps": int(args.timesteps),
-        "eval_budget": int(args.eval_budget),
-        "seed": int(args.seed),
-        "base_temperature": float(args.base_temperature),
-        "control_mode": args.control_mode,
-        "policy": "MlpPolicy",
-        "vec_env": args.vec_env,
-        "env_repeats": int(args.env_repeats),
-        "schedule": args.schedule,
-        "n_steps": int(args.n_steps),
-        "batch_size": int(args.batch_size),
-        "n_epochs": int(args.n_epochs),
-        "learning_rate": float(args.learning_rate),
-        "phase_count": len(phases),
-    }
     (output_dir / "training_config.json").write_text(
         json.dumps(config, ensure_ascii=False, indent=2) + "\n",
         encoding="utf-8",
@@ -376,9 +588,9 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser.add_argument("--vec-env", choices=("subproc", "dummy"), default="subproc")
     parser.add_argument(
         "--schedule",
-        choices=("mixed", "bucketed"),
+        choices=("mixed", "bucketed", "episode_bucketed"),
         default="mixed",
-        help="mixed runs all bundles in one synchronous VecEnv; bucketed cycles homogeneous per-bundle VecEnvs.",
+        help="mixed runs all bundles in one synchronous VecEnv; bucketed cycles homogeneous per-bundle VecEnvs; episode_bucketed makes each phase episode-complete.",
     )
     parser.add_argument(
         "--env-repeats",
@@ -390,6 +602,12 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser.add_argument("--batch-size", type=int, default=256)
     parser.add_argument("--n-epochs", type=int, default=5)
     parser.add_argument("--learning-rate", type=float, default=3e-4)
+    parser.add_argument("--episodes-per-phase", type=int, default=1)
+    parser.add_argument(
+        "--allow-fragmented-phases",
+        action="store_true",
+        help="Allow legacy bucketed phases shorter than eval_budget. Intended only for diagnostics.",
+    )
     parser.add_argument("--verbose", type=int, default=1)
     parser.add_argument("--progress-bar", action="store_true")
     return parser.parse_args(argv)

@@ -1,6 +1,12 @@
 import pytest
 
-from dr_alns_ppo.train_ppo import build_bucketed_phase_plan, build_env_specs
+from dr_alns_ppo.train_ppo import (
+    build_bucketed_phase_plan,
+    build_env_specs,
+    build_episode_bucketed_phase_plan,
+    build_training_config,
+    validate_episode_safe_config,
+)
 
 
 def test_build_env_specs_default_preserves_one_env_per_bundle() -> None:
@@ -47,3 +53,82 @@ def test_build_bucketed_phase_plan_cycles_homogeneous_bundle_phases() -> None:
 def test_build_bucketed_phase_plan_requires_positive_budget() -> None:
     with pytest.raises(ValueError, match="timesteps"):
         build_bucketed_phase_plan(["bundle-a"], total_timesteps=0, n_steps=3, env_repeats=2)
+
+
+def test_mixed_schedule_rejects_less_than_one_episode_wave() -> None:
+    with pytest.raises(ValueError, match="one full episode wave"):
+        validate_episode_safe_config(
+            schedule="mixed",
+            bundles=["bundle-a", "bundle-b", "bundle-c"],
+            total_timesteps=100_000,
+            eval_budget=16_000,
+            n_steps=256,
+            env_repeats=3,
+            allow_fragmented_phases=False,
+            episodes_per_phase=1,
+        )
+
+
+def test_bucketed_schedule_rejects_fragmented_phase_by_default() -> None:
+    with pytest.raises(ValueError, match="fragmented bucketed phase"):
+        validate_episode_safe_config(
+            schedule="bucketed",
+            bundles=["bundle-a"],
+            total_timesteps=1_000_000,
+            eval_budget=16_000,
+            n_steps=128,
+            env_repeats=24,
+            allow_fragmented_phases=False,
+            episodes_per_phase=1,
+        )
+
+    validate_episode_safe_config(
+        schedule="bucketed",
+        bundles=["bundle-a"],
+        total_timesteps=1_000_000,
+        eval_budget=16_000,
+        n_steps=128,
+        env_repeats=24,
+        allow_fragmented_phases=True,
+        episodes_per_phase=1,
+    )
+
+
+def test_episode_bucketed_phase_plan_uses_eval_budget_times_env_repeats() -> None:
+    phases = build_episode_bucketed_phase_plan(
+        ["bundle-a", "bundle-b"],
+        total_timesteps=100_000,
+        eval_budget=16_000,
+        env_repeats=3,
+        episodes_per_phase=2,
+    )
+
+    assert [phase["bundle"] for phase in phases] == ["bundle-a", "bundle-b"]
+    assert [phase["requested_timesteps"] for phase in phases] == [96_000, 96_000]
+    assert [phase["rollout_timesteps"] for phase in phases] == [96_000, 96_000]
+
+
+def test_training_config_records_episode_safety_metadata() -> None:
+    config = build_training_config(
+        manifest="manifest.json",
+        train_bundles=["bundle-a", "bundle-b", "bundle-c"],
+        timesteps=147_456,
+        eval_budget=16_000,
+        seed=1,
+        base_temperature=100.0,
+        control_mode="ppo_full",
+        vec_env="subproc",
+        schedule="mixed",
+        env_repeats=3,
+        n_steps=256,
+        batch_size=288,
+        n_epochs=5,
+        learning_rate=0.0003,
+        allow_fragmented_phases=False,
+        episodes_per_phase=1,
+    )
+
+    assert config["n_envs"] == 9
+    assert config["min_timesteps_for_one_episode_wave"] == 144_000
+    assert config["episode_safe"] is True
+    assert "mixed" in config["schedule_safety_reason"]
