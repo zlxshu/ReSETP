@@ -1,0 +1,111 @@
+{
+  "commit": "210f58a54b579859129f8d6889809d70d9a8720a",
+  "evaluation_summary": [
+    {
+      "actual_evals_values": "16000",
+      "algorithm": "alpha_ucb_env",
+      "best_obj": 4779.053444002934,
+      "mean_best_obj": 4878.331796187524,
+      "median_best_obj": 4848.619847811227,
+      "rows": 10,
+      "split": "formal_10001",
+      "std_best_obj": 90.39011736520821,
+      "violation_values": "0",
+      "worker_python_values": "/opt/anaconda3/bin/python3.13"
+    },
+    {
+      "actual_evals_values": "16000",
+      "algorithm": "ppo_full",
+      "best_obj": 6085.923811179165,
+      "mean_best_obj": 6085.923811179165,
+      "mean_gap_vs_alpha_pct": 24.754200112739134,
+      "mean_gap_vs_random_pct": 27.290707099021166,
+      "median_best_obj": 6085.923811179165,
+      "rows": 10,
+      "split": "formal_10001",
+      "std_best_obj": 0.0,
+      "violation_values": "0",
+      "worker_python_values": "/opt/anaconda3/bin/python3.13"
+    },
+    {
+      "actual_evals_values": "16000",
+      "algorithm": "random_full",
+      "best_obj": 4739.8600246707265,
+      "mean_best_obj": 4781.121850823597,
+      "median_best_obj": 4788.89040673416,
+      "rows": 10,
+      "split": "formal_10001",
+      "std_best_obj": 23.251875542053586,
+      "violation_values": "0",
+      "worker_python_values": "/opt/anaconda3/bin/python3.13"
+    },
+    {
+      "actual_evals_values": "16000",
+      "algorithm": "alpha_ucb_env",
+      "best_obj": 3471.1647322217887,
+      "mean_best_obj": 3902.509679676566,
+      "median_best_obj": 3951.9634151920627,
+      "rows": 10,
+      "split": "held_out",
+      "std_best_obj": 147.53230445484192,
+      "violation_values": "0",
+      "worker_python_values": "/opt/anaconda3/bin/python3.13"
+    },
+    {
+      "actual_evals_values": "16000",
+      "algorithm": "ppo_full",
+      "best_obj": 4222.7854921365815,
+      "mean_best_obj": 4222.7854921365815,
+      "mean_gap_vs_alpha_pct": 8.206919104594238,
+      "mean_gap_vs_random_pct": 19.338915843770067,
+      "median_best_obj": 4222.7854921365815,
+      "rows": 10,
+      "split": "held_out",
+      "std_best_obj": 0.0,
+      "violation_values": "0",
+      "worker_python_values": "/opt/anaconda3/bin/python3.13"
+    },
+    {
+      "actual_evals_values": "16000",
+      "algorithm": "random_full",
+      "best_obj": 3454.642942519675,
+      "mean_best_obj": 3538.4815274044795,
+      "median_best_obj": 3543.0153484069533,
+      "rows": 10,
+      "split": "held_out",
+      "std_best_obj": 32.90946328987675,
+      "violation_values": "0",
+      "worker_python_values": "/opt/anaconda3/bin/python3.13"
+    }
+  ],
+  "pilot_report": {
+    "reason": "Episode-safe training completed, but PPO did not show the required reward trend plus 100-01 AlphaUCB proximity.",
+    "reward_trend": {
+      "episode_count": 72,
+      "first_third_mean": 2001.6399916666667,
+      "last_third_mean": 1919.2486291666667,
+      "reward_up": false,
+      "slope": -4.500528683516626
+    },
+    "verdict": "WEAK_AFTER_VALID_TRAINING"
+  },
+  "training": {
+    "actual_evals": [
+      16000
+    ],
+    "env_eval_rows": 72,
+    "episode_count": 72,
+    "episode_safe": true,
+    "eval_budget": 16000,
+    "feasible_values": [
+      1
+    ],
+    "monitor_lengths": [
+      16000
+    ],
+    "n_envs": 9,
+    "phase_count": 8,
+    "schedule": "episode_bucketed",
+    "timesteps": 1032192
+  }
+}

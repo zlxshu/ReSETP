@@ -54,6 +54,9 @@ class EvalCountCallback(BaseCallback):
                 "repair_delta_count",
                 "best_obj",
                 "feasible",
+                "worker_python_executable",
+                "worker_python_version",
+                "worker_numpy_version",
             ],
         )
         if write_header:
@@ -81,6 +84,7 @@ class EvalCountCallback(BaseCallback):
         if self._writer is None or self._handle is None:
             return
         spec = self.env_specs[env_index]
+        trace = info.get("trace", {}) or {}
         self._writer.writerow(
             {
                 "event": event,
@@ -93,6 +97,9 @@ class EvalCountCallback(BaseCallback):
                 "repair_delta_count": int(info.get("repair_delta_count", 0)),
                 "best_obj": float(info.get("best_obj", 0.0)),
                 "feasible": int(info.get("violation_count", 1) == 0),
+                "worker_python_executable": str(trace.get("worker_python_executable", "")),
+                "worker_python_version": str(trace.get("worker_python_version", "")),
+                "worker_numpy_version": str(trace.get("worker_numpy_version", "")),
             }
         )
         self.episode_index += 1

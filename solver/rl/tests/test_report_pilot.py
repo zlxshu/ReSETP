@@ -24,7 +24,7 @@ def test_pilot_report_promising_when_reward_and_10001_close_alpha() -> None:
     assert report["integrity"]["ok"] is True
 
 
-def test_pilot_report_data_limited_when_train_close_but_10001_not_close() -> None:
+def test_pilot_report_weak_after_valid_training_when_train_close_but_10001_not_close() -> None:
     report = build_pilot_report(
         monitor_rows=_upward_monitor(),
         train_rows=_comparison_rows(ppo=103.0, alpha=100.0, random=130.0),
@@ -32,7 +32,7 @@ def test_pilot_report_data_limited_when_train_close_but_10001_not_close() -> Non
         held_out_rows=_comparison_rows(ppo=120.0, alpha=100.0, random=130.0),
     )
 
-    assert report["verdict"] == "DATA_LIMITED"
+    assert report["verdict"] == "WEAK_AFTER_VALID_TRAINING"
     assert report["train_summary"]["ppo_close_to_alpha"] is True
     assert report["formal_10001_summary"]["ppo_close_to_alpha"] is False
 
@@ -45,7 +45,7 @@ def test_pilot_report_weak_when_reward_flat_or_train_not_close() -> None:
         held_out_rows=_comparison_rows(ppo=120.0, alpha=100.0, random=130.0),
     )
 
-    assert report["verdict"] == "WEAK"
+    assert report["verdict"] == "WEAK_AFTER_VALID_TRAINING"
     assert report["reward_trend"]["reward_up"] is False
 
 
@@ -70,7 +70,7 @@ def test_report_pilot_accepts_episode_safe_monitor_before_quality_verdict() -> N
     )
 
     assert report["reward_trend"]["episode_count"] == 3
-    assert report["verdict"] == "WEAK"
+    assert report["verdict"] == "WEAK_AFTER_VALID_TRAINING"
 
 
 def test_pilot_report_halts_on_non_system_worker_or_violation() -> None:

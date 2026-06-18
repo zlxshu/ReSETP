@@ -164,19 +164,9 @@ def classify_pilot(
             "verdict": "PROMISING",
             "reason": "Reward increased and PPO is within 5% of AlphaUCB on the unseen 100-01 formal check.",
         }
-    if reward_up and train_close_alpha:
-        return {
-            "verdict": "DATA_LIMITED",
-            "reason": "PPO learns on the real3 training set but does not yet generalize to 100-01.",
-        }
-    if reward_up and train_beats_random:
-        return {
-            "verdict": "WEAK",
-            "reason": "Reward improved and PPO beats random on train, but it is not close to AlphaUCB on train.",
-        }
     return {
-        "verdict": "WEAK",
-        "reason": "The medium pilot did not show a convincing reward trend plus training-set AlphaUCB proximity.",
+        "verdict": "WEAK_AFTER_VALID_TRAINING",
+        "reason": "Episode-safe training completed, but PPO did not show the required reward trend plus 100-01 AlphaUCB proximity.",
     }
 
 

@@ -1,6 +1,7 @@
 import pytest
 
 from dr_alns_ppo.train_ppo import (
+    EvalCountCallback,
     build_bucketed_phase_plan,
     build_env_specs,
     build_episode_bucketed_phase_plan,
@@ -132,3 +133,32 @@ def test_training_config_records_episode_safety_metadata() -> None:
     assert config["min_timesteps_for_one_episode_wave"] == 144_000
     assert config["episode_safe"] is True
     assert "mixed" in config["schedule_safety_reason"]
+
+
+def test_eval_count_callback_records_worker_fingerprint(tmp_path) -> None:
+    output_csv = tmp_path / "env_eval_counts.csv"
+    callback = EvalCountCallback(output_csv, [{"bundle": "bundle-a", "seed": 7}])
+
+    callback._on_training_start()
+    callback._write_row(
+        "episode_end",
+        0,
+        {
+            "actual_evals": 16000,
+            "candidate_scores": 16000,
+            "repair_delta_count": 10,
+            "best_obj": 123.4,
+            "violation_count": 0,
+            "trace": {
+                "worker_python_executable": "/opt/anaconda3/bin/python3.13",
+                "worker_python_version": "3.13.9",
+                "worker_numpy_version": "2.3.5",
+            },
+        },
+    )
+    callback._on_training_end()
+
+    text = output_csv.read_text()
+    assert "worker_python_executable" in text
+    assert "/opt/anaconda3/bin/python3.13" in text
+    assert "2.3.5" in text
