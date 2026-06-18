@@ -335,6 +335,18 @@ class JsonlWorker:
                 OPERATOR_SET,
                 customer_count=customer_count,
             )
+        elif mode == "reduced_full":
+            if len(raw) != 4:
+                raise ValueError(f"reduced_full action raw must have 4 components: {raw!r}")
+            winner_action = WinnerOperatorAction(
+                destroy_op_id=destroy_id,
+                repair_op_id=repair_id,
+                remove_count_q=None,
+                accept_param=0.0,
+                temperature=0.0,
+                remove_fraction=float(action.get("q_ratio", 0.10)),
+                raw_action=(raw[0], raw[1], raw[2], raw[3]),
+            )
         elif mode in {"operator_only", "kernel_default"}:
             if len(raw) != 2:
                 raise ValueError(f"{mode} action raw must have 2 components: {raw!r}")

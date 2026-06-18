@@ -33,7 +33,7 @@ def evaluate(args: argparse.Namespace) -> list[dict]:
     bundles = _filter_bundles(_selected_bundles(manifest, args.split), args.bundle_filter)
     seeds = parse_seeds(args.seeds)
     algorithms = parse_algorithms(args.algorithms)
-    if any(algorithm in {"ppo_full", "ppo_operator_only"} for algorithm in algorithms) and not args.model:
+    if any(algorithm in {"ppo_full", "ppo_operator_only", "ppo_reduced_full"} for algorithm in algorithms) and not args.model:
         raise ValueError("--model is required when evaluating PPO algorithms")
     all_tasks = [
         (algorithm, bundle_dir, seed)
@@ -141,6 +141,19 @@ def _evaluate_one_task(algorithm: str, bundle_dir: str, seed: int, args: dict) -
         )
         row["algorithm"] = "ppo_operator_only"
         return normalize_result_row(row)
+    if algorithm == "ppo_reduced_full":
+        model = PPO.load(args["model_path"])
+        row = run_ppo_policy(
+            model,
+            bundle_dir,
+            seed=seed,
+            eval_budget=args["eval_budget"],
+            base_temperature=args["base_temperature"],
+            deterministic=args["deterministic"],
+            control_mode="reduced_full",
+        )
+        row["algorithm"] = "ppo_reduced_full"
+        return normalize_result_row(row)
     if algorithm == "random_full":
         return run_random_policy(
             bundle_dir,
@@ -175,6 +188,7 @@ def parse_algorithms(value: str) -> tuple[str, ...]:
         "official_winner_kernel",
         "ppo_full",
         "ppo_operator_only",
+        "ppo_reduced_full",
     }
     unknown = sorted(set(algorithms) - allowed)
     if unknown:
@@ -211,7 +225,7 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser.add_argument(
         "--algorithms",
         default="random_full,alpha_ucb_env",
-        help="Comma-separated algorithms: random_full,alpha_ucb_env,official_winner_kernel,ppo_full,ppo_operator_only.",
+        help="Comma-separated algorithms: random_full,alpha_ucb_env,official_winner_kernel,ppo_full,ppo_operator_only,ppo_reduced_full.",
     )
     parser.add_argument("--split", choices=("train", "held_out", "formal_eval", "all"), default="held_out")
     parser.add_argument("--bundle-filter", help="Comma-separated substrings used to narrow the selected split.")

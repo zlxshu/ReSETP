@@ -12,8 +12,11 @@ _OPERATOR_SET = WinnerOperatorSet.create()
 DESTROY_IDS = tuple(name for name, _ in _OPERATOR_SET.destroy_ops)
 REPAIR_IDS = tuple(name for name, _ in _OPERATOR_SET.repair_ops)
 FULL_ACTION_NVECS = (len(DESTROY_IDS), len(REPAIR_IDS), 10, 100)
+REDUCED_ACTION_NVECS = (len(DESTROY_IDS), len(REPAIR_IDS), 3, 3)
 OPERATOR_ONLY_NVECS = (len(DESTROY_IDS), len(REPAIR_IDS))
 MAX_THRESHOLD_RATIO = 0.02
+REDUCED_Q_RATIOS = (0.10, 0.25, 0.40)
+REDUCED_THRESHOLD_RATIOS = (0.0, 0.005, 0.02)
 
 
 def _coerce_action_component(value: Any) -> int:
@@ -45,13 +48,20 @@ def decode_action(raw: Sequence[int], *, base_temperature: float, control_mode: 
             control_mode=mode,
         )
     q_idx, t_idx = values[2:]
-    if not 0 <= q_idx < 10:
-        raise ValueError(f"q index out of range: {q_idx}")
-    if not 0 <= t_idx < 100:
-        raise ValueError(f"threshold index out of range: {t_idx}")
-
-    q_ratio = 0.10 + (0.30 * q_idx / 9.0)
-    threshold_ratio = MAX_THRESHOLD_RATIO * t_idx / 99.0
+    if mode == "reduced_full":
+        if not 0 <= q_idx < len(REDUCED_Q_RATIOS):
+            raise ValueError(f"reduced q index out of range: {q_idx}")
+        if not 0 <= t_idx < len(REDUCED_THRESHOLD_RATIOS):
+            raise ValueError(f"reduced threshold index out of range: {t_idx}")
+        q_ratio = REDUCED_Q_RATIOS[q_idx]
+        threshold_ratio = REDUCED_THRESHOLD_RATIOS[t_idx]
+    else:
+        if not 0 <= q_idx < 10:
+            raise ValueError(f"q index out of range: {q_idx}")
+        if not 0 <= t_idx < 100:
+            raise ValueError(f"threshold index out of range: {t_idx}")
+        q_ratio = 0.10 + (0.30 * q_idx / 9.0)
+        threshold_ratio = MAX_THRESHOLD_RATIO * t_idx / 99.0
     return DecodedAction(
         destroy_id=DESTROY_IDS[d_idx],
         repair_id=REPAIR_IDS[r_idx],

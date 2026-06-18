@@ -6,7 +6,7 @@ import gymnasium as gym
 import numpy as np
 from gymnasium import spaces
 
-from .action_space import FULL_ACTION_NVECS, OPERATOR_ONLY_NVECS, decode_action
+from .action_space import FULL_ACTION_NVECS, OPERATOR_ONLY_NVECS, REDUCED_ACTION_NVECS, decode_action
 from .worker_client import WorkerClient
 
 
@@ -30,9 +30,14 @@ class SetpAlnsEnv(gym.Env):
         self.eval_budget = int(eval_budget)
         self.base_temperature = float(base_temperature)
         self.control_mode = str(control_mode)
-        if self.control_mode not in {"ppo_full", "operator_only", "kernel_default"}:
+        if self.control_mode not in {"ppo_full", "reduced_full", "operator_only", "kernel_default"}:
             raise ValueError(f"unknown control_mode: {control_mode}")
-        nvec = FULL_ACTION_NVECS if self.control_mode == "ppo_full" else OPERATOR_ONLY_NVECS
+        if self.control_mode == "ppo_full":
+            nvec = FULL_ACTION_NVECS
+        elif self.control_mode == "reduced_full":
+            nvec = REDUCED_ACTION_NVECS
+        else:
+            nvec = OPERATOR_ONLY_NVECS
         self.action_space = spaces.MultiDiscrete(list(nvec))
         self.observation_space = spaces.Box(
             low=-10.0,

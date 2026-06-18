@@ -46,3 +46,24 @@ def test_env_operator_only_accepts_two_component_actions_with_same_obs_shape() -
     assert reward >= 0.0
     assert terminated is False
     assert truncated is False
+
+
+def test_env_reduced_full_accepts_coarse_four_component_actions() -> None:
+    env = SetpAlnsEnv(FIXTURE_DIR, seed=1, eval_budget=5, base_temperature=100.0, control_mode="reduced_full")
+    try:
+        obs, info = env.reset()
+        next_obs, reward, terminated, truncated, step_info = env.step([5, 1, 2, 2])
+    finally:
+        env.close()
+
+    assert obs.shape == (11,)
+    assert next_obs.shape == (11,)
+    assert list(env.action_space.nvec) == [6, 3, 3, 3]
+    assert info["actual_evals"] == 0
+    assert step_info["actual_evals"] == 1
+    assert step_info["trace"]["control_mode"] == "reduced_full"
+    assert step_info["trace"]["q_ratio"] == 0.40
+    assert step_info["trace"]["threshold_ratio"] == 0.02
+    assert reward >= 0.0
+    assert terminated is False
+    assert truncated is False

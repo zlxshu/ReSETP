@@ -1,6 +1,6 @@
 import pytest
 
-from dr_alns_ppo.action_space import DESTROY_IDS, REPAIR_IDS, decode_action
+from dr_alns_ppo.action_space import DESTROY_IDS, REDUCED_ACTION_NVECS, REPAIR_IDS, decode_action
 
 
 def test_decode_action_maps_multi_discrete_components() -> None:
@@ -49,6 +49,18 @@ def test_decode_action_operator_only_uses_two_components_and_kernel_defaults() -
     assert action.threshold_ratio == 0.0
     assert action.raw == (5, 2)
     assert action.control_mode == "operator_only"
+
+
+def test_decode_action_reduced_full_uses_coarse_q_and_threshold() -> None:
+    action = decode_action([5, 1, 2, 2], base_temperature=100.0, control_mode="reduced_full")
+
+    assert REDUCED_ACTION_NVECS == (6, 3, 3, 3)
+    assert action.destroy_id == "vehicle_type_swap"
+    assert action.repair_id == "regret2_insert_repair"
+    assert action.q_ratio == 0.40
+    assert action.threshold_ratio == 0.02
+    assert action.raw == (5, 1, 2, 2)
+    assert action.control_mode == "reduced_full"
 
 
 def test_decode_action_rejects_invalid_length() -> None:

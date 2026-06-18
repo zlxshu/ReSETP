@@ -591,7 +591,7 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser.add_argument("--seed", type=int, default=1)
     parser.add_argument("--output-dir", required=True)
     parser.add_argument("--base-temperature", type=float, default=100.0)
-    parser.add_argument("--control-mode", choices=("ppo_full", "operator_only"), default="ppo_full")
+    parser.add_argument("--control-mode", choices=("ppo_full", "reduced_full", "operator_only"), default="ppo_full")
     parser.add_argument("--vec-env", choices=("subproc", "dummy"), default="subproc")
     parser.add_argument(
         "--schedule",
