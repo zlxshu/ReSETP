@@ -1,0 +1,27 @@
+{
+  "manifest": "solver/reports/dr_alns_ppo_v2/training_bundle_manifest.json",
+  "train_bundles": [
+    "models/data_bundle/generated_instances/E-UK100_02__u0_seed2_24h_20251113",
+    "models/data_bundle/generated_instances/E-UK24h-三班-150",
+    "models/data_bundle/generated_instances/E-UK24h-三班-200"
+  ],
+  "timesteps": 147456,
+  "eval_budget": 16000,
+  "seed": 17,
+  "base_temperature": 100.0,
+  "control_mode": "reduced_full",
+  "policy": "MlpPolicy",
+  "vec_env": "subproc",
+  "env_repeats": 3,
+  "schedule": "mixed",
+  "n_steps": 256,
+  "batch_size": 288,
+  "n_epochs": 3,
+  "learning_rate": 0.0003,
+  "n_envs": 9,
+  "min_timesteps_for_one_episode_wave": 144000,
+  "episode_safe": true,
+  "schedule_safety_reason": "mixed schedule has 9 parallel envs and at least one full episode wave",
+  "allow_fragmented_phases": false,
+  "episodes_per_phase": 1
+}
