@@ -1,0 +1,51 @@
+{
+  "context": {
+    "episode_safe_integrity": {
+      "budget_mismatches": [],
+      "non_system_worker": [],
+      "ok": true,
+      "row_count": 60,
+      "violations": []
+    },
+    "episode_safe_quality": null,
+    "episode_safe_reason": "Episode-safe training completed, but PPO did not show the required reward trend plus 100-01 AlphaUCB proximity.",
+    "episode_safe_verdict": "WEAK_AFTER_VALID_TRAINING",
+    "git_head": "63fa4d00c6968c338c57a1a295b3ff6c0c76f61a",
+    "git_status": "?? AGENTS.md\n?? docs/claudecode_handoff.md\n?? docs/claudecode_handoff_brief.md\nerror: non-monotonic index .git/objects/pack/._pack-a6a46b2df29e80bd7a0a2c0cc35e490eccda4b1c.idx\n",
+    "system_worker_python": "/opt/anaconda3/bin/python3.13"
+  },
+  "formal_10001_means": {
+    "alpha_ucb_env": 4875.0470412240875,
+    "ppo_full": 6085.923811179165,
+    "random_full": 4765.0304160798305
+  },
+  "hypotheses": [
+    {
+      "evidence": "max top action probability=0.999325; ppo formal mean=6085.923811",
+      "hypothesis": "policy collapse is real",
+      "status": "confirmed"
+    },
+    {
+      "evidence": "ppo max accepted_rate=1.000000; ppo max improved_best_rate=0.010742; random formal mean=4765.030416",
+      "hypothesis": "immediate reward can favor a globally weak fixed action",
+      "status": "supported"
+    },
+    {
+      "evidence": "formal random_full mean=4765.030416; alpha_ucb_env mean=4875.047041",
+      "hypothesis": "random_full is a strong operator-space baseline",
+      "status": "confirmed"
+    },
+    {
+      "evidence": "max conflicting rounded-observation bucket rate=0.068510",
+      "hypothesis": "observation aliasing limits conditional control",
+      "status": "inconclusive"
+    }
+  ],
+  "next_repair_order": [
+    "operator_only_action_space",
+    "reduced_q_threshold_action_space",
+    "reward_shaping_after_reward_audit",
+    "block_level_controller_if_small_repairs_fail"
+  ],
+  "recommendation": "do_not_long_train_current_ppo"
+}
