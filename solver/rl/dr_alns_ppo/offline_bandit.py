@@ -146,58 +146,44 @@ def run_collect(args: argparse.Namespace) -> int:
     manifest = load_manifest(args.manifest)
     bundles = _selected_bundles(manifest, args.split)
     policies = _parse_csv_list(args.policies)
+    partial_path = dataset_dir / "block_trace_rows.partial.csv"
+    existing_rows = _read_csv(partial_path) if bool(args.resume_partial) and partial_path.exists() else []
+    existing_episodes = _read_csv(dataset_dir / "episode_summary.csv") if bool(args.resume_partial) else []
     tasks: list[TraceEpisodeTask] = []
-    episode_index = 0
-    for policy in policies:
-        if policy not in {"random_block", "alpha_ucb_block", "stratified_random"}:
-            raise ValueError(f"unknown collection policy: {policy}")
-        for repeat in range(int(args.episodes_per_policy)):
-            for bundle in bundles:
-                tasks.append(
-                    TraceEpisodeTask(
-                        episode_index=episode_index,
-                        bundle=bundle,
-                        seed=int(args.seed) + 1000 * repeat + episode_index,
-                        policy=policy,
-                        eval_budget=int(args.eval_budget),
-                        block_size=int(args.block_size),
+    episode_index = _next_episode_index(existing_rows, existing_episodes)
+    if not existing_rows:
+        for policy in policies:
+            if policy not in {"random_block", "alpha_ucb_block", "stratified_random"}:
+                raise ValueError(f"unknown collection policy: {policy}")
+            for repeat in range(int(args.episodes_per_policy)):
+                for bundle in bundles:
+                    tasks.append(
+                        TraceEpisodeTask(
+                            episode_index=episode_index,
+                            bundle=bundle,
+                            seed=int(args.seed) + 1000 * repeat + episode_index,
+                            policy=policy,
+                            eval_budget=int(args.eval_budget),
+                            block_size=int(args.block_size),
+                        )
                     )
-                )
-                episode_index += 1
+                    episode_index += 1
     start = time.monotonic()
-    rows, episodes = _execute_trace_tasks(tasks, jobs=int(args.jobs), partial_path=dataset_dir / "block_trace_rows.partial.csv")
-    supplement_tasks: list[TraceEpisodeTask] = []
-    coverage = summarize_action_coverage(rows)
-    while (
-        not bool(args.disable_auto_supplement)
-        and not coverage["pass_minimum_coverage"]
-        and len(supplement_tasks) < int(args.max_supplement_episodes)
-    ):
-        remaining = int(args.max_supplement_episodes) - len(supplement_tasks)
-        chunk_count = min(int(args.supplement_chunk_size), remaining)
-        chunk: list[TraceEpisodeTask] = []
-        for _ in range(chunk_count):
-            bundle = bundles[episode_index % len(bundles)]
-            task = TraceEpisodeTask(
-                episode_index=episode_index,
-                bundle=bundle,
-                seed=int(args.seed) + 100000 + episode_index,
-                policy=str(args.supplement_policy),
-                eval_budget=int(args.eval_budget),
-                block_size=int(args.block_size),
-            )
-            chunk.append(task)
-            supplement_tasks.append(task)
-            episode_index += 1
-        new_rows, new_episodes = _execute_trace_tasks(
-            chunk,
-            jobs=int(args.jobs),
-            partial_path=dataset_dir / "block_trace_rows.partial.csv",
-            existing_rows=rows,
-        )
-        rows.extend(new_rows)
-        episodes.extend(new_episodes)
-        coverage = summarize_action_coverage(rows)
+    rows, episodes, supplement_tasks = _execute_trace_collection(
+        initial_tasks=tasks,
+        bundles=bundles,
+        jobs=int(args.jobs),
+        partial_path=partial_path,
+        existing_rows=existing_rows,
+        existing_episodes=existing_episodes,
+        next_episode_index=episode_index,
+        seed=int(args.seed),
+        eval_budget=int(args.eval_budget),
+        block_size=int(args.block_size),
+        disable_auto_supplement=bool(args.disable_auto_supplement),
+        supplement_policy=str(args.supplement_policy),
+        max_supplement_episodes=int(args.max_supplement_episodes),
+    )
     rows.sort(key=lambda row: (row["episode_index"], row["block_step_index"]))
     episodes.sort(key=lambda row: row["episode_index"])
     _write_csv(dataset_dir / "block_trace_rows.csv", rows, fieldnames=_trace_fieldnames())
@@ -211,30 +197,131 @@ def run_collect(args: argparse.Namespace) -> int:
     return 0 if stats["integrity"]["pass_collection_integrity"] else 2
 
 
-def _execute_trace_tasks(
-    tasks: list[TraceEpisodeTask],
+def _execute_trace_collection(
     *,
+    initial_tasks: list[TraceEpisodeTask],
+    bundles: list[str],
     jobs: int,
     partial_path: Path,
-    existing_rows: list[dict[str, Any]] | None = None,
-) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
-    rows: list[dict[str, Any]] = []
-    episodes: list[dict[str, Any]] = []
-    if int(jobs) > 1 and len(tasks) > 1:
-        with concurrent.futures.ProcessPoolExecutor(max_workers=min(int(jobs), len(tasks))) as executor:
-            futures = [executor.submit(run_trace_episode, task) for task in tasks]
-            for future in concurrent.futures.as_completed(futures):
-                episode = future.result()
-                episodes.append(_episode_summary_row(episode))
-                rows.extend(episode["block_rows"])
-                _write_csv(partial_path, list(existing_rows or []) + rows, fieldnames=_trace_fieldnames())
-    else:
-        for task in tasks:
+    existing_rows: list[dict[str, Any]],
+    existing_episodes: list[dict[str, Any]],
+    next_episode_index: int,
+    seed: int,
+    eval_budget: int,
+    block_size: int,
+    disable_auto_supplement: bool,
+    supplement_policy: str,
+    max_supplement_episodes: int,
+) -> tuple[list[dict[str, Any]], list[dict[str, Any]], list[TraceEpisodeTask]]:
+    rows = list(existing_rows)
+    episodes = list(existing_episodes)
+    initial_queue = list(initial_tasks)
+    supplement_tasks: list[TraceEpisodeTask] = []
+    if int(jobs) <= 1:
+        while initial_queue or _should_submit_supplement(
+            rows,
+            disable_auto_supplement=disable_auto_supplement,
+            supplement_tasks=supplement_tasks,
+            max_supplement_episodes=max_supplement_episodes,
+        ):
+            if initial_queue:
+                task = initial_queue.pop(0)
+            else:
+                task = _make_supplement_task(
+                    bundles,
+                    next_episode_index=next_episode_index,
+                    seed=seed,
+                    policy=supplement_policy,
+                    eval_budget=eval_budget,
+                    block_size=block_size,
+                )
+                supplement_tasks.append(task)
+                next_episode_index += 1
             episode = run_trace_episode(task)
             episodes.append(_episode_summary_row(episode))
             rows.extend(episode["block_rows"])
-            _write_csv(partial_path, list(existing_rows or []) + rows, fieldnames=_trace_fieldnames())
-    return rows, episodes
+            _write_csv(partial_path, rows, fieldnames=_trace_fieldnames())
+        return rows, episodes, supplement_tasks
+
+    max_workers = max(1, int(jobs))
+    with concurrent.futures.ProcessPoolExecutor(max_workers=max_workers) as executor:
+        futures: dict[concurrent.futures.Future, TraceEpisodeTask] = {}
+
+        def submit(task: TraceEpisodeTask) -> None:
+            futures[executor.submit(run_trace_episode, task)] = task
+
+        def fill_slots() -> None:
+            nonlocal next_episode_index
+            while len(futures) < max_workers:
+                if initial_queue:
+                    submit(initial_queue.pop(0))
+                    continue
+                if not _should_submit_supplement(
+                    rows,
+                    disable_auto_supplement=disable_auto_supplement,
+                    supplement_tasks=supplement_tasks,
+                    max_supplement_episodes=max_supplement_episodes,
+                ):
+                    break
+                task = _make_supplement_task(
+                    bundles,
+                    next_episode_index=next_episode_index,
+                    seed=seed,
+                    policy=supplement_policy,
+                    eval_budget=eval_budget,
+                    block_size=block_size,
+                )
+                supplement_tasks.append(task)
+                next_episode_index += 1
+                submit(task)
+
+        fill_slots()
+        while futures:
+            done, _pending = concurrent.futures.wait(
+                list(futures),
+                return_when=concurrent.futures.FIRST_COMPLETED,
+            )
+            for future in done:
+                _task = futures.pop(future)
+                episode = future.result()
+                episodes.append(_episode_summary_row(episode))
+                rows.extend(episode["block_rows"])
+                _write_csv(partial_path, rows, fieldnames=_trace_fieldnames())
+            fill_slots()
+    return rows, episodes, supplement_tasks
+
+
+def _should_submit_supplement(
+    rows: list[dict[str, Any]],
+    *,
+    disable_auto_supplement: bool,
+    supplement_tasks: list[TraceEpisodeTask],
+    max_supplement_episodes: int,
+) -> bool:
+    if disable_auto_supplement:
+        return False
+    if len(supplement_tasks) >= int(max_supplement_episodes):
+        return False
+    return not summarize_action_coverage(rows)["pass_minimum_coverage"]
+
+
+def _make_supplement_task(
+    bundles: list[str],
+    *,
+    next_episode_index: int,
+    seed: int,
+    policy: str,
+    eval_budget: int,
+    block_size: int,
+) -> TraceEpisodeTask:
+    return TraceEpisodeTask(
+        episode_index=int(next_episode_index),
+        bundle=bundles[int(next_episode_index) % len(bundles)],
+        seed=int(seed) + 100000 + int(next_episode_index),
+        policy=str(policy),
+        eval_budget=int(eval_budget),
+        block_size=int(block_size),
+    )
 
 
 def run_train(args: argparse.Namespace) -> int:
@@ -663,6 +750,21 @@ def _parse_csv_list(value: str) -> list[str]:
     return [item.strip() for item in str(value).split(",") if item.strip()]
 
 
+def _next_episode_index(rows: list[dict[str, Any]], episodes: list[dict[str, Any]]) -> int:
+    values: list[int] = []
+    for row in rows:
+        try:
+            values.append(int(float(row.get("episode_index", -1))))
+        except (TypeError, ValueError):
+            pass
+    for episode in episodes:
+        try:
+            values.append(int(float(episode.get("episode_index", -1))))
+        except (TypeError, ValueError):
+            pass
+    return (max(values) + 1) if values else 0
+
+
 def _safe_index(values: tuple[Any, ...], index: int, default: Any = "") -> Any:
     if 0 <= int(index) < len(values):
         return values[int(index)]
@@ -975,6 +1077,7 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     collect.add_argument("--supplement-policy", choices=("random_block", "stratified_random"), default="stratified_random")
     collect.add_argument("--supplement-chunk-size", type=int, default=6)
     collect.add_argument("--max-supplement-episodes", type=int, default=64)
+    collect.add_argument("--resume-partial", action="store_true")
 
     train = sub.add_parser("train")
     train.add_argument("--dataset", default=f"{REPORT_ROOT_FRAGMENT}/dataset/block_trace_rows.csv")
