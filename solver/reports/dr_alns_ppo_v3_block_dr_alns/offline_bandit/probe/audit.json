@@ -1,0 +1,60 @@
+{
+  "status": "PASS",
+  "dataset_path": "solver/reports/dr_alns_ppo_v3_block_dr_alns/offline_bandit/dataset/block_trace_rows.csv",
+  "row_count": 1625,
+  "column_count": 54,
+  "required_columns": [
+    "obs_00",
+    "obs_01",
+    "obs_02",
+    "obs_03",
+    "obs_04",
+    "obs_05",
+    "obs_06",
+    "obs_07",
+    "obs_08",
+    "obs_09",
+    "obs_10",
+    "obs_11",
+    "obs_12",
+    "obs_13",
+    "obs_14",
+    "obs_15",
+    "obs_16",
+    "obs_17",
+    "obs_18",
+    "reward",
+    "action_destroy",
+    "action_repair",
+    "action_q",
+    "action_threshold",
+    "action_exploration",
+    "collection_policy",
+    "episode_index"
+  ],
+  "missing_columns": [],
+  "policy_counts": {
+    "alpha_ucb_block": 375,
+    "random_block": 125,
+    "stratified_random": 1125
+  },
+  "episode_count": 13,
+  "block_action_nvecs": [
+    7,
+    4,
+    5,
+    4,
+    4
+  ],
+  "propensity": {
+    "random_block_behavior_probability": 0.0004464285714285714,
+    "random_block_behavior_probability_formula": "prod(1 / BLOCK_ACTION_NVECS[i])",
+    "random_block_action_count": 2240,
+    "excluded_from_importance_sampling": [
+      "alpha_ucb_block",
+      "stratified_random"
+    ],
+    "reason": "alpha_ucb_block and stratified_random are deterministic collection policies here, so no random behavior propensity is available for IS."
+  },
+  "reason": "schema and Phase 0 propensity checks passed"
+}
