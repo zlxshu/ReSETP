@@ -10,6 +10,7 @@ from typing import Any
 
 from stable_baselines3 import PPO
 
+from .async_block_policy import is_async_block_model_path, load_async_block_policy
 from .baselines import (
     normalize_result_row,
     run_alpha_ucb_env_policy,
@@ -159,7 +160,11 @@ def _evaluate_one_task(algorithm: str, bundle_dir: str, seed: int, args: dict) -
         row["algorithm"] = "ppo_reduced_full"
         return normalize_result_row(row)
     if algorithm == "ppo_block":
-        model = PPO.load(args["model_path"])
+        model = (
+            load_async_block_policy(args["model_path"])
+            if is_async_block_model_path(args["model_path"])
+            else PPO.load(args["model_path"])
+        )
         return run_ppo_block_policy(
             model,
             bundle_dir,
