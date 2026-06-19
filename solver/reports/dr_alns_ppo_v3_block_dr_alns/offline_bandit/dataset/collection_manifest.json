@@ -1,0 +1,91 @@
+{
+  "command": "summarize-partial",
+  "args": {
+    "command": "summarize-partial",
+    "output_dir": "solver/reports/dr_alns_ppo_v3_block_dr_alns/offline_bandit",
+    "partial_csv": "solver/reports/dr_alns_ppo_v3_block_dr_alns/offline_bandit/dataset/block_trace_rows.partial.csv",
+    "eval_budget": 16000,
+    "block_size": 128,
+    "required_worker_python": "/opt/anaconda3/bin/python3.13",
+    "elapsed_seconds": 10260.0,
+    "status": "HALT_COLLECTION_COST",
+    "reason": "Collected 1625 block rows after roughly 2.85 hours. Marginal and unique action coverage passed, but the minimum 4000-row gate did not; arbitrary block actions created heavy-tail solver episodes on this local machine."
+  },
+  "stats": {
+    "row_count": 1625,
+    "episode_count": 13,
+    "elapsed_seconds": 10260.0,
+    "block_size": 128,
+    "eval_budget": 16000,
+    "coverage": {
+      "row_count": 1625,
+      "unique_full_actions": 872,
+      "minimum_unique_full_actions": 150,
+      "minimum_block_rows": 4000,
+      "marginal_coverage": {
+        "action_destroy": 7,
+        "action_repair": 4,
+        "action_q": 5,
+        "action_threshold": 4,
+        "action_exploration": 4
+      },
+      "marginal_values": {
+        "action_destroy": [
+          0,
+          1,
+          2,
+          3,
+          4,
+          5,
+          6
+        ],
+        "action_repair": [
+          0,
+          1,
+          2,
+          3
+        ],
+        "action_q": [
+          0,
+          1,
+          2,
+          3,
+          4
+        ],
+        "action_threshold": [
+          0,
+          1,
+          2,
+          3
+        ],
+        "action_exploration": [
+          0,
+          1,
+          2,
+          3
+        ]
+      },
+      "expected_marginal_coverage": {
+        "action_destroy": 7,
+        "action_repair": 4,
+        "action_q": 5,
+        "action_threshold": 4,
+        "action_exploration": 4
+      },
+      "pass_marginal_coverage": true,
+      "pass_unique_full_actions": true,
+      "pass_minimum_rows": false,
+      "pass_minimum_coverage": false
+    },
+    "integrity": {
+      "system_worker": true,
+      "numpy_ok": true,
+      "zero_violations": true,
+      "evals_progress": true,
+      "pass_collection_integrity": true
+    },
+    "status": "HALT_COLLECTION_COST",
+    "reason": "Collected 1625 block rows after roughly 2.85 hours. Marginal and unique action coverage passed, but the minimum 4000-row gate did not; arbitrary block actions created heavy-tail solver episodes on this local machine."
+  },
+  "policy": "Partial rows are real block transitions, but coverage gate did not pass; do not train a performance policy from this dataset."
+}

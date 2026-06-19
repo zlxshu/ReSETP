@@ -394,6 +394,35 @@ def run_evaluate(args: argparse.Namespace) -> int:
     return 0
 
 
+def run_summarize_partial(args: argparse.Namespace) -> int:
+    output_dir = _checked_output_dir(Path(args.output_dir))
+    dataset_dir = output_dir / "dataset"
+    partial_path = Path(args.partial_csv)
+    rows = _read_csv(partial_path)
+    rows.sort(key=lambda row: (int(float(row.get("episode_index", 0))), int(float(row.get("block_step_index", 0)))))
+    episodes = _episode_summaries_from_rows(rows)
+    coverage = summarize_action_coverage(rows)
+    stats = summarize_dataset(rows, episodes, coverage=coverage, elapsed_seconds=float(args.elapsed_seconds), args=args)
+    stats["status"] = str(args.status)
+    stats["reason"] = str(args.reason)
+    dataset_dir.mkdir(parents=True, exist_ok=True)
+    _write_csv(dataset_dir / "block_trace_rows.csv", rows, fieldnames=_trace_fieldnames())
+    _write_csv(dataset_dir / "episode_summary.csv", episodes, fieldnames=_episode_summary_fieldnames())
+    _write_csv(dataset_dir / "action_coverage.csv", _coverage_rows(coverage))
+    _write_json(dataset_dir / "dataset_stats.json", stats)
+    _write_json(
+        dataset_dir / "collection_manifest.json",
+        {
+            "command": "summarize-partial",
+            "args": vars(args),
+            "stats": stats,
+            "policy": "Partial rows are real block transitions, but coverage gate did not pass; do not train a performance policy from this dataset.",
+        },
+    )
+    _write_dataset_report(dataset_dir / "dataset_report.md", stats)
+    return 0
+
+
 def run_report(args: argparse.Namespace) -> int:
     output_dir = _checked_output_dir(Path(args.output_dir))
     output_dir.mkdir(parents=True, exist_ok=True)
@@ -401,7 +430,13 @@ def run_report(args: argparse.Namespace) -> int:
     comparison_path = Path(args.comparison)
     dataset_stats = json.loads(dataset_stats_path.read_text(encoding="utf-8")) if dataset_stats_path.exists() else {}
     comparison_rows = _read_csv(comparison_path) if comparison_path.exists() else []
-    verdict = verdict_from_comparison(comparison_rows)
+    if str(dataset_stats.get("status", "")).startswith("HALT_"):
+        verdict = {
+            "status": str(dataset_stats.get("status")),
+            "reason": str(dataset_stats.get("reason", "dataset gate halted before evaluation")),
+        }
+    else:
+        verdict = verdict_from_comparison(comparison_rows)
     report = {
         "dataset_stats_path": str(dataset_stats_path),
         "comparison_path": str(comparison_path),
@@ -791,6 +826,37 @@ def _episode_summary_row(episode: dict[str, Any]) -> dict[str, Any]:
     }
 
 
+def _episode_summaries_from_rows(rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    grouped: dict[int, list[dict[str, Any]]] = {}
+    for row in rows:
+        grouped.setdefault(int(float(row.get("episode_index", 0))), []).append(row)
+    summaries: list[dict[str, Any]] = []
+    for episode_index, episode_rows in sorted(grouped.items()):
+        episode_rows.sort(key=lambda row: int(float(row.get("block_step_index", 0))))
+        first = episode_rows[0]
+        last = episode_rows[-1]
+        summaries.append(
+            {
+                "episode_index": episode_index,
+                "bundle": first.get("bundle", ""),
+                "seed": int(float(first.get("seed", 0))),
+                "policy": first.get("collection_policy", ""),
+                "eval_budget": int(float(first.get("eval_budget", 0))),
+                "block_size": int(float(first.get("block_size", 0))),
+                "block_steps": len(episode_rows),
+                "best_obj": float(last.get("best_obj", 0.0)),
+                "actual_evals": int(float(last.get("actual_evals_after", 0))),
+                "violation_count": int(float(last.get("violation_count", 1))),
+                "wall_time_seconds": "",
+                "worker_python_executable": last.get("worker_python_executable", ""),
+                "worker_python_version": last.get("worker_python_version", ""),
+                "worker_numpy_version": last.get("worker_numpy_version", ""),
+                "pid": "",
+            }
+        )
+    return summaries
+
+
 def _coverage_rows(coverage: dict[str, Any]) -> list[dict[str, Any]]:
     rows = []
     for key, count in coverage["marginal_coverage"].items():
@@ -897,6 +963,9 @@ def _write_dataset_report(path: Path, stats: dict[str, Any]) -> None:
     lines = [
         "# Offline Bandit Dataset",
         "",
+        f"Status: `{stats.get('status', 'DATASET_RECORDED')}`.",
+        f"Reason: {stats.get('reason', 'n/a')}.",
+        "",
         f"Rows: {stats['row_count']}. Episodes: {stats['episode_count']}.",
         f"Coverage pass: `{coverage['pass_minimum_coverage']}`. Unique full actions: {coverage['unique_full_actions']}.",
         f"Integrity pass: `{integrity['pass_collection_integrity']}`.",
@@ -966,6 +1035,8 @@ def _plain_verdict(verdict: dict[str, Any]) -> str:
         return "The offline policy beat the strong random-block baseline and stayed close to AlphaUCB. It is worth moving to a stronger machine for online warm-start training."
     if status == "WEAK":
         return "The offline policy did not clear the strong random-block baseline. This is evidence against spending more local online-training time on the current PPO formulation."
+    if str(status).startswith("HALT_COLLECTION"):
+        return f"Collection halted before training: {verdict.get('reason', 'the dataset gate did not pass')}."
     return f"Integrity gate failed: {verdict.get('reason', 'unknown reason')}."
 
 
@@ -1106,6 +1177,19 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     evaluate.add_argument("--rerun-underbudget", action="store_true")
     evaluate.add_argument("--stochastic-policy", action="store_true")
 
+    summarize = sub.add_parser("summarize-partial")
+    summarize.add_argument("--output-dir", default=f"{REPORT_ROOT_FRAGMENT}")
+    summarize.add_argument("--partial-csv", default=f"{REPORT_ROOT_FRAGMENT}/dataset/block_trace_rows.partial.csv")
+    summarize.add_argument("--eval-budget", type=int, default=16000)
+    summarize.add_argument("--block-size", type=int, default=128)
+    summarize.add_argument("--required-worker-python", default=DEFAULT_SYSTEM_WORKER)
+    summarize.add_argument("--elapsed-seconds", type=float, default=0.0)
+    summarize.add_argument("--status", default="HALT_COLLECTION_COST")
+    summarize.add_argument(
+        "--reason",
+        default="Block-level coverage sampling did not reach the minimum dataset gate at acceptable local-machine cost.",
+    )
+
     report = sub.add_parser("report")
     report.add_argument("--output-dir", default=f"{REPORT_ROOT_FRAGMENT}")
     report.add_argument("--dataset-stats", default=f"{REPORT_ROOT_FRAGMENT}/dataset/dataset_stats.json")
@@ -1124,6 +1208,8 @@ def main(argv: list[str] | None = None) -> int:
         return run_train(args)
     if args.command == "evaluate":
         return run_evaluate(args)
+    if args.command == "summarize-partial":
+        return run_summarize_partial(args)
     if args.command == "report":
         return run_report(args)
     raise ValueError(f"unknown command: {args.command}")
