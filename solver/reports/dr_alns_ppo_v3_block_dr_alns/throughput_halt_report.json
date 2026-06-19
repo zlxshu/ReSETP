@@ -1,0 +1,11 @@
+{
+  "status": "HALT_SYNC_VECENV_THROUGHPUT",
+  "full_gate": "PASS_STRICT",
+  "full_gate_report": "solver/reports/dr_alns_ppo_v3_block_dr_alns/full_gate_10001/full_gate_report_strict.md",
+  "mixed_pilot": "ABORTED_AFTER_20_MINUTES_ZERO_EPISODES_ONE_ACTIVE_WORKER",
+  "episode_bucketed_block128_probe": "ABORTED_AFTER_APPROX_12_MINUTES_ZERO_EPISODES_SYNC_LONGTAIL",
+  "episode_bucketed_block512_probe": "ABORTED_AFTER_APPROX_9_MINUTES_ZERO_EPISODES_SYNC_LONGTAIL",
+  "plain_cause": "SB3 SubprocVecEnv is synchronous. It waits for the slowest solver worker every RL step. DR-ALNS move times have heavy tails, so most workers wait while one seed/instance finishes. This destroys throughput before PPO can learn.",
+  "not_the_cause": "Not a solver semantic issue, not worker environment drift, not a PPO-quality result. The PPO pilot did not reach valid episode data.",
+  "recommended_next_fix": "Replace synchronous VecEnv sampling with an asynchronous episode collector, or switch first to an offline/contextual bandit controller using completed ALNS block traces. Do not run longer SB3 synchronous PPO in this setup."
+}

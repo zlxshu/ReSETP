@@ -1,0 +1,9 @@
+{
+  "status": "HALT_MIXED_VECENV_LONGTAIL",
+  "reason": "mixed schedule launched 9 workers but after two probes only one worker was active and monitor.csv had zero episode rows",
+  "elapsed_observed_minutes": 20,
+  "monitor_rows_including_header": 2,
+  "env_eval_counts_rows_including_header": 1,
+  "worker_python": "/opt/anaconda3/bin/python3.13",
+  "next_action": "use episode_bucketed homogeneous per-bundle phases before any real block PPO pilot"
+}

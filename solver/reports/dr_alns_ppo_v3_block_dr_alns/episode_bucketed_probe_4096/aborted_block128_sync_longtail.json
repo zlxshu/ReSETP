@@ -1,0 +1,5 @@
+{
+  "status": "HALT_BLOCK128_SYNC_LONGTAIL",
+  "reason": "episode_bucketed restored concurrent worker launch, but block_size=128 caused too many synchronous barriers; first 4096-eval phase had no completed episode after ~12 minutes and was dominated by a single long-tail worker",
+  "next_action": "probe block_size=512 to reduce synchronization barriers before real pilot"
+}
