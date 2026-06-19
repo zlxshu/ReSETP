@@ -530,7 +530,32 @@ def _run_lns(session: _SearchSession) -> BaselineRunResult:
 
 
 def _run_gwo(session: _SearchSession) -> BaselineRunResult:
-    return session.finalize(failure_reason="GWO baseline not implemented in this commit.")
+    params = {"NIND": 50, "MAXGEN": 1000, "position_update": "GA-crossover-alpha-beta-delta", "local_search": "Shaw-LNS"}
+    wolves = _gwo_initial_wolves(session, int(params["NIND"]))
+    generation = 0
+    while session.can_score() and wolves:
+        generation += 1
+        wolves = sorted(wolves, key=lambda item: (item.objective, item.signature))
+        guides = wolves[: min(3, len(wolves))]
+        next_wolves: list[_ScoredSolution] = list(guides)
+        for wolf in wolves[len(guides) :]:
+            if not session.can_score():
+                break
+            guide = guides[0] if session.rng.random() < 1.0 / 3.0 else guides[1 % len(guides)] if session.rng.random() < 0.5 else guides[-1]
+            order = _order_crossover(_solution_order(wolf.solution, session.context.instance), _solution_order(guide.solution, session.context.instance), session.rng)
+            order = _apply_order_move(order, session.rng, session.rng.choice(["swap", "relocate", "two_opt"]))
+            candidate = _order_to_solution(order, session, type_hints=_route_type_hints(guide.solution, session.context.instance))
+            outcome = _alns_neighbor(session, candidate, "shaw_related_removal", "regret2_insert_repair")
+            if outcome.produced and outcome.feasible:
+                candidate = outcome.solution
+            scored = session.score(candidate, operator="gwo_alpha_beta_delta_lns")
+            if scored is not None:
+                next_wolves.append(scored if scored.objective <= wolf.objective else wolf)
+                session.accept_if_better(scored)
+        wolves = sorted(next_wolves, key=lambda item: (item.objective, item.signature))[: max(1, int(params["NIND"]))]
+        if generation >= int(params["MAXGEN"]):
+            generation = 0
+    return session.finalize(params)
 
 
 def _run_iwd(session: _SearchSession) -> BaselineRunResult:
@@ -920,6 +945,27 @@ def _lns_operator_pair(rng: random.Random) -> tuple[str, str]:
     if rng.random() < 0.25:
         destroy = "worst_customer_removal"
     return destroy, repair
+
+
+def _gwo_initial_wolves(session: _SearchSession, target_population: int) -> list[_ScoredSolution]:
+    wolves = [session.current]
+    base_order = _solution_order(session.current.solution, session.context.instance)
+    desired = max(1, min(int(target_population), max(1, session.target)))
+    for idx in range(desired - 1):
+        if not session.can_score():
+            break
+        if idx % 3 == 0:
+            order = _nearest_neighbor_order(session.context.instance, session.rng)
+        elif idx % 3 == 1:
+            order = _angle_scan_order(session.context.instance)
+        else:
+            order = _apply_order_move(base_order, session.rng, "double_bridge")
+        candidate = _order_to_solution(order, session)
+        scored = session.score(candidate, operator="gwo_initial_wolf")
+        if scored is not None:
+            wolves.append(scored)
+            session.accept_if_better(scored)
+    return sorted(wolves, key=lambda item: (item.objective, item.signature))
 
 
 def _alns_neighbor(session: _SearchSession, solution: Solution, destroy: str, repair: str) -> _OperatorOutcome:
