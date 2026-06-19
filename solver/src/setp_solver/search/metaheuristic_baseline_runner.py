@@ -137,7 +137,7 @@ def _run_task(task: tuple[str, str, str, int, int, float]) -> dict[str, Any]:
             initial_solution=warm,
         )
         solution = run.best_solution
-        status = run.status
+        status = "OK" if solution is not None and int(run.evals) >= int(eval_budget) else run.status
         source = "Existing fair scikit-opt-SA adapter under common referee"
         evaluations = int(run.evals)
         best_cost = run.best_cost
@@ -182,7 +182,7 @@ def _run_task(task: tuple[str, str, str, int, int, float]) -> dict[str, Any]:
         "evaluations": evaluations,
         "eval_budget": int(eval_budget),
         "max_runtime_seconds": float(max_runtime_seconds),
-        "elapsed_seconds": elapsed if algorithm != "fair-SA" else time.perf_counter() - started,
+        "elapsed_seconds": elapsed,
         "best_cost": best_cost,
         "status": status,
         "source": source,

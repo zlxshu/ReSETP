@@ -156,8 +156,10 @@ class _SearchSession:
             return None
         self.count_operator(operator)
         objective = float(score_candidate(solution, self.context, label="candidate"))
-        feasible = _is_feasible(solution, self.context)
-        cost = float(model_cost(solution, self.context)) if feasible else math.inf
+        breakdown = self.context.score_breakdowns.get(id(solution), {})
+        violation_count = int(breakdown.get("violation_count", 0))
+        feasible = violation_count == 0
+        cost = float(breakdown.get("raw_cost", math.inf)) if feasible else math.inf
         scored = _ScoredSolution(
             solution=solution,
             objective=objective,
@@ -857,6 +859,7 @@ def _vns_shake(order: list[str], rng: random.Random, iteration: int) -> list[str
 
 def _vns_local_search(session: _SearchSession, solution: Solution) -> Solution:
     best = solution
+    best_obj = float(score_reference(best, session.context))
     neighborhoods = ["swap", "relocate", "two_opt", "alns_shaw"]
     improved = True
     while improved and session.can_score():
@@ -872,8 +875,9 @@ def _vns_local_search(session: _SearchSession, solution: Solution) -> Solution:
                 order = _apply_order_move(_solution_order(best, session.context.instance), session.rng, neighborhood)
                 candidate = _order_to_solution(order, session, type_hints=_route_type_hints(best, session.context.instance))
             scored = session.score(candidate, operator=f"vns_local_{neighborhood}")
-            if scored is not None and scored.feasible and scored.objective < score_reference(best, session.context) - 1e-9:
+            if scored is not None and scored.feasible and scored.objective < best_obj - 1e-9:
                 best = scored.solution
+                best_obj = scored.objective
                 improved = True
                 break
     return best
@@ -931,13 +935,15 @@ def _weighted_customer_choice(weights: dict[str, float], rng: random.Random) -> 
 
 def _aco_vnd(solution: Solution, session: _SearchSession) -> Solution:
     best = solution
+    best_obj = float(score_reference(best, session.context))
     for move in ("relocate", "swap"):
         if not session.can_score():
             return best
         candidate = _order_to_solution(_apply_order_move(_solution_order(best, session.context.instance), session.rng, move), session, type_hints=_route_type_hints(best, session.context.instance))
         scored = session.score(candidate, operator=f"aco_vnd_{move}")
-        if scored is not None and scored.feasible and scored.objective < score_reference(best, session.context) - 1e-9:
+        if scored is not None and scored.feasible and scored.objective < best_obj - 1e-9:
             best = scored.solution
+            best_obj = scored.objective
     return best
 
 
