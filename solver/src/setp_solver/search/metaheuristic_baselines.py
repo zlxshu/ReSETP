@@ -337,7 +337,40 @@ def cost_breakdown_row(
 
 
 def _run_ga(session: _SearchSession) -> BaselineRunResult:
-    return session.finalize(failure_reason="GA baseline not implemented in this commit.")
+    params = {"population": 200, "elite_fraction": 0.10, "mutation_probability": 0.10}
+    population = _ga_initial_population(session, params["population"])
+    no_improvement = 0
+    generation = 0
+    while session.can_score() and population:
+        generation += 1
+        before = session.best.objective
+        population = sorted(population, key=lambda item: (item.objective, item.signature))
+        elite_count = max(1, int(math.ceil(len(population) * params["elite_fraction"])))
+        next_population = population[:elite_count]
+        survivor_pool = population[elite_count:]
+        session.rng.shuffle(survivor_pool)
+        next_population.extend(survivor_pool[: max(0, len(population) - elite_count) // 4])
+        while len(next_population) < len(population) and session.can_score():
+            parent_a = _tournament(population, session.rng)
+            parent_b = _tournament(population, session.rng)
+            operator = "ga_common_nodes" if session.rng.random() < 0.5 else "ga_common_arcs"
+            child = _ga_crossover(parent_a.solution, parent_b.solution, session, operator=operator)
+            if session.rng.random() < params["mutation_probability"]:
+                child = _ga_mutation(child, session)
+                operator = f"{operator}_mutation"
+            scored = session.score(child, operator=operator)
+            if scored is not None:
+                next_population.append(scored)
+                session.accept_if_better(scored)
+        if session.best.objective < before - 1e-9:
+            no_improvement = 0
+        else:
+            no_improvement += 1
+        population = sorted(next_population, key=lambda item: (item.objective, item.signature))[: max(1, len(population))]
+        if no_improvement >= max(5, len(population) // 4):
+            _ga_diversify(population, session)
+            no_improvement = 0
+    return session.finalize(params)
 
 
 def _run_pso(session: _SearchSession) -> BaselineRunResult:
@@ -504,6 +537,100 @@ def _order_crossover(parent_a: list[str], parent_b: list[str], rng: random.Rando
     used = set(block)
     fill = [customer_id for customer_id in parent_b if customer_id not in used]
     return [*fill[:i], *block, *fill[i:]]
+
+
+def _ga_initial_population(session: _SearchSession, target_population: int) -> list[_ScoredSolution]:
+    order = _solution_order(session.current.solution, session.context.instance)
+    population: list[_ScoredSolution] = [session.current]
+    desired = max(1, min(int(target_population), max(1, session.target)))
+    nn_order = _nearest_neighbor_order(session.context.instance, session.rng)
+    for idx in range(desired - 1):
+        if not session.can_score():
+            break
+        if idx == 0:
+            candidate_order = nn_order
+            operator = "ga_nn_initialization"
+        elif idx % 5 == 0:
+            candidate_order = _nearest_neighbor_order(session.context.instance, session.rng)
+            operator = "ga_random_start_nn_initialization"
+        else:
+            move = ("swap", "relocate", "two_opt", "double_bridge")[idx % 4]
+            candidate_order = _apply_order_move(order, session.rng, move)
+            operator = f"ga_seeded_{move}"
+        candidate = _order_to_solution(candidate_order, session)
+        improved = _ga_initial_improvement(candidate, session)
+        scored = session.score(improved, operator=operator)
+        if scored is not None:
+            population.append(scored)
+            session.accept_if_better(scored)
+    return sorted(population, key=lambda item: (item.objective, item.signature))
+
+
+def _ga_initial_improvement(solution: Solution, session: _SearchSession) -> Solution:
+    outcome = _alns_neighbor(session, solution, "whole_route_removal", "regret2_insert_repair")
+    if outcome.produced and outcome.feasible:
+        return outcome.solution
+    return solution
+
+
+def _nearest_neighbor_order(instance: Instance, rng: random.Random) -> list[str]:
+    remaining = set(_all_customer_ids(instance))
+    if not remaining:
+        return []
+    current = rng.choice(sorted(remaining))
+    order = [current]
+    remaining.remove(current)
+    while remaining:
+        current = min(remaining, key=lambda customer_id: (float(instance.distance(current, customer_id)), customer_id))
+        order.append(current)
+        remaining.remove(current)
+    return order
+
+
+def _tournament(population: list[_ScoredSolution], rng: random.Random) -> _ScoredSolution:
+    if len(population) == 1:
+        return population[0]
+    a, b = rng.sample(population, 2)
+    return a if (a.objective, a.signature) <= (b.objective, b.signature) else b
+
+
+def _ga_crossover(parent_a: Solution, parent_b: Solution, session: _SearchSession, *, operator: str) -> Solution:
+    if operator == "ga_common_arcs":
+        return _route_crossover(parent_a, parent_b, session.context, session.rng)
+    order_a = _solution_order(parent_a, session.context.instance)
+    order_b = _solution_order(parent_b, session.context.instance)
+    return _order_to_solution(_order_crossover(order_a, order_b, session.rng), session, type_hints=_route_type_hints(parent_a, session.context.instance))
+
+
+def _ga_mutation(solution: Solution, session: _SearchSession) -> Solution:
+    order = _solution_order(solution, session.context.instance)
+    mutation = session.rng.choice(["random_node_delete", "random_route_delete", "nearest_node_delete"])
+    if mutation == "random_route_delete":
+        outcome = _alns_neighbor(session, solution, "whole_route_removal", "regret2_insert_repair")
+        return outcome.solution if outcome.produced and outcome.feasible else solution
+    if mutation == "nearest_node_delete":
+        order = _nearest_node_reinsert_order(order, session.context.instance, session.rng)
+    else:
+        order = _apply_order_move(order, session.rng, session.rng.choice(["swap", "relocate", "two_opt"]))
+    return _order_to_solution(order, session, type_hints=_route_type_hints(solution, session.context.instance))
+
+
+def _nearest_node_reinsert_order(order: list[str], instance: Instance, rng: random.Random) -> list[str]:
+    if len(order) < 2:
+        return list(order)
+    base = rng.choice(order)
+    candidates = [customer_id for customer_id in order if customer_id != base]
+    target = min(candidates, key=lambda customer_id: (float(instance.distance(base, customer_id)), customer_id))
+    out = [customer_id for customer_id in order if customer_id != target]
+    out.insert(rng.randrange(len(out) + 1), target)
+    return out
+
+
+def _ga_diversify(population: list[_ScoredSolution], session: _SearchSession) -> None:
+    if len(population) <= 2:
+        return
+    keep = max(1, len(population) // 2)
+    del population[keep:]
 
 
 def _alns_neighbor(session: _SearchSession, solution: Solution, destroy: str, repair: str) -> _OperatorOutcome:
