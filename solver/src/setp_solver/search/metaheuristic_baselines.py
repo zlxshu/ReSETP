@@ -508,7 +508,25 @@ def _run_ga_vns(session: _SearchSession) -> BaselineRunResult:
 
 
 def _run_lns(session: _SearchSession) -> BaselineRunResult:
-    return session.finalize(failure_reason="LNS baseline not implemented in this commit.")
+    params = {"max_iter": 1000, "epsilon": 0.3, "phi": 0.05, "mu": 0.95, "destroy": "random+shaw", "repair": "farthest+regret"}
+    scan_solution = _order_to_solution(_angle_scan_order(session.context.instance), session)
+    scored_scan = session.score(scan_solution, operator="lns_scan_initial")
+    if scored_scan is not None and scored_scan.feasible:
+        session.current = scored_scan
+    temperature = -float(params["phi"]) * abs(session.current.objective) / math.log(0.5)
+    iteration = 0
+    while session.can_score():
+        iteration += 1
+        destroy, repair = _lns_operator_pair(session.rng)
+        outcome = _alns_neighbor(session, session.current.solution, destroy, repair)
+        candidate = outcome.solution if outcome.produced and outcome.feasible else _order_to_solution(_apply_order_move(_solution_order(session.current.solution, session.context.instance), session.rng, "relocate"), session)
+        scored = session.score(candidate, operator=f"lns_{destroy}_{repair}")
+        session.accept_metropolis(scored, temperature)
+        temperature *= float(params["mu"])
+        if iteration >= int(params["max_iter"]):
+            iteration = 0
+            temperature = max(1e-9, -float(params["phi"]) * abs(session.current.objective) / math.log(0.5))
+    return session.finalize(params)
 
 
 def _run_gwo(session: _SearchSession) -> BaselineRunResult:
@@ -880,6 +898,28 @@ def _ga_vns_polish(solution: Solution, session: _SearchSession, trials: int) -> 
         if obj_candidate < obj_best - 1e-9:
             best = candidate
     return best
+
+
+def _angle_scan_order(instance: Instance) -> list[str]:
+    depots = [node for node in instance.nodes if node.node_type.lower() == "d"]
+    if depots:
+        cx = sum(float(node.x) for node in depots) / len(depots)
+        cy = sum(float(node.y) for node in depots) / len(depots)
+    else:
+        cx = cy = 0.0
+    customers = [node for node in instance.nodes if node.node_type.lower() == "c"]
+    return [
+        node.node_id
+        for node in sorted(customers, key=lambda node: (math.atan2(float(node.y) - cy, float(node.x) - cx), float(node.demand), node.node_id))
+    ]
+
+
+def _lns_operator_pair(rng: random.Random) -> tuple[str, str]:
+    destroy = "random_customer_removal" if rng.random() < 0.5 else "shaw_related_removal"
+    repair = rng.choice(["greedy_insert_repair", "regret2_insert_repair", "regret3_insert_repair"])
+    if rng.random() < 0.25:
+        destroy = "worst_customer_removal"
+    return destroy, repair
 
 
 def _alns_neighbor(session: _SearchSession, solution: Solution, destroy: str, repair: str) -> _OperatorOutcome:
