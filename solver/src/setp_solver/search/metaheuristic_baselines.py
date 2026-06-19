@@ -374,7 +374,41 @@ def _run_ga(session: _SearchSession) -> BaselineRunResult:
 
 
 def _run_pso(session: _SearchSession) -> BaselineRunResult:
-    return session.finalize(failure_reason="PSO baseline not implemented in this commit.")
+    params = {"population": 50, "w": 0.72, "c1": 1.49, "c2": 1.49, "calibration_eval_seed0": 1000}
+    particles = _pso_initial_particles(session, params["population"])
+    if not particles:
+        return session.finalize(params, failure_reason="PSO produced no particles.")
+    gbest = min((particle["pbest"] for particle in particles), key=lambda item: (item.objective, item.signature))
+    while session.can_score():
+        for particle in particles:
+            if not session.can_score():
+                break
+            order = list(particle["order"])
+            velocity = list(particle.get("velocity", []))
+            kept_velocity = [swap for swap in velocity if session.rng.random() < params["w"]]
+            pbest_swaps = _order_swap_sequence(order, _solution_order(particle["pbest"].solution, session.context.instance))
+            gbest_swaps = _order_swap_sequence(order, _solution_order(gbest.solution, session.context.instance))
+            velocity = kept_velocity
+            velocity.extend(swap for swap in pbest_swaps if session.rng.random() < min(1.0, params["c1"] / 2.0))
+            velocity.extend(swap for swap in gbest_swaps if session.rng.random() < min(1.0, params["c2"] / 2.0))
+            if session.rng.random() < 0.10:
+                i, j = session.rng.sample(range(len(order)), 2)
+                velocity.append((i, j))
+            order = _apply_swaps(order, velocity, session.rng, 1.0)
+            if session.rng.random() < 0.05:
+                order = _apply_order_move(order, session.rng, session.rng.choice(["swap", "relocate", "two_opt"]))
+            candidate = _order_to_solution(order, session, type_hints=_route_type_hints(particle["pbest"].solution, session.context.instance))
+            scored = session.score(candidate, operator="pso_velocity_decode")
+            if scored is None:
+                continue
+            particle["order"] = _solution_order(scored.solution, session.context.instance) if scored.feasible else order
+            particle["velocity"] = velocity[-max(1, len(order)) :]
+            if scored.objective < particle["pbest"].objective - 1e-9:
+                particle["pbest"] = scored
+            if scored.objective < gbest.objective - 1e-9:
+                gbest = scored
+            session.accept_if_better(scored)
+    return session.finalize(params)
 
 
 def _run_vns(session: _SearchSession) -> BaselineRunResult:
@@ -631,6 +665,28 @@ def _ga_diversify(population: list[_ScoredSolution], session: _SearchSession) ->
         return
     keep = max(1, len(population) // 2)
     del population[keep:]
+
+
+def _pso_initial_particles(session: _SearchSession, target_population: int) -> list[dict[str, Any]]:
+    base_order = _solution_order(session.current.solution, session.context.instance)
+    particles: list[dict[str, Any]] = [
+        {"order": base_order, "velocity": [], "pbest": session.current}
+    ]
+    desired = max(1, min(int(target_population), max(1, session.target)))
+    for idx in range(desired - 1):
+        if not session.can_score():
+            break
+        if idx % 4 == 0:
+            order = _nearest_neighbor_order(session.context.instance, session.rng)
+        else:
+            order = _apply_order_move(base_order, session.rng, ("swap", "relocate", "two_opt", "double_bridge")[idx % 4])
+        candidate = _order_to_solution(order, session)
+        scored = session.score(candidate, operator="pso_initial_particle")
+        if scored is None:
+            break
+        particles.append({"order": order, "velocity": [], "pbest": scored})
+        session.accept_if_better(scored)
+    return particles
 
 
 def _alns_neighbor(session: _SearchSession, solution: Solution, destroy: str, repair: str) -> _OperatorOutcome:
