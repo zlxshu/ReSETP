@@ -45,3 +45,7 @@ PYTHONPATH=solver/rl:solver/src:models/src \
 All 6 rows reached the requested `eval_budget=256`, all 6 rows had `violation_count=0`, and all rows used the audited system worker environment. The short budget is intentionally not used for any performance claim.
 
 Next valid step is a full V3 gate: `eval_budget=16000`, seeds 1-10, `official_winner_kernel/random_full/alpha_ucb_env/random_block/alpha_ucb_block`, then only if that gate passes, train `ppo_block`.
+
+## Budget note
+
+For `block_ppo`, PPO timesteps are block decisions, not raw candidate evaluations. With `eval_budget=16000` and `block_size=128`, one full episode is `ceil(16000 / 128) = 125` RL steps. With 9 parallel envs, one complete episode wave is `1125` PPO timesteps. A 64-wave pilot is therefore `72000` PPO timesteps, not the old per-step 1M setting.

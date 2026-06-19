@@ -6,6 +6,8 @@
   "architecture": "block_level_online_alns_controller",
   "control_mode": "block_ppo",
   "block_size_default": 128,
+  "effective_episode_steps_at_eval_budget_16000": 125,
+  "one_episode_wave_timesteps_at_9_envs": 1125,
   "action_space": {
     "type": "MultiDiscrete",
     "nvec": [7, 4, 5, 4, 4],
@@ -46,5 +48,13 @@
     "zero_violation_rows": 6,
     "all_actual_evals_equal_budget": true,
     "performance_claim": false
+  },
+  "next_gate_defaults": {
+    "full_gate_eval_budget": 16000,
+    "full_gate_seeds": [1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
+    "full_gate_jobs": 6,
+    "pilot_episode_waves": 64,
+    "pilot_timesteps_with_9_envs": 72000,
+    "note": "Do not reuse old per-step PPO 1M timesteps blindly; block_ppo timesteps are block decisions, not candidate evals."
   }
 }
