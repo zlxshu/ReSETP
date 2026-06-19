@@ -164,23 +164,40 @@ def run_collect(args: argparse.Namespace) -> int:
                     )
                 )
                 episode_index += 1
-    rows: list[dict[str, Any]] = []
-    episodes: list[dict[str, Any]] = []
     start = time.monotonic()
-    if int(args.jobs) > 1 and len(tasks) > 1:
-        with concurrent.futures.ProcessPoolExecutor(max_workers=min(int(args.jobs), len(tasks))) as executor:
-            futures = [executor.submit(run_trace_episode, task) for task in tasks]
-            for future in concurrent.futures.as_completed(futures):
-                episode = future.result()
-                episodes.append(_episode_summary_row(episode))
-                rows.extend(episode["block_rows"])
-                _write_csv(dataset_dir / "block_trace_rows.partial.csv", rows, fieldnames=_trace_fieldnames())
-    else:
-        for task in tasks:
-            episode = run_trace_episode(task)
-            episodes.append(_episode_summary_row(episode))
-            rows.extend(episode["block_rows"])
-            _write_csv(dataset_dir / "block_trace_rows.partial.csv", rows, fieldnames=_trace_fieldnames())
+    rows, episodes = _execute_trace_tasks(tasks, jobs=int(args.jobs), partial_path=dataset_dir / "block_trace_rows.partial.csv")
+    supplement_tasks: list[TraceEpisodeTask] = []
+    coverage = summarize_action_coverage(rows)
+    while (
+        not bool(args.disable_auto_supplement)
+        and not coverage["pass_minimum_coverage"]
+        and len(supplement_tasks) < int(args.max_supplement_episodes)
+    ):
+        remaining = int(args.max_supplement_episodes) - len(supplement_tasks)
+        chunk_count = min(int(args.supplement_chunk_size), remaining)
+        chunk: list[TraceEpisodeTask] = []
+        for _ in range(chunk_count):
+            bundle = bundles[episode_index % len(bundles)]
+            task = TraceEpisodeTask(
+                episode_index=episode_index,
+                bundle=bundle,
+                seed=int(args.seed) + 100000 + episode_index,
+                policy=str(args.supplement_policy),
+                eval_budget=int(args.eval_budget),
+                block_size=int(args.block_size),
+            )
+            chunk.append(task)
+            supplement_tasks.append(task)
+            episode_index += 1
+        new_rows, new_episodes = _execute_trace_tasks(
+            chunk,
+            jobs=int(args.jobs),
+            partial_path=dataset_dir / "block_trace_rows.partial.csv",
+            existing_rows=rows,
+        )
+        rows.extend(new_rows)
+        episodes.extend(new_episodes)
+        coverage = summarize_action_coverage(rows)
     rows.sort(key=lambda row: (row["episode_index"], row["block_step_index"]))
     episodes.sort(key=lambda row: row["episode_index"])
     _write_csv(dataset_dir / "block_trace_rows.csv", rows, fieldnames=_trace_fieldnames())
@@ -189,9 +206,35 @@ def run_collect(args: argparse.Namespace) -> int:
     stats = summarize_dataset(rows, episodes, coverage=coverage, elapsed_seconds=time.monotonic() - start, args=args)
     _write_csv(dataset_dir / "action_coverage.csv", _coverage_rows(coverage))
     _write_json(dataset_dir / "dataset_stats.json", stats)
-    _write_json(dataset_dir / "collection_manifest.json", _collection_manifest(args, tasks, stats))
+    _write_json(dataset_dir / "collection_manifest.json", _collection_manifest(args, tasks, supplement_tasks, stats))
     _write_dataset_report(dataset_dir / "dataset_report.md", stats)
     return 0 if stats["integrity"]["pass_collection_integrity"] else 2
+
+
+def _execute_trace_tasks(
+    tasks: list[TraceEpisodeTask],
+    *,
+    jobs: int,
+    partial_path: Path,
+    existing_rows: list[dict[str, Any]] | None = None,
+) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
+    rows: list[dict[str, Any]] = []
+    episodes: list[dict[str, Any]] = []
+    if int(jobs) > 1 and len(tasks) > 1:
+        with concurrent.futures.ProcessPoolExecutor(max_workers=min(int(jobs), len(tasks))) as executor:
+            futures = [executor.submit(run_trace_episode, task) for task in tasks]
+            for future in concurrent.futures.as_completed(futures):
+                episode = future.result()
+                episodes.append(_episode_summary_row(episode))
+                rows.extend(episode["block_rows"])
+                _write_csv(partial_path, list(existing_rows or []) + rows, fieldnames=_trace_fieldnames())
+    else:
+        for task in tasks:
+            episode = run_trace_episode(task)
+            episodes.append(_episode_summary_row(episode))
+            rows.extend(episode["block_rows"])
+            _write_csv(partial_path, list(existing_rows or []) + rows, fieldnames=_trace_fieldnames())
+    return rows, episodes
 
 
 def run_train(args: argparse.Namespace) -> int:
@@ -676,11 +719,17 @@ def _coverage_rows(coverage: dict[str, Any]) -> list[dict[str, Any]]:
     return rows
 
 
-def _collection_manifest(args: argparse.Namespace, tasks: list[TraceEpisodeTask], stats: dict[str, Any]) -> dict[str, Any]:
+def _collection_manifest(
+    args: argparse.Namespace,
+    tasks: list[TraceEpisodeTask],
+    supplement_tasks: list[TraceEpisodeTask],
+    stats: dict[str, Any],
+) -> dict[str, Any]:
     return {
         "command": "collect",
         "args": vars(args),
-        "task_count": len(tasks),
+        "initial_task_count": len(tasks),
+        "supplement_task_count": len(supplement_tasks),
         "stats": stats,
         "policy": "Rows are real block-level transitions; existing episode/run reports are not treated as training rows.",
     }
@@ -922,6 +971,10 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     collect.add_argument("--block-size", type=int, default=128)
     collect.add_argument("--jobs", type=int, default=6)
     collect.add_argument("--required-worker-python", default=DEFAULT_SYSTEM_WORKER)
+    collect.add_argument("--disable-auto-supplement", action="store_true")
+    collect.add_argument("--supplement-policy", choices=("random_block", "stratified_random"), default="stratified_random")
+    collect.add_argument("--supplement-chunk-size", type=int, default=6)
+    collect.add_argument("--max-supplement-episodes", type=int, default=64)
 
     train = sub.add_parser("train")
     train.add_argument("--dataset", default=f"{REPORT_ROOT_FRAGMENT}/dataset/block_trace_rows.csv")
@@ -975,4 +1028,3 @@ def main(argv: list[str] | None = None) -> int:
 
 if __name__ == "__main__":
     raise SystemExit(main())
-
