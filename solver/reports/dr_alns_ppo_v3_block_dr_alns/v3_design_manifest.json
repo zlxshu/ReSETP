@@ -1,0 +1,50 @@
+{
+  "lane": "dr_alns_ppo_v3_block_dr_alns",
+  "implementation_commit": "fbfdb0f",
+  "gold_system_python": "/opt/anaconda3/bin/python3.13",
+  "gold_numpy_version": "2.3.5",
+  "architecture": "block_level_online_alns_controller",
+  "control_mode": "block_ppo",
+  "block_size_default": 128,
+  "action_space": {
+    "type": "MultiDiscrete",
+    "nvec": [7, 4, 5, 4, 4],
+    "components": [
+      "destroy_or_alpha_ucb",
+      "repair_or_alpha_ucb",
+      "q_ratio",
+      "threshold_ratio",
+      "exploration_ratio"
+    ],
+    "q_ratios": [0.1, 0.16, 0.23, 0.3, 0.4],
+    "threshold_ratios": [0.0, 0.0025, 0.0075, 0.02],
+    "exploration_ratios": [0.0, 0.05, 0.15, 0.3]
+  },
+  "reward_principle": "block-level best-cost and route-count improvement; no reward for merely accepted worse moves",
+  "baselines_added": [
+    "random_block",
+    "alpha_ucb_block",
+    "ppo_block"
+  ],
+  "semantic_guards": [
+    "cost.py/check.py/evaluation.py semantics unchanged",
+    "PRIMARY_ALGORITHM unchanged",
+    "winner_operators public API unchanged",
+    "formal E1-E7 not called",
+    "random_full remains a strong operator-space baseline, not a weak random solver"
+  ],
+  "mechanism_smoke": {
+    "path": "solver/reports/dr_alns_ppo_v3_block_dr_alns/mechanism_smoke/comparison.csv",
+    "eval_budget": 256,
+    "seeds": [1, 2],
+    "algorithms": [
+      "random_block",
+      "alpha_ucb_block",
+      "official_winner_kernel"
+    ],
+    "rows": 6,
+    "zero_violation_rows": 6,
+    "all_actual_evals_equal_budget": true,
+    "performance_claim": false
+  }
+}
