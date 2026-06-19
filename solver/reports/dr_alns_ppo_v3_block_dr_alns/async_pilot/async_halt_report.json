@@ -1,0 +1,19 @@
+{
+  "status": "HALT_ASYNC_THROUGHPUT_INSUFFICIENT",
+  "integrity": {
+    "completed_episodes": 6,
+    "all_actual_evals_match_budget": true,
+    "zero_violations": true,
+    "system_worker": true,
+    "numpy_ok": true
+  },
+  "throughput": {
+    "busy_ratio": 0.5600605455642372,
+    "min_busy_ratio": 0.6,
+    "episodes_per_hour": 3.1925455615826297,
+    "block_steps_per_hour": 399.0681951978287,
+    "projected_hours_for_72000_block_steps": 180.42029123445352
+  },
+  "decision": "Do not launch pilot. Async actor execution works, but throughput is far below what the requested 72000 block-step pilot requires.",
+  "next_recommendation": "If continuing PPO, reduce the learning problem before training: use 100-01-only mechanism pilot, lower eval_budget for training-only curriculum, or switch to offline/bandit learning from completed traces. Do not claim PPO performance from this self-check."
+}
