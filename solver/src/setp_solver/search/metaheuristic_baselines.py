@@ -412,7 +412,28 @@ def _run_pso(session: _SearchSession) -> BaselineRunResult:
 
 
 def _run_vns(session: _SearchSession) -> BaselineRunResult:
-    return session.finalize(failure_reason="VNS baseline not implemented in this commit.")
+    n_customers = len(_all_customer_ids(session.context.instance))
+    params = {"restart_parameter_r": 3, "ITERS_MAX": max(1, 3 * n_customers), "shaking": "double_bridge+rvnd"}
+    while session.can_score():
+        construction_order = _nearest_neighbor_order(session.context.instance, session.rng)
+        construction_order = _apply_order_move(construction_order, session.rng, session.rng.choice(["swap", "relocate", "two_opt"]))
+        start_solution = _order_to_solution(construction_order, session)
+        start_scored = session.score(start_solution, operator="vns_construction")
+        if start_scored is not None and start_scored.feasible and start_scored.objective < session.current.objective:
+            session.current = start_scored
+        i = 0
+        while session.can_score() and i < params["ITERS_MAX"]:
+            base_order = _solution_order(session.current.solution, session.context.instance)
+            shaken_order = _vns_shake(base_order, session.rng, i)
+            shaken = _order_to_solution(shaken_order, session)
+            local = _vns_local_search(session, shaken)
+            scored = session.score(local, operator="vns_shaking_local_search")
+            if scored is not None and scored.feasible and scored.objective < session.current.objective - 1e-9:
+                session.current = scored
+                i = 0
+            else:
+                i += 1
+    return session.finalize(params)
 
 
 def _run_aco(session: _SearchSession) -> BaselineRunResult:
@@ -687,6 +708,38 @@ def _pso_initial_particles(session: _SearchSession, target_population: int) -> l
         particles.append({"order": order, "velocity": [], "pbest": scored})
         session.accept_if_better(scored)
     return particles
+
+
+def _vns_shake(order: list[str], rng: random.Random, iteration: int) -> list[str]:
+    moves = ["double_bridge", "relocate", "swap", "two_opt"]
+    out = list(order)
+    for _ in range(1 + (iteration % 3)):
+        out = _apply_order_move(out, rng, moves[iteration % len(moves)])
+    return out
+
+
+def _vns_local_search(session: _SearchSession, solution: Solution) -> Solution:
+    best = solution
+    neighborhoods = ["swap", "relocate", "two_opt", "alns_shaw"]
+    improved = True
+    while improved and session.can_score():
+        improved = False
+        session.rng.shuffle(neighborhoods)
+        for neighborhood in neighborhoods:
+            if not session.can_score():
+                return best
+            if neighborhood == "alns_shaw":
+                outcome = _alns_neighbor(session, best, "shaw_related_removal", "regret2_insert_repair")
+                candidate = outcome.solution if outcome.produced and outcome.feasible else best
+            else:
+                order = _apply_order_move(_solution_order(best, session.context.instance), session.rng, neighborhood)
+                candidate = _order_to_solution(order, session, type_hints=_route_type_hints(best, session.context.instance))
+            scored = session.score(candidate, operator=f"vns_local_{neighborhood}")
+            if scored is not None and scored.feasible and scored.objective < score_reference(best, session.context) - 1e-9:
+                best = scored.solution
+                improved = True
+                break
+    return best
 
 
 def _alns_neighbor(session: _SearchSession, solution: Solution, destroy: str, repair: str) -> _OperatorOutcome:
