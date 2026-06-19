@@ -474,7 +474,37 @@ def _run_aco(session: _SearchSession) -> BaselineRunResult:
 
 
 def _run_ga_vns(session: _SearchSession) -> BaselineRunResult:
-    return session.finalize(failure_reason="GA-VNS baseline not implemented in this commit.")
+    params = {"population": 200, "elite_fraction": 0.10, "mutation_probability": 0.10, "vns_polish_trials": 3}
+    population = _ga_initial_population(session, params["population"])
+    while session.can_score() and population:
+        population = sorted(population, key=lambda item: (item.objective, item.signature))
+        elite_count = max(1, int(math.ceil(len(population) * params["elite_fraction"])))
+        next_population: list[_ScoredSolution] = []
+        for elite in population[:elite_count]:
+            if not session.can_score():
+                break
+            polished = _ga_vns_polish(elite.solution, session, int(params["vns_polish_trials"]))
+            scored = session.score(polished, operator="ga_vns_elite_polish")
+            next_population.append(scored if scored is not None else elite)
+            if scored is not None:
+                session.accept_if_better(scored)
+        if not next_population:
+            next_population = population[:elite_count]
+        while len(next_population) < len(population) and session.can_score():
+            parent_a = _tournament(population, session.rng)
+            parent_b = _tournament(population, session.rng)
+            child = _ga_crossover(parent_a.solution, parent_b.solution, session, operator="ga_common_arcs" if session.rng.random() < 0.5 else "ga_common_nodes")
+            if session.rng.random() < params["mutation_probability"]:
+                child = _ga_mutation(child, session)
+                operator = "ga_vns_child_mutation"
+            else:
+                operator = "ga_vns_child_crossover"
+            scored = session.score(child, operator=operator)
+            if scored is not None:
+                next_population.append(scored)
+                session.accept_if_better(scored)
+        population = sorted(next_population, key=lambda item: (item.objective, item.signature))[: max(1, len(population))]
+    return session.finalize(params)
 
 
 def _run_lns(session: _SearchSession) -> BaselineRunResult:
@@ -834,6 +864,21 @@ def _aco_vnd(solution: Solution, session: _SearchSession) -> Solution:
         scored = session.score(candidate, operator=f"aco_vnd_{move}")
         if scored is not None and scored.feasible and scored.objective < score_reference(best, session.context) - 1e-9:
             best = scored.solution
+    return best
+
+
+def _ga_vns_polish(solution: Solution, session: _SearchSession, trials: int) -> Solution:
+    best = solution
+    for idx in range(max(1, int(trials))):
+        if not session.can_score():
+            return best
+        order = _vns_shake(_solution_order(best, session.context.instance), session.rng, idx)
+        candidate = _order_to_solution(order, session, type_hints=_route_type_hints(best, session.context.instance))
+        candidate = _vns_local_search(session, candidate)
+        obj_best = score_reference(best, session.context)
+        obj_candidate = score_reference(candidate, session.context)
+        if obj_candidate < obj_best - 1e-9:
+            best = candidate
     return best
 
 
