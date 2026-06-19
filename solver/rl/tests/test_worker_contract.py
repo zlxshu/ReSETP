@@ -6,7 +6,7 @@ from pathlib import Path
 
 import pytest
 
-from dr_alns_ppo.action_space import decode_action
+from dr_alns_ppo.action_space import decode_action, decode_block_action
 from dr_alns_ppo.worker_client import WorkerClient, _worker_env, resolve_worker_python
 
 FIXTURE_DIR = "models/data_bundle/generated_instances/verify_20251113"
@@ -186,6 +186,27 @@ def test_worker_operator_only_uses_kernel_default_q_and_zero_threshold() -> None
     assert response["trace"]["remove_count_q"] is None
     assert response["trace"]["threshold"] == 0.0
     assert response["trace"]["control_mode"] == "operator_only"
+
+
+def test_worker_block_step_runs_multiple_internal_steps_and_reports_best_route_context() -> None:
+    client = WorkerClient(FIXTURE_DIR, seed=1, max_evals=20)
+    try:
+        client.reset()
+        response = client.block_step(decode_block_action([6, 3, 1, 0, 0], block_size=4))
+    finally:
+        client.close()
+
+    assert response["ok"] is True
+    assert response["actual_evals"] >= 1
+    assert response["actual_evals"] <= 20
+    assert response["trace"]["op"] == "block_step"
+    assert response["trace"]["control_mode"] == "block_ppo"
+    assert response["trace"]["block_iterations"] >= 1
+    assert response["trace"]["block_iterations"] <= 4
+    assert response["trace"]["block_requested_destroy_id"] == "alpha_ucb"
+    assert response["trace"]["block_requested_repair_id"] == "alpha_ucb"
+    assert "capacity_route_lower_bound" in response["trace"]
+    assert response["violation_count"] == 0
 
 
 def test_worker_client_does_not_inherit_pythonpath(monkeypatch) -> None:

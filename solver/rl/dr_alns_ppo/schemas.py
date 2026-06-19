@@ -15,6 +15,18 @@ class DecodedAction:
 
 
 @dataclass(frozen=True)
+class BlockDecodedAction:
+    destroy_id: str
+    repair_id: str
+    q_ratio: float
+    threshold_ratio: float
+    exploration_ratio: float
+    block_size: int
+    raw: tuple[int, ...]
+    control_mode: str = "block_ppo"
+
+
+@dataclass(frozen=True)
 class WorkerRequest:
     request_id: int
     op: str

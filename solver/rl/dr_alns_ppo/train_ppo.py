@@ -11,11 +11,27 @@ from stable_baselines3.common.callbacks import BaseCallback
 from stable_baselines3.common.vec_env import DummyVecEnv, SubprocVecEnv, VecMonitor
 
 from .bundle_manifest import load_manifest
+from .block_env import BlockAlnsEnv
 from .env import SetpAlnsEnv
 
 
-def make_env(bundle_dir: str, *, seed: int, eval_budget: int, base_temperature: float, control_mode: str):
-    def _factory() -> SetpAlnsEnv:
+def make_env(
+    bundle_dir: str,
+    *,
+    seed: int,
+    eval_budget: int,
+    base_temperature: float,
+    control_mode: str,
+    block_size: int = 128,
+):
+    def _factory() -> SetpAlnsEnv | BlockAlnsEnv:
+        if control_mode == "block_ppo":
+            return BlockAlnsEnv(
+                bundle_dir,
+                seed=seed,
+                eval_budget=eval_budget,
+                block_size=block_size,
+            )
         return SetpAlnsEnv(
             bundle_dir,
             seed=seed,
@@ -116,6 +132,7 @@ def build_vec_env(
     output_dir: Path,
     vec_env: str,
     env_repeats: int = 1,
+    block_size: int = 128,
     monitor_filename: str = "monitor.csv",
 ):
     env_specs = build_env_specs(bundles, seed=seed, env_repeats=env_repeats)
@@ -126,6 +143,7 @@ def build_vec_env(
             eval_budget=eval_budget,
             base_temperature=base_temperature,
             control_mode=control_mode,
+            block_size=block_size,
         )
         for spec in env_specs
     ]
@@ -205,12 +223,26 @@ def active_env_count(schedule: str, bundles: list[str], *, env_repeats: int) -> 
     raise ValueError(f"unknown schedule: {schedule}")
 
 
-def min_timesteps_for_episode_wave(eval_budget: int, n_envs: int) -> int:
+def effective_episode_steps(eval_budget: int, *, control_mode: str = "ppo_full", block_size: int = 128) -> int:
     if int(eval_budget) < 1:
         raise ValueError("--eval-budget must be >= 1")
+    if str(control_mode) == "block_ppo":
+        if int(block_size) < 1:
+            raise ValueError("--block-size must be >= 1")
+        return int((int(eval_budget) + int(block_size) - 1) // int(block_size))
+    return int(eval_budget)
+
+
+def min_timesteps_for_episode_wave(
+    eval_budget: int,
+    n_envs: int,
+    *,
+    control_mode: str = "ppo_full",
+    block_size: int = 128,
+) -> int:
     if int(n_envs) < 1:
         raise ValueError("n_envs must be >= 1")
-    return int(eval_budget) * int(n_envs)
+    return effective_episode_steps(eval_budget, control_mode=control_mode, block_size=block_size) * int(n_envs)
 
 
 def build_episode_bucketed_phase_plan(
@@ -220,6 +252,8 @@ def build_episode_bucketed_phase_plan(
     eval_budget: int,
     env_repeats: int,
     episodes_per_phase: int = 1,
+    control_mode: str = "ppo_full",
+    block_size: int = 128,
 ) -> list[dict[str, Any]]:
     if not bundles:
         raise ValueError("at least one training bundle is required")
@@ -227,7 +261,11 @@ def build_episode_bucketed_phase_plan(
         raise ValueError("--timesteps must be >= 1")
     if int(episodes_per_phase) < 1:
         raise ValueError("--episodes-per-phase must be >= 1")
-    phase_timesteps = int(eval_budget) * int(env_repeats) * int(episodes_per_phase)
+    phase_timesteps = (
+        effective_episode_steps(eval_budget, control_mode=control_mode, block_size=block_size)
+        * int(env_repeats)
+        * int(episodes_per_phase)
+    )
     if phase_timesteps < 1:
         raise ValueError("episode_bucketed phase timesteps must be >= 1")
     phases: list[dict[str, Any]] = []
@@ -258,9 +296,17 @@ def episode_safety_metadata(
     env_repeats: int,
     allow_fragmented_phases: bool,
     episodes_per_phase: int,
+    control_mode: str = "ppo_full",
+    block_size: int = 128,
 ) -> dict[str, Any]:
     n_envs = active_env_count(schedule, bundles, env_repeats=env_repeats)
-    min_wave = min_timesteps_for_episode_wave(eval_budget, n_envs)
+    episode_steps = effective_episode_steps(eval_budget, control_mode=control_mode, block_size=block_size)
+    min_wave = min_timesteps_for_episode_wave(
+        eval_budget,
+        n_envs,
+        control_mode=control_mode,
+        block_size=block_size,
+    )
     if str(schedule) == "mixed":
         safe = int(timesteps) >= min_wave
         reason = (
@@ -269,13 +315,13 @@ def episode_safety_metadata(
             else f"mixed schedule needs at least {min_wave} timesteps for one full episode wave"
         )
     elif str(schedule) == "bucketed":
-        safe = int(n_steps) >= int(eval_budget)
+        safe = int(n_steps) >= int(episode_steps)
         if safe:
-            reason = f"bucketed phase n_steps={int(n_steps)} reaches eval_budget={int(eval_budget)}"
+            reason = f"bucketed phase n_steps={int(n_steps)} reaches episode_steps={int(episode_steps)}"
         elif allow_fragmented_phases:
             reason = "fragmented bucketed phase explicitly allowed for diagnostics"
         else:
-            reason = f"fragmented bucketed phase: n_steps={int(n_steps)} < eval_budget={int(eval_budget)}"
+            reason = f"fragmented bucketed phase: n_steps={int(n_steps)} < episode_steps={int(episode_steps)}"
     elif str(schedule) == "episode_bucketed":
         safe = int(episodes_per_phase) >= 1
         reason = (
@@ -288,6 +334,7 @@ def episode_safety_metadata(
     return {
         "n_envs": n_envs,
         "min_timesteps_for_one_episode_wave": min_wave,
+        "effective_episode_steps": int(episode_steps),
         "episode_safe": bool(safe),
         "schedule_safety_reason": reason,
         "allow_fragmented_phases": bool(allow_fragmented_phases),
@@ -305,6 +352,8 @@ def validate_episode_safe_config(
     env_repeats: int,
     allow_fragmented_phases: bool,
     episodes_per_phase: int,
+    control_mode: str = "ppo_full",
+    block_size: int = 128,
 ) -> None:
     metadata = episode_safety_metadata(
         schedule=schedule,
@@ -315,6 +364,8 @@ def validate_episode_safe_config(
         env_repeats=env_repeats,
         allow_fragmented_phases=allow_fragmented_phases,
         episodes_per_phase=episodes_per_phase,
+        control_mode=control_mode,
+        block_size=block_size,
     )
     if schedule == "mixed" and not metadata["episode_safe"]:
         raise ValueError(str(metadata["schedule_safety_reason"]))
@@ -342,6 +393,7 @@ def build_training_config(
     learning_rate: float,
     allow_fragmented_phases: bool,
     episodes_per_phase: int,
+    block_size: int = 128,
     phase_count: int | None = None,
 ) -> dict[str, Any]:
     config = {
@@ -352,6 +404,7 @@ def build_training_config(
         "seed": int(seed),
         "base_temperature": float(base_temperature),
         "control_mode": control_mode,
+        "block_size": int(block_size),
         "policy": "MlpPolicy",
         "vec_env": vec_env,
         "env_repeats": int(env_repeats),
@@ -373,6 +426,8 @@ def build_training_config(
             env_repeats=env_repeats,
             allow_fragmented_phases=allow_fragmented_phases,
             episodes_per_phase=episodes_per_phase,
+            control_mode=control_mode,
+            block_size=block_size,
         )
     )
     return config
@@ -392,6 +447,8 @@ def train(args: argparse.Namespace) -> None:
         env_repeats=int(args.env_repeats),
         allow_fragmented_phases=bool(args.allow_fragmented_phases),
         episodes_per_phase=int(args.episodes_per_phase),
+        control_mode=str(args.control_mode),
+        block_size=int(args.block_size),
     )
     if args.schedule in {"bucketed", "episode_bucketed"}:
         train_bucketed(args, train_bundles, output_dir)
@@ -407,6 +464,7 @@ def train(args: argparse.Namespace) -> None:
             output_dir=output_dir,
             vec_env=args.vec_env,
             env_repeats=args.env_repeats,
+            block_size=args.block_size,
         )
         model = PPO(
             "MlpPolicy",
@@ -435,6 +493,7 @@ def train(args: argparse.Namespace) -> None:
             learning_rate=float(args.learning_rate),
             allow_fragmented_phases=bool(args.allow_fragmented_phases),
             episodes_per_phase=int(args.episodes_per_phase),
+            block_size=int(args.block_size),
         )
         (output_dir / "training_config.json").write_text(
             json.dumps(config, ensure_ascii=False, indent=2) + "\n",
@@ -456,6 +515,8 @@ def train_bucketed(args: argparse.Namespace, train_bundles: list[str], output_di
             eval_budget=int(args.eval_budget),
             env_repeats=int(args.env_repeats),
             episodes_per_phase=int(args.episodes_per_phase),
+            control_mode=str(args.control_mode),
+            block_size=int(args.block_size),
         )
     else:
         phases = build_bucketed_phase_plan(
@@ -481,6 +542,7 @@ def train_bucketed(args: argparse.Namespace, train_bundles: list[str], output_di
         learning_rate=float(args.learning_rate),
         allow_fragmented_phases=bool(args.allow_fragmented_phases),
         episodes_per_phase=int(args.episodes_per_phase),
+        block_size=int(args.block_size),
         phase_count=len(phases),
     )
     (output_dir / "training_config.json").write_text(
@@ -517,6 +579,7 @@ def train_bucketed(args: argparse.Namespace, train_bundles: list[str], output_di
                     output_dir=output_dir,
                     vec_env=args.vec_env,
                     env_repeats=args.env_repeats,
+                    block_size=args.block_size,
                     monitor_filename=monitor_file,
                 )
                 if model is None:
@@ -591,7 +654,8 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser.add_argument("--seed", type=int, default=1)
     parser.add_argument("--output-dir", required=True)
     parser.add_argument("--base-temperature", type=float, default=100.0)
-    parser.add_argument("--control-mode", choices=("ppo_full", "reduced_full", "operator_only"), default="ppo_full")
+    parser.add_argument("--control-mode", choices=("ppo_full", "reduced_full", "operator_only", "block_ppo"), default="ppo_full")
+    parser.add_argument("--block-size", type=int, default=128)
     parser.add_argument("--vec-env", choices=("subproc", "dummy"), default="subproc")
     parser.add_argument(
         "--schedule",

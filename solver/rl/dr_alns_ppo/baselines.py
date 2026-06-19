@@ -11,6 +11,8 @@ from typing import Any, Callable
 
 from stable_baselines3 import PPO
 
+from .action_space import BLOCK_DESTROY_IDS, BLOCK_REPAIR_IDS
+from .block_env import BlockAlnsEnv
 from .env import SetpAlnsEnv
 from .worker_client import _worker_env, resolve_worker_python
 
@@ -61,6 +63,51 @@ def run_random_policy(
         env.close()
 
 
+def run_random_block_policy(
+    bundle_dir: str,
+    *,
+    seed: int,
+    eval_budget: int,
+    block_size: int = 128,
+) -> dict[str, Any]:
+    env = BlockAlnsEnv(bundle_dir, seed=seed, eval_budget=eval_budget, block_size=block_size)
+    try:
+        env.action_space.seed(seed)
+        return _run_env_policy(
+            env,
+            lambda _obs: env.action_space.sample(),
+            algorithm="random_block",
+            bundle_dir=bundle_dir,
+            seed=seed,
+            eval_budget=eval_budget,
+        )
+    finally:
+        env.close()
+
+
+def run_alpha_ucb_block_policy(
+    bundle_dir: str,
+    *,
+    seed: int,
+    eval_budget: int,
+    block_size: int = 128,
+) -> dict[str, Any]:
+    env = BlockAlnsEnv(bundle_dir, seed=seed, eval_budget=eval_budget, block_size=block_size)
+    try:
+        alpha_destroy = BLOCK_DESTROY_IDS.index("alpha_ucb")
+        alpha_repair = BLOCK_REPAIR_IDS.index("alpha_ucb")
+        return _run_env_policy(
+            env,
+            lambda _obs: (alpha_destroy, alpha_repair, 1, 0, 0),
+            algorithm="alpha_ucb_block",
+            bundle_dir=bundle_dir,
+            seed=seed,
+            eval_budget=eval_budget,
+        )
+    finally:
+        env.close()
+
+
 def run_ppo_policy(
     model: PPO,
     bundle_dir: str,
@@ -77,6 +124,29 @@ def run_ppo_policy(
             env,
             lambda obs: model.predict(obs, deterministic=deterministic)[0],
             algorithm=control_mode,
+            bundle_dir=bundle_dir,
+            seed=seed,
+            eval_budget=eval_budget,
+        )
+    finally:
+        env.close()
+
+
+def run_ppo_block_policy(
+    model: PPO,
+    bundle_dir: str,
+    *,
+    seed: int,
+    eval_budget: int,
+    block_size: int = 128,
+    deterministic: bool = True,
+) -> dict[str, Any]:
+    env = BlockAlnsEnv(bundle_dir, seed=seed, eval_budget=eval_budget, block_size=block_size)
+    try:
+        return _run_env_policy(
+            env,
+            lambda obs: model.predict(obs, deterministic=deterministic)[0],
+            algorithm="ppo_block",
             bundle_dir=bundle_dir,
             seed=seed,
             eval_budget=eval_budget,

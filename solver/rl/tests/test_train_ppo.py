@@ -6,6 +6,8 @@ from dr_alns_ppo.train_ppo import (
     build_env_specs,
     build_episode_bucketed_phase_plan,
     build_training_config,
+    effective_episode_steps,
+    min_timesteps_for_episode_wave,
     validate_episode_safe_config,
 )
 
@@ -107,6 +109,38 @@ def test_episode_bucketed_phase_plan_uses_eval_budget_times_env_repeats() -> Non
     assert [phase["bundle"] for phase in phases] == ["bundle-a", "bundle-b"]
     assert [phase["requested_timesteps"] for phase in phases] == [96_000, 96_000]
     assert [phase["rollout_timesteps"] for phase in phases] == [96_000, 96_000]
+
+
+def test_block_schedule_episode_wave_uses_block_steps_not_raw_eval_budget() -> None:
+    assert effective_episode_steps(16_000, control_mode="block_ppo", block_size=128) == 125
+    assert min_timesteps_for_episode_wave(16_000, 9, control_mode="block_ppo", block_size=128) == 1125
+
+    validate_episode_safe_config(
+        schedule="mixed",
+        bundles=["bundle-a", "bundle-b", "bundle-c"],
+        total_timesteps=1125,
+        eval_budget=16_000,
+        n_steps=64,
+        env_repeats=3,
+        allow_fragmented_phases=False,
+        episodes_per_phase=1,
+        control_mode="block_ppo",
+        block_size=128,
+    )
+
+
+def test_block_episode_bucketed_phase_plan_uses_effective_episode_steps() -> None:
+    phases = build_episode_bucketed_phase_plan(
+        ["bundle-a", "bundle-b"],
+        total_timesteps=1000,
+        eval_budget=16_000,
+        env_repeats=3,
+        episodes_per_phase=2,
+        control_mode="block_ppo",
+        block_size=128,
+    )
+
+    assert [phase["requested_timesteps"] for phase in phases] == [750, 750]
 
 
 def test_training_config_records_episode_safety_metadata() -> None:

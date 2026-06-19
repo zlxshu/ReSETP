@@ -1,6 +1,15 @@
 import pytest
 
-from dr_alns_ppo.action_space import DESTROY_IDS, REDUCED_ACTION_NVECS, REPAIR_IDS, decode_action
+from dr_alns_ppo.action_space import (
+    BLOCK_ACTION_NVECS,
+    BLOCK_DESTROY_IDS,
+    BLOCK_REPAIR_IDS,
+    DESTROY_IDS,
+    REDUCED_ACTION_NVECS,
+    REPAIR_IDS,
+    decode_action,
+    decode_block_action,
+)
 
 
 def test_decode_action_maps_multi_discrete_components() -> None:
@@ -76,3 +85,23 @@ def test_decode_action_rejects_out_of_range_component() -> None:
 def test_decode_action_rejects_non_integer_float_component() -> None:
     with pytest.raises(ValueError, match="action component must be an integer value"):
         decode_action([0, 1.2, 0, 0], base_temperature=100.0)
+
+
+def test_decode_block_action_maps_online_controller_components() -> None:
+    action = decode_block_action([6, 3, 4, 3, 2], block_size=256)
+
+    assert BLOCK_ACTION_NVECS == (7, 4, 5, 4, 4)
+    assert BLOCK_DESTROY_IDS[-1] == "alpha_ucb"
+    assert BLOCK_REPAIR_IDS[-1] == "alpha_ucb"
+    assert action.destroy_id == "alpha_ucb"
+    assert action.repair_id == "alpha_ucb"
+    assert action.q_ratio == 0.40
+    assert action.threshold_ratio == 0.02
+    assert action.exploration_ratio == 0.15
+    assert action.block_size == 256
+    assert action.control_mode == "block_ppo"
+
+
+def test_decode_block_action_rejects_invalid_shape() -> None:
+    with pytest.raises(ValueError, match="Expected 5 block action components"):
+        decode_block_action([0, 0, 0, 0])

@@ -13,8 +13,11 @@ from stable_baselines3 import PPO
 from .baselines import (
     normalize_result_row,
     run_alpha_ucb_env_policy,
+    run_alpha_ucb_block_policy,
     run_official_winner_kernel,
+    run_ppo_block_policy,
     run_ppo_policy,
+    run_random_block_policy,
     run_random_policy,
     write_rows_csv,
 )
@@ -33,7 +36,7 @@ def evaluate(args: argparse.Namespace) -> list[dict]:
     bundles = _filter_bundles(_selected_bundles(manifest, args.split), args.bundle_filter)
     seeds = parse_seeds(args.seeds)
     algorithms = parse_algorithms(args.algorithms)
-    if any(algorithm in {"ppo_full", "ppo_operator_only", "ppo_reduced_full"} for algorithm in algorithms) and not args.model:
+    if any(algorithm in {"ppo_full", "ppo_operator_only", "ppo_reduced_full", "ppo_block"} for algorithm in algorithms) and not args.model:
         raise ValueError("--model is required when evaluating PPO algorithms")
     all_tasks = [
         (algorithm, bundle_dir, seed)
@@ -47,6 +50,7 @@ def evaluate(args: argparse.Namespace) -> list[dict]:
         "base_temperature": float(args.base_temperature),
         "deterministic": not args.stochastic_ppo,
         "official_max_runtime_seconds": float(args.official_max_runtime_seconds),
+        "block_size": int(args.block_size),
     }
     rows: list[dict]
     output_dir = Path(args.output_dir)
@@ -154,6 +158,16 @@ def _evaluate_one_task(algorithm: str, bundle_dir: str, seed: int, args: dict) -
         )
         row["algorithm"] = "ppo_reduced_full"
         return normalize_result_row(row)
+    if algorithm == "ppo_block":
+        model = PPO.load(args["model_path"])
+        return run_ppo_block_policy(
+            model,
+            bundle_dir,
+            seed=seed,
+            eval_budget=args["eval_budget"],
+            block_size=args["block_size"],
+            deterministic=args["deterministic"],
+        )
     if algorithm == "random_full":
         return run_random_policy(
             bundle_dir,
@@ -161,12 +175,26 @@ def _evaluate_one_task(algorithm: str, bundle_dir: str, seed: int, args: dict) -
             eval_budget=args["eval_budget"],
             base_temperature=args["base_temperature"],
         )
+    if algorithm == "random_block":
+        return run_random_block_policy(
+            bundle_dir,
+            seed=seed,
+            eval_budget=args["eval_budget"],
+            block_size=args["block_size"],
+        )
     if algorithm == "alpha_ucb_env":
         return run_alpha_ucb_env_policy(
             bundle_dir,
             seed=seed,
             eval_budget=args["eval_budget"],
             base_temperature=args["base_temperature"],
+        )
+    if algorithm == "alpha_ucb_block":
+        return run_alpha_ucb_block_policy(
+            bundle_dir,
+            seed=seed,
+            eval_budget=args["eval_budget"],
+            block_size=args["block_size"],
         )
     if algorithm == "official_winner_kernel":
         return run_official_winner_kernel(
@@ -189,6 +217,9 @@ def parse_algorithms(value: str) -> tuple[str, ...]:
         "ppo_full",
         "ppo_operator_only",
         "ppo_reduced_full",
+        "random_block",
+        "alpha_ucb_block",
+        "ppo_block",
     }
     unknown = sorted(set(algorithms) - allowed)
     if unknown:
@@ -225,7 +256,7 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser.add_argument(
         "--algorithms",
         default="random_full,alpha_ucb_env",
-        help="Comma-separated algorithms: random_full,alpha_ucb_env,official_winner_kernel,ppo_full,ppo_operator_only,ppo_reduced_full.",
+        help="Comma-separated algorithms: random_full,alpha_ucb_env,official_winner_kernel,ppo_full,ppo_operator_only,ppo_reduced_full,random_block,alpha_ucb_block,ppo_block.",
     )
     parser.add_argument("--split", choices=("train", "held_out", "formal_eval", "all"), default="held_out")
     parser.add_argument("--bundle-filter", help="Comma-separated substrings used to narrow the selected split.")
@@ -233,6 +264,7 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser.add_argument("--seeds", default="1,2,3")
     parser.add_argument("--output-dir", required=True)
     parser.add_argument("--base-temperature", type=float, default=100.0)
+    parser.add_argument("--block-size", type=int, default=128)
     parser.add_argument("--stochastic-ppo", action="store_true")
     parser.add_argument("--official-max-runtime-seconds", type=float, default=900.0)
     parser.add_argument("--jobs", type=int, default=min(2, max(1, os.cpu_count() or 1)))

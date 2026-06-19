@@ -16,6 +16,7 @@ from setp_solver.prices import DEFAULT_PRICES
 from setp_solver.search.bundle import load_search_bundle
 from setp_solver.search.construction import build_initial_solution
 from setp_solver.search.evaluation import BIG_M, EvalBudget, EvaluationContext, fairness_context_for_solution
+from setp_solver.search.alns_wouda import _make_operator_selector
 from setp_solver.search.winner_operators import (
     WinnerOperatorAction,
     WinnerOperatorSet,
@@ -32,6 +33,9 @@ from .solution_json import solution_to_json
 OPERATOR_SET = WinnerOperatorSet.create()
 DESTROY_IDS = [name for name, _ in OPERATOR_SET.destroy_ops]
 REPAIR_IDS = [name for name, _ in OPERATOR_SET.repair_ops]
+ALPHA_UCB_CHOICE = "alpha_ucb"
+BLOCK_Q_RATIOS = (0.10, 0.16, 0.23, 0.30, 0.40)
+BLOCK_THRESHOLD_RATIOS = (0.0, 0.0025, 0.0075, 0.02)
 MAX_THRESHOLD_RATIO = 0.02
 RUNTIME_TRACE = {
     "worker_python_executable": sys.executable,
@@ -52,6 +56,7 @@ class WorkerState:
     rng: np.random.Generator
     destroy_counts: dict[str, int]
     repair_counts: dict[str, int]
+    alpha_selector: Any | None = None
     step_index: int = 0
     stagnation_steps: int = 0
     last_improvement_step: int = 0
@@ -81,10 +86,120 @@ class JsonlWorker:
         return self._state_response(request_id, op="reset")
 
     def step(self, request_id: Any, action: dict[str, Any]) -> dict[str, Any]:
+        return self._apply_single_action(request_id, action, op="step")
+
+    def block_step(self, request_id: Any, action: dict[str, Any]) -> dict[str, Any]:
+        state = self.state
+        self._ensure_budget_available()
+        block_size = int(action.get("block_size", 128))
+        if block_size < 1:
+            raise ValueError(f"block_size must be >= 1: {block_size}")
+        exploration_ratio = float(action.get("exploration_ratio", 0.0) or 0.0)
+        if not math.isfinite(exploration_ratio) or exploration_ratio < 0.0 or exploration_ratio > 1.0:
+            raise ValueError(f"exploration_ratio must be finite and in [0, 1]: {exploration_ratio!r}")
+
+        start_actual_evals = int(state.context.budget.count if state.context.budget else 0)
+        start_candidate_scores = int(state.context.score_counts.get("candidate", 0))
+        start_repair_delta = int(state.context.score_counts.get("repair_delta", 0))
+        start_best_obj = float(state.best_obj)
+        start_current_obj = float(state.current_obj)
+        start_best_routes = len(state.best_solution.routes)
+        start_current_routes = len(state.current_solution.routes)
+        accepted_count = 0
+        improved_current_count = 0
+        improved_best_count = 0
+        rejected_count = 0
+        first_error = ""
+        last_response: dict[str, Any] | None = None
+
+        for _ in range(block_size):
+            budget = state.context.budget
+            if budget is not None and budget.reached_target:
+                break
+            internal_action = self._resolve_block_internal_action(action)
+            try:
+                response = self._apply_single_action(request_id, internal_action, op="block_internal")
+            except RuntimeError as exc:
+                first_error = str(exc)
+                break
+            last_response = response
+            accepted_count += int(bool(response.get("accepted")))
+            improved_current_count += int(bool(response.get("improved_current")))
+            improved_best_count += int(bool(response.get("improved_best")))
+            rejected_count += int(not bool(response.get("accepted")))
+            if internal_action.get("_uses_alpha_ucb"):
+                self._update_alpha_selector(internal_action, response)
+
+        if last_response is None:
+            raise RuntimeError(first_error or "block_step made no progress")
+
+        end_best_obj = float(state.best_obj)
+        end_current_obj = float(state.current_obj)
+        end_best_routes = len(state.best_solution.routes)
+        end_current_routes = len(state.current_solution.routes)
+        actual_evals = int(state.context.budget.count if state.context.budget else 0)
+        repair_delta_count = int(state.context.score_counts.get("repair_delta", 0))
+        best_summary = state.best_summary
+        block_iterations = accepted_count + rejected_count
+        trace = dict(last_response.get("trace", {}) or {})
+        trace.update(
+            {
+                **RUNTIME_TRACE,
+                "op": "block_step",
+                "block_size": int(block_size),
+                "block_iterations": int(block_iterations),
+                "block_evals_added": int(actual_evals - start_actual_evals),
+                "block_candidate_scores_added": int(state.context.score_counts.get("candidate", 0) - start_candidate_scores),
+                "block_repair_delta_added": int(repair_delta_count - start_repair_delta),
+                "block_accepted_count": int(accepted_count),
+                "block_rejected_count": int(rejected_count),
+                "block_improved_current_count": int(improved_current_count),
+                "block_improved_best_count": int(improved_best_count),
+                "block_start_best_obj": float(start_best_obj),
+                "block_end_best_obj": float(end_best_obj),
+                "block_best_delta": float(end_best_obj - start_best_obj),
+                "block_start_current_obj": float(start_current_obj),
+                "block_end_current_obj": float(end_current_obj),
+                "block_current_delta": float(end_current_obj - start_current_obj),
+                "block_start_best_route_count": int(start_best_routes),
+                "block_end_best_route_count": int(end_best_routes),
+                "block_best_route_delta": int(end_best_routes - start_best_routes),
+                "block_start_current_route_count": int(start_current_routes),
+                "block_end_current_route_count": int(end_current_routes),
+                "block_current_route_delta": int(end_current_routes - start_current_routes),
+                "capacity_route_lower_bound": int(self._capacity_route_lower_bound()),
+                "exploration_ratio": float(exploration_ratio),
+                "block_requested_destroy_id": str(action.get("destroy_id", "")),
+                "block_requested_repair_id": str(action.get("repair_id", "")),
+                "block_requested_q_ratio": float(action.get("q_ratio", 0.0) or 0.0),
+                "block_requested_threshold_ratio": float(action.get("threshold_ratio", 0.0) or 0.0),
+                "control_mode": "block_ppo",
+                "destroy_counts": dict(state.destroy_counts),
+                "repair_counts": dict(state.repair_counts),
+            }
+        )
+        return {
+            "request_id": request_id,
+            "ok": True,
+            "accepted": bool(accepted_count > 0),
+            "improved_current": bool(improved_current_count > 0),
+            "improved_best": bool(improved_best_count > 0),
+            "actual_evals": actual_evals,
+            "candidate_scores": int(state.context.score_counts.get("candidate", 0)),
+            "repair_delta_count": repair_delta_count,
+            "current_obj": float(state.current_obj),
+            "best_obj": float(state.best_obj),
+            "candidate_obj": float(last_response.get("candidate_obj", state.current_obj)),
+            "violation_count": int(best_summary["violation_count"]),
+            "metrics": best_summary["metrics"],
+            "solution": solution_to_json(state.best_solution),
+            "trace": trace,
+        }
+
+    def _apply_single_action(self, request_id: Any, action: dict[str, Any], *, op: str) -> dict[str, Any]:
         state = self.state
         self._ensure_budget_available()
         winner_action, threshold = self._decode_worker_action(action)
-
         before_repair_delta = int(state.context.score_counts.get("repair_delta", 0))
         result = apply_winner_action(
             state.current_solution,
@@ -147,7 +262,7 @@ class JsonlWorker:
             "trace": {
                 **winner_trace,
                 **RUNTIME_TRACE,
-                "op": "step",
+                "op": op,
                 "step_index": int(state.step_index),
                 "operator_base_id": operator_base_id,
                 "winner_operator_module": winner_operator_module,
@@ -359,6 +474,18 @@ class JsonlWorker:
                 remove_fraction=None,
                 raw_action=(raw[0], raw[1], -1, 0),
             )
+        elif mode == "block_ppo":
+            if len(raw) != 5:
+                raise ValueError(f"block_ppo action raw must have 5 components: {raw!r}")
+            winner_action = WinnerOperatorAction(
+                destroy_op_id=destroy_id,
+                repair_op_id=repair_id,
+                remove_count_q=None,
+                accept_param=0.0,
+                temperature=0.0,
+                remove_fraction=float(action.get("q_ratio", 0.10)),
+                raw_action=(raw[0], raw[1], raw[2], raw[3], raw[4]),
+            )
         else:
             raise ValueError(f"unknown control_mode: {mode}")
         threshold_ratio = self._threshold_ratio(action)
@@ -386,6 +513,86 @@ class JsonlWorker:
             for node_id in route.node_sequence
             if node_id in customer_ids
         )
+
+    def _resolve_block_internal_action(self, action: dict[str, Any]) -> dict[str, Any]:
+        requested_destroy = str(action.get("destroy_id", ""))
+        requested_repair = str(action.get("repair_id", ""))
+        exploration_ratio = float(action.get("exploration_ratio", 0.0) or 0.0)
+        uses_alpha = requested_destroy == ALPHA_UCB_CHOICE or requested_repair == ALPHA_UCB_CHOICE
+        explore = bool(exploration_ratio > 0.0 and self.state.rng.random() < exploration_ratio)
+
+        destroy_idx: int | None = None
+        repair_idx: int | None = None
+        if uses_alpha and not explore:
+            selector = self._alpha_selector()
+            selected_destroy, selected_repair = selector(self.state.rng, None, None)
+            destroy_idx = int(selected_destroy)
+            repair_idx = int(selected_repair)
+        if explore:
+            destroy_idx = int(self.state.rng.integers(0, len(DESTROY_IDS)))
+            repair_idx = int(self.state.rng.integers(0, len(REPAIR_IDS)))
+
+        destroy_id = DESTROY_IDS[destroy_idx] if destroy_idx is not None else requested_destroy
+        repair_id = REPAIR_IDS[repair_idx] if repair_idx is not None else requested_repair
+        if destroy_id not in DESTROY_IDS:
+            raise ValueError(f"unknown block destroy_id: {destroy_id}")
+        if repair_id not in REPAIR_IDS:
+            raise ValueError(f"unknown block repair_id: {repair_id}")
+        if destroy_idx is None:
+            destroy_idx = DESTROY_IDS.index(destroy_id)
+        if repair_idx is None:
+            repair_idx = REPAIR_IDS.index(repair_id)
+        q_ratio = float(action.get("q_ratio", BLOCK_Q_RATIOS[0]) or BLOCK_Q_RATIOS[0])
+        if q_ratio not in BLOCK_Q_RATIOS:
+            nearest = min(BLOCK_Q_RATIOS, key=lambda value: abs(float(value) - q_ratio))
+            q_ratio = float(nearest)
+        threshold_ratio = float(action.get("threshold_ratio", 0.0) or 0.0)
+        return {
+            "destroy_id": destroy_id,
+            "repair_id": repair_id,
+            "q_ratio": q_ratio,
+            "threshold_ratio": threshold_ratio,
+            "raw": tuple(int(value) for value in action.get("raw", (0, 0, 0, 0, 0))),
+            "control_mode": "block_ppo",
+            "_alpha_destroy_idx": destroy_idx,
+            "_alpha_repair_idx": repair_idx,
+            "_uses_alpha_ucb": uses_alpha and not explore,
+        }
+
+    def _alpha_selector(self) -> Any:
+        if self.state.alpha_selector is None:
+            self.state.alpha_selector = _make_operator_selector(len(DESTROY_IDS), len(REPAIR_IDS))
+        return self.state.alpha_selector
+
+    def _update_alpha_selector(self, action: dict[str, Any], response: dict[str, Any]) -> None:
+        selector = self._alpha_selector()
+        selector.update(
+            None,
+            int(action["_alpha_destroy_idx"]),
+            int(action["_alpha_repair_idx"]),
+            self._outcome_index(response),
+        )
+
+    @staticmethod
+    def _outcome_index(response: dict[str, Any]) -> int:
+        if response.get("improved_best"):
+            return 0
+        if response.get("improved_current"):
+            return 1
+        if response.get("accepted"):
+            return 2
+        return 3
+
+    def _capacity_route_lower_bound(self) -> int:
+        total_demand = sum(
+            max(0.0, float(node.demand))
+            for node in self.bundle.instance.nodes
+            if node.node_type.lower() == "c"
+        )
+        capacity = float(self._effective_prices().Q_capacity)
+        if capacity <= 0.0:
+            return 0
+        return int(math.ceil(total_demand / capacity))
 
     def _progress(self) -> float:
         budget = self.state.context.budget
@@ -446,6 +653,11 @@ def _dispatch(worker: JsonlWorker, request: dict[str, Any]) -> tuple[dict[str, A
         if not isinstance(action, dict):
             raise ValueError("step request requires an action object")
         return worker.step(request_id, action), False
+    if op == "block_step":
+        action = request.get("action")
+        if not isinstance(action, dict):
+            raise ValueError("block_step request requires an action object")
+        return worker.block_step(request_id, action), False
     if op == "close":
         return worker.close(request_id), True
     raise ValueError(f"unknown op: {op}")
