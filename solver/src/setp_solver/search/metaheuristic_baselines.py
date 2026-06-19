@@ -437,7 +437,40 @@ def _run_vns(session: _SearchSession) -> BaselineRunResult:
 
 
 def _run_aco(session: _SearchSession) -> BaselineRunResult:
-    return session.finalize(failure_reason="ACO baseline not implemented in this commit.")
+    params = {"m": 20, "iter": 100, "r0": 0.1, "rho0": 0.8, "rho_min": 0.01, "alpha": 1.0, "beta": 2.0, "Q": 1.0}
+    customers = _all_customer_ids(session.context.instance)
+    pheromone = {(a, b): 1.0 for a in customers for b in customers if a != b}
+    rho = float(params["rho0"])
+    iteration = 0
+    while session.can_score():
+        iteration += 1
+        iteration_best: _ScoredSolution | None = None
+        iteration_worst = 0.0
+        for _ in range(int(params["m"])):
+            if not session.can_score():
+                break
+            order = _aco_construct_order(customers, pheromone, session, params)
+            candidate = _order_to_solution(order, session)
+            candidate = _aco_vnd(candidate, session)
+            scored = session.score(candidate, operator="aco_ant_vnd")
+            if scored is None:
+                break
+            session.accept_if_better(scored)
+            if scored.feasible:
+                iteration_worst = max(iteration_worst, scored.objective)
+                if iteration_best is None or scored.objective < iteration_best.objective:
+                    iteration_best = scored
+        rho = max(float(params["rho_min"]), 0.95 * rho)
+        for edge in list(pheromone):
+            pheromone[edge] = max(1e-9, (1.0 - rho) * pheromone[edge])
+        if iteration_best is not None:
+            delta = ((iteration_worst - iteration_best.objective) / max(1e-9, abs(iteration_best.objective))) * float(params["Q"])
+            for a, b in zip(_solution_order(iteration_best.solution, session.context.instance), _solution_order(iteration_best.solution, session.context.instance)[1:]):
+                if (a, b) in pheromone:
+                    pheromone[(a, b)] += max(1e-9, delta)
+        if iteration >= int(params["iter"]) and session.can_score():
+            iteration = 0
+    return session.finalize(params)
 
 
 def _run_ga_vns(session: _SearchSession) -> BaselineRunResult:
@@ -739,6 +772,68 @@ def _vns_local_search(session: _SearchSession, solution: Solution) -> Solution:
                 best = scored.solution
                 improved = True
                 break
+    return best
+
+
+def _aco_construct_order(customers: list[str], pheromone: dict[tuple[str, str], float], session: _SearchSession, params: dict[str, Any]) -> list[str]:
+    remaining = set(customers)
+    if not remaining:
+        return []
+    current = session.rng.choice(sorted(remaining))
+    order = [current]
+    remaining.remove(current)
+    while remaining:
+        weights = {
+            customer_id: _aco_transition_weight(current, customer_id, pheromone, session, params)
+            for customer_id in remaining
+        }
+        if session.rng.random() < float(params["r0"]):
+            next_customer = max(weights, key=lambda customer_id: (weights[customer_id], customer_id))
+        else:
+            next_customer = _weighted_customer_choice(weights, session.rng)
+        order.append(next_customer)
+        remaining.remove(next_customer)
+        current = next_customer
+    return order
+
+
+def _aco_transition_weight(a: str, b: str, pheromone: dict[tuple[str, str], float], session: _SearchSession, params: dict[str, Any]) -> float:
+    instance = session.context.instance
+    nodes = _node_lookup(instance)
+    depots = [node.node_id for node in instance.nodes if node.node_type.lower() == "d"]
+    distance = max(1e-9, float(instance.distance(a, b)))
+    eta = 1.0 / distance
+    saving = max(1e-9, min(float(instance.distance(depot, a)) + float(instance.distance(depot, b)) for depot in depots) - distance)
+    dev = 1.0 / max(1.0, abs(float(nodes[a].due_time) - float(nodes[b].ready_time)))
+    width = 1.0 / max(1.0, float(nodes[b].due_time) - float(nodes[b].ready_time))
+    tau = pheromone.get((a, b), 1.0)
+    alpha = float(params["alpha"])
+    beta = float(params["beta"])
+    return (tau ** alpha) * (eta ** beta) * (1.0 + saving / 10_000.0) * (1.0 + dev) * (1.0 + width)
+
+
+def _weighted_customer_choice(weights: dict[str, float], rng: random.Random) -> str:
+    total = sum(max(0.0, value) for value in weights.values())
+    if total <= 1e-12:
+        return rng.choice(sorted(weights))
+    pick = rng.random() * total
+    current = 0.0
+    for customer_id, weight in sorted(weights.items()):
+        current += max(0.0, weight)
+        if current >= pick:
+            return customer_id
+    return sorted(weights)[-1]
+
+
+def _aco_vnd(solution: Solution, session: _SearchSession) -> Solution:
+    best = solution
+    for move in ("relocate", "swap"):
+        if not session.can_score():
+            return best
+        candidate = _order_to_solution(_apply_order_move(_solution_order(best, session.context.instance), session.rng, move), session, type_hints=_route_type_hints(best, session.context.instance))
+        scored = session.score(candidate, operator=f"aco_vnd_{move}")
+        if scored is not None and scored.feasible and scored.objective < score_reference(best, session.context) - 1e-9:
+            best = scored.solution
     return best
 
 
