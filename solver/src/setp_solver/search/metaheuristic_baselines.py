@@ -559,7 +559,38 @@ def _run_gwo(session: _SearchSession) -> BaselineRunResult:
 
 
 def _run_iwd(session: _SearchSession) -> BaselineRunResult:
-    return session.finalize(failure_reason="IWD baseline not implemented in this commit.")
+    params = {"drops": 20, "soil0": 1000.0, "velocity0": 100.0, "iter": 100, "lns": "Shaw+min-increment", "acceptance": "SA-Metropolis"}
+    customers = _all_customer_ids(session.context.instance)
+    soil = {(a, b): float(params["soil0"]) for a in customers for b in customers if a != b}
+    velocity = {idx: float(params["velocity0"]) for idx in range(int(params["drops"]))}
+    temperature = -0.05 * abs(session.current.objective) / math.log(0.5)
+    iteration = 0
+    while session.can_score():
+        iteration += 1
+        best_this_iter: _ScoredSolution | None = None
+        for drop_idx in range(int(params["drops"])):
+            if not session.can_score():
+                break
+            order = _iwd_construct_order(customers, soil, session)
+            candidate = _order_to_solution(order, session)
+            outcome = _alns_neighbor(session, candidate, "shaw_related_removal", "greedy_insert_repair")
+            if outcome.produced and outcome.feasible:
+                candidate = outcome.solution
+            scored = session.score(candidate, operator="iwd_construct_lns_sa")
+            if scored is None:
+                break
+            session.accept_metropolis(scored, temperature)
+            if scored.feasible and (best_this_iter is None or scored.objective < best_this_iter.objective):
+                best_this_iter = scored
+            velocity[drop_idx] = velocity[drop_idx] + 1.0 / max(1.0, abs(scored.objective))
+            _iwd_update_local_soil(order, soil, scored.objective)
+        if best_this_iter is not None:
+            _iwd_update_global_soil(_solution_order(best_this_iter.solution, session.context.instance), soil, best_this_iter.objective)
+        temperature *= 0.95
+        if iteration >= int(params["iter"]):
+            iteration = 0
+            temperature = max(1e-9, -0.05 * abs(session.current.objective) / math.log(0.5))
+    return session.finalize(params)
 
 
 def _normalize_algorithm(algorithm: str) -> str:
@@ -966,6 +997,51 @@ def _gwo_initial_wolves(session: _SearchSession, target_population: int) -> list
             wolves.append(scored)
             session.accept_if_better(scored)
     return sorted(wolves, key=lambda item: (item.objective, item.signature))
+
+
+def _iwd_construct_order(customers: list[str], soil: dict[tuple[str, str], float], session: _SearchSession) -> list[str]:
+    remaining = set(customers)
+    if not remaining:
+        return []
+    current = session.rng.choice(sorted(remaining))
+    order = [current]
+    remaining.remove(current)
+    while remaining:
+        weights = {
+            candidate: _iwd_transition_weight(current, candidate, soil, session)
+            for candidate in remaining
+        }
+        nxt = _weighted_customer_choice(weights, session.rng)
+        order.append(nxt)
+        remaining.remove(nxt)
+        current = nxt
+    return order
+
+
+def _iwd_transition_weight(a: str, b: str, soil: dict[tuple[str, str], float], session: _SearchSession) -> float:
+    instance = session.context.instance
+    depots = [node.node_id for node in instance.nodes if node.node_type.lower() == "d"]
+    saving = max(1e-9, min(float(instance.distance(depot, a)) + float(instance.distance(depot, b)) for depot in depots) - float(instance.distance(a, b)))
+    edge_soil = max(1e-9, soil.get((a, b), 1000.0))
+    return (1.0 / edge_soil) * (1.0 + saving / 10_000.0)
+
+
+def _iwd_update_local_soil(order: list[str], soil: dict[tuple[str, str], float], objective: float) -> None:
+    if not math.isfinite(objective):
+        return
+    delta = 1.0 / max(1.0, abs(objective))
+    for edge in zip(order, order[1:]):
+        if edge in soil:
+            soil[edge] = max(1e-9, soil[edge] * 0.99 - delta)
+
+
+def _iwd_update_global_soil(order: list[str], soil: dict[tuple[str, str], float], objective: float) -> None:
+    if not math.isfinite(objective):
+        return
+    delta = 10.0 / max(1.0, abs(objective))
+    for edge in zip(order, order[1:]):
+        if edge in soil:
+            soil[edge] = max(1e-9, soil[edge] - delta)
 
 
 def _alns_neighbor(session: _SearchSession, solution: Solution, destroy: str, repair: str) -> _OperatorOutcome:
