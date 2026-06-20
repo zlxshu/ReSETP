@@ -13,6 +13,7 @@ from dr_alns_ppo.async_block_policy import (
     load_async_block_policy,
     save_async_block_policy,
 )
+from dr_alns_ppo.block_env import BlockAlnsEnv
 from dr_alns_ppo.evaluate_policy import _evaluate_one_task
 from dr_alns_ppo.train_async_block_ppo import (
     AsyncEpisodeTask,
@@ -22,6 +23,7 @@ from dr_alns_ppo.train_async_block_ppo import (
     ppo_update,
     run_actor_episode,
     _checked_output_dir,
+    _phase_can_advance,
 )
 
 
@@ -56,6 +58,7 @@ def test_async_actor_returns_complete_tiny_trajectory(monkeypatch: pytest.Monkey
         block_size=4,
         policy_version=0,
         deterministic=True,
+        curriculum_phase="route",
         policy_payload={
             "state_dict": {key: value.detach().cpu() for key, value in model.state_dict().items()},
             "obs_dim": model.obs_dim,
@@ -93,9 +96,11 @@ def test_ppo_update_uses_old_log_probs_and_returns_metrics() -> None:
         "rewards": [0.1, 0.2],
         "values": [0.0, 0.0],
         "old_log_probs": [-1.0, -1.1],
+        "bundle": "A",
     }
 
-    batch = flatten_episodes([episode], gamma=0.99, gae_lambda=0.95)
+    batch = flatten_episodes([episode], gamma=0.99, gae_lambda=0.95, advantage_clip_range=0.5)
+    assert float(batch["advantages"].abs().max()) <= 0.5
     metrics = ppo_update(
         model,
         optimizer,
@@ -106,6 +111,7 @@ def test_ppo_update_uses_old_log_probs_and_returns_metrics() -> None:
         value_coef=0.5,
         entropy_coef=0.01,
         max_grad_norm=0.5,
+        value_clip_range=0.1,
     )
 
     assert set(metrics) == {"policy_loss", "value_loss", "entropy", "approx_kl", "clip_fraction"}
@@ -118,6 +124,54 @@ def test_compute_episode_advantages_returns_same_length() -> None:
     assert len(advantages) == 2
     assert len(returns) == 2
     assert returns[-1] == pytest.approx(2.0)
+
+
+def test_curriculum_reward_phases_use_available_signals() -> None:
+    response = {
+        "best_obj": 90.0,
+        "current_obj": 95.0,
+        "violation_count": 0,
+        "solution": {"routes": [{"vehicle_id": "EV1"}], "charging_actions": [{"vehicle_id": "EV1"}]},
+        "metrics": {"cost_carbon": 10.0, "E_total": 50.0, "electricity_kwh": 12.0},
+        "trace": {
+            "block_start_best_obj": 100.0,
+            "block_end_best_obj": 90.0,
+            "block_start_current_obj": 100.0,
+            "block_end_current_obj": 95.0,
+            "block_best_route_delta": -1,
+            "block_improved_best_count": 1,
+            "block_improved_current_count": 1,
+            "block_iterations": 4,
+            "block_requested_q_ratio": 0.16,
+            "block_requested_threshold_ratio": 0.0025,
+        },
+    }
+    env = BlockAlnsEnv.__new__(BlockAlnsEnv)
+    env.initial_obj = 100.0
+    env.curriculum_phase = "route"
+    route_reward = env._reward(dict(response), terminated=False)
+    env.curriculum_phase = "energy"
+    energy_reward = env._reward(dict(response), terminated=False)
+    env.curriculum_phase = "carbon"
+    carbon_response = dict(response)
+    carbon_reward = env._reward(carbon_response, terminated=False)
+
+    assert energy_reward > route_reward
+    assert carbon_reward != energy_reward
+    assert carbon_response["reward_components"]["fallback"] == ""
+
+
+def test_curriculum_phase_gate_requires_minimum_and_stability() -> None:
+    episodes = [
+        {"curriculum_phase": "route", "bundle": "A", "best_obj": 10.0, "violation_count": 0},
+        {"curriculum_phase": "route", "bundle": "B", "best_obj": 11.0, "violation_count": 0},
+        {"curriculum_phase": "route", "bundle": "A", "best_obj": 9.0, "violation_count": 0},
+        {"curriculum_phase": "route", "bundle": "B", "best_obj": 10.0, "violation_count": 0},
+    ]
+    assert not _phase_can_advance(episodes[:3], "route", min_episodes=4)
+    assert _phase_can_advance(episodes, "route", min_episodes=4)
+    bad = episodes + [{"curriculum_phase": "route", "bundle": "A", "best_obj": 20.0, "violation_count": 1}]
+    assert not _phase_can_advance(bad, "route", min_episodes=4)
 
 
 def test_async_reports_stay_under_async_pilot_dir(tmp_path: Path) -> None:

@@ -31,6 +31,7 @@ from .bundle_manifest import load_manifest
 SYSTEM_WORKER_PYTHON = os.environ.get("SETP_WORKER_PYTHON", "/opt/anaconda3/bin/python3.13")
 SYSTEM_WORKER_NUMPY = "2.3.5"
 REPORT_ROOT_FRAGMENT = "solver/reports/dr_alns_ppo_v3_block_dr_alns/async_pilot"
+CURRICULUM_PHASES = ("route", "energy", "carbon", "dynamic")
 
 
 @dataclass(frozen=True)
@@ -42,6 +43,7 @@ class AsyncEpisodeTask:
     block_size: int
     policy_version: int
     deterministic: bool
+    curriculum_phase: str
     policy_payload: dict[str, Any]
 
 
@@ -59,6 +61,7 @@ def run_actor_episode(task: AsyncEpisodeTask) -> dict[str, Any]:
         seed=int(task.seed),
         eval_budget=int(task.eval_budget),
         block_size=int(task.block_size),
+        curriculum_phase=str(task.curriculum_phase),
     )
     observations: list[list[float]] = []
     actions: list[list[int]] = []
@@ -93,6 +96,7 @@ def run_actor_episode(task: AsyncEpisodeTask) -> dict[str, Any]:
         "bundle": task.bundle,
         "seed": int(task.seed),
         "policy_version": int(task.policy_version),
+        "curriculum_phase": str(task.curriculum_phase),
         "block_size": int(task.block_size),
         "eval_budget": int(task.eval_budget),
         "observations": observations,
@@ -103,6 +107,7 @@ def run_actor_episode(task: AsyncEpisodeTask) -> dict[str, Any]:
         "entropies": entropies,
         "block_steps": len(rewards),
         "reward_sum": float(sum(rewards)),
+        "reward_finite": bool(all(math.isfinite(float(value)) for value in rewards)),
         "best_obj": float(final_info.get("best_obj", 0.0)),
         "actual_evals": int(final_info.get("actual_evals", 0)),
         "candidate_scores": int(final_info.get("candidate_scores", 0)),
@@ -170,12 +175,16 @@ def flatten_episodes(
     *,
     gamma: float,
     gae_lambda: float,
+    shared_baseline_by_bundle: bool = False,
+    advantage_clip_range: float | None = None,
 ) -> dict[str, torch.Tensor]:
     obs: list[list[float]] = []
     actions: list[list[int]] = []
     old_log_probs: list[float] = []
+    old_values: list[float] = []
     advantages: list[float] = []
     returns: list[float] = []
+    per_episode: list[tuple[dict[str, Any], list[float], list[float]]] = []
     for episode in episodes:
         ep_adv, ep_returns = compute_episode_advantages(
             [float(v) for v in episode["rewards"]],
@@ -183,9 +192,32 @@ def flatten_episodes(
             gamma=gamma,
             gae_lambda=gae_lambda,
         )
+        per_episode.append((episode, ep_adv, ep_returns))
+
+    if shared_baseline_by_bundle:
+        bundle_returns: dict[str, list[float]] = {}
+        for episode, _ep_adv, ep_returns in per_episode:
+            bundle = str(episode.get("bundle", ""))
+            if ep_returns:
+                bundle_returns.setdefault(bundle, []).append(float(sum(ep_returns)))
+        bundle_means = {
+            bundle: float(sum(values) / len(values))
+            for bundle, values in bundle_returns.items()
+            if len(values) >= 2
+        }
+        for idx, (episode, ep_adv, ep_returns) in enumerate(per_episode):
+            baseline = bundle_means.get(str(episode.get("bundle", "")))
+            if baseline is None:
+                continue
+            ep_returns = [float(value) - baseline for value in ep_returns]
+            ep_adv = [float(ret) - float(value) for ret, value in zip(ep_returns, episode["values"])]
+            per_episode[idx] = (episode, ep_adv, ep_returns)
+
+    for episode, ep_adv, ep_returns in per_episode:
         obs.extend(episode["observations"])
         actions.extend(episode["actions"])
         old_log_probs.extend(float(v) for v in episode["old_log_probs"])
+        old_values.extend(float(v) for v in episode["values"])
         advantages.extend(ep_adv)
         returns.extend(ep_returns)
     if not obs:
@@ -196,12 +228,19 @@ def flatten_episodes(
         adv_tensor = (adv_tensor - adv_tensor.mean()) / (adv_std + 1e-8)
     else:
         adv_tensor = adv_tensor - adv_tensor.mean()
+    if advantage_clip_range is not None and float(advantage_clip_range) > 0.0:
+        adv_tensor = torch.clamp(adv_tensor, -float(advantage_clip_range), float(advantage_clip_range))
     return {
         "obs": torch.as_tensor(obs, dtype=torch.float32),
         "actions": torch.as_tensor(actions, dtype=torch.long),
         "old_log_probs": torch.as_tensor(old_log_probs, dtype=torch.float32),
+        "old_values": torch.as_tensor(old_values, dtype=torch.float32),
         "advantages": adv_tensor,
         "returns": torch.as_tensor(returns, dtype=torch.float32),
+        "shared_baseline_group_count": torch.as_tensor(
+            len({str(ep.get("bundle", "")) for ep in episodes}) if shared_baseline_by_bundle else 0,
+            dtype=torch.long,
+        ),
     }
 
 
@@ -216,6 +255,7 @@ def ppo_update(
     value_coef: float,
     entropy_coef: float,
     max_grad_norm: float,
+    value_clip_range: float | None = None,
 ) -> dict[str, float]:
     sample_count = int(batch["obs"].shape[0])
     losses: list[dict[str, float]] = []
@@ -225,13 +265,21 @@ def ppo_update(
             indices = permutation[start : start + int(minibatch_size)]
             log_probs, entropies, values = model.evaluate_actions(batch["obs"][indices], batch["actions"][indices])
             old_log_probs = batch["old_log_probs"][indices]
+            old_values = batch.get("old_values")
+            old_values_mb = old_values[indices] if old_values is not None else None
             advantages = batch["advantages"][indices]
             returns = batch["returns"][indices]
             ratio = torch.exp(log_probs - old_log_probs)
             unclipped = ratio * advantages
             clipped = torch.clamp(ratio, 1.0 - float(clip_range), 1.0 + float(clip_range)) * advantages
             policy_loss = -torch.minimum(unclipped, clipped).mean()
-            value_loss = nn.functional.mse_loss(values, returns)
+            value_loss_unclipped = nn.functional.mse_loss(values, returns)
+            if value_clip_range is not None and old_values_mb is not None and float(value_clip_range) > 0.0:
+                clipped_values = old_values_mb + torch.clamp(values - old_values_mb, -float(value_clip_range), float(value_clip_range))
+                value_loss_clipped = nn.functional.mse_loss(clipped_values, returns)
+                value_loss = torch.maximum(value_loss_unclipped, value_loss_clipped)
+            else:
+                value_loss = value_loss_unclipped
             entropy = entropies.mean()
             loss = policy_loss + float(value_coef) * value_loss - float(entropy_coef) * entropy
             optimizer.zero_grad()
@@ -350,17 +398,79 @@ def run_audit(args: argparse.Namespace) -> int:
     return 0
 
 
+def _parse_curriculum_schedule(text: str) -> list[str]:
+    phases = [part.strip() for part in str(text).split(",") if part.strip()]
+    if not phases:
+        raise ValueError("curriculum schedule cannot be empty")
+    unknown = [phase for phase in phases if phase not in CURRICULUM_PHASES]
+    if unknown:
+        raise ValueError(f"unknown curriculum phase(s): {unknown}")
+    return phases
+
+
+def _phase_values(text: str | None, schedule: list[str], default: float | None) -> list[float | None]:
+    raw = "" if text is None else str(text).strip()
+    if not raw:
+        return [default for _ in schedule]
+    values = [part.strip() for part in raw.split(",")]
+    if len(values) != len(schedule):
+        raise ValueError(f"phase override length {len(values)} must match schedule length {len(schedule)}")
+    parsed: list[float | None] = []
+    for value in values:
+        parsed.append(default if value == "" else float(value))
+    return parsed
+
+
+def _phase_can_advance(episodes: list[dict[str, Any]], phase: str, *, min_episodes: int) -> bool:
+    phase_episodes = [ep for ep in episodes if str(ep.get("curriculum_phase", "")) == phase]
+    if len(phase_episodes) < int(min_episodes):
+        return False
+    recent = phase_episodes[-int(min_episodes) :]
+    if any(int(ep.get("violation_count", 1)) != 0 for ep in recent):
+        return False
+    if any(not math.isfinite(float(ep.get("best_obj", math.inf))) for ep in recent):
+        return False
+    by_bundle: dict[str, list[dict[str, Any]]] = {}
+    for episode in phase_episodes:
+        by_bundle.setdefault(str(episode.get("bundle", "")), []).append(episode)
+    for bundle_eps in by_bundle.values():
+        if len(bundle_eps) < int(min_episodes) * 2:
+            continue
+        prev = [float(ep["best_obj"]) for ep in bundle_eps[-2 * int(min_episodes) : -int(min_episodes)]]
+        curr = [float(ep["best_obj"]) for ep in bundle_eps[-int(min_episodes) :]]
+        if statistics_median(curr) > statistics_median(prev) + max(1e-9, abs(statistics_median(prev)) * 1e-9):
+            return False
+    return True
+
+
+def statistics_median(values: list[float]) -> float:
+    ordered = sorted(float(value) for value in values)
+    if not ordered:
+        return math.inf
+    mid = len(ordered) // 2
+    if len(ordered) % 2:
+        return ordered[mid]
+    return 0.5 * (ordered[mid - 1] + ordered[mid])
+
+
 def run_train(args: argparse.Namespace) -> int:
     output_dir = _checked_output_dir(Path(args.output_dir))
     output_dir.mkdir(parents=True, exist_ok=True)
     _require_system_worker(args.required_worker_python)
     manifest = load_manifest(args.manifest)
     bundles = list(manifest["train"])
+    schedule = _parse_curriculum_schedule(args.curriculum_schedule)
+    phase_learning_rates = _phase_values(args.phase_learning_rates, schedule, float(args.learning_rate))
+    phase_entropy_coefs = _phase_values(args.phase_entropy_coefs, schedule, float(args.entropy_coef))
+    phase_clip_ranges = _phase_values(args.phase_clip_ranges, schedule, float(args.clip_range))
+    phase_value_clip_ranges = _phase_values(args.phase_value_clip_ranges, schedule, None)
+    phase_advantage_clip_ranges = _phase_values(args.phase_advantage_clip_ranges, schedule, None)
     model = make_block_actor_critic(seed=int(args.seed), hidden_size=int(args.hidden_size))
     optimizer = torch.optim.Adam(model.parameters(), lr=float(args.learning_rate))
     config = vars(args).copy()
     config["train_bundles"] = bundles
     config["model_format"] = "dr_alns_async_block_ppo.v1"
+    config["parsed_curriculum_schedule"] = schedule
     _write_json(output_dir / "async_training_config.json", config)
 
     episode_log_path = output_dir / "async_episode_log.csv"
@@ -368,13 +478,16 @@ def run_train(args: argparse.Namespace) -> int:
     entropy_log_path = output_dir / "policy_entropy.csv"
     throughput_path = output_dir / "worker_throughput.csv"
     cpu_probe_path = output_dir / "cpu_probe.csv"
+    phase_transition_path = output_dir / "phase_transitions.csv"
     _write_episode_log(episode_log_path, [], mode="w")
     _write_csv(update_log_path, [], fieldnames=_update_fieldnames())
     _write_csv(entropy_log_path, [], fieldnames=["update_index", "policy_version", "entropy"])
     _write_csv(throughput_path, [], fieldnames=_throughput_fieldnames())
     _write_csv(cpu_probe_path, [], fieldnames=_cpu_probe_fieldnames())
+    _write_csv(phase_transition_path, [], fieldnames=_phase_transition_fieldnames())
 
     policy_version = 0
+    phase_index = 0
     update_index = 0
     episode_index = 0
     completed_episodes = 0
@@ -398,6 +511,7 @@ def run_train(args: argparse.Namespace) -> int:
                 block_size=int(args.block_size),
                 policy_version=policy_version,
                 deterministic=False,
+                curriculum_phase=schedule[phase_index],
                 policy_payload=make_policy_payload(model),
             )
             futures[executor.submit(run_actor_episode, task)] = task
@@ -432,6 +546,25 @@ def run_train(args: argparse.Namespace) -> int:
                 if accepted:
                     rollout_buffer.extend(accepted)
                     valid_steps_total += int(episode["block_steps"])
+                    if phase_index < len(schedule) - 1 and _phase_can_advance(
+                        [ep for ep in all_episodes if int(ep.get("policy_version", -1)) <= policy_version],
+                        schedule[phase_index],
+                        min_episodes=int(args.phase_min_episodes),
+                    ):
+                        previous = schedule[phase_index]
+                        phase_index += 1
+                        _append_csv(
+                            phase_transition_path,
+                            [
+                                {
+                                    "completed_episodes": completed_episodes,
+                                    "valid_steps_total": valid_steps_total,
+                                    "from_phase": previous,
+                                    "to_phase": schedule[phase_index],
+                                }
+                            ],
+                            fieldnames=_phase_transition_fieldnames(),
+                        )
                 _append_csv(episode_log_path, [_episode_csv_row(episode, accepted_for_update=bool(accepted))])
                 _append_csv(
                     throughput_path,
@@ -448,10 +581,19 @@ def run_train(args: argparse.Namespace) -> int:
                 )
                 stale_episodes_total += len(stale)
                 if accepted:
+                    update_phase = str(accepted[-1].get("curriculum_phase", schedule[phase_index]))
+                    update_phase_index = schedule.index(update_phase) if update_phase in schedule else phase_index
+                    phase_lr = phase_learning_rates[update_phase_index]
+                    phase_entropy = phase_entropy_coefs[update_phase_index]
+                    phase_clip = phase_clip_ranges[update_phase_index]
+                    for group in optimizer.param_groups:
+                        group["lr"] = float(phase_lr if phase_lr is not None else args.learning_rate)
                     batch = flatten_episodes(
                         accepted,
                         gamma=float(args.gamma),
                         gae_lambda=float(args.gae_lambda),
+                        shared_baseline_by_bundle=False,
+                        advantage_clip_range=phase_advantage_clip_ranges[phase_index],
                     )
                     metrics = ppo_update(
                         model,
@@ -459,15 +601,20 @@ def run_train(args: argparse.Namespace) -> int:
                         batch,
                         epochs=int(args.epochs),
                         minibatch_size=int(args.minibatch_size),
-                        clip_range=float(args.clip_range),
+                        clip_range=float(phase_clip if phase_clip is not None else args.clip_range),
                         value_coef=float(args.value_coef),
-                        entropy_coef=float(args.entropy_coef),
+                        entropy_coef=float(phase_entropy if phase_entropy is not None else args.entropy_coef),
                         max_grad_norm=float(args.max_grad_norm),
+                        value_clip_range=phase_value_clip_ranges[update_phase_index],
                     )
                     update_row = {
                         "update_index": update_index,
                         "policy_version_before": policy_version,
                         "policy_version_after": policy_version + 1,
+                        "curriculum_phase": update_phase,
+                        "learning_rate": float(phase_lr if phase_lr is not None else args.learning_rate),
+                        "entropy_coef": float(phase_entropy if phase_entropy is not None else args.entropy_coef),
+                        "clip_range": float(phase_clip if phase_clip is not None else args.clip_range),
                         "valid_steps": int(batch["obs"].shape[0]),
                         "valid_episodes": len(accepted),
                         "stale_episodes": len(stale),
@@ -496,6 +643,8 @@ def run_train(args: argparse.Namespace) -> int:
         "completed_episodes": completed_episodes,
         "valid_steps_total": valid_steps_total,
         "stale_episodes_total": stale_episodes_total,
+        "final_curriculum_phase": schedule[phase_index],
+        "curriculum_schedule": schedule,
         "train_wall_time_seconds": time.monotonic() - start_time,
     }
     save_async_block_policy(output_dir / "async_block_ppo_model.pt", model, metadata=metadata)
@@ -529,6 +678,7 @@ def collect_episodes(
                 block_size=int(block_size),
                 policy_version=0,
                 deterministic=bool(deterministic),
+                curriculum_phase="route",
                 policy_payload=make_policy_payload(model),
             )
             futures.append(executor.submit(run_actor_episode, task))
@@ -573,9 +723,11 @@ def _episode_csv_row(episode: dict[str, Any], *, accepted_for_update: bool) -> d
         "bundle": episode["bundle"],
         "seed": int(episode["seed"]),
         "policy_version": int(episode["policy_version"]),
+        "curriculum_phase": str(episode.get("curriculum_phase", "route")),
         "accepted_for_update": int(bool(accepted_for_update)),
         "block_steps": int(episode["block_steps"]),
         "reward_sum": float(episode["reward_sum"]),
+        "reward_finite": int(bool(episode.get("reward_finite", True))),
         "best_obj": float(episode["best_obj"]),
         "actual_evals": int(episode["actual_evals"]),
         "candidate_scores": int(episode["candidate_scores"]),
@@ -755,9 +907,11 @@ def _episode_fieldnames() -> list[str]:
         "bundle",
         "seed",
         "policy_version",
+        "curriculum_phase",
         "accepted_for_update",
         "block_steps",
         "reward_sum",
+        "reward_finite",
         "best_obj",
         "actual_evals",
         "candidate_scores",
@@ -802,6 +956,10 @@ def _update_fieldnames() -> list[str]:
         "update_index",
         "policy_version_before",
         "policy_version_after",
+        "curriculum_phase",
+        "learning_rate",
+        "entropy_coef",
+        "clip_range",
         "valid_steps",
         "valid_episodes",
         "stale_episodes",
@@ -810,6 +968,15 @@ def _update_fieldnames() -> list[str]:
         "entropy",
         "approx_kl",
         "clip_fraction",
+    ]
+
+
+def _phase_transition_fieldnames() -> list[str]:
+    return [
+        "completed_episodes",
+        "valid_steps_total",
+        "from_phase",
+        "to_phase",
     ]
 
 
@@ -855,6 +1022,13 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
             p.add_argument("--rollout-min-steps", type=int, default=2048)
             p.add_argument("--rollout-min-episodes", type=int, default=12)
             p.add_argument("--max-policy-lag", type=int, default=1)
+            p.add_argument("--curriculum-schedule", default="route,energy,carbon,dynamic")
+            p.add_argument("--phase-min-episodes", type=int, default=4)
+            p.add_argument("--phase-learning-rates", default="")
+            p.add_argument("--phase-entropy-coefs", default="")
+            p.add_argument("--phase-clip-ranges", default="")
+            p.add_argument("--phase-value-clip-ranges", default="")
+            p.add_argument("--phase-advantage-clip-ranges", default="")
             p.add_argument("--gamma", type=float, default=0.99)
             p.add_argument("--gae-lambda", type=float, default=0.95)
             p.add_argument("--clip-range", type=float, default=0.2)

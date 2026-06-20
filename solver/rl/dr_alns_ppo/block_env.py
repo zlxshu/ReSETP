@@ -11,6 +11,7 @@ from .worker_client import WorkerClient
 
 
 BLOCK_OBSERVATION_SIZE = 19
+CURRICULUM_PHASES = ("route", "energy", "carbon", "dynamic")
 
 
 class BlockAlnsEnv(gym.Env):
@@ -22,14 +23,18 @@ class BlockAlnsEnv(gym.Env):
         seed: int = 1,
         eval_budget: int = 16000,
         block_size: int = 128,
+        curriculum_phase: str = "route",
     ) -> None:
         super().__init__()
         if int(block_size) < 1:
             raise ValueError("block_size must be >= 1")
+        if curriculum_phase not in CURRICULUM_PHASES:
+            raise ValueError(f"unknown curriculum_phase: {curriculum_phase}")
         self.bundle_dir = bundle_dir
         self.seed_value = int(seed)
         self.eval_budget = int(eval_budget)
         self.block_size = int(block_size)
+        self.curriculum_phase = str(curriculum_phase)
         self.action_space = spaces.MultiDiscrete(list(BLOCK_ACTION_NVECS))
         self.observation_space = spaces.Box(
             low=-10.0,
@@ -60,6 +65,7 @@ class BlockAlnsEnv(gym.Env):
         self.last_response = response
         terminated = bool(int(response.get("actual_evals", 0)) >= self.eval_budget)
         reward = self._reward(response, terminated=terminated)
+        response["curriculum_phase"] = self.curriculum_phase
         truncated = False
         return self._obs(response), reward, terminated, truncated, response
 
@@ -84,14 +90,54 @@ class BlockAlnsEnv(gym.Env):
         iterations = max(1.0, _float(trace.get("block_iterations"), 1.0))
         no_best_penalty = 0.02 if best_hits == 0 else 0.0
 
-        reward = 100.0 * best_gain + 10.0 * current_gain + 1.5 * route_gain - 0.5 * route_penalty
-        reward += min(2.0, best_hits / iterations)
-        reward -= no_best_penalty
+        route_reward = 100.0 * best_gain + 10.0 * current_gain + 1.5 * route_gain - 0.5 * route_penalty
+        route_reward += min(2.0, best_hits / iterations)
+        route_reward -= no_best_penalty
+        reward = route_reward
+
+        components: dict[str, float | str] = {
+            "route": float(route_reward),
+            "energy": 0.0,
+            "carbon": 0.0,
+            "dynamic": 0.0,
+            "fallback": "",
+        }
+        phase = self.curriculum_phase
+        if phase in {"energy", "carbon", "dynamic"}:
+            charge_ratio = _charge_ratio(response)
+            requested_q = _float(trace.get("block_requested_q_ratio"), 0.0)
+            requested_threshold = _float(trace.get("block_requested_threshold_ratio"), 0.0)
+            block_improvement_rate = (best_hits + _float(trace.get("block_improved_current_count"), 0.0)) / iterations
+            energy_reward = 0.75 * min(1.0, charge_ratio) * block_improvement_rate
+            energy_reward += 0.25 * max(0.0, 0.40 - requested_q)
+            energy_reward -= 0.10 * min(1.0, requested_threshold / 0.02) if requested_threshold > 0.0 else 0.0
+            components["energy"] = float(energy_reward)
+            reward += energy_reward
+        if phase in {"carbon", "dynamic"}:
+            metrics = response.get("metrics", {}) or {}
+            carbon_reward = _carbon_reward(metrics, trace)
+            if carbon_reward is None:
+                carbon_reward = 25.0 * best_gain
+                components["fallback"] = "no_independent_carbon_or_fairness_signal"
+            components["carbon"] = float(carbon_reward)
+            reward += float(carbon_reward)
+        if phase == "dynamic":
+            dynamic_reward = _dynamic_reward(response)
+            if dynamic_reward is None:
+                dynamic_reward = 10.0 * best_gain
+                fallback = str(components.get("fallback") or "")
+                components["fallback"] = ";".join(part for part in (fallback, "no_dynamic_signal") if part)
+            components["dynamic"] = float(dynamic_reward)
+            reward += float(dynamic_reward)
         if int(response.get("violation_count", 0)) != 0:
             reward -= 10.0
+            components["violation_penalty"] = -10.0
         if terminated and self.initial_obj is not None:
             final_gain = max(0.0, (float(self.initial_obj) - end_best) / max(abs(float(self.initial_obj)), 1.0))
-            reward += min(10.0, 100.0 * final_gain)
+            terminal_reward = min(10.0, 100.0 * final_gain)
+            reward += terminal_reward
+            components["terminal"] = float(terminal_reward)
+        response["reward_components"] = components
         return float(reward)
 
     def _obs(self, response: dict[str, Any]) -> np.ndarray:
@@ -166,6 +212,33 @@ def _route_count(response: dict[str, Any]) -> int:
     return len(routes) if isinstance(routes, list) else 0
 
 
+def _charge_ratio(response: dict[str, Any]) -> float:
+    route_count = max(float(_route_count(response)), 1.0)
+    solution = response.get("solution", {}) if isinstance(response, dict) else {}
+    actions = solution.get("charging_actions", []) if isinstance(solution, dict) else []
+    return float(len(actions) if isinstance(actions, list) else 0) / route_count
+
+
+def _carbon_reward(metrics: dict[str, Any], trace: dict[str, Any]) -> float | None:
+    if not any(key in metrics for key in ("cost_carbon", "E_total", "electricity_kwh")):
+        return None
+    start_best = abs(_float(trace.get("block_start_best_obj"), 0.0))
+    carbon_cost = abs(_float(metrics.get("cost_carbon"), 0.0))
+    energy_total = abs(_float(metrics.get("E_total"), 0.0))
+    electricity = abs(_float(metrics.get("electricity_kwh"), 0.0))
+    denom = max(start_best, 1.0)
+    return -0.25 * min(2.0, carbon_cost / denom) - 0.02 * min(10.0, (energy_total + electricity) / 1000.0)
+
+
+def _dynamic_reward(response: dict[str, Any]) -> float | None:
+    trace = response.get("trace", {}) or {}
+    metrics = response.get("metrics", {}) or {}
+    keys = set(trace) | set(metrics) | set(response)
+    if not any("dynamic" in str(key).lower() or "rolling" in str(key).lower() for key in keys):
+        return None
+    return 0.0
+
+
 def _float(value: Any, default: float = 0.0) -> float:
     try:
         result = float(value)
@@ -176,4 +249,4 @@ def _float(value: Any, default: float = 0.0) -> float:
     return result
 
 
-__all__ = ["BLOCK_OBSERVATION_SIZE", "BlockAlnsEnv"]
+__all__ = ["BLOCK_OBSERVATION_SIZE", "CURRICULUM_PHASES", "BlockAlnsEnv"]
