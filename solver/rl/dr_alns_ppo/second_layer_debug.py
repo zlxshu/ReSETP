@@ -20,7 +20,7 @@ from .env import OBSERVATION_SIZE, SetpAlnsEnv
 from .worker_client import resolve_worker_python
 
 
-SYSTEM_WORKER_PYTHON = "/opt/anaconda3/bin/python3.13"
+SYSTEM_WORKER_PYTHON = os.environ.get("SETP_WORKER_PYTHON", "/opt/anaconda3/bin/python3.13")
 REPORT_DIR = Path("solver/reports/dr_alns_ppo_v2/second_layer_debug")
 MANIFEST_PATH = Path("solver/reports/dr_alns_ppo_v2/training_bundle_manifest.json")
 MODEL_PATH = Path("solver/reports/dr_alns_ppo_v2/episode_safe_pilot/train/model.zip")

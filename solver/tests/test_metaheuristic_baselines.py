@@ -19,7 +19,7 @@ from setp_solver.search.metaheuristic_baselines import BASELINE_ALGORITHMS, run_
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 INSTANCE = REPO_ROOT / INSTANCE_DIRS["100-01-24h"]
-SYSTEM_PYTHON = "/opt/anaconda3/bin/python3.13"
+SYSTEM_PYTHON = os.environ.get("SETP_WORKER_PYTHON", "/opt/anaconda3/bin/python3.13")
 SYSTEM_NUMPY = "2.3.5"
 
 

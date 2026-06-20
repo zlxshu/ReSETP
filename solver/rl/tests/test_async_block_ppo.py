@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import os
 from pathlib import Path
 
 import numpy as np
@@ -42,7 +43,7 @@ def test_async_block_policy_predict_supports_multidiscrete_actions(tmp_path: Pat
 
 
 def test_async_actor_returns_complete_tiny_trajectory(monkeypatch: pytest.MonkeyPatch) -> None:
-    system_python = Path("/opt/anaconda3/bin/python3.13")
+    system_python = Path(os.environ.get("SETP_WORKER_PYTHON", "/opt/anaconda3/bin/python3.13"))
     if not system_python.exists():
         pytest.skip("system worker Python is not available")
     monkeypatch.setenv("SETP_WORKER_PYTHON", str(system_python))

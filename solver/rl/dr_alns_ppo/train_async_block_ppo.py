@@ -21,7 +21,7 @@ from .block_env import BlockAlnsEnv
 from .bundle_manifest import load_manifest
 
 
-SYSTEM_WORKER_PYTHON = "/opt/anaconda3/bin/python3.13"
+SYSTEM_WORKER_PYTHON = os.environ.get("SETP_WORKER_PYTHON", "/opt/anaconda3/bin/python3.13")
 SYSTEM_WORKER_NUMPY = "2.3.5"
 REPORT_ROOT_FRAGMENT = "solver/reports/dr_alns_ppo_v3_block_dr_alns/async_pilot"
 
@@ -693,7 +693,7 @@ def _update_fieldnames() -> list[str]:
 
 
 def _checked_output_dir(path: Path) -> Path:
-    text = str(path)
+    text = path.as_posix()
     if REPORT_ROOT_FRAGMENT not in text:
         raise ValueError(f"async PPO reports must stay under {REPORT_ROOT_FRAGMENT}: {path}")
     return path

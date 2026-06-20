@@ -3,6 +3,7 @@ from __future__ import annotations
 import argparse
 import csv
 import json
+import os
 import statistics
 from pathlib import Path
 from typing import Any
@@ -10,7 +11,7 @@ from typing import Any
 from .report_smoke import load_comparison
 
 
-SYSTEM_WORKER_PYTHON = "/opt/anaconda3/bin/python3.13"
+SYSTEM_WORKER_PYTHON = os.environ.get("SETP_WORKER_PYTHON", "/opt/anaconda3/bin/python3.13")
 CLOSE_TO_ALPHA_RELATIVE_GAP = 0.05
 REWARD_IMPROVEMENT_RATIO = 0.05
 

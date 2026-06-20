@@ -21,7 +21,7 @@ from .env import SetpAlnsEnv
 from .train_ppo import build_bucketed_phase_plan
 
 
-SYSTEM_WORKER_PYTHON = "/opt/anaconda3/bin/python3.13"
+SYSTEM_WORKER_PYTHON = os.environ.get("SETP_WORKER_PYTHON", "/opt/anaconda3/bin/python3.13")
 PILOT_DIR = Path("solver/reports/dr_alns_ppo_v2/pilot_real3")
 REPORT_DIR = Path("solver/reports/dr_alns_ppo_v2/ppo_failure_investigation")
 MANIFEST_PATH = Path("solver/reports/dr_alns_ppo_v2/training_bundle_manifest.json")

@@ -32,7 +32,7 @@ from .metaheuristic_baselines import (
 from .winner_operators import WinnerKernelConfig, run_winner_kernel
 
 
-SYSTEM_PYTHON = "/opt/anaconda3/bin/python3.13"
+SYSTEM_PYTHON = os.environ.get("SETP_WORKER_PYTHON", "/opt/anaconda3/bin/python3.13")
 SYSTEM_NUMPY = "2.3.5"
 DEFAULT_EVAL_BUDGET = 16_000
 DEFAULT_MAX_RUNTIME_SECONDS = 900.0
