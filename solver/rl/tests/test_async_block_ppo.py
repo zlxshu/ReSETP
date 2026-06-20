@@ -28,6 +28,7 @@ from dr_alns_ppo.train_async_block_ppo import (
     _batch_to_device,
     _checked_output_dir,
     _cpu_probe_row,
+    _expected_episode_steps,
     _phase_can_advance,
     _save_periodic_checkpoint,
 )
@@ -230,6 +231,12 @@ def test_train_parser_exposes_checkpoint_interval() -> None:
     args = parse_args(["train", "--output-dir", "solver/reports/dr_alns_ppo_v3_block_dr_alns/async_pilot/x"])
 
     assert args.checkpoint_every_updates == 10
+
+
+def test_expected_episode_steps_rounds_up_budget_blocks() -> None:
+    assert _expected_episode_steps(16000, 128) == 125
+    assert _expected_episode_steps(9, 4) == 3
+    assert _expected_episode_steps(0, 4) == 1
 
 
 def test_cpu_probe_row_includes_system_memory_fields() -> None:

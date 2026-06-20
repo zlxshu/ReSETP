@@ -565,6 +565,10 @@ def _save_periodic_checkpoint(
     return checkpoint_path.as_posix()
 
 
+def _expected_episode_steps(eval_budget: int, block_size: int) -> int:
+    return max(1, int(math.ceil(float(eval_budget) / max(float(block_size), 1.0))))
+
+
 def run_train(args: argparse.Namespace) -> int:
     output_dir = _checked_output_dir(Path(args.output_dir))
     output_dir.mkdir(parents=True, exist_ok=True)
@@ -612,6 +616,7 @@ def run_train(args: argparse.Namespace) -> int:
     rollout_buffer: list[dict[str, Any]] = []
     start_time = time.monotonic()
     next_cpu_probe = start_time
+    expected_episode_steps = _expected_episode_steps(int(args.eval_budget), int(args.block_size))
 
     with concurrent.futures.ProcessPoolExecutor(max_workers=int(args.num_actors)) as executor:
         futures: dict[concurrent.futures.Future, AsyncEpisodeTask] = {}
@@ -632,7 +637,8 @@ def run_train(args: argparse.Namespace) -> int:
             futures[executor.submit(run_actor_episode, task)] = task
             episode_index += 1
 
-        for _ in range(int(args.num_actors)):
+        initial_tasks = min(int(args.num_actors), max(1, int(math.ceil(int(args.timesteps) / expected_episode_steps))))
+        for _ in range(initial_tasks):
             submit_one()
 
         while valid_steps_total < int(args.timesteps):
@@ -685,7 +691,8 @@ def run_train(args: argparse.Namespace) -> int:
                     throughput_path,
                     _throughput_rows(all_episodes, elapsed=time.monotonic() - start_time, num_actors=int(args.num_actors))[-1:],
                 )
-                if valid_steps_total < int(args.timesteps):
+                projected_steps = valid_steps_total + len(futures) * expected_episode_steps
+                if valid_steps_total < int(args.timesteps) and projected_steps < int(args.timesteps):
                     submit_one()
             buffer_steps = sum(int(ep["block_steps"]) for ep in rollout_buffer)
             if buffer_steps >= int(args.rollout_min_steps) or len(rollout_buffer) >= int(args.rollout_min_episodes):
