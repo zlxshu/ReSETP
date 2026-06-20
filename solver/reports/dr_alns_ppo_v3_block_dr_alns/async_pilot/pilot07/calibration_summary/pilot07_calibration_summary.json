@@ -1,0 +1,70 @@
+{
+  "max_projected_episodes": 200,
+  "memory_limit_mb": 12000.0,
+  "min_projected_episodes": 100,
+  "projection_hours": 3.0,
+  "rows": [
+    {
+      "block_size": 32,
+      "calibration_dir": "solver/reports/dr_alns_ppo_v3_block_dr_alns/async_pilot/pilot07/calibration_budget1500_block32_actors8",
+      "completed_episodes": 10,
+      "episodes_per_hour": 40.0201879614827,
+      "eval_budget": 1500,
+      "max_system_memory_used_mb": 13759.9140625,
+      "max_worker_rss_mb": 328.828125,
+      "num_actors": 8,
+      "numpy_ok": true,
+      "projected_episodes": 120.0605638844481,
+      "train_wall_time_seconds": 900.2179999999935,
+      "worker_ok": true,
+      "zero_violations": true
+    },
+    {
+      "block_size": 64,
+      "calibration_dir": "solver/reports/dr_alns_ppo_v3_block_dr_alns/async_pilot/pilot07/calibration_budget1500_block64_actors6",
+      "completed_episodes": 8,
+      "episodes_per_hour": 45.26636426220565,
+      "eval_budget": 1500,
+      "max_system_memory_used_mb": 11612.5078125,
+      "max_worker_rss_mb": 239.640625,
+      "num_actors": 6,
+      "numpy_ok": true,
+      "projected_episodes": 135.79909278661694,
+      "train_wall_time_seconds": 636.8899999999994,
+      "worker_ok": true,
+      "zero_violations": true
+    },
+    {
+      "block_size": 64,
+      "calibration_dir": "solver/reports/dr_alns_ppo_v3_block_dr_alns/async_pilot/pilot07/calibration_budget3000_block64_actors6",
+      "completed_episodes": 6,
+      "episodes_per_hour": 25.087108013937282,
+      "eval_budget": 3000,
+      "max_system_memory_used_mb": 11133.38671875,
+      "max_worker_rss_mb": 244.84765625,
+      "num_actors": 6,
+      "numpy_ok": true,
+      "projected_episodes": 75.26132404181185,
+      "train_wall_time_seconds": 861.5939999999973,
+      "worker_ok": true,
+      "zero_violations": true
+    }
+  ],
+  "schema_version": "resetp-pilot07-calibration.v1",
+  "selected": {
+    "block_size": 64,
+    "calibration_dir": "solver/reports/dr_alns_ppo_v3_block_dr_alns/async_pilot/pilot07/calibration_budget1500_block64_actors6",
+    "completed_episodes": 8,
+    "episodes_per_hour": 45.26636426220565,
+    "eval_budget": 1500,
+    "max_system_memory_used_mb": 11612.5078125,
+    "max_worker_rss_mb": 239.640625,
+    "num_actors": 6,
+    "numpy_ok": true,
+    "projected_episodes": 135.79909278661694,
+    "train_wall_time_seconds": 636.8899999999994,
+    "worker_ok": true,
+    "zero_violations": true
+  },
+  "status": "CALIBRATION_OK"
+}
