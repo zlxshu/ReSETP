@@ -23,7 +23,7 @@ ReSETP = 投《系统工程理论与实践》的绿色车辆路径论文。多�
 
 ## 2. 三条工作线当前状态（2026-06-20）
 - **图表（13 张）**：壳目录 + 数据适配完成；第四阶段"照壳填数据画图"等大重跑数字。详见 `docs/handoff/memory/figure-redesign-task.md`。
-- **大重跑 E1-E7 + 表图重生成**：在 M1 上**运行中**（user 锁定）= 论文正式数字。**搬盘会中断它**——先让它跑完，或改 remote/copy。
+- **大重跑 E1-E7 + 表图重生成**：✅ **完成（2026-06-20, commit `9da7f8b`）= 论文正式数字锁死**。471/471 零失败零违约；**£4878 锚精确复现**（ALNS 4878.3318 / SA 5346.99）；T3-T9 + F1-F6/F5b 重生成到 `docs/paper_submission_final`，**F4 修好非空**；碳段 →**2330.7 kgCO2e**；latexmk 过；solver166/RL102 过；保护文件未动。报告 `solver/reports/formal_winner_20260619/`。小尾巴：E2 有 1 条 stale DR-ALNS provenance 行（T3 已排除，无害）。注：这是"正式数字 + 现有风格表图"完成；图表"顶刊级重设计"是否并入待确认（见 `docs/handoff/memory/figure-redesign-task.md`）。
 - **ALNS winner kernel**：100-01 碾 SA 8.8%（£4878 vs £5347）健康；L-main 近最优持平。代码 `solver/src/setp_solver/search/winner_operators.py`。
 - **DR-ALNS（block lane）**：离线探针 = **PROMISING**（有可学上下文信号，r2_delta≈1.05, CI[0.957,1.157]）。根因是训练不稳、非无信号。下一步 = 上 3060 做课程训练；方案在 `solver/reports/dr_alns_ppo_v3_block_dr_alns/offline_bandit/probe/curriculum_training_plan.md`。代码 `solver/rl/dr_alns_ppo/`（block_env/async_block_policy/train_async_block_ppo/offline_probe）。
 - **8 文献基线（轨②）**：已实现接入统一接口、零违约跑通，但 **HALT_BASELINE_THROUGHPUT**（eval/s 3.96–11.04 < 16000/900s 需的 17.78）。下一步 = 先 profile 提速（每个计数 eval ≈ 一次 evaluate，full check 延后/缓存 decode），仍不够再换等墙钟公平。**基线对比必须在基准机 M1 跑**（与 £4878 锚同环境）。代码 `solver/src/setp_solver/search/metaheuristic_baselines.py` + `metaheuristic_baseline_runner.py`；产物 `baselines/`。
@@ -76,3 +76,4 @@ ReSETP = 投《系统工程理论与实践》的绿色车辆路径论文。多�
 - 2026-06-20（续）user 确认：GPU 机 = Windows 5800H，外置盘 exFAT 直插 Windows 干活，训完迁回，授权上 GitHub。已建私有备份 `github.com/zlxshu/ReSETP`（46M 快照 = 代码+文档+记忆；大数据/reports/venv 不在内，留盘上）。清理 .git 内 AppleDouble 垃圾。确立"单盘=串行"工作顺序（见上）。handoff 文档已提交进盘上仓库（commit 38e6356）。
 - 2026-06-20（续2）写了轨②提速提示词，三条 Codex 提示词存入 `docs/handoff/codex_prompts/`（01 探针 / 02 基线 / 03 提速，+ README）。
 - 2026-06-20 E1-E7 进度快照（user 报）：~51/60 单元、414/470 记录、0 失败；E1 完 / E2 ~130-140 / E3 52-60 / E4 135-160 / E6 58-70 / E7 9-10；剩 E4 网格 + E6 theta + E3 长尾；6 worker。ETA 纯算 2-4h + 收尾（合并 manifest / export-backfill / 修正文碳段 / 查表图 F4 / solver+RL 测试 + commit）1-2h = 整体 3-6h。不降规格、不混旧数据。**下一步：在 M1 跑完 E1-E7 + 发提示词③做轨②正式对比，再移盘 Windows 训 DR。**
+- 🎯 2026-06-20 **E1-E7 大重跑完成（commit `9da7f8b`）= 论文正式数字锁死**：471/471 零失败零违约；£4878 锚精确复现；T3-T9 + F1-F6/F5b 重生成（F4 修好）；碳段 →2330.7 kgCO2e；latexmk 过；solver166/RL102 过；保护文件未动。**M1 现已空闲 → 下一步发提示词③做轨②基线正式对比，再移盘 Windows 训 DR。** 未 push（GitHub 备份待刷新）。
