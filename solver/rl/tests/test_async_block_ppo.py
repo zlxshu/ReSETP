@@ -24,6 +24,7 @@ from dr_alns_ppo.train_async_block_ppo import (
     flatten_episodes,
     ppo_update,
     run_actor_episode,
+    _batch_to_device,
     _checked_output_dir,
     _phase_can_advance,
 )
@@ -150,6 +151,40 @@ def test_ppo_update_uses_old_log_probs_and_returns_metrics() -> None:
 
     assert set(metrics) == {"policy_loss", "value_loss", "entropy", "approx_kl", "clip_fraction"}
     assert metrics["entropy"] > 0.0
+
+
+def test_shared_baseline_subtracts_bundle_mean_before_normalization() -> None:
+    episodes = []
+    for bundle, reward in (("A", 1.0), ("A", 3.0), ("B", 10.0), ("B", 14.0)):
+        episodes.append(
+            {
+                "observations": [[0.0] * 19],
+                "actions": [[0, 0, 0, 0, 0]],
+                "rewards": [reward],
+                "values": [0.0],
+                "old_log_probs": [-1.0],
+                "bundle": bundle,
+            }
+        )
+
+    batch = flatten_episodes(episodes, gamma=1.0, gae_lambda=1.0, shared_baseline_by_bundle=True)
+
+    assert batch["returns"].tolist() == pytest.approx([-1.0, 1.0, -2.0, 2.0])
+    assert int(batch["shared_baseline_group_count"]) == 2
+    assert int(batch["shared_baseline_skipped_group_count"]) == 0
+
+
+def test_batch_to_device_moves_tensor_lists() -> None:
+    batch = {
+        "obs": torch.zeros((1, 19), dtype=torch.float32),
+        "action_masks": [torch.ones((1, n), dtype=torch.bool) for n in BLOCK_ACTION_NVECS],
+        "label": "kept",
+    }
+    moved = _batch_to_device(batch, torch.device("cpu"))
+
+    assert moved["obs"].device.type == "cpu"
+    assert all(mask.device.type == "cpu" for mask in moved["action_masks"])
+    assert moved["label"] == "kept"
 
 
 def test_compute_episode_advantages_returns_same_length() -> None:

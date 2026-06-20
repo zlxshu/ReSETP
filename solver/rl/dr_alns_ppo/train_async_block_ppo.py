@@ -182,7 +182,7 @@ def flatten_episodes(
     gae_lambda: float,
     shared_baseline_by_bundle: bool = False,
     advantage_clip_range: float | None = None,
-) -> dict[str, torch.Tensor]:
+) -> dict[str, Any]:
     obs: list[list[float]] = []
     actions: list[list[int]] = []
     action_masks: list[list[list[bool]]] = [[] for _ in BLOCK_ACTION_NVECS]
@@ -200,6 +200,8 @@ def flatten_episodes(
         )
         per_episode.append((episode, ep_adv, ep_returns))
 
+    shared_group_count = 0
+    shared_skipped_group_count = 0
     if shared_baseline_by_bundle:
         bundle_returns: dict[str, list[float]] = {}
         for episode, _ep_adv, ep_returns in per_episode:
@@ -211,6 +213,8 @@ def flatten_episodes(
             for bundle, values in bundle_returns.items()
             if len(values) >= 2
         }
+        shared_group_count = len(bundle_means)
+        shared_skipped_group_count = sum(1 for values in bundle_returns.values() if len(values) < 2)
         for idx, (episode, ep_adv, ep_returns) in enumerate(per_episode):
             baseline = bundle_means.get(str(episode.get("bundle", "")))
             if baseline is None:
@@ -251,17 +255,38 @@ def flatten_episodes(
         "old_values": torch.as_tensor(old_values, dtype=torch.float32),
         "advantages": adv_tensor,
         "returns": torch.as_tensor(returns, dtype=torch.float32),
-        "shared_baseline_group_count": torch.as_tensor(
-            len({str(ep.get("bundle", "")) for ep in episodes}) if shared_baseline_by_bundle else 0,
-            dtype=torch.long,
-        ),
+        "shared_baseline_group_count": torch.as_tensor(shared_group_count, dtype=torch.long),
+        "shared_baseline_skipped_group_count": torch.as_tensor(shared_skipped_group_count, dtype=torch.long),
     }
+
+
+def _resolve_device(device_name: str) -> torch.device:
+    requested = str(device_name).strip().lower()
+    if requested == "auto":
+        return torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    if requested == "cuda" and not torch.cuda.is_available():
+        raise RuntimeError("--device cuda requested, but torch.cuda.is_available() is False")
+    if requested not in {"cpu", "cuda"}:
+        raise ValueError(f"unsupported device: {device_name}")
+    return torch.device(requested)
+
+
+def _batch_to_device(batch: dict[str, Any], device: torch.device) -> dict[str, Any]:
+    moved: dict[str, Any] = {}
+    for key, value in batch.items():
+        if isinstance(value, torch.Tensor):
+            moved[key] = value.to(device)
+        elif isinstance(value, list):
+            moved[key] = [item.to(device) if isinstance(item, torch.Tensor) else item for item in value]
+        else:
+            moved[key] = value
+    return moved
 
 
 def ppo_update(
     model: BlockActorCritic,
     optimizer: torch.optim.Optimizer,
-    batch: dict[str, torch.Tensor],
+    batch: dict[str, Any],
     *,
     epochs: int,
     minibatch_size: int,
@@ -274,7 +299,7 @@ def ppo_update(
     sample_count = int(batch["obs"].shape[0])
     losses: list[dict[str, float]] = []
     for _epoch in range(int(epochs)):
-        permutation = torch.randperm(sample_count)
+        permutation = torch.randperm(sample_count, device=batch["obs"].device)
         for start in range(0, sample_count, int(minibatch_size)):
             indices = permutation[start : start + int(minibatch_size)]
             masks = [mask[indices] for mask in batch.get("action_masks", [])]
@@ -530,12 +555,15 @@ def run_train(args: argparse.Namespace) -> int:
     phase_clip_ranges = _phase_values(args.phase_clip_ranges, schedule, float(args.clip_range))
     phase_value_clip_ranges = _phase_values(args.phase_value_clip_ranges, schedule, None)
     phase_advantage_clip_ranges = _phase_values(args.phase_advantage_clip_ranges, schedule, None)
-    model = make_block_actor_critic(seed=int(args.seed), hidden_size=int(args.hidden_size))
+    device = _resolve_device(args.device)
+    model = make_block_actor_critic(seed=int(args.seed), hidden_size=int(args.hidden_size)).to(device)
     optimizer = torch.optim.Adam(model.parameters(), lr=float(args.learning_rate))
     config = vars(args).copy()
     config["train_bundles"] = bundles
     config["model_format"] = "dr_alns_async_block_ppo.v1"
     config["parsed_curriculum_schedule"] = schedule
+    config["resolved_device"] = str(device)
+    config["shared_baseline_by_bundle"] = not bool(args.disable_shared_baseline)
     _write_json(output_dir / "async_training_config.json", config)
 
     episode_log_path = output_dir / "async_episode_log.csv"
@@ -657,9 +685,10 @@ def run_train(args: argparse.Namespace) -> int:
                         accepted,
                         gamma=float(args.gamma),
                         gae_lambda=float(args.gae_lambda),
-                        shared_baseline_by_bundle=False,
-                        advantage_clip_range=phase_advantage_clip_ranges[phase_index],
+                        shared_baseline_by_bundle=not bool(args.disable_shared_baseline),
+                        advantage_clip_range=phase_advantage_clip_ranges[update_phase_index],
                     )
+                    batch = _batch_to_device(batch, device)
                     metrics = ppo_update(
                         model,
                         optimizer,
@@ -680,9 +709,14 @@ def run_train(args: argparse.Namespace) -> int:
                         "learning_rate": float(phase_lr if phase_lr is not None else args.learning_rate),
                         "entropy_coef": float(phase_entropy if phase_entropy is not None else args.entropy_coef),
                         "clip_range": float(phase_clip if phase_clip is not None else args.clip_range),
+                        "device": str(device),
                         "valid_steps": int(batch["obs"].shape[0]),
                         "valid_episodes": len(accepted),
                         "stale_episodes": len(stale),
+                        "shared_baseline_group_count": int(batch["shared_baseline_group_count"].detach().cpu().item()),
+                        "shared_baseline_skipped_group_count": int(
+                            batch["shared_baseline_skipped_group_count"].detach().cpu().item()
+                        ),
                         **_aggregate_mask_invalid_rates(accepted),
                         **metrics,
                     }
@@ -711,6 +745,8 @@ def run_train(args: argparse.Namespace) -> int:
         "stale_episodes_total": stale_episodes_total,
         "final_curriculum_phase": schedule[phase_index],
         "curriculum_schedule": schedule,
+        "device": str(device),
+        "shared_baseline_by_bundle": not bool(args.disable_shared_baseline),
         "train_wall_time_seconds": time.monotonic() - start_time,
     }
     save_async_block_policy(output_dir / "async_block_ppo_model.pt", model, metadata=metadata)
@@ -965,6 +1001,10 @@ def _write_train_md(path: Path, summary: dict[str, Any]) -> None:
         f"Valid block steps: {summary['valid_steps_total']}.",
         f"Stale episodes discarded: {summary['stale_episodes_total']}.",
         f"Final policy version: {summary['policy_version']}.",
+        f"Device: `{summary.get('device', 'cpu')}`.",
+        f"Shared baseline by bundle: `{summary.get('shared_baseline_by_bundle', False)}`.",
+        "",
+        "GPU use is limited to the main-process PPO model, batch tensors, and gradient updates; solver rollout remains CPU-bound.",
     ]
     path.write_text("\n".join(lines) + "\n", encoding="utf-8")
 
@@ -1033,9 +1073,12 @@ def _update_fieldnames() -> list[str]:
         "learning_rate",
         "entropy_coef",
         "clip_range",
+        "device",
         "valid_steps",
         "valid_episodes",
         "stale_episodes",
+        "shared_baseline_group_count",
+        "shared_baseline_skipped_group_count",
         "mask_invalid_rate_head_0",
         "mask_invalid_rate_head_1",
         "mask_invalid_rate_head_2",
@@ -1107,6 +1150,8 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
             p.add_argument("--phase-clip-ranges", default="")
             p.add_argument("--phase-value-clip-ranges", default="")
             p.add_argument("--phase-advantage-clip-ranges", default="")
+            p.add_argument("--device", choices=("auto", "cpu", "cuda"), default="auto")
+            p.add_argument("--disable-shared-baseline", action="store_true")
             p.add_argument("--gamma", type=float, default=0.99)
             p.add_argument("--gae-lambda", type=float, default=0.95)
             p.add_argument("--clip-range", type=float, default=0.2)
