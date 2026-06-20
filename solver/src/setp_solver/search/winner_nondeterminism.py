@@ -1454,9 +1454,9 @@ def _run_tasks(tasks: list[Any], func: Any, *, workers: int) -> list[dict[str, A
 
 def _ensure_output_dir(output_dir: str | Path) -> Path:
     out = Path(output_dir)
-    expected = RESTORATION_DIR.as_posix()
-    if expected not in out.as_posix():
-        raise ValueError(f"output_dir must be under {expected}: {out}")
+    allowed = (RESTORATION_DIR.as_posix(), "solver/reports/formal_winner")
+    if not any(marker in out.as_posix() for marker in allowed):
+        raise ValueError(f"output_dir must be under one of {allowed}: {out}")
     out.mkdir(parents=True, exist_ok=True)
     return out
 

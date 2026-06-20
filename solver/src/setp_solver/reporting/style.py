@@ -1,6 +1,8 @@
 from __future__ import annotations
 
+import importlib
 from pathlib import Path
+import sys
 
 
 PALETTE = {
@@ -23,6 +25,10 @@ DOUBLE_COL_FIGSIZE = (6.65, 3.90)
 def setup_matplotlib() -> str:
     import matplotlib
 
+    if not hasattr(matplotlib, "use"):
+        sys.modules.pop("matplotlib", None)
+        sys.modules.pop("matplotlib.pyplot", None)
+        matplotlib = importlib.import_module("matplotlib")
     matplotlib.use("Agg", force=True)
     from matplotlib import font_manager
     from matplotlib import pyplot as plt

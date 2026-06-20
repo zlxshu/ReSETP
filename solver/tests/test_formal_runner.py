@@ -29,6 +29,7 @@ from setp_solver.search.formal_runner import (
     _f2_final_rows,
     _flatten_run_row,
     _prices_with_carbon_price_factor,
+    _resolve_e2_algorithms,
     run_e0_gate,
     run_e4_carbon_sensitivity,
     run_e7_dynamic,
@@ -116,6 +117,58 @@ class FormalRunnerTests(unittest.TestCase):
 
         self.assertEqual(flat["actual_elapsed_seconds"], 8.0)
         self.assertEqual(flat["result"]["elapsed_seconds"], 8.0)
+
+    def test_parse_float_list_supports_theta_grid_cli(self) -> None:
+        self.assertEqual(formal_runner._parse_float_list("0.80,0.85,1.10"), [0.8, 0.85, 1.1])
+        self.assertIsNone(formal_runner._parse_float_list(""))
+
+    def test_resolve_e2_algorithms_can_exclude_dr_alns(self) -> None:
+        algorithms = _resolve_e2_algorithms(["ALNS-Wouda", "DR-ALNS", "scikit-opt-SA"], ["DR-ALNS"])
+
+        self.assertEqual(algorithms, ["ALNS-Wouda", "scikit-opt-SA"])
+
+    def test_e1_table_uses_best_feasible_seed_and_writes_seed_detail(self) -> None:
+        run_rows = [
+            {
+                "variant": "mixed",
+                "seed": 1,
+                "status": "completed",
+                "actual_evals": 10,
+                "result": {
+                    "feasible": True,
+                    "best_cost": 110.0,
+                    "violation_count": 0,
+                    "metrics": {"total_cost": 110.0, "E_total": 20.0, "E_ev_indirect": 4.0},
+                    "ev_routes": 1,
+                    "cv_routes": 2,
+                    "route_count": 3,
+                },
+            },
+            {
+                "variant": "mixed",
+                "seed": 2,
+                "status": "completed",
+                "actual_evals": 10,
+                "result": {
+                    "feasible": True,
+                    "best_cost": 100.0,
+                    "violation_count": 0,
+                    "metrics": {"total_cost": 100.0, "E_total": 10.0, "E_ev_indirect": 3.0},
+                    "ev_routes": 2,
+                    "cv_routes": 1,
+                    "route_count": 3,
+                },
+            },
+        ]
+
+        table = formal_runner._e1_table_rows(run_rows)
+        detail = formal_runner._e1_seed_detail_rows(run_rows)
+
+        values = {row["metric"]: row["value"] for row in table}
+        self.assertEqual(values["mixed total_cost"], 100.0)
+        self.assertEqual(values["mixed source_seed"], 2)
+        self.assertEqual(len(detail), 2)
+        self.assertEqual({row["seed"] for row in detail}, {1, 2})
 
     # v2026-06-12: W2 T3 gaps use per-instance observed best and include Chen-style tail rows.
     def test_e2_final_rows_use_instance_local_reference_and_tail_rows(self) -> None:
@@ -546,6 +599,17 @@ class FormalRunnerTests(unittest.TestCase):
         self.assertEqual(specs["M4"]["carbon_price_factor"], 1.0)
         self.assertTrue(specs["M5"]["fairness_enabled"])
         self.assertEqual(specs["M5"]["carbon_price_factor"], 1.0)
+        self.assertEqual(
+            {code: specs[code]["label"] for code in ("M0", "M1", "M2", "M3", "M4", "M5")},
+            {
+                "M0": "无多场协同",
+                "M1": "无碳感知",
+                "M2": "均值碳强度",
+                "M3": "无碳交易",
+                "M4": "无收益公平",
+                "M5": "完整模型",
+            },
+        )
 
     # v2026-06-13: R2 cooperative E3 layers must all start from the concatenated
     # independent seed so the ablation variable is not confounded by construction.

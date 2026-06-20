@@ -7,7 +7,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
-from setp_solver.reporting.figures import CARBON_MAIN_PRICE_GBP_PER_TONNE, carbon_stress_points, charging_period_shares
+from setp_solver.reporting.figures import CARBON_MAIN_PRICE_GBP_PER_TONNE, carbon_stress_points, charging_period_shares, figure_f4_48slot_charging
 from setp_solver.reporting.samples import build_figure_sources
 from setp_solver.reporting.schema import read_records, write_records
 from setp_solver.reporting.tables import (
@@ -129,6 +129,22 @@ class ReportingOutputTest(unittest.TestCase):
             self.assertIn("Average", tex)
             self.assertIn("达到最优的算例数", tex)
 
+    def test_t3_standardizes_algorithm_display_labels(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "t3.csv"
+            path.write_text(
+                "\ufeff算例,n/d,参考最优(来源算法),ALNS-Wouda|相对已观测最优偏差\\%,ALNS-Wouda|时间s,scikit-opt-SA|相对已观测最优偏差\\%,scikit-opt-SA|时间s\n"
+                "I1,100/2,100.000 (ALNS-Wouda),0.00,1.20,9.50,1.40\n",
+                encoding="utf-8",
+            )
+
+            tex = table_t3_algorithm_comparison(path)
+
+        self.assertIn("I1 & 100/2 & ALNS", tex)
+        self.assertIn("I1 & 100/2 & SA", tex)
+        self.assertNotIn("ALNS-Wouda &", tex)
+        self.assertNotIn("scikit-opt-SA &", tex)
+
     def test_t5_chen_table8_columns(self) -> None:
         headers = [header for _, header in TABLE_SPECS["T5"]]
         self.assertEqual(headers, ["消融层级", "最优", "均值", "std", "总碳kg", "相对完整模型变化\\%", "电车数", "跨场数", "$\\min\\Pi/\\Pi^0$"])
@@ -160,6 +176,26 @@ class ReportingOutputTest(unittest.TestCase):
         shares = charging_period_shares(rows)
         self.assertEqual(shares["朴素充电"], {"谷": 0.30, "平": 0.30, "峰": 0.40})
         self.assertEqual(shares["碳感知充电"], {"谷": 0.80, "平": 0.10, "峰": 0.10})
+
+    def test_f4_renders_new_formal_48_slot_schema(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            source = Path(tmp) / "f4.csv"
+            rows = ["scenario,slot_index,horizon_second_start,gamma_gco2_per_kwh,depot_kwh,station_kwh,other_kwh,total_kwh"]
+            for scenario in ("naive_return_charge", "carbon_aware"):
+                for slot in range(48):
+                    gamma = 120 + (slot % 24) * 6
+                    kwh = 0.0
+                    if scenario == "naive_return_charge" and slot in {18, 19, 20}:
+                        kwh = 20.0
+                    if scenario == "carbon_aware" and slot in {4, 5, 6}:
+                        kwh = 20.0
+                    rows.append(f"{scenario},{slot},{slot * 1800},{gamma},0,0,0,{kwh}")
+            source.write_text("\n".join(rows) + "\n", encoding="utf-8")
+
+            pdf, png = figure_f4_48slot_charging(source, Path(tmp) / "f4")
+
+            self.assertGreater(pdf.stat().st_size, 1000)
+            self.assertGreater(png.stat().st_size, 1000)
 
     def test_f5b_carbon_stress_converts_factor_to_price_axis(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:

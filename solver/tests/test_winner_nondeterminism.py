@@ -1,10 +1,12 @@
 from __future__ import annotations
 
 from pathlib import Path
+import tempfile
 import unittest
 
 from setp_solver.search.winner_nondeterminism import (
     RESTORATION_DIR,
+    _ensure_output_dir,
     classify_reproducibility_root_cause,
     classify_context_matrix,
     collect_env_fingerprint,
@@ -102,6 +104,12 @@ class WinnerNondeterminismTests(unittest.TestCase):
 
     def test_nondeterminism_reports_stay_under_restoration_dir(self) -> None:
         self.assertEqual(str(RESTORATION_DIR), "solver/reports/dr_alns_ppo_v2/restoration")
+
+    def test_system_worker_gate_allows_new_formal_winner_dir(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            out = _ensure_output_dir(Path(tmp) / "solver" / "reports" / "formal_winner_unit" / "stage0")
+
+            self.assertTrue(out.exists())
 
     def test_no_formal_runner_strings_in_nondeterminism_runner(self) -> None:
         source = Path("solver/src/setp_solver/search/winner_nondeterminism.py").read_text(encoding="utf-8")

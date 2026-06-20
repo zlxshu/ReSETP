@@ -20,6 +20,7 @@ from .figures import (
 from .registry import RUNNERS, get_runner, register_runner
 from .samples import build_figure_sources, build_table_sources
 from .schema import write_records
+from .schema import write_rows
 from .tables import write_table_fragment
 
 
@@ -151,6 +152,13 @@ def run_formal_backfill(args: argparse.Namespace) -> dict[str, Any]:
         stress_dir / "combined" / "tables" / "e4_carbon_price_diagnostics.csv",
     )
     if f5b_means.exists() and f5b_seed_detail is not None:
+        f5b_source = _write_f5b_source_csv(
+            carbon_stress_points(f5b_means, f5b_seed_detail),
+            formal_dir / "figures" / "f5b_carbon_stress.csv",
+            f5b_means,
+            f5b_seed_detail,
+        )
+        shutil.copy2(f5b_source, figures_out / "f5b_carbon_stress.csv")
         figure_paths["F5B"] = figure_f5b_carbon_stress(f5b_means, f5b_seed_detail, figures_out / "f5b_carbon_stress")
     else:
         missing.append(f"F5B:{f5b_means},{f5b_seed_detail or stress_dir / 'combined' / 'tables'}")
@@ -180,6 +188,12 @@ def run_f5b_carbon_stress(args: argparse.Namespace) -> dict[str, Any]:
     if seed_detail_csv is None:
         raise FileNotFoundError("missing F5b seed detail CSV under parallel_r2_stress_final/combined/tables")
     output_stem = stress_dir / "combined" / "figures" / "f5b_carbon_stress"
+    source_csv = _write_f5b_source_csv(
+        carbon_stress_points(means_csv, seed_detail_csv),
+        output_stem.with_suffix(".csv"),
+        means_csv,
+        seed_detail_csv,
+    )
     figure_paths = figure_f5b_carbon_stress(means_csv, seed_detail_csv, output_stem)
 
     paper_dir = repo_root / "docs" / "paper_submission_final" / "generated_figures"
@@ -188,6 +202,7 @@ def run_f5b_carbon_stress(args: argparse.Namespace) -> dict[str, Any]:
     shutil.copy2(figure_paths[0], paper_pdf)
     return {
         "sources": {"means": means_csv, "seed_detail": seed_detail_csv},
+        "source_csv": source_csv,
         "figures": figure_paths,
         "paper_pdf": paper_pdf,
         "points": carbon_stress_points(means_csv, seed_detail_csv),
@@ -231,6 +246,7 @@ def _console_summary(name: str, result: dict[str, Any]) -> str:
             "F5b carbon stress 已完成：",
             f"- source means: {result['sources']['means']}",
             f"- source seed_detail: {result['sources']['seed_detail']}",
+            f"- source csv: {result['source_csv']}",
             f"- pdf: {result['figures'][0]}",
             f"- png: {result['figures'][1]}",
             f"- paper pdf: {result['paper_pdf']}",
@@ -275,6 +291,36 @@ def _formal_summary_markdown(
     lines.append("")
     lines.append("HALT_FOR_USER" if missing else "GATE Z5 PASS")
     return "\n".join(lines) + "\n"
+
+
+def _write_f5b_source_csv(
+    points: list[dict[str, float]],
+    output_csv: Path,
+    means_csv: Path,
+    seed_detail_csv: Path,
+) -> Path:
+    rows = [
+        {
+            **point,
+            "source_means_csv": str(means_csv),
+            "source_seed_detail_csv": str(seed_detail_csv),
+        }
+        for point in points
+    ]
+    write_rows(
+        output_csv,
+        rows,
+        fieldnames=[
+            "factor",
+            "price_gbp_per_tonne",
+            "carbon_mean",
+            "carbon_std",
+            "ev_count",
+            "source_means_csv",
+            "source_seed_detail_csv",
+        ],
+    )
+    return output_csv
 
 
 def _copy_selected_formal_outputs_to_paper(

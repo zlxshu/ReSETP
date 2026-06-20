@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from pathlib import Path
 import unittest
+from unittest.mock import patch
 
 from setp_solver.check import check_solution
 from setp_solver.cost import CARBON_N_SLOTS
@@ -300,8 +301,9 @@ class SearchGateTests(unittest.TestCase):
     def test_alns_wouda_destroy_q_uses_fractional_customer_scale(self) -> None:
         import numpy as np
 
-        draws = [_adaptive_remove_count(100, np.random.default_rng(seed)) for seed in range(20)]
-        late_draws = [_adaptive_remove_count(100, np.random.default_rng(seed), progress=1.0) for seed in range(20)]
+        with patch.dict("os.environ", {"SETP_ALNS_CRUSH_ADAPTIVE_Q": "1"}):
+            draws = [_adaptive_remove_count(100, np.random.default_rng(seed)) for seed in range(20)]
+            late_draws = [_adaptive_remove_count(100, np.random.default_rng(seed), progress=1.0) for seed in range(20)]
 
         self.assertTrue(all(10 <= value <= 40 for value in draws))
         self.assertTrue(any(value > 12 for value in draws))
