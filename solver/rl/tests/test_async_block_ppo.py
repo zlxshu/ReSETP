@@ -103,6 +103,7 @@ def test_async_actor_returns_complete_tiny_trajectory(monkeypatch: pytest.Monkey
     )
 
     episode = run_actor_episode(task)
+    repeat = run_actor_episode(task)
 
     assert episode["episode_index"] == 0
     assert episode["actual_evals"] == 8
@@ -111,6 +112,9 @@ def test_async_actor_returns_complete_tiny_trajectory(monkeypatch: pytest.Monkey
     assert len(episode["observations"]) == episode["block_steps"]
     assert len(episode["actions"]) == episode["block_steps"]
     assert episode["worker_python_executable"]
+    assert repeat["actions"] == episode["actions"]
+    assert repeat["rewards"] == episode["rewards"]
+    assert repeat["best_obj"] == episode["best_obj"]
 
 
 def test_filter_on_policy_episodes_rejects_excessive_policy_lag() -> None:

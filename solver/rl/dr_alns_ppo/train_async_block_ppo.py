@@ -49,6 +49,8 @@ class AsyncEpisodeTask:
 
 def run_actor_episode(task: AsyncEpisodeTask) -> dict[str, Any]:
     start = time.monotonic()
+    torch.manual_seed(int(task.seed))
+    np.random.seed(int(task.seed) % (2**32 - 1))
     model = BlockActorCritic(
         obs_dim=int(task.policy_payload["obs_dim"]),
         action_nvec=tuple(int(v) for v in task.policy_payload["action_nvec"]),
