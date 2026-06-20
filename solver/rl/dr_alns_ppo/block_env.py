@@ -6,7 +6,14 @@ import gymnasium as gym
 import numpy as np
 from gymnasium import spaces
 
-from .action_space import BLOCK_ACTION_NVECS, decode_block_action
+from .action_space import (
+    ALPHA_UCB_CHOICE,
+    BLOCK_ACTION_NVECS,
+    BLOCK_DESTROY_IDS,
+    BLOCK_Q_RATIOS,
+    BLOCK_REPAIR_IDS,
+    decode_block_action,
+)
 from .worker_client import WorkerClient
 
 
@@ -57,7 +64,10 @@ class BlockAlnsEnv(gym.Env):
         self.last_response = self._checked_response(self.client.reset())
         self.initial_obj = _float(self.last_response.get("best_obj"), 0.0)
         self.initial_route_count = _route_count(self.last_response)
-        return self._obs(self.last_response), {"actual_evals": int(self.last_response.get("actual_evals", 0))}
+        return self._obs(self.last_response), {
+            "actual_evals": int(self.last_response.get("actual_evals", 0)),
+            "action_mask": self._action_mask(self.last_response),
+        }
 
     def step(self, action):
         decoded = decode_block_action(action, block_size=self.block_size)
@@ -66,8 +76,48 @@ class BlockAlnsEnv(gym.Env):
         terminated = bool(int(response.get("actual_evals", 0)) >= self.eval_budget)
         reward = self._reward(response, terminated=terminated)
         response["curriculum_phase"] = self.curriculum_phase
+        response["action_mask"] = self._action_mask(response)
         truncated = False
         return self._obs(response), reward, terminated, truncated, response
+
+    def _action_mask(self, response: dict[str, Any]) -> list[list[bool]]:
+        masks = [[True for _ in range(int(n))] for n in BLOCK_ACTION_NVECS]
+        metrics = response.get("metrics", {}) or {}
+        trace = response.get("trace", {}) or {}
+
+        cv_routes = _float(metrics.get("n_veh_cv"), 0.0)
+        ev_routes = _float(metrics.get("n_veh_ev"), 0.0)
+        total_routes = cv_routes + ev_routes
+        ev_share = ev_routes / max(total_routes, 1.0)
+        if total_routes > 0 and (ev_share <= 1e-9 or ev_share >= 1.0 - 1e-9):
+            _mask_named(masks[0], BLOCK_DESTROY_IDS, {"vehicle_type_swap"})
+
+        best_route_count = int(_float(trace.get("block_end_best_route_count"), _route_count(response)))
+        lower_bound = int(_float(trace.get("capacity_route_lower_bound"), 0.0))
+        route_gap = (best_route_count - lower_bound) / max(float(best_route_count), 1.0)
+        route_delta = _float(trace.get("block_best_route_delta"), 0.0)
+        route_delta_no_improve = "block_best_route_delta" in trace and route_delta >= 0.0
+        if route_gap <= 0.0 or route_delta_no_improve:
+            _mask_named(masks[0], BLOCK_DESTROY_IDS, {"whole_route_removal", "route_segment_removal"})
+
+        actual_evals = _float(response.get("actual_evals"), 0.0)
+        budget_progress = actual_evals / max(float(self.eval_budget), 1.0)
+        block_iterations = max(1.0, _float(trace.get("block_iterations"), 1.0))
+        rejected_rate = _float(trace.get("block_rejected_count"), 0.0) / block_iterations
+        best_hits = _float(trace.get("block_improved_best_count"), 0.0)
+        current_hits = _float(trace.get("block_improved_current_count"), 0.0)
+        stagnation = _float(trace.get("stagnation_steps"), 0.0) / max(float(self.eval_budget), 1.0)
+        if (budget_progress >= 0.75 or rejected_rate >= 0.80 or stagnation >= 0.25) and best_hits + current_hits <= 0.0:
+            for idx, q_ratio in enumerate(BLOCK_Q_RATIOS):
+                if float(q_ratio) >= 0.30:
+                    masks[2][idx] = False
+
+        _ensure_head_has_action(masks[0], BLOCK_DESTROY_IDS, [BLOCK_DESTROY_IDS.index(ALPHA_UCB_CHOICE), 0])
+        _ensure_head_has_action(masks[1], BLOCK_REPAIR_IDS, [BLOCK_REPAIR_IDS.index(ALPHA_UCB_CHOICE), 0])
+        _ensure_head_has_action(masks[2], tuple(str(v) for v in BLOCK_Q_RATIOS), [0])
+        _ensure_head_has_action(masks[3], tuple(str(v) for v in range(BLOCK_ACTION_NVECS[3])), [0])
+        _ensure_head_has_action(masks[4], tuple(str(v) for v in range(BLOCK_ACTION_NVECS[4])), [0])
+        return masks
 
     def close(self) -> None:
         self.client.close()
@@ -237,6 +287,22 @@ def _dynamic_reward(response: dict[str, Any]) -> float | None:
     if not any("dynamic" in str(key).lower() or "rolling" in str(key).lower() for key in keys):
         return None
     return 0.0
+
+
+def _mask_named(mask: list[bool], names: tuple[str, ...], blocked: set[str]) -> None:
+    for idx, name in enumerate(names):
+        if name in blocked:
+            mask[idx] = False
+
+
+def _ensure_head_has_action(mask: list[bool], _names: tuple[str, ...], fallback_indices: list[int]) -> None:
+    if any(mask):
+        return
+    for idx in fallback_indices:
+        if 0 <= int(idx) < len(mask):
+            mask[int(idx)] = True
+            return
+    mask[0] = True
 
 
 def _float(value: Any, default: float = 0.0) -> float:

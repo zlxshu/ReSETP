@@ -32,22 +32,38 @@ class BlockActorCritic(nn.Module):
         self.action_heads = nn.ModuleList([nn.Linear(self.hidden_size, n) for n in self.action_nvec])
         self.value_head = nn.Linear(self.hidden_size, 1)
 
-    def forward(self, obs: torch.Tensor) -> tuple[list[torch.Tensor], torch.Tensor]:
+    def forward(
+        self,
+        obs: torch.Tensor,
+        masks: list[torch.Tensor] | list[np.ndarray] | list[list[bool]] | None = None,
+    ) -> tuple[list[torch.Tensor], torch.Tensor]:
         if obs.ndim == 1:
             obs = obs.unsqueeze(0)
         features = self.backbone(obs.float())
         logits = [head(features) for head in self.action_heads]
+        if masks is not None:
+            logits = _apply_action_masks(logits, masks)
         values = self.value_head(features).squeeze(-1)
         return logits, values
 
-    def distributions(self, obs: torch.Tensor) -> tuple[list[Categorical], torch.Tensor]:
-        logits, values = self.forward(obs)
+    def distributions(
+        self,
+        obs: torch.Tensor,
+        masks: list[torch.Tensor] | list[np.ndarray] | list[list[bool]] | None = None,
+    ) -> tuple[list[Categorical], torch.Tensor]:
+        logits, values = self.forward(obs, masks=masks)
         return [Categorical(logits=logit) for logit in logits], values
 
     @torch.no_grad()
-    def act(self, obs: np.ndarray | torch.Tensor, *, deterministic: bool = False) -> dict[str, Any]:
+    def act(
+        self,
+        obs: np.ndarray | torch.Tensor,
+        *,
+        deterministic: bool = False,
+        masks: list[torch.Tensor] | list[np.ndarray] | list[list[bool]] | None = None,
+    ) -> dict[str, Any]:
         obs_tensor = _obs_tensor(obs)
-        dists, values = self.distributions(obs_tensor)
+        dists, values = self.distributions(obs_tensor, masks=masks)
         actions: list[torch.Tensor] = []
         log_probs: list[torch.Tensor] = []
         entropies: list[torch.Tensor] = []
@@ -68,8 +84,9 @@ class BlockActorCritic(nn.Module):
         self,
         obs: torch.Tensor,
         actions: torch.Tensor,
+        masks: list[torch.Tensor] | list[np.ndarray] | list[list[bool]] | None = None,
     ) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
-        dists, values = self.distributions(obs)
+        dists, values = self.distributions(obs, masks=masks)
         if actions.ndim == 1:
             actions = actions.unsqueeze(0)
         log_prob_parts = []
@@ -146,9 +163,31 @@ def _obs_tensor(obs: np.ndarray | torch.Tensor) -> torch.Tensor:
     return tensor
 
 
+def _apply_action_masks(
+    logits: list[torch.Tensor],
+    masks: list[torch.Tensor] | list[np.ndarray] | list[list[bool]],
+) -> list[torch.Tensor]:
+    if len(masks) != len(logits):
+        raise ValueError(f"expected {len(logits)} action-mask heads, got {len(masks)}")
+    masked_logits: list[torch.Tensor] = []
+    for logit, raw_mask in zip(logits, masks):
+        mask = torch.as_tensor(raw_mask, dtype=torch.bool, device=logit.device)
+        if mask.ndim == 1:
+            mask = mask.unsqueeze(0).expand(logit.shape[0], -1)
+        if mask.shape != logit.shape:
+            raise ValueError(f"action mask shape {tuple(mask.shape)} does not match logits {tuple(logit.shape)}")
+        if not bool(mask.any(dim=-1).all()):
+            mask = mask.clone()
+            empty_rows = ~mask.any(dim=-1)
+            mask[empty_rows, 0] = True
+        masked_logits.append(logit.masked_fill(~mask, -1e9))
+    return masked_logits
+
+
 __all__ = [
     "AsyncBlockPolicy",
     "BlockActorCritic",
+    "_apply_action_masks",
     "is_async_block_model_path",
     "load_async_block_policy",
     "make_block_actor_critic",

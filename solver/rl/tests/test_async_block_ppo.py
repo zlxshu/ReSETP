@@ -9,10 +9,12 @@ import torch
 
 from dr_alns_ppo.async_block_policy import (
     AsyncBlockPolicy,
+    _apply_action_masks,
     make_block_actor_critic,
     load_async_block_policy,
     save_async_block_policy,
 )
+from dr_alns_ppo.action_space import BLOCK_ACTION_NVECS, BLOCK_DESTROY_IDS, BLOCK_Q_RATIOS
 from dr_alns_ppo.block_env import BlockAlnsEnv
 from dr_alns_ppo.evaluate_policy import _evaluate_one_task
 from dr_alns_ppo.train_async_block_ppo import (
@@ -42,6 +44,38 @@ def test_async_block_policy_predict_supports_multidiscrete_actions(tmp_path: Pat
     assert action.shape == (5,)
     assert action.dtype == np.int64
     assert policy.metadata["policy_version"] == 3
+
+
+def test_action_masks_zero_invalid_policy_probability() -> None:
+    model = make_block_actor_critic(seed=1)
+    obs = torch.zeros((1, 19), dtype=torch.float32)
+    masks = [[True for _ in range(n)] for n in BLOCK_ACTION_NVECS]
+    masks[0][0] = False
+
+    dists, _values = model.distributions(obs, masks=masks)
+
+    assert dists[0].probs[0, 0].item() == pytest.approx(0.0)
+
+
+def test_action_masks_none_matches_all_true_logits() -> None:
+    model = make_block_actor_critic(seed=1)
+    obs = torch.zeros((2, 19), dtype=torch.float32)
+    all_true = [torch.ones((2, n), dtype=torch.bool) for n in BLOCK_ACTION_NVECS]
+
+    logits_without, values_without = model.forward(obs)
+    logits_with, values_with = model.forward(obs, masks=all_true)
+
+    assert torch.allclose(values_without, values_with)
+    for left, right in zip(logits_without, logits_with):
+        assert torch.allclose(left, right)
+
+
+def test_apply_action_masks_falls_back_when_head_is_all_false() -> None:
+    logits = [torch.zeros((1, 3), dtype=torch.float32)]
+    masked = _apply_action_masks(logits, [torch.zeros((1, 3), dtype=torch.bool)])
+
+    assert masked[0][0, 0].item() == pytest.approx(0.0)
+    assert masked[0][0, 1].item() < -1e8
 
 
 def test_async_actor_returns_complete_tiny_trajectory(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -172,6 +206,34 @@ def test_curriculum_phase_gate_requires_minimum_and_stability() -> None:
     assert _phase_can_advance(episodes, "route", min_episodes=4)
     bad = episodes + [{"curriculum_phase": "route", "bundle": "A", "best_obj": 20.0, "violation_count": 1}]
     assert not _phase_can_advance(bad, "route", min_episodes=4)
+
+
+def test_block_env_action_mask_uses_named_rules_and_keeps_fallbacks() -> None:
+    env = BlockAlnsEnv.__new__(BlockAlnsEnv)
+    env.eval_budget = 100
+    response = {
+        "actual_evals": 90,
+        "solution": {"routes": [{"vehicle_id": "CV1"}, {"vehicle_id": "CV2"}]},
+        "metrics": {"n_veh_cv": 2, "n_veh_ev": 0},
+        "trace": {
+            "block_end_best_route_count": 2,
+            "capacity_route_lower_bound": 2,
+            "block_best_route_delta": 0,
+            "block_iterations": 10,
+            "block_rejected_count": 10,
+            "block_improved_best_count": 0,
+            "block_improved_current_count": 0,
+            "stagnation_steps": 50,
+        },
+    }
+
+    mask = env._action_mask(response)
+
+    assert mask[0][BLOCK_DESTROY_IDS.index("vehicle_type_swap")] is False
+    assert mask[0][BLOCK_DESTROY_IDS.index("whole_route_removal")] is False
+    assert mask[0][BLOCK_DESTROY_IDS.index("route_segment_removal")] is False
+    assert mask[2][len(BLOCK_Q_RATIOS) - 1] is False
+    assert all(any(head) for head in mask)
 
 
 def test_async_reports_stay_under_async_pilot_dir(tmp_path: Path) -> None:

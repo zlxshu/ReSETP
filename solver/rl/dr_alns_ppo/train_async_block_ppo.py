@@ -69,23 +69,27 @@ def run_actor_episode(task: AsyncEpisodeTask) -> dict[str, Any]:
     values: list[float] = []
     log_probs: list[float] = []
     entropies: list[float] = []
+    action_masks: list[list[list[bool]]] = []
     infos: list[dict[str, Any]] = []
     try:
-        obs, _info = env.reset(seed=int(task.seed))
+        obs, reset_info = env.reset(seed=int(task.seed))
+        current_mask = reset_info.get("action_mask")
         terminated = False
         truncated = False
         while not (terminated or truncated):
-            decision = model.act(obs, deterministic=bool(task.deterministic))
+            decision = model.act(obs, deterministic=bool(task.deterministic), masks=current_mask)
             action = np.asarray(decision["action"], dtype=np.int64)
             next_obs, reward, terminated, truncated, info = env.step(action)
             observations.append(np.asarray(obs, dtype=np.float32).tolist())
             actions.append(action.astype(int).tolist())
+            action_masks.append(_mask_to_lists(current_mask))
             rewards.append(float(reward))
             values.append(float(decision["value"]))
             log_probs.append(float(decision["log_prob"]))
             entropies.append(float(decision["entropy"]))
             infos.append(info)
             obs = next_obs
+            current_mask = info.get("action_mask")
         final_info = infos[-1] if infos else dict(env.last_response or {})
     finally:
         env.close()
@@ -101,6 +105,7 @@ def run_actor_episode(task: AsyncEpisodeTask) -> dict[str, Any]:
         "eval_budget": int(task.eval_budget),
         "observations": observations,
         "actions": actions,
+        "action_masks": action_masks,
         "rewards": rewards,
         "values": values,
         "old_log_probs": log_probs,
@@ -180,6 +185,7 @@ def flatten_episodes(
 ) -> dict[str, torch.Tensor]:
     obs: list[list[float]] = []
     actions: list[list[int]] = []
+    action_masks: list[list[list[bool]]] = [[] for _ in BLOCK_ACTION_NVECS]
     old_log_probs: list[float] = []
     old_values: list[float] = []
     advantages: list[float] = []
@@ -216,6 +222,13 @@ def flatten_episodes(
     for episode, ep_adv, ep_returns in per_episode:
         obs.extend(episode["observations"])
         actions.extend(episode["actions"])
+        episode_masks = episode.get("action_masks")
+        if not episode_masks:
+            episode_masks = [_all_true_mask() for _ in episode["actions"]]
+        for mask in episode_masks:
+            normalized = _mask_to_lists(mask)
+            for head_idx, head_mask in enumerate(normalized):
+                action_masks[head_idx].append([bool(value) for value in head_mask])
         old_log_probs.extend(float(v) for v in episode["old_log_probs"])
         old_values.extend(float(v) for v in episode["values"])
         advantages.extend(ep_adv)
@@ -233,6 +246,7 @@ def flatten_episodes(
     return {
         "obs": torch.as_tensor(obs, dtype=torch.float32),
         "actions": torch.as_tensor(actions, dtype=torch.long),
+        "action_masks": [torch.as_tensor(mask, dtype=torch.bool) for mask in action_masks],
         "old_log_probs": torch.as_tensor(old_log_probs, dtype=torch.float32),
         "old_values": torch.as_tensor(old_values, dtype=torch.float32),
         "advantages": adv_tensor,
@@ -263,7 +277,12 @@ def ppo_update(
         permutation = torch.randperm(sample_count)
         for start in range(0, sample_count, int(minibatch_size)):
             indices = permutation[start : start + int(minibatch_size)]
-            log_probs, entropies, values = model.evaluate_actions(batch["obs"][indices], batch["actions"][indices])
+            masks = [mask[indices] for mask in batch.get("action_masks", [])]
+            log_probs, entropies, values = model.evaluate_actions(
+                batch["obs"][indices],
+                batch["actions"][indices],
+                masks=masks or None,
+            )
             old_log_probs = batch["old_log_probs"][indices]
             old_values = batch.get("old_values")
             old_values_mb = old_values[indices] if old_values is not None else None
@@ -453,6 +472,52 @@ def statistics_median(values: list[float]) -> float:
     return 0.5 * (ordered[mid - 1] + ordered[mid])
 
 
+def _all_true_mask() -> list[list[bool]]:
+    return [[True for _ in range(int(n))] for n in BLOCK_ACTION_NVECS]
+
+
+def _mask_to_lists(mask: Any) -> list[list[bool]]:
+    if mask is None:
+        return _all_true_mask()
+    if len(mask) != len(BLOCK_ACTION_NVECS):
+        raise ValueError(f"expected {len(BLOCK_ACTION_NVECS)} mask heads, got {len(mask)}")
+    normalized: list[list[bool]] = []
+    for head_idx, head in enumerate(mask):
+        values = [bool(value) for value in list(head)]
+        expected = int(BLOCK_ACTION_NVECS[head_idx])
+        if len(values) != expected:
+            raise ValueError(f"mask head {head_idx} expected length {expected}, got {len(values)}")
+        if not any(values):
+            values[0] = True
+        normalized.append(values)
+    return normalized
+
+
+def _mask_invalid_rates(episode: dict[str, Any]) -> dict[str, float]:
+    masks = episode.get("action_masks") or []
+    totals = [0 for _ in BLOCK_ACTION_NVECS]
+    invalid = [0 for _ in BLOCK_ACTION_NVECS]
+    for raw_mask in masks:
+        normalized = _mask_to_lists(raw_mask)
+        for idx, head in enumerate(normalized):
+            totals[idx] += len(head)
+            invalid[idx] += sum(1 for value in head if not value)
+    return {
+        f"mask_invalid_rate_head_{idx}": (float(invalid[idx]) / float(totals[idx]) if totals[idx] else 0.0)
+        for idx in range(len(BLOCK_ACTION_NVECS))
+    }
+
+
+def _aggregate_mask_invalid_rates(episodes: list[dict[str, Any]]) -> dict[str, float]:
+    totals = [0.0 for _ in BLOCK_ACTION_NVECS]
+    for episode in episodes:
+        rates = _mask_invalid_rates(episode)
+        for idx in range(len(BLOCK_ACTION_NVECS)):
+            totals[idx] += float(rates[f"mask_invalid_rate_head_{idx}"])
+    count = max(float(len(episodes)), 1.0)
+    return {f"mask_invalid_rate_head_{idx}": totals[idx] / count for idx in range(len(BLOCK_ACTION_NVECS))}
+
+
 def run_train(args: argparse.Namespace) -> int:
     output_dir = _checked_output_dir(Path(args.output_dir))
     output_dir.mkdir(parents=True, exist_ok=True)
@@ -618,6 +683,7 @@ def run_train(args: argparse.Namespace) -> int:
                         "valid_steps": int(batch["obs"].shape[0]),
                         "valid_episodes": len(accepted),
                         "stale_episodes": len(stale),
+                        **_aggregate_mask_invalid_rates(accepted),
                         **metrics,
                     }
                     _append_csv(update_log_path, [update_row], fieldnames=_update_fieldnames())
@@ -718,7 +784,7 @@ def _self_check_verdict(episodes: list[dict[str, Any]], throughput: dict[str, An
 
 
 def _episode_csv_row(episode: dict[str, Any], *, accepted_for_update: bool) -> dict[str, Any]:
-    return {
+    row = {
         "episode_index": int(episode["episode_index"]),
         "bundle": episode["bundle"],
         "seed": int(episode["seed"]),
@@ -740,6 +806,8 @@ def _episode_csv_row(episode: dict[str, Any], *, accepted_for_update: bool) -> d
         "worker_numpy_version": episode["worker_numpy_version"],
         "pid": int(episode["pid"]),
     }
+    row.update(_mask_invalid_rates(episode))
+    return row
 
 
 def _write_episode_log(path: Path, episodes: list[dict[str, Any]], *, mode: str = "w") -> None:
@@ -923,6 +991,11 @@ def _episode_fieldnames() -> list[str]:
         "worker_python_version",
         "worker_numpy_version",
         "pid",
+        "mask_invalid_rate_head_0",
+        "mask_invalid_rate_head_1",
+        "mask_invalid_rate_head_2",
+        "mask_invalid_rate_head_3",
+        "mask_invalid_rate_head_4",
     ]
 
 
@@ -963,6 +1036,11 @@ def _update_fieldnames() -> list[str]:
         "valid_steps",
         "valid_episodes",
         "stale_episodes",
+        "mask_invalid_rate_head_0",
+        "mask_invalid_rate_head_1",
+        "mask_invalid_rate_head_2",
+        "mask_invalid_rate_head_3",
+        "mask_invalid_rate_head_4",
         "policy_loss",
         "value_loss",
         "entropy",
