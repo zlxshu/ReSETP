@@ -3,8 +3,10 @@
 from __future__ import annotations
 
 import argparse
+from contextlib import contextmanager
 from concurrent.futures import ProcessPoolExecutor, as_completed
 import csv
+import functools
 import json
 import math
 import os
@@ -19,6 +21,10 @@ import numpy as np
 
 from ..check import check_solution
 from ..prices import DEFAULT_PRICES
+from . import candidates as candidates_module
+from . import evaluation as evaluation_module
+from . import metaheuristic_baselines as baseline_module
+from . import repair_scoring as repair_scoring_module
 from .alns_crush import INSTANCE_DIRS
 from .bundle import load_search_bundle
 from .candidates import make_shared_initial_solution, run_candidate
@@ -36,7 +42,10 @@ SYSTEM_PYTHON = os.environ.get("SETP_WORKER_PYTHON", "/opt/anaconda3/bin/python3
 SYSTEM_NUMPY = "2.3.5"
 DEFAULT_EVAL_BUDGET = 16_000
 DEFAULT_MAX_RUNTIME_SECONDS = 900.0
+DEFAULT_FALLBACK_MAX_RUNTIME_SECONDS = 3600.0
+DEFAULT_PROFILE_EVAL_BUDGET = 100
 DEFAULT_INSTANCES = ("100-01-24h", "L-main", "Scale-150", "Scale-200")
+PROFILE_ALGORITHMS = ("IWD", "GWO", "ACO", "VNS")
 
 
 def run_all(
@@ -47,6 +56,9 @@ def run_all(
     seeds: list[int],
     eval_budget: int = DEFAULT_EVAL_BUDGET,
     max_runtime_seconds: float = DEFAULT_MAX_RUNTIME_SECONDS,
+    fallback_max_runtime_seconds: float | None = None,
+    auto_runtime_fallback: bool = False,
+    speed_probe_eval_budget: int = DEFAULT_PROFILE_EVAL_BUDGET,
     algorithms: list[str] | None = None,
 ) -> dict[str, Any]:
     _ensure_environment()
@@ -56,16 +68,26 @@ def run_all(
     _write_preflight(root, out)
     selected = _selected_instances(instances)
     selected_algorithms = algorithms or list(BASELINE_ALGORITHMS)
+    runtime_caps = _runtime_caps(
+        root,
+        selected,
+        selected_algorithms,
+        max_runtime_seconds=float(max_runtime_seconds),
+        fallback_max_runtime_seconds=fallback_max_runtime_seconds,
+        auto_runtime_fallback=auto_runtime_fallback,
+        speed_probe_eval_budget=int(speed_probe_eval_budget),
+        target_eval_budget=int(eval_budget),
+    )
     started = time.perf_counter()
 
     tasks: list[tuple[str, str, str, int, int, float]] = []
     for instance_name, rel_dir in selected.items():
         bundle_dir = str(root / rel_dir)
         for seed in seeds:
-            tasks.append(("fair-SA", instance_name, bundle_dir, int(seed), int(eval_budget), float(max_runtime_seconds)))
-            tasks.append(("winner-kernel ALNS", instance_name, bundle_dir, int(seed), int(eval_budget), float(max_runtime_seconds)))
+            tasks.append(("fair-SA", instance_name, bundle_dir, int(seed), int(eval_budget), runtime_caps["fair-SA"]))
+            tasks.append(("winner-kernel ALNS", instance_name, bundle_dir, int(seed), int(eval_budget), runtime_caps["winner-kernel ALNS"]))
             for algorithm in selected_algorithms:
-                tasks.append((algorithm, instance_name, bundle_dir, int(seed), int(eval_budget), float(max_runtime_seconds)))
+                tasks.append((algorithm, instance_name, bundle_dir, int(seed), int(eval_budget), runtime_caps.get(algorithm, float(max_runtime_seconds))))
 
     results = _run_parallel(tasks)
     rows: list[dict[str, Any]] = []
@@ -97,10 +119,12 @@ def run_all(
     comparison = _comparison_rows(summary, rows)
     wilcoxon = _wilcoxon_rows(rows)
     verdicts = _verdict_rows(comparison, wilcoxon)
+    convergence = _convergence_rows(results)
     _write_csv(out / "raw_runs.csv", raw_rows)
     _write_csv(out / "comparison_table.csv", comparison)
     _write_csv(out / "wilcoxon.csv", wilcoxon)
     _write_csv(out / "verdicts.csv", verdicts)
+    _write_csv(out / "convergence_curves.csv", convergence)
     _write_csv(out / "halts.csv", halt_rows)
     manifest = {
         "schema_version": "setp-metaheuristic-baselines.v1",
@@ -112,14 +136,69 @@ def run_all(
         "seeds": seeds,
         "eval_budget": int(eval_budget),
         "max_runtime_seconds": float(max_runtime_seconds),
+        "fallback_max_runtime_seconds": fallback_max_runtime_seconds,
+        "auto_runtime_fallback": bool(auto_runtime_fallback),
+        "runtime_caps": runtime_caps,
         "algorithms": ["fair-SA", "winner-kernel ALNS", *selected_algorithms],
         "elapsed_seconds": time.perf_counter() - started,
         "status": "HALT_BASELINE_INCOMPARABLE" if halt_rows else "OK",
-        "outputs": ["raw_runs.csv", "comparison_table.csv", "wilcoxon.csv", "verdicts.csv", "report.md", "manifest.json"],
+        "outputs": ["raw_runs.csv", "comparison_table.csv", "wilcoxon.csv", "verdicts.csv", "convergence_curves.csv", "report.md", "manifest.json"],
     }
     _write_json(out / "manifest.json", manifest)
     (out / "report.md").write_text(_report(verdicts, comparison, halt_rows, manifest), encoding="utf-8")
     return {"gate": manifest["status"], "manifest": str(out / "manifest.json"), "elapsed_seconds": manifest["elapsed_seconds"]}
+
+
+def run_profile(
+    repo_root: str | Path,
+    output_dir: str | Path,
+    *,
+    instance: str = "100-01-24h",
+    seed: int = 1,
+    eval_budget: int = DEFAULT_PROFILE_EVAL_BUDGET,
+    max_runtime_seconds: float = 300.0,
+    algorithms: list[str] | None = None,
+) -> dict[str, Any]:
+    _ensure_environment()
+    root = Path(repo_root)
+    out = Path(output_dir)
+    out.mkdir(parents=True, exist_ok=True)
+    selected = _selected_instances([instance])
+    if instance not in selected:
+        raise ValueError(f"Profile instance {instance!r} not selected")
+    bundle_dir = root / selected[instance]
+    profile_algorithms = algorithms or list(PROFILE_ALGORITHMS)
+    rows: list[dict[str, Any]] = []
+    summaries: list[dict[str, Any]] = []
+    for algorithm in [*profile_algorithms, "winner-kernel ALNS"]:
+        result = _profile_one(
+            algorithm,
+            str(bundle_dir),
+            instance,
+            int(seed),
+            int(eval_budget),
+            float(max_runtime_seconds),
+        )
+        summaries.append(result["summary"])
+        rows.extend(result["buckets"])
+    _write_csv(out / "profile_timings.csv", rows)
+    _write_csv(out / "profile_summary.csv", summaries)
+    manifest = {
+        "schema_version": "setp-metaheuristic-baseline-profile.v1",
+        "repo_root": str(root),
+        "commit_hash": _git_commit(root),
+        "system_python": SYSTEM_PYTHON,
+        "numpy": np.__version__,
+        "instance": instance,
+        "seed": int(seed),
+        "eval_budget": int(eval_budget),
+        "max_runtime_seconds": float(max_runtime_seconds),
+        "algorithms": [*profile_algorithms, "winner-kernel ALNS"],
+        "outputs": ["profile_report.md", "profile_timings.csv", "profile_summary.csv", "manifest.json"],
+    }
+    _write_json(out / "manifest.json", manifest)
+    (out / "profile_report.md").write_text(_profile_report(summaries, rows, manifest), encoding="utf-8")
+    return {"gate": "PROFILE_COMPLETE", "manifest": str(out / "manifest.json")}
 
 
 def _run_task(task: tuple[str, str, str, int, int, float]) -> dict[str, Any]:
@@ -142,6 +221,7 @@ def _run_task(task: tuple[str, str, str, int, int, float]) -> dict[str, Any]:
         evaluations = int(run.evals)
         best_cost = run.best_cost
         elapsed = float(run.elapsed_seconds)
+        history = list(getattr(run, "history", []) or [])
     elif algorithm == "winner-kernel ALNS":
         run = run_winner_kernel(
             bundle_dir,
@@ -154,6 +234,7 @@ def _run_task(task: tuple[str, str, str, int, int, float]) -> dict[str, Any]:
         evaluations = int(run["evaluations"])
         best_cost = float(run["best_cost"])
         elapsed = float(run["elapsed_seconds"])
+        history = [{"eval": float(evaluations), "best_cost": best_cost, "operator": "winner_final"}]
     else:
         run = run_metaheuristic_baseline(
             algorithm,
@@ -169,6 +250,7 @@ def _run_task(task: tuple[str, str, str, int, int, float]) -> dict[str, Any]:
         evaluations = int(run.evals)
         best_cost = run.best_cost
         elapsed = float(run.elapsed_seconds)
+        history = list(run.history)
     violations = check_solution(solution, bundle.instance, DEFAULT_PRICES) if solution is not None else []
     if solution is not None and violations:
         status = "HALT_VIOLATIONS"
@@ -187,6 +269,7 @@ def _run_task(task: tuple[str, str, str, int, int, float]) -> dict[str, Any]:
         "status": status,
         "source": source,
         "violation_count": len(violations),
+        "history": history,
         "solution": solution_to_dict(solution) if solution is not None else None,
     }
 
@@ -201,6 +284,179 @@ def _run_parallel(tasks: list[tuple[str, str, str, int, int, float]]) -> list[di
         for future in as_completed(futures):
             results.append(future.result())
     return results
+
+
+def _runtime_caps(
+    root: Path,
+    selected: dict[str, Path],
+    algorithms: list[str],
+    *,
+    max_runtime_seconds: float,
+    fallback_max_runtime_seconds: float | None,
+    auto_runtime_fallback: bool,
+    speed_probe_eval_budget: int,
+    target_eval_budget: int,
+) -> dict[str, float]:
+    caps = {"fair-SA": float(max_runtime_seconds), "winner-kernel ALNS": float(max_runtime_seconds)}
+    caps.update({algorithm: float(max_runtime_seconds) for algorithm in algorithms})
+    if not auto_runtime_fallback or fallback_max_runtime_seconds is None:
+        return caps
+    if "100-01-24h" not in selected:
+        return caps
+    bundle_dir = root / selected["100-01-24h"]
+    bundle = load_search_bundle(bundle_dir)
+    warm = make_shared_initial_solution(bundle)
+    for algorithm in algorithms:
+        started = time.perf_counter()
+        result = run_metaheuristic_baseline(
+            algorithm,
+            bundle_dir,
+            seed=1,
+            eval_budget=int(speed_probe_eval_budget),
+            max_runtime_seconds=max(60.0, float(fallback_max_runtime_seconds)),
+            initial_solution=warm,
+        )
+        elapsed = max(1e-9, time.perf_counter() - started)
+        evals_per_second = float(result.evals) / elapsed
+        projected = int(target_eval_budget) / evals_per_second if evals_per_second > 1e-12 else math.inf
+        if projected > float(max_runtime_seconds):
+            caps[algorithm] = float(fallback_max_runtime_seconds)
+    return caps
+
+
+def _convergence_rows(results: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    rows: list[dict[str, Any]] = []
+    for result in sorted(results, key=lambda row: (row["instance"], row["algorithm"], int(row["seed"]))):
+        history = list(result.get("history") or [])
+        if not history and result.get("best_cost") is not None:
+            history = [{"eval": float(result.get("evaluations", 0)), "best_cost": float(result["best_cost"])}]
+        for idx, point in enumerate(history):
+            best_value = point.get("best_cost", point.get("best_obj", result.get("best_cost")))
+            current_value = point.get("current_cost", point.get("current_obj", ""))
+            rows.append(
+                {
+                    "instance": result["instance"],
+                    "algorithm": result["algorithm"],
+                    "seed": int(result["seed"]),
+                    "point_index": idx,
+                    "eval": float(point.get("eval", result.get("evaluations", 0))),
+                    "best_cost": float(best_value) if best_value not in {None, ""} else math.nan,
+                    "current_cost": float(current_value) if current_value not in {None, ""} else "",
+                    "operator": point.get("operator", ""),
+                    "eval_budget": int(result.get("eval_budget", 0)),
+                    "max_runtime_seconds": float(result.get("max_runtime_seconds", 0.0)),
+                    "status": result.get("status", ""),
+                }
+            )
+    return rows
+
+
+def _profile_one(
+    algorithm: str,
+    bundle_dir: str,
+    instance_name: str,
+    seed: int,
+    eval_budget: int,
+    max_runtime_seconds: float,
+) -> dict[str, Any]:
+    bundle = load_search_bundle(bundle_dir)
+    warm = make_shared_initial_solution(bundle)
+    with _profile_timers() as timers:
+        started = time.perf_counter()
+        if algorithm == "winner-kernel ALNS":
+            run = run_winner_kernel(
+                bundle_dir,
+                config=WinnerKernelConfig(seed=seed, eval_budget=eval_budget, max_runtime_seconds=max_runtime_seconds),
+                initial_solution=warm,
+            )
+            evals = int(run["evaluations"])
+            status = "OK" if run["feasible"] else "HALT_WINNER_INCOMPARABLE"
+            best_cost = float(run["best_cost"])
+        else:
+            result = run_metaheuristic_baseline(
+                algorithm,
+                bundle_dir,
+                seed=seed,
+                eval_budget=eval_budget,
+                max_runtime_seconds=max_runtime_seconds,
+                initial_solution=warm,
+            )
+            evals = int(result.evals)
+            status = result.status
+            best_cost = result.best_cost
+        elapsed = time.perf_counter() - started
+    evals_per_second = evals / max(1e-9, elapsed)
+    projected = DEFAULT_EVAL_BUDGET / evals_per_second if evals_per_second > 1e-12 else math.inf
+    summary = {
+        "instance": instance_name,
+        "algorithm": algorithm,
+        "seed": int(seed),
+        "status": status,
+        "evals": evals,
+        "elapsed_seconds": float(elapsed),
+        "evals_per_second": float(evals_per_second),
+        "projected_16000_seconds": float(projected),
+        "meets_16000_900s": projected <= DEFAULT_MAX_RUNTIME_SECONDS,
+        "best_cost": best_cost,
+    }
+    bucket_rows: list[dict[str, Any]] = []
+    accounted = 0.0
+    for bucket, row in sorted(timers.items()):
+        seconds = float(row["seconds"])
+        accounted += seconds
+        bucket_rows.append(
+            {
+                **summary,
+                "bucket": bucket,
+                "bucket_count": int(row["count"]),
+                "bucket_seconds": seconds,
+                "bucket_share_pct": seconds / max(1e-9, elapsed) * 100.0,
+            }
+        )
+    other = max(0.0, float(elapsed) - accounted)
+    bucket_rows.append({**summary, "bucket": "other_or_uninstrumented", "bucket_count": 0, "bucket_seconds": other, "bucket_share_pct": other / max(1e-9, elapsed) * 100.0})
+    return {"summary": summary, "buckets": bucket_rows}
+
+
+@contextmanager
+def _profile_timers() -> Any:
+    timers: dict[str, dict[str, float | int]] = {
+        "decode_order_to_solution": {"count": 0, "seconds": 0.0},
+        "evaluate": {"count": 0, "seconds": 0.0},
+        "check_solution": {"count": 0, "seconds": 0.0},
+        "repair_route_charging": {"count": 0, "seconds": 0.0},
+    }
+    originals: list[tuple[Any, str, Any]] = []
+
+    def patch(module: Any, name: str, bucket: str) -> None:
+        original = getattr(module, name)
+
+        @functools.wraps(original)
+        def wrapper(*args: Any, **kwargs: Any) -> Any:
+            started = time.perf_counter()
+            try:
+                return original(*args, **kwargs)
+            finally:
+                timers[bucket]["count"] = int(timers[bucket]["count"]) + 1
+                timers[bucket]["seconds"] = float(timers[bucket]["seconds"]) + (time.perf_counter() - started)
+
+        setattr(module, name, wrapper)
+        originals.append((module, name, original))
+
+    try:
+        patch(baseline_module, "_decode_order_like_random_key", "decode_order_to_solution")
+        patch(baseline_module, "evaluate", "evaluate")
+        patch(baseline_module, "check_solution", "check_solution")
+        patch(baseline_module, "repair_route_charging", "repair_route_charging")
+        patch(evaluation_module, "evaluate", "evaluate")
+        patch(evaluation_module, "check_solution", "check_solution")
+        patch(candidates_module, "check_solution", "check_solution")
+        patch(candidates_module, "repair_route_charging", "repair_route_charging")
+        patch(repair_scoring_module, "evaluate", "evaluate")
+        yield timers
+    finally:
+        for module, name, original in reversed(originals):
+            setattr(module, name, original)
 
 
 def _solution_from_result(result: dict[str, Any]) -> Any:
@@ -376,6 +632,46 @@ def _report(verdicts: list[dict[str, Any]], comparison: list[dict[str, Any]], ha
     return "\n".join(lines) + "\n"
 
 
+def _profile_report(summaries: list[dict[str, Any]], bucket_rows: list[dict[str, Any]], manifest: dict[str, Any]) -> str:
+    lines = [
+        "# Metaheuristic Baseline Profile",
+        "",
+        "One-line conclusion: profile is a throughput diagnostic only; dominance claims require the formal comparison gate.",
+        "",
+        f"Commit: {manifest['commit_hash']}",
+        f"Environment: {manifest['system_python']}, numpy {manifest['numpy']}",
+        f"Instance/seed/evals: {manifest['instance']} / {manifest['seed']} / {manifest['eval_budget']}",
+        "",
+        "## Throughput",
+    ]
+    for row in sorted(summaries, key=lambda item: str(item["algorithm"])):
+        projected = float(row["projected_16000_seconds"])
+        decision = "900s" if bool(row["meets_16000_900s"]) else "3600s/HALT"
+        lines.append(
+            f"- {row['algorithm']}: status={row['status']}, eval/s={float(row['evals_per_second']):.3f}, "
+            f"projected_16000={projected:.1f}s, cap_decision={decision}, best_cost={row['best_cost']}."
+        )
+    lines.extend(["", "## Time Buckets"])
+    grouped: dict[str, list[dict[str, Any]]] = {}
+    for row in bucket_rows:
+        grouped.setdefault(str(row["algorithm"]), []).append(row)
+    for algorithm in sorted(grouped):
+        pieces = []
+        for row in sorted(grouped[algorithm], key=lambda item: float(item["bucket_seconds"]), reverse=True):
+            if float(row["bucket_seconds"]) <= 1e-9 and int(row["bucket_count"]) == 0:
+                continue
+            pieces.append(f"{row['bucket']}={float(row['bucket_share_pct']):.1f}%/{int(row['bucket_count'])}x")
+        lines.append(f"- {algorithm}: " + "; ".join(pieces))
+    lines.extend(
+        [
+            "",
+            "## Method",
+            "The profile wraps decode, evaluate, check_solution, and EV charging repair call sites in-process. Bucket shares are diagnostic and may overlap less than cProfile; the formal gate is still full eval count, zero violations, and system Python/numpy.",
+        ]
+    )
+    return "\n".join(lines) + "\n"
+
+
 def _ensure_environment() -> None:
     if Path(sys.executable) != Path(SYSTEM_PYTHON):
         raise SystemExit(f"HALT_ENVIRONMENT: expected {SYSTEM_PYTHON}, got {sys.executable}")
@@ -460,15 +756,32 @@ def _parse_instances(text: str) -> list[str]:
 
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description="Run ReSETP metaheuristic baseline comparison.")
-    parser.add_argument("stage", choices=["all"])
+    parser.add_argument("stage", choices=["all", "profile"])
     parser.add_argument("--repo-root", default=str(Path(__file__).resolve().parents[4]))
     parser.add_argument("--output-dir", default="baselines")
     parser.add_argument("--instances", default="100-01-24h,L-main,Scale-150,Scale-200")
+    parser.add_argument("--profile-instance", default="100-01-24h")
     parser.add_argument("--seeds", default="1-10")
     parser.add_argument("--eval-budget", type=int, default=DEFAULT_EVAL_BUDGET)
     parser.add_argument("--max-runtime-seconds", type=float, default=DEFAULT_MAX_RUNTIME_SECONDS)
+    parser.add_argument("--fallback-max-runtime-seconds", type=float, default=DEFAULT_FALLBACK_MAX_RUNTIME_SECONDS)
+    parser.add_argument("--auto-runtime-fallback", action="store_true")
+    parser.add_argument("--speed-probe-eval-budget", type=int, default=DEFAULT_PROFILE_EVAL_BUDGET)
     parser.add_argument("--algorithms", default=",".join(BASELINE_ALGORITHMS))
     args = parser.parse_args(argv)
+    selected_algorithms = [item.strip() for item in args.algorithms.split(",") if item.strip()]
+    if args.stage == "profile":
+        result = run_profile(
+            args.repo_root,
+            args.output_dir,
+            instance=args.profile_instance,
+            seed=_parse_seed_list(args.seeds)[0],
+            eval_budget=args.speed_probe_eval_budget,
+            max_runtime_seconds=args.max_runtime_seconds,
+            algorithms=selected_algorithms or list(PROFILE_ALGORITHMS),
+        )
+        print(f"GATE METAHEURISTIC_BASELINES_PROFILE {result['gate']} {json.dumps(result, ensure_ascii=False)}")
+        return 0
     result = run_all(
         args.repo_root,
         args.output_dir,
@@ -476,7 +789,10 @@ def main(argv: list[str] | None = None) -> int:
         seeds=_parse_seed_list(args.seeds),
         eval_budget=args.eval_budget,
         max_runtime_seconds=args.max_runtime_seconds,
-        algorithms=[item.strip() for item in args.algorithms.split(",") if item.strip()],
+        fallback_max_runtime_seconds=args.fallback_max_runtime_seconds,
+        auto_runtime_fallback=args.auto_runtime_fallback,
+        speed_probe_eval_budget=args.speed_probe_eval_budget,
+        algorithms=selected_algorithms,
     )
     print(f"GATE METAHEURISTIC_BASELINES {result['gate']} {json.dumps(result, ensure_ascii=False)}")
     return 0
