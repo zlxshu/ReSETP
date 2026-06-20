@@ -65,5 +65,14 @@ ReSETP = 投《系统工程理论与实践》的绿色车辆路径论文。多�
 `docs/handoff/memory/` = M1 上 Claude 私有记忆（`~/.claude/.../memory/`）的快照，随仓库走。含 `MEMORY.md`（索引）+ project-plan-overview / baseline-algorithm-catalog / alns-crush-root-cause / algorithm-pivot-ca-alns / figure-redesign-task / deferred-instance-robustness / feedback_communication_style。深细节看这里。
 已写好的两条 Codex 提示词（①离线探针 ②8基线复刻）应存到 `docs/handoff/codex_prompts/`（待补）。
 
+## ⚠️ 工作顺序（单盘物理迁移 = 串行，必读）
+仓库在外置盘上，盘在哪台机、另一台就停（含 M1 上正在跑的 E1-E7）。GitHub 备份只有 46M 代码+文档，**没有大数据/instances/reports**，所以 Windows 机不能靠 GitHub 独立干完整实验。因此严格串行：
+1. **先在 M1 跑完**：E1-E7 重跑（进行中）+ 轨② 基线提速与正式对比（canonical 数字）。
+2. **再移盘到 Windows**：装环境 → DR 课程训练（相对 % 报，不与 M1 绝对值比）。
+3. **迁回 M1**：整合 DR 结果。
+
 ## 变更日志（每次对话/决策/Codex run 追加一行）
-- 2026-06-20 建本文件；记忆快照入 `docs/handoff/memory/`。探针 PROMISING（r2_delta≈1.05）；8 基线 HALT_BASELINE_THROUGHPUT。提出迁移策略（M1 canonical + 3060 训 DR），待 user 确认 OS/传输/分工。
+- 2026-06-20 建本文件；记忆快照入 `docs/handoff/memory/`。探针 PROMISING（r2_delta≈1.05）；8 基线 HALT_BASELINE_THROUGHPUT。提出迁移策略（M1 canonical + 3060 训 DR）。
+- 2026-06-20（续）user 确认：GPU 机 = Windows 5800H，外置盘 exFAT 直插 Windows 干活，训完迁回，授权上 GitHub。已建私有备份 `github.com/zlxshu/ReSETP`（46M 快照 = 代码+文档+记忆；大数据/reports/venv 不在内，留盘上）。清理 .git 内 AppleDouble 垃圾。确立"单盘=串行"工作顺序（见上）。handoff 文档已提交进盘上仓库（commit 38e6356）。
+- 2026-06-20（续2）写了轨②提速提示词，三条 Codex 提示词存入 `docs/handoff/codex_prompts/`（01 探针 / 02 基线 / 03 提速，+ README）。
+- 2026-06-20 E1-E7 进度快照（user 报）：~51/60 单元、414/470 记录、0 失败；E1 完 / E2 ~130-140 / E3 52-60 / E4 135-160 / E6 58-70 / E7 9-10；剩 E4 网格 + E6 theta + E3 长尾；6 worker。ETA 纯算 2-4h + 收尾（合并 manifest / export-backfill / 修正文碳段 / 查表图 F4 / solver+RL 测试 + commit）1-2h = 整体 3-6h。不降规格、不混旧数据。**下一步：在 M1 跑完 E1-E7 + 发提示词③做轨②正式对比，再移盘 Windows 训 DR。**
