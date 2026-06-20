@@ -215,6 +215,8 @@ def run_e2_algorithm_comparison(
     seeds: list[int] | None = None,
     eval_budget: int = 16_000,
     max_runtime_seconds: float = 300.0,
+    algorithms: list[str] | None = None,
+    exclude_algorithms: list[str] | None = None,
 ) -> dict[str, Any]:
     """Run E2 for all Z1-available algorithms and write T3/F2 sources."""
 
@@ -226,7 +228,7 @@ def run_e2_algorithm_comparison(
         "L-main": root / "models" / "data_bundle" / "generated_instances" / "E-UK24h-三班-01",
         "100-01-24h": root / "models" / "data_bundle" / "generated_instances" / "E-UK100_01__d2_s3_seed1_24h_20251113",
     }
-    algorithms = [PRIMARY_ALGORITHM, *Z1_CANDIDATES]
+    algorithms = _resolve_e2_algorithms(algorithms, exclude_algorithms)
     initial_solutions = {
         instance_name: make_shared_initial_solution(load_search_bundle(bundle_dir))
         for instance_name, bundle_dir in instances.items()
@@ -254,6 +256,15 @@ def run_e2_algorithm_comparison(
     _write_csv(out / "figures" / "f2_algorithm_curves.csv", _f2_curve_rows(run_rows))
     _write_e2_solution_outputs(root, out, run_rows)
     return {"run_count": len(run_rows), "finals": finals, "manifest": str(ledger.path)}
+
+
+def _resolve_e2_algorithms(algorithms: list[str] | None, exclude_algorithms: list[str] | None = None) -> list[str]:
+    selected = [item.strip() for item in (algorithms or [PRIMARY_ALGORITHM, *Z1_CANDIDATES]) if item.strip()]
+    excluded = {item.strip() for item in (exclude_algorithms or []) if item.strip()}
+    resolved = [algorithm for algorithm in selected if algorithm not in excluded]
+    if not resolved:
+        raise ValueError("E2 algorithm selection is empty")
+    return resolved
 
 
 def run_alns_fix_validation(
@@ -380,6 +391,7 @@ def run_e1_main_and_counterfactuals(
     output_dir: str | Path,
     *,
     seed: int = 1,
+    seeds: list[int] | None = None,
     eval_budget: int = 16_000,
     max_runtime_seconds: float = 300.0,
 ) -> dict[str, Any]:
@@ -387,11 +399,12 @@ def run_e1_main_and_counterfactuals(
 
     root = Path(repo_root)
     out = Path(output_dir)
+    run_seeds = seeds or [seed]
     bundle_dir = root / "models" / "data_bundle" / "generated_instances" / "E-UK24h-三班-01"
     quota = compute_default_carbon_quota(
         bundle_dir,
         out / "carbon_quota_L-main.json",
-        seed=seed,
+        seed=run_seeds[0],
         eval_budget=eval_budget,
         max_runtime_seconds=max_runtime_seconds,
     )["default_ce_kg"]
@@ -403,21 +416,23 @@ def run_e1_main_and_counterfactuals(
     }
     rows = []
     for variant, policy in variants.items():
-        key = RunKey("E1", "L-main", PRIMARY_ALGORITHM, seed, variant)
-        row = ledger.run(
-            key,
-            lambda policy=policy: _run_alns_metrics(
-                bundle_dir,
-                seed=seed,
-                eval_budget=eval_budget,
-                max_runtime_seconds=max_runtime_seconds,
-                policy=policy,
-                carbon_quota_kg=float(quota),
-            ),
-        )
-        rows.append(_flatten_run_row(key, row))
+        for run_seed in run_seeds:
+            key = RunKey("E1", "L-main", PRIMARY_ALGORITHM, run_seed, variant)
+            row = ledger.run(
+                key,
+                lambda policy=policy, run_seed=run_seed: _run_alns_metrics(
+                    bundle_dir,
+                    seed=run_seed,
+                    eval_budget=eval_budget,
+                    max_runtime_seconds=max_runtime_seconds,
+                    policy=policy,
+                    carbon_quota_kg=float(quota),
+                ),
+            )
+            rows.append(_flatten_run_row(key, row))
     table_rows = _e1_table_rows(rows)
     _write_csv(out / "tables" / "t4_solution_decomposition.csv", table_rows)
+    _write_csv(out / "tables" / "t4_solution_decomposition_seed_detail.csv", _e1_seed_detail_rows(rows))
     return {"run_count": len(rows), "rows": table_rows, "manifest": str(ledger.path)}
 
 
@@ -679,11 +694,17 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--variants", default="")
     parser.add_argument("--carbon-price-factors", default="")
     parser.add_argument("--quota-factors", default="")
+    parser.add_argument("--thetas", default="")
+    parser.add_argument("--algorithms", default="")
+    parser.add_argument("--exclude-algorithms", default="")
     args = parser.parse_args(argv)
     seeds = [int(item) for item in args.seeds.split(",") if item.strip()]
     variants = [item.strip() for item in args.variants.split(",") if item.strip()]
-    cpf = [float(x) for x in args.carbon_price_factors.split(",") if x.strip()] or None
-    qf = [float(x) for x in args.quota_factors.split(",") if x.strip()] or None
+    cpf = _parse_float_list(args.carbon_price_factors)
+    qf = _parse_float_list(args.quota_factors)
+    thetas = _parse_float_list(args.thetas)
+    algorithms = _parse_string_list(args.algorithms)
+    exclude_algorithms = _parse_string_list(args.exclude_algorithms)
     out = Path(args.output_dir)
     if args.stage == "E0":
         result = run_e0_gate(args.repo_root, out / "tables" / "t1_instances.csv")
@@ -698,9 +719,17 @@ def main(argv: list[str] | None = None) -> int:
     elif args.stage == "ALNS_WANG_STRONG":
         result = run_alns_wang_strong_validation(args.repo_root, out, seeds=seeds, eval_budget=args.eval_budget, max_runtime_seconds=args.max_runtime_seconds)
     elif args.stage == "E1":
-        result = run_e1_main_and_counterfactuals(args.repo_root, out, seed=seeds[0], eval_budget=args.eval_budget, max_runtime_seconds=args.max_runtime_seconds)
+        result = run_e1_main_and_counterfactuals(args.repo_root, out, seed=seeds[0], seeds=seeds, eval_budget=args.eval_budget, max_runtime_seconds=args.max_runtime_seconds)
     elif args.stage == "E2":
-        result = run_e2_algorithm_comparison(args.repo_root, out, seeds=seeds, eval_budget=args.eval_budget, max_runtime_seconds=args.max_runtime_seconds)
+        result = run_e2_algorithm_comparison(
+            args.repo_root,
+            out,
+            seeds=seeds,
+            eval_budget=args.eval_budget,
+            max_runtime_seconds=args.max_runtime_seconds,
+            algorithms=algorithms or None,
+            exclude_algorithms=exclude_algorithms or None,
+        )
     elif args.stage == "E3":
         result = run_e3_ablation(args.repo_root, out, seeds=seeds, variants_filter=variants or None, eval_budget=args.eval_budget, max_runtime_seconds=args.max_runtime_seconds)
     elif args.stage == "E4":
@@ -717,12 +746,21 @@ def main(argv: list[str] | None = None) -> int:
     elif args.stage == "E5":
         result = run_e5_formal(args.repo_root, out)
     elif args.stage == "E6":
-        result = run_e6_fairness_scan(args.repo_root, out, seeds=seeds, eval_budget=args.eval_budget, max_runtime_seconds=args.max_runtime_seconds)
+        result = run_e6_fairness_scan(args.repo_root, out, seeds=seeds, thetas=thetas, eval_budget=args.eval_budget, max_runtime_seconds=args.max_runtime_seconds)
     else:
         result = run_e7_dynamic(args.repo_root, out, seed=seeds[0], seeds=seeds, eval_budget=args.eval_budget, max_runtime_seconds=args.max_runtime_seconds)
     gate = "PASS" if not str(result.get("gate", "")).startswith("HALT") and result.get("all_assertions_pass", True) else result.get("gate", "HALT")
     print(f"GATE {args.stage} {gate} {json.dumps(_compact_summary(result), ensure_ascii=False)}")
     return 0 if gate == "PASS" else 2
+
+
+def _parse_float_list(text: str) -> list[float] | None:
+    values = [float(item) for item in text.split(",") if item.strip()]
+    return values or None
+
+
+def _parse_string_list(text: str) -> list[str]:
+    return [item.strip() for item in text.split(",") if item.strip()]
 
 
 def _run_algorithm_once(
@@ -789,7 +827,7 @@ def _e3_variant_specs(quota: float) -> list[dict[str, Any]]:
     return [
         {
             "code": "M0",
-            "label": "independent_zero_gamma_no_quota_no_fairness",
+            "label": "无多场协同",
             "carbon_profile_mode": "zero_gamma",
             "carbon_quota_kg": 0.0,
             "carbon_price_factor": 0.0,
@@ -801,7 +839,7 @@ def _e3_variant_specs(quota: float) -> list[dict[str, Any]]:
         },
         {
             "code": "M1",
-            "label": "cooperative_zero_gamma_no_quota_no_fairness",
+            "label": "无碳感知",
             "carbon_profile_mode": "zero_gamma",
             "carbon_quota_kg": 0.0,
             "carbon_price_factor": 0.0,
@@ -813,7 +851,7 @@ def _e3_variant_specs(quota: float) -> list[dict[str, Any]]:
         },
         {
             "code": "M2",
-            "label": "cooperative_mean_gamma_no_quota_no_fairness",
+            "label": "均值碳强度",
             "carbon_profile_mode": "mean_gamma",
             "carbon_quota_kg": 0.0,
             "carbon_price_factor": 0.0,
@@ -825,7 +863,7 @@ def _e3_variant_specs(quota: float) -> list[dict[str, Any]]:
         },
         {
             "code": "M3",
-            "label": "cooperative_time_varying_gamma_no_quota_no_fairness",
+            "label": "无碳交易",
             "carbon_profile_mode": "actual_gamma",
             "carbon_quota_kg": 0.0,
             "carbon_price_factor": 0.0,
@@ -837,7 +875,7 @@ def _e3_variant_specs(quota: float) -> list[dict[str, Any]]:
         },
         {
             "code": "M4",
-            "label": "plus_carbon_trading",
+            "label": "无收益公平",
             "carbon_profile_mode": "actual_gamma",
             "carbon_quota_kg": float(quota),
             "carbon_price_factor": 1.0,
@@ -849,7 +887,7 @@ def _e3_variant_specs(quota: float) -> list[dict[str, Any]]:
         },
         {
             "code": "M5",
-            "label": "plus_fairness",
+            "label": "完整模型",
             "carbon_profile_mode": "actual_gamma",
             "carbon_quota_kg": float(quota),
             "carbon_price_factor": 1.0,
@@ -1704,7 +1742,7 @@ def _n_d_label(instance: str) -> str:
 
 def _e1_table_rows(run_rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
     rows = []
-    for row in run_rows:
+    for row in _e1_best_rows_by_variant(run_rows):
         result = row.get("result", {})
         metrics = result.get("metrics", {})
         if not metrics:
@@ -1717,9 +1755,51 @@ def _e1_table_rows(run_rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
                 {"metric": f"{row['variant']} total_carbon_kg", "value": round(total_carbon, 3), "share_pct": ""},
                 {"metric": f"{row['variant']} charging_stake", "value": round(charging_carbon, 3), "share_pct": round(charging_carbon / total_carbon * 100.0, 3) if total_carbon else 0.0},
                 {"metric": f"{row['variant']} EV/CV", "value": f"{result.get('ev_routes', 0)}/{result.get('cv_routes', 0)}", "share_pct": ""},
+                {"metric": f"{row['variant']} source_seed", "value": row["seed"], "share_pct": ""},
             ]
         )
     return rows
+
+
+def _e1_seed_detail_rows(run_rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    rows = []
+    for row in sorted(run_rows, key=lambda item: (item["variant"], int(item["seed"]))):
+        result = row.get("result", {})
+        metrics = result.get("metrics", {})
+        total_carbon = float(metrics.get("E_total", 0.0)) if metrics else 0.0
+        charging_carbon = float(metrics.get("E_ev_indirect", 0.0)) if metrics else 0.0
+        rows.append(
+            {
+                "variant": row["variant"],
+                "seed": row["seed"],
+                "status": row.get("status", ""),
+                "feasible": "是" if result.get("feasible") else "否",
+                "violation_count": result.get("violation_count", ""),
+                "total_cost": round(float(metrics["total_cost"]), 3) if metrics else "",
+                "total_carbon_kg": round(total_carbon, 3) if metrics else "",
+                "charging_carbon_kg": round(charging_carbon, 3) if metrics else "",
+                "charging_share_pct": round(charging_carbon / total_carbon * 100.0, 3) if total_carbon else "",
+                "ev_routes": result.get("ev_routes", ""),
+                "cv_routes": result.get("cv_routes", ""),
+                "route_count": result.get("route_count", ""),
+                "actual_evals": row.get("actual_evals", result.get("actual_evals", "")),
+                "elapsed_seconds": result.get("elapsed_seconds", ""),
+            }
+        )
+    return rows
+
+
+def _e1_best_rows_by_variant(run_rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    grouped: dict[str, list[dict[str, Any]]] = {}
+    for row in run_rows:
+        grouped.setdefault(row["variant"], []).append(row)
+    best_rows = []
+    for variant, rows in sorted(grouped.items()):
+        feasible = [row for row in rows if _run_feasible_with_cost(row)]
+        if not feasible:
+            continue
+        best_rows.append(min(feasible, key=lambda item: float(item["result"]["best_cost"])))
+    return best_rows
 
 
 def _write_e2_solution_outputs(repo_root: Path, output_dir: Path, run_rows: list[dict[str, Any]]) -> None:
@@ -1749,14 +1829,7 @@ def _write_e2_solution_outputs(repo_root: Path, output_dir: Path, run_rows: list
         {"metric": "e2_best EV/CV", "value": f"{best['result'].get('ev_routes', 0)}/{best['result'].get('cv_routes', 0)}", "share_pct": ""},
         {"metric": "e2_best source", "value": f"E2 {PRIMARY_ALGORITHM} seed={best['seed']}", "share_pct": ""},
     ]
-    legacy = repo_root / "solver" / "reports" / "formal" / "tables" / "t4_solution_decomposition.csv"
-    if legacy.exists() and legacy.resolve() != (output_dir / "tables" / "t4_solution_decomposition.csv").resolve():
-        with legacy.open("r", newline="", encoding="utf-8") as handle:
-            for row in csv.DictReader(handle):
-                metric = str(row.get("metric", ""))
-                if metric.startswith("mixed "):
-                    rows.append({"metric": f"legacy_e1 {metric}", "value": row.get("value", ""), "share_pct": row.get("share_pct", "")})
-    _write_csv(output_dir / "tables" / "t4_solution_decomposition.csv", rows)
+    _write_csv(output_dir / "tables" / "t4_e2_best_solution_decomposition.csv", rows)
     _write_route_map_sources(bundle.instance, solution, output_dir / "figures")
 
 
@@ -1838,7 +1911,7 @@ def _retained_e3_m0_rows(repo_root: Path) -> list[dict[str, Any]]:
         key = row.get("key", {})
         if key.get("experiment") == "E3" and key.get("variant") == "M0":
             flat = _flatten_run_row(key_from_payload(key), row)
-            flat["label"] = "independent_zero_gamma_no_quota_no_fairness"
+            flat["label"] = "无多场协同"
             flat["retained_from"] = str(manifest)
             rows.append(flat)
     return rows

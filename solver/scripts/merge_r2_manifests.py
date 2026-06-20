@@ -46,12 +46,13 @@ def main() -> int:
 
     quota_target = combined_dir / "carbon_quota_L-main.json"
     if not quota_target.exists():
-        for candidate in (
-            attempt_dir / "units" / "e3_s1" / "carbon_quota_L-main.json",
-            attempt_dir / "units" / "e3_s2" / "carbon_quota_L-main.json",
-            attempt_dir / "units" / "e4_s1" / "carbon_quota_L-main.json",
-            attempt_dir / "units" / "e4_s2" / "carbon_quota_L-main.json",
-        ):
+        quota_candidates = [
+            attempt_dir / "carbon_quota_L-main.json",
+            attempt_dir / "formal" / "carbon_quota_L-main.json",
+            attempt_dir / "combined" / "carbon_quota_L-main.json",
+        ]
+        quota_candidates.extend(sorted(attempt_dir.glob("units/*/carbon_quota_L-main.json")))
+        for candidate in quota_candidates:
             if candidate.exists():
                 shutil.copy2(candidate, quota_target)
                 break

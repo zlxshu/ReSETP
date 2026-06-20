@@ -9,6 +9,16 @@ from .schema import read_rows, write_rows
 ColumnSpec = tuple[str, str]
 
 
+ALGORITHM_DISPLAY_LABELS = {
+    "ALNS-Wouda": "ALNS",
+    "ALNS@wangqianlongucas": "ALNS-WQL",
+    "NSGA-II@haris989": "NSGA-II",
+    "VNS@Valdecy": "VNS",
+    "scikit-opt-GA": "GA",
+    "scikit-opt-SA": "SA",
+}
+
+
 TABLE_SPECS: dict[str, list[ColumnSpec]] = {
     "T1": [
         ("instance", "算例"),
@@ -195,7 +205,7 @@ def grouped_csv_to_long_booktabs(csv_path: str | Path, *, base_headers: list[str
                     [
                         _latex_cell(instance),
                         _latex_cell(_base_header_value(row, "n_d")),
-                        _latex_cell(group),
+                        _latex_cell(_algorithm_label(group)),
                         _latex_cell(_display_value("T3", "reference_best", _base_header_value(row, "reference_best"))),
                         _latex_cell(_display_value("T3", "gap", values["相对已观测最优偏差\\%"])),
                         _latex_cell(_display_value("T3", "time", values["时间s"])),
@@ -219,7 +229,7 @@ def grouped_csv_to_booktabs(csv_path: str | Path, *, base_headers: list[str], gr
 
     first_header = [_base_header_label(header) for header in base_headers]
     for group, metrics in groups:
-        first_header.append(f"\\multicolumn{{{len(metrics)}}}{{c}}{{{_latex_cell(group)}}}")
+        first_header.append(f"\\multicolumn{{{len(metrics)}}}{{c}}{{{_latex_cell(_algorithm_label(group))}}}")
     lines.append(" & ".join(first_header) + r"\\")
 
     cmidrules: list[str] = []
@@ -296,6 +306,10 @@ def _display_value(table_id: str | None, field: str, value: object) -> str:
     if table_id == "T9" and field == "feasible":
         return {"True": "是", "False": "否"}.get(text, text)
     return text
+
+
+def _algorithm_label(name: str) -> str:
+    return ALGORITHM_DISPLAY_LABELS.get(name, name)
 
 
 def _format_number(text: str, *, digits: int) -> str:

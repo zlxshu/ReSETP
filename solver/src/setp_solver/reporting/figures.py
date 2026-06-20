@@ -11,6 +11,7 @@ from .style import DOUBLE_COL_FIGSIZE, LINE_STYLES, MARKERS, PALETTE, SINGLE_COL
 CARBON_MAIN_PRICE_GBP_PER_TONNE = 50.34
 
 ALGORITHM_DISPLAY_LABELS = {
+    "ALNS-Wouda": "ALNS",
     "ALNS@wangqianlongucas": "ALNS-WQL",
     "NSGA-II@haris989": "NSGA-II",
     "VNS@Valdecy": "VNS",
@@ -168,10 +169,12 @@ def figure_f4_48slot_charging(csv_path: str | Path, output_stem: str | Path) -> 
     setup_matplotlib()
     from matplotlib import pyplot as plt
 
-    rows = _read_rows(csv_path)
+    rows = _f4_normalized_rows(_read_rows(csv_path))
+    if not rows:
+        raise ValueError("F4 charging source has no rows")
     scenarios = ["朴素充电", "碳感知充电"]
     fig, axes = plt.subplots(1, 2, figsize=DOUBLE_COL_FIGSIZE, constrained_layout=True)
-    gamma_rows = [row for row in rows if row["scenario"] == scenarios[0]]
+    gamma_rows = _f4_gamma_baseline(rows)
     x = [float(row["hour"]) for row in gamma_rows]
     gamma = [float(row["gamma_gco2_per_kwh"]) for row in gamma_rows]
     axes[0].axvspan(8, 17, color=PALETTE["light_gray"], alpha=0.55, label="日间作业窗")
@@ -191,7 +194,8 @@ def figure_f4_48slot_charging(csv_path: str | Path, output_stem: str | Path) -> 
     axes[0].set_ylabel("$\\gamma$ gCO2/kWh")
     axes[0].set_xlim(0, 24)
     ax2.set_ylabel("充电 kWh")
-    ax2.set_ylim(bottom=0)
+    max_kwh = max((float(row["total_kwh"]) for row in rows), default=0.0)
+    ax2.set_ylim(0, max(max_kwh * 1.15, 1.0))
     axes[0].legend(loc="upper left", fontsize=7, handlelength=1.3)
     ax2.legend(loc="upper right", fontsize=7, handlelength=1.3)
 
@@ -211,6 +215,45 @@ def figure_f4_48slot_charging(csv_path: str | Path, output_stem: str | Path) -> 
     axes[1].set_title("(b) 峰/平/谷充电占比")
     axes[1].legend(loc="upper center", ncols=3, fontsize=7)
     return save_pdf_png(fig, output_stem)
+
+
+F4_SCENARIO_LABELS = {
+    "naive_return_charge": "朴素充电",
+    "carbon_aware": "碳感知充电",
+    "朴素充电": "朴素充电",
+    "碳感知充电": "碳感知充电",
+}
+
+
+def _f4_normalized_rows(rows: list[dict[str, str]]) -> list[dict[str, str]]:
+    normalized = []
+    for row in rows:
+        scenario = F4_SCENARIO_LABELS.get(str(row.get("scenario", "")).strip(), str(row.get("scenario", "")).strip())
+        if scenario not in {"朴素充电", "碳感知充电"}:
+            continue
+        item = dict(row)
+        item["scenario"] = scenario
+        item["hour"] = f"{_f4_hour(row):.6f}"
+        normalized.append(item)
+    return sorted(normalized, key=lambda item: (item["scenario"], float(item["hour"])))
+
+
+def _f4_hour(row: dict[str, str]) -> float:
+    if str(row.get("hour", "")).strip():
+        return float(row["hour"])
+    if str(row.get("horizon_second_start", "")).strip():
+        return float(row["horizon_second_start"]) / 3600.0
+    if str(row.get("slot_index", "")).strip():
+        return float(row["slot_index"]) * 0.5
+    raise KeyError("F4 row needs one of hour, horizon_second_start, or slot_index")
+
+
+def _f4_gamma_baseline(rows: list[dict[str, str]]) -> list[dict[str, str]]:
+    by_hour: dict[float, dict[str, str]] = {}
+    for row in rows:
+        hour = round(float(row["hour"]), 6)
+        by_hour.setdefault(hour, row)
+    return [by_hour[hour] for hour in sorted(by_hour)]
 
 
 def figure_f5_carbon_heatmap(csv_path: str | Path, output_stem: str | Path, *, watermark: bool = True) -> tuple[Path, Path]:

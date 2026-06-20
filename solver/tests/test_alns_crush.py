@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import unittest
+from unittest.mock import patch
 
 from setp_solver.check import check_solution
 from setp_solver.instance_loader import Instance, Node
@@ -54,8 +55,9 @@ class AlnsCrushTests(unittest.TestCase):
         route = Route("CV_NEW", "cv", "D0", ["D0", "C1", "D0"])
         context = EvaluationContext(instance, [])
 
-        self.assertGreater(_path_repair_delta_score(route, context), 79.0)
-        self.assertGreater(_delta_score(Solution(routes=[route]), route, [], context), 79.0)
+        with patch.dict("os.environ", {"SETP_ALNS_CRUSH_TRUE_REPAIR": "1"}):
+            self.assertGreater(_path_repair_delta_score(route, context), 79.0)
+            self.assertGreater(_delta_score(Solution(routes=[route]), route, [], context), 79.0)
 
     def test_cost_breakdown_row_reports_fixed_cost_share(self) -> None:
         instance = _mergeable_instance()
@@ -143,7 +145,8 @@ class AlnsCrushTests(unittest.TestCase):
         context = EvaluationContext(instance, [])
         solution = Solution(routes=[Route("CV1", "cv", "D0", ["D0", "C1", "C3", "C2", "D0"])])
 
-        improved = improve_solution_locally(solution, context)
+        with patch.dict("os.environ", {"SETP_ALNS_CRUSH_LOCAL_SEARCH": "1"}):
+            improved = improve_solution_locally(solution, context)
 
         self.assertEqual(check_solution(improved, instance), [])
         self.assertLess(model_cost(improved, context), model_cost(solution, context))
