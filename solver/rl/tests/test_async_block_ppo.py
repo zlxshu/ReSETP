@@ -22,11 +22,14 @@ from dr_alns_ppo.train_async_block_ppo import (
     compute_episode_advantages,
     filter_on_policy_episodes,
     flatten_episodes,
+    parse_args,
     ppo_update,
     run_actor_episode,
     _batch_to_device,
     _checked_output_dir,
+    _cpu_probe_row,
     _phase_can_advance,
+    _save_periodic_checkpoint,
 )
 
 
@@ -197,6 +200,45 @@ def test_compute_episode_advantages_returns_same_length() -> None:
     assert len(advantages) == 2
     assert len(returns) == 2
     assert returns[-1] == pytest.approx(2.0)
+
+
+def test_periodic_checkpoint_helper_saves_only_on_due_update(tmp_path: Path) -> None:
+    model = make_block_actor_critic(seed=1)
+
+    skipped = _save_periodic_checkpoint(
+        tmp_path,
+        model,
+        update_index=0,
+        checkpoint_every_updates=2,
+        metadata={"policy_version": 1},
+    )
+    saved = _save_periodic_checkpoint(
+        tmp_path,
+        model,
+        update_index=1,
+        checkpoint_every_updates=2,
+        metadata={"policy_version": 2},
+    )
+
+    assert skipped == ""
+    assert saved.endswith("checkpoints/async_block_ppo_update_0002.pt")
+    assert Path(saved).exists()
+    assert load_async_block_policy(saved).metadata["checkpoint_update_count"] == 2
+
+
+def test_train_parser_exposes_checkpoint_interval() -> None:
+    args = parse_args(["train", "--output-dir", "solver/reports/dr_alns_ppo_v3_block_dr_alns/async_pilot/x"])
+
+    assert args.checkpoint_every_updates == 10
+
+
+def test_cpu_probe_row_includes_system_memory_fields() -> None:
+    row = _cpu_probe_row(0.0)
+
+    assert "system_memory_used_mb" in row
+    assert "system_memory_available_mb" in row
+    assert "system_memory_percent" in row
+    assert float(row["system_memory_percent"]) >= 0.0
 
 
 def test_curriculum_reward_phases_use_available_signals() -> None:

@@ -545,6 +545,26 @@ def _aggregate_mask_invalid_rates(episodes: list[dict[str, Any]]) -> dict[str, f
     return {f"mask_invalid_rate_head_{idx}": totals[idx] / count for idx in range(len(BLOCK_ACTION_NVECS))}
 
 
+def _save_periodic_checkpoint(
+    output_dir: Path,
+    model: BlockActorCritic,
+    *,
+    update_index: int,
+    checkpoint_every_updates: int,
+    metadata: dict[str, Any],
+) -> str:
+    every = int(checkpoint_every_updates)
+    update_count = int(update_index) + 1
+    if every <= 0 or update_count % every != 0:
+        return ""
+    checkpoint_path = output_dir / "checkpoints" / f"async_block_ppo_update_{update_count:04d}.pt"
+    payload = dict(metadata)
+    payload["checkpoint_update_index"] = int(update_index)
+    payload["checkpoint_update_count"] = int(update_count)
+    save_async_block_policy(checkpoint_path, model, metadata=payload)
+    return checkpoint_path.as_posix()
+
+
 def run_train(args: argparse.Namespace) -> int:
     output_dir = _checked_output_dir(Path(args.output_dir))
     output_dir.mkdir(parents=True, exist_ok=True)
@@ -703,6 +723,22 @@ def run_train(args: argparse.Namespace) -> int:
                         max_grad_norm=float(args.max_grad_norm),
                         value_clip_range=phase_value_clip_ranges[update_phase_index],
                     )
+                    checkpoint_path = _save_periodic_checkpoint(
+                        output_dir,
+                        model,
+                        update_index=update_index,
+                        checkpoint_every_updates=int(args.checkpoint_every_updates),
+                        metadata={
+                            "policy_version": policy_version + 1,
+                            "update_index": update_index,
+                            "completed_episodes": completed_episodes,
+                            "valid_steps_total": valid_steps_total,
+                            "curriculum_phase": update_phase,
+                            "curriculum_schedule": schedule,
+                            "device": str(device),
+                            "shared_baseline_by_bundle": not bool(args.disable_shared_baseline),
+                        },
+                    )
                     update_row = {
                         "update_index": update_index,
                         "policy_version_before": policy_version,
@@ -719,6 +755,7 @@ def run_train(args: argparse.Namespace) -> int:
                         "shared_baseline_skipped_group_count": int(
                             batch["shared_baseline_skipped_group_count"].detach().cpu().item()
                         ),
+                        "checkpoint_path": checkpoint_path,
                         **_aggregate_mask_invalid_rates(accepted),
                         **metrics,
                     }
@@ -749,6 +786,7 @@ def run_train(args: argparse.Namespace) -> int:
         "curriculum_schedule": schedule,
         "device": str(device),
         "shared_baseline_by_bundle": not bool(args.disable_shared_baseline),
+        "checkpoint_every_updates": int(args.checkpoint_every_updates),
         "train_wall_time_seconds": time.monotonic() - start_time,
     }
     save_async_block_policy(output_dir / "async_block_ppo_model.pt", model, metadata=metadata)
@@ -894,11 +932,20 @@ def _cpu_probe_row(start_time: float) -> dict[str, Any]:
                 rss_bytes += int(getattr(memory_info, "rss", 0) or 0)
             except (psutil.NoSuchProcess, psutil.AccessDenied):
                 continue
+        vm = psutil.virtual_memory()
+        system_total_bytes = int(getattr(vm, "total", 0) or 0)
+        system_available_bytes = int(getattr(vm, "available", 0) or 0)
+        system_used_bytes = int(getattr(vm, "used", 0) or 0)
+        system_memory_percent = float(getattr(vm, "percent", 0.0) or 0.0)
         error = ""
     except Exception as exc:
         active = 0
         pcpu = 0.0
         rss_bytes = 0
+        system_total_bytes = 0
+        system_available_bytes = 0
+        system_used_bytes = 0
+        system_memory_percent = 0.0
         error = str(exc)
     return {
         "elapsed_seconds": time.monotonic() - start_time,
@@ -906,6 +953,13 @@ def _cpu_probe_row(start_time: float) -> dict[str, Any]:
         "total_worker_pcpu": pcpu,
         "total_worker_rss_bytes": rss_bytes,
         "total_worker_rss_mb": float(rss_bytes) / (1024.0 * 1024.0),
+        "system_memory_total_bytes": system_total_bytes,
+        "system_memory_available_bytes": system_available_bytes,
+        "system_memory_used_bytes": system_used_bytes,
+        "system_memory_total_mb": float(system_total_bytes) / (1024.0 * 1024.0),
+        "system_memory_available_mb": float(system_available_bytes) / (1024.0 * 1024.0),
+        "system_memory_used_mb": float(system_used_bytes) / (1024.0 * 1024.0),
+        "system_memory_percent": system_memory_percent,
         "probe_error": error,
     }
 
@@ -1062,6 +1116,13 @@ def _cpu_probe_fieldnames() -> list[str]:
         "total_worker_pcpu",
         "total_worker_rss_bytes",
         "total_worker_rss_mb",
+        "system_memory_total_bytes",
+        "system_memory_available_bytes",
+        "system_memory_used_bytes",
+        "system_memory_total_mb",
+        "system_memory_available_mb",
+        "system_memory_used_mb",
+        "system_memory_percent",
         "probe_error",
     ]
 
@@ -1081,6 +1142,7 @@ def _update_fieldnames() -> list[str]:
         "stale_episodes",
         "shared_baseline_group_count",
         "shared_baseline_skipped_group_count",
+        "checkpoint_path",
         "mask_invalid_rate_head_0",
         "mask_invalid_rate_head_1",
         "mask_invalid_rate_head_2",
@@ -1163,6 +1225,7 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
             p.add_argument("--epochs", type=int, default=4)
             p.add_argument("--minibatch-size", type=int, default=256)
             p.add_argument("--max-grad-norm", type=float, default=0.5)
+            p.add_argument("--checkpoint-every-updates", type=int, default=10)
             p.add_argument("--poll-seconds", type=float, default=5.0)
             p.add_argument("--cpu-sample-interval-seconds", type=float, default=60.0)
     return parser.parse_args(argv)
