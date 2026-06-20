@@ -6,7 +6,6 @@ import csv
 import json
 import math
 import os
-import subprocess
 import time
 from dataclasses import dataclass
 from pathlib import Path
@@ -16,6 +15,14 @@ import numpy as np
 import torch
 from torch import nn
 
+from .action_space import (
+    BLOCK_ACTION_NVECS,
+    BLOCK_DESTROY_IDS,
+    BLOCK_EXPLORATION_RATIOS,
+    BLOCK_Q_RATIOS,
+    BLOCK_REPAIR_IDS,
+    BLOCK_THRESHOLD_RATIOS,
+)
 from .async_block_policy import BlockActorCritic, make_block_actor_critic, save_async_block_policy
 from .block_env import BlockAlnsEnv
 from .bundle_manifest import load_manifest
@@ -269,10 +276,78 @@ def run_self_check(args: argparse.Namespace) -> int:
     _write_episode_log(output_dir / "async_episode_log.csv", episodes)
     throughput = _throughput_rows(episodes, elapsed=elapsed, num_actors=int(args.num_actors))
     _write_csv(output_dir / "worker_throughput.csv", throughput)
+    cpu_probe = [_cpu_probe_row(start)]
+    _write_csv(output_dir / "cpu_probe.csv", cpu_probe, fieldnames=_cpu_probe_fieldnames())
     verdict = _self_check_verdict(episodes, throughput[-1] if throughput else {}, args=args)
+    verdict["cpu_probe"] = cpu_probe[-1]
     _write_json(output_dir / "async_self_check.json", verdict)
     _write_self_check_md(output_dir / "async_self_check.md", verdict)
     return 0 if verdict["status"] == "PASS_ASYNC_SELF_CHECK" else 2
+
+
+def run_audit(args: argparse.Namespace) -> int:
+    output_dir = _checked_output_dir(Path(args.output_dir))
+    output_dir.mkdir(parents=True, exist_ok=True)
+    _require_system_worker(args.required_worker_python)
+    manifest = load_manifest(args.manifest)
+    bundle = str((manifest["train"] or [args.bundle])[0])
+    if args.bundle:
+        bundle = str(args.bundle)
+
+    env = BlockAlnsEnv(
+        bundle,
+        seed=int(args.seed),
+        eval_budget=int(args.eval_budget),
+        block_size=int(args.block_size),
+    )
+    try:
+        _obs, reset_info = env.reset(seed=int(args.seed))
+        reset_response = dict(env.last_response or {})
+        action = np.zeros(len(BLOCK_ACTION_NVECS), dtype=np.int64)
+        _next_obs, reward, terminated, truncated, step_response = env.step(action)
+    finally:
+        env.close()
+
+    trace = dict((step_response.get("trace", {}) if isinstance(step_response, dict) else {}) or {})
+    metrics = dict((step_response.get("metrics", {}) if isinstance(step_response, dict) else {}) or {})
+    try:
+        import psutil  # type: ignore
+
+        psutil_version = str(psutil.__version__)
+    except Exception as exc:  # pragma: no cover - depends on external env
+        psutil_version = f"unavailable: {exc}"
+
+    payload = {
+        "bundle": bundle,
+        "seed": int(args.seed),
+        "eval_budget": int(args.eval_budget),
+        "block_size": int(args.block_size),
+        "block_action_nvecs": list(BLOCK_ACTION_NVECS),
+        "block_destroy_ids": list(BLOCK_DESTROY_IDS),
+        "block_repair_ids": list(BLOCK_REPAIR_IDS),
+        "block_q_ratios": list(BLOCK_Q_RATIOS),
+        "block_threshold_ratios": list(BLOCK_THRESHOLD_RATIOS),
+        "block_exploration_ratios": list(BLOCK_EXPLORATION_RATIOS),
+        "reset_info_keys": sorted(str(key) for key in reset_info.keys()),
+        "reset_response_keys": sorted(str(key) for key in reset_response.keys()),
+        "step_response_keys": sorted(str(key) for key in step_response.keys()),
+        "metrics_keys": sorted(str(key) for key in metrics.keys()),
+        "trace_keys": sorted(str(key) for key in trace.keys()),
+        "worker_python_executable": str(trace.get("worker_python_executable", "")),
+        "worker_python_version": str(trace.get("worker_python_version", "")),
+        "worker_numpy_version": str(trace.get("worker_numpy_version", "")),
+        "torch_version": str(torch.__version__),
+        "torch_cuda_available": bool(torch.cuda.is_available()),
+        "torch_cuda_device": torch.cuda.get_device_name(0) if torch.cuda.is_available() else "",
+        "psutil_version": psutil_version,
+        "sample_reward": float(reward),
+        "sample_terminated": bool(terminated),
+        "sample_truncated": bool(truncated),
+        "sample_cpu_probe": _cpu_probe_row(time.monotonic()),
+    }
+    _write_json(output_dir / "audit.json", payload)
+    _write_audit_md(output_dir / "audit.md", payload)
+    return 0
 
 
 def run_train(args: argparse.Namespace) -> int:
@@ -297,7 +372,7 @@ def run_train(args: argparse.Namespace) -> int:
     _write_csv(update_log_path, [], fieldnames=_update_fieldnames())
     _write_csv(entropy_log_path, [], fieldnames=["update_index", "policy_version", "entropy"])
     _write_csv(throughput_path, [], fieldnames=_throughput_fieldnames())
-    _write_csv(cpu_probe_path, [], fieldnames=["elapsed_seconds", "active_worker_count", "total_worker_pcpu"])
+    _write_csv(cpu_probe_path, [], fieldnames=_cpu_probe_fieldnames())
 
     policy_version = 0
     update_index = 0
@@ -545,29 +620,35 @@ def _throughput_rows(episodes: list[dict[str, Any]], *, elapsed: float, num_acto
 
 def _cpu_probe_row(start_time: float) -> dict[str, Any]:
     try:
-        proc = subprocess.run(
-            ["ps", "-axo", "pcpu,command"],
-            check=False,
-            text=True,
-            capture_output=True,
-        )
+        import psutil  # type: ignore
+
         active = 0
         pcpu = 0.0
-        for line in proc.stdout.splitlines():
-            if "dr_alns_ppo.worker" not in line:
+        rss_bytes = 0
+        for proc in psutil.process_iter(["cmdline", "cpu_percent", "memory_info"]):
+            try:
+                cmdline = " ".join(str(part) for part in (proc.info.get("cmdline") or []))
+                if "dr_alns_ppo.worker" not in cmdline:
+                    continue
+                active += 1
+                pcpu += float(proc.info.get("cpu_percent") or 0.0)
+                memory_info = proc.info.get("memory_info")
+                rss_bytes += int(getattr(memory_info, "rss", 0) or 0)
+            except (psutil.NoSuchProcess, psutil.AccessDenied):
                 continue
-            parts = line.strip().split(None, 1)
-            if not parts:
-                continue
-            active += 1
-            pcpu += float(parts[0])
-    except Exception:
+        error = ""
+    except Exception as exc:
         active = 0
         pcpu = 0.0
+        rss_bytes = 0
+        error = str(exc)
     return {
         "elapsed_seconds": time.monotonic() - start_time,
         "active_worker_count": active,
         "total_worker_pcpu": pcpu,
+        "total_worker_rss_bytes": rss_bytes,
+        "total_worker_rss_mb": float(rss_bytes) / (1024.0 * 1024.0),
+        "probe_error": error,
     }
 
 
@@ -621,6 +702,35 @@ def _write_self_check_md(path: Path, verdict: dict[str, Any]) -> None:
         f"System worker: {verdict['system_worker']}.",
         f"NumPy anchor: {verdict['numpy_ok']}.",
         f"Busy ratio: {verdict['busy_ratio']:.3f}.",
+        f"Worker RSS MB: {float((verdict.get('cpu_probe') or {}).get('total_worker_rss_mb', 0.0)):.1f}.",
+    ]
+    path.write_text("\n".join(lines) + "\n", encoding="utf-8")
+
+
+def _write_audit_md(path: Path, payload: dict[str, Any]) -> None:
+    lines = [
+        "# Async Block PPO Audit",
+        "",
+        f"Bundle: `{payload['bundle']}`.",
+        f"Worker: `{payload['worker_python_executable']}`.",
+        f"Worker NumPy: `{payload['worker_numpy_version']}`.",
+        f"Torch: `{payload['torch_version']}`; CUDA available: `{payload['torch_cuda_available']}`; device: `{payload['torch_cuda_device']}`.",
+        f"psutil: `{payload['psutil_version']}`.",
+        "",
+        "## Block Action Space",
+        "",
+        f"nvecs: `{payload['block_action_nvecs']}`",
+        f"destroy: `{payload['block_destroy_ids']}`",
+        f"repair: `{payload['block_repair_ids']}`",
+        f"q ratios: `{payload['block_q_ratios']}`",
+        f"threshold ratios: `{payload['block_threshold_ratios']}`",
+        f"exploration ratios: `{payload['block_exploration_ratios']}`",
+        "",
+        "## Response Fields",
+        "",
+        f"top-level: `{payload['step_response_keys']}`",
+        f"metrics: `{payload['metrics_keys']}`",
+        f"trace: `{payload['trace_keys']}`",
     ]
     path.write_text("\n".join(lines) + "\n", encoding="utf-8")
 
@@ -676,6 +786,17 @@ def _throughput_fieldnames() -> list[str]:
     ]
 
 
+def _cpu_probe_fieldnames() -> list[str]:
+    return [
+        "elapsed_seconds",
+        "active_worker_count",
+        "total_worker_pcpu",
+        "total_worker_rss_bytes",
+        "total_worker_rss_mb",
+        "probe_error",
+    ]
+
+
 def _update_fieldnames() -> list[str]:
     return [
         "update_index",
@@ -708,6 +829,14 @@ def _require_system_worker(required: str) -> None:
 def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Asynchronous block-level PPO trainer for DR-ALNS.")
     sub = parser.add_subparsers(dest="command", required=True)
+    audit = sub.add_parser("audit")
+    audit.add_argument("--manifest", default="solver/reports/dr_alns_ppo_v2/training_bundle_manifest.json")
+    audit.add_argument("--output-dir", default=f"{REPORT_ROOT_FRAGMENT}/audit")
+    audit.add_argument("--bundle", default="")
+    audit.add_argument("--seed", type=int, default=1)
+    audit.add_argument("--eval-budget", type=int, default=16)
+    audit.add_argument("--block-size", type=int, default=4)
+    audit.add_argument("--required-worker-python", default=SYSTEM_WORKER_PYTHON)
     for command in ("self-check", "train"):
         p = sub.add_parser(command)
         p.add_argument("--manifest", default="solver/reports/dr_alns_ppo_v2/training_bundle_manifest.json")
@@ -742,6 +871,8 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
 
 def main(argv: list[str] | None = None) -> int:
     args = parse_args(argv)
+    if args.command == "audit":
+        return run_audit(args)
     if args.command == "self-check":
         return run_self_check(args)
     if args.command == "train":
