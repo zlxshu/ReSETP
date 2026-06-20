@@ -9,6 +9,7 @@ import pytest
 
 from dr_alns_ppo.async_block_policy import AsyncBlockPolicy, load_async_block_policy
 from dr_alns_ppo.offline_bandit import (
+    DEFAULT_SYSTEM_WORKER,
     MIN_BLOCK_ROWS,
     MIN_UNIQUE_FULL_ACTIONS,
     _checked_output_dir,
@@ -56,7 +57,7 @@ def _fake_trace_row(index: int) -> dict[str, object]:
         "best_obj": 100.0 - index,
         "current_obj": 100.0 - index,
         "violation_count": 0,
-        "worker_python_executable": "/opt/anaconda3/bin/python3.13",
+        "worker_python_executable": DEFAULT_SYSTEM_WORKER,
         "worker_python_version": "3.13.0",
         "worker_numpy_version": "2.3.5",
     }
@@ -95,7 +96,7 @@ def test_action_coverage_gate_detects_insufficient_rows() -> None:
 def test_dataset_integrity_rejects_non_system_worker() -> None:
     rows = [_fake_trace_row(0)]
     rows[0]["worker_python_executable"] = "/tmp/venv/bin/python"
-    args = argparse.Namespace(required_worker_python="/opt/anaconda3/bin/python3.13", block_size=4, eval_budget=16)
+    args = argparse.Namespace(required_worker_python=DEFAULT_SYSTEM_WORKER, block_size=4, eval_budget=16)
 
     stats = summarize_dataset(rows, [], coverage=summarize_action_coverage(rows), elapsed_seconds=0.0, args=args)
 
@@ -149,7 +150,7 @@ def test_verdict_cannot_be_promising_when_ppo_loses_to_random() -> None:
                     "actual_evals": 16000,
                     "best_obj": best,
                     "violation_count": 0,
-                    "worker_python_executable": "/opt/anaconda3/bin/python3.13",
+                    "worker_python_executable": DEFAULT_SYSTEM_WORKER,
                 }
             )
 
@@ -168,7 +169,7 @@ def test_comparison_integrity_rejects_underbudget_rows() -> None:
             "actual_evals": 128,
             "best_obj": 1.0,
             "violation_count": 0,
-            "worker_python_executable": "/opt/anaconda3/bin/python3.13",
+            "worker_python_executable": DEFAULT_SYSTEM_WORKER,
         }
     ]
 

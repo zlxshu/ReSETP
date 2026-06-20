@@ -59,7 +59,7 @@ def test_action_collapse_classifier_detects_single_dominant_action() -> None:
 
 def test_investigation_output_path_guard() -> None:
     allowed = diag.ensure_investigation_path(diag.REPORT_DIR / "probe.csv")
-    assert str(allowed).endswith("solver/reports/dr_alns_ppo_v2/ppo_failure_investigation/probe.csv")
+    assert allowed.as_posix().endswith("solver/reports/dr_alns_ppo_v2/ppo_failure_investigation/probe.csv")
 
     with pytest.raises(ValueError, match="diagnostic output path"):
         diag.ensure_investigation_path("solver/reports/dr_alns_ppo_v2/not_investigation/probe.csv")

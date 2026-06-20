@@ -20,10 +20,11 @@ from setp_solver.search.evaluation import EvaluationContext, record_repair_delta
 from setp_solver.solution import ChargingAction, Route, Solution
 
 
-_NODE_LOOKUP_CACHE: dict[int, dict[str, Any]] = {}
-_CUSTOMER_IDS_CACHE: dict[int, list[str]] = {}
-_CUSTOMER_ID_SET_CACHE: dict[int, set[str]] = {}
-_DEPOTS_CACHE: dict[int, list[Any]] = {}
+_InstanceSignature = tuple[tuple[int, str, str], ...]
+_NODE_LOOKUP_CACHE: dict[int, tuple[_InstanceSignature, dict[str, Any]]] = {}
+_CUSTOMER_IDS_CACHE: dict[int, tuple[_InstanceSignature, list[str]]] = {}
+_CUSTOMER_ID_SET_CACHE: dict[int, tuple[_InstanceSignature, set[str]]] = {}
+_DEPOTS_CACHE: dict[int, tuple[_InstanceSignature, list[Any]]] = {}
 
 
 @dataclass
@@ -212,40 +213,52 @@ def _rng_sample(rng: Any, values: list[str], k: int) -> list[str]:
     return [values[int(idx)] for idx in np.atleast_1d(indices)]
 
 
+def _instance_signature(instance: Any) -> _InstanceSignature:
+    return tuple((id(node), str(node.node_id), str(node.node_type).lower()) for node in instance.nodes)
+
+
 def _node_lookup(instance: Any) -> dict[str, Any]:
     cache_key = id(instance)
-    lookup = _NODE_LOOKUP_CACHE.get(cache_key)
-    if lookup is None:
+    signature = _instance_signature(instance)
+    cached = _NODE_LOOKUP_CACHE.get(cache_key)
+    if cached is None or cached[0] != signature:
         lookup = {node.node_id: node for node in instance.nodes}
-        _NODE_LOOKUP_CACHE[cache_key] = lookup
-    return lookup
+        _NODE_LOOKUP_CACHE[cache_key] = (signature, lookup)
+        return lookup
+    return cached[1]
 
 
 def _customer_ids(instance: Any) -> list[str]:
     cache_key = id(instance)
-    customer_ids = _CUSTOMER_IDS_CACHE.get(cache_key)
-    if customer_ids is None:
+    signature = _instance_signature(instance)
+    cached = _CUSTOMER_IDS_CACHE.get(cache_key)
+    if cached is None or cached[0] != signature:
         customer_ids = [node.node_id for node in instance.nodes if node.node_type.lower() == "c"]
-        _CUSTOMER_IDS_CACHE[cache_key] = customer_ids
-    return customer_ids
+        _CUSTOMER_IDS_CACHE[cache_key] = (signature, customer_ids)
+        return customer_ids
+    return cached[1]
 
 
 def _customer_id_set(instance: Any) -> set[str]:
     cache_key = id(instance)
-    customer_ids = _CUSTOMER_ID_SET_CACHE.get(cache_key)
-    if customer_ids is None:
+    signature = _instance_signature(instance)
+    cached = _CUSTOMER_ID_SET_CACHE.get(cache_key)
+    if cached is None or cached[0] != signature:
         customer_ids = set(_customer_ids(instance))
-        _CUSTOMER_ID_SET_CACHE[cache_key] = customer_ids
-    return customer_ids
+        _CUSTOMER_ID_SET_CACHE[cache_key] = (signature, customer_ids)
+        return customer_ids
+    return cached[1]
 
 
 def _depots(instance: Any) -> list[Any]:
     cache_key = id(instance)
-    depots = _DEPOTS_CACHE.get(cache_key)
-    if depots is None:
+    signature = _instance_signature(instance)
+    cached = _DEPOTS_CACHE.get(cache_key)
+    if cached is None or cached[0] != signature:
         depots = [node for node in instance.nodes if node.node_type.lower() == "d"]
-        _DEPOTS_CACHE[cache_key] = depots
-    return depots
+        _DEPOTS_CACHE[cache_key] = (signature, depots)
+        return depots
+    return cached[1]
 
 
 def _route_customer_ids(route: Route, instance: Any) -> list[str]:

@@ -661,7 +661,7 @@ def _select_dataset(dataset: Path, partial_dataset: Path) -> Path:
 
 
 def _checked_output_dir(path: Path) -> Path:
-    text = str(path)
+    text = path.as_posix()
     if REPORT_ROOT_FRAGMENT not in text:
         raise ValueError(f"offline probe reports must stay under {REPORT_ROOT_FRAGMENT}: {path}")
     return path

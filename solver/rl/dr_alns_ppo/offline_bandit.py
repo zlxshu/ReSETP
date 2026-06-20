@@ -904,7 +904,7 @@ def _collection_manifest(
 
 
 def _checked_output_dir(path: Path) -> Path:
-    text = str(path)
+    text = path.as_posix()
     if REPORT_ROOT_FRAGMENT not in text:
         raise ValueError(f"offline bandit reports must stay under {REPORT_ROOT_FRAGMENT}: {path}")
     return path

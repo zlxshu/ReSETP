@@ -11,7 +11,7 @@ from dr_alns_ppo import second_layer_debug as dbg
 
 def test_second_layer_output_path_guard() -> None:
     allowed = dbg.ensure_report_path(dbg.REPORT_DIR / "probe.csv")
-    assert str(allowed).endswith("solver/reports/dr_alns_ppo_v2/second_layer_debug/probe.csv")
+    assert allowed.as_posix().endswith("solver/reports/dr_alns_ppo_v2/second_layer_debug/probe.csv")
 
     with pytest.raises(ValueError, match="second-layer debug output"):
         dbg.ensure_report_path("solver/reports/dr_alns_ppo_v2/outside_second_layer/probe.csv")
