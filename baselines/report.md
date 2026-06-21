@@ -1,125 +1,58 @@
-# Metaheuristic Baselines HALT Report
+# Metaheuristic Baselines Formal Status
 
-One-line conclusion: no ALNS-vs-8-baseline win/lose/tie claim is valid yet for `100-01-24h`, `L-main`, `Scale-150`, or `Scale-200`; the 8 baselines are implemented and pass zero-violation small-budget tests, but the current implementation is too slow to guarantee `actual_evals=16000` within 900s, so the formal comparison is halted.
+One-line conclusion: HALT. No ALNS / fair-SA vs 8-baseline win, loss, or tie claim is valid from this run, because the formal gate did not produce full-budget comparable baseline rows and the runner-side winner rows do not match the 100-01 anchor values.
 
-## What Was Implemented
+## Current Evidence
 
-`solver/src/setp_solver/search/metaheuristic_baselines.py` now exposes `run_metaheuristic_baseline(algorithm, bundle_dir, seed, eval_budget, max_runtime_seconds, initial_solution)` for GA, PSO, VNS, ACO, GA-VNS, LNS, GWO, and IWD. All complete candidate scoring goes through `EvaluationContext(..., EvalBudget(limit=target,target=target))` and `score_candidate()`. `model_cost()` is used only for unpenalized reporting, not budget accounting.
+- Environment: `/opt/anaconda3/bin/python3.13`, numpy `2.3.5`.
+- Implementation commits: `16941ae7` baseline decode/cache speedup, `7de2c847` profile/convergence runner, `520890f4` runtime fallback completion support.
+- Protected semantics: no diff in `solver/src/setp_solver/cost.py`, `solver/src/setp_solver/check.py`, `solver/src/setp_solver/search/evaluation.py`, `solver/src/setp_solver/search/winner_operators.py`, or `solver/src/setp_solver/search/candidates.py` at the time of this report.
+- Unit test command passed: `PYTHONPATH=solver/src /opt/anaconda3/bin/python3.13 -m unittest solver.tests.test_metaheuristic_baselines`.
 
-`solver/src/setp_solver/search/metaheuristic_baseline_runner.py` now provides the comparison runner with hard environment checks for `/opt/anaconda3/bin/python3.13` and numpy `2.3.5`. The runner can serialize raw runs, comparison rows, Wilcoxon rows, verdicts, reports, manifests, and solutions. A small runner smoke test passed after fixing the fair-SA status normalization.
+## Phase 0 Profile
 
-`solver/tests/test_metaheuristic_baselines.py` verifies the gold environment and confirms all 8 baselines return zero-violation solutions at a small evaluation budget.
+Profile output is in `baselines/profile_report.md`, `baselines/profile_summary.csv`, and `baselines/profile_timings.csv`. On the 100-eval diagnostic gate, the optimized baselines looked fast enough on `100-01-24h`: ACO `149.542` eval/s, GWO `26.154`, IWD `102.692`, VNS `41.453`, and winner-kernel ALNS `21.045`.
 
-## Provenance By Commit
+That profile was only diagnostic. The formal 16000-eval run below showed that the short profile underestimates the cost of long-run budget-out repair/sort work.
 
-- `6d5446d` records the audit in `baselines/audit.md`.
-- `a6a233d` adds the shared baseline harness and runner.
-- `3305a10` adds GA.
-- `ca36e8a` adds PSO.
-- `a199a8b` adds VNS.
-- `4835b5a` adds ACO.
-- `8fb5c49` adds GA-VNS.
-- `e7646d0` adds LNS.
-- `bbf5325` adds GWO.
-- `f1b8849` adds IWD.
-- `b4749bc` adds the unit tests.
-- `c02045f` fixes runner status normalization and removes duplicate scoring overhead before the speed probe.
+## Formal 900s Run
 
-## Verification Commands
+Formal output directory: `baselines/formal_20260621_10001_lmain_10seed`.
 
-Environment and tests:
+The run wrote complete raw artifacts, but its manifest status is `HALT_BASELINE_INCOMPARABLE`. It produced 200 raw rows: 130 `OK` and 70 `HALT_RUNTIME_UNDER_EVAL`. All recorded rows had zero violations, but 70 rows failed the strict `evaluations == 16000` gate.
 
-```text
-PYTHONPATH=solver/src /opt/anaconda3/bin/python3.13 -m unittest solver.tests.test_metaheuristic_baselines
-```
+Under-budget rows by instance and algorithm:
 
-Stdout:
+| instance | algorithm | runs | min evals | max evals | mean evals |
+|---|---:|---:|---:|---:|---:|
+| 100-01-24h | GA | 10 | 9229 | 9229 | 9229.0 |
+| 100-01-24h | GWO | 10 | 11086 | 11859 | 11624.9 |
+| L-main | GA | 10 | 9229 | 9229 | 9229.0 |
+| L-main | GA-VNS | 10 | 7726 | 8007 | 7848.5 |
+| L-main | GWO | 10 | 2162 | 2296 | 2207.5 |
+| L-main | LNS | 10 | 9184 | 9752 | 9499.9 |
+| L-main | VNS | 10 | 7138 | 7577 | 7398.0 |
 
-```text
-.s.
-----------------------------------------------------------------------
-Ran 3 tests in 8.790s
+Because those rows are under-budget, `comparison_table.csv`, `wilcoxon.csv`, `verdicts.csv`, and `convergence_curves.csv` inside that directory are HALT artifacts only, not publishable formal comparisons.
 
-OK (skipped=1)
-```
+## 3600s Fallback Attempt
 
-Runner smoke command:
+Fallback output directory: `baselines/formal_20260621_10001_lmain_10seed_fallback3600`.
 
-```text
-PYTHONPATH=solver/src SETP_META_PARALLEL_WORKERS=1 /opt/anaconda3/bin/python3.13 -m setp_solver.search.metaheuristic_baseline_runner all --repo-root . --output-dir baselines/smoke_runner --instances 100-01-24h --seeds 1 --eval-budget 4 --max-runtime-seconds 120 --algorithms GA,PSO
-```
+After adding `complete-fallback`, I started a 3600s fallback completion run using the 900s directory as input. The first four fallback worker processes were still CPU-bound at `01:04:46`, already beyond the 3600s per-run cap, with no formal CSVs written. I terminated the process tree rather than letting 70 fallback tasks run unbounded. Evidence is recorded in `baselines/formal_20260621_10001_lmain_10seed_fallback3600/HALT_FALLBACK_OVERRUN.md`.
 
-Stdout:
+The overrun stack sample showed Python `sorted/list_sort` hotspots, consistent with the remaining budget-out insertion/repair enumeration bottleneck. This means the current baseline implementation is still not at the required per-eval cost level for formal comparison.
 
-```text
-GATE METAHEURISTIC_BASELINES OK {"gate": "OK", "manifest": "baselines/smoke_runner/manifest.json", "elapsed_seconds": 7.0073081250011455}
-```
+## Winner Anchor
 
-Speed probe command:
+The 900s formal runner's `100-01-24h` winner rows do not match the user-provided anchor: observed winner mean `4844.796180674237`, seed2 `4731.514705663005`, zero violations. The required anchor is mean `4878.33`, seed2 `4779.05`, zero violations.
 
-```text
-PYTHONPATH=solver/src /opt/anaconda3/bin/python3.13 - <<'PY'
-import time
-from setp_solver.search.metaheuristic_baselines import BASELINE_ALGORITHMS, run_metaheuristic_baseline
-p='models/data_bundle/generated_instances/E-UK100_01__d2_s3_seed1_24h_20251113'
-for alg in BASELINE_ALGORITHMS:
-    t=time.perf_counter()
-    r=run_metaheuristic_baseline(alg, p, seed=1, eval_budget=100, max_runtime_seconds=300)
-    dt=time.perf_counter()-t
-    print(alg, r.status, r.evals, round(dt,3), round(r.evals/dt,3), r.best_cost)
-PY
-```
+I did not modify winner code or shared `candidates.py` / evaluation semantics, so no winner rollback was triggered by code edits. Still, this runner output is not anchor-comparable and must not be used for a formal ALNS-vs-baseline claim.
 
-Stdout:
+## Do Not Use
 
-```text
-GA OK 100 11.129 8.986 6331.298733608956
-PSO OK 100 9.112 10.974 6331.298733608956
-VNS OK 100 9.895 10.106 6331.298733608956
-ACO OK 100 11.076 9.029 6331.298733608956
-GA-VNS OK 100 9.618 10.397 6331.298733608956
-LNS OK 100 9.06 11.038 5545.80699995476
-GWO OK 100 14.911 6.707 6331.298733608956
-IWD OK 100 25.254 3.96 6331.298733608956
-```
+Do not use root-level `baselines/comparison_table.csv`, `baselines/raw_runs.csv`, `baselines/wilcoxon.csv`, or `baselines/verdicts.csv` as current formal outputs. They predate this HALT run. The current run's authoritative status is this report plus the timestamped HALT directories above.
 
-Anchor speed command:
+## Required Next Step
 
-```text
-PYTHONPATH=solver/src /opt/anaconda3/bin/python3.13 - <<'PY'
-import time
-from setp_solver.search.bundle import load_search_bundle
-from setp_solver.search.candidates import make_shared_initial_solution, run_candidate
-from setp_solver.search.winner_operators import WinnerKernelConfig, run_winner_kernel
-p='models/data_bundle/generated_instances/E-UK100_01__d2_s3_seed1_24h_20251113'
-b=load_search_bundle(p)
-w=make_shared_initial_solution(b)
-for name in ['fair-SA','winner']:
-    t=time.perf_counter()
-    if name=='fair-SA':
-        r=run_candidate('scikit-opt-SA', p, seed=1, eval_budget=100, max_runtime_seconds=300, initial_solution=w)
-        evals=r.evals; cost=r.best_cost; status=r.status
-    else:
-        r=run_winner_kernel(p, config=WinnerKernelConfig(seed=1, eval_budget=100, max_runtime_seconds=300), initial_solution=w)
-        evals=r['evaluations']; cost=r['best_cost']; status='OK' if r['feasible'] else 'BAD'
-    dt=time.perf_counter()-t
-    print(name, status, evals, round(dt,3), round(evals/dt,3), cost)
-PY
-```
-
-Stdout:
-
-```text
-fair-SA feasible 100 0.561 178.119 6331.298733608956
-winner OK 100 6.386 15.659 5406.294961824951
-```
-
-## HALT Reason
-
-The formal requirement is `16000 / 900 = 17.78` complete evaluations per second per run. The current 8 baseline implementations are below that threshold on the 100-eval gate. The slowest is IWD at about 3.96 eval/s, and the best baseline speed observed is about 11.04 eval/s. Running the requested four instances, 10 seeds, and 8 baselines now would produce under-budget runs or require far more than the allowed runtime, so those outputs would be methodologically invalid.
-
-Therefore `comparison_table.csv`, `wilcoxon.csv`, and `verdicts.csv` are explicit HALT artifacts, not dominance evidence. No Wilcoxon p-values, paired wins, or ALNS superiority claims are reported.
-
-## Required Next Fix
-
-The implementation needs a performance pass before the formal run. The likely target is the giant-tour decode path: many algorithms repeatedly call `random_key_to_solution()`, which is much slower than the existing fair-SA adapter and still slower than winner-kernel ALNS. The next revision should move more candidate generation onto route-local destroy/repair and avoid repeated full reconstruction where the paper design permits an equivalent route-set mutation.
+Before any formal table can be published, the remaining budget-out repair/sort work must be removed or bounded inside the baseline-only layer, and the runner must enforce a hard per-task timeout so a single repair pass cannot overrun the 3600s cap. After that, rerun the winner anchor and the 16000-eval formal gate from a clean timestamped directory.

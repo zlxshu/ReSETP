@@ -1,0 +1,62 @@
+{
+  "schema_version": "setp-metaheuristic-baselines.v1",
+  "repo_root": ".",
+  "commit_hash": "7de2c847",
+  "system_python": "/opt/anaconda3/bin/python3.13",
+  "numpy": "2.3.5",
+  "instances": {
+    "100-01-24h": "models/data_bundle/generated_instances/E-UK100_01__d2_s3_seed1_24h_20251113",
+    "L-main": "models/data_bundle/generated_instances/E-UK24h-三班-01"
+  },
+  "seeds": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9,
+    10
+  ],
+  "eval_budget": 16000,
+  "max_runtime_seconds": 900.0,
+  "fallback_max_runtime_seconds": 3600.0,
+  "auto_runtime_fallback": true,
+  "runtime_caps": {
+    "fair-SA": 900.0,
+    "winner-kernel ALNS": 900.0,
+    "GA": 900.0,
+    "PSO": 900.0,
+    "VNS": 900.0,
+    "ACO": 900.0,
+    "GA-VNS": 900.0,
+    "LNS": 900.0,
+    "GWO": 900.0,
+    "IWD": 900.0
+  },
+  "algorithms": [
+    "fair-SA",
+    "winner-kernel ALNS",
+    "GA",
+    "PSO",
+    "VNS",
+    "ACO",
+    "GA-VNS",
+    "LNS",
+    "GWO",
+    "IWD"
+  ],
+  "elapsed_seconds": 26261.316335958,
+  "status": "HALT_BASELINE_INCOMPARABLE",
+  "outputs": [
+    "raw_runs.csv",
+    "comparison_table.csv",
+    "wilcoxon.csv",
+    "verdicts.csv",
+    "convergence_curves.csv",
+    "report.md",
+    "manifest.json"
+  ]
+}
