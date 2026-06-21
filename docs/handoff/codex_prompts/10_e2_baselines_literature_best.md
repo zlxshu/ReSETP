@@ -28,7 +28,7 @@
 按上表逐个重做到文献忠实形态，复用 `candidates.py` 可行性机制；每个独立 commit + 单测。**接口不变**：`run_metaheuristic_baseline(algorithm, bundle, seed, eval_budget, max_runtime, initial_solution)`，目标过 `score_candidate/EvalBudget`。
 
 ## Phase 2 — “真在搜索”硬门禁（关键，防再出 std=0 稻草人）
-对每个基线，在 2-3 个代表算例 × 5 seed 上快验：① **跨 seed std>0**（不是恒定值）；② **best 明显改善暖启动**（不是原地返回）；③ 零违约。**任何基线仍 std=0 / 不改善暖启动 → 标 HALT_BASELINE_DEGENERATE、报告、不计入**。输出 `baselines/e2_baselines/search_sanity.md`。
+对每个基线，在 2-3 个代表算例 × 5 seed 上快验：① **跨 seed std>0**（不是恒定值）；② **best 明显改善暖启动**（不是原地返回）；③ 零违约；④ **用其文献/网络推荐的标准参数配置**（种群规模/迭代/降温/信息素等取源论文或公认调参值，写进报告），且 **收敛曲线显示明显收敛**（best-so-far 随时间平滑下降到平台，非过早停滞或锯齿乱跳）——这是 user 明确要求"其他算法也优化到正常发挥水平、图中明显收敛"。**任何基线仍 std=0 / 不改善暖启动 / 不收敛 → 标 HALT_BASELINE_DEGENERATE、报告、不计入**。输出 `baselines/e2_baselines/search_sanity.md`（含每基线收敛曲线 + 参数出处）。
 
 ## 验收
 - 8 基线全部文献忠实、每个标出处、每个过“真在搜索”门禁（std>0 + 改善暖启动 + 零违约）；TS 仅当仓库有现成才加，否则注明跳过。
