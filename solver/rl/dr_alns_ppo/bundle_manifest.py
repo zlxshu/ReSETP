@@ -32,6 +32,7 @@ EXCLUDED_FROM_TRAINING_REASON = {
 
 REQUIRED_BUNDLE_FILES = ("instance.json", "distance_matrix.npy", "carbon_profile.csv")
 FORBIDDEN_TRAINING_MARKERS = ("verify", "demo", "E-UK25", "E-UK100_01")
+CURRICULUM_FORBIDDEN_MARKERS = ("verify", "demo", "E-UK100_01")
 
 
 def build_manifest() -> dict[str, Any]:
@@ -66,6 +67,57 @@ def validate_manifest(manifest: dict[str, Any], *, root: str | Path = ".") -> No
     if missing:
         details = "; ".join(f"{bundle}: {', '.join(files)}" for bundle, files in missing.items())
         raise FileNotFoundError(f"Missing required bundle files: {details}")
+
+
+def validate_curriculum_manifest(manifest: dict[str, Any], *, root: str | Path = ".") -> None:
+    """Validate the small-to-large DR curriculum manifest without relaxing the strict manifest gate."""
+
+    if manifest.get("schema_version") != SCHEMA_VERSION:
+        raise ValueError(f"Unsupported schema_version: {manifest.get('schema_version')!r}")
+
+    train = _checked_bundle_list(manifest, "train")
+    held_out = _checked_bundle_list(manifest, "held_out")
+    formal_eval = _checked_bundle_list(manifest, "formal_eval")
+    all_bundles = train + held_out + formal_eval
+    duplicates = sorted({path for path in all_bundles if all_bundles.count(path) > 1})
+    if duplicates:
+        joined = ", ".join(duplicates)
+        raise ValueError(f"Bundle appears more than once: {joined}")
+
+    forbidden = sorted(bundle for bundle in train if _curriculum_forbidden_training_reason(bundle))
+    if forbidden:
+        details = "; ".join(f"{bundle}: {_curriculum_forbidden_training_reason(bundle)}" for bundle in forbidden)
+        raise ValueError(f"Forbidden curriculum training bundle(s): {details}")
+
+    if not any("E-UK100_01" in bundle for bundle in formal_eval):
+        raise ValueError("Curriculum formal_eval must include E-UK100_01")
+
+    missing = missing_bundle_files(all_bundles, root=root)
+    if missing:
+        details = "; ".join(f"{bundle}: {', '.join(files)}" for bundle, files in missing.items())
+        raise FileNotFoundError(f"Missing required bundle files: {details}")
+
+    root_path = Path(root)
+    invalid: list[str] = []
+    for bundle in train:
+        bundle_path = root_path / bundle
+        scenario_manifest_path = bundle_path / "scenario_manifest.json"
+        if not scenario_manifest_path.is_file():
+            invalid.append(f"{bundle}: missing scenario_manifest.json")
+            continue
+        scenario_manifest = json.loads(scenario_manifest_path.read_text(encoding="utf-8"))
+        validation = scenario_manifest.get("validation")
+        if not isinstance(validation, dict) or validation.get("passed") is not True:
+            invalid.append(f"{bundle}: scenario validation did not pass")
+        customer_count = validation.get("customer_count") if isinstance(validation, dict) else None
+        if not isinstance(customer_count, int) or customer_count < 15:
+            invalid.append(f"{bundle}: customer_count must be >= 15")
+        config = scenario_manifest.get("config")
+        add_event_source_paths = config.get("add_event_source_paths", []) if isinstance(config, dict) else []
+        if any("E-UK100_01" in str(path) for path in add_event_source_paths):
+            invalid.append(f"{bundle}: add_event_source_paths leaks E-UK100_01")
+    if invalid:
+        raise ValueError("; ".join(invalid))
 
 
 def missing_bundle_files(bundle_dirs: list[str] | tuple[str, ...], *, root: str | Path = ".") -> dict[str, list[str]]:
@@ -107,6 +159,13 @@ def _checked_bundle_list(manifest: dict[str, Any], key: str) -> list[str]:
 
 def _forbidden_training_reason(bundle_dir: str) -> str:
     for marker in FORBIDDEN_TRAINING_MARKERS:
+        if marker in bundle_dir:
+            return f"contains {marker!r}"
+    return ""
+
+
+def _curriculum_forbidden_training_reason(bundle_dir: str) -> str:
+    for marker in CURRICULUM_FORBIDDEN_MARKERS:
         if marker in bundle_dir:
             return f"contains {marker!r}"
     return ""
