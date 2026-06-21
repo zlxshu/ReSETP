@@ -11,10 +11,16 @@ from setp_solver.search.alns_crush_v2 import (
     fair_sa_gap,
     sa_config_diff_from_manifests,
 )
+from setp_solver.check import check_solution
+from setp_solver.prices import DEFAULT_PRICES
+from setp_solver.search.bundle import load_search_bundle
 from setp_solver.search.winner_operators import (
     WinnerKernelConfig,
+    e2_alns_scan_bridge_flags,
     e2_alns_variant_flags,
     operator_base_id,
+    run_e2_alns_scan_bridge,
+    scan_all_cv_solution,
     winner_operator_module,
     winner_variant_flags,
     write_winner_manifest,
@@ -47,7 +53,10 @@ class AlnsCrushV2Tests(unittest.TestCase):
                 "WinnerOperatorSet",
                 "apply_winner_action",
                 "decode_winner_action",
+                "e2_alns_scan_bridge_flags",
                 "e2_alns_variant_flags",
+                "run_e2_alns_scan_bridge",
+                "scan_all_cv_solution",
                 "winner_variant_flags",
                 "run_e2_alns_final",
                 "run_winner_kernel",
@@ -56,6 +65,7 @@ class AlnsCrushV2Tests(unittest.TestCase):
             ],
         )
         self.assertEqual(manifest["e2_alns_flags"], e2_alns_variant_flags())
+        self.assertEqual(manifest["e2_alns_scan_bridge_flags"], e2_alns_scan_bridge_flags())
         self.assertIn("Does not change cost.py/check.py/evaluation.py model semantics.", manifest["semantic_guards"])
 
     def test_winner_variant_flags_disable_harmful_prompt1_addons(self) -> None:
@@ -67,6 +77,8 @@ class AlnsCrushV2Tests(unittest.TestCase):
         self.assertEqual(default_flags["SETP_ALNS_CRUSH_LOCAL_SEARCH"], "0")
         self.assertEqual(default_flags["SETP_ALNS_CRUSH_ADAPTIVE_Q"], "0")
         self.assertEqual(default_flags["SETP_ALNS_CRUSH_ROUTE_ELIMINATION"], "0")
+        self.assertEqual(default_flags["SETP_ALNS_CRUSH_SCAN_RESTART"], "0")
+        self.assertEqual(default_flags["SETP_ALNS_CRUSH_SCAN_REBUILD"], "0")
         self.assertEqual(route_elim_flags["SETP_ALNS_CRUSH_ROUTE_ELIMINATION"], "1")
         self.assertEqual(WinnerKernelConfig().include_route_elimination, False)
 
@@ -78,7 +90,43 @@ class AlnsCrushV2Tests(unittest.TestCase):
         self.assertEqual(flags["SETP_ALNS_CRUSH_LOCAL_SEARCH"], "0")
         self.assertEqual(flags["SETP_ALNS_CRUSH_ADAPTIVE_Q"], "1")
         self.assertEqual(flags["SETP_ALNS_CRUSH_ROUTE_ELIMINATION"], "0")
+        self.assertEqual(flags["SETP_ALNS_CRUSH_SCAN_RESTART"], "0")
+        self.assertEqual(flags["SETP_ALNS_CRUSH_SCAN_REBUILD"], "0")
         self.assertNotEqual(flags, winner_variant_flags())
+
+    def test_e2_scan_bridge_flags_are_explicit_experimental_flags(self) -> None:
+        flags = e2_alns_scan_bridge_flags()
+
+        self.assertEqual(flags["SETP_ALNS_CRUSH_TRUE_REPAIR"], "1")
+        self.assertEqual(flags["SETP_ALNS_CRUSH_ADAPTIVE_Q"], "1")
+        self.assertEqual(flags["SETP_ALNS_CRUSH_SCAN_RESTART"], "1")
+        self.assertEqual(flags["SETP_ALNS_CRUSH_SCAN_REBUILD"], "1")
+        self.assertEqual(flags["SETP_ALNS_CRUSH_ROUTE_ELIMINATION"], "0")
+        self.assertEqual(flags["SETP_ALNS_CRUSH_TRUE_ACCEPTANCE"], "0")
+        self.assertEqual(flags["SETP_ALNS_CRUSH_LOCAL_SEARCH"], "0")
+
+    def test_scan_construction_returns_zero_violation_all_cv_solution(self) -> None:
+        root = Path(__file__).resolve().parents[2]
+        bundle = load_search_bundle(root / "models/data_bundle/generated_instances/e2_benchmark/vanilla/e2-vanilla-10c-01")
+
+        solution = scan_all_cv_solution(bundle.instance, offset=0)
+
+        self.assertTrue(solution.routes)
+        self.assertTrue(all(route.vehicle_type.lower() == "cv" for route in solution.routes))
+        self.assertEqual(check_solution(solution, bundle.instance, DEFAULT_PRICES), [])
+
+    def test_e2_scan_bridge_same_seed_small_budget_is_deterministic(self) -> None:
+        root = Path(__file__).resolve().parents[2]
+        bundle_dir = root / "models/data_bundle/generated_instances/e2_benchmark/vanilla/e2-vanilla-10c-01"
+        config = WinnerKernelConfig(seed=7, eval_budget=16, max_runtime_seconds=120.0)
+
+        first = run_e2_alns_scan_bridge(bundle_dir, config=config)
+        second = run_e2_alns_scan_bridge(bundle_dir, config=config)
+
+        self.assertEqual(first["violation_count"], 0)
+        self.assertEqual(second["violation_count"], 0)
+        self.assertAlmostEqual(first["best_cost"], second["best_cost"])
+        self.assertEqual(first["evaluations"], second["evaluations"])
 
     def test_v2_summary_uses_fair_sa_not_phase2_sa_denominator(self) -> None:
         fair_summary = [

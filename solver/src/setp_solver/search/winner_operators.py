@@ -14,8 +14,9 @@ from typing import Any, Callable, Iterator
 import numpy as np
 
 from ..check import check_solution
+from ..cost import route_node_schedule
 from ..prices import DEFAULT_PRICES
-from ..solution import Solution
+from ..solution import Route, Solution
 from .alns_wouda import (
     AlnsRunResult,
     AlnsState,
@@ -42,7 +43,7 @@ from .alns_wouda import (
 from .bundle import load_search_bundle
 from .candidates import run_candidate
 from .construction import build_initial_solution
-from .evaluation import EvalBudget, model_cost, EvaluationContext, score_reference
+from .evaluation import EvalBudget, model_cost, EvaluationContext, score_candidate, score_reference
 from .local_search import improve_solution_locally
 
 
@@ -56,6 +57,8 @@ _CRUSH_FLAG_NAMES = (
     "SETP_ALNS_CRUSH_TRUE_ACCEPTANCE",
     "SETP_ALNS_CRUSH_LOCAL_SEARCH",
     "SETP_ALNS_CRUSH_ADAPTIVE_Q",
+    "SETP_ALNS_CRUSH_SCAN_RESTART",
+    "SETP_ALNS_CRUSH_SCAN_REBUILD",
 )
 
 
@@ -65,6 +68,8 @@ E2_ALNS_COMPONENT_SOURCES = {
     "SETP_ALNS_CRUSH_TRUE_ACCEPTANCE": "Wu/Ropke-Pisinger: non-hillclimbing ALNS acceptance",
     "SETP_ALNS_CRUSH_LOCAL_SEARCH": "VNS/RVND: bounded 2-opt/Or-opt/relocate polishing",
     "SETP_ALNS_CRUSH_ADAPTIVE_Q": "Ropke-Pisinger/Wu: adaptive large destroy size",
+    "SETP_ALNS_CRUSH_SCAN_RESTART": "Gao GLNS: scan/sweep all-CV construction restart",
+    "SETP_ALNS_CRUSH_SCAN_REBUILD": "Gao GLNS: periodic scan/sweep whole-solution rebuild",
 }
 
 
@@ -146,6 +151,8 @@ def winner_variant_flags(*, include_route_elimination: bool = False) -> dict[str
         "SETP_ALNS_CRUSH_TRUE_ACCEPTANCE": "0",
         "SETP_ALNS_CRUSH_LOCAL_SEARCH": "0",
         "SETP_ALNS_CRUSH_ADAPTIVE_Q": "0",
+        "SETP_ALNS_CRUSH_SCAN_RESTART": "0",
+        "SETP_ALNS_CRUSH_SCAN_REBUILD": "0",
     }
 
 
@@ -164,6 +171,22 @@ def e2_alns_variant_flags() -> dict[str, str]:
         "SETP_ALNS_CRUSH_TRUE_ACCEPTANCE": "0",
         "SETP_ALNS_CRUSH_LOCAL_SEARCH": "0",
         "SETP_ALNS_CRUSH_ADAPTIVE_Q": "1",
+        "SETP_ALNS_CRUSH_SCAN_RESTART": "0",
+        "SETP_ALNS_CRUSH_SCAN_REBUILD": "0",
+    }
+
+
+def e2_alns_scan_bridge_flags() -> dict[str, str]:
+    """Return the 09b GLNS scan-bridge candidate flags."""
+
+    return {
+        "SETP_ALNS_CRUSH_TRUE_REPAIR": "1",
+        "SETP_ALNS_CRUSH_ROUTE_ELIMINATION": "0",
+        "SETP_ALNS_CRUSH_TRUE_ACCEPTANCE": "0",
+        "SETP_ALNS_CRUSH_LOCAL_SEARCH": "0",
+        "SETP_ALNS_CRUSH_ADAPTIVE_Q": "1",
+        "SETP_ALNS_CRUSH_SCAN_RESTART": "1",
+        "SETP_ALNS_CRUSH_SCAN_REBUILD": "1",
     }
 
 
@@ -346,6 +369,31 @@ def run_e2_alns_final(
     )
 
 
+def run_e2_alns_scan_bridge(
+    bundle_dir: str | Path,
+    *,
+    config: WinnerKernelConfig | None = None,
+    initial_solution: Solution | None = None,
+) -> dict[str, Any]:
+    """Run the 09b GLNS scan-bridge ALNS candidate."""
+
+    cfg = config or WinnerKernelConfig()
+    flags = e2_alns_scan_bridge_flags()
+    cfg = WinnerKernelConfig(
+        **{
+            **asdict(cfg),
+            "include_route_elimination": flags["SETP_ALNS_CRUSH_ROUTE_ELIMINATION"] == "1",
+        }
+    )
+    return _run_winner_variant(
+        bundle_dir,
+        cfg,
+        initial_solution=initial_solution,
+        variant_flags=flags,
+        variant_id="e2_alns_scan_bridge",
+    )
+
+
 def write_winner_manifest(output_dir: str | Path) -> Path:
     """Write the public winner-operator API manifest."""
 
@@ -362,7 +410,10 @@ def write_winner_manifest(output_dir: str | Path) -> Path:
             "WinnerOperatorSet",
             "apply_winner_action",
             "decode_winner_action",
+            "e2_alns_scan_bridge_flags",
             "e2_alns_variant_flags",
+            "run_e2_alns_scan_bridge",
+            "scan_all_cv_solution",
             "winner_variant_flags",
             "run_e2_alns_final",
             "run_winner_kernel",
@@ -372,6 +423,7 @@ def write_winner_manifest(output_dir: str | Path) -> Path:
         "default_flags": winner_variant_flags(include_route_elimination=False),
         "route_elimination_flags": winner_variant_flags(include_route_elimination=True),
         "e2_alns_flags": e2_alns_variant_flags(),
+        "e2_alns_scan_bridge_flags": e2_alns_scan_bridge_flags(),
         "e2_alns_component_sources": E2_ALNS_COMPONENT_SOURCES,
         "compatible_instances": ["100-01-24h", "L-main"],
         "semantic_guards": [
@@ -474,10 +526,27 @@ def _run_winner_kernel_loop(
     acceptance = _make_acceptance_criterion(current, _target_iterations(None, config.eval_budget))
     destroy_counts = {name: [0, 0, 0, 0] for name, _ in operator_set.destroy_ops}
     repair_counts = {name: [0, 0, 0, 0] for name, _ in operator_set.repair_ops}
+    scan_counts = {
+        "restart_attempts": 0,
+        "restart_accepts": 0,
+        "rebuild_attempts": 0,
+        "rebuild_accepts": 0,
+        "infeasible": 0,
+    }
     rng = np.random.default_rng(config.seed)
     target = int(config.eval_budget)
     started = time.perf_counter()
     moves = 0
+    scan_attempts = 0
+    moves_since_best_improvement = 0
+    if _flag_enabled_from(flags, "SETP_ALNS_CRUSH_SCAN_RESTART") and _can_consume_scan_eval(context, target):
+        scan_state = _scan_restart_state(current, offset=scan_attempts, counter=scan_counts, counter_prefix="restart")
+        scan_attempts += 1
+        if scan_state is not None and scan_state.objective() < current.objective() - 1e-9:
+            current = scan_state
+            scan_counts["restart_accepts"] += 1
+            if scan_state.objective() < best.objective() - 1e-9:
+                best = scan_state
     while True:
         if context.budget is not None and context.budget.reached_target:
             break
@@ -486,6 +555,20 @@ def _run_winner_kernel_loop(
         if time.perf_counter() - started >= float(config.max_runtime_seconds):
             break
         moves += 1
+        if (
+            _flag_enabled_from(flags, "SETP_ALNS_CRUSH_SCAN_REBUILD")
+            and moves_since_best_improvement >= _scan_rebuild_interval(target)
+            and _can_consume_scan_eval(context, target)
+        ):
+            scan_state = _scan_restart_state(current, offset=scan_attempts, counter=scan_counts, counter_prefix="rebuild")
+            scan_attempts += 1
+            moves_since_best_improvement = 0
+            if scan_state is not None and scan_state.objective() < current.objective() - 1e-9:
+                current = scan_state
+                scan_counts["rebuild_accepts"] += 1
+                if scan_state.objective() < best.objective() - 1e-9:
+                    best = scan_state
+                continue
         progress = min(1.0, moves / max(1, target))
         destroy_idx, repair_idx = selector(rng, best, current)
         destroy_name = operator_set.destroy_ops[int(destroy_idx)][0]
@@ -523,6 +606,9 @@ def _run_winner_kernel_loop(
             if best_improved:
                 best = candidate
                 outcome_idx = 0
+                moves_since_best_improvement = 0
+        if not best_improved:
+            moves_since_best_improvement += 1
         destroy_counts[destroy_name][outcome_idx] += 1
         repair_counts[repair_name][outcome_idx] += 1
         selector.update(candidate, int(destroy_idx), int(repair_idx), outcome_idx)
@@ -544,8 +630,147 @@ def _run_winner_kernel_loop(
         int(context.score_counts.get("candidate", 0)),
         int(context.score_counts.get("repair_delta", 0)),
         int(context.score_counts.get("repair_delta", 0)),
-        {"destroy": destroy_counts_out, "repair": repair_counts_out},
+        {"destroy": destroy_counts_out, "repair": repair_counts_out, "scan": dict(scan_counts)},
     )
+
+
+def _flag_enabled_from(flags: dict[str, str], name: str) -> bool:
+    return str(flags.get(name, "0")).lower() not in {"0", "false", "no"}
+
+
+def _scan_rebuild_interval(target: int) -> int:
+    return max(25, min(250, int(target) // 20))
+
+
+def _can_consume_scan_eval(context: EvaluationContext, target: int) -> bool:
+    return context.budget is None or context.budget.count < int(target)
+
+
+def _scan_restart_state(
+    state: AlnsState,
+    *,
+    offset: int,
+    counter: dict[str, int],
+    counter_prefix: str,
+) -> AlnsState | None:
+    counter[f"{counter_prefix}_attempts"] += 1
+    solution = scan_all_cv_solution(state.context.instance, offset=offset)
+    objective = float(score_candidate(solution, state.context, label="candidate"))
+    breakdown = state.context.score_breakdowns.get(id(solution), {})
+    if int(breakdown.get("violation_count", 0)) != 0:
+        counter["infeasible"] += 1
+        return None
+    candidate = replace(
+        state,
+        solution=solution,
+        objective_value=objective,
+        removed_customers=(),
+        source_solution=None,
+        allow_new_route_repair=True,
+    )
+    return candidate
+
+
+def scan_all_cv_solution(instance: Any, *, offset: int = 0) -> Solution:
+    """Build a deterministic GLNS-style sweep all-CV solution."""
+
+    ordered = _scan_sweep_order(instance, offset=offset)
+    depots = _scan_depots(instance)
+    if not depots:
+        return Solution(routes=[])
+    node_lookup = {node.node_id: node for node in instance.nodes}
+    depots_by_customer = {
+        customer_id: tuple(
+            depot.node_id
+            for depot in sorted(
+                depots,
+                key=lambda depot, cid=customer_id: (float(instance.distance(depot.node_id, cid)), depot.node_id),
+            )
+        )
+        for customer_id in ordered
+    }
+    plans: dict[str, list[list[str]]] = {depot.node_id: [] for depot in depots}
+    for customer_id in ordered:
+        _append_scan_customer(instance, node_lookup, depots_by_customer, plans, customer_id)
+    routes: list[Route] = []
+    next_cv = 1
+    for depot_id, depot_plans in sorted(plans.items()):
+        for customer_ids in depot_plans:
+            routes.append(Route(f"CV{next_cv}", "cv", depot_id, [depot_id, *customer_ids, depot_id]))
+            next_cv += 1
+    return Solution(routes=routes)
+
+
+def _scan_sweep_order(instance: Any, *, offset: int = 0) -> list[str]:
+    depots = _scan_depots(instance)
+    if depots:
+        cx = sum(float(node.x) for node in depots) / len(depots)
+        cy = sum(float(node.y) for node in depots) / len(depots)
+    else:
+        cx = cy = 0.0
+    customers = [node for node in instance.nodes if node.node_type.lower() == "c"]
+    ordered = [
+        node.node_id
+        for node in sorted(
+            customers,
+            key=lambda node: (
+                math.atan2(float(node.y) - cy, float(node.x) - cx),
+                float(node.demand),
+                node.node_id,
+            ),
+        )
+    ]
+    if not ordered:
+        return []
+    shift = int(offset) % len(ordered)
+    return [*ordered[shift:], *ordered[:shift]]
+
+
+def _scan_depots(instance: Any) -> list[Any]:
+    return sorted((node for node in instance.nodes if node.node_type.lower() == "d"), key=lambda node: node.node_id)
+
+
+def _append_scan_customer(
+    instance: Any,
+    node_lookup: dict[str, Any],
+    depots_by_customer: dict[str, tuple[str, ...]],
+    plans: dict[str, list[list[str]]],
+    customer_id: str,
+) -> None:
+    for depot_id in depots_by_customer[customer_id]:
+        depot_plans = plans[depot_id]
+        if depot_plans:
+            candidate = [*depot_plans[-1], customer_id]
+            if _scan_route_plan_feasible(instance, node_lookup, depot_id, candidate):
+                depot_plans[-1] = candidate
+                return
+        if _scan_route_plan_feasible(instance, node_lookup, depot_id, [customer_id]):
+            depot_plans.append([customer_id])
+            return
+    plans[depots_by_customer[customer_id][0]].append([customer_id])
+
+
+def _scan_route_plan_feasible(instance: Any, node_lookup: dict[str, Any], depot_id: str, customer_ids: list[str]) -> bool:
+    capacity = _price(DEFAULT_PRICES, "Q_capacity")
+    if sum(float(node_lookup[customer_id].demand) for customer_id in customer_ids) > capacity + 1e-9:
+        return False
+    route = Route("SCAN", "cv", depot_id, [depot_id, *customer_ids, depot_id])
+    for row in route_node_schedule(route, instance, DEFAULT_PRICES):
+        node = node_lookup.get(row.node_id)
+        if node is not None and row.t_start > float(node.due_time) + 1e-9:
+            return False
+    return True
+
+
+def _scan_route_distance(instance: Any, depot_id: str, customer_ids: list[str]) -> float:
+    sequence = [depot_id, *customer_ids, depot_id]
+    return sum(float(instance.distance(a, b)) for a, b in zip(sequence, sequence[1:]))
+
+
+def _price(prices: Any, name: str) -> float:
+    if isinstance(prices, dict):
+        return float(prices[name])
+    return float(getattr(prices, name))
 
 
 @contextmanager
