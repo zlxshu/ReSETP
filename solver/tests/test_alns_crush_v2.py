@@ -16,9 +16,12 @@ from setp_solver.prices import DEFAULT_PRICES
 from setp_solver.search.bundle import load_search_bundle
 from setp_solver.search.winner_operators import (
     WinnerKernelConfig,
+    _make_winner_acceptance_criterion,
     e2_alns_scan_bridge_flags,
+    e2_alns_sa_acceptance_flags,
     e2_alns_variant_flags,
     operator_base_id,
+    run_e2_alns_sa_acceptance,
     run_e2_alns_scan_bridge,
     scan_all_cv_solution,
     winner_operator_module,
@@ -53,8 +56,10 @@ class AlnsCrushV2Tests(unittest.TestCase):
                 "WinnerOperatorSet",
                 "apply_winner_action",
                 "decode_winner_action",
+                "e2_alns_sa_acceptance_flags",
                 "e2_alns_scan_bridge_flags",
                 "e2_alns_variant_flags",
+                "run_e2_alns_sa_acceptance",
                 "run_e2_alns_scan_bridge",
                 "scan_all_cv_solution",
                 "winner_variant_flags",
@@ -66,6 +71,8 @@ class AlnsCrushV2Tests(unittest.TestCase):
         )
         self.assertEqual(manifest["e2_alns_flags"], e2_alns_variant_flags())
         self.assertEqual(manifest["e2_alns_scan_bridge_flags"], e2_alns_scan_bridge_flags())
+        self.assertEqual(manifest["e2_alns_sa_acceptance_flags"]["autofit"], e2_alns_sa_acceptance_flags(mode="autofit"))
+        self.assertEqual(manifest["e2_alns_sa_acceptance_flags"]["lns_cooling"], e2_alns_sa_acceptance_flags(mode="lns_cooling"))
         self.assertIn("Does not change cost.py/check.py/evaluation.py model semantics.", manifest["semantic_guards"])
 
     def test_winner_variant_flags_disable_harmful_prompt1_addons(self) -> None:
@@ -74,6 +81,8 @@ class AlnsCrushV2Tests(unittest.TestCase):
 
         self.assertEqual(default_flags["SETP_ALNS_CRUSH_TRUE_REPAIR"], "0")
         self.assertEqual(default_flags["SETP_ALNS_CRUSH_TRUE_ACCEPTANCE"], "0")
+        self.assertEqual(default_flags["SETP_ALNS_CRUSH_SA_ACCEPTANCE"], "0")
+        self.assertEqual(default_flags["SETP_ALNS_CRUSH_SA_MODE"], "off")
         self.assertEqual(default_flags["SETP_ALNS_CRUSH_LOCAL_SEARCH"], "0")
         self.assertEqual(default_flags["SETP_ALNS_CRUSH_ADAPTIVE_Q"], "0")
         self.assertEqual(default_flags["SETP_ALNS_CRUSH_ROUTE_ELIMINATION"], "0")
@@ -87,6 +96,8 @@ class AlnsCrushV2Tests(unittest.TestCase):
 
         self.assertEqual(flags["SETP_ALNS_CRUSH_TRUE_REPAIR"], "1")
         self.assertEqual(flags["SETP_ALNS_CRUSH_TRUE_ACCEPTANCE"], "0")
+        self.assertEqual(flags["SETP_ALNS_CRUSH_SA_ACCEPTANCE"], "0")
+        self.assertEqual(flags["SETP_ALNS_CRUSH_SA_MODE"], "off")
         self.assertEqual(flags["SETP_ALNS_CRUSH_LOCAL_SEARCH"], "0")
         self.assertEqual(flags["SETP_ALNS_CRUSH_ADAPTIVE_Q"], "1")
         self.assertEqual(flags["SETP_ALNS_CRUSH_ROUTE_ELIMINATION"], "0")
@@ -103,7 +114,42 @@ class AlnsCrushV2Tests(unittest.TestCase):
         self.assertEqual(flags["SETP_ALNS_CRUSH_SCAN_REBUILD"], "1")
         self.assertEqual(flags["SETP_ALNS_CRUSH_ROUTE_ELIMINATION"], "0")
         self.assertEqual(flags["SETP_ALNS_CRUSH_TRUE_ACCEPTANCE"], "0")
+        self.assertEqual(flags["SETP_ALNS_CRUSH_SA_ACCEPTANCE"], "0")
+        self.assertEqual(flags["SETP_ALNS_CRUSH_SA_MODE"], "off")
         self.assertEqual(flags["SETP_ALNS_CRUSH_LOCAL_SEARCH"], "0")
+
+    def test_e2_sa_acceptance_flags_are_explicit_experimental_flags(self) -> None:
+        flags = e2_alns_sa_acceptance_flags(mode="autofit")
+
+        self.assertEqual(flags["SETP_ALNS_CRUSH_TRUE_REPAIR"], "1")
+        self.assertEqual(flags["SETP_ALNS_CRUSH_ADAPTIVE_Q"], "1")
+        self.assertEqual(flags["SETP_ALNS_CRUSH_SCAN_RESTART"], "1")
+        self.assertEqual(flags["SETP_ALNS_CRUSH_SCAN_REBUILD"], "1")
+        self.assertEqual(flags["SETP_ALNS_CRUSH_TRUE_ACCEPTANCE"], "0")
+        self.assertEqual(flags["SETP_ALNS_CRUSH_SA_ACCEPTANCE"], "1")
+        self.assertEqual(flags["SETP_ALNS_CRUSH_SA_MODE"], "autofit")
+        self.assertEqual(e2_alns_sa_acceptance_flags(mode="lns_cooling")["SETP_ALNS_CRUSH_SA_MODE"], "lns_cooling")
+
+    def test_winner_acceptance_builder_keeps_default_hillclimbing_and_sa_opt_in(self) -> None:
+        root = Path(__file__).resolve().parents[2]
+        bundle = load_search_bundle(root / "models/data_bundle/generated_instances/e2_benchmark/vanilla/e2-vanilla-10c-01")
+        from setp_solver.search.construction import build_initial_solution
+        from setp_solver.search.evaluation import EvaluationContext, score_reference
+        from setp_solver.search.alns_wouda import AlnsState
+
+        solution = build_initial_solution(bundle.instance, bundle.carbon_profile)
+        context = EvaluationContext(bundle.instance, bundle.carbon_profile)
+        state = AlnsState(solution, context, objective_value=score_reference(solution, context))
+
+        default_acceptance = _make_winner_acceptance_criterion(state, config=WinnerKernelConfig(eval_budget=100), flags=winner_variant_flags())
+        sa_acceptance = _make_winner_acceptance_criterion(
+            state,
+            config=WinnerKernelConfig(eval_budget=100, max_runtime_seconds=10.0),
+            flags=e2_alns_sa_acceptance_flags(mode="autofit"),
+        )
+
+        self.assertEqual(type(default_acceptance).__name__, "HillClimbing")
+        self.assertEqual(type(sa_acceptance).__name__, "SimulatedAnnealing")
 
     def test_scan_construction_returns_zero_violation_all_cv_solution(self) -> None:
         root = Path(__file__).resolve().parents[2]
@@ -127,6 +173,20 @@ class AlnsCrushV2Tests(unittest.TestCase):
         self.assertEqual(second["violation_count"], 0)
         self.assertAlmostEqual(first["best_cost"], second["best_cost"])
         self.assertEqual(first["evaluations"], second["evaluations"])
+
+    def test_e2_sa_acceptance_same_seed_small_budget_is_deterministic(self) -> None:
+        root = Path(__file__).resolve().parents[2]
+        bundle_dir = root / "models/data_bundle/generated_instances/e2_benchmark/vanilla/e2-vanilla-10c-01"
+        config = WinnerKernelConfig(seed=7, eval_budget=16, max_runtime_seconds=120.0)
+
+        first = run_e2_alns_sa_acceptance(bundle_dir, config=config, mode="autofit")
+        second = run_e2_alns_sa_acceptance(bundle_dir, config=config, mode="autofit")
+
+        self.assertEqual(first["violation_count"], 0)
+        self.assertEqual(second["violation_count"], 0)
+        self.assertAlmostEqual(first["best_cost"], second["best_cost"])
+        self.assertEqual(first["evaluations"], second["evaluations"])
+        self.assertTrue(first["history"])
 
     def test_v2_summary_uses_fair_sa_not_phase2_sa_denominator(self) -> None:
         fair_summary = [

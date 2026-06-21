@@ -55,6 +55,8 @@ _CRUSH_FLAG_NAMES = (
     "SETP_ALNS_CRUSH_TRUE_REPAIR",
     "SETP_ALNS_CRUSH_ROUTE_ELIMINATION",
     "SETP_ALNS_CRUSH_TRUE_ACCEPTANCE",
+    "SETP_ALNS_CRUSH_SA_ACCEPTANCE",
+    "SETP_ALNS_CRUSH_SA_MODE",
     "SETP_ALNS_CRUSH_LOCAL_SEARCH",
     "SETP_ALNS_CRUSH_ADAPTIVE_Q",
     "SETP_ALNS_CRUSH_SCAN_RESTART",
@@ -66,11 +68,20 @@ E2_ALNS_COMPONENT_SOURCES = {
     "SETP_ALNS_CRUSH_TRUE_REPAIR": "Ropke-Pisinger/Wu: cost-aware greedy/regret repair",
     "SETP_ALNS_CRUSH_ROUTE_ELIMINATION": "Gao GLNS: route elimination large neighborhood",
     "SETP_ALNS_CRUSH_TRUE_ACCEPTANCE": "Wu/Ropke-Pisinger: non-hillclimbing ALNS acceptance",
+    "SETP_ALNS_CRUSH_SA_ACCEPTANCE": "Ropke-Pisinger: simulated annealing acceptance with geometric cooling",
+    "SETP_ALNS_CRUSH_SA_MODE": "Ropke-Pisinger/Gao GLNS: SA cooling schedule selector",
     "SETP_ALNS_CRUSH_LOCAL_SEARCH": "VNS/RVND: bounded 2-opt/Or-opt/relocate polishing",
     "SETP_ALNS_CRUSH_ADAPTIVE_Q": "Ropke-Pisinger/Wu: adaptive large destroy size",
     "SETP_ALNS_CRUSH_SCAN_RESTART": "Gao GLNS: scan/sweep all-CV construction restart",
     "SETP_ALNS_CRUSH_SCAN_REBUILD": "Gao GLNS: periodic scan/sweep whole-solution rebuild",
 }
+
+
+SA_AUTOFIT_WORSE_PCT = 0.05
+SA_AUTOFIT_ACCEPT_PROB = 0.5
+SA_TARGET_EVALS_PER_SECOND = 25.0
+SA_LNS_PHI = 0.05
+SA_LNS_MU = 0.95
 
 
 @dataclass(frozen=True)
@@ -149,6 +160,8 @@ def winner_variant_flags(*, include_route_elimination: bool = False) -> dict[str
         "SETP_ALNS_CRUSH_TRUE_REPAIR": "0",
         "SETP_ALNS_CRUSH_ROUTE_ELIMINATION": "1" if include_route_elimination else "0",
         "SETP_ALNS_CRUSH_TRUE_ACCEPTANCE": "0",
+        "SETP_ALNS_CRUSH_SA_ACCEPTANCE": "0",
+        "SETP_ALNS_CRUSH_SA_MODE": "off",
         "SETP_ALNS_CRUSH_LOCAL_SEARCH": "0",
         "SETP_ALNS_CRUSH_ADAPTIVE_Q": "0",
         "SETP_ALNS_CRUSH_SCAN_RESTART": "0",
@@ -169,6 +182,8 @@ def e2_alns_variant_flags() -> dict[str, str]:
         "SETP_ALNS_CRUSH_TRUE_REPAIR": "1",
         "SETP_ALNS_CRUSH_ROUTE_ELIMINATION": "0",
         "SETP_ALNS_CRUSH_TRUE_ACCEPTANCE": "0",
+        "SETP_ALNS_CRUSH_SA_ACCEPTANCE": "0",
+        "SETP_ALNS_CRUSH_SA_MODE": "off",
         "SETP_ALNS_CRUSH_LOCAL_SEARCH": "0",
         "SETP_ALNS_CRUSH_ADAPTIVE_Q": "1",
         "SETP_ALNS_CRUSH_SCAN_RESTART": "0",
@@ -183,11 +198,30 @@ def e2_alns_scan_bridge_flags() -> dict[str, str]:
         "SETP_ALNS_CRUSH_TRUE_REPAIR": "1",
         "SETP_ALNS_CRUSH_ROUTE_ELIMINATION": "0",
         "SETP_ALNS_CRUSH_TRUE_ACCEPTANCE": "0",
+        "SETP_ALNS_CRUSH_SA_ACCEPTANCE": "0",
+        "SETP_ALNS_CRUSH_SA_MODE": "off",
         "SETP_ALNS_CRUSH_LOCAL_SEARCH": "0",
         "SETP_ALNS_CRUSH_ADAPTIVE_Q": "1",
         "SETP_ALNS_CRUSH_SCAN_RESTART": "1",
         "SETP_ALNS_CRUSH_SCAN_REBUILD": "1",
     }
+
+
+def e2_alns_sa_acceptance_flags(*, mode: str = "autofit") -> dict[str, str]:
+    """Return the 09c E2 ALNS SA-acceptance candidate flags."""
+
+    normalized_mode = str(mode).strip().lower().replace("-", "_")
+    if normalized_mode not in {"autofit", "lns_cooling"}:
+        raise ValueError(f"Unsupported E2 ALNS SA mode: {mode}")
+    flags = e2_alns_scan_bridge_flags()
+    flags.update(
+        {
+            "SETP_ALNS_CRUSH_TRUE_ACCEPTANCE": "0",
+            "SETP_ALNS_CRUSH_SA_ACCEPTANCE": "1",
+            "SETP_ALNS_CRUSH_SA_MODE": normalized_mode,
+        }
+    )
+    return flags
 
 
 def decode_winner_action(
@@ -394,6 +428,33 @@ def run_e2_alns_scan_bridge(
     )
 
 
+def run_e2_alns_sa_acceptance(
+    bundle_dir: str | Path,
+    *,
+    config: WinnerKernelConfig | None = None,
+    initial_solution: Solution | None = None,
+    mode: str = "autofit",
+) -> dict[str, Any]:
+    """Run the 09c E2 ALNS candidate with standard SA acceptance."""
+
+    cfg = config or WinnerKernelConfig()
+    flags = e2_alns_sa_acceptance_flags(mode=mode)
+    cfg = WinnerKernelConfig(
+        **{
+            **asdict(cfg),
+            "include_route_elimination": flags["SETP_ALNS_CRUSH_ROUTE_ELIMINATION"] == "1",
+        }
+    )
+    normalized_mode = flags["SETP_ALNS_CRUSH_SA_MODE"]
+    return _run_winner_variant(
+        bundle_dir,
+        cfg,
+        initial_solution=initial_solution,
+        variant_flags=flags,
+        variant_id=f"e2_alns_sa_{normalized_mode}",
+    )
+
+
 def write_winner_manifest(output_dir: str | Path) -> Path:
     """Write the public winner-operator API manifest."""
 
@@ -410,8 +471,10 @@ def write_winner_manifest(output_dir: str | Path) -> Path:
             "WinnerOperatorSet",
             "apply_winner_action",
             "decode_winner_action",
+            "e2_alns_sa_acceptance_flags",
             "e2_alns_scan_bridge_flags",
             "e2_alns_variant_flags",
+            "run_e2_alns_sa_acceptance",
             "run_e2_alns_scan_bridge",
             "scan_all_cv_solution",
             "winner_variant_flags",
@@ -424,6 +487,10 @@ def write_winner_manifest(output_dir: str | Path) -> Path:
         "route_elimination_flags": winner_variant_flags(include_route_elimination=True),
         "e2_alns_flags": e2_alns_variant_flags(),
         "e2_alns_scan_bridge_flags": e2_alns_scan_bridge_flags(),
+        "e2_alns_sa_acceptance_flags": {
+            "autofit": e2_alns_sa_acceptance_flags(mode="autofit"),
+            "lns_cooling": e2_alns_sa_acceptance_flags(mode="lns_cooling"),
+        },
         "e2_alns_component_sources": E2_ALNS_COMPONENT_SOURCES,
         "compatible_instances": ["100-01-24h", "L-main"],
         "semantic_guards": [
@@ -497,6 +564,7 @@ def _run_winner_variant(
         "feasible": len(violations) == 0,
         "violation_count": len(violations),
         "flags": dict(flags),
+        "history": list(getattr(run, "history", [])) if config.algorithm == "ALNS-Wouda" else [],
     }
 
 
@@ -523,7 +591,7 @@ def _run_winner_kernel_loop(
     operator_set = WinnerOperatorSet.create(include_route_elimination=config.include_route_elimination)
     flags = variant_flags or winner_variant_flags(include_route_elimination=config.include_route_elimination)
     selector = _make_operator_selector(len(operator_set.destroy_ops), len(operator_set.repair_ops))
-    acceptance = _make_acceptance_criterion(current, _target_iterations(None, config.eval_budget))
+    acceptance = _make_winner_acceptance_criterion(current, config=config, flags=flags)
     destroy_counts = {name: [0, 0, 0, 0] for name, _ in operator_set.destroy_ops}
     repair_counts = {name: [0, 0, 0, 0] for name, _ in operator_set.repair_ops}
     scan_counts = {
@@ -536,6 +604,7 @@ def _run_winner_kernel_loop(
     rng = np.random.default_rng(config.seed)
     target = int(config.eval_budget)
     started = time.perf_counter()
+    history = [_winner_history_entry(context, best.solution, best.objective(), 0, started, "shared_warm_start")]
     moves = 0
     scan_attempts = 0
     moves_since_best_improvement = 0
@@ -547,6 +616,7 @@ def _run_winner_kernel_loop(
             scan_counts["restart_accepts"] += 1
             if scan_state.objective() < best.objective() - 1e-9:
                 best = scan_state
+                history.append(_winner_history_entry(context, best.solution, best.objective(), context.budget.count if context.budget else 0, started, "scan_restart"))
     while True:
         if context.budget is not None and context.budget.reached_target:
             break
@@ -568,6 +638,7 @@ def _run_winner_kernel_loop(
                 scan_counts["rebuild_accepts"] += 1
                 if scan_state.objective() < best.objective() - 1e-9:
                     best = scan_state
+                    history.append(_winner_history_entry(context, best.solution, best.objective(), context.budget.count if context.budget else 0, started, "scan_rebuild"))
                 continue
         progress = min(1.0, moves / max(1, target))
         destroy_idx, repair_idx = selector(rng, best, current)
@@ -607,6 +678,16 @@ def _run_winner_kernel_loop(
                 best = candidate
                 outcome_idx = 0
                 moves_since_best_improvement = 0
+                history.append(
+                    _winner_history_entry(
+                        context,
+                        best.solution,
+                        best.objective(),
+                        context.budget.count if context.budget else 0,
+                        started,
+                        f"{destroy_name}+{repair_name}",
+                    )
+                )
         if not best_improved:
             moves_since_best_improvement += 1
         destroy_counts[destroy_name][outcome_idx] += 1
@@ -631,7 +712,58 @@ def _run_winner_kernel_loop(
         int(context.score_counts.get("repair_delta", 0)),
         int(context.score_counts.get("repair_delta", 0)),
         {"destroy": destroy_counts_out, "repair": repair_counts_out, "scan": dict(scan_counts)},
+        history,
     )
+
+
+def _make_winner_acceptance_criterion(initial_state: AlnsState, *, config: WinnerKernelConfig, flags: dict[str, str]) -> Any:
+    if not _flag_enabled_from(flags, "SETP_ALNS_CRUSH_SA_ACCEPTANCE"):
+        with _temporary_flags(flags):
+            return _make_acceptance_criterion(initial_state, _target_iterations(None, config.eval_budget))
+    _ensure_sa_acceptance_available()
+    from alns.accept import SimulatedAnnealing
+
+    mode = str(flags.get("SETP_ALNS_CRUSH_SA_MODE", "autofit")).strip().lower().replace("-", "_")
+    initial_obj = max(1.0, abs(float(initial_state.objective())))
+    if mode == "autofit":
+        return SimulatedAnnealing.autofit(
+            initial_obj,
+            SA_AUTOFIT_WORSE_PCT,
+            SA_AUTOFIT_ACCEPT_PROB,
+            _sa_target_iterations(config),
+            method="exponential",
+        )
+    if mode == "lns_cooling":
+        start_temperature = max(1e-9, -SA_LNS_PHI * initial_obj / math.log(0.5))
+        return SimulatedAnnealing(start_temperature, 1e-9, SA_LNS_MU, method="exponential")
+    raise ValueError(f"Unsupported E2 ALNS SA mode: {mode}")
+
+
+def _ensure_sa_acceptance_available() -> None:
+    from .alns_wouda import _ensure_local_alns_on_path
+
+    _ensure_local_alns_on_path()
+
+
+def _sa_target_iterations(config: WinnerKernelConfig) -> int:
+    return min(int(config.eval_budget), max(100, int(float(config.max_runtime_seconds) * SA_TARGET_EVALS_PER_SECOND)))
+
+
+def _winner_history_entry(
+    context: EvaluationContext,
+    solution: Solution,
+    objective: float,
+    eval_count: int,
+    started: float,
+    operator: str,
+) -> dict[str, Any]:
+    return {
+        "eval": int(eval_count),
+        "time_seconds": max(0.0, time.perf_counter() - started),
+        "best_cost": float(model_cost(solution, context)),
+        "best_obj": float(objective),
+        "operator": str(operator),
+    }
 
 
 def _flag_enabled_from(flags: dict[str, str], name: str) -> bool:

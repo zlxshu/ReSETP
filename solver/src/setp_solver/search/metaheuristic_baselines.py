@@ -145,6 +145,7 @@ class _SearchSession:
         self.history: list[dict[str, Any]] = [
             {
                 "eval": 0,
+                "time_seconds": 0.0,
                 "best_cost": self.best.cost,
                 "current_cost": self.current.cost,
                 "operator": "shared_warm_start",
@@ -204,6 +205,7 @@ class _SearchSession:
             self.history.append(
                 {
                     "eval": self.evals,
+                    "time_seconds": time.perf_counter() - self.started,
                     "best_cost": cost,
                     "current_cost": self.current.cost if self.current.feasible else math.inf,
                     "operator": operator,

@@ -90,6 +90,7 @@ class AlnsRunResult:
     repair_scores: int = 0
     repair_delta_count: int = 0
     operator_counts: dict[str, Any] = field(default_factory=dict)
+    history: list[dict[str, Any]] = field(default_factory=list)
 
 
 def run_alns_wouda(
