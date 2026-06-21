@@ -13,6 +13,7 @@ from setp_solver.search.alns_crush_v2 import (
 )
 from setp_solver.search.winner_operators import (
     WinnerKernelConfig,
+    e2_alns_variant_flags,
     operator_base_id,
     winner_operator_module,
     winner_variant_flags,
@@ -46,12 +47,15 @@ class AlnsCrushV2Tests(unittest.TestCase):
                 "WinnerOperatorSet",
                 "apply_winner_action",
                 "decode_winner_action",
+                "e2_alns_variant_flags",
                 "winner_variant_flags",
+                "run_e2_alns_final",
                 "run_winner_kernel",
                 "run_winner_kernel_plus_route_elimination",
                 "write_winner_manifest",
             ],
         )
+        self.assertEqual(manifest["e2_alns_flags"], e2_alns_variant_flags())
         self.assertIn("Does not change cost.py/check.py/evaluation.py model semantics.", manifest["semantic_guards"])
 
     def test_winner_variant_flags_disable_harmful_prompt1_addons(self) -> None:
@@ -65,6 +69,16 @@ class AlnsCrushV2Tests(unittest.TestCase):
         self.assertEqual(default_flags["SETP_ALNS_CRUSH_ROUTE_ELIMINATION"], "0")
         self.assertEqual(route_elim_flags["SETP_ALNS_CRUSH_ROUTE_ELIMINATION"], "1")
         self.assertEqual(WinnerKernelConfig().include_route_elimination, False)
+
+    def test_e2_alns_variant_flags_are_explicit_not_legacy_default(self) -> None:
+        flags = e2_alns_variant_flags()
+
+        self.assertEqual(flags["SETP_ALNS_CRUSH_TRUE_REPAIR"], "1")
+        self.assertEqual(flags["SETP_ALNS_CRUSH_TRUE_ACCEPTANCE"], "0")
+        self.assertEqual(flags["SETP_ALNS_CRUSH_LOCAL_SEARCH"], "0")
+        self.assertEqual(flags["SETP_ALNS_CRUSH_ADAPTIVE_Q"], "1")
+        self.assertEqual(flags["SETP_ALNS_CRUSH_ROUTE_ELIMINATION"], "0")
+        self.assertNotEqual(flags, winner_variant_flags())
 
     def test_v2_summary_uses_fair_sa_not_phase2_sa_denominator(self) -> None:
         fair_summary = [

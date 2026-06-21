@@ -1,0 +1,24 @@
+{
+  "acceptance_expected": "HillClimbing when SETP_ALNS_CRUSH_TRUE_ACCEPTANCE=0",
+  "alpha_ucb_expected": "AlphaUCB([20,8,2,0.05], alpha=0.08)",
+  "destroy_ops": [
+    "random_customer_removal",
+    "worst_customer_removal",
+    "shaw_related_removal",
+    "whole_route_removal",
+    "route_segment_removal",
+    "vehicle_type_swap"
+  ],
+  "gate": "PASS_STATIC_RECIPE_AUDIT",
+  "mismatches": [],
+  "new_cv_route_fallback": true,
+  "operator_base_id": "winner_kernel_v1",
+  "path_insertion_all_route_position": true,
+  "repair_ops": [
+    "greedy_insert_repair",
+    "regret2_insert_repair",
+    "regret3_insert_repair"
+  ],
+  "require_charging_signal_default": false,
+  "winner_operator_module": "setp_solver.search.winner_operators"
+}

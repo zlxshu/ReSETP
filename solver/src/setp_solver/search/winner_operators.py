@@ -59,6 +59,15 @@ _CRUSH_FLAG_NAMES = (
 )
 
 
+E2_ALNS_COMPONENT_SOURCES = {
+    "SETP_ALNS_CRUSH_TRUE_REPAIR": "Ropke-Pisinger/Wu: cost-aware greedy/regret repair",
+    "SETP_ALNS_CRUSH_ROUTE_ELIMINATION": "Gao GLNS: route elimination large neighborhood",
+    "SETP_ALNS_CRUSH_TRUE_ACCEPTANCE": "Wu/Ropke-Pisinger: non-hillclimbing ALNS acceptance",
+    "SETP_ALNS_CRUSH_LOCAL_SEARCH": "VNS/RVND: bounded 2-opt/Or-opt/relocate polishing",
+    "SETP_ALNS_CRUSH_ADAPTIVE_Q": "Ropke-Pisinger/Wu: adaptive large destroy size",
+}
+
+
 @dataclass(frozen=True)
 class WinnerKernelConfig:
     """Configuration for reproducible winner-kernel ALNS runs."""
@@ -140,6 +149,24 @@ def winner_variant_flags(*, include_route_elimination: bool = False) -> dict[str
     }
 
 
+def e2_alns_variant_flags() -> dict[str, str]:
+    """Return the promoted E2 literature-component ALNS flags.
+
+    Phase-0/short ablation promoted only true repair scoring and adaptive q.
+    Route elimination, RRT acceptance, and local search remain explicit
+    literature components, but are not defaulted into the E2 final wrapper until
+    larger E2 ablations show they help.
+    """
+
+    return {
+        "SETP_ALNS_CRUSH_TRUE_REPAIR": "1",
+        "SETP_ALNS_CRUSH_ROUTE_ELIMINATION": "0",
+        "SETP_ALNS_CRUSH_TRUE_ACCEPTANCE": "0",
+        "SETP_ALNS_CRUSH_LOCAL_SEARCH": "0",
+        "SETP_ALNS_CRUSH_ADAPTIVE_Q": "1",
+    }
+
+
 def decode_winner_action(
     raw_action: list[int] | tuple[int, ...],
     operator_set: WinnerOperatorSet | None = None,
@@ -188,6 +215,7 @@ def apply_winner_action(
     policy: SearchPolicy | None = None,
     current_obj: float | None = None,
     progress: float = 0.0,
+    variant_flags: dict[str, str] | None = None,
 ) -> dict[str, Any]:
     """Apply one winner destroy+repair action and score one complete candidate."""
 
@@ -207,7 +235,8 @@ def apply_winner_action(
         remove_count_q = max(1, int(math.ceil(float(action.remove_fraction) * max(0, customer_count)))) if customer_count else 0
     destroy_op = ops.destroy_callable(action.destroy_op_id)
     repair_op = ops.repair_callable(action.repair_op_id)
-    with _temporary_flags(winner_variant_flags(include_route_elimination=ops.include_route_elimination)):
+    flags = variant_flags or winner_variant_flags(include_route_elimination=ops.include_route_elimination)
+    with _temporary_flags(flags):
         destroyed = destroy_op(
             previous_state,
             rng,
@@ -287,6 +316,36 @@ def run_winner_kernel_plus_route_elimination(
     return _run_winner_variant(bundle_dir, cfg, initial_solution=initial_solution)
 
 
+def run_e2_alns_final(
+    bundle_dir: str | Path,
+    *,
+    config: WinnerKernelConfig | None = None,
+    initial_solution: Solution | None = None,
+) -> dict[str, Any]:
+    """Run the explicit E2 literature-component ALNS variant.
+
+    This wrapper does not change ``run_winner_kernel``. It exists so E2 can
+    compare a strengthened ALNS candidate while legacy E1-E7 anchors stay
+    callable through the original winner-kernel entry point.
+    """
+
+    cfg = config or WinnerKernelConfig()
+    flags = e2_alns_variant_flags()
+    cfg = WinnerKernelConfig(
+        **{
+            **asdict(cfg),
+            "include_route_elimination": flags["SETP_ALNS_CRUSH_ROUTE_ELIMINATION"] == "1",
+        }
+    )
+    return _run_winner_variant(
+        bundle_dir,
+        cfg,
+        initial_solution=initial_solution,
+        variant_flags=flags,
+        variant_id="e2_alns_final",
+    )
+
+
 def write_winner_manifest(output_dir: str | Path) -> Path:
     """Write the public winner-operator API manifest."""
 
@@ -303,13 +362,17 @@ def write_winner_manifest(output_dir: str | Path) -> Path:
             "WinnerOperatorSet",
             "apply_winner_action",
             "decode_winner_action",
+            "e2_alns_variant_flags",
             "winner_variant_flags",
+            "run_e2_alns_final",
             "run_winner_kernel",
             "run_winner_kernel_plus_route_elimination",
             "write_winner_manifest",
         ],
         "default_flags": winner_variant_flags(include_route_elimination=False),
         "route_elimination_flags": winner_variant_flags(include_route_elimination=True),
+        "e2_alns_flags": e2_alns_variant_flags(),
+        "e2_alns_component_sources": E2_ALNS_COMPONENT_SOURCES,
         "compatible_instances": ["100-01-24h", "L-main"],
         "semantic_guards": [
             "Does not change cost.py/check.py/evaluation.py model semantics.",
@@ -326,6 +389,8 @@ def _run_winner_variant(
     config: WinnerKernelConfig,
     *,
     initial_solution: Solution | None,
+    variant_flags: dict[str, str] | None = None,
+    variant_id: str = "winner_kernel",
 ) -> dict[str, Any]:
     started = time.perf_counter()
     bundle = load_search_bundle(bundle_dir)
@@ -336,13 +401,15 @@ def _run_winner_variant(
         introduce_ev=config.require_charging_signal,
         require_charging_signal=config.require_charging_signal,
     )
-    with _temporary_flags(winner_variant_flags(include_route_elimination=config.include_route_elimination)):
+    flags = variant_flags or winner_variant_flags(include_route_elimination=config.include_route_elimination)
+    with _temporary_flags(flags):
         if config.algorithm == "ALNS-Wouda":
             run = _run_winner_kernel_loop(
                 warm,
                 bundle.instance,
                 bundle.carbon_profile,
                 config=config,
+                variant_flags=flags,
             )
             solution = run.best_solution
             evaluations = run.evaluations
@@ -365,6 +432,7 @@ def _run_winner_variant(
     violations = check_solution(solution, bundle.instance, DEFAULT_PRICES)
     return {
         "operator_base_id": operator_base_id,
+        "variant": variant_id,
         "algorithm": config.algorithm,
         "seed": int(config.seed),
         "eval_budget": int(config.eval_budget),
@@ -376,7 +444,7 @@ def _run_winner_variant(
         "best_cost": model_cost(solution, context),
         "feasible": len(violations) == 0,
         "violation_count": len(violations),
-        "flags": winner_variant_flags(include_route_elimination=config.include_route_elimination),
+        "flags": dict(flags),
     }
 
 
@@ -386,6 +454,7 @@ def _run_winner_kernel_loop(
     carbon_profile: list[dict[str, Any]],
     *,
     config: WinnerKernelConfig,
+    variant_flags: dict[str, str] | None = None,
 ) -> AlnsRunResult:
     policy = SearchPolicy(require_charging_signal=config.require_charging_signal)
     context = EvaluationContext(
@@ -400,6 +469,7 @@ def _run_winner_kernel_loop(
     initial_obj = score_reference(initial_solution, context)
     current = best = AlnsState(initial_solution, context, objective_value=initial_obj, policy=policy)
     operator_set = WinnerOperatorSet.create(include_route_elimination=config.include_route_elimination)
+    flags = variant_flags or winner_variant_flags(include_route_elimination=config.include_route_elimination)
     selector = _make_operator_selector(len(operator_set.destroy_ops), len(operator_set.repair_ops))
     acceptance = _make_acceptance_criterion(current, _target_iterations(None, config.eval_budget))
     destroy_counts = {name: [0, 0, 0, 0] for name, _ in operator_set.destroy_ops}
@@ -436,6 +506,7 @@ def _run_winner_kernel_loop(
             policy=policy,
             current_obj=previous_obj,
             progress=progress,
+            variant_flags=flags,
         )
         candidate = result["candidate_state"]
         candidate_obj = float(result["candidate_obj"])
