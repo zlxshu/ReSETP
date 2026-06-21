@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import argparse
+import ast
 from contextlib import contextmanager
 from concurrent.futures import ProcessPoolExecutor, as_completed
 import csv
@@ -89,7 +90,138 @@ def run_all(
             for algorithm in selected_algorithms:
                 tasks.append((algorithm, instance_name, bundle_dir, int(seed), int(eval_budget), runtime_caps.get(algorithm, float(max_runtime_seconds))))
 
-    results = _run_parallel(tasks)
+    results, fallback_reruns = _run_parallel_with_fallback(
+        tasks,
+        fallback_max_runtime_seconds=fallback_max_runtime_seconds,
+        auto_runtime_fallback=auto_runtime_fallback,
+    )
+
+    return _write_formal_results(
+        root,
+        out,
+        selected=selected,
+        seeds=seeds,
+        eval_budget=eval_budget,
+        max_runtime_seconds=max_runtime_seconds,
+        fallback_max_runtime_seconds=fallback_max_runtime_seconds,
+        auto_runtime_fallback=auto_runtime_fallback,
+        runtime_caps=runtime_caps,
+        selected_algorithms=selected_algorithms,
+        results=results,
+        started=started,
+        fallback_reruns=fallback_reruns,
+        previous_output_dir=None,
+    )
+
+
+def run_fallback_completion(
+    repo_root: str | Path,
+    previous_output_dir: str | Path,
+    output_dir: str | Path,
+    *,
+    fallback_max_runtime_seconds: float = DEFAULT_FALLBACK_MAX_RUNTIME_SECONDS,
+) -> dict[str, Any]:
+    _ensure_environment()
+    root = Path(repo_root)
+    previous = Path(previous_output_dir)
+    out = Path(output_dir)
+    out.mkdir(parents=True, exist_ok=True)
+    _write_preflight(root, out)
+
+    manifest = json.loads((previous / "manifest.json").read_text(encoding="utf-8"))
+    raw_rows = _read_csv(previous / "raw_runs.csv")
+    results = [_result_from_raw_row(previous, row) for row in raw_rows]
+    tasks: list[tuple[str, str, str, int, int, float]] = []
+    old_by_key = {_result_key(result): result for result in results}
+    for result in results:
+        if (
+            result["status"] == "HALT_RUNTIME_UNDER_EVAL"
+            and int(result["evaluations"]) < int(result["eval_budget"])
+            and float(result["max_runtime_seconds"]) < float(fallback_max_runtime_seconds)
+        ):
+            bundle_dir = Path(str(result["bundle_dir"]))
+            if not bundle_dir.is_absolute():
+                bundle_dir = root / bundle_dir
+            tasks.append(
+                (
+                    str(result["algorithm"]),
+                    str(result["instance"]),
+                    str(bundle_dir),
+                    int(result["seed"]),
+                    int(result["eval_budget"]),
+                    float(fallback_max_runtime_seconds),
+                )
+            )
+
+    started = time.perf_counter()
+    fallback_results = _run_parallel(tasks) if tasks else []
+    fallback_reruns: list[dict[str, Any]] = []
+    for replacement in fallback_results:
+        key = _result_key(replacement)
+        old = old_by_key.get(key, {})
+        old_by_key[key] = replacement
+        fallback_reruns.append(
+            {
+                "instance": replacement["instance"],
+                "algorithm": replacement["algorithm"],
+                "seed": int(replacement["seed"]),
+                "old_evaluations": int(old.get("evaluations", 0) or 0),
+                "old_max_runtime_seconds": float(old.get("max_runtime_seconds", 0.0) or 0.0),
+                "new_evaluations": int(replacement["evaluations"]),
+                "new_max_runtime_seconds": float(replacement["max_runtime_seconds"]),
+                "new_status": replacement["status"],
+            }
+        )
+    combined_results = list(old_by_key.values())
+    selected = {name: Path(path) for name, path in dict(manifest["instances"]).items()}
+    selected_algorithms = [
+        str(algorithm)
+        for algorithm in manifest.get("algorithms", [])
+        if algorithm not in {"fair-SA", "winner-kernel ALNS"}
+    ]
+    runtime_caps = dict(manifest.get("runtime_caps", {}))
+    for rerun in fallback_reruns:
+        algorithm = str(rerun["algorithm"])
+        runtime_caps[algorithm] = max(float(runtime_caps.get(algorithm, 0.0) or 0.0), float(rerun["new_max_runtime_seconds"]))
+
+    elapsed_override = float(manifest.get("elapsed_seconds", 0.0) or 0.0) + (time.perf_counter() - started)
+    return _write_formal_results(
+        root,
+        out,
+        selected=selected,
+        seeds=[int(seed) for seed in manifest["seeds"]],
+        eval_budget=int(manifest["eval_budget"]),
+        max_runtime_seconds=float(manifest["max_runtime_seconds"]),
+        fallback_max_runtime_seconds=float(fallback_max_runtime_seconds),
+        auto_runtime_fallback=bool(manifest.get("auto_runtime_fallback", True)),
+        runtime_caps=runtime_caps,
+        selected_algorithms=selected_algorithms,
+        results=combined_results,
+        started=started,
+        fallback_reruns=fallback_reruns,
+        previous_output_dir=str(previous),
+        elapsed_seconds_override=elapsed_override,
+    )
+
+
+def _write_formal_results(
+    root: Path,
+    out: Path,
+    *,
+    selected: dict[str, Path],
+    seeds: list[int],
+    eval_budget: int,
+    max_runtime_seconds: float,
+    fallback_max_runtime_seconds: float | None,
+    auto_runtime_fallback: bool,
+    runtime_caps: dict[str, float],
+    selected_algorithms: list[str],
+    results: list[dict[str, Any]],
+    started: float,
+    fallback_reruns: list[dict[str, Any]],
+    previous_output_dir: str | None,
+    elapsed_seconds_override: float | None = None,
+) -> dict[str, Any]:
     rows: list[dict[str, Any]] = []
     raw_rows: list[dict[str, Any]] = []
     halt_rows: list[dict[str, Any]] = []
@@ -139,8 +271,10 @@ def run_all(
         "fallback_max_runtime_seconds": fallback_max_runtime_seconds,
         "auto_runtime_fallback": bool(auto_runtime_fallback),
         "runtime_caps": runtime_caps,
+        "fallback_reruns": fallback_reruns,
+        "previous_output_dir": previous_output_dir,
         "algorithms": ["fair-SA", "winner-kernel ALNS", *selected_algorithms],
-        "elapsed_seconds": time.perf_counter() - started,
+        "elapsed_seconds": float(elapsed_seconds_override) if elapsed_seconds_override is not None else time.perf_counter() - started,
         "status": "HALT_BASELINE_INCOMPARABLE" if halt_rows else "OK",
         "outputs": ["raw_runs.csv", "comparison_table.csv", "wilcoxon.csv", "verdicts.csv", "convergence_curves.csv", "report.md", "manifest.json"],
     }
@@ -284,6 +418,61 @@ def _run_parallel(tasks: list[tuple[str, str, str, int, int, float]]) -> list[di
         for future in as_completed(futures):
             results.append(future.result())
     return results
+
+
+def _run_parallel_with_fallback(
+    tasks: list[tuple[str, str, str, int, int, float]],
+    *,
+    fallback_max_runtime_seconds: float | None,
+    auto_runtime_fallback: bool,
+) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
+    results = _run_parallel(tasks)
+    if not auto_runtime_fallback or fallback_max_runtime_seconds is None:
+        return results, []
+    fallback_cap = float(fallback_max_runtime_seconds)
+    fallback_tasks: list[tuple[str, str, str, int, int, float]] = []
+    for result in results:
+        if (
+            result["status"] == "HALT_RUNTIME_UNDER_EVAL"
+            and int(result["evaluations"]) < int(result["eval_budget"])
+            and float(result["max_runtime_seconds"]) < fallback_cap
+        ):
+            fallback_tasks.append(
+                (
+                    str(result["algorithm"]),
+                    str(result["instance"]),
+                    str(result["bundle_dir"]),
+                    int(result["seed"]),
+                    int(result["eval_budget"]),
+                    fallback_cap,
+                )
+            )
+    if not fallback_tasks:
+        return results, []
+    replacements = _run_parallel(fallback_tasks)
+    by_key = {_result_key(result): result for result in results}
+    reruns: list[dict[str, Any]] = []
+    for replacement in replacements:
+        key = _result_key(replacement)
+        old = by_key.get(key, {})
+        by_key[key] = replacement
+        reruns.append(
+            {
+                "instance": replacement["instance"],
+                "algorithm": replacement["algorithm"],
+                "seed": int(replacement["seed"]),
+                "old_evaluations": int(old.get("evaluations", 0) or 0),
+                "old_max_runtime_seconds": float(old.get("max_runtime_seconds", 0.0) or 0.0),
+                "new_evaluations": int(replacement["evaluations"]),
+                "new_max_runtime_seconds": float(replacement["max_runtime_seconds"]),
+                "new_status": replacement["status"],
+            }
+        )
+    return list(by_key.values()), reruns
+
+
+def _result_key(result: dict[str, Any]) -> tuple[str, str, int]:
+    return str(result["instance"]), str(result["algorithm"]), int(result["seed"])
 
 
 def _runtime_caps(
@@ -696,6 +885,36 @@ def _raw_result_row(result: dict[str, Any]) -> dict[str, Any]:
     return {key: value for key, value in result.items() if key != "solution"}
 
 
+def _read_csv(path: str | Path) -> list[dict[str, str]]:
+    with Path(path).open(newline="", encoding="utf-8") as handle:
+        return list(csv.DictReader(handle))
+
+
+def _result_from_raw_row(previous_output_dir: Path, row: dict[str, str]) -> dict[str, Any]:
+    solution_path = previous_output_dir / "solutions" / f"{row['instance']}_{_safe_name(row['algorithm'])}_seed{row['seed']}.json"
+    solution = json.loads(solution_path.read_text(encoding="utf-8")) if solution_path.exists() else None
+    try:
+        history = ast.literal_eval(row.get("history", "[]") or "[]")
+    except (SyntaxError, ValueError):
+        history = []
+    return {
+        "instance": row["instance"],
+        "bundle_dir": row["bundle_dir"],
+        "algorithm": row["algorithm"],
+        "seed": int(row["seed"]),
+        "evaluations": int(float(row["evaluations"])),
+        "eval_budget": int(float(row["eval_budget"])),
+        "max_runtime_seconds": float(row["max_runtime_seconds"]),
+        "elapsed_seconds": float(row["elapsed_seconds"]),
+        "best_cost": float(row["best_cost"]) if row.get("best_cost") not in {"", None} else math.inf,
+        "status": row["status"],
+        "source": row.get("source", ""),
+        "violation_count": int(float(row.get("violation_count", 0) or 0)),
+        "history": history if isinstance(history, list) else [],
+        "solution": solution,
+    }
+
+
 def _write_preflight(repo_root: Path, out: Path) -> None:
     preflight = out / "preflight"
     preflight.mkdir(parents=True, exist_ok=True)
@@ -756,9 +975,10 @@ def _parse_instances(text: str) -> list[str]:
 
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description="Run ReSETP metaheuristic baseline comparison.")
-    parser.add_argument("stage", choices=["all", "profile"])
+    parser.add_argument("stage", choices=["all", "profile", "complete-fallback"])
     parser.add_argument("--repo-root", default=str(Path(__file__).resolve().parents[4]))
     parser.add_argument("--output-dir", default="baselines")
+    parser.add_argument("--previous-output-dir", default="")
     parser.add_argument("--instances", default="100-01-24h,L-main,Scale-150,Scale-200")
     parser.add_argument("--profile-instance", default="100-01-24h")
     parser.add_argument("--seeds", default="1-10")
@@ -781,6 +1001,17 @@ def main(argv: list[str] | None = None) -> int:
             algorithms=selected_algorithms or list(PROFILE_ALGORITHMS),
         )
         print(f"GATE METAHEURISTIC_BASELINES_PROFILE {result['gate']} {json.dumps(result, ensure_ascii=False)}")
+        return 0
+    if args.stage == "complete-fallback":
+        if not args.previous_output_dir:
+            raise SystemExit("HALT_ARGUMENTS: --previous-output-dir is required for complete-fallback")
+        result = run_fallback_completion(
+            args.repo_root,
+            args.previous_output_dir,
+            args.output_dir,
+            fallback_max_runtime_seconds=args.fallback_max_runtime_seconds,
+        )
+        print(f"GATE METAHEURISTIC_BASELINES_FALLBACK {result['gate']} {json.dumps(result, ensure_ascii=False)}")
         return 0
     result = run_all(
         args.repo_root,
