@@ -25,7 +25,7 @@ from .action_space import (
 )
 from .async_block_policy import BlockActorCritic, make_block_actor_critic, save_async_block_policy
 from .block_env import BlockAlnsEnv
-from .bundle_manifest import load_manifest
+from .bundle_manifest import load_manifest, validate_curriculum_manifest
 
 
 SYSTEM_WORKER_PYTHON = os.environ.get("SETP_WORKER_PYTHON", "/opt/anaconda3/bin/python3.13")
@@ -351,7 +351,7 @@ def run_self_check(args: argparse.Namespace) -> int:
     output_dir = _checked_output_dir(Path(args.output_dir))
     output_dir.mkdir(parents=True, exist_ok=True)
     _require_system_worker(args.required_worker_python)
-    manifest = load_manifest(args.manifest)
+    manifest = _load_manifest_for_args(args)
     bundles = list(manifest["train"])
     model = make_block_actor_critic(seed=int(args.seed), hidden_size=int(args.hidden_size))
     start = time.monotonic()
@@ -383,7 +383,7 @@ def run_audit(args: argparse.Namespace) -> int:
     output_dir = _checked_output_dir(Path(args.output_dir))
     output_dir.mkdir(parents=True, exist_ok=True)
     _require_system_worker(args.required_worker_python)
-    manifest = load_manifest(args.manifest)
+    manifest = _load_manifest_for_args(args)
     bundle = str((manifest["train"] or [args.bundle])[0])
     if args.bundle:
         bundle = str(args.bundle)
@@ -569,11 +569,19 @@ def _expected_episode_steps(eval_budget: int, block_size: int) -> int:
     return max(1, int(math.ceil(float(eval_budget) / max(float(block_size), 1.0))))
 
 
+def _load_manifest_for_args(args: argparse.Namespace) -> dict[str, Any]:
+    curriculum = bool(getattr(args, "curriculum", False))
+    manifest = load_manifest(args.manifest, validate=not curriculum)
+    if curriculum:
+        validate_curriculum_manifest(manifest, root=Path.cwd())
+    return manifest
+
+
 def run_train(args: argparse.Namespace) -> int:
     output_dir = _checked_output_dir(Path(args.output_dir))
     output_dir.mkdir(parents=True, exist_ok=True)
     _require_system_worker(args.required_worker_python)
-    manifest = load_manifest(args.manifest)
+    manifest = _load_manifest_for_args(args)
     bundles = list(manifest["train"])
     schedule = _parse_curriculum_schedule(args.curriculum_schedule)
     phase_learning_rates = _phase_values(args.phase_learning_rates, schedule, float(args.learning_rate))
@@ -1190,6 +1198,7 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     sub = parser.add_subparsers(dest="command", required=True)
     audit = sub.add_parser("audit")
     audit.add_argument("--manifest", default="solver/reports/dr_alns_ppo_v2/training_bundle_manifest.json")
+    audit.add_argument("--curriculum", action="store_true")
     audit.add_argument("--output-dir", default=f"{REPORT_ROOT_FRAGMENT}/audit")
     audit.add_argument("--bundle", default="")
     audit.add_argument("--seed", type=int, default=1)
@@ -1199,6 +1208,7 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     for command in ("self-check", "train"):
         p = sub.add_parser(command)
         p.add_argument("--manifest", default="solver/reports/dr_alns_ppo_v2/training_bundle_manifest.json")
+        p.add_argument("--curriculum", action="store_true")
         p.add_argument("--output-dir", required=True)
         p.add_argument("--seed", type=int, default=1)
         p.add_argument("--eval-budget", type=int, default=16000)
