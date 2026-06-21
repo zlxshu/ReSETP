@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import argparse
-from concurrent.futures import ProcessPoolExecutor, as_completed
+from concurrent.futures import ThreadPoolExecutor, as_completed
 import csv
 import json
 import math
@@ -11,6 +11,7 @@ from pathlib import Path
 import statistics
 import subprocess
 import sys
+import tempfile
 import time
 from typing import Any
 
@@ -73,6 +74,7 @@ GATE_INSTANCES = {
 
 ALGORITHMS = ("alns_sa_autofit", "alns_sa_lns_cooling", "LNS")
 SA_ALGORITHMS = ("alns_sa_autofit", "alns_sa_lns_cooling")
+HARD_TIMEOUT_GRACE_SECONDS = 15.0
 
 
 def run_gate(
@@ -112,7 +114,7 @@ def run_gate(
                     }
                 )
     started = time.perf_counter()
-    rows = _run_tasks(tasks, workers=max(1, int(workers)))
+    rows = _run_tasks(tasks, workers=max(1, int(workers)), repo_root=root)
     rows.sort(key=lambda row: (row["instance"], row["algorithm"], int(row["seed"])))
     _write_convergence_files(out / "convergence", rows)
     summary_rows = _summary_rows(rows)
@@ -142,15 +144,53 @@ def run_gate(
     return {"gate": verdict["verdict"], "manifest": str(out / "sa_manifest.json"), "elapsed_seconds": manifest["elapsed_seconds"]}
 
 
-def _run_tasks(tasks: list[dict[str, Any]], *, workers: int) -> list[dict[str, Any]]:
-    if workers <= 1:
-        return [_run_one(task) for task in tasks]
-    rows: list[dict[str, Any]] = []
-    with ProcessPoolExecutor(max_workers=workers) as pool:
-        futures = [pool.submit(_run_one, task) for task in tasks]
-        for future in as_completed(futures):
-            rows.append(future.result())
-    return rows
+def _run_tasks(tasks: list[dict[str, Any]], *, workers: int, repo_root: Path) -> list[dict[str, Any]]:
+    with tempfile.TemporaryDirectory(prefix="setp_e2_sa_tasks_") as tmp:
+        task_root = Path(tmp)
+        if workers <= 1:
+            return [_run_task_subprocess(task, repo_root=repo_root, task_root=task_root, task_index=idx) for idx, task in enumerate(tasks)]
+        rows: list[dict[str, Any]] = []
+        with ThreadPoolExecutor(max_workers=workers) as pool:
+            futures = [
+                pool.submit(_run_task_subprocess, task, repo_root=repo_root, task_root=task_root, task_index=idx)
+                for idx, task in enumerate(tasks)
+            ]
+            for future in as_completed(futures):
+                rows.append(future.result())
+        return rows
+
+
+def _run_task_subprocess(task: dict[str, Any], *, repo_root: Path, task_root: Path, task_index: int) -> dict[str, Any]:
+    task_path = task_root / f"task_{task_index}.json"
+    output_path = task_root / f"task_{task_index}_row.json"
+    task_path.write_text(json.dumps(task, ensure_ascii=False), encoding="utf-8")
+    timeout_seconds = float(task["runtime_cap_seconds"]) + HARD_TIMEOUT_GRACE_SECONDS
+    command = [
+        sys.executable,
+        "-m",
+        "setp_solver.search.e2_alns_sa_acceptance",
+        "--task-json",
+        str(task_path),
+        "--task-output-json",
+        str(output_path),
+    ]
+    started = time.perf_counter()
+    try:
+        completed = subprocess.run(
+            command,
+            cwd=repo_root,
+            text=True,
+            capture_output=True,
+            timeout=timeout_seconds,
+            check=False,
+        )
+    except subprocess.TimeoutExpired as exc:
+        return _timeout_row(task, elapsed=time.perf_counter() - started, stdout=exc.stdout, stderr=exc.stderr)
+    if completed.returncode != 0:
+        return _worker_error_row(task, elapsed=time.perf_counter() - started, stdout=completed.stdout, stderr=completed.stderr)
+    if not output_path.exists():
+        return _worker_error_row(task, elapsed=time.perf_counter() - started, stdout=completed.stdout, stderr=completed.stderr, reason="Worker produced no row JSON.")
+    return json.loads(output_path.read_text(encoding="utf-8"))
 
 
 def _run_one(task: dict[str, Any]) -> dict[str, Any]:
@@ -227,6 +267,68 @@ def _run_one(task: dict[str, Any]) -> dict[str, Any]:
         "active_flags": json.dumps(flags, sort_keys=True),
         "_history": history,
     }
+
+
+def _timeout_row(task: dict[str, Any], *, elapsed: float, stdout: str | bytes | None, stderr: str | bytes | None) -> dict[str, Any]:
+    return _failure_row(task, elapsed=elapsed, status="HALT_HARD_TIMEOUT", reason="Worker exceeded runtime cap plus hard-timeout grace.", stdout=stdout, stderr=stderr)
+
+
+def _worker_error_row(
+    task: dict[str, Any],
+    *,
+    elapsed: float,
+    stdout: str | bytes | None,
+    stderr: str | bytes | None,
+    reason: str = "Worker exited non-zero.",
+) -> dict[str, Any]:
+    return _failure_row(task, elapsed=elapsed, status="HALT_WORKER_ERROR", reason=reason, stdout=stdout, stderr=stderr)
+
+
+def _failure_row(
+    task: dict[str, Any],
+    *,
+    elapsed: float,
+    status: str,
+    reason: str,
+    stdout: str | bytes | None,
+    stderr: str | bytes | None,
+) -> dict[str, Any]:
+    return {
+        "commit_hash": task["commit_hash"],
+        "python": sys.executable,
+        "numpy": np.__version__,
+        "instance": task["instance"],
+        "category": task["category"],
+        "algorithm": task["algorithm"],
+        "seed": int(task["seed"]),
+        "runtime_cap_seconds": float(task["runtime_cap_seconds"]),
+        "elapsed_seconds": float(elapsed),
+        "eval_budget_backstop": int(task["eval_budget"]),
+        "actual_evals": 0,
+        "best_cost": math.inf,
+        "route_count": 0,
+        "cv_route_count": 0,
+        "ev_route_count": 0,
+        "violation_count": -1,
+        "feasible": False,
+        "status": status,
+        "gate_status": status,
+        "active_flags": "",
+        "failure_reason": reason,
+        "worker_stdout_tail": _tail_text(stdout),
+        "worker_stderr_tail": _tail_text(stderr),
+        "_history": [],
+    }
+
+
+def _tail_text(value: str | bytes | None, *, limit: int = 2000) -> str:
+    if value is None:
+        return ""
+    if isinstance(value, bytes):
+        text = value.decode("utf-8", errors="replace")
+    else:
+        text = value
+    return text[-limit:]
 
 
 def _write_convergence_files(convergence_dir: Path, rows: list[dict[str, Any]]) -> None:
@@ -465,6 +567,8 @@ def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description="Run the E2 ALNS SA-acceptance gate.")
     parser.add_argument("--repo-root", default=str(_repo_root()))
     parser.add_argument("--output-dir", default="baselines/e2_alns")
+    parser.add_argument("--task-json", default="")
+    parser.add_argument("--task-output-json", default="")
     parser.add_argument("--seeds", default="1-5")
     parser.add_argument("--instances", default="")
     parser.add_argument("--eval-budget", type=int, default=16_000)
@@ -472,6 +576,13 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--workers", type=int, default=1)
     parser.add_argument("--no-report-update", action="store_true")
     args = parser.parse_args(argv)
+    if args.task_json:
+        task = json.loads(Path(args.task_json).read_text(encoding="utf-8"))
+        row = _run_one(task)
+        if not args.task_output_json:
+            raise ValueError("--task-output-json is required with --task-json")
+        Path(args.task_output_json).write_text(json.dumps(row, ensure_ascii=False), encoding="utf-8")
+        return 0
     instances = [item.strip() for item in args.instances.split(",") if item.strip()] or None
     result = run_gate(
         args.repo_root,
