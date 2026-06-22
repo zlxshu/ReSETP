@@ -12,6 +12,7 @@ from __future__ import annotations
 
 from contextlib import contextmanager
 from dataclasses import asdict, dataclass, field, replace
+import json
 import math
 import os
 from pathlib import Path
@@ -211,6 +212,7 @@ class _SearchSession:
                     "operator": operator,
                 }
             )
+            _maybe_write_e2_checkpoint(scored.solution, cost, objective, self.evals, time.perf_counter() - self.started, operator)
         return scored
 
     def accept_if_better(self, scored: _ScoredSolution | None) -> bool:
@@ -268,6 +270,36 @@ class _SearchSession:
             operator_counts=dict(self.operator_counts),
             parameter_notes=parameter_notes or {},
         )
+
+
+def _maybe_write_e2_checkpoint(
+    solution: Solution,
+    best_cost: float,
+    best_obj: float,
+    eval_count: int,
+    elapsed_seconds: float,
+    operator: str,
+) -> None:
+    path_text = os.environ.get("SETP_E2_ALNS_CHECKPOINT_PATH", "").strip()
+    if not path_text:
+        return
+    path = Path(path_text)
+    try:
+        path.parent.mkdir(parents=True, exist_ok=True)
+        payload = {
+            "schema_version": "setp-e2-checkpoint.v1",
+            "eval": int(eval_count),
+            "time_seconds": float(elapsed_seconds),
+            "best_cost": float(best_cost),
+            "best_obj": float(best_obj),
+            "operator": str(operator),
+            "solution": asdict(solution),
+        }
+        tmp = path.with_suffix(path.suffix + ".tmp")
+        tmp.write_text(json.dumps(payload, ensure_ascii=False), encoding="utf-8")
+        os.replace(tmp, path)
+    except Exception:
+        return
 
 
 def run_metaheuristic_baseline(

@@ -19,6 +19,7 @@ from setp_solver.search.winner_operators import (
     _make_winner_acceptance_criterion,
     e2_alns_scan_bridge_flags,
     e2_alns_sa_acceptance_flags,
+    e2_alns_throughput_flags,
     e2_alns_variant_flags,
     operator_base_id,
     run_e2_alns_sa_acceptance,
@@ -58,9 +59,11 @@ class AlnsCrushV2Tests(unittest.TestCase):
                 "decode_winner_action",
                 "e2_alns_sa_acceptance_flags",
                 "e2_alns_scan_bridge_flags",
+                "e2_alns_throughput_flags",
                 "e2_alns_variant_flags",
                 "run_e2_alns_sa_acceptance",
                 "run_e2_alns_scan_bridge",
+                "run_e2_alns_throughput",
                 "scan_all_cv_solution",
                 "winner_variant_flags",
                 "run_e2_alns_final",
@@ -73,6 +76,7 @@ class AlnsCrushV2Tests(unittest.TestCase):
         self.assertEqual(manifest["e2_alns_scan_bridge_flags"], e2_alns_scan_bridge_flags())
         self.assertEqual(manifest["e2_alns_sa_acceptance_flags"]["autofit"], e2_alns_sa_acceptance_flags(mode="autofit"))
         self.assertEqual(manifest["e2_alns_sa_acceptance_flags"]["lns_cooling"], e2_alns_sa_acceptance_flags(mode="lns_cooling"))
+        self.assertEqual(manifest["e2_alns_throughput_flags"], e2_alns_throughput_flags())
         self.assertIn("Does not change cost.py/check.py/evaluation.py model semantics.", manifest["semantic_guards"])
 
     def test_winner_variant_flags_disable_harmful_prompt1_addons(self) -> None:
@@ -88,6 +92,8 @@ class AlnsCrushV2Tests(unittest.TestCase):
         self.assertEqual(default_flags["SETP_ALNS_CRUSH_ROUTE_ELIMINATION"], "0")
         self.assertEqual(default_flags["SETP_ALNS_CRUSH_SCAN_RESTART"], "0")
         self.assertEqual(default_flags["SETP_ALNS_CRUSH_SCAN_REBUILD"], "0")
+        self.assertEqual(default_flags["SETP_ALNS_CRUSH_ROUTE_COST_CACHE"], "0")
+        self.assertEqual(default_flags["SETP_ALNS_CRUSH_TIMING_LEDGER"], "0")
         self.assertEqual(route_elim_flags["SETP_ALNS_CRUSH_ROUTE_ELIMINATION"], "1")
         self.assertEqual(WinnerKernelConfig().include_route_elimination, False)
 
@@ -103,6 +109,8 @@ class AlnsCrushV2Tests(unittest.TestCase):
         self.assertEqual(flags["SETP_ALNS_CRUSH_ROUTE_ELIMINATION"], "0")
         self.assertEqual(flags["SETP_ALNS_CRUSH_SCAN_RESTART"], "0")
         self.assertEqual(flags["SETP_ALNS_CRUSH_SCAN_REBUILD"], "0")
+        self.assertEqual(flags["SETP_ALNS_CRUSH_ROUTE_COST_CACHE"], "0")
+        self.assertEqual(flags["SETP_ALNS_CRUSH_TIMING_LEDGER"], "0")
         self.assertNotEqual(flags, winner_variant_flags())
 
     def test_e2_scan_bridge_flags_are_explicit_experimental_flags(self) -> None:
@@ -117,6 +125,8 @@ class AlnsCrushV2Tests(unittest.TestCase):
         self.assertEqual(flags["SETP_ALNS_CRUSH_SA_ACCEPTANCE"], "0")
         self.assertEqual(flags["SETP_ALNS_CRUSH_SA_MODE"], "off")
         self.assertEqual(flags["SETP_ALNS_CRUSH_LOCAL_SEARCH"], "0")
+        self.assertEqual(flags["SETP_ALNS_CRUSH_ROUTE_COST_CACHE"], "0")
+        self.assertEqual(flags["SETP_ALNS_CRUSH_TIMING_LEDGER"], "0")
 
     def test_e2_sa_acceptance_flags_are_explicit_experimental_flags(self) -> None:
         flags = e2_alns_sa_acceptance_flags(mode="autofit")
@@ -129,6 +139,18 @@ class AlnsCrushV2Tests(unittest.TestCase):
         self.assertEqual(flags["SETP_ALNS_CRUSH_SA_ACCEPTANCE"], "1")
         self.assertEqual(flags["SETP_ALNS_CRUSH_SA_MODE"], "autofit")
         self.assertEqual(e2_alns_sa_acceptance_flags(mode="lns_cooling")["SETP_ALNS_CRUSH_SA_MODE"], "lns_cooling")
+
+    def test_e2_throughput_flags_are_explicit_experimental_flags(self) -> None:
+        flags = e2_alns_throughput_flags()
+
+        self.assertEqual(flags["SETP_ALNS_CRUSH_TRUE_REPAIR"], "1")
+        self.assertEqual(flags["SETP_ALNS_CRUSH_ADAPTIVE_Q"], "1")
+        self.assertEqual(flags["SETP_ALNS_CRUSH_SCAN_RESTART"], "1")
+        self.assertEqual(flags["SETP_ALNS_CRUSH_SCAN_REBUILD"], "1")
+        self.assertEqual(flags["SETP_ALNS_CRUSH_SA_ACCEPTANCE"], "1")
+        self.assertEqual(flags["SETP_ALNS_CRUSH_SA_MODE"], "lns_cooling")
+        self.assertEqual(flags["SETP_ALNS_CRUSH_ROUTE_COST_CACHE"], "1")
+        self.assertEqual(flags["SETP_ALNS_CRUSH_TIMING_LEDGER"], "1")
 
     def test_winner_acceptance_builder_keeps_default_hillclimbing_and_sa_opt_in(self) -> None:
         root = Path(__file__).resolve().parents[2]

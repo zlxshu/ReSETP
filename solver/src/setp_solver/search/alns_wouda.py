@@ -38,6 +38,7 @@ from .feasible_repair import (
 from .fleet import FleetLimits, UNBOUNDED_FLEET, infer_fleet_limits, route_ev_energy_summary
 from .local_search import improve_solution_locally
 from .repair_scoring import route_model_cost_delta
+from .timing import timed_section
 
 
 MAX_VEHICLE_SWAP_CANDIDATES = 8
@@ -401,13 +402,14 @@ def _adaptive_remove_count(
 
 
 def _hard_violations(solution: Solution, context: EvaluationContext) -> list[Any]:
-    return check_solution(
-        solution,
-        context.instance,
-        context.prices,
-        fairness_context=fairness_context_for_solution(solution, context),
-        fairness_enabled=context.fairness_enabled,
-    )
+    with timed_section(context, "hard_check"):
+        return check_solution(
+            solution,
+            context.instance,
+            context.prices,
+            fairness_context=fairness_context_for_solution(solution, context),
+            fairness_enabled=context.fairness_enabled,
+        )
 
 
 def _solution_changed(a: Solution, b: Solution) -> bool:
@@ -796,7 +798,9 @@ def _ranked_insert_positions(route: Route, customer_id: str, instance: Instance)
 
 
 def _finalize_candidate_state(state: AlnsState) -> AlnsState:
-    return replace(state, objective_value=score_candidate(state.solution, state.context), removed_customers=state.removed_customers)
+    with timed_section(state.context, "full_candidate_score"):
+        objective = score_candidate(state.solution, state.context)
+    return replace(state, objective_value=objective, removed_customers=state.removed_customers)
 
 
 def _repair_route_delta_score(
@@ -816,7 +820,8 @@ def _repair_solution_delta_score(solution: Solution, context: EvaluationContext)
     try:
         if context.repair_delta_mode == "exact":
             return score_reference(solution, context)
-        return float(evaluate(solution, context.instance, context.carbon_profile, context.prices, carbon_quota_kg=context.carbon_quota_kg)["total_cost"])
+        with timed_section(context, "repair_solution_score"):
+            return float(evaluate(solution, context.instance, context.carbon_profile, context.prices, carbon_quota_kg=context.carbon_quota_kg)["total_cost"])
     except Exception:
         return BIG_M
 

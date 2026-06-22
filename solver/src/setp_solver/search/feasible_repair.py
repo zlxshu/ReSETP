@@ -12,6 +12,7 @@ from ..solution import ChargingAction, Route, Solution
 from .charging import repair_route_charging
 from .evaluation import BIG_M, EvaluationContext, fairness_context_for_solution, record_repair_delta
 from .repair_scoring import route_model_cost_delta
+from .timing import timed_section
 
 
 MAX_ROUTE_CANDIDATES = 4
@@ -123,22 +124,44 @@ def repair_removed_customers(
 
 
 def route_customers(route: Route, instance: Instance) -> list[str]:
-    node_lookup = {node.node_id: node for node in instance.nodes}
-    return [
+    cache = _instance_cache(instance, "_setp_route_customer_cache")
+    key = _route_key(route)
+    cached = cache.get(key)
+    if cached is not None:
+        return list(cached)
+    node_lookup = _node_lookup(instance)
+    customers = tuple(
         node_id
         for node_id in route.node_sequence
         if node_lookup.get(node_id) is not None and node_lookup[node_id].node_type.lower() == "c"
-    ]
+    )
+    if len(cache) > 100_000:
+        cache.clear()
+    cache[key] = customers
+    return list(customers)
 
 
 def nearest_depot_id(customer_id: str, instance: Instance) -> str:
-    customer = next(node for node in instance.nodes if node.node_id == customer_id)
+    cache = _instance_cache(instance, "_setp_nearest_depot_cache")
+    if customer_id in cache:
+        return str(cache[customer_id])
     depots = _depots(instance)
-    return min(depots, key=lambda depot: (instance.distance(depot.node_id, customer.node_id), depot.node_id)).node_id
+    nearest = min(depots, key=lambda depot: (instance.distance(depot.node_id, customer_id), depot.node_id)).node_id
+    cache[customer_id] = nearest
+    return str(nearest)
 
 
 def route_distance(route: Route, instance: Instance) -> float:
-    return sum(float(instance.distance(a, b)) for a, b in zip(route.node_sequence, route.node_sequence[1:]))
+    cache = _instance_cache(instance, "_setp_route_distance_cache")
+    key = _route_key(route)
+    cached = cache.get(key)
+    if cached is not None:
+        return float(cached)
+    distance = sum(float(instance.distance(a, b)) for a, b in zip(route.node_sequence, route.node_sequence[1:]))
+    if len(cache) > 100_000:
+        cache.clear()
+    cache[key] = distance
+    return float(distance)
 
 
 def _ranked_routes(routes: list[Route], customer_id: str, instance: Instance, limit: int) -> list[tuple[int, Route]]:
@@ -180,10 +203,10 @@ def _solution_with_route_customers(
     actions = [action for action in solution.charging_actions if action.vehicle_id != route.vehicle_id]
     route_actions: list[ChargingAction] = []
     if vehicle_type == "ev":
-        try:
-            clean_route, route_actions = repair_route_charging(clean_route, context.instance, context.carbon_profile, context.prices)
-        except ValueError:
+        repaired = _repair_ev_route_cached(clean_route, context)
+        if repaired is None:
             return None
+        clean_route, route_actions = repaired
         if bool(getattr(policy, "require_charging_signal", False)) and not route_actions:
             return None
     if not _route_locally_feasible(clean_route, route_actions, context):
@@ -208,10 +231,8 @@ def _new_route_options(solution: Solution, customer_id: str, context: Evaluation
     if ev_count < int(getattr(policy, "max_ev", 10**9)):
         vehicle_id = _next_vehicle_id(solution.routes, "EV")
         route = Route(vehicle_id, "ev", depot_id, [depot_id, customer_id, depot_id])
-        try:
-            repaired, actions = repair_route_charging(route, context.instance, context.carbon_profile, context.prices)
-        except ValueError:
-            repaired, actions = None, []
+        repaired_payload = _repair_ev_route_cached(route, context)
+        repaired, actions = repaired_payload if repaired_payload is not None else (None, [])
         record_repair_delta(context)
         if repaired is not None and (not bool(getattr(policy, "require_charging_signal", False)) or actions) and _route_locally_feasible(repaired, actions, context):
             candidate = Solution(routes=[*solution.routes, repaired], charging_actions=[*solution.charging_actions, *actions], cross_site_services=solution.cross_site_services)
@@ -220,7 +241,20 @@ def _new_route_options(solution: Solution, customer_id: str, context: Evaluation
 
 
 def _route_locally_feasible(route: Route, actions: list[ChargingAction], context: EvaluationContext) -> bool:
-    node_lookup = {node.node_id: node for node in context.instance.nodes}
+    cache = _instance_cache(context.instance, "_setp_local_feasible_cache")
+    key = (_route_key(route), _action_key(actions))
+    cached = cache.get(key)
+    if cached is not None:
+        return bool(cached)
+    feasible = _route_locally_feasible_uncached(route, actions, context)
+    if len(cache) > 200_000:
+        cache.clear()
+    cache[key] = bool(feasible)
+    return bool(feasible)
+
+
+def _route_locally_feasible_uncached(route: Route, actions: list[ChargingAction], context: EvaluationContext) -> bool:
+    node_lookup = _node_lookup(context.instance)
     if not route.node_sequence or route.node_sequence[0] != route.home_depot_id or route.node_sequence[-1] != route.home_depot_id:
         return False
     if route.home_depot_id not in node_lookup or node_lookup[route.home_depot_id].node_type.lower() != "d":
@@ -276,13 +310,14 @@ def _price(prices: Any, name: str) -> float:
 def _is_full_solution_feasible(solution: Solution, context: EvaluationContext, policy: Any) -> bool:
     if bool(getattr(policy, "require_charging_signal", False)) and not any(float(action.energy_kwh) > 1e-9 for action in solution.charging_actions):
         return False
-    return not check_solution(
-        solution,
-        context.instance,
-        context.prices,
-        fairness_context=fairness_context_for_solution(solution, context),
-        fairness_enabled=context.fairness_enabled,
-    )
+    with timed_section(context, "repair_full_check"):
+        return not check_solution(
+            solution,
+            context.instance,
+            context.prices,
+            fairness_context=fairness_context_for_solution(solution, context),
+            fairness_enabled=context.fairness_enabled,
+        )
 
 
 def _all_cv_fallback(solution: Solution, context: EvaluationContext, policy: Any) -> Solution | None:
@@ -317,7 +352,8 @@ def _delta_score(
 
 def _solution_cost(solution: Solution, context: EvaluationContext) -> float:
     try:
-        return float(evaluate(solution, context.instance, context.carbon_profile, context.prices, carbon_quota_kg=context.carbon_quota_kg)["total_cost"])
+        with timed_section(context, "repair_fallback_solution_cost"):
+            return float(evaluate(solution, context.instance, context.carbon_profile, context.prices, carbon_quota_kg=context.carbon_quota_kg)["total_cost"])
     except Exception:
         return BIG_M
 
@@ -327,7 +363,65 @@ def _solution_key(solution: Solution) -> tuple[Any, ...]:
 
 
 def _depots(instance: Instance) -> list[Node]:
-    return sorted((node for node in instance.nodes if node.node_type.lower() == "d"), key=lambda node: node.node_id)
+    cache = _instance_cache(instance, "_setp_depot_cache")
+    if "depots" not in cache:
+        cache["depots"] = tuple(sorted((node for node in instance.nodes if node.node_type.lower() == "d"), key=lambda node: node.node_id))
+    return list(cache["depots"])
+
+
+def _node_lookup(instance: Instance) -> dict[str, Node]:
+    cache = _instance_cache(instance, "_setp_node_lookup_cache")
+    if "lookup" not in cache:
+        cache["lookup"] = {node.node_id: node for node in instance.nodes}
+    return cache["lookup"]
+
+
+def _instance_cache(instance: Instance, name: str) -> dict[Any, Any]:
+    cached = getattr(instance, name, None)
+    if cached is None:
+        cached = {}
+        object.__setattr__(instance, name, cached)
+    return cached
+
+
+def _route_key(route: Route) -> tuple[str, str, str, tuple[str, ...]]:
+    key = (str(route.vehicle_id), route.vehicle_type.lower(), str(route.home_depot_id), tuple(str(node_id) for node_id in route.node_sequence))
+    return key
+
+
+def _action_key(actions: list[ChargingAction]) -> tuple[tuple[str, str, float, float, float], ...]:
+    return tuple(
+        sorted(
+            (
+                str(action.vehicle_id),
+                str(action.station_id),
+                round(float(action.energy_kwh), 9),
+                round(float(action.occupancy_minutes), 9),
+                round(float(action.charge_start_second), 9),
+            )
+            for action in actions
+        )
+    )
+
+
+def _repair_ev_route_cached(route: Route, context: EvaluationContext) -> tuple[Route, list[ChargingAction]] | None:
+    cache = _instance_cache(context.instance, "_setp_ev_repair_cache")
+    key = _route_key(route)
+    if key in cache:
+        cached = cache[key]
+        if cached is None:
+            return None
+        repaired, actions = cached
+        return repaired, list(actions)
+    try:
+        repaired, actions = repair_route_charging(route, context.instance, context.carbon_profile, context.prices)
+    except ValueError:
+        cache[key] = None
+        return None
+    if len(cache) > 200_000:
+        cache.clear()
+    cache[key] = (repaired, tuple(actions))
+    return repaired, list(actions)
 
 
 def _next_vehicle_id(routes: list[Route], prefix: str) -> str:

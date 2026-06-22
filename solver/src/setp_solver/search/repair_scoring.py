@@ -15,6 +15,7 @@ from typing import Any
 from ..cost import evaluate
 from ..solution import ChargingAction, Route, Solution
 from .evaluation import BIG_M, EvaluationContext, _prices_with_carbon_weight
+from .timing import timed_section
 
 
 def route_model_cost_delta(
@@ -45,16 +46,58 @@ def route_model_cost(route: Route, actions: list[ChargingAction] | list[Any], co
     spurious fixed offset unrelated to the insertion decision.
     """
 
-    prices = _prices_with_carbon_weight(context.prices, context.carbon_weight)
     route_actions = [action for action in actions if getattr(action, "vehicle_id", route.vehicle_id) == route.vehicle_id]
-    return float(
-        evaluate(
-            Solution(routes=[route], charging_actions=list(route_actions)),
-            context.instance,
-            context.carbon_profile,
-            prices,
-            carbon_quota_kg=0.0,
-        )["total_cost"]
+    cache_key = _route_cost_cache_key(route, route_actions)
+    cache = _route_cost_cache(context)
+    if cache is not None and cache_key in cache:
+        return float(cache[cache_key])
+    prices = _prices_with_carbon_weight(context.prices, context.carbon_weight)
+    with timed_section(context, "route_model_cost"):
+        cost = float(
+            evaluate(
+                Solution(routes=[route], charging_actions=list(route_actions)),
+                context.instance,
+                context.carbon_profile,
+                prices,
+                carbon_quota_kg=0.0,
+            )["total_cost"]
+        )
+    if cache is not None:
+        if len(cache) > 50_000:
+            cache.clear()
+        cache[cache_key] = cost
+    return cost
+
+
+def _route_cost_cache(context: EvaluationContext) -> dict[Any, float] | None:
+    if os.environ.get("SETP_ALNS_CRUSH_ROUTE_COST_CACHE", "0").lower() in {"0", "false", "no"}:
+        return None
+    cache = getattr(context, "_route_model_cost_cache", None)
+    if cache is None:
+        cache = {}
+        setattr(context, "_route_model_cost_cache", cache)
+    return cache
+
+
+def _route_cost_cache_key(route: Route, actions: list[ChargingAction] | list[Any]) -> tuple[Any, ...]:
+    action_key = tuple(
+        sorted(
+            (
+                str(getattr(action, "vehicle_id", "")),
+                str(getattr(action, "station_id", "")),
+                round(float(getattr(action, "energy_kwh", 0.0)), 9),
+                round(float(getattr(action, "occupancy_minutes", 0.0)), 9),
+                round(float(getattr(action, "charge_start_second", 0.0)), 9),
+            )
+            for action in actions
+        )
+    )
+    return (
+        str(route.vehicle_id),
+        route.vehicle_type.lower(),
+        str(route.home_depot_id),
+        tuple(str(node_id) for node_id in route.node_sequence),
+        action_key,
     )
 
 
