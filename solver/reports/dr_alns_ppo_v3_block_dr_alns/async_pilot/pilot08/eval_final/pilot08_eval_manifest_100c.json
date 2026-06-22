@@ -1,0 +1,16 @@
+{
+  "schema_version": "dr-alns-ppo-bundle-manifest.v1",
+  "train": [
+    "models/data_bundle/generated_instances/E-UK100_02__u0_seed2_24h_20251113"
+  ],
+  "held_out": [
+    "models/data_bundle/generated_instances/E-UK100_03__u0_seed3_24h_20251113"
+  ],
+  "formal_eval": [
+    "models/data_bundle/generated_instances/E-UK100_01__d2_s3_seed1_24h_20251113"
+  ],
+  "excluded_from_training_reason": {
+    "pilot08_eval_only": "Evaluation-only 100c manifest for Pilot08 C. The curriculum training manifest contains 25c/50c train bundles and must not be reused for 100c verdicts.",
+    "same_machine_relative_only": "All reported percentages are same-machine x86 relative comparisons; no M1 absolute objective comparison is made."
+  }
+}

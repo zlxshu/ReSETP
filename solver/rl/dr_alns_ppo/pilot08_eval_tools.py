@@ -443,6 +443,7 @@ def summarize_eval(
         "refine_ranking": refine_ranking,
         "integrity": integrity,
         "runtime_summary": runtime_rows,
+        "equal_wall_clock_note": _equal_wall_clock_note(runtime_rows),
         "algorithm_summary": algorithm_rows,
         "paired_relative": paired,
         "wilcoxon": wilcoxon_rows,
@@ -1134,6 +1135,10 @@ def _report_markdown(summary: dict[str, Any]) -> str:
             f"- BEST_MODEL: `{summary['best_model']['model_label']}` update `{summary['best_model']['checkpoint_update']}`",
             f"- Final model refine rank: `{summary['final_model_rank']}`",
             "",
+            "## Equal-Wall-Clock Check",
+            "",
+            summary["equal_wall_clock_note"],
+            "",
             "## Runtime",
             "",
         ]
@@ -1170,6 +1175,41 @@ def _report_markdown(summary: dict[str, Any]) -> str:
         ]
     )
     return "\n".join(lines) + "\n"
+
+
+def _equal_wall_clock_note(runtime_rows: list[dict[str, Any]]) -> str:
+    timed = [row for row in runtime_rows if str(row.get("eval_mode")) == "timed"]
+    budget = [row for row in runtime_rows if str(row.get("eval_mode")) == "budget"]
+    timed_ok = all(
+        TARGET_SECONDS * TIMED_MIN_RATIO
+        <= float(row.get("mean_elapsed_seconds") or 0.0)
+        <= TARGET_SECONDS * TIMED_MAX_RATIO
+        for row in timed
+    )
+    slow_budget = [
+        row
+        for row in budget
+        if float(row.get("mean_elapsed_seconds") or 0.0) > TARGET_SECONDS * TIMED_MAX_RATIO
+        or float(row.get("mean_elapsed_seconds") or 0.0) < TARGET_SECONDS * TIMED_MIN_RATIO
+    ]
+    if timed_ok and not slow_budget:
+        return "Timed and budget-mode algorithms stayed within the 900s tolerance window on mean runtime."
+    parts = []
+    if timed_ok:
+        parts.append("SA and official winner rows used true timed mode and stayed near 900s on mean runtime.")
+    else:
+        parts.append("At least one timed SA/official row group was outside the 900s tolerance window.")
+    if slow_budget:
+        names = ", ".join(
+            f"{row['algorithm']} on {Path(str(row['bundle'])).name} mean={float(row['mean_elapsed_seconds']):.1f}s"
+            for row in slow_budget
+        )
+        parts.append(
+            "Budget-mode block algorithms shared EVAL_BUDGET_900, but observed runtimes were not uniformly near 900s: "
+            + names
+            + ". Interpret relative percentages with this same-machine runtime caveat."
+        )
+    return " ".join(parts)
 
 
 def _row_id(row: dict[str, Any]) -> str:

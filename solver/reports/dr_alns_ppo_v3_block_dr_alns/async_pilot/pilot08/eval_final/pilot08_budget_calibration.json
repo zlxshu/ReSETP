@@ -1,0 +1,92 @@
+{
+  "attempts": [
+    {
+      "actual_evals": 2700,
+      "algorithm": "ppo_block_final",
+      "best_obj": 4057.811022904121,
+      "bundle": "models/data_bundle/generated_instances/E-UK100_02__u0_seed2_24h_20251113",
+      "bundle_role": "train",
+      "calibration_attempt": 1,
+      "candidate_scores": 2700,
+      "checkpoint_update": 350,
+      "control_mode": "block_ppo",
+      "destroy_counts": {
+        "random_customer_removal": 2,
+        "route_segment_removal": 6,
+        "shaw_related_removal": 5,
+        "vehicle_type_swap": 61,
+        "whole_route_removal": 4,
+        "worst_customer_removal": 7
+      },
+      "elapsed_seconds": 185.76051999998163,
+      "eval_budget": 2700,
+      "eval_mode": "calibration",
+      "feasible": true,
+      "model_label": "final",
+      "operator_base_id": "winner_kernel_v1",
+      "operator_counts": {},
+      "q_ratio_counts": {
+        "0.230000": 85
+      },
+      "repair_counts": {
+        "greedy_insert_repair": 10,
+        "regret2_insert_repair": 5,
+        "regret3_insert_repair": 70
+      },
+      "repair_delta_count": 340836,
+      "runtime_target_seconds": 900.0,
+      "seed": 1,
+      "solution_signature_hash": "d7482a52f1f356662b521c178c7ff0c1ab35dac99039ed69a099a1c975dc1f03",
+      "violation_count": 0,
+      "worker_numpy_version": "2.3.5",
+      "worker_python_executable": "C:\\Users\\zlxshu\\.venvs\\resetp-solver-py313\\Scripts\\python.exe",
+      "worker_python_version": "3.13.12 (main, Mar  3 2026, 15:00:12) [MSC v.1944 64 bit (AMD64)]"
+    },
+    {
+      "actual_evals": 13100,
+      "algorithm": "ppo_block_final",
+      "best_obj": 3689.0731559951605,
+      "bundle": "models/data_bundle/generated_instances/E-UK100_02__u0_seed2_24h_20251113",
+      "bundle_role": "train",
+      "calibration_attempt": 2,
+      "candidate_scores": 13100,
+      "checkpoint_update": 350,
+      "control_mode": "block_ppo",
+      "destroy_counts": {
+        "random_customer_removal": 18,
+        "route_segment_removal": 26,
+        "shaw_related_removal": 25,
+        "vehicle_type_swap": 300,
+        "whole_route_removal": 20,
+        "worst_customer_removal": 21
+      },
+      "elapsed_seconds": 884.2513372999965,
+      "eval_budget": 13100,
+      "eval_mode": "calibration",
+      "feasible": true,
+      "model_label": "final",
+      "operator_base_id": "winner_kernel_v1",
+      "operator_counts": {},
+      "q_ratio_counts": {
+        "0.230000": 410
+      },
+      "repair_counts": {
+        "greedy_insert_repair": 42,
+        "regret2_insert_repair": 39,
+        "regret3_insert_repair": 329
+      },
+      "repair_delta_count": 1683949,
+      "runtime_target_seconds": 900.0,
+      "seed": 1,
+      "solution_signature_hash": "57523dad28b79b7ebd6b11488e117f8f3e8a38b12a5a60f82b0518821a2d3c15",
+      "violation_count": 0,
+      "worker_numpy_version": "2.3.5",
+      "worker_python_executable": "C:\\Users\\zlxshu\\.venvs\\resetp-solver-py313\\Scripts\\python.exe",
+      "worker_python_version": "3.13.12 (main, Mar  3 2026, 15:00:12) [MSC v.1944 64 bit (AMD64)]"
+    }
+  ],
+  "schema_version": "resetp-pilot08-budget-calibration.v1",
+  "selected_elapsed_seconds": 884.2513372999965,
+  "selected_eval_budget": 13100,
+  "target_seconds": 900.0
+}
