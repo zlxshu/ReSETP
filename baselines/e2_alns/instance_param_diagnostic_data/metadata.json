@@ -1,0 +1,21 @@
+{
+  "PYTHONHASHSEED": "0",
+  "branch": "codex/reporting-pipeline",
+  "command": "/opt/anaconda3/bin/python3.13 baselines/e2_alns/instance_param_diagnostic.py --eval-budget 80 --max-runtime-seconds 10",
+  "elapsed_seconds": 46.13135762498132,
+  "eval_budget": 80,
+  "instances": [
+    "vanilla/e2-vanilla-25c-01",
+    "vanilla/e2-vanilla-50c-01",
+    "threeshift/e2-threeshift-50c-01"
+  ],
+  "max_runtime_seconds": 10.0,
+  "numpy": "2.3.5",
+  "phase0_only": false,
+  "phase2_mode": "fixed_replay",
+  "python": "/opt/anaconda3/bin/python3.13",
+  "python_version": "3.13.9",
+  "repo_head": "39879b4b768935f45f69b61474ef840befdfc5be",
+  "repo_root": "/Volumes/移动硬盘（512G）/ReSETP",
+  "schema_version": "setp-09e-diagnostic-metadata.v1"
+}
