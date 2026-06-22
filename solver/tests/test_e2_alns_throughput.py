@@ -36,6 +36,7 @@ class E2AlnsThroughputTest(unittest.TestCase):
         throughput = e2_alns_throughput_flags()
         self.assertEqual(throughput["SETP_ALNS_CRUSH_SA_MODE"], "lns_cooling")
         self.assertEqual(throughput["SETP_ALNS_CRUSH_ROUTE_COST_CACHE"], "1")
+        self.assertEqual(throughput["SETP_ALNS_CRUSH_REPAIR_STRUCTURE_CACHE"], "1")
         self.assertEqual(throughput["SETP_ALNS_CRUSH_TIMING_LEDGER"], "1")
 
     def test_route_cost_cache_matches_uncached_route_cost(self) -> None:

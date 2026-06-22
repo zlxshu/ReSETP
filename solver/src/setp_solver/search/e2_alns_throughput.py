@@ -226,12 +226,14 @@ def _run_one(task: dict[str, Any]) -> dict[str, Any]:
     if algorithm == "alns_e2_throughput":
         profile_phase = str(task.get("profile_phase", "after"))
         route_cache = profile_phase != "before"
-        flags = e2_alns_throughput_flags(route_cost_cache=route_cache, timing_ledger=True)
+        structure_cache = profile_phase != "before"
+        flags = e2_alns_throughput_flags(route_cost_cache=route_cache, repair_structure_cache=structure_cache, timing_ledger=True)
         result = run_e2_alns_throughput(
             bundle_dir,
             config=WinnerKernelConfig(seed=seed, eval_budget=eval_budget, max_runtime_seconds=runtime_cap),
             initial_solution=warm,
             route_cost_cache=route_cache,
+            repair_structure_cache=structure_cache,
             timing_ledger=True,
         )
         solution = result["best_solution"]

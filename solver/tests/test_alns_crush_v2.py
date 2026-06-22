@@ -93,6 +93,7 @@ class AlnsCrushV2Tests(unittest.TestCase):
         self.assertEqual(default_flags["SETP_ALNS_CRUSH_SCAN_RESTART"], "0")
         self.assertEqual(default_flags["SETP_ALNS_CRUSH_SCAN_REBUILD"], "0")
         self.assertEqual(default_flags["SETP_ALNS_CRUSH_ROUTE_COST_CACHE"], "0")
+        self.assertEqual(default_flags["SETP_ALNS_CRUSH_REPAIR_STRUCTURE_CACHE"], "0")
         self.assertEqual(default_flags["SETP_ALNS_CRUSH_TIMING_LEDGER"], "0")
         self.assertEqual(route_elim_flags["SETP_ALNS_CRUSH_ROUTE_ELIMINATION"], "1")
         self.assertEqual(WinnerKernelConfig().include_route_elimination, False)
@@ -110,6 +111,7 @@ class AlnsCrushV2Tests(unittest.TestCase):
         self.assertEqual(flags["SETP_ALNS_CRUSH_SCAN_RESTART"], "0")
         self.assertEqual(flags["SETP_ALNS_CRUSH_SCAN_REBUILD"], "0")
         self.assertEqual(flags["SETP_ALNS_CRUSH_ROUTE_COST_CACHE"], "0")
+        self.assertEqual(flags["SETP_ALNS_CRUSH_REPAIR_STRUCTURE_CACHE"], "0")
         self.assertEqual(flags["SETP_ALNS_CRUSH_TIMING_LEDGER"], "0")
         self.assertNotEqual(flags, winner_variant_flags())
 
@@ -126,6 +128,7 @@ class AlnsCrushV2Tests(unittest.TestCase):
         self.assertEqual(flags["SETP_ALNS_CRUSH_SA_MODE"], "off")
         self.assertEqual(flags["SETP_ALNS_CRUSH_LOCAL_SEARCH"], "0")
         self.assertEqual(flags["SETP_ALNS_CRUSH_ROUTE_COST_CACHE"], "0")
+        self.assertEqual(flags["SETP_ALNS_CRUSH_REPAIR_STRUCTURE_CACHE"], "0")
         self.assertEqual(flags["SETP_ALNS_CRUSH_TIMING_LEDGER"], "0")
 
     def test_e2_sa_acceptance_flags_are_explicit_experimental_flags(self) -> None:
@@ -150,6 +153,7 @@ class AlnsCrushV2Tests(unittest.TestCase):
         self.assertEqual(flags["SETP_ALNS_CRUSH_SA_ACCEPTANCE"], "1")
         self.assertEqual(flags["SETP_ALNS_CRUSH_SA_MODE"], "lns_cooling")
         self.assertEqual(flags["SETP_ALNS_CRUSH_ROUTE_COST_CACHE"], "1")
+        self.assertEqual(flags["SETP_ALNS_CRUSH_REPAIR_STRUCTURE_CACHE"], "1")
         self.assertEqual(flags["SETP_ALNS_CRUSH_TIMING_LEDGER"], "1")
 
     def test_winner_acceptance_builder_keeps_default_hillclimbing_and_sa_opt_in(self) -> None:

@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+import os
 from typing import Any
 
 from ..check import check_solution
@@ -124,6 +125,13 @@ def repair_removed_customers(
 
 
 def route_customers(route: Route, instance: Instance) -> list[str]:
+    if not _structure_cache_enabled():
+        node_lookup = {node.node_id: node for node in instance.nodes}
+        return [
+            node_id
+            for node_id in route.node_sequence
+            if node_lookup.get(node_id) is not None and node_lookup[node_id].node_type.lower() == "c"
+        ]
     cache = _instance_cache(instance, "_setp_route_customer_cache")
     key = _route_key(route)
     cached = cache.get(key)
@@ -142,6 +150,10 @@ def route_customers(route: Route, instance: Instance) -> list[str]:
 
 
 def nearest_depot_id(customer_id: str, instance: Instance) -> str:
+    if not _structure_cache_enabled():
+        customer = next(node for node in instance.nodes if node.node_id == customer_id)
+        depots = _depots(instance)
+        return min(depots, key=lambda depot: (instance.distance(depot.node_id, customer.node_id), depot.node_id)).node_id
     cache = _instance_cache(instance, "_setp_nearest_depot_cache")
     if customer_id in cache:
         return str(cache[customer_id])
@@ -152,6 +164,8 @@ def nearest_depot_id(customer_id: str, instance: Instance) -> str:
 
 
 def route_distance(route: Route, instance: Instance) -> float:
+    if not _structure_cache_enabled():
+        return sum(float(instance.distance(a, b)) for a, b in zip(route.node_sequence, route.node_sequence[1:]))
     cache = _instance_cache(instance, "_setp_route_distance_cache")
     key = _route_key(route)
     cached = cache.get(key)
@@ -241,6 +255,8 @@ def _new_route_options(solution: Solution, customer_id: str, context: Evaluation
 
 
 def _route_locally_feasible(route: Route, actions: list[ChargingAction], context: EvaluationContext) -> bool:
+    if not _structure_cache_enabled():
+        return _route_locally_feasible_uncached(route, actions, context)
     cache = _instance_cache(context.instance, "_setp_local_feasible_cache")
     key = (_route_key(route), _action_key(actions))
     cached = cache.get(key)
@@ -363,6 +379,8 @@ def _solution_key(solution: Solution) -> tuple[Any, ...]:
 
 
 def _depots(instance: Instance) -> list[Node]:
+    if not _structure_cache_enabled():
+        return sorted((node for node in instance.nodes if node.node_type.lower() == "d"), key=lambda node: node.node_id)
     cache = _instance_cache(instance, "_setp_depot_cache")
     if "depots" not in cache:
         cache["depots"] = tuple(sorted((node for node in instance.nodes if node.node_type.lower() == "d"), key=lambda node: node.node_id))
@@ -370,6 +388,8 @@ def _depots(instance: Instance) -> list[Node]:
 
 
 def _node_lookup(instance: Instance) -> dict[str, Node]:
+    if not _structure_cache_enabled():
+        return {node.node_id: node for node in instance.nodes}
     cache = _instance_cache(instance, "_setp_node_lookup_cache")
     if "lookup" not in cache:
         cache["lookup"] = {node.node_id: node for node in instance.nodes}
@@ -405,6 +425,12 @@ def _action_key(actions: list[ChargingAction]) -> tuple[tuple[str, str, float, f
 
 
 def _repair_ev_route_cached(route: Route, context: EvaluationContext) -> tuple[Route, list[ChargingAction]] | None:
+    if not _structure_cache_enabled():
+        try:
+            repaired, actions = repair_route_charging(route, context.instance, context.carbon_profile, context.prices)
+        except ValueError:
+            return None
+        return repaired, list(actions)
     cache = _instance_cache(context.instance, "_setp_ev_repair_cache")
     key = _route_key(route)
     if key in cache:
@@ -422,6 +448,10 @@ def _repair_ev_route_cached(route: Route, context: EvaluationContext) -> tuple[R
         cache.clear()
     cache[key] = (repaired, tuple(actions))
     return repaired, list(actions)
+
+
+def _structure_cache_enabled() -> bool:
+    return os.environ.get("SETP_ALNS_CRUSH_REPAIR_STRUCTURE_CACHE", "0").lower() not in {"0", "false", "no"}
 
 
 def _next_vehicle_id(routes: list[Route], prefix: str) -> str:

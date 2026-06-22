@@ -63,6 +63,7 @@ _CRUSH_FLAG_NAMES = (
     "SETP_ALNS_CRUSH_SCAN_RESTART",
     "SETP_ALNS_CRUSH_SCAN_REBUILD",
     "SETP_ALNS_CRUSH_ROUTE_COST_CACHE",
+    "SETP_ALNS_CRUSH_REPAIR_STRUCTURE_CACHE",
     "SETP_ALNS_CRUSH_TIMING_LEDGER",
 )
 
@@ -78,6 +79,7 @@ E2_ALNS_COMPONENT_SOURCES = {
     "SETP_ALNS_CRUSH_SCAN_RESTART": "Gao GLNS: scan/sweep all-CV construction restart",
     "SETP_ALNS_CRUSH_SCAN_REBUILD": "Gao GLNS: periodic scan/sweep whole-solution rebuild",
     "SETP_ALNS_CRUSH_ROUTE_COST_CACHE": "Engineering: route-local model-cost cache for E2 throughput profiling",
+    "SETP_ALNS_CRUSH_REPAIR_STRUCTURE_CACHE": "Engineering: route/EV repair structure cache for E2 throughput profiling",
     "SETP_ALNS_CRUSH_TIMING_LEDGER": "Engineering: opt-in timing ledger for E2 throughput profiling",
 }
 
@@ -172,6 +174,7 @@ def winner_variant_flags(*, include_route_elimination: bool = False) -> dict[str
         "SETP_ALNS_CRUSH_SCAN_RESTART": "0",
         "SETP_ALNS_CRUSH_SCAN_REBUILD": "0",
         "SETP_ALNS_CRUSH_ROUTE_COST_CACHE": "0",
+        "SETP_ALNS_CRUSH_REPAIR_STRUCTURE_CACHE": "0",
         "SETP_ALNS_CRUSH_TIMING_LEDGER": "0",
     }
 
@@ -196,6 +199,7 @@ def e2_alns_variant_flags() -> dict[str, str]:
         "SETP_ALNS_CRUSH_SCAN_RESTART": "0",
         "SETP_ALNS_CRUSH_SCAN_REBUILD": "0",
         "SETP_ALNS_CRUSH_ROUTE_COST_CACHE": "0",
+        "SETP_ALNS_CRUSH_REPAIR_STRUCTURE_CACHE": "0",
         "SETP_ALNS_CRUSH_TIMING_LEDGER": "0",
     }
 
@@ -214,6 +218,7 @@ def e2_alns_scan_bridge_flags() -> dict[str, str]:
         "SETP_ALNS_CRUSH_SCAN_RESTART": "1",
         "SETP_ALNS_CRUSH_SCAN_REBUILD": "1",
         "SETP_ALNS_CRUSH_ROUTE_COST_CACHE": "0",
+        "SETP_ALNS_CRUSH_REPAIR_STRUCTURE_CACHE": "0",
         "SETP_ALNS_CRUSH_TIMING_LEDGER": "0",
     }
 
@@ -235,13 +240,19 @@ def e2_alns_sa_acceptance_flags(*, mode: str = "autofit") -> dict[str, str]:
     return flags
 
 
-def e2_alns_throughput_flags(*, route_cost_cache: bool = True, timing_ledger: bool = True) -> dict[str, str]:
+def e2_alns_throughput_flags(
+    *,
+    route_cost_cache: bool = True,
+    repair_structure_cache: bool = True,
+    timing_ledger: bool = True,
+) -> dict[str, str]:
     """Return the fixed 09d E2 ALNS throughput candidate flags."""
 
     flags = e2_alns_sa_acceptance_flags(mode="lns_cooling")
     flags.update(
         {
             "SETP_ALNS_CRUSH_ROUTE_COST_CACHE": "1" if route_cost_cache else "0",
+            "SETP_ALNS_CRUSH_REPAIR_STRUCTURE_CACHE": "1" if repair_structure_cache else "0",
             "SETP_ALNS_CRUSH_TIMING_LEDGER": "1" if timing_ledger else "0",
         }
     )
@@ -494,12 +505,13 @@ def run_e2_alns_throughput(
     config: WinnerKernelConfig | None = None,
     initial_solution: Solution | None = None,
     route_cost_cache: bool = True,
+    repair_structure_cache: bool = True,
     timing_ledger: bool = True,
 ) -> dict[str, Any]:
     """Run the 09d E2 ALNS throughput candidate."""
 
     cfg = config or WinnerKernelConfig()
-    flags = e2_alns_throughput_flags(route_cost_cache=route_cost_cache, timing_ledger=timing_ledger)
+    flags = e2_alns_throughput_flags(route_cost_cache=route_cost_cache, repair_structure_cache=repair_structure_cache, timing_ledger=timing_ledger)
     cfg = WinnerKernelConfig(
         **{
             **asdict(cfg),
