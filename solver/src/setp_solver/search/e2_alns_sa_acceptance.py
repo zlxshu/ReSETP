@@ -117,6 +117,7 @@ def run_gate(
     rows = _run_tasks(tasks, workers=max(1, int(workers)), repo_root=root)
     rows.sort(key=lambda row: (row["instance"], row["algorithm"], int(row["seed"])))
     _write_convergence_files(out / "convergence", rows)
+    _write_csv(out / "sa_raw_runs.csv", rows)
     summary_rows = _summary_rows(rows)
     verdict = _verdict(rows, summary_rows)
     manifest = {
@@ -134,7 +135,6 @@ def run_gate(
         "elapsed_seconds": time.perf_counter() - started,
         "wall_clock_fairness": "runtime cap by instance size; eval budget is a high diagnostic backstop only",
     }
-    _write_csv(out / "sa_raw_runs.csv", rows)
     _write_csv(out / "sa_summary.csv", summary_rows)
     _write_json(out / "sa_verdict.json", verdict)
     _write_json(out / "verdict.json", verdict)
@@ -364,15 +364,17 @@ def _summary_rows(rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
     for instance, category, algorithm in keys:
         group = [row for row in rows if row["instance"] == instance and row["algorithm"] == algorithm]
         costs = [float(row["best_cost"]) for row in group]
+        finite_costs = [cost for cost in costs if math.isfinite(cost)]
+        has_nonfinite_cost = len(finite_costs) != len(costs)
         out.append(
             {
                 "instance": instance,
                 "category": category,
                 "algorithm": algorithm,
                 "n": len(group),
-                "mean_cost": statistics.fmean(costs) if costs else math.inf,
-                "best_cost": min(costs) if costs else math.inf,
-                "std_cost": statistics.stdev(costs) if len(costs) > 1 else 0.0,
+                "mean_cost": math.inf if has_nonfinite_cost or not finite_costs else statistics.fmean(finite_costs),
+                "best_cost": min(finite_costs) if finite_costs else math.inf,
+                "std_cost": math.inf if has_nonfinite_cost else statistics.stdev(finite_costs) if len(finite_costs) > 1 else 0.0,
                 "mean_elapsed_seconds": statistics.fmean(float(row["elapsed_seconds"]) for row in group),
                 "mean_actual_evals": statistics.fmean(float(row["actual_evals"]) for row in group),
                 "mean_route_count": statistics.fmean(float(row["route_count"]) for row in group),
