@@ -7,6 +7,7 @@ Baseline selected small cases did not reproduce all-CV optimality: mixed best-fo
 ## Environment
 
 - repo_head: `39879b4b768935f45f69b61474ef840befdfc5be`
+- diagnostic_artifact_commit: `9f145998d5b99c9f36839b0b9fc648280a22ab53`
 - branch: `codex/reporting-pipeline`
 - python: `/opt/anaconda3/bin/python3.13`
 - numpy: `2.3.5`
