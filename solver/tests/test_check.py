@@ -322,7 +322,7 @@ class CheckSolutionTests(unittest.TestCase):
         solution = Solution(
             routes=[Route("EV1", "ev", "D0", ["D0", "C1", "D0"])],
             charging_actions=[
-                ChargingAction("EV1", "D0", energy_kwh=81.0, occupancy_minutes=30.0, charge_start_second=0.0)
+                ChargingAction("EV1", "D0", energy_kwh=281.0, occupancy_minutes=30.0, charge_start_second=0.0)
             ],
         )
 
@@ -548,7 +548,8 @@ class CheckSolutionTests(unittest.TestCase):
 
         # v2026-06-12: station upper-bound regression explicitly fixes bbar at B;
         # the default solver state now starts from bbar=0 before depot precharge.
-        violation = _assert_only_violation(self, check_solution(solution, instance, PriceParameters(initial_ev_battery_kwh=80.0)), "BATTERY")
+        prices = PriceParameters(B_battery_kwh=80.0, initial_ev_battery_kwh=80.0)
+        violation = _assert_only_violation(self, check_solution(solution, instance, prices), "BATTERY")
 
         self.assertEqual(violation.vehicle_id, "EV1")
         self.assertEqual(violation.location, "F1")

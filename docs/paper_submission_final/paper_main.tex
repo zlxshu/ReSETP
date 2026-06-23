@@ -579,7 +579,7 @@ u_{ijk}^{\tau},a_{ik}^{\tau},b_{ik}^{\tau},y_{skt}^{\tau},g_{skt}^{\tau},y_{ikt}
 \subsection{算例设置与参数说明}
 
 % v2026-06-13: formal-backfill turns the parameter section from pre-run wording into final-run wording.
-本文以Goeke和Schneider混合车队路径研究为基础\textsuperscript{\cite{ref:27}}，采用EVRPTW-MF公开实例构造协同多车场混合车队算例\textsuperscript{\cite{ref:28}}。算例保留原始客户、充电站、时间窗、服务时间、车辆容量、电池容量和非对称距离矩阵，并在不改变原始客户需求与道路结构的前提下扩展第二车场，用于刻画客户跨场服务、共享车辆池和共享充电站容量约束。主要节点规模、车队配置、车辆容量和参数取值见表 \ref{tab:parameter-settings}，正式实验结果由统一的数据配置文件和结果导出脚本给出。
+本文以Goeke和Schneider混合车队路径研究为基础\textsuperscript{\cite{ref:27}}，采用EVRPTW-MF公开实例构造协同多车场混合车队算例\textsuperscript{\cite{ref:28}}。算例保留原始客户、充电站、时间窗、服务时间、车辆容量和非对称距离矩阵；电池容量不沿用Goeke原始80 kWh设定，而是按现代中型电动配送卡车公开证据重新标定为280 kWh。本文在不改变原始客户需求与道路结构的前提下扩展第二车场，用于刻画客户跨场服务、共享车辆池和共享充电站容量约束。主要节点规模、车队配置、车辆容量和参数取值见表 \ref{tab:parameter-settings}，正式实验结果由统一的数据配置文件和结果导出脚本给出。
 
 考虑到时变电网碳强度、公共充电电价和碳交易价格等细粒度数据在国内尚不完全公开，本文采用来源完整、可公开核验的英国公开数据完成参数标定，所得机制性结论用于为中国物流低碳管理提供参考。本文成本统一以英镑计量。电网碳强度采用NESO发布的Great Britain范围actual national carbon intensity，并按固定时间粒度换算为kgCO\textsubscript{2}/kWh\textsuperscript{\cite{ref:29}}；Carbon Intensity API用于核对碳强度接口和时间粒度\textsuperscript{\cite{ref:30}}。柴油CO\textsubscript{2}因子、柴油价格、电价和碳交易价格分别来自GOV.UK温室气体转换因子、道路燃油价格、非居民部门电价和UK ETS碳价相关资料\textsuperscript{\cite{ref:31,ref:32,ref:33,ref:34,ref:35}}。充电占用成本$c_s^{occ}$作为补能技术场景参数处理，不引用非同口径的工资或车辆租赁报价。
 
@@ -630,7 +630,7 @@ $N$ & 发动机转速 & 33 & rev/s\\
 $D$ & 发动机排量 & 5 & L\\
 \midrule
 \multicolumn{4}{l}{\textbf{E 电动车能耗参数}}\\
-$B$ & 电池容量 & 80 & kWh\\
+$B$ & 电池容量 & 280 & kWh\\
 $\underline{B}$ & 安全电量下限 & 0 & kWh\\
 $\alpha_k^e$ & EV能耗综合系数($\varphi^d \cdot \phi^d$) & 1.3178 & ---\\
 % v2026-06-11: add charging-power experiment setting used by generated instances.
@@ -666,8 +666,10 @@ $CE$ & 碳配额默认值(实验设定) & $0.8E^{base}$ & kgCO$_2$e\\
 \noindent\begin{minipage}{\linewidth}
 \footnotesize\justifying
 注: 网络规模与时间基准取自本研究生成算例,碳强度时间序列取自英国国家电网实测数据\textsuperscript{\cite{ref:30}}。
-车辆物理参数、CMEM能耗系数及速度设定全部取自算例基准文献\textsuperscript{\cite{ref:27}},
+车辆物理参数、CMEM能耗系数及速度设定主要取自算例基准文献\textsuperscript{\cite{ref:27}},
 其中CMEM系数原始来源为\textsuperscript{\cite{ref:36}}。
+电池容量的Goeke原始基准值为80 kWh; 本文在保持跨城/高速速度设定不变的前提下,
+依据现代中型电动配送卡车公开产品参数和证据约束重优化诊断,将主情景电池容量标定为280 kWh\textsuperscript{\cite{ref:43}}。
 电动车能耗综合系数$\alpha_k^e = \varphi^d \cdot \phi^d = 1.184692 \times 1.112434 = 1.3178$
 由\textsuperscript{\cite{ref:27}}表4放电两级效率参数乘积计算得出。
 柴油价格取自英国政府周度道路燃油价格统计\textsuperscript{\cite{ref:32}};
@@ -913,6 +915,7 @@ $\theta=1.0$ 表示协同后各车场收益不低于独立运营基准,对应协
 \bibitem{ref:40} Department for Energy Security and Net Zero. Quarterly Energy Prices, June 2025[EB/OL]. [2025-06-26]. \url{https://assets.publishing.service.gov.uk/media/685a9f35db207fc18744d608/quarterly-energy-prices-june-2025.pdf}.
 \bibitem{ref:41} Mer UK. Commercial EV chargers[EB/OL]. [2026-06-12]. \url{https://uk.mer.eco/chargers/commercial-ev-chargers/}.
 \bibitem{ref:42} National Pallets. Pallet Delivery UK: pallet prices[EB/OL]. [2026-06-12]. \url{https://www.nationalpallets.co.uk/pallet-delivery/uk}.
+\bibitem{ref:43} Volvo Trucks. Volvo presents electric trucks with longer range[EB/OL]. [2026-06-23]. \url{https://www.volvotrucks.com/en-en/news-stories/press-releases/2023/jun/volvo-presents-electric-trucks-with-longer-range.html}.
 \end{thebibliography}
 
 \end{document}
