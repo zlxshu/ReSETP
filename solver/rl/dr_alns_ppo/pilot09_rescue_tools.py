@@ -675,10 +675,17 @@ def run_block_model_policy(
     block_size: int,
     stochastic: bool,
     collect_trace: bool,
+    meta_mode: bool = False,
     max_steps: int | None = None,
 ) -> tuple[dict[str, Any], list[dict[str, Any]]]:
     model.eval()
-    env = BlockAlnsEnv(bundle, seed=int(seed), eval_budget=int(eval_budget), block_size=int(block_size))
+    env = BlockAlnsEnv(
+        bundle,
+        seed=int(seed),
+        eval_budget=int(eval_budget),
+        block_size=int(block_size),
+        meta_mode=bool(meta_mode),
+    )
     trace_rows: list[dict[str, Any]] = []
     destroy_counts: dict[str, int] = {}
     repair_counts: dict[str, int] = {}
@@ -747,6 +754,7 @@ def run_block_model_policy(
             "destroy_counts": destroy_counts,
             "repair_counts": repair_counts,
             "q_ratio_counts": q_counts,
+            "meta_mode": bool(meta_mode),
             "worker_python_executable": str((last_info.get("trace", {}) or {}).get("worker_python_executable", "")),
             "worker_python_version": str((last_info.get("trace", {}) or {}).get("worker_python_version", "")),
             "worker_numpy_version": str((last_info.get("trace", {}) or {}).get("worker_numpy_version", "")),

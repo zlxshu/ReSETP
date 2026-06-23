@@ -14,7 +14,7 @@ from dr_alns_ppo.async_block_policy import (
     load_async_block_policy,
     save_async_block_policy,
 )
-from dr_alns_ppo.action_space import BLOCK_ACTION_NVECS, BLOCK_DESTROY_IDS, BLOCK_Q_RATIOS
+from dr_alns_ppo.action_space import ALPHA_UCB_CHOICE, BLOCK_ACTION_NVECS, BLOCK_DESTROY_IDS, BLOCK_Q_RATIOS, BLOCK_REPAIR_IDS
 from dr_alns_ppo.block_env import BlockAlnsEnv
 from dr_alns_ppo.evaluate_policy import _evaluate_one_task
 from dr_alns_ppo.train_async_block_ppo import (
@@ -233,6 +233,12 @@ def test_train_parser_exposes_checkpoint_interval() -> None:
     assert args.checkpoint_every_updates == 10
 
 
+def test_train_parser_exposes_meta_mode() -> None:
+    args = parse_args(["train", "--meta-mode", "--output-dir", "solver/reports/dr_alns_ppo_v3_block_dr_alns/async_pilot/x"])
+
+    assert args.meta_mode is True
+
+
 def test_expected_episode_steps_rounds_up_budget_blocks() -> None:
     assert _expected_episode_steps(16000, 128) == 125
     assert _expected_episode_steps(9, 4) == 3
@@ -322,6 +328,95 @@ def test_block_env_action_mask_uses_named_rules_and_keeps_fallbacks() -> None:
     assert mask[0][BLOCK_DESTROY_IDS.index("route_segment_removal")] is False
     assert mask[2][len(BLOCK_Q_RATIOS) - 1] is False
     assert all(any(head) for head in mask)
+
+
+def test_block_env_meta_mode_forces_alpha_ucb_operator_heads() -> None:
+    env = BlockAlnsEnv.__new__(BlockAlnsEnv)
+    env.eval_budget = 100
+    env.meta_mode = True
+    response = {
+        "actual_evals": 90,
+        "solution": {"routes": [{"vehicle_id": "CV1"}, {"vehicle_id": "CV2"}]},
+        "metrics": {"n_veh_cv": 2, "n_veh_ev": 0},
+        "trace": {
+            "block_end_best_route_count": 2,
+            "capacity_route_lower_bound": 2,
+            "block_best_route_delta": 0,
+            "block_iterations": 10,
+            "block_rejected_count": 10,
+            "block_improved_best_count": 0,
+            "block_improved_current_count": 0,
+            "stagnation_steps": 50,
+        },
+    }
+
+    mask = env._action_mask(response)
+    destroy_alpha = BLOCK_DESTROY_IDS.index(ALPHA_UCB_CHOICE)
+    repair_alpha = BLOCK_REPAIR_IDS.index(ALPHA_UCB_CHOICE)
+
+    assert mask[0] == [idx == destroy_alpha for idx in range(len(BLOCK_DESTROY_IDS))]
+    assert mask[1] == [idx == repair_alpha for idx in range(len(BLOCK_REPAIR_IDS))]
+    assert mask[2] == [True for _ in range(BLOCK_ACTION_NVECS[2])]
+    assert mask[3] == [True for _ in range(BLOCK_ACTION_NVECS[3])]
+    assert mask[4] == [True for _ in range(BLOCK_ACTION_NVECS[4])]
+
+
+def test_async_actor_meta_mode_records_alpha_ucb_operator_actions(monkeypatch: pytest.MonkeyPatch) -> None:
+    class FakeEnv:
+        def __init__(self, bundle, *, seed, eval_budget, block_size, curriculum_phase, meta_mode=False):
+            self.meta_mode = meta_mode
+            self.action_space = None
+            self.last_response = {"best_obj": 1.0, "actual_evals": 0}
+
+        def reset(self, *, seed=None):
+            mask = [[True for _ in range(n)] for n in BLOCK_ACTION_NVECS]
+            mask[0] = [idx == BLOCK_DESTROY_IDS.index(ALPHA_UCB_CHOICE) for idx in range(BLOCK_ACTION_NVECS[0])]
+            mask[1] = [idx == BLOCK_REPAIR_IDS.index(ALPHA_UCB_CHOICE) for idx in range(BLOCK_ACTION_NVECS[1])]
+            return np.zeros(19, dtype=np.float32), {"action_mask": mask}
+
+        def step(self, action):
+            self.last_response = {
+                "best_obj": 1.0,
+                "actual_evals": 4,
+                "candidate_scores": 4,
+                "repair_delta_count": 0,
+                "violation_count": 0,
+                "feasible": True,
+                "trace": {
+                    "worker_python_executable": "py",
+                    "worker_python_version": "3.13",
+                    "worker_numpy_version": "2.3.5",
+                },
+            }
+            return np.zeros(19, dtype=np.float32), 0.0, True, False, self.last_response
+
+        def close(self):
+            pass
+
+    monkeypatch.setattr("dr_alns_ppo.train_async_block_ppo.BlockAlnsEnv", FakeEnv)
+    model = make_block_actor_critic(seed=1)
+    task = AsyncEpisodeTask(
+        episode_index=0,
+        bundle=FIXTURE_DIR,
+        seed=1,
+        eval_budget=4,
+        block_size=4,
+        policy_version=0,
+        deterministic=False,
+        curriculum_phase="route",
+        meta_mode=True,
+        policy_payload={
+            "state_dict": {key: value.detach().cpu() for key, value in model.state_dict().items()},
+            "obs_dim": model.obs_dim,
+            "action_nvec": model.action_nvec,
+            "hidden_size": model.hidden_size,
+        },
+    )
+
+    episode = run_actor_episode(task)
+
+    assert episode["actions"][0][0] == BLOCK_DESTROY_IDS.index(ALPHA_UCB_CHOICE)
+    assert episode["actions"][0][1] == BLOCK_REPAIR_IDS.index(ALPHA_UCB_CHOICE)
 
 
 def test_async_reports_stay_under_async_pilot_dir(tmp_path: Path) -> None:

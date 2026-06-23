@@ -45,6 +45,7 @@ class AsyncEpisodeTask:
     deterministic: bool
     curriculum_phase: str
     policy_payload: dict[str, Any]
+    meta_mode: bool = False
 
 
 def run_actor_episode(task: AsyncEpisodeTask) -> dict[str, Any]:
@@ -64,6 +65,7 @@ def run_actor_episode(task: AsyncEpisodeTask) -> dict[str, Any]:
         eval_budget=int(task.eval_budget),
         block_size=int(task.block_size),
         curriculum_phase=str(task.curriculum_phase),
+        meta_mode=bool(task.meta_mode),
     )
     observations: list[list[float]] = []
     actions: list[list[int]] = []
@@ -103,6 +105,7 @@ def run_actor_episode(task: AsyncEpisodeTask) -> dict[str, Any]:
         "seed": int(task.seed),
         "policy_version": int(task.policy_version),
         "curriculum_phase": str(task.curriculum_phase),
+        "meta_mode": bool(task.meta_mode),
         "block_size": int(task.block_size),
         "eval_budget": int(task.eval_budget),
         "observations": observations,
@@ -364,6 +367,7 @@ def run_self_check(args: argparse.Namespace) -> int:
         num_actors=int(args.num_actors),
         episode_count=int(args.self_check_episodes),
         deterministic=False,
+        meta_mode=bool(args.meta_mode),
         output_dir=output_dir,
     )
     elapsed = time.monotonic() - start
@@ -393,6 +397,7 @@ def run_audit(args: argparse.Namespace) -> int:
         seed=int(args.seed),
         eval_budget=int(args.eval_budget),
         block_size=int(args.block_size),
+        meta_mode=bool(args.meta_mode),
     )
     try:
         _obs, reset_info = env.reset(seed=int(args.seed))
@@ -641,6 +646,7 @@ def run_train(args: argparse.Namespace) -> int:
                 deterministic=False,
                 curriculum_phase=schedule[phase_index],
                 policy_payload=make_policy_payload(model),
+                meta_mode=bool(args.meta_mode),
             )
             futures[executor.submit(run_actor_episode, task)] = task
             episode_index += 1
@@ -820,6 +826,7 @@ def collect_episodes(
     num_actors: int,
     episode_count: int,
     deterministic: bool,
+    meta_mode: bool = False,
     output_dir: Path | None = None,
 ) -> list[dict[str, Any]]:
     _ = output_dir
@@ -837,6 +844,7 @@ def collect_episodes(
                 deterministic=bool(deterministic),
                 curriculum_phase="route",
                 policy_payload=make_policy_payload(model),
+                meta_mode=bool(meta_mode),
             )
             futures.append(executor.submit(run_actor_episode, task))
         for future in concurrent.futures.as_completed(futures):
@@ -881,6 +889,7 @@ def _episode_csv_row(episode: dict[str, Any], *, accepted_for_update: bool) -> d
         "seed": int(episode["seed"]),
         "policy_version": int(episode["policy_version"]),
         "curriculum_phase": str(episode.get("curriculum_phase", "route")),
+        "meta_mode": int(bool(episode.get("meta_mode", False))),
         "accepted_for_update": int(bool(accepted_for_update)),
         "block_steps": int(episode["block_steps"]),
         "reward_sum": float(episode["reward_sum"]),
@@ -1087,6 +1096,7 @@ def _episode_fieldnames() -> list[str]:
         "seed",
         "policy_version",
         "curriculum_phase",
+        "meta_mode",
         "accepted_for_update",
         "block_steps",
         "reward_sum",
@@ -1199,6 +1209,7 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     audit = sub.add_parser("audit")
     audit.add_argument("--manifest", default="solver/reports/dr_alns_ppo_v2/training_bundle_manifest.json")
     audit.add_argument("--curriculum", action="store_true")
+    audit.add_argument("--meta-mode", action="store_true")
     audit.add_argument("--output-dir", default=f"{REPORT_ROOT_FRAGMENT}/audit")
     audit.add_argument("--bundle", default="")
     audit.add_argument("--seed", type=int, default=1)
@@ -1209,6 +1220,7 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         p = sub.add_parser(command)
         p.add_argument("--manifest", default="solver/reports/dr_alns_ppo_v2/training_bundle_manifest.json")
         p.add_argument("--curriculum", action="store_true")
+        p.add_argument("--meta-mode", action="store_true")
         p.add_argument("--output-dir", required=True)
         p.add_argument("--seed", type=int, default=1)
         p.add_argument("--eval-budget", type=int, default=16000)

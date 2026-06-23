@@ -31,6 +31,7 @@ class BlockAlnsEnv(gym.Env):
         eval_budget: int = 16000,
         block_size: int = 128,
         curriculum_phase: str = "route",
+        meta_mode: bool = False,
     ) -> None:
         super().__init__()
         if int(block_size) < 1:
@@ -42,6 +43,7 @@ class BlockAlnsEnv(gym.Env):
         self.eval_budget = int(eval_budget)
         self.block_size = int(block_size)
         self.curriculum_phase = str(curriculum_phase)
+        self.meta_mode = bool(meta_mode)
         self.action_space = spaces.MultiDiscrete(list(BLOCK_ACTION_NVECS))
         self.observation_space = spaces.Box(
             low=-10.0,
@@ -82,6 +84,11 @@ class BlockAlnsEnv(gym.Env):
 
     def _action_mask(self, response: dict[str, Any]) -> list[list[bool]]:
         masks = [[True for _ in range(int(n))] for n in BLOCK_ACTION_NVECS]
+        if bool(getattr(self, "meta_mode", False)):
+            _force_single_action(masks[0], BLOCK_DESTROY_IDS.index(ALPHA_UCB_CHOICE))
+            _force_single_action(masks[1], BLOCK_REPAIR_IDS.index(ALPHA_UCB_CHOICE))
+            return masks
+
         metrics = response.get("metrics", {}) or {}
         trace = response.get("trace", {}) or {}
 
@@ -293,6 +300,11 @@ def _mask_named(mask: list[bool], names: tuple[str, ...], blocked: set[str]) -> 
     for idx, name in enumerate(names):
         if name in blocked:
             mask[idx] = False
+
+
+def _force_single_action(mask: list[bool], forced_idx: int) -> None:
+    for idx in range(len(mask)):
+        mask[idx] = idx == int(forced_idx)
 
 
 def _ensure_head_has_action(mask: list[bool], _names: tuple[str, ...], fallback_indices: list[int]) -> None:
