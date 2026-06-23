@@ -1,0 +1,123 @@
+{
+  "classifiers": {
+    "e2-threeshift-100c-01": "MIXED_EXISTS_MEAN_ALLCV",
+    "e2-threeshift-150c-01": "MIXED_EXISTS_MEAN_ALLCV",
+    "e2-threeshift-200c-01": "ALLCV_BEST_AND_MEAN"
+  },
+  "phase1_mechanism": {
+    "e2-threeshift-100c-01": {
+      "mixed_cost_carbon_minus_allcv": -43.16561816283872,
+      "mixed_cost_elec_minus_allcv": 262.51893777453074,
+      "mixed_cost_fix_minus_allcv": 240.0,
+      "mixed_cost_fuel_minus_allcv": -543.9666465157262,
+      "mixed_cost_occ_minus_allcv": 14.593681827569583,
+      "mixed_ev_routes_drive_kwh_gt_battery": 3,
+      "mixed_ev_routes_with_public_charge": 3,
+      "mixed_max_ev_route_drive_kwh_over_battery": 1.1918046364239714,
+      "mixed_public_charge_kwh": 29.187363655139166,
+      "mixed_public_occupancy_cost": 14.593681827569583,
+      "mixed_total_gap_pct": -0.8900725403541938
+    },
+    "e2-threeshift-150c-01": {
+      "mixed_cost_carbon_minus_allcv": -59.446123760440656,
+      "mixed_cost_elec_minus_allcv": 371.8020956461558,
+      "mixed_cost_fix_minus_allcv": 160.0,
+      "mixed_cost_fuel_minus_allcv": -736.2238922642146,
+      "mixed_cost_occ_minus_allcv": 29.591173782165058,
+      "mixed_ev_routes_drive_kwh_gt_battery": 6,
+      "mixed_ev_routes_with_public_charge": 6,
+      "mixed_max_ev_route_drive_kwh_over_battery": 1.200291432871641,
+      "mixed_public_charge_kwh": 59.182347564330115,
+      "mixed_public_occupancy_cost": 29.591173782165058,
+      "mixed_total_gap_pct": -2.4652946493233356
+    },
+    "e2-threeshift-200c-01": {
+      "mixed_cost_carbon_minus_allcv": -81.7994337202941,
+      "mixed_cost_elec_minus_allcv": 527.8404753790986,
+      "mixed_cost_fix_minus_allcv": 480.0,
+      "mixed_cost_fuel_minus_allcv": -1013.4376987642701,
+      "mixed_cost_occ_minus_allcv": 27.059907930996374,
+      "mixed_ev_routes_drive_kwh_gt_battery": 5,
+      "mixed_ev_routes_with_public_charge": 5,
+      "mixed_max_ev_route_drive_kwh_over_battery": 1.2284453880159325,
+      "mixed_public_charge_kwh": 54.11981586199275,
+      "mixed_public_occupancy_cost": 27.059907930996374,
+      "mixed_total_gap_pct": 1.2775007199798858
+    }
+  },
+  "phase2_scan": {
+    "flips": [
+      {
+        "allcv_cost": 8785.322401818645,
+        "field": "v_speed_ms",
+        "gap_pct_mixed_minus_allcv": -0.920421210981882,
+        "instance": "e2-threeshift-200c-01",
+        "mixed_cost": 8704.460430979163,
+        "scan_name": "speed_ms",
+        "value": 11.1
+      }
+    ],
+    "near_flips": [
+      {
+        "allcv_cost": 8979.132837679645,
+        "field": "B_battery_kwh",
+        "gap_pct_mixed_minus_allcv": 0.5063994713521862,
+        "instance": "e2-threeshift-200c-01",
+        "mixed_cost": 9024.603118901665,
+        "scan_name": "battery_kwh",
+        "value": 160.0
+      },
+      {
+        "allcv_cost": 8979.132837679645,
+        "field": "B_battery_kwh",
+        "gap_pct_mixed_minus_allcv": 0.5063994713521862,
+        "instance": "e2-threeshift-200c-01",
+        "mixed_cost": 9024.603118901665,
+        "scan_name": "battery_kwh",
+        "value": 320.0
+      },
+      {
+        "allcv_cost": 8979.132837679645,
+        "field": "B_battery_kwh",
+        "gap_pct_mixed_minus_allcv": 0.5063994713521862,
+        "instance": "e2-threeshift-200c-01",
+        "mixed_cost": 9024.603118901665,
+        "scan_name": "battery_kwh",
+        "value": 480.0
+      },
+      {
+        "allcv_cost": 8699.996370415178,
+        "field": "v_speed_ms",
+        "gap_pct_mixed_minus_allcv": 0.5236125412306467,
+        "instance": "e2-threeshift-200c-01",
+        "mixed_cost": 8745.550642497283,
+        "scan_name": "speed_ms",
+        "value": 16.7
+      },
+      {
+        "allcv_cost": 8979.132837679645,
+        "field": "station_electricity_price",
+        "gap_pct_mixed_minus_allcv": 0.8949487770632731,
+        "instance": "e2-threeshift-200c-01",
+        "mixed_cost": 9059.491477201345,
+        "scan_name": "public_station_price",
+        "value": 0.1853
+      },
+      {
+        "allcv_cost": 8979.132837679645,
+        "field": "occupancy_fee",
+        "gap_pct_mixed_minus_allcv": 0.9761363408112999,
+        "instance": "e2-threeshift-200c-01",
+        "mixed_cost": 9066.781416397956,
+        "scan_name": "occupancy_fee",
+        "value": 0.0
+      }
+    ],
+    "true_allcv_instances": [
+      "e2-threeshift-200c-01"
+    ]
+  },
+  "reopt_rows": 0,
+  "summary": "True best-and-mean all-CV dominance is present on e2-threeshift-200c-01. Cases with best mixed already present: e2-threeshift-100c-01, e2-threeshift-150c-01.",
+  "verdict": "ALLCV_ECONOMIC_ON_TRUE_LARGESCALE_CASE"
+}
