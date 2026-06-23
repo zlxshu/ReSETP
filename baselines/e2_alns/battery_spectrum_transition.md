@@ -1,6 +1,7 @@
 # 09k Evidence-Bound Battery Spectrum Gate
 
 Commit: `7fe3db60`.
+Artifact commit: `7d9bfdb6804da0f5247bf0bebfae33ca8cb993b8`.
 Python: `/opt/anaconda3/bin/python3.13`; NumPy: `2.3.5`.
 Frozen parameters: `v_speed_ms=25.0`, `carbon_price=0.05034`. Battery is varied only through in-memory overrides.
 Command: `/opt/anaconda3/bin/python3.13 baselines/e2_alns/battery_spectrum_transition.py --full-gate --screen-eval-budget 500 --screen-runtime-small 90 --screen-runtime-medium 180 --screen-runtime-large 300 --full-battery-values 80 100 113 141 210 280 --full-eval-budget 3000 --full-runtime-small 180 --full-runtime-medium 300 --full-runtime-large 900 --task-timeout-buffer 90 --workers 3`.
