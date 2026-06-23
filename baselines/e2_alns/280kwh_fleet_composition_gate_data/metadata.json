@@ -1,24 +1,41 @@
 {
   "B_battery_kwh": 280.0,
   "carbon_price": 0.05034,
-  "command": "/opt/anaconda3/bin/python3.13 baselines/e2_alns/fleet_composition_gate_280.py --instance-set smoke --eval-budget 300 --runtime-cap-small 30 --runtime-cap-medium 45 --runtime-cap-large 60 --task-timeout-buffer 10",
-  "commit_hash": "48484b415fa7a9e1574aea403af822c289d196fc",
-  "diagnostic_artifact_commit": "a82340351c67e0585a871359cd04a5cedcaf42ca",
-  "eval_budget": 300,
-  "git_status_short": "?? baselines/e2_alns/280kwh_fleet_composition_gate.md\n?? baselines/e2_alns/280kwh_fleet_composition_gate_data/composition_summary.csv\n?? baselines/e2_alns/280kwh_fleet_composition_gate_data/conclusion.json\n?? baselines/e2_alns/280kwh_fleet_composition_gate_data/metadata.json\n?? baselines/e2_alns/280kwh_fleet_composition_gate_data/phase0_instance_audit.csv\n?? baselines/e2_alns/280kwh_fleet_composition_gate_data/raw_runs.csv\n?? baselines/e2_alns/280kwh_fleet_composition_gate_data/winners.csv\n?? baselines/e2_alns/280kwh_fleet_mix_probe.md\n?? baselines/e2_alns/280kwh_fleet_mix_probe_data/mixed_probe_seed1.csv\n?? baselines/e2_alns/fleet_composition_gate_280.py",
-  "instance_set": "smoke",
+  "command": "/opt/anaconda3/bin/python3.13 baselines/e2_alns/fleet_composition_gate_280.py --instance-set representative --seeds 1 2 3 --eval-budget 3000 --runtime-cap-small 180 --runtime-cap-medium 300 --runtime-cap-large 900 --task-timeout-buffer 60 --workers 3",
+  "commit_hash": "b69306035dfebe0a73fc72942beea10c9cf21eb6",
+  "diagnostic_artifact_commit": "PENDING_COMMIT",
+  "eval_budget": 3000,
+  "expected_raw_run_count": 153,
+  "git_status_short": "M baselines/e2_alns/280kwh_fleet_composition_gate_data/raw_runs.csv\n M baselines/e2_alns/fleet_composition_gate_280.py\n?? baselines/e2_alns/280kwh_fleet_composition_gate_smoke.md\n?? baselines/e2_alns/280kwh_fleet_composition_gate_smoke_data/composition_summary.csv\n?? baselines/e2_alns/280kwh_fleet_composition_gate_smoke_data/conclusion.json\n?? baselines/e2_alns/280kwh_fleet_composition_gate_smoke_data/metadata.json\n?? baselines/e2_alns/280kwh_fleet_composition_gate_smoke_data/phase0_instance_audit.csv\n?? baselines/e2_alns/280kwh_fleet_composition_gate_smoke_data/raw_runs.csv\n?? baselines/e2_alns/280kwh_fleet_composition_gate_smoke_data/raw_runs.partial.csv\n?? baselines/e2_alns/280kwh_fleet_composition_gate_smoke_data/task_queue.csv\n?? baselines/e2_alns/280kwh_fleet_composition_gate_smoke_data/winners.csv\n?? baselines/e2_alns/280kwh_fleet_composition_gate_stage1.md\n?? baselines/e2_alns/280kwh_fleet_composition_gate_stage1_data/composition_summary.csv\n?? baselines/e2_alns/280kwh_fleet_composition_gate_stage1_data/conclusion.json\n?? baselines/e2_alns/280kwh_fleet_composition_gate_stage1_data/metadata.json\n?? baselines/e2_alns/280kwh_fleet_composition_gate_stage1_data/phase0_instance_audit.csv\n?? baselines/e2_alns/280kwh_fleet_composition_gate_stage1_data/raw_runs.csv\n?? baselines/e2_alns/280kwh_fleet_composition_gate_stage1_data/raw_runs.partial.csv\n?? baselines/e2_alns/280kwh_fleet_composition_gate_stage1_data/task_queue.csv\n?? baselines/e2_alns/280kwh_fleet_composition_gate_stage1_data/winners.csv",
+  "in_process": false,
+  "instance_count": 17,
+  "instance_set": "representative",
   "numpy": "2.3.5",
+  "output_dir": "baselines/e2_alns/280kwh_fleet_composition_gate_data",
+  "phase0_only": false,
   "python": "/opt/anaconda3/bin/python3.13",
   "python_version": "3.13.9 | packaged by Anaconda, Inc. | (main, Oct 21 2025, 19:11:29) [Clang 20.1.8 ]",
   "repo_root": "/Volumes/移动硬盘（512G）/ReSETP",
+  "report_path": "baselines/e2_alns/280kwh_fleet_composition_gate.md",
+  "resume": true,
+  "retry_timeouts": false,
   "runtime_caps": {
-    "large": 60.0,
-    "medium": 45.0,
-    "small": 30.0
+    "large": 900.0,
+    "medium": 300.0,
+    "small": 180.0
   },
   "schema_version": "setp-280kwh-fleet-composition-gate.v1",
   "seeds": [
-    1
+    1,
+    2,
+    3
   ],
-  "v_speed_ms": 25.0
+  "stage": "manual",
+  "v_speed_ms": 25.0,
+  "variant_order": [
+    "free_mixed",
+    "cv_shell",
+    "ev_shell"
+  ],
+  "workers": 3
 }

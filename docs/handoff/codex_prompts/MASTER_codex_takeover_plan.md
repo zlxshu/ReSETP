@@ -20,7 +20,7 @@
 - **重跑 E1 车型反事实(cv_only/ev_only/mixed)跨规模(25–200c),确认新最优是"真混合"(CV 与 EV 都被用),不是 all-EV。**
 - 若多数档变 all-EV → 280 偏高,回退到更保守的证据下界(查 Volvo FL ~265kWh / 中型配送车更低值,Zotero+官方源),重新 09h 式确认。**别为了"混合"硬调,以证据为准,如实报。**
 - 通过(真混合)→ 进第3步。
-- 2026-06-23 Codex 接管后已新增 `baselines/e2_alns/fleet_composition_gate_280.py` 与 `baselines/e2_alns/280kwh_fleet_composition_gate.md` 做此 gate。当前 smoke 仅为 `staged_probe`:3 个代表实例、seed1、300 eval, 可判 winner 均为 `balanced_mixed`, 但 `threeshift-200c ev_shell` timeout, 结论仍是 `HALT_COLLECTION_COST`。**不得据此宣布 §2 通过;下一步需跑更强 budget/seeds 或改成可恢复任务队列后再判。**
+- 2026-06-23 Codex 已把 gate 扩成可恢复队列并跑满 Stage1（代表集 17 实例 × seeds1-3 × 3 variants, 153/153 raw rows, 51/51 winners, 0 timeout）。结论 `HALT_EV_DOMINANT`:51 个 winner 中 34 个 `ev_heavy_mixed`、16 个 `all_ev`、0 个 `balanced_mixed`, mean EV share 多数实例 >0.9。**§2 未通过,Stage2 不启动,E2/T3 与 E1-E7 全量重跑继续暂停。下一步不是进 §3,而是重新决策 280kWh 是否只作为 modern-battery/EV-dominant scenario、是否回退到证据下界电池,或是否接受“现代电池下算例 EV 主导”的论文叙述。**
 
 ## 3. 剩余总路线图(按依赖顺序,Codex 自驱执行)
 1. **8 基线做到文献最优 + 收敛(已写 `10_e2_baselines_literature_best.md`)**:GA/PSO/VNS/ACO/GA-VNS/LNS/GWO/IWD 按源论文重做、文献标准参数、"真在搜索"硬门禁(std>0 + 改善暖启动 + 收敛曲线明显收敛)。`baseline-algorithm-catalog.md` 有设计转录。
