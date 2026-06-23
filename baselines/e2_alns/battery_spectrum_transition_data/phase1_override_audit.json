@@ -1,0 +1,42 @@
+{
+  "audited_battery_values": [
+    60.0,
+    80.0,
+    81.0,
+    82.6,
+    89.0,
+    100.0,
+    113.0,
+    123.9,
+    140.0,
+    141.0,
+    150.0,
+    160.0,
+    176.0,
+    180.0,
+    194.0,
+    200.0,
+    210.0,
+    240.0,
+    280.0,
+    282.0,
+    291.0
+  ],
+  "carbon_price_pinned": 0.05034,
+  "check_battery_override_changes_feasibility": true,
+  "check_high_battery_violation_count": 0,
+  "check_tiny_battery_violation_count": 1,
+  "default_battery_kwh": 280.0,
+  "note": "Main task runs pass explicit override warm starts because run_alns_wouda default initial construction does not pass prices through to build_initial_solution.",
+  "repair_high_status": "OK",
+  "repair_low_status": "OK",
+  "solver_probe": {
+    "high_best_obj": 1309.5186674465808,
+    "high_total_cost": 1309.5186674465808,
+    "low_best_obj": 1334.3036352292697,
+    "low_total_cost": 1334.3036352292697,
+    "objective_or_cost_changed": true,
+    "status": "OK"
+  },
+  "status": "OK"
+}
