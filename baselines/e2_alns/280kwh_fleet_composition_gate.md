@@ -1,6 +1,7 @@
 # 280kWh Fleet-Composition Gate
 
 Commit: `b6930603`.
+Artifact commit: `2086d24b`.
 Python: `/opt/anaconda3/bin/python3.13`; NumPy: `2.3.5`.
 Prices: `B_battery_kwh=280.0`, `v_speed_ms=25.0`, `carbon_price=0.05034`.
 Command: `/opt/anaconda3/bin/python3.13 baselines/e2_alns/fleet_composition_gate_280.py --instance-set representative --seeds 1 2 3 --eval-budget 3000 --runtime-cap-small 180 --runtime-cap-medium 300 --runtime-cap-large 900 --task-timeout-buffer 60 --workers 3`.
