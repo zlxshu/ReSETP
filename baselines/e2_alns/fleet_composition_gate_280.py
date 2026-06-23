@@ -64,11 +64,56 @@ SMOKE_INSTANCES = (
 )
 
 VARIANT_ORDER = ("free_mixed", "cv_shell", "ev_shell")
+TERMINAL_STATUSES = {
+    "OK",
+    "VIOLATION",
+    "TIMEOUT",
+    "ERROR",
+    "JSON_PARSE_ERROR",
+    "SUBPROCESS_NONZERO",
+}
+
+STAGE_DEFAULTS = {
+    "smoke": {
+        "instance_set": "smoke",
+        "seeds": [1],
+        "eval_budget": 300,
+        "runtime_cap_small": 30.0,
+        "runtime_cap_medium": 45.0,
+        "runtime_cap_large": 60.0,
+        "task_timeout_buffer": 10.0,
+        "output_dir": "baselines/e2_alns/280kwh_fleet_composition_gate_smoke_data",
+        "report_path": "baselines/e2_alns/280kwh_fleet_composition_gate_smoke.md",
+    },
+    "stage1": {
+        "instance_set": "representative",
+        "seeds": [1, 2, 3],
+        "eval_budget": 3000,
+        "runtime_cap_small": 180.0,
+        "runtime_cap_medium": 300.0,
+        "runtime_cap_large": 900.0,
+        "task_timeout_buffer": 60.0,
+        "output_dir": "baselines/e2_alns/280kwh_fleet_composition_gate_stage1_data",
+        "report_path": "baselines/e2_alns/280kwh_fleet_composition_gate_stage1.md",
+    },
+    "stage2": {
+        "instance_set": "representative",
+        "seeds": [1, 2, 3, 4, 5],
+        "eval_budget": 16000,
+        "runtime_cap_small": 300.0,
+        "runtime_cap_medium": 600.0,
+        "runtime_cap_large": 900.0,
+        "task_timeout_buffer": 60.0,
+        "output_dir": "baselines/e2_alns/280kwh_fleet_composition_gate_stage2_data",
+        "report_path": "baselines/e2_alns/280kwh_fleet_composition_gate_stage2.md",
+    },
+}
 
 
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--repo-root", default=".")
+    parser.add_argument("--stage", choices=("manual", "smoke", "stage1", "stage2"), default="manual")
     parser.add_argument("--output-dir", default=str(DEFAULT_OUTPUT_DIR))
     parser.add_argument("--report-path", default=str(DEFAULT_REPORT))
     parser.add_argument("--instance-set", choices=("smoke", "representative", "custom"), default="representative")
@@ -80,6 +125,8 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--runtime-cap-large", type=float, default=180.0)
     parser.add_argument("--task-timeout-buffer", type=float, default=30.0)
     parser.add_argument("--in-process", action="store_true", help="Run tasks in-process; default uses per-task subprocess timeouts.")
+    parser.add_argument("--resume", action=argparse.BooleanOptionalAction, default=True, help="Skip terminal rows already present in the output directory.")
+    parser.add_argument("--retry-timeouts", action="store_true", help="When resuming, rerun TIMEOUT rows instead of treating them as terminal.")
     parser.add_argument("--phase0-only", action="store_true")
     parser.add_argument("--single-run", action="store_true", help=argparse.SUPPRESS)
     parser.add_argument("--single-category", default="", help=argparse.SUPPRESS)
@@ -89,6 +136,7 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--single-eval-budget", type=int, default=0, help=argparse.SUPPRESS)
     parser.add_argument("--single-runtime-cap", type=float, default=0.0, help=argparse.SUPPRESS)
     args = parser.parse_args(argv)
+    apply_stage_defaults(args)
 
     repo_root = Path(args.repo_root).resolve()
     if args.single_run:
@@ -100,6 +148,9 @@ def main(argv: list[str] | None = None) -> int:
 
     metadata = build_metadata(repo_root, args)
     instances = selected_instances(args)
+    metadata["instance_count"] = len(instances)
+    metadata["variant_order"] = list(VARIANT_ORDER)
+    metadata["expected_raw_run_count"] = len(instances) * len(args.seeds) * len(VARIANT_ORDER)
     phase0_rows = phase0_instance_audit(repo_root, instances)
     write_csv(output_dir / "phase0_instance_audit.csv", phase0_rows)
 
@@ -158,9 +209,29 @@ def normalize_instance(value: str) -> str:
     raise ValueError(f"Cannot infer category for instance {value!r}; use category/instance")
 
 
+def apply_stage_defaults(args: argparse.Namespace) -> None:
+    stage = str(args.stage)
+    if stage == "manual":
+        return
+    defaults = STAGE_DEFAULTS[stage]
+    # Stage shortcuts are intentionally decision-complete. If custom overrides
+    # are needed, use --stage manual and pass the desired CLI values explicitly.
+    args.instance_set = str(defaults["instance_set"])
+    args.instances = []
+    args.seeds = list(defaults["seeds"])
+    args.eval_budget = int(defaults["eval_budget"])
+    args.runtime_cap_small = float(defaults["runtime_cap_small"])
+    args.runtime_cap_medium = float(defaults["runtime_cap_medium"])
+    args.runtime_cap_large = float(defaults["runtime_cap_large"])
+    args.task_timeout_buffer = float(defaults["task_timeout_buffer"])
+    args.output_dir = str(defaults["output_dir"])
+    args.report_path = str(defaults["report_path"])
+
+
 def build_metadata(repo_root: Path, args: argparse.Namespace) -> dict[str, Any]:
     return {
         "schema_version": "setp-280kwh-fleet-composition-gate.v1",
+        "stage": str(args.stage),
         "repo_root": str(repo_root),
         "commit_hash": git_output(repo_root, "rev-parse", "HEAD"),
         "git_status_short": git_output(repo_root, "status", "--short", "--untracked-files=all"),
@@ -174,6 +245,9 @@ def build_metadata(repo_root: Path, args: argparse.Namespace) -> dict[str, Any]:
         "eval_budget": int(args.eval_budget),
         "seeds": list(args.seeds),
         "instance_set": str(args.instance_set),
+        "resume": bool(args.resume),
+        "retry_timeouts": bool(args.retry_timeouts),
+        "in_process": bool(args.in_process),
         "runtime_caps": {
             "small": float(args.runtime_cap_small),
             "medium": float(args.runtime_cap_medium),
@@ -205,19 +279,115 @@ def phase0_instance_audit(repo_root: Path, instances: Iterable[str]) -> list[dic
 
 def run_gate(repo_root: Path, instances: list[str], args: argparse.Namespace) -> list[dict[str, Any]]:
     flags = e2_alns_throughput_flags(route_cost_cache=True, repair_structure_cache=True, timing_ledger=False)
+    output_dir = repo_root / args.output_dir
+    tasks = build_tasks(instances, args)
+    completed: dict[tuple[str, str, int, str, int], dict[str, Any]] = {}
+    if args.resume:
+        completed = load_completed_rows(output_dir, retry_timeouts=bool(args.retry_timeouts))
     rows: list[dict[str, Any]] = []
+    pending: list[dict[str, Any]] = []
+    for task in tasks:
+        key = task_key(task)
+        existing = completed.get(key)
+        if existing is not None:
+            rows.append(existing)
+        else:
+            pending.append(task)
+    write_csv(output_dir / "task_queue.csv", task_queue_rows(tasks, completed, pending))
+    write_csv(output_dir / "raw_runs.partial.csv", sorted_rows(rows))
+    for task in pending:
+        category = str(task["category"])
+        instance = str(task["instance"])
+        variant = str(task["variant"])
+        seed = int(task["seed"])
+        cap = float(task["runtime_cap_seconds"])
+        bundle_dir = repo_root / BENCHMARK_ROOT / category / instance
+        if args.in_process:
+            row = run_one(repo_root, bundle_dir, category, instance, variant, seed, int(args.eval_budget), cap, flags)
+        else:
+            row = run_one_subprocess(repo_root, args, category, instance, variant, seed, int(args.eval_budget), cap)
+        rows.append(row)
+        completed[task_key(row)] = row
+        write_csv(output_dir / "raw_runs.partial.csv", sorted_rows(rows))
+        write_csv(output_dir / "task_queue.csv", task_queue_rows(tasks, completed, [item for item in pending if task_key(item) not in completed]))
+    return sorted_rows(rows)
+
+
+def build_tasks(instances: list[str], args: argparse.Namespace) -> list[dict[str, Any]]:
+    tasks: list[dict[str, Any]] = []
     for item in instances:
         category, instance = item.split("/", 1)
-        bundle_dir = repo_root / BENCHMARK_ROOT / category / instance
         cap = runtime_cap(instance, args)
         for seed in args.seeds:
             for variant in VARIANT_ORDER:
-                if args.in_process:
-                    row = run_one(repo_root, bundle_dir, category, instance, variant, int(seed), int(args.eval_budget), cap, flags)
-                else:
-                    row = run_one_subprocess(repo_root, args, category, instance, variant, int(seed), int(args.eval_budget), cap)
-                rows.append(row)
-                write_csv(repo_root / args.output_dir / "raw_runs.partial.csv", rows)
+                tasks.append(
+                    {
+                        "category": category,
+                        "instance": instance,
+                        "seed": int(seed),
+                        "variant": variant,
+                        "eval_budget": int(args.eval_budget),
+                        "runtime_cap_seconds": float(cap),
+                    }
+                )
+    return tasks
+
+
+def load_completed_rows(output_dir: Path, *, retry_timeouts: bool) -> dict[tuple[str, str, int, str, int], dict[str, Any]]:
+    completed: dict[tuple[str, str, int, str, int], dict[str, Any]] = {}
+    for name in ("raw_runs.csv", "raw_runs.partial.csv"):
+        path = output_dir / name
+        if not path.exists() or path.stat().st_size == 0:
+            continue
+        for row in read_csv(path):
+            status = str(row.get("status", ""))
+            if status == "TIMEOUT" and retry_timeouts:
+                continue
+            if status in TERMINAL_STATUSES:
+                completed[task_key(row)] = row
+    return completed
+
+
+def task_key(row: dict[str, Any]) -> tuple[str, str, int, str, int]:
+    return (
+        str(row["category"]),
+        str(row["instance"]),
+        int(row["seed"]),
+        str(row["variant"]),
+        int(row["eval_budget"]),
+    )
+
+
+def sorted_rows(rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    return sorted(rows, key=lambda row: (str(row.get("category", "")), str(row.get("instance", "")), int(row.get("seed", 0)), variant_index(str(row.get("variant", "")))))
+
+
+def variant_index(variant: str) -> int:
+    try:
+        return VARIANT_ORDER.index(variant)
+    except ValueError:
+        return len(VARIANT_ORDER)
+
+
+def task_queue_rows(
+    tasks: list[dict[str, Any]],
+    completed: dict[tuple[str, str, int, str, int], dict[str, Any]],
+    pending: list[dict[str, Any]],
+) -> list[dict[str, Any]]:
+    pending_keys = {task_key(row) for row in pending}
+    rows = []
+    for task in tasks:
+        key = task_key(task)
+        existing = completed.get(key)
+        rows.append(
+            {
+                **task,
+                "queue_status": "pending" if key in pending_keys else "terminal",
+                "run_status": existing.get("status", "") if existing else "",
+                "total_cost": existing.get("total_cost", "") if existing else "",
+                "composition": existing.get("composition", "") if existing else "",
+            }
+        )
     return rows
 
 
@@ -336,6 +506,7 @@ def timeout_row(
         "v_speed_ms": float(DEFAULT_PRICES.v_speed_ms),
         "carbon_price": float(DEFAULT_PRICES.carbon_price),
         "status": "TIMEOUT",
+        "active_flags": json.dumps(e2_alns_throughput_flags(route_cost_cache=True, repair_structure_cache=True, timing_ledger=False), sort_keys=True),
         "actual_evals": 0,
         "violation_count": -1,
         "route_count": 0,
@@ -376,6 +547,7 @@ def subprocess_error_row(
         "v_speed_ms": float(DEFAULT_PRICES.v_speed_ms),
         "carbon_price": float(DEFAULT_PRICES.carbon_price),
         "status": status,
+        "active_flags": json.dumps(e2_alns_throughput_flags(route_cost_cache=True, repair_structure_cache=True, timing_ledger=False), sort_keys=True),
         "subprocess_returncode": int(returncode),
         "actual_evals": 0,
         "violation_count": -1,
@@ -544,6 +716,7 @@ def summary_rows_from_winners(rows: list[dict[str, Any]]) -> list[dict[str, Any]
             {
                 "category": category,
                 "instance": instance,
+                "customer_count": customer_count(instance),
                 "seed_count": len(winners),
                 "ok_seed_count": len(ok),
                 "all_ev_winner_count": counts.get("all_ev", 0),
@@ -553,6 +726,10 @@ def summary_rows_from_winners(rows: list[dict[str, Any]]) -> list[dict[str, Any]
                 "all_cv_winner_count": counts.get("all_cv", 0),
                 "mean_winner_cost": mean(float(row["winner_total_cost"]) for row in ok) if ok else "",
                 "mean_winner_ev_share": mean(float(row["winner_ev_route_share"]) for row in ok) if ok else "",
+                "mean_winner_cv_share": mean(1.0 - float(row["winner_ev_route_share"]) for row in ok) if ok else "",
+                "mean_winner_cv_routes": mean(float(row["winner_cv_route_count"]) for row in ok) if ok else "",
+                "mean_winner_ev_routes": mean(float(row["winner_ev_route_count"]) for row in ok) if ok else "",
+                "mean_winner_route_count": mean(float(row["winner_route_count"]) for row in ok) if ok else "",
             }
         )
     return out
