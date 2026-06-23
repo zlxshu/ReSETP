@@ -7,7 +7,7 @@ True best-and-mean all-CV dominance is present on e2-threeshift-200c-01. Cases w
 ## Environment
 
 - repo_head: `43d423b7c2fd0a1a4eff85774ba7810bef9409c9`
-- diagnostic_artifact_commit: `PENDING_COMMIT`
+- diagnostic_artifact_commit: `57972d6e24e97f10ffeb90f33ba75d7e5b72dbc5`
 - branch: `codex/reporting-pipeline`
 - python: `/opt/anaconda3/bin/python3.13`
 - python_version: `3.13.9`

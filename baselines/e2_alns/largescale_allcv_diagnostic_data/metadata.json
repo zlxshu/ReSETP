@@ -3,7 +3,7 @@
   "branch": "codex/reporting-pipeline",
   "checkpoint_dir": "baselines/e2_alns/checkpoints",
   "command": "PYTHONPATH=solver/src:models/src PYTHONHASHSEED=0 /opt/anaconda3/bin/python3.13 baselines/e2_alns/largescale_allcv_diagnostic.py --phase2-mode fixed_replay --reopt-collection-note 'Attempted --enable-reopt-refine twice in this session. The first default direct run was interrupted after >15 min in local_search/check_solution; the second run used 09d throughput flags and was interrupted after >15 min while still CPU-bound in run_alns_wouda. No reopt rows are claimed; fixed-replay triggers are recorded for a resumable future refine.'",
-  "diagnostic_artifact_commit": "PENDING_COMMIT",
+  "diagnostic_artifact_commit": "57972d6e24e97f10ffeb90f33ba75d7e5b72dbc5",
   "elapsed_seconds": 0.4818600830039941,
   "enable_reopt_refine": false,
   "instances": [
