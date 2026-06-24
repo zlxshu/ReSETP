@@ -1,6 +1,7 @@
 # 09l Source-Bound Practical Mixed-Band Gate
 
 Commit: `d7eea173`.
+Artifact commit: `3c215f3ba2a7bfa10be15e385061db43ca02142a`.
 Python: `/opt/anaconda3/bin/python3.13`; NumPy: `2.3.5`.
 Frozen defaults: `B_battery_kwh=280.0`, `v_speed_ms=25.0`, `carbon_price=0.05034`.
 Battery values in this report are in-memory overrides only; `prices.py`, `cost.py`, `check.py`, `evaluation.py`, bundle data, and algorithm semantics are not changed.
