@@ -1,7 +1,7 @@
 # 09n Fleet-Cap Operational Gate
 
 Commit: `dcf89960`.
-Diagnostic artifact commit: `PENDING_COMMIT`.
+Diagnostic artifact commit: `55cd2b71cf0de23a573ff8e9bb3be86f2cd16381`.
 Python: `/opt/anaconda3/bin/python3.13`; NumPy: `2.3.5`.
 Frozen defaults: `B_battery_kwh=280.0`, `v_speed_ms=25.0`, `carbon_price=0.05034`.
 This is a diagnostic search-shell gate only. It does not edit `prices.py`, `cost.py`, `check.py`, `evaluation.py`, generated bundles, or formal model semantics.
