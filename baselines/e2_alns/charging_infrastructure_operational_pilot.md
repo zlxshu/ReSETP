@@ -1,6 +1,7 @@
 # 09o Charging-Infrastructure Operational Pilot
 
-Commit: `3806df34`.
+Run commit: `3806df34`.
+Artifact commit: `a2e021e678a1f5c8576ac760be207f7bc55dbf4e`.
 Python: `/opt/anaconda3/bin/python3.13`; NumPy: `2.3.5`.
 Prices used by in-memory override: `B_battery_kwh=280.0`, `v_speed_ms=25.0`, `carbon_price=0.05034`.
 Command: `/opt/anaconda3/bin/python3.13 baselines/e2_alns/charging_infrastructure_operational_pilot.py --eval-budget 300 --runtime-cap-large 90 --task-timeout-buffer 30 --resume`.
