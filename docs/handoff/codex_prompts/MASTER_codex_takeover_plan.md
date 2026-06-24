@@ -15,6 +15,7 @@
 - **09k 关键事实**:严格 balanced 只出现在旧文献锚 `80kWh`（mean EV share 0.408, 32/51 balanced winners）；当前车型证据没有稳健 balanced 候选。`100kWh` 是边界点（mean EV share 0.681）但 winner 多数已 EV-heavy（30/51）；`113/141/210/280kWh` 全部 EV-dominant（mean EV share 0.780/0.877/0.898/0.898）。报告 verdict=`BALANCED_EVIDENCE_BAND_FOUND`,但解释必须读全:这个 balanced 是旧文献锚,不是现代中型车主场景通行证。
 - **当前默认代码仍是 280kWh(09i/09j commit `8500fd9c`)**,但它现在应视为 **modern-battery/EV-dominant scenario candidate**,不能直接作为"混合车队主场景"进入正式表图。旧 80kWh 结果也不能恢复成现代主场景,只能作为 Goeke/Chen 文献锚或历史 baseline。
 - **09l 来源约束实践混合带 gate 已跑满 Stage A,电池单参数路线暂时关门**:`baselines/e2_alns/source_bound_mixed_band_gate.py` 对 19 个真实来源候选(60-291kWh,不含 80 主候选)跑全梯度 `-01` 实例 × seed1 × 3 variants,`1311/1311` rows 跑满、0 timeout/error。结论 `BATTERY_ONLY_INSUFFICIENT`(screen-gated,不是 Stage C confirmation):没有任何非 80kWh 来源候选 pass/near-pass。低端 81/82.6/89kWh 全局均值看似混合但跨规模失败;100kWh 只有 11/23 实例过带并已开始 EV-heavy;113kWh 起多数规模 EV-heavy/all-EV。Stage B/C 因无幸存候选不触发。
+- **09m 首轮只读结构审计已完成**:`baselines/e2_alns/structural_mixed_band_investigation.py` 审计 69/69 实例结构并把 09l Stage A 限定到 75-200 拼接分析。结论:75-200 不是单一电池问题;地理包络相近,大规模客户密度更高且最近公共站距离下降,反而可能让 EV 更容易。最重要新线索是 fleet count:当前 `infer_fleet_limits()` 是 unbounded fleet,`check.py` 明确 fleet count 不再硬约束,而 metadata 仍有 `num_cv/num_ev`;EV-heavy 解常用几十条 EV route。下一步 09m 正式诊断优先查 EV 数量/资本约束,再查充电容量/站点可用性/长路线 eligibility。
 - **诊断来龙去脉(供理解,别重做)**:E2 算法对比上 LNS 基线(=高娇娇2024 GLNS,扫描+LNS+SA、无 EV/碳机器的通用纯路由器)曾赢我们的 ALNS。80kWh 端 EV 续航不足,280kWh 端 EV 太强。真正的论文主线要在 **证据约束参数** 与 **现实运营约束** 之间选择,不能为了凑混合硬调电池。
 
 ## 2. 当前用户纠偏后的判据
@@ -25,7 +26,7 @@
 - **未来若拍板任何新默认电池容量,必须同步三处事实源**:不能只改 `prices.py`。必须同时更新 `docs/paper_submission_final/paper_main.tex` 的参数表/参数说明、补齐或更新 bibliography 中的新来源引用、并在 `solver/src/setp_solver/prices.py` 注释中写清"旧参数值+旧来源"与"新参数值+新来源+诊断证据"。旧 Goeke/Davis-Figliozzi 80kWh 与当前 280kWh 证据链都要保留痕迹,不能被静默覆盖。
 - **比例标准改成实践混合带**:不要求 1:1,允许研究趋势偏 EV,但 winner 的 EV/CV 实际占比至少应落在 20%-80% 区间内。主指标先用 `EV route share`；报告还应尽量补 `served customers / distance / demand` share,避免路线数假平衡。
 - **不能只看全局均值或单个算例**:必须按 family × size 梯度逐项报告,并包含稳定性校验算例。一个电池值只有在所有梯度规模、稳定性实例、seeds 下多数 winner 都维持 20%-80% 实践混合,才算故事立住。
-- **09l 已给出下一步方向**:真实来源电池容量单参数不足以让跨规模稳定维持 20%-80% 实践混合带。不要继续向下微调电池找刀刃;下一步改走运营约束退路,例如充电容量/公共桩稀缺/EV 数量或资本约束/长路线 eligibility。任何运营约束必须先有证据矩阵和最小语义设计,不能直接改 `cost.py/check.py/evaluation.py`。
+- **09l/09m 已给出下一步方向**:真实来源电池容量单参数不足以让跨规模稳定维持 20%-80% 实践混合带。不要继续向下微调电池找刀刃;下一步改走运营结构诊断,优先 EV 数量/资本约束,其次充电容量/公共桩稀缺/长路线 eligibility。任何运营约束必须先有证据矩阵和最小语义设计,不能直接改 `cost.py/check.py/evaluation.py`。
 
 ## 3. 剩余总路线图(拍板后再执行)
 1. **8 基线做到文献最优 + 收敛(已写 `10_e2_baselines_literature_best.md`)**:GA/PSO/VNS/ACO/GA-VNS/LNS/GWO/IWD 按源论文重做、文献标准参数、"真在搜索"硬门禁(std>0 + 改善暖启动 + 收敛曲线明显收敛)。`baseline-algorithm-catalog.md` 有设计转录。
@@ -37,8 +38,8 @@
 7. **(可选,不阻塞)DR-ALNS**:x86 lane 的锦上添花/future work,训出来再补 T3 的 DR 列;**未训练前不进算法主线、不用于救场**。
 
 ## 4. 各步预备方案(contingencies,诚实优先)
-- **09l 已确认真实来源候选均不跨规模通过**:不要继续向下微调电池找刀刃;后续主线进入运营约束退路。
-- **运营约束退路**:先做证据矩阵和最小语义设计,不要一上来改 `cost.py/check.py/evaluation.py`;任何新增约束必须有现实解释、可关开关、旧语义可复现。优先考虑现实中让混合车队成立的因素:场站充电容量、公共桩稀缺/绕行、EV 购置资本或数量上限、跨城长路线 EV eligibility。
+- **09l 已确认真实来源候选均不跨规模通过;09m 指向 fleet/operation root cause**:不要继续向下微调电池找刀刃;后续主线进入运营结构诊断。
+- **运营约束退路**:先做证据矩阵和最小语义设计,不要一上来改 `cost.py/check.py/evaluation.py`;任何新增约束必须有现实解释、可关开关、旧语义可复现。优先级从高到低:EV 购置资本或数量上限(当前代码是 unbounded fleet,最可疑)、场站充电容量、公共桩稀缺/绕行、跨城长路线 EV eligibility。
 - **参数正式化退路**:无论最后是电池容量、运营约束还是场景分叉,只要进入默认参数/论文主场景,就必须同步代码默认值、代码注释来源、TeX 参数表、TeX 表下注释、bibliography、HANDOFF,并显式说明旧参数为什么保留为历史/文献锚而不是当前主场景。
 - **第3步(E2)若强化 ALNS 仍输 LNS**(在已拍板并通过 gate 的主参数/约束场景下):先查是不是又回到"算法方差/可靠性"问题(09c/09d 的残留);文献找现成稳定化(SA 降温重调/多起点);**仍不过则诚实定位"ALNS 与 LNS 同档第一梯队、差异化靠碳感知机制+DR",不硬刚不注水**(符合既定 bar:对手更强+贴近最优+创新清晰,非碾弱对手)。绝不退回旧数据凑赢。
 - **E1-E7 重跑算力**:各 10seed×16000eval=天级以内,resumable;200c 单期慢→硬超时返回 incumbent(09d 已修)。
@@ -52,4 +53,4 @@
 - 算例:`models/data_bundle/generated_instances/e2_benchmark/`(69 算例;正式评价需绑定最终拍板的参数/约束场景)。
 
 ## 一句话给 Codex
-09l 已证明:真实来源电池值单参数不能让非 80kWh 候选跨所有梯度规模稳定维持 20%-80% 实践混合带。**不要自驱进入 E2/T3,也不要继续调无来源电池值;下一步转运营约束退路,先证据矩阵+最小语义设计,再由 user 拍板是否实现。** 全程诚实+克制+用 fable5 思考方式约束自己,跑不出就 HALT、绝不注水。
+09l/09m 已证明:真实来源电池值单参数不能让非 80kWh 候选跨所有梯度规模稳定维持 20%-80% 实践混合带,且当前 EV-heavy 很可能受 unbounded fleet 运营假设影响。**不要自驱进入 E2/T3,也不要继续调无来源电池值;下一步执行 `09m_operational_structure_mixed_band_diagnostic.md`,先证据矩阵+只读/内存 gate,重点查 EV 数量/资本约束,再由 user 拍板是否实现。** 全程诚实+克制+用 fable5 思考方式约束自己,跑不出就 HALT、绝不注水。
