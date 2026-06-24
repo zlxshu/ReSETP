@@ -479,27 +479,44 @@ def generated_fleet_rows_all(repo_root: Path) -> list[dict[str, Any]]:
     rows: list[dict[str, Any]] = []
     for key in focus_instances(repo_root, reps=(1, 2, 3)):
         category, instance = key.split("/", 1)
-        bundle_dir = repo_root / BENCHMARK_ROOT / category / instance
-        data = json.loads((bundle_dir / "instance.json").read_text(encoding="utf-8"))
-        manifest = json.loads((bundle_dir / "scenario_manifest.json").read_text(encoding="utf-8"))
-        meta = data.get("metadata", {})
-        cfg = manifest.get("config", {})
-        nodes = data.get("nodes", [])
-        rows.append(
-            {
-                "category": category,
-                "instance": instance,
-                "size": b9k.customer_count(instance),
-                "replicate": replicate_number(instance),
-                "depots": sum(1 for node in nodes if str(node.get("node_type", "")).lower() == "d"),
-                "stations": sum(1 for node in nodes if str(node.get("node_type", "")).lower() == "f"),
-                "manifest_num_cv": meta.get("num_cv", cfg.get("num_cv", "")),
-                "manifest_num_ev": meta.get("num_ev", cfg.get("num_ev", "")),
-                "station_strategy": cfg.get("station_strategy", ""),
-                "depot_strategy": cfg.get("depot_strategy", ""),
-            }
-        )
+        rows.append(generated_fleet_row_for(repo_root, category, instance))
     return rows
+
+
+def generated_fleet_row_for(repo_root: Path, category: str, instance: str) -> dict[str, Any]:
+    bundle_dir = repo_root / BENCHMARK_ROOT / category / instance
+    data = json.loads((bundle_dir / "instance.json").read_text(encoding="utf-8"))
+    manifest = json.loads((bundle_dir / "scenario_manifest.json").read_text(encoding="utf-8"))
+    meta = data.get("metadata", {})
+    cfg = manifest.get("config", {})
+    nodes = data.get("nodes", [])
+    return {
+        "category": category,
+        "instance": instance,
+        "size": b9k.customer_count(instance),
+        "replicate": replicate_number(instance),
+        "depots": sum(1 for node in nodes if str(node.get("node_type", "")).lower() == "d"),
+        "stations": sum(1 for node in nodes if str(node.get("node_type", "")).lower() == "f"),
+        "manifest_num_cv": meta.get("num_cv", cfg.get("num_cv", "")),
+        "manifest_num_ev": meta.get("num_ev", cfg.get("num_ev", "")),
+        "station_strategy": cfg.get("station_strategy", ""),
+        "depot_strategy": cfg.get("depot_strategy", ""),
+    }
+
+
+def single_fleet_meta_all(repo_root: Path, category: str, instance: str) -> g09n.FleetMeta:
+    """Return fleet metadata for the full 10-200 E2 gradient.
+
+    The 09n helper was built for the large-scale cap gate.  09q widened the
+    diagnostic to 10/15/20/25c instances, so subprocess tasks read the generated
+    bundle metadata directly instead of relying on the older 09n focus set.
+    """
+    key = f"{category}/{instance}"
+    generated = [generated_fleet_row_for(repo_root, category, instance)]
+    meta = g09n.fleet_meta_by_instance(repo_root, raw_goeke_fleet_rows(repo_root), generated).get(key)
+    if meta is None:
+        raise ValueError(f"missing fleet metadata for {key}")
+    return meta
 
 
 def phase0_audit(
@@ -838,7 +855,7 @@ def run_one(
 ) -> dict[str, Any]:
     started = time.perf_counter()
     original_bundle_dir = repo_root / BENCHMARK_ROOT / category / instance
-    meta = g09n.single_fleet_meta(repo_root, category, instance)
+    meta = single_fleet_meta_all(repo_root, category, instance)
     spec = constraint_for_scenario(meta, constraint_scenario)
     prices = replace(DEFAULT_PRICES, carbon_price=CARBON_PRICE, B_battery_kwh=float(battery_kwh))
     row = base_run_row(repo_root, phase, category, instance, variant, seed, battery_kwh, spec, eval_budget, runtime_cap_seconds, flags)
