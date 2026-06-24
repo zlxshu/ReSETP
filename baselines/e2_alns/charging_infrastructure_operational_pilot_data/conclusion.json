@@ -1,0 +1,14 @@
+{
+  "expected_raw_rows": 6,
+  "failure_rows": 3,
+  "interpretation": "The pilot did not collect a complete auditable set; do not infer charging-infrastructure causality. Under the HALT, the 3 completed OK row(s) are still useful as a clue: mean depot charging energy share=1.000, mean public charging energy share=0.000, max one-depot concurrent charging=62, EV routes using public charging=0. That points to depot charging capacity as the next hypothesis to evidence-check, not to public fast-charger scarcity.",
+  "ok_raw_rows": 3,
+  "ok_row_ev_routes_with_public_charge_total": 0,
+  "ok_row_max_depot_peak_concurrent_at_one_depot": 62.0,
+  "ok_row_mean_depot_charging_energy_share": 1.0,
+  "ok_row_mean_public_charging_energy_share": 0.0,
+  "pilot_instance_count": 3,
+  "raw_rows": 6,
+  "verdict": "HALT_COLLECTION_COST",
+  "winner_rows": 3
+}
