@@ -1,6 +1,7 @@
 # 09q Source-Bound Battery x Operational-Constraint Mix Map
 
 Commit: `9f650030`.
+Artifact commit: `1242c1063644a26535553b36b360cb91bb7ea38c`.
 Python: `/opt/anaconda3/bin/python3.13`; NumPy: `2.3.5`.
 Frozen defaults: `B_battery_kwh=280.0`, `v_speed_ms=25.0`, `carbon_price=0.05034`.
 This runner does not change `prices.py`, generated bundles, `cost.py`, `check.py`, `evaluation.py`, or algorithm semantics.
