@@ -1,0 +1,37 @@
+caveat,evidence_kind,evidence_tier,path_or_url,promotable_in_09q,scenario_relevance,source_id,source_type,unit,value
+,battery_capacity,literature_benchmark,/Users/zhouleixishu/Zotero/storage/5EKAGHKW/Qiu 等 _ 2024 _ Routing a mixed fleet...pdf,True,,Qiu2024,local_pdf,kWh,60.0
+,battery_capacity,literature_benchmark,/Users/zhouleixishu/Zotero/storage/PGY3QPNT/Goeke和Schneider _ 2015 _ Routing...pdf,False,,Goeke2015,local_pdf,kWh,80.0
+,battery_capacity,literature_benchmark,/Users/zhouleixishu/Zotero/storage/392IDBJI/陈婉茹 等 _ 2023 _ 碳交易机制下多中心混合车队配送路径和速度优化研究.pdf,False,,Chen2023,local_pdf,kWh,80.0
+,battery_capacity,conditional_van,https://www.mbvans.com/en/esprinter,True,,MercedesESprinter,official_web,kWh,81.0
+,battery_capacity,conditional_van,https://www.mbvans.com/en/esprinter,True,,MercedesESprinter,official_web,kWh,113.0
+,battery_capacity,strong_current_vehicle_class,https://insideevs.com/news/609794/mitsubishi-fuso-next-generation-ecanter/,True,,FusoECanter,secondary_web,kWh,82.6
+,battery_capacity,strong_current_vehicle_class,https://insideevs.com/news/609794/mitsubishi-fuso-next-generation-ecanter/,True,,FusoECanter,secondary_web,kWh,123.9
+,battery_capacity,conditional_van,https://www.fromtheroad.ford.com/content/dam/fordmediasite/us/en/library/2025/specs/2025-Transit-Technical-Specs.pdf,True,,FordETransit2025,official_pdf,kWh,89.0
+,battery_capacity,strong_current_vehicle_class,https://www.isuzucv.com/en/nrrev,True,,IsuzuNRREV,official_web,kWh,60.0
+,battery_capacity,strong_current_vehicle_class,https://www.isuzucv.com/en/nrrev,True,,IsuzuNRREV,official_web,kWh,100.0
+,battery_capacity,strong_current_vehicle_class,https://www.isuzucv.com/en/nrrev,True,,IsuzuNRREV,official_web,kWh,140.0
+,battery_capacity,strong_current_vehicle_class,https://www.isuzucv.com/en/nrrev,True,,IsuzuNRREV,official_web,kWh,180.0
+,battery_capacity,strong_current_vehicle_class,https://www.daf.com/en/news-and-media/news-articles/global/2023/q4/new-daf-xb-electric-range-for-clean-urban-distribution,True,,DAFXBElectric,official_web,kWh,141.0
+,battery_capacity,strong_current_vehicle_class,https://www.daf.com/en/news-and-media/news-articles/global/2023/q4/new-daf-xb-electric-range-for-clean-urban-distribution,True,,DAFXBElectric,official_web,kWh,210.0
+,battery_capacity,strong_current_vehicle_class,https://www.daf.com/en/news-and-media/news-articles/global/2023/q4/new-daf-xb-electric-range-for-clean-urban-distribution,True,,DAFXBElectric,official_web,kWh,282.0
+,battery_capacity,strong_current_vehicle_class,https://www.macktrucks.com/trucks/md-electric/,True,,MackMDElectric,official_web,kWh,150.0
+,battery_capacity,strong_current_vehicle_class,https://www.macktrucks.com/trucks/md-electric/,True,,MackMDElectric,official_web,kWh,240.0
+,battery_capacity,strong_current_vehicle_class,https://freightliner.com/trucks/em2/,True,,FreightlinerEM2,official_web,kWh,194.0
+,battery_capacity,strong_current_vehicle_class,https://freightliner.com/trucks/em2/,True,,FreightlinerEM2,official_web,kWh,291.0
+,battery_capacity,strong_current_vehicle_class,https://www.internationaltrucks.com/trucks/emv-series,True,,InternationalEMV,official_web,kWh,210.0
+,battery_capacity,strong_current_vehicle_class,https://www.renault-trucks.co.uk/static/documents/renault-trucks-e-tech-d-d-wide-uk.pdf,True,,RenaultTrucksETechD,official_web,kWh,176.0
+,battery_capacity,strong_current_vehicle_class,https://www.renault-trucks.co.uk/static/documents/renault-trucks-e-tech-d-d-wide-uk.pdf,True,,RenaultTrucksETechD,official_web,kWh,200.0
+,battery_capacity,strong_current_vehicle_class,https://www.volvotrucks.com/en-en/news-stories/press-releases/2023/jun/volvo-presents-electric-trucks-with-longer-range.html,True,,VolvoFLFE2023,official_web,kWh,280.0
+,battery_capacity,diagnostic_threshold,baselines/e2_alns/parameter_evidence_review.md,False,,DiagnosticBridge160,diagnostic,kWh,160.0
+,battery_capacity,future_heavy_class,https://www.volvotrucks.com/en-en/trucks/electric/volvo-fh-electric.html,False,,VolvoFHElectric,official_web,kWh,360.0
+,battery_capacity,future_heavy_class,https://www.volvotrucks.com/en-en/trucks/electric/volvo-fh-electric.html,False,,VolvoFHElectric,official_web,kWh,540.0
+,battery_capacity,future_heavy_class,https://www.daimlertruck.com/en/newsroom/pressrelease/full-charge-for-the-future-the-first-eactros-600-on-the-road-in-europes-fleets-53166796,False,,DaimlerEActros600,official_web,kWh,621.0
+May be incompatible with ReSETP one-route-per-vehicle interpretation if route count exceeds numVeh.,operational_constraint,source_backed,models/data_bundle/raw_instances/goeke_uk,False,original mixed-fleet benchmark vehicle availability,GoekeSchneider2015Raw,benchmark_raw_instance,rule,numPetrolVeh/numElectroVeh per raw E-UK instance
+Current solver/checker intentionally do not enforce these values.,operational_constraint,source_backed,models/data_bundle/generated_instances/e2_benchmark,False,current E2 generated bundles,ReSETPGeneratedMetadata,generated_instance_metadata,rule,metadata num_cv/num_ev copied from Goeke donor
+Do not generate evidence_ratio_cap from this source without extracting explicit fleet-count data.,operational_constraint,context_only,docs/paper_submission_final/paper_main.tex ref:7,False,"supports multidepot/shared charging as a scenario, not a numeric fleet cap by itself",Chen2023SharedCharging,paper_reference,rule,
+Context source only for this runner.,operational_constraint,context_only,docs/paper_submission_final/paper_main.tex ref:25,False,supports shared resources in multidepot routing,Wang2024ResourceSharing,paper_reference,rule,
+Battery evidence was used in 09h/09k; no fleet cap ratio is promoted here without extraction.,operational_constraint,context_only,/Users/zhouleixishu/Zotero/storage/5EKAGHKW/Qiu 等 _ 2024 _ Routing a mixed fleet...pdf,False,post-2020 mixed CV/EV routing literature,Qiu2024MixedFleet,local_pdf_reference,rule,
+No numeric cap is generated unless the source is explicitly extracted later.,operational_constraint,context_only,/Users/zhouleixishu/Zotero/storage/3BZESE7Z/李英 等 _ 2020 _ 电动汽车传统汽车混合车队配置及路径优化模型.pdf,False,supports treating fleet configuration as a real operational mechanism,Li2020FleetConfiguration,local_pdf_reference,rule,
+Qualitative/industry context only unless an explicit fleet ratio is extracted.,operational_constraint,context_only,https://www.gov.uk/government/publications/commercial-electric-vans-and-fleets-adoption-smart-charging-and-barriers,False,"real fleets face adoption, charging, and capital barriers",GOVUKCommercialEVFleets2024,official_web,rule,
+"This is the current generated assumption, not a real-world charger-count source.",operational_constraint,diagnostic_reference,models/data_bundle/generated_instances/e2_benchmark,False,Explains why 09o 280kWh winners can depot-charge many EV routes.,ReSETPGeneratedDepotChargers,generated_instance_metadata,rule,depot station_chargers currently default to customer_count_route_upper_bound
+Cannot become a main scenario without public-charger availability evidence.,operational_constraint,diagnostic_only,,False,Tests whether lower battery candidates rely on public charging.,09qNoPublicChargingDiagnostic,diagnostic_counterfactual,rule,set public station_chargers to 0 in temporary bundles
