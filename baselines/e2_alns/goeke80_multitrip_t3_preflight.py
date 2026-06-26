@@ -771,9 +771,9 @@ def smoke_instances() -> list[tuple[str, str, float, int, int]]:
 
 
 def runtime_cap(size: int, category: str) -> float:
-    if size <= 50:
+    if size <= 25:
         return 300.0
-    if size <= 100:
+    if size <= 50:
         return 600.0
     return 900.0
 
