@@ -61,6 +61,8 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--stage-a-only", action="store_true")
     parser.add_argument("--stage-b-only", action="store_true")
     parser.add_argument("--no-auto-stage-b", action="store_true")
+    parser.add_argument("--summarize-existing-only", action="store_true")
+    parser.add_argument("--summarize-stage", choices=("smoke", "stage_a", "stage_b"), default="stage_b")
     parser.add_argument("--resume", action="store_true", default=True)
     parser.add_argument("--no-resume", dest="resume", action="store_false")
     parser.add_argument("--retry-timeouts", action="store_true")
@@ -89,6 +91,20 @@ def main(argv: list[str] | None = None) -> int:
     conclusion: dict[str, Any]
 
     if not phase0["phase0_ok"] or args.phase0_only:
+        conclusion = decide_final(phase0, smoke_result, stage_a_result, stage_b_result, elapsed=time.perf_counter() - started)
+        finish(metadata, output_dir, report_path, phase0, smoke_result, stage_a_result, stage_b_result, conclusion, started)
+        print(json.dumps(conclusion, ensure_ascii=False, indent=2))
+        return 0 if not conclusion["verdict"].startswith("HALT") else 2
+
+    if args.summarize_existing_only:
+        smoke_result = load_stage_result(output_dir, "smoke")
+        stage_a_result = load_stage_result(output_dir, "stage_a")
+        if args.summarize_stage == "smoke":
+            smoke_result = summarize_existing_stage(repo_root, output_dir, "smoke", smoke_instances(), [1], int(args.smoke_eval_budget))
+        elif args.summarize_stage == "stage_a":
+            stage_a_result = summarize_existing_stage(repo_root, output_dir, "stage_a", instance_rows(replicates=STAGE_A_REPLICATES), parse_seeds(args.stage_a_seeds), int(args.stage_a_eval_budget))
+        else:
+            stage_b_result = summarize_existing_stage(repo_root, output_dir, "stage_b", instance_rows(replicates=REPLICATES), parse_seeds(args.stage_b_seeds), int(args.stage_b_eval_budget))
         conclusion = decide_final(phase0, smoke_result, stage_a_result, stage_b_result, elapsed=time.perf_counter() - started)
         finish(metadata, output_dir, report_path, phase0, smoke_result, stage_a_result, stage_b_result, conclusion, started)
         print(json.dumps(conclusion, ensure_ascii=False, indent=2))
@@ -288,6 +304,10 @@ def run_one_task(repo_root: Path, task: dict[str, Any], idx: int) -> dict[str, A
         task_index=idx,
         timeout_seconds=float(task["runtime_cap_seconds"]) + HARD_TIMEOUT_GRACE_SECONDS,
     )
+    return add_task_metadata(row, task)
+
+
+def add_task_metadata(row: dict[str, Any], task: dict[str, Any]) -> dict[str, Any]:
     # The reused throughput worker intentionally reports only solver-level fields.
     # Keep the gate metadata here so resume, summaries, and checkpoint enrichment
     # stay keyed to the exact stage task that produced the row.
@@ -296,6 +316,87 @@ def run_one_task(repo_root: Path, task: dict[str, Any], idx: int) -> dict[str, A
     row["replicate"] = int(task["replicate"])
     row["checkpoint_path"] = task["checkpoint_path"]
     return row
+
+
+def summarize_existing_stage(
+    repo_root: Path,
+    output_dir: Path,
+    stage: str,
+    instance_rows_: list[tuple[str, str, float, int, int]],
+    seeds: list[int],
+    eval_budget: int,
+) -> dict[str, Any]:
+    started = time.perf_counter()
+    stage_dir = output_dir / stage
+    tasks = build_tasks(repo_root, stage_dir, stage, instance_rows_, seeds, eval_budget)
+    rows = collect_existing_task_rows(repo_root, stage_dir)
+    rows = [enrich_row(repo_root, row) for row in rows]
+    rows.sort(key=lambda row: (str(row.get("instance")), int(row.get("seed", 0)), str(row.get("algorithm"))))
+    raw_path = stage_dir / f"{stage}_raw_runs.csv"
+    write_csv(raw_path, rows)
+    pair_rows = pair_summary(rows)
+    scale_rows = scale_summary(rows)
+    write_csv(stage_dir / f"{stage}_paired_summary.csv", pair_rows)
+    write_csv(stage_dir / f"{stage}_scale_summary.csv", scale_rows)
+    verdict = stage_verdict(stage, rows, pair_rows, scale_rows, expected_count=len(tasks), elapsed=time.perf_counter() - started)
+    write_json(stage_dir / f"{stage}_verdict.json", verdict)
+    return stage_result_from_verdict(repo_root, stage, stage_dir, raw_path, verdict, len(tasks), len(rows))
+
+
+def collect_existing_task_rows(repo_root: Path, stage_dir: Path) -> list[dict[str, Any]]:
+    task_root = stage_dir / ".throughput_tasks"
+    rows: list[dict[str, Any]] = []
+    if not task_root.exists():
+        return rows
+    for task_path in sorted(task_root.glob("task_*.json")):
+        if task_path.name.endswith("_row.json"):
+            continue
+        suffix = task_path.stem.replace("task_", "")
+        row_path = task_root / f"task_{suffix}_row.json"
+        if not row_path.exists():
+            continue
+        try:
+            task = json.loads(task_path.read_text(encoding="utf-8"))
+            row = json.loads(row_path.read_text(encoding="utf-8"))
+        except Exception:
+            continue
+        rows.append(add_task_metadata(row, task))
+    return rows
+
+
+def load_stage_result(output_dir: Path, stage: str) -> dict[str, Any] | None:
+    stage_dir = output_dir / stage
+    verdict_path = stage_dir / f"{stage}_verdict.json"
+    raw_path = stage_dir / f"{stage}_raw_runs.csv"
+    if not verdict_path.exists():
+        return None
+    verdict = json.loads(verdict_path.read_text(encoding="utf-8"))
+    expected = int(verdict.get("expected_rows", 0))
+    rows = int(verdict.get("rows", 0))
+    return stage_result_from_verdict(Path.cwd(), stage, stage_dir, raw_path, verdict, expected, rows)
+
+
+def stage_result_from_verdict(
+    repo_root: Path,
+    stage: str,
+    stage_dir: Path,
+    raw_path: Path,
+    verdict: dict[str, Any],
+    expected_rows: int,
+    rows: int,
+) -> dict[str, Any]:
+    return {
+        "stage": stage,
+        "stage_gate": verdict["stage_gate"],
+        "verdict": verdict["verdict"],
+        "rows": rows,
+        "expected_rows": expected_rows,
+        "elapsed_seconds": verdict["elapsed_seconds"],
+        "raw_path": str(raw_path.relative_to(repo_root)) if raw_path.is_absolute() else str(raw_path),
+        "paired_path": str((stage_dir / f"{stage}_paired_summary.csv").relative_to(repo_root)) if stage_dir.is_absolute() else str(stage_dir / f"{stage}_paired_summary.csv"),
+        "scale_path": str((stage_dir / f"{stage}_scale_summary.csv").relative_to(repo_root)) if stage_dir.is_absolute() else str(stage_dir / f"{stage}_scale_summary.csv"),
+        "metrics": verdict,
+    }
 
 
 def enrich_row(repo_root: Path, row: dict[str, Any]) -> dict[str, Any]:
