@@ -63,7 +63,7 @@ class CheckSolutionTests(unittest.TestCase):
         self.assertEqual(check_solution(_legal_solution(), _instance()), [])
 
     def test_detects_overload(self) -> None:
-        violations = check_solution(_legal_solution(), _instance(c1_demand=1700.0))
+        violations = check_solution(_legal_solution(), _instance(c1_demand=3700.0))
         self.assertIn("CAPACITY", _types(violations))
         self.assertTrue(any(v.vehicle_id == "CV1" and "initial load" in v.detail for v in violations))
 

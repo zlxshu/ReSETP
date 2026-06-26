@@ -587,7 +587,8 @@ u_{ijk}^{\tau},a_{ik}^{\tau},b_{ik}^{\tau},y_{skt}^{\tau},g_{skt}^{\tau},y_{ikt}
 \subsection{算例设置与参数说明}
 
 % v2026-06-13: formal-backfill turns the parameter section from pre-run wording into final-run wording.
-本文以Goeke和Schneider混合车队路径研究为基础\textsuperscript{\cite{ref:27}}，采用EVRPTW-MF公开实例构造协同多车场混合车队算例\textsuperscript{\cite{ref:28}}。算例保留原始客户、充电站、时间窗、服务时间、车辆容量和非对称距离矩阵；电池容量不沿用Goeke原始80 kWh设定，而是按现代中型电动配送卡车公开证据重新标定为280 kWh。本文在不改变原始客户需求与道路结构的前提下扩展第二车场，用于刻画客户跨场服务、共享车辆池和共享充电站容量约束。主要节点规模、车队配置、车辆容量和参数取值见表 \ref{tab:parameter-settings}，正式实验结果由统一的数据配置文件和结果导出脚本给出。
+% v2026-06-26: align vehicle payload with Goeke Table 4 Q=3650 after hard fleet-cap audit; the earlier local 1600 kg generator value is not used as the Goeke baseline.
+本文以Goeke和Schneider混合车队路径研究为基础\textsuperscript{\cite{ref:27}}，采用EVRPTW-MF公开实例构造协同多车场混合车队算例\textsuperscript{\cite{ref:28}}。算例保留原始客户、充电站、时间窗、服务时间、车辆容量和非对称距离矩阵；其中车辆载重容量按Goeke原始参数表取$Q=3650$ kg。电池容量不沿用Goeke原始80 kWh设定，而是按现代中型电动配送卡车公开证据重新标定为280 kWh。本文在不改变原始客户需求与道路结构的前提下扩展第二车场，用于刻画客户跨场服务、共享车辆池和共享充电站容量约束。主要节点规模、车队配置、车辆容量和参数取值见表 \ref{tab:parameter-settings}，正式实验结果由统一的数据配置文件和结果导出脚本给出。
 
 考虑到时变电网碳强度、公共充电电价和碳交易价格等细粒度数据在国内尚不完全公开，本文采用来源完整、可公开核验的英国公开数据完成参数标定，所得机制性结论用于为中国物流低碳管理提供参考。本文成本统一以英镑计量。电网碳强度采用NESO发布的Great Britain范围actual national carbon intensity，并按固定时间粒度换算为kgCO\textsubscript{2}/kWh\textsuperscript{\cite{ref:29}}；Carbon Intensity API用于核对碳强度接口和时间粒度\textsuperscript{\cite{ref:30}}。柴油CO\textsubscript{2}因子、柴油价格、电价和碳交易价格分别来自GOV.UK温室气体转换因子、道路燃油价格、非居民部门电价和UK ETS碳价相关资料\textsuperscript{\cite{ref:31,ref:32,ref:33,ref:34,ref:35}}。充电占用成本$c_s^{occ}$作为补能技术场景参数处理，不引用非同口径的工资或车辆租赁报价。
 
@@ -609,7 +610,7 @@ $|\mathcal{S}|$ & 共享充电站数量 & 3 & 个\\
 $m$ & 可用车辆总数上限(含油车与电动车) & 20 & 辆\\
 $m^g$ & 可用燃油车数量上限 & 10 & 辆\\
 $m^e$ & 可用电动车数量上限 & 10 & 辆\\
-$Q$ & 车辆载重容量 & 1\,600 & kg\\
+$Q$ & 车辆载重容量 & 3\,650 & kg\\
 $v$ & 固定行驶速度 & 90 & km/h\\
 \midrule
 \multicolumn{4}{l}{\textbf{B 碳强度与时间基准}}\\
