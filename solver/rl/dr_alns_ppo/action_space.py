@@ -29,6 +29,7 @@ BLOCK_CANDIDATE_GENERATOR_CHOICES = (
     "stronger_insertion_repair",
     "ev_charging_aware_repair",
 )
+BLOCK_SEARCH_CONTROL_CHOICES = ("continue", "stop", "restart")
 BLOCK_ACTION_NVECS = (
     len(BLOCK_DESTROY_IDS),
     len(BLOCK_REPAIR_IDS),
@@ -37,6 +38,15 @@ BLOCK_ACTION_NVECS = (
     len(BLOCK_EXPLORATION_RATIOS),
 )
 BLOCK_CANDIDATE_ACTION_NVECS = (*BLOCK_ACTION_NVECS, len(BLOCK_CANDIDATE_GENERATOR_CHOICES))
+
+
+def block_action_nvecs(*, candidate_generator_mode: bool = False, search_control_mode: bool = False) -> tuple[int, ...]:
+    nvecs = list(BLOCK_ACTION_NVECS)
+    if bool(candidate_generator_mode):
+        nvecs.append(len(BLOCK_CANDIDATE_GENERATOR_CHOICES))
+    if bool(search_control_mode):
+        nvecs.append(len(BLOCK_SEARCH_CONTROL_CHOICES))
+    return tuple(nvecs)
 
 
 def _coerce_action_component(value: Any) -> int:
@@ -97,8 +107,12 @@ def decode_block_action(
     *,
     block_size: int = 128,
     candidate_generator_mode: bool = False,
+    search_control_mode: bool = False,
 ) -> BlockDecodedAction:
-    expected_len = 6 if bool(candidate_generator_mode) else 5
+    expected_len = len(block_action_nvecs(
+        candidate_generator_mode=bool(candidate_generator_mode),
+        search_control_mode=bool(search_control_mode),
+    ))
     if len(raw) != expected_len:
         raise ValueError(f"Expected {expected_len} block action components, got {len(raw)}")
     values = [_coerce_action_component(value) for value in raw]
@@ -119,6 +133,12 @@ def decode_block_action(
         if not 0 <= generator_idx < len(BLOCK_CANDIDATE_GENERATOR_CHOICES):
             raise ValueError(f"block candidate-generator index out of range: {generator_idx}")
         candidate_generator = BLOCK_CANDIDATE_GENERATOR_CHOICES[generator_idx]
+    search_control = "continue"
+    if bool(search_control_mode):
+        control_idx = values[5 + int(bool(candidate_generator_mode))]
+        if not 0 <= control_idx < len(BLOCK_SEARCH_CONTROL_CHOICES):
+            raise ValueError(f"block search-control index out of range: {control_idx}")
+        search_control = BLOCK_SEARCH_CONTROL_CHOICES[control_idx]
     if int(block_size) < 1:
         raise ValueError("block_size must be >= 1")
     return BlockDecodedAction(
@@ -130,4 +150,5 @@ def decode_block_action(
         block_size=int(block_size),
         raw=tuple(values),
         candidate_generator=str(candidate_generator),
+        search_control=str(search_control),
     )

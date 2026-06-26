@@ -9,16 +9,16 @@ from dr_alns_ppo.pilot11_interface_audit import (
 
 
 def test_current_block_interface_names_existing_heads() -> None:
-    assert CURRENT_BLOCK_INTERFACE["obs_dim"] == 19
+    assert CURRENT_BLOCK_INTERFACE["obs_dim"] == 24
     assert CURRENT_BLOCK_INTERFACE["action_heads"] == [
         "destroy",
         "repair",
         "q_ratio",
         "threshold_ratio",
         "exploration_ratio",
+        "search_control",
     ]
     assert "charging_strategy" not in CURRENT_BLOCK_INTERFACE["action_heads"]
-    assert "accept_stop" not in CURRENT_BLOCK_INTERFACE["action_heads"]
 
 
 def test_required_literature_signals_include_domain_state_and_control() -> None:
@@ -42,4 +42,4 @@ def test_gate_requires_feasible_action_control_point() -> None:
     rows = build_gap_rows()
     gate = classify_gate(rows)
     assert gate["status"] == "NEEDS_INTERFACE_REDESIGN"
-    assert "acceptance_or_stop_control" in gate["recommended_first_audit"]
+    assert "charging_strategy_control" in gate["recommended_first_audit"]

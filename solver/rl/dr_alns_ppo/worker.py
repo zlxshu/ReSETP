@@ -38,6 +38,7 @@ ALPHA_UCB_CHOICE = "alpha_ucb"
 BLOCK_Q_RATIOS = (0.10, 0.16, 0.23, 0.30, 0.40)
 BLOCK_THRESHOLD_RATIOS = (0.0, 0.0025, 0.0075, 0.02)
 MAX_THRESHOLD_RATIO = 0.02
+SEARCH_CONTROL_CHOICES = {"continue", "stop", "restart"}
 RUNTIME_TRACE = {
     "worker_python_executable": sys.executable,
     "worker_python_version": sys.version,
@@ -98,6 +99,9 @@ class JsonlWorker:
         exploration_ratio = float(action.get("exploration_ratio", 0.0) or 0.0)
         if not math.isfinite(exploration_ratio) or exploration_ratio < 0.0 or exploration_ratio > 1.0:
             raise ValueError(f"exploration_ratio must be finite and in [0, 1]: {exploration_ratio!r}")
+        search_control = str(action.get("search_control", "continue") or "continue")
+        if search_control not in SEARCH_CONTROL_CHOICES:
+            raise ValueError(f"unknown search_control: {search_control!r}")
 
         start_actual_evals = int(state.context.budget.count if state.context.budget else 0)
         start_candidate_scores = int(state.context.score_counts.get("candidate", 0))
@@ -106,6 +110,25 @@ class JsonlWorker:
         start_current_obj = float(state.current_obj)
         start_best_routes = len(state.best_solution.routes)
         start_current_routes = len(state.current_solution.routes)
+        if search_control == "stop":
+            return self._block_stop_response(
+                request_id,
+                action,
+                start_actual_evals=start_actual_evals,
+                start_candidate_scores=start_candidate_scores,
+                start_repair_delta=start_repair_delta,
+                start_best_obj=start_best_obj,
+                start_current_obj=start_current_obj,
+                start_best_routes=start_best_routes,
+                start_current_routes=start_current_routes,
+            )
+        restart_improvement = 0.0
+        if search_control == "restart":
+            restart_improvement = max(0.0, float(state.current_obj) - float(state.best_obj))
+            state.current_solution = state.best_solution
+            state.current_obj = float(state.best_obj)
+            state.current_summary = state.best_summary
+            state.stagnation_steps = 0
         accepted_count = 0
         improved_current_count = 0
         improved_best_count = 0
@@ -193,6 +216,10 @@ class JsonlWorker:
                 "block_requested_threshold_ratio": float(action.get("threshold_ratio", 0.0) or 0.0),
                 "block_requested_candidate_generator": str(candidate_generator),
                 "block_candidate_generator_candidate_count": int(len(block_candidates or [])),
+                "search_control": str(search_control),
+                "search_control_restart_applied": int(search_control == "restart"),
+                "search_control_restart_improvement": float(restart_improvement),
+                "search_control_stop_requested": False,
                 "control_mode": "block_ppo",
                 "destroy_counts": dict(state.destroy_counts),
                 "repair_counts": dict(state.repair_counts),
@@ -210,6 +237,81 @@ class JsonlWorker:
             "current_obj": float(state.current_obj),
             "best_obj": float(state.best_obj),
             "candidate_obj": float(last_response.get("candidate_obj", state.current_obj)),
+            "violation_count": int(best_summary["violation_count"]),
+            "metrics": best_summary["metrics"],
+            "solution": solution_to_json(state.best_solution),
+            "trace": trace,
+        }
+
+    def _block_stop_response(
+        self,
+        request_id: Any,
+        action: dict[str, Any],
+        *,
+        start_actual_evals: int,
+        start_candidate_scores: int,
+        start_repair_delta: int,
+        start_best_obj: float,
+        start_current_obj: float,
+        start_best_routes: int,
+        start_current_routes: int,
+    ) -> dict[str, Any]:
+        state = self.state
+        actual_evals = int(state.context.budget.count if state.context.budget else 0)
+        repair_delta_count = int(state.context.score_counts.get("repair_delta", 0))
+        best_summary = state.best_summary
+        trace = {
+            **RUNTIME_TRACE,
+            "op": "block_step",
+            "block_size": int(action.get("block_size", 128)),
+            "block_iterations": 0,
+            "block_evals_added": int(actual_evals - int(start_actual_evals)),
+            "block_candidate_scores_added": int(state.context.score_counts.get("candidate", 0) - int(start_candidate_scores)),
+            "block_repair_delta_added": int(repair_delta_count - int(start_repair_delta)),
+            "block_accepted_count": 0,
+            "block_rejected_count": 0,
+            "block_improved_current_count": 0,
+            "block_improved_best_count": 0,
+            "block_start_best_obj": float(start_best_obj),
+            "block_end_best_obj": float(state.best_obj),
+            "block_best_delta": float(state.best_obj - float(start_best_obj)),
+            "block_start_current_obj": float(start_current_obj),
+            "block_end_current_obj": float(state.current_obj),
+            "block_current_delta": float(state.current_obj - float(start_current_obj)),
+            "block_start_best_route_count": int(start_best_routes),
+            "block_end_best_route_count": int(len(state.best_solution.routes)),
+            "block_best_route_delta": int(len(state.best_solution.routes) - int(start_best_routes)),
+            "block_start_current_route_count": int(start_current_routes),
+            "block_end_current_route_count": int(len(state.current_solution.routes)),
+            "block_current_route_delta": int(len(state.current_solution.routes) - int(start_current_routes)),
+            "capacity_route_lower_bound": int(self._capacity_route_lower_bound()),
+            "exploration_ratio": float(action.get("exploration_ratio", 0.0) or 0.0),
+            "block_requested_destroy_id": str(action.get("destroy_id", "")),
+            "block_requested_repair_id": str(action.get("repair_id", "")),
+            "block_requested_q_ratio": float(action.get("q_ratio", 0.0) or 0.0),
+            "block_requested_threshold_ratio": float(action.get("threshold_ratio", 0.0) or 0.0),
+            "block_requested_candidate_generator": str(action.get("candidate_generator", "default") or "default"),
+            "block_candidate_generator_candidate_count": 0,
+            "search_control": "stop",
+            "search_control_restart_applied": 0,
+            "search_control_restart_improvement": 0.0,
+            "search_control_stop_requested": True,
+            "control_mode": "block_ppo",
+            "destroy_counts": dict(state.destroy_counts),
+            "repair_counts": dict(state.repair_counts),
+        }
+        return {
+            "request_id": request_id,
+            "ok": True,
+            "accepted": False,
+            "improved_current": False,
+            "improved_best": False,
+            "actual_evals": actual_evals,
+            "candidate_scores": int(state.context.score_counts.get("candidate", 0)),
+            "repair_delta_count": repair_delta_count,
+            "current_obj": float(state.current_obj),
+            "best_obj": float(state.best_obj),
+            "candidate_obj": float(state.current_obj),
             "violation_count": int(best_summary["violation_count"]),
             "metrics": best_summary["metrics"],
             "solution": solution_to_json(state.best_solution),
@@ -603,8 +705,8 @@ class JsonlWorker:
                 raw_action=(raw[0], raw[1], -1, 0),
             )
         elif mode == "block_ppo":
-            if len(raw) not in {5, 6}:
-                raise ValueError(f"block_ppo action raw must have 5 or 6 components: {raw!r}")
+            if len(raw) not in {5, 6, 7}:
+                raise ValueError(f"block_ppo action raw must have 5, 6, or 7 components: {raw!r}")
             winner_action = WinnerOperatorAction(
                 destroy_op_id=destroy_id,
                 repair_op_id=repair_id,

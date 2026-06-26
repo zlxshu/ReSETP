@@ -8,6 +8,7 @@ import numpy as np
 import pytest
 
 from dr_alns_ppo.async_block_policy import AsyncBlockPolicy, load_async_block_policy
+from dr_alns_ppo.block_env import BLOCK_OBSERVATION_SIZE
 from dr_alns_ppo.offline_bandit import (
     DEFAULT_SYSTEM_WORKER,
     MIN_BLOCK_ROWS,
@@ -61,7 +62,7 @@ def _fake_trace_row(index: int) -> dict[str, object]:
         "worker_python_version": "3.13.0",
         "worker_numpy_version": "2.3.5",
     }
-    for obs_idx in range(19):
+    for obs_idx in range(BLOCK_OBSERVATION_SIZE):
         row[f"obs_{obs_idx:02d}"] = float(obs_idx) / 100.0
     return row
 
@@ -124,7 +125,7 @@ def test_offline_train_writes_async_loadable_pt_model(tmp_path: Path) -> None:
 
     rc = run_train(args)
     policy = load_async_block_policy(output_dir / "offline_policy.pt")
-    action, state = policy.predict(np.zeros(19, dtype=np.float32), deterministic=True)
+    action, state = policy.predict(np.zeros(policy.model.obs_dim, dtype=np.float32), deterministic=True)
 
     assert rc == 0
     assert isinstance(policy, AsyncBlockPolicy)

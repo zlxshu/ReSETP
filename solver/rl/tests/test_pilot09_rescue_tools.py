@@ -6,6 +6,7 @@ import numpy as np
 
 from dr_alns_ppo import pilot09_rescue_tools as tools
 from dr_alns_ppo.async_block_policy import make_block_actor_critic
+from dr_alns_ppo.block_env import BLOCK_OBSERVATION_SIZE
 
 
 def test_literature_merge_keeps_zotero_repo_and_web_evidence() -> None:
@@ -115,7 +116,7 @@ def test_normalize_rescue_row_preserves_runtime_and_budget_fields() -> None:
 
 
 def test_build_trace_row_tolerates_missing_trace_fields() -> None:
-    obs = np.zeros(19, dtype=np.float32)
+    obs = np.zeros(BLOCK_OBSERVATION_SIZE, dtype=np.float32)
     action = np.array([0, 1, 2, 3, 0], dtype=np.int64)
     row = tools.build_trace_row(
         algorithm="ppo_block_stochastic",

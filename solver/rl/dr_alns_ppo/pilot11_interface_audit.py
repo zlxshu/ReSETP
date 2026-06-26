@@ -8,13 +8,12 @@ from typing import Any
 
 
 CURRENT_BLOCK_INTERFACE: dict[str, Any] = {
-    "obs_dim": 19,
-    "action_heads": ["destroy", "repair", "q_ratio", "threshold_ratio", "exploration_ratio"],
+    "obs_dim": 24,
+    "action_heads": ["destroy", "repair", "q_ratio", "threshold_ratio", "exploration_ratio", "search_control"],
     "known_limits": [
         "No route sequence state",
         "No customer time-window feature table",
         "No direct charging strategy head",
-        "No accept or stop head",
         "No learned repair insertion decision",
     ],
     "source_files": [
@@ -60,9 +59,9 @@ REQUIRED_LITERATURE_SIGNALS: list[dict[str, str]] = [
     {
         "name": "acceptance_or_stop_control",
         "source": "Reijnen DR-ALNS and PPO-ALNS acceptance/stop actions",
-        "current_status": "missing",
-        "resetp_candidate_source": "winner search loop acceptance threshold and block termination context",
-        "first_audit_step": "Replay accepted/rejected candidate traces and test whether accept/stop control is observable.",
+        "current_status": "present",
+        "resetp_candidate_source": "block search-control head with continue/stop/restart plus threshold ratio",
+        "first_audit_step": "Verify short PPO runs actually sample stop/restart and do not collapse to continue.",
         "why_it_matters": "The policy needs direct control over accepting worse candidates or stopping search.",
     },
     {
@@ -107,7 +106,7 @@ def classify_gate(rows: list[dict[str, str]]) -> dict[str, object]:
         "status": "NEEDS_INTERFACE_REDESIGN" if missing else "NO_INTERFACE_GAP",
         "missing_count": len(missing),
         "missing": missing,
-        "recommended_first_audit": ["acceptance_or_stop_control", "charging_strategy_control"],
+        "recommended_first_audit": ["charging_strategy_control"],
         "long_training_allowed": False,
         "baseline_rule": "future DR must beat best static/tuned meta, not default AlphaUCB",
     }

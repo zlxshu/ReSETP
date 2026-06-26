@@ -13,12 +13,14 @@ from .action_space import (
     BLOCK_DESTROY_IDS,
     BLOCK_Q_RATIOS,
     BLOCK_REPAIR_IDS,
+    BLOCK_SEARCH_CONTROL_CHOICES,
     decode_block_action,
+    block_action_nvecs,
 )
 from .worker_client import WorkerClient
 
 
-BLOCK_OBSERVATION_SIZE = 19
+BLOCK_OBSERVATION_SIZE = 24
 CURRICULUM_PHASES = ("route", "energy", "carbon", "dynamic")
 
 
@@ -34,6 +36,7 @@ class BlockAlnsEnv(gym.Env):
         curriculum_phase: str = "route",
         meta_mode: bool = False,
         candidate_generator_mode: bool = False,
+        search_control_mode: bool = False,
     ) -> None:
         super().__init__()
         if int(block_size) < 1:
@@ -47,7 +50,8 @@ class BlockAlnsEnv(gym.Env):
         self.curriculum_phase = str(curriculum_phase)
         self.meta_mode = bool(meta_mode)
         self.candidate_generator_mode = bool(candidate_generator_mode)
-        self.action_nvecs = _action_nvecs(self.candidate_generator_mode)
+        self.search_control_mode = bool(search_control_mode)
+        self.action_nvecs = _action_nvecs(self.candidate_generator_mode, self.search_control_mode)
         self.action_space = spaces.MultiDiscrete(list(self.action_nvecs))
         self.observation_space = spaces.Box(
             low=-10.0,
@@ -80,10 +84,12 @@ class BlockAlnsEnv(gym.Env):
             action,
             block_size=self.block_size,
             candidate_generator_mode=bool(getattr(self, "candidate_generator_mode", False)),
+            search_control_mode=bool(getattr(self, "search_control_mode", False)),
         )
         response = self._checked_response(self.client.block_step(decoded))
         self.last_response = response
-        terminated = bool(int(response.get("actual_evals", 0)) >= self.eval_budget)
+        trace = response.get("trace", {}) or {}
+        terminated = bool(int(response.get("actual_evals", 0)) >= self.eval_budget or trace.get("search_control_stop_requested"))
         reward = self._reward(response, terminated=terminated)
         response["curriculum_phase"] = self.curriculum_phase
         response["action_mask"] = self._action_mask(response)
@@ -91,7 +97,10 @@ class BlockAlnsEnv(gym.Env):
         return self._obs(response), reward, terminated, truncated, response
 
     def _action_mask(self, response: dict[str, Any]) -> list[list[bool]]:
-        action_nvecs = _action_nvecs(bool(getattr(self, "candidate_generator_mode", False)))
+        action_nvecs = _action_nvecs(
+            bool(getattr(self, "candidate_generator_mode", False)),
+            bool(getattr(self, "search_control_mode", False)),
+        )
         masks = [[True for _ in range(int(n))] for n in action_nvecs]
         if bool(getattr(self, "meta_mode", False)):
             _force_single_action(masks[0], BLOCK_DESTROY_IDS.index(ALPHA_UCB_CHOICE))
@@ -133,8 +142,15 @@ class BlockAlnsEnv(gym.Env):
         _ensure_head_has_action(masks[2], tuple(str(v) for v in BLOCK_Q_RATIOS), [0])
         _ensure_head_has_action(masks[3], tuple(str(v) for v in range(action_nvecs[3])), [0])
         _ensure_head_has_action(masks[4], tuple(str(v) for v in range(action_nvecs[4])), [0])
-        if len(masks) > len(BLOCK_ACTION_NVECS):
-            _ensure_head_has_action(masks[5], tuple(str(v) for v in range(action_nvecs[5])), [0])
+        head_idx = len(BLOCK_ACTION_NVECS)
+        if bool(getattr(self, "candidate_generator_mode", False)):
+            _ensure_head_has_action(masks[head_idx], tuple(str(v) for v in range(action_nvecs[head_idx])), [0])
+            head_idx += 1
+        if bool(getattr(self, "search_control_mode", False)):
+            _ensure_head_has_action(masks[head_idx], BLOCK_SEARCH_CONTROL_CHOICES, [0])
+            stop_idx = BLOCK_SEARCH_CONTROL_CHOICES.index("stop")
+            if budget_progress < 0.75 and stagnation < 0.25:
+                masks[head_idx][stop_idx] = False
         return masks
 
     def close(self) -> None:
@@ -162,9 +178,30 @@ class BlockAlnsEnv(gym.Env):
         route_reward += min(2.0, best_hits / iterations)
         route_reward -= no_best_penalty
         reward = route_reward
+        requested_candidate_generator = str(trace.get("block_requested_candidate_generator", "default") or "default")
+        candidate_count = _float(trace.get("block_candidate_generator_candidate_count"), 0.0)
+        candidate_reward = 0.0
+        if requested_candidate_generator != "default":
+            candidate_reward += 0.05 * min(1.0, candidate_count / 4.0)
+            candidate_reward += 0.50 * min(1.0, (best_hits + _float(trace.get("block_improved_current_count"), 0.0)) / iterations)
+            if candidate_count <= 0.0:
+                candidate_reward -= 0.25
+        search_control = str(trace.get("search_control", "continue") or "continue")
+        search_reward = 0.0
+        if search_control == "restart":
+            restart_gain = _float(trace.get("search_control_restart_improvement"), 0.0) / max(abs(start_current), 1.0)
+            search_reward += min(0.50, 25.0 * restart_gain)
+            if restart_gain <= 0.0:
+                search_reward -= 0.05
+        elif search_control == "stop":
+            budget_progress = _float(response.get("actual_evals"), 0.0) / max(float(self.eval_budget), 1.0)
+            search_reward += 0.10 if budget_progress >= 0.80 and best_hits == 0 else -0.25
+        reward += candidate_reward + search_reward
 
         components: dict[str, float | str] = {
             "route": float(route_reward),
+            "candidate": float(candidate_reward),
+            "search_control": float(search_reward),
             "energy": 0.0,
             "carbon": 0.0,
             "dynamic": 0.0,
@@ -262,6 +299,11 @@ class BlockAlnsEnv(gym.Env):
                 _float(trace.get("exploration_ratio"), 0.0),
                 _float(trace.get("stagnation_steps"), 0.0) / max(float(self.eval_budget), 1.0),
                 min(1.0, max(0.0, _float(response.get("violation_count"), 0.0))),
+                _scale_feature(str(getattr(self, "bundle_dir", ""))),
+                _phase_feature(str(getattr(self, "curriculum_phase", "route"))),
+                min(1.0, _float(trace.get("block_candidate_generator_candidate_count"), 0.0) / 16.0),
+                0.0 if str(trace.get("block_requested_candidate_generator", "default") or "default") == "default" else 1.0,
+                0.0 if str(trace.get("search_control", "continue") or "continue") == "continue" else 1.0,
             ],
             dtype=np.float32,
         )
@@ -287,8 +329,11 @@ def _charge_ratio(response: dict[str, Any]) -> float:
     return float(len(actions) if isinstance(actions, list) else 0) / route_count
 
 
-def _action_nvecs(candidate_generator_mode: bool) -> tuple[int, ...]:
-    return tuple(BLOCK_CANDIDATE_ACTION_NVECS if bool(candidate_generator_mode) else BLOCK_ACTION_NVECS)
+def _action_nvecs(candidate_generator_mode: bool, search_control_mode: bool = False) -> tuple[int, ...]:
+    return block_action_nvecs(
+        candidate_generator_mode=bool(candidate_generator_mode),
+        search_control_mode=bool(search_control_mode),
+    )
 
 
 def _carbon_reward(metrics: dict[str, Any], trace: dict[str, Any]) -> float | None:
@@ -309,6 +354,21 @@ def _dynamic_reward(response: dict[str, Any]) -> float | None:
     if not any("dynamic" in str(key).lower() or "rolling" in str(key).lower() for key in keys):
         return None
     return 0.0
+
+
+def _scale_feature(bundle_dir: str) -> float:
+    lowered = str(bundle_dir).lower()
+    for customers in (200, 150, 100, 75, 50):
+        if f"{customers}c" in lowered:
+            return min(1.0, float(customers) / 200.0)
+    return 0.0
+
+
+def _phase_feature(phase: str) -> float:
+    try:
+        return float(CURRICULUM_PHASES.index(str(phase))) / max(float(len(CURRICULUM_PHASES) - 1), 1.0)
+    except ValueError:
+        return 0.0
 
 
 def _mask_named(mask: list[bool], names: tuple[str, ...], blocked: set[str]) -> None:

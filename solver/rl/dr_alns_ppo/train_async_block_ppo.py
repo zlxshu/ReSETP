@@ -22,7 +22,9 @@ from .action_space import (
     BLOCK_EXPLORATION_RATIOS,
     BLOCK_Q_RATIOS,
     BLOCK_REPAIR_IDS,
+    BLOCK_SEARCH_CONTROL_CHOICES,
     BLOCK_THRESHOLD_RATIOS,
+    block_action_nvecs,
 )
 from .async_block_policy import BlockActorCritic, make_block_actor_critic, save_async_block_policy
 from .block_env import BlockAlnsEnv
@@ -48,6 +50,7 @@ class AsyncEpisodeTask:
     policy_payload: dict[str, Any]
     meta_mode: bool = False
     candidate_generator_mode: bool = False
+    search_control_mode: bool = False
 
 
 def run_actor_episode(task: AsyncEpisodeTask) -> dict[str, Any]:
@@ -69,6 +72,7 @@ def run_actor_episode(task: AsyncEpisodeTask) -> dict[str, Any]:
         curriculum_phase=str(task.curriculum_phase),
         meta_mode=bool(task.meta_mode),
         candidate_generator_mode=bool(task.candidate_generator_mode),
+        search_control_mode=bool(task.search_control_mode),
     )
     observations: list[list[float]] = []
     actions: list[list[int]] = []
@@ -110,6 +114,7 @@ def run_actor_episode(task: AsyncEpisodeTask) -> dict[str, Any]:
         "curriculum_phase": str(task.curriculum_phase),
         "meta_mode": bool(task.meta_mode),
         "candidate_generator_mode": bool(task.candidate_generator_mode),
+        "search_control_mode": bool(task.search_control_mode),
         "block_size": int(task.block_size),
         "eval_budget": int(task.eval_budget),
         "observations": observations,
@@ -162,12 +167,20 @@ def filter_on_policy_episodes(
     return accepted, stale
 
 
-def _training_action_nvecs(candidate_generator_mode: bool) -> tuple[int, ...]:
-    return tuple(BLOCK_CANDIDATE_ACTION_NVECS if bool(candidate_generator_mode) else BLOCK_ACTION_NVECS)
+def _training_action_nvecs(candidate_generator_mode: bool, search_control_mode: bool = False) -> tuple[int, ...]:
+    return block_action_nvecs(
+        candidate_generator_mode=bool(candidate_generator_mode),
+        search_control_mode=bool(search_control_mode),
+    )
 
 
 def _episode_action_nvecs(episodes: list[dict[str, Any]]) -> tuple[int, ...]:
     for episode in episodes:
+        if bool(episode.get("candidate_generator_mode", False)) or bool(episode.get("search_control_mode", False)):
+            return _training_action_nvecs(
+                bool(episode.get("candidate_generator_mode", False)),
+                bool(episode.get("search_control_mode", False)),
+            )
         for action in episode.get("actions", []) or []:
             if len(action) == len(BLOCK_CANDIDATE_ACTION_NVECS):
                 return tuple(BLOCK_CANDIDATE_ACTION_NVECS)
@@ -375,7 +388,7 @@ def run_self_check(args: argparse.Namespace) -> int:
     _require_system_worker(args.required_worker_python)
     manifest = _load_manifest_for_args(args)
     bundles = list(manifest["train"])
-    action_nvecs = _training_action_nvecs(bool(args.candidate_generator_mode))
+    action_nvecs = _training_action_nvecs(bool(args.candidate_generator_mode), bool(args.search_control_mode))
     model = make_block_actor_critic(seed=int(args.seed), hidden_size=int(args.hidden_size), action_nvec=action_nvecs)
     start = time.monotonic()
     episodes = collect_episodes(
@@ -389,6 +402,7 @@ def run_self_check(args: argparse.Namespace) -> int:
         deterministic=False,
         meta_mode=bool(args.meta_mode),
         candidate_generator_mode=bool(args.candidate_generator_mode),
+        search_control_mode=bool(args.search_control_mode),
         output_dir=output_dir,
     )
     elapsed = time.monotonic() - start
@@ -420,11 +434,12 @@ def run_audit(args: argparse.Namespace) -> int:
         block_size=int(args.block_size),
         meta_mode=bool(args.meta_mode),
         candidate_generator_mode=bool(args.candidate_generator_mode),
+        search_control_mode=bool(args.search_control_mode),
     )
     try:
         _obs, reset_info = env.reset(seed=int(args.seed))
         reset_response = dict(env.last_response or {})
-        action_nvecs = _training_action_nvecs(bool(args.candidate_generator_mode))
+        action_nvecs = _training_action_nvecs(bool(args.candidate_generator_mode), bool(args.search_control_mode))
         action = np.zeros(len(action_nvecs), dtype=np.int64)
         _next_obs, reward, terminated, truncated, step_response = env.step(action)
     finally:
@@ -445,12 +460,14 @@ def run_audit(args: argparse.Namespace) -> int:
         "eval_budget": int(args.eval_budget),
         "block_size": int(args.block_size),
         "candidate_generator_mode": bool(args.candidate_generator_mode),
-        "block_action_nvecs": list(_training_action_nvecs(bool(args.candidate_generator_mode))),
+        "search_control_mode": bool(args.search_control_mode),
+        "block_action_nvecs": list(_training_action_nvecs(bool(args.candidate_generator_mode), bool(args.search_control_mode))),
         "block_destroy_ids": list(BLOCK_DESTROY_IDS),
         "block_repair_ids": list(BLOCK_REPAIR_IDS),
         "block_q_ratios": list(BLOCK_Q_RATIOS),
         "block_threshold_ratios": list(BLOCK_THRESHOLD_RATIOS),
         "block_exploration_ratios": list(BLOCK_EXPLORATION_RATIOS),
+        "block_search_control_choices": list(BLOCK_SEARCH_CONTROL_CHOICES),
         "reset_info_keys": sorted(str(key) for key in reset_info.keys()),
         "reset_response_keys": sorted(str(key) for key in reset_response.keys()),
         "step_response_keys": sorted(str(key) for key in step_response.keys()),
@@ -551,15 +568,29 @@ def _mask_to_lists(mask: Any, action_nvecs: tuple[int, ...] | None = None) -> li
 
 
 def _mask_action_nvecs(mask: Any) -> tuple[int, ...]:
-    if mask is not None and len(mask) == len(BLOCK_CANDIDATE_ACTION_NVECS):
-        return tuple(BLOCK_CANDIDATE_ACTION_NVECS)
+    if mask is not None:
+        candidates = (
+            block_action_nvecs(candidate_generator_mode=True, search_control_mode=True),
+            block_action_nvecs(candidate_generator_mode=False, search_control_mode=True),
+            block_action_nvecs(candidate_generator_mode=True, search_control_mode=False),
+            block_action_nvecs(candidate_generator_mode=False, search_control_mode=False),
+        )
+        for nvecs in candidates:
+            if len(mask) != len(nvecs):
+                continue
+            try:
+                if all(len(list(head)) == int(nvecs[idx]) for idx, head in enumerate(mask)):
+                    return tuple(nvecs)
+            except TypeError:
+                continue
     return tuple(BLOCK_ACTION_NVECS)
 
 
 def _mask_invalid_rates(episode: dict[str, Any]) -> dict[str, float]:
     masks = episode.get("action_masks") or []
-    totals = [0 for _ in BLOCK_CANDIDATE_ACTION_NVECS]
-    invalid = [0 for _ in BLOCK_CANDIDATE_ACTION_NVECS]
+    max_nvecs = block_action_nvecs(candidate_generator_mode=True, search_control_mode=True)
+    totals = [0 for _ in max_nvecs]
+    invalid = [0 for _ in max_nvecs]
     for raw_mask in masks:
         normalized = _mask_to_lists(raw_mask)
         for idx, head in enumerate(normalized):
@@ -567,18 +598,19 @@ def _mask_invalid_rates(episode: dict[str, Any]) -> dict[str, float]:
             invalid[idx] += sum(1 for value in head if not value)
     return {
         f"mask_invalid_rate_head_{idx}": (float(invalid[idx]) / float(totals[idx]) if totals[idx] else 0.0)
-        for idx in range(len(BLOCK_CANDIDATE_ACTION_NVECS))
+        for idx in range(len(max_nvecs))
     }
 
 
 def _aggregate_mask_invalid_rates(episodes: list[dict[str, Any]]) -> dict[str, float]:
-    totals = [0.0 for _ in BLOCK_CANDIDATE_ACTION_NVECS]
+    max_nvecs = block_action_nvecs(candidate_generator_mode=True, search_control_mode=True)
+    totals = [0.0 for _ in max_nvecs]
     for episode in episodes:
         rates = _mask_invalid_rates(episode)
-        for idx in range(len(BLOCK_CANDIDATE_ACTION_NVECS)):
+        for idx in range(len(max_nvecs)):
             totals[idx] += float(rates[f"mask_invalid_rate_head_{idx}"])
     count = max(float(len(episodes)), 1.0)
-    return {f"mask_invalid_rate_head_{idx}": totals[idx] / count for idx in range(len(BLOCK_CANDIDATE_ACTION_NVECS))}
+    return {f"mask_invalid_rate_head_{idx}": totals[idx] / count for idx in range(len(max_nvecs))}
 
 
 def _save_periodic_checkpoint(
@@ -626,7 +658,7 @@ def run_train(args: argparse.Namespace) -> int:
     phase_value_clip_ranges = _phase_values(args.phase_value_clip_ranges, schedule, None)
     phase_advantage_clip_ranges = _phase_values(args.phase_advantage_clip_ranges, schedule, None)
     device = _resolve_device(args.device)
-    action_nvecs = _training_action_nvecs(bool(args.candidate_generator_mode))
+    action_nvecs = _training_action_nvecs(bool(args.candidate_generator_mode), bool(args.search_control_mode))
     model = make_block_actor_critic(seed=int(args.seed), hidden_size=int(args.hidden_size), action_nvec=action_nvecs).to(device)
     optimizer = torch.optim.Adam(model.parameters(), lr=float(args.learning_rate))
     config = vars(args).copy()
@@ -681,6 +713,7 @@ def run_train(args: argparse.Namespace) -> int:
                 policy_payload=make_policy_payload(model),
                 meta_mode=bool(args.meta_mode),
                 candidate_generator_mode=bool(args.candidate_generator_mode),
+                search_control_mode=bool(args.search_control_mode),
             )
             futures[executor.submit(run_actor_episode, task)] = task
             episode_index += 1
@@ -862,6 +895,7 @@ def collect_episodes(
     deterministic: bool,
     meta_mode: bool = False,
     candidate_generator_mode: bool = False,
+    search_control_mode: bool = False,
     output_dir: Path | None = None,
 ) -> list[dict[str, Any]]:
     _ = output_dir
@@ -881,6 +915,7 @@ def collect_episodes(
                 policy_payload=make_policy_payload(model),
                 meta_mode=bool(meta_mode),
                 candidate_generator_mode=bool(candidate_generator_mode),
+                search_control_mode=bool(search_control_mode),
             )
             futures.append(executor.submit(run_actor_episode, task))
         for future in concurrent.futures.as_completed(futures):
@@ -920,6 +955,8 @@ def _self_check_verdict(episodes: list[dict[str, Any]], throughput: dict[str, An
 
 def _candidate_generator_indices(episode: dict[str, Any]) -> list[int]:
     indices: list[int] = []
+    if not bool(episode.get("candidate_generator_mode", False)):
+        return indices
     for action in episode.get("actions", []) or []:
         if len(action) > len(BLOCK_ACTION_NVECS):
             indices.append(int(action[len(BLOCK_ACTION_NVECS)]))
@@ -934,6 +971,25 @@ def _candidate_generator_nondefault_count(episode: dict[str, Any]) -> int:
     return sum(1 for idx in _candidate_generator_indices(episode) if idx != 0)
 
 
+def _search_control_indices(episode: dict[str, Any]) -> list[int]:
+    indices: list[int] = []
+    if not bool(episode.get("search_control_mode", False)):
+        return indices
+    control_idx = len(BLOCK_ACTION_NVECS) + int(bool(episode.get("candidate_generator_mode", False)))
+    for action in episode.get("actions", []) or []:
+        if len(action) > control_idx:
+            indices.append(int(action[control_idx]))
+    return indices
+
+
+def _search_control_unique_count(episode: dict[str, Any]) -> int:
+    return len(set(_search_control_indices(episode)))
+
+
+def _search_control_noncontinue_count(episode: dict[str, Any]) -> int:
+    return sum(1 for idx in _search_control_indices(episode) if idx != 0)
+
+
 def _episode_csv_row(episode: dict[str, Any], *, accepted_for_update: bool) -> dict[str, Any]:
     row = {
         "episode_index": int(episode["episode_index"]),
@@ -943,9 +999,12 @@ def _episode_csv_row(episode: dict[str, Any], *, accepted_for_update: bool) -> d
         "curriculum_phase": str(episode.get("curriculum_phase", "route")),
         "meta_mode": int(bool(episode.get("meta_mode", False))),
         "candidate_generator_mode": int(bool(episode.get("candidate_generator_mode", False))),
+        "search_control_mode": int(bool(episode.get("search_control_mode", False))),
         "accepted_for_update": int(bool(accepted_for_update)),
         "candidate_generator_unique_count": _candidate_generator_unique_count(episode),
         "candidate_generator_nondefault_count": _candidate_generator_nondefault_count(episode),
+        "search_control_unique_count": _search_control_unique_count(episode),
+        "search_control_noncontinue_count": _search_control_noncontinue_count(episode),
         "block_steps": int(episode["block_steps"]),
         "reward_sum": float(episode["reward_sum"]),
         "reward_finite": int(bool(episode.get("reward_finite", True))),
@@ -1153,9 +1212,12 @@ def _episode_fieldnames() -> list[str]:
         "curriculum_phase",
         "meta_mode",
         "candidate_generator_mode",
+        "search_control_mode",
         "accepted_for_update",
         "candidate_generator_unique_count",
         "candidate_generator_nondefault_count",
+        "search_control_unique_count",
+        "search_control_noncontinue_count",
         "block_steps",
         "reward_sum",
         "reward_finite",
@@ -1176,6 +1238,7 @@ def _episode_fieldnames() -> list[str]:
         "mask_invalid_rate_head_3",
         "mask_invalid_rate_head_4",
         "mask_invalid_rate_head_5",
+        "mask_invalid_rate_head_6",
     ]
 
 
@@ -1233,6 +1296,7 @@ def _update_fieldnames() -> list[str]:
         "mask_invalid_rate_head_3",
         "mask_invalid_rate_head_4",
         "mask_invalid_rate_head_5",
+        "mask_invalid_rate_head_6",
         "policy_loss",
         "value_loss",
         "entropy",
@@ -1271,6 +1335,7 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     audit.add_argument("--curriculum", action="store_true")
     audit.add_argument("--meta-mode", action="store_true")
     audit.add_argument("--candidate-generator-mode", action="store_true")
+    audit.add_argument("--search-control-mode", action="store_true")
     audit.add_argument("--output-dir", default=f"{REPORT_ROOT_FRAGMENT}/audit")
     audit.add_argument("--bundle", default="")
     audit.add_argument("--seed", type=int, default=1)
@@ -1283,6 +1348,7 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         p.add_argument("--curriculum", action="store_true")
         p.add_argument("--meta-mode", action="store_true")
         p.add_argument("--candidate-generator-mode", action="store_true")
+        p.add_argument("--search-control-mode", action="store_true")
         p.add_argument("--output-dir", required=True)
         p.add_argument("--seed", type=int, default=1)
         p.add_argument("--eval-budget", type=int, default=16000)
