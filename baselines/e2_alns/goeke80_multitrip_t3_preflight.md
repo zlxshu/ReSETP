@@ -1,6 +1,6 @@
 # 09t Goeke80 Multi-Trip T3 Preflight
 
-Verdict: `SMOKE_OK`
+Verdict: `STAGE_A_PASS`
 
 ## Plain Reading
 
@@ -13,18 +13,18 @@ Verdict: `SMOKE_OK`
 - 09s warm start rows OK: `True` with `69` rows
 - 09s rescue report OK: `True`
 
-## Smoke
+## Stage A
 
-- Verdict: `SMOKE_OK`
-- Stage gate: `STAGE_SMOKE_OK`
-- Rows: `6/6`
-- Paired counts: `{"alns": 1, "tie": 2}`
+- Verdict: `STAGE_A_PASS`
+- Stage gate: `STAGE_PASS_TO_NEXT`
+- Rows: `138/138`
+- Paired counts: `{"alns": 7, "lns": 2, "tie": 60}`
 - LNS-dominant groups: `[]`
-- Mean EV route share, 75-200 winners: `0.051852`
+- Mean EV route share, 75-200 winners: `0.057343`
 - All-CV winner share, 75-200: `0.000000`
-- Raw rows: `baselines/e2_alns/goeke80_multitrip_t3_preflight_data/smoke/smoke_raw_runs.csv`
-- Paired summary: `baselines/e2_alns/goeke80_multitrip_t3_preflight_data/smoke/smoke_paired_summary.csv`
-- Scale summary: `baselines/e2_alns/goeke80_multitrip_t3_preflight_data/smoke/smoke_scale_summary.csv`
+- Raw rows: `baselines/e2_alns/goeke80_multitrip_t3_preflight_data/stage_a/stage_a_raw_runs.csv`
+- Paired summary: `baselines/e2_alns/goeke80_multitrip_t3_preflight_data/stage_a/stage_a_paired_summary.csv`
+- Scale summary: `baselines/e2_alns/goeke80_multitrip_t3_preflight_data/stage_a/stage_a_scale_summary.csv`
 
 ## Artifacts
 

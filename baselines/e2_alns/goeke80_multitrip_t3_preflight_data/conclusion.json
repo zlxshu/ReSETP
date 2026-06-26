@@ -1,39 +1,40 @@
 {
-  "elapsed_seconds": 16.986469,
+  "elapsed_seconds": 3973.565859,
   "phase0_ok": true,
-  "smoke": {
-    "elapsed_seconds": 16.601761,
-    "expected_rows": 6,
+  "smoke": null,
+  "stage_a": {
+    "elapsed_seconds": 3972.923893,
+    "expected_rows": 138,
     "metrics": {
       "all_cv_share_75_200": 0.0,
       "collection_failure_count": 0,
       "collection_failures_sample": [],
-      "elapsed_seconds": 16.601761,
-      "expected_rows": 6,
+      "elapsed_seconds": 3972.923893,
+      "expected_rows": 138,
       "lns_dominant_group_count": 0,
       "lns_dominant_groups": [],
-      "mean_ev_route_share_75_200": 0.05185185185185185,
-      "paired_count": 3,
+      "mean_ev_route_share_75_200": 0.05734336969969153,
+      "paired_count": 69,
       "paired_counts": {
-        "alns": 1,
-        "tie": 2
+        "alns": 7,
+        "lns": 2,
+        "tie": 60
       },
-      "rows": 6,
-      "stage": "smoke",
-      "stage_gate": "STAGE_SMOKE_OK",
-      "verdict": "SMOKE_OK",
+      "rows": 138,
+      "stage": "stage_a",
+      "stage_gate": "STAGE_PASS_TO_NEXT",
+      "verdict": "STAGE_A_PASS",
       "wilcoxon_lns_better": false,
-      "wins_ties": 3
+      "wins_ties": 67
     },
-    "paired_path": "baselines/e2_alns/goeke80_multitrip_t3_preflight_data/smoke/smoke_paired_summary.csv",
-    "raw_path": "baselines/e2_alns/goeke80_multitrip_t3_preflight_data/smoke/smoke_raw_runs.csv",
-    "rows": 6,
-    "scale_path": "baselines/e2_alns/goeke80_multitrip_t3_preflight_data/smoke/smoke_scale_summary.csv",
-    "stage": "smoke",
-    "stage_gate": "STAGE_SMOKE_OK",
-    "verdict": "SMOKE_OK"
+    "paired_path": "baselines/e2_alns/goeke80_multitrip_t3_preflight_data/stage_a/stage_a_paired_summary.csv",
+    "raw_path": "baselines/e2_alns/goeke80_multitrip_t3_preflight_data/stage_a/stage_a_raw_runs.csv",
+    "rows": 138,
+    "scale_path": "baselines/e2_alns/goeke80_multitrip_t3_preflight_data/stage_a/stage_a_scale_summary.csv",
+    "stage": "stage_a",
+    "stage_gate": "STAGE_PASS_TO_NEXT",
+    "verdict": "STAGE_A_PASS"
   },
-  "stage_a": null,
   "stage_b": null,
-  "verdict": "SMOKE_OK"
+  "verdict": "STAGE_A_PASS"
 }
