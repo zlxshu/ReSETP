@@ -10,7 +10,7 @@ charging signal.
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 import json
 from pathlib import Path
 from typing import Any
@@ -18,7 +18,7 @@ from typing import Any
 from ..cost import _arc_loads, ev_arc_energy_kwh
 from ..instance_loader import Instance
 from ..prices import DEFAULT_PRICES, PriceParameters
-from ..solution import Route, Solution
+from ..solution import ChargingAction, Route, Solution, route_trip_vehicle_id
 
 UNBOUNDED_FLEET = 1_000_000
 
@@ -55,6 +55,56 @@ class FleetProbeDiagnostic:
     vehicle_type_semantics: VehicleTypeSemantics
 
 
+def normalize_solution_vehicle_trips(
+    solution: Solution,
+    instance: Instance,
+    *,
+    max_cv: int | None = None,
+    max_ev: int | None = None,
+) -> Solution:
+    """Retag route ids so finite fleet caps count physical vehicles, not trips.
+
+    The solver's ``Route`` schema has one id shared by the route and its
+    charging actions. Reusing exactly the same id across EV trips would make
+    the battery checker sum unrelated charging actions. This helper therefore
+    emits unique trip ids such as ``EV1#T2`` while the checker counts only the
+    physical prefix ``EV1``.
+    """
+
+    limits = {
+        "cv": _limit_or_route_count(max_cv if max_cv is not None else getattr(instance, "num_cv", None), solution, "cv"),
+        "ev": _limit_or_route_count(max_ev if max_ev is not None else getattr(instance, "num_ev", None), solution, "ev"),
+    }
+    planned_ids: dict[int, str] = {}
+    for vehicle_type in ("cv", "ev"):
+        route_items = [
+            (idx, route)
+            for idx, route in enumerate(solution.routes)
+            if route.vehicle_type.lower() == vehicle_type
+        ]
+        if not route_items:
+            continue
+        cap = limits[vehicle_type]
+        if cap <= 0:
+            raise ValueError(f"HALT_FLEET_PACKING: no {vehicle_type.upper()} vehicles available for {len(route_items)} routes")
+        planned_ids.update(_trip_ids_for_type(route_items, cap, vehicle_type.upper()))
+
+    old_to_new: dict[str, str] = {}
+    new_routes: list[Route] = []
+    for idx, route in enumerate(solution.routes):
+        new_id = planned_ids.get(idx, route.vehicle_id)
+        if route.vehicle_id in old_to_new and old_to_new[route.vehicle_id] != new_id:
+            raise ValueError(f"HALT_FLEET_PACKING: duplicate route id {route.vehicle_id} cannot be safely retagged")
+        old_to_new[route.vehicle_id] = new_id
+        new_routes.append(replace(route, vehicle_id=new_id))
+
+    new_actions = [
+        replace(action, vehicle_id=old_to_new.get(action.vehicle_id, action.vehicle_id))
+        for action in solution.charging_actions
+    ]
+    return Solution(routes=new_routes, charging_actions=new_actions, cross_site_services=solution.cross_site_services)
+
+
 def infer_fleet_limits(bundle_dir: str | Path) -> FleetLimits:
     """Return structural CV/EV fleet limits for the generated bundle.
 
@@ -68,6 +118,26 @@ def infer_fleet_limits(bundle_dir: str | Path) -> FleetLimits:
     if limits is not None:
         return limits
     return FleetLimits()
+
+
+def _limit_or_route_count(value: int | None, solution: Solution, vehicle_type: str) -> int:
+    if value is None:
+        return max(1, sum(1 for route in solution.routes if route.vehicle_type.lower() == vehicle_type))
+    if int(value) >= UNBOUNDED_FLEET:
+        return max(1, sum(1 for route in solution.routes if route.vehicle_type.lower() == vehicle_type))
+    return int(value)
+
+
+def _trip_ids_for_type(route_items: list[tuple[int, Route]], cap: int, prefix: str) -> dict[int, str]:
+    slot_count = max(1, min(int(cap), len(route_items)))
+    slots = [f"{prefix}{idx}" for idx in range(1, slot_count + 1)]
+    trip_counts: dict[str, int] = {}
+    out: dict[int, str] = {}
+    for pos, (idx, _route) in enumerate(route_items):
+        base_id = slots[pos % len(slots)]
+        trip_counts[base_id] = trip_counts.get(base_id, 0) + 1
+        out[idx] = route_trip_vehicle_id(base_id, trip_counts[base_id])
+    return out
 
 
 def _fleet_limits_from_bundle(path: Path) -> FleetLimits | None:
@@ -177,7 +247,7 @@ def vehicle_type_semantics_report() -> VehicleTypeSemantics:
     evidence = (
         "paper_main.tex defines K^tau, K^{g,tau}, K^{e,tau}, and callable vehicles by depot.",
         "paper_main.tex defines z_k^tau as the vehicle dispatch variable.",
-        "paper_main.tex defines m^g/m^e as hard upper bounds on dispatched CV/EV counts.",
+        "paper_main.tex defines m^g/m^e as hard upper bounds on physical CV/EV vehicle counts.",
         "paper_main.tex:262 and 282-285 split emissions/costs by CV and EV terms.",
         "paper_main.tex:541 says the algorithm receives available vehicles and outputs routes/charging.",
         "paper_main.tex:665 and 673 require reporting vehicle assignment/type split and carbon effects.",

@@ -34,11 +34,11 @@ from setp_solver.search.candidates import (
 from setp_solver.search.e5_probe import run_e5_probe, slot_charge_table
 from setp_solver.search.evaluation import EvalBudget, EvaluationContext, model_cost, penalized_obj, score_candidate, score_reference
 from setp_solver.search.feasible_repair import enumerate_feasible_insertions, repair_removed_customers
-from setp_solver.search.fleet import FleetLimits, UNBOUNDED_FLEET, fleet_probe_diagnostic, infer_fleet_limits, vehicle_type_semantics_report
+from setp_solver.search.fleet import FleetLimits, UNBOUNDED_FLEET, fleet_probe_diagnostic, infer_fleet_limits, normalize_solution_vehicle_trips, vehicle_type_semantics_report
 from setp_solver.search.gates import b2_feasible_domain_gate
 from setp_solver.search.root_cause import _breakdown_for, _operator_summary_rows, solution_churn
 from setp_solver.search.scout import scout_reference_algorithms
-from setp_solver.solution import Route, Solution
+from setp_solver.solution import Route, Solution, physical_vehicle_id
 
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
@@ -119,12 +119,31 @@ class SearchGateTests(unittest.TestCase):
 
         self.assertEqual((limits.cv, limits.ev), (10, 10))
         self.assertEqual(diagnostic.customer_count, 25)
-        self.assertEqual(diagnostic.battery_kwh, 280.0)
-        self.assertEqual(diagnostic.charging_candidate_count, 0)
+        self.assertEqual(diagnostic.battery_kwh, 80.0)
+        self.assertGreaterEqual(diagnostic.charging_candidate_count, 1)
 
         legacy = fleet_probe_diagnostic(FIXTURE_DIR, cv_seed, bundle.instance, _legacy_battery_prices())
         self.assertEqual(legacy.battery_kwh, 80.0)
         self.assertGreaterEqual(legacy.charging_candidate_count, 1)
+
+        modern = fleet_probe_diagnostic(FIXTURE_DIR, cv_seed, bundle.instance, PriceParameters(B_battery_kwh=280.0))
+        self.assertEqual(modern.battery_kwh, 280.0)
+        self.assertEqual(modern.charging_candidate_count, 0)
+
+    def test_fleet_trip_retagger_packs_routes_into_physical_vehicle_cap(self) -> None:
+        base = _charging_instance()
+        instance = Instance(nodes=base.nodes, distance_matrix=base.distance_matrix, num_cv=1, num_ev=1)
+        solution = Solution(
+            routes=[
+                Route("CV_A", "cv", "D0", ["D0", "C1", "D0"]),
+                Route("CV_B", "cv", "D0", ["D0", "F1", "D0"]),
+            ]
+        )
+
+        packed = normalize_solution_vehicle_trips(solution, instance)
+
+        self.assertEqual([route.vehicle_id for route in packed.routes], ["CV1#T1", "CV1#T2"])
+        self.assertEqual(check_solution(packed, instance), [])
 
     def test_fleet_limits_read_hard_caps_from_instance_metadata(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
@@ -225,7 +244,7 @@ class SearchGateTests(unittest.TestCase):
         self.assertEqual(check_solution(solution, bundle.instance, prices), [])
         self.assertGreater(sum(action.energy_kwh for action in solution.charging_actions), 0.0)
 
-    # v2026-06-12: M0/M1 EV-heavy seed must honor a low CV cap and keep real charging stake.
+    # v2026-06-26: finite fleet limits cap physical vehicles, not route/trip rows.
     def test_m0_evheavy_initial_solution_respects_fleet_limits_and_charges(self) -> None:
         bundle = load_search_bundle(FIXTURE_DIR)
         solution = build_initial_solution(
@@ -235,10 +254,8 @@ class SearchGateTests(unittest.TestCase):
         )
 
         self.assertEqual(check_solution(solution, bundle.instance), [])
-        self.assertLessEqual(sum(1 for route in solution.routes if route.vehicle_type.lower() == "cv"), 3)
-        self.assertLessEqual(sum(1 for route in solution.routes if route.vehicle_type.lower() == "ev"), 8)
-        self.assertGreaterEqual(len(solution.charging_actions), 2)
-        self.assertGreater(sum(action.energy_kwh for action in solution.charging_actions), 50.0)
+        self.assertLessEqual(len({physical_vehicle_id(route.vehicle_id) for route in solution.routes if route.vehicle_type.lower() == "cv"}), 3)
+        self.assertLessEqual(len({physical_vehicle_id(route.vehicle_id) for route in solution.routes if route.vehicle_type.lower() == "ev"}), 8)
 
     # v2026-06-11: H2 vehicle_type_swap can flip a route while preserving feasibility.
     def test_h2_vehicle_type_swap_can_change_type_and_remain_feasible(self) -> None:

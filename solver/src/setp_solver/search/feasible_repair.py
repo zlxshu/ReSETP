@@ -12,6 +12,7 @@ from ..instance_loader import Instance, Node
 from ..solution import ChargingAction, Route, Solution
 from .charging import repair_route_charging
 from .evaluation import BIG_M, EvaluationContext, fairness_context_for_solution, record_repair_delta
+from .fleet import normalize_solution_vehicle_trips
 from .repair_scoring import route_model_cost_delta
 from .timing import timed_section
 
@@ -117,10 +118,10 @@ def repair_removed_customers(
         _, _, customer_id, current = min(scored, key=lambda item: (item[0], item[1], item[2]))
         pending.remove(customer_id)
     if _is_full_solution_feasible(current, context, policy):
-        return current
+        return _normalize_for_policy(current, context, policy)
     fallback = _all_cv_fallback(current, context, policy)
     if fallback is not None and _is_full_solution_feasible(fallback, context, policy):
-        return fallback
+        return _normalize_for_policy(fallback, context, policy)
     return None
 
 
@@ -326,6 +327,10 @@ def _price(prices: Any, name: str) -> float:
 def _is_full_solution_feasible(solution: Solution, context: EvaluationContext, policy: Any) -> bool:
     if bool(getattr(policy, "require_charging_signal", False)) and not any(float(action.energy_kwh) > 1e-9 for action in solution.charging_actions):
         return False
+    try:
+        solution = _normalize_for_policy(solution, context, policy)
+    except ValueError:
+        return False
     with timed_section(context, "repair_full_check"):
         return not check_solution(
             solution,
@@ -339,8 +344,6 @@ def _is_full_solution_feasible(solution: Solution, context: EvaluationContext, p
 def _all_cv_fallback(solution: Solution, context: EvaluationContext, policy: Any) -> Solution | None:
     if bool(getattr(policy, "require_charging_signal", False)):
         return None
-    if len(solution.routes) > int(getattr(policy, "max_cv", 10**9)):
-        return None
     routes = [
         Route(_next_vehicle_id([], f"CV_REPAIR_{idx}_"), "cv", route.home_depot_id, [route.home_depot_id, *route_customers(route, context.instance), route.home_depot_id])
         for idx, route in enumerate(solution.routes, start=1)
@@ -348,6 +351,15 @@ def _all_cv_fallback(solution: Solution, context: EvaluationContext, policy: Any
     ]
     fallback = Solution(routes=routes, charging_actions=[], cross_site_services=solution.cross_site_services)
     return fallback
+
+
+def _normalize_for_policy(solution: Solution, context: EvaluationContext, policy: Any) -> Solution:
+    return normalize_solution_vehicle_trips(
+        solution,
+        context.instance,
+        max_cv=int(getattr(policy, "max_cv", getattr(context.instance, "num_cv", 10**9) or 10**9)),
+        max_ev=int(getattr(policy, "max_ev", getattr(context.instance, "num_ev", 10**9) or 10**9)),
+    )
 
 
 def _delta_score(

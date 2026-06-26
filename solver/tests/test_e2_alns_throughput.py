@@ -93,11 +93,10 @@ class E2AlnsThroughputTest(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             result = run_smoke(REPO_ROOT, Path(tmp))
 
-        # v2026-06-26: restoring hard fleet caps makes the legacy E2-10c smoke
-        # fixture infeasible under the current route=vehicle semantics. The
-        # runner must report a HALT instead of pretending the old unbounded
-        # smoke still certifies throughput readiness.
-        self.assertEqual(result["gate"], "HALT_SMOKE")
+        # v2026-06-26: physical-vehicle multi-trip semantics make the E2-10c
+        # smoke feasible again under hard num_cv/num_ev caps.
+        self.assertEqual(result["gate"], "SMOKE_OK")
+        self.assertGreater(result["rows"], 0)
 
 
 if __name__ == "__main__":

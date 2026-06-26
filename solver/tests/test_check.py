@@ -111,6 +111,68 @@ class CheckSolutionTests(unittest.TestCase):
         self.assertIn("FLEET_SIZE", _types(violations))
         self.assertTrue(any(v.location == "ev" and "exceed available electric vehicles" in v.detail for v in violations))
 
+    def test_fleet_size_counts_physical_vehicle_ids_not_trip_routes(self) -> None:
+        base = _instance(c2_demand=0.0)
+        instance = Instance(nodes=base.nodes, distance_matrix=base.distance_matrix, num_cv=1, num_ev=0)
+        solution = Solution(
+            routes=[
+                Route("CV1#T1", "cv", "D0", ["D0", "C1", "D0"]),
+                Route("CV1#T2", "cv", "D0", ["D0", "C2", "D0"]),
+            ]
+        )
+
+        violations = check_solution(solution, instance)
+
+        self.assertNotIn("FLEET_SIZE", _types(violations))
+
+    def test_same_physical_vehicle_id_cannot_mix_vehicle_type(self) -> None:
+        instance = Instance(
+            nodes=[
+                Node("D0", "d", 0.0, 0.0, due_time=10_000.0),
+                Node("D1", "d", 0.0, 0.0, due_time=10_000.0),
+            ],
+            distance_matrix=[
+                [0.0, 0.0],
+                [0.0, 0.0],
+            ],
+            num_cv=1,
+            num_ev=1,
+        )
+        solution = Solution(
+            routes=[
+                Route("V1#T1", "cv", "D0", ["D0", "D0"]),
+                Route("V1#T2", "ev", "D1", ["D1", "D1"]),
+            ]
+        )
+
+        violations = check_solution(solution, instance)
+
+        self.assertIn("ROUTE_STRUCTURE", _types(violations))
+
+    def test_same_physical_vehicle_can_serve_trips_from_different_depots(self) -> None:
+        instance = Instance(
+            nodes=[
+                Node("D0", "d", 0.0, 0.0, due_time=10_000.0),
+                Node("D1", "d", 0.0, 0.0, due_time=10_000.0),
+            ],
+            distance_matrix=[
+                [0.0, 0.0],
+                [0.0, 0.0],
+            ],
+            num_cv=1,
+            num_ev=0,
+        )
+        solution = Solution(
+            routes=[
+                Route("CV1#T1", "cv", "D0", ["D0", "D0"]),
+                Route("CV1#T2", "cv", "D1", ["D1", "D1"]),
+            ]
+        )
+
+        violations = check_solution(solution, instance)
+
+        self.assertEqual(violations, [])
+
     # v2026-06-12: W2b rolling stages can start from inherited vehicle positions.
     def test_dynamic_context_allows_open_start_from_vehicle_position(self) -> None:
         solution = Solution(
@@ -396,15 +458,14 @@ class CheckSolutionTests(unittest.TestCase):
         self.assertEqual(violation.vehicle_id, "CV1")
         self.assertIn(violation.location, {"F1", "D0->F1", "D0"})
 
-    # v2026-06-12: fleet count is objective-penalized, not a hard feasibility cap.
-    def test_fleet_size_is_not_a_hard_constraint(self) -> None:
-        instance = Instance(nodes=[Node("D0", "d", 0.0, 0.0, due_time=10_000.0)], distance_matrix=[[0.0]])
+    # v2026-06-26: fleet count is a hard cap on physical vehicles, not route/trip rows.
+    def test_fleet_size_is_a_hard_physical_vehicle_cap(self) -> None:
+        instance = Instance(nodes=[Node("D0", "d", 0.0, 0.0, due_time=10_000.0)], distance_matrix=[[0.0]], num_cv=10)
         solution = Solution(routes=[Route(f"CV{i}", "cv", "D0", ["D0", "D0"]) for i in range(11)])
 
         violations = check_solution(solution, instance)
 
-        self.assertNotIn("FLEET_SIZE", _types(violations))
-        self.assertEqual(violations, [])
+        self.assertIn("FLEET_SIZE", _types(violations))
 
     # v2026-06-12: Z0b station capacity replaces the old one-visit shortcut.
     def test_repeated_station_visit_without_overlap_is_not_a_uniqueness_violation(self) -> None:

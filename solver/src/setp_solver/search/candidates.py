@@ -32,7 +32,7 @@ from .charging import repair_route_charging
 from .construction import build_initial_solution
 from .evaluation import BIG_M, EvalBudget, EvaluationContext, model_cost, record_repair_delta, score_candidate, score_reference
 from .feasible_repair import repair_removed_customers
-from .fleet import FleetLimits, UNBOUNDED_FLEET, infer_fleet_limits
+from .fleet import FleetLimits, UNBOUNDED_FLEET, infer_fleet_limits, normalize_solution_vehicle_trips
 from .local_search import improve_solution_locally
 from .repair_scoring import route_model_cost_delta
 from .scout import scout_reference_algorithms
@@ -227,7 +227,7 @@ def random_key_to_solution(
             routes.append(route)
             next_cv += 1
 
-    solution = Solution(routes=routes, charging_actions=actions)
+    solution = normalize_solution_vehicle_trips(Solution(routes=routes, charging_actions=actions), instance)
     if check_solution(solution, instance, prices):
         try:
             fallback = build_initial_solution(
@@ -1014,6 +1014,10 @@ def _maybe_update_best(
     best_cost: float,
     state: CandidateState,
 ) -> tuple[Solution, float, float]:
+    try:
+        candidate = normalize_solution_vehicle_trips(candidate, state.context.instance)
+    except ValueError:
+        return best_solution, best_obj, best_cost
     if score < best_obj - 1e-9 and not check_solution(candidate, state.context.instance, state.context.prices):
         state.search_diagnostics["best_updates"] = int(state.search_diagnostics.get("best_updates", 0)) + 1
         return candidate, float(score), model_cost(candidate, state.context)
@@ -1106,6 +1110,10 @@ def _apply_path_operator_outcome(
     candidate = builders[operator](solution, context, rng)
     if candidate is None:
         return _OperatorOutcome(solution, produced=False, feasible=False, changed=False, detail="operator_returned_none")
+    try:
+        candidate = normalize_solution_vehicle_trips(candidate, context.instance)
+    except ValueError as exc:
+        return _OperatorOutcome(solution, produced=True, feasible=False, changed=False, detail=str(exc))
     changed = solution_signature_hash(candidate) != solution_signature_hash(solution)
     return _OperatorOutcome(candidate, produced=True, feasible=True, changed=changed, detail="feasibility_deferred_to_candidate_score")
 
@@ -1579,7 +1587,7 @@ def _rebuild_solution(routes: list[Route], context: EvaluationContext) -> Soluti
         else:
             rebuilt_routes.append(clean_route)
     candidate = Solution(routes=rebuilt_routes, charging_actions=actions)
-    return candidate
+    return normalize_solution_vehicle_trips(candidate, context.instance)
 
 
 def _unique_vehicle_id(vehicle_id: str, used_ids: dict[str, int], idx: int) -> str:

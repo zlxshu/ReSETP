@@ -33,8 +33,8 @@ class Instance:
     ev_kwh_per_meter: float | None = None
     unit_distance_cost_per_meter: float | None = None
     # v2026-06-26: structural fleet availability. When present, these are hard
-    # upper bounds on dispatched CV/EV routes; generated bundles keep them in
-    # instance metadata as num_cv/num_ev.
+    # upper bounds on physical CV/EV vehicles; a physical vehicle may serve
+    # multiple route/trip rows via the ``CV1#Tn`` route-id convention.
     num_cv: int | None = None
     num_ev: int | None = None
     _node_index: dict[str, int] = field(init=False, repr=False, compare=False)

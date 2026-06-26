@@ -37,7 +37,7 @@ D_displace = 5.0  # L, 发动机排量。Goeke(2015)Table 4 原值。参考文�
 phi_d = 1.184692  # 无量纲, 电机放电效率系数。Goeke(2015)Table 4 原值, 见其 3.1 节回归。参考文献: GOEKE D, SCHNEIDER M. Routing a mixed fleet of electric and conventional vehicles[J]. European Journal of Operational Research, 2015, 245(1): 81-99. DOI:10.1016/j.ejor.2015.01.049.
 varphi_d = 1.112434  # 无量纲, 电池放电效率系数。Goeke(2015)Table 4 原值, 见其 3.1 节回归。参考文献: GOEKE D, SCHNEIDER M. Routing a mixed fleet of electric and conventional vehicles[J]. European Journal of Operational Research, 2015, 245(1): 81-99. DOI:10.1016/j.ejor.2015.01.049.
 alpha_e = phi_d * varphi_d  # 无量纲, 论文 eq:electricity 的单系数 alpha_k^e 取两级放电系数乘积。平地无下坡, 再生制动系数 phi^r/varphi^r 不实现。参考文献: GOEKE D, SCHNEIDER M. Routing a mixed fleet of electric and conventional vehicles[J]. European Journal of Operational Research, 2015, 245(1): 81-99. DOI:10.1016/j.ejor.2015.01.049.
-B_battery_kwh = 280.0  # kWh, EV 电池容量。Goeke(2015)Table 4 / Davis & Figliozzi 2013 原值为 80 kWh; 本研究经 09h 证据约束诊断(a0d5951)更新为现代中型电动配送卡车下界 280 kWh, 对应 Volvo FL/FE Electric 280 kWh 起的公开证据边界。
+B_battery_kwh = 80.0  # kWh, EV 电池容量。Goeke(2015)Table 4 / Davis & Figliozzi 2013 原值为 80 kWh。09h-09l 曾诊断 280 kWh 现代中型电动配送卡车情景(Volvo FL/FE Electric 公开证据边界), 但 09s 为对齐 Goeke 基线并修正实体车辆硬上限语义, 暂恢复 80 kWh 为默认值。
 
 
 # ---------------------------------------------------------------------------
