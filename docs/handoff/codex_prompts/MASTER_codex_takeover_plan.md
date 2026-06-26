@@ -12,7 +12,8 @@
 ## 1. 现状快照(2026-06-26,09s 后)
 - **当前主线已由用户拍板回正到 Goeke 物理参数 + 实体车辆多趟语义**。09k-09q 的 280kWh、电池梯度和运营约束摸排全部保留为历史诊断链,但暂不再作为当前执行入口。当前默认参数为 `Q_capacity=3650kg`、`B_battery_kwh=80kWh`、`v_speed_ms=25.0`、`carbon_price=0.05034`;TeX 参数表和 `prices.py` 注释已同步保留 1600kg/280kWh 的历史痕迹。
 - **09s 修正的核心不是新增论文模型,而是修代码翻译错误**:论文里的 `m^g/m^e` 是实体车辆硬上限,不是 route 数硬上限。一台实体车允许一天/一个阶段跑多趟;代码现在用 `CV1#T1`、`CV1#T2` 这类 trip id 保持 route/charging action 唯一,同时按 `CV1` 这个 physical vehicle prefix 计入车辆数上限。固定费暂不改,仍按每趟/每次派遣口径;若未来要改为每实体车固定费,必须另起成本语义审计。
-- **09s gate 当前结果**:`baselines/e2_alns/goeke80_multitrip_rescue_gate.py` Phase1 让 69/69 个 E2 实例 warm start 在硬实体车上限下零违约通过;Phase2 代表集 seed1 小预算 smoke 34/34 行 OK, paired result 为 ALNS wins 2 / LNS wins 0 / ties 15。大白话:语义卡点已经清掉,可以继续救算法对比;但这不是正式胜利证据,因为多数 pair 在 `eval_budget=300` 下只是同成本持平。下一步应做更高预算、多 seed 的 E2/T3 预演,不能直接写 ALNS 已经赢。
+- **09s gate 结果**:`baselines/e2_alns/goeke80_multitrip_rescue_gate.py` Phase1 让 69/69 个 E2 实例 warm start 在硬实体车上限下零违约通过;Phase2 代表集 seed1 小预算 smoke 34/34 行 OK, paired result 为 ALNS wins 2 / LNS wins 0 / ties 15。大白话:语义卡点已经清掉,可以继续救算法对比;但这不是正式胜利证据,因为多数 pair 在 `eval_budget=300` 下只是同成本持平。
+- **09t 高预算预演结果**:`baselines/e2_alns/goeke80_multitrip_t3_preflight.py` 已跑。Phase0/smoke OK；Stage A 全 `-01` 梯度 × seeds1-3 × ALNS/LNS 跑满 138/138,0 采集失败,paired counts = ALNS 7 / LNS 2 / ties 60,说明 LNS 没在低预算全梯度上系统性压制 ALNS。但 Stage A 的 75-200 winner mean EV route share 仅约 0.057,所以 Goeke80 下混合故事偏弱。Stage B 尝试完整 69 实例 × seeds1-3 × 2 算法、`eval_budget=16000`,最终在 `e2-vanilla-150c-01` 的 LNS seed1/2 于 900s 上限内只跑到约 11.2k/16k eval,按规则 `HALT_COLLECTION_COST`（130/414 rows）。这不是算法输赢结论,而是“当前 Stage B 采集设定太贵/不闭合”。正式 T3 仍不能启动。
 
 ### 历史诊断链(保留供理解,当前不作为入口)
 - **09h/09i 的 280kWh 结论已被 09k 细化,不能再简单写成"根因已解决→直接重跑正式 E2"**。09h 证明了 280kWh 能让 mixed/EV 击败 all-CV fixed reference,但 280kWh fleet-composition gate 随后证明它把主问题推到另一端:代表集 winner 以 EV-heavy/all-EV 为主,不是稳定真混合。因此 **E2/T3 与 E1-E7 全量重跑继续暂停**。
@@ -34,7 +35,7 @@
 - **未来若拍板任何新默认电池容量,必须同步三处事实源**:不能只改 `prices.py`。必须同时更新 `docs/paper_submission_final/paper_main.tex` 的参数表/参数说明、补齐或更新 bibliography 中的新来源引用、并在 `solver/src/setp_solver/prices.py` 注释中写清"旧参数值+旧来源"与"新参数值+新来源+诊断证据"。旧 Goeke/Davis-Figliozzi 80kWh 与当前 280kWh 证据链都要保留痕迹,不能被静默覆盖。
 - **比例标准改成实践混合带**:不要求 1:1,允许研究趋势偏 EV,但 winner 的 EV/CV 实际占比至少应落在 20%-80% 区间内。主指标先用 `EV route share`；报告还应尽量补 `served customers / distance / demand` share,避免路线数假平衡。
 - **不能只看全局均值或单个算例**:必须按 family × size 梯度逐项报告,并包含稳定性校验算例。一个电池值只有在所有梯度规模、稳定性实例、seeds 下多数 winner 都维持 20%-80% 实践混合,才算故事立住。
-- **下一步优先级**:先做 09s 后续的更高预算、多 seed E2/T3 预演,确认 Goeke80 + 多趟实体车语义下 ALNS 是否真有竞争力、是否系统性退化为全 CV。只有这个 gate 过了,再谈正式 T3/E1-E7;如果仍输或全 CV 退化,再回到算法/参数/场景叙事决策。
+- **下一步优先级**:先处理 09t 的采集策略决策,不要直接正式 T3。可选方向包括:把预演改成 wall-clock 公平而非固定 16000 eval,或降低 Stage B eval budget 到 LNS 能在 900s 内闭合的水平,或优化/替换 LNS 收集路径后再重跑 Stage B。若只看现有证据,Goeke80 + 多趟实体车语义下 ALNS 有竞争力迹象,但 EV 使用偏低,更像 Goeke baseline/算法可行性测试,不能包装成稳定现代混合车队主故事。
 
 ## 3. 剩余总路线图(拍板后再执行)
 1. **8 基线做到文献最优 + 收敛(已写 `10_e2_baselines_literature_best.md`)**:GA/PSO/VNS/ACO/GA-VNS/LNS/GWO/IWD 按源论文重做、文献标准参数、"真在搜索"硬门禁(std>0 + 改善暖启动 + 收敛曲线明显收敛)。`baseline-algorithm-catalog.md` 有设计转录。
@@ -61,4 +62,4 @@
 - 算例:`models/data_bundle/generated_instances/e2_benchmark/`(69 算例;正式评价需绑定最终拍板的参数/约束场景)。
 
 ## 一句话给 Codex
-09s 已把主线收回到 Goeke `Q=3650,B=80` 与实体车辆可多趟语义:69/69 E2 warm start 可行,小预算 smoke 34/34 OK,但算法胜负还没有正式证据。**下一步不是继续 09q,也不是直接写论文胜利,而是做更高预算、多 seed 的 E2/T3 预演:证明 ALNS 是否真有竞争力、是否退化全 CV、是否值得进入正式全量对比。** 全程诚实+克制+用 fable5 思考方式约束自己,跑不出就 HALT、绝不注水。
+09s 已把主线收回到 Goeke `Q=3650,B=80` 与实体车辆可多趟语义:69/69 E2 warm start 可行。09t 进一步证明 Stage A 低预算全梯度下 ALNS 没被 LNS 系统性压制,但 Stage B 固定 16000 eval 在 LNS 150c 上采集成本过高而 HALT,且 Goeke80 的 EV 使用偏低。**下一步不是继续 09q,也不是直接正式 T3,而是先拍板预演采集口径:wall-clock 公平、降低 eval budget、或优化 LNS 收集路径。** 全程诚实+克制+用 fable5 思考方式约束自己,跑不出就 HALT、绝不注水。

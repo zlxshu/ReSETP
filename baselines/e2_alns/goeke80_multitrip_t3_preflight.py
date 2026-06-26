@@ -173,6 +173,7 @@ def build_metadata(repo_root: Path, args: argparse.Namespace) -> dict[str, Any]:
         "platform": platform.platform(),
         "output_dir": str(args.output_dir),
         "report_path": str(args.report_path),
+        "runtime_cap_policy": "10-25c=300s; 50c=600s; 75-200c=900s for Stage B retry collection",
     }
 
 
@@ -716,6 +717,8 @@ def render_report(
                 f"- LNS-dominant groups: `{json.dumps(metrics.get('lns_dominant_groups', []), ensure_ascii=False)}`",
                 f"- Mean EV route share, 75-200 winners: `{float(metrics.get('mean_ev_route_share_75_200', 0.0)):.6f}`",
                 f"- All-CV winner share, 75-200: `{float(metrics.get('all_cv_share_75_200', 0.0)):.6f}`",
+                f"- Collection failures: `{metrics.get('collection_failure_count', 0)}`",
+                f"- Failure sample: `{json.dumps(metrics.get('collection_failures_sample', []), ensure_ascii=False)}`",
                 f"- Raw rows: `{result.get('raw_path')}`",
                 f"- Paired summary: `{result.get('paired_path', '')}`",
                 f"- Scale summary: `{result.get('scale_path', '')}`",
@@ -730,6 +733,7 @@ def render_report(
             f"- Report: `{metadata.get('report_path')}`",
             f"- HEAD at run start: `{metadata.get('head')}`",
             f"- Artifact commit hash: `{metadata.get('artifact_commit_hash')}`",
+            f"- Runtime cap policy: `{metadata.get('runtime_cap_policy')}`",
         ]
     )
     return "\n".join(lines).rstrip() + "\n"

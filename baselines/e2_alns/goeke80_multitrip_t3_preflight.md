@@ -22,6 +22,8 @@ Verdict: `HALT_COLLECTION_COST`
 - LNS-dominant groups: `[]`
 - Mean EV route share, 75-200 winners: `0.051852`
 - All-CV winner share, 75-200: `0.000000`
+- Collection failures: `0`
+- Failure sample: `[]`
 - Raw rows: `baselines/e2_alns/goeke80_multitrip_t3_preflight_data/smoke/smoke_raw_runs.csv`
 - Paired summary: `baselines/e2_alns/goeke80_multitrip_t3_preflight_data/smoke/smoke_paired_summary.csv`
 - Scale summary: `baselines/e2_alns/goeke80_multitrip_t3_preflight_data/smoke/smoke_scale_summary.csv`
@@ -35,6 +37,8 @@ Verdict: `HALT_COLLECTION_COST`
 - LNS-dominant groups: `[]`
 - Mean EV route share, 75-200 winners: `0.057343`
 - All-CV winner share, 75-200: `0.000000`
+- Collection failures: `0`
+- Failure sample: `[]`
 - Raw rows: `baselines/e2_alns/goeke80_multitrip_t3_preflight_data/stage_a/stage_a_raw_runs.csv`
 - Paired summary: `baselines/e2_alns/goeke80_multitrip_t3_preflight_data/stage_a/stage_a_paired_summary.csv`
 - Scale summary: `baselines/e2_alns/goeke80_multitrip_t3_preflight_data/stage_a/stage_a_scale_summary.csv`
@@ -43,11 +47,13 @@ Verdict: `HALT_COLLECTION_COST`
 
 - Verdict: `HALT_COLLECTION_COST`
 - Stage gate: `STAGE_HALT`
-- Rows: `69/414`
-- Paired counts: `{"alns": 5, "lns": 10, "tie": 18}`
+- Rows: `130/414`
+- Paired counts: `{"alns": 5, "lns": 10, "tie": 50}`
 - LNS-dominant groups: `[]`
-- Mean EV route share, 75-200 winners: `0.000000`
+- Mean EV route share, 75-200 winners: `0.074827`
 - All-CV winner share, 75-200: `0.000000`
+- Collection failures: `3`
+- Failure sample: `[{"reason": "missing_rows", "rows": 130, "expected": 414}, {"reason": "status_not_ok", "instance": "e2-vanilla-150c-01", "algorithm": "LNS", "seed": 1, "status": "HALT_RUNTIME_UNDER_EVAL"}, {"reason": "status_not_ok", "instance": "e2-vanilla-150c-01", "algorithm": "LNS", "seed": 2, "status": "HALT_RUNTIME_UNDER_EVAL"}]`
 - Raw rows: `baselines/e2_alns/goeke80_multitrip_t3_preflight_data/stage_b/stage_b_raw_runs.csv`
 - Paired summary: `baselines/e2_alns/goeke80_multitrip_t3_preflight_data/stage_b/stage_b_paired_summary.csv`
 - Scale summary: `baselines/e2_alns/goeke80_multitrip_t3_preflight_data/stage_b/stage_b_scale_summary.csv`
@@ -56,5 +62,6 @@ Verdict: `HALT_COLLECTION_COST`
 
 - Data dir: `baselines/e2_alns/goeke80_multitrip_t3_preflight_data`
 - Report: `baselines/e2_alns/goeke80_multitrip_t3_preflight.md`
-- HEAD at run start: `d14ac63da231185de0e084c2ffd0157cefe06c06`
+- HEAD at run start: `4388ba52977eb18372abf93cf97e3a981b3ba049`
 - Artifact commit hash: `pending`
+- Runtime cap policy: `10-25c=300s; 50c=600s; 75-200c=900s for Stage B retry collection`
