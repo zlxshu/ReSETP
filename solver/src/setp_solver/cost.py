@@ -26,7 +26,7 @@ from typing import Any
 
 from .instance_loader import Instance, Node
 from .prices import DEFAULT_PRICES, PriceParameters
-from .solution import ChargingAction, Route, Solution
+from .solution import ChargingAction, Route, Solution, physical_vehicle_id
 
 
 # v2026-06-11: fixed NESO experiment grid, 2025-11-13 08:00-17:00 UTC.
@@ -117,8 +117,8 @@ def evaluate(
     fuel_liters = sum(item.fuel_liters for item in route_energy if item.vehicle_type == "cv")
     ev_drive_kwh = sum(item.ev_drive_kwh for item in route_energy if item.vehicle_type == "ev")
 
-    n_veh_cv = sum(1 for route in solution.routes if route.vehicle_type.lower() == "cv")
-    n_veh_ev = sum(1 for route in solution.routes if route.vehicle_type.lower() == "ev")
+    n_veh_cv = len({physical_vehicle_id(route.vehicle_id) for route in solution.routes if route.vehicle_type.lower() == "cv"})
+    n_veh_ev = len({physical_vehicle_id(route.vehicle_id) for route in solution.routes if route.vehicle_type.lower() == "ev"})
     electricity_kwh = sum(float(action.energy_kwh) for action in solution.charging_actions)
     occupancy_minutes = sum(float(action.occupancy_minutes) for action in solution.charging_actions)
 

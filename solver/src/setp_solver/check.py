@@ -14,7 +14,7 @@ from .cost import (
 )
 from .instance_loader import Instance, Node
 from .prices import DEFAULT_PRICES, PriceParameters
-from .solution import ChargingAction, Route, Solution
+from .solution import ChargingAction, Route, Solution, physical_vehicle_id
 
 
 # v2026-06-11: expose paper-facing hard-constraint names through Violation.type.
@@ -102,7 +102,7 @@ def check_solution(
     violations.extend(_check_structure(solution, node_lookup))
     violations.extend(_check_dynamic_context(solution, dynamic_context))
     violations.extend(_check_customer_service(solution, node_lookup))
-    violations.extend(_check_vehicle_count(solution))
+    violations.extend(_check_vehicle_count(solution, instance))
     violations.extend(_check_station_capacity(solution, node_lookup, instance))
 
     for route in solution.routes:
@@ -131,11 +131,39 @@ def _check_structure(solution: Solution, node_lookup: dict[str, Node]) -> list[V
     vehicle_ids = Counter(route.vehicle_id for route in solution.routes)
     for vehicle_id, count in vehicle_ids.items():
         if count > 1:
-            violations.append(Violation(ROUTE_STRUCTURE, vehicle_id, vehicle_id, f"vehicle_id appears {count} times"))
+            violations.append(
+                Violation(
+                    ROUTE_STRUCTURE,
+                    vehicle_id,
+                    vehicle_id,
+                    (
+                        f"route/trip vehicle_id appears {count} times; use distinct "
+                        f"{physical_vehicle_id(vehicle_id)}#Tn ids for reusable physical vehicles"
+                    ),
+                )
+            )
+    physical_vehicle_type: dict[str, str] = {}
     for route in solution.routes:
         if not route.node_sequence:
             violations.append(Violation(ROUTE_STRUCTURE, route.vehicle_id, "", "route has empty node_sequence"))
             continue
+        physical_id = physical_vehicle_id(route.vehicle_id)
+        vehicle_type = route.vehicle_type.lower()
+        previous = physical_vehicle_type.get(physical_id)
+        if previous is None:
+            physical_vehicle_type[physical_id] = vehicle_type
+        elif previous != vehicle_type:
+            violations.append(
+                Violation(
+                    ROUTE_STRUCTURE,
+                    route.vehicle_id,
+                    physical_id,
+                    (
+                        "physical vehicle id reused with inconsistent type: "
+                        f"first={previous}, current={vehicle_type}"
+                    ),
+                )
+            )
         for node_id in route.node_sequence:
             if node_id not in node_lookup:
                 violations.append(Violation(ROUTE_STRUCTURE, route.vehicle_id, node_id, f"unknown node id {node_id}"))
@@ -186,12 +214,36 @@ def _check_customer_service(solution: Solution, node_lookup: dict[str, Node]) ->
     return violations
 
 
-def _check_vehicle_count(solution: Solution) -> list[Violation]:
-    # v2026-06-12: fleet count is no longer a hard feasibility cap. Vehicle
-    # usage is discouraged by vehicle_fixed_cost in cost.py, so FLEET_SIZE is
-    # kept as a stable taxonomy name but intentionally emits no violation.
-    _ = solution
-    return []
+def _check_vehicle_count(solution: Solution, instance: Instance) -> list[Violation]:
+    """Enforce structural CV/EV fleet availability when the instance provides it."""
+
+    violations: list[Violation] = []
+    vehicles_by_type: dict[str, set[str]] = defaultdict(set)
+    for route in solution.routes:
+        vehicles_by_type[route.vehicle_type.lower()].add(physical_vehicle_id(route.vehicle_id))
+    max_cv = getattr(instance, "num_cv", None)
+    max_ev = getattr(instance, "num_ev", None)
+    cv_count = len(vehicles_by_type["cv"])
+    ev_count = len(vehicles_by_type["ev"])
+    if max_cv is not None and cv_count > int(max_cv):
+        violations.append(
+            Violation(
+                FLEET_SIZE,
+                "",
+                "cv",
+                f"CV physical vehicles {cv_count} exceed available fuel vehicles {int(max_cv)}",
+            )
+        )
+    if max_ev is not None and ev_count > int(max_ev):
+        violations.append(
+            Violation(
+                FLEET_SIZE,
+                "",
+                "ev",
+                f"EV physical vehicles {ev_count} exceed available electric vehicles {int(max_ev)}",
+            )
+        )
+    return violations
 
 
 def _check_station_capacity(solution: Solution, node_lookup: dict[str, Node], instance: Instance) -> list[Violation]:

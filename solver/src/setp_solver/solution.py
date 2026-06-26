@@ -3,6 +3,26 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 
 
+VEHICLE_TRIP_SEPARATOR = "#T"
+
+
+def physical_vehicle_id(vehicle_id: str) -> str:
+    """Return the physical vehicle id behind a route/trip id.
+
+    ``CV1#T2`` means the second trip served by physical vehicle ``CV1``. The
+    full id stays unique so charging actions remain tied to one trip and do
+    not bleed into another trip's battery ledger.
+    """
+
+    return str(vehicle_id).split(VEHICLE_TRIP_SEPARATOR, 1)[0]
+
+
+def route_trip_vehicle_id(base_vehicle_id: str, trip_index: int) -> str:
+    """Build a route/trip id for one physical vehicle's dispatch."""
+
+    return f"{base_vehicle_id}{VEHICLE_TRIP_SEPARATOR}{int(trip_index)}"
+
+
 @dataclass(frozen=True)
 class Route:
     vehicle_id: str

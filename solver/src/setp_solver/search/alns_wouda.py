@@ -35,9 +35,10 @@ from .feasible_repair import (
     route_customers as feasible_route_customers,
     route_distance as feasible_route_distance,
 )
-from .fleet import FleetLimits, UNBOUNDED_FLEET, infer_fleet_limits, route_ev_energy_summary
+from .fleet import FleetLimits, UNBOUNDED_FLEET, infer_fleet_limits, normalize_solution_vehicle_trips, route_ev_energy_summary
 from .local_search import improve_solution_locally
 from .repair_scoring import route_model_cost_delta
+from .timing import timed_section
 
 
 MAX_VEHICLE_SWAP_CANDIDATES = 8
@@ -90,6 +91,7 @@ class AlnsRunResult:
     repair_scores: int = 0
     repair_delta_count: int = 0
     operator_counts: dict[str, Any] = field(default_factory=dict)
+    history: list[dict[str, Any]] = field(default_factory=list)
 
 
 def run_alns_wouda(
@@ -128,6 +130,7 @@ def run_alns_wouda(
         introduce_ev=search_policy.require_charging_signal,
         require_charging_signal=search_policy.require_charging_signal,
     )
+    initial = _normalize_for_policy(initial, bundle.instance, search_policy)
     context = EvaluationContext(
         bundle.instance,
         bundle.carbon_profile,
@@ -164,7 +167,7 @@ def run_alns_wouda(
         check_solution(
             best_state.solution,
             bundle.instance,
-            DEFAULT_PRICES,
+            prices,
             fairness_context=fairness_context_for_solution(best_state.solution, context),
             fairness_enabled=fairness_enabled,
         )
@@ -400,12 +403,26 @@ def _adaptive_remove_count(
 
 
 def _hard_violations(solution: Solution, context: EvaluationContext) -> list[Any]:
-    return check_solution(
+    try:
+        solution = normalize_solution_vehicle_trips(solution, context.instance)
+    except ValueError as exc:
+        return [exc]
+    with timed_section(context, "hard_check"):
+        return check_solution(
+            solution,
+            context.instance,
+            context.prices,
+            fairness_context=fairness_context_for_solution(solution, context),
+            fairness_enabled=context.fairness_enabled,
+        )
+
+
+def _normalize_for_policy(solution: Solution, instance: Instance, policy: SearchPolicy) -> Solution:
+    return normalize_solution_vehicle_trips(
         solution,
-        context.instance,
-        context.prices,
-        fairness_context=fairness_context_for_solution(solution, context),
-        fairness_enabled=context.fairness_enabled,
+        instance,
+        max_cv=int(policy.max_cv),
+        max_ev=int(policy.max_ev),
     )
 
 
@@ -602,6 +619,7 @@ def vehicle_type_swap(state: AlnsState, rng: np.random.Generator) -> AlnsState:
     if not scored:
         return state
     for _, candidate in sorted(scored, key=lambda item: item[0]):
+        candidate = _normalize_for_policy(candidate, state.context.instance, state.policy)
         if not check_solution(candidate, state.context.instance, state.context.prices):
             return replace(state, solution=candidate, objective_value=None)
     return state
@@ -677,7 +695,7 @@ def _try_cv_to_ev(state: AlnsState, rng: np.random.Generator) -> AlnsState:
 
 
 def _try_cv_to_ev_candidates(state: AlnsState, rng: np.random.Generator) -> list[Solution]:
-    if _count_routes(state.solution, "ev") >= state.policy.max_ev:
+    if state.policy.max_ev <= 0:
         return []
     routes = list(state.solution.routes)
     indices = [idx for idx, route in enumerate(routes) if route.vehicle_type.lower() == "cv" and _route_customer_ids(route, state.context.instance)]
@@ -713,7 +731,10 @@ def _try_cv_to_ev_candidates(state: AlnsState, rng: np.random.Generator) -> list
         )
         if state.policy.require_charging_signal and not has_charging_signal(candidate):
             continue
-        candidates.append(candidate)
+        try:
+            candidates.append(_normalize_for_policy(candidate, state.context.instance, state.policy))
+        except ValueError:
+            continue
     return candidates
 
 
@@ -723,7 +744,7 @@ def _try_ev_to_cv(state: AlnsState, rng: np.random.Generator) -> AlnsState:
 
 
 def _try_ev_to_cv_candidates(state: AlnsState, rng: np.random.Generator) -> list[Solution]:
-    if _count_routes(state.solution, "cv") >= state.policy.max_cv:
+    if state.policy.max_cv <= 0:
         return []
     routes = list(state.solution.routes)
     indices = [idx for idx, route in enumerate(routes) if route.vehicle_type.lower() == "ev"]
@@ -745,7 +766,10 @@ def _try_ev_to_cv_candidates(state: AlnsState, rng: np.random.Generator) -> list
         candidate = replace(state.solution, routes=candidate_routes, charging_actions=candidate_actions)
         if state.policy.require_charging_signal and not has_charging_signal(candidate):
             continue
-        candidates.append(candidate)
+        try:
+            candidates.append(_normalize_for_policy(candidate, state.context.instance, state.policy))
+        except ValueError:
+            continue
     return candidates
 
 
@@ -795,7 +819,10 @@ def _ranked_insert_positions(route: Route, customer_id: str, instance: Instance)
 
 
 def _finalize_candidate_state(state: AlnsState) -> AlnsState:
-    return replace(state, objective_value=score_candidate(state.solution, state.context), removed_customers=state.removed_customers)
+    solution = _normalize_for_policy(state.solution, state.context.instance, state.policy)
+    with timed_section(state.context, "full_candidate_score"):
+        objective = score_candidate(solution, state.context)
+    return replace(state, solution=solution, objective_value=objective, removed_customers=state.removed_customers)
 
 
 def _repair_route_delta_score(
@@ -815,7 +842,8 @@ def _repair_solution_delta_score(solution: Solution, context: EvaluationContext)
     try:
         if context.repair_delta_mode == "exact":
             return score_reference(solution, context)
-        return float(evaluate(solution, context.instance, context.carbon_profile, context.prices, carbon_quota_kg=context.carbon_quota_kg)["total_cost"])
+        with timed_section(context, "repair_solution_score"):
+            return float(evaluate(solution, context.instance, context.carbon_profile, context.prices, carbon_quota_kg=context.carbon_quota_kg)["total_cost"])
     except Exception:
         return BIG_M
 

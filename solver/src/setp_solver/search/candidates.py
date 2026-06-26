@@ -32,6 +32,7 @@ from .charging import repair_route_charging
 from .construction import build_initial_solution
 from .evaluation import BIG_M, EvalBudget, EvaluationContext, model_cost, record_repair_delta, score_candidate, score_reference
 from .feasible_repair import repair_removed_customers
+from .fleet import FleetLimits, UNBOUNDED_FLEET, infer_fleet_limits, normalize_solution_vehicle_trips
 from .local_search import improve_solution_locally
 from .repair_scoring import route_model_cost_delta
 from .scout import scout_reference_algorithms
@@ -143,10 +144,12 @@ def make_shared_initial_solution(
 
     # v2026-06-12: W1a aligns all candidates with ALNS-Wouda's construction:
     # nearest depot assignment, regret-2 insertion, and EV charging repair.
+    limits = infer_fleet_limits(bundle.bundle_dir)
     solution = build_initial_solution(
         bundle.instance,
         bundle.carbon_profile,
         prices,
+        fleet_limits=limits,
         introduce_ev=True,
         require_charging_signal=False,
     )
@@ -224,8 +227,20 @@ def random_key_to_solution(
             routes.append(route)
             next_cv += 1
 
-    solution = Solution(routes=routes, charging_actions=actions)
+    solution = normalize_solution_vehicle_trips(Solution(routes=routes, charging_actions=actions), instance)
     if check_solution(solution, instance, prices):
+        try:
+            fallback = build_initial_solution(
+                instance,
+                carbon_profile,
+                prices,
+                fleet_limits=_fleet_limits_from_instance(instance),
+                require_charging_signal=False,
+            )
+            if not check_solution(fallback, instance, prices):
+                return fallback
+        except ValueError:
+            pass
         return _all_cv_solution(ordered, instance, prices)
     return solution
 
@@ -999,6 +1014,10 @@ def _maybe_update_best(
     best_cost: float,
     state: CandidateState,
 ) -> tuple[Solution, float, float]:
+    try:
+        candidate = normalize_solution_vehicle_trips(candidate, state.context.instance)
+    except ValueError:
+        return best_solution, best_obj, best_cost
     if score < best_obj - 1e-9 and not check_solution(candidate, state.context.instance, state.context.prices):
         state.search_diagnostics["best_updates"] = int(state.search_diagnostics.get("best_updates", 0)) + 1
         return candidate, float(score), model_cost(candidate, state.context)
@@ -1091,6 +1110,10 @@ def _apply_path_operator_outcome(
     candidate = builders[operator](solution, context, rng)
     if candidate is None:
         return _OperatorOutcome(solution, produced=False, feasible=False, changed=False, detail="operator_returned_none")
+    try:
+        candidate = normalize_solution_vehicle_trips(candidate, context.instance)
+    except ValueError as exc:
+        return _OperatorOutcome(solution, produced=True, feasible=False, changed=False, detail=str(exc))
     changed = solution_signature_hash(candidate) != solution_signature_hash(solution)
     return _OperatorOutcome(candidate, produced=True, feasible=True, changed=changed, detail="feasibility_deferred_to_candidate_score")
 
@@ -1564,7 +1587,7 @@ def _rebuild_solution(routes: list[Route], context: EvaluationContext) -> Soluti
         else:
             rebuilt_routes.append(clean_route)
     candidate = Solution(routes=rebuilt_routes, charging_actions=actions)
-    return candidate
+    return normalize_solution_vehicle_trips(candidate, context.instance)
 
 
 def _unique_vehicle_id(vehicle_id: str, used_ids: dict[str, int], idx: int) -> str:
@@ -1839,6 +1862,14 @@ def _all_cv_solution(
             routes.append(Route(f"CV{idx}", "cv", depot_id, [depot_id, *customer_ids, depot_id]))
             idx += 1
     return Solution(routes=routes)
+
+
+def _fleet_limits_from_instance(instance: Instance) -> FleetLimits:
+    return FleetLimits(
+        cv=int(instance.num_cv) if instance.num_cv is not None else UNBOUNDED_FLEET,
+        ev=int(instance.num_ev) if instance.num_ev is not None else UNBOUNDED_FLEET,
+        source="instance.num_cv/num_ev hard fleet caps",
+    )
 
 
 def _route_customer_plan_feasible(

@@ -17,7 +17,7 @@ from ..instance_loader import Instance, Node
 from ..prices import DEFAULT_PRICES, PriceParameters
 from ..solution import ChargingAction, Route, Solution
 from .charging import repair_route_charging
-from .fleet import FleetLimits, UNBOUNDED_FLEET, route_ev_energy_summary
+from .fleet import FleetLimits, UNBOUNDED_FLEET, normalize_solution_vehicle_trips, route_ev_energy_summary
 
 
 @dataclass
@@ -44,20 +44,40 @@ def build_initial_solution(
     repair so E5 has a real charging signal.
     """
 
-    limits = fleet_limits or FleetLimits()
-    # v2026-06-12: no hard fleet-count cap. Build the CV seed with the first
-    # feasible route budget starting at ceil(total_demand/Q), so vehicle fixed
-    # cost still pushes the construction toward fewer routes.
-    route_budget = _seed_route_budget(instance, prices, max_cv=max_cv if max_cv is not None else limits.cv)
-    solution = _build_cv_seed_with_retry(instance, prices, start_budget=route_budget, max_budget=_customer_count(instance))
-    if introduce_ev and carbon_profile is not None and limits.ev > 0:
-        if limits.cv < _count_routes(solution, "cv"):
+    limits = fleet_limits or FleetLimits(
+        cv=int(instance.num_cv) if instance.num_cv is not None else UNBOUNDED_FLEET,
+        ev=int(instance.num_ev) if instance.num_ev is not None else UNBOUNDED_FLEET,
+        source="instance.num_cv/num_ev physical fleet caps",
+    )
+    # v2026-06-26: final solutions must respect CV/EV fleet caps, but the
+    # deterministic warm start is still built as a temporary CV packing before
+    # routes are electrified. When EVs are available, let that temporary seed
+    # use the total available fleet count; otherwise low CV caps can falsely
+    # block instances that become feasible after EV conversion.
+    effective_max_cv = max_cv if max_cv is not None else limits.cv
+    active_limits = replace(limits, cv=effective_max_cv)
+    # v2026-06-26: a route is a trip/dispatch, not a physical vehicle. Build
+    # as many trips as capacity/time windows require, then retag trips onto the
+    # finite physical fleet before the final check.
+    seed_route_limit = UNBOUNDED_FLEET
+    route_budget = _seed_route_budget(instance, prices, max_cv=seed_route_limit)
+    seed_max_budget = _customer_count(instance)
+    enforce_seed_fleet_count = False
+    solution = _build_cv_seed_with_retry(
+        instance,
+        prices,
+        start_budget=route_budget,
+        max_budget=seed_max_budget,
+        enforce_fleet_count=enforce_seed_fleet_count,
+    )
+    if introduce_ev and carbon_profile is not None and active_limits.ev > 0:
+        if active_limits.cv <= 0:
             solution = introduce_ev_heavy_routes(
                 solution,
                 instance,
                 carbon_profile,
                 prices,
-                fleet_limits=limits,
+                fleet_limits=active_limits,
                 require_charging_signal=require_charging_signal,
             )
         else:
@@ -66,9 +86,14 @@ def build_initial_solution(
                 instance,
                 carbon_profile,
                 prices,
-                fleet_limits=limits,
+                fleet_limits=active_limits,
                 require_charging_signal=require_charging_signal,
             )
+    solution = normalize_solution_vehicle_trips(solution, instance, max_cv=active_limits.cv, max_ev=active_limits.ev)
+    violations = check_solution(solution, instance, prices)
+    if violations:
+        details = "; ".join(f"{v.type}:{v.vehicle_id}:{v.location}:{v.detail}" for v in violations[:8])
+        raise ValueError(f"Initial solution is infeasible after fleet-trip retagging: {details}")
     return _inherit_dynamic_state(solution)
 
 
@@ -77,6 +102,7 @@ def _build_cv_seed(
     prices: PriceParameters | dict[str, float] | Any,
     *,
     max_cv: int,
+    enforce_fleet_count: bool = True,
 ) -> Solution:
     """Build the original deterministic CV-only seed."""
 
@@ -97,7 +123,10 @@ def _build_cv_seed(
         for idx, plan in enumerate(plans)
     ]
     solution = Solution(routes=routes)
-    violations = check_solution(solution, instance, prices)
+    if enforce_fleet_count:
+        solution = normalize_solution_vehicle_trips(solution, instance, max_cv=max_cv, max_ev=0)
+    check_instance = instance if enforce_fleet_count else replace(instance, num_cv=None, num_ev=None)
+    violations = check_solution(solution, check_instance, prices)
     if violations:
         details = "; ".join(f"{v.type}:{v.vehicle_id}:{v.location}:{v.detail}" for v in violations[:8])
         raise ValueError(f"Initial solution is infeasible: {details}")
@@ -110,18 +139,21 @@ def _build_cv_seed_with_retry(
     *,
     start_budget: int,
     max_budget: int,
+    enforce_fleet_count: bool = True,
 ) -> Solution:
-    """Build the first feasible CV seed without imposing a fleet cap.
+    """Build the first feasible CV seed within the supplied route budget.
 
-    v2026-06-12: N0 retry for the no-fleet-limit policy. ``start_budget`` is
-    the demand lower bound on vehicle count; the loop increases only when
-    capacity/time-window packing needs extra vehicles.
+    v2026-06-26: ``max_budget`` is the temporary seed ceiling. With finite
+    mixed-fleet caps this can be CV+EV, because route electrification happens
+    after the deterministic CV packing. Final fleet-count feasibility is still
+    checked on the returned solution. ``enforce_fleet_count=False`` is only
+    used for this temporary all-CV packing step before EV conversion.
     """
 
     last_error: Exception | None = None
     for budget in range(max(1, start_budget), max_budget + 1):
         try:
-            return _build_cv_seed(instance, prices, max_cv=budget)
+            return _build_cv_seed(instance, prices, max_cv=budget, enforce_fleet_count=enforce_fleet_count)
         except ValueError as exc:
             last_error = exc
     raise ValueError(f"Initial solution is infeasible even with {max_budget} routes: {last_error}")
@@ -163,7 +195,12 @@ def introduce_ev_routes(
                 continue
             if require_charging_signal and not actions:
                 continue
-            candidate = _replace_customer_with_ev(solution, customer_id, repaired_route, actions)
+            candidate = normalize_solution_vehicle_trips(
+                _replace_customer_with_ev(solution, customer_id, repaired_route, actions),
+                instance,
+                max_cv=limits.cv,
+                max_ev=limits.ev,
+            )
             violations = check_solution(candidate, instance, prices)
             if violations:
                 continue
@@ -218,7 +255,7 @@ def introduce_ev_heavy_routes(
             )
             if candidate is None:
                 break
-        current = candidate
+        current = normalize_solution_vehicle_trips(candidate, instance, max_cv=fleet_limits.cv, max_ev=fleet_limits.ev)
 
     # v2026-06-12: Q2 makes depot precharge a real charging signal, so reduce
     # CV count by route electrification before spending remaining EV slots on
@@ -227,7 +264,7 @@ def introduce_ev_heavy_routes(
         candidate = _best_charged_customer_electrification(current, instance, carbon_profile, prices)
         if candidate is None:
             break
-        current = candidate
+        current = normalize_solution_vehicle_trips(candidate, instance, max_cv=fleet_limits.cv, max_ev=fleet_limits.ev)
 
     cv_count = _count_routes(current, "cv")
     ev_count = _count_routes(current, "ev")
@@ -261,7 +298,12 @@ def _best_charged_customer_electrification(
                 continue
             if not actions or _actions_touch_used_station(actions, used_stations):
                 continue
-            candidate = _replace_customer_with_ev(solution, customer_id, repaired_route, actions)
+            candidate = normalize_solution_vehicle_trips(
+                _replace_customer_with_ev(solution, customer_id, repaired_route, actions),
+                instance,
+                max_cv=UNBOUNDED_FLEET,
+                max_ev=UNBOUNDED_FLEET,
+            )
             if check_solution(candidate, instance, prices):
                 continue
             charge_energy = sum(float(action.energy_kwh) for action in actions)
@@ -296,7 +338,12 @@ def _best_route_electrification(
             for action in solution.charging_actions
             if action.vehicle_id != route.vehicle_id and action.vehicle_id != ev_id
         ]
-        candidate = replace(solution, routes=routes, charging_actions=[*preserved_actions, *actions])
+        candidate = normalize_solution_vehicle_trips(
+            replace(solution, routes=routes, charging_actions=[*preserved_actions, *actions]),
+            instance,
+            max_cv=UNBOUNDED_FLEET,
+            max_ev=UNBOUNDED_FLEET,
+        )
         if check_solution(candidate, instance, prices):
             continue
         energy = route_ev_energy_summary(ev_route, instance, prices).ev_kwh
@@ -352,7 +399,12 @@ def _best_route_split_electrification(
             continue
         routes = [item for item in solution.routes if item.vehicle_id != route.vehicle_id]
         preserved_actions = [action for action in solution.charging_actions if action.vehicle_id != route.vehicle_id]
-        candidate = replace(solution, routes=[*routes, *new_routes], charging_actions=[*preserved_actions, *new_actions])
+        candidate = normalize_solution_vehicle_trips(
+            replace(solution, routes=[*routes, *new_routes], charging_actions=[*preserved_actions, *new_actions]),
+            instance,
+            max_cv=UNBOUNDED_FLEET,
+            max_ev=UNBOUNDED_FLEET,
+        )
         if check_solution(candidate, instance, prices):
             continue
         charge_energy = sum(float(action.energy_kwh) for action in new_actions)
@@ -444,6 +496,14 @@ def _seed_route_budget(instance: Instance, prices: PriceParameters | dict[str, f
     if max_cv >= UNBOUNDED_FLEET:
         return max(1, demand_bound)
     return max(1, min(max_cv, _customer_count(instance)))
+
+
+def _seed_route_limit(limits: FleetLimits, *, introduce_ev: bool) -> int:
+    if not introduce_ev or limits.ev <= 0:
+        return limits.cv
+    if limits.cv >= UNBOUNDED_FLEET or limits.ev >= UNBOUNDED_FLEET:
+        return UNBOUNDED_FLEET
+    return max(1, int(limits.cv) + int(limits.ev))
 
 
 def _customer_count(instance: Instance) -> int:
