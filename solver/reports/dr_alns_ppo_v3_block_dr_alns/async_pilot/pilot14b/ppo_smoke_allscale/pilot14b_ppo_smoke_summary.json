@@ -1,0 +1,61 @@
+{
+  "train_bundle_count": 15,
+  "resolved_device": "cuda",
+  "candidate_generator_mode": true,
+  "episode_count": 20,
+  "unique_episode_bundles": 15,
+  "unique_bundle_names": [
+    "e2-threeshift-100c-01",
+    "e2-threeshift-100c-02",
+    "e2-threeshift-100c-03",
+    "e2-threeshift-150c-01",
+    "e2-threeshift-150c-02",
+    "e2-threeshift-150c-03",
+    "e2-threeshift-200c-01",
+    "e2-threeshift-200c-02",
+    "e2-threeshift-200c-03",
+    "e2-threeshift-50c-01",
+    "e2-threeshift-50c-02",
+    "e2-threeshift-50c-03",
+    "e2-threeshift-75c-01",
+    "e2-threeshift-75c-02",
+    "e2-threeshift-75c-03"
+  ],
+  "violation_count_sum": 0,
+  "worker_python_executables": [
+    "C:\\Users\\zlxshu\\.venvs\\resetp-solver-py313\\Scripts\\python.exe"
+  ],
+  "worker_numpy_versions": [
+    "2.3.5"
+  ],
+  "finite_reward_and_best_obj": true,
+  "candidate_generator_unique_total": 62,
+  "candidate_generator_nondefault_total": 71,
+  "candidate_generator_unique_max": 4,
+  "phase_transitions": [
+    {
+      "completed_episodes": "2",
+      "valid_steps_total": "10",
+      "from_phase": "route",
+      "to_phase": "energy"
+    },
+    {
+      "completed_episodes": "6",
+      "valid_steps_total": "30",
+      "from_phase": "energy",
+      "to_phase": "carbon"
+    }
+  ],
+  "update_count": 6,
+  "throughput_last": {
+    "completed_episodes": "20",
+    "elapsed_seconds": "122.60899999993853",
+    "num_actors": "3",
+    "busy_time_seconds_sum": "306.7029999998631",
+    "busy_ratio": "0.8338240531554695",
+    "idle_ratio": "0.16617594684453052",
+    "episodes_per_hour": "587.2325848839489",
+    "block_steps_per_hour": "2936.1629244197447",
+    "worker_failure_count": "0"
+  }
+}

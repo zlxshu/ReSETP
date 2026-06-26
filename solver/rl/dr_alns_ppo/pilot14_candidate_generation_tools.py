@@ -72,6 +72,51 @@ THREESHIFT_PROBE_BUNDLES: tuple[dict[str, str], ...] = (
         "bundle_name": "e2-threeshift-75c-03",
         "bundle_path": "models/data_bundle/generated_instances/e2_benchmark/threeshift/e2-threeshift-75c-03",
     },
+    {
+        "bundle_role": "scale_probe",
+        "bundle_name": "e2-threeshift-100c-01",
+        "bundle_path": "models/data_bundle/generated_instances/e2_benchmark/threeshift/e2-threeshift-100c-01",
+    },
+    {
+        "bundle_role": "scale_probe",
+        "bundle_name": "e2-threeshift-100c-02",
+        "bundle_path": "models/data_bundle/generated_instances/e2_benchmark/threeshift/e2-threeshift-100c-02",
+    },
+    {
+        "bundle_role": "scale_probe",
+        "bundle_name": "e2-threeshift-100c-03",
+        "bundle_path": "models/data_bundle/generated_instances/e2_benchmark/threeshift/e2-threeshift-100c-03",
+    },
+    {
+        "bundle_role": "scale_probe",
+        "bundle_name": "e2-threeshift-150c-01",
+        "bundle_path": "models/data_bundle/generated_instances/e2_benchmark/threeshift/e2-threeshift-150c-01",
+    },
+    {
+        "bundle_role": "scale_probe",
+        "bundle_name": "e2-threeshift-150c-02",
+        "bundle_path": "models/data_bundle/generated_instances/e2_benchmark/threeshift/e2-threeshift-150c-02",
+    },
+    {
+        "bundle_role": "scale_probe",
+        "bundle_name": "e2-threeshift-150c-03",
+        "bundle_path": "models/data_bundle/generated_instances/e2_benchmark/threeshift/e2-threeshift-150c-03",
+    },
+    {
+        "bundle_role": "scale_probe",
+        "bundle_name": "e2-threeshift-200c-01",
+        "bundle_path": "models/data_bundle/generated_instances/e2_benchmark/threeshift/e2-threeshift-200c-01",
+    },
+    {
+        "bundle_role": "scale_probe",
+        "bundle_name": "e2-threeshift-200c-02",
+        "bundle_path": "models/data_bundle/generated_instances/e2_benchmark/threeshift/e2-threeshift-200c-02",
+    },
+    {
+        "bundle_role": "scale_probe",
+        "bundle_name": "e2-threeshift-200c-03",
+        "bundle_path": "models/data_bundle/generated_instances/e2_benchmark/threeshift/e2-threeshift-200c-03",
+    },
 )
 
 
@@ -79,6 +124,38 @@ THREESHIFT_PROBE_BUNDLES: tuple[dict[str, str], ...] = (
 class CandidateVariant:
     name: str
     description: str
+
+
+@dataclass(frozen=True)
+class CandidateGenerationLimits:
+    remove_fractions: tuple[float, ...]
+    repair_modes: tuple[str, ...]
+    option_ranks: tuple[int, ...]
+    max_route_candidates: int
+    max_positions_per_route: int
+    max_candidates_per_action: int | None
+
+
+def exhaustive_candidate_generation_limits() -> CandidateGenerationLimits:
+    return CandidateGenerationLimits(
+        remove_fractions=(0.10, 0.16, 0.23, 0.30, 0.40),
+        repair_modes=("greedy", "regret2", "regret3", "criticality"),
+        option_ranks=(0, 1, -1),
+        max_route_candidates=10_000,
+        max_positions_per_route=10_000,
+        max_candidates_per_action=None,
+    )
+
+
+def runtime_candidate_generation_limits() -> CandidateGenerationLimits:
+    return CandidateGenerationLimits(
+        remove_fractions=(0.10,),
+        repair_modes=("greedy",),
+        option_ranks=(0,),
+        max_route_candidates=8,
+        max_positions_per_route=4,
+        max_candidates_per_action=16,
+    )
 
 
 @dataclass(frozen=True)
@@ -180,6 +257,7 @@ def run_surgery(
     bundle_names: set[str] | None = None,
     variant_names: set[str] | None = None,
     include_route_elimination: bool = True,
+    candidate_limits: CandidateGenerationLimits | None = None,
 ) -> dict[str, Any]:
     output_dir.mkdir(parents=True, exist_ok=True)
     variants = [variant for variant in default_candidate_variants() if not variant_names or variant.name in variant_names]
@@ -199,6 +277,7 @@ def run_surgery(
                     variant=variant,
                     eval_budget=int(eval_budget),
                     include_route_elimination=include_route_elimination,
+                    candidate_limits=candidate_limits or exhaustive_candidate_generation_limits(),
                 )
                 rows.append(row)
                 write_rows_csv(partial_path, rows)
@@ -211,6 +290,7 @@ def run_surgery(
         "seeds": [int(seed) for seed in seeds],
         "eval_budget": int(eval_budget),
         "variants": [variant.__dict__ for variant in variants],
+        "candidate_generation_limits": (candidate_limits or exhaustive_candidate_generation_limits()).__dict__,
         "row_count": len(rows),
         "gate": gate,
         "variant_summary": variant_summary,
@@ -232,6 +312,7 @@ def probe_variant(
     variant: CandidateVariant,
     eval_budget: int,
     include_route_elimination: bool,
+    candidate_limits: CandidateGenerationLimits | None = None,
 ) -> dict[str, Any]:
     started = time.perf_counter()
     search_bundle = load_search_bundle(bundle.bundle_path)
@@ -257,6 +338,7 @@ def probe_variant(
         variant_name=variant.name,
         include_route_elimination=include_route_elimination,
         fleet_limits=limits,
+        limits=candidate_limits or exhaustive_candidate_generation_limits(),
     )
     return _score_candidate_batch(
         bundle=bundle,
@@ -334,11 +416,17 @@ def _generate_candidates_for_variant(
     variant_name: str,
     include_route_elimination: bool,
     fleet_limits: FleetLimits,
+    limits: CandidateGenerationLimits,
 ) -> list[Solution]:
     if variant_name == "route_compression_rebuild":
         return _route_compression_candidates(state)
     if variant_name == "stronger_insertion_repair":
-        return _stronger_insertion_candidates(state, seed=seed, include_route_elimination=include_route_elimination)
+        return _stronger_insertion_candidates(
+            state,
+            seed=seed,
+            include_route_elimination=include_route_elimination,
+            limits=limits,
+        )
     if variant_name == "ev_charging_aware_repair":
         return _ev_charging_candidates(state, fleet_limits=fleet_limits)
     raise ValueError(f"unknown candidate variant: {variant_name}")
@@ -351,18 +439,21 @@ def generate_candidate_solutions(
     variant_name: str,
     include_route_elimination: bool = True,
     fleet_limits: FleetLimits | None = None,
+    limits: CandidateGenerationLimits | None = None,
 ) -> list[Solution]:
     """Generate feasible Pilot14 candidate solutions for opt-in PPO diagnostics."""
 
-    limits = fleet_limits
-    if limits is None:
-        limits = FleetLimits(cv=999_999, ev=999_999)
+    resolved_fleet_limits = fleet_limits
+    if resolved_fleet_limits is None:
+        resolved_fleet_limits = FleetLimits(cv=999_999, ev=999_999)
+    resolved_candidate_limits = limits or runtime_candidate_generation_limits()
     return _generate_candidates_for_variant(
         state=state,
         seed=int(seed),
         variant_name=str(variant_name),
         include_route_elimination=bool(include_route_elimination),
-        fleet_limits=limits,
+        fleet_limits=resolved_fleet_limits,
+        limits=resolved_candidate_limits,
     )
 
 
@@ -400,11 +491,12 @@ def _stronger_insertion_candidates(
     *,
     seed: int,
     include_route_elimination: bool,
+    limits: CandidateGenerationLimits,
 ) -> list[Solution]:
     candidates: list[Solution] = []
     op_set = WinnerOperatorSet.create(include_route_elimination=include_route_elimination)
     customer_count = _customer_count(state.solution, state.context)
-    remove_counts = sorted({max(1, int(math.ceil(customer_count * fraction))) for fraction in (0.10, 0.16, 0.23, 0.30, 0.40)})
+    remove_counts = sorted({max(1, int(math.ceil(customer_count * fraction))) for fraction in limits.remove_fractions})
     for destroy_index, (destroy_id, destroy_op) in enumerate(op_set.destroy_ops):
         if destroy_id == "vehicle_type_swap":
             continue
@@ -414,8 +506,8 @@ def _stronger_insertion_candidates(
             pending = list(destroyed.removed_customers)
             if not pending:
                 continue
-            for mode in ("greedy", "regret2", "regret3", "criticality"):
-                for option_rank in (0, 1, -1):
+            for mode in limits.repair_modes:
+                for option_rank in limits.option_ranks:
                     repaired = _wide_complete_repair(
                         destroyed.solution,
                         pending,
@@ -424,9 +516,13 @@ def _stronger_insertion_candidates(
                         mode=mode,
                         allow_new_route=destroyed.allow_new_route_repair,
                         option_rank=option_rank,
+                        max_route_candidates=int(limits.max_route_candidates),
+                        max_positions_per_route=int(limits.max_positions_per_route),
                     )
                     if repaired is not None:
                         candidates.append(repaired)
+                        if limits.max_candidates_per_action is not None and len(candidates) >= int(limits.max_candidates_per_action):
+                            return _unique_feasible_candidates(candidates, state.context)[: int(limits.max_candidates_per_action)]
     return _unique_feasible_candidates(candidates, state.context)
 
 
@@ -471,6 +567,8 @@ def _wide_complete_repair(
     mode: str,
     allow_new_route: bool,
     option_rank: int,
+    max_route_candidates: int = 10_000,
+    max_positions_per_route: int = 10_000,
 ) -> Solution | None:
     current = partial_solution
     pending = list(dict.fromkeys(pending_customers))
@@ -487,6 +585,8 @@ def _wide_complete_repair(
             mode=mode,
             allow_new_route=allow_new_route,
             option_rank=option_rank,
+            max_route_candidates=int(max_route_candidates),
+            max_positions_per_route=int(max_positions_per_route),
         )
         if selection is None:
             return None
@@ -510,6 +610,8 @@ def _select_next_insertion(
     mode: str,
     allow_new_route: bool,
     option_rank: int,
+    max_route_candidates: int,
+    max_positions_per_route: int,
 ) -> tuple[str, Solution] | None:
     rows: list[tuple[float, float, str, Solution]] = []
     node_lookup = {node.node_id: node for node in context.instance.nodes}
@@ -519,8 +621,8 @@ def _select_next_insertion(
             customer_id,
             context,
             policy,
-            max_route_candidates=10_000,
-            max_positions_per_route=10_000,
+            max_route_candidates=int(max_route_candidates),
+            max_positions_per_route=int(max_positions_per_route),
             allow_new_route=allow_new_route,
         )
         if not options:
@@ -603,6 +705,7 @@ def _score_candidate_batch(
         "changed_candidate_count": int(changed_count),
         "improving_candidate_count": int(improving_count),
         "violation_count": int(violation_count),
+        "repair_delta_count": int(context.score_counts.get("repair_delta", 0)),
         "baseline_obj": float(baseline_obj),
         "best_candidate_obj": float(best_obj),
         "best_changed_candidate_obj": float(best_changed_obj),
@@ -620,6 +723,7 @@ def _variant_summaries(rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
     summaries: list[dict[str, Any]] = []
     for variant, values in sorted(grouped.items()):
         candidate_count = sum(int(row["candidate_count"]) for row in values)
+        generated_candidate_count = sum(int(row.get("unique_candidate_count", row["candidate_count"])) for row in values)
         changed_count = sum(int(row["changed_candidate_count"]) for row in values)
         improving_count = sum(int(row["improving_candidate_count"]) for row in values)
         train_rel = [float(row["best_relative_percent"]) for row in values if row["bundle_role"] == "train_probe"]
@@ -630,11 +734,11 @@ def _variant_summaries(rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
                 "variant": variant,
                 "rows": len(values),
                 "candidate_count": int(candidate_count),
-                "unique_candidate_count": sum(int(row.get("unique_candidate_count", 0)) for row in values),
+                "unique_candidate_count": int(generated_candidate_count),
                 "changed_candidate_count": int(changed_count),
                 "improving_candidate_count": int(improving_count),
-                "changed_rate": 0.0 if candidate_count == 0 else changed_count / candidate_count,
-                "improving_rate": 0.0 if candidate_count == 0 else improving_count / candidate_count,
+                "changed_rate": 0.0 if generated_candidate_count == 0 else changed_count / generated_candidate_count,
+                "improving_rate": 0.0 if generated_candidate_count == 0 else improving_count / generated_candidate_count,
                 "train_mean_relative_percent": mean(train_rel) if train_rel else -math.inf,
                 "held_mean_relative_percent": mean(held_rel) if held_rel else -math.inf,
                 "overall_mean_relative_percent": mean(float(row["best_relative_percent"]) for row in values),
@@ -735,6 +839,15 @@ def _parse_seeds(value: str) -> list[int]:
     return [int(item.strip()) for item in str(value).split(",") if item.strip()]
 
 
+def _candidate_limits_for_profile(profile: str) -> CandidateGenerationLimits:
+    normalized = str(profile).strip().lower()
+    if normalized == "runtime":
+        return runtime_candidate_generation_limits()
+    if normalized == "exhaustive":
+        return exhaustive_candidate_generation_limits()
+    raise ValueError(f"unknown candidate generation profile: {profile!r}")
+
+
 def _decision_text(status: str) -> str:
     if status == READY_STATUS:
         return (
@@ -761,6 +874,7 @@ def build_parser() -> argparse.ArgumentParser:
     run.add_argument("--bundle-names", default="")
     run.add_argument("--variants", default="")
     run.add_argument("--no-route-elimination", action="store_true")
+    run.add_argument("--candidate-profile", choices=("exhaustive", "runtime"), default="exhaustive")
     return parser
 
 
@@ -774,6 +888,7 @@ def main(argv: list[str] | None = None) -> int:
             bundle_names=_parse_csv_set(args.bundle_names),
             variant_names=_parse_csv_set(args.variants),
             include_route_elimination=not bool(args.no_route_elimination),
+            candidate_limits=_candidate_limits_for_profile(args.candidate_profile),
         )
         print(json.dumps({"gate": summary["gate"], "output_dir": str(args.output_dir)}, ensure_ascii=False, indent=2))
         return 0

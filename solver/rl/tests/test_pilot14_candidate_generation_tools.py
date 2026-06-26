@@ -3,10 +3,12 @@ from __future__ import annotations
 from dr_alns_ppo.pilot14_candidate_generation_tools import (
     REQUIRED_WORKER_NUMPY,
     REQUIRED_WORKER_PYTHON,
+    CandidateGenerationLimits,
     CandidateVariant,
     candidate_row_gate,
     classify_candidate_generator_gate,
     default_candidate_variants,
+    runtime_candidate_generation_limits,
     render_pilot14_report,
     threeshift_probe_bundles,
 )
@@ -29,6 +31,7 @@ def _row(
         "seed": seed,
         "variant": variant,
         "candidate_count": 1,
+        "unique_candidate_count": 1,
         "feasible_candidate_count": 1 if feasible else 0,
         "changed_candidate_count": 1 if changed else 0,
         "improving_candidate_count": 1 if improving else 0,
@@ -46,15 +49,9 @@ def _row(
 def test_threeshift_probe_bundles_match_goal_instances() -> None:
     bundles = threeshift_probe_bundles()
     names = [row["bundle_name"] for row in bundles]
-    assert names == [
-        "e2-threeshift-50c-01",
-        "e2-threeshift-50c-02",
-        "e2-threeshift-50c-03",
-        "e2-threeshift-75c-01",
-        "e2-threeshift-75c-02",
-        "e2-threeshift-75c-03",
-    ]
-    assert not any("100c" in name for name in names)
+    for scale in ("50c", "75c", "100c", "150c", "200c"):
+        assert sum(1 for name in names if f"-{scale}-" in name) == 3
+    assert len(names) == 15
 
 
 def test_default_candidate_variants_cover_literature_backed_families() -> None:
@@ -64,6 +61,18 @@ def test_default_candidate_variants_cover_literature_backed_families() -> None:
         CandidateVariant("stronger_insertion_repair", "criticality / regret-k / wider insertion repair"),
         CandidateVariant("ev_charging_aware_repair", "EV / charging-aware repair"),
     ]
+
+
+def test_runtime_candidate_generation_limits_are_training_safe() -> None:
+    limits = runtime_candidate_generation_limits()
+
+    assert isinstance(limits, CandidateGenerationLimits)
+    assert limits.max_route_candidates <= 8
+    assert limits.max_positions_per_route <= 4
+    assert limits.max_candidates_per_action <= 16
+    assert limits.repair_modes == ("greedy",)
+    assert limits.option_ranks == (0,)
+    assert limits.remove_fractions == (0.10,)
 
 
 def test_candidate_row_gate_rejects_worker_drift() -> None:
@@ -133,6 +142,37 @@ def test_candidate_generator_gate_halts_when_changed_rate_is_too_low() -> None:
     assert gate["changed_rate"] == 0.0
 
 
+def test_candidate_generator_gate_uses_generated_candidates_not_budget_padding() -> None:
+    rows = [
+        {
+            **_row(bundle_role="train_probe", bundle_name=f"e2-threeshift-50c-0{idx+1}", relative=0.8),
+            "candidate_count": 50,
+            "unique_candidate_count": 5,
+            "feasible_candidate_count": 50,
+            "changed_candidate_count": 5,
+            "improving_candidate_count": 5,
+        }
+        for idx in range(3)
+    ]
+    rows.extend(
+        {
+            **_row(bundle_role="held_probe", bundle_name=f"e2-threeshift-75c-0{idx+1}", relative=0.8),
+            "candidate_count": 50,
+            "unique_candidate_count": 5,
+            "feasible_candidate_count": 50,
+            "changed_candidate_count": 5,
+            "improving_candidate_count": 5,
+        }
+        for idx in range(3)
+    )
+
+    gate = classify_candidate_generator_gate(rows)
+
+    assert gate["status"] == "READY_FOR_PPO_INTERFACE"
+    assert gate["changed_rate"] == 1.0
+    assert gate["improving_rate"] == 1.0
+
+
 def test_candidate_generator_gate_rejects_any_infeasible_row() -> None:
     rows = [_row(), _row(feasible=False, changed=True, improving=False, relative=-1.0)]
 
@@ -153,4 +193,3 @@ def test_render_pilot14_report_states_ready_or_halt_without_training_claim() -> 
     assert "Pilot14" in report
     assert "no PPO training" in report
     assert "HALT_CANDIDATE_GENERATOR_NO_HEADROOM" in report
-
