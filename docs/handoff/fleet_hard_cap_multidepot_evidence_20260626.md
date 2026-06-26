@@ -4,9 +4,9 @@
 
 ## 一句话结论
 
-本轮按用户决策把 `m^g/m^e` 恢复为不可超过的车辆数量硬上限。代码现在会从生成实例 metadata 或原始 EVRPTW-MF 文本中的 `num_cv/num_ev`、`numPetrolVeh/numElectroVeh` 读取上限，并由 `check_solution()` 判定超限为 `FLEET_SIZE` 违规。论文 TeX 也同步改为硬上限解释。
+本轮按用户决策只在代码侧试行车辆数量硬上限: 代码现在会从生成实例 metadata 或原始 EVRPTW-MF 文本中的 `num_cv/num_ev`、`numPetrolVeh/numElectroVeh` 读取上限，并由 `check_solution()` 判定超限为 `FLEET_SIZE` 违规。
 
-这不是改碳价、电池、速度或成本项，但它确实改变了此前 solver 的可行性语义: 之前车辆数主要靠固定费抑制，超过 metadata 车辆数也不会被判 infeasible；现在会被判 infeasible。
+这不是改碳价、电池、速度或成本项，但它确实改变了此前 solver 的可行性语义: 之前超过 metadata 车辆数不会被判 infeasible；现在会被判 infeasible。注意: 用户随后明确要求不得改论文建模，因此本轮新增到 TeX 的车辆数量公式和参数表解释已撤回，论文模型文本保持原状。
 
 ## 本项目当前采用的规则
 
@@ -91,14 +91,13 @@ Froger et al. 2022 明确指出许多 EVRP 研究隐含假设充电站可同时�
 - `/Volumes/移动硬盘（512G）/paper_input/SETP-template-20230830/research_materials/pdf_text_extracts/Froger_等___2022___The_electric_vehicle_routing_problem_with_capacitated_charging_stations.txt:51-54`
 - `/Volumes/移动硬盘（512G）/paper_input/SETP-template-20230830/research_materials/pdf_text_extracts/Froger_等___2022___The_electric_vehicle_routing_problem_with_capacitated_charging_stations.txt:108-112`
 
-## 对当前论文/代码的含义
+## 对当前代码的含义
 
 当前最克制、最容易解释的版本是:
 
-1. 论文中 `m^g/m^e` 是“当前阶段可用燃油车/电动车数量上限”，不是成本表里的装饰参数。
-2. 代码中 `num_cv/num_ev` 必须穿透到 `Instance`，由 checker 判硬违规。
-3. 生成多车场实例时，不默认按车场数翻倍车辆。若未来需要 per-depot 车辆上限，必须显式新增 `m_d^g/m_d^e` 并有文献/场景说明。
-4. 旧 09q/09n 诊断中所有“无限 EV”结论都要重新理解: 它们说明旧实现放松了 fleet cap；现在硬上限恢复后，正式 E2/T3 必须重新跑。
+1. 代码中 `num_cv/num_ev` 已穿透到 `Instance`，由 checker 判硬违规。
+2. 生成多车场实例时，不默认按车场数翻倍车辆。若未来需要 per-depot 车辆上限，必须先经用户同意并显式建模，不能由代码默默推导。
+3. 旧 09q/09n 诊断中所有“无限 EV”结论都要重新理解: 它们说明旧实现放松了 fleet cap；现在硬上限试行后，正式 E2/T3 必须重新跑或先做 feasibility gate。
 
 ## 后续必须先验收的风险
 

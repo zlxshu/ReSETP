@@ -190,7 +190,6 @@ $\tau,t$ & 滚动重规划时刻和离散充电时段索引\\
 $i,j,k,d,s$ & 节点、车辆、车场和充电站索引\\
 $D,N^\tau,S,\mathcal R$ & 车场集合、时刻 $\tau$ 的有效待服务客户集合、共享充电站集合和可充电节点集合 $\mathcal R=S\cup D$\\
 $K^\tau,K^{g,\tau},K^{e,\tau},K_d^\tau$ & 可用车辆集合、燃油车集合、电动车集合以及车场 $d$ 当前可调用车辆集合\\
-$m^g,m^e$ & 当前阶段燃油车和电动车可用数量上限\\
 $T$ & 离散充电时段集合\\
 $V_k^\tau,\mathcal{A}_k^\tau$ & 车辆 $k$ 在时刻 $\tau$ 可访问节点集合和可行弧集合\\
 $o_k^\tau,h_k,d_i^0$ & 车辆 $k$ 的当前继承位置、最终返回车场和客户 $i$ 的原归属车场\\
@@ -316,13 +315,6 @@ C_{\mathrm{car}}^{\tau}=p^{car}\left(\Delta E^{\tau}-CE^{\tau}\right).
 \sum_{i\in V_k^\tau\setminus\{h_k\}}x_{ih_kk}^{\tau}=z_k^\tau,
 \qquad k\in K^\tau .
 \label{eq:return}
-\end{equation}
-
-当前阶段启用的各类型车辆数量不得超过可用车队上限：
-\begin{equation}
-\sum_{k\in K^{g,\tau}}z_k^\tau \le m^g,\qquad
-\sum_{k\in K^{e,\tau}}z_k^\tau \le m^e .
-\label{eq:fleet_size_cap}
 \end{equation}
 
 客户和充电站节点满足车辆流平衡：
@@ -606,9 +598,9 @@ u_{ijk}^{\tau},a_{ik}^{\tau},b_{ik}^{\tau},y_{skt}^{\tau},g_{skt}^{\tau},y_{ikt}
 $|\mathcal{D}|$ & 车场数量 & 2 & 个\\
 $|N^0|$ & 客户总数 & 25 & 个\\
 $|\mathcal{S}|$ & 共享充电站数量 & 3 & 个\\
-$m$ & 可用车辆总数上限(含油车与电动车) & 20 & 辆\\
-$m^g$ & 可用燃油车数量上限 & 10 & 辆\\
-$m^e$ & 可用电动车数量上限 & 10 & 辆\\
+$m$ & 候选车辆池总数(含油车与电动车) & 20 & 辆\\
+$m^g$ & 候选燃油车数量 & 10 & 辆\\
+$m^e$ & 候选电动车数量 & 10 & 辆\\
 $Q$ & 车辆载重容量 & 1\,600 & kg\\
 $v$ & 固定行驶速度 & 90 & km/h\\
 \midrule
@@ -702,7 +694,7 @@ $CE$ & 碳配额默认值(实验设定) & $0.8E^{base}$ & kgCO$_2$e\\
 % v2026-06-12: V0 document the profit-fairness revenue and theta settings.
 配送收入按 $R_i=\rho q_i$ 折算,其中 $\rho=0.18936$ £/kg 由英国公开托盘配送报价中 250 kg quarter pallet 收费 47.34 £(不含 VAT) 折算得到\textsuperscript{\cite{ref:42}};
 $\theta=1.0$ 表示协同后各车场收益不低于独立运营基准,对应协同物流收益分配中的个体理性要求\textsuperscript{\cite{ref:8,ref:10}}。
-表中 $m,m^g,m^e$ 为当前阶段可用车辆数量上限,求解结果中实际启用的燃油车和电动车数量必须分别满足式 \eqref{eq:fleet_size_cap};车辆固定成本用于在可用上限内抑制不必要派车,但不能替代车辆数量硬约束。
+表中 $m,m^g,m^e$ 为候选车辆池规模,不是求解结果中必须启用或不可超过的硬上限;实际启用车辆由派遣变量和车辆固定成本共同决定。
 \end{minipage}
 
 \subsection{实验组织与结果呈现}
