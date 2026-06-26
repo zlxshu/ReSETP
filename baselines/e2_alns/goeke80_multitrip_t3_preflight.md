@@ -62,6 +62,6 @@ Verdict: `HALT_COLLECTION_COST`
 
 - Data dir: `baselines/e2_alns/goeke80_multitrip_t3_preflight_data`
 - Report: `baselines/e2_alns/goeke80_multitrip_t3_preflight.md`
-- HEAD at run start: `4388ba52977eb18372abf93cf97e3a981b3ba049`
-- Artifact commit hash: `pending`
+- HEAD at run start: `ba2541343c1a249ea1c009c76feef590e5cdda6d`
+- Artifact commit hash: `ba254134`
 - Runtime cap policy: `10-25c=300s; 50c=600s; 75-200c=900s for Stage B retry collection`
