@@ -97,8 +97,8 @@ def main(argv: list[str] | None = None) -> int:
         return 0 if not conclusion["verdict"].startswith("HALT") else 2
 
     if args.summarize_existing_only:
-        smoke_result = load_stage_result(output_dir, "smoke")
-        stage_a_result = load_stage_result(output_dir, "stage_a")
+        smoke_result = load_stage_result(repo_root, output_dir, "smoke")
+        stage_a_result = load_stage_result(repo_root, output_dir, "stage_a")
         if args.summarize_stage == "smoke":
             smoke_result = summarize_existing_stage(repo_root, output_dir, "smoke", smoke_instances(), [1], int(args.smoke_eval_budget))
         elif args.summarize_stage == "stage_a":
@@ -364,7 +364,7 @@ def collect_existing_task_rows(repo_root: Path, stage_dir: Path) -> list[dict[st
     return rows
 
 
-def load_stage_result(output_dir: Path, stage: str) -> dict[str, Any] | None:
+def load_stage_result(repo_root: Path, output_dir: Path, stage: str) -> dict[str, Any] | None:
     stage_dir = output_dir / stage
     verdict_path = stage_dir / f"{stage}_verdict.json"
     raw_path = stage_dir / f"{stage}_raw_runs.csv"
@@ -771,14 +771,10 @@ def smoke_instances() -> list[tuple[str, str, float, int, int]]:
 
 
 def runtime_cap(size: int, category: str) -> float:
-    if size <= 25:
-        return 180.0
-    if size <= 75:
-        return 240.0 if category != "threeshift" else 300.0
-    if size <= 100:
+    if size <= 50:
         return 300.0
-    if size <= 150:
-        return 600.0 if category != "threeshift" else 900.0
+    if size <= 100:
+        return 600.0
     return 900.0
 
 
@@ -800,7 +796,14 @@ def load_existing_rows(path: Path) -> dict[tuple[str, str, int, str], dict[str, 
 
 def is_retryable_failure(row: dict[str, Any]) -> bool:
     status = str(row.get("status", ""))
-    return status.startswith("HALT_HARD_TIMEOUT") or status in {"HALT_WORKER_ERROR", "TIMEOUT", "ERROR", "SUBPROCESS_NONZERO", "JSON_PARSE_ERROR"}
+    return status.startswith("HALT_HARD_TIMEOUT") or status in {
+        "HALT_RUNTIME_UNDER_EVAL",
+        "HALT_WORKER_ERROR",
+        "TIMEOUT",
+        "ERROR",
+        "SUBPROCESS_NONZERO",
+        "JSON_PARSE_ERROR",
+    }
 
 
 def queue_row(task: dict[str, Any], action: str, prior_status: str) -> dict[str, Any]:

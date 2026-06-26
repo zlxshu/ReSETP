@@ -1,0 +1,49 @@
+{
+  "all_cv_share_75_200": 0.0,
+  "collection_failure_count": 4,
+  "collection_failures_sample": [
+    {
+      "expected": 414,
+      "reason": "missing_rows",
+      "rows": 69
+    },
+    {
+      "algorithm": "LNS",
+      "instance": "e2-vanilla-25c-01",
+      "reason": "status_not_ok",
+      "seed": 1,
+      "status": "HALT_RUNTIME_UNDER_EVAL"
+    },
+    {
+      "algorithm": "LNS",
+      "instance": "e2-vanilla-25c-01",
+      "reason": "status_not_ok",
+      "seed": 2,
+      "status": "HALT_RUNTIME_UNDER_EVAL"
+    },
+    {
+      "algorithm": "LNS",
+      "instance": "e2-vanilla-25c-01",
+      "reason": "status_not_ok",
+      "seed": 3,
+      "status": "HALT_RUNTIME_UNDER_EVAL"
+    }
+  ],
+  "elapsed_seconds": 4.762165,
+  "expected_rows": 414,
+  "lns_dominant_group_count": 0,
+  "lns_dominant_groups": [],
+  "mean_ev_route_share_75_200": 0.0,
+  "paired_count": 33,
+  "paired_counts": {
+    "alns": 5,
+    "lns": 10,
+    "tie": 18
+  },
+  "rows": 69,
+  "stage": "stage_b",
+  "stage_gate": "STAGE_HALT",
+  "verdict": "HALT_COLLECTION_COST",
+  "wilcoxon_lns_better": false,
+  "wins_ties": 23
+}
