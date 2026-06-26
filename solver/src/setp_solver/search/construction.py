@@ -45,19 +45,32 @@ def build_initial_solution(
     """
 
     limits = fleet_limits or FleetLimits()
-    # v2026-06-12: no hard fleet-count cap. Build the CV seed with the first
-    # feasible route budget starting at ceil(total_demand/Q), so vehicle fixed
-    # cost still pushes the construction toward fewer routes.
-    route_budget = _seed_route_budget(instance, prices, max_cv=max_cv if max_cv is not None else limits.cv)
-    solution = _build_cv_seed_with_retry(instance, prices, start_budget=route_budget, max_budget=_customer_count(instance))
-    if introduce_ev and carbon_profile is not None and limits.ev > 0:
-        if limits.cv < _count_routes(solution, "cv"):
+    # v2026-06-26: final solutions must respect CV/EV fleet caps, but the
+    # deterministic warm start is still built as a temporary CV packing before
+    # routes are electrified. When EVs are available, let that temporary seed
+    # use the total available fleet count; otherwise low CV caps can falsely
+    # block instances that become feasible after EV conversion.
+    effective_max_cv = max_cv if max_cv is not None else limits.cv
+    active_limits = replace(limits, cv=effective_max_cv)
+    seed_route_limit = _seed_route_limit(active_limits, introduce_ev=introduce_ev and carbon_profile is not None)
+    route_budget = _seed_route_budget(instance, prices, max_cv=seed_route_limit)
+    seed_max_budget = _customer_count(instance) if seed_route_limit >= UNBOUNDED_FLEET else max(1, int(seed_route_limit))
+    enforce_seed_fleet_count = seed_route_limit <= active_limits.cv
+    solution = _build_cv_seed_with_retry(
+        instance,
+        prices,
+        start_budget=route_budget,
+        max_budget=seed_max_budget,
+        enforce_fleet_count=enforce_seed_fleet_count,
+    )
+    if introduce_ev and carbon_profile is not None and active_limits.ev > 0:
+        if active_limits.cv < _count_routes(solution, "cv"):
             solution = introduce_ev_heavy_routes(
                 solution,
                 instance,
                 carbon_profile,
                 prices,
-                fleet_limits=limits,
+                fleet_limits=active_limits,
                 require_charging_signal=require_charging_signal,
             )
         else:
@@ -66,7 +79,7 @@ def build_initial_solution(
                 instance,
                 carbon_profile,
                 prices,
-                fleet_limits=limits,
+                fleet_limits=active_limits,
                 require_charging_signal=require_charging_signal,
             )
     return _inherit_dynamic_state(solution)
@@ -77,6 +90,7 @@ def _build_cv_seed(
     prices: PriceParameters | dict[str, float] | Any,
     *,
     max_cv: int,
+    enforce_fleet_count: bool = True,
 ) -> Solution:
     """Build the original deterministic CV-only seed."""
 
@@ -97,7 +111,8 @@ def _build_cv_seed(
         for idx, plan in enumerate(plans)
     ]
     solution = Solution(routes=routes)
-    violations = check_solution(solution, instance, prices)
+    check_instance = instance if enforce_fleet_count else replace(instance, num_cv=None, num_ev=None)
+    violations = check_solution(solution, check_instance, prices)
     if violations:
         details = "; ".join(f"{v.type}:{v.vehicle_id}:{v.location}:{v.detail}" for v in violations[:8])
         raise ValueError(f"Initial solution is infeasible: {details}")
@@ -110,18 +125,21 @@ def _build_cv_seed_with_retry(
     *,
     start_budget: int,
     max_budget: int,
+    enforce_fleet_count: bool = True,
 ) -> Solution:
-    """Build the first feasible CV seed without imposing a fleet cap.
+    """Build the first feasible CV seed within the supplied route budget.
 
-    v2026-06-12: N0 retry for the no-fleet-limit policy. ``start_budget`` is
-    the demand lower bound on vehicle count; the loop increases only when
-    capacity/time-window packing needs extra vehicles.
+    v2026-06-26: ``max_budget`` is the temporary seed ceiling. With finite
+    mixed-fleet caps this can be CV+EV, because route electrification happens
+    after the deterministic CV packing. Final fleet-count feasibility is still
+    checked on the returned solution. ``enforce_fleet_count=False`` is only
+    used for this temporary all-CV packing step before EV conversion.
     """
 
     last_error: Exception | None = None
     for budget in range(max(1, start_budget), max_budget + 1):
         try:
-            return _build_cv_seed(instance, prices, max_cv=budget)
+            return _build_cv_seed(instance, prices, max_cv=budget, enforce_fleet_count=enforce_fleet_count)
         except ValueError as exc:
             last_error = exc
     raise ValueError(f"Initial solution is infeasible even with {max_budget} routes: {last_error}")
@@ -444,6 +462,14 @@ def _seed_route_budget(instance: Instance, prices: PriceParameters | dict[str, f
     if max_cv >= UNBOUNDED_FLEET:
         return max(1, demand_bound)
     return max(1, min(max_cv, _customer_count(instance)))
+
+
+def _seed_route_limit(limits: FleetLimits, *, introduce_ev: bool) -> int:
+    if not introduce_ev or limits.ev <= 0:
+        return limits.cv
+    if limits.cv >= UNBOUNDED_FLEET or limits.ev >= UNBOUNDED_FLEET:
+        return UNBOUNDED_FLEET
+    return max(1, int(limits.cv) + int(limits.ev))
 
 
 def _customer_count(instance: Instance) -> int:

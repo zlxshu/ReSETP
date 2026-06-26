@@ -3,6 +3,7 @@ from __future__ import annotations
 import csv
 from dataclasses import dataclass, field
 from pathlib import Path
+import re
 from typing import Any
 
 
@@ -31,6 +32,11 @@ class Instance:
     diesel_l_per_meter: float | None = None
     ev_kwh_per_meter: float | None = None
     unit_distance_cost_per_meter: float | None = None
+    # v2026-06-26: structural fleet availability. When present, these are hard
+    # upper bounds on dispatched CV/EV routes; generated bundles keep them in
+    # instance metadata as num_cv/num_ev.
+    num_cv: int | None = None
+    num_ev: int | None = None
     _node_index: dict[str, int] = field(init=False, repr=False, compare=False)
 
     def __post_init__(self) -> None:
@@ -53,6 +59,8 @@ def load_instance(path: str | Path) -> Instance:
     instance_path = Path(path)
     nodes: list[Node] = []
     matrix_rows: list[list[float]] = []
+    num_cv: int | None = None
+    num_ev: int | None = None
     in_matrix = False
 
     with instance_path.open("r", encoding="utf-8") as handle:
@@ -62,6 +70,12 @@ def load_instance(path: str | Path) -> Instance:
                 continue
             if line.startswith("DistanceMatrix"):
                 in_matrix = True
+                continue
+            if line.startswith("m "):
+                if "numPetrolVeh" in line:
+                    num_cv = _slash_int(line)
+                elif "numElectroVeh" in line:
+                    num_ev = _slash_int(line)
                 continue
             if in_matrix:
                 matrix_rows.append([float(value) for value in line.split()])
@@ -91,7 +105,12 @@ def load_instance(path: str | Path) -> Instance:
         raise ValueError(f"No nodes found in instance file: {instance_path}")
     if len(matrix_rows) != len(nodes) or any(len(row) != len(nodes) for row in matrix_rows):
         raise ValueError("Distance matrix shape does not match node count")
-    return Instance(nodes=nodes, distance_matrix=matrix_rows)
+    return Instance(nodes=nodes, distance_matrix=matrix_rows, num_cv=num_cv, num_ev=num_ev)
+
+
+def _slash_int(line: str) -> int | None:
+    match = re.search(r"/\s*([0-9]+)\s*/", line)
+    return int(match.group(1)) if match else None
 
 
 def load_carbon_profile(path: str | Path) -> list[dict[str, Any]]:

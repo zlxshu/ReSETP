@@ -16,6 +16,7 @@ from typing import Any
 import numpy as np
 
 from ..instance_loader import Instance, Node, load_carbon_profile
+from .fleet import UNBOUNDED_FLEET, infer_fleet_limits
 
 
 @dataclass(frozen=True)
@@ -30,6 +31,15 @@ def load_search_bundle(bundle_dir: str | Path) -> SearchBundle:
 
     path = Path(bundle_dir)
     data = json.loads((path / "instance.json").read_text(encoding="utf-8"))
+    metadata = data.get("metadata", {})
+    num_cv = _optional_int(metadata.get("num_cv"))
+    num_ev = _optional_int(metadata.get("num_ev"))
+    if num_cv is None or num_ev is None:
+        limits = infer_fleet_limits(path)
+        if num_cv is None and limits.cv < UNBOUNDED_FLEET:
+            num_cv = limits.cv
+        if num_ev is None and limits.ev < UNBOUNDED_FLEET:
+            num_ev = limits.ev
     raw_nodes = data["nodes"]
     customer_count = sum(1 for row in raw_nodes if str(row.get("node_type", "")).lower() == "c")
     nodes = [
@@ -53,13 +63,28 @@ def load_search_bundle(bundle_dir: str | Path) -> SearchBundle:
     ]
     matrix = np.load(path / "distance_matrix.npy").astype(float).tolist()
     carbon_profile = load_carbon_profile(path / "carbon_profile.csv")
-    return SearchBundle(path, Instance(nodes=nodes, distance_matrix=matrix), carbon_profile)
+    return SearchBundle(
+        path,
+        Instance(
+            nodes=nodes,
+            distance_matrix=matrix,
+            num_cv=num_cv,
+            num_ev=num_ev,
+        ),
+        carbon_profile,
+    )
 
 
 def _optional_float(value: object) -> float | None:
     if value is None:
         return None
     return float(value)
+
+
+def _optional_int(value: object) -> int | None:
+    if value is None or value == "":
+        return None
+    return int(float(value))
 
 
 def _station_chargers(row: dict[str, object], customer_count: int) -> int | None:

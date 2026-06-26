@@ -56,16 +56,90 @@ class FleetProbeDiagnostic:
 
 
 def infer_fleet_limits(bundle_dir: str | Path) -> FleetLimits:
-    """Return the current unbounded fleet policy for the generated bundle.
+    """Return structural CV/EV fleet limits for the generated bundle.
 
-    v2026-06-12: N0 retry follows the clarified model policy: generated
-    bundles do not impose m^g/m^e hard caps. Existing manifest counts are
-    ignored as feasibility limits; fixed vehicle cost remains the mechanism
-    that encourages fewer routes.
+    v2026-06-26: num_cv/num_ev are restored as hard upper bounds when a
+    generated bundle or exported EVRPTW-MF text file carries them. Older
+    ad-hoc fixtures without fleet metadata fall back to unbounded limits.
     """
 
-    _ = bundle_dir
+    path = Path(bundle_dir)
+    limits = _fleet_limits_from_bundle(path)
+    if limits is not None:
+        return limits
     return FleetLimits()
+
+
+def _fleet_limits_from_bundle(path: Path) -> FleetLimits | None:
+    if path.is_file():
+        return _fleet_limits_from_text(path)
+
+    for json_name in ("instance.json", "scenario_manifest.json"):
+        json_path = path / json_name
+        if not json_path.exists():
+            continue
+        try:
+            data = json.loads(json_path.read_text(encoding="utf-8"))
+        except json.JSONDecodeError:
+            continue
+        flattened = _flatten_dict(data)
+        cv = _optional_int(_first_present(flattened, "metadata.num_cv", "config.num_cv", "num_cv"))
+        ev = _optional_int(_first_present(flattened, "metadata.num_ev", "config.num_ev", "num_ev"))
+        if cv is not None or ev is not None:
+            return FleetLimits(
+                cv=cv if cv is not None else UNBOUNDED_FLEET,
+                ev=ev if ev is not None else UNBOUNDED_FLEET,
+                source=f"{json_name}: num_cv/num_ev hard fleet caps",
+            )
+
+    for text_name in ("instance_evrptwmf.txt", "instance.txt"):
+        text_path = path / text_name
+        if text_path.exists():
+            limits = _fleet_limits_from_text(text_path)
+            if limits is not None:
+                return limits
+    return None
+
+
+def _fleet_limits_from_text(path: Path) -> FleetLimits | None:
+    cv: int | None = None
+    ev: int | None = None
+    try:
+        lines = path.read_text(encoding="utf-8").splitlines()
+    except OSError:
+        return None
+    for line in lines:
+        if "numPetrolVeh" in line:
+            cv = _slash_int(line)
+        elif "numElectroVeh" in line:
+            ev = _slash_int(line)
+    if cv is None and ev is None:
+        return None
+    return FleetLimits(
+        cv=cv if cv is not None else UNBOUNDED_FLEET,
+        ev=ev if ev is not None else UNBOUNDED_FLEET,
+        source=f"{path.name}: numPetrolVeh/numElectroVeh hard fleet caps",
+    )
+
+
+def _optional_int(value: Any) -> int | None:
+    if value is None or value == "":
+        return None
+    return int(float(value))
+
+
+def _first_present(data: dict[str, Any], *keys: str) -> Any:
+    for key in keys:
+        if key in data and data[key] not in {None, ""}:
+            return data[key]
+    return None
+
+
+def _slash_int(line: str) -> int | None:
+    import re
+
+    match = re.search(r"/\s*([0-9]+)\s*/", line)
+    return int(match.group(1)) if match else None
 
 
 def route_ev_energy_summary(
@@ -101,14 +175,15 @@ def vehicle_type_semantics_report() -> VehicleTypeSemantics:
     """
 
     evidence = (
-        "paper_main.tex:190 defines K^tau, K^{g,tau}, K^{e,tau}, and callable vehicles by depot.",
-        "paper_main.tex:218 defines z_k^tau as the vehicle dispatch variable.",
+        "paper_main.tex defines K^tau, K^{g,tau}, K^{e,tau}, and callable vehicles by depot.",
+        "paper_main.tex defines z_k^tau as the vehicle dispatch variable.",
+        "paper_main.tex defines m^g/m^e as hard upper bounds on dispatched CV/EV counts.",
         "paper_main.tex:262 and 282-285 split emissions/costs by CV and EV terms.",
         "paper_main.tex:541 says the algorithm receives available vehicles and outputs routes/charging.",
         "paper_main.tex:665 and 673 require reporting vehicle assignment/type split and carbon effects.",
     )
     return VehicleTypeSemantics(
-        "车型是可用车队内的派遣/车型选择问题, 不是客户固定指派。",
+        "车型是有限可用车队内的派遣/车型选择问题, 不是客户固定指派。",
         evidence,
     )
 

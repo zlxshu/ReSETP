@@ -102,7 +102,7 @@ def check_solution(
     violations.extend(_check_structure(solution, node_lookup))
     violations.extend(_check_dynamic_context(solution, dynamic_context))
     violations.extend(_check_customer_service(solution, node_lookup))
-    violations.extend(_check_vehicle_count(solution))
+    violations.extend(_check_vehicle_count(solution, instance))
     violations.extend(_check_station_capacity(solution, node_lookup, instance))
 
     for route in solution.routes:
@@ -186,12 +186,32 @@ def _check_customer_service(solution: Solution, node_lookup: dict[str, Node]) ->
     return violations
 
 
-def _check_vehicle_count(solution: Solution) -> list[Violation]:
-    # v2026-06-12: fleet count is no longer a hard feasibility cap. Vehicle
-    # usage is discouraged by vehicle_fixed_cost in cost.py, so FLEET_SIZE is
-    # kept as a stable taxonomy name but intentionally emits no violation.
-    _ = solution
-    return []
+def _check_vehicle_count(solution: Solution, instance: Instance) -> list[Violation]:
+    """Enforce structural CV/EV fleet availability when the instance provides it."""
+
+    violations: list[Violation] = []
+    counts = Counter(route.vehicle_type.lower() for route in solution.routes)
+    max_cv = getattr(instance, "num_cv", None)
+    max_ev = getattr(instance, "num_ev", None)
+    if max_cv is not None and counts["cv"] > int(max_cv):
+        violations.append(
+            Violation(
+                FLEET_SIZE,
+                "",
+                "cv",
+                f"CV routes {counts['cv']} exceed available fuel vehicles {int(max_cv)}",
+            )
+        )
+    if max_ev is not None and counts["ev"] > int(max_ev):
+        violations.append(
+            Violation(
+                FLEET_SIZE,
+                "",
+                "ev",
+                f"EV routes {counts['ev']} exceed available electric vehicles {int(max_ev)}",
+            )
+        )
+    return violations
 
 
 def _check_station_capacity(solution: Solution, node_lookup: dict[str, Node], instance: Instance) -> list[Violation]:

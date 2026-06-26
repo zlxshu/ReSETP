@@ -1,6 +1,8 @@
 from __future__ import annotations
 
+import json
 from pathlib import Path
+import tempfile
 import unittest
 from unittest.mock import patch
 
@@ -107,7 +109,7 @@ class SearchGateTests(unittest.TestCase):
         ]
         self.assertEqual(violations, [])
 
-    # v2026-06-12: H0 verifies fleet count is unbounded and reports whether routes need charging.
+    # v2026-06-12: H0 verifies fleet metadata and reports charge candidates.
     def test_h0_fleet_diagnostic_finds_ev_capacity_and_charge_candidates(self) -> None:
         bundle = load_search_bundle(FIXTURE_DIR)
         cv_seed = build_initial_solution(bundle.instance, bundle.carbon_profile, introduce_ev=False)
@@ -115,7 +117,7 @@ class SearchGateTests(unittest.TestCase):
         limits = infer_fleet_limits(FIXTURE_DIR)
         diagnostic = fleet_probe_diagnostic(FIXTURE_DIR, cv_seed, bundle.instance)
 
-        self.assertEqual((limits.cv, limits.ev), (UNBOUNDED_FLEET, UNBOUNDED_FLEET))
+        self.assertEqual((limits.cv, limits.ev), (10, 10))
         self.assertEqual(diagnostic.customer_count, 25)
         self.assertEqual(diagnostic.battery_kwh, 280.0)
         self.assertEqual(diagnostic.charging_candidate_count, 0)
@@ -124,14 +126,27 @@ class SearchGateTests(unittest.TestCase):
         self.assertEqual(legacy.battery_kwh, 80.0)
         self.assertGreaterEqual(legacy.charging_candidate_count, 1)
 
+    def test_fleet_limits_read_hard_caps_from_instance_metadata(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            bundle_dir = Path(tmp)
+            (bundle_dir / "instance.json").write_text(
+                json.dumps({"metadata": {"num_cv": 4, "num_ev": 3}}, ensure_ascii=False),
+                encoding="utf-8",
+            )
+
+            limits = infer_fleet_limits(bundle_dir)
+
+        self.assertEqual((limits.cv, limits.ev), (4, 3))
+        self.assertIn("hard fleet caps", limits.source)
+
     # v2026-06-11: H1 records paper evidence that type is dispatch/choice, not customer-fixed.
     def test_h1_vehicle_type_semantics_report_has_paper_evidence(self) -> None:
         report = vehicle_type_semantics_report()
 
         self.assertIn("派遣", report.conclusion)
-        self.assertTrue(any(":190" in line for line in report.evidence_lines))
-        self.assertTrue(any(":218" in line for line in report.evidence_lines))
-        self.assertTrue(any(":665" in line for line in report.evidence_lines))
+        self.assertTrue(any("K^tau" in line for line in report.evidence_lines))
+        self.assertTrue(any("z_k^tau" in line for line in report.evidence_lines))
+        self.assertTrue(any("m^g/m^e" in line for line in report.evidence_lines))
 
     # v2026-06-11: G3 seed solution must be feasible on the real carbon-aligned fixture.
     def test_initial_solution_feasible_and_penalty_preserves_feasible_objective(self) -> None:

@@ -95,6 +95,22 @@ class CheckSolutionTests(unittest.TestCase):
         self.assertIn("CUSTOMER_COVERAGE", _types(violations))
         self.assertTrue(any(v.location == "C1" and "served 2 times" in v.detail for v in violations))
 
+    def test_detects_fleet_size_cap_violation(self) -> None:
+        base = _instance()
+        instance = Instance(nodes=base.nodes, distance_matrix=base.distance_matrix, num_cv=1, num_ev=1)
+        solution = Solution(
+            routes=[
+                Route("CV1", "cv", "D0", ["D0", "C1", "D0"]),
+                Route("EV1", "ev", "D0", ["D0", "C2", "D0"]),
+                Route("EV2", "ev", "D0", ["D0", "F1", "D0"]),
+            ]
+        )
+
+        violations = check_solution(solution, instance)
+
+        self.assertIn("FLEET_SIZE", _types(violations))
+        self.assertTrue(any(v.location == "ev" and "exceed available electric vehicles" in v.detail for v in violations))
+
     # v2026-06-12: W2b rolling stages can start from inherited vehicle positions.
     def test_dynamic_context_allows_open_start_from_vehicle_position(self) -> None:
         solution = Solution(

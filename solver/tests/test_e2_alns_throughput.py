@@ -24,6 +24,7 @@ from setp_solver.search.winner_operators import (
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 SMALL_BUNDLE = REPO_ROOT / "models/data_bundle/generated_instances/e2_benchmark/vanilla/e2-vanilla-10c-01"
+VERIFY_BUNDLE = REPO_ROOT / "models/data_bundle/generated_instances/verify_20251113"
 
 
 class E2AlnsThroughputTest(unittest.TestCase):
@@ -40,7 +41,7 @@ class E2AlnsThroughputTest(unittest.TestCase):
         self.assertEqual(throughput["SETP_ALNS_CRUSH_TIMING_LEDGER"], "1")
 
     def test_route_cost_cache_matches_uncached_route_cost(self) -> None:
-        bundle = load_search_bundle(SMALL_BUNDLE)
+        bundle = load_search_bundle(VERIFY_BUNDLE)
         solution = make_shared_initial_solution(bundle)
         route = solution.routes[0]
         context = EvaluationContext(bundle.instance, bundle.carbon_profile)
@@ -61,11 +62,14 @@ class E2AlnsThroughputTest(unittest.TestCase):
         self.assertAlmostEqual(cached, cached_again)
 
     def test_timeout_row_returns_finite_checkpoint_incumbent(self) -> None:
-        bundle = load_search_bundle(SMALL_BUNDLE)
+        bundle = load_search_bundle(VERIFY_BUNDLE)
         warm = make_shared_initial_solution(bundle)
         warm_cost = float(evaluate(warm, bundle.instance, bundle.carbon_profile, DEFAULT_PRICES)["total_cost"])
         with tempfile.TemporaryDirectory() as tmp:
             task = _task(REPO_ROOT, Path(tmp), "vanilla", "e2-vanilla-10c-01", "LNS", 1, 32, 0.001)
+            task["bundle_dir"] = str(VERIFY_BUNDLE.relative_to(REPO_ROOT))
+            task["category"] = "fixture"
+            task["instance"] = "verify_20251113"
             _write_checkpoint(Path(task["checkpoint_path"]), warm, best_cost=warm_cost, best_obj=warm_cost, eval_count=0, elapsed_seconds=0.0, operator="shared_warm_start")
             row = _timeout_row(task, elapsed=1.0, stdout="", stderr="")
 
@@ -76,8 +80,8 @@ class E2AlnsThroughputTest(unittest.TestCase):
     def test_e2_alns_throughput_same_seed_small_budget_is_deterministic(self) -> None:
         config = WinnerKernelConfig(seed=11, eval_budget=16, max_runtime_seconds=120.0)
 
-        first = run_e2_alns_throughput(SMALL_BUNDLE, config=config)
-        second = run_e2_alns_throughput(SMALL_BUNDLE, config=config)
+        first = run_e2_alns_throughput(VERIFY_BUNDLE, config=config)
+        second = run_e2_alns_throughput(VERIFY_BUNDLE, config=config)
 
         self.assertEqual(first["violation_count"], 0)
         self.assertEqual(second["violation_count"], 0)
@@ -89,7 +93,11 @@ class E2AlnsThroughputTest(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             result = run_smoke(REPO_ROOT, Path(tmp))
 
-        self.assertEqual(result["gate"], "SMOKE_OK")
+        # v2026-06-26: restoring hard fleet caps makes the legacy E2-10c smoke
+        # fixture infeasible under the current route=vehicle semantics. The
+        # runner must report a HALT instead of pretending the old unbounded
+        # smoke still certifies throughput readiness.
+        self.assertEqual(result["gate"], "HALT_SMOKE")
 
 
 if __name__ == "__main__":

@@ -32,6 +32,7 @@ from .charging import repair_route_charging
 from .construction import build_initial_solution
 from .evaluation import BIG_M, EvalBudget, EvaluationContext, model_cost, record_repair_delta, score_candidate, score_reference
 from .feasible_repair import repair_removed_customers
+from .fleet import FleetLimits, UNBOUNDED_FLEET, infer_fleet_limits
 from .local_search import improve_solution_locally
 from .repair_scoring import route_model_cost_delta
 from .scout import scout_reference_algorithms
@@ -143,10 +144,12 @@ def make_shared_initial_solution(
 
     # v2026-06-12: W1a aligns all candidates with ALNS-Wouda's construction:
     # nearest depot assignment, regret-2 insertion, and EV charging repair.
+    limits = infer_fleet_limits(bundle.bundle_dir)
     solution = build_initial_solution(
         bundle.instance,
         bundle.carbon_profile,
         prices,
+        fleet_limits=limits,
         introduce_ev=True,
         require_charging_signal=False,
     )
@@ -226,6 +229,18 @@ def random_key_to_solution(
 
     solution = Solution(routes=routes, charging_actions=actions)
     if check_solution(solution, instance, prices):
+        try:
+            fallback = build_initial_solution(
+                instance,
+                carbon_profile,
+                prices,
+                fleet_limits=_fleet_limits_from_instance(instance),
+                require_charging_signal=False,
+            )
+            if not check_solution(fallback, instance, prices):
+                return fallback
+        except ValueError:
+            pass
         return _all_cv_solution(ordered, instance, prices)
     return solution
 
@@ -1839,6 +1854,14 @@ def _all_cv_solution(
             routes.append(Route(f"CV{idx}", "cv", depot_id, [depot_id, *customer_ids, depot_id]))
             idx += 1
     return Solution(routes=routes)
+
+
+def _fleet_limits_from_instance(instance: Instance) -> FleetLimits:
+    return FleetLimits(
+        cv=int(instance.num_cv) if instance.num_cv is not None else UNBOUNDED_FLEET,
+        ev=int(instance.num_ev) if instance.num_ev is not None else UNBOUNDED_FLEET,
+        source="instance.num_cv/num_ev hard fleet caps",
+    )
 
 
 def _route_customer_plan_feasible(
