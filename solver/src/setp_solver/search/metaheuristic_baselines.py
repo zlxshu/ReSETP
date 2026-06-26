@@ -10,19 +10,23 @@ layer; this module only owns the metaheuristic search shells.
 
 from __future__ import annotations
 
+from contextlib import contextmanager
 from dataclasses import asdict, dataclass, field, replace
+import json
 import math
+import os
 from pathlib import Path
 import random
 import time
 from typing import Any, Callable
 
 from ..check import check_solution
-from ..cost import evaluate
+from ..cost import evaluate, route_node_schedule
 from ..instance_loader import Instance, Node
 from ..prices import DEFAULT_PRICES
 from ..solution import ChargingAction, CrossSiteService, Route, Solution
 from .bundle import SearchBundle, load_search_bundle
+from .charging import repair_route_charging
 from .candidates import (
     _OperatorOutcome,
     _apply_strong_alns_destroy_repair,
@@ -32,7 +36,6 @@ from .candidates import (
     _route_customers,
     _route_with_customers,
     make_shared_initial_solution,
-    random_key_to_solution,
     solution_signature_hash,
 )
 from .evaluation import EvalBudget, EvaluationContext, model_cost, score_candidate, score_reference
@@ -114,6 +117,24 @@ class _SearchSession:
         )
         self.shared_seed_cost = model_cost(initial_solution, self.context)
         seed_obj = score_reference(initial_solution, self.context)
+        self.customer_ids = _all_customer_ids(bundle.instance)
+        self.customer_set = set(self.customer_ids)
+        self.node_lookup = {node.node_id: node for node in bundle.instance.nodes}
+        self.depots = sorted((node for node in bundle.instance.nodes if node.node_type.lower() == "d"), key=lambda node: node.node_id)
+        self.depots_by_customer = {
+            customer_id: tuple(
+                depot.node_id
+                for depot in sorted(
+                    self.depots,
+                    key=lambda depot, cid=customer_id: (float(bundle.instance.distance(depot.node_id, cid)), depot.node_id),
+                )
+            )
+            for customer_id in self.customer_ids
+        }
+        self.route_feasible_cache: dict[tuple[str, tuple[str, ...]], bool] = {}
+        self.route_distance_cache: dict[tuple[str, tuple[str, ...]], float] = {}
+        self.decode_cache: dict[tuple[tuple[str, ...], tuple[tuple[str, float], ...], float], Solution] = {}
+        self.reference_objective_cache: dict[str, float] = {}
         self.current = _ScoredSolution(
             solution=initial_solution,
             objective=float(seed_obj),
@@ -125,12 +146,14 @@ class _SearchSession:
         self.history: list[dict[str, Any]] = [
             {
                 "eval": 0,
+                "time_seconds": 0.0,
                 "best_cost": self.best.cost,
                 "current_cost": self.current.cost,
                 "operator": "shared_warm_start",
             }
         ]
         self.operator_counts: dict[str, int] = {}
+        self.reference_objective_cache[self.current.signature] = float(seed_obj)
 
     @property
     def evals(self) -> int:
@@ -150,6 +173,17 @@ class _SearchSession:
 
     def count_operator(self, name: str) -> None:
         self.operator_counts[name] = self.operator_counts.get(name, 0) + 1
+
+    def reference_objective(self, solution: Solution) -> float:
+        signature = solution_signature_hash(solution)
+        cached = self.reference_objective_cache.get(signature)
+        if cached is not None:
+            return cached
+        objective = float(score_reference(solution, self.context))
+        if len(self.reference_objective_cache) > 4096:
+            self.reference_objective_cache.clear()
+        self.reference_objective_cache[signature] = objective
+        return objective
 
     def score(self, solution: Solution, *, operator: str) -> _ScoredSolution | None:
         if not self.can_score():
@@ -172,11 +206,13 @@ class _SearchSession:
             self.history.append(
                 {
                     "eval": self.evals,
+                    "time_seconds": time.perf_counter() - self.started,
                     "best_cost": cost,
                     "current_cost": self.current.cost if self.current.feasible else math.inf,
                     "operator": operator,
                 }
             )
+            _maybe_write_e2_checkpoint(scored.solution, cost, objective, self.evals, time.perf_counter() - self.started, operator)
         return scored
 
     def accept_if_better(self, scored: _ScoredSolution | None) -> bool:
@@ -234,6 +270,36 @@ class _SearchSession:
             operator_counts=dict(self.operator_counts),
             parameter_notes=parameter_notes or {},
         )
+
+
+def _maybe_write_e2_checkpoint(
+    solution: Solution,
+    best_cost: float,
+    best_obj: float,
+    eval_count: int,
+    elapsed_seconds: float,
+    operator: str,
+) -> None:
+    path_text = os.environ.get("SETP_E2_ALNS_CHECKPOINT_PATH", "").strip()
+    if not path_text:
+        return
+    path = Path(path_text)
+    try:
+        path.parent.mkdir(parents=True, exist_ok=True)
+        payload = {
+            "schema_version": "setp-e2-checkpoint.v1",
+            "eval": int(eval_count),
+            "time_seconds": float(elapsed_seconds),
+            "best_cost": float(best_cost),
+            "best_obj": float(best_obj),
+            "operator": str(operator),
+            "solution": asdict(solution),
+        }
+        tmp = path.with_suffix(path.suffix + ".tmp")
+        tmp.write_text(json.dumps(payload, ensure_ascii=False), encoding="utf-8")
+        os.replace(tmp, path)
+    except Exception:
+        return
 
 
 def run_metaheuristic_baseline(
@@ -442,6 +508,7 @@ def _run_aco(session: _SearchSession) -> BaselineRunResult:
     params = {"m": 20, "iter": 100, "r0": 0.1, "rho0": 0.8, "rho_min": 0.01, "alpha": 1.0, "beta": 2.0, "Q": 1.0}
     customers = _all_customer_ids(session.context.instance)
     pheromone = {(a, b): 1.0 for a in customers for b in customers if a != b}
+    transition_base = _aco_transition_base(customers, session, params)
     rho = float(params["rho0"])
     iteration = 0
     while session.can_score():
@@ -451,7 +518,7 @@ def _run_aco(session: _SearchSession) -> BaselineRunResult:
         for _ in range(int(params["m"])):
             if not session.can_score():
                 break
-            order = _aco_construct_order(customers, pheromone, session, params)
+            order = _aco_construct_order(customers, pheromone, transition_base, session, params)
             candidate = _order_to_solution(order, session)
             candidate = _aco_vnd(candidate, session)
             scored = session.score(candidate, operator="aco_ant_vnd")
@@ -561,9 +628,10 @@ def _run_gwo(session: _SearchSession) -> BaselineRunResult:
 
 
 def _run_iwd(session: _SearchSession) -> BaselineRunResult:
-    params = {"drops": 20, "soil0": 1000.0, "velocity0": 100.0, "iter": 100, "lns": "Shaw+min-increment", "acceptance": "SA-Metropolis"}
+    params = {"drops": 20, "soil0": 1000.0, "velocity0": 100.0, "iter": 100, "lns": "Shaw+min-increment on iteration-best", "acceptance": "SA-Metropolis"}
     customers = _all_customer_ids(session.context.instance)
     soil = {(a, b): float(params["soil0"]) for a in customers for b in customers if a != b}
+    transition_base = _iwd_transition_base(customers, session)
     velocity = {idx: float(params["velocity0"]) for idx in range(int(params["drops"]))}
     temperature = -0.05 * abs(session.current.objective) / math.log(0.5)
     iteration = 0
@@ -573,12 +641,9 @@ def _run_iwd(session: _SearchSession) -> BaselineRunResult:
         for drop_idx in range(int(params["drops"])):
             if not session.can_score():
                 break
-            order = _iwd_construct_order(customers, soil, session)
+            order = _iwd_construct_order(customers, soil, transition_base, session)
             candidate = _order_to_solution(order, session)
-            outcome = _alns_neighbor(session, candidate, "shaw_related_removal", "greedy_insert_repair")
-            if outcome.produced and outcome.feasible:
-                candidate = outcome.solution
-            scored = session.score(candidate, operator="iwd_construct_lns_sa")
+            scored = session.score(candidate, operator="iwd_construct_sa")
             if scored is None:
                 break
             session.accept_metropolis(scored, temperature)
@@ -587,6 +652,12 @@ def _run_iwd(session: _SearchSession) -> BaselineRunResult:
             velocity[drop_idx] = velocity[drop_idx] + 1.0 / max(1.0, abs(scored.objective))
             _iwd_update_local_soil(order, soil, scored.objective)
         if best_this_iter is not None:
+            outcome = _alns_neighbor(session, best_this_iter.solution, "shaw_related_removal", "greedy_insert_repair") if session.can_score() else _OperatorOutcome(best_this_iter.solution, produced=False, feasible=False, changed=False)
+            if outcome.produced and outcome.feasible:
+                polished = session.score(outcome.solution, operator="iwd_iteration_best_lns")
+                session.accept_metropolis(polished, temperature)
+                if polished is not None and polished.feasible and polished.objective < best_this_iter.objective:
+                    best_this_iter = polished
             _iwd_update_global_soil(_solution_order(best_this_iter.solution, session.context.instance), soil, best_this_iter.objective)
         temperature *= 0.95
         if iteration >= int(params["iter"]):
@@ -636,15 +707,18 @@ def _order_to_solution(
     type_hints: dict[str, float] | None = None,
     ev_threshold: float = 0.82,
 ) -> Solution:
-    ordered = _complete_order(order, session.context.instance)
-    width = max(1, len(ordered) - 1)
+    ordered = _complete_order_for_session(order, session)
     hints = type_hints or _route_type_hints(session.current.solution, session.context.instance)
-    chromosome = {
-        "customer_keys": {customer_id: idx / width for idx, customer_id in enumerate(ordered)},
-        "vehicle_type_keys": {customer_id: float(hints.get(customer_id, 0.05)) for customer_id in ordered},
-        "ev_threshold": float(ev_threshold),
-    }
-    return random_key_to_solution(chromosome, session.context.instance, session.context.carbon_profile, DEFAULT_PRICES)
+    type_key = tuple((customer_id, float(hints.get(customer_id, 0.05))) for customer_id in ordered)
+    cache_key = (tuple(ordered), type_key, float(ev_threshold))
+    cached = session.decode_cache.get(cache_key)
+    if cached is not None:
+        return cached
+    decoded = _decode_order_like_random_key(ordered, session, dict(type_key), ev_threshold=float(ev_threshold))
+    if len(session.decode_cache) > 2048:
+        session.decode_cache.clear()
+    session.decode_cache[cache_key] = decoded
+    return decoded
 
 
 def _complete_order(order: list[str], instance: Instance) -> list[str]:
@@ -655,12 +729,131 @@ def _complete_order(order: list[str], instance: Instance) -> list[str]:
     return [*complete, *missing]
 
 
+def _complete_order_for_session(order: list[str], session: _SearchSession) -> list[str]:
+    seen: set[str] = set()
+    complete = [customer_id for customer_id in order if customer_id in session.customer_set and not (customer_id in seen or seen.add(customer_id))]
+    missing = [customer_id for customer_id in session.customer_ids if customer_id not in seen]
+    return [*complete, *missing]
+
+
+def _decode_order_like_random_key(ordered: list[str], session: _SearchSession, type_keys: dict[str, float], *, ev_threshold: float) -> Solution:
+    plans: dict[str, list[list[str]]] = {depot.node_id: [] for depot in session.depots}
+    for customer_id in ordered:
+        _append_customer_to_cached_plan(customer_id, plans, session)
+
+    routes: list[Route] = []
+    actions: list[ChargingAction] = []
+    next_cv = 1
+    next_ev = 1
+    for depot_id, depot_plans in sorted(plans.items()):
+        for customer_ids in depot_plans:
+            avg_type_key = sum(type_keys.get(customer_id, 0.0) for customer_id in customer_ids) / max(1, len(customer_ids))
+            if avg_type_key >= ev_threshold:
+                route = Route(f"EV{next_ev}", "ev", depot_id, [depot_id, *customer_ids, depot_id])
+                try:
+                    repaired, route_actions = repair_route_charging(route, session.context.instance, session.context.carbon_profile, DEFAULT_PRICES)
+                    candidate = Solution(routes=[*routes, repaired], charging_actions=[*actions, *route_actions])
+                    if not check_solution(candidate, session.context.instance, DEFAULT_PRICES):
+                        routes.append(repaired)
+                        actions.extend(route_actions)
+                        next_ev += 1
+                        continue
+                except ValueError:
+                    pass
+            routes.append(Route(f"CV{next_cv}", "cv", depot_id, [depot_id, *customer_ids, depot_id]))
+            next_cv += 1
+
+    solution = Solution(routes=routes, charging_actions=actions)
+    if check_solution(solution, session.context.instance, DEFAULT_PRICES):
+        return _all_cv_solution_for_session(ordered, session)
+    return solution
+
+
+def _append_customer_to_cached_plan(customer_id: str, plans: dict[str, list[list[str]]], session: _SearchSession) -> None:
+    best: tuple[float, str, int | None] | None = None
+    for depot_id in session.depots_by_customer[customer_id]:
+        depot_plans = plans[depot_id]
+        for idx, customer_ids in enumerate(depot_plans):
+            candidate = (*customer_ids, customer_id)
+            if _route_customer_plan_feasible_cached(depot_id, candidate, session):
+                distance = _route_distance_cached(depot_id, candidate, session)
+                key = (distance, depot_id, idx)
+                if best is None or key < best:
+                    best = key
+        single = (customer_id,)
+        if _route_customer_plan_feasible_cached(depot_id, single, session):
+            key = (_route_distance_cached(depot_id, single, session), depot_id, None)
+            if best is None or key < best:
+                best = key
+    if best is None:
+        depot_id = session.depots_by_customer[customer_id][0]
+        plans[depot_id].append([customer_id])
+        return
+    _, depot_id, route_idx = best
+    if route_idx is None:
+        plans[depot_id].append([customer_id])
+    else:
+        plans[depot_id][route_idx].append(customer_id)
+
+
+def _route_customer_plan_feasible_cached(depot_id: str, customer_ids: tuple[str, ...], session: _SearchSession) -> bool:
+    key = (depot_id, customer_ids)
+    cached = session.route_feasible_cache.get(key)
+    if cached is not None:
+        return cached
+    node_lookup = session.node_lookup
+    feasible = sum(float(node_lookup[customer_id].demand) for customer_id in customer_ids) <= _price(DEFAULT_PRICES, "Q_capacity") + 1e-9
+    if feasible:
+        route = Route("TMP", "cv", depot_id, [depot_id, *customer_ids, depot_id])
+        for row in route_node_schedule(route, session.context.instance, DEFAULT_PRICES):
+            if row.t_start > float(node_lookup[row.node_id].due_time) + 1e-9:
+                feasible = False
+                break
+    if len(session.route_feasible_cache) > 100_000:
+        session.route_feasible_cache.clear()
+    session.route_feasible_cache[key] = feasible
+    return feasible
+
+
+def _route_distance_cached(depot_id: str, customer_ids: tuple[str, ...], session: _SearchSession) -> float:
+    key = (depot_id, customer_ids)
+    cached = session.route_distance_cache.get(key)
+    if cached is not None:
+        return cached
+    sequence = (depot_id, *customer_ids, depot_id)
+    index = session.context.instance.node_index
+    distance = sum(float(session.context.instance.distance_matrix[index[a]][index[b]]) for a, b in zip(sequence, sequence[1:]))
+    if len(session.route_distance_cache) > 100_000:
+        session.route_distance_cache.clear()
+    session.route_distance_cache[key] = distance
+    return distance
+
+
+def _all_cv_solution_for_session(ordered: list[str], session: _SearchSession) -> Solution:
+    plans: dict[str, list[list[str]]] = {depot.node_id: [] for depot in session.depots}
+    for customer_id in ordered:
+        _append_customer_to_cached_plan(customer_id, plans, session)
+    routes: list[Route] = []
+    idx = 1
+    for depot_id, depot_plans in sorted(plans.items()):
+        for customer_ids in depot_plans:
+            routes.append(Route(f"CV{idx}", "cv", depot_id, [depot_id, *customer_ids, depot_id]))
+            idx += 1
+    return Solution(routes=routes)
+
+
 def _distance(instance: Instance, a: str, b: str) -> float:
     return float(instance.distance(a, b))
 
 
 def _node_lookup(instance: Instance) -> dict[str, Node]:
     return {node.node_id: node for node in instance.nodes}
+
+
+def _price(prices: Any, name: str) -> float:
+    if isinstance(prices, dict):
+        return float(prices[name])
+    return float(getattr(prices, name))
 
 
 def _apply_order_move(order: list[str], rng: random.Random, move: str) -> list[str]:
@@ -859,7 +1052,7 @@ def _vns_shake(order: list[str], rng: random.Random, iteration: int) -> list[str
 
 def _vns_local_search(session: _SearchSession, solution: Solution) -> Solution:
     best = solution
-    best_obj = float(score_reference(best, session.context))
+    best_obj = session.reference_objective(best)
     neighborhoods = ["swap", "relocate", "two_opt", "alns_shaw"]
     improved = True
     while improved and session.can_score():
@@ -883,7 +1076,26 @@ def _vns_local_search(session: _SearchSession, solution: Solution) -> Solution:
     return best
 
 
-def _aco_construct_order(customers: list[str], pheromone: dict[tuple[str, str], float], session: _SearchSession, params: dict[str, Any]) -> list[str]:
+def _aco_transition_base(customers: list[str], session: _SearchSession, params: dict[str, Any]) -> dict[tuple[str, str], float]:
+    instance = session.context.instance
+    nodes = session.node_lookup
+    depots = [depot.node_id for depot in session.depots]
+    beta = float(params["beta"])
+    base: dict[tuple[str, str], float] = {}
+    for a in customers:
+        for b in customers:
+            if a == b:
+                continue
+            distance = max(1e-9, float(instance.distance(a, b)))
+            eta = 1.0 / distance
+            saving = max(1e-9, min(float(instance.distance(depot, a)) + float(instance.distance(depot, b)) for depot in depots) - distance)
+            dev = 1.0 / max(1.0, abs(float(nodes[a].due_time) - float(nodes[b].ready_time)))
+            width = 1.0 / max(1.0, float(nodes[b].due_time) - float(nodes[b].ready_time))
+            base[(a, b)] = (eta ** beta) * (1.0 + saving / 10_000.0) * (1.0 + dev) * (1.0 + width)
+    return base
+
+
+def _aco_construct_order(customers: list[str], pheromone: dict[tuple[str, str], float], transition_base: dict[tuple[str, str], float], session: _SearchSession, params: dict[str, Any]) -> list[str]:
     remaining = set(customers)
     if not remaining:
         return []
@@ -892,7 +1104,7 @@ def _aco_construct_order(customers: list[str], pheromone: dict[tuple[str, str], 
     remaining.remove(current)
     while remaining:
         weights = {
-            customer_id: _aco_transition_weight(current, customer_id, pheromone, session, params)
+            customer_id: _aco_transition_weight(current, customer_id, pheromone, transition_base, params)
             for customer_id in remaining
         }
         if session.rng.random() < float(params["r0"]):
@@ -905,19 +1117,10 @@ def _aco_construct_order(customers: list[str], pheromone: dict[tuple[str, str], 
     return order
 
 
-def _aco_transition_weight(a: str, b: str, pheromone: dict[tuple[str, str], float], session: _SearchSession, params: dict[str, Any]) -> float:
-    instance = session.context.instance
-    nodes = _node_lookup(instance)
-    depots = [node.node_id for node in instance.nodes if node.node_type.lower() == "d"]
-    distance = max(1e-9, float(instance.distance(a, b)))
-    eta = 1.0 / distance
-    saving = max(1e-9, min(float(instance.distance(depot, a)) + float(instance.distance(depot, b)) for depot in depots) - distance)
-    dev = 1.0 / max(1.0, abs(float(nodes[a].due_time) - float(nodes[b].ready_time)))
-    width = 1.0 / max(1.0, float(nodes[b].due_time) - float(nodes[b].ready_time))
+def _aco_transition_weight(a: str, b: str, pheromone: dict[tuple[str, str], float], transition_base: dict[tuple[str, str], float], params: dict[str, Any]) -> float:
     tau = pheromone.get((a, b), 1.0)
     alpha = float(params["alpha"])
-    beta = float(params["beta"])
-    return (tau ** alpha) * (eta ** beta) * (1.0 + saving / 10_000.0) * (1.0 + dev) * (1.0 + width)
+    return (tau ** alpha) * transition_base.get((a, b), 1.0)
 
 
 def _weighted_customer_choice(weights: dict[str, float], rng: random.Random) -> str:
@@ -935,7 +1138,7 @@ def _weighted_customer_choice(weights: dict[str, float], rng: random.Random) -> 
 
 def _aco_vnd(solution: Solution, session: _SearchSession) -> Solution:
     best = solution
-    best_obj = float(score_reference(best, session.context))
+    best_obj = session.reference_objective(best)
     for move in ("relocate", "swap"):
         if not session.can_score():
             return best
@@ -955,8 +1158,8 @@ def _ga_vns_polish(solution: Solution, session: _SearchSession, trials: int) -> 
         order = _vns_shake(_solution_order(best, session.context.instance), session.rng, idx)
         candidate = _order_to_solution(order, session, type_hints=_route_type_hints(best, session.context.instance))
         candidate = _vns_local_search(session, candidate)
-        obj_best = score_reference(best, session.context)
-        obj_candidate = score_reference(candidate, session.context)
+        obj_best = session.reference_objective(best)
+        obj_candidate = session.reference_objective(candidate)
         if obj_candidate < obj_best - 1e-9:
             best = candidate
     return best
@@ -1005,7 +1208,20 @@ def _gwo_initial_wolves(session: _SearchSession, target_population: int) -> list
     return sorted(wolves, key=lambda item: (item.objective, item.signature))
 
 
-def _iwd_construct_order(customers: list[str], soil: dict[tuple[str, str], float], session: _SearchSession) -> list[str]:
+def _iwd_transition_base(customers: list[str], session: _SearchSession) -> dict[tuple[str, str], float]:
+    instance = session.context.instance
+    depots = [depot.node_id for depot in session.depots]
+    base: dict[tuple[str, str], float] = {}
+    for a in customers:
+        for b in customers:
+            if a == b:
+                continue
+            saving = max(1e-9, min(float(instance.distance(depot, a)) + float(instance.distance(depot, b)) for depot in depots) - float(instance.distance(a, b)))
+            base[(a, b)] = 1.0 + saving / 10_000.0
+    return base
+
+
+def _iwd_construct_order(customers: list[str], soil: dict[tuple[str, str], float], transition_base: dict[tuple[str, str], float], session: _SearchSession) -> list[str]:
     remaining = set(customers)
     if not remaining:
         return []
@@ -1014,7 +1230,7 @@ def _iwd_construct_order(customers: list[str], soil: dict[tuple[str, str], float
     remaining.remove(current)
     while remaining:
         weights = {
-            candidate: _iwd_transition_weight(current, candidate, soil, session)
+            candidate: _iwd_transition_weight(current, candidate, soil, transition_base)
             for candidate in remaining
         }
         nxt = _weighted_customer_choice(weights, session.rng)
@@ -1024,12 +1240,9 @@ def _iwd_construct_order(customers: list[str], soil: dict[tuple[str, str], float
     return order
 
 
-def _iwd_transition_weight(a: str, b: str, soil: dict[tuple[str, str], float], session: _SearchSession) -> float:
-    instance = session.context.instance
-    depots = [node.node_id for node in instance.nodes if node.node_type.lower() == "d"]
-    saving = max(1e-9, min(float(instance.distance(depot, a)) + float(instance.distance(depot, b)) for depot in depots) - float(instance.distance(a, b)))
+def _iwd_transition_weight(a: str, b: str, soil: dict[tuple[str, str], float], transition_base: dict[tuple[str, str], float]) -> float:
     edge_soil = max(1e-9, soil.get((a, b), 1000.0))
-    return (1.0 / edge_soil) * (1.0 + saving / 10_000.0)
+    return (1.0 / edge_soil) * transition_base.get((a, b), 1.0)
 
 
 def _iwd_update_local_soil(order: list[str], soil: dict[tuple[str, str], float], objective: float) -> None:
@@ -1051,12 +1264,26 @@ def _iwd_update_global_soil(order: list[str], soil: dict[tuple[str, str], float]
 
 
 def _alns_neighbor(session: _SearchSession, solution: Solution, destroy: str, repair: str) -> _OperatorOutcome:
-    return _apply_strong_alns_destroy_repair(solution, session.context, session.rng, destroy, repair)
+    with _baseline_fast_repair_flags():
+        return _apply_strong_alns_destroy_repair(solution, session.context, session.rng, destroy, repair)
+
+
+@contextmanager
+def _baseline_fast_repair_flags() -> Any:
+    old_value = os.environ.get("SETP_ALNS_CRUSH_TRUE_REPAIR")
+    try:
+        os.environ["SETP_ALNS_CRUSH_TRUE_REPAIR"] = "0"
+        yield
+    finally:
+        if old_value is None:
+            os.environ.pop("SETP_ALNS_CRUSH_TRUE_REPAIR", None)
+        else:
+            os.environ["SETP_ALNS_CRUSH_TRUE_REPAIR"] = old_value
 
 
 def _local_order_search(session: _SearchSession, solution: Solution, *, max_trials: int = 6) -> Solution:
     best = solution
-    best_obj = score_reference(best, session.context)
+    best_obj = session.reference_objective(best)
     order = _solution_order(solution, session.context.instance)
     for move in ("swap", "relocate", "two_opt"):
         for _ in range(max(1, max_trials)):
