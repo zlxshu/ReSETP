@@ -1,0 +1,32 @@
+{
+  "collection_failure_count": 0,
+  "expected_rows": 12,
+  "failure_sample": [],
+  "paired_rows": 6,
+  "phase0_ok": true,
+  "plain": "测试数据收齐，可以比较同等时间、降预算和100kWh对车队构成的影响。",
+  "rows": 12,
+  "scenario_summary": [
+    {
+      "battery_kwh": 100.0,
+      "collection_failures": 0,
+      "comparison_mode": "wallclock",
+      "mean_gap_pct_alns_minus_lns": -10.20962319309084,
+      "mean_winner_ev_route_share_75_200": 0.05185185185185185,
+      "paired_winner_counts": "{\"alns\": 1, \"tie\": 2}",
+      "pairs": 3,
+      "scenario": "wc100"
+    },
+    {
+      "battery_kwh": 80.0,
+      "collection_failures": 0,
+      "comparison_mode": "wallclock",
+      "mean_gap_pct_alns_minus_lns": -9.594928394661222,
+      "mean_winner_ev_route_share_75_200": 0.05185185185185185,
+      "paired_winner_counts": "{\"alns\": 1, \"tie\": 2}",
+      "pairs": 3,
+      "scenario": "wc80"
+    }
+  ],
+  "verdict": "PREFLIGHT_COMPLETE"
+}
