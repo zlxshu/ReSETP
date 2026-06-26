@@ -10,8 +10,8 @@ Verdict: `HARD_CAP_CAPACITY_INFEASIBLE_CURRENT_Q`
 
 ## 当前事实
 
-- Repo HEAD: `c138f169`
-- Artifact commit hash: `pending`
+- Repo HEAD: `316c0eb5`
+- Artifact commit hash: `316c0eb5`
 - 当前代码/论文容量 `Q`: `1600.0` kg
 - Goeke 反事实容量: `3650.0` kg
 - 论文 hard-cap 公式存在: `True`
