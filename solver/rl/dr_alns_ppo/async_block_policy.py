@@ -111,9 +111,13 @@ class AsyncBlockPolicy:
         return action, None
 
 
-def make_block_actor_critic(seed: int = 1, hidden_size: int = 128) -> BlockActorCritic:
+def make_block_actor_critic(
+    seed: int = 1,
+    hidden_size: int = 128,
+    action_nvec: tuple[int, ...] = tuple(BLOCK_ACTION_NVECS),
+) -> BlockActorCritic:
     torch.manual_seed(int(seed))
-    model = BlockActorCritic(hidden_size=int(hidden_size))
+    model = BlockActorCritic(action_nvec=tuple(int(v) for v in action_nvec), hidden_size=int(hidden_size))
     return model
 
 

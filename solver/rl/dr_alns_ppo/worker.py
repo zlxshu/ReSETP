@@ -16,7 +16,8 @@ from setp_solver.prices import DEFAULT_PRICES
 from setp_solver.search.bundle import load_search_bundle
 from setp_solver.search.construction import build_initial_solution
 from setp_solver.search.evaluation import BIG_M, EvalBudget, EvaluationContext, fairness_context_for_solution
-from setp_solver.search.alns_wouda import _make_operator_selector
+from setp_solver.search.alns_wouda import AlnsState, SearchPolicy, _make_operator_selector, _solution_changed
+from setp_solver.search.fleet import infer_fleet_limits
 from setp_solver.search.winner_operators import (
     WinnerOperatorAction,
     WinnerOperatorSet,
@@ -111,14 +112,31 @@ class JsonlWorker:
         rejected_count = 0
         first_error = ""
         last_response: dict[str, Any] | None = None
+        candidate_generator = str(action.get("candidate_generator", "default") or "default")
+        block_candidates: list[Solution] | None = None
 
-        for _ in range(block_size):
+        for block_offset in range(block_size):
             budget = state.context.budget
             if budget is not None and budget.reached_target:
                 break
-            internal_action = self._resolve_block_internal_action(action)
             try:
-                response = self._apply_single_action(request_id, internal_action, op="block_internal")
+                if candidate_generator != "default":
+                    if block_candidates is None:
+                        block_candidates = self._candidate_generator_solutions(
+                            candidate_generator,
+                            seed=self.seed + int(state.step_index),
+                        )
+                    response = self._apply_candidate_generator_action(
+                        request_id,
+                        action,
+                        op="block_candidate_generator",
+                        candidates=block_candidates,
+                        candidate_offset=int(block_offset),
+                    )
+                    internal_action = {}
+                else:
+                    internal_action = self._resolve_block_internal_action(action)
+                    response = self._apply_single_action(request_id, internal_action, op="block_internal")
             except RuntimeError as exc:
                 first_error = str(exc)
                 break
@@ -173,6 +191,8 @@ class JsonlWorker:
                 "block_requested_repair_id": str(action.get("repair_id", "")),
                 "block_requested_q_ratio": float(action.get("q_ratio", 0.0) or 0.0),
                 "block_requested_threshold_ratio": float(action.get("threshold_ratio", 0.0) or 0.0),
+                "block_requested_candidate_generator": str(candidate_generator),
+                "block_candidate_generator_candidate_count": int(len(block_candidates or [])),
                 "control_mode": "block_ppo",
                 "destroy_counts": dict(state.destroy_counts),
                 "repair_counts": dict(state.repair_counts),
@@ -194,6 +214,114 @@ class JsonlWorker:
             "metrics": best_summary["metrics"],
             "solution": solution_to_json(state.best_solution),
             "trace": trace,
+        }
+
+    def _candidate_generator_solutions(self, variant_name: str, *, seed: int) -> list[Solution]:
+        from .pilot14_candidate_generation_tools import generate_candidate_solutions
+
+        limits = infer_fleet_limits(self.bundle.bundle_dir)
+        policy = SearchPolicy(require_charging_signal=False, max_cv=limits.cv, max_ev=limits.ev)
+        state = AlnsState(
+            self.state.current_solution,
+            self.state.context,
+            objective_value=float(self.state.current_obj),
+            policy=policy,
+        )
+        return generate_candidate_solutions(
+            state=state,
+            seed=int(seed),
+            variant_name=str(variant_name),
+            include_route_elimination=True,
+            fleet_limits=limits,
+        )
+
+    def _apply_candidate_generator_action(
+        self,
+        request_id: Any,
+        action: dict[str, Any],
+        *,
+        op: str,
+        candidates: list[Solution],
+        candidate_offset: int,
+    ) -> dict[str, Any]:
+        state = self.state
+        self._ensure_budget_available()
+        before_candidate_scores = int(state.context.score_counts.get("candidate", 0))
+        old_current_obj = float(state.current_obj)
+        old_best_obj = float(state.best_obj)
+        if candidates:
+            candidate = candidates[int(candidate_offset) % len(candidates)]
+            candidate_obj, candidate_summary = self._score_solution(candidate, record_candidate=True)
+            changed = bool(_solution_changed(state.current_solution, candidate))
+        else:
+            candidate = state.current_solution
+            candidate_obj, candidate_summary = self._score_solution(candidate, record_candidate=True)
+            changed = False
+
+        threshold = float(self._threshold_ratio(action)) * max(float(state.current_obj), 0.0)
+        delta = float(candidate_obj - old_current_obj)
+        accepted = bool(changed and delta <= threshold)
+        improved_current = bool(accepted and candidate_obj < old_current_obj)
+        improved_best = bool(accepted and candidate_obj < old_best_obj)
+
+        state.step_index += 1
+        if accepted:
+            state.current_solution = candidate
+            state.current_obj = float(candidate_obj)
+            state.current_summary = candidate_summary
+        if improved_best:
+            state.best_solution = candidate
+            state.best_obj = float(candidate_obj)
+            state.best_summary = candidate_summary
+            state.stagnation_steps = 0
+            state.last_improvement_step = state.step_index
+        else:
+            state.stagnation_steps += 1
+
+        current_summary = state.current_summary
+        reward_code = self._reward_code(accepted, improved_current, improved_best)
+        actual_evals_added = int(state.context.score_counts.get("candidate", 0) - before_candidate_scores)
+        return {
+            "request_id": request_id,
+            "ok": True,
+            "accepted": bool(accepted),
+            "improved_current": bool(improved_current),
+            "improved_best": bool(improved_best),
+            "actual_evals": int(state.context.budget.count if state.context.budget else 0),
+            "candidate_scores": int(state.context.score_counts.get("candidate", 0)),
+            "repair_delta_count": int(state.context.score_counts.get("repair_delta", 0)),
+            "current_obj": float(state.current_obj),
+            "best_obj": float(state.best_obj),
+            "candidate_obj": float(candidate_obj),
+            "violation_count": int(current_summary["violation_count"]),
+            "metrics": current_summary["metrics"],
+            "solution": solution_to_json(state.current_solution),
+            "trace": {
+                **RUNTIME_TRACE,
+                "op": op,
+                "step_index": int(state.step_index),
+                "operator_base_id": operator_base_id,
+                "winner_operator_module": winner_operator_module,
+                "destroy_id": str(action.get("destroy_id", "")),
+                "repair_id": str(action.get("repair_id", "")),
+                "q_ratio": float(action.get("q_ratio", 0.0) or 0.0),
+                "threshold": float(threshold),
+                "threshold_ratio": float(self._threshold_ratio(action)),
+                "control_mode": str(action.get("control_mode", "block_ppo")),
+                "candidate_generator": str(action.get("candidate_generator", "default") or "default"),
+                "candidate_generator_candidate_count": int(len(candidates)),
+                "delta": float(delta),
+                "changed": bool(changed),
+                "stagnation_steps": int(state.stagnation_steps),
+                "last_improvement_step": int(state.last_improvement_step),
+                "repair_delta_added": 0,
+                "actual_evals_added": int(actual_evals_added),
+                "candidate_violation_count": int(candidate_summary["violation_count"]),
+                "candidate_metrics": candidate_summary["metrics"],
+                "destroy_counts": dict(state.destroy_counts),
+                "repair_counts": dict(state.repair_counts),
+                "reward_code": reward_code,
+            },
         }
 
     def _apply_single_action(self, request_id: Any, action: dict[str, Any], *, op: str) -> dict[str, Any]:
@@ -475,8 +603,8 @@ class JsonlWorker:
                 raw_action=(raw[0], raw[1], -1, 0),
             )
         elif mode == "block_ppo":
-            if len(raw) != 5:
-                raise ValueError(f"block_ppo action raw must have 5 components: {raw!r}")
+            if len(raw) not in {5, 6}:
+                raise ValueError(f"block_ppo action raw must have 5 or 6 components: {raw!r}")
             winner_action = WinnerOperatorAction(
                 destroy_op_id=destroy_id,
                 repair_op_id=repair_id,
@@ -554,6 +682,7 @@ class JsonlWorker:
             "threshold_ratio": threshold_ratio,
             "raw": tuple(int(value) for value in action.get("raw", (0, 0, 0, 0, 0))),
             "control_mode": "block_ppo",
+            "candidate_generator": str(action.get("candidate_generator", "default") or "default"),
             "_alpha_destroy_idx": destroy_idx,
             "_alpha_repair_idx": repair_idx,
             "_uses_alpha_ucb": uses_alpha and not explore,

@@ -9,6 +9,7 @@ from gymnasium import spaces
 from .action_space import (
     ALPHA_UCB_CHOICE,
     BLOCK_ACTION_NVECS,
+    BLOCK_CANDIDATE_ACTION_NVECS,
     BLOCK_DESTROY_IDS,
     BLOCK_Q_RATIOS,
     BLOCK_REPAIR_IDS,
@@ -32,6 +33,7 @@ class BlockAlnsEnv(gym.Env):
         block_size: int = 128,
         curriculum_phase: str = "route",
         meta_mode: bool = False,
+        candidate_generator_mode: bool = False,
     ) -> None:
         super().__init__()
         if int(block_size) < 1:
@@ -44,7 +46,9 @@ class BlockAlnsEnv(gym.Env):
         self.block_size = int(block_size)
         self.curriculum_phase = str(curriculum_phase)
         self.meta_mode = bool(meta_mode)
-        self.action_space = spaces.MultiDiscrete(list(BLOCK_ACTION_NVECS))
+        self.candidate_generator_mode = bool(candidate_generator_mode)
+        self.action_nvecs = _action_nvecs(self.candidate_generator_mode)
+        self.action_space = spaces.MultiDiscrete(list(self.action_nvecs))
         self.observation_space = spaces.Box(
             low=-10.0,
             high=10.0,
@@ -72,7 +76,11 @@ class BlockAlnsEnv(gym.Env):
         }
 
     def step(self, action):
-        decoded = decode_block_action(action, block_size=self.block_size)
+        decoded = decode_block_action(
+            action,
+            block_size=self.block_size,
+            candidate_generator_mode=bool(getattr(self, "candidate_generator_mode", False)),
+        )
         response = self._checked_response(self.client.block_step(decoded))
         self.last_response = response
         terminated = bool(int(response.get("actual_evals", 0)) >= self.eval_budget)
@@ -83,7 +91,8 @@ class BlockAlnsEnv(gym.Env):
         return self._obs(response), reward, terminated, truncated, response
 
     def _action_mask(self, response: dict[str, Any]) -> list[list[bool]]:
-        masks = [[True for _ in range(int(n))] for n in BLOCK_ACTION_NVECS]
+        action_nvecs = _action_nvecs(bool(getattr(self, "candidate_generator_mode", False)))
+        masks = [[True for _ in range(int(n))] for n in action_nvecs]
         if bool(getattr(self, "meta_mode", False)):
             _force_single_action(masks[0], BLOCK_DESTROY_IDS.index(ALPHA_UCB_CHOICE))
             _force_single_action(masks[1], BLOCK_REPAIR_IDS.index(ALPHA_UCB_CHOICE))
@@ -122,8 +131,10 @@ class BlockAlnsEnv(gym.Env):
         _ensure_head_has_action(masks[0], BLOCK_DESTROY_IDS, [BLOCK_DESTROY_IDS.index(ALPHA_UCB_CHOICE), 0])
         _ensure_head_has_action(masks[1], BLOCK_REPAIR_IDS, [BLOCK_REPAIR_IDS.index(ALPHA_UCB_CHOICE), 0])
         _ensure_head_has_action(masks[2], tuple(str(v) for v in BLOCK_Q_RATIOS), [0])
-        _ensure_head_has_action(masks[3], tuple(str(v) for v in range(BLOCK_ACTION_NVECS[3])), [0])
-        _ensure_head_has_action(masks[4], tuple(str(v) for v in range(BLOCK_ACTION_NVECS[4])), [0])
+        _ensure_head_has_action(masks[3], tuple(str(v) for v in range(action_nvecs[3])), [0])
+        _ensure_head_has_action(masks[4], tuple(str(v) for v in range(action_nvecs[4])), [0])
+        if len(masks) > len(BLOCK_ACTION_NVECS):
+            _ensure_head_has_action(masks[5], tuple(str(v) for v in range(action_nvecs[5])), [0])
         return masks
 
     def close(self) -> None:
@@ -274,6 +285,10 @@ def _charge_ratio(response: dict[str, Any]) -> float:
     solution = response.get("solution", {}) if isinstance(response, dict) else {}
     actions = solution.get("charging_actions", []) if isinstance(solution, dict) else []
     return float(len(actions) if isinstance(actions, list) else 0) / route_count
+
+
+def _action_nvecs(candidate_generator_mode: bool) -> tuple[int, ...]:
+    return tuple(BLOCK_CANDIDATE_ACTION_NVECS if bool(candidate_generator_mode) else BLOCK_ACTION_NVECS)
 
 
 def _carbon_reward(metrics: dict[str, Any], trace: dict[str, Any]) -> float | None:

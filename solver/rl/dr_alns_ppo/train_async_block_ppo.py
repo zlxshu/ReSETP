@@ -17,6 +17,7 @@ from torch import nn
 
 from .action_space import (
     BLOCK_ACTION_NVECS,
+    BLOCK_CANDIDATE_ACTION_NVECS,
     BLOCK_DESTROY_IDS,
     BLOCK_EXPLORATION_RATIOS,
     BLOCK_Q_RATIOS,
@@ -46,6 +47,7 @@ class AsyncEpisodeTask:
     curriculum_phase: str
     policy_payload: dict[str, Any]
     meta_mode: bool = False
+    candidate_generator_mode: bool = False
 
 
 def run_actor_episode(task: AsyncEpisodeTask) -> dict[str, Any]:
@@ -66,6 +68,7 @@ def run_actor_episode(task: AsyncEpisodeTask) -> dict[str, Any]:
         block_size=int(task.block_size),
         curriculum_phase=str(task.curriculum_phase),
         meta_mode=bool(task.meta_mode),
+        candidate_generator_mode=bool(task.candidate_generator_mode),
     )
     observations: list[list[float]] = []
     actions: list[list[int]] = []
@@ -106,6 +109,7 @@ def run_actor_episode(task: AsyncEpisodeTask) -> dict[str, Any]:
         "policy_version": int(task.policy_version),
         "curriculum_phase": str(task.curriculum_phase),
         "meta_mode": bool(task.meta_mode),
+        "candidate_generator_mode": bool(task.candidate_generator_mode),
         "block_size": int(task.block_size),
         "eval_budget": int(task.eval_budget),
         "observations": observations,
@@ -158,6 +162,20 @@ def filter_on_policy_episodes(
     return accepted, stale
 
 
+def _training_action_nvecs(candidate_generator_mode: bool) -> tuple[int, ...]:
+    return tuple(BLOCK_CANDIDATE_ACTION_NVECS if bool(candidate_generator_mode) else BLOCK_ACTION_NVECS)
+
+
+def _episode_action_nvecs(episodes: list[dict[str, Any]]) -> tuple[int, ...]:
+    for episode in episodes:
+        for action in episode.get("actions", []) or []:
+            if len(action) == len(BLOCK_CANDIDATE_ACTION_NVECS):
+                return tuple(BLOCK_CANDIDATE_ACTION_NVECS)
+            if len(action) == len(BLOCK_ACTION_NVECS):
+                return tuple(BLOCK_ACTION_NVECS)
+    return tuple(BLOCK_ACTION_NVECS)
+
+
 def compute_episode_advantages(
     rewards: list[float],
     values: list[float],
@@ -188,9 +206,10 @@ def flatten_episodes(
     shared_baseline_by_bundle: bool = False,
     advantage_clip_range: float | None = None,
 ) -> dict[str, Any]:
+    action_nvecs = _episode_action_nvecs(episodes)
     obs: list[list[float]] = []
     actions: list[list[int]] = []
-    action_masks: list[list[list[bool]]] = [[] for _ in BLOCK_ACTION_NVECS]
+    action_masks: list[list[list[bool]]] = [[] for _ in action_nvecs]
     old_log_probs: list[float] = []
     old_values: list[float] = []
     advantages: list[float] = []
@@ -233,9 +252,9 @@ def flatten_episodes(
         actions.extend(episode["actions"])
         episode_masks = episode.get("action_masks")
         if not episode_masks:
-            episode_masks = [_all_true_mask() for _ in episode["actions"]]
+            episode_masks = [_all_true_mask(action_nvecs=action_nvecs) for _ in episode["actions"]]
         for mask in episode_masks:
-            normalized = _mask_to_lists(mask)
+            normalized = _mask_to_lists(mask, action_nvecs=action_nvecs)
             for head_idx, head_mask in enumerate(normalized):
                 action_masks[head_idx].append([bool(value) for value in head_mask])
         old_log_probs.extend(float(v) for v in episode["old_log_probs"])
@@ -356,7 +375,8 @@ def run_self_check(args: argparse.Namespace) -> int:
     _require_system_worker(args.required_worker_python)
     manifest = _load_manifest_for_args(args)
     bundles = list(manifest["train"])
-    model = make_block_actor_critic(seed=int(args.seed), hidden_size=int(args.hidden_size))
+    action_nvecs = _training_action_nvecs(bool(args.candidate_generator_mode))
+    model = make_block_actor_critic(seed=int(args.seed), hidden_size=int(args.hidden_size), action_nvec=action_nvecs)
     start = time.monotonic()
     episodes = collect_episodes(
         model,
@@ -368,6 +388,7 @@ def run_self_check(args: argparse.Namespace) -> int:
         episode_count=int(args.self_check_episodes),
         deterministic=False,
         meta_mode=bool(args.meta_mode),
+        candidate_generator_mode=bool(args.candidate_generator_mode),
         output_dir=output_dir,
     )
     elapsed = time.monotonic() - start
@@ -398,11 +419,13 @@ def run_audit(args: argparse.Namespace) -> int:
         eval_budget=int(args.eval_budget),
         block_size=int(args.block_size),
         meta_mode=bool(args.meta_mode),
+        candidate_generator_mode=bool(args.candidate_generator_mode),
     )
     try:
         _obs, reset_info = env.reset(seed=int(args.seed))
         reset_response = dict(env.last_response or {})
-        action = np.zeros(len(BLOCK_ACTION_NVECS), dtype=np.int64)
+        action_nvecs = _training_action_nvecs(bool(args.candidate_generator_mode))
+        action = np.zeros(len(action_nvecs), dtype=np.int64)
         _next_obs, reward, terminated, truncated, step_response = env.step(action)
     finally:
         env.close()
@@ -421,7 +444,8 @@ def run_audit(args: argparse.Namespace) -> int:
         "seed": int(args.seed),
         "eval_budget": int(args.eval_budget),
         "block_size": int(args.block_size),
-        "block_action_nvecs": list(BLOCK_ACTION_NVECS),
+        "candidate_generator_mode": bool(args.candidate_generator_mode),
+        "block_action_nvecs": list(_training_action_nvecs(bool(args.candidate_generator_mode))),
         "block_destroy_ids": list(BLOCK_DESTROY_IDS),
         "block_repair_ids": list(BLOCK_REPAIR_IDS),
         "block_q_ratios": list(BLOCK_Q_RATIOS),
@@ -504,19 +528,20 @@ def statistics_median(values: list[float]) -> float:
     return 0.5 * (ordered[mid - 1] + ordered[mid])
 
 
-def _all_true_mask() -> list[list[bool]]:
-    return [[True for _ in range(int(n))] for n in BLOCK_ACTION_NVECS]
+def _all_true_mask(action_nvecs: tuple[int, ...] = tuple(BLOCK_ACTION_NVECS)) -> list[list[bool]]:
+    return [[True for _ in range(int(n))] for n in action_nvecs]
 
 
-def _mask_to_lists(mask: Any) -> list[list[bool]]:
+def _mask_to_lists(mask: Any, action_nvecs: tuple[int, ...] | None = None) -> list[list[bool]]:
+    expected_nvecs = tuple(action_nvecs or _mask_action_nvecs(mask))
     if mask is None:
-        return _all_true_mask()
-    if len(mask) != len(BLOCK_ACTION_NVECS):
-        raise ValueError(f"expected {len(BLOCK_ACTION_NVECS)} mask heads, got {len(mask)}")
+        return _all_true_mask(action_nvecs=expected_nvecs)
+    if len(mask) != len(expected_nvecs):
+        raise ValueError(f"expected {len(expected_nvecs)} mask heads, got {len(mask)}")
     normalized: list[list[bool]] = []
     for head_idx, head in enumerate(mask):
         values = [bool(value) for value in list(head)]
-        expected = int(BLOCK_ACTION_NVECS[head_idx])
+        expected = int(expected_nvecs[head_idx])
         if len(values) != expected:
             raise ValueError(f"mask head {head_idx} expected length {expected}, got {len(values)}")
         if not any(values):
@@ -525,10 +550,16 @@ def _mask_to_lists(mask: Any) -> list[list[bool]]:
     return normalized
 
 
+def _mask_action_nvecs(mask: Any) -> tuple[int, ...]:
+    if mask is not None and len(mask) == len(BLOCK_CANDIDATE_ACTION_NVECS):
+        return tuple(BLOCK_CANDIDATE_ACTION_NVECS)
+    return tuple(BLOCK_ACTION_NVECS)
+
+
 def _mask_invalid_rates(episode: dict[str, Any]) -> dict[str, float]:
     masks = episode.get("action_masks") or []
-    totals = [0 for _ in BLOCK_ACTION_NVECS]
-    invalid = [0 for _ in BLOCK_ACTION_NVECS]
+    totals = [0 for _ in BLOCK_CANDIDATE_ACTION_NVECS]
+    invalid = [0 for _ in BLOCK_CANDIDATE_ACTION_NVECS]
     for raw_mask in masks:
         normalized = _mask_to_lists(raw_mask)
         for idx, head in enumerate(normalized):
@@ -536,18 +567,18 @@ def _mask_invalid_rates(episode: dict[str, Any]) -> dict[str, float]:
             invalid[idx] += sum(1 for value in head if not value)
     return {
         f"mask_invalid_rate_head_{idx}": (float(invalid[idx]) / float(totals[idx]) if totals[idx] else 0.0)
-        for idx in range(len(BLOCK_ACTION_NVECS))
+        for idx in range(len(BLOCK_CANDIDATE_ACTION_NVECS))
     }
 
 
 def _aggregate_mask_invalid_rates(episodes: list[dict[str, Any]]) -> dict[str, float]:
-    totals = [0.0 for _ in BLOCK_ACTION_NVECS]
+    totals = [0.0 for _ in BLOCK_CANDIDATE_ACTION_NVECS]
     for episode in episodes:
         rates = _mask_invalid_rates(episode)
-        for idx in range(len(BLOCK_ACTION_NVECS)):
+        for idx in range(len(BLOCK_CANDIDATE_ACTION_NVECS)):
             totals[idx] += float(rates[f"mask_invalid_rate_head_{idx}"])
     count = max(float(len(episodes)), 1.0)
-    return {f"mask_invalid_rate_head_{idx}": totals[idx] / count for idx in range(len(BLOCK_ACTION_NVECS))}
+    return {f"mask_invalid_rate_head_{idx}": totals[idx] / count for idx in range(len(BLOCK_CANDIDATE_ACTION_NVECS))}
 
 
 def _save_periodic_checkpoint(
@@ -595,13 +626,15 @@ def run_train(args: argparse.Namespace) -> int:
     phase_value_clip_ranges = _phase_values(args.phase_value_clip_ranges, schedule, None)
     phase_advantage_clip_ranges = _phase_values(args.phase_advantage_clip_ranges, schedule, None)
     device = _resolve_device(args.device)
-    model = make_block_actor_critic(seed=int(args.seed), hidden_size=int(args.hidden_size)).to(device)
+    action_nvecs = _training_action_nvecs(bool(args.candidate_generator_mode))
+    model = make_block_actor_critic(seed=int(args.seed), hidden_size=int(args.hidden_size), action_nvec=action_nvecs).to(device)
     optimizer = torch.optim.Adam(model.parameters(), lr=float(args.learning_rate))
     config = vars(args).copy()
     config["train_bundles"] = bundles
     config["model_format"] = "dr_alns_async_block_ppo.v1"
     config["parsed_curriculum_schedule"] = schedule
     config["resolved_device"] = str(device)
+    config["action_nvecs"] = list(action_nvecs)
     config["shared_baseline_by_bundle"] = not bool(args.disable_shared_baseline)
     _write_json(output_dir / "async_training_config.json", config)
 
@@ -647,6 +680,7 @@ def run_train(args: argparse.Namespace) -> int:
                 curriculum_phase=schedule[phase_index],
                 policy_payload=make_policy_payload(model),
                 meta_mode=bool(args.meta_mode),
+                candidate_generator_mode=bool(args.candidate_generator_mode),
             )
             futures[executor.submit(run_actor_episode, task)] = task
             episode_index += 1
@@ -827,6 +861,7 @@ def collect_episodes(
     episode_count: int,
     deterministic: bool,
     meta_mode: bool = False,
+    candidate_generator_mode: bool = False,
     output_dir: Path | None = None,
 ) -> list[dict[str, Any]]:
     _ = output_dir
@@ -845,6 +880,7 @@ def collect_episodes(
                 curriculum_phase="route",
                 policy_payload=make_policy_payload(model),
                 meta_mode=bool(meta_mode),
+                candidate_generator_mode=bool(candidate_generator_mode),
             )
             futures.append(executor.submit(run_actor_episode, task))
         for future in concurrent.futures.as_completed(futures):
@@ -882,6 +918,22 @@ def _self_check_verdict(episodes: list[dict[str, Any]], throughput: dict[str, An
     }
 
 
+def _candidate_generator_indices(episode: dict[str, Any]) -> list[int]:
+    indices: list[int] = []
+    for action in episode.get("actions", []) or []:
+        if len(action) > len(BLOCK_ACTION_NVECS):
+            indices.append(int(action[len(BLOCK_ACTION_NVECS)]))
+    return indices
+
+
+def _candidate_generator_unique_count(episode: dict[str, Any]) -> int:
+    return len(set(_candidate_generator_indices(episode)))
+
+
+def _candidate_generator_nondefault_count(episode: dict[str, Any]) -> int:
+    return sum(1 for idx in _candidate_generator_indices(episode) if idx != 0)
+
+
 def _episode_csv_row(episode: dict[str, Any], *, accepted_for_update: bool) -> dict[str, Any]:
     row = {
         "episode_index": int(episode["episode_index"]),
@@ -890,7 +942,10 @@ def _episode_csv_row(episode: dict[str, Any], *, accepted_for_update: bool) -> d
         "policy_version": int(episode["policy_version"]),
         "curriculum_phase": str(episode.get("curriculum_phase", "route")),
         "meta_mode": int(bool(episode.get("meta_mode", False))),
+        "candidate_generator_mode": int(bool(episode.get("candidate_generator_mode", False))),
         "accepted_for_update": int(bool(accepted_for_update)),
+        "candidate_generator_unique_count": _candidate_generator_unique_count(episode),
+        "candidate_generator_nondefault_count": _candidate_generator_nondefault_count(episode),
         "block_steps": int(episode["block_steps"]),
         "reward_sum": float(episode["reward_sum"]),
         "reward_finite": int(bool(episode.get("reward_finite", True))),
@@ -1097,7 +1152,10 @@ def _episode_fieldnames() -> list[str]:
         "policy_version",
         "curriculum_phase",
         "meta_mode",
+        "candidate_generator_mode",
         "accepted_for_update",
+        "candidate_generator_unique_count",
+        "candidate_generator_nondefault_count",
         "block_steps",
         "reward_sum",
         "reward_finite",
@@ -1117,6 +1175,7 @@ def _episode_fieldnames() -> list[str]:
         "mask_invalid_rate_head_2",
         "mask_invalid_rate_head_3",
         "mask_invalid_rate_head_4",
+        "mask_invalid_rate_head_5",
     ]
 
 
@@ -1173,6 +1232,7 @@ def _update_fieldnames() -> list[str]:
         "mask_invalid_rate_head_2",
         "mask_invalid_rate_head_3",
         "mask_invalid_rate_head_4",
+        "mask_invalid_rate_head_5",
         "policy_loss",
         "value_loss",
         "entropy",
@@ -1210,6 +1270,7 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     audit.add_argument("--manifest", default="solver/reports/dr_alns_ppo_v2/training_bundle_manifest.json")
     audit.add_argument("--curriculum", action="store_true")
     audit.add_argument("--meta-mode", action="store_true")
+    audit.add_argument("--candidate-generator-mode", action="store_true")
     audit.add_argument("--output-dir", default=f"{REPORT_ROOT_FRAGMENT}/audit")
     audit.add_argument("--bundle", default="")
     audit.add_argument("--seed", type=int, default=1)
@@ -1221,6 +1282,7 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         p.add_argument("--manifest", default="solver/reports/dr_alns_ppo_v2/training_bundle_manifest.json")
         p.add_argument("--curriculum", action="store_true")
         p.add_argument("--meta-mode", action="store_true")
+        p.add_argument("--candidate-generator-mode", action="store_true")
         p.add_argument("--output-dir", required=True)
         p.add_argument("--seed", type=int, default=1)
         p.add_argument("--eval-budget", type=int, default=16000)

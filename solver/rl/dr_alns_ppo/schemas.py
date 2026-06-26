@@ -24,6 +24,7 @@ class BlockDecodedAction:
     block_size: int
     raw: tuple[int, ...]
     control_mode: str = "block_ppo"
+    candidate_generator: str = "default"
 
 
 @dataclass(frozen=True)

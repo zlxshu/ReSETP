@@ -14,7 +14,16 @@ from dr_alns_ppo.async_block_policy import (
     load_async_block_policy,
     save_async_block_policy,
 )
-from dr_alns_ppo.action_space import ALPHA_UCB_CHOICE, BLOCK_ACTION_NVECS, BLOCK_DESTROY_IDS, BLOCK_Q_RATIOS, BLOCK_REPAIR_IDS
+from dr_alns_ppo.action_space import (
+    ALPHA_UCB_CHOICE,
+    BLOCK_ACTION_NVECS,
+    BLOCK_CANDIDATE_ACTION_NVECS,
+    BLOCK_CANDIDATE_GENERATOR_CHOICES,
+    BLOCK_DESTROY_IDS,
+    BLOCK_Q_RATIOS,
+    BLOCK_REPAIR_IDS,
+    decode_block_action,
+)
 from dr_alns_ppo.block_env import BlockAlnsEnv
 from dr_alns_ppo.evaluate_policy import _evaluate_one_task
 from dr_alns_ppo.train_async_block_ppo import (
@@ -239,6 +248,32 @@ def test_train_parser_exposes_meta_mode() -> None:
     assert args.meta_mode is True
 
 
+def test_candidate_generator_mode_extends_block_action_space() -> None:
+    assert BLOCK_CANDIDATE_ACTION_NVECS[:-1] == BLOCK_ACTION_NVECS
+    assert BLOCK_CANDIDATE_ACTION_NVECS[-1] == len(BLOCK_CANDIDATE_GENERATOR_CHOICES)
+    assert "default" in BLOCK_CANDIDATE_GENERATOR_CHOICES
+    assert "stronger_insertion_repair" in BLOCK_CANDIDATE_GENERATOR_CHOICES
+
+
+def test_decode_block_action_preserves_candidate_generator_choice() -> None:
+    raw = [0, 0, 0, 0, 0, BLOCK_CANDIDATE_GENERATOR_CHOICES.index("stronger_insertion_repair")]
+
+    decoded = decode_block_action(raw, block_size=4, candidate_generator_mode=True)
+
+    assert decoded.candidate_generator == "stronger_insertion_repair"
+    assert decoded.block_size == 4
+    assert decoded.raw == tuple(raw)
+
+
+def test_parser_exposes_candidate_generator_mode_for_async_commands() -> None:
+    for command in ("audit", "self-check", "train"):
+        argv = [command, "--candidate-generator-mode"]
+        if command != "audit":
+            argv.extend(["--output-dir", "solver/reports/dr_alns_ppo_v3_block_dr_alns/async_pilot/x"])
+        args = parse_args(argv)
+        assert args.candidate_generator_mode is True
+
+
 def test_expected_episode_steps_rounds_up_budget_blocks() -> None:
     assert _expected_episode_steps(16000, 128) == 125
     assert _expected_episode_steps(9, 4) == 3
@@ -361,9 +396,38 @@ def test_block_env_meta_mode_forces_alpha_ucb_operator_heads() -> None:
     assert mask[4] == [True for _ in range(BLOCK_ACTION_NVECS[4])]
 
 
+def test_block_env_candidate_generator_mode_adds_unmasked_generator_head() -> None:
+    env = BlockAlnsEnv.__new__(BlockAlnsEnv)
+    env.eval_budget = 100
+    env.meta_mode = False
+    env.candidate_generator_mode = True
+    response = {
+        "actual_evals": 10,
+        "solution": {"routes": [{"vehicle_id": "CV1"}, {"vehicle_id": "CV2"}]},
+        "metrics": {"n_veh_cv": 2, "n_veh_ev": 0},
+        "trace": {"block_iterations": 4},
+    }
+
+    mask = env._action_mask(response)
+
+    assert len(mask) == len(BLOCK_CANDIDATE_ACTION_NVECS)
+    assert len(mask[-1]) == len(BLOCK_CANDIDATE_GENERATOR_CHOICES)
+    assert all(mask[-1])
+
+
 def test_async_actor_meta_mode_records_alpha_ucb_operator_actions(monkeypatch: pytest.MonkeyPatch) -> None:
     class FakeEnv:
-        def __init__(self, bundle, *, seed, eval_budget, block_size, curriculum_phase, meta_mode=False):
+        def __init__(
+            self,
+            bundle,
+            *,
+            seed,
+            eval_budget,
+            block_size,
+            curriculum_phase,
+            meta_mode=False,
+            candidate_generator_mode=False,
+        ):
             self.meta_mode = meta_mode
             self.action_space = None
             self.last_response = {"best_obj": 1.0, "actual_evals": 0}
@@ -417,6 +481,77 @@ def test_async_actor_meta_mode_records_alpha_ucb_operator_actions(monkeypatch: p
 
     assert episode["actions"][0][0] == BLOCK_DESTROY_IDS.index(ALPHA_UCB_CHOICE)
     assert episode["actions"][0][1] == BLOCK_REPAIR_IDS.index(ALPHA_UCB_CHOICE)
+
+
+def test_async_actor_candidate_generator_mode_uses_extended_action_head(monkeypatch: pytest.MonkeyPatch) -> None:
+    seen: dict[str, object] = {}
+
+    class FakeEnv:
+        def __init__(
+            self,
+            bundle,
+            *,
+            seed,
+            eval_budget,
+            block_size,
+            curriculum_phase,
+            meta_mode=False,
+            candidate_generator_mode=False,
+        ):
+            self.candidate_generator_mode = candidate_generator_mode
+            self.last_response = {"best_obj": 1.0, "actual_evals": 0}
+            seen["candidate_generator_mode"] = candidate_generator_mode
+
+        def reset(self, *, seed=None):
+            return np.zeros(19, dtype=np.float32), {
+                "action_mask": [[True for _ in range(n)] for n in BLOCK_CANDIDATE_ACTION_NVECS]
+            }
+
+        def step(self, action):
+            seen["action_len"] = len(action)
+            self.last_response = {
+                "best_obj": 1.0,
+                "actual_evals": 4,
+                "candidate_scores": 4,
+                "repair_delta_count": 0,
+                "violation_count": 0,
+                "feasible": True,
+                "trace": {
+                    "worker_python_executable": "py",
+                    "worker_python_version": "3.13",
+                    "worker_numpy_version": "2.3.5",
+                },
+            }
+            return np.zeros(19, dtype=np.float32), 0.0, True, False, self.last_response
+
+        def close(self):
+            pass
+
+    monkeypatch.setattr("dr_alns_ppo.train_async_block_ppo.BlockAlnsEnv", FakeEnv)
+    model = make_block_actor_critic(seed=1, action_nvec=BLOCK_CANDIDATE_ACTION_NVECS)
+    task = AsyncEpisodeTask(
+        episode_index=0,
+        bundle=FIXTURE_DIR,
+        seed=1,
+        eval_budget=4,
+        block_size=4,
+        policy_version=0,
+        deterministic=False,
+        curriculum_phase="route",
+        candidate_generator_mode=True,
+        policy_payload={
+            "state_dict": {key: value.detach().cpu() for key, value in model.state_dict().items()},
+            "obs_dim": model.obs_dim,
+            "action_nvec": model.action_nvec,
+            "hidden_size": model.hidden_size,
+        },
+    )
+
+    episode = run_actor_episode(task)
+
+    assert seen["candidate_generator_mode"] is True
+    assert seen["action_len"] == len(BLOCK_CANDIDATE_ACTION_NVECS)
+    assert episode["candidate_generator_mode"] is True
 
 
 def test_async_reports_stay_under_async_pilot_dir(tmp_path: Path) -> None:
