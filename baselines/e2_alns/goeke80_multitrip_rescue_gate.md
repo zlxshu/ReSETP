@@ -63,4 +63,4 @@ Phase 2 algorithm smoke completed with SMOKE_OK; inspect paired ALNS/LNS rows be
 - Data dir: `baselines/e2_alns/goeke80_multitrip_rescue_gate_data`
 - Report: `baselines/e2_alns/goeke80_multitrip_rescue_gate.md`
 - HEAD: `927af04de6079aecc2b4642481243d704eb64c14`
-- Artifact commit hash: `pending`
+- Artifact commit hash: `8853d6aa5c1f042439529c477d902415a070860d`
