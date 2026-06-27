@@ -870,6 +870,200 @@ def scenario_summary(rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
     return out
 
 
+def mechanism_summary(rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    pairs = pair_summary(rows)
+    wilcoxon_by_scenario = {str(row["scenario"]): row for row in wilcoxon_summary(pairs)}
+    grouped: dict[str, list[dict[str, Any]]] = defaultdict(list)
+    for row in pairs:
+        grouped[str(row["scenario"])].append(row)
+
+    baseline = _core_mechanism_metrics(grouped.get("wc80", []))
+    out: list[dict[str, Any]] = []
+    for scenario in sorted(grouped, key=lambda name: (as_float(SCENARIOS.get(name, {}).get("battery_kwh", math.inf)), name)):
+        metrics = _core_mechanism_metrics(grouped[scenario])
+        wilcox = wilcoxon_by_scenario.get(scenario, {})
+        ev_delta = metrics["mean_winner_ev_route_share_75_200"] - baseline["mean_winner_ev_route_share_75_200"]
+        gap_delta = metrics["mean_gap_pct_alns_minus_lns_75_200"] - baseline["mean_gap_pct_alns_minus_lns_75_200"]
+        nondegenerate = not metrics["majority_all_cv_or_all_ev"]
+        stage_a_signal = (
+            scenario != "wc80"
+            and ev_delta >= 0.10
+            and metrics["mean_winner_charging_action_count_75_200"] >= 1.0
+            and nondegenerate
+            and (gap_delta < -1e-9 or metrics["alns_wins_75_200"] > metrics["lns_wins_75_200"])
+        )
+        out.append(
+            {
+                "scenario": scenario,
+                "battery_label": HIGH_TENSION_BATTERY_LABELS.get(scenario, scenario),
+                "battery_kwh": SCENARIOS.get(scenario, {}).get("battery_kwh", ""),
+                **metrics,
+                "ev_share_delta_vs_wc80": ev_delta,
+                "gap_delta_vs_wc80": gap_delta,
+                "wilcoxon_p_less_alns_minus_lns": wilcox.get("p_value_less", math.nan),
+                "wilcoxon_method": wilcox.get("method", ""),
+                "stage_a_signal_for_stage_b": bool(stage_a_signal),
+            }
+        )
+    return out
+
+
+def _core_mechanism_metrics(items: list[dict[str, Any]]) -> dict[str, Any]:
+    core = [row for row in items if int(row.get("size", 0)) >= 75]
+    selected = core or list(items)
+    gaps = [as_float(row.get("gap_pct_alns_minus_lns")) for row in selected if math.isfinite(as_float(row.get("gap_pct_alns_minus_lns")))]
+    ev_shares = [as_float(row.get("winner_ev_route_share")) for row in selected if math.isfinite(as_float(row.get("winner_ev_route_share")))]
+    charging = [as_float(row.get("winner_charging_action_count", 0)) for row in selected if math.isfinite(as_float(row.get("winner_charging_action_count", 0)))]
+    winner_counts = Counter(str(row.get("paired_winner")) for row in selected)
+    all_cv = sum(1 for row in selected if boolish(row.get("winner_all_cv")))
+    all_ev = sum(1 for row in selected if boolish(row.get("winner_all_ev")))
+    pairs = len(selected)
+    non_ties = winner_counts.get("alns", 0) + winner_counts.get("lns", 0)
+    return {
+        "pairs_75_200": pairs,
+        "alns_wins_75_200": int(winner_counts.get("alns", 0)),
+        "ties_75_200": int(winner_counts.get("tie", 0)),
+        "lns_wins_75_200": int(winner_counts.get("lns", 0)),
+        "non_tie_pairs_75_200": int(non_ties),
+        "mean_gap_pct_alns_minus_lns_75_200": statistics.fmean(gaps) if gaps else math.inf,
+        "mean_winner_ev_route_share_75_200": statistics.fmean(ev_shares) if ev_shares else 0.0,
+        "mean_winner_charging_action_count_75_200": statistics.fmean(charging) if charging else 0.0,
+        "all_cv_winner_share_75_200": all_cv / pairs if pairs else 0.0,
+        "all_ev_winner_share_75_200": all_ev / pairs if pairs else 0.0,
+        "majority_all_cv_or_all_ev": bool(pairs and (all_cv / pairs > 0.5 or all_ev / pairs > 0.5)),
+    }
+
+
+def wilcoxon_summary(pair_rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    groups: dict[str, list[dict[str, Any]]] = defaultdict(list)
+    for row in pair_rows:
+        if int(row.get("size", 0)) >= 75:
+            groups[str(row["scenario"])].append(row)
+    out: list[dict[str, Any]] = []
+    for scenario, items in sorted(groups.items()):
+        diffs = [as_float(row.get("alns_cost")) - as_float(row.get("lns_cost")) for row in items if math.isfinite(as_float(row.get("alns_cost"))) and math.isfinite(as_float(row.get("lns_cost")))]
+        p_value, method = wilcoxon_less(diffs)
+        out.append(
+            {
+                "scenario": scenario,
+                "battery_kwh": SCENARIOS.get(scenario, {}).get("battery_kwh", ""),
+                "pairs_75_200": len(diffs),
+                "nonzero_pairs": sum(1 for value in diffs if abs(value) > 1e-9),
+                "wins_alns_lower": sum(1 for value in diffs if value < -1e-9),
+                "wins_lns_lower": sum(1 for value in diffs if value > 1e-9),
+                "p_value_less": p_value,
+                "method": method,
+            }
+        )
+    return out
+
+
+def wilcoxon_less(diffs: list[float]) -> tuple[float, str]:
+    nonzero = [float(value) for value in diffs if abs(float(value)) > 1e-9]
+    if not nonzero:
+        return 1.0, "all_zero"
+    try:
+        from scipy.stats import wilcoxon
+
+        try:
+            result = wilcoxon(nonzero, alternative="less", zero_method="wilcox", method="auto")
+        except TypeError:
+            result = wilcoxon(nonzero, alternative="less", zero_method="wilcox")
+        return float(result.pvalue), "scipy_wilcoxon_less"
+    except Exception:
+        return sign_test_less(nonzero), "fallback_sign_test_less"
+
+
+def sign_test_less(diffs: list[float]) -> float:
+    nonzero = [float(value) for value in diffs if abs(float(value)) > 1e-9]
+    if not nonzero:
+        return 1.0
+    wins = sum(1 for value in nonzero if value < 0.0)
+    n = len(nonzero)
+    return sum(math.comb(n, k) for k in range(wins, n + 1)) / (2 ** n)
+
+
+def high_tension_decision(rows: list[dict[str, Any]], *, expected_count: int, instances_mode: str) -> dict[str, Any]:
+    failures = collection_failures(rows)
+    pairs = pair_summary(rows)
+    mechanism = mechanism_summary(rows)
+    wilcoxon_rows = wilcoxon_summary(pairs)
+    if len(rows) != expected_count or failures:
+        return {
+            "verdict": "HALT_COLLECTION_COST",
+            "plain": "09v 数据没有闭合，或存在非零违约/环境漂移/不可读 checkpoint；这是 PROBE，不能下算法结论。",
+            "rows": len(rows),
+            "expected_rows": expected_count,
+            "paired_rows": len(pairs),
+            "collection_failure_count": len(failures) + (0 if len(rows) == expected_count else 1),
+            "stage_b_recommended": False,
+            "mechanism_summary": mechanism,
+            "wilcoxon_summary": wilcoxon_rows,
+            "failure_sample": _failure_sample(failures),
+            "report_kind": "high_tension",
+        }
+
+    baseline = next((row for row in mechanism if row["scenario"] == "wc80"), {})
+    active = [
+        row
+        for row in mechanism
+        if row["scenario"] != "wc80"
+        and row["ev_share_delta_vs_wc80"] >= 0.10
+        and row["mean_winner_charging_action_count_75_200"] >= 1.0
+        and not boolish(row["majority_all_cv_or_all_ev"])
+    ]
+    stage_b_candidates = [row for row in active if boolish(row["stage_a_signal_for_stage_b"])]
+    pass_rows = [
+        row
+        for row in active
+        if as_float(row.get("wilcoxon_p_less_alns_minus_lns")) < 0.05
+        and int(row.get("alns_wins_75_200", 0)) > int(row.get("lns_wins_75_200", 0))
+        and as_float(row.get("mean_gap_pct_alns_minus_lns_75_200")) < as_float(baseline.get("mean_gap_pct_alns_minus_lns_75_200", math.inf))
+    ]
+
+    if pass_rows:
+        verdict = "PASS_MECHANISM_SEPARATION"
+        plain = "09v PROBE 显示：至少一个高机制活跃度档中 ALNS 相对 LNS 出现统计支持的分离。下一步应另起正式场景化与 T3 提示词。"
+    elif active:
+        verdict = "INCONCLUSIVE_FAIL_NO_SEPARATION"
+        plain = "09v PROBE 找到了非退化的高机制活跃度档，但 vanilla ALNS 仍未相对 LNS 清晰分离；停止继续用电池/regime 调 vanilla ALNS，算法创新转向 DR-ALNS。"
+    else:
+        verdict = "INCONCLUSIVE_NO_NONDEGENERATE_TENSION"
+        plain = "09v PROBE 未找到非退化且充电/EV 机制真正咬合的高张力档；all-CV/all-EV 退化档的打平不证伪机制假设，但也不能支撑正式 T3。"
+
+    stage_b_recommended = bool(instances_mode == "gradient01" and stage_b_candidates and not pass_rows)
+    return {
+        "verdict": verdict,
+        "plain": plain,
+        "rows": len(rows),
+        "expected_rows": expected_count,
+        "paired_rows": len(pairs),
+        "collection_failure_count": 0,
+        "stage_b_recommended": stage_b_recommended,
+        "stage_b_reason": "Stage A detected high-tension nondegenerate signal." if stage_b_recommended else "Stage B not triggered by the preregistered Stage A rule.",
+        "stage_b_candidate_scenarios": [row["scenario"] for row in stage_b_candidates],
+        "pass_candidate_scenarios": [row["scenario"] for row in pass_rows],
+        "mechanism_summary": mechanism,
+        "wilcoxon_summary": wilcoxon_rows,
+        "failure_sample": [],
+        "report_kind": "high_tension",
+    }
+
+
+def _failure_sample(failures: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    return [
+        {
+            "scenario": row.get("scenario"),
+            "instance": row.get("instance"),
+            "algorithm": row.get("algorithm"),
+            "seed": row.get("seed"),
+            "status": row.get("status"),
+            "bucket": row.get("failure_bucket"),
+        }
+        for row in failures[:10]
+    ]
+
+
 def collection_failures(rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
     failures: list[dict[str, Any]] = []
     for row in rows:
@@ -886,11 +1080,20 @@ def collection_failures(rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
     return failures
 
 
-def conclude(phase0: dict[str, Any], rows: list[dict[str, Any]], *, expected_count: int) -> dict[str, Any]:
+def conclude(
+    phase0: dict[str, Any],
+    rows: list[dict[str, Any]],
+    *,
+    expected_count: int,
+    report_kind: str = "preflight",
+    instances_mode: str = "smoke",
+) -> dict[str, Any]:
     if not phase0.get("phase0_ok"):
         return {"verdict": "HALT_SEMANTIC_DRIFT", "phase0_ok": False, "plain": "默认参数、环境或09s warm-start锚点不一致，先不跑比较。"}
     if expected_count == 0:
         return {"verdict": "PHASE0_OK", "phase0_ok": True, "plain": "只完成Phase0。"}
+    if report_kind == "high_tension":
+        return high_tension_decision(rows, expected_count=expected_count, instances_mode=instances_mode) | {"phase0_ok": True}
     failures = collection_failures(rows)
     pairs = pair_summary(rows)
     scenario_rows = scenario_summary(rows)
@@ -909,21 +1112,13 @@ def conclude(phase0: dict[str, Any], rows: list[dict[str, Any]], *, expected_cou
         "collection_failure_count": len(failures) + (0 if len(rows) == expected_count else 1),
         "plain": plain,
         "scenario_summary": scenario_rows,
-        "failure_sample": [
-            {
-                "scenario": row.get("scenario"),
-                "instance": row.get("instance"),
-                "algorithm": row.get("algorithm"),
-                "seed": row.get("seed"),
-                "status": row.get("status"),
-                "bucket": row.get("failure_bucket"),
-            }
-            for row in failures[:10]
-        ],
+        "failure_sample": _failure_sample(failures),
     }
 
 
 def render_report(metadata: dict[str, Any], phase0: dict[str, Any], conclusion: dict[str, Any]) -> str:
+    if metadata.get("report_kind") == "high_tension":
+        return render_high_tension_report(metadata, phase0, conclusion)
     scenario_lines = []
     for row in conclusion.get("scenario_summary", []):
         scenario_lines.append(
@@ -978,6 +1173,130 @@ def render_report(metadata: dict[str, Any], phase0: dict[str, Any], conclusion: 
         "- Goeke80 is interpreted as a Goeke baseline scene unless a later evidence-backed scenario is selected for the mixed-fleet story.",
     ]
     return "\n".join(lines).rstrip() + "\n"
+
+
+def render_high_tension_report(metadata: dict[str, Any], phase0: dict[str, Any], conclusion: dict[str, Any]) -> str:
+    mechanism_lines = []
+    for row in conclusion.get("mechanism_summary", []):
+        wins = f"{int(row.get('alns_wins_75_200', 0))}/{int(row.get('ties_75_200', 0))}/{int(row.get('lns_wins_75_200', 0))}"
+        p_value = as_float(row.get("wilcoxon_p_less_alns_minus_lns"))
+        p_text = f"{p_value:.4g}" if math.isfinite(p_value) else "nan"
+        mechanism_lines.append(
+            "| {label} | {ev:.4f} | {charge:.2f} | {wins} | {gap:.4f} | {p} | {degenerate} |".format(
+                label=row.get("battery_label", row.get("scenario", "")),
+                ev=as_float(row.get("mean_winner_ev_route_share_75_200")),
+                charge=as_float(row.get("mean_winner_charging_action_count_75_200")),
+                wins=wins,
+                gap=as_float(row.get("mean_gap_pct_alns_minus_lns_75_200")),
+                p=p_text,
+                degenerate=row.get("majority_all_cv_or_all_ev"),
+            )
+        )
+
+    failure_lines = []
+    for row in conclusion.get("failure_sample", []):
+        failure_lines.append(
+            f"| {row.get('scenario', '')} | {row.get('instance', '')} | {row.get('algorithm', '')} | {row.get('seed', '')} | {row.get('status', '')} | {row.get('bucket', '')} |"
+        )
+
+    lines = [
+        "# 09v High-Tension ALNS vs LNS Separation Probe",
+        "",
+        "Evidence level: **PROBE / 非正式 T3**. This report does not claim formal algorithm dominance.",
+        "",
+        f"Verdict: `{conclusion['verdict']}`",
+        "",
+        "## Plain Reading",
+        "",
+        str(conclusion.get("plain", "")),
+        "",
+        "本步服务的目标：验证 ALNS 在 Goeke80/100 下与 LNS 打平，是否只是因为 EV/充电/碳机制几乎不活跃；若电池档提高后机制咬合，ALNS-LNS 配对差是否随之分离。",
+        "",
+        "## Phase 0",
+        "",
+        f"- Phase0 OK: `{phase0.get('phase0_ok')}`",
+        f"- Defaults probe: `{json.dumps(phase0.get('default_probe', {}), sort_keys=True)}`",
+        f"- 09s warm start rows OK: `{phase0.get('warm_start_09s_ok')}` with `{phase0.get('warm_start_rows')}` rows",
+        "",
+        "## Mechanism Separation Summary",
+        "",
+        "| battery tier | mean EV route share (75-200) | mean charging actions | ALNS/tie/LNS | mean gap % ALNS-LNS | Wilcoxon p | majority all-CV/all-EV |",
+        "|---|---:|---:|---:|---:|---:|---:|",
+        *mechanism_lines,
+        "",
+        "## Stage Decision",
+        "",
+        f"- Stage B recommended: `{conclusion.get('stage_b_recommended')}`",
+        f"- Stage B reason: {conclusion.get('stage_b_reason', '')}",
+        f"- Stage B candidate scenarios: `{json.dumps(conclusion.get('stage_b_candidate_scenarios', []), ensure_ascii=False)}`",
+        f"- PASS candidate scenarios: `{json.dumps(conclusion.get('pass_candidate_scenarios', []), ensure_ascii=False)}`",
+        "",
+        "## Caveat",
+        "",
+        "If a battery tier degenerates into majority all-CV or majority all-EV, a tie there is not evidence against the target hypothesis. The hypothesis concerns non-degenerate contested regimes where EV use and charging actually bind.",
+        "",
+        "## Artifacts",
+        "",
+        f"- Data dir: `{metadata.get('output_dir')}`",
+        f"- Raw rows: `{metadata.get('output_dir')}/raw_runs.csv`",
+        f"- Paired summary: `{metadata.get('output_dir')}/paired_summary.csv`",
+        f"- Mechanism summary: `{metadata.get('output_dir')}/mechanism_summary.csv`",
+        f"- Wilcoxon summary: `{metadata.get('output_dir')}/wilcoxon_summary.csv`",
+        f"- Stage decision: `{metadata.get('output_dir')}/stage_decision.json`",
+        f"- Artifact hashes: `{metadata.get('output_dir')}/artifact_hashes.json`",
+        f"- Report: `{metadata.get('report_path')}`",
+        f"- HEAD at run start: `{metadata.get('head')}`",
+        f"- Artifact commit hash: `{metadata.get('artifact_commit_hash')}`",
+        "",
+        "## Collection Failures",
+        "",
+        "| scenario | instance | algorithm | seed | status | bucket |",
+        "|---|---|---|---:|---|---|",
+        *(failure_lines or ["|  |  |  |  | none |  |"]),
+        "",
+        "## Interpretation Rules",
+        "",
+        "- `80/100/150/280kWh` are in-memory diagnostic battery overrides only.",
+        "- Carbon price stays fixed at `0.05034`; no cost/check/evaluation/default-parameter semantics are changed.",
+        "- Stage A is a trend probe. Stage B only runs if the preregistered Stage A signal appears.",
+    ]
+    return "\n".join(lines).rstrip() + "\n"
+
+
+def artifact_hashes(output_dir: Path, report_path: Path) -> dict[str, Any]:
+    candidates = [
+        output_dir / "phase0_audit.json",
+        output_dir / "raw_runs.csv",
+        output_dir / "paired_summary.csv",
+        output_dir / "scale_summary.csv",
+        output_dir / "scenario_summary.csv",
+        output_dir / "mechanism_summary.csv",
+        output_dir / "wilcoxon_summary.csv",
+        output_dir / "stage_decision.json",
+        output_dir / "metadata.json",
+        output_dir / "conclusion.json",
+        report_path,
+    ]
+    return {
+        "schema": "setp-09v-artifact-hashes.v1",
+        "files": [
+            {
+                "path": str(path),
+                "sha256": sha256_file(path),
+                "bytes": path.stat().st_size,
+            }
+            for path in candidates
+            if path.exists()
+        ],
+    }
+
+
+def sha256_file(path: Path) -> str:
+    digest = hashlib.sha256()
+    with path.open("rb") as handle:
+        for chunk in iter(lambda: handle.read(1024 * 1024), b""):
+            digest.update(chunk)
+    return digest.hexdigest()
 
 
 def as_float(value: Any) -> float:
