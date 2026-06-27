@@ -8,6 +8,8 @@
 
 重要限制: 这份报告不能逐字还原所有 Claude Desktop 原始消息,除非那些消息已经被贴进本线程、写进仓库文件或被 Codex memory/rollout 摘要记录。下面对 Claude 侧内容的描述,只使用本线程可见内容、HANDOFF/MASTER、09 系列提示词/报告、git/报告产物和 memory 摘要。
 
+这份报告同时覆盖用户三次提出的反馈要求: 第一,按"预期、问题、影响、解决办法/辅助工具"四个桶复盘;第二,回答英文 walkthrough 的六个问题,包括目标、难点、工作流、Codex 挣扎点、用户后续补救和最终落点;第三,覆盖 broader-goal examples,包括 Codex 丢失目标、局部合理但整体失败、需要过多监督、反复犯同类错误、错误后恢复不足、跨文件/工具协调差,以及用户被迫切换模型或方法。
+
 ## 1. 一句话总述
 
 这一周真正要做的,不是简单把某个算法跑赢,也不是找一个好看的电池参数。真正目标是把 E2 算法对比做成论文里站得住的证据: 算法比较要公平,参数要有来源,混合车队故事不能退化成全油车或全电车,代码和论文模型语义要一致,长任务要能监控和恢复,Claude 与 Codex 的交接要不断线。
@@ -269,4 +271,3 @@ Codex struggled most with maintaining context across many turns. It treated diag
 To compensate, I used Claude for higher-level judgment, wrote increasingly explicit prompts, relied on HANDOFF/MASTER files, Git commits, local reports, CSV/JSON artifacts, memory summaries, and subagents to reconstruct the chain. The final outcome is partial: we corrected several semantic and parameter issues, but the formal algorithm comparison and modern mixed-fleet story are still not complete.
 
 Before I would delegate a similar task to Codex again, it would need to preserve the broader goal, clearly separate evidence levels, explain results in plain language, keep source-of-truth files synchronized, and stop for global reassessment after major errors instead of continuing with another narrow experiment.
-
