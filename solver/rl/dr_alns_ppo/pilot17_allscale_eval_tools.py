@@ -814,8 +814,8 @@ def wilcoxon_rows(rows: list[dict[str, Any]], *, left_algorithm: str) -> list[di
                 statistic: float | str = float(result.statistic)
                 p_value: float | str = float(result.pvalue)
             except ValueError:
-                statistic = math.nan
-                p_value = math.nan
+                statistic = ""
+                p_value = ""
             used = True
         else:
             statistic = ""
@@ -868,9 +868,15 @@ def classify_verdict(
         return {"verdict": "HALT_DR", "reason": "Integrity gates failed; no performance verdict."}
     scales = sorted({int(row["scale"]) for row in scale_rows})
     baselines = sorted({str(row["baseline_algorithm"]) for row in scale_rows})
+    external_rows = [
+        row for row in scale_rows
+        if not str(row["baseline_algorithm"]).startswith("ppo_block")
+    ]
     strongest_by_scale: dict[int, dict[str, Any]] = {}
     for scale in scales:
-        candidates = [row for row in scale_rows if int(row["scale"]) == scale]
+        candidates = [row for row in external_rows if int(row["scale"]) == scale]
+        if not candidates:
+            candidates = [row for row in scale_rows if int(row["scale"]) == scale]
         strongest_by_scale[scale] = min(candidates, key=lambda row: float(row["mean_relative_pct"]))
     mean_vs_second = statistics.fmean(float(row["mean_relative_pct"]) for row in strongest_by_scale.values())
     min_vs_second = min(float(row["mean_relative_pct"]) for row in strongest_by_scale.values())
@@ -898,6 +904,7 @@ def classify_verdict(
         "min_scale_relative_pct_vs_second": min_vs_second,
         "strongest_baseline_by_scale": strongest_by_scale,
         "baselines": baselines,
+        "target_baseline_rule": "Target/second-place gate excludes ppo_block_final; final is reported as a DR variant, not an external baseline.",
     }
 
 
@@ -940,7 +947,7 @@ def write_csv(path: str | Path, rows: list[dict[str, Any]], fieldnames: list[str
     output.parent.mkdir(parents=True, exist_ok=True)
     fields = fieldnames or sorted({key for row in rows for key in row})
     with output.open("w", newline="", encoding="utf-8") as handle:
-        writer = csv.DictWriter(handle, fieldnames=fields)
+        writer = csv.DictWriter(handle, fieldnames=fields, lineterminator="\n")
         writer.writeheader()
         for row in rows:
             writer.writerow(csv_row(row, fields))
@@ -949,7 +956,19 @@ def write_csv(path: str | Path, rows: list[dict[str, Any]], fieldnames: list[str
 def write_json(path: str | Path, payload: dict[str, Any]) -> None:
     output = Path(path)
     output.parent.mkdir(parents=True, exist_ok=True)
-    output.write_text(json.dumps(payload, ensure_ascii=False, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+    output.write_text(json.dumps(json_safe(payload), ensure_ascii=False, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+
+
+def json_safe(value: Any) -> Any:
+    if isinstance(value, dict):
+        return {str(key): json_safe(item) for key, item in value.items()}
+    if isinstance(value, list):
+        return [json_safe(item) for item in value]
+    if isinstance(value, tuple):
+        return [json_safe(item) for item in value]
+    if isinstance(value, float) and not math.isfinite(value):
+        return None
+    return value
 
 
 def load_rows(path: str | Path) -> list[dict[str, Any]]:

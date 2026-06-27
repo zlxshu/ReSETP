@@ -77,6 +77,26 @@ def test_verdict_target_pass_requires_each_scale_nonnegative() -> None:
     assert verdict["verdict"] == "WEAK"
 
 
+def test_verdict_excludes_ppo_final_from_second_place_gate() -> None:
+    scale_rows = [
+        _scale(50, "ppo_block_final", 0.0, wins=0, n=9),
+        _scale(50, "alpha_ucb_block", 12.0, wins=5, n=15),
+        _scale(75, "ppo_block_final", 0.0, wins=0, n=9),
+        _scale(75, "alpha_ucb_block", 12.0, wins=5, n=15),
+        _scale(100, "ppo_block_final", 0.0, wins=0, n=9),
+        _scale(100, "alpha_ucb_block", 12.0, wins=5, n=15),
+        _scale(150, "ppo_block_final", 0.0, wins=0, n=9),
+        _scale(150, "alpha_ucb_block", 12.0, wins=5, n=15),
+        _scale(200, "ppo_block_final", 0.0, wins=0, n=9),
+        _scale(200, "alpha_ucb_block", 12.0, wins=5, n=15),
+    ]
+
+    verdict = tools.classify_verdict(scale_rows=scale_rows, paired_rows=[], integrity={"ok": True, "ppo_underbudget_count": 0})
+
+    assert verdict["verdict"] == "TARGET_PASS"
+    assert verdict["strongest_baseline_by_scale"][50]["baseline_algorithm"] == "alpha_ucb_block"
+
+
 def test_build_eval_manifest_marks_all_bundles_as_formal_eval() -> None:
     bundles = ["e2-threeshift-50c-01", "e2-threeshift-75c-01"]
 

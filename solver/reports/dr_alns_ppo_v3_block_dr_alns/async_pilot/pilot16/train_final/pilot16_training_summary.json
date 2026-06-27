@@ -1,0 +1,158 @@
+{
+  "status": "PASS_PILOT16_TRAINING_HEALTH",
+  "checks": {
+    "completed_episodes_ge_5000": true,
+    "completed_episodes_ge_8000": true,
+    "all_15_train_bundles_touched": true,
+    "route_energy_carbon_present": true,
+    "zero_violations": true,
+    "feasible_all": true,
+    "worker_py313": true,
+    "numpy_235": true,
+    "device_cuda": true,
+    "finite_rewards": true,
+    "finite_best_obj": true,
+    "checkpoint_count_ge_5": true,
+    "candidate_nondefault_rate_ge_40pct": true,
+    "search_noncontinue_rate_ge_5pct": true,
+    "entropy_not_collapsed": true,
+    "large_scale_not_sustained_worse": true
+  },
+  "summary": {
+    "policy_version": 375,
+    "completed_episodes": 11280,
+    "valid_steps_total": 50003,
+    "stale_episodes_total": 4,
+    "final_curriculum_phase": "carbon",
+    "curriculum_schedule": [
+      "route",
+      "energy",
+      "carbon"
+    ],
+    "device": "cuda",
+    "shared_baseline_by_bundle": true,
+    "checkpoint_every_updates": 10,
+    "train_wall_time_seconds": 44604.234000000055
+  },
+  "config_selection": {
+    "num_actors": 6,
+    "eval_budget": 20,
+    "block_size": 4
+  },
+  "phase_counts": {
+    "route": 505,
+    "energy": 505,
+    "carbon": 10270
+  },
+  "scale_counts": {
+    "75c": 2256,
+    "50c": 2256,
+    "100c": 2256,
+    "150c": 2256,
+    "200c": 2256
+  },
+  "phase_transitions": [
+    {
+      "completed_episodes": "500",
+      "valid_steps_total": "2363",
+      "from_phase": "route",
+      "to_phase": "energy"
+    },
+    {
+      "completed_episodes": "1005",
+      "valid_steps_total": "4722",
+      "from_phase": "energy",
+      "to_phase": "carbon"
+    }
+  ],
+  "unique_bundle_count": 15,
+  "candidate_nondefault_rate": 0.644643464006557,
+  "search_noncontinue_rate": 0.4964516322491654,
+  "workers": [
+    "C:\\Users\\zlxshu\\.venvs\\resetp-solver-py313\\Scripts\\python.exe"
+  ],
+  "numpys": [
+    "2.3.5"
+  ],
+  "throughput_last": {
+    "completed_episodes": "11280",
+    "elapsed_seconds": "44603.46900000004",
+    "num_actors": "6",
+    "busy_time_seconds_sum": "262679.8020000042",
+    "busy_ratio": "0.981537265632874",
+    "idle_ratio": "0.018462734367125977",
+    "episodes_per_hour": "910.4224606386549",
+    "block_steps_per_hour": "4037.416910330446",
+    "worker_failure_count": "0"
+  },
+  "peak_system_memory_used_mb": 13831.7265625,
+  "min_system_memory_available_mb": 2404.33203125,
+  "entropy": {
+    "first": 9.193696975708008,
+    "middle": 8.7121422290802,
+    "final": 8.678935289382935,
+    "minimum": 8.318948984146118,
+    "final_over_first": 0.9440092829157629
+  },
+  "checkpoint_count": 37,
+  "checkpoints": [
+    "solver\\reports\\dr_alns_ppo_v3_block_dr_alns\\async_pilot\\pilot16\\train_final\\checkpoints\\async_block_ppo_update_0010.pt",
+    "solver\\reports\\dr_alns_ppo_v3_block_dr_alns\\async_pilot\\pilot16\\train_final\\checkpoints\\async_block_ppo_update_0020.pt",
+    "solver\\reports\\dr_alns_ppo_v3_block_dr_alns\\async_pilot\\pilot16\\train_final\\checkpoints\\async_block_ppo_update_0030.pt",
+    "solver\\reports\\dr_alns_ppo_v3_block_dr_alns\\async_pilot\\pilot16\\train_final\\checkpoints\\async_block_ppo_update_0040.pt",
+    "solver\\reports\\dr_alns_ppo_v3_block_dr_alns\\async_pilot\\pilot16\\train_final\\checkpoints\\async_block_ppo_update_0050.pt",
+    "solver\\reports\\dr_alns_ppo_v3_block_dr_alns\\async_pilot\\pilot16\\train_final\\checkpoints\\async_block_ppo_update_0060.pt",
+    "solver\\reports\\dr_alns_ppo_v3_block_dr_alns\\async_pilot\\pilot16\\train_final\\checkpoints\\async_block_ppo_update_0070.pt",
+    "solver\\reports\\dr_alns_ppo_v3_block_dr_alns\\async_pilot\\pilot16\\train_final\\checkpoints\\async_block_ppo_update_0080.pt",
+    "solver\\reports\\dr_alns_ppo_v3_block_dr_alns\\async_pilot\\pilot16\\train_final\\checkpoints\\async_block_ppo_update_0090.pt",
+    "solver\\reports\\dr_alns_ppo_v3_block_dr_alns\\async_pilot\\pilot16\\train_final\\checkpoints\\async_block_ppo_update_0100.pt",
+    "solver\\reports\\dr_alns_ppo_v3_block_dr_alns\\async_pilot\\pilot16\\train_final\\checkpoints\\async_block_ppo_update_0110.pt",
+    "solver\\reports\\dr_alns_ppo_v3_block_dr_alns\\async_pilot\\pilot16\\train_final\\checkpoints\\async_block_ppo_update_0120.pt",
+    "solver\\reports\\dr_alns_ppo_v3_block_dr_alns\\async_pilot\\pilot16\\train_final\\checkpoints\\async_block_ppo_update_0130.pt",
+    "solver\\reports\\dr_alns_ppo_v3_block_dr_alns\\async_pilot\\pilot16\\train_final\\checkpoints\\async_block_ppo_update_0140.pt",
+    "solver\\reports\\dr_alns_ppo_v3_block_dr_alns\\async_pilot\\pilot16\\train_final\\checkpoints\\async_block_ppo_update_0150.pt",
+    "solver\\reports\\dr_alns_ppo_v3_block_dr_alns\\async_pilot\\pilot16\\train_final\\checkpoints\\async_block_ppo_update_0160.pt",
+    "solver\\reports\\dr_alns_ppo_v3_block_dr_alns\\async_pilot\\pilot16\\train_final\\checkpoints\\async_block_ppo_update_0170.pt",
+    "solver\\reports\\dr_alns_ppo_v3_block_dr_alns\\async_pilot\\pilot16\\train_final\\checkpoints\\async_block_ppo_update_0180.pt",
+    "solver\\reports\\dr_alns_ppo_v3_block_dr_alns\\async_pilot\\pilot16\\train_final\\checkpoints\\async_block_ppo_update_0190.pt",
+    "solver\\reports\\dr_alns_ppo_v3_block_dr_alns\\async_pilot\\pilot16\\train_final\\checkpoints\\async_block_ppo_update_0200.pt",
+    "solver\\reports\\dr_alns_ppo_v3_block_dr_alns\\async_pilot\\pilot16\\train_final\\checkpoints\\async_block_ppo_update_0210.pt",
+    "solver\\reports\\dr_alns_ppo_v3_block_dr_alns\\async_pilot\\pilot16\\train_final\\checkpoints\\async_block_ppo_update_0220.pt",
+    "solver\\reports\\dr_alns_ppo_v3_block_dr_alns\\async_pilot\\pilot16\\train_final\\checkpoints\\async_block_ppo_update_0230.pt",
+    "solver\\reports\\dr_alns_ppo_v3_block_dr_alns\\async_pilot\\pilot16\\train_final\\checkpoints\\async_block_ppo_update_0240.pt",
+    "solver\\reports\\dr_alns_ppo_v3_block_dr_alns\\async_pilot\\pilot16\\train_final\\checkpoints\\async_block_ppo_update_0250.pt",
+    "solver\\reports\\dr_alns_ppo_v3_block_dr_alns\\async_pilot\\pilot16\\train_final\\checkpoints\\async_block_ppo_update_0260.pt",
+    "solver\\reports\\dr_alns_ppo_v3_block_dr_alns\\async_pilot\\pilot16\\train_final\\checkpoints\\async_block_ppo_update_0270.pt",
+    "solver\\reports\\dr_alns_ppo_v3_block_dr_alns\\async_pilot\\pilot16\\train_final\\checkpoints\\async_block_ppo_update_0280.pt",
+    "solver\\reports\\dr_alns_ppo_v3_block_dr_alns\\async_pilot\\pilot16\\train_final\\checkpoints\\async_block_ppo_update_0290.pt",
+    "solver\\reports\\dr_alns_ppo_v3_block_dr_alns\\async_pilot\\pilot16\\train_final\\checkpoints\\async_block_ppo_update_0300.pt",
+    "solver\\reports\\dr_alns_ppo_v3_block_dr_alns\\async_pilot\\pilot16\\train_final\\checkpoints\\async_block_ppo_update_0310.pt",
+    "solver\\reports\\dr_alns_ppo_v3_block_dr_alns\\async_pilot\\pilot16\\train_final\\checkpoints\\async_block_ppo_update_0320.pt",
+    "solver\\reports\\dr_alns_ppo_v3_block_dr_alns\\async_pilot\\pilot16\\train_final\\checkpoints\\async_block_ppo_update_0330.pt",
+    "solver\\reports\\dr_alns_ppo_v3_block_dr_alns\\async_pilot\\pilot16\\train_final\\checkpoints\\async_block_ppo_update_0340.pt",
+    "solver\\reports\\dr_alns_ppo_v3_block_dr_alns\\async_pilot\\pilot16\\train_final\\checkpoints\\async_block_ppo_update_0350.pt",
+    "solver\\reports\\dr_alns_ppo_v3_block_dr_alns\\async_pilot\\pilot16\\train_final\\checkpoints\\async_block_ppo_update_0360.pt",
+    "solver\\reports\\dr_alns_ppo_v3_block_dr_alns\\async_pilot\\pilot16\\train_final\\checkpoints\\async_block_ppo_update_0370.pt"
+  ],
+  "large_scale_trend": {
+    "150c": {
+      "episode_rows": 2256,
+      "normalized_best_obj_thirds": [
+        0.9969380772815352,
+        0.9960009074688461,
+        0.9959995595015549
+      ],
+      "sustained_worse": false
+    },
+    "200c": {
+      "episode_rows": 2256,
+      "normalized_best_obj_thirds": [
+        0.9997746432281507,
+        0.9994994480663512,
+        0.9994086989537546
+      ],
+      "sustained_worse": false
+    }
+  },
+  "final_model_path": "solver\\reports\\dr_alns_ppo_v3_block_dr_alns\\async_pilot\\pilot16\\train_final\\async_block_ppo_model.pt"
+}
