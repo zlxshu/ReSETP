@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import argparse
 import csv
+import hashlib
 import json
 import math
 import os
@@ -35,6 +36,13 @@ GOLD_NUMPY = "2.3.5"
 HARD_TIMEOUT_GRACE_SECONDS = 15.0
 WALLCLOCK_BACKSTOP_EVALS = 16_000
 LOWERED_FIXED_EVALS = 8_000
+HIGH_TENSION_SCENARIOS = ("wc80", "wc100", "wc150", "wc280")
+HIGH_TENSION_BATTERY_LABELS = {
+    "wc80": "80 (Goeke old anchor)",
+    "wc100": "100 (boundary)",
+    "wc150": "150 (source-supported vehicle class)",
+    "wc280": "280 (modern truck)",
+}
 
 SCENARIOS: dict[str, dict[str, Any]] = {
     "wc80": {
@@ -48,6 +56,18 @@ SCENARIOS: dict[str, dict[str, Any]] = {
         "mode": "wallclock",
         "eval_budget": WALLCLOCK_BACKSTOP_EVALS,
         "label": "100kWh same wall-clock",
+    },
+    "wc150": {
+        "battery_kwh": 150.0,
+        "mode": "wallclock",
+        "eval_budget": WALLCLOCK_BACKSTOP_EVALS,
+        "label": "150kWh same wall-clock",
+    },
+    "wc280": {
+        "battery_kwh": 280.0,
+        "mode": "wallclock",
+        "eval_budget": WALLCLOCK_BACKSTOP_EVALS,
+        "label": "280kWh same wall-clock",
     },
     "budget8k80": {
         "battery_kwh": 80.0,
@@ -72,8 +92,9 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--worker-task-json", default="")
     parser.add_argument("--worker-output-json", default="")
     parser.add_argument("--phase0-only", action="store_true")
-    parser.add_argument("--instances", choices=("smoke", "gradient01", "all"), default="smoke")
+    parser.add_argument("--instances", choices=("smoke", "gradient01", "gradient01_75_200", "all"), default="smoke")
     parser.add_argument("--scenarios", default="wc80,wc100,budget8k80,budget8k100")
+    parser.add_argument("--report-kind", choices=("preflight", "high_tension"), default="preflight")
     parser.add_argument("--seeds", default="1")
     parser.add_argument("--workers", type=int, default=2)
     parser.add_argument("--cap-scale", type=float, default=1.0)
@@ -117,9 +138,13 @@ def main(argv: list[str] | None = None) -> int:
             rows = run_tasks(repo_root, output_dir, tasks, workers=max(1, int(args.workers)), resume=bool(args.resume), retry_failures=bool(args.retry_failures))
         rows = enrich_rows(repo_root, rows)
         write_csv(output_dir / "raw_runs.csv", rows)
-        write_csv(output_dir / "paired_summary.csv", pair_summary(rows))
+        pairs = pair_summary(rows)
+        write_csv(output_dir / "paired_summary.csv", pairs)
         write_csv(output_dir / "scale_summary.csv", scale_summary(rows))
         write_csv(output_dir / "scenario_summary.csv", scenario_summary(rows))
+        if args.report_kind == "high_tension":
+            write_csv(output_dir / "mechanism_summary.csv", mechanism_summary(rows))
+            write_csv(output_dir / "wilcoxon_summary.csv", wilcoxon_summary(pairs))
 
     conclusion = conclude(
         phase0,
@@ -137,13 +162,19 @@ def main(argv: list[str] | None = None) -> int:
         )
         if phase0["phase0_ok"] and not args.phase0_only
         else 0,
+        report_kind=args.report_kind,
+        instances_mode=args.instances,
     )
     metadata["elapsed_seconds"] = round(time.perf_counter() - started, 6)
     metadata["verdict"] = conclusion["verdict"]
     write_json(output_dir / "metadata.json", metadata)
     write_json(output_dir / "conclusion.json", conclusion)
+    if args.report_kind == "high_tension":
+        write_json(output_dir / "stage_decision.json", conclusion)
     report_path.parent.mkdir(parents=True, exist_ok=True)
     report_path.write_text(render_report(metadata, phase0, conclusion), encoding="utf-8")
+    if args.report_kind == "high_tension":
+        write_json(output_dir / "artifact_hashes.json", artifact_hashes(output_dir, report_path))
     print(json.dumps(conclusion, ensure_ascii=False, indent=2))
     return 0 if not conclusion["verdict"].startswith("HALT") else 2
 
@@ -159,6 +190,7 @@ def build_metadata(repo_root: Path, args: argparse.Namespace) -> dict[str, Any]:
         "platform": platform.platform(),
         "instances": args.instances,
         "scenarios": args.scenarios,
+        "report_kind": args.report_kind,
         "seeds": args.seeds,
         "output_dir": str(args.output_dir),
         "report_path": str(args.report_path),
@@ -224,10 +256,12 @@ def select_instances(mode: str) -> list[tuple[str, str, int, int]]:
             ("multidepot", "e2-multidepot-100c-01", 100, 1),
             ("threeshift", "e2-threeshift-200c-01", 200, 1),
         ]
-    replicates = (1,) if mode == "gradient01" else (1, 2, 3)
+    replicates = (1,) if mode in {"gradient01", "gradient01_75_200"} else (1, 2, 3)
     rows: list[tuple[str, str, int, int]] = []
     for category, sizes in (("vanilla", VANILLA_MULTIDEPOT_SIZES), ("multidepot", VANILLA_MULTIDEPOT_SIZES), ("threeshift", THREESHIFT_SIZES)):
         for size in sizes:
+            if mode == "gradient01_75_200" and size < 75:
+                continue
             for replicate in replicates:
                 rows.append((category, f"e2-{category}-{size}c-{replicate:02d}", int(size), int(replicate)))
     return rows
@@ -575,6 +609,7 @@ def row_from_solution(
     timings: dict[str, Any],
 ) -> dict[str, Any]:
     routes = list(solution.routes) if solution is not None else []
+    charging_actions = list(solution.charging_actions) if solution is not None else []
     cv_routes = [route for route in routes if str(route.vehicle_type).lower() == "cv"]
     ev_routes = [route for route in routes if str(route.vehicle_type).lower() == "ev"]
     trip_counts = Counter(physical_vehicle_id(str(route.vehicle_id)) for route in routes)
@@ -588,6 +623,7 @@ def row_from_solution(
         "route_count": len(routes),
         "cv_route_count": len(cv_routes),
         "ev_route_count": len(ev_routes),
+        "charging_action_count": len(charging_actions),
         "winner_ev_route_share": len(ev_routes) / len(routes) if routes else 0.0,
         "winner_all_cv": bool(routes and not ev_routes),
         "winner_all_ev": bool(routes and not cv_routes),
@@ -614,6 +650,7 @@ def failure_row(task: dict[str, Any], elapsed: float, status: str, reason: str, 
         "route_count": 0,
         "cv_route_count": 0,
         "ev_route_count": 0,
+        "charging_action_count": 0,
         "winner_ev_route_share": 0.0,
         "winner_all_cv": False,
         "winner_all_ev": False,
@@ -754,11 +791,14 @@ def pair_summary(rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
                 "lns_status": lns.get("status"),
                 "alns_evals": int(float(alns.get("actual_evals", 0) or 0)),
                 "lns_evals": int(float(lns.get("actual_evals", 0) or 0)),
+                "alns_charging_action_count": int(float(alns.get("charging_action_count", 0) or 0)),
+                "lns_charging_action_count": int(float(lns.get("charging_action_count", 0) or 0)),
                 "alns_cost": alns_cost,
                 "lns_cost": lns_cost,
                 "gap_pct_alns_minus_lns": gap_pct,
                 "paired_winner": winner,
                 "winner_algorithm_for_composition": winner_row.get("algorithm"),
+                "winner_charging_action_count": int(float(winner_row.get("charging_action_count", 0) or 0)),
                 "winner_ev_route_share": as_float(winner_row.get("winner_ev_route_share")),
                 "winner_all_cv": boolish(winner_row.get("winner_all_cv")),
                 "winner_all_ev": boolish(winner_row.get("winner_all_ev")),
@@ -779,8 +819,10 @@ def scale_summary(rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
     for (scenario, category, size), items in sorted(groups.items()):
         gaps = [as_float(row["gap_pct_alns_minus_lns"]) for row in items if math.isfinite(as_float(row["gap_pct_alns_minus_lns"]))]
         ev_shares = [as_float(row["winner_ev_route_share"]) for row in items if math.isfinite(as_float(row["winner_ev_route_share"]))]
+        charging_actions = [as_float(row.get("winner_charging_action_count", 0)) for row in items if math.isfinite(as_float(row.get("winner_charging_action_count", 0)))]
         winner_counts = Counter(str(row["paired_winner"]) for row in items)
         all_cv_count = sum(1 for row in items if boolish(row["winner_all_cv"]))
+        all_ev_count = sum(1 for row in items if boolish(row["winner_all_ev"]))
         out.append(
             {
                 "scenario": scenario,
@@ -790,7 +832,9 @@ def scale_summary(rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
                 "mean_gap_pct_alns_minus_lns": statistics.fmean(gaps) if gaps else math.inf,
                 "best_gap_pct_alns_minus_lns": min(gaps) if gaps else math.inf,
                 "mean_winner_ev_route_share": statistics.fmean(ev_shares) if ev_shares else 0.0,
+                "mean_winner_charging_action_count": statistics.fmean(charging_actions) if charging_actions else 0.0,
                 "all_cv_winner_share": all_cv_count / len(items) if items else 0.0,
+                "all_ev_winner_share": all_ev_count / len(items) if items else 0.0,
                 "paired_winner_counts": json.dumps(dict(winner_counts), sort_keys=True),
             }
         )
@@ -808,6 +852,7 @@ def scenario_summary(rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
     for scenario, items in sorted(groups.items()):
         gaps = [as_float(row["gap_pct_alns_minus_lns"]) for row in items if math.isfinite(as_float(row["gap_pct_alns_minus_lns"]))]
         ev_shares_75 = [as_float(row["winner_ev_route_share"]) for row in items if int(row.get("size", 0)) >= 75]
+        charging_75 = [as_float(row.get("winner_charging_action_count", 0)) for row in items if int(row.get("size", 0)) >= 75]
         winner_counts = Counter(str(row["paired_winner"]) for row in items)
         out.append(
             {
@@ -818,6 +863,7 @@ def scenario_summary(rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
                 "paired_winner_counts": json.dumps(dict(winner_counts), sort_keys=True),
                 "mean_gap_pct_alns_minus_lns": statistics.fmean(gaps) if gaps else math.inf,
                 "mean_winner_ev_route_share_75_200": statistics.fmean(ev_shares_75) if ev_shares_75 else 0.0,
+                "mean_winner_charging_action_count_75_200": statistics.fmean(charging_75) if charging_75 else 0.0,
                 "collection_failures": int(failures_by_scenario.get(scenario, 0)),
             }
         )
