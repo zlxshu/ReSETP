@@ -1,0 +1,24 @@
+{
+  "artifact_commit_hash": "pending",
+  "cap_scale": 1.0,
+  "command": "baselines/e2_alns/wallclock_battery_preflight.py --instances gradient01 --scenarios wc80,wc100,budget8k80,budget8k100 --seeds 1 --workers 2 --output-dir baselines/e2_alns/wallclock_battery_preflight_stagea_data --report-path baselines/e2_alns/wallclock_battery_preflight_stagea.md",
+  "elapsed_seconds": 39512.276216,
+  "head": "c03ef202d3f60b6dee583a9dc1ae5c63025f2886",
+  "instances": "gradient01",
+  "max_cap_seconds": 0.0,
+  "notes": [
+    "Diagnostic only: no default parameter or model semantic change.",
+    "Wall-clock lanes accept zero-violation incumbents even when eval backstop is not reached.",
+    "Lowered-budget lanes require the fixed eval budget to close.",
+    "Goeke80 is treated as a baseline scene, not a modern mixed-fleet story by itself."
+  ],
+  "output_dir": "baselines/e2_alns/wallclock_battery_preflight_stagea_data",
+  "platform": "macOS-15.7.5-arm64-arm-64bit-Mach-O",
+  "python": "3.13.9 | packaged by Anaconda, Inc. | (main, Oct 21 2025, 19:11:29) [Clang 20.1.8 ]",
+  "repo_root": "/Volumes/移动硬盘（512G）/ReSETP",
+  "report_path": "baselines/e2_alns/wallclock_battery_preflight_stagea.md",
+  "scenarios": "wc80,wc100,budget8k80,budget8k100",
+  "script": "baselines/e2_alns/wallclock_battery_preflight.py",
+  "seeds": "1",
+  "verdict": "HALT_COLLECTION_COST"
+}

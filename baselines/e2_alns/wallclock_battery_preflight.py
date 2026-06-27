@@ -33,7 +33,7 @@ THREESHIFT_SIZES = (50, 75, 100, 150, 200)
 GOLD_PYTHON = "/opt/anaconda3/bin/python3.13"
 GOLD_NUMPY = "2.3.5"
 HARD_TIMEOUT_GRACE_SECONDS = 15.0
-WALLCLOCK_BACKSTOP_EVALS = 1_000_000
+WALLCLOCK_BACKSTOP_EVALS = 16_000
 LOWERED_FIXED_EVALS = 8_000
 
 SCENARIOS: dict[str, dict[str, Any]] = {
@@ -373,7 +373,7 @@ def execute_task(repo_root: Path, task_root: Path, task: dict[str, Any], idx: in
             env=env,
         )
     except subprocess.TimeoutExpired as exc:
-        return failure_row(task, time.perf_counter() - started, "HALT_HARD_TIMEOUT", "Worker exceeded runtime cap plus grace.", exc.stdout, exc.stderr)
+        return timeout_row_from_checkpoint(repo_root, task, time.perf_counter() - started, exc.stdout, exc.stderr)
     if completed.returncode != 0:
         return failure_row(task, time.perf_counter() - started, "HALT_WORKER_ERROR", "Worker exited non-zero.", completed.stdout, completed.stderr)
     if not out_path.exists():
@@ -502,6 +502,55 @@ def write_checkpoint(path: Path, solution_dict: dict[str, Any], best_cost: float
     tmp = path.with_suffix(path.suffix + ".tmp")
     tmp.write_text(json.dumps(payload, ensure_ascii=False), encoding="utf-8")
     os.replace(tmp, path)
+
+
+def read_checkpoint(path: Path) -> dict[str, Any] | None:
+    try:
+        if not path.exists():
+            return None
+        payload = json.loads(path.read_text(encoding="utf-8"))
+        if "solution" not in payload:
+            return None
+        return payload
+    except Exception:
+        return None
+
+
+def timeout_row_from_checkpoint(repo_root: Path, task: dict[str, Any], elapsed: float, stdout: str | bytes | None, stderr: str | bytes | None) -> dict[str, Any]:
+    checkpoint = read_checkpoint(Path(task["checkpoint_path"]))
+    if checkpoint is None:
+        return failure_row(task, elapsed, "HALT_HARD_TIMEOUT", "Worker exceeded runtime cap plus grace and no checkpoint was readable.", stdout, stderr)
+
+    from setp_solver.check import check_solution
+    from setp_solver.cost import evaluate
+    from setp_solver.search.bundle import load_search_bundle
+    from setp_solver.search.metaheuristic_baselines import solution_from_dict
+
+    prices = apply_battery_override(float(task["battery_kwh"]))
+    bundle = load_search_bundle(repo_root / str(task["bundle_dir"]))
+    solution = solution_from_dict(checkpoint["solution"])
+    violations = check_solution(solution, bundle.instance, prices)
+    best_cost = float(evaluate(solution, bundle.instance, bundle.carbon_profile, prices)["total_cost"]) if not violations else math.inf
+    actual_evals = int(checkpoint.get("eval", 0))
+    status = "OK" if str(task.get("comparison_mode")) == "wallclock" and not violations and math.isfinite(best_cost) else "HALT_HARD_TIMEOUT_WITH_INCUMBENT"
+    row = row_from_solution(
+        task,
+        solution,
+        best_cost,
+        actual_evals,
+        len(violations),
+        status,
+        status,
+        elapsed,
+        {},
+        {},
+    )
+    return row | {
+        "failure_reason": "Worker exceeded runtime cap plus hard-timeout grace; returned last readable checkpoint.",
+        "checkpoint_operator": str(checkpoint.get("operator", "")),
+        "worker_stdout_tail": tail_text(stdout),
+        "worker_stderr_tail": tail_text(stderr),
+    }
 
 
 def row_for_convergence(task: dict[str, Any], history: list[dict[str, Any]]) -> dict[str, Any]:
