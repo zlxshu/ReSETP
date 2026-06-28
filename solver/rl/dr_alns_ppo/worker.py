@@ -16,7 +16,7 @@ from setp_solver.prices import DEFAULT_PRICES
 from setp_solver.search.bundle import load_search_bundle
 from setp_solver.search.construction import build_initial_solution
 from setp_solver.search.evaluation import BIG_M, EvalBudget, EvaluationContext, fairness_context_for_solution
-from setp_solver.search.alns_wouda import AlnsState, SearchPolicy, _make_operator_selector, _solution_changed
+from setp_solver.search.alns_wouda import AlnsState, SearchPolicy, _make_operator_selector, _remove_customers, _solution_changed
 from setp_solver.search.fleet import infer_fleet_limits
 from setp_solver.search.winner_operators import (
     WinnerOperatorAction,
@@ -28,6 +28,7 @@ from setp_solver.search.winner_operators import (
 )
 from setp_solver.solution import Solution
 
+from .learned_destroy import LEARNED_DESTROY_CONTROL_MODE, LEARNED_DESTROY_ID, customer_feature_payload_json
 from .solution_json import solution_to_json
 
 
@@ -91,6 +92,8 @@ class JsonlWorker:
         return self._apply_single_action(request_id, action, op="step")
 
     def block_step(self, request_id: Any, action: dict[str, Any]) -> dict[str, Any]:
+        if str(action.get("control_mode", "")) == LEARNED_DESTROY_CONTROL_MODE:
+            return self._apply_learned_destroy_action(request_id, action, op="block_step")
         state = self.state
         self._ensure_budget_available()
         block_size = int(action.get("block_size", 128))
@@ -517,6 +520,156 @@ class JsonlWorker:
         }
         return response
 
+    def _apply_learned_destroy_action(self, request_id: Any, action: dict[str, Any], *, op: str) -> dict[str, Any]:
+        state = self.state
+        self._ensure_budget_available()
+        block_size = int(action.get("block_size", 1))
+        if block_size != 1:
+            raise ValueError("learned_destroy requires block_size=1 so customer features are refreshed before each action")
+        repair_id = str(action.get("repair_id", ""))
+        if repair_id not in REPAIR_IDS:
+            raise ValueError(f"unknown learned_destroy repair_id: {repair_id}")
+        remove_customer_ids = tuple(str(value) for value in action.get("remove_customer_ids", ()) if str(value))
+        if not remove_customer_ids:
+            raise ValueError("learned_destroy requires remove_customer_ids")
+        threshold_ratio = self._threshold_ratio(action)
+        threshold = float(threshold_ratio) * max(float(state.current_obj), 0.0)
+        old_current_obj = float(state.current_obj)
+        old_best_obj = float(state.best_obj)
+        start_actual_evals = int(state.context.budget.count if state.context.budget else 0)
+        start_candidate_scores = int(state.context.score_counts.get("candidate", 0))
+        start_repair_delta = int(state.context.score_counts.get("repair_delta", 0))
+        start_best_routes = len(state.best_solution.routes)
+        start_current_routes = len(state.current_solution.routes)
+
+        previous_state = AlnsState(
+            state.current_solution,
+            state.context,
+            objective_value=float(state.current_obj),
+            policy=SearchPolicy(require_charging_signal=False),
+        )
+        destroyed = _remove_customers(previous_state, list(remove_customer_ids))
+        repair_op = OPERATOR_SET.repair_callable(repair_id)
+        candidate_state = repair_op(destroyed, state.rng)
+        candidate = candidate_state.solution
+        changed = bool(_solution_changed(state.current_solution, candidate))
+        candidate_obj = float(candidate_state.objective())
+        candidate_summary = self._summarize_solution(candidate)
+
+        delta = float(candidate_obj - old_current_obj)
+        accepted = bool(changed and delta <= float(threshold))
+        improved_current = bool(accepted and candidate_obj < old_current_obj)
+        improved_best = bool(
+            accepted
+            and int(candidate_summary["violation_count"]) == 0
+            and candidate_obj < old_best_obj
+        )
+
+        state.step_index += 1
+        if accepted:
+            state.current_solution = candidate
+            state.current_obj = candidate_obj
+            state.current_summary = candidate_summary
+        if improved_best:
+            state.best_solution = candidate
+            state.best_obj = candidate_obj
+            state.best_summary = candidate_summary
+            state.stagnation_steps = 0
+            state.last_improvement_step = state.step_index
+        else:
+            state.stagnation_steps += 1
+
+        self._inc(state.destroy_counts, LEARNED_DESTROY_ID)
+        self._inc(state.repair_counts, repair_id)
+        current_summary = state.current_summary
+        actual_evals = int(state.context.budget.count if state.context.budget else 0)
+        candidate_scores = int(state.context.score_counts.get("candidate", 0))
+        repair_delta_count = int(state.context.score_counts.get("repair_delta", 0))
+        reward_code = self._reward_code(accepted, improved_current, improved_best)
+        block_iterations = 1
+        trace = {
+            **RUNTIME_TRACE,
+            "op": op,
+            "step_index": int(state.step_index),
+            "operator_base_id": operator_base_id,
+            "winner_operator_module": winner_operator_module,
+            "destroy_id": LEARNED_DESTROY_ID,
+            "repair_id": repair_id,
+            "q_ratio": float(action.get("q_ratio", 0.0) or 0.0),
+            "threshold": float(threshold),
+            "threshold_ratio": float(threshold_ratio),
+            "control_mode": LEARNED_DESTROY_CONTROL_MODE,
+            "delta": float(delta),
+            "changed": bool(changed),
+            "accepted": bool(accepted),
+            "stagnation_steps": int(state.stagnation_steps),
+            "last_improvement_step": int(state.last_improvement_step),
+            "repair_delta_added": int(repair_delta_count - start_repair_delta),
+            "actual_evals_added": int(actual_evals - start_actual_evals),
+            "candidate_violation_count": int(candidate_summary["violation_count"]),
+            "candidate_metrics": candidate_summary["metrics"],
+            "destroy_counts": dict(state.destroy_counts),
+            "repair_counts": dict(state.repair_counts),
+            "reward_code": reward_code,
+            "learned_destroy_customer_ids": list(remove_customer_ids),
+            "learned_destroy_selected_count": int(len(remove_customer_ids)),
+            "learned_destroy_repair_id": repair_id,
+            "learned_destroy_candidate_violation_count": int(candidate_summary["violation_count"]),
+            "block_size": int(block_size),
+            "block_iterations": block_iterations,
+            "block_evals_added": int(actual_evals - start_actual_evals),
+            "block_candidate_scores_added": int(candidate_scores - start_candidate_scores),
+            "block_repair_delta_added": int(repair_delta_count - start_repair_delta),
+            "block_accepted_count": int(accepted),
+            "block_rejected_count": int(not accepted),
+            "block_improved_current_count": int(improved_current),
+            "block_improved_best_count": int(improved_best),
+            "block_start_best_obj": float(old_best_obj),
+            "block_end_best_obj": float(state.best_obj),
+            "block_best_delta": float(state.best_obj - old_best_obj),
+            "block_start_current_obj": float(old_current_obj),
+            "block_end_current_obj": float(state.current_obj),
+            "block_current_delta": float(state.current_obj - old_current_obj),
+            "block_start_best_route_count": int(start_best_routes),
+            "block_end_best_route_count": int(len(state.best_solution.routes)),
+            "block_best_route_delta": int(len(state.best_solution.routes) - start_best_routes),
+            "block_start_current_route_count": int(start_current_routes),
+            "block_end_current_route_count": int(len(state.current_solution.routes)),
+            "block_current_route_delta": int(len(state.current_solution.routes) - start_current_routes),
+            "capacity_route_lower_bound": int(self._capacity_route_lower_bound()),
+            "exploration_ratio": 0.0,
+            "block_requested_destroy_id": LEARNED_DESTROY_ID,
+            "block_requested_repair_id": repair_id,
+            "block_requested_q_ratio": float(action.get("q_ratio", 0.0) or 0.0),
+            "block_requested_threshold_ratio": float(threshold_ratio),
+            "search_control": "continue",
+            "search_control_restart_applied": 0,
+            "search_control_restart_improvement": 0.0,
+            "search_control_stop_requested": False,
+        }
+        return {
+            "request_id": request_id,
+            "ok": True,
+            "accepted": bool(accepted),
+            "improved_current": bool(improved_current),
+            "improved_best": bool(improved_best),
+            "actual_evals": actual_evals,
+            "candidate_scores": candidate_scores,
+            "repair_delta_count": repair_delta_count,
+            "current_obj": float(state.current_obj),
+            "best_obj": float(state.best_obj),
+            "candidate_obj": float(candidate_obj),
+            "violation_count": int(current_summary["violation_count"]),
+            "metrics": current_summary["metrics"],
+            "solution": solution_to_json(state.current_solution),
+            "customer_features": customer_feature_payload_json(
+                state.current_solution,
+                self.bundle.instance,
+                self.bundle.carbon_profile,
+            ),
+            "trace": trace,
+        }
+
     def close(self, request_id: Any) -> dict[str, Any]:
         state = self.state
         return {
@@ -592,6 +745,11 @@ class JsonlWorker:
             "violation_count": int(summary["violation_count"]),
             "metrics": summary["metrics"],
             "solution": solution_to_json(state.current_solution),
+            "customer_features": customer_feature_payload_json(
+                state.current_solution,
+                self.bundle.instance,
+                self.bundle.carbon_profile,
+            ),
             "trace": {
                 **RUNTIME_TRACE,
                 "op": op,
