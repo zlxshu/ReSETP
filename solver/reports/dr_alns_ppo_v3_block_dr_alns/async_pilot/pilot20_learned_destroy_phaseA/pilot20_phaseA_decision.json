@@ -1,0 +1,62 @@
+{
+  "schema_version": "pilot20-phaseA-decision.v1",
+  "final_decision": "UNDERTRAINED_DEFERRED_RUNTIME",
+  "phase_b_opened": false,
+  "reason": "Runner verdicts were HALT, but the planned undertraining audit found no clear learning signal at the escalation cap. Treat as undertrained/deferred, not as a true learned-destroy negative result.",
+  "worker_integrity": {
+    "required_worker_python": "C:\\Users\\zlxshu\\.venvs\\resetp-solver-py313\\Scripts\\python.exe",
+    "required_worker_numpy": "2.3.5",
+    "all_rows_ok": true
+  },
+  "budget_integrity": {
+    "actual_evals_full_budget": true,
+    "learned_zero_violations": true
+  },
+  "runs": [
+    {
+      "run": "formal_120",
+      "train_episodes": 120,
+      "eval_budget": 120,
+      "runner_verdict": "HALT_LEARNED_DESTROY",
+      "avg_improvement_pct_vs_operator_select": -22.428687326490632,
+      "min_scale_improvement_pct_vs_operator_select": -30.612770606223147,
+      "avg_improvement_pct_vs_random": -23.103790514567475,
+      "reward_early_mean": 39.50829401630611,
+      "reward_mid_mean": 39.71967777620938,
+      "reward_late_mean": 39.15826370897222,
+      "reward_late_vs_early_pct": -0.8859666458628198,
+      "decision_use": "undertrained"
+    },
+    {
+      "run": "formal_240",
+      "train_episodes": 240,
+      "eval_budget": 120,
+      "runner_verdict": "HALT_LEARNED_DESTROY",
+      "avg_improvement_pct_vs_operator_select": -12.259110215172436,
+      "min_scale_improvement_pct_vs_operator_select": -19.480967171422062,
+      "avg_improvement_pct_vs_random": -12.886861444071204,
+      "reward_early_mean": 39.613985896257745,
+      "reward_mid_mean": 39.7236010634828,
+      "reward_late_mean": 38.811505732914455,
+      "reward_late_vs_early_pct": -2.0257496063255243,
+      "decision_use": "undertrained"
+    },
+    {
+      "run": "formal_240_b180",
+      "train_episodes": 240,
+      "eval_budget": 180,
+      "runner_verdict": "HALT_LEARNED_DESTROY",
+      "avg_improvement_pct_vs_operator_select": -14.493495096492874,
+      "min_scale_improvement_pct_vs_operator_select": -15.45336942019931,
+      "avg_improvement_pct_vs_random": -15.438980535431654,
+      "reward_early_mean": 42.727598204476424,
+      "reward_mid_mean": 42.67071182525529,
+      "reward_late_mean": 42.93272106809876,
+      "reward_late_vs_early_pct": 0.4800712138264756,
+      "entropy_first": 29.804258290459128,
+      "entropy_last": 32.67988932291666,
+      "entropy_max": 38.69842826618868,
+      "decision_use": "undertrained_cap"
+    }
+  ]
+}
