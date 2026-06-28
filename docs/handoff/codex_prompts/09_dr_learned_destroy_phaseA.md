@@ -41,6 +41,12 @@
 - `0 ~ +2%` → **`WEAK_LEARNED_DESTROY`**：有方向但增量小，需先调特征/reward/采样再判，不进阶段B。
 - `≤0` → **`HALT_LEARNED_DESTROY`**：学习型破坏在富问题小算例上没加值，**诚实记录负结果**，回蓝图重想(可能需更强特征/神经修复 NLNS 式/或换 NeuOpt 式学移动)。
 
+### 4.1 判级有效性前提（防"欠训误杀"，铁律）
+判级只有在 **learned 策略确实训练充分**时才算数。`PASS` 可直接信（欠训还能赢=方向硬）；**但 `WEAK`/`HALT` 不得直接当作"learned-destroy 没用"的结论**，必须先验训练是否到位：
+- 看 `pilot20_update_log.csv` 训练曲线：reward 是否上行、entropy 是否合理下降、policy/value loss 是否收敛、approx_kl 是否正常。
+- **若曲线平/没学（欠训）**：把 `--train-episodes`（默认 8 太小）调大重跑——25/50c 很便宜，可到几十~一两百 episode、必要时同时增大 `--eval-budget`/`--rollout-min-episodes`，**直到出现明确学习信号**，才让 `WEAK`/`HALT` 算数。
+- 只有"学到了却仍不赢"才是真负结果；"没学到就输"是欠训、不是结论。报告里必须写明本次 learned 是否训练充分及依据。
+
 ## 5. 突发预案
 - 指针头 PPO 不稳/不收敛：先用"按移除节省的贪心 destroy"做监督预热，或降 lr/加 entropy；仍不稳→记 `HALT_POLICY_UNSTABLE` 诊断。
 - 吞吐/内存超：降 actors/eval_budget；worker 漂到 py312 或 NumPy≠2.3.5 或非有限成本→立即 `HALT_INTEGRITY` 查根因，不改参硬跑。
