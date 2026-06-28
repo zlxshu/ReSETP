@@ -10,7 +10,7 @@ from functools import lru_cache
 from pathlib import Path
 from typing import Any
 
-from .schemas import BlockDecodedAction, DecodedAction
+from .schemas import BlockDecodedAction, DecodedAction, LearnedDestroyDecodedAction
 
 
 RESTORATION_FINGERPRINT = Path("solver/reports/dr_alns_ppo_v2/restoration/phase1_env_fingerprints.json")
@@ -56,7 +56,7 @@ class WorkerClient:
         action = asdict(decoded_action)
         return self._request({"op": "step", "action": action})
 
-    def block_step(self, decoded_action: BlockDecodedAction) -> dict[str, Any]:
+    def block_step(self, decoded_action: BlockDecodedAction | LearnedDestroyDecodedAction) -> dict[str, Any]:
         action = asdict(decoded_action)
         return self._request({"op": "block_step", "action": action})
 
