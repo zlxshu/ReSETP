@@ -60,6 +60,9 @@ class WorkerClient:
         action = asdict(decoded_action)
         return self._request({"op": "block_step", "action": action})
 
+    def best_of_k_destroy(self, action: dict[str, Any]) -> dict[str, Any]:
+        return self._request({"op": "best_of_k_destroy", "action": dict(action)})
+
     def close(self) -> dict[str, Any] | None:
         if self._closed:
             return None

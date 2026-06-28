@@ -39,6 +39,10 @@ class LearnedDestroyActorCritic(nn.Module):
             nn.Linear(self.hidden_size, self.hidden_size),
             nn.Tanh(),
         )
+        num_heads = 4 if self.hidden_size % 4 == 0 else 1
+        self.set_attention = nn.MultiheadAttention(self.hidden_size, num_heads=num_heads, batch_first=True)
+        self.set_attention_norm = nn.LayerNorm(self.hidden_size)
+        self.global_context_norm = nn.LayerNorm(self.hidden_size)
         self.pointer_head = nn.Linear(self.hidden_size, 1)
         self.repair_head = nn.Linear(self.hidden_size, len(REPAIR_IDS))
         self.q_head = nn.Linear(self.hidden_size, len(BLOCK_Q_RATIOS))
@@ -54,12 +58,23 @@ class LearnedDestroyActorCritic(nn.Module):
         global_obs, customer_features, customer_mask = _prepare_inputs(global_obs, customer_features, customer_mask)
         global_state = self.global_encoder(global_obs.float())
         customer_state = self.customer_encoder(customer_features.float())
-        pointer_logits = self.pointer_head(torch.tanh(customer_state + global_state.unsqueeze(1))).squeeze(-1)
+        attention_out, _weights = self.set_attention(
+            customer_state,
+            customer_state,
+            customer_state,
+            key_padding_mask=~customer_mask.bool(),
+            need_weights=False,
+        )
+        customer_state = self.set_attention_norm(customer_state + attention_out)
+        mask_float = customer_mask.float().unsqueeze(-1)
+        set_context = (customer_state * mask_float).sum(dim=1) / mask_float.sum(dim=1).clamp_min(1.0)
+        global_context = self.global_context_norm(global_state + set_context)
+        pointer_logits = self.pointer_head(torch.tanh(customer_state + global_context.unsqueeze(1))).squeeze(-1)
         pointer_logits = pointer_logits.masked_fill(~customer_mask.bool(), -1e9)
-        repair_logits = self.repair_head(global_state)
-        q_logits = self.q_head(global_state)
-        threshold_logits = self.threshold_head(global_state)
-        values = self.value_head(global_state).squeeze(-1)
+        repair_logits = self.repair_head(global_context)
+        q_logits = self.q_head(global_context)
+        threshold_logits = self.threshold_head(global_context)
+        values = self.value_head(global_context).squeeze(-1)
         return repair_logits, q_logits, threshold_logits, pointer_logits, values
 
     @torch.no_grad()
@@ -154,11 +169,12 @@ def save_learned_destroy_policy(
     output = Path(path)
     output.parent.mkdir(parents=True, exist_ok=True)
     payload = {
-        "format": "dr_alns_learned_destroy_ppo.v1",
+        "format": "dr_alns_learned_destroy_ppo.v2",
         "state_dict": {key: value.detach().cpu() for key, value in model.state_dict().items()},
         "global_obs_dim": int(model.global_obs_dim),
         "customer_feature_dim": int(model.customer_feature_dim),
         "hidden_size": int(model.hidden_size),
+        "architecture": "set_attention_pointer_v1",
         "metadata": dict(metadata or {}),
     }
     torch.save(payload, output)
@@ -166,14 +182,14 @@ def save_learned_destroy_policy(
 
 def load_learned_destroy_policy(path: str | Path, *, map_location: str | torch.device = "cpu") -> LearnedDestroyActorCritic:
     payload = torch.load(Path(path), map_location=map_location, weights_only=False)
-    if not isinstance(payload, dict) or payload.get("format") != "dr_alns_learned_destroy_ppo.v1":
+    if not isinstance(payload, dict) or payload.get("format") not in {"dr_alns_learned_destroy_ppo.v1", "dr_alns_learned_destroy_ppo.v2"}:
         raise ValueError(f"not a learned-destroy PPO model: {path}")
     model = LearnedDestroyActorCritic(
         global_obs_dim=int(payload["global_obs_dim"]),
         customer_feature_dim=int(payload["customer_feature_dim"]),
         hidden_size=int(payload["hidden_size"]),
     )
-    model.load_state_dict(payload["state_dict"])
+    model.load_state_dict(payload["state_dict"], strict=False)
     model.eval()
     return model
 

@@ -207,8 +207,8 @@ def learned_destroy_reward(response: dict[str, Any], *, initial_obj: float | Non
     end_best = _float(trace.get("block_end_best_obj"), response.get("best_obj", start_best))
     start_current = _float(trace.get("block_start_current_obj"), response.get("current_obj", 0.0))
     end_current = _float(trace.get("block_end_current_obj"), response.get("current_obj", start_current))
-    best_gain = max(0.0, (start_best - end_best) / max(abs(start_best), 1.0))
-    current_gain = max(0.0, (start_current - end_current) / max(abs(start_current), 1.0))
+    best_gain = (start_best - end_best) / max(abs(start_best), 1.0)
+    current_gain = (start_current - end_current) / max(abs(start_current), 1.0)
     accepted = 1.0 if response.get("accepted") else 0.0
     candidate_violations = _float(trace.get("candidate_violation_count"), response.get("violation_count", 0.0))
     reward = 120.0 * best_gain + 20.0 * current_gain + 0.05 * accepted
@@ -217,6 +217,8 @@ def learned_destroy_reward(response: dict[str, Any], *, initial_obj: float | Non
     if terminated and initial_obj is not None:
         final_gain = max(0.0, (float(initial_obj) - end_best) / max(abs(float(initial_obj)), 1.0))
         reward += min(10.0, 100.0 * final_gain)
+        if int(response.get("actual_evals", 0)) < int(eval_budget):
+            reward -= 2.0
     if int(response.get("actual_evals", 0)) >= int(eval_budget) and int(response.get("violation_count", 0)) != 0:
         reward -= 10.0
     return float(reward)

@@ -429,6 +429,182 @@ class JsonlWorker:
             },
         }
 
+    def best_of_k_destroy(self, request_id: Any, action: dict[str, Any]) -> dict[str, Any]:
+        state = self.state
+        self._ensure_budget_available()
+        k = int(action.get("candidate_k", 4))
+        if k < 1:
+            raise ValueError(f"candidate_k must be >= 1: {k}")
+        requested_repair_id = str(action.get("repair_id", "regret2_insert_repair") or "regret2_insert_repair")
+        repair_id = requested_repair_id
+        alpha_repair_idx: int | None = None
+        if repair_id == ALPHA_UCB_CHOICE:
+            _selected_destroy, selected_repair = self._alpha_selector()(state.rng, None, None)
+            alpha_repair_idx = int(selected_repair)
+            repair_id = REPAIR_IDS[alpha_repair_idx]
+        if repair_id not in REPAIR_IDS:
+            raise ValueError(f"unknown repair_id for best_of_k_destroy: {repair_id}")
+        destroy_ids = [str(value) for value in action.get("destroy_ids", []) if str(value)]
+        if not destroy_ids:
+            destroy_ids = [value for value in DESTROY_IDS if value != ALPHA_UCB_CHOICE]
+        invalid = [value for value in destroy_ids if value not in DESTROY_IDS or value == ALPHA_UCB_CHOICE]
+        if invalid:
+            raise ValueError(f"invalid best_of_k destroy_ids: {invalid}")
+        q_ratio = float(action.get("q_ratio", BLOCK_Q_RATIOS[-1]) or BLOCK_Q_RATIOS[-1])
+        threshold_ratio = self._threshold_ratio(action)
+        threshold = float(threshold_ratio) * max(float(state.current_obj), 0.0)
+
+        start_actual_evals = int(state.context.budget.count if state.context.budget else 0)
+        start_candidate_scores = int(state.context.score_counts.get("candidate", 0))
+        start_repair_delta = int(state.context.score_counts.get("repair_delta", 0))
+        old_current_obj = float(state.current_obj)
+        old_best_obj = float(state.best_obj)
+        previous_solution = state.current_solution
+        previous_state = AlnsState(
+            previous_solution,
+            state.context,
+            objective_value=float(state.current_obj),
+            policy=SearchPolicy(require_charging_signal=False),
+        )
+
+        scored: list[dict[str, Any]] = []
+        best_payload: dict[str, Any] | None = None
+        for offset in range(k):
+            budget = state.context.budget
+            if budget is not None and budget.reached_target:
+                break
+            if budget is not None and best_payload is not None and (budget.target_count - budget.count) < 2:
+                break
+            destroy_id = str(destroy_ids[int(state.rng.integers(0, len(destroy_ids)))])
+            destroy_op = OPERATOR_SET.destroy_callable(destroy_id)
+            repair_op = OPERATOR_SET.repair_callable(repair_id)
+            remove_count_q = max(1, int(math.ceil(q_ratio * max(0, self._current_customer_count()))))
+            destroyed = destroy_op(
+                previous_state,
+                state.rng,
+                progress=self._progress(),
+                remove_count_q=remove_count_q,
+            )
+            candidate_state = repair_op(destroyed, state.rng)
+            candidate = candidate_state.solution
+            changed = bool(_solution_changed(previous_solution, candidate))
+            if candidate_state.removed_customers or not changed:
+                candidate = previous_solution
+                changed = False
+            candidate_obj, candidate_summary = self._score_solution(candidate, record_candidate=True)
+            payload = {
+                "offset": int(offset),
+                "destroy_id": destroy_id,
+                "repair_id": repair_id,
+                "candidate_obj": float(candidate_obj),
+                "changed": bool(changed),
+                "violation_count": int(candidate_summary["violation_count"]),
+                "solution": candidate,
+                "summary": candidate_summary,
+            }
+            scored.append(payload)
+            if best_payload is None or float(candidate_obj) < float(best_payload["candidate_obj"]):
+                best_payload = payload
+
+        if best_payload is None:
+            raise RuntimeError("best_of_k_destroy made no progress before budget target")
+
+        candidate = best_payload["solution"]
+        candidate_summary = best_payload["summary"]
+        candidate_obj = float(best_payload["candidate_obj"])
+        delta = float(candidate_obj - old_current_obj)
+        changed = bool(best_payload["changed"])
+        accepted = bool(changed and delta <= threshold)
+        improved_current = bool(accepted and candidate_obj < old_current_obj)
+        improved_best = bool(accepted and candidate_obj < old_best_obj and int(candidate_summary["violation_count"]) == 0)
+
+        state.step_index += 1
+        if accepted:
+            state.current_solution = candidate
+            state.current_obj = candidate_obj
+            state.current_summary = candidate_summary
+        if improved_best:
+            state.best_solution = candidate
+            state.best_obj = candidate_obj
+            state.best_summary = candidate_summary
+            state.stagnation_steps = 0
+            state.last_improvement_step = state.step_index
+        else:
+            state.stagnation_steps += 1
+
+        self._inc(state.destroy_counts, "best_of_k_destroy")
+        self._inc(state.repair_counts, repair_id)
+        current_summary = state.current_summary
+        actual_evals = int(state.context.budget.count if state.context.budget else 0)
+        candidate_scores = int(state.context.score_counts.get("candidate", 0))
+        repair_delta_count = int(state.context.score_counts.get("repair_delta", 0))
+        reward_code = self._reward_code(accepted, improved_current, improved_best)
+        trace = {
+            **RUNTIME_TRACE,
+            "op": "best_of_k_destroy",
+            "operator_base_id": operator_base_id,
+            "winner_operator_module": winner_operator_module,
+            "step_index": int(state.step_index),
+            "destroy_id": "best_of_k_destroy",
+            "best_of_k_selected_destroy_id": str(best_payload["destroy_id"]),
+            "repair_id": repair_id,
+            "requested_repair_id": requested_repair_id,
+            "alpha_repair_idx": alpha_repair_idx,
+            "q_ratio": float(q_ratio),
+            "threshold": float(threshold),
+            "threshold_ratio": float(threshold_ratio),
+            "control_mode": "best_of_k_destroy",
+            "candidate_k": int(k),
+            "candidate_k_evaluated": int(len(scored)),
+            "candidate_objs": [float(row["candidate_obj"]) for row in scored],
+            "candidate_destroy_ids": [str(row["destroy_id"]) for row in scored],
+            "delta": float(delta),
+            "changed": bool(changed),
+            "accepted": bool(accepted),
+            "stagnation_steps": int(state.stagnation_steps),
+            "last_improvement_step": int(state.last_improvement_step),
+            "repair_delta_added": int(repair_delta_count - start_repair_delta),
+            "actual_evals_added": int(actual_evals - start_actual_evals),
+            "candidate_violation_count": int(candidate_summary["violation_count"]),
+            "candidate_metrics": candidate_summary["metrics"],
+            "destroy_counts": dict(state.destroy_counts),
+            "repair_counts": dict(state.repair_counts),
+            "reward_code": reward_code,
+            "block_size": 1,
+            "block_iterations": 1,
+            "block_evals_added": int(actual_evals - start_actual_evals),
+            "block_candidate_scores_added": int(candidate_scores - start_candidate_scores),
+            "block_repair_delta_added": int(repair_delta_count - start_repair_delta),
+            "block_accepted_count": int(accepted),
+            "block_rejected_count": int(not accepted),
+            "block_improved_current_count": int(improved_current),
+            "block_improved_best_count": int(improved_best),
+            "block_start_best_obj": float(old_best_obj),
+            "block_end_best_obj": float(state.best_obj),
+            "block_best_delta": float(state.best_obj - old_best_obj),
+            "block_start_current_obj": float(old_current_obj),
+            "block_end_current_obj": float(state.current_obj),
+            "block_current_delta": float(state.current_obj - old_current_obj),
+            "capacity_route_lower_bound": int(self._capacity_route_lower_bound()),
+        }
+        return {
+            "request_id": request_id,
+            "ok": True,
+            "accepted": bool(accepted),
+            "improved_current": bool(improved_current),
+            "improved_best": bool(improved_best),
+            "actual_evals": actual_evals,
+            "candidate_scores": candidate_scores,
+            "repair_delta_count": repair_delta_count,
+            "current_obj": float(state.current_obj),
+            "best_obj": float(state.best_obj),
+            "candidate_obj": candidate_obj,
+            "violation_count": int(current_summary["violation_count"]),
+            "metrics": current_summary["metrics"],
+            "solution": solution_to_json(state.current_solution),
+            "trace": trace,
+        }
+
     def _apply_single_action(self, request_id: Any, action: dict[str, Any], *, op: str) -> dict[str, Any]:
         state = self.state
         self._ensure_budget_available()
@@ -1051,6 +1227,11 @@ def _dispatch(worker: JsonlWorker, request: dict[str, Any]) -> tuple[dict[str, A
         if not isinstance(action, dict):
             raise ValueError("block_step request requires an action object")
         return worker.block_step(request_id, action), False
+    if op == "best_of_k_destroy":
+        action = request.get("action")
+        if not isinstance(action, dict):
+            raise ValueError("best_of_k_destroy request requires an action object")
+        return worker.best_of_k_destroy(request_id, action), False
     if op == "close":
         return worker.close(request_id), True
     raise ValueError(f"unknown op: {op}")
