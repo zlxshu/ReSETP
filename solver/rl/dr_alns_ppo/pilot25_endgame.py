@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import argparse
+import copy
 from dataclasses import asdict
 import json
 import math
@@ -10,15 +11,10 @@ import time
 from pathlib import Path
 from typing import Any
 
-from setp_solver.check import check_solution
-from setp_solver.cost import evaluate
-from setp_solver.prices import DEFAULT_PRICES
-from setp_solver.search.bundle import load_search_bundle
 from setp_solver.search.candidates import PRIMARY_ALGORITHM, run_candidate, make_shared_initial_solution
-from setp_solver.search.charging import replay_fixed_route_charging
 from setp_solver.search.metaheuristic_baselines import BASELINE_ALGORITHMS, baseline_result_to_dict, run_metaheuristic_baseline
 
-from .pilot20_learned_destroy_phaseA import DEFAULT_WORKER, REQUIRED_WORKER_NUMPY, _require_torch_available
+from .pilot20_learned_destroy_phaseA import DEFAULT_WORKER, REQUIRED_WORKER_NUMPY, _parse_int_list, _require_torch_available
 from .pilot21_learned_destroy_big import REPORT_ROOT_TOKEN
 from .pilot22_grounded_fixes import (
     _git_snapshot,
@@ -33,7 +29,11 @@ from .pilot22_grounded_fixes import (
     _write_csv,
     _write_json,
 )
-from .pilot24_data_generalization import validate_data_manifest
+from .pilot24_data_generalization import (
+    run_stage1 as run_learned_destroy_stage1,
+    run_stage2 as run_learned_destroy_stage2,
+    validate_data_manifest,
+)
 
 
 DEFAULT_OUTPUT_DIR = Path("solver/reports/dr_alns_ppo_v3_block_dr_alns/async_pilot/pilot25_endgame")
@@ -92,18 +92,21 @@ ABSORPTION_SOURCES = [
     {
         "name": "NeuOpt",
         "external": "https://github.com/yining043/NeuOpt",
+        "external_commit": "ccf6b5f0f6a8fda2792b4be11d4ec35390a8139b",
         "mechanism": "Learns local-search move effects, including feasible/infeasible routing regions and k-opt-style moves.",
         "adopt": "Pilot25 records it as evidence for moving beyond operator picking; full k-opt policy is out of scope for this overnight runner.",
     },
     {
         "name": "NLNS",
         "external": "https://github.com/ahottung/NLNS",
+        "external_commit": "8fd1e83faeb0ecff7986c4e5993f7398e6b6b6f8",
         "mechanism": "Learns repair/repair-order decisions inside large-neighborhood search rather than merely selecting a handcrafted destroy operator.",
-        "adopt": "Pilot25 records it as the repair-learning target; overnight implementation focuses on the lower-risk carbon timing control surface.",
+        "adopt": "Pilot25 uses the repository's learned-destroy pointer policy because it learns customer removal plus repair/q/threshold heads inside the worker repair loop.",
     },
     {
         "name": "POMO",
-        "external": "https://arxiv.org/abs/2010.16011",
+        "external": "https://github.com/yd-kwon/POMO",
+        "external_commit": "d7c3d6ea580499a53e874fe9e065f69e799a8551",
         "mechanism": "Uses multiple optima/starts with shared baseline to reduce variance for neural combinatorial optimization.",
         "adopt": "Keep the Pilot22-24 POMO shared-baseline rule for any learned policy updates.",
     },
@@ -267,55 +270,72 @@ def run_stage0(args: argparse.Namespace, output_dir: Path, progress_path: Path) 
 
 
 def run_stage1(args: argparse.Namespace, output_dir: Path, progress_path: Path, state: dict[str, Any], started: float) -> dict[str, Any]:
-    manifest = state["data_manifest"]
-    train = manifest["splits"]["train"][: int(args.stage1_train_bundles)]
-    val = manifest["splits"]["val"][: int(args.stage1_val_bundles)]
-    update_rows: list[dict[str, Any]] = []
-    strategies = ["naive", "aware"]
-    for index, row in enumerate(train):
-        _check_wall(started, args.max_wall_seconds)
-        for strategy in strategies:
-            result = evaluate_timing_strategy(row["path"], strategy=strategy)
-            update = {
-                "group": index,
-                "bundle": row["path"],
-                "strategy": strategy,
-                "best_cost": result["best_cost"],
-                "violation_count": result["violation_count"],
-                "charging_event_count": result["charging_event_count"],
-                "status": result["status"],
-            }
-            update_rows.append(update)
-        _write_csv(output_dir / "pilot25_update_log.csv", update_rows)
-    learned_strategy = choose_strategy(update_rows, default="aware")
-    validation_rows = validate_timing_policy(val, learned_strategy=learned_strategy)
-    _write_csv(output_dir / "pilot25_validation_rows.csv", validation_rows)
-    summary = summarize_stage1(validation_rows, learned_strategy=learned_strategy, threshold_pct=float(args.validation_gain_threshold))
-    checkpoint = {
-        "policy_type": "carbon_timing_strategy",
-        "learned_strategy": learned_strategy,
-        "selection_rule": "lowest mean train best_cost among naive/aware replay_fixed_route_charging strategies",
-        "stage1": summary,
+    summary = run_learned_destroy_stage1(args, output_dir, progress_path, state, started)
+    summary["learning_variant"] = "learned_destroy_pointer_with_repair_q_threshold_heads"
+    summary["pilot25_training_stack"] = {
+        "pomo_shared_baseline": True,
+        "reward_surface": "learned_destroy_reward_5_3_1_0_style_worker_codes",
+        "target_kl": float(args.target_kl),
+        "lr_annealing": [float(args.learning_rate), float(args.final_learning_rate)],
+        "clip_range": float(args.clip_range),
+        "ppo_epochs": int(args.ppo_epochs),
+        "fresh_per_batch": True,
+        "best_validation_checkpoint": str(output_dir / "pilot24_best_validation_model.pt"),
     }
-    _write_json(output_dir / "pilot25_best_validation_metadata.json", checkpoint)
-    _write_json(output_dir / "pilot25_best_validation_checkpoint.json", checkpoint)
-    summary["best_model_path"] = str(output_dir / "pilot25_best_validation_checkpoint.json")
+    _alias_if_exists(output_dir / "pilot24_update_log.csv", output_dir / "pilot25_update_log.csv")
+    _alias_if_exists(output_dir / "pilot24_training_episode_log.csv", output_dir / "pilot25_training_episode_log.csv")
+    _alias_if_exists(output_dir / "pilot24_validation_rows.csv", output_dir / "pilot25_validation_rows.csv")
+    _alias_if_exists(output_dir / "pilot24_validation_detail_rows.csv", output_dir / "pilot25_validation_detail_rows.csv")
+    _alias_if_exists(output_dir / "pilot24_best_validation_model.pt", output_dir / "pilot25_best_validation_checkpoint.pt")
+    _alias_if_exists(output_dir / "pilot24_best_validation_metadata.json", output_dir / "pilot25_best_validation_metadata.json")
+    _write_json(
+        output_dir / "pilot25_best_validation_checkpoint.json",
+        {
+            "policy_type": "learned_destroy_pointer_with_repair_q_threshold_heads",
+            "checkpoint_path": str(output_dir / "pilot25_best_validation_checkpoint.pt"),
+            "metadata_path": str(output_dir / "pilot25_best_validation_metadata.json"),
+            "stage1": summary,
+        },
+    )
     return summary
 
 
 def run_stage2(args: argparse.Namespace, output_dir: Path, progress_path: Path, state: dict[str, Any], started: float) -> list[dict[str, Any]]:
-    manifest = state["data_manifest"]
-    stage1 = state.get("stage1") or {}
-    learned_strategy = str(stage1.get("learned_strategy") or "aware")
-    rows: list[dict[str, Any]] = []
+    manifest = copy.deepcopy(state["data_manifest"])
     test_rows = manifest["splits"]["test"][: int(args.stage2_test_bundles)]
+    manifest["splits"]["test"] = test_rows
+    rows: list[dict[str, Any]] = []
+    original_manifest = state.get("data_manifest")
+    state["data_manifest"] = manifest
+    try:
+        stage_a_rows = run_learned_destroy_stage2(args, output_dir, progress_path, state)
+    finally:
+        state["data_manifest"] = original_manifest
+    for row in stage_a_rows:
+        out = dict(row)
+        out["group"] = "A"
+        out["best_cost"] = _row_cost(out)
+        out["worker_integrity_ok"] = out.get("worker_integrity_ok", True)
+        rows.append(out)
+    test_seeds = _parse_int_list(args.test_eval_seeds)
+    completed_plain = {(row.get("algorithm"), row.get("bundle"), int(row.get("seed") or 0)) for row in rows}
+    for row_spec in test_rows:
+        for seed in test_seeds:
+            key = ("plain_alns", row_spec["path"], int(seed))
+            if key in completed_plain:
+                continue
+            plain = run_strong_method_row(
+                row_spec["path"],
+                seed=int(seed),
+                eval_budget=int(args.stage2_eval_budget),
+                max_runtime_seconds=float(args.stage2_max_runtime_seconds),
+            )
+            rows.append({**plain, "group": "A", "algorithm": "plain_alns", "native_algorithm": plain.get("algorithm"), "bundle": row_spec["path"], "seed": int(seed)})
+            _write_csv(output_dir / "pilot25_test_rows.csv", rows)
     baseline_algorithms = _parse_list(args.baseline_algorithms) or ["GA", "PSO", "ACO", "IWD", "VNS"]
     for index, row in enumerate(test_rows):
         _check_wall(started, args.max_wall_seconds)
         bundle = row["path"]
-        for strategy, label in (("naive", "plain_alns_naive_timing"), (learned_strategy, "pilot25_full_dr_timing")):
-            result = evaluate_timing_strategy(bundle, strategy=strategy)
-            rows.append({"group": "A", "algorithm": label, "bundle": bundle, "seed": args.test_seed, **result})
         if bool(args.run_weak_baselines):
             strong = run_strong_method_row(bundle, seed=int(args.test_seed), eval_budget=int(args.stage2_eval_budget), max_runtime_seconds=float(args.stage2_max_runtime_seconds))
             rows.append({**strong, "group": "B", "algorithm": "strong_alns", "native_algorithm": strong.get("algorithm"), "bundle": bundle, "seed": args.test_seed})
@@ -327,6 +347,7 @@ def run_stage2(args: argparse.Namespace, output_dir: Path, progress_path: Path, 
         _log(progress_path, f"Stage2 bundle {index + 1}/{len(test_rows)} done")
     rows.append({"group": "C", "algorithm": "exact_anchor", "status": "SKIPPED", "reason": "No CPLEX/exact small-instance runner is configured in this x86 pilot path; C is optional and does not affect A/B verdict."})
     _write_csv(output_dir / "pilot25_test_rows.csv", rows)
+    _alias_if_exists(output_dir / "pilot24_independent_test.csv", output_dir / "pilot25_independent_test_A_learned.csv")
     return rows
 
 
@@ -358,6 +379,8 @@ def absorption_markdown(absorption: dict[str, Any]) -> str:
         )
         if item.get("external"):
             lines.append(f"- External source: {item['external']}")
+        if item.get("external_commit"):
+            lines.append(f"- External commit checked by `git ls-remote`: `{item['external_commit']}`")
         for path in item.get("existing_paths", []):
             lines.append(f"- Local evidence: `{path}`")
         for path in item.get("missing_paths", []):
@@ -485,20 +508,37 @@ def run_baseline_row(algorithm: str, bundle: str | Path, *, seed: int, eval_budg
 
 
 def summarize_stage2(rows: list[dict[str, Any]], stage1: dict[str, Any], *, dr_threshold: float, weak_threshold: float) -> dict[str, Any]:
-    dr_gain = _paired_gain(rows, "pilot25_full_dr_timing", "plain_alns_naive_timing", group="A")
+    learned_vs_operator = _paired_gain(rows, "learned_destroy", "operator_select", group="A")
+    learned_vs_plain = _paired_gain(rows, "learned_destroy", "plain_alns", group="A")
+    candidates = [value for value in (learned_vs_operator, learned_vs_plain) if math.isfinite(float(value))]
+    dr_gain = min(candidates) if candidates else 0.0
     weak_gain = _weak_field_gain(rows)
     zero_violations = all(int(row.get("violation_count", 0) or 0) == 0 for row in rows if row.get("group") in {"A", "B"})
     worker_ok = all(str(row.get("worker_integrity_ok", True)).lower() == "true" for row in rows if row.get("group") in {"A", "B"})
+    stage1_ok = str(stage1.get("gate_status") or "") == PASS_STAGE1
     if not zero_violations or not worker_ok:
         status = HALT_BOTH
-    elif dr_gain >= dr_threshold and weak_gain >= weak_threshold:
+    elif stage1_ok and dr_gain >= dr_threshold and weak_gain >= weak_threshold:
         status = PASS_DR
     elif weak_gain >= weak_threshold:
         status = PARTIAL_WIN
     else:
         status = HALT_BOTH
-    reason = f"dr_gain={dr_gain:.3f}%, weak_field_gain={weak_gain:.3f}%, stage1={stage1.get('gate_status')}, zero_violations={zero_violations}, worker_ok={worker_ok}"
-    return {"status": status, "reason": reason, "dr_gain_pct": dr_gain, "weak_field_gain_pct": weak_gain, "zero_violations": zero_violations, "worker_ok": worker_ok}
+    reason = (
+        f"dr_gain={dr_gain:.3f}%, learned_vs_operator={learned_vs_operator:.3f}%, "
+        f"learned_vs_plain={learned_vs_plain:.3f}%, weak_field_gain={weak_gain:.3f}%, "
+        f"stage1={stage1.get('gate_status')}, zero_violations={zero_violations}, worker_ok={worker_ok}"
+    )
+    return {
+        "status": status,
+        "reason": reason,
+        "dr_gain_pct": dr_gain,
+        "learned_vs_operator_pct": learned_vs_operator,
+        "learned_vs_plain_pct": learned_vs_plain,
+        "weak_field_gain_pct": weak_gain,
+        "zero_violations": zero_violations,
+        "worker_ok": worker_ok,
+    }
 
 
 def _paired_gain(rows: list[dict[str, Any]], learned: str, baseline: str, *, group: str) -> float:
@@ -508,8 +548,10 @@ def _paired_gain(rows: list[dict[str, Any]], learned: str, baseline: str, *, gro
         if row.get("group") != group or row.get("algorithm") != learned:
             continue
         base = by_key.get((baseline, row.get("bundle"), row.get("seed")))
-        if base and _is_number(base.get("best_cost")) and _is_number(row.get("best_cost")):
-            gains.append(_improvement_pct(float(base["best_cost"]), float(row["best_cost"])))
+        base_cost = _row_cost(base or {})
+        learned_cost = _row_cost(row)
+        if math.isfinite(base_cost) and math.isfinite(learned_cost):
+            gains.append(_improvement_pct(base_cost, learned_cost))
     return _mean(gains)
 
 
@@ -520,11 +562,24 @@ def _weak_field_gain(rows: list[dict[str, Any]]) -> float:
         if row.get("group") == "B":
             by_bundle.setdefault(row.get("bundle"), []).append(row)
     for bundle_rows in by_bundle.values():
-        strong = next((row for row in bundle_rows if row.get("algorithm") == "strong_alns" and _is_number(row.get("best_cost"))), None)
-        weak_costs = [float(row["best_cost"]) for row in bundle_rows if row.get("algorithm") != "strong_alns" and _is_number(row.get("best_cost")) and math.isfinite(float(row["best_cost"]))]
+        strong = next((row for row in bundle_rows if row.get("algorithm") == "strong_alns" and math.isfinite(_row_cost(row))), None)
+        weak_costs = [_row_cost(row) for row in bundle_rows if row.get("algorithm") != "strong_alns" and math.isfinite(_row_cost(row))]
         if strong and weak_costs:
-            gains.append(_improvement_pct(_mean(weak_costs), float(strong["best_cost"])))
+            gains.append(_improvement_pct(_mean(weak_costs), _row_cost(strong)))
     return _mean(gains) if gains else 0.0
+
+
+def _row_cost(row: dict[str, Any]) -> float:
+    for key in ("best_cost", "best_obj", "best_penalized_obj"):
+        if _is_number(row.get(key)):
+            return float(row[key])
+    return math.inf
+
+
+def _alias_if_exists(source: Path, dest: Path) -> None:
+    if source.exists():
+        dest.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copy2(source, dest)
 
 
 def _docs_status() -> dict[str, Any]:
@@ -585,8 +640,10 @@ def _write_report(path: Path, state: dict[str, Any]) -> None:
         "",
         "## 人话结论",
         "",
-        f"- DR 成没成：{stage2.get('dr_gain_pct', '未完成')}% vs plain timing/ALNS comparator；Stage1={stage1.get('gate_status', '未完成')}",
+        f"- DR 成没成：{stage2.get('dr_gain_pct', '未完成')}% vs operator-select/plain-ALNS comparator；Stage1={stage1.get('gate_status', '未完成')}",
         f"- 对弱场 10% 拿没拿到：{stage2.get('weak_field_gain_pct', '未完成')}%",
+        f"- 学习机器稳没稳：variant={stage1.get('learning_variant', '未完成')}；KL ok={stage1.get('approx_kl_ok', '未完成')}；max_kl={stage1.get('max_approx_kl', '未完成')}；零违约={stage1.get('validation_zero_violations', '未完成')}",
+        "- 规模边界：本次正式判级是 x86 same-scale 25c fresh-per-batch；未把 50c 小→大泛化当作已证明结论。",
         f"- DR 去还是留：{decision}",
         f"- 证据链：Stage0 absorption/wiring={((state.get('stage0') or {}).get('gate_status', '未完成'))}；Stage1={stage1.get('gate_reason', '未完成')}；Stage2={stage2.get('reason', '未完成')}",
         f"- 跑到哪：{state.get('completed_stage', 'none')}；墙钟 {float(state.get('wall_time_seconds') or 0.0):.1f}s",
@@ -597,7 +654,7 @@ def _write_report(path: Path, state: dict[str, Any]) -> None:
         "- `pilot25_data_manifest.json`",
         "- `pilot25_update_log.csv`",
         "- `pilot25_test_rows.csv`",
-        "- `pilot25_best_validation_checkpoint.json`",
+        "- `pilot25_best_validation_checkpoint.pt`",
         "- `pilot25_endgame_report.json`",
     ]
     path.write_text("\n".join(lines) + "\n", encoding="utf-8", newline="\n")
@@ -617,9 +674,30 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     run_parser.add_argument("--train-bundle-count", type=int, default=80)
     run_parser.add_argument("--val-bundle-count", type=int, default=16)
     run_parser.add_argument("--test-bundle-count", type=int, default=12)
-    run_parser.add_argument("--stage1-train-bundles", type=int, default=40)
-    run_parser.add_argument("--stage1-val-bundles", type=int, default=16)
+    run_parser.add_argument("--seed", type=int, default=1)
+    run_parser.add_argument("--stage1-train-episodes", type=int, default=1000)
+    run_parser.add_argument("--stage1-eval-budget", type=int, default=120)
+    run_parser.add_argument("--pomo-rollouts", type=int, default=4)
+    run_parser.add_argument("--validation-eval-seeds", default="301")
+    run_parser.add_argument("--validation-eval-budget", type=int, default=120)
+    run_parser.add_argument("--validation-every-updates", type=int, default=25)
     run_parser.add_argument("--validation-gain-threshold", type=float, default=3.0)
+    run_parser.add_argument("--validation-rollback-tolerance", type=float, default=3.0)
+    run_parser.add_argument("--validation-recent-count", type=int, default=3)
+    run_parser.add_argument("--checkpoint-every-updates", type=int, default=25)
+    run_parser.add_argument("--test-eval-seeds", default="901")
+    run_parser.add_argument("--max-customers", type=int, default=128)
+    run_parser.add_argument("--hidden-size", type=int, default=128)
+    run_parser.add_argument("--learning-rate", type=float, default=1e-4)
+    run_parser.add_argument("--final-learning-rate", type=float, default=1e-5)
+    run_parser.add_argument("--ppo-epochs", type=int, default=1)
+    run_parser.add_argument("--minibatch-size", type=int, default=64)
+    run_parser.add_argument("--clip-range", type=float, default=0.1)
+    run_parser.add_argument("--target-kl", type=float, default=0.08)
+    run_parser.add_argument("--kl-ok-threshold", type=float, default=0.30)
+    run_parser.add_argument("--value-coef", type=float, default=0.5)
+    run_parser.add_argument("--entropy-coef", type=float, default=0.01)
+    run_parser.add_argument("--max-grad-norm", type=float, default=0.5)
     run_parser.add_argument("--stage2-test-bundles", type=int, default=6)
     run_parser.add_argument("--stage2-eval-budget", type=int, default=80)
     run_parser.add_argument("--stage2-max-runtime-seconds", type=float, default=90.0)

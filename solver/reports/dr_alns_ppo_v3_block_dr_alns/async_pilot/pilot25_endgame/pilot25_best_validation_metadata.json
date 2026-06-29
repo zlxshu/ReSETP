@@ -1,15 +1,9 @@
 {
-  "policy_type": "carbon_timing_strategy",
-  "learned_strategy": "aware",
-  "selection_rule": "lowest mean train best_cost among naive/aware replay_fixed_route_charging strategies",
-  "stage1": {
-    "gate_status": "HALT_NO_VALIDATION_GAIN",
-    "gate_reason": "learned_strategy=aware, avg_validation_gain=0.000%, best_validation_gain=0.000%, threshold=3.000%, zero_violations=True",
-    "learned_strategy": "aware",
-    "avg_validation_gain_pct_vs_initial": 0.00019945059653120705,
-    "best_validation_gain_pct_vs_initial": 0.00043982814401399953,
-    "validation_zero_violations": true,
-    "approx_kl_ok": true,
-    "fresh_no_reuse": true
-  }
+  "reason": "validation_mean_obj_improved",
+  "update_index": 249,
+  "group_index": 249,
+  "tag": "update_0250",
+  "validation_mean_obj": 632.9352451030695,
+  "validation_gain_pct_vs_initial": 1.6288153766232316,
+  "validation_zero_violations": true
 }

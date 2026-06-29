@@ -106,8 +106,11 @@ def _bundle_row(tmp_path: Path, name: str, split: str, seed: int) -> dict[str, o
 
 def _stage2_rows(*, dr_cost: float, plain_cost: float, strong_cost: float, weak_costs: list[float]) -> list[dict[str, object]]:
     rows: list[dict[str, object]] = [
-        {"group": "A", "algorithm": "pilot25_full_dr_timing", "bundle": "b", "seed": 1, "best_cost": dr_cost, "violation_count": 0, "worker_integrity_ok": True},
-        {"group": "A", "algorithm": "plain_alns_naive_timing", "bundle": "b", "seed": 1, "best_cost": plain_cost, "violation_count": 0, "worker_integrity_ok": True},
+        {"group": "A", "algorithm": "learned_destroy", "bundle": "b", "seed": 1, "best_cost": dr_cost, "violation_count": 0, "worker_integrity_ok": True},
+        {"group": "A", "algorithm": "operator_select", "bundle": "b", "seed": 1, "best_cost": plain_cost, "violation_count": 0, "worker_integrity_ok": True},
+        {"group": "A", "algorithm": "plain_alns", "bundle": "b", "seed": 1, "best_cost": plain_cost, "violation_count": 0, "worker_integrity_ok": True},
+        {"group": "A", "algorithm": "random_operator", "bundle": "b", "seed": 1, "best_cost": plain_cost + 1.0, "violation_count": 0, "worker_integrity_ok": True},
+        {"group": "A", "algorithm": "worst_removal_fixed", "bundle": "b", "seed": 1, "best_cost": plain_cost + 2.0, "violation_count": 0, "worker_integrity_ok": True},
         {"group": "B", "algorithm": "strong_alns", "bundle": "b", "seed": 1, "best_cost": strong_cost, "violation_count": 0, "worker_integrity_ok": True},
     ]
     for index, value in enumerate(weak_costs):

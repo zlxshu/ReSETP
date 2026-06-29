@@ -31,18 +31,21 @@ This file records source-backed mechanisms consumed before the Pilot25 endgame r
 - Mechanism: Learns local-search move effects, including feasible/infeasible routing regions and k-opt-style moves.
 - Adopted in Pilot25: Pilot25 records it as evidence for moving beyond operator picking; full k-opt policy is out of scope for this overnight runner.
 - External source: https://github.com/yining043/NeuOpt
+- External commit checked by `git ls-remote`: `ccf6b5f0f6a8fda2792b4be11d4ec35390a8139b`
 
 ## NLNS
 
 - Mechanism: Learns repair/repair-order decisions inside large-neighborhood search rather than merely selecting a handcrafted destroy operator.
-- Adopted in Pilot25: Pilot25 records it as the repair-learning target; overnight implementation focuses on the lower-risk carbon timing control surface.
+- Adopted in Pilot25: Pilot25 uses the repository's learned-destroy pointer policy because it learns customer removal plus repair/q/threshold heads inside the worker repair loop.
 - External source: https://github.com/ahottung/NLNS
+- External commit checked by `git ls-remote`: `8fd1e83faeb0ecff7986c4e5993f7398e6b6b6f8`
 
 ## POMO
 
 - Mechanism: Uses multiple optima/starts with shared baseline to reduce variance for neural combinatorial optimization.
 - Adopted in Pilot25: Keep the Pilot22-24 POMO shared-baseline rule for any learned policy updates.
-- External source: https://arxiv.org/abs/2010.16011
+- External source: https://github.com/yd-kwon/POMO
+- External commit checked by `git ls-remote`: `d7c3d6ea580499a53e874fe9e065f69e799a8551`
 
 ## GLOP / Learning to Delegate
 

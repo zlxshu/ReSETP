@@ -13,10 +13,10 @@
     "cuda_available": true,
     "cuda_device": "NVIDIA GeForce RTX 3060 Laptop GPU",
     "cuda_total_gb": 5.99951171875,
-    "disk_free_gb": 102.70842742919922,
+    "disk_free_gb": 102.70304489135742,
     "git": {
-      "status_short_branch": "## dr-x86...origin/dr-x86\n?? solver/rl/dr_alns_ppo/pilot25_endgame.py\n?? solver/rl/tests/test_pilot25_endgame.py",
-      "head": "5d017646fab3e5dc19ab863cd2c9721da1fce6ce",
+      "status_short_branch": "## dr-x86...origin/dr-x86 [ahead 1]\n M solver/reports/dr_alns_ppo_v3_block_dr_alns/async_pilot/pilot25_endgame/pilot25_progress.log\n M solver/rl/dr_alns_ppo/pilot25_endgame.py\n M solver/rl/tests/test_pilot25_endgame.py",
+      "head": "37179987ce736f434663eed509de31aa6e64f03b",
       "branch": "dr-x86",
       "tracked_docs": [
         "HANDOFF.md",
@@ -27,7 +27,7 @@
   },
   "stage0": {
     "gate_status": "G0_PASS",
-    "gate_reason": "absorption_complete=True, wiring_complete=True, train=80, val=16, test=12",
+    "gate_reason": "absorption_complete=True, wiring_complete=True, train=250, val=30, test=30",
     "absorption_path": "solver\\reports\\dr_alns_ppo_v3_block_dr_alns\\async_pilot\\pilot25_endgame\\pilot25_absorption.md",
     "absorption": {
       "complete": true,
@@ -86,6 +86,7 @@
         {
           "name": "NeuOpt",
           "external": "https://github.com/yining043/NeuOpt",
+          "external_commit": "ccf6b5f0f6a8fda2792b4be11d4ec35390a8139b",
           "mechanism": "Learns local-search move effects, including feasible/infeasible routing regions and k-opt-style moves.",
           "adopt": "Pilot25 records it as evidence for moving beyond operator picking; full k-opt policy is out of scope for this overnight runner.",
           "existing_paths": [],
@@ -95,15 +96,17 @@
         {
           "name": "NLNS",
           "external": "https://github.com/ahottung/NLNS",
+          "external_commit": "8fd1e83faeb0ecff7986c4e5993f7398e6b6b6f8",
           "mechanism": "Learns repair/repair-order decisions inside large-neighborhood search rather than merely selecting a handcrafted destroy operator.",
-          "adopt": "Pilot25 records it as the repair-learning target; overnight implementation focuses on the lower-risk carbon timing control surface.",
+          "adopt": "Pilot25 uses the repository's learned-destroy pointer policy because it learns customer removal plus repair/q/threshold heads inside the worker repair loop.",
           "existing_paths": [],
           "missing_paths": [],
           "local_complete": true
         },
         {
           "name": "POMO",
-          "external": "https://arxiv.org/abs/2010.16011",
+          "external": "https://github.com/yd-kwon/POMO",
+          "external_commit": "d7c3d6ea580499a53e874fe9e065f69e799a8551",
           "mechanism": "Uses multiple optima/starts with shared baseline to reduce variance for neural combinatorial optimization.",
           "adopt": "Keep the Pilot22-24 POMO shared-baseline rule for any learned policy updates.",
           "existing_paths": [],
@@ -857,6 +860,1536 @@
             "seed": 24080,
             "n_customers": 25,
             "validation_passed": true
+          },
+          {
+            "split": "train",
+            "path": "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_07__curric_d2_s3_seed24081_24h",
+            "scenario_id": "E-UK25_07__curric_d2_s3_seed24081_24h",
+            "base_id": "E-UK25_07",
+            "seed": 24081,
+            "n_customers": 25,
+            "validation_passed": true
+          },
+          {
+            "split": "train",
+            "path": "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_08__curric_d2_s3_seed24082_24h",
+            "scenario_id": "E-UK25_08__curric_d2_s3_seed24082_24h",
+            "base_id": "E-UK25_08",
+            "seed": 24082,
+            "n_customers": 25,
+            "validation_passed": true
+          },
+          {
+            "split": "train",
+            "path": "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_09__curric_d2_s3_seed24083_24h",
+            "scenario_id": "E-UK25_09__curric_d2_s3_seed24083_24h",
+            "base_id": "E-UK25_09",
+            "seed": 24083,
+            "n_customers": 25,
+            "validation_passed": true
+          },
+          {
+            "split": "train",
+            "path": "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_10__curric_d2_s3_seed24084_24h",
+            "scenario_id": "E-UK25_10__curric_d2_s3_seed24084_24h",
+            "base_id": "E-UK25_10",
+            "seed": 24084,
+            "n_customers": 25,
+            "validation_passed": true
+          },
+          {
+            "split": "train",
+            "path": "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_11__curric_d2_s3_seed24085_24h",
+            "scenario_id": "E-UK25_11__curric_d2_s3_seed24085_24h",
+            "base_id": "E-UK25_11",
+            "seed": 24085,
+            "n_customers": 25,
+            "validation_passed": true
+          },
+          {
+            "split": "train",
+            "path": "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_12__curric_d2_s3_seed24086_24h",
+            "scenario_id": "E-UK25_12__curric_d2_s3_seed24086_24h",
+            "base_id": "E-UK25_12",
+            "seed": 24086,
+            "n_customers": 25,
+            "validation_passed": true
+          },
+          {
+            "split": "train",
+            "path": "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_13__curric_d2_s3_seed24087_24h",
+            "scenario_id": "E-UK25_13__curric_d2_s3_seed24087_24h",
+            "base_id": "E-UK25_13",
+            "seed": 24087,
+            "n_customers": 25,
+            "validation_passed": true
+          },
+          {
+            "split": "train",
+            "path": "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_14__curric_d2_s3_seed24088_24h",
+            "scenario_id": "E-UK25_14__curric_d2_s3_seed24088_24h",
+            "base_id": "E-UK25_14",
+            "seed": 24088,
+            "n_customers": 25,
+            "validation_passed": true
+          },
+          {
+            "split": "train",
+            "path": "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_15__curric_d2_s3_seed24089_24h",
+            "scenario_id": "E-UK25_15__curric_d2_s3_seed24089_24h",
+            "base_id": "E-UK25_15",
+            "seed": 24089,
+            "n_customers": 25,
+            "validation_passed": true
+          },
+          {
+            "split": "train",
+            "path": "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_16__curric_d2_s3_seed24090_24h",
+            "scenario_id": "E-UK25_16__curric_d2_s3_seed24090_24h",
+            "base_id": "E-UK25_16",
+            "seed": 24090,
+            "n_customers": 25,
+            "validation_passed": true
+          },
+          {
+            "split": "train",
+            "path": "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_17__curric_d2_s3_seed24091_24h",
+            "scenario_id": "E-UK25_17__curric_d2_s3_seed24091_24h",
+            "base_id": "E-UK25_17",
+            "seed": 24091,
+            "n_customers": 25,
+            "validation_passed": true
+          },
+          {
+            "split": "train",
+            "path": "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_18__curric_d2_s3_seed24092_24h",
+            "scenario_id": "E-UK25_18__curric_d2_s3_seed24092_24h",
+            "base_id": "E-UK25_18",
+            "seed": 24092,
+            "n_customers": 25,
+            "validation_passed": true
+          },
+          {
+            "split": "train",
+            "path": "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_19__curric_d2_s3_seed24093_24h",
+            "scenario_id": "E-UK25_19__curric_d2_s3_seed24093_24h",
+            "base_id": "E-UK25_19",
+            "seed": 24093,
+            "n_customers": 25,
+            "validation_passed": true
+          },
+          {
+            "split": "train",
+            "path": "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_20__curric_d2_s3_seed24094_24h",
+            "scenario_id": "E-UK25_20__curric_d2_s3_seed24094_24h",
+            "base_id": "E-UK25_20",
+            "seed": 24094,
+            "n_customers": 25,
+            "validation_passed": true
+          },
+          {
+            "split": "train",
+            "path": "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_02__curric_d2_s3_seed24095_24h",
+            "scenario_id": "E-UK25_02__curric_d2_s3_seed24095_24h",
+            "base_id": "E-UK25_02",
+            "seed": 24095,
+            "n_customers": 25,
+            "validation_passed": true
+          },
+          {
+            "split": "train",
+            "path": "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_03__curric_d2_s3_seed24096_24h",
+            "scenario_id": "E-UK25_03__curric_d2_s3_seed24096_24h",
+            "base_id": "E-UK25_03",
+            "seed": 24096,
+            "n_customers": 25,
+            "validation_passed": true
+          },
+          {
+            "split": "train",
+            "path": "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_04__curric_d2_s3_seed24097_24h",
+            "scenario_id": "E-UK25_04__curric_d2_s3_seed24097_24h",
+            "base_id": "E-UK25_04",
+            "seed": 24097,
+            "n_customers": 25,
+            "validation_passed": true
+          },
+          {
+            "split": "train",
+            "path": "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_05__curric_d2_s3_seed24098_24h",
+            "scenario_id": "E-UK25_05__curric_d2_s3_seed24098_24h",
+            "base_id": "E-UK25_05",
+            "seed": 24098,
+            "n_customers": 25,
+            "validation_passed": true
+          },
+          {
+            "split": "train",
+            "path": "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_06__curric_d2_s3_seed24099_24h",
+            "scenario_id": "E-UK25_06__curric_d2_s3_seed24099_24h",
+            "base_id": "E-UK25_06",
+            "seed": 24099,
+            "n_customers": 25,
+            "validation_passed": true
+          },
+          {
+            "split": "train",
+            "path": "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_07__curric_d2_s3_seed24100_24h",
+            "scenario_id": "E-UK25_07__curric_d2_s3_seed24100_24h",
+            "base_id": "E-UK25_07",
+            "seed": 24100,
+            "n_customers": 25,
+            "validation_passed": true
+          },
+          {
+            "split": "train",
+            "path": "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_08__curric_d2_s3_seed24101_24h",
+            "scenario_id": "E-UK25_08__curric_d2_s3_seed24101_24h",
+            "base_id": "E-UK25_08",
+            "seed": 24101,
+            "n_customers": 25,
+            "validation_passed": true
+          },
+          {
+            "split": "train",
+            "path": "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_09__curric_d2_s3_seed24102_24h",
+            "scenario_id": "E-UK25_09__curric_d2_s3_seed24102_24h",
+            "base_id": "E-UK25_09",
+            "seed": 24102,
+            "n_customers": 25,
+            "validation_passed": true
+          },
+          {
+            "split": "train",
+            "path": "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_10__curric_d2_s3_seed24103_24h",
+            "scenario_id": "E-UK25_10__curric_d2_s3_seed24103_24h",
+            "base_id": "E-UK25_10",
+            "seed": 24103,
+            "n_customers": 25,
+            "validation_passed": true
+          },
+          {
+            "split": "train",
+            "path": "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_11__curric_d2_s3_seed24104_24h",
+            "scenario_id": "E-UK25_11__curric_d2_s3_seed24104_24h",
+            "base_id": "E-UK25_11",
+            "seed": 24104,
+            "n_customers": 25,
+            "validation_passed": true
+          },
+          {
+            "split": "train",
+            "path": "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_12__curric_d2_s3_seed24105_24h",
+            "scenario_id": "E-UK25_12__curric_d2_s3_seed24105_24h",
+            "base_id": "E-UK25_12",
+            "seed": 24105,
+            "n_customers": 25,
+            "validation_passed": true
+          },
+          {
+            "split": "train",
+            "path": "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_13__curric_d2_s3_seed24106_24h",
+            "scenario_id": "E-UK25_13__curric_d2_s3_seed24106_24h",
+            "base_id": "E-UK25_13",
+            "seed": 24106,
+            "n_customers": 25,
+            "validation_passed": true
+          },
+          {
+            "split": "train",
+            "path": "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_14__curric_d2_s3_seed24107_24h",
+            "scenario_id": "E-UK25_14__curric_d2_s3_seed24107_24h",
+            "base_id": "E-UK25_14",
+            "seed": 24107,
+            "n_customers": 25,
+            "validation_passed": true
+          },
+          {
+            "split": "train",
+            "path": "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_15__curric_d2_s3_seed24108_24h",
+            "scenario_id": "E-UK25_15__curric_d2_s3_seed24108_24h",
+            "base_id": "E-UK25_15",
+            "seed": 24108,
+            "n_customers": 25,
+            "validation_passed": true
+          },
+          {
+            "split": "train",
+            "path": "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_16__curric_d2_s3_seed24109_24h",
+            "scenario_id": "E-UK25_16__curric_d2_s3_seed24109_24h",
+            "base_id": "E-UK25_16",
+            "seed": 24109,
+            "n_customers": 25,
+            "validation_passed": true
+          },
+          {
+            "split": "train",
+            "path": "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_17__curric_d2_s3_seed24110_24h",
+            "scenario_id": "E-UK25_17__curric_d2_s3_seed24110_24h",
+            "base_id": "E-UK25_17",
+            "seed": 24110,
+            "n_customers": 25,
+            "validation_passed": true
+          },
+          {
+            "split": "train",
+            "path": "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_18__curric_d2_s3_seed24111_24h",
+            "scenario_id": "E-UK25_18__curric_d2_s3_seed24111_24h",
+            "base_id": "E-UK25_18",
+            "seed": 24111,
+            "n_customers": 25,
+            "validation_passed": true
+          },
+          {
+            "split": "train",
+            "path": "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_19__curric_d2_s3_seed24112_24h",
+            "scenario_id": "E-UK25_19__curric_d2_s3_seed24112_24h",
+            "base_id": "E-UK25_19",
+            "seed": 24112,
+            "n_customers": 25,
+            "validation_passed": true
+          },
+          {
+            "split": "train",
+            "path": "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_20__curric_d2_s3_seed24113_24h",
+            "scenario_id": "E-UK25_20__curric_d2_s3_seed24113_24h",
+            "base_id": "E-UK25_20",
+            "seed": 24113,
+            "n_customers": 25,
+            "validation_passed": true
+          },
+          {
+            "split": "train",
+            "path": "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_02__curric_d2_s3_seed24114_24h",
+            "scenario_id": "E-UK25_02__curric_d2_s3_seed24114_24h",
+            "base_id": "E-UK25_02",
+            "seed": 24114,
+            "n_customers": 25,
+            "validation_passed": true
+          },
+          {
+            "split": "train",
+            "path": "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_03__curric_d2_s3_seed24115_24h",
+            "scenario_id": "E-UK25_03__curric_d2_s3_seed24115_24h",
+            "base_id": "E-UK25_03",
+            "seed": 24115,
+            "n_customers": 25,
+            "validation_passed": true
+          },
+          {
+            "split": "train",
+            "path": "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_04__curric_d2_s3_seed24116_24h",
+            "scenario_id": "E-UK25_04__curric_d2_s3_seed24116_24h",
+            "base_id": "E-UK25_04",
+            "seed": 24116,
+            "n_customers": 25,
+            "validation_passed": true
+          },
+          {
+            "split": "train",
+            "path": "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_05__curric_d2_s3_seed24117_24h",
+            "scenario_id": "E-UK25_05__curric_d2_s3_seed24117_24h",
+            "base_id": "E-UK25_05",
+            "seed": 24117,
+            "n_customers": 25,
+            "validation_passed": true
+          },
+          {
+            "split": "train",
+            "path": "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_06__curric_d2_s3_seed24118_24h",
+            "scenario_id": "E-UK25_06__curric_d2_s3_seed24118_24h",
+            "base_id": "E-UK25_06",
+            "seed": 24118,
+            "n_customers": 25,
+            "validation_passed": true
+          },
+          {
+            "split": "train",
+            "path": "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_07__curric_d2_s3_seed24119_24h",
+            "scenario_id": "E-UK25_07__curric_d2_s3_seed24119_24h",
+            "base_id": "E-UK25_07",
+            "seed": 24119,
+            "n_customers": 25,
+            "validation_passed": true
+          },
+          {
+            "split": "train",
+            "path": "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_08__curric_d2_s3_seed24120_24h",
+            "scenario_id": "E-UK25_08__curric_d2_s3_seed24120_24h",
+            "base_id": "E-UK25_08",
+            "seed": 24120,
+            "n_customers": 25,
+            "validation_passed": true
+          },
+          {
+            "split": "train",
+            "path": "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_09__curric_d2_s3_seed24121_24h",
+            "scenario_id": "E-UK25_09__curric_d2_s3_seed24121_24h",
+            "base_id": "E-UK25_09",
+            "seed": 24121,
+            "n_customers": 25,
+            "validation_passed": true
+          },
+          {
+            "split": "train",
+            "path": "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_10__curric_d2_s3_seed24122_24h",
+            "scenario_id": "E-UK25_10__curric_d2_s3_seed24122_24h",
+            "base_id": "E-UK25_10",
+            "seed": 24122,
+            "n_customers": 25,
+            "validation_passed": true
+          },
+          {
+            "split": "train",
+            "path": "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_11__curric_d2_s3_seed24123_24h",
+            "scenario_id": "E-UK25_11__curric_d2_s3_seed24123_24h",
+            "base_id": "E-UK25_11",
+            "seed": 24123,
+            "n_customers": 25,
+            "validation_passed": true
+          },
+          {
+            "split": "train",
+            "path": "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_12__curric_d2_s3_seed24124_24h",
+            "scenario_id": "E-UK25_12__curric_d2_s3_seed24124_24h",
+            "base_id": "E-UK25_12",
+            "seed": 24124,
+            "n_customers": 25,
+            "validation_passed": true
+          },
+          {
+            "split": "train",
+            "path": "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_13__curric_d2_s3_seed24125_24h",
+            "scenario_id": "E-UK25_13__curric_d2_s3_seed24125_24h",
+            "base_id": "E-UK25_13",
+            "seed": 24125,
+            "n_customers": 25,
+            "validation_passed": true
+          },
+          {
+            "split": "train",
+            "path": "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_14__curric_d2_s3_seed24126_24h",
+            "scenario_id": "E-UK25_14__curric_d2_s3_seed24126_24h",
+            "base_id": "E-UK25_14",
+            "seed": 24126,
+            "n_customers": 25,
+            "validation_passed": true
+          },
+          {
+            "split": "train",
+            "path": "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_15__curric_d2_s3_seed24127_24h",
+            "scenario_id": "E-UK25_15__curric_d2_s3_seed24127_24h",
+            "base_id": "E-UK25_15",
+            "seed": 24127,
+            "n_customers": 25,
+            "validation_passed": true
+          },
+          {
+            "split": "train",
+            "path": "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_16__curric_d2_s3_seed24128_24h",
+            "scenario_id": "E-UK25_16__curric_d2_s3_seed24128_24h",
+            "base_id": "E-UK25_16",
+            "seed": 24128,
+            "n_customers": 25,
+            "validation_passed": true
+          },
+          {
+            "split": "train",
+            "path": "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_17__curric_d2_s3_seed24129_24h",
+            "scenario_id": "E-UK25_17__curric_d2_s3_seed24129_24h",
+            "base_id": "E-UK25_17",
+            "seed": 24129,
+            "n_customers": 25,
+            "validation_passed": true
+          },
+          {
+            "split": "train",
+            "path": "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_18__curric_d2_s3_seed24130_24h",
+            "scenario_id": "E-UK25_18__curric_d2_s3_seed24130_24h",
+            "base_id": "E-UK25_18",
+            "seed": 24130,
+            "n_customers": 25,
+            "validation_passed": true
+          },
+          {
+            "split": "train",
+            "path": "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_19__curric_d2_s3_seed24131_24h",
+            "scenario_id": "E-UK25_19__curric_d2_s3_seed24131_24h",
+            "base_id": "E-UK25_19",
+            "seed": 24131,
+            "n_customers": 25,
+            "validation_passed": true
+          },
+          {
+            "split": "train",
+            "path": "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_02__curric_d2_s3_seed24133_24h",
+            "scenario_id": "E-UK25_02__curric_d2_s3_seed24133_24h",
+            "base_id": "E-UK25_02",
+            "seed": 24133,
+            "n_customers": 25,
+            "validation_passed": true
+          },
+          {
+            "split": "train",
+            "path": "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_03__curric_d2_s3_seed24134_24h",
+            "scenario_id": "E-UK25_03__curric_d2_s3_seed24134_24h",
+            "base_id": "E-UK25_03",
+            "seed": 24134,
+            "n_customers": 25,
+            "validation_passed": true
+          },
+          {
+            "split": "train",
+            "path": "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_04__curric_d2_s3_seed24135_24h",
+            "scenario_id": "E-UK25_04__curric_d2_s3_seed24135_24h",
+            "base_id": "E-UK25_04",
+            "seed": 24135,
+            "n_customers": 25,
+            "validation_passed": true
+          },
+          {
+            "split": "train",
+            "path": "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_05__curric_d2_s3_seed24136_24h",
+            "scenario_id": "E-UK25_05__curric_d2_s3_seed24136_24h",
+            "base_id": "E-UK25_05",
+            "seed": 24136,
+            "n_customers": 25,
+            "validation_passed": true
+          },
+          {
+            "split": "train",
+            "path": "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_06__curric_d2_s3_seed24137_24h",
+            "scenario_id": "E-UK25_06__curric_d2_s3_seed24137_24h",
+            "base_id": "E-UK25_06",
+            "seed": 24137,
+            "n_customers": 25,
+            "validation_passed": true
+          },
+          {
+            "split": "train",
+            "path": "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_07__curric_d2_s3_seed24138_24h",
+            "scenario_id": "E-UK25_07__curric_d2_s3_seed24138_24h",
+            "base_id": "E-UK25_07",
+            "seed": 24138,
+            "n_customers": 25,
+            "validation_passed": true
+          },
+          {
+            "split": "train",
+            "path": "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_08__curric_d2_s3_seed24139_24h",
+            "scenario_id": "E-UK25_08__curric_d2_s3_seed24139_24h",
+            "base_id": "E-UK25_08",
+            "seed": 24139,
+            "n_customers": 25,
+            "validation_passed": true
+          },
+          {
+            "split": "train",
+            "path": "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_09__curric_d2_s3_seed24140_24h",
+            "scenario_id": "E-UK25_09__curric_d2_s3_seed24140_24h",
+            "base_id": "E-UK25_09",
+            "seed": 24140,
+            "n_customers": 25,
+            "validation_passed": true
+          },
+          {
+            "split": "train",
+            "path": "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_10__curric_d2_s3_seed24141_24h",
+            "scenario_id": "E-UK25_10__curric_d2_s3_seed24141_24h",
+            "base_id": "E-UK25_10",
+            "seed": 24141,
+            "n_customers": 25,
+            "validation_passed": true
+          },
+          {
+            "split": "train",
+            "path": "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_11__curric_d2_s3_seed24142_24h",
+            "scenario_id": "E-UK25_11__curric_d2_s3_seed24142_24h",
+            "base_id": "E-UK25_11",
+            "seed": 24142,
+            "n_customers": 25,
+            "validation_passed": true
+          },
+          {
+            "split": "train",
+            "path": "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_12__curric_d2_s3_seed24143_24h",
+            "scenario_id": "E-UK25_12__curric_d2_s3_seed24143_24h",
+            "base_id": "E-UK25_12",
+            "seed": 24143,
+            "n_customers": 25,
+            "validation_passed": true
+          },
+          {
+            "split": "train",
+            "path": "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_13__curric_d2_s3_seed24144_24h",
+            "scenario_id": "E-UK25_13__curric_d2_s3_seed24144_24h",
+            "base_id": "E-UK25_13",
+            "seed": 24144,
+            "n_customers": 25,
+            "validation_passed": true
+          },
+          {
+            "split": "train",
+            "path": "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_14__curric_d2_s3_seed24145_24h",
+            "scenario_id": "E-UK25_14__curric_d2_s3_seed24145_24h",
+            "base_id": "E-UK25_14",
+            "seed": 24145,
+            "n_customers": 25,
+            "validation_passed": true
+          },
+          {
+            "split": "train",
+            "path": "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_15__curric_d2_s3_seed24146_24h",
+            "scenario_id": "E-UK25_15__curric_d2_s3_seed24146_24h",
+            "base_id": "E-UK25_15",
+            "seed": 24146,
+            "n_customers": 25,
+            "validation_passed": true
+          },
+          {
+            "split": "train",
+            "path": "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_16__curric_d2_s3_seed24147_24h",
+            "scenario_id": "E-UK25_16__curric_d2_s3_seed24147_24h",
+            "base_id": "E-UK25_16",
+            "seed": 24147,
+            "n_customers": 25,
+            "validation_passed": true
+          },
+          {
+            "split": "train",
+            "path": "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_17__curric_d2_s3_seed24148_24h",
+            "scenario_id": "E-UK25_17__curric_d2_s3_seed24148_24h",
+            "base_id": "E-UK25_17",
+            "seed": 24148,
+            "n_customers": 25,
+            "validation_passed": true
+          },
+          {
+            "split": "train",
+            "path": "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_18__curric_d2_s3_seed24149_24h",
+            "scenario_id": "E-UK25_18__curric_d2_s3_seed24149_24h",
+            "base_id": "E-UK25_18",
+            "seed": 24149,
+            "n_customers": 25,
+            "validation_passed": true
+          },
+          {
+            "split": "train",
+            "path": "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_19__curric_d2_s3_seed24150_24h",
+            "scenario_id": "E-UK25_19__curric_d2_s3_seed24150_24h",
+            "base_id": "E-UK25_19",
+            "seed": 24150,
+            "n_customers": 25,
+            "validation_passed": true
+          },
+          {
+            "split": "train",
+            "path": "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_20__curric_d2_s3_seed24151_24h",
+            "scenario_id": "E-UK25_20__curric_d2_s3_seed24151_24h",
+            "base_id": "E-UK25_20",
+            "seed": 24151,
+            "n_customers": 25,
+            "validation_passed": true
+          },
+          {
+            "split": "train",
+            "path": "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_02__curric_d2_s3_seed24152_24h",
+            "scenario_id": "E-UK25_02__curric_d2_s3_seed24152_24h",
+            "base_id": "E-UK25_02",
+            "seed": 24152,
+            "n_customers": 25,
+            "validation_passed": true
+          },
+          {
+            "split": "train",
+            "path": "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_03__curric_d2_s3_seed24153_24h",
+            "scenario_id": "E-UK25_03__curric_d2_s3_seed24153_24h",
+            "base_id": "E-UK25_03",
+            "seed": 24153,
+            "n_customers": 25,
+            "validation_passed": true
+          },
+          {
+            "split": "train",
+            "path": "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_04__curric_d2_s3_seed24154_24h",
+            "scenario_id": "E-UK25_04__curric_d2_s3_seed24154_24h",
+            "base_id": "E-UK25_04",
+            "seed": 24154,
+            "n_customers": 25,
+            "validation_passed": true
+          },
+          {
+            "split": "train",
+            "path": "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_05__curric_d2_s3_seed24155_24h",
+            "scenario_id": "E-UK25_05__curric_d2_s3_seed24155_24h",
+            "base_id": "E-UK25_05",
+            "seed": 24155,
+            "n_customers": 25,
+            "validation_passed": true
+          },
+          {
+            "split": "train",
+            "path": "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_06__curric_d2_s3_seed24156_24h",
+            "scenario_id": "E-UK25_06__curric_d2_s3_seed24156_24h",
+            "base_id": "E-UK25_06",
+            "seed": 24156,
+            "n_customers": 25,
+            "validation_passed": true
+          },
+          {
+            "split": "train",
+            "path": "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_07__curric_d2_s3_seed24157_24h",
+            "scenario_id": "E-UK25_07__curric_d2_s3_seed24157_24h",
+            "base_id": "E-UK25_07",
+            "seed": 24157,
+            "n_customers": 25,
+            "validation_passed": true
+          },
+          {
+            "split": "train",
+            "path": "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_08__curric_d2_s3_seed24158_24h",
+            "scenario_id": "E-UK25_08__curric_d2_s3_seed24158_24h",
+            "base_id": "E-UK25_08",
+            "seed": 24158,
+            "n_customers": 25,
+            "validation_passed": true
+          },
+          {
+            "split": "train",
+            "path": "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_09__curric_d2_s3_seed24159_24h",
+            "scenario_id": "E-UK25_09__curric_d2_s3_seed24159_24h",
+            "base_id": "E-UK25_09",
+            "seed": 24159,
+            "n_customers": 25,
+            "validation_passed": true
+          },
+          {
+            "split": "train",
+            "path": "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_10__curric_d2_s3_seed24160_24h",
+            "scenario_id": "E-UK25_10__curric_d2_s3_seed24160_24h",
+            "base_id": "E-UK25_10",
+            "seed": 24160,
+            "n_customers": 25,
+            "validation_passed": true
+          },
+          {
+            "split": "train",
+            "path": "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_11__curric_d2_s3_seed24161_24h",
+            "scenario_id": "E-UK25_11__curric_d2_s3_seed24161_24h",
+            "base_id": "E-UK25_11",
+            "seed": 24161,
+            "n_customers": 25,
+            "validation_passed": true
+          },
+          {
+            "split": "train",
+            "path": "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_12__curric_d2_s3_seed24162_24h",
+            "scenario_id": "E-UK25_12__curric_d2_s3_seed24162_24h",
+            "base_id": "E-UK25_12",
+            "seed": 24162,
+            "n_customers": 25,
+            "validation_passed": true
+          },
+          {
+            "split": "train",
+            "path": "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_13__curric_d2_s3_seed24163_24h",
+            "scenario_id": "E-UK25_13__curric_d2_s3_seed24163_24h",
+            "base_id": "E-UK25_13",
+            "seed": 24163,
+            "n_customers": 25,
+            "validation_passed": true
+          },
+          {
+            "split": "train",
+            "path": "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_14__curric_d2_s3_seed24164_24h",
+            "scenario_id": "E-UK25_14__curric_d2_s3_seed24164_24h",
+            "base_id": "E-UK25_14",
+            "seed": 24164,
+            "n_customers": 25,
+            "validation_passed": true
+          },
+          {
+            "split": "train",
+            "path": "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_15__curric_d2_s3_seed24165_24h",
+            "scenario_id": "E-UK25_15__curric_d2_s3_seed24165_24h",
+            "base_id": "E-UK25_15",
+            "seed": 24165,
+            "n_customers": 25,
+            "validation_passed": true
+          },
+          {
+            "split": "train",
+            "path": "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_16__curric_d2_s3_seed24166_24h",
+            "scenario_id": "E-UK25_16__curric_d2_s3_seed24166_24h",
+            "base_id": "E-UK25_16",
+            "seed": 24166,
+            "n_customers": 25,
+            "validation_passed": true
+          },
+          {
+            "split": "train",
+            "path": "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_17__curric_d2_s3_seed24167_24h",
+            "scenario_id": "E-UK25_17__curric_d2_s3_seed24167_24h",
+            "base_id": "E-UK25_17",
+            "seed": 24167,
+            "n_customers": 25,
+            "validation_passed": true
+          },
+          {
+            "split": "train",
+            "path": "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_18__curric_d2_s3_seed24168_24h",
+            "scenario_id": "E-UK25_18__curric_d2_s3_seed24168_24h",
+            "base_id": "E-UK25_18",
+            "seed": 24168,
+            "n_customers": 25,
+            "validation_passed": true
+          },
+          {
+            "split": "train",
+            "path": "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_19__curric_d2_s3_seed24169_24h",
+            "scenario_id": "E-UK25_19__curric_d2_s3_seed24169_24h",
+            "base_id": "E-UK25_19",
+            "seed": 24169,
+            "n_customers": 25,
+            "validation_passed": true
+          },
+          {
+            "split": "train",
+            "path": "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_20__curric_d2_s3_seed24170_24h",
+            "scenario_id": "E-UK25_20__curric_d2_s3_seed24170_24h",
+            "base_id": "E-UK25_20",
+            "seed": 24170,
+            "n_customers": 25,
+            "validation_passed": true
+          },
+          {
+            "split": "train",
+            "path": "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_02__curric_d2_s3_seed24171_24h",
+            "scenario_id": "E-UK25_02__curric_d2_s3_seed24171_24h",
+            "base_id": "E-UK25_02",
+            "seed": 24171,
+            "n_customers": 25,
+            "validation_passed": true
+          },
+          {
+            "split": "train",
+            "path": "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_03__curric_d2_s3_seed24172_24h",
+            "scenario_id": "E-UK25_03__curric_d2_s3_seed24172_24h",
+            "base_id": "E-UK25_03",
+            "seed": 24172,
+            "n_customers": 25,
+            "validation_passed": true
+          },
+          {
+            "split": "train",
+            "path": "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_04__curric_d2_s3_seed24173_24h",
+            "scenario_id": "E-UK25_04__curric_d2_s3_seed24173_24h",
+            "base_id": "E-UK25_04",
+            "seed": 24173,
+            "n_customers": 25,
+            "validation_passed": true
+          },
+          {
+            "split": "train",
+            "path": "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_05__curric_d2_s3_seed24174_24h",
+            "scenario_id": "E-UK25_05__curric_d2_s3_seed24174_24h",
+            "base_id": "E-UK25_05",
+            "seed": 24174,
+            "n_customers": 25,
+            "validation_passed": true
+          },
+          {
+            "split": "train",
+            "path": "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_06__curric_d2_s3_seed24175_24h",
+            "scenario_id": "E-UK25_06__curric_d2_s3_seed24175_24h",
+            "base_id": "E-UK25_06",
+            "seed": 24175,
+            "n_customers": 25,
+            "validation_passed": true
+          },
+          {
+            "split": "train",
+            "path": "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_07__curric_d2_s3_seed24176_24h",
+            "scenario_id": "E-UK25_07__curric_d2_s3_seed24176_24h",
+            "base_id": "E-UK25_07",
+            "seed": 24176,
+            "n_customers": 25,
+            "validation_passed": true
+          },
+          {
+            "split": "train",
+            "path": "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_08__curric_d2_s3_seed24177_24h",
+            "scenario_id": "E-UK25_08__curric_d2_s3_seed24177_24h",
+            "base_id": "E-UK25_08",
+            "seed": 24177,
+            "n_customers": 25,
+            "validation_passed": true
+          },
+          {
+            "split": "train",
+            "path": "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_09__curric_d2_s3_seed24178_24h",
+            "scenario_id": "E-UK25_09__curric_d2_s3_seed24178_24h",
+            "base_id": "E-UK25_09",
+            "seed": 24178,
+            "n_customers": 25,
+            "validation_passed": true
+          },
+          {
+            "split": "train",
+            "path": "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_10__curric_d2_s3_seed24179_24h",
+            "scenario_id": "E-UK25_10__curric_d2_s3_seed24179_24h",
+            "base_id": "E-UK25_10",
+            "seed": 24179,
+            "n_customers": 25,
+            "validation_passed": true
+          },
+          {
+            "split": "train",
+            "path": "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_12__curric_d2_s3_seed24181_24h",
+            "scenario_id": "E-UK25_12__curric_d2_s3_seed24181_24h",
+            "base_id": "E-UK25_12",
+            "seed": 24181,
+            "n_customers": 25,
+            "validation_passed": true
+          },
+          {
+            "split": "train",
+            "path": "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_13__curric_d2_s3_seed24182_24h",
+            "scenario_id": "E-UK25_13__curric_d2_s3_seed24182_24h",
+            "base_id": "E-UK25_13",
+            "seed": 24182,
+            "n_customers": 25,
+            "validation_passed": true
+          },
+          {
+            "split": "train",
+            "path": "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_14__curric_d2_s3_seed24183_24h",
+            "scenario_id": "E-UK25_14__curric_d2_s3_seed24183_24h",
+            "base_id": "E-UK25_14",
+            "seed": 24183,
+            "n_customers": 25,
+            "validation_passed": true
+          },
+          {
+            "split": "train",
+            "path": "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_15__curric_d2_s3_seed24184_24h",
+            "scenario_id": "E-UK25_15__curric_d2_s3_seed24184_24h",
+            "base_id": "E-UK25_15",
+            "seed": 24184,
+            "n_customers": 25,
+            "validation_passed": true
+          },
+          {
+            "split": "train",
+            "path": "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_16__curric_d2_s3_seed24185_24h",
+            "scenario_id": "E-UK25_16__curric_d2_s3_seed24185_24h",
+            "base_id": "E-UK25_16",
+            "seed": 24185,
+            "n_customers": 25,
+            "validation_passed": true
+          },
+          {
+            "split": "train",
+            "path": "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_17__curric_d2_s3_seed24186_24h",
+            "scenario_id": "E-UK25_17__curric_d2_s3_seed24186_24h",
+            "base_id": "E-UK25_17",
+            "seed": 24186,
+            "n_customers": 25,
+            "validation_passed": true
+          },
+          {
+            "split": "train",
+            "path": "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_18__curric_d2_s3_seed24187_24h",
+            "scenario_id": "E-UK25_18__curric_d2_s3_seed24187_24h",
+            "base_id": "E-UK25_18",
+            "seed": 24187,
+            "n_customers": 25,
+            "validation_passed": true
+          },
+          {
+            "split": "train",
+            "path": "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_19__curric_d2_s3_seed24188_24h",
+            "scenario_id": "E-UK25_19__curric_d2_s3_seed24188_24h",
+            "base_id": "E-UK25_19",
+            "seed": 24188,
+            "n_customers": 25,
+            "validation_passed": true
+          },
+          {
+            "split": "train",
+            "path": "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_20__curric_d2_s3_seed24189_24h",
+            "scenario_id": "E-UK25_20__curric_d2_s3_seed24189_24h",
+            "base_id": "E-UK25_20",
+            "seed": 24189,
+            "n_customers": 25,
+            "validation_passed": true
+          },
+          {
+            "split": "train",
+            "path": "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_02__curric_d2_s3_seed24190_24h",
+            "scenario_id": "E-UK25_02__curric_d2_s3_seed24190_24h",
+            "base_id": "E-UK25_02",
+            "seed": 24190,
+            "n_customers": 25,
+            "validation_passed": true
+          },
+          {
+            "split": "train",
+            "path": "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_03__curric_d2_s3_seed24191_24h",
+            "scenario_id": "E-UK25_03__curric_d2_s3_seed24191_24h",
+            "base_id": "E-UK25_03",
+            "seed": 24191,
+            "n_customers": 25,
+            "validation_passed": true
+          },
+          {
+            "split": "train",
+            "path": "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_04__curric_d2_s3_seed24192_24h",
+            "scenario_id": "E-UK25_04__curric_d2_s3_seed24192_24h",
+            "base_id": "E-UK25_04",
+            "seed": 24192,
+            "n_customers": 25,
+            "validation_passed": true
+          },
+          {
+            "split": "train",
+            "path": "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_05__curric_d2_s3_seed24193_24h",
+            "scenario_id": "E-UK25_05__curric_d2_s3_seed24193_24h",
+            "base_id": "E-UK25_05",
+            "seed": 24193,
+            "n_customers": 25,
+            "validation_passed": true
+          },
+          {
+            "split": "train",
+            "path": "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_06__curric_d2_s3_seed24194_24h",
+            "scenario_id": "E-UK25_06__curric_d2_s3_seed24194_24h",
+            "base_id": "E-UK25_06",
+            "seed": 24194,
+            "n_customers": 25,
+            "validation_passed": true
+          },
+          {
+            "split": "train",
+            "path": "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_07__curric_d2_s3_seed24195_24h",
+            "scenario_id": "E-UK25_07__curric_d2_s3_seed24195_24h",
+            "base_id": "E-UK25_07",
+            "seed": 24195,
+            "n_customers": 25,
+            "validation_passed": true
+          },
+          {
+            "split": "train",
+            "path": "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_08__curric_d2_s3_seed24196_24h",
+            "scenario_id": "E-UK25_08__curric_d2_s3_seed24196_24h",
+            "base_id": "E-UK25_08",
+            "seed": 24196,
+            "n_customers": 25,
+            "validation_passed": true
+          },
+          {
+            "split": "train",
+            "path": "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_09__curric_d2_s3_seed24197_24h",
+            "scenario_id": "E-UK25_09__curric_d2_s3_seed24197_24h",
+            "base_id": "E-UK25_09",
+            "seed": 24197,
+            "n_customers": 25,
+            "validation_passed": true
+          },
+          {
+            "split": "train",
+            "path": "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_10__curric_d2_s3_seed24198_24h",
+            "scenario_id": "E-UK25_10__curric_d2_s3_seed24198_24h",
+            "base_id": "E-UK25_10",
+            "seed": 24198,
+            "n_customers": 25,
+            "validation_passed": true
+          },
+          {
+            "split": "train",
+            "path": "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_11__curric_d2_s3_seed24199_24h",
+            "scenario_id": "E-UK25_11__curric_d2_s3_seed24199_24h",
+            "base_id": "E-UK25_11",
+            "seed": 24199,
+            "n_customers": 25,
+            "validation_passed": true
+          },
+          {
+            "split": "train",
+            "path": "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_12__curric_d2_s3_seed24200_24h",
+            "scenario_id": "E-UK25_12__curric_d2_s3_seed24200_24h",
+            "base_id": "E-UK25_12",
+            "seed": 24200,
+            "n_customers": 25,
+            "validation_passed": true
+          },
+          {
+            "split": "train",
+            "path": "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_13__curric_d2_s3_seed24201_24h",
+            "scenario_id": "E-UK25_13__curric_d2_s3_seed24201_24h",
+            "base_id": "E-UK25_13",
+            "seed": 24201,
+            "n_customers": 25,
+            "validation_passed": true
+          },
+          {
+            "split": "train",
+            "path": "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_14__curric_d2_s3_seed24202_24h",
+            "scenario_id": "E-UK25_14__curric_d2_s3_seed24202_24h",
+            "base_id": "E-UK25_14",
+            "seed": 24202,
+            "n_customers": 25,
+            "validation_passed": true
+          },
+          {
+            "split": "train",
+            "path": "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_15__curric_d2_s3_seed24203_24h",
+            "scenario_id": "E-UK25_15__curric_d2_s3_seed24203_24h",
+            "base_id": "E-UK25_15",
+            "seed": 24203,
+            "n_customers": 25,
+            "validation_passed": true
+          },
+          {
+            "split": "train",
+            "path": "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_16__curric_d2_s3_seed24204_24h",
+            "scenario_id": "E-UK25_16__curric_d2_s3_seed24204_24h",
+            "base_id": "E-UK25_16",
+            "seed": 24204,
+            "n_customers": 25,
+            "validation_passed": true
+          },
+          {
+            "split": "train",
+            "path": "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_17__curric_d2_s3_seed24205_24h",
+            "scenario_id": "E-UK25_17__curric_d2_s3_seed24205_24h",
+            "base_id": "E-UK25_17",
+            "seed": 24205,
+            "n_customers": 25,
+            "validation_passed": true
+          },
+          {
+            "split": "train",
+            "path": "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_18__curric_d2_s3_seed24206_24h",
+            "scenario_id": "E-UK25_18__curric_d2_s3_seed24206_24h",
+            "base_id": "E-UK25_18",
+            "seed": 24206,
+            "n_customers": 25,
+            "validation_passed": true
+          },
+          {
+            "split": "train",
+            "path": "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_19__curric_d2_s3_seed24207_24h",
+            "scenario_id": "E-UK25_19__curric_d2_s3_seed24207_24h",
+            "base_id": "E-UK25_19",
+            "seed": 24207,
+            "n_customers": 25,
+            "validation_passed": true
+          },
+          {
+            "split": "train",
+            "path": "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_20__curric_d2_s3_seed24208_24h",
+            "scenario_id": "E-UK25_20__curric_d2_s3_seed24208_24h",
+            "base_id": "E-UK25_20",
+            "seed": 24208,
+            "n_customers": 25,
+            "validation_passed": true
+          },
+          {
+            "split": "train",
+            "path": "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_02__curric_d2_s3_seed24209_24h",
+            "scenario_id": "E-UK25_02__curric_d2_s3_seed24209_24h",
+            "base_id": "E-UK25_02",
+            "seed": 24209,
+            "n_customers": 25,
+            "validation_passed": true
+          },
+          {
+            "split": "train",
+            "path": "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_03__curric_d2_s3_seed24210_24h",
+            "scenario_id": "E-UK25_03__curric_d2_s3_seed24210_24h",
+            "base_id": "E-UK25_03",
+            "seed": 24210,
+            "n_customers": 25,
+            "validation_passed": true
+          },
+          {
+            "split": "train",
+            "path": "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_04__curric_d2_s3_seed24211_24h",
+            "scenario_id": "E-UK25_04__curric_d2_s3_seed24211_24h",
+            "base_id": "E-UK25_04",
+            "seed": 24211,
+            "n_customers": 25,
+            "validation_passed": true
+          },
+          {
+            "split": "train",
+            "path": "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_05__curric_d2_s3_seed24212_24h",
+            "scenario_id": "E-UK25_05__curric_d2_s3_seed24212_24h",
+            "base_id": "E-UK25_05",
+            "seed": 24212,
+            "n_customers": 25,
+            "validation_passed": true
+          },
+          {
+            "split": "train",
+            "path": "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_06__curric_d2_s3_seed24213_24h",
+            "scenario_id": "E-UK25_06__curric_d2_s3_seed24213_24h",
+            "base_id": "E-UK25_06",
+            "seed": 24213,
+            "n_customers": 25,
+            "validation_passed": true
+          },
+          {
+            "split": "train",
+            "path": "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_07__curric_d2_s3_seed24214_24h",
+            "scenario_id": "E-UK25_07__curric_d2_s3_seed24214_24h",
+            "base_id": "E-UK25_07",
+            "seed": 24214,
+            "n_customers": 25,
+            "validation_passed": true
+          },
+          {
+            "split": "train",
+            "path": "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_08__curric_d2_s3_seed24215_24h",
+            "scenario_id": "E-UK25_08__curric_d2_s3_seed24215_24h",
+            "base_id": "E-UK25_08",
+            "seed": 24215,
+            "n_customers": 25,
+            "validation_passed": true
+          },
+          {
+            "split": "train",
+            "path": "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_09__curric_d2_s3_seed24216_24h",
+            "scenario_id": "E-UK25_09__curric_d2_s3_seed24216_24h",
+            "base_id": "E-UK25_09",
+            "seed": 24216,
+            "n_customers": 25,
+            "validation_passed": true
+          },
+          {
+            "split": "train",
+            "path": "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_10__curric_d2_s3_seed24217_24h",
+            "scenario_id": "E-UK25_10__curric_d2_s3_seed24217_24h",
+            "base_id": "E-UK25_10",
+            "seed": 24217,
+            "n_customers": 25,
+            "validation_passed": true
+          },
+          {
+            "split": "train",
+            "path": "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_11__curric_d2_s3_seed24218_24h",
+            "scenario_id": "E-UK25_11__curric_d2_s3_seed24218_24h",
+            "base_id": "E-UK25_11",
+            "seed": 24218,
+            "n_customers": 25,
+            "validation_passed": true
+          },
+          {
+            "split": "train",
+            "path": "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_12__curric_d2_s3_seed24219_24h",
+            "scenario_id": "E-UK25_12__curric_d2_s3_seed24219_24h",
+            "base_id": "E-UK25_12",
+            "seed": 24219,
+            "n_customers": 25,
+            "validation_passed": true
+          },
+          {
+            "split": "train",
+            "path": "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_13__curric_d2_s3_seed24220_24h",
+            "scenario_id": "E-UK25_13__curric_d2_s3_seed24220_24h",
+            "base_id": "E-UK25_13",
+            "seed": 24220,
+            "n_customers": 25,
+            "validation_passed": true
+          },
+          {
+            "split": "train",
+            "path": "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_14__curric_d2_s3_seed24221_24h",
+            "scenario_id": "E-UK25_14__curric_d2_s3_seed24221_24h",
+            "base_id": "E-UK25_14",
+            "seed": 24221,
+            "n_customers": 25,
+            "validation_passed": true
+          },
+          {
+            "split": "train",
+            "path": "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_15__curric_d2_s3_seed24222_24h",
+            "scenario_id": "E-UK25_15__curric_d2_s3_seed24222_24h",
+            "base_id": "E-UK25_15",
+            "seed": 24222,
+            "n_customers": 25,
+            "validation_passed": true
+          },
+          {
+            "split": "train",
+            "path": "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_16__curric_d2_s3_seed24223_24h",
+            "scenario_id": "E-UK25_16__curric_d2_s3_seed24223_24h",
+            "base_id": "E-UK25_16",
+            "seed": 24223,
+            "n_customers": 25,
+            "validation_passed": true
+          },
+          {
+            "split": "train",
+            "path": "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_17__curric_d2_s3_seed24224_24h",
+            "scenario_id": "E-UK25_17__curric_d2_s3_seed24224_24h",
+            "base_id": "E-UK25_17",
+            "seed": 24224,
+            "n_customers": 25,
+            "validation_passed": true
+          },
+          {
+            "split": "train",
+            "path": "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_18__curric_d2_s3_seed24225_24h",
+            "scenario_id": "E-UK25_18__curric_d2_s3_seed24225_24h",
+            "base_id": "E-UK25_18",
+            "seed": 24225,
+            "n_customers": 25,
+            "validation_passed": true
+          },
+          {
+            "split": "train",
+            "path": "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_19__curric_d2_s3_seed24226_24h",
+            "scenario_id": "E-UK25_19__curric_d2_s3_seed24226_24h",
+            "base_id": "E-UK25_19",
+            "seed": 24226,
+            "n_customers": 25,
+            "validation_passed": true
+          },
+          {
+            "split": "train",
+            "path": "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_20__curric_d2_s3_seed24227_24h",
+            "scenario_id": "E-UK25_20__curric_d2_s3_seed24227_24h",
+            "base_id": "E-UK25_20",
+            "seed": 24227,
+            "n_customers": 25,
+            "validation_passed": true
+          },
+          {
+            "split": "train",
+            "path": "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_03__curric_d2_s3_seed24229_24h",
+            "scenario_id": "E-UK25_03__curric_d2_s3_seed24229_24h",
+            "base_id": "E-UK25_03",
+            "seed": 24229,
+            "n_customers": 25,
+            "validation_passed": true
+          },
+          {
+            "split": "train",
+            "path": "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_04__curric_d2_s3_seed24230_24h",
+            "scenario_id": "E-UK25_04__curric_d2_s3_seed24230_24h",
+            "base_id": "E-UK25_04",
+            "seed": 24230,
+            "n_customers": 25,
+            "validation_passed": true
+          },
+          {
+            "split": "train",
+            "path": "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_05__curric_d2_s3_seed24231_24h",
+            "scenario_id": "E-UK25_05__curric_d2_s3_seed24231_24h",
+            "base_id": "E-UK25_05",
+            "seed": 24231,
+            "n_customers": 25,
+            "validation_passed": true
+          },
+          {
+            "split": "train",
+            "path": "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_06__curric_d2_s3_seed24232_24h",
+            "scenario_id": "E-UK25_06__curric_d2_s3_seed24232_24h",
+            "base_id": "E-UK25_06",
+            "seed": 24232,
+            "n_customers": 25,
+            "validation_passed": true
+          },
+          {
+            "split": "train",
+            "path": "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_07__curric_d2_s3_seed24233_24h",
+            "scenario_id": "E-UK25_07__curric_d2_s3_seed24233_24h",
+            "base_id": "E-UK25_07",
+            "seed": 24233,
+            "n_customers": 25,
+            "validation_passed": true
+          },
+          {
+            "split": "train",
+            "path": "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_08__curric_d2_s3_seed24234_24h",
+            "scenario_id": "E-UK25_08__curric_d2_s3_seed24234_24h",
+            "base_id": "E-UK25_08",
+            "seed": 24234,
+            "n_customers": 25,
+            "validation_passed": true
+          },
+          {
+            "split": "train",
+            "path": "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_09__curric_d2_s3_seed24235_24h",
+            "scenario_id": "E-UK25_09__curric_d2_s3_seed24235_24h",
+            "base_id": "E-UK25_09",
+            "seed": 24235,
+            "n_customers": 25,
+            "validation_passed": true
+          },
+          {
+            "split": "train",
+            "path": "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_10__curric_d2_s3_seed24236_24h",
+            "scenario_id": "E-UK25_10__curric_d2_s3_seed24236_24h",
+            "base_id": "E-UK25_10",
+            "seed": 24236,
+            "n_customers": 25,
+            "validation_passed": true
+          },
+          {
+            "split": "train",
+            "path": "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_11__curric_d2_s3_seed24237_24h",
+            "scenario_id": "E-UK25_11__curric_d2_s3_seed24237_24h",
+            "base_id": "E-UK25_11",
+            "seed": 24237,
+            "n_customers": 25,
+            "validation_passed": true
+          },
+          {
+            "split": "train",
+            "path": "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_12__curric_d2_s3_seed24238_24h",
+            "scenario_id": "E-UK25_12__curric_d2_s3_seed24238_24h",
+            "base_id": "E-UK25_12",
+            "seed": 24238,
+            "n_customers": 25,
+            "validation_passed": true
+          },
+          {
+            "split": "train",
+            "path": "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_13__curric_d2_s3_seed24239_24h",
+            "scenario_id": "E-UK25_13__curric_d2_s3_seed24239_24h",
+            "base_id": "E-UK25_13",
+            "seed": 24239,
+            "n_customers": 25,
+            "validation_passed": true
+          },
+          {
+            "split": "train",
+            "path": "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_14__curric_d2_s3_seed24240_24h",
+            "scenario_id": "E-UK25_14__curric_d2_s3_seed24240_24h",
+            "base_id": "E-UK25_14",
+            "seed": 24240,
+            "n_customers": 25,
+            "validation_passed": true
+          },
+          {
+            "split": "train",
+            "path": "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_15__curric_d2_s3_seed24241_24h",
+            "scenario_id": "E-UK25_15__curric_d2_s3_seed24241_24h",
+            "base_id": "E-UK25_15",
+            "seed": 24241,
+            "n_customers": 25,
+            "validation_passed": true
+          },
+          {
+            "split": "train",
+            "path": "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_16__curric_d2_s3_seed24242_24h",
+            "scenario_id": "E-UK25_16__curric_d2_s3_seed24242_24h",
+            "base_id": "E-UK25_16",
+            "seed": 24242,
+            "n_customers": 25,
+            "validation_passed": true
+          },
+          {
+            "split": "train",
+            "path": "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_17__curric_d2_s3_seed24243_24h",
+            "scenario_id": "E-UK25_17__curric_d2_s3_seed24243_24h",
+            "base_id": "E-UK25_17",
+            "seed": 24243,
+            "n_customers": 25,
+            "validation_passed": true
+          },
+          {
+            "split": "train",
+            "path": "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_18__curric_d2_s3_seed24244_24h",
+            "scenario_id": "E-UK25_18__curric_d2_s3_seed24244_24h",
+            "base_id": "E-UK25_18",
+            "seed": 24244,
+            "n_customers": 25,
+            "validation_passed": true
+          },
+          {
+            "split": "train",
+            "path": "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_19__curric_d2_s3_seed24245_24h",
+            "scenario_id": "E-UK25_19__curric_d2_s3_seed24245_24h",
+            "base_id": "E-UK25_19",
+            "seed": 24245,
+            "n_customers": 25,
+            "validation_passed": true
+          },
+          {
+            "split": "train",
+            "path": "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_20__curric_d2_s3_seed24246_24h",
+            "scenario_id": "E-UK25_20__curric_d2_s3_seed24246_24h",
+            "base_id": "E-UK25_20",
+            "seed": 24246,
+            "n_customers": 25,
+            "validation_passed": true
+          },
+          {
+            "split": "train",
+            "path": "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_02__curric_d2_s3_seed24247_24h",
+            "scenario_id": "E-UK25_02__curric_d2_s3_seed24247_24h",
+            "base_id": "E-UK25_02",
+            "seed": 24247,
+            "n_customers": 25,
+            "validation_passed": true
+          },
+          {
+            "split": "train",
+            "path": "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_03__curric_d2_s3_seed24248_24h",
+            "scenario_id": "E-UK25_03__curric_d2_s3_seed24248_24h",
+            "base_id": "E-UK25_03",
+            "seed": 24248,
+            "n_customers": 25,
+            "validation_passed": true
+          },
+          {
+            "split": "train",
+            "path": "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_04__curric_d2_s3_seed24249_24h",
+            "scenario_id": "E-UK25_04__curric_d2_s3_seed24249_24h",
+            "base_id": "E-UK25_04",
+            "seed": 24249,
+            "n_customers": 25,
+            "validation_passed": true
+          },
+          {
+            "split": "train",
+            "path": "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_05__curric_d2_s3_seed24250_24h",
+            "scenario_id": "E-UK25_05__curric_d2_s3_seed24250_24h",
+            "base_id": "E-UK25_05",
+            "seed": 24250,
+            "n_customers": 25,
+            "validation_passed": true
+          },
+          {
+            "split": "train",
+            "path": "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_06__curric_d2_s3_seed24251_24h",
+            "scenario_id": "E-UK25_06__curric_d2_s3_seed24251_24h",
+            "base_id": "E-UK25_06",
+            "seed": 24251,
+            "n_customers": 25,
+            "validation_passed": true
+          },
+          {
+            "split": "train",
+            "path": "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_07__curric_d2_s3_seed24252_24h",
+            "scenario_id": "E-UK25_07__curric_d2_s3_seed24252_24h",
+            "base_id": "E-UK25_07",
+            "seed": 24252,
+            "n_customers": 25,
+            "validation_passed": true
+          },
+          {
+            "split": "train",
+            "path": "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_09__curric_d2_s3_seed24254_24h",
+            "scenario_id": "E-UK25_09__curric_d2_s3_seed24254_24h",
+            "base_id": "E-UK25_09",
+            "seed": 24254,
+            "n_customers": 25,
+            "validation_passed": true
           }
         ],
         "val": [
@@ -1003,6 +2536,132 @@
             "seed": 25015,
             "n_customers": 25,
             "validation_passed": true
+          },
+          {
+            "split": "val",
+            "path": "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_18__curric_d2_s3_seed25016_24h",
+            "scenario_id": "E-UK25_18__curric_d2_s3_seed25016_24h",
+            "base_id": "E-UK25_18",
+            "seed": 25016,
+            "n_customers": 25,
+            "validation_passed": true
+          },
+          {
+            "split": "val",
+            "path": "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_19__curric_d2_s3_seed25017_24h",
+            "scenario_id": "E-UK25_19__curric_d2_s3_seed25017_24h",
+            "base_id": "E-UK25_19",
+            "seed": 25017,
+            "n_customers": 25,
+            "validation_passed": true
+          },
+          {
+            "split": "val",
+            "path": "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_02__curric_d2_s3_seed25019_24h",
+            "scenario_id": "E-UK25_02__curric_d2_s3_seed25019_24h",
+            "base_id": "E-UK25_02",
+            "seed": 25019,
+            "n_customers": 25,
+            "validation_passed": true
+          },
+          {
+            "split": "val",
+            "path": "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_03__curric_d2_s3_seed25020_24h",
+            "scenario_id": "E-UK25_03__curric_d2_s3_seed25020_24h",
+            "base_id": "E-UK25_03",
+            "seed": 25020,
+            "n_customers": 25,
+            "validation_passed": true
+          },
+          {
+            "split": "val",
+            "path": "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_04__curric_d2_s3_seed25021_24h",
+            "scenario_id": "E-UK25_04__curric_d2_s3_seed25021_24h",
+            "base_id": "E-UK25_04",
+            "seed": 25021,
+            "n_customers": 25,
+            "validation_passed": true
+          },
+          {
+            "split": "val",
+            "path": "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_05__curric_d2_s3_seed25022_24h",
+            "scenario_id": "E-UK25_05__curric_d2_s3_seed25022_24h",
+            "base_id": "E-UK25_05",
+            "seed": 25022,
+            "n_customers": 25,
+            "validation_passed": true
+          },
+          {
+            "split": "val",
+            "path": "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_06__curric_d2_s3_seed25023_24h",
+            "scenario_id": "E-UK25_06__curric_d2_s3_seed25023_24h",
+            "base_id": "E-UK25_06",
+            "seed": 25023,
+            "n_customers": 25,
+            "validation_passed": true
+          },
+          {
+            "split": "val",
+            "path": "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_07__curric_d2_s3_seed25024_24h",
+            "scenario_id": "E-UK25_07__curric_d2_s3_seed25024_24h",
+            "base_id": "E-UK25_07",
+            "seed": 25024,
+            "n_customers": 25,
+            "validation_passed": true
+          },
+          {
+            "split": "val",
+            "path": "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_08__curric_d2_s3_seed25025_24h",
+            "scenario_id": "E-UK25_08__curric_d2_s3_seed25025_24h",
+            "base_id": "E-UK25_08",
+            "seed": 25025,
+            "n_customers": 25,
+            "validation_passed": true
+          },
+          {
+            "split": "val",
+            "path": "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_09__curric_d2_s3_seed25026_24h",
+            "scenario_id": "E-UK25_09__curric_d2_s3_seed25026_24h",
+            "base_id": "E-UK25_09",
+            "seed": 25026,
+            "n_customers": 25,
+            "validation_passed": true
+          },
+          {
+            "split": "val",
+            "path": "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_10__curric_d2_s3_seed25027_24h",
+            "scenario_id": "E-UK25_10__curric_d2_s3_seed25027_24h",
+            "base_id": "E-UK25_10",
+            "seed": 25027,
+            "n_customers": 25,
+            "validation_passed": true
+          },
+          {
+            "split": "val",
+            "path": "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_11__curric_d2_s3_seed25028_24h",
+            "scenario_id": "E-UK25_11__curric_d2_s3_seed25028_24h",
+            "base_id": "E-UK25_11",
+            "seed": 25028,
+            "n_customers": 25,
+            "validation_passed": true
+          },
+          {
+            "split": "val",
+            "path": "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_12__curric_d2_s3_seed25029_24h",
+            "scenario_id": "E-UK25_12__curric_d2_s3_seed25029_24h",
+            "base_id": "E-UK25_12",
+            "seed": 25029,
+            "n_customers": 25,
+            "validation_passed": true
+          },
+          {
+            "split": "val",
+            "path": "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_13__curric_d2_s3_seed25030_24h",
+            "scenario_id": "E-UK25_13__curric_d2_s3_seed25030_24h",
+            "base_id": "E-UK25_13",
+            "seed": 25030,
+            "n_customers": 25,
+            "validation_passed": true
           }
         ],
         "test": [
@@ -1113,6 +2772,168 @@
             "seed": 26011,
             "n_customers": 25,
             "validation_passed": true
+          },
+          {
+            "split": "test",
+            "path": "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_14__curric_d2_s3_seed26012_24h",
+            "scenario_id": "E-UK25_14__curric_d2_s3_seed26012_24h",
+            "base_id": "E-UK25_14",
+            "seed": 26012,
+            "n_customers": 25,
+            "validation_passed": true
+          },
+          {
+            "split": "test",
+            "path": "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_15__curric_d2_s3_seed26013_24h",
+            "scenario_id": "E-UK25_15__curric_d2_s3_seed26013_24h",
+            "base_id": "E-UK25_15",
+            "seed": 26013,
+            "n_customers": 25,
+            "validation_passed": true
+          },
+          {
+            "split": "test",
+            "path": "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_16__curric_d2_s3_seed26014_24h",
+            "scenario_id": "E-UK25_16__curric_d2_s3_seed26014_24h",
+            "base_id": "E-UK25_16",
+            "seed": 26014,
+            "n_customers": 25,
+            "validation_passed": true
+          },
+          {
+            "split": "test",
+            "path": "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_17__curric_d2_s3_seed26015_24h",
+            "scenario_id": "E-UK25_17__curric_d2_s3_seed26015_24h",
+            "base_id": "E-UK25_17",
+            "seed": 26015,
+            "n_customers": 25,
+            "validation_passed": true
+          },
+          {
+            "split": "test",
+            "path": "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_18__curric_d2_s3_seed26016_24h",
+            "scenario_id": "E-UK25_18__curric_d2_s3_seed26016_24h",
+            "base_id": "E-UK25_18",
+            "seed": 26016,
+            "n_customers": 25,
+            "validation_passed": true
+          },
+          {
+            "split": "test",
+            "path": "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_19__curric_d2_s3_seed26017_24h",
+            "scenario_id": "E-UK25_19__curric_d2_s3_seed26017_24h",
+            "base_id": "E-UK25_19",
+            "seed": 26017,
+            "n_customers": 25,
+            "validation_passed": true
+          },
+          {
+            "split": "test",
+            "path": "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_20__curric_d2_s3_seed26018_24h",
+            "scenario_id": "E-UK25_20__curric_d2_s3_seed26018_24h",
+            "base_id": "E-UK25_20",
+            "seed": 26018,
+            "n_customers": 25,
+            "validation_passed": true
+          },
+          {
+            "split": "test",
+            "path": "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_02__curric_d2_s3_seed26019_24h",
+            "scenario_id": "E-UK25_02__curric_d2_s3_seed26019_24h",
+            "base_id": "E-UK25_02",
+            "seed": 26019,
+            "n_customers": 25,
+            "validation_passed": true
+          },
+          {
+            "split": "test",
+            "path": "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_03__curric_d2_s3_seed26020_24h",
+            "scenario_id": "E-UK25_03__curric_d2_s3_seed26020_24h",
+            "base_id": "E-UK25_03",
+            "seed": 26020,
+            "n_customers": 25,
+            "validation_passed": true
+          },
+          {
+            "split": "test",
+            "path": "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_04__curric_d2_s3_seed26021_24h",
+            "scenario_id": "E-UK25_04__curric_d2_s3_seed26021_24h",
+            "base_id": "E-UK25_04",
+            "seed": 26021,
+            "n_customers": 25,
+            "validation_passed": true
+          },
+          {
+            "split": "test",
+            "path": "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_05__curric_d2_s3_seed26022_24h",
+            "scenario_id": "E-UK25_05__curric_d2_s3_seed26022_24h",
+            "base_id": "E-UK25_05",
+            "seed": 26022,
+            "n_customers": 25,
+            "validation_passed": true
+          },
+          {
+            "split": "test",
+            "path": "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_06__curric_d2_s3_seed26023_24h",
+            "scenario_id": "E-UK25_06__curric_d2_s3_seed26023_24h",
+            "base_id": "E-UK25_06",
+            "seed": 26023,
+            "n_customers": 25,
+            "validation_passed": true
+          },
+          {
+            "split": "test",
+            "path": "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_07__curric_d2_s3_seed26024_24h",
+            "scenario_id": "E-UK25_07__curric_d2_s3_seed26024_24h",
+            "base_id": "E-UK25_07",
+            "seed": 26024,
+            "n_customers": 25,
+            "validation_passed": true
+          },
+          {
+            "split": "test",
+            "path": "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_08__curric_d2_s3_seed26025_24h",
+            "scenario_id": "E-UK25_08__curric_d2_s3_seed26025_24h",
+            "base_id": "E-UK25_08",
+            "seed": 26025,
+            "n_customers": 25,
+            "validation_passed": true
+          },
+          {
+            "split": "test",
+            "path": "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_09__curric_d2_s3_seed26026_24h",
+            "scenario_id": "E-UK25_09__curric_d2_s3_seed26026_24h",
+            "base_id": "E-UK25_09",
+            "seed": 26026,
+            "n_customers": 25,
+            "validation_passed": true
+          },
+          {
+            "split": "test",
+            "path": "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_10__curric_d2_s3_seed26027_24h",
+            "scenario_id": "E-UK25_10__curric_d2_s3_seed26027_24h",
+            "base_id": "E-UK25_10",
+            "seed": 26027,
+            "n_customers": 25,
+            "validation_passed": true
+          },
+          {
+            "split": "test",
+            "path": "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_11__curric_d2_s3_seed26028_24h",
+            "scenario_id": "E-UK25_11__curric_d2_s3_seed26028_24h",
+            "base_id": "E-UK25_11",
+            "seed": 26028,
+            "n_customers": 25,
+            "validation_passed": true
+          },
+          {
+            "split": "test",
+            "path": "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_12__curric_d2_s3_seed26029_24h",
+            "scenario_id": "E-UK25_12__curric_d2_s3_seed26029_24h",
+            "base_id": "E-UK25_12",
+            "seed": 26029,
+            "n_customers": 25,
+            "validation_passed": true
           }
         ]
       },
@@ -1123,9 +2944,9 @@
         "path_overlap": {},
         "incomplete": [],
         "invalid": [],
-        "train_count": 80,
-        "val_count": 16,
-        "test_count": 12
+        "train_count": 250,
+        "val_count": 30,
+        "test_count": 30
       }
     }
   },
@@ -1854,6 +3675,1536 @@
           "seed": 24080,
           "n_customers": 25,
           "validation_passed": true
+        },
+        {
+          "split": "train",
+          "path": "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_07__curric_d2_s3_seed24081_24h",
+          "scenario_id": "E-UK25_07__curric_d2_s3_seed24081_24h",
+          "base_id": "E-UK25_07",
+          "seed": 24081,
+          "n_customers": 25,
+          "validation_passed": true
+        },
+        {
+          "split": "train",
+          "path": "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_08__curric_d2_s3_seed24082_24h",
+          "scenario_id": "E-UK25_08__curric_d2_s3_seed24082_24h",
+          "base_id": "E-UK25_08",
+          "seed": 24082,
+          "n_customers": 25,
+          "validation_passed": true
+        },
+        {
+          "split": "train",
+          "path": "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_09__curric_d2_s3_seed24083_24h",
+          "scenario_id": "E-UK25_09__curric_d2_s3_seed24083_24h",
+          "base_id": "E-UK25_09",
+          "seed": 24083,
+          "n_customers": 25,
+          "validation_passed": true
+        },
+        {
+          "split": "train",
+          "path": "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_10__curric_d2_s3_seed24084_24h",
+          "scenario_id": "E-UK25_10__curric_d2_s3_seed24084_24h",
+          "base_id": "E-UK25_10",
+          "seed": 24084,
+          "n_customers": 25,
+          "validation_passed": true
+        },
+        {
+          "split": "train",
+          "path": "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_11__curric_d2_s3_seed24085_24h",
+          "scenario_id": "E-UK25_11__curric_d2_s3_seed24085_24h",
+          "base_id": "E-UK25_11",
+          "seed": 24085,
+          "n_customers": 25,
+          "validation_passed": true
+        },
+        {
+          "split": "train",
+          "path": "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_12__curric_d2_s3_seed24086_24h",
+          "scenario_id": "E-UK25_12__curric_d2_s3_seed24086_24h",
+          "base_id": "E-UK25_12",
+          "seed": 24086,
+          "n_customers": 25,
+          "validation_passed": true
+        },
+        {
+          "split": "train",
+          "path": "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_13__curric_d2_s3_seed24087_24h",
+          "scenario_id": "E-UK25_13__curric_d2_s3_seed24087_24h",
+          "base_id": "E-UK25_13",
+          "seed": 24087,
+          "n_customers": 25,
+          "validation_passed": true
+        },
+        {
+          "split": "train",
+          "path": "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_14__curric_d2_s3_seed24088_24h",
+          "scenario_id": "E-UK25_14__curric_d2_s3_seed24088_24h",
+          "base_id": "E-UK25_14",
+          "seed": 24088,
+          "n_customers": 25,
+          "validation_passed": true
+        },
+        {
+          "split": "train",
+          "path": "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_15__curric_d2_s3_seed24089_24h",
+          "scenario_id": "E-UK25_15__curric_d2_s3_seed24089_24h",
+          "base_id": "E-UK25_15",
+          "seed": 24089,
+          "n_customers": 25,
+          "validation_passed": true
+        },
+        {
+          "split": "train",
+          "path": "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_16__curric_d2_s3_seed24090_24h",
+          "scenario_id": "E-UK25_16__curric_d2_s3_seed24090_24h",
+          "base_id": "E-UK25_16",
+          "seed": 24090,
+          "n_customers": 25,
+          "validation_passed": true
+        },
+        {
+          "split": "train",
+          "path": "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_17__curric_d2_s3_seed24091_24h",
+          "scenario_id": "E-UK25_17__curric_d2_s3_seed24091_24h",
+          "base_id": "E-UK25_17",
+          "seed": 24091,
+          "n_customers": 25,
+          "validation_passed": true
+        },
+        {
+          "split": "train",
+          "path": "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_18__curric_d2_s3_seed24092_24h",
+          "scenario_id": "E-UK25_18__curric_d2_s3_seed24092_24h",
+          "base_id": "E-UK25_18",
+          "seed": 24092,
+          "n_customers": 25,
+          "validation_passed": true
+        },
+        {
+          "split": "train",
+          "path": "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_19__curric_d2_s3_seed24093_24h",
+          "scenario_id": "E-UK25_19__curric_d2_s3_seed24093_24h",
+          "base_id": "E-UK25_19",
+          "seed": 24093,
+          "n_customers": 25,
+          "validation_passed": true
+        },
+        {
+          "split": "train",
+          "path": "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_20__curric_d2_s3_seed24094_24h",
+          "scenario_id": "E-UK25_20__curric_d2_s3_seed24094_24h",
+          "base_id": "E-UK25_20",
+          "seed": 24094,
+          "n_customers": 25,
+          "validation_passed": true
+        },
+        {
+          "split": "train",
+          "path": "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_02__curric_d2_s3_seed24095_24h",
+          "scenario_id": "E-UK25_02__curric_d2_s3_seed24095_24h",
+          "base_id": "E-UK25_02",
+          "seed": 24095,
+          "n_customers": 25,
+          "validation_passed": true
+        },
+        {
+          "split": "train",
+          "path": "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_03__curric_d2_s3_seed24096_24h",
+          "scenario_id": "E-UK25_03__curric_d2_s3_seed24096_24h",
+          "base_id": "E-UK25_03",
+          "seed": 24096,
+          "n_customers": 25,
+          "validation_passed": true
+        },
+        {
+          "split": "train",
+          "path": "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_04__curric_d2_s3_seed24097_24h",
+          "scenario_id": "E-UK25_04__curric_d2_s3_seed24097_24h",
+          "base_id": "E-UK25_04",
+          "seed": 24097,
+          "n_customers": 25,
+          "validation_passed": true
+        },
+        {
+          "split": "train",
+          "path": "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_05__curric_d2_s3_seed24098_24h",
+          "scenario_id": "E-UK25_05__curric_d2_s3_seed24098_24h",
+          "base_id": "E-UK25_05",
+          "seed": 24098,
+          "n_customers": 25,
+          "validation_passed": true
+        },
+        {
+          "split": "train",
+          "path": "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_06__curric_d2_s3_seed24099_24h",
+          "scenario_id": "E-UK25_06__curric_d2_s3_seed24099_24h",
+          "base_id": "E-UK25_06",
+          "seed": 24099,
+          "n_customers": 25,
+          "validation_passed": true
+        },
+        {
+          "split": "train",
+          "path": "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_07__curric_d2_s3_seed24100_24h",
+          "scenario_id": "E-UK25_07__curric_d2_s3_seed24100_24h",
+          "base_id": "E-UK25_07",
+          "seed": 24100,
+          "n_customers": 25,
+          "validation_passed": true
+        },
+        {
+          "split": "train",
+          "path": "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_08__curric_d2_s3_seed24101_24h",
+          "scenario_id": "E-UK25_08__curric_d2_s3_seed24101_24h",
+          "base_id": "E-UK25_08",
+          "seed": 24101,
+          "n_customers": 25,
+          "validation_passed": true
+        },
+        {
+          "split": "train",
+          "path": "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_09__curric_d2_s3_seed24102_24h",
+          "scenario_id": "E-UK25_09__curric_d2_s3_seed24102_24h",
+          "base_id": "E-UK25_09",
+          "seed": 24102,
+          "n_customers": 25,
+          "validation_passed": true
+        },
+        {
+          "split": "train",
+          "path": "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_10__curric_d2_s3_seed24103_24h",
+          "scenario_id": "E-UK25_10__curric_d2_s3_seed24103_24h",
+          "base_id": "E-UK25_10",
+          "seed": 24103,
+          "n_customers": 25,
+          "validation_passed": true
+        },
+        {
+          "split": "train",
+          "path": "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_11__curric_d2_s3_seed24104_24h",
+          "scenario_id": "E-UK25_11__curric_d2_s3_seed24104_24h",
+          "base_id": "E-UK25_11",
+          "seed": 24104,
+          "n_customers": 25,
+          "validation_passed": true
+        },
+        {
+          "split": "train",
+          "path": "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_12__curric_d2_s3_seed24105_24h",
+          "scenario_id": "E-UK25_12__curric_d2_s3_seed24105_24h",
+          "base_id": "E-UK25_12",
+          "seed": 24105,
+          "n_customers": 25,
+          "validation_passed": true
+        },
+        {
+          "split": "train",
+          "path": "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_13__curric_d2_s3_seed24106_24h",
+          "scenario_id": "E-UK25_13__curric_d2_s3_seed24106_24h",
+          "base_id": "E-UK25_13",
+          "seed": 24106,
+          "n_customers": 25,
+          "validation_passed": true
+        },
+        {
+          "split": "train",
+          "path": "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_14__curric_d2_s3_seed24107_24h",
+          "scenario_id": "E-UK25_14__curric_d2_s3_seed24107_24h",
+          "base_id": "E-UK25_14",
+          "seed": 24107,
+          "n_customers": 25,
+          "validation_passed": true
+        },
+        {
+          "split": "train",
+          "path": "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_15__curric_d2_s3_seed24108_24h",
+          "scenario_id": "E-UK25_15__curric_d2_s3_seed24108_24h",
+          "base_id": "E-UK25_15",
+          "seed": 24108,
+          "n_customers": 25,
+          "validation_passed": true
+        },
+        {
+          "split": "train",
+          "path": "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_16__curric_d2_s3_seed24109_24h",
+          "scenario_id": "E-UK25_16__curric_d2_s3_seed24109_24h",
+          "base_id": "E-UK25_16",
+          "seed": 24109,
+          "n_customers": 25,
+          "validation_passed": true
+        },
+        {
+          "split": "train",
+          "path": "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_17__curric_d2_s3_seed24110_24h",
+          "scenario_id": "E-UK25_17__curric_d2_s3_seed24110_24h",
+          "base_id": "E-UK25_17",
+          "seed": 24110,
+          "n_customers": 25,
+          "validation_passed": true
+        },
+        {
+          "split": "train",
+          "path": "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_18__curric_d2_s3_seed24111_24h",
+          "scenario_id": "E-UK25_18__curric_d2_s3_seed24111_24h",
+          "base_id": "E-UK25_18",
+          "seed": 24111,
+          "n_customers": 25,
+          "validation_passed": true
+        },
+        {
+          "split": "train",
+          "path": "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_19__curric_d2_s3_seed24112_24h",
+          "scenario_id": "E-UK25_19__curric_d2_s3_seed24112_24h",
+          "base_id": "E-UK25_19",
+          "seed": 24112,
+          "n_customers": 25,
+          "validation_passed": true
+        },
+        {
+          "split": "train",
+          "path": "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_20__curric_d2_s3_seed24113_24h",
+          "scenario_id": "E-UK25_20__curric_d2_s3_seed24113_24h",
+          "base_id": "E-UK25_20",
+          "seed": 24113,
+          "n_customers": 25,
+          "validation_passed": true
+        },
+        {
+          "split": "train",
+          "path": "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_02__curric_d2_s3_seed24114_24h",
+          "scenario_id": "E-UK25_02__curric_d2_s3_seed24114_24h",
+          "base_id": "E-UK25_02",
+          "seed": 24114,
+          "n_customers": 25,
+          "validation_passed": true
+        },
+        {
+          "split": "train",
+          "path": "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_03__curric_d2_s3_seed24115_24h",
+          "scenario_id": "E-UK25_03__curric_d2_s3_seed24115_24h",
+          "base_id": "E-UK25_03",
+          "seed": 24115,
+          "n_customers": 25,
+          "validation_passed": true
+        },
+        {
+          "split": "train",
+          "path": "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_04__curric_d2_s3_seed24116_24h",
+          "scenario_id": "E-UK25_04__curric_d2_s3_seed24116_24h",
+          "base_id": "E-UK25_04",
+          "seed": 24116,
+          "n_customers": 25,
+          "validation_passed": true
+        },
+        {
+          "split": "train",
+          "path": "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_05__curric_d2_s3_seed24117_24h",
+          "scenario_id": "E-UK25_05__curric_d2_s3_seed24117_24h",
+          "base_id": "E-UK25_05",
+          "seed": 24117,
+          "n_customers": 25,
+          "validation_passed": true
+        },
+        {
+          "split": "train",
+          "path": "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_06__curric_d2_s3_seed24118_24h",
+          "scenario_id": "E-UK25_06__curric_d2_s3_seed24118_24h",
+          "base_id": "E-UK25_06",
+          "seed": 24118,
+          "n_customers": 25,
+          "validation_passed": true
+        },
+        {
+          "split": "train",
+          "path": "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_07__curric_d2_s3_seed24119_24h",
+          "scenario_id": "E-UK25_07__curric_d2_s3_seed24119_24h",
+          "base_id": "E-UK25_07",
+          "seed": 24119,
+          "n_customers": 25,
+          "validation_passed": true
+        },
+        {
+          "split": "train",
+          "path": "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_08__curric_d2_s3_seed24120_24h",
+          "scenario_id": "E-UK25_08__curric_d2_s3_seed24120_24h",
+          "base_id": "E-UK25_08",
+          "seed": 24120,
+          "n_customers": 25,
+          "validation_passed": true
+        },
+        {
+          "split": "train",
+          "path": "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_09__curric_d2_s3_seed24121_24h",
+          "scenario_id": "E-UK25_09__curric_d2_s3_seed24121_24h",
+          "base_id": "E-UK25_09",
+          "seed": 24121,
+          "n_customers": 25,
+          "validation_passed": true
+        },
+        {
+          "split": "train",
+          "path": "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_10__curric_d2_s3_seed24122_24h",
+          "scenario_id": "E-UK25_10__curric_d2_s3_seed24122_24h",
+          "base_id": "E-UK25_10",
+          "seed": 24122,
+          "n_customers": 25,
+          "validation_passed": true
+        },
+        {
+          "split": "train",
+          "path": "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_11__curric_d2_s3_seed24123_24h",
+          "scenario_id": "E-UK25_11__curric_d2_s3_seed24123_24h",
+          "base_id": "E-UK25_11",
+          "seed": 24123,
+          "n_customers": 25,
+          "validation_passed": true
+        },
+        {
+          "split": "train",
+          "path": "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_12__curric_d2_s3_seed24124_24h",
+          "scenario_id": "E-UK25_12__curric_d2_s3_seed24124_24h",
+          "base_id": "E-UK25_12",
+          "seed": 24124,
+          "n_customers": 25,
+          "validation_passed": true
+        },
+        {
+          "split": "train",
+          "path": "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_13__curric_d2_s3_seed24125_24h",
+          "scenario_id": "E-UK25_13__curric_d2_s3_seed24125_24h",
+          "base_id": "E-UK25_13",
+          "seed": 24125,
+          "n_customers": 25,
+          "validation_passed": true
+        },
+        {
+          "split": "train",
+          "path": "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_14__curric_d2_s3_seed24126_24h",
+          "scenario_id": "E-UK25_14__curric_d2_s3_seed24126_24h",
+          "base_id": "E-UK25_14",
+          "seed": 24126,
+          "n_customers": 25,
+          "validation_passed": true
+        },
+        {
+          "split": "train",
+          "path": "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_15__curric_d2_s3_seed24127_24h",
+          "scenario_id": "E-UK25_15__curric_d2_s3_seed24127_24h",
+          "base_id": "E-UK25_15",
+          "seed": 24127,
+          "n_customers": 25,
+          "validation_passed": true
+        },
+        {
+          "split": "train",
+          "path": "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_16__curric_d2_s3_seed24128_24h",
+          "scenario_id": "E-UK25_16__curric_d2_s3_seed24128_24h",
+          "base_id": "E-UK25_16",
+          "seed": 24128,
+          "n_customers": 25,
+          "validation_passed": true
+        },
+        {
+          "split": "train",
+          "path": "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_17__curric_d2_s3_seed24129_24h",
+          "scenario_id": "E-UK25_17__curric_d2_s3_seed24129_24h",
+          "base_id": "E-UK25_17",
+          "seed": 24129,
+          "n_customers": 25,
+          "validation_passed": true
+        },
+        {
+          "split": "train",
+          "path": "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_18__curric_d2_s3_seed24130_24h",
+          "scenario_id": "E-UK25_18__curric_d2_s3_seed24130_24h",
+          "base_id": "E-UK25_18",
+          "seed": 24130,
+          "n_customers": 25,
+          "validation_passed": true
+        },
+        {
+          "split": "train",
+          "path": "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_19__curric_d2_s3_seed24131_24h",
+          "scenario_id": "E-UK25_19__curric_d2_s3_seed24131_24h",
+          "base_id": "E-UK25_19",
+          "seed": 24131,
+          "n_customers": 25,
+          "validation_passed": true
+        },
+        {
+          "split": "train",
+          "path": "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_02__curric_d2_s3_seed24133_24h",
+          "scenario_id": "E-UK25_02__curric_d2_s3_seed24133_24h",
+          "base_id": "E-UK25_02",
+          "seed": 24133,
+          "n_customers": 25,
+          "validation_passed": true
+        },
+        {
+          "split": "train",
+          "path": "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_03__curric_d2_s3_seed24134_24h",
+          "scenario_id": "E-UK25_03__curric_d2_s3_seed24134_24h",
+          "base_id": "E-UK25_03",
+          "seed": 24134,
+          "n_customers": 25,
+          "validation_passed": true
+        },
+        {
+          "split": "train",
+          "path": "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_04__curric_d2_s3_seed24135_24h",
+          "scenario_id": "E-UK25_04__curric_d2_s3_seed24135_24h",
+          "base_id": "E-UK25_04",
+          "seed": 24135,
+          "n_customers": 25,
+          "validation_passed": true
+        },
+        {
+          "split": "train",
+          "path": "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_05__curric_d2_s3_seed24136_24h",
+          "scenario_id": "E-UK25_05__curric_d2_s3_seed24136_24h",
+          "base_id": "E-UK25_05",
+          "seed": 24136,
+          "n_customers": 25,
+          "validation_passed": true
+        },
+        {
+          "split": "train",
+          "path": "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_06__curric_d2_s3_seed24137_24h",
+          "scenario_id": "E-UK25_06__curric_d2_s3_seed24137_24h",
+          "base_id": "E-UK25_06",
+          "seed": 24137,
+          "n_customers": 25,
+          "validation_passed": true
+        },
+        {
+          "split": "train",
+          "path": "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_07__curric_d2_s3_seed24138_24h",
+          "scenario_id": "E-UK25_07__curric_d2_s3_seed24138_24h",
+          "base_id": "E-UK25_07",
+          "seed": 24138,
+          "n_customers": 25,
+          "validation_passed": true
+        },
+        {
+          "split": "train",
+          "path": "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_08__curric_d2_s3_seed24139_24h",
+          "scenario_id": "E-UK25_08__curric_d2_s3_seed24139_24h",
+          "base_id": "E-UK25_08",
+          "seed": 24139,
+          "n_customers": 25,
+          "validation_passed": true
+        },
+        {
+          "split": "train",
+          "path": "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_09__curric_d2_s3_seed24140_24h",
+          "scenario_id": "E-UK25_09__curric_d2_s3_seed24140_24h",
+          "base_id": "E-UK25_09",
+          "seed": 24140,
+          "n_customers": 25,
+          "validation_passed": true
+        },
+        {
+          "split": "train",
+          "path": "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_10__curric_d2_s3_seed24141_24h",
+          "scenario_id": "E-UK25_10__curric_d2_s3_seed24141_24h",
+          "base_id": "E-UK25_10",
+          "seed": 24141,
+          "n_customers": 25,
+          "validation_passed": true
+        },
+        {
+          "split": "train",
+          "path": "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_11__curric_d2_s3_seed24142_24h",
+          "scenario_id": "E-UK25_11__curric_d2_s3_seed24142_24h",
+          "base_id": "E-UK25_11",
+          "seed": 24142,
+          "n_customers": 25,
+          "validation_passed": true
+        },
+        {
+          "split": "train",
+          "path": "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_12__curric_d2_s3_seed24143_24h",
+          "scenario_id": "E-UK25_12__curric_d2_s3_seed24143_24h",
+          "base_id": "E-UK25_12",
+          "seed": 24143,
+          "n_customers": 25,
+          "validation_passed": true
+        },
+        {
+          "split": "train",
+          "path": "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_13__curric_d2_s3_seed24144_24h",
+          "scenario_id": "E-UK25_13__curric_d2_s3_seed24144_24h",
+          "base_id": "E-UK25_13",
+          "seed": 24144,
+          "n_customers": 25,
+          "validation_passed": true
+        },
+        {
+          "split": "train",
+          "path": "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_14__curric_d2_s3_seed24145_24h",
+          "scenario_id": "E-UK25_14__curric_d2_s3_seed24145_24h",
+          "base_id": "E-UK25_14",
+          "seed": 24145,
+          "n_customers": 25,
+          "validation_passed": true
+        },
+        {
+          "split": "train",
+          "path": "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_15__curric_d2_s3_seed24146_24h",
+          "scenario_id": "E-UK25_15__curric_d2_s3_seed24146_24h",
+          "base_id": "E-UK25_15",
+          "seed": 24146,
+          "n_customers": 25,
+          "validation_passed": true
+        },
+        {
+          "split": "train",
+          "path": "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_16__curric_d2_s3_seed24147_24h",
+          "scenario_id": "E-UK25_16__curric_d2_s3_seed24147_24h",
+          "base_id": "E-UK25_16",
+          "seed": 24147,
+          "n_customers": 25,
+          "validation_passed": true
+        },
+        {
+          "split": "train",
+          "path": "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_17__curric_d2_s3_seed24148_24h",
+          "scenario_id": "E-UK25_17__curric_d2_s3_seed24148_24h",
+          "base_id": "E-UK25_17",
+          "seed": 24148,
+          "n_customers": 25,
+          "validation_passed": true
+        },
+        {
+          "split": "train",
+          "path": "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_18__curric_d2_s3_seed24149_24h",
+          "scenario_id": "E-UK25_18__curric_d2_s3_seed24149_24h",
+          "base_id": "E-UK25_18",
+          "seed": 24149,
+          "n_customers": 25,
+          "validation_passed": true
+        },
+        {
+          "split": "train",
+          "path": "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_19__curric_d2_s3_seed24150_24h",
+          "scenario_id": "E-UK25_19__curric_d2_s3_seed24150_24h",
+          "base_id": "E-UK25_19",
+          "seed": 24150,
+          "n_customers": 25,
+          "validation_passed": true
+        },
+        {
+          "split": "train",
+          "path": "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_20__curric_d2_s3_seed24151_24h",
+          "scenario_id": "E-UK25_20__curric_d2_s3_seed24151_24h",
+          "base_id": "E-UK25_20",
+          "seed": 24151,
+          "n_customers": 25,
+          "validation_passed": true
+        },
+        {
+          "split": "train",
+          "path": "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_02__curric_d2_s3_seed24152_24h",
+          "scenario_id": "E-UK25_02__curric_d2_s3_seed24152_24h",
+          "base_id": "E-UK25_02",
+          "seed": 24152,
+          "n_customers": 25,
+          "validation_passed": true
+        },
+        {
+          "split": "train",
+          "path": "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_03__curric_d2_s3_seed24153_24h",
+          "scenario_id": "E-UK25_03__curric_d2_s3_seed24153_24h",
+          "base_id": "E-UK25_03",
+          "seed": 24153,
+          "n_customers": 25,
+          "validation_passed": true
+        },
+        {
+          "split": "train",
+          "path": "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_04__curric_d2_s3_seed24154_24h",
+          "scenario_id": "E-UK25_04__curric_d2_s3_seed24154_24h",
+          "base_id": "E-UK25_04",
+          "seed": 24154,
+          "n_customers": 25,
+          "validation_passed": true
+        },
+        {
+          "split": "train",
+          "path": "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_05__curric_d2_s3_seed24155_24h",
+          "scenario_id": "E-UK25_05__curric_d2_s3_seed24155_24h",
+          "base_id": "E-UK25_05",
+          "seed": 24155,
+          "n_customers": 25,
+          "validation_passed": true
+        },
+        {
+          "split": "train",
+          "path": "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_06__curric_d2_s3_seed24156_24h",
+          "scenario_id": "E-UK25_06__curric_d2_s3_seed24156_24h",
+          "base_id": "E-UK25_06",
+          "seed": 24156,
+          "n_customers": 25,
+          "validation_passed": true
+        },
+        {
+          "split": "train",
+          "path": "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_07__curric_d2_s3_seed24157_24h",
+          "scenario_id": "E-UK25_07__curric_d2_s3_seed24157_24h",
+          "base_id": "E-UK25_07",
+          "seed": 24157,
+          "n_customers": 25,
+          "validation_passed": true
+        },
+        {
+          "split": "train",
+          "path": "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_08__curric_d2_s3_seed24158_24h",
+          "scenario_id": "E-UK25_08__curric_d2_s3_seed24158_24h",
+          "base_id": "E-UK25_08",
+          "seed": 24158,
+          "n_customers": 25,
+          "validation_passed": true
+        },
+        {
+          "split": "train",
+          "path": "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_09__curric_d2_s3_seed24159_24h",
+          "scenario_id": "E-UK25_09__curric_d2_s3_seed24159_24h",
+          "base_id": "E-UK25_09",
+          "seed": 24159,
+          "n_customers": 25,
+          "validation_passed": true
+        },
+        {
+          "split": "train",
+          "path": "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_10__curric_d2_s3_seed24160_24h",
+          "scenario_id": "E-UK25_10__curric_d2_s3_seed24160_24h",
+          "base_id": "E-UK25_10",
+          "seed": 24160,
+          "n_customers": 25,
+          "validation_passed": true
+        },
+        {
+          "split": "train",
+          "path": "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_11__curric_d2_s3_seed24161_24h",
+          "scenario_id": "E-UK25_11__curric_d2_s3_seed24161_24h",
+          "base_id": "E-UK25_11",
+          "seed": 24161,
+          "n_customers": 25,
+          "validation_passed": true
+        },
+        {
+          "split": "train",
+          "path": "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_12__curric_d2_s3_seed24162_24h",
+          "scenario_id": "E-UK25_12__curric_d2_s3_seed24162_24h",
+          "base_id": "E-UK25_12",
+          "seed": 24162,
+          "n_customers": 25,
+          "validation_passed": true
+        },
+        {
+          "split": "train",
+          "path": "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_13__curric_d2_s3_seed24163_24h",
+          "scenario_id": "E-UK25_13__curric_d2_s3_seed24163_24h",
+          "base_id": "E-UK25_13",
+          "seed": 24163,
+          "n_customers": 25,
+          "validation_passed": true
+        },
+        {
+          "split": "train",
+          "path": "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_14__curric_d2_s3_seed24164_24h",
+          "scenario_id": "E-UK25_14__curric_d2_s3_seed24164_24h",
+          "base_id": "E-UK25_14",
+          "seed": 24164,
+          "n_customers": 25,
+          "validation_passed": true
+        },
+        {
+          "split": "train",
+          "path": "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_15__curric_d2_s3_seed24165_24h",
+          "scenario_id": "E-UK25_15__curric_d2_s3_seed24165_24h",
+          "base_id": "E-UK25_15",
+          "seed": 24165,
+          "n_customers": 25,
+          "validation_passed": true
+        },
+        {
+          "split": "train",
+          "path": "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_16__curric_d2_s3_seed24166_24h",
+          "scenario_id": "E-UK25_16__curric_d2_s3_seed24166_24h",
+          "base_id": "E-UK25_16",
+          "seed": 24166,
+          "n_customers": 25,
+          "validation_passed": true
+        },
+        {
+          "split": "train",
+          "path": "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_17__curric_d2_s3_seed24167_24h",
+          "scenario_id": "E-UK25_17__curric_d2_s3_seed24167_24h",
+          "base_id": "E-UK25_17",
+          "seed": 24167,
+          "n_customers": 25,
+          "validation_passed": true
+        },
+        {
+          "split": "train",
+          "path": "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_18__curric_d2_s3_seed24168_24h",
+          "scenario_id": "E-UK25_18__curric_d2_s3_seed24168_24h",
+          "base_id": "E-UK25_18",
+          "seed": 24168,
+          "n_customers": 25,
+          "validation_passed": true
+        },
+        {
+          "split": "train",
+          "path": "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_19__curric_d2_s3_seed24169_24h",
+          "scenario_id": "E-UK25_19__curric_d2_s3_seed24169_24h",
+          "base_id": "E-UK25_19",
+          "seed": 24169,
+          "n_customers": 25,
+          "validation_passed": true
+        },
+        {
+          "split": "train",
+          "path": "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_20__curric_d2_s3_seed24170_24h",
+          "scenario_id": "E-UK25_20__curric_d2_s3_seed24170_24h",
+          "base_id": "E-UK25_20",
+          "seed": 24170,
+          "n_customers": 25,
+          "validation_passed": true
+        },
+        {
+          "split": "train",
+          "path": "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_02__curric_d2_s3_seed24171_24h",
+          "scenario_id": "E-UK25_02__curric_d2_s3_seed24171_24h",
+          "base_id": "E-UK25_02",
+          "seed": 24171,
+          "n_customers": 25,
+          "validation_passed": true
+        },
+        {
+          "split": "train",
+          "path": "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_03__curric_d2_s3_seed24172_24h",
+          "scenario_id": "E-UK25_03__curric_d2_s3_seed24172_24h",
+          "base_id": "E-UK25_03",
+          "seed": 24172,
+          "n_customers": 25,
+          "validation_passed": true
+        },
+        {
+          "split": "train",
+          "path": "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_04__curric_d2_s3_seed24173_24h",
+          "scenario_id": "E-UK25_04__curric_d2_s3_seed24173_24h",
+          "base_id": "E-UK25_04",
+          "seed": 24173,
+          "n_customers": 25,
+          "validation_passed": true
+        },
+        {
+          "split": "train",
+          "path": "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_05__curric_d2_s3_seed24174_24h",
+          "scenario_id": "E-UK25_05__curric_d2_s3_seed24174_24h",
+          "base_id": "E-UK25_05",
+          "seed": 24174,
+          "n_customers": 25,
+          "validation_passed": true
+        },
+        {
+          "split": "train",
+          "path": "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_06__curric_d2_s3_seed24175_24h",
+          "scenario_id": "E-UK25_06__curric_d2_s3_seed24175_24h",
+          "base_id": "E-UK25_06",
+          "seed": 24175,
+          "n_customers": 25,
+          "validation_passed": true
+        },
+        {
+          "split": "train",
+          "path": "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_07__curric_d2_s3_seed24176_24h",
+          "scenario_id": "E-UK25_07__curric_d2_s3_seed24176_24h",
+          "base_id": "E-UK25_07",
+          "seed": 24176,
+          "n_customers": 25,
+          "validation_passed": true
+        },
+        {
+          "split": "train",
+          "path": "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_08__curric_d2_s3_seed24177_24h",
+          "scenario_id": "E-UK25_08__curric_d2_s3_seed24177_24h",
+          "base_id": "E-UK25_08",
+          "seed": 24177,
+          "n_customers": 25,
+          "validation_passed": true
+        },
+        {
+          "split": "train",
+          "path": "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_09__curric_d2_s3_seed24178_24h",
+          "scenario_id": "E-UK25_09__curric_d2_s3_seed24178_24h",
+          "base_id": "E-UK25_09",
+          "seed": 24178,
+          "n_customers": 25,
+          "validation_passed": true
+        },
+        {
+          "split": "train",
+          "path": "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_10__curric_d2_s3_seed24179_24h",
+          "scenario_id": "E-UK25_10__curric_d2_s3_seed24179_24h",
+          "base_id": "E-UK25_10",
+          "seed": 24179,
+          "n_customers": 25,
+          "validation_passed": true
+        },
+        {
+          "split": "train",
+          "path": "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_12__curric_d2_s3_seed24181_24h",
+          "scenario_id": "E-UK25_12__curric_d2_s3_seed24181_24h",
+          "base_id": "E-UK25_12",
+          "seed": 24181,
+          "n_customers": 25,
+          "validation_passed": true
+        },
+        {
+          "split": "train",
+          "path": "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_13__curric_d2_s3_seed24182_24h",
+          "scenario_id": "E-UK25_13__curric_d2_s3_seed24182_24h",
+          "base_id": "E-UK25_13",
+          "seed": 24182,
+          "n_customers": 25,
+          "validation_passed": true
+        },
+        {
+          "split": "train",
+          "path": "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_14__curric_d2_s3_seed24183_24h",
+          "scenario_id": "E-UK25_14__curric_d2_s3_seed24183_24h",
+          "base_id": "E-UK25_14",
+          "seed": 24183,
+          "n_customers": 25,
+          "validation_passed": true
+        },
+        {
+          "split": "train",
+          "path": "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_15__curric_d2_s3_seed24184_24h",
+          "scenario_id": "E-UK25_15__curric_d2_s3_seed24184_24h",
+          "base_id": "E-UK25_15",
+          "seed": 24184,
+          "n_customers": 25,
+          "validation_passed": true
+        },
+        {
+          "split": "train",
+          "path": "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_16__curric_d2_s3_seed24185_24h",
+          "scenario_id": "E-UK25_16__curric_d2_s3_seed24185_24h",
+          "base_id": "E-UK25_16",
+          "seed": 24185,
+          "n_customers": 25,
+          "validation_passed": true
+        },
+        {
+          "split": "train",
+          "path": "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_17__curric_d2_s3_seed24186_24h",
+          "scenario_id": "E-UK25_17__curric_d2_s3_seed24186_24h",
+          "base_id": "E-UK25_17",
+          "seed": 24186,
+          "n_customers": 25,
+          "validation_passed": true
+        },
+        {
+          "split": "train",
+          "path": "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_18__curric_d2_s3_seed24187_24h",
+          "scenario_id": "E-UK25_18__curric_d2_s3_seed24187_24h",
+          "base_id": "E-UK25_18",
+          "seed": 24187,
+          "n_customers": 25,
+          "validation_passed": true
+        },
+        {
+          "split": "train",
+          "path": "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_19__curric_d2_s3_seed24188_24h",
+          "scenario_id": "E-UK25_19__curric_d2_s3_seed24188_24h",
+          "base_id": "E-UK25_19",
+          "seed": 24188,
+          "n_customers": 25,
+          "validation_passed": true
+        },
+        {
+          "split": "train",
+          "path": "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_20__curric_d2_s3_seed24189_24h",
+          "scenario_id": "E-UK25_20__curric_d2_s3_seed24189_24h",
+          "base_id": "E-UK25_20",
+          "seed": 24189,
+          "n_customers": 25,
+          "validation_passed": true
+        },
+        {
+          "split": "train",
+          "path": "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_02__curric_d2_s3_seed24190_24h",
+          "scenario_id": "E-UK25_02__curric_d2_s3_seed24190_24h",
+          "base_id": "E-UK25_02",
+          "seed": 24190,
+          "n_customers": 25,
+          "validation_passed": true
+        },
+        {
+          "split": "train",
+          "path": "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_03__curric_d2_s3_seed24191_24h",
+          "scenario_id": "E-UK25_03__curric_d2_s3_seed24191_24h",
+          "base_id": "E-UK25_03",
+          "seed": 24191,
+          "n_customers": 25,
+          "validation_passed": true
+        },
+        {
+          "split": "train",
+          "path": "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_04__curric_d2_s3_seed24192_24h",
+          "scenario_id": "E-UK25_04__curric_d2_s3_seed24192_24h",
+          "base_id": "E-UK25_04",
+          "seed": 24192,
+          "n_customers": 25,
+          "validation_passed": true
+        },
+        {
+          "split": "train",
+          "path": "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_05__curric_d2_s3_seed24193_24h",
+          "scenario_id": "E-UK25_05__curric_d2_s3_seed24193_24h",
+          "base_id": "E-UK25_05",
+          "seed": 24193,
+          "n_customers": 25,
+          "validation_passed": true
+        },
+        {
+          "split": "train",
+          "path": "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_06__curric_d2_s3_seed24194_24h",
+          "scenario_id": "E-UK25_06__curric_d2_s3_seed24194_24h",
+          "base_id": "E-UK25_06",
+          "seed": 24194,
+          "n_customers": 25,
+          "validation_passed": true
+        },
+        {
+          "split": "train",
+          "path": "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_07__curric_d2_s3_seed24195_24h",
+          "scenario_id": "E-UK25_07__curric_d2_s3_seed24195_24h",
+          "base_id": "E-UK25_07",
+          "seed": 24195,
+          "n_customers": 25,
+          "validation_passed": true
+        },
+        {
+          "split": "train",
+          "path": "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_08__curric_d2_s3_seed24196_24h",
+          "scenario_id": "E-UK25_08__curric_d2_s3_seed24196_24h",
+          "base_id": "E-UK25_08",
+          "seed": 24196,
+          "n_customers": 25,
+          "validation_passed": true
+        },
+        {
+          "split": "train",
+          "path": "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_09__curric_d2_s3_seed24197_24h",
+          "scenario_id": "E-UK25_09__curric_d2_s3_seed24197_24h",
+          "base_id": "E-UK25_09",
+          "seed": 24197,
+          "n_customers": 25,
+          "validation_passed": true
+        },
+        {
+          "split": "train",
+          "path": "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_10__curric_d2_s3_seed24198_24h",
+          "scenario_id": "E-UK25_10__curric_d2_s3_seed24198_24h",
+          "base_id": "E-UK25_10",
+          "seed": 24198,
+          "n_customers": 25,
+          "validation_passed": true
+        },
+        {
+          "split": "train",
+          "path": "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_11__curric_d2_s3_seed24199_24h",
+          "scenario_id": "E-UK25_11__curric_d2_s3_seed24199_24h",
+          "base_id": "E-UK25_11",
+          "seed": 24199,
+          "n_customers": 25,
+          "validation_passed": true
+        },
+        {
+          "split": "train",
+          "path": "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_12__curric_d2_s3_seed24200_24h",
+          "scenario_id": "E-UK25_12__curric_d2_s3_seed24200_24h",
+          "base_id": "E-UK25_12",
+          "seed": 24200,
+          "n_customers": 25,
+          "validation_passed": true
+        },
+        {
+          "split": "train",
+          "path": "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_13__curric_d2_s3_seed24201_24h",
+          "scenario_id": "E-UK25_13__curric_d2_s3_seed24201_24h",
+          "base_id": "E-UK25_13",
+          "seed": 24201,
+          "n_customers": 25,
+          "validation_passed": true
+        },
+        {
+          "split": "train",
+          "path": "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_14__curric_d2_s3_seed24202_24h",
+          "scenario_id": "E-UK25_14__curric_d2_s3_seed24202_24h",
+          "base_id": "E-UK25_14",
+          "seed": 24202,
+          "n_customers": 25,
+          "validation_passed": true
+        },
+        {
+          "split": "train",
+          "path": "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_15__curric_d2_s3_seed24203_24h",
+          "scenario_id": "E-UK25_15__curric_d2_s3_seed24203_24h",
+          "base_id": "E-UK25_15",
+          "seed": 24203,
+          "n_customers": 25,
+          "validation_passed": true
+        },
+        {
+          "split": "train",
+          "path": "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_16__curric_d2_s3_seed24204_24h",
+          "scenario_id": "E-UK25_16__curric_d2_s3_seed24204_24h",
+          "base_id": "E-UK25_16",
+          "seed": 24204,
+          "n_customers": 25,
+          "validation_passed": true
+        },
+        {
+          "split": "train",
+          "path": "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_17__curric_d2_s3_seed24205_24h",
+          "scenario_id": "E-UK25_17__curric_d2_s3_seed24205_24h",
+          "base_id": "E-UK25_17",
+          "seed": 24205,
+          "n_customers": 25,
+          "validation_passed": true
+        },
+        {
+          "split": "train",
+          "path": "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_18__curric_d2_s3_seed24206_24h",
+          "scenario_id": "E-UK25_18__curric_d2_s3_seed24206_24h",
+          "base_id": "E-UK25_18",
+          "seed": 24206,
+          "n_customers": 25,
+          "validation_passed": true
+        },
+        {
+          "split": "train",
+          "path": "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_19__curric_d2_s3_seed24207_24h",
+          "scenario_id": "E-UK25_19__curric_d2_s3_seed24207_24h",
+          "base_id": "E-UK25_19",
+          "seed": 24207,
+          "n_customers": 25,
+          "validation_passed": true
+        },
+        {
+          "split": "train",
+          "path": "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_20__curric_d2_s3_seed24208_24h",
+          "scenario_id": "E-UK25_20__curric_d2_s3_seed24208_24h",
+          "base_id": "E-UK25_20",
+          "seed": 24208,
+          "n_customers": 25,
+          "validation_passed": true
+        },
+        {
+          "split": "train",
+          "path": "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_02__curric_d2_s3_seed24209_24h",
+          "scenario_id": "E-UK25_02__curric_d2_s3_seed24209_24h",
+          "base_id": "E-UK25_02",
+          "seed": 24209,
+          "n_customers": 25,
+          "validation_passed": true
+        },
+        {
+          "split": "train",
+          "path": "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_03__curric_d2_s3_seed24210_24h",
+          "scenario_id": "E-UK25_03__curric_d2_s3_seed24210_24h",
+          "base_id": "E-UK25_03",
+          "seed": 24210,
+          "n_customers": 25,
+          "validation_passed": true
+        },
+        {
+          "split": "train",
+          "path": "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_04__curric_d2_s3_seed24211_24h",
+          "scenario_id": "E-UK25_04__curric_d2_s3_seed24211_24h",
+          "base_id": "E-UK25_04",
+          "seed": 24211,
+          "n_customers": 25,
+          "validation_passed": true
+        },
+        {
+          "split": "train",
+          "path": "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_05__curric_d2_s3_seed24212_24h",
+          "scenario_id": "E-UK25_05__curric_d2_s3_seed24212_24h",
+          "base_id": "E-UK25_05",
+          "seed": 24212,
+          "n_customers": 25,
+          "validation_passed": true
+        },
+        {
+          "split": "train",
+          "path": "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_06__curric_d2_s3_seed24213_24h",
+          "scenario_id": "E-UK25_06__curric_d2_s3_seed24213_24h",
+          "base_id": "E-UK25_06",
+          "seed": 24213,
+          "n_customers": 25,
+          "validation_passed": true
+        },
+        {
+          "split": "train",
+          "path": "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_07__curric_d2_s3_seed24214_24h",
+          "scenario_id": "E-UK25_07__curric_d2_s3_seed24214_24h",
+          "base_id": "E-UK25_07",
+          "seed": 24214,
+          "n_customers": 25,
+          "validation_passed": true
+        },
+        {
+          "split": "train",
+          "path": "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_08__curric_d2_s3_seed24215_24h",
+          "scenario_id": "E-UK25_08__curric_d2_s3_seed24215_24h",
+          "base_id": "E-UK25_08",
+          "seed": 24215,
+          "n_customers": 25,
+          "validation_passed": true
+        },
+        {
+          "split": "train",
+          "path": "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_09__curric_d2_s3_seed24216_24h",
+          "scenario_id": "E-UK25_09__curric_d2_s3_seed24216_24h",
+          "base_id": "E-UK25_09",
+          "seed": 24216,
+          "n_customers": 25,
+          "validation_passed": true
+        },
+        {
+          "split": "train",
+          "path": "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_10__curric_d2_s3_seed24217_24h",
+          "scenario_id": "E-UK25_10__curric_d2_s3_seed24217_24h",
+          "base_id": "E-UK25_10",
+          "seed": 24217,
+          "n_customers": 25,
+          "validation_passed": true
+        },
+        {
+          "split": "train",
+          "path": "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_11__curric_d2_s3_seed24218_24h",
+          "scenario_id": "E-UK25_11__curric_d2_s3_seed24218_24h",
+          "base_id": "E-UK25_11",
+          "seed": 24218,
+          "n_customers": 25,
+          "validation_passed": true
+        },
+        {
+          "split": "train",
+          "path": "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_12__curric_d2_s3_seed24219_24h",
+          "scenario_id": "E-UK25_12__curric_d2_s3_seed24219_24h",
+          "base_id": "E-UK25_12",
+          "seed": 24219,
+          "n_customers": 25,
+          "validation_passed": true
+        },
+        {
+          "split": "train",
+          "path": "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_13__curric_d2_s3_seed24220_24h",
+          "scenario_id": "E-UK25_13__curric_d2_s3_seed24220_24h",
+          "base_id": "E-UK25_13",
+          "seed": 24220,
+          "n_customers": 25,
+          "validation_passed": true
+        },
+        {
+          "split": "train",
+          "path": "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_14__curric_d2_s3_seed24221_24h",
+          "scenario_id": "E-UK25_14__curric_d2_s3_seed24221_24h",
+          "base_id": "E-UK25_14",
+          "seed": 24221,
+          "n_customers": 25,
+          "validation_passed": true
+        },
+        {
+          "split": "train",
+          "path": "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_15__curric_d2_s3_seed24222_24h",
+          "scenario_id": "E-UK25_15__curric_d2_s3_seed24222_24h",
+          "base_id": "E-UK25_15",
+          "seed": 24222,
+          "n_customers": 25,
+          "validation_passed": true
+        },
+        {
+          "split": "train",
+          "path": "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_16__curric_d2_s3_seed24223_24h",
+          "scenario_id": "E-UK25_16__curric_d2_s3_seed24223_24h",
+          "base_id": "E-UK25_16",
+          "seed": 24223,
+          "n_customers": 25,
+          "validation_passed": true
+        },
+        {
+          "split": "train",
+          "path": "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_17__curric_d2_s3_seed24224_24h",
+          "scenario_id": "E-UK25_17__curric_d2_s3_seed24224_24h",
+          "base_id": "E-UK25_17",
+          "seed": 24224,
+          "n_customers": 25,
+          "validation_passed": true
+        },
+        {
+          "split": "train",
+          "path": "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_18__curric_d2_s3_seed24225_24h",
+          "scenario_id": "E-UK25_18__curric_d2_s3_seed24225_24h",
+          "base_id": "E-UK25_18",
+          "seed": 24225,
+          "n_customers": 25,
+          "validation_passed": true
+        },
+        {
+          "split": "train",
+          "path": "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_19__curric_d2_s3_seed24226_24h",
+          "scenario_id": "E-UK25_19__curric_d2_s3_seed24226_24h",
+          "base_id": "E-UK25_19",
+          "seed": 24226,
+          "n_customers": 25,
+          "validation_passed": true
+        },
+        {
+          "split": "train",
+          "path": "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_20__curric_d2_s3_seed24227_24h",
+          "scenario_id": "E-UK25_20__curric_d2_s3_seed24227_24h",
+          "base_id": "E-UK25_20",
+          "seed": 24227,
+          "n_customers": 25,
+          "validation_passed": true
+        },
+        {
+          "split": "train",
+          "path": "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_03__curric_d2_s3_seed24229_24h",
+          "scenario_id": "E-UK25_03__curric_d2_s3_seed24229_24h",
+          "base_id": "E-UK25_03",
+          "seed": 24229,
+          "n_customers": 25,
+          "validation_passed": true
+        },
+        {
+          "split": "train",
+          "path": "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_04__curric_d2_s3_seed24230_24h",
+          "scenario_id": "E-UK25_04__curric_d2_s3_seed24230_24h",
+          "base_id": "E-UK25_04",
+          "seed": 24230,
+          "n_customers": 25,
+          "validation_passed": true
+        },
+        {
+          "split": "train",
+          "path": "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_05__curric_d2_s3_seed24231_24h",
+          "scenario_id": "E-UK25_05__curric_d2_s3_seed24231_24h",
+          "base_id": "E-UK25_05",
+          "seed": 24231,
+          "n_customers": 25,
+          "validation_passed": true
+        },
+        {
+          "split": "train",
+          "path": "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_06__curric_d2_s3_seed24232_24h",
+          "scenario_id": "E-UK25_06__curric_d2_s3_seed24232_24h",
+          "base_id": "E-UK25_06",
+          "seed": 24232,
+          "n_customers": 25,
+          "validation_passed": true
+        },
+        {
+          "split": "train",
+          "path": "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_07__curric_d2_s3_seed24233_24h",
+          "scenario_id": "E-UK25_07__curric_d2_s3_seed24233_24h",
+          "base_id": "E-UK25_07",
+          "seed": 24233,
+          "n_customers": 25,
+          "validation_passed": true
+        },
+        {
+          "split": "train",
+          "path": "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_08__curric_d2_s3_seed24234_24h",
+          "scenario_id": "E-UK25_08__curric_d2_s3_seed24234_24h",
+          "base_id": "E-UK25_08",
+          "seed": 24234,
+          "n_customers": 25,
+          "validation_passed": true
+        },
+        {
+          "split": "train",
+          "path": "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_09__curric_d2_s3_seed24235_24h",
+          "scenario_id": "E-UK25_09__curric_d2_s3_seed24235_24h",
+          "base_id": "E-UK25_09",
+          "seed": 24235,
+          "n_customers": 25,
+          "validation_passed": true
+        },
+        {
+          "split": "train",
+          "path": "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_10__curric_d2_s3_seed24236_24h",
+          "scenario_id": "E-UK25_10__curric_d2_s3_seed24236_24h",
+          "base_id": "E-UK25_10",
+          "seed": 24236,
+          "n_customers": 25,
+          "validation_passed": true
+        },
+        {
+          "split": "train",
+          "path": "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_11__curric_d2_s3_seed24237_24h",
+          "scenario_id": "E-UK25_11__curric_d2_s3_seed24237_24h",
+          "base_id": "E-UK25_11",
+          "seed": 24237,
+          "n_customers": 25,
+          "validation_passed": true
+        },
+        {
+          "split": "train",
+          "path": "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_12__curric_d2_s3_seed24238_24h",
+          "scenario_id": "E-UK25_12__curric_d2_s3_seed24238_24h",
+          "base_id": "E-UK25_12",
+          "seed": 24238,
+          "n_customers": 25,
+          "validation_passed": true
+        },
+        {
+          "split": "train",
+          "path": "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_13__curric_d2_s3_seed24239_24h",
+          "scenario_id": "E-UK25_13__curric_d2_s3_seed24239_24h",
+          "base_id": "E-UK25_13",
+          "seed": 24239,
+          "n_customers": 25,
+          "validation_passed": true
+        },
+        {
+          "split": "train",
+          "path": "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_14__curric_d2_s3_seed24240_24h",
+          "scenario_id": "E-UK25_14__curric_d2_s3_seed24240_24h",
+          "base_id": "E-UK25_14",
+          "seed": 24240,
+          "n_customers": 25,
+          "validation_passed": true
+        },
+        {
+          "split": "train",
+          "path": "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_15__curric_d2_s3_seed24241_24h",
+          "scenario_id": "E-UK25_15__curric_d2_s3_seed24241_24h",
+          "base_id": "E-UK25_15",
+          "seed": 24241,
+          "n_customers": 25,
+          "validation_passed": true
+        },
+        {
+          "split": "train",
+          "path": "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_16__curric_d2_s3_seed24242_24h",
+          "scenario_id": "E-UK25_16__curric_d2_s3_seed24242_24h",
+          "base_id": "E-UK25_16",
+          "seed": 24242,
+          "n_customers": 25,
+          "validation_passed": true
+        },
+        {
+          "split": "train",
+          "path": "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_17__curric_d2_s3_seed24243_24h",
+          "scenario_id": "E-UK25_17__curric_d2_s3_seed24243_24h",
+          "base_id": "E-UK25_17",
+          "seed": 24243,
+          "n_customers": 25,
+          "validation_passed": true
+        },
+        {
+          "split": "train",
+          "path": "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_18__curric_d2_s3_seed24244_24h",
+          "scenario_id": "E-UK25_18__curric_d2_s3_seed24244_24h",
+          "base_id": "E-UK25_18",
+          "seed": 24244,
+          "n_customers": 25,
+          "validation_passed": true
+        },
+        {
+          "split": "train",
+          "path": "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_19__curric_d2_s3_seed24245_24h",
+          "scenario_id": "E-UK25_19__curric_d2_s3_seed24245_24h",
+          "base_id": "E-UK25_19",
+          "seed": 24245,
+          "n_customers": 25,
+          "validation_passed": true
+        },
+        {
+          "split": "train",
+          "path": "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_20__curric_d2_s3_seed24246_24h",
+          "scenario_id": "E-UK25_20__curric_d2_s3_seed24246_24h",
+          "base_id": "E-UK25_20",
+          "seed": 24246,
+          "n_customers": 25,
+          "validation_passed": true
+        },
+        {
+          "split": "train",
+          "path": "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_02__curric_d2_s3_seed24247_24h",
+          "scenario_id": "E-UK25_02__curric_d2_s3_seed24247_24h",
+          "base_id": "E-UK25_02",
+          "seed": 24247,
+          "n_customers": 25,
+          "validation_passed": true
+        },
+        {
+          "split": "train",
+          "path": "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_03__curric_d2_s3_seed24248_24h",
+          "scenario_id": "E-UK25_03__curric_d2_s3_seed24248_24h",
+          "base_id": "E-UK25_03",
+          "seed": 24248,
+          "n_customers": 25,
+          "validation_passed": true
+        },
+        {
+          "split": "train",
+          "path": "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_04__curric_d2_s3_seed24249_24h",
+          "scenario_id": "E-UK25_04__curric_d2_s3_seed24249_24h",
+          "base_id": "E-UK25_04",
+          "seed": 24249,
+          "n_customers": 25,
+          "validation_passed": true
+        },
+        {
+          "split": "train",
+          "path": "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_05__curric_d2_s3_seed24250_24h",
+          "scenario_id": "E-UK25_05__curric_d2_s3_seed24250_24h",
+          "base_id": "E-UK25_05",
+          "seed": 24250,
+          "n_customers": 25,
+          "validation_passed": true
+        },
+        {
+          "split": "train",
+          "path": "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_06__curric_d2_s3_seed24251_24h",
+          "scenario_id": "E-UK25_06__curric_d2_s3_seed24251_24h",
+          "base_id": "E-UK25_06",
+          "seed": 24251,
+          "n_customers": 25,
+          "validation_passed": true
+        },
+        {
+          "split": "train",
+          "path": "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_07__curric_d2_s3_seed24252_24h",
+          "scenario_id": "E-UK25_07__curric_d2_s3_seed24252_24h",
+          "base_id": "E-UK25_07",
+          "seed": 24252,
+          "n_customers": 25,
+          "validation_passed": true
+        },
+        {
+          "split": "train",
+          "path": "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_09__curric_d2_s3_seed24254_24h",
+          "scenario_id": "E-UK25_09__curric_d2_s3_seed24254_24h",
+          "base_id": "E-UK25_09",
+          "seed": 24254,
+          "n_customers": 25,
+          "validation_passed": true
         }
       ],
       "val": [
@@ -2000,6 +5351,132 @@
           "seed": 25015,
           "n_customers": 25,
           "validation_passed": true
+        },
+        {
+          "split": "val",
+          "path": "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_18__curric_d2_s3_seed25016_24h",
+          "scenario_id": "E-UK25_18__curric_d2_s3_seed25016_24h",
+          "base_id": "E-UK25_18",
+          "seed": 25016,
+          "n_customers": 25,
+          "validation_passed": true
+        },
+        {
+          "split": "val",
+          "path": "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_19__curric_d2_s3_seed25017_24h",
+          "scenario_id": "E-UK25_19__curric_d2_s3_seed25017_24h",
+          "base_id": "E-UK25_19",
+          "seed": 25017,
+          "n_customers": 25,
+          "validation_passed": true
+        },
+        {
+          "split": "val",
+          "path": "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_02__curric_d2_s3_seed25019_24h",
+          "scenario_id": "E-UK25_02__curric_d2_s3_seed25019_24h",
+          "base_id": "E-UK25_02",
+          "seed": 25019,
+          "n_customers": 25,
+          "validation_passed": true
+        },
+        {
+          "split": "val",
+          "path": "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_03__curric_d2_s3_seed25020_24h",
+          "scenario_id": "E-UK25_03__curric_d2_s3_seed25020_24h",
+          "base_id": "E-UK25_03",
+          "seed": 25020,
+          "n_customers": 25,
+          "validation_passed": true
+        },
+        {
+          "split": "val",
+          "path": "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_04__curric_d2_s3_seed25021_24h",
+          "scenario_id": "E-UK25_04__curric_d2_s3_seed25021_24h",
+          "base_id": "E-UK25_04",
+          "seed": 25021,
+          "n_customers": 25,
+          "validation_passed": true
+        },
+        {
+          "split": "val",
+          "path": "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_05__curric_d2_s3_seed25022_24h",
+          "scenario_id": "E-UK25_05__curric_d2_s3_seed25022_24h",
+          "base_id": "E-UK25_05",
+          "seed": 25022,
+          "n_customers": 25,
+          "validation_passed": true
+        },
+        {
+          "split": "val",
+          "path": "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_06__curric_d2_s3_seed25023_24h",
+          "scenario_id": "E-UK25_06__curric_d2_s3_seed25023_24h",
+          "base_id": "E-UK25_06",
+          "seed": 25023,
+          "n_customers": 25,
+          "validation_passed": true
+        },
+        {
+          "split": "val",
+          "path": "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_07__curric_d2_s3_seed25024_24h",
+          "scenario_id": "E-UK25_07__curric_d2_s3_seed25024_24h",
+          "base_id": "E-UK25_07",
+          "seed": 25024,
+          "n_customers": 25,
+          "validation_passed": true
+        },
+        {
+          "split": "val",
+          "path": "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_08__curric_d2_s3_seed25025_24h",
+          "scenario_id": "E-UK25_08__curric_d2_s3_seed25025_24h",
+          "base_id": "E-UK25_08",
+          "seed": 25025,
+          "n_customers": 25,
+          "validation_passed": true
+        },
+        {
+          "split": "val",
+          "path": "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_09__curric_d2_s3_seed25026_24h",
+          "scenario_id": "E-UK25_09__curric_d2_s3_seed25026_24h",
+          "base_id": "E-UK25_09",
+          "seed": 25026,
+          "n_customers": 25,
+          "validation_passed": true
+        },
+        {
+          "split": "val",
+          "path": "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_10__curric_d2_s3_seed25027_24h",
+          "scenario_id": "E-UK25_10__curric_d2_s3_seed25027_24h",
+          "base_id": "E-UK25_10",
+          "seed": 25027,
+          "n_customers": 25,
+          "validation_passed": true
+        },
+        {
+          "split": "val",
+          "path": "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_11__curric_d2_s3_seed25028_24h",
+          "scenario_id": "E-UK25_11__curric_d2_s3_seed25028_24h",
+          "base_id": "E-UK25_11",
+          "seed": 25028,
+          "n_customers": 25,
+          "validation_passed": true
+        },
+        {
+          "split": "val",
+          "path": "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_12__curric_d2_s3_seed25029_24h",
+          "scenario_id": "E-UK25_12__curric_d2_s3_seed25029_24h",
+          "base_id": "E-UK25_12",
+          "seed": 25029,
+          "n_customers": 25,
+          "validation_passed": true
+        },
+        {
+          "split": "val",
+          "path": "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_13__curric_d2_s3_seed25030_24h",
+          "scenario_id": "E-UK25_13__curric_d2_s3_seed25030_24h",
+          "base_id": "E-UK25_13",
+          "seed": 25030,
+          "n_customers": 25,
+          "validation_passed": true
         }
       ],
       "test": [
@@ -2110,6 +5587,168 @@
           "seed": 26011,
           "n_customers": 25,
           "validation_passed": true
+        },
+        {
+          "split": "test",
+          "path": "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_14__curric_d2_s3_seed26012_24h",
+          "scenario_id": "E-UK25_14__curric_d2_s3_seed26012_24h",
+          "base_id": "E-UK25_14",
+          "seed": 26012,
+          "n_customers": 25,
+          "validation_passed": true
+        },
+        {
+          "split": "test",
+          "path": "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_15__curric_d2_s3_seed26013_24h",
+          "scenario_id": "E-UK25_15__curric_d2_s3_seed26013_24h",
+          "base_id": "E-UK25_15",
+          "seed": 26013,
+          "n_customers": 25,
+          "validation_passed": true
+        },
+        {
+          "split": "test",
+          "path": "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_16__curric_d2_s3_seed26014_24h",
+          "scenario_id": "E-UK25_16__curric_d2_s3_seed26014_24h",
+          "base_id": "E-UK25_16",
+          "seed": 26014,
+          "n_customers": 25,
+          "validation_passed": true
+        },
+        {
+          "split": "test",
+          "path": "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_17__curric_d2_s3_seed26015_24h",
+          "scenario_id": "E-UK25_17__curric_d2_s3_seed26015_24h",
+          "base_id": "E-UK25_17",
+          "seed": 26015,
+          "n_customers": 25,
+          "validation_passed": true
+        },
+        {
+          "split": "test",
+          "path": "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_18__curric_d2_s3_seed26016_24h",
+          "scenario_id": "E-UK25_18__curric_d2_s3_seed26016_24h",
+          "base_id": "E-UK25_18",
+          "seed": 26016,
+          "n_customers": 25,
+          "validation_passed": true
+        },
+        {
+          "split": "test",
+          "path": "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_19__curric_d2_s3_seed26017_24h",
+          "scenario_id": "E-UK25_19__curric_d2_s3_seed26017_24h",
+          "base_id": "E-UK25_19",
+          "seed": 26017,
+          "n_customers": 25,
+          "validation_passed": true
+        },
+        {
+          "split": "test",
+          "path": "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_20__curric_d2_s3_seed26018_24h",
+          "scenario_id": "E-UK25_20__curric_d2_s3_seed26018_24h",
+          "base_id": "E-UK25_20",
+          "seed": 26018,
+          "n_customers": 25,
+          "validation_passed": true
+        },
+        {
+          "split": "test",
+          "path": "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_02__curric_d2_s3_seed26019_24h",
+          "scenario_id": "E-UK25_02__curric_d2_s3_seed26019_24h",
+          "base_id": "E-UK25_02",
+          "seed": 26019,
+          "n_customers": 25,
+          "validation_passed": true
+        },
+        {
+          "split": "test",
+          "path": "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_03__curric_d2_s3_seed26020_24h",
+          "scenario_id": "E-UK25_03__curric_d2_s3_seed26020_24h",
+          "base_id": "E-UK25_03",
+          "seed": 26020,
+          "n_customers": 25,
+          "validation_passed": true
+        },
+        {
+          "split": "test",
+          "path": "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_04__curric_d2_s3_seed26021_24h",
+          "scenario_id": "E-UK25_04__curric_d2_s3_seed26021_24h",
+          "base_id": "E-UK25_04",
+          "seed": 26021,
+          "n_customers": 25,
+          "validation_passed": true
+        },
+        {
+          "split": "test",
+          "path": "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_05__curric_d2_s3_seed26022_24h",
+          "scenario_id": "E-UK25_05__curric_d2_s3_seed26022_24h",
+          "base_id": "E-UK25_05",
+          "seed": 26022,
+          "n_customers": 25,
+          "validation_passed": true
+        },
+        {
+          "split": "test",
+          "path": "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_06__curric_d2_s3_seed26023_24h",
+          "scenario_id": "E-UK25_06__curric_d2_s3_seed26023_24h",
+          "base_id": "E-UK25_06",
+          "seed": 26023,
+          "n_customers": 25,
+          "validation_passed": true
+        },
+        {
+          "split": "test",
+          "path": "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_07__curric_d2_s3_seed26024_24h",
+          "scenario_id": "E-UK25_07__curric_d2_s3_seed26024_24h",
+          "base_id": "E-UK25_07",
+          "seed": 26024,
+          "n_customers": 25,
+          "validation_passed": true
+        },
+        {
+          "split": "test",
+          "path": "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_08__curric_d2_s3_seed26025_24h",
+          "scenario_id": "E-UK25_08__curric_d2_s3_seed26025_24h",
+          "base_id": "E-UK25_08",
+          "seed": 26025,
+          "n_customers": 25,
+          "validation_passed": true
+        },
+        {
+          "split": "test",
+          "path": "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_09__curric_d2_s3_seed26026_24h",
+          "scenario_id": "E-UK25_09__curric_d2_s3_seed26026_24h",
+          "base_id": "E-UK25_09",
+          "seed": 26026,
+          "n_customers": 25,
+          "validation_passed": true
+        },
+        {
+          "split": "test",
+          "path": "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_10__curric_d2_s3_seed26027_24h",
+          "scenario_id": "E-UK25_10__curric_d2_s3_seed26027_24h",
+          "base_id": "E-UK25_10",
+          "seed": 26027,
+          "n_customers": 25,
+          "validation_passed": true
+        },
+        {
+          "split": "test",
+          "path": "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_11__curric_d2_s3_seed26028_24h",
+          "scenario_id": "E-UK25_11__curric_d2_s3_seed26028_24h",
+          "base_id": "E-UK25_11",
+          "seed": 26028,
+          "n_customers": 25,
+          "validation_passed": true
+        },
+        {
+          "split": "test",
+          "path": "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_12__curric_d2_s3_seed26029_24h",
+          "scenario_id": "E-UK25_12__curric_d2_s3_seed26029_24h",
+          "base_id": "E-UK25_12",
+          "seed": 26029,
+          "n_customers": 25,
+          "validation_passed": true
         }
       ]
     },
@@ -2120,32 +5759,310 @@
       "path_overlap": {},
       "incomplete": [],
       "invalid": [],
-      "train_count": 80,
-      "val_count": 16,
-      "test_count": 12
+      "train_count": 250,
+      "val_count": 30,
+      "test_count": 30
     }
   },
   "completed_stage": "stage2",
+  "stage1_progress": {
+    "next_group": 250,
+    "train_schedule": [
+      "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_18__curric_d2_s3_seed24035_24h",
+      "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_16__curric_d2_s3_seed24147_24h",
+      "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_12__curric_d2_s3_seed24219_24h",
+      "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_20__curric_d2_s3_seed24208_24h",
+      "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_10__curric_d2_s3_seed24198_24h",
+      "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_18__curric_d2_s3_seed24016_24h",
+      "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_11__curric_d2_s3_seed24066_24h",
+      "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_13__curric_d2_s3_seed24030_24h",
+      "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_15__curric_d2_s3_seed24127_24h",
+      "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_09__curric_d2_s3_seed24197_24h",
+      "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_04__curric_d2_s3_seed24116_24h",
+      "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_09__curric_d2_s3_seed24121_24h",
+      "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_18__curric_d2_s3_seed24168_24h",
+      "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_05__curric_d2_s3_seed24098_24h",
+      "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_16__curric_d2_s3_seed24204_24h",
+      "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_18__curric_d2_s3_seed24054_24h",
+      "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_07__curric_d2_s3_seed24024_24h",
+      "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_13__curric_d2_s3_seed24125_24h",
+      "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_09__curric_d2_s3_seed24007_24h",
+      "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_06__curric_d2_s3_seed24232_24h",
+      "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_09__curric_d2_s3_seed24216_24h",
+      "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_07__curric_d2_s3_seed24100_24h",
+      "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_18__curric_d2_s3_seed24111_24h",
+      "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_07__curric_d2_s3_seed24157_24h",
+      "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_04__curric_d2_s3_seed24249_24h",
+      "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_11__curric_d2_s3_seed24199_24h",
+      "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_02__curric_d2_s3_seed24000_24h",
+      "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_12__curric_d2_s3_seed24181_24h",
+      "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_03__curric_d2_s3_seed24115_24h",
+      "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_14__curric_d2_s3_seed24069_24h",
+      "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_18__curric_d2_s3_seed24187_24h",
+      "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_05__curric_d2_s3_seed24250_24h",
+      "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_04__curric_d2_s3_seed24059_24h",
+      "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_03__curric_d2_s3_seed24153_24h",
+      "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_09__curric_d2_s3_seed24026_24h",
+      "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_08__curric_d2_s3_seed24082_24h",
+      "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_09__curric_d2_s3_seed24235_24h",
+      "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_07__curric_d2_s3_seed24005_24h",
+      "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_08__curric_d2_s3_seed24006_24h",
+      "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_15__curric_d2_s3_seed24241_24h",
+      "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_09__curric_d2_s3_seed24140_24h",
+      "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_04__curric_d2_s3_seed24002_24h",
+      "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_14__curric_d2_s3_seed24240_24h",
+      "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_08__curric_d2_s3_seed24177_24h",
+      "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_20__curric_d2_s3_seed24056_24h",
+      "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_16__curric_d2_s3_seed24109_24h",
+      "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_19__curric_d2_s3_seed24188_24h",
+      "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_07__curric_d2_s3_seed24233_24h",
+      "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_06__curric_d2_s3_seed24137_24h",
+      "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_02__curric_d2_s3_seed24057_24h",
+      "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_03__curric_d2_s3_seed24229_24h",
+      "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_20__curric_d2_s3_seed24113_24h",
+      "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_19__curric_d2_s3_seed24245_24h",
+      "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_12__curric_d2_s3_seed24143_24h",
+      "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_05__curric_d2_s3_seed24060_24h",
+      "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_15__curric_d2_s3_seed24089_24h",
+      "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_14__curric_d2_s3_seed24202_24h",
+      "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_06__curric_d2_s3_seed24175_24h",
+      "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_15__curric_d2_s3_seed24203_24h",
+      "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_06__curric_d2_s3_seed24118_24h",
+      "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_20__curric_d2_s3_seed24075_24h",
+      "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_08__curric_d2_s3_seed24215_24h",
+      "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_14__curric_d2_s3_seed24107_24h",
+      "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_13__curric_d2_s3_seed24144_24h",
+      "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_16__curric_d2_s3_seed24166_24h",
+      "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_08__curric_d2_s3_seed24025_24h",
+      "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_12__curric_d2_s3_seed24048_24h",
+      "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_13__curric_d2_s3_seed24163_24h",
+      "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_02__curric_d2_s3_seed24076_24h",
+      "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_20__curric_d2_s3_seed24246_24h",
+      "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_12__curric_d2_s3_seed24086_24h",
+      "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_17__curric_d2_s3_seed24129_24h",
+      "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_19__curric_d2_s3_seed24207_24h",
+      "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_18__curric_d2_s3_seed24130_24h",
+      "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_04__curric_d2_s3_seed24173_24h",
+      "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_13__curric_d2_s3_seed24049_24h",
+      "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_04__curric_d2_s3_seed24078_24h",
+      "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_18__curric_d2_s3_seed24073_24h",
+      "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_02__curric_d2_s3_seed24152_24h",
+      "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_16__curric_d2_s3_seed24128_24h",
+      "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_09__curric_d2_s3_seed24178_24h",
+      "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_08__curric_d2_s3_seed24101_24h",
+      "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_02__curric_d2_s3_seed24209_24h",
+      "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_10__curric_d2_s3_seed24008_24h",
+      "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_11__curric_d2_s3_seed24123_24h",
+      "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_08__curric_d2_s3_seed24063_24h",
+      "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_11__curric_d2_s3_seed24104_24h",
+      "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_02__curric_d2_s3_seed24190_24h",
+      "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_09__curric_d2_s3_seed24045_24h",
+      "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_20__curric_d2_s3_seed24094_24h",
+      "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_11__curric_d2_s3_seed24142_24h",
+      "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_03__curric_d2_s3_seed24096_24h",
+      "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_05__curric_d2_s3_seed24022_24h",
+      "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_13__curric_d2_s3_seed24201_24h",
+      "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_19__curric_d2_s3_seed24131_24h",
+      "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_10__curric_d2_s3_seed24027_24h",
+      "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_06__curric_d2_s3_seed24042_24h",
+      "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_04__curric_d2_s3_seed24135_24h",
+      "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_20__curric_d2_s3_seed24170_24h",
+      "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_02__curric_d2_s3_seed24095_24h",
+      "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_14__curric_d2_s3_seed24126_24h",
+      "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_17__curric_d2_s3_seed24205_24h",
+      "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_16__curric_d2_s3_seed24242_24h",
+      "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_13__curric_d2_s3_seed24011_24h",
+      "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_05__curric_d2_s3_seed24079_24h",
+      "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_06__curric_d2_s3_seed24251_24h",
+      "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_08__curric_d2_s3_seed24044_24h",
+      "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_14__curric_d2_s3_seed24145_24h",
+      "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_18__curric_d2_s3_seed24225_24h",
+      "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_13__curric_d2_s3_seed24220_24h",
+      "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_05__curric_d2_s3_seed24003_24h",
+      "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_16__curric_d2_s3_seed24052_24h",
+      "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_08__curric_d2_s3_seed24196_24h",
+      "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_15__curric_d2_s3_seed24165_24h",
+      "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_02__curric_d2_s3_seed24133_24h",
+      "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_18__curric_d2_s3_seed24244_24h",
+      "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_17__curric_d2_s3_seed24091_24h",
+      "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_05__curric_d2_s3_seed24193_24h",
+      "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_16__curric_d2_s3_seed24223_24h",
+      "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_03__curric_d2_s3_seed24001_24h",
+      "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_06__curric_d2_s3_seed24099_24h",
+      "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_17__curric_d2_s3_seed24034_24h",
+      "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_17__curric_d2_s3_seed24053_24h",
+      "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_19__curric_d2_s3_seed24055_24h",
+      "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_10__curric_d2_s3_seed24122_24h",
+      "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_19__curric_d2_s3_seed24150_24h",
+      "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_07__curric_d2_s3_seed24062_24h",
+      "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_19__curric_d2_s3_seed24112_24h",
+      "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_11__curric_d2_s3_seed24047_24h",
+      "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_05__curric_d2_s3_seed24174_24h",
+      "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_16__curric_d2_s3_seed24071_24h",
+      "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_15__curric_d2_s3_seed24222_24h",
+      "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_10__curric_d2_s3_seed24065_24h",
+      "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_03__curric_d2_s3_seed24172_24h",
+      "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_18__curric_d2_s3_seed24206_24h",
+      "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_12__curric_d2_s3_seed24105_24h",
+      "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_10__curric_d2_s3_seed24046_24h",
+      "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_12__curric_d2_s3_seed24238_24h",
+      "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_16__curric_d2_s3_seed24185_24h",
+      "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_19__curric_d2_s3_seed24226_24h",
+      "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_13__curric_d2_s3_seed24239_24h",
+      "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_15__curric_d2_s3_seed24070_24h",
+      "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_06__curric_d2_s3_seed24080_24h",
+      "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_15__curric_d2_s3_seed24146_24h",
+      "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_07__curric_d2_s3_seed24252_24h",
+      "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_07__curric_d2_s3_seed24043_24h",
+      "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_11__curric_d2_s3_seed24161_24h",
+      "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_03__curric_d2_s3_seed24077_24h",
+      "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_10__curric_d2_s3_seed24141_24h",
+      "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_12__curric_d2_s3_seed24029_24h",
+      "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_10__curric_d2_s3_seed24217_24h",
+      "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_09__curric_d2_s3_seed24159_24h",
+      "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_08__curric_d2_s3_seed24120_24h",
+      "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_04__curric_d2_s3_seed24192_24h",
+      "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_06__curric_d2_s3_seed24023_24h",
+      "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_17__curric_d2_s3_seed24148_24h",
+      "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_03__curric_d2_s3_seed24210_24h",
+      "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_16__curric_d2_s3_seed24033_24h",
+      "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_06__curric_d2_s3_seed24004_24h",
+      "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_13__curric_d2_s3_seed24087_24h",
+      "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_11__curric_d2_s3_seed24009_24h",
+      "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_12__curric_d2_s3_seed24010_24h",
+      "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_04__curric_d2_s3_seed24211_24h",
+      "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_03__curric_d2_s3_seed24058_24h",
+      "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_04__curric_d2_s3_seed24230_24h",
+      "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_19__curric_d2_s3_seed24036_24h",
+      "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_14__curric_d2_s3_seed24031_24h",
+      "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_09__curric_d2_s3_seed24254_24h",
+      "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_16__curric_d2_s3_seed24014_24h",
+      "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_15__curric_d2_s3_seed24108_24h",
+      "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_10__curric_d2_s3_seed24160_24h",
+      "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_17__curric_d2_s3_seed24167_24h",
+      "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_02__curric_d2_s3_seed24038_24h",
+      "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_06__curric_d2_s3_seed24213_24h",
+      "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_04__curric_d2_s3_seed24021_24h",
+      "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_03__curric_d2_s3_seed24020_24h",
+      "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_19__curric_d2_s3_seed24093_24h",
+      "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_13__curric_d2_s3_seed24068_24h",
+      "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_15__curric_d2_s3_seed24184_24h",
+      "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_09__curric_d2_s3_seed24083_24h",
+      "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_07__curric_d2_s3_seed24195_24h",
+      "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_07__curric_d2_s3_seed24138_24h",
+      "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_05__curric_d2_s3_seed24155_24h",
+      "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_09__curric_d2_s3_seed24064_24h",
+      "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_06__curric_d2_s3_seed24061_24h",
+      "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_08__curric_d2_s3_seed24234_24h",
+      "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_09__curric_d2_s3_seed24102_24h",
+      "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_02__curric_d2_s3_seed24019_24h",
+      "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_11__curric_d2_s3_seed24237_24h",
+      "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_17__curric_d2_s3_seed24072_24h",
+      "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_11__curric_d2_s3_seed24218_24h",
+      "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_15__curric_d2_s3_seed24051_24h",
+      "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_14__curric_d2_s3_seed24012_24h",
+      "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_03__curric_d2_s3_seed24248_24h",
+      "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_07__curric_d2_s3_seed24214_24h",
+      "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_06__curric_d2_s3_seed24194_24h",
+      "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_20__curric_d2_s3_seed24151_24h",
+      "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_19__curric_d2_s3_seed24074_24h",
+      "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_15__curric_d2_s3_seed24013_24h",
+      "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_03__curric_d2_s3_seed24039_24h",
+      "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_06__curric_d2_s3_seed24156_24h",
+      "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_13__curric_d2_s3_seed24182_24h",
+      "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_03__curric_d2_s3_seed24134_24h",
+      "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_07__curric_d2_s3_seed24176_24h",
+      "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_07__curric_d2_s3_seed24119_24h",
+      "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_16__curric_d2_s3_seed24090_24h",
+      "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_14__curric_d2_s3_seed24088_24h",
+      "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_05__curric_d2_s3_seed24136_24h",
+      "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_11__curric_d2_s3_seed24028_24h",
+      "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_05__curric_d2_s3_seed24117_24h",
+      "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_14__curric_d2_s3_seed24050_24h",
+      "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_12__curric_d2_s3_seed24162_24h",
+      "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_17__curric_d2_s3_seed24186_24h",
+      "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_20__curric_d2_s3_seed24227_24h",
+      "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_18__curric_d2_s3_seed24149_24h",
+      "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_10__curric_d2_s3_seed24179_24h",
+      "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_20__curric_d2_s3_seed24037_24h",
+      "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_08__curric_d2_s3_seed24158_24h",
+      "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_02__curric_d2_s3_seed24114_24h",
+      "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_02__curric_d2_s3_seed24247_24h",
+      "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_20__curric_d2_s3_seed24018_24h",
+      "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_10__curric_d2_s3_seed24084_24h",
+      "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_17__curric_d2_s3_seed24224_24h",
+      "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_14__curric_d2_s3_seed24183_24h",
+      "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_04__curric_d2_s3_seed24097_24h",
+      "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_05__curric_d2_s3_seed24212_24h",
+      "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_05__curric_d2_s3_seed24041_24h",
+      "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_13__curric_d2_s3_seed24106_24h",
+      "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_18__curric_d2_s3_seed24092_24h",
+      "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_14__curric_d2_s3_seed24221_24h",
+      "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_07__curric_d2_s3_seed24081_24h",
+      "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_02__curric_d2_s3_seed24171_24h",
+      "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_20__curric_d2_s3_seed24189_24h",
+      "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_19__curric_d2_s3_seed24017_24h",
+      "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_14__curric_d2_s3_seed24164_24h",
+      "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_17__curric_d2_s3_seed24110_24h",
+      "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_08__curric_d2_s3_seed24139_24h",
+      "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_19__curric_d2_s3_seed24169_24h",
+      "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_12__curric_d2_s3_seed24200_24h",
+      "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_11__curric_d2_s3_seed24085_24h",
+      "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_17__curric_d2_s3_seed24015_24h",
+      "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_12__curric_d2_s3_seed24124_24h",
+      "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_04__curric_d2_s3_seed24154_24h",
+      "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_05__curric_d2_s3_seed24231_24h",
+      "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_10__curric_d2_s3_seed24103_24h",
+      "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_04__curric_d2_s3_seed24040_24h",
+      "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_17__curric_d2_s3_seed24243_24h",
+      "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_10__curric_d2_s3_seed24236_24h",
+      "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_12__curric_d2_s3_seed24067_24h",
+      "models/data_bundle/generated_instances/pilot24_data_generalization/E-UK25_03__curric_d2_s3_seed24191_24h"
+    ]
+  },
   "stage1": {
     "gate_status": "HALT_NO_VALIDATION_GAIN",
-    "gate_reason": "learned_strategy=aware, avg_validation_gain=0.000%, best_validation_gain=0.000%, threshold=3.000%, zero_violations=True",
-    "learned_strategy": "aware",
-    "avg_validation_gain_pct_vs_initial": 0.00019945059653120705,
-    "best_validation_gain_pct_vs_initial": 0.00043982814401399953,
-    "validation_zero_violations": true,
+    "gate_reason": "best_validation_gain=1.629%, final_validation_gain=1.629%, recent_slope=0.0924951, stable_keep=True, finite_losses=True, kl_ok=True, zero_violations=True, entropy_floor_ok=True, fresh_no_reuse=True",
+    "best_model_path": "solver\\reports\\dr_alns_ppo_v3_block_dr_alns\\async_pilot\\pilot25_endgame\\pilot24_best_validation_model.pt",
+    "update_count": 250,
+    "validation_count": 12,
+    "best_validation_gain_pct_vs_initial": 1.6288153766232316,
+    "final_validation_gain_pct_vs_initial": 1.6288153766232316,
+    "recent_validation_gain_slope": 0.0924951263351052,
+    "stable_keep": true,
+    "finite_losses": true,
     "approx_kl_ok": true,
+    "max_approx_kl": 0.014435889199376106,
+    "entropy_floor_ok": true,
+    "validation_zero_violations": true,
     "fresh_no_reuse": true,
-    "best_model_path": "solver\\reports\\dr_alns_ppo_v3_block_dr_alns\\async_pilot\\pilot25_endgame\\pilot25_best_validation_checkpoint.json"
+    "fresh_group_count": 250,
+    "learning_variant": "learned_destroy_pointer_with_repair_q_threshold_heads",
+    "pilot25_training_stack": {
+      "pomo_shared_baseline": true,
+      "reward_surface": "learned_destroy_reward_5_3_1_0_style_worker_codes",
+      "target_kl": 0.08,
+      "lr_annealing": [
+        0.0001,
+        1e-05
+      ],
+      "clip_range": 0.1,
+      "ppo_epochs": 1,
+      "fresh_per_batch": true,
+      "best_validation_checkpoint": "solver\\reports\\dr_alns_ppo_v3_block_dr_alns\\async_pilot\\pilot25_endgame\\pilot24_best_validation_model.pt"
+    }
   },
   "stage2": {
     "status": "PARTIAL_WIN_NO_DR",
-    "reason": "dr_gain=0.000%, weak_field_gain=28.080%, stage1=HALT_NO_VALIDATION_GAIN, zero_violations=True, worker_ok=True",
-    "dr_gain_pct": 0.00019639931060701755,
-    "weak_field_gain_pct": 28.08017534740684,
+    "reason": "dr_gain=-24.426%, learned_vs_operator=-24.426%, learned_vs_plain=-15.885%, weak_field_gain=27.769%, stage1=HALT_NO_VALIDATION_GAIN, zero_violations=True, worker_ok=True",
+    "dr_gain_pct": -24.42560331247945,
+    "learned_vs_operator_pct": -24.42560331247945,
+    "learned_vs_plain_pct": -15.884707740972216,
+    "weak_field_gain_pct": 27.76855956360977,
     "zero_violations": true,
     "worker_ok": true
   },
   "final_status": "PARTIAL_WIN_NO_DR",
-  "final_reason": "dr_gain=0.000%, weak_field_gain=28.080%, stage1=HALT_NO_VALIDATION_GAIN, zero_violations=True, worker_ok=True",
-  "wall_time_seconds": 27.20299999997951
+  "final_reason": "dr_gain=-24.426%, learned_vs_operator=-24.426%, learned_vs_plain=-15.885%, weak_field_gain=27.769%, stage1=HALT_NO_VALIDATION_GAIN, zero_violations=True, worker_ok=True",
+  "wall_time_seconds": 10001.311999999918
 }
