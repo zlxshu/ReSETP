@@ -436,7 +436,7 @@ def _run_ga(session: _SearchSession) -> BaselineRunResult:
             no_improvement += 1
         population = sorted(next_population, key=lambda item: (item.objective, item.signature))[: max(1, len(population))]
         if no_improvement >= max(5, len(population) // 4):
-            _ga_diversify(population, session)
+            _ga_diversify(population, session, params["population"])
             no_improvement = 0
     return session.finalize(params)
 
@@ -446,6 +446,11 @@ def _run_pso(session: _SearchSession) -> BaselineRunResult:
     particles = _pso_initial_particles(session, params["population"])
     if not particles:
         return session.finalize(params, failure_reason="PSO produced no particles.")
+    for scored in _pso_bootstrap_particles(session, max_trials=max(8, params["population"] // 2)):
+        particles.append({"order": _solution_order(scored.solution, session.context.instance), "velocity": [], "pbest": scored})
+    for scored in _pso_crossover_bootstrap(session, [particle["pbest"] for particle in particles], max_trials=params["population"]):
+        particles.append({"order": _solution_order(scored.solution, session.context.instance), "velocity": [], "pbest": scored})
+    particles = sorted(particles, key=lambda item: (item["pbest"].objective, item["pbest"].signature))[: max(1, params["population"])]
     gbest = min((particle["pbest"] for particle in particles), key=lambda item: (item.objective, item.signature))
     while session.can_score():
         for particle in particles:
@@ -466,6 +471,10 @@ def _run_pso(session: _SearchSession) -> BaselineRunResult:
             if session.rng.random() < 0.05:
                 order = _apply_order_move(order, session.rng, session.rng.choice(["swap", "relocate", "two_opt"]))
             candidate = _order_to_solution(order, session, type_hints=_route_type_hints(particle["pbest"].solution, session.context.instance))
+            if session.rng.random() < 0.40:
+                candidate = _pso_particle_polish(candidate, session)
+            if session.rng.random() < 0.25:
+                candidate = _route_crossover(candidate, gbest.solution, session.context, session.rng)
             scored = session.score(candidate, operator="pso_velocity_decode")
             if scored is None:
                 continue
@@ -954,9 +963,17 @@ def _ga_initial_population(session: _SearchSession, target_population: int) -> l
 
 
 def _ga_initial_improvement(solution: Solution, session: _SearchSession) -> Solution:
-    outcome = _alns_neighbor(session, solution, "whole_route_removal", "regret2_insert_repair")
-    if outcome.produced and outcome.feasible:
-        return outcome.solution
+    for destroy, repair in (
+        ("whole_route_removal", "regret2_insert_repair"),
+        ("random_customer_removal", "greedy_insert_repair"),
+        ("worst_customer_removal", "regret2_insert_repair"),
+        ("shaw_related_removal", "regret3_insert_repair"),
+    ):
+        if not session.can_score():
+            break
+        outcome = _alns_neighbor(session, solution, destroy, repair)
+        if outcome.produced and outcome.feasible:
+            return outcome.solution
     return solution
 
 
@@ -991,9 +1008,15 @@ def _ga_crossover(parent_a: Solution, parent_b: Solution, session: _SearchSessio
 
 def _ga_mutation(solution: Solution, session: _SearchSession) -> Solution:
     order = _solution_order(solution, session.context.instance)
-    mutation = session.rng.choice(["random_node_delete", "random_route_delete", "nearest_node_delete"])
+    mutation = session.rng.choice(["random_node_delete", "random_route_delete", "nearest_node_delete", "shaw_lns", "worst_lns"])
     if mutation == "random_route_delete":
         outcome = _alns_neighbor(session, solution, "whole_route_removal", "regret2_insert_repair")
+        return outcome.solution if outcome.produced and outcome.feasible else solution
+    if mutation == "shaw_lns":
+        outcome = _alns_neighbor(session, solution, "shaw_related_removal", "regret2_insert_repair")
+        return outcome.solution if outcome.produced and outcome.feasible else solution
+    if mutation == "worst_lns":
+        outcome = _alns_neighbor(session, solution, "worst_customer_removal", "regret3_insert_repair")
         return outcome.solution if outcome.produced and outcome.feasible else solution
     if mutation == "nearest_node_delete":
         order = _nearest_node_reinsert_order(order, session.context.instance, session.rng)
@@ -1013,11 +1036,36 @@ def _nearest_node_reinsert_order(order: list[str], instance: Instance, rng: rand
     return out
 
 
-def _ga_diversify(population: list[_ScoredSolution], session: _SearchSession) -> None:
-    if len(population) <= 2:
+def _ga_diversify(population: list[_ScoredSolution], session: _SearchSession, target_population: int) -> None:
+    if not population:
         return
-    keep = max(1, len(population) // 2)
+    keep = max(2, min(len(population), max(2, int(target_population) // 4)))
+    population.sort(key=lambda item: (item.objective, item.signature))
     del population[keep:]
+    desired = max(keep, min(int(target_population), max(1, session.target)))
+    base_order = _solution_order(population[0].solution, session.context.instance)
+    attempts = 0
+    while len(population) < desired and session.can_score() and attempts < desired * 4:
+        attempts += 1
+        if attempts % 7 == 0:
+            order = _nearest_neighbor_order(session.context.instance, session.rng)
+            operator = "ga_diversify_nearest_neighbor"
+            candidate = _order_to_solution(order, session)
+        elif attempts % 5 == 0:
+            order = _apply_order_move(base_order, session.rng, "double_bridge")
+            operator = "ga_diversify_double_bridge"
+            candidate = _order_to_solution(order, session)
+        else:
+            order = _apply_order_move(base_order, session.rng, session.rng.choice(["swap", "relocate", "two_opt"]))
+            operator = "ga_diversify_order_move"
+            candidate = _order_to_solution(order, session, type_hints=_route_type_hints(population[0].solution, session.context.instance))
+        if attempts % 3 == 0:
+            candidate = _ga_mutation(candidate, session)
+            operator = f"{operator}_mutation"
+        scored = session.score(candidate, operator=operator)
+        if scored is not None:
+            population.append(scored)
+            session.accept_if_better(scored)
 
 
 def _pso_initial_particles(session: _SearchSession, target_population: int) -> list[dict[str, Any]]:
@@ -1034,12 +1082,72 @@ def _pso_initial_particles(session: _SearchSession, target_population: int) -> l
         else:
             order = _apply_order_move(base_order, session.rng, ("swap", "relocate", "two_opt", "double_bridge")[idx % 4])
         candidate = _order_to_solution(order, session)
+        candidate = _pso_particle_polish(candidate, session) if idx % 3 == 0 else candidate
         scored = session.score(candidate, operator="pso_initial_particle")
         if scored is None:
             break
         particles.append({"order": order, "velocity": [], "pbest": scored})
         session.accept_if_better(scored)
     return particles
+
+
+def _pso_particle_polish(solution: Solution, session: _SearchSession) -> Solution:
+    destroy, repair = session.rng.choice(
+        [
+            ("random_customer_removal", "greedy_insert_repair"),
+            ("worst_customer_removal", "regret2_insert_repair"),
+            ("shaw_related_removal", "regret3_insert_repair"),
+        ]
+    )
+    outcome = _alns_neighbor(session, solution, destroy, repair)
+    return outcome.solution if outcome.produced and outcome.feasible else solution
+
+
+def _pso_bootstrap_particles(session: _SearchSession, *, max_trials: int) -> list[_ScoredSolution]:
+    seeded: list[_ScoredSolution] = []
+    base_order = _solution_order(session.current.solution, session.context.instance)
+    for idx in range(max(1, int(max_trials))):
+        if not session.can_score():
+            break
+        if idx % 4 == 0:
+            order = _nearest_neighbor_order(session.context.instance, session.rng)
+        elif idx % 4 == 1:
+            order = _angle_scan_order(session.context.instance)
+        else:
+            order = _apply_order_move(base_order, session.rng, ("swap", "relocate", "two_opt", "double_bridge")[idx % 4])
+        candidate = _order_to_solution(order, session)
+        candidate = _pso_particle_polish(candidate, session)
+        candidate = _local_order_search(session, candidate, max_trials=3)
+        scored = session.score(candidate, operator="pso_bootstrap_local_seed")
+        if scored is not None:
+            seeded.append(scored)
+            session.accept_if_better(scored)
+    return seeded
+
+
+def _pso_crossover_bootstrap(session: _SearchSession, seeds: list[_ScoredSolution], *, max_trials: int) -> list[_ScoredSolution]:
+    if len(seeds) < 2:
+        return []
+    seeded: list[_ScoredSolution] = []
+    pool = sorted(seeds, key=lambda item: (item.objective, item.signature))
+    for idx in range(max(1, int(max_trials))):
+        if not session.can_score():
+            break
+        parent_a = _tournament(pool, session.rng)
+        parent_b = _tournament(pool, session.rng)
+        if idx % 2 == 0:
+            child = _route_crossover(parent_a.solution, parent_b.solution, session.context, session.rng)
+        else:
+            child = _ga_crossover(parent_a.solution, parent_b.solution, session, operator="ga_common_nodes")
+        if idx % 3 == 0:
+            child = _ga_mutation(child, session)
+        scored = session.score(child, operator="pso_bootstrap_path_relink")
+        if scored is not None:
+            seeded.append(scored)
+            pool.append(scored)
+            pool = sorted(pool, key=lambda item: (item.objective, item.signature))[: max(2, len(seeds))]
+            session.accept_if_better(scored)
+    return seeded
 
 
 def _vns_shake(order: list[str], rng: random.Random, iteration: int) -> list[str]:
