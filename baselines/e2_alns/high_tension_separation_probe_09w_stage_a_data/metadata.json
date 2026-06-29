@@ -1,0 +1,25 @@
+{
+  "artifact_commit_hash": "pending",
+  "cap_scale": 1.0,
+  "command": "baselines/e2_alns/wallclock_battery_preflight.py --report-kind high_tension --instances gradient01 --scenarios wc80,wc100,wc150,wc280 --seeds 1 --workers 2 --output-dir baselines/e2_alns/high_tension_separation_probe_09w_stage_a_data --report-path baselines/e2_alns/high_tension_separation_probe_09w.md --retry-failures --resume",
+  "elapsed_seconds": 4.109192,
+  "head": "7cb71f35c46fbd099747fc0d18c15a95315b746d",
+  "instances": "gradient01",
+  "max_cap_seconds": 0.0,
+  "notes": [
+    "Diagnostic only: no default parameter or model semantic change.",
+    "Wall-clock lanes accept zero-violation incumbents even when eval backstop is not reached.",
+    "Lowered-budget lanes require the fixed eval budget to close.",
+    "Goeke80 is treated as a baseline scene, not a modern mixed-fleet story by itself."
+  ],
+  "output_dir": "baselines/e2_alns/high_tension_separation_probe_09w_stage_a_data",
+  "platform": "macOS-15.7.5-arm64-arm-64bit-Mach-O",
+  "python": "3.13.9 | packaged by Anaconda, Inc. | (main, Oct 21 2025, 19:11:29) [Clang 20.1.8 ]",
+  "repo_root": "/Volumes/移动硬盘（512G）/ReSETP",
+  "report_kind": "high_tension",
+  "report_path": "baselines/e2_alns/high_tension_separation_probe_09w.md",
+  "scenarios": "wc80,wc100,wc150,wc280",
+  "script": "baselines/e2_alns/wallclock_battery_preflight.py",
+  "seeds": "1",
+  "verdict": "INCONCLUSIVE_NO_NONDEGENERATE_TENSION"
+}

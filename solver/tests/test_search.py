@@ -21,6 +21,7 @@ from setp_solver.search.alns_wouda import (
     vehicle_type_swap,
 )
 from setp_solver.search.bundle import load_search_bundle
+from setp_solver.search.carbon_operators import low_carbon_charging_share
 from setp_solver.search.charging import repair_route_charging
 from setp_solver.search.construction import build_initial_solution
 from setp_solver.search.candidates import (
@@ -38,7 +39,7 @@ from setp_solver.search.fleet import FleetLimits, UNBOUNDED_FLEET, fleet_probe_d
 from setp_solver.search.gates import b2_feasible_domain_gate
 from setp_solver.search.root_cause import _breakdown_for, _operator_summary_rows, solution_churn
 from setp_solver.search.scout import scout_reference_algorithms
-from setp_solver.solution import Route, Solution, physical_vehicle_id
+from setp_solver.solution import ChargingAction, Route, Solution, physical_vehicle_id
 
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
@@ -108,6 +109,46 @@ class SearchGateTests(unittest.TestCase):
             if v.type in {"CHARGING_START", "CHARGING_POWER", "BATTERY", "TIME_WINDOW"}
         ]
         self.assertEqual(violations, [])
+
+    def test_low_carbon_charging_share_uses_actual_gamma_slots(self) -> None:
+        instance = _charging_instance()
+        prices = _legacy_battery_prices()
+        profile = [
+            {"slot_index": 0, "actual_gco2_per_kwh": 500.0, "forecast_gco2_per_kwh": 500.0},
+            {"slot_index": 1, "actual_gco2_per_kwh": 50.0, "forecast_gco2_per_kwh": 50.0},
+            {"slot_index": 2, "actual_gco2_per_kwh": 600.0, "forecast_gco2_per_kwh": 600.0},
+            {"slot_index": 3, "actual_gco2_per_kwh": 650.0, "forecast_gco2_per_kwh": 650.0},
+        ]
+        solution = Solution(
+            routes=[Route("EV1", "ev", "D0", ["D0", "F1", "C1", "D0"])],
+            charging_actions=[
+                ChargingAction("EV1", "F1", energy_kwh=10.0, occupancy_minutes=30.0, charge_start_second=1800.0),
+                ChargingAction("EV1", "F1", energy_kwh=30.0, occupancy_minutes=30.0, charge_start_second=0.0),
+            ],
+        )
+
+        self.assertAlmostEqual(low_carbon_charging_share(solution, instance, profile, prices), 0.25)
+
+    def test_battery_override_changes_fixed_ev_referee_path(self) -> None:
+        instance = _charging_instance()
+        profile = _profile()
+        solution = Solution(routes=[Route("EV1", "ev", "D0", ["D0", "C1", "D0"])])
+        low = PriceParameters(B_battery_kwh=80.0, initial_ev_battery_kwh=80.0)
+        high = PriceParameters(B_battery_kwh=280.0, initial_ev_battery_kwh=280.0)
+
+        low_violations = check_solution(solution, instance, low)
+        high_violations = check_solution(solution, instance, high)
+
+        self.assertTrue(any(violation.type == "BATTERY" for violation in low_violations))
+        self.assertEqual(high_violations, [])
+
+        low_context = EvaluationContext(instance, profile, prices=low)
+        high_context = EvaluationContext(instance, profile, prices=high)
+        low_objective = score_candidate(solution, low_context)
+        high_objective = score_candidate(solution, high_context)
+
+        self.assertGreater(low_objective, high_objective + 1.0)
+        self.assertAlmostEqual(high_objective, model_cost(solution, high_context), delta=1e-9)
 
     # v2026-06-12: H0 verifies fleet metadata and reports charge candidates.
     def test_h0_fleet_diagnostic_finds_ev_capacity_and_charge_candidates(self) -> None:

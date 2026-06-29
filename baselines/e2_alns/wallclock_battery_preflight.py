@@ -29,6 +29,12 @@ BENCHMARK_ROOT = Path("models/data_bundle/generated_instances/e2_benchmark")
 OUTPUT_DIR = Path("baselines/e2_alns/wallclock_battery_preflight_data")
 REPORT_PATH = Path("baselines/e2_alns/wallclock_battery_preflight.md")
 ALGORITHMS = ("alns_e2_throughput", "LNS")
+CARBON_AWARE_ALGORITHMS = ("alns_e2_throughput", "LNS", "alns_e2_carbon", "alns_e2_carbon_ablation")
+CARBON_AWARE_COMPARISONS = (
+    ("carbon_vs_ablation", "alns_e2_carbon", "alns_e2_carbon_ablation"),
+    ("carbon_vs_throughput", "alns_e2_carbon", "alns_e2_throughput"),
+    ("carbon_vs_lns", "alns_e2_carbon", "LNS"),
+)
 VANILLA_MULTIDEPOT_SIZES = (10, 15, 20, 25, 50, 75, 100, 150, 200)
 THREESHIFT_SIZES = (50, 75, 100, 150, 200)
 GOLD_PYTHON = "/opt/anaconda3/bin/python3.13"
@@ -94,7 +100,8 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--phase0-only", action="store_true")
     parser.add_argument("--instances", choices=("smoke", "gradient01", "gradient01_75_200", "all"), default="smoke")
     parser.add_argument("--scenarios", default="wc80,wc100,budget8k80,budget8k100")
-    parser.add_argument("--report-kind", choices=("preflight", "high_tension"), default="preflight")
+    parser.add_argument("--report-kind", choices=("preflight", "high_tension", "carbon_aware"), default="preflight")
+    parser.add_argument("--algorithms", default="")
     parser.add_argument("--seeds", default="1")
     parser.add_argument("--workers", type=int, default=2)
     parser.add_argument("--cap-scale", type=float, default=1.0)
@@ -129,6 +136,7 @@ def main(argv: list[str] | None = None) -> int:
             instances=select_instances(args.instances),
             seeds=parse_seeds(args.seeds),
             scenarios=parse_scenarios(args.scenarios),
+            algorithms=select_algorithms(args.report_kind, args.algorithms),
             cap_scale=float(args.cap_scale),
             max_cap_seconds=float(args.max_cap_seconds),
         )
@@ -145,6 +153,10 @@ def main(argv: list[str] | None = None) -> int:
         if args.report_kind == "high_tension":
             write_csv(output_dir / "mechanism_summary.csv", mechanism_summary(rows))
             write_csv(output_dir / "wilcoxon_summary.csv", wilcoxon_summary(pairs))
+        if args.report_kind == "carbon_aware":
+            carbon_pairs = carbon_pair_summary(rows)
+            write_csv(output_dir / "carbon_pair_summary.csv", carbon_pairs)
+            write_csv(output_dir / "carbon_comparison_summary.csv", carbon_comparison_summary(carbon_pairs, rows))
 
     conclusion = conclude(
         phase0,
@@ -156,6 +168,7 @@ def main(argv: list[str] | None = None) -> int:
                 instances=select_instances(args.instances),
                 seeds=parse_seeds(args.seeds),
                 scenarios=parse_scenarios(args.scenarios),
+                algorithms=select_algorithms(args.report_kind, args.algorithms),
                 cap_scale=float(args.cap_scale),
                 max_cap_seconds=float(args.max_cap_seconds),
             )
@@ -169,11 +182,11 @@ def main(argv: list[str] | None = None) -> int:
     metadata["verdict"] = conclusion["verdict"]
     write_json(output_dir / "metadata.json", metadata)
     write_json(output_dir / "conclusion.json", conclusion)
-    if args.report_kind == "high_tension":
+    if args.report_kind in {"high_tension", "carbon_aware"}:
         write_json(output_dir / "stage_decision.json", conclusion)
     report_path.parent.mkdir(parents=True, exist_ok=True)
     report_path.write_text(render_report(metadata, phase0, conclusion), encoding="utf-8")
-    if args.report_kind == "high_tension":
+    if args.report_kind in {"high_tension", "carbon_aware"}:
         write_json(output_dir / "artifact_hashes.json", artifact_hashes(output_dir, report_path))
     print(json.dumps(conclusion, ensure_ascii=False, indent=2))
     return 0 if not conclusion["verdict"].startswith("HALT") else 2
@@ -190,6 +203,7 @@ def build_metadata(repo_root: Path, args: argparse.Namespace) -> dict[str, Any]:
         "platform": platform.platform(),
         "instances": args.instances,
         "scenarios": args.scenarios,
+        "algorithms": ",".join(select_algorithms(args.report_kind, args.algorithms)),
         "report_kind": args.report_kind,
         "seeds": args.seeds,
         "output_dir": str(args.output_dir),
@@ -275,6 +289,18 @@ def parse_scenarios(value: str) -> list[str]:
     return out
 
 
+def select_algorithms(report_kind: str, value: str = "") -> tuple[str, ...]:
+    if str(value).strip():
+        requested = tuple(part.strip() for part in str(value).split(",") if part.strip())
+        unknown = [name for name in requested if name not in CARBON_AWARE_ALGORITHMS]
+        if unknown:
+            raise ValueError(f"Unknown algorithms: {unknown}")
+        return requested
+    if report_kind == "carbon_aware":
+        return CARBON_AWARE_ALGORITHMS
+    return ALGORITHMS
+
+
 def parse_seeds(value: str) -> list[int]:
     out: list[int] = []
     for part in str(value).split(","):
@@ -311,6 +337,7 @@ def build_tasks(
     instances: list[tuple[str, str, int, int]],
     seeds: list[int],
     scenarios: list[str],
+    algorithms: tuple[str, ...],
     cap_scale: float,
     max_cap_seconds: float,
 ) -> list[dict[str, Any]]:
@@ -319,7 +346,7 @@ def build_tasks(
         scenario = SCENARIOS[scenario_name]
         for category, instance, size, replicate in instances:
             for seed in seeds:
-                for algorithm in ALGORITHMS:
+                for algorithm in algorithms:
                     tasks.append(
                         {
                             "repo_root": str(repo_root),
@@ -425,7 +452,8 @@ def run_worker_task(task_path: Path) -> dict[str, Any]:
     from setp_solver.search.candidates import make_shared_initial_solution
     from setp_solver.search.e2_alns_throughput import _write_convergence_files
     from setp_solver.search.metaheuristic_baselines import run_metaheuristic_baseline, solution_to_dict
-    from setp_solver.search.winner_operators import WinnerKernelConfig, e2_alns_throughput_flags, run_e2_alns_throughput
+    from setp_solver.search.carbon_operators import low_carbon_charging_share
+    from setp_solver.search.winner_operators import WinnerKernelConfig, e2_alns_throughput_flags, run_e2_alns_carbon, run_e2_alns_throughput
 
     root = Path(task["repo_root"])
     bundle_dir = root / str(task["bundle_dir"])
@@ -444,6 +472,7 @@ def run_worker_task(task_path: Path) -> dict[str, Any]:
     flags: dict[str, str] = {}
     history: list[dict[str, Any]] = []
     timings: dict[str, Any] = {}
+    operator_counts: dict[str, Any] = {}
     try:
         if algorithm == "alns_e2_throughput":
             flags = e2_alns_throughput_flags(route_cost_cache=True, repair_structure_cache=True, timing_ledger=True)
@@ -455,6 +484,7 @@ def run_worker_task(task_path: Path) -> dict[str, Any]:
                     max_runtime_seconds=float(task["runtime_cap_seconds"]),
                 ),
                 initial_solution=warm,
+                prices=prices,
                 route_cost_cache=True,
                 repair_structure_cache=True,
                 timing_ledger=True,
@@ -466,6 +496,32 @@ def run_worker_task(task_path: Path) -> dict[str, Any]:
             elapsed = float(result["elapsed_seconds"])
             history = list(result.get("history", []))
             timings = dict(result.get("timings", {}))
+            operator_counts = dict(result.get("operator_counts", {}))
+        elif algorithm in {"alns_e2_carbon", "alns_e2_carbon_ablation"}:
+            bias = 0.0 if algorithm == "alns_e2_carbon_ablation" else 1.0
+            result = run_e2_alns_carbon(
+                bundle_dir,
+                config=WinnerKernelConfig(
+                    seed=int(task["seed"]),
+                    eval_budget=int(task["eval_budget"]),
+                    max_runtime_seconds=float(task["runtime_cap_seconds"]),
+                ),
+                initial_solution=warm,
+                prices=prices,
+                carbon_bias_weight=bias,
+                variant_id=algorithm,
+                route_cost_cache=True,
+                repair_structure_cache=True,
+                timing_ledger=True,
+            )
+            solution = result["best_solution"]
+            best_cost = float(result["best_cost"])
+            actual_evals = int(result["evaluations"])
+            violation_count = int(result["violation_count"])
+            elapsed = float(result["elapsed_seconds"])
+            history = list(result.get("history", []))
+            timings = dict(result.get("timings", {}))
+            operator_counts = dict(result.get("operator_counts", {}))
         elif algorithm == "LNS":
             result = run_metaheuristic_baseline(
                 "LNS",
@@ -474,6 +530,7 @@ def run_worker_task(task_path: Path) -> dict[str, Any]:
                 eval_budget=int(task["eval_budget"]),
                 max_runtime_seconds=float(task["runtime_cap_seconds"]),
                 initial_solution=warm,
+                prices=prices,
             )
             solution = result.best_solution
             best_cost = float(result.best_cost) if result.best_cost is not None else math.inf
@@ -489,7 +546,12 @@ def run_worker_task(task_path: Path) -> dict[str, Any]:
     elapsed = max(elapsed, time.perf_counter() - started)
     violations = check_solution(solution, bundle.instance, prices) if solution is not None else []
     if solution is not None and not violations:
-        best_cost = float(evaluate(solution, bundle.instance, bundle.carbon_profile, prices)["total_cost"])
+        final_metrics = evaluate(solution, bundle.instance, bundle.carbon_profile, prices)
+        best_cost = float(final_metrics["total_cost"])
+        low_carbon_share = low_carbon_charging_share(solution, bundle.instance, bundle.carbon_profile, prices)
+    else:
+        final_metrics = {}
+        low_carbon_share = 0.0
     feasible = solution is not None and not violations and math.isfinite(best_cost)
     mode = str(task["comparison_mode"])
     eval_complete = actual_evals >= int(task["eval_budget"])
@@ -509,7 +571,7 @@ def run_worker_task(task_path: Path) -> dict[str, Any]:
         _write_convergence_files(convergence_dir, [row_for_convergence(task, history)])
     except Exception:
         pass
-    return row_from_solution(task, solution, best_cost, actual_evals, len(violations), status, gate_status, elapsed, flags, timings)
+    return row_from_solution(task, solution, best_cost, actual_evals, len(violations), status, gate_status, elapsed, flags, timings, operator_counts, final_metrics, low_carbon_share)
 
 
 def apply_battery_override(battery_kwh: float) -> Any:
@@ -558,13 +620,16 @@ def timeout_row_from_checkpoint(repo_root: Path, task: dict[str, Any], elapsed: 
     from setp_solver.check import check_solution
     from setp_solver.cost import evaluate
     from setp_solver.search.bundle import load_search_bundle
+    from setp_solver.search.carbon_operators import low_carbon_charging_share
     from setp_solver.search.metaheuristic_baselines import solution_from_dict
 
     prices = apply_battery_override(float(task["battery_kwh"]))
     bundle = load_search_bundle(repo_root / str(task["bundle_dir"]))
     solution = solution_from_dict(checkpoint["solution"])
     violations = check_solution(solution, bundle.instance, prices)
-    best_cost = float(evaluate(solution, bundle.instance, bundle.carbon_profile, prices)["total_cost"]) if not violations else math.inf
+    metrics = evaluate(solution, bundle.instance, bundle.carbon_profile, prices) if not violations else {}
+    best_cost = float(metrics["total_cost"]) if metrics else math.inf
+    low_share = low_carbon_charging_share(solution, bundle.instance, bundle.carbon_profile, prices) if metrics else 0.0
     actual_evals = int(checkpoint.get("eval", 0))
     status = "OK" if str(task.get("comparison_mode")) == "wallclock" and not violations and math.isfinite(best_cost) else "HALT_HARD_TIMEOUT_WITH_INCUMBENT"
     row = row_from_solution(
@@ -578,6 +643,9 @@ def timeout_row_from_checkpoint(repo_root: Path, task: dict[str, Any], elapsed: 
         elapsed,
         {},
         {},
+        {},
+        metrics,
+        low_share,
     )
     return row | {
         "failure_reason": "Worker exceeded runtime cap plus hard-timeout grace; returned last readable checkpoint.",
@@ -607,12 +675,18 @@ def row_from_solution(
     elapsed: float,
     flags: dict[str, str],
     timings: dict[str, Any],
+    operator_counts: dict[str, Any] | None = None,
+    metrics: dict[str, Any] | None = None,
+    low_carbon_charging_share_value: float = 0.0,
 ) -> dict[str, Any]:
     routes = list(solution.routes) if solution is not None else []
     charging_actions = list(solution.charging_actions) if solution is not None else []
     cv_routes = [route for route in routes if str(route.vehicle_type).lower() == "cv"]
     ev_routes = [route for route in routes if str(route.vehicle_type).lower() == "ev"]
     trip_counts = Counter(physical_vehicle_id(str(route.vehicle_id)) for route in routes)
+    counts = operator_counts or {}
+    carbon_counts = carbon_operator_counts(counts)
+    metrics = metrics or {}
     return base_row(task) | {
         "python": sys.executable,
         "numpy": numpy_version(),
@@ -630,12 +704,19 @@ def row_from_solution(
         "cv_physical_vehicle_count": len({physical_vehicle_id(str(route.vehicle_id)) for route in cv_routes}),
         "ev_physical_vehicle_count": len({physical_vehicle_id(str(route.vehicle_id)) for route in ev_routes}),
         "max_trips_per_physical_vehicle": max(trip_counts.values()) if trip_counts else 0,
+        "cost_carbon": as_float(metrics.get("cost_carbon", 0.0)),
+        "E_total": as_float(metrics.get("E_total", 0.0)),
+        "E_cv_direct": as_float(metrics.get("E_cv_direct", 0.0)),
+        "E_ev_indirect": as_float(metrics.get("E_ev_indirect", 0.0)),
+        "low_carbon_charging_share": float(low_carbon_charging_share_value),
+        **carbon_counts,
         "violation_count": int(violation_count),
         "feasible": bool(solution is not None and violation_count == 0 and math.isfinite(best_cost)),
         "status": status,
         "gate_status": gate_status,
         "active_flags": json.dumps(flags, sort_keys=True),
         "timings": json.dumps(timings, sort_keys=True),
+        "operator_counts": json.dumps(counts, sort_keys=True),
     }
 
 
@@ -657,13 +738,49 @@ def failure_row(task: dict[str, Any], elapsed: float, status: str, reason: str, 
         "cv_physical_vehicle_count": 0,
         "ev_physical_vehicle_count": 0,
         "max_trips_per_physical_vehicle": 0,
+        "cost_carbon": 0.0,
+        "E_total": 0.0,
+        "E_cv_direct": 0.0,
+        "E_ev_indirect": 0.0,
+        "low_carbon_charging_share": 0.0,
+        "carbon_destroy_attempts": 0,
+        "carbon_destroy_best_improvements": 0,
+        "carbon_repair_attempts": 0,
+        "carbon_repair_best_improvements": 0,
         "violation_count": -1,
         "feasible": False,
         "status": status,
         "gate_status": status,
+        "operator_counts": "{}",
         "failure_reason": reason,
         "worker_stdout_tail": tail_text(stdout),
         "worker_stderr_tail": tail_text(stderr),
+    }
+
+
+def carbon_operator_counts(operator_counts: dict[str, Any]) -> dict[str, int]:
+    destroy_names = {"worst_carbon_removal", "carbon_related_removal"}
+    repair_names = {"low_carbon_charging_repair"}
+
+    def _sum_counts(section: str, names: set[str], idx: int | None = None) -> int:
+        total = 0
+        rows = operator_counts.get(section, {}) if isinstance(operator_counts, dict) else {}
+        if not isinstance(rows, dict):
+            return 0
+        for name in names:
+            values = rows.get(name, ())
+            if isinstance(values, (list, tuple)):
+                if idx is None:
+                    total += sum(int(float(value)) for value in values)
+                elif len(values) > idx:
+                    total += int(float(values[idx]))
+        return int(total)
+
+    return {
+        "carbon_destroy_attempts": _sum_counts("destroy", destroy_names),
+        "carbon_destroy_best_improvements": _sum_counts("destroy", destroy_names, 0),
+        "carbon_repair_attempts": _sum_counts("repair", repair_names),
+        "carbon_repair_best_improvements": _sum_counts("repair", repair_names, 0),
     }
 
 
@@ -805,6 +922,84 @@ def pair_summary(rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
                 "winner_cv_physical": int(float(winner_row.get("cv_physical_vehicle_count", 0) or 0)),
                 "winner_ev_physical": int(float(winner_row.get("ev_physical_vehicle_count", 0) or 0)),
                 "winner_max_trips_per_vehicle": int(float(winner_row.get("max_trips_per_physical_vehicle", 0) or 0)),
+            }
+        )
+    return out
+
+
+def carbon_pair_summary(rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    by_pair: dict[tuple[str, str, int], dict[str, dict[str, Any]]] = defaultdict(dict)
+    for row in rows:
+        by_pair[(str(row.get("scenario")), str(row.get("instance")), int(float(row.get("seed", 0))))][str(row.get("algorithm"))] = row
+    out: list[dict[str, Any]] = []
+    for comparison, left_alg, right_alg in CARBON_AWARE_COMPARISONS:
+        for (scenario, instance, seed), algs in sorted(by_pair.items()):
+            if left_alg not in algs or right_alg not in algs:
+                continue
+            left = algs[left_alg]
+            right = algs[right_alg]
+            left_cost = as_float(left.get("best_cost"))
+            right_cost = as_float(right.get("best_cost"))
+            gap_pct = 100.0 * (left_cost - right_cost) / right_cost if math.isfinite(left_cost) and math.isfinite(right_cost) and right_cost else math.inf
+            winner = "tie"
+            if math.isfinite(gap_pct) and abs(left_cost - right_cost) > 1e-9:
+                winner = left_alg if left_cost < right_cost else right_alg
+            out.append(
+                {
+                    "comparison": comparison,
+                    "scenario": scenario,
+                    "category": left.get("category") or right.get("category"),
+                    "instance": instance,
+                    "size": int(float(left.get("size", right.get("size", 0)) or 0)),
+                    "replicate": int(float(left.get("replicate", right.get("replicate", 0)) or 0)),
+                    "seed": seed,
+                    "left_algorithm": left_alg,
+                    "right_algorithm": right_alg,
+                    "left_status": left.get("status"),
+                    "right_status": right.get("status"),
+                    "left_cost": left_cost,
+                    "right_cost": right_cost,
+                    "gap_pct_left_minus_right": gap_pct,
+                    "paired_winner": winner,
+                    "left_E_total": as_float(left.get("E_total")),
+                    "right_E_total": as_float(right.get("E_total")),
+                    "E_total_delta_left_minus_right": as_float(left.get("E_total")) - as_float(right.get("E_total")),
+                    "left_low_carbon_charging_share": as_float(left.get("low_carbon_charging_share")),
+                    "right_low_carbon_charging_share": as_float(right.get("low_carbon_charging_share")),
+                    "left_carbon_destroy_attempts": int(float(left.get("carbon_destroy_attempts", 0) or 0)),
+                    "left_carbon_repair_attempts": int(float(left.get("carbon_repair_attempts", 0) or 0)),
+                    "left_winner_ev_route_share": as_float(left.get("winner_ev_route_share")),
+                    "left_charging_action_count": int(float(left.get("charging_action_count", 0) or 0)),
+                    "left_all_cv": boolish(left.get("winner_all_cv")),
+                    "left_all_ev": boolish(left.get("winner_all_ev")),
+                }
+            )
+    return out
+
+
+def carbon_comparison_summary(pair_rows: list[dict[str, Any]], rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    del rows
+    groups: dict[str, list[dict[str, Any]]] = defaultdict(list)
+    for row in pair_rows:
+        groups[str(row["comparison"])].append(row)
+    out: list[dict[str, Any]] = []
+    for comparison, items in sorted(groups.items()):
+        gaps = [as_float(row["gap_pct_left_minus_right"]) for row in items if math.isfinite(as_float(row["gap_pct_left_minus_right"]))]
+        emissions = [as_float(row["E_total_delta_left_minus_right"]) for row in items if math.isfinite(as_float(row["E_total_delta_left_minus_right"]))]
+        diffs = [as_float(row.get("left_cost")) - as_float(row.get("right_cost")) for row in items if math.isfinite(as_float(row.get("left_cost"))) and math.isfinite(as_float(row.get("right_cost")))]
+        p_value, method = wilcoxon_less(diffs)
+        winner_counts = Counter(str(row["paired_winner"]) for row in items)
+        out.append(
+            {
+                "comparison": comparison,
+                "pairs": len(items),
+                "mean_gap_pct_left_minus_right": statistics.fmean(gaps) if gaps else math.inf,
+                "mean_E_total_delta_left_minus_right": statistics.fmean(emissions) if emissions else math.inf,
+                "left_wins": int(winner_counts.get(items[0]["left_algorithm"], 0)) if items else 0,
+                "right_wins": int(winner_counts.get(items[0]["right_algorithm"], 0)) if items else 0,
+                "ties": int(winner_counts.get("tie", 0)),
+                "wilcoxon_p_less_left_minus_right": p_value,
+                "wilcoxon_method": method,
             }
         )
     return out
@@ -1094,6 +1289,8 @@ def conclude(
         return {"verdict": "PHASE0_OK", "phase0_ok": True, "plain": "只完成Phase0。"}
     if report_kind == "high_tension":
         return high_tension_decision(rows, expected_count=expected_count, instances_mode=instances_mode) | {"phase0_ok": True}
+    if report_kind == "carbon_aware":
+        return carbon_aware_decision(rows, expected_count=expected_count, instances_mode=instances_mode) | {"phase0_ok": True}
     failures = collection_failures(rows)
     pairs = pair_summary(rows)
     scenario_rows = scenario_summary(rows)
@@ -1116,9 +1313,86 @@ def conclude(
     }
 
 
+def carbon_aware_decision(rows: list[dict[str, Any]], *, expected_count: int, instances_mode: str) -> dict[str, Any]:
+    failures = collection_failures(rows)
+    pairs = carbon_pair_summary(rows)
+    summary = carbon_comparison_summary(pairs, rows)
+    if len(rows) != expected_count or failures:
+        return {
+            "verdict": "HALT_COLLECTION_COST",
+            "plain": "09x carbon-aware PROBE 数据没有闭合，或存在环境漂移/违约/checkpoint 问题；不能下算法结论。",
+            "rows": len(rows),
+            "expected_rows": expected_count,
+            "paired_rows": len(pairs),
+            "collection_failure_count": len(failures) + (0 if len(rows) == expected_count else 1),
+            "stage_b_recommended": False,
+            "carbon_comparison_summary": summary,
+            "failure_sample": _failure_sample(failures),
+            "report_kind": "carbon_aware",
+        }
+
+    carbon_rows = [row for row in rows if str(row.get("algorithm")) == "alns_e2_carbon"]
+    if not carbon_rows:
+        return {
+            "verdict": "HALT_OPERATOR_INVARIANT",
+            "plain": "没有收集到 alns_e2_carbon 行，说明 runner 算法集或 worker 分支没有接通。",
+            "rows": len(rows),
+            "expected_rows": expected_count,
+            "paired_rows": len(pairs),
+            "collection_failure_count": 0,
+            "stage_b_recommended": False,
+            "carbon_comparison_summary": summary,
+            "failure_sample": [],
+            "report_kind": "carbon_aware",
+        }
+
+    mean_ev = statistics.fmean(as_float(row.get("winner_ev_route_share")) for row in carbon_rows)
+    mean_charge = statistics.fmean(as_float(row.get("charging_action_count", 0)) for row in carbon_rows)
+    all_cv_or_ev = sum(1 for row in carbon_rows if boolish(row.get("winner_all_cv")) or boolish(row.get("winner_all_ev")))
+    if mean_ev <= 1e-9 or mean_charge <= 1e-9 or all_cv_or_ev / len(carbon_rows) > 0.5:
+        verdict = "REAL_DEGENERACY"
+        plain = "09x PROBE 中 alns_e2_carbon 返回的 EV/充电机制退化，碳算子没有真实作用空间；这不是算法胜负证据。"
+    else:
+        by_name = {str(row["comparison"]): row for row in summary}
+        ablation = by_name.get("carbon_vs_ablation", {})
+        throughput = by_name.get("carbon_vs_throughput", {})
+        lns = by_name.get("carbon_vs_lns", {})
+        emission_gain = as_float(ablation.get("mean_E_total_delta_left_minus_right", math.inf)) < -1e-9
+        cost_not_worse = as_float(ablation.get("mean_gap_pct_left_minus_right", math.inf)) <= 1e-9
+        beats_search_peer = (
+            int(throughput.get("left_wins", 0)) > int(throughput.get("right_wins", 0))
+            or int(lns.get("left_wins", 0)) > int(lns.get("right_wins", 0))
+            or as_float(throughput.get("wilcoxon_p_less_left_minus_right", math.inf)) < 0.05
+            or as_float(lns.get("wilcoxon_p_less_left_minus_right", math.inf)) < 0.05
+        )
+        if emission_gain and cost_not_worse and beats_search_peer:
+            verdict = "PASS_CARBON_AWARE_OPERATORS"
+            plain = "09x PROBE 中 carbon-aware 算子相对消融降低碳且成本不劣，并对 throughput/LNS 至少一个对手出现分离信号；下一步另起正式 T3 设计。"
+        else:
+            verdict = "WEAK_CARBON_SIGNAL"
+            plain = "09x PROBE 未证明 carbon-aware 算子在同一 referee 下稳定优于消融/throughput/LNS；不把它升级为正式 T3 主张。"
+
+    stage_b_recommended = bool(instances_mode == "gradient01" and verdict == "PASS_CARBON_AWARE_OPERATORS")
+    return {
+        "verdict": verdict,
+        "plain": plain,
+        "rows": len(rows),
+        "expected_rows": expected_count,
+        "paired_rows": len(pairs),
+        "collection_failure_count": 0,
+        "stage_b_recommended": stage_b_recommended,
+        "stage_b_reason": "Stage A detected carbon-aware separation signal." if stage_b_recommended else "Stage B not triggered by the preregistered Stage A rule.",
+        "carbon_comparison_summary": summary,
+        "failure_sample": [],
+        "report_kind": "carbon_aware",
+    }
+
+
 def render_report(metadata: dict[str, Any], phase0: dict[str, Any], conclusion: dict[str, Any]) -> str:
     if metadata.get("report_kind") == "high_tension":
         return render_high_tension_report(metadata, phase0, conclusion)
+    if metadata.get("report_kind") == "carbon_aware":
+        return render_carbon_aware_report(metadata, phase0, conclusion)
     scenario_lines = []
     for row in conclusion.get("scenario_summary", []):
         scenario_lines.append(
@@ -1259,6 +1533,86 @@ def render_high_tension_report(metadata: dict[str, Any], phase0: dict[str, Any],
         "- `80/100/150/280kWh` are in-memory diagnostic battery overrides only.",
         "- Carbon price stays fixed at `0.05034`; no cost/check/evaluation/default-parameter semantics are changed.",
         "- Stage A is a trend probe. Stage B only runs if the preregistered Stage A signal appears.",
+    ]
+    return "\n".join(lines).rstrip() + "\n"
+
+
+def render_carbon_aware_report(metadata: dict[str, Any], phase0: dict[str, Any], conclusion: dict[str, Any]) -> str:
+    summary_lines = []
+    for row in conclusion.get("carbon_comparison_summary", []):
+        summary_lines.append(
+            "| {comparison} | {pairs} | {gap:.4f} | {emission:.4f} | {wins}/{ties}/{losses} | {p:.4g} | {method} |".format(
+                comparison=row.get("comparison", ""),
+                pairs=int(row.get("pairs", 0)),
+                gap=as_float(row.get("mean_gap_pct_left_minus_right")),
+                emission=as_float(row.get("mean_E_total_delta_left_minus_right")),
+                wins=int(row.get("left_wins", 0)),
+                ties=int(row.get("ties", 0)),
+                losses=int(row.get("right_wins", 0)),
+                p=as_float(row.get("wilcoxon_p_less_left_minus_right")),
+                method=row.get("wilcoxon_method", ""),
+            )
+        )
+
+    failure_lines = []
+    for row in conclusion.get("failure_sample", []):
+        failure_lines.append(
+            f"| {row.get('scenario', '')} | {row.get('instance', '')} | {row.get('algorithm', '')} | {row.get('seed', '')} | {row.get('status', '')} | {row.get('bucket', '')} |"
+        )
+
+    lines = [
+        "# 09x Carbon-Aware ALNS Operator Probe",
+        "",
+        "Evidence level: **PROBE / 非正式 T3**. This report does not claim formal algorithm dominance.",
+        "",
+        f"Verdict: `{conclusion['verdict']}`",
+        "",
+        "## Plain Reading",
+        "",
+        str(conclusion.get("plain", "")),
+        "",
+        "本步只检验 `alns_e2_carbon` 是否通过搜索算子读取两层碳与分时电碳信号；`cost.py`、`check.py`、`evaluation.py`、默认参数和最终 referee 均保持不变。",
+        "",
+        "## Phase 0",
+        "",
+        f"- Phase0 OK: `{phase0.get('phase0_ok')}`",
+        f"- Defaults probe: `{json.dumps(phase0.get('default_probe', {}), sort_keys=True)}`",
+        f"- 09s warm start rows OK: `{phase0.get('warm_start_09s_ok')}` with `{phase0.get('warm_start_rows')}` rows",
+        "",
+        "## Carbon Comparison Summary",
+        "",
+        "| comparison | pairs | mean gap % left-right | mean E_total delta kg | left/tie/right | Wilcoxon p | method |",
+        "|---|---:|---:|---:|---:|---:|---|",
+        *(summary_lines or ["|  | 0 | nan | nan | 0/0/0 | nan |  |"]),
+        "",
+        "## Stage Decision",
+        "",
+        f"- Stage B recommended: `{conclusion.get('stage_b_recommended')}`",
+        f"- Stage B reason: {conclusion.get('stage_b_reason', '')}",
+        "",
+        "## Artifacts",
+        "",
+        f"- Data dir: `{metadata.get('output_dir')}`",
+        f"- Raw rows: `{metadata.get('output_dir')}/raw_runs.csv`",
+        f"- Carbon pair summary: `{metadata.get('output_dir')}/carbon_pair_summary.csv`",
+        f"- Carbon comparison summary: `{metadata.get('output_dir')}/carbon_comparison_summary.csv`",
+        f"- Stage decision: `{metadata.get('output_dir')}/stage_decision.json`",
+        f"- Artifact hashes: `{metadata.get('output_dir')}/artifact_hashes.json`",
+        f"- Report: `{metadata.get('report_path')}`",
+        f"- HEAD at run start: `{metadata.get('head')}`",
+        f"- Artifact commit hash: `{metadata.get('artifact_commit_hash')}`",
+        "",
+        "## Collection Failures",
+        "",
+        "| scenario | instance | algorithm | seed | status | bucket |",
+        "|---|---|---|---:|---|---|",
+        *(failure_lines or ["|  |  |  |  | none |  |"]),
+        "",
+        "## Interpretation Rules",
+        "",
+        "- `alns_e2_carbon_ablation` keeps the same carbon-aware operator registry but sets operator-level carbon bias to zero.",
+        "- All reported costs and emissions are replayed through the unchanged evaluator/checker after each worker returns a solution.",
+        "- `PASS_CARBON_AWARE_OPERATORS` is only a probe signal; formal T3 requires a separate locked experiment.",
     ]
     return "\n".join(lines).rstrip() + "\n"
 

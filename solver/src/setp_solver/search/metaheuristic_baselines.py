@@ -23,7 +23,7 @@ from typing import Any, Callable
 from ..check import check_solution
 from ..cost import evaluate, route_node_schedule
 from ..instance_loader import Instance, Node
-from ..prices import DEFAULT_PRICES
+from ..prices import DEFAULT_PRICES, PriceParameters
 from ..solution import ChargingAction, CrossSiteService, Route, Solution
 from .bundle import SearchBundle, load_search_bundle
 from .charging import repair_route_charging
@@ -103,16 +103,18 @@ class _SearchSession:
         eval_budget: int,
         max_runtime_seconds: float,
         initial_solution: Solution,
+        prices: PriceParameters | None = None,
     ) -> None:
         self.algorithm = str(algorithm)
         self.bundle = bundle
+        effective_prices = prices or DEFAULT_PRICES
         self.rng = random.Random(int(seed))
         self.started = time.perf_counter()
         self.max_runtime_seconds = float(max_runtime_seconds)
         self.context = EvaluationContext(
             bundle.instance,
             bundle.carbon_profile,
-            prices=DEFAULT_PRICES,
+            prices=effective_prices,
             budget=EvalBudget(limit=int(eval_budget), target=int(eval_budget)),
         )
         self.shared_seed_cost = model_cost(initial_solution, self.context)
@@ -240,7 +242,7 @@ class _SearchSession:
     def finalize(self, parameter_notes: dict[str, Any] | None = None, failure_reason: str = "") -> BaselineRunResult:
         elapsed = time.perf_counter() - self.started
         best_solution = self.best.solution if self.best.feasible else None
-        violations = check_solution(best_solution, self.context.instance, DEFAULT_PRICES) if best_solution is not None else []
+        violations = check_solution(best_solution, self.context.instance, self.context.prices) if best_solution is not None else []
         status = "OK"
         reason = failure_reason
         if best_solution is None or violations:
@@ -310,13 +312,15 @@ def run_metaheuristic_baseline(
     eval_budget: int = 16_000,
     max_runtime_seconds: float = 900.0,
     initial_solution: Solution | None = None,
+    prices: PriceParameters | None = None,
 ) -> BaselineRunResult:
     """Run one formal metaheuristic baseline under the common referee."""
 
     name = _normalize_algorithm(algorithm)
     bundle = load_search_bundle(bundle_dir)
-    warm = initial_solution or make_shared_initial_solution(bundle)
-    session = _SearchSession(name, bundle, seed, eval_budget, max_runtime_seconds, warm)
+    effective_prices = prices or DEFAULT_PRICES
+    warm = initial_solution or make_shared_initial_solution(bundle, prices=effective_prices)
+    session = _SearchSession(name, bundle, seed, eval_budget, max_runtime_seconds, warm, prices=effective_prices)
     runner = {
         "GA": _run_ga,
         "PSO": _run_pso,
@@ -677,7 +681,7 @@ def _normalize_algorithm(algorithm: str) -> str:
 
 
 def _is_feasible(solution: Solution, context: EvaluationContext) -> bool:
-    return not check_solution(solution, context.instance, DEFAULT_PRICES)
+    return not check_solution(solution, context.instance, context.prices)
 
 
 def _all_customer_ids(instance: Instance) -> list[str]:
@@ -751,9 +755,9 @@ def _decode_order_like_random_key(ordered: list[str], session: _SearchSession, t
             if avg_type_key >= ev_threshold:
                 route = Route(f"EV{next_ev}", "ev", depot_id, [depot_id, *customer_ids, depot_id])
                 try:
-                    repaired, route_actions = repair_route_charging(route, session.context.instance, session.context.carbon_profile, DEFAULT_PRICES)
+                    repaired, route_actions = repair_route_charging(route, session.context.instance, session.context.carbon_profile, session.context.prices)
                     candidate = Solution(routes=[*routes, repaired], charging_actions=[*actions, *route_actions])
-                    if not check_solution(candidate, session.context.instance, DEFAULT_PRICES):
+                    if not check_solution(candidate, session.context.instance, session.context.prices):
                         routes.append(repaired)
                         actions.extend(route_actions)
                         next_ev += 1
@@ -764,7 +768,7 @@ def _decode_order_like_random_key(ordered: list[str], session: _SearchSession, t
             next_cv += 1
 
     solution = Solution(routes=routes, charging_actions=actions)
-    if check_solution(solution, session.context.instance, DEFAULT_PRICES):
+    if check_solution(solution, session.context.instance, session.context.prices):
         return _all_cv_solution_for_session(ordered, session)
     return solution
 
@@ -802,10 +806,10 @@ def _route_customer_plan_feasible_cached(depot_id: str, customer_ids: tuple[str,
     if cached is not None:
         return cached
     node_lookup = session.node_lookup
-    feasible = sum(float(node_lookup[customer_id].demand) for customer_id in customer_ids) <= _price(DEFAULT_PRICES, "Q_capacity") + 1e-9
+    feasible = sum(float(node_lookup[customer_id].demand) for customer_id in customer_ids) <= _price(session.context.prices, "Q_capacity") + 1e-9
     if feasible:
         route = Route("TMP", "cv", depot_id, [depot_id, *customer_ids, depot_id])
-        for row in route_node_schedule(route, session.context.instance, DEFAULT_PRICES):
+        for row in route_node_schedule(route, session.context.instance, session.context.prices):
             if row.t_start > float(node_lookup[row.node_id].due_time) + 1e-9:
                 feasible = False
                 break

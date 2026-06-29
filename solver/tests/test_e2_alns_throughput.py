@@ -1,11 +1,14 @@
 from __future__ import annotations
 
+from dataclasses import replace
 import math
 import os
 import tempfile
 import unittest
+from unittest.mock import patch
 from pathlib import Path
 
+import setp_solver.search.winner_operators as winner_ops
 from setp_solver.check import check_solution
 from setp_solver.cost import evaluate
 from setp_solver.prices import DEFAULT_PRICES
@@ -16,6 +19,7 @@ from setp_solver.search.repair_scoring import route_model_cost
 from setp_solver.search.evaluation import EvaluationContext
 from setp_solver.search.winner_operators import (
     WinnerKernelConfig,
+    run_e2_alns_carbon,
     e2_alns_throughput_flags,
     run_e2_alns_throughput,
     winner_variant_flags,
@@ -88,6 +92,83 @@ class E2AlnsThroughputTest(unittest.TestCase):
         self.assertAlmostEqual(first["best_cost"], second["best_cost"])
         self.assertEqual(first["evaluations"], second["evaluations"])
         self.assertTrue(first["timings"])
+
+    def test_e2_alns_throughput_default_prices_match_explicit_default(self) -> None:
+        config = WinnerKernelConfig(seed=12, eval_budget=4, max_runtime_seconds=120.0)
+
+        implicit = run_e2_alns_throughput(VERIFY_BUNDLE, config=config)
+        explicit = run_e2_alns_throughput(VERIFY_BUNDLE, config=config, prices=DEFAULT_PRICES)
+
+        self.assertEqual(implicit["violation_count"], explicit["violation_count"])
+        self.assertEqual(implicit["evaluations"], explicit["evaluations"])
+        self.assertAlmostEqual(implicit["best_cost"], explicit["best_cost"])
+
+    def test_e2_alns_throughput_prices_override_reaches_search_context(self) -> None:
+        override = replace(DEFAULT_PRICES, B_battery_kwh=280.0)
+        captured_batteries: list[float] = []
+        real_context = winner_ops.EvaluationContext
+
+        def recording_context(*args: object, **kwargs: object) -> EvaluationContext:
+            context = real_context(*args, **kwargs)
+            captured_batteries.append(float(getattr(context.prices, "B_battery_kwh")))
+            return context
+
+        with patch.object(winner_ops, "EvaluationContext", side_effect=recording_context):
+            result = winner_ops.run_e2_alns_throughput(
+                VERIFY_BUNDLE,
+                config=WinnerKernelConfig(seed=13, eval_budget=2, max_runtime_seconds=120.0),
+                prices=override,
+            )
+
+        self.assertEqual(result["violation_count"], 0)
+        self.assertTrue(captured_batteries)
+        self.assertEqual(set(captured_batteries), {280.0})
+
+    def test_carbon_operator_registry_is_isolated_from_default_winner(self) -> None:
+        default_ops = winner_ops.WinnerOperatorSet.create()
+        carbon_ops = winner_ops.WinnerOperatorSet.create(carbon_aware=True, carbon_bias_weight=1.0)
+        ablation_ops = winner_ops.WinnerOperatorSet.create(carbon_aware=True, carbon_bias_weight=0.0)
+
+        default_destroy = [name for name, _ in default_ops.destroy_ops]
+        default_repair = [name for name, _ in default_ops.repair_ops]
+        carbon_destroy = [name for name, _ in carbon_ops.destroy_ops]
+        carbon_repair = [name for name, _ in carbon_ops.repair_ops]
+
+        self.assertEqual(
+            default_destroy,
+            [
+                "random_customer_removal",
+                "worst_customer_removal",
+                "shaw_related_removal",
+                "whole_route_removal",
+                "route_segment_removal",
+                "vehicle_type_swap",
+            ],
+        )
+        self.assertEqual(default_repair, ["greedy_insert_repair", "regret2_insert_repair", "regret3_insert_repair"])
+        self.assertIn("worst_carbon_removal", carbon_destroy)
+        self.assertIn("carbon_related_removal", carbon_destroy)
+        self.assertIn("low_carbon_charging_repair", carbon_repair)
+        self.assertEqual([name for name, _ in ablation_ops.destroy_ops], carbon_destroy)
+        self.assertEqual([name for name, _ in ablation_ops.repair_ops], carbon_repair)
+        self.assertEqual(default_ops.carbon_bias_weight, 0.0)
+        self.assertEqual(carbon_ops.carbon_bias_weight, 1.0)
+        self.assertEqual(ablation_ops.carbon_bias_weight, 0.0)
+
+    def test_run_e2_alns_carbon_uses_carbon_variant_without_changing_default(self) -> None:
+        config = WinnerKernelConfig(seed=14, eval_budget=4, max_runtime_seconds=120.0)
+
+        carbon = run_e2_alns_carbon(VERIFY_BUNDLE, config=config, carbon_bias_weight=1.0)
+        ablation = run_e2_alns_carbon(VERIFY_BUNDLE, config=config, carbon_bias_weight=0.0, variant_id="alns_e2_carbon_ablation")
+        default = run_e2_alns_throughput(VERIFY_BUNDLE, config=config)
+
+        self.assertEqual(carbon["variant"], "alns_e2_carbon")
+        self.assertEqual(ablation["variant"], "alns_e2_carbon_ablation")
+        self.assertEqual(default["variant"], "e2_alns_throughput")
+        self.assertEqual(carbon["violation_count"], 0)
+        self.assertEqual(ablation["violation_count"], 0)
+        self.assertIn("worst_carbon_removal", carbon["operator_counts"]["destroy"])
+        self.assertNotIn("worst_carbon_removal", default["operator_counts"]["destroy"])
 
     def test_runner_smoke_outputs_finite_zero_violation_rows(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:

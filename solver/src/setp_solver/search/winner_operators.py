@@ -15,7 +15,7 @@ import numpy as np
 
 from ..check import check_solution
 from ..cost import route_node_schedule
-from ..prices import DEFAULT_PRICES
+from ..prices import DEFAULT_PRICES, PriceParameters
 from ..solution import Route, Solution
 from .alns_wouda import (
     AlnsRunResult,
@@ -41,6 +41,7 @@ from .alns_wouda import (
     worst_customer_removal,
 )
 from .bundle import load_search_bundle
+from .carbon_operators import carbon_related_removal, low_carbon_charging_repair, worst_carbon_removal
 from .candidates import run_candidate
 from .construction import build_initial_solution
 from .evaluation import EvalBudget, model_cost, EvaluationContext, score_candidate, score_reference
@@ -101,6 +102,8 @@ class WinnerKernelConfig:
     max_runtime_seconds: float = 900.0
     require_charging_signal: bool = False
     include_route_elimination: bool = False
+    carbon_aware_operators: bool = False
+    carbon_operator_bias: float = 0.0
 
 
 @dataclass(frozen=True)
@@ -123,9 +126,25 @@ class WinnerOperatorSet:
     destroy_ops: tuple[tuple[str, Callable[[AlnsState, np.random.Generator], AlnsState]], ...]
     repair_ops: tuple[tuple[str, Callable[[AlnsState, np.random.Generator], AlnsState]], ...]
     include_route_elimination: bool = False
+    carbon_aware: bool = False
+    carbon_bias_weight: float = 0.0
 
     @classmethod
-    def create(cls, *, include_route_elimination: bool = False) -> "WinnerOperatorSet":
+    def create(
+        cls,
+        *,
+        include_route_elimination: bool = False,
+        carbon_aware: bool = False,
+        carbon_bias_weight: float = 1.0,
+    ) -> "WinnerOperatorSet":
+        bias = float(carbon_bias_weight) if carbon_aware else 0.0
+
+        def _with_carbon_bias(fn: Callable[..., AlnsState]) -> Callable[[AlnsState, np.random.Generator], AlnsState]:
+            def _wrapped(state: AlnsState, rng: np.random.Generator, **kwargs: Any) -> AlnsState:
+                return fn(state, rng, carbon_bias_weight=bias, **kwargs)
+
+            return _wrapped
+
         destroy_ops: list[tuple[str, Callable[[AlnsState, np.random.Generator], AlnsState]]] = [
             ("random_customer_removal", random_customer_removal),
             ("worst_customer_removal", worst_customer_removal),
@@ -136,12 +155,21 @@ class WinnerOperatorSet:
         ]
         if include_route_elimination:
             destroy_ops.insert(4, ("route_elimination_removal", route_elimination_removal))
+        if carbon_aware:
+            destroy_ops.extend(
+                [
+                    ("worst_carbon_removal", _with_carbon_bias(worst_carbon_removal)),
+                    ("carbon_related_removal", _with_carbon_bias(carbon_related_removal)),
+                ]
+            )
         repair_ops: list[tuple[str, Callable[[AlnsState, np.random.Generator], AlnsState]]] = [
             ("greedy_insert_repair", greedy_insert_repair),
             ("regret2_insert_repair", regret2_insert_repair),
             ("regret3_insert_repair", regret3_insert_repair),
         ]
-        return cls(tuple(destroy_ops), tuple(repair_ops), bool(include_route_elimination))
+        if carbon_aware:
+            repair_ops.append(("low_carbon_charging_repair", _with_carbon_bias(low_carbon_charging_repair)))
+        return cls(tuple(destroy_ops), tuple(repair_ops), bool(include_route_elimination), bool(carbon_aware), bias)
 
     @property
     def action_space_nvec(self) -> tuple[int, int, int, int]:
@@ -504,6 +532,7 @@ def run_e2_alns_throughput(
     *,
     config: WinnerKernelConfig | None = None,
     initial_solution: Solution | None = None,
+    prices: PriceParameters | None = None,
     route_cost_cache: bool = True,
     repair_structure_cache: bool = True,
     timing_ledger: bool = True,
@@ -522,8 +551,45 @@ def run_e2_alns_throughput(
         bundle_dir,
         cfg,
         initial_solution=initial_solution,
+        prices=prices,
         variant_flags=flags,
         variant_id="e2_alns_throughput",
+    )
+
+
+def run_e2_alns_carbon(
+    bundle_dir: str | Path,
+    *,
+    config: WinnerKernelConfig | None = None,
+    initial_solution: Solution | None = None,
+    prices: PriceParameters | None = None,
+    carbon_bias_weight: float = 1.0,
+    variant_id: str = "alns_e2_carbon",
+    route_cost_cache: bool = True,
+    repair_structure_cache: bool = True,
+    timing_ledger: bool = True,
+) -> dict[str, Any]:
+    """Run the 09x carbon-aware ALNS probe variant."""
+
+    cfg = config or WinnerKernelConfig()
+    flags = e2_alns_throughput_flags(route_cost_cache=route_cost_cache, repair_structure_cache=repair_structure_cache, timing_ledger=timing_ledger)
+    flags["SETP_ALNS_CARBON_OPERATORS"] = "1"
+    flags["SETP_ALNS_CARBON_OPERATOR_BIAS"] = str(float(carbon_bias_weight))
+    cfg = WinnerKernelConfig(
+        **{
+            **asdict(cfg),
+            "include_route_elimination": flags["SETP_ALNS_CRUSH_ROUTE_ELIMINATION"] == "1",
+            "carbon_aware_operators": True,
+            "carbon_operator_bias": float(carbon_bias_weight),
+        }
+    )
+    return _run_winner_variant(
+        bundle_dir,
+        cfg,
+        initial_solution=initial_solution,
+        prices=prices,
+        variant_flags=flags,
+        variant_id=variant_id,
     )
 
 
@@ -549,6 +615,7 @@ def write_winner_manifest(output_dir: str | Path) -> Path:
             "e2_alns_variant_flags",
             "run_e2_alns_sa_acceptance",
             "run_e2_alns_scan_bridge",
+            "run_e2_alns_carbon",
             "run_e2_alns_throughput",
             "scan_all_cv_solution",
             "winner_variant_flags",
@@ -566,6 +633,11 @@ def write_winner_manifest(output_dir: str | Path) -> Path:
             "lns_cooling": e2_alns_sa_acceptance_flags(mode="lns_cooling"),
         },
         "e2_alns_throughput_flags": e2_alns_throughput_flags(),
+        "e2_alns_carbon_flags": {
+            **e2_alns_throughput_flags(),
+            "SETP_ALNS_CARBON_OPERATORS": "1",
+            "SETP_ALNS_CARBON_OPERATOR_BIAS": "1.0",
+        },
         "e2_alns_component_sources": E2_ALNS_COMPONENT_SOURCES,
         "compatible_instances": ["100-01-24h", "L-main"],
         "semantic_guards": [
@@ -583,15 +655,17 @@ def _run_winner_variant(
     config: WinnerKernelConfig,
     *,
     initial_solution: Solution | None,
+    prices: PriceParameters | None = None,
     variant_flags: dict[str, str] | None = None,
     variant_id: str = "winner_kernel",
 ) -> dict[str, Any]:
     started = time.perf_counter()
     bundle = load_search_bundle(bundle_dir)
+    effective_prices = prices or DEFAULT_PRICES
     warm = initial_solution or build_initial_solution(
         bundle.instance,
         bundle.carbon_profile,
-        DEFAULT_PRICES,
+        effective_prices,
         introduce_ev=config.require_charging_signal,
         require_charging_signal=config.require_charging_signal,
     )
@@ -603,6 +677,7 @@ def _run_winner_variant(
                 bundle.instance,
                 bundle.carbon_profile,
                 config=config,
+                prices=effective_prices,
                 variant_flags=flags,
             )
             solution = run.best_solution
@@ -622,8 +697,8 @@ def _run_winner_variant(
             evaluations = run.evals
         else:
             raise ValueError(f"Unsupported winner kernel algorithm: {config.algorithm}")
-    context = EvaluationContext(bundle.instance, bundle.carbon_profile)
-    violations = check_solution(solution, bundle.instance, DEFAULT_PRICES)
+    context = EvaluationContext(bundle.instance, bundle.carbon_profile, prices=effective_prices)
+    violations = check_solution(solution, bundle.instance, effective_prices)
     return {
         "operator_base_id": operator_base_id,
         "variant": variant_id,
@@ -651,12 +726,15 @@ def _run_winner_kernel_loop(
     carbon_profile: list[dict[str, Any]],
     *,
     config: WinnerKernelConfig,
+    prices: PriceParameters | None = None,
     variant_flags: dict[str, str] | None = None,
 ) -> AlnsRunResult:
     policy = SearchPolicy(require_charging_signal=config.require_charging_signal)
+    effective_prices = prices or DEFAULT_PRICES
     context = EvaluationContext(
         instance,
         carbon_profile,
+        prices=effective_prices,
         budget=EvalBudget(
             limit=_budget_limit(None, config.eval_budget),
             target=int(config.eval_budget),
@@ -668,7 +746,11 @@ def _run_winner_kernel_loop(
     with timed_section(context, "initial_reference_score"):
         initial_obj = score_reference(initial_solution, context)
     current = best = AlnsState(initial_solution, context, objective_value=initial_obj, policy=policy)
-    operator_set = WinnerOperatorSet.create(include_route_elimination=config.include_route_elimination)
+    operator_set = WinnerOperatorSet.create(
+        include_route_elimination=config.include_route_elimination,
+        carbon_aware=config.carbon_aware_operators,
+        carbon_bias_weight=config.carbon_operator_bias,
+    )
     selector = _make_operator_selector(len(operator_set.destroy_ops), len(operator_set.repair_ops))
     acceptance = _make_winner_acceptance_criterion(current, config=config, flags=flags)
     destroy_counts = {name: [0, 0, 0, 0] for name, _ in operator_set.destroy_ops}
@@ -786,7 +868,7 @@ def _run_winner_kernel_loop(
     destroy_counts_out = {name: tuple(row) for name, row in destroy_counts.items()}
     repair_counts_out = {name: tuple(row) for name, row in repair_counts.items()}
     with timed_section(context, "final_check"):
-        feasible = len(check_solution(best.solution, instance, DEFAULT_PRICES)) == 0
+        feasible = len(check_solution(best.solution, instance, effective_prices)) == 0
     actual_moves = sum(sum(row) for row in destroy_counts_out.values())
     timing_snapshot = ledger.snapshot() if ledger is not None else {}
     return AlnsRunResult(
@@ -920,7 +1002,7 @@ def _scan_restart_state(
 ) -> AlnsState | None:
     counter[f"{counter_prefix}_attempts"] += 1
     with timed_section(state.context, "scan_build"):
-        solution = scan_all_cv_solution(state.context.instance, offset=offset)
+        solution = scan_all_cv_solution(state.context.instance, offset=offset, prices=state.context.prices)
     with timed_section(state.context, "scan_score"):
         objective = float(score_candidate(solution, state.context, label="candidate"))
     breakdown = state.context.score_breakdowns.get(id(solution), {})
@@ -938,9 +1020,10 @@ def _scan_restart_state(
     return candidate
 
 
-def scan_all_cv_solution(instance: Any, *, offset: int = 0) -> Solution:
+def scan_all_cv_solution(instance: Any, *, offset: int = 0, prices: PriceParameters | None = None) -> Solution:
     """Build a deterministic GLNS-style sweep all-CV solution."""
 
+    effective_prices = prices or DEFAULT_PRICES
     ordered = _scan_sweep_order(instance, offset=offset)
     depots = _scan_depots(instance)
     if not depots:
@@ -958,7 +1041,7 @@ def scan_all_cv_solution(instance: Any, *, offset: int = 0) -> Solution:
     }
     plans: dict[str, list[list[str]]] = {depot.node_id: [] for depot in depots}
     for customer_id in ordered:
-        _append_scan_customer(instance, node_lookup, depots_by_customer, plans, customer_id)
+        _append_scan_customer(instance, node_lookup, depots_by_customer, plans, customer_id, effective_prices)
     routes: list[Route] = []
     next_cv = 1
     for depot_id, depot_plans in sorted(plans.items()):
@@ -1003,26 +1086,27 @@ def _append_scan_customer(
     depots_by_customer: dict[str, tuple[str, ...]],
     plans: dict[str, list[list[str]]],
     customer_id: str,
+    prices: PriceParameters,
 ) -> None:
     for depot_id in depots_by_customer[customer_id]:
         depot_plans = plans[depot_id]
         if depot_plans:
             candidate = [*depot_plans[-1], customer_id]
-            if _scan_route_plan_feasible(instance, node_lookup, depot_id, candidate):
+            if _scan_route_plan_feasible(instance, node_lookup, depot_id, candidate, prices):
                 depot_plans[-1] = candidate
                 return
-        if _scan_route_plan_feasible(instance, node_lookup, depot_id, [customer_id]):
+        if _scan_route_plan_feasible(instance, node_lookup, depot_id, [customer_id], prices):
             depot_plans.append([customer_id])
             return
     plans[depots_by_customer[customer_id][0]].append([customer_id])
 
 
-def _scan_route_plan_feasible(instance: Any, node_lookup: dict[str, Any], depot_id: str, customer_ids: list[str]) -> bool:
-    capacity = _price(DEFAULT_PRICES, "Q_capacity")
+def _scan_route_plan_feasible(instance: Any, node_lookup: dict[str, Any], depot_id: str, customer_ids: list[str], prices: PriceParameters) -> bool:
+    capacity = _price(prices, "Q_capacity")
     if sum(float(node_lookup[customer_id].demand) for customer_id in customer_ids) > capacity + 1e-9:
         return False
     route = Route("SCAN", "cv", depot_id, [depot_id, *customer_ids, depot_id])
-    for row in route_node_schedule(route, instance, DEFAULT_PRICES):
+    for row in route_node_schedule(route, instance, prices):
         node = node_lookup.get(row.node_id)
         if node is not None and row.t_start > float(node.due_time) + 1e-9:
             return False

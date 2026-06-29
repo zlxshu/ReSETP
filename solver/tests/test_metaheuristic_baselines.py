@@ -1,14 +1,17 @@
 from __future__ import annotations
 
+from dataclasses import replace
 import math
 import os
 import sys
 import tempfile
 import unittest
+from unittest.mock import patch
 from pathlib import Path
 
 import numpy as np
 
+import setp_solver.search.metaheuristic_baselines as meta_baselines
 from setp_solver.check import check_solution
 from setp_solver.cost import evaluate
 from setp_solver.prices import DEFAULT_PRICES
@@ -55,6 +58,56 @@ class MetaheuristicBaselineTest(unittest.TestCase):
                 self.assertEqual(check_solution(result.best_solution, self.bundle.instance, DEFAULT_PRICES), [])
                 cost = evaluate(result.best_solution, self.bundle.instance, self.bundle.carbon_profile, DEFAULT_PRICES)["total_cost"]
                 self.assertTrue(math.isfinite(float(cost)))
+
+    def test_lns_default_prices_match_explicit_default(self) -> None:
+        implicit = run_metaheuristic_baseline(
+            "LNS",
+            INSTANCE,
+            seed=2,
+            eval_budget=4,
+            max_runtime_seconds=120.0,
+            initial_solution=self.warm,
+        )
+        explicit = run_metaheuristic_baseline(
+            "LNS",
+            INSTANCE,
+            seed=2,
+            eval_budget=4,
+            max_runtime_seconds=120.0,
+            initial_solution=self.warm,
+            prices=DEFAULT_PRICES,
+        )
+
+        self.assertEqual(implicit.status, explicit.status)
+        self.assertEqual(implicit.evals, explicit.evals)
+        self.assertEqual(implicit.violation_count, explicit.violation_count)
+        self.assertAlmostEqual(float(implicit.best_cost), float(explicit.best_cost))
+
+    def test_lns_prices_override_reaches_search_context(self) -> None:
+        override = replace(DEFAULT_PRICES, B_battery_kwh=280.0)
+        captured_batteries: list[float] = []
+        real_context = meta_baselines.EvaluationContext
+
+        def recording_context(*args: object, **kwargs: object) -> meta_baselines.EvaluationContext:
+            context = real_context(*args, **kwargs)
+            captured_batteries.append(float(getattr(context.prices, "B_battery_kwh")))
+            return context
+
+        result = None
+        with patch.object(meta_baselines, "EvaluationContext", side_effect=recording_context):
+            result = meta_baselines.run_metaheuristic_baseline(
+                "LNS",
+                INSTANCE,
+                seed=3,
+                eval_budget=2,
+                max_runtime_seconds=120.0,
+                initial_solution=self.warm,
+                prices=override,
+            )
+
+        self.assertEqual(result.status, "OK")
+        self.assertTrue(captured_batteries)
+        self.assertEqual(set(captured_batteries), {280.0})
 
     def test_runner_writes_profile_and_convergence_outputs(self) -> None:
         old_workers = os.environ.get("SETP_META_PARALLEL_WORKERS")
