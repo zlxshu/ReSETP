@@ -83,6 +83,7 @@ def run(args: argparse.Namespace) -> int:
     final_reason = str(state.get("final_reason", "") or "")
 
     try:
+        _enforce_resume_guard(state, resume=bool(args.resume))
         _log(progress_path, "Pilot21 start")
         preflight = run_preflight(args, output_dir)
         os.environ["SETP_WORKER_PYTHON"] = str(Path(args.worker_python).resolve())
@@ -600,6 +601,13 @@ def _stage_done(state: dict[str, Any], stage: str) -> bool:
     order = {"stage0": 0, "stage1": 1, "stage2": 2}
     completed = str(state.get("completed_stage", "") or "")
     return completed in order and order[completed] >= order[stage]
+
+
+def _enforce_resume_guard(state: dict[str, Any], *, resume: bool) -> None:
+    status = str(state.get("final_status", "") or "")
+    guarded = {"HALT_LEARNER_FLAT", "HALT_LEARNED_DESTROY", "HALT_NO_DESTROY_HEADROOM", "HALT_NO_TRAIN_BUNDLES"}
+    if bool(resume) and status in guarded:
+        raise Pilot21Halt("HALT_RESUME_GUARD", f"Refusing to resume from halted Pilot21 state {status}; start a fresh run instead")
 
 
 def _check_wall(started: float, max_wall_seconds: int) -> None:

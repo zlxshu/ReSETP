@@ -49,7 +49,7 @@ def test_best_of_k_destroy_worker_evaluates_candidates(monkeypatch: pytest.Monke
     assert response["trace"]["worker_numpy_version"] == "2.3.5"
 
 
-def test_learned_destroy_reward_penalizes_worse_current_candidate() -> None:
+def test_learned_destroy_reward_scores_accepted_worse_candidate_as_one() -> None:
     response = {
         "best_obj": 100.0,
         "actual_evals": 1,
@@ -66,7 +66,7 @@ def test_learned_destroy_reward_penalizes_worse_current_candidate() -> None:
 
     reward = learned_destroy_reward(response, initial_obj=100.0, eval_budget=4, terminated=False)
 
-    assert reward < 0.0
+    assert reward == 1.0
 
 
 def test_stage0_gate_halts_without_destroy_headroom() -> None:

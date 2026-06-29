@@ -203,24 +203,20 @@ def global_observation_from_response(
 
 def learned_destroy_reward(response: dict[str, Any], *, initial_obj: float | None, eval_budget: int, terminated: bool) -> float:
     trace = response.get("trace", {}) or {}
-    start_best = _float(trace.get("block_start_best_obj"), response.get("best_obj", 0.0))
-    end_best = _float(trace.get("block_end_best_obj"), response.get("best_obj", start_best))
-    start_current = _float(trace.get("block_start_current_obj"), response.get("current_obj", 0.0))
-    end_current = _float(trace.get("block_end_current_obj"), response.get("current_obj", start_current))
-    best_gain = (start_best - end_best) / max(abs(start_best), 1.0)
-    current_gain = (start_current - end_current) / max(abs(start_current), 1.0)
-    accepted = 1.0 if response.get("accepted") else 0.0
-    candidate_violations = _float(trace.get("candidate_violation_count"), response.get("violation_count", 0.0))
-    reward = 120.0 * best_gain + 20.0 * current_gain + 0.05 * accepted
-    if candidate_violations > 0:
-        reward -= min(5.0, candidate_violations)
+    improved_best = bool(response.get("improved_best")) or int(trace.get("block_improved_best_count", 0) or 0) > 0
+    improved_current = bool(response.get("improved_current")) or int(trace.get("block_improved_current_count", 0) or 0) > 0
+    accepted = bool(response.get("accepted")) or int(trace.get("block_accepted_count", 0) or 0) > 0
+    if improved_best:
+        reward = 5.0
+    elif accepted and improved_current:
+        reward = 3.0
+    elif accepted:
+        reward = 1.0
+    else:
+        reward = 0.0
     if terminated and initial_obj is not None:
-        final_gain = max(0.0, (float(initial_obj) - end_best) / max(abs(float(initial_obj)), 1.0))
-        reward += min(10.0, 100.0 * final_gain)
         if int(response.get("actual_evals", 0)) < int(eval_budget):
             reward -= 2.0
-    if int(response.get("actual_evals", 0)) >= int(eval_budget) and int(response.get("violation_count", 0)) != 0:
-        reward -= 10.0
     return float(reward)
 
 
