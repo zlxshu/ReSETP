@@ -1,0 +1,48 @@
+{
+  "carbon_comparison_summary": [
+    {
+      "comparison": "carbon_vs_ablation",
+      "left_wins": 0,
+      "mean_E_total_delta_left_minus_right": 4.153070880158409,
+      "mean_gap_pct_left_minus_right": 1.8303509587424676,
+      "pairs": 23,
+      "right_wins": 2,
+      "ties": 21,
+      "wilcoxon_method": "scipy_wilcoxon_less",
+      "wilcoxon_p_less_left_minus_right": 1.0
+    },
+    {
+      "comparison": "carbon_vs_lns",
+      "left_wins": 2,
+      "mean_E_total_delta_left_minus_right": -6.229165796864552,
+      "mean_gap_pct_left_minus_right": -2.053428623355036,
+      "pairs": 23,
+      "right_wins": 1,
+      "ties": 20,
+      "wilcoxon_method": "scipy_wilcoxon_less",
+      "wilcoxon_p_less_left_minus_right": 0.25
+    },
+    {
+      "comparison": "carbon_vs_throughput",
+      "left_wins": 1,
+      "mean_E_total_delta_left_minus_right": -0.09249007626552048,
+      "mean_gap_pct_left_minus_right": -0.0110012173023453,
+      "pairs": 23,
+      "right_wins": 0,
+      "ties": 22,
+      "wilcoxon_method": "scipy_wilcoxon_less",
+      "wilcoxon_p_less_left_minus_right": 0.5
+    }
+  ],
+  "collection_failure_count": 0,
+  "expected_rows": 92,
+  "failure_sample": [],
+  "paired_rows": 69,
+  "phase0_ok": true,
+  "plain": "09x PROBE 未证明 carbon-aware 算子在同一 referee 下稳定优于消融/throughput/LNS；不把它升级为正式 T3 主张。",
+  "report_kind": "carbon_aware",
+  "rows": 92,
+  "stage_b_reason": "Stage B not triggered by the preregistered Stage A rule.",
+  "stage_b_recommended": false,
+  "verdict": "WEAK_CARBON_SIGNAL"
+}
