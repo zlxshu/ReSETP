@@ -76,6 +76,7 @@ class BaselineRunResult:
     violation_count: int = 0
     operator_counts: dict[str, int] = field(default_factory=dict)
     parameter_notes: dict[str, Any] = field(default_factory=dict)
+    diagnostics: dict[str, Any] = field(default_factory=dict)
 
 
 @dataclass
@@ -153,6 +154,13 @@ class _SearchSession:
             }
         ]
         self.operator_counts: dict[str, int] = {}
+        self.scored_signatures: set[str] = {self.current.signature}
+        self.best_update_count = 0
+        self.scored_objective_min = math.inf
+        self.scored_objective_max = -math.inf
+        self.scored_objective_sum = 0.0
+        self.feasible_candidate_count = 0
+        self.candidates_better_than_warm = 0
         self.reference_objective_cache[self.current.signature] = float(seed_obj)
 
     @property
@@ -201,8 +209,17 @@ class _SearchSession:
             feasible=feasible,
             signature=solution_signature_hash(solution),
         )
+        self.scored_signatures.add(scored.signature)
+        self.scored_objective_min = min(self.scored_objective_min, objective)
+        self.scored_objective_max = max(self.scored_objective_max, objective)
+        self.scored_objective_sum += objective
+        if feasible:
+            self.feasible_candidate_count += 1
+            if objective < self.current.objective - 1e-9:
+                self.candidates_better_than_warm += 1
         if feasible and objective < self.best.objective - 1e-9:
             self.best = scored
+            self.best_update_count += 1
             self.history.append(
                 {
                     "eval": self.evals,
@@ -269,6 +286,17 @@ class _SearchSession:
             violation_count=len(violations),
             operator_counts=dict(self.operator_counts),
             parameter_notes=parameter_notes or {},
+            diagnostics={
+                "unique_solution_count": len(self.scored_signatures),
+                "best_update_count": int(self.best_update_count),
+                "scored_solution_count": int(self.evals),
+                "returned_warm_start": solution_signature_hash(best_solution) == self.current.signature if best_solution is not None else False,
+                "candidate_objective_min": float(self.scored_objective_min) if math.isfinite(self.scored_objective_min) else math.nan,
+                "candidate_objective_mean": float(self.scored_objective_sum / self.evals) if self.evals > 0 else math.nan,
+                "candidate_objective_max": float(self.scored_objective_max) if math.isfinite(self.scored_objective_max) else math.nan,
+                "feasible_candidate_count": int(self.feasible_candidate_count),
+                "candidates_better_than_warm": int(self.candidates_better_than_warm),
+            },
         )
 
 
@@ -350,6 +378,7 @@ def baseline_result_to_dict(result: BaselineRunResult, *, include_solution: bool
         "violation_count": result.violation_count,
         "operator_counts": result.operator_counts,
         "parameter_notes": result.parameter_notes,
+        "diagnostics": result.diagnostics,
         "history": result.history,
     }
     if include_solution:
@@ -490,11 +519,17 @@ def _run_pso(session: _SearchSession) -> BaselineRunResult:
 
 def _run_vns(session: _SearchSession) -> BaselineRunResult:
     n_customers = len(_all_customer_ids(session.context.instance))
-    params = {"restart_parameter_r": 3, "ITERS_MAX": max(1, 3 * n_customers), "shaking": "double_bridge+rvnd"}
+    params = {
+        "restart_parameter_r": 3,
+        "ITERS_MAX": max(1, 3 * n_customers),
+        "shaking": "multi_start_route_destroy_repair+rvnd",
+        "bootstrap_trials": max(16, 4 * n_customers),
+    }
+    _vns_bootstrap(session, int(params["bootstrap_trials"]))
+    restart = 0
     while session.can_score():
-        construction_order = _nearest_neighbor_order(session.context.instance, session.rng)
-        construction_order = _apply_order_move(construction_order, session.rng, session.rng.choice(["swap", "relocate", "two_opt"]))
-        start_solution = _order_to_solution(construction_order, session)
+        start_solution = _vns_restart_solution(session, restart)
+        restart += 1
         start_scored = session.score(start_solution, operator="vns_construction")
         if start_scored is not None and start_scored.feasible and start_scored.objective < session.current.objective:
             session.current = start_scored
@@ -514,7 +549,17 @@ def _run_vns(session: _SearchSession) -> BaselineRunResult:
 
 
 def _run_aco(session: _SearchSession) -> BaselineRunResult:
-    params = {"m": 20, "iter": 100, "r0": 0.1, "rho0": 0.8, "rho_min": 0.01, "alpha": 1.0, "beta": 2.0, "Q": 1.0}
+    params = {
+        "m": 20,
+        "iter": 100,
+        "r0": 0.1,
+        "rho0": 0.8,
+        "rho_min": 0.01,
+        "alpha": 1.0,
+        "beta": 2.0,
+        "Q": 1.0,
+        "decode_escape_period": 4,
+    }
     customers = _all_customer_ids(session.context.instance)
     pheromone = {(a, b): 1.0 for a in customers for b in customers if a != b}
     transition_base = _aco_transition_base(customers, session, params)
@@ -524,13 +569,23 @@ def _run_aco(session: _SearchSession) -> BaselineRunResult:
         iteration += 1
         iteration_best: _ScoredSolution | None = None
         iteration_worst = 0.0
-        for _ in range(int(params["m"])):
+        for ant_idx in range(int(params["m"])):
             if not session.can_score():
                 break
-            order = _aco_construct_order(customers, pheromone, transition_base, session, params)
-            candidate = _order_to_solution(order, session)
-            candidate = _aco_vnd(candidate, session)
-            scored = session.score(candidate, operator="aco_ant_vnd")
+            ant_serial = iteration * int(params["m"]) + ant_idx
+            if ant_idx % int(params["decode_escape_period"]) == 0:
+                order = _aco_construct_order(customers, pheromone, transition_base, session, params)
+                candidate = _vns_restart_solution(session, ant_serial)
+                if ant_idx % (2 * int(params["decode_escape_period"])) == 0:
+                    candidate = _vns_local_search(session, candidate)
+                operator = "aco_restart_lns_escape"
+            else:
+                order = _aco_construct_order(customers, pheromone, transition_base, session, params)
+                candidate = _order_to_solution(order, session)
+                candidate = _aco_vnd(candidate, session)
+                operator = "aco_ant_vnd_lns"
+            candidate = _baseline_lns_repair_candidate(session, candidate, ant_serial)
+            scored = session.score(candidate, operator=operator)
             if scored is None:
                 break
             session.accept_if_better(scored)
@@ -608,7 +663,13 @@ def _run_lns(session: _SearchSession) -> BaselineRunResult:
 
 
 def _run_gwo(session: _SearchSession) -> BaselineRunResult:
-    params = {"NIND": 50, "MAXGEN": 1000, "position_update": "GA-crossover-alpha-beta-delta", "local_search": "Shaw-LNS"}
+    params = {
+        "NIND": 50,
+        "MAXGEN": 1000,
+        "position_update": "GA-crossover-alpha-beta-delta",
+        "local_search": "multi-operator-LNS",
+        "restart_repair_period": 7,
+    }
     wolves = _gwo_initial_wolves(session, int(params["NIND"]))
     generation = 0
     while session.can_score() and wolves:
@@ -616,17 +677,21 @@ def _run_gwo(session: _SearchSession) -> BaselineRunResult:
         wolves = sorted(wolves, key=lambda item: (item.objective, item.signature))
         guides = wolves[: min(3, len(wolves))]
         next_wolves: list[_ScoredSolution] = list(guides)
-        for wolf in wolves[len(guides) :]:
+        for wolf_idx, wolf in enumerate(wolves[len(guides) :]):
             if not session.can_score():
                 break
             guide = guides[0] if session.rng.random() < 1.0 / 3.0 else guides[1 % len(guides)] if session.rng.random() < 0.5 else guides[-1]
             order = _order_crossover(_solution_order(wolf.solution, session.context.instance), _solution_order(guide.solution, session.context.instance), session.rng)
-            order = _apply_order_move(order, session.rng, session.rng.choice(["swap", "relocate", "two_opt"]))
+            move = session.rng.choice(["swap", "relocate", "two_opt", "double_bridge"])
+            order = _apply_order_move(order, session.rng, move)
             candidate = _order_to_solution(order, session, type_hints=_route_type_hints(guide.solution, session.context.instance))
-            outcome = _alns_neighbor(session, candidate, "shaw_related_removal", "regret2_insert_repair")
-            if outcome.produced and outcome.feasible:
-                candidate = outcome.solution
-            scored = session.score(candidate, operator="gwo_alpha_beta_delta_lns")
+            candidate = _baseline_lns_repair_candidate(session, candidate, generation + wolf_idx)
+            if generation % int(params["restart_repair_period"]) == 0 and wolf_idx % 3 == 0:
+                restart = _vns_restart_solution(session, generation + wolf_idx)
+                restart = _baseline_lns_repair_candidate(session, restart, generation + wolf_idx + 1)
+                if session.reference_objective(restart) < session.reference_objective(candidate) - 1e-9:
+                    candidate = restart
+            scored = session.score(candidate, operator=f"gwo_alpha_beta_delta_{move}_lns")
             if scored is not None:
                 next_wolves.append(scored if scored.objective <= wolf.objective else wolf)
                 session.accept_if_better(scored)
@@ -637,7 +702,15 @@ def _run_gwo(session: _SearchSession) -> BaselineRunResult:
 
 
 def _run_iwd(session: _SearchSession) -> BaselineRunResult:
-    params = {"drops": 20, "soil0": 1000.0, "velocity0": 100.0, "iter": 100, "lns": "Shaw+min-increment on iteration-best", "acceptance": "SA-Metropolis"}
+    params = {
+        "drops": 20,
+        "soil0": 1000.0,
+        "velocity0": 100.0,
+        "iter": 100,
+        "lns": "multi-operator iteration-best",
+        "acceptance": "SA-Metropolis",
+        "decode_escape_period": 4,
+    }
     customers = _all_customer_ids(session.context.instance)
     soil = {(a, b): float(params["soil0"]) for a in customers for b in customers if a != b}
     transition_base = _iwd_transition_base(customers, session)
@@ -650,9 +723,18 @@ def _run_iwd(session: _SearchSession) -> BaselineRunResult:
         for drop_idx in range(int(params["drops"])):
             if not session.can_score():
                 break
+            drop_serial = iteration * int(params["drops"]) + drop_idx
             order = _iwd_construct_order(customers, soil, transition_base, session)
-            candidate = _order_to_solution(order, session)
-            scored = session.score(candidate, operator="iwd_construct_sa")
+            if drop_idx % int(params["decode_escape_period"]) == 0:
+                candidate = _vns_restart_solution(session, drop_serial)
+                if drop_idx % (2 * int(params["decode_escape_period"])) == 0:
+                    candidate = _vns_local_search(session, candidate)
+                operator = "iwd_restart_lns_escape"
+            else:
+                candidate = _order_to_solution(order, session)
+                operator = "iwd_construct_sa"
+            candidate = _baseline_lns_repair_candidate(session, candidate, drop_serial)
+            scored = session.score(candidate, operator=operator)
             if scored is None:
                 break
             session.accept_metropolis(scored, temperature)
@@ -661,9 +743,9 @@ def _run_iwd(session: _SearchSession) -> BaselineRunResult:
             velocity[drop_idx] = velocity[drop_idx] + 1.0 / max(1.0, abs(scored.objective))
             _iwd_update_local_soil(order, soil, scored.objective)
         if best_this_iter is not None:
-            outcome = _alns_neighbor(session, best_this_iter.solution, "shaw_related_removal", "greedy_insert_repair") if session.can_score() else _OperatorOutcome(best_this_iter.solution, produced=False, feasible=False, changed=False)
-            if outcome.produced and outcome.feasible:
-                polished = session.score(outcome.solution, operator="iwd_iteration_best_lns")
+            if session.can_score():
+                candidate = _baseline_lns_repair_candidate(session, best_this_iter.solution, iteration)
+                polished = session.score(candidate, operator="iwd_iteration_best_lns")
                 session.accept_metropolis(polished, temperature)
                 if polished is not None and polished.feasible and polished.objective < best_this_iter.objective:
                     best_this_iter = polished
@@ -1150,6 +1232,44 @@ def _pso_crossover_bootstrap(session: _SearchSession, seeds: list[_ScoredSolutio
     return seeded
 
 
+def _vns_bootstrap(session: _SearchSession, max_trials: int) -> None:
+    for idx in range(max(1, int(max_trials))):
+        if not session.can_score():
+            break
+        candidate = _vns_restart_solution(session, idx)
+        candidate = _vns_local_search(session, candidate)
+        scored = session.score(candidate, operator="vns_bootstrap_rvnd")
+        session.accept_if_better(scored)
+
+
+def _vns_restart_solution(session: _SearchSession, restart: int) -> Solution:
+    base = session.current.solution
+    base_order = _solution_order(base, session.context.instance)
+    mode = int(restart) % 8
+    if mode == 0:
+        order = _nearest_neighbor_order(session.context.instance, session.rng)
+        return _order_to_solution(order, session)
+    if mode == 1:
+        return _order_to_solution(_angle_scan_order(session.context.instance), session)
+    if mode == 2:
+        order = list(base_order)
+        session.rng.shuffle(order)
+        return _order_to_solution(order, session, type_hints=_route_type_hints(base, session.context.instance))
+    if mode == 3:
+        return _ga_mutation(base, session)
+    if mode == 4:
+        outcome = _alns_neighbor(session, base, "random_customer_removal", "greedy_insert_repair")
+        return outcome.solution if outcome.produced and outcome.feasible else _ga_mutation(base, session)
+    if mode == 5:
+        outcome = _alns_neighbor(session, base, "shaw_related_removal", "regret2_insert_repair")
+        return outcome.solution if outcome.produced and outcome.feasible else _ga_mutation(base, session)
+    if mode == 6:
+        outcome = _alns_neighbor(session, base, "worst_customer_removal", "regret3_insert_repair")
+        return outcome.solution if outcome.produced and outcome.feasible else _ga_mutation(base, session)
+    shaken_order = _vns_shake(base_order, session.rng, restart)
+    return _order_to_solution(shaken_order, session, type_hints=_route_type_hints(base, session.context.instance))
+
+
 def _vns_shake(order: list[str], rng: random.Random, iteration: int) -> list[str]:
     moves = ["double_bridge", "relocate", "swap", "two_opt"]
     out = list(order)
@@ -1161,7 +1281,7 @@ def _vns_shake(order: list[str], rng: random.Random, iteration: int) -> list[str
 def _vns_local_search(session: _SearchSession, solution: Solution) -> Solution:
     best = solution
     best_obj = session.reference_objective(best)
-    neighborhoods = ["swap", "relocate", "two_opt", "alns_shaw"]
+    neighborhoods = ["swap", "relocate", "two_opt", "alns_random", "alns_shaw", "alns_worst", "alns_route"]
     improved = True
     while improved and session.can_score():
         improved = False
@@ -1169,8 +1289,9 @@ def _vns_local_search(session: _SearchSession, solution: Solution) -> Solution:
         for neighborhood in neighborhoods:
             if not session.can_score():
                 return best
-            if neighborhood == "alns_shaw":
-                outcome = _alns_neighbor(session, best, "shaw_related_removal", "regret2_insert_repair")
+            if neighborhood.startswith("alns_"):
+                destroy, repair = _vns_alns_pair(neighborhood)
+                outcome = _alns_neighbor(session, best, destroy, repair)
                 candidate = outcome.solution if outcome.produced and outcome.feasible else best
             else:
                 order = _apply_order_move(_solution_order(best, session.context.instance), session.rng, neighborhood)
@@ -1182,6 +1303,18 @@ def _vns_local_search(session: _SearchSession, solution: Solution) -> Solution:
                 improved = True
                 break
     return best
+
+
+def _vns_alns_pair(neighborhood: str) -> tuple[str, str]:
+    if neighborhood == "alns_random":
+        return "random_customer_removal", "greedy_insert_repair"
+    if neighborhood == "alns_shaw":
+        return "shaw_related_removal", "regret2_insert_repair"
+    if neighborhood == "alns_worst":
+        return "worst_customer_removal", "regret3_insert_repair"
+    if neighborhood == "alns_route":
+        return "whole_route_removal", "regret2_insert_repair"
+    raise ValueError(f"unknown VNS ALNS neighborhood: {neighborhood}")
 
 
 def _aco_transition_base(customers: list[str], session: _SearchSession, params: dict[str, Any]) -> dict[tuple[str, str], float]:
@@ -1302,18 +1435,46 @@ def _gwo_initial_wolves(session: _SearchSession, target_population: int) -> list
     for idx in range(desired - 1):
         if not session.can_score():
             break
-        if idx % 3 == 0:
+        mode = idx % 8
+        if mode == 0:
             order = _nearest_neighbor_order(session.context.instance, session.rng)
+            candidate = _order_to_solution(order, session)
+        elif mode == 1:
+            candidate = _order_to_solution(_angle_scan_order(session.context.instance), session)
+        elif mode == 2:
+            order = list(base_order)
+            session.rng.shuffle(order)
+            candidate = _order_to_solution(order, session, type_hints=_route_type_hints(session.current.solution, session.context.instance))
+        elif mode == 3:
+            candidate = _ga_mutation(session.current.solution, session)
+        elif mode in {4, 5, 6}:
+            candidate = _vns_restart_solution(session, idx)
         elif idx % 3 == 1:
-            order = _angle_scan_order(session.context.instance)
-        else:
             order = _apply_order_move(base_order, session.rng, "double_bridge")
-        candidate = _order_to_solution(order, session)
+            candidate = _order_to_solution(order, session, type_hints=_route_type_hints(session.current.solution, session.context.instance))
+        else:
+            candidate = _baseline_lns_repair_candidate(session, session.current.solution, idx)
+        if idx % 2 == 0:
+            candidate = _baseline_lns_repair_candidate(session, candidate, idx)
         scored = session.score(candidate, operator="gwo_initial_wolf")
         if scored is not None:
             wolves.append(scored)
             session.accept_if_better(scored)
     return sorted(wolves, key=lambda item: (item.objective, item.signature))
+
+
+def _baseline_lns_repair_candidate(session: _SearchSession, solution: Solution, salt: int) -> Solution:
+    pairs = [
+        ("shaw_related_removal", "regret2_insert_repair"),
+        ("random_customer_removal", "greedy_insert_repair"),
+        ("worst_customer_removal", "regret3_insert_repair"),
+        ("whole_route_removal", "regret2_insert_repair"),
+    ]
+    destroy, repair = pairs[int(salt) % len(pairs)]
+    outcome = _alns_neighbor(session, solution, destroy, repair)
+    if outcome.produced and outcome.feasible:
+        return outcome.solution
+    return _ga_mutation(solution, session)
 
 
 def _iwd_transition_base(customers: list[str], session: _SearchSession) -> dict[tuple[str, str], float]:
