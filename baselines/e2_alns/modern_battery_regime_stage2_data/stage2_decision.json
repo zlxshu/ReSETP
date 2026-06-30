@@ -1,0 +1,15 @@
+{
+  "collection_failure_count": 1,
+  "failure_sample": [
+    {
+      "failure_bucket": "stage2_algorithm_timeout_no_raw_rows",
+      "runtime_cap_seconds": 900,
+      "runtime_observed_seconds": "~3600"
+    }
+  ],
+  "paired_vs_ablation": 0,
+  "paired_vs_lns": 0,
+  "plain": "280kWh 构造出现一个非退化混合实例，但 Stage 2 算法对比未能按 900s 单任务墙钟帽闭合；两条 worker 跑到约 1 小时仍未写出 raw_runs.csv。停止本次算法结论，只保留 headroom 与构造证据。",
+  "rows": 0,
+  "verdict": "HALT_COLLECTION_COST"
+}
