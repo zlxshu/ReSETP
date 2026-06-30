@@ -43,6 +43,8 @@ VANILLA_MULTIDEPOT_SIZES = (10, 15, 20, 25, 50, 75, 100, 150, 200)
 THREESHIFT_SIZES = (50, 75, 100, 150, 200)
 STAGE1_ALGORITHMS = ("alns_e2_carbon", "LNS")
 STAGE2_ALGORITHMS = ("alns_e2_carbon", "alns_e2_carbon_ablation", "LNS", "GA", "PSO", "VNS", "GA-VNS")
+STAGEB_ALGORITHMS = ("alns_e2_carbon", "alns_e2_carbon_ablation", "LNS", "GA", "PSO", "VNS")
+HARD_TIMEOUT_GRACE_SECONDS = 15.0
 STAGE0_VERDICTS = {
     "X_SEARCH_MISSED_FEASIBLE_EV",
     "Y_EV_FEASIBLE_BUT_EXPENSIVE",
@@ -61,6 +63,16 @@ STAGE2_VERDICTS = {
     "B_MECHANISM_BUT_TIE",
     "B_NO_MIX_ANYWHERE",
     "B_CAP_BOUNDED",
+    "HALT_COLLECTION_COST",
+}
+STAGEA_VERDICTS = {
+    "THREESHIFT_MIXED_GENERALIZES",
+    "THREESHIFT_MIXED_N1_ONLY",
+    "HALT_STAGEA_CONSTRUCTION_BROKEN",
+}
+STAGEB_VERDICTS = {
+    "CARBON_REGIME_ALNS_WINS",
+    "MECHANISM_BUT_TIE",
     "HALT_COLLECTION_COST",
 }
 
@@ -96,6 +108,26 @@ def parse_args() -> argparse.Namespace:
     s2.add_argument("--retry-failures", action="store_true")
     s2.add_argument("--stage0-dir", default="baselines/e2_alns/ev_heavy_regime_stage0_data")
 
+    sa = sub.add_parser("stageA")
+    sa.add_argument("--battery-kwh", type=float, default=280.0)
+    sa.add_argument("--instances", choices=("threeshift_stability_100_200",), default="threeshift_stability_100_200")
+    sa.add_argument("--output-dir", required=True)
+    sa.add_argument("--report-path", required=True)
+
+    sb = sub.add_parser("stageB")
+    sb.add_argument("--battery-kwh", type=float, default=280.0)
+    sb.add_argument("--seeds", default="1-3")
+    sb.add_argument("--workers", type=int, default=2)
+    sb.add_argument("--algorithms", default=",".join(STAGEB_ALGORITHMS))
+    sb.add_argument("--stageA-dir", default="baselines/e2_alns/threeshift_280_stageA_generalization_data")
+    sb.add_argument("--output-dir", required=True)
+    sb.add_argument("--report-path", required=True)
+    sb.add_argument("--retry-failures", action="store_true")
+
+    worker = sub.add_parser("worker-search")
+    worker.add_argument("--task-json", required=True)
+    worker.add_argument("--output-json", required=True)
+
     syn = sub.add_parser("synthesis")
     syn.add_argument("--stage0-dir", default="baselines/e2_alns/ev_heavy_regime_stage0_data")
     syn.add_argument("--stage1-dir", default="baselines/e2_alns/ev_seeded_search_stage1_data")
@@ -112,6 +144,14 @@ def main() -> None:
         run_stage1(args)
     elif args.stage == "stage2":
         run_stage2(args)
+    elif args.stage == "stageA":
+        run_stageA(args)
+    elif args.stage == "stageB":
+        run_stageB(args)
+    elif args.stage == "worker-search":
+        task = read_json(Path(args.task_json))
+        row = run_search_task(task)
+        Path(args.output_json).write_text(json.dumps(row, ensure_ascii=False), encoding="utf-8")
     elif args.stage == "synthesis":
         run_synthesis(args)
     else:
@@ -343,6 +383,100 @@ def run_stage2(args: argparse.Namespace) -> dict[str, Any]:
     return decision
 
 
+def run_stageA(args: argparse.Namespace) -> dict[str, Any]:
+    output_dir = Path(args.output_dir)
+    report_path = Path(args.report_path)
+    output_dir.mkdir(parents=True, exist_ok=True)
+    (output_dir / "ev_maximal_solutions").mkdir(exist_ok=True)
+    metadata = build_metadata(output_dir, report_path, "stageA", battery_kwh=float(args.battery_kwh))
+    write_json(output_dir / "metadata.json", metadata)
+    phase0 = phase0_audit(float(args.battery_kwh))
+    write_json(output_dir / "phase0_audit.json", phase0)
+
+    baseline_rows: list[dict[str, Any]] = []
+    attempt_rows: list[dict[str, Any]] = []
+    construction_rows: list[dict[str, Any]] = []
+    for category, instance_name, size in select_instances(args.instances):
+        result = stage0_instance(category, instance_name, size, float(args.battery_kwh), output_dir)
+        baseline_rows.append(result["baseline_row"])
+        attempt_rows.extend(result["attempt_rows"])
+        construction_rows.append(result["ev_row"])
+
+    write_csv(output_dir / "baseline_rows.csv", baseline_rows)
+    write_csv(output_dir / "conversion_attempts.csv", attempt_rows)
+    write_csv(output_dir / "ev_maximal_280_rows.csv", construction_rows)
+    failure_summary = summarize_failures(attempt_rows)
+    write_csv(output_dir / "failure_reason_summary.csv", failure_summary)
+    decision = stageA_decision(phase0, construction_rows)
+    write_json(output_dir / "stageA_decision.json", decision)
+    report_path.write_text(render_stageA_report(metadata, phase0, decision, construction_rows, failure_summary), encoding="utf-8")
+    write_json(output_dir / "artifact_hashes.json", artifact_hashes(output_dir, report_path))
+    return decision
+
+
+def run_stageB(args: argparse.Namespace) -> dict[str, Any]:
+    output_dir = Path(args.output_dir)
+    report_path = Path(args.report_path)
+    output_dir.mkdir(parents=True, exist_ok=True)
+    metadata = build_metadata(output_dir, report_path, "stageB", battery_kwh=float(args.battery_kwh))
+    metadata["stageA_dir"] = str(args.stageA_dir)
+    write_json(output_dir / "metadata.json", metadata)
+    phase0 = phase0_audit(float(args.battery_kwh))
+    write_json(output_dir / "phase0_audit.json", phase0)
+
+    stageA_dir = Path(args.stageA_dir)
+    stageA_decision_path = stageA_dir / "stageA_decision.json"
+    if not stageA_decision_path.exists():
+        decision = {"verdict": "HALT_COLLECTION_COST", "plain": "Stage A decision is missing; Stage B cannot choose EV-seeded instances.", "rows": 0, "collection_failure_count": 1}
+        write_json(output_dir / "stageB_decision.json", decision)
+        report_path.write_text(render_stageB_report(metadata, phase0, decision, [], [], [], []), encoding="utf-8")
+        write_json(output_dir / "artifact_hashes.json", artifact_hashes(output_dir, report_path))
+        return decision
+    stageA_decision_payload = read_json(stageA_decision_path)
+    if stageA_decision_payload.get("verdict") != "THREESHIFT_MIXED_GENERALIZES":
+        decision = {
+            "verdict": "HALT_COLLECTION_COST",
+            "plain": "Stage A did not pass THREESHIFT_MIXED_GENERALIZES; preregistered Stage B is not allowed.",
+            "rows": 0,
+            "collection_failure_count": 1,
+            "stageA_verdict": stageA_decision_payload.get("verdict"),
+        }
+        write_json(output_dir / "stageB_decision.json", decision)
+        report_path.write_text(render_stageB_report(metadata, phase0, decision, [], [], [], []), encoding="utf-8")
+        write_json(output_dir / "artifact_hashes.json", artifact_hashes(output_dir, report_path))
+        return decision
+
+    construction_rows = stageB_construction_rows(stageA_dir)
+    write_csv(output_dir / "selected_instances.csv", construction_rows)
+    algorithms = tuple(item.strip() for item in str(args.algorithms).split(",") if item.strip())
+    tasks: list[dict[str, Any]] = []
+    for row in construction_rows:
+        for seed in parse_seeds(args.seeds):
+            for algorithm in algorithms:
+                tasks.append(build_stageB_task(output_dir, row, seed, algorithm, float(args.battery_kwh), str(stageA_dir)))
+    write_csv(output_dir / "task_queue.csv", [stageB_queue_row(task) for task in tasks])
+    if phase0.get("phase0_ok"):
+        rows = run_search_tasks(
+            tasks,
+            workers=int(args.workers),
+            incremental_csv=output_dir / "raw_runs.csv",
+            hard_timeout=True,
+            retry_failures=bool(args.retry_failures),
+        )
+    else:
+        rows = []
+    write_csv(output_dir / "raw_runs.csv", rows)
+    pairs_baselines = stageB_pair_summaries(rows)
+    pairs_ablation = pair_rows(rows, "alns_e2_carbon", "alns_e2_carbon_ablation")
+    write_csv(output_dir / "paired_vs_baselines.csv", pairs_baselines)
+    write_csv(output_dir / "paired_vs_ablation.csv", pairs_ablation)
+    decision = stageB_decision(phase0, rows, pairs_baselines, pairs_ablation, expected_rows=len(tasks))
+    write_json(output_dir / "stageB_decision.json", decision)
+    report_path.write_text(render_stageB_report(metadata, phase0, decision, construction_rows, rows, pairs_baselines, pairs_ablation), encoding="utf-8")
+    write_json(output_dir / "artifact_hashes.json", artifact_hashes(output_dir, report_path))
+    return decision
+
+
 def build_search_task(stage: str, output_dir: Path, category: str, instance_name: str, size: int, seed: int, algorithm: str, battery_kwh: float, seed_dir: str) -> dict[str, Any]:
     return {
         "stage": stage,
@@ -361,17 +495,136 @@ def build_search_task(stage: str, output_dir: Path, category: str, instance_name
     }
 
 
-def run_search_tasks(tasks: list[dict[str, Any]], *, workers: int) -> list[dict[str, Any]]:
-    if workers <= 1:
-        return [run_search_task(task) for task in tasks]
-    from concurrent.futures import ProcessPoolExecutor, as_completed
+def build_stageB_task(output_dir: Path, row: dict[str, Any], seed: int, algorithm: str, battery_kwh: float, seed_dir: str) -> dict[str, Any]:
+    instance_name = str(row["instance"])
+    category = str(row["category"])
+    size = int(as_float(row["size"]))
+    return {
+        "stage": "stageB",
+        "repo_root": str(REPO_ROOT),
+        "output_dir": str(output_dir),
+        "category": category,
+        "instance": instance_name,
+        "size": size,
+        "seed": int(seed),
+        "algorithm": algorithm,
+        "battery_kwh": float(battery_kwh),
+        "bundle_dir": str(bundle_path(category, instance_name).relative_to(REPO_ROOT)),
+        "eval_budget": 16_000,
+        "runtime_cap_seconds": stageB_runtime_cap(size),
+        "comparison_mode": "wallclock",
+        "seed_dir": seed_dir,
+        "checkpoint_path": str(output_dir / "checkpoints" / "wc280_ev_seeded" / f"{instance_name}__{algorithm}__seed{seed}.json"),
+    }
 
+
+def stageB_construction_rows(stageA_dir: Path) -> list[dict[str, Any]]:
+    rows = list(csv.DictReader((stageA_dir / "ev_maximal_280_rows.csv").open(newline="", encoding="utf-8")))
+    selected: list[dict[str, Any]] = []
+    for row in rows:
+        size = int(as_float(row.get("size")))
+        if size == 150 or (size in {100, 200} and stageA_passes(row)):
+            selected.append(row)
+    return sorted(selected, key=lambda row: (int(as_float(row.get("size"))), str(row.get("instance"))))
+
+
+def stageB_runtime_cap(size: int) -> float:
+    if int(size) >= 200:
+        return 2700.0
+    if int(size) >= 150:
+        return 1800.0
+    return 900.0
+
+
+def stageB_queue_row(task: dict[str, Any]) -> dict[str, Any]:
+    return {
+        "instance": task["instance"],
+        "size": task["size"],
+        "seed": task["seed"],
+        "algorithm": task["algorithm"],
+        "battery_kwh": task["battery_kwh"],
+        "runtime_cap_seconds": task["runtime_cap_seconds"],
+        "eval_budget": task["eval_budget"],
+        "checkpoint_path": task["checkpoint_path"],
+        "seed_dir": task["seed_dir"],
+    }
+
+
+def run_search_tasks(
+    tasks: list[dict[str, Any]],
+    *,
+    workers: int,
+    incremental_csv: Path | None = None,
+    hard_timeout: bool = False,
+    retry_failures: bool = False,
+) -> list[dict[str, Any]]:
+    existing: dict[tuple[str, str, int, str], dict[str, Any]] = {}
+    if incremental_csv is not None and incremental_csv.exists():
+        existing = load_search_rows(incremental_csv)
     rows: list[dict[str, Any]] = []
-    with ProcessPoolExecutor(max_workers=int(workers)) as pool:
-        future_map = {pool.submit(run_search_task, task): task for task in tasks}
-        for future in as_completed(future_map):
-            rows.append(future.result())
-    return sorted(rows, key=lambda row: (row.get("instance", ""), int(row.get("seed", 0)), row.get("algorithm", "")))
+    pending: list[dict[str, Any]] = []
+    for task in tasks:
+        prior = existing.get(search_task_key(task))
+        if prior is not None and (str(prior.get("gate_status")) == "OK" or not retry_failures):
+            rows.append(prior | {"queue_action": "SKIPPED_EXISTING"})
+            continue
+        pending.append(task)
+    runner = execute_search_task_subprocess if hard_timeout else run_search_task
+
+    if workers <= 1:
+        for task in pending:
+            row = runner(task)
+            rows.append(row)
+            if incremental_csv is not None:
+                write_csv(incremental_csv, sorted(rows, key=search_row_sort_key))
+    else:
+        from concurrent.futures import ProcessPoolExecutor, as_completed
+
+        with ProcessPoolExecutor(max_workers=int(workers)) as pool:
+            future_map = {pool.submit(runner, task): task for task in pending}
+            for future in as_completed(future_map):
+                rows.append(future.result())
+                if incremental_csv is not None:
+                    write_csv(incremental_csv, sorted(rows, key=search_row_sort_key))
+    return sorted(rows, key=search_row_sort_key)
+
+
+def execute_search_task_subprocess(task: dict[str, Any]) -> dict[str, Any]:
+    output_dir = Path(task["output_dir"])
+    task_root = output_dir / ".tasks"
+    task_root.mkdir(parents=True, exist_ok=True)
+    slug = f"{task['instance']}__{task['algorithm']}__seed{task['seed']}"
+    task_path = task_root / f"{slug}.json"
+    row_path = task_root / f"{slug}_row.json"
+    task_path.write_text(json.dumps(task, ensure_ascii=False), encoding="utf-8")
+    command = [
+        sys.executable,
+        str(Path(__file__).resolve()),
+        "worker-search",
+        "--task-json",
+        str(task_path),
+        "--output-json",
+        str(row_path),
+    ]
+    env = {**os.environ, "PYTHONPATH": "solver/src:models/src:.", "PYTHONHASHSEED": "0"}
+    started = time.perf_counter()
+    try:
+        completed = subprocess.run(
+            command,
+            cwd=REPO_ROOT,
+            text=True,
+            capture_output=True,
+            timeout=float(task["runtime_cap_seconds"]) + HARD_TIMEOUT_GRACE_SECONDS,
+            check=False,
+            env=env,
+        )
+    except subprocess.TimeoutExpired as exc:
+        return timeout_row_from_checkpoint(task, time.perf_counter() - started, exc.stdout, exc.stderr)
+    if completed.returncode != 0:
+        return task_failure_row(task, started, "HALT_WORKER_ERROR", f"Worker exited non-zero: {completed.stderr[-1200:]}")
+    if not row_path.exists():
+        return task_failure_row(task, started, "HALT_WORKER_ERROR", "Worker produced no row JSON.")
+    return read_json(row_path)
 
 
 def run_search_task(task: dict[str, Any]) -> dict[str, Any]:
@@ -387,6 +640,11 @@ def run_search_task(task: dict[str, Any]) -> dict[str, Any]:
     prices = replace(DEFAULT_PRICES, B_battery_kwh=float(task["battery_kwh"]), carbon_price=CARBON_PRICE)
     bundle = load_search_bundle(Path(task["repo_root"]) / task["bundle_dir"])
     initial_solution, seed_source = load_or_build_seed_for_search(task, bundle, prices)
+    checkpoint_path = str(task.get("checkpoint_path", "")).strip()
+    if checkpoint_path:
+        os.environ["SETP_E2_ALNS_CHECKPOINT_PATH"] = checkpoint_path
+        seed_metrics = evaluate(initial_solution, bundle.instance, bundle.carbon_profile, prices)
+        write_checkpoint(Path(checkpoint_path), initial_solution, float(seed_metrics["total_cost"]), 0, 0.0, "ev_maximal_warm_start")
     algorithm = str(task["algorithm"])
     operator_counts: dict[str, Any] = {}
     status = "OK"
@@ -430,7 +688,10 @@ def run_search_task(task: dict[str, Any]) -> dict[str, Any]:
     if violations:
         status = "HALT_INFEASIBLE"
         failure_reason = "; ".join(str(item) for item in violations[:3])
-    elif actual_evals < int(task["eval_budget"]):
+    elif str(task.get("comparison_mode", "fixed_budget")) == "wallclock":
+        status = "OK"
+        failure_reason = ""
+    elif str(task.get("comparison_mode", "fixed_budget")) != "wallclock" and actual_evals < int(task["eval_budget"]):
         status = "HALT_RUNTIME_UNDER_EVAL"
         failure_reason = failure_reason or f"Stopped at {actual_evals}/{task['eval_budget']} evals"
     return search_row(task, status, failure_reason, started, solution, metrics, best_cost, actual_evals, len(violations), operator_counts, seed_source, low_carbon_charging_share(solution, bundle.instance, bundle.carbon_profile, prices) if solution is not None else 0.0)
@@ -455,6 +716,7 @@ def load_or_build_seed_for_search(task: dict[str, Any], bundle: Any, prices: Any
 def search_row(task: dict[str, Any], status: str, failure_reason: str, started: float, solution: Any, metrics: dict[str, Any], best_cost: float, actual_evals: int, violation_count: int, operator_counts: dict[str, Any], seed_source: str, low_carbon_share: float) -> dict[str, Any]:
     route_count = len(solution.routes) if solution is not None else 0
     ev_routes = sum(1 for route in solution.routes if route.vehicle_type.lower() == "ev") if solution is not None else 0
+    checkpoint_path = str(task.get("checkpoint_path", ""))
     return {
         **{key: task[key] for key in ("stage", "category", "instance", "size", "seed", "algorithm", "battery_kwh")},
         "status": status,
@@ -463,6 +725,10 @@ def search_row(task: dict[str, Any], status: str, failure_reason: str, started: 
         "best_cost": best_cost,
         "actual_evals": actual_evals,
         "elapsed_seconds": max(0.0, time.perf_counter() - started),
+        "runtime_cap_seconds": as_float(task.get("runtime_cap_seconds")),
+        "eval_budget": int(as_float(task.get("eval_budget", 0))),
+        "checkpoint_path": checkpoint_path,
+        "checkpoint_readable": Path(checkpoint_path).exists() if checkpoint_path else False,
         "violation_count": violation_count,
         "route_count": route_count,
         "ev_route_count": ev_routes,
@@ -489,6 +755,10 @@ def task_failure_row(task: dict[str, Any], started: float, status: str, reason: 
         "best_cost": math.inf,
         "actual_evals": 0,
         "elapsed_seconds": max(0.0, time.perf_counter() - started),
+        "runtime_cap_seconds": as_float(task.get("runtime_cap_seconds")),
+        "eval_budget": int(as_float(task.get("eval_budget", 0))),
+        "checkpoint_path": str(task.get("checkpoint_path", "")),
+        "checkpoint_readable": False,
         "violation_count": 99,
         "route_count": 0,
         "ev_route_count": 0,
@@ -504,6 +774,79 @@ def task_failure_row(task: dict[str, Any], started: float, status: str, reason: 
         "carbon_best_improvements": 0,
         "operator_counts": "{}",
     }
+
+
+def write_checkpoint(path: Path, solution: Any, best_cost: float, eval_count: int, elapsed: float, operator: str) -> None:
+    from setp_solver.search.metaheuristic_baselines import solution_to_dict
+
+    path.parent.mkdir(parents=True, exist_ok=True)
+    payload = {
+        "schema_version": "setp-09y-checkpoint.v1",
+        "eval": int(eval_count),
+        "time_seconds": float(elapsed),
+        "best_cost": float(best_cost),
+        "best_obj": float(best_cost),
+        "operator": str(operator),
+        "solution": solution_to_dict(solution),
+    }
+    tmp = path.with_suffix(path.suffix + ".tmp")
+    tmp.write_text(json.dumps(payload, ensure_ascii=False), encoding="utf-8")
+    os.replace(tmp, path)
+
+
+def read_checkpoint(path: Path) -> dict[str, Any] | None:
+    try:
+        if not path.exists():
+            return None
+        payload = read_json(path)
+        if "solution" not in payload:
+            return None
+        return payload
+    except Exception:
+        return None
+
+
+def timeout_row_from_checkpoint(task: dict[str, Any], elapsed: float, stdout: str | bytes | None, stderr: str | bytes | None) -> dict[str, Any]:
+    from setp_solver.check import check_solution
+    from setp_solver.cost import evaluate
+    from setp_solver.prices import DEFAULT_PRICES
+    from setp_solver.search.bundle import load_search_bundle
+    from setp_solver.search.carbon_operators import low_carbon_charging_share
+    from setp_solver.search.metaheuristic_baselines import solution_from_dict
+
+    checkpoint_path = Path(str(task.get("checkpoint_path", "")))
+    checkpoint = read_checkpoint(checkpoint_path)
+    if checkpoint is None:
+        row = task_failure_row(task, time.perf_counter() - elapsed, "HALT_HARD_TIMEOUT", "Worker exceeded runtime cap plus grace and no checkpoint was readable.")
+        row["worker_stdout_tail"] = tail_text(stdout)
+        row["worker_stderr_tail"] = tail_text(stderr)
+        return row
+    prices = replace(DEFAULT_PRICES, B_battery_kwh=float(task["battery_kwh"]), carbon_price=CARBON_PRICE)
+    bundle = load_search_bundle(Path(task["repo_root"]) / task["bundle_dir"])
+    solution = solution_from_dict(checkpoint["solution"])
+    violations = check_solution(solution, bundle.instance, prices)
+    metrics = evaluate(solution, bundle.instance, bundle.carbon_profile, prices) if not violations else {}
+    low_share = low_carbon_charging_share(solution, bundle.instance, bundle.carbon_profile, prices) if metrics else 0.0
+    best_cost = float(metrics["total_cost"]) if metrics else math.inf
+    status = "OK" if not violations and math.isfinite(best_cost) else "HALT_HARD_TIMEOUT_WITH_INFEASIBLE_INCUMBENT"
+    row = search_row(
+        task,
+        status,
+        "Worker exceeded runtime cap plus hard-timeout grace; returned last readable checkpoint.",
+        time.perf_counter() - elapsed,
+        solution,
+        metrics,
+        best_cost,
+        int(checkpoint.get("eval", 0)),
+        len(violations),
+        {},
+        str(checkpoint_path),
+        low_share,
+    )
+    row["checkpoint_operator"] = str(checkpoint.get("operator", ""))
+    row["worker_stdout_tail"] = tail_text(stdout)
+    row["worker_stderr_tail"] = tail_text(stderr)
+    return row
 
 
 def load_baseline_solution(bundle: Any, instance_name: str, prices: Any) -> tuple[Any, str]:
@@ -700,6 +1043,40 @@ def majority_cap_bounded(rows: list[dict[str, Any]]) -> bool:
     return bounded / len(rows) > 0.5
 
 
+def stageA_passes(row: dict[str, Any]) -> bool:
+    return (
+        str(row.get("status")) == "OK"
+        and int(as_float(row.get("violation_count"))) == 0
+        and as_float(row.get("ev_route_share")) >= 0.30
+        and as_float(row.get("cost_gap_pct_vs_baseline")) <= 0.0
+        and as_float(row.get("E_total_gap_pct_vs_baseline")) <= 0.0
+    )
+
+
+def stageA_decision(phase0: dict[str, Any], rows: list[dict[str, Any]]) -> dict[str, Any]:
+    if not phase0.get("phase0_ok"):
+        verdict = "HALT_STAGEA_CONSTRUCTION_BROKEN"
+        plain = "环境或默认参数锚漂移，不能解释 280kWh 三班构造泛化。"
+    else:
+        pass_rows = [row for row in rows if stageA_passes(row)]
+        if len(pass_rows) >= 2:
+            verdict = "THREESHIFT_MIXED_GENERALIZES"
+            plain = "280kWh 下至少两个三班实例构造出零违约、EV≥30%、成本和总碳都不劣于全-CV 的非退化混合解。"
+        else:
+            verdict = "THREESHIFT_MIXED_N1_ONLY"
+            plain = "280kWh 下未达到两个三班实例过门槛；混合故事只能算局部 n=1 信号，不能泛化。"
+    assert verdict in STAGEA_VERDICTS
+    return {
+        "verdict": verdict,
+        "plain": plain,
+        "rows": len(rows),
+        "pass_count": sum(1 for row in rows if stageA_passes(row)),
+        "pass_instances": [str(row.get("instance")) for row in rows if stageA_passes(row)],
+        "collection_failure_count": 0 if verdict != "HALT_STAGEA_CONSTRUCTION_BROKEN" else 1,
+        "criteria": "status OK, violation_count=0, ev_route_share>=0.30, cost_gap_pct_vs_baseline<=0, E_total_gap_pct_vs_baseline<=0",
+    }
+
+
 def run_synthesis(args: argparse.Namespace) -> None:
     stage0 = read_json(Path(args.stage0_dir) / "stage0_decision.json") if (Path(args.stage0_dir) / "stage0_decision.json").exists() else {}
     stage1 = read_json(Path(args.stage1_dir) / "stage1_decision.json") if (Path(args.stage1_dir) / "stage1_decision.json").exists() else {}
@@ -719,6 +1096,12 @@ def select_instances(mode: str) -> list[tuple[str, str, int]]:
             for size in sizes:
                 if size >= 75:
                     rows.append((category, f"e2-{category}-{size}c-01", size))
+        return rows
+    if mode == "threeshift_stability_100_200":
+        rows = []
+        for size in (100, 150, 200):
+            for replicate in (1, 2, 3):
+                rows.append(("threeshift", f"e2-threeshift-{size}c-{replicate:02d}", size))
         return rows
     raise ValueError(mode)
 
@@ -818,6 +1201,82 @@ def pair_rows(rows: list[dict[str, Any]], left: str, right: str) -> list[dict[st
     return pairs
 
 
+def stageB_pair_summaries(rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    out: list[dict[str, Any]] = []
+    for baseline in ("LNS", "GA", "PSO", "VNS"):
+        for row in pair_rows(rows, "alns_e2_carbon", baseline):
+            row["comparison"] = f"alns_e2_carbon_vs_{baseline}"
+            out.append(row)
+    return out
+
+
+def stageB_decision(phase0: dict[str, Any], rows: list[dict[str, Any]], pairs_baselines: list[dict[str, Any]], pairs_ablation: list[dict[str, Any]], *, expected_rows: int) -> dict[str, Any]:
+    failures = collection_failures(rows)
+    if not phase0.get("phase0_ok"):
+        failures.append({"failure_bucket": "phase0_not_ok"})
+    if len(rows) != expected_rows:
+        failures.append({"failure_bucket": "missing_rows", "rows": len(rows), "expected_rows": expected_rows})
+    if failures:
+        verdict = "HALT_COLLECTION_COST"
+        plain = "Stage B 数据没有完整闭合，或存在环境漂移/违约/checkpoint 问题；不能下算法对比结论。"
+    else:
+        baseline_stats = stageB_baseline_stats(pairs_baselines)
+        required = ("LNS", "GA", "PSO")
+        alns_wins_required = all(baseline_stats.get(name, {}).get("significant_win", False) for name in required)
+        ablation_stats = wilcoxon_or_sign([as_float(row.get("gap_pct_left_minus_right")) for row in pairs_ablation])
+        ablation_wins = sum(1 for row in pairs_ablation if as_float(row.get("gap_pct_left_minus_right")) < -1e-9)
+        ablation_losses = sum(1 for row in pairs_ablation if as_float(row.get("gap_pct_left_minus_right")) > 1e-9)
+        carbon_ablation_significant = ablation_stats["p_value_less"] < 0.05 and ablation_wins > ablation_losses
+        carbon_rows = [row for row in rows if str(row.get("algorithm")) == "alns_e2_carbon"]
+        mean_ev_share = safe_mean(as_float(row.get("ev_route_share")) for row in carbon_rows)
+        ev_retained = mean_ev_share >= 0.30
+        if alns_wins_required:
+            verdict = "CARBON_REGIME_ALNS_WINS"
+            plain = "EV 在场时，alns_e2_carbon 对 LNS/GA/PSO 达到预注册显著胜出门槛；可进入正式 T3 候选。"
+        else:
+            verdict = "MECHANISM_BUT_TIE"
+            plain = "EV/充电机制在场，但 alns_e2_carbon 未同时显著胜过 LNS/GA/PSO；算法主线应诚实转 DR-ALNS 或更强搜索设计。"
+        return {
+            "verdict": verdict,
+            "plain": plain,
+            "rows": len(rows),
+            "expected_rows": expected_rows,
+            "collection_failure_count": 0,
+            "baseline_stats": baseline_stats,
+            "carbon_ablation_significant": carbon_ablation_significant,
+            "carbon_ablation_p_less": ablation_stats["p_value_less"],
+            "carbon_ablation_method": ablation_stats["method"],
+            "mean_alns_ev_route_share": mean_ev_share,
+            "ev_retained": ev_retained,
+        }
+    assert verdict in STAGEB_VERDICTS
+    return {"verdict": verdict, "plain": plain, "rows": len(rows), "expected_rows": expected_rows, "collection_failure_count": len(failures), "failure_sample": failures[:10]}
+
+
+def stageB_baseline_stats(pairs: list[dict[str, Any]]) -> dict[str, dict[str, Any]]:
+    grouped: dict[str, list[dict[str, Any]]] = {}
+    for row in pairs:
+        grouped.setdefault(str(row.get("right_algorithm")), []).append(row)
+    out: dict[str, dict[str, Any]] = {}
+    for baseline, items in sorted(grouped.items()):
+        gaps = [as_float(row.get("gap_pct_left_minus_right")) for row in items]
+        stats = wilcoxon_or_sign(gaps)
+        wins = sum(1 for gap in gaps if gap < -1e-9)
+        losses = sum(1 for gap in gaps if gap > 1e-9)
+        ties = len(gaps) - wins - losses
+        out[baseline] = {
+            "pairs": len(items),
+            "wins": wins,
+            "ties": ties,
+            "losses": losses,
+            "mean_gap_pct": safe_mean(gaps),
+            "p_less": stats["p_value_less"],
+            "method": stats["method"],
+            "significant_win": stats["p_value_less"] < 0.05 and wins > losses,
+        }
+    return out
+
+
 def wilcoxon_or_sign(values: list[float]) -> dict[str, Any]:
     clean = [float(value) for value in values if math.isfinite(float(value)) and abs(float(value)) > 1e-12]
     if not clean:
@@ -844,6 +1303,8 @@ def collection_failures(rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
             failures.append(row | {"failure_bucket": "python_mismatch"})
         elif str(row.get("numpy")) != GOLD_NUMPY:
             failures.append(row | {"failure_bucket": "numpy_mismatch"})
+        elif str(row.get("checkpoint_path", "")).strip() and not boolish(row.get("checkpoint_readable")):
+            failures.append(row | {"failure_bucket": "checkpoint_unreadable"})
     return failures
 
 
@@ -1005,6 +1466,136 @@ def render_stage2_report(metadata: dict[str, Any], decision: dict[str, Any], hea
     return "\n".join(lines).rstrip() + "\n"
 
 
+def render_stageA_report(metadata: dict[str, Any], phase0: dict[str, Any], decision: dict[str, Any], rows: list[dict[str, Any]], failures: list[dict[str, Any]]) -> str:
+    lines = [
+        "# 09y Stage A Three-Shift 280kWh Construction Generalization",
+        "",
+        f"Evidence level: **{PROBE_LEVEL}**. This is a construction diagnostic, not formal T3.",
+        "",
+        f"Verdict: `{decision['verdict']}`",
+        "",
+        "## Plain Reading",
+        "",
+        str(decision.get("plain", "")),
+        "",
+        "## Gate",
+        "",
+        "- Pass rule: `EV route share >= 0.30`, `violation_count = 0`, `cost gap % <= 0`, and `E_total gap % <= 0` versus the all-CV/near-CV baseline.",
+        f"- Passing instances: `{decision.get('pass_count', 0)}/{decision.get('rows', len(rows))}`",
+        f"- Pass list: `{', '.join(decision.get('pass_instances', [])) or 'none'}`",
+        "",
+        "## Phase 0",
+        "",
+        f"- Phase0 OK: `{phase0.get('phase0_ok')}`",
+        f"- Defaults probe: `{json.dumps(phase0.get('default_probe', {}), sort_keys=True)}`",
+        f"- Diagnostic battery override: `{phase0.get('diagnostic_battery_kwh')}` kWh",
+        f"- HEAD: `{metadata.get('head')}`",
+        "",
+        "## Construction Rows",
+        "",
+        "| instance | EV route share | violation_count | cost gap % | E_total gap % | low-carbon charging share | charging actions | pass | verdict |",
+        "|---|---:|---:|---:|---:|---:|---:|---|---|",
+    ]
+    for row in rows:
+        lines.append(
+            "| {instance} | {ev:.4f} | {violations} | {cost:.4f} | {carbon:.4f} | {low:.4f} | {charge} | {passed} | {verdict} |".format(
+                instance=row.get("instance"),
+                ev=as_float(row.get("ev_route_share")),
+                violations=int(as_float(row.get("violation_count"))),
+                cost=as_float(row.get("cost_gap_pct_vs_baseline")),
+                carbon=as_float(row.get("E_total_gap_pct_vs_baseline")),
+                low=as_float(row.get("low_carbon_charging_share")),
+                charge=int(as_float(row.get("charging_action_count"))),
+                passed="yes" if stageA_passes(row) else "no",
+                verdict=row.get("instance_verdict"),
+            )
+        )
+    lines.extend([
+        "",
+        "## Failure Reasons",
+        "",
+        "| instance | failure_reason | count |",
+        "|---|---|---:|",
+    ])
+    for row in failures:
+        lines.append(f"| {row.get('instance')} | {row.get('failure_reason')} | {row.get('count')} |")
+    lines.extend(common_artifact_lines(metadata))
+    lines.append("- Battery capacity was applied only with in-memory `dataclasses.replace(DEFAULT_PRICES, B_battery_kwh=280.0, carbon_price=0.05034)`.")
+    return "\n".join(lines).rstrip() + "\n"
+
+
+def render_stageB_report(
+    metadata: dict[str, Any],
+    phase0: dict[str, Any],
+    decision: dict[str, Any],
+    construction_rows: list[dict[str, Any]],
+    rows: list[dict[str, Any]],
+    pairs_baselines: list[dict[str, Any]],
+    pairs_ablation: list[dict[str, Any]],
+) -> str:
+    lines = [
+        "# 09y Stage B EV-Seeded Carbon-Regime Algorithm Comparison",
+        "",
+        f"Evidence level: **{PROBE_LEVEL}**. This is a gated diagnostic comparison, not formal T3 until user approves scenario formalization.",
+        "",
+        f"Verdict: `{decision['verdict']}`",
+        "",
+        "## Plain Reading",
+        "",
+        str(decision.get("plain", "")),
+        "",
+        "## Phase 0",
+        "",
+        f"- Phase0 OK: `{phase0.get('phase0_ok')}`",
+        f"- Defaults probe: `{json.dumps(phase0.get('default_probe', {}), sort_keys=True)}`",
+        f"- Diagnostic battery override: `{phase0.get('diagnostic_battery_kwh')}` kWh",
+        f"- HEAD: `{metadata.get('head')}`",
+        "",
+        "## Selected Instances",
+        "",
+        "| instance | size | Stage A EV share | Stage A cost gap % | Stage A E_total gap % |",
+        "|---|---:|---:|---:|---:|",
+    ]
+    for row in construction_rows:
+        lines.append(
+            f"| {row.get('instance')} | {int(as_float(row.get('size')))} | {as_float(row.get('ev_route_share')):.4f} | "
+            f"{as_float(row.get('cost_gap_pct_vs_baseline')):.4f} | {as_float(row.get('E_total_gap_pct_vs_baseline')):.4f} |"
+        )
+    lines.extend([
+        "",
+        "## Collection",
+        "",
+        f"- Rows: `{decision.get('rows', len(rows))}/{decision.get('expected_rows', len(rows))}`",
+        f"- Collection failures: `{decision.get('collection_failure_count', 0)}`",
+        f"- Mean ALNS EV route share: `{decision.get('mean_alns_ev_route_share', 0)}`",
+        f"- EV retained: `{decision.get('ev_retained', False)}`",
+        f"- Carbon ablation significant: `{decision.get('carbon_ablation_significant', False)}` (p_less=`{decision.get('carbon_ablation_p_less', 'NA')}`)",
+        "",
+        "## ALNS vs Baselines",
+        "",
+        "| baseline | pairs | wins/ties/losses | mean gap % | p_less | significant win |",
+        "|---|---:|---:|---:|---:|---|",
+    ])
+    baseline_stats = decision.get("baseline_stats", {})
+    if isinstance(baseline_stats, dict):
+        for baseline, stats in sorted(baseline_stats.items()):
+            lines.append(
+                f"| {baseline} | {stats.get('pairs')} | {stats.get('wins')}/{stats.get('ties')}/{stats.get('losses')} | "
+                f"{as_float(stats.get('mean_gap_pct')):.4f} | {as_float(stats.get('p_less')):.6g} | {stats.get('significant_win')} |"
+            )
+    if decision.get("failure_sample"):
+        lines.extend(["", "## Failure Sample", "", "```json", json.dumps(decision.get("failure_sample"), ensure_ascii=False, indent=2), "```"])
+    lines.extend(common_artifact_lines(metadata))
+    lines.extend([
+        f"- Raw rows: `{metadata.get('output_dir')}/raw_runs.csv`",
+        f"- Baseline pairs: `{metadata.get('output_dir')}/paired_vs_baselines.csv`",
+        f"- Ablation pairs: `{metadata.get('output_dir')}/paired_vs_ablation.csv`",
+        "- Wall-clock caps: 100c=900s, 150c=1800s, 200c=2700s; rows record actual eval counts.",
+        "- Battery capacity was applied only with in-memory `dataclasses.replace(DEFAULT_PRICES, B_battery_kwh=280.0, carbon_price=0.05034)`.",
+    ])
+    return "\n".join(lines).rstrip() + "\n"
+
+
 def render_synthesis(stage0: dict[str, Any], stage1: dict[str, Any], stage2: dict[str, Any]) -> str:
     recommendation = "vanilla ALNS=强基线非碾压者；算法创新主线=DR-ALNS；混合故事限于受约束或现代电池场景"
     if stage1.get("verdict") == "A_SEARCH_GAP_CONFIRMED":
@@ -1093,6 +1684,29 @@ def as_float(value: Any) -> float:
 
 def boolish(value: Any) -> bool:
     return str(value).strip().lower() in {"1", "true", "yes", "y"}
+
+
+def load_search_rows(path: Path) -> dict[tuple[str, str, int, str], dict[str, Any]]:
+    if not path.exists():
+        return {}
+    rows = list(csv.DictReader(path.open(newline="", encoding="utf-8")))
+    return {search_task_key(row): row for row in rows}
+
+
+def search_task_key(row: dict[str, Any]) -> tuple[str, str, int, str]:
+    return (str(row.get("stage")), str(row.get("instance")), int(as_float(row.get("seed", 0))), str(row.get("algorithm")))
+
+
+def search_row_sort_key(row: dict[str, Any]) -> tuple[str, str, int, str]:
+    return (str(row.get("stage")), str(row.get("instance")), int(as_float(row.get("seed", 0))), str(row.get("algorithm")))
+
+
+def tail_text(value: str | bytes | None, limit: int = 1200) -> str:
+    if value is None:
+        return ""
+    if isinstance(value, bytes):
+        value = value.decode("utf-8", errors="replace")
+    return str(value)[-limit:]
 
 
 def numpy_version() -> str:

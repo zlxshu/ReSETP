@@ -3,6 +3,7 @@ from __future__ import annotations
 import math
 import tempfile
 import unittest
+import csv
 from pathlib import Path
 
 from setp_solver.prices import DEFAULT_PRICES
@@ -19,6 +20,10 @@ class EvHeavyRegimeProbeTest(unittest.TestCase):
         gradient = probe.select_instances("gradient01_75_200")
         self.assertEqual(len(gradient), 12)
         self.assertTrue(all(size >= 75 for _, _, size in gradient))
+        stage_a = probe.select_instances("threeshift_stability_100_200")
+        self.assertEqual(len(stage_a), 9)
+        self.assertEqual(stage_a[0], ("threeshift", "e2-threeshift-100c-01", 100))
+        self.assertEqual(stage_a[-1], ("threeshift", "e2-threeshift-200c-03", 200))
         self.assertEqual(probe.parse_seeds("1-3"), [1, 2, 3])
         self.assertEqual(probe.parse_seeds("1,3"), [1, 3])
 
@@ -35,6 +40,46 @@ class EvHeavyRegimeProbeTest(unittest.TestCase):
         self.assertIn("X_SEARCH_MISSED_FEASIBLE_EV", probe.STAGE0_VERDICTS)
         self.assertIn("A_EV_RETAINED_BUT_ALNS_TIES", probe.STAGE1_VERDICTS)
         self.assertIn("B_MODERN_REGIME_WORKS", probe.STAGE2_VERDICTS)
+        self.assertIn("THREESHIFT_MIXED_GENERALIZES", probe.STAGEA_VERDICTS)
+
+    def test_stageA_gate_requires_mixed_zero_violation_and_nonworse_cost_carbon(self) -> None:
+        passing = {
+            "status": "OK",
+            "violation_count": 0,
+            "ev_route_share": 0.30,
+            "cost_gap_pct_vs_baseline": 0.0,
+            "E_total_gap_pct_vs_baseline": -0.1,
+        }
+        failing = passing | {"ev_route_share": 0.29}
+
+        self.assertTrue(probe.stageA_passes(passing))
+        self.assertFalse(probe.stageA_passes(failing))
+
+        decision = probe.stageA_decision({"phase0_ok": True}, [passing, failing])
+        self.assertEqual(decision["verdict"], "THREESHIFT_MIXED_N1_ONLY")
+        decision = probe.stageA_decision({"phase0_ok": True}, [passing, passing])
+        self.assertEqual(decision["verdict"], "THREESHIFT_MIXED_GENERALIZES")
+
+    def test_stageB_selects_anchor_150_and_passed_100_200_instances(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            stage_dir = Path(tmp)
+            rows = [
+                {"category": "threeshift", "instance": "e2-threeshift-100c-01", "size": 100, "status": "OK", "violation_count": 0, "ev_route_share": 0.26, "cost_gap_pct_vs_baseline": -1, "E_total_gap_pct_vs_baseline": -1},
+                {"category": "threeshift", "instance": "e2-threeshift-100c-02", "size": 100, "status": "OK", "violation_count": 0, "ev_route_share": 0.31, "cost_gap_pct_vs_baseline": -1, "E_total_gap_pct_vs_baseline": -1},
+                {"category": "threeshift", "instance": "e2-threeshift-150c-01", "size": 150, "status": "OK", "violation_count": 0, "ev_route_share": 0.20, "cost_gap_pct_vs_baseline": 1, "E_total_gap_pct_vs_baseline": 1},
+                {"category": "threeshift", "instance": "e2-threeshift-200c-01", "size": 200, "status": "OK", "violation_count": 0, "ev_route_share": 0.40, "cost_gap_pct_vs_baseline": -1, "E_total_gap_pct_vs_baseline": -1},
+            ]
+            with (stage_dir / "ev_maximal_280_rows.csv").open("w", encoding="utf-8", newline="") as fh:
+                writer = csv.DictWriter(fh, fieldnames=list(rows[0]))
+                writer.writeheader()
+                writer.writerows(rows)
+
+            selected = probe.stageB_construction_rows(stage_dir)
+
+        self.assertEqual([row["instance"] for row in selected], ["e2-threeshift-100c-02", "e2-threeshift-150c-01", "e2-threeshift-200c-01"])
+        self.assertEqual(probe.stageB_runtime_cap(100), 900.0)
+        self.assertEqual(probe.stageB_runtime_cap(150), 1800.0)
+        self.assertEqual(probe.stageB_runtime_cap(200), 2700.0)
 
     def test_stage0_instance_constructs_checked_rows_without_polluting_default_prices(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
