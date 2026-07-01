@@ -258,9 +258,12 @@ def run_search_tasks(
     pending: list[dict[str, Any]] = []
     for task in tasks:
         prior = existing.get(task_key(task))
-        if prior is not None and (str(prior.get("gate_status")) == "OK" or not retry_failures):
-            rows.append(prior | {"queue_action": "SKIPPED_EXISTING"})
-            continue
+        if prior is not None:
+            prior_status_ok = str(prior.get("status")) == "OK"
+            prior_gate_ok = str(prior.get("gate_status")) == "OK"
+            if not retry_failures or (prior_status_ok and prior_gate_ok):
+                rows.append(prior | {"queue_action": "SKIPPED_EXISTING"})
+                continue
         pending.append(task)
     if workers <= 1:
         for task in pending:
