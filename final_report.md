@@ -1,7 +1,7 @@
 # Final Track19 Report
 
-Final status: STOP_AFTER_CALIBRATION
-Final reason: Stopped after Track19 100c calibration.
+Final status: HALT_WALL_CLOCK
+Final reason: wall clock limit reached at checkpoint
 
 ## Budget Audit
 Verdict: BUDGET_AUDIT_DONE
