@@ -45,6 +45,7 @@ from .carbon_operators import carbon_related_removal, low_carbon_charging_repair
 from .candidates import run_candidate
 from .construction import build_initial_solution
 from .evaluation import EvalBudget, model_cost, EvaluationContext, score_candidate, score_reference
+from .fleet import UNBOUNDED_FLEET
 from .local_search import improve_solution_locally
 from .timing import TimingLedger, attach_timing_ledger, timed_section
 
@@ -341,7 +342,7 @@ def apply_winner_action(
 
     ops = operator_set or WinnerOperatorSet.create()
     rng = rng or np.random.default_rng()
-    search_policy = policy or SearchPolicy(require_charging_signal=False)
+    search_policy = policy or _search_policy_for_instance(context.instance, require_charging_signal=False)
     previous_state = AlnsState(
         solution,
         context,
@@ -729,7 +730,7 @@ def _run_winner_kernel_loop(
     prices: PriceParameters | None = None,
     variant_flags: dict[str, str] | None = None,
 ) -> AlnsRunResult:
-    policy = SearchPolicy(require_charging_signal=config.require_charging_signal)
+    policy = _search_policy_for_instance(instance, require_charging_signal=config.require_charging_signal)
     effective_prices = prices or DEFAULT_PRICES
     context = EvaluationContext(
         instance,
@@ -888,6 +889,21 @@ def _run_winner_kernel_loop(
         {"destroy": destroy_counts_out, "repair": repair_counts_out, "scan": dict(scan_counts), "timing": timing_snapshot},
         history,
     )
+
+
+def _search_policy_for_instance(instance: Any, *, require_charging_signal: bool) -> SearchPolicy:
+    return SearchPolicy(
+        require_charging_signal=bool(require_charging_signal),
+        max_cv=_instance_fleet_limit(instance, "num_cv"),
+        max_ev=_instance_fleet_limit(instance, "num_ev"),
+    )
+
+
+def _instance_fleet_limit(instance: Any, attr: str) -> int:
+    value = getattr(instance, attr, None)
+    if value is None:
+        return UNBOUNDED_FLEET
+    return int(float(value))
 
 
 def _make_winner_acceptance_criterion(initial_state: AlnsState, *, config: WinnerKernelConfig, flags: dict[str, str]) -> Any:
