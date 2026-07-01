@@ -39,6 +39,7 @@ from .candidates import (
     solution_signature_hash,
 )
 from .evaluation import EvalBudget, EvaluationContext, model_cost, score_candidate, score_reference
+from .fleet import normalize_solution_vehicle_trips
 
 
 BASELINE_ALGORITHMS = ("GA", "PSO", "VNS", "ACO", "GA-VNS", "LNS", "GWO", "IWD")
@@ -469,12 +470,21 @@ def _run_pso(session: _SearchSession) -> BaselineRunResult:
             order = _apply_swaps(order, velocity, session.rng, 1.0)
             if session.rng.random() < 0.05:
                 order = _apply_order_move(order, session.rng, session.rng.choice(["swap", "relocate", "two_opt"]))
-            candidate = _order_to_solution(order, session, type_hints=_route_type_hints(particle["pbest"].solution, session.context.instance))
-            scored = session.score(candidate, operator="pso_velocity_decode")
+            if session.rng.random() < 0.30:
+                type_hints = _route_type_hints(particle["pbest"].solution, session.context.instance)
+                candidate = _vehicle_type_mutation(particle["pbest"].solution, session)
+                operator = "pso_vehicle_type_mutation"
+            else:
+                base_hints = dict(particle.get("type_hints") or _route_type_hints(particle["pbest"].solution, session.context.instance))
+                type_hints = _mutated_type_hints(base_hints, order, session, flip_probability=0.08, force_ev=True)
+                candidate = _order_to_solution(order, session, type_hints=type_hints)
+                operator = "pso_velocity_decode"
+            scored = session.score(candidate, operator=operator)
             if scored is None:
                 continue
             particle["order"] = _solution_order(scored.solution, session.context.instance) if scored.feasible else order
             particle["velocity"] = velocity[-max(1, len(order)) :]
+            particle["type_hints"] = _route_type_hints(scored.solution, session.context.instance) if scored.feasible else type_hints
             if scored.objective < particle["pbest"].objective - 1e-9:
                 particle["pbest"] = scored
             if scored.objective < gbest.objective - 1e-9:
@@ -487,17 +497,25 @@ def _run_vns(session: _SearchSession) -> BaselineRunResult:
     n_customers = len(_all_customer_ids(session.context.instance))
     params = {"restart_parameter_r": 3, "ITERS_MAX": max(1, 3 * n_customers), "shaking": "double_bridge+rvnd"}
     while session.can_score():
-        construction_order = _nearest_neighbor_order(session.context.instance, session.rng)
-        construction_order = _apply_order_move(construction_order, session.rng, session.rng.choice(["swap", "relocate", "two_opt"]))
-        start_solution = _order_to_solution(construction_order, session)
-        start_scored = session.score(start_solution, operator="vns_construction")
+        if session.rng.random() < 0.50:
+            start_solution = _vehicle_type_mutation(session.current.solution, session)
+            start_operator = "vns_vehicle_type_construction"
+        else:
+            construction_order = _nearest_neighbor_order(session.context.instance, session.rng)
+            construction_order = _apply_order_move(construction_order, session.rng, session.rng.choice(["swap", "relocate", "two_opt"]))
+            start_solution = _order_to_solution(construction_order, session, type_hints=_exploratory_type_hints(construction_order, session, session.evals))
+            start_operator = "vns_construction"
+        start_scored = session.score(start_solution, operator=start_operator)
         if start_scored is not None and start_scored.feasible and start_scored.objective < session.current.objective:
             session.current = start_scored
         i = 0
         while session.can_score() and i < params["ITERS_MAX"]:
-            base_order = _solution_order(session.current.solution, session.context.instance)
-            shaken_order = _vns_shake(base_order, session.rng, i)
-            shaken = _order_to_solution(shaken_order, session)
+            if i % 4 == 0:
+                shaken = _vehicle_type_mutation(session.current.solution, session)
+            else:
+                base_order = _solution_order(session.current.solution, session.context.instance)
+                shaken_order = _vns_shake(base_order, session.rng, i)
+                shaken = _order_to_solution(shaken_order, session)
             local = _vns_local_search(session, shaken)
             scored = session.score(local, operator="vns_shaking_local_search")
             if scored is not None and scored.feasible and scored.objective < session.current.objective - 1e-9:
@@ -584,16 +602,21 @@ def _run_lns(session: _SearchSession) -> BaselineRunResult:
     params = {"max_iter": 1000, "epsilon": 0.3, "phi": 0.05, "mu": 0.95, "destroy": "random+shaw", "repair": "farthest+regret"}
     scan_solution = _order_to_solution(_angle_scan_order(session.context.instance), session)
     scored_scan = session.score(scan_solution, operator="lns_scan_initial")
-    if scored_scan is not None and scored_scan.feasible:
+    if scored_scan is not None and scored_scan.feasible and scored_scan.objective < session.current.objective - 1e-9:
         session.current = scored_scan
     temperature = -float(params["phi"]) * abs(session.current.objective) / math.log(0.5)
     iteration = 0
     while session.can_score():
         iteration += 1
         destroy, repair = _lns_operator_pair(session.rng)
-        outcome = _alns_neighbor(session, session.current.solution, destroy, repair)
-        candidate = outcome.solution if outcome.produced and outcome.feasible else _order_to_solution(_apply_order_move(_solution_order(session.current.solution, session.context.instance), session.rng, "relocate"), session)
-        scored = session.score(candidate, operator=f"lns_{destroy}_{repair}")
+        if session.rng.random() < 0.35:
+            candidate = _vehicle_type_mutation(session.current.solution, session)
+            operator = "lns_vehicle_type_mutation"
+        else:
+            outcome = _alns_neighbor(session, session.current.solution, destroy, repair)
+            candidate = outcome.solution if outcome.produced and outcome.feasible else _order_to_solution(_apply_order_move(_solution_order(session.current.solution, session.context.instance), session.rng, "relocate"), session)
+            operator = f"lns_{destroy}_{repair}"
+        scored = session.score(candidate, operator=operator)
         session.accept_metropolis(scored, temperature)
         temperature *= float(params["mu"])
         if iteration >= int(params["max_iter"]):
@@ -704,6 +727,45 @@ def _route_type_hints(solution: Solution, instance: Instance) -> dict[str, float
     return hints
 
 
+def _exploratory_type_hints(order: list[str], session: _SearchSession, index: int = 0) -> dict[str, float]:
+    probabilities = (0.05, 0.35, 0.65, 0.85, 1.0)
+    probability = probabilities[int(index) % len(probabilities)]
+    return {
+        customer_id: 0.95 if session.rng.random() < probability else 0.05
+        for customer_id in order
+    }
+
+
+def _mutated_type_hints(
+    base: dict[str, float],
+    order: list[str],
+    session: _SearchSession,
+    *,
+    flip_probability: float = 0.12,
+    force_ev: bool = False,
+) -> dict[str, float]:
+    hints = {customer_id: float(base.get(customer_id, 0.05)) for customer_id in order}
+    changed = False
+    for customer_id in order:
+        if session.rng.random() < float(flip_probability):
+            hints[customer_id] = 0.05 if hints.get(customer_id, 0.05) >= 0.5 else 0.95
+            changed = True
+    if force_ev and order and (not changed or max(hints.values(), default=0.05) < 0.5):
+        sample_size = max(1, min(len(order), len(order) // 3 or 1))
+        for customer_id in session.rng.sample(order, sample_size):
+            hints[customer_id] = 0.95
+    return hints
+
+
+def _crossover_type_hints(parent_a: Solution, parent_b: Solution, order: list[str], session: _SearchSession) -> dict[str, float]:
+    hints_a = _route_type_hints(parent_a, session.context.instance)
+    hints_b = _route_type_hints(parent_b, session.context.instance)
+    hints: dict[str, float] = {}
+    for customer_id in order:
+        hints[customer_id] = hints_a.get(customer_id, 0.05) if session.rng.random() < 0.5 else hints_b.get(customer_id, 0.05)
+    return _mutated_type_hints(hints, order, session, flip_probability=0.04, force_ev=True)
+
+
 def _order_to_solution(
     order: list[str],
     session: _SearchSession,
@@ -756,10 +818,10 @@ def _decode_order_like_random_key(ordered: list[str], session: _SearchSession, t
                 route = Route(f"EV{next_ev}", "ev", depot_id, [depot_id, *customer_ids, depot_id])
                 try:
                     repaired, route_actions = repair_route_charging(route, session.context.instance, session.context.carbon_profile, session.context.prices)
-                    candidate = Solution(routes=[*routes, repaired], charging_actions=[*actions, *route_actions])
+                    candidate = _normalize_solution_for_session(Solution(routes=[*routes, repaired], charging_actions=[*actions, *route_actions]), session)
                     if not check_solution(candidate, session.context.instance, session.context.prices):
-                        routes.append(repaired)
-                        actions.extend(route_actions)
+                        routes = list(candidate.routes)
+                        actions = list(candidate.charging_actions)
                         next_ev += 1
                         continue
                 except ValueError:
@@ -767,9 +829,51 @@ def _decode_order_like_random_key(ordered: list[str], session: _SearchSession, t
             routes.append(Route(f"CV{next_cv}", "cv", depot_id, [depot_id, *customer_ids, depot_id]))
             next_cv += 1
 
-    solution = Solution(routes=routes, charging_actions=actions)
+    solution = _normalize_solution_for_session(Solution(routes=routes, charging_actions=actions), session)
     if check_solution(solution, session.context.instance, session.context.prices):
         return _all_cv_solution_for_session(ordered, session)
+    return solution
+
+
+def _normalize_solution_for_session(solution: Solution, session: _SearchSession) -> Solution:
+    try:
+        return normalize_solution_vehicle_trips(solution, session.context.instance)
+    except ValueError:
+        return solution
+
+
+def _vehicle_type_mutation(solution: Solution, session: _SearchSession, *, attempts: int = 12) -> Solution:
+    routes = list(solution.routes)
+    if not routes:
+        return solution
+    cv_indices = [idx for idx, route in enumerate(routes) if route.vehicle_type.lower() == "cv"]
+    ev_indices = [idx for idx, route in enumerate(routes) if route.vehicle_type.lower() == "ev"]
+    candidate_indices = list(cv_indices or ev_indices)
+    session.rng.shuffle(candidate_indices)
+    for idx in candidate_indices[: max(1, int(attempts))]:
+        route = routes[idx]
+        target_type = "ev" if route.vehicle_type.lower() == "cv" else "cv"
+        new_route = replace(route, vehicle_id=f"{target_type.upper()}M{idx + 1}", vehicle_type=target_type)
+        new_actions = [action for action in solution.charging_actions if action.vehicle_id != route.vehicle_id]
+        if target_type == "ev":
+            try:
+                new_route, route_actions = repair_route_charging(
+                    new_route,
+                    session.context.instance,
+                    session.context.carbon_profile,
+                    session.context.prices,
+                )
+            except ValueError:
+                continue
+            new_actions.extend(route_actions)
+        new_routes = list(routes)
+        new_routes[idx] = new_route
+        candidate = _normalize_solution_for_session(
+            Solution(routes=new_routes, charging_actions=new_actions, cross_site_services=solution.cross_site_services),
+            session,
+        )
+        if not check_solution(candidate, session.context.instance, session.context.prices):
+            return candidate
     return solution
 
 
@@ -843,7 +947,7 @@ def _all_cv_solution_for_session(ordered: list[str], session: _SearchSession) ->
         for customer_ids in depot_plans:
             routes.append(Route(f"CV{idx}", "cv", depot_id, [depot_id, *customer_ids, depot_id]))
             idx += 1
-    return Solution(routes=routes)
+    return _normalize_solution_for_session(Solution(routes=routes), session)
 
 
 def _distance(instance: Instance, a: str, b: str) -> float:
@@ -938,7 +1042,11 @@ def _ga_initial_population(session: _SearchSession, target_population: int) -> l
     for idx in range(desired - 1):
         if not session.can_score():
             break
-        if idx == 0:
+        vehicle_type_seed = idx % 3 == 1
+        if vehicle_type_seed:
+            candidate_order = order
+            operator = "ga_vehicle_type_initialization"
+        elif idx == 0:
             candidate_order = nn_order
             operator = "ga_nn_initialization"
         elif idx % 5 == 0:
@@ -948,8 +1056,12 @@ def _ga_initial_population(session: _SearchSession, target_population: int) -> l
             move = ("swap", "relocate", "two_opt", "double_bridge")[idx % 4]
             candidate_order = _apply_order_move(order, session.rng, move)
             operator = f"ga_seeded_{move}"
-        candidate = _order_to_solution(candidate_order, session)
-        improved = _ga_initial_improvement(candidate, session)
+        if vehicle_type_seed:
+            candidate = _vehicle_type_mutation(session.current.solution, session, attempts=idx + 1)
+            improved = candidate
+        else:
+            candidate = _order_to_solution(candidate_order, session, type_hints=_exploratory_type_hints(candidate_order, session, idx))
+            improved = _ga_initial_improvement(candidate, session)
         scored = session.score(improved, operator=operator)
         if scored is not None:
             population.append(scored)
@@ -990,20 +1102,24 @@ def _ga_crossover(parent_a: Solution, parent_b: Solution, session: _SearchSessio
         return _route_crossover(parent_a, parent_b, session.context, session.rng)
     order_a = _solution_order(parent_a, session.context.instance)
     order_b = _solution_order(parent_b, session.context.instance)
-    return _order_to_solution(_order_crossover(order_a, order_b, session.rng), session, type_hints=_route_type_hints(parent_a, session.context.instance))
+    child_order = _order_crossover(order_a, order_b, session.rng)
+    return _order_to_solution(child_order, session, type_hints=_crossover_type_hints(parent_a, parent_b, child_order, session))
 
 
 def _ga_mutation(solution: Solution, session: _SearchSession) -> Solution:
     order = _solution_order(solution, session.context.instance)
-    mutation = session.rng.choice(["random_node_delete", "random_route_delete", "nearest_node_delete"])
+    mutation = session.rng.choice(["random_node_delete", "random_route_delete", "nearest_node_delete", "vehicle_type_mutation"])
     if mutation == "random_route_delete":
         outcome = _alns_neighbor(session, solution, "whole_route_removal", "regret2_insert_repair")
         return outcome.solution if outcome.produced and outcome.feasible else solution
+    if mutation == "vehicle_type_mutation":
+        return _vehicle_type_mutation(solution, session)
     if mutation == "nearest_node_delete":
         order = _nearest_node_reinsert_order(order, session.context.instance, session.rng)
     else:
         order = _apply_order_move(order, session.rng, session.rng.choice(["swap", "relocate", "two_opt"]))
-    return _order_to_solution(order, session, type_hints=_route_type_hints(solution, session.context.instance))
+    hints = _mutated_type_hints(_route_type_hints(solution, session.context.instance), order, session, flip_probability=0.05)
+    return _order_to_solution(order, session, type_hints=hints)
 
 
 def _nearest_node_reinsert_order(order: list[str], instance: Instance, rng: random.Random) -> list[str]:
@@ -1033,15 +1149,21 @@ def _pso_initial_particles(session: _SearchSession, target_population: int) -> l
     for idx in range(desired - 1):
         if not session.can_score():
             break
-        if idx % 4 == 0:
+        if idx % 3 == 1:
+            candidate = _vehicle_type_mutation(session.current.solution, session, attempts=idx + 1)
+            order = _solution_order(candidate, session.context.instance)
+        elif idx % 4 == 0:
             order = _nearest_neighbor_order(session.context.instance, session.rng)
+            hints = _exploratory_type_hints(order, session, idx)
+            candidate = _order_to_solution(order, session, type_hints=hints)
         else:
             order = _apply_order_move(base_order, session.rng, ("swap", "relocate", "two_opt", "double_bridge")[idx % 4])
-        candidate = _order_to_solution(order, session)
+            hints = _exploratory_type_hints(order, session, idx)
+            candidate = _order_to_solution(order, session, type_hints=hints)
         scored = session.score(candidate, operator="pso_initial_particle")
         if scored is None:
             break
-        particles.append({"order": order, "velocity": [], "pbest": scored})
+        particles.append({"order": order, "velocity": [], "pbest": scored, "type_hints": _route_type_hints(scored.solution, session.context.instance)})
         session.accept_if_better(scored)
     return particles
 
@@ -1057,7 +1179,7 @@ def _vns_shake(order: list[str], rng: random.Random, iteration: int) -> list[str
 def _vns_local_search(session: _SearchSession, solution: Solution) -> Solution:
     best = solution
     best_obj = session.reference_objective(best)
-    neighborhoods = ["swap", "relocate", "two_opt", "alns_shaw"]
+    neighborhoods = ["swap", "relocate", "two_opt", "vehicle_type", "alns_shaw"]
     improved = True
     while improved and session.can_score():
         improved = False
@@ -1068,9 +1190,12 @@ def _vns_local_search(session: _SearchSession, solution: Solution) -> Solution:
             if neighborhood == "alns_shaw":
                 outcome = _alns_neighbor(session, best, "shaw_related_removal", "regret2_insert_repair")
                 candidate = outcome.solution if outcome.produced and outcome.feasible else best
+            elif neighborhood == "vehicle_type":
+                candidate = _vehicle_type_mutation(best, session)
             else:
                 order = _apply_order_move(_solution_order(best, session.context.instance), session.rng, neighborhood)
-                candidate = _order_to_solution(order, session, type_hints=_route_type_hints(best, session.context.instance))
+                hints = _mutated_type_hints(_route_type_hints(best, session.context.instance), order, session, flip_probability=0.04)
+                candidate = _order_to_solution(order, session, type_hints=hints)
             scored = session.score(candidate, operator=f"vns_local_{neighborhood}")
             if scored is not None and scored.feasible and scored.objective < best_obj - 1e-9:
                 best = scored.solution

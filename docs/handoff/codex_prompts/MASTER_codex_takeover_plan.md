@@ -1,6 +1,6 @@
 # MASTER — Codex 接管总规划（Claude credits 将尽，转 Codex 思考+执行）
 
-> 这是 Claude(M1)交给 Codex 的总纲。**Claude 之后基本不在场,Codex 既思考也执行。** 本文件 = 剩余全部规划(总体+局部) + 预备方案 + 行为铁律。每段对话先读本文件 + `CLAUDE-FABLE-5.md` + `HANDOFF.md` + `docs/handoff/memory/`，再动手。
+> 这是 Claude(M1)交给 Codex 的总纲。**Claude 之后基本不在场,Codex 既思考也执行。** 本文件 = 剩余全部规划(总体+局部) + 预备方案 + 行为铁律。每段对话先读 `HANDOFF.md` + `docs/handoff/project_planning_map_20260701.md` + 本文件 + `CLAUDE-FABLE-5.md` + `docs/handoff/memory/`，再动手。
 
 ## 0. 给 Codex 的行为铁律(每段对话自我约束,务必照做)
 - **先读后做**:每轮先读 `CLAUDE-FABLE-5.md`(用它的思考方式:严谨认知、假设驱动、用代码/数据/文献坐实、不臆测、不停在表面猜测、证据与假设冲突就改假设) + 本文件 + `HANDOFF.md` + `docs/handoff/memory/`。
@@ -42,7 +42,7 @@
 2. **E2 算法对比正式跑出 T3/F2**:只有在第2节主叙事确定并通过相应 gate 后才跑。不要在 280kWh EV-dominant 状态下写"混合最优"故事。
 3. **E1-E7 全量重跑 = 新正式数字**:参数/约束主场景确定后再重跑。旧 9da7f8b、旧 80kWh 和 280kWh 暂态结果均不得直接灌正式表图。
 4. **图表顶刊级填数画图(已规划 `docs/handoff/memory/figure-redesign-task.md`)**:壳已锁,用新数字填→画→user 审→进正式。F4 修渲染、F6 补 θ 网格。
-5. **动态需求整合(`docs/handoff/memory/dynamic-demand-integration.md`)**:E7/T9 必须证明 车场协同/收益公平/时变碳 真参与动态路径决策(动态×协同、动态×公平、动态×碳 三交互证据),否则=堆砌。先查 `run_rolling_reoptimization` 每阶段是否解完整目标。
+5. **动态需求整合(`docs/handoff/memory/dynamic-demand-integration.md`)**:E7/T9 必须证明 车场协同/收益公平/时变碳 真参与动态路径决策(动态×协同、动态×公平、动态×碳 三交互证据),否则=堆砌。先查 `run_rolling_reoptimization` 每阶段是否解完整目标。**2026-07-01 明确规划门槛:** 后续 T9 不能只报告动态成本、累计碳、冻结路线和可行性;必须新增或产出三类交互指标:①动态新增/变更需求被跨车场或共享车辆池吸收的比例/案例;②逐阶段车场收益与公平比/公平约束状态,若 `min_fairness_ratio=off` 则明示未完成;③动态重规划对 EV/CV 分工、充电动作、充电时段平均碳强度或新增碳排的影响。若三项无法成立,动态需求只能写作滚动接口与状态继承可行性,不得写成四要素耦合贡献。
 6. **§3 算法章 + §4.4 算法对比重写**(user 手工定稿文字;Codex 备好 T3/收敛/gap 素材)。
 7. **(可选,不阻塞)DR-ALNS**:x86 lane 的锦上添花/future work,训出来再补 T3 的 DR 列;**未训练前不进算法主线、不用于救场**。
 
@@ -56,10 +56,11 @@
 - **跨机**:x86 dr-x86 分支的 DR 小产出经 GitHub/U盘合并;HANDOFF 冲突 x86 标 `[x86/DR]`、M1 标 `[M1]` 两边保留。
 
 ## 5. 索引(已有资产,别重造)
+- 总图:`docs/handoff/project_planning_map_20260701.md`(2026-07-01 新增;先读它理解算法贡献、场景参数、动态需求和正式重跑四条主线的顺序与 gate)。
 - 提示词:`08`(算例已生成)/`09`系列(ALNS 强化历程,e2_alns_final 已实现)/`09b-09h`(扫描/SA/吞吐/诊断,均历史证据)/`10`(基线)/`11`(E2 协议)。
 - 记忆:`docs/handoff/memory/` = project-plan-overview / baseline-algorithm-catalog(8基线设计+harness接口) / figure-redesign-task / dynamic-demand-integration / alns-crush-root-cause / deferred-instance-robustness / feedback-communication-style。
 - 诊断产物:`baselines/e2_alns/`(09b-09h 报告/数据,80kWh 时代,作历史参考)。
 - 算例:`models/data_bundle/generated_instances/e2_benchmark/`(69 算例;正式评价需绑定最终拍板的参数/约束场景)。
 
 ## 一句话给 Codex
-09s 已把主线收回到 Goeke `Q=3650,B=80` 与实体车辆可多趟语义:69/69 E2 warm start 可行。09t 进一步证明 Stage A 低预算全梯度下 ALNS 没被 LNS 系统性压制,但 Stage B 固定 16000 eval 在 LNS 150c 上采集成本过高而 HALT,且 Goeke80 的 EV 使用偏低。**下一步不是继续 09q,也不是直接正式 T3,而是先拍板预演采集口径:wall-clock 公平、降低 eval budget、或优化 LNS 收集路径。** 全程诚实+克制+用 fable5 思考方式约束自己,跑不出就 HALT、绝不注水。
+M1 当前算法线已越过一个新门槛: `metaheuristic_baselines.py` 修复 GA/PSO/LNS/VNS baseline 活性后,单实例 `e2-threeshift-150c-01`、280kWh 门控显示非 ALNS 已能从 `5803.55` 到 `5174.35` 的 EV-heavy 平台,ALNS 变体仍到约 `3701/3639/3364`,最好约 `3364.77`。这只能说明 baseline 已正常发挥且单实例 ALNS 仍强,**不能**写成全实例正式胜利或 carbon-aware 算子胜利。下一步是同实例更长复核:确认非 ALNS 的 `5174` 平台是否会继续下降、ALNS 的 `33xx-37xx` 是否稳定;若稳定,再小范围扩实例。x86 DR 线独立运行,本 M1 线不要接管或混入判断。
