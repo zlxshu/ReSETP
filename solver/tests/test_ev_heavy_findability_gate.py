@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from dataclasses import replace
 import math
+from types import SimpleNamespace
 import unittest
 
 import numpy as np
@@ -26,6 +27,11 @@ class EvHeavyFindabilityGateTest(unittest.TestCase):
         self.assertEqual(source, "rebuilt_make_shared_initial_solution")
         self.assertNotIn("ev_maximal", source)
         self.assertAlmostEqual(float(DEFAULT_PRICES.B_battery_kwh), 80.0)
+
+    def test_markdown_report_path_is_rejected(self) -> None:
+        self.assertIsNone(gate.report_path_from_args(SimpleNamespace(report_path="")))
+        with self.assertRaises(ValueError):
+            gate.report_path_from_args(SimpleNamespace(report_path="baselines/e2_alns/no_report.md"))
 
     def test_search_row_has_required_diagnostic_fields(self) -> None:
         task = {

@@ -89,7 +89,7 @@ def add_common_args(parser: argparse.ArgumentParser) -> None:
     parser.add_argument("--size", type=int, default=DEFAULT_INSTANCE[2])
     parser.add_argument("--battery-kwh", type=float, default=280.0)
     parser.add_argument("--output-dir", default="baselines/e2_alns/ev_heavy_findability_gate_data")
-    parser.add_argument("--report-path", default="baselines/e2_alns/ev_heavy_findability_gate.md")
+    parser.add_argument("--report-path", default="")
 
 
 def main() -> None:
@@ -110,7 +110,7 @@ def main() -> None:
 
 def run_phase1(args: argparse.Namespace) -> dict[str, Any]:
     output_dir = Path(args.output_dir)
-    report_path = Path(args.report_path)
+    report_path = report_path_from_args(args)
     output_dir.mkdir(parents=True, exist_ok=True)
     metadata = build_metadata(args, "phase1")
     regime.write_json(output_dir / "metadata.json", metadata)
@@ -128,14 +128,14 @@ def run_phase1(args: argparse.Namespace) -> dict[str, Any]:
 
     decision = findability_decision(phase0, rows, audit_rows, expected_rows=len(tasks))
     regime.write_json(output_dir / "findability_decision.json", decision)
-    report_path.write_text(render_report(metadata, phase0, decision, rows, audit_rows), encoding="utf-8")
+    write_optional_report(report_path, metadata, phase0, decision, rows, audit_rows)
     regime.write_json(output_dir / "artifact_hashes.json", artifact_hashes(output_dir, report_path))
     return decision
 
 
 def run_neutral_search_gate(args: argparse.Namespace) -> dict[str, Any]:
     output_dir = Path(args.output_dir)
-    report_path = Path(args.report_path)
+    report_path = report_path_from_args(args)
     output_dir.mkdir(parents=True, exist_ok=True)
     metadata = build_metadata(args, "neutral-search-gate")
     regime.write_json(output_dir / "metadata.json", metadata)
@@ -150,14 +150,14 @@ def run_neutral_search_gate(args: argparse.Namespace) -> dict[str, Any]:
     audit_rows = read_optional_csv(output_dir / "ev_swap_audit_rows.csv")
     decision = findability_decision(phase0, rows, audit_rows, expected_rows=len(tasks))
     regime.write_json(output_dir / "findability_decision.json", decision)
-    report_path.write_text(render_report(metadata, phase0, decision, rows, audit_rows), encoding="utf-8")
+    write_optional_report(report_path, metadata, phase0, decision, rows, audit_rows)
     regime.write_json(output_dir / "artifact_hashes.json", artifact_hashes(output_dir, report_path))
     return decision
 
 
 def run_ev_swap_audit(args: argparse.Namespace) -> dict[str, Any]:
     output_dir = Path(args.output_dir)
-    report_path = Path(args.report_path)
+    report_path = report_path_from_args(args)
     output_dir.mkdir(parents=True, exist_ok=True)
     metadata = build_metadata(args, "ev-swap-audit")
     regime.write_json(output_dir / "metadata.json", metadata)
@@ -170,9 +170,32 @@ def run_ev_swap_audit(args: argparse.Namespace) -> dict[str, Any]:
     search_rows = read_optional_csv(output_dir / "raw_runs.csv")
     decision = findability_decision(phase0, search_rows, rows, expected_rows=len(search_rows))
     regime.write_json(output_dir / "findability_decision.json", decision)
-    report_path.write_text(render_report(metadata, phase0, decision, search_rows, rows), encoding="utf-8")
+    write_optional_report(report_path, metadata, phase0, decision, search_rows, rows)
     regime.write_json(output_dir / "artifact_hashes.json", artifact_hashes(output_dir, report_path))
     return decision
+
+
+def report_path_from_args(args: argparse.Namespace) -> Path | None:
+    raw = str(getattr(args, "report_path", "") or "").strip()
+    if not raw:
+        return None
+    path = Path(raw)
+    if path.suffix.lower() == ".md":
+        raise ValueError("Markdown report files are disabled for this workflow; use CSV/JSON artifacts and chat summaries.")
+    return path
+
+
+def write_optional_report(
+    report_path: Path | None,
+    metadata: dict[str, Any],
+    phase0: dict[str, Any],
+    decision: dict[str, Any],
+    rows: list[dict[str, Any]],
+    audit_rows: list[dict[str, Any]],
+) -> None:
+    if report_path is None:
+        return
+    report_path.write_text(render_report(metadata, phase0, decision, rows, audit_rows), encoding="utf-8")
 
 
 def build_metadata(args: argparse.Namespace, command: str) -> dict[str, Any]:
@@ -719,9 +742,12 @@ def row_sort_key(row: dict[str, Any]) -> tuple[str, str, int, str]:
     return task_key(row)
 
 
-def artifact_hashes(output_dir: Path, report_path: Path) -> dict[str, Any]:
+def artifact_hashes(output_dir: Path, report_path: Path | None) -> dict[str, Any]:
     files = []
-    for path in sorted(output_dir.glob("*.csv")) + sorted(output_dir.glob("*.json")) + [report_path]:
+    paths = sorted(output_dir.glob("*.csv")) + sorted(output_dir.glob("*.json"))
+    if report_path is not None:
+        paths.append(report_path)
+    for path in paths:
         if path.exists() and path.name != "artifact_hashes.json":
             files.append({"path": str(path), "sha256": regime.sha256_file(path)})
     return {"schema": "setp-09z-artifact-hashes.v1", "files": files}
