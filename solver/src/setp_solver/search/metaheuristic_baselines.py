@@ -77,6 +77,18 @@ class BaselineRunResult:
     violation_count: int = 0
     operator_counts: dict[str, int] = field(default_factory=dict)
     parameter_notes: dict[str, Any] = field(default_factory=dict)
+    common_preprocess_cost: float | None = None
+    common_preprocess_attempts: int = 0
+    common_preprocess_accepted_flips: int = 0
+    common_lift: float = 0.0
+    native_lift: float = 0.0
+    flip_lift: float = 0.0
+    native_best_updates: int = 0
+    flip_best_updates: int = 0
+    common_best_updates: int = 0
+    route_count_unique: int = 0
+    liveness_verdict: str = ""
+    liveness_flags: list[str] = field(default_factory=list)
 
 
 @dataclass
@@ -105,6 +117,7 @@ class _SearchSession:
         max_runtime_seconds: float,
         initial_solution: Solution,
         prices: PriceParameters | None = None,
+        common_flip_preprocess: bool = False,
     ) -> None:
         self.algorithm = str(algorithm)
         self.bundle = bundle
@@ -138,6 +151,10 @@ class _SearchSession:
         self.route_distance_cache: dict[tuple[str, tuple[str, ...]], float] = {}
         self.decode_cache: dict[tuple[tuple[str, ...], tuple[tuple[str, float], ...], float], Solution] = {}
         self.reference_objective_cache: dict[str, float] = {}
+        self.candidate_route_counts: set[int] = set()
+        self.common_preprocess_cost: float | None = None
+        self.common_preprocess_attempts = 0
+        self.common_preprocess_accepted_flips = 0
         self.current = _ScoredSolution(
             solution=initial_solution,
             objective=float(seed_obj),
@@ -153,10 +170,15 @@ class _SearchSession:
                 "best_cost": self.best.cost,
                 "current_cost": self.current.cost,
                 "operator": "shared_warm_start",
+                "channel": "shared_warm_start",
+                "route_count": len(initial_solution.routes),
+                "signature": self.current.signature,
             }
         ]
         self.operator_counts: dict[str, int] = {}
         self.reference_objective_cache[self.current.signature] = float(seed_obj)
+        if common_flip_preprocess:
+            self.apply_common_flip_preprocess()
 
     @property
     def evals(self) -> int:
@@ -188,10 +210,11 @@ class _SearchSession:
         self.reference_objective_cache[signature] = objective
         return objective
 
-    def score(self, solution: Solution, *, operator: str) -> _ScoredSolution | None:
+    def score(self, solution: Solution, *, operator: str, channel: str | None = None) -> _ScoredSolution | None:
         if not self.can_score():
             return None
         self.count_operator(operator)
+        self.candidate_route_counts.add(len(solution.routes))
         objective = float(score_candidate(solution, self.context, label="candidate"))
         breakdown = self.context.score_breakdowns.get(id(solution), {})
         violation_count = int(breakdown.get("violation_count", 0))
@@ -205,18 +228,60 @@ class _SearchSession:
             signature=solution_signature_hash(solution),
         )
         if feasible and objective < self.best.objective - 1e-9:
+            before_best_cost = self.best.cost
             self.best = scored
             self.history.append(
                 {
                     "eval": self.evals,
                     "time_seconds": time.perf_counter() - self.started,
                     "best_cost": cost,
+                    "best_cost_before": before_best_cost,
                     "current_cost": self.current.cost if self.current.feasible else math.inf,
                     "operator": operator,
+                    "channel": channel or _operator_channel(operator),
+                    "route_count": len(solution.routes),
+                    "signature": scored.signature,
                 }
             )
             _maybe_write_e2_checkpoint(scored.solution, cost, objective, self.evals, time.perf_counter() - self.started, operator)
         return scored
+
+    def apply_common_flip_preprocess(self) -> None:
+        before = self.best
+        outcome = _deterministic_common_flip_closure(self.best.solution, self)
+        self.common_preprocess_attempts = int(outcome["attempts"])
+        self.common_preprocess_accepted_flips = int(outcome["accepted_flips"])
+        solution = outcome["solution"]
+        cost = float(outcome["cost"])
+        self.common_preprocess_cost = cost if math.isfinite(cost) else None
+        if not math.isfinite(cost) or cost >= before.cost - 1e-9:
+            return
+        objective = self.reference_objective(solution)
+        scored = _ScoredSolution(
+            solution=solution,
+            objective=float(objective),
+            cost=cost,
+            feasible=True,
+            signature=solution_signature_hash(solution),
+        )
+        self.current = scored
+        self.best = scored
+        self.history.append(
+            {
+                "eval": 0,
+                "time_seconds": time.perf_counter() - self.started,
+                "best_cost": cost,
+                "best_cost_before": before.cost,
+                "current_cost": cost,
+                "operator": "common_flip_preprocess",
+                "channel": "common_flip_preprocess",
+                "route_count": len(solution.routes),
+                "signature": scored.signature,
+                "accepted_flips": self.common_preprocess_accepted_flips,
+                "attempts": self.common_preprocess_attempts,
+            }
+        )
+        _maybe_write_e2_checkpoint(scored.solution, cost, objective, 0, time.perf_counter() - self.started, "common_flip_preprocess")
 
     def accept_if_better(self, scored: _ScoredSolution | None) -> bool:
         if scored is None:
@@ -244,6 +309,14 @@ class _SearchSession:
         elapsed = time.perf_counter() - self.started
         best_solution = self.best.solution if self.best.feasible else None
         violations = check_solution(best_solution, self.context.instance, self.context.prices) if best_solution is not None else []
+        channel_stats = _channel_lift_stats(self.history)
+        route_count_unique = len(self.candidate_route_counts)
+        liveness_flags: list[str] = []
+        if channel_stats["native_best_updates"] < 1:
+            liveness_flags.append("NO_NATIVE_BEST_UPDATE")
+        if route_count_unique < 5:
+            liveness_flags.append("ROUTE_COUNT_DIVERSITY_LOW")
+        liveness_verdict = "BASELINE_LIVENESS_FAIL" if liveness_flags else "BASELINE_LIVENESS_OK"
         status = "OK"
         reason = failure_reason
         if best_solution is None or violations:
@@ -272,6 +345,18 @@ class _SearchSession:
             violation_count=len(violations),
             operator_counts=dict(self.operator_counts),
             parameter_notes=parameter_notes or {},
+            common_preprocess_cost=self.common_preprocess_cost,
+            common_preprocess_attempts=int(self.common_preprocess_attempts),
+            common_preprocess_accepted_flips=int(self.common_preprocess_accepted_flips),
+            common_lift=float(channel_stats["common_lift"]),
+            native_lift=float(channel_stats["native_lift"]),
+            flip_lift=float(channel_stats["flip_lift"]),
+            native_best_updates=int(channel_stats["native_best_updates"]),
+            flip_best_updates=int(channel_stats["flip_best_updates"]),
+            common_best_updates=int(channel_stats["common_best_updates"]),
+            route_count_unique=route_count_unique,
+            liveness_verdict=liveness_verdict,
+            liveness_flags=liveness_flags,
         )
 
 
@@ -314,6 +399,7 @@ def run_metaheuristic_baseline(
     max_runtime_seconds: float = 900.0,
     initial_solution: Solution | None = None,
     prices: PriceParameters | None = None,
+    common_flip_preprocess: bool = False,
 ) -> BaselineRunResult:
     """Run one formal metaheuristic baseline under the common referee."""
 
@@ -321,7 +407,16 @@ def run_metaheuristic_baseline(
     bundle = load_search_bundle(bundle_dir)
     effective_prices = prices or DEFAULT_PRICES
     warm = initial_solution or make_shared_initial_solution(bundle, prices=effective_prices)
-    session = _SearchSession(name, bundle, seed, eval_budget, max_runtime_seconds, warm, prices=effective_prices)
+    session = _SearchSession(
+        name,
+        bundle,
+        seed,
+        eval_budget,
+        max_runtime_seconds,
+        warm,
+        prices=effective_prices,
+        common_flip_preprocess=bool(common_flip_preprocess),
+    )
     runner = {
         "GA": _run_ga,
         "PSO": _run_pso,
@@ -356,6 +451,18 @@ def baseline_result_to_dict(result: BaselineRunResult, *, include_solution: bool
         "operator_counts": result.operator_counts,
         "parameter_notes": result.parameter_notes,
         "history": result.history,
+        "common_preprocess_cost": result.common_preprocess_cost,
+        "common_preprocess_attempts": result.common_preprocess_attempts,
+        "common_preprocess_accepted_flips": result.common_preprocess_accepted_flips,
+        "common_lift": result.common_lift,
+        "native_lift": result.native_lift,
+        "flip_lift": result.flip_lift,
+        "native_best_updates": result.native_best_updates,
+        "flip_best_updates": result.flip_best_updates,
+        "common_best_updates": result.common_best_updates,
+        "route_count_unique": result.route_count_unique,
+        "liveness_verdict": result.liveness_verdict,
+        "liveness_flags": result.liveness_flags,
     }
     if include_solution:
         row["solution"] = solution_to_dict(result.best_solution) if result.best_solution is not None else None
@@ -707,6 +814,42 @@ def _is_feasible(solution: Solution, context: EvaluationContext) -> bool:
     return not check_solution(solution, context.instance, context.prices)
 
 
+def _operator_channel(operator: str) -> str:
+    if operator == "shared_warm_start":
+        return "shared_warm_start"
+    if operator == "common_flip_preprocess":
+        return "common_flip_preprocess"
+    if "vehicle_type" in operator:
+        return "flip_operator"
+    return f"native_{operator}"
+
+
+def _channel_lift_stats(history: list[dict[str, Any]]) -> dict[str, float | int]:
+    stats: dict[str, float | int] = {
+        "common_lift": 0.0,
+        "native_lift": 0.0,
+        "flip_lift": 0.0,
+        "common_best_updates": 0,
+        "native_best_updates": 0,
+        "flip_best_updates": 0,
+    }
+    for item in history[1:]:
+        before = float(item.get("best_cost_before", item.get("current_cost", math.inf)))
+        after = float(item.get("best_cost", math.inf))
+        lift = max(0.0, before - after) if math.isfinite(before) and math.isfinite(after) else 0.0
+        channel = str(item.get("channel") or _operator_channel(str(item.get("operator", ""))))
+        if channel == "common_flip_preprocess":
+            stats["common_lift"] = float(stats["common_lift"]) + lift
+            stats["common_best_updates"] = int(stats["common_best_updates"]) + 1
+        elif channel == "flip_operator":
+            stats["flip_lift"] = float(stats["flip_lift"]) + lift
+            stats["flip_best_updates"] = int(stats["flip_best_updates"]) + 1
+        elif channel.startswith("native_"):
+            stats["native_lift"] = float(stats["native_lift"]) + lift
+            stats["native_best_updates"] = int(stats["native_best_updates"]) + 1
+    return stats
+
+
 def _all_customer_ids(instance: Instance) -> list[str]:
     return [node.node_id for node in instance.nodes if node.node_type.lower() == "c"]
 
@@ -840,6 +983,71 @@ def _normalize_solution_for_session(solution: Solution, session: _SearchSession)
         return normalize_solution_vehicle_trips(solution, session.context.instance)
     except ValueError:
         return solution
+
+
+def _deterministic_common_flip_closure(solution: Solution, session: _SearchSession) -> dict[str, Any]:
+    current = solution
+    current_cost = _feasible_model_cost(current, session)
+    accepted = 0
+    attempts = 0
+    while attempts < 500 and math.isfinite(current_cost):
+        best_candidate: Solution | None = None
+        best_cost = current_cost
+        for idx, _route in enumerate(list(current.routes)):
+            attempts += 1
+            candidate = _flip_route_type_at_index(current, idx, session)
+            if candidate is None:
+                continue
+            cost = _feasible_model_cost(candidate, session)
+            if cost < best_cost - 1e-9:
+                best_candidate = candidate
+                best_cost = cost
+        if best_candidate is None:
+            break
+        current = best_candidate
+        current_cost = best_cost
+        accepted += 1
+    return {
+        "solution": current,
+        "cost": current_cost,
+        "attempts": attempts,
+        "accepted_flips": accepted,
+    }
+
+
+def _flip_route_type_at_index(solution: Solution, idx: int, session: _SearchSession) -> Solution | None:
+    routes = list(solution.routes)
+    if idx < 0 or idx >= len(routes):
+        return None
+    route = routes[idx]
+    target_type = "ev" if route.vehicle_type.lower() == "cv" else "cv"
+    new_route = replace(route, vehicle_id=f"{target_type.upper()}COMMON_{idx + 1}", vehicle_type=target_type)
+    new_actions = [action for action in solution.charging_actions if action.vehicle_id != route.vehicle_id]
+    if target_type == "ev":
+        try:
+            new_route, route_actions = repair_route_charging(
+                new_route,
+                session.context.instance,
+                session.context.carbon_profile,
+                session.context.prices,
+            )
+        except ValueError:
+            return None
+        new_actions.extend(route_actions)
+    routes[idx] = new_route
+    candidate = _normalize_solution_for_session(
+        Solution(routes=routes, charging_actions=new_actions, cross_site_services=solution.cross_site_services),
+        session,
+    )
+    if check_solution(candidate, session.context.instance, session.context.prices):
+        return None
+    return candidate
+
+
+def _feasible_model_cost(solution: Solution, session: _SearchSession) -> float:
+    if check_solution(solution, session.context.instance, session.context.prices):
+        return math.inf
+    return float(model_cost(solution, session.context))
 
 
 def _vehicle_type_mutation(solution: Solution, session: _SearchSession, *, attempts: int = 12) -> Solution:
@@ -1162,15 +1370,18 @@ def _pso_initial_particles(session: _SearchSession, target_population: int) -> l
         if idx % 3 == 1:
             candidate = _vehicle_type_mutation(session.current.solution, session, attempts=idx + 1)
             order = _solution_order(candidate, session.context.instance)
+            operator = "pso_initial_particle_vehicle_type"
         elif idx % 4 == 0:
             order = _nearest_neighbor_order(session.context.instance, session.rng)
             hints = _exploratory_type_hints(order, session, idx)
             candidate = _order_to_solution(order, session, type_hints=hints)
+            operator = "pso_initial_particle_nn_decode"
         else:
             order = _apply_order_move(base_order, session.rng, ("swap", "relocate", "two_opt", "double_bridge")[idx % 4])
             hints = _exploratory_type_hints(order, session, idx)
             candidate = _order_to_solution(order, session, type_hints=hints)
-        scored = session.score(candidate, operator="pso_initial_particle")
+            operator = "pso_initial_particle_decode"
+        scored = session.score(candidate, operator=operator)
         if scored is None:
             break
         particles.append({"order": order, "velocity": [], "pbest": scored, "type_hints": _route_type_hints(scored.solution, session.context.instance)})
