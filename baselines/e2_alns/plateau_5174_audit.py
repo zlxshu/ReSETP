@@ -179,25 +179,45 @@ def history_tables(raw_rows: list[dict[str, str]]) -> tuple[list[dict[str, Any]]
             continue
         history = json.loads(row.get("history_json") or "[]")
         improvement_ops = [str(item.get("operator", "")) for item in history[1:]]
+        improvement_channels = [str(item.get("channel", "")) for item in history[1:]]
         improvement_evals = [int(item.get("eval", -1)) for item in history[1:]]
         direct_vehicle_channel_ops = [op for op in improvement_ops if "vehicle_type" in op]
+        native_channel_ops = [
+            op
+            for op, channel in zip(improvement_ops, improvement_channels)
+            if channel.startswith("native_")
+        ]
+        flip_channel_ops = [
+            op
+            for op, channel in zip(improvement_ops, improvement_channels)
+            if channel == "flip_operator"
+        ]
+        common_channel_ops = [
+            op
+            for op, channel in zip(improvement_ops, improvement_channels)
+            if channel == "common_flip_preprocess"
+        ]
         pso_initial_vehicle_schedule = (
             row["algorithm"] == "PSO"
             and bool(improvement_ops)
             and set(improvement_ops) == {"pso_initial_particle"}
             and all((eval_count - 2) % 3 == 0 for eval_count in improvement_evals)
         )
-        shared_vehicle_channel = (
-            len(improvement_ops) > 0
-            and (len(direct_vehicle_channel_ops) == len(improvement_ops) or pso_initial_vehicle_schedule)
-        )
-        channel_basis = (
-            "direct_vehicle_type_operator"
-            if len(direct_vehicle_channel_ops) == len(improvement_ops)
-            else "pso_initial_particle_eval_mod3_vehicle_type_branch"
-            if pso_initial_vehicle_schedule
-            else "mixed_or_non_vehicle_channel"
-        )
+        if any(improvement_channels):
+            shared_vehicle_channel = len(improvement_ops) > 0 and not native_channel_ops
+            channel_basis = "explicit_history_channel"
+        else:
+            shared_vehicle_channel = (
+                len(improvement_ops) > 0
+                and (len(direct_vehicle_channel_ops) == len(improvement_ops) or pso_initial_vehicle_schedule)
+            )
+            channel_basis = (
+                "direct_vehicle_type_operator"
+                if len(direct_vehicle_channel_ops) == len(improvement_ops)
+                else "pso_initial_particle_eval_mod3_vehicle_type_branch"
+                if pso_initial_vehicle_schedule
+                else "mixed_or_non_vehicle_channel"
+            )
         for idx, item in enumerate(history):
             history_rows.append(
                 {
@@ -208,6 +228,8 @@ def history_tables(raw_rows: list[dict[str, str]]) -> tuple[list[dict[str, Any]]
                     "best_cost": float(item.get("best_cost", "nan")),
                     "current_cost": float(item.get("current_cost", "nan")),
                     "operator": str(item.get("operator", "")),
+                    "channel": str(item.get("channel", "")),
+                    "route_count": item.get("route_count", ""),
                     "time_seconds": float(item.get("time_seconds", 0.0)),
                 }
             )
@@ -224,6 +246,9 @@ def history_tables(raw_rows: list[dict[str, str]]) -> tuple[list[dict[str, Any]]
                 "unique_improvement_operators": "|".join(sorted(set(improvement_ops))),
                 "all_improvements_vehicle_type_channel": shared_vehicle_channel,
                 "vehicle_type_channel_basis": channel_basis,
+                "native_best_updates": len(native_channel_ops),
+                "flip_best_updates": len(flip_channel_ops),
+                "common_best_updates": len(common_channel_ops),
                 "actual_evals": int(row["actual_evals"]),
                 "post_final_improvement_evals": int(row["actual_evals"]) - (int(history[-1].get("eval", 0)) if history else 0),
             }
@@ -310,7 +335,12 @@ def artifact_hashes_contains_appledouble(path: Path) -> bool:
     if not path.exists():
         return False
     payload = read_json(path)
-    return any("/._" in str(item.get("path", "")) or str(item.get("path", "")).split("/")[-1].startswith("._") for item in payload.get("files", []))
+    files = payload.get("files", [])
+    if isinstance(files, dict):
+        paths = [str(key) for key in files]
+    else:
+        paths = [str(item.get("path", "")) for item in files if isinstance(item, dict)]
+    return any("/._" in path_text or path_text.split("/")[-1].startswith("._") for path_text in paths)
 
 
 def write_artifact_hashes(path: Path) -> None:
