@@ -1,53 +1,25 @@
 {
-  "files": [
-    {
-      "path": "baselines/e2_alns/decoder_fix_validation.md",
-      "sha256": "330383ad88c38b1ff5dbf9651feb0553b94c9834f6bbf20bdf42c457795ed9aa"
-    },
-    {
-      "path": "baselines/e2_alns/decoder_fix_validation_data/best_trajectory.csv",
-      "sha256": "1fbacd32b8045909ea17e5c12da01b0947f45b268e33c7ba1c33e6bf11765f52"
-    },
-    {
-      "path": "baselines/e2_alns/decoder_fix_validation_data/bridge_autopsy.csv",
-      "sha256": "c343d2555f6ec1ed3a3f10d4ed321663343ddd2b256a9d5f2e204c3cea4b84c0"
-    },
-    {
-      "path": "baselines/e2_alns/decoder_fix_validation_data/bridge_summary.csv",
-      "sha256": "59fdf2fad17ac74ae1c94eba7e2f8d7ec583ef2bb041dd763fd2cfb3ffdd548d"
-    },
-    {
-      "path": "baselines/e2_alns/decoder_fix_validation_data/decision.json",
-      "sha256": "eef84fd2e31f5e89f65aec6badbaf9d33f34a4a858f5e1b821648d220688ce03"
-    },
-    {
-      "path": "baselines/e2_alns/decoder_fix_validation_data/decode_events.csv",
-      "sha256": "e6bb740f3586585b40e3b08b32b89ba13578c4b7ec74fdfdd881567f5544186b"
-    },
-    {
-      "path": "baselines/e2_alns/decoder_fix_validation_data/decoder_micro_check.json",
-      "sha256": "9906b0f55306283a938adc915cd3b618556644d44497ed549da799ad63ae8458"
-    },
-    {
-      "path": "baselines/e2_alns/decoder_fix_validation_data/metadata.json",
-      "sha256": "ca52641e7af62cfdf9a840a93c666653c7677e2fb2e242fccd6549dfc965ad66"
-    },
-    {
-      "path": "baselines/e2_alns/decoder_fix_validation_data/model_intent_audit.json",
-      "sha256": "ff256fcdfac939cf9e2c303fc496dcd9e60dfb1a2e197f0ccd14b202ce9fcaad"
-    },
-    {
-      "path": "baselines/e2_alns/decoder_fix_validation_data/phase0_audit.json",
-      "sha256": "69870b3e23dee2060452e615734776b7fc24523e175ce2ee6db36e8ff9ff0232"
-    },
-    {
-      "path": "baselines/e2_alns/decoder_fix_validation_data/pre_fix_decode_summary.json",
-      "sha256": "11803d00522a11676dedfbcc84bfdda72b632dc61c050b10137ae0b082ce1acf"
-    },
-    {
-      "path": "baselines/e2_alns/decoder_fix_validation_data/raw_runs.csv",
-      "sha256": "cc21d10d8ab1832e2dc52cf59f0d4eea81141ca49564e81c1c99169f9fe4d81b"
-    }
+  "exclude": [
+    ".DS_Store",
+    "._*",
+    ".pytest_cache",
+    "__pycache__",
+    "artifact_hashes.json"
   ],
-  "schema": "setp-c1-r1a-r3-artifact-hashes.v1"
+  "files": {
+    "best_trajectory.csv": "1fbacd32b8045909ea17e5c12da01b0947f45b268e33c7ba1c33e6bf11765f52",
+    "bridge_autopsy.csv": "c343d2555f6ec1ed3a3f10d4ed321663343ddd2b256a9d5f2e204c3cea4b84c0",
+    "bridge_summary.csv": "59fdf2fad17ac74ae1c94eba7e2f8d7ec583ef2bb041dd763fd2cfb3ffdd548d",
+    "decision.json": "eef84fd2e31f5e89f65aec6badbaf9d33f34a4a858f5e1b821648d220688ce03",
+    "decode_events.csv": "e6bb740f3586585b40e3b08b32b89ba13578c4b7ec74fdfdd881567f5544186b",
+    "decoder_micro_check.json": "9906b0f55306283a938adc915cd3b618556644d44497ed549da799ad63ae8458",
+    "metadata.json": "ca52641e7af62cfdf9a840a93c666653c7677e2fb2e242fccd6549dfc965ad66",
+    "model_intent_audit.json": "ff256fcdfac939cf9e2c303fc496dcd9e60dfb1a2e197f0ccd14b202ce9fcaad",
+    "phase0_audit.json": "69870b3e23dee2060452e615734776b7fc24523e175ce2ee6db36e8ff9ff0232",
+    "pre_fix_decode_summary.json": "11803d00522a11676dedfbcc84bfdda72b632dc61c050b10137ae0b082ce1acf",
+    "raw_runs.csv": "cc21d10d8ab1832e2dc52cf59f0d4eea81141ca49564e81c1c99169f9fe4d81b"
+  },
+  "generated_at_epoch": 1783014673.231798,
+  "root": "baselines/e2_alns/decoder_fix_validation_data",
+  "schema": "setp-artifact-hashes.v1"
 }

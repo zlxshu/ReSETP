@@ -1,4 +1,11 @@
 {
+  "exclude": [
+    ".DS_Store",
+    "._*",
+    ".pytest_cache",
+    "__pycache__",
+    "artifact_hashes.json"
+  ],
   "files": {
     "anchor_parity.json": "ea04fe9f4d56682a3c581c5b6b11879c300d34b72e3eb38ea11cf50cf3e0ccb9",
     "call_convention_diff.csv": "7b0e6f9ef8b3ae09154663dcb02eea34558fb853255adbfc19ec8ff9b713380a",
@@ -11,5 +18,7 @@
     "report.md": "ee661941cb2ad9fa0b0f904a9f39261f90778d7d94d4a260ed2d6368283bfa03",
     "selected_regression_case.json": "7584b86f6f613f66b5c17aeb335aafb1c236bb761586d283b61918bb113f10ab"
   },
-  "schema": "setp-c1-r1b-artifact-hashes.v1"
+  "generated_at_epoch": 1783014673.239557,
+  "root": "baselines/e2_alns/bridge_fix_validation_data",
+  "schema": "setp-artifact-hashes.v1"
 }

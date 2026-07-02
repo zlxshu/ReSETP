@@ -1,49 +1,62 @@
 {
-  "files": [
-    {
-      "path": "baselines/e2_alns/ev_heavy_findability_gate_long_same_instance_v2_data/._raw_runs.csv",
-      "sha256": "c273cf172ecc4b77c83cca195cccb2c22e19584bcf127a3d24f13815e2b39199"
-    },
-    {
-      "path": "baselines/e2_alns/ev_heavy_findability_gate_long_same_instance_v2_data/._task_queue.csv",
-      "sha256": "c273cf172ecc4b77c83cca195cccb2c22e19584bcf127a3d24f13815e2b39199"
-    },
-    {
-      "path": "baselines/e2_alns/ev_heavy_findability_gate_long_same_instance_v2_data/raw_runs.csv",
-      "sha256": "e01f32472b1574b8a57b07def208bd5733e2d91b0328f1444e1c05aab5f68eec"
-    },
-    {
-      "path": "baselines/e2_alns/ev_heavy_findability_gate_long_same_instance_v2_data/task_queue.csv",
-      "sha256": "82083f81dbab053e9666fc7031be8887fbd1cc963666d7661e5d41fd2f8a1c0f"
-    },
-    {
-      "path": "baselines/e2_alns/ev_heavy_findability_gate_long_same_instance_v2_data/._artifact_hashes.json",
-      "sha256": "c273cf172ecc4b77c83cca195cccb2c22e19584bcf127a3d24f13815e2b39199"
-    },
-    {
-      "path": "baselines/e2_alns/ev_heavy_findability_gate_long_same_instance_v2_data/._findability_decision.json",
-      "sha256": "c273cf172ecc4b77c83cca195cccb2c22e19584bcf127a3d24f13815e2b39199"
-    },
-    {
-      "path": "baselines/e2_alns/ev_heavy_findability_gate_long_same_instance_v2_data/._metadata.json",
-      "sha256": "c273cf172ecc4b77c83cca195cccb2c22e19584bcf127a3d24f13815e2b39199"
-    },
-    {
-      "path": "baselines/e2_alns/ev_heavy_findability_gate_long_same_instance_v2_data/._phase0_audit.json",
-      "sha256": "c273cf172ecc4b77c83cca195cccb2c22e19584bcf127a3d24f13815e2b39199"
-    },
-    {
-      "path": "baselines/e2_alns/ev_heavy_findability_gate_long_same_instance_v2_data/findability_decision.json",
-      "sha256": "b8862837578277c7599fdee074d7f220f87512108604523f5ea6c6c4a746d912"
-    },
-    {
-      "path": "baselines/e2_alns/ev_heavy_findability_gate_long_same_instance_v2_data/metadata.json",
-      "sha256": "a07ab329120d288e9bc6ac34aa45393dc50df58b5dd0ebe555dfaea4675b35f2"
-    },
-    {
-      "path": "baselines/e2_alns/ev_heavy_findability_gate_long_same_instance_v2_data/phase0_audit.json",
-      "sha256": "6f41ad5c572952845633c5c95a6376499e6cd6a7e65833bd8aa29d53cd20a38a"
-    }
+  "exclude": [
+    ".DS_Store",
+    "._*",
+    ".pytest_cache",
+    "__pycache__",
+    "artifact_hashes.json"
   ],
-  "schema": "setp-09z-artifact-hashes.v1"
+  "files": {
+    ".tasks/e2-threeshift-150c-01__GA__seed1.json": "e145cccc3b79607b4160565fa0107b1f005383efdbbece632f1f2875b244e43a",
+    ".tasks/e2-threeshift-150c-01__GA__seed1_row.json": "c38c371cbfc4e91b20e91acd39740c02ec6d5f83d00afe874f570901e029752b",
+    ".tasks/e2-threeshift-150c-01__GA__seed2.json": "ef8bea48f5ca51d0b8f00898820193485676ae699c9e209d0ae617e31899c168",
+    ".tasks/e2-threeshift-150c-01__GA__seed2_row.json": "f693065ae32ad360efc3aaec563a3e2eab6bcd17e2900a59e2ac8365d7b932ca",
+    ".tasks/e2-threeshift-150c-01__LNS__seed1.json": "e608c4f3410f2ca7736e5f8513771a5dedadd22736315e7a79985e531057f455",
+    ".tasks/e2-threeshift-150c-01__LNS__seed1_row.json": "09d95cda611b52304c8696a68cd24641fe3f6d10a0baebb93a7a05481c624b30",
+    ".tasks/e2-threeshift-150c-01__LNS__seed2.json": "b54ec334abe8b4dd455b371eaa206d98ee1c7559cf239a46cea2c2d29cf48180",
+    ".tasks/e2-threeshift-150c-01__LNS__seed2_row.json": "7d90a54d4ea60be599366a9714b4f4d1ca2cc9767a3450258e7b2693aa3d5373",
+    ".tasks/e2-threeshift-150c-01__PSO__seed1.json": "7c11b2cda6aa8736f7fbc58fa70b6113b2a1abed85699ec3fdd4aaf7afeb33e4",
+    ".tasks/e2-threeshift-150c-01__PSO__seed1_row.json": "e3e4b90b1cd1f9e83e24f9a9d0ac440dda8b4732be5faed052f6c9afbfb95151",
+    ".tasks/e2-threeshift-150c-01__PSO__seed2.json": "9c995c7ceaa8711b1b56d0c138ea01a5c864fdfd0cb1171415c7ec777c58bcb2",
+    ".tasks/e2-threeshift-150c-01__PSO__seed2_row.json": "182a6ee1385dacaddc0ee61da885268dda58c4d45a9fc55ac6f3be8d7c101c3e",
+    ".tasks/e2-threeshift-150c-01__VNS__seed1.json": "5d5d88bc0aa5012ce3880ee1f42dc64286b3e1528b5a145b19ff75474754f5bf",
+    ".tasks/e2-threeshift-150c-01__VNS__seed1_row.json": "a92a48ee20a1923d6c1118486de67b5329b0cc287ededf2bb567da4f98fd2e87",
+    ".tasks/e2-threeshift-150c-01__VNS__seed2.json": "a015d29dbda2eb88d3b4e6b1dc0cbf1ecad3f87f79ef149880f8280279912849",
+    ".tasks/e2-threeshift-150c-01__VNS__seed2_row.json": "591dbc06122f7f616a7b792d7d80633f5af9f146c6e6f5d8c71c0ba84ccccd8c",
+    ".tasks/e2-threeshift-150c-01__alns_e2_carbon__seed1.json": "7cdb065f0dcfaa405cf845c830fe6abd71eaf36595c1378b729a81548f8f7948",
+    ".tasks/e2-threeshift-150c-01__alns_e2_carbon__seed1_row.json": "f41a413206bd2f5ce0b39196913cc3f09d80fbf01a94ae6015fca0940e8f252b",
+    ".tasks/e2-threeshift-150c-01__alns_e2_carbon__seed2.json": "ad06565a92e7171e62cdea71230b8e6fcd7065b6204a8f96e6b2467697bd6072",
+    ".tasks/e2-threeshift-150c-01__alns_e2_carbon__seed2_row.json": "d0739cb1b94d0267f91079973b36a160f4dd1630d4e9056fdc80ebc97392f485",
+    ".tasks/e2-threeshift-150c-01__alns_e2_carbon_ablation__seed1.json": "037ae0b764156e4774eb61cd94005a53cc6c6eb3317fca6ad34a5522dcd3e847",
+    ".tasks/e2-threeshift-150c-01__alns_e2_carbon_ablation__seed1_row.json": "167181b1ba160c546d0e573667e0a16dee2e70ec7d8e322cbc811a43a7eccac4",
+    ".tasks/e2-threeshift-150c-01__alns_e2_carbon_ablation__seed2.json": "8c6e1b6165c99b7f1ee98e61d2780dd29ba4597848a24e46904096797ac08f93",
+    ".tasks/e2-threeshift-150c-01__alns_e2_carbon_ablation__seed2_row.json": "fb5c3ab2a30ae33d78dee572f5ec38a88b46316a80b80d708512bc20b24bc8c7",
+    ".tasks/e2-threeshift-150c-01__alns_e2_throughput__seed1.json": "74b75e00c29e4d13342e5e0b2b5ca655fceea303749f29783366af6cc084a3ca",
+    ".tasks/e2-threeshift-150c-01__alns_e2_throughput__seed1_row.json": "327ceb6d680e364948cb47fd42653a82ddeee242e6e194d190f3a8c952dd8c2b",
+    ".tasks/e2-threeshift-150c-01__alns_e2_throughput__seed2.json": "1bf0012f90d4213a37d600230af0d1a33ceeecc59dce0ddae38c90c437198087",
+    ".tasks/e2-threeshift-150c-01__alns_e2_throughput__seed2_row.json": "1af93ab62d36bc4a13660d6660ec7f6b2573a56546012c8ca7fc83eb34509b8d",
+    "artifact_hashes.contaminated_appledouble_20260702.json": "a27e9ab3fc81bf743d867adccef876918bcc1fb78570a21e2a9d746ad92c6bb8",
+    "checkpoints/neutral/e2-threeshift-150c-01__GA__seed1.json": "6fe7099feeecd12195aebb767ba1fbce7fee535ea9092bd77a2747726b89f4c8",
+    "checkpoints/neutral/e2-threeshift-150c-01__GA__seed2.json": "cb081ae2eebdc366abb3e4eb117f84c722bf45b616d3ca58626e977a4ffd229a",
+    "checkpoints/neutral/e2-threeshift-150c-01__LNS__seed1.json": "87eea41fe902ee29a4984d4b182e3315405521958df701315af6be634a4c8623",
+    "checkpoints/neutral/e2-threeshift-150c-01__LNS__seed2.json": "4401726caa1268a35404ff982d54db2ba09b09f655a32e9001b4a2763ab434bd",
+    "checkpoints/neutral/e2-threeshift-150c-01__PSO__seed1.json": "0835b76bb2c3332b7f083770c619f14363a1b77da36228c67c9c0c3ee3e9987c",
+    "checkpoints/neutral/e2-threeshift-150c-01__PSO__seed2.json": "47416164285d44f7c256d57b3063ecd0a8cd6399cc854234665b310d5f52cc99",
+    "checkpoints/neutral/e2-threeshift-150c-01__VNS__seed1.json": "40967c1d8801159597298f22cdb621e63dd32e11ce53e83810159110a285d59f",
+    "checkpoints/neutral/e2-threeshift-150c-01__VNS__seed2.json": "f9ca5e61a631c22a48277941eefc4072108dd017f27ef715640d2938b3087bca",
+    "checkpoints/neutral/e2-threeshift-150c-01__alns_e2_carbon__seed1.json": "aed35e1c259d272b6b8e5c9dc79ed12e69790fe02ce19a2cee3cfe5e9859b605",
+    "checkpoints/neutral/e2-threeshift-150c-01__alns_e2_carbon__seed2.json": "816c01b43378ec5dba576398966a695f7ce9fb28a35cff68c1452fb1be1e1a64",
+    "checkpoints/neutral/e2-threeshift-150c-01__alns_e2_carbon_ablation__seed1.json": "a7862fe765d4ee36a1d83a97ec26eb11efff57b268583563831a311d7d9d89c5",
+    "checkpoints/neutral/e2-threeshift-150c-01__alns_e2_carbon_ablation__seed2.json": "9ad390f1ecc8e125e969ce7b52333d9fadc23aec916dc7421dd051537617ec3a",
+    "checkpoints/neutral/e2-threeshift-150c-01__alns_e2_throughput__seed1.json": "276f0753767a4b62d07ff9dd2076e462638bb50f846b9a869b0b6a175520b836",
+    "checkpoints/neutral/e2-threeshift-150c-01__alns_e2_throughput__seed2.json": "7668043e4cba4a61ba8f29b37ecd3175d5380cd954f8626885ebea554b73b25f",
+    "findability_decision.json": "b8862837578277c7599fdee074d7f220f87512108604523f5ea6c6c4a746d912",
+    "metadata.json": "a07ab329120d288e9bc6ac34aa45393dc50df58b5dd0ebe555dfaea4675b35f2",
+    "phase0_audit.json": "6f41ad5c572952845633c5c95a6376499e6cd6a7e65833bd8aa29d53cd20a38a",
+    "raw_runs.csv": "e01f32472b1574b8a57b07def208bd5733e2d91b0328f1444e1c05aab5f68eec",
+    "task_queue.csv": "82083f81dbab053e9666fc7031be8887fbd1cc963666d7661e5d41fd2f8a1c0f"
+  },
+  "generated_at_epoch": 1783014673.2103329,
+  "root": "baselines/e2_alns/ev_heavy_findability_gate_long_same_instance_v2_data",
+  "schema": "setp-artifact-hashes.v1"
 }
