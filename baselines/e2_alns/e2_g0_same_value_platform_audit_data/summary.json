@@ -1,0 +1,36 @@
+{
+  "all_baseline_improvements_vehicle_type_channel": true,
+  "all_baseline_status_ok_and_full_eval": true,
+  "baseline_algorithms": [
+    "GA",
+    "LNS",
+    "PSO",
+    "VNS"
+  ],
+  "baseline_best_cost": [
+    "5174.345121253789"
+  ],
+  "baseline_best_signature": [
+    "7cc6d853424cabb63602f8e9157561513fd038792153be3eb53eab56e86f09d2"
+  ],
+  "baseline_rows": 8,
+  "battery_kwh": 280.0,
+  "findability_decision_verdict": "PASS_ALL_FIND_OR_INSTANCE_EASY",
+  "findability_max_closed_gap_fraction": 5.697638994742827,
+  "input_dir": "baselines/e2_alns/ev_heavy_findability_gate_long_same_instance_v2_data",
+  "labels": [
+    "HASH_CONTAMINATED_APPLEDOUBLE",
+    "EV_MAXIMAL_REFERENCE_NOT_BOUND"
+  ],
+  "max_final_improvement_eval": 42,
+  "metadata_head": "73cd0fe80d62a30358d2242de445f3563490af52",
+  "min_post_final_improvement_evals": 15958,
+  "output_dir": "baselines/e2_alns/e2_g0_same_value_platform_audit_data",
+  "reason": "All four baselines across two seeds reached the same signature/cost through the shared vehicle-type mutation channel within <=42 evals, then spent the remaining budget without distinct best updates.",
+  "replay_clean": true,
+  "rows_total": 14,
+  "schema": "setp-e2-g0-plateau-5174-audit.v1",
+  "single_baseline_best_cost": true,
+  "single_baseline_best_signature": true,
+  "verdict": "ARTIFICIAL_HOMOGENIZATION"
+}

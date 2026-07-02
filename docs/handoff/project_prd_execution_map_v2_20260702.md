@@ -4,7 +4,7 @@
 执行对象：Codex / M1 主仓 + x86 DR 线
 状态：执行规划，不是实验结论
 
-本文件把 ReSETP 从“单个 E2 卡点排查”升级为“全项目可执行 PRD 与施工图”。它继承 `docs/handoff/project_planning_map_20260701.md` 与 Claude worktree 里的 `docs/handoff/e2_prd_and_planning_map_20260702.md`，但修正两个时效事实：当前主工作区的 GA 长复核已补跑到 `16000/16000 OK`，所以 “GA 仍 9229/16000 HALT” 已过时；`5174.345121253789` 同值平台仍存在，仍是一票否决级审计对象。
+本文件把 ReSETP 从“单个 E2 卡点排查”升级为“全项目可执行 PRD 与施工图”。它继承 `docs/handoff/project_planning_map_20260701.md` 与 Claude worktree 里的 `docs/handoff/e2_prd_and_planning_map_20260702.md`，但修正两个时效事实：当前主工作区的 GA 长复核已补跑到 `16000/16000 OK`，所以 “GA 仍 9229/16000 HALT” 已过时；`5174.345121253789` 同值平台已由 C1 审计判为 `ARTIFICIAL_HOMOGENIZATION`，E2-G0 当前未过门。
 
 `HANDOFF.md` 仍是单一事实源；本文件负责定义“目标、顺序、PDCA、停止条件、记录制度、Codex 任务队列”。冲突时先查 `HANDOFF.md` 和原始 CSV/JSON，再更新本文。
 
@@ -20,14 +20,14 @@
 
 - Goeke80：物理上 EV/充电机制很弱，09y Stage0 标为 `Z_EV_PHYSICALLY_UNSUPPORTED_80KWH`；可作为文献基准场景，但不适合作为现代混合车队主故事。
 - 280kWh：三班倒场景能保住 EV/充电机制；旧 Stage B 在 baseline 活性修复前为 `MECHANISM_BUT_TIE`，baseline 修复后单实例 `e2-threeshift-150c-01` 出现 ALNS 明显低于 GA/LNS/PSO/VNS 平台的信号。
-- 最新同实例长复核：`ev_heavy_findability_gate_long_same_instance_v2_data/raw_runs.csv` 中 14 行全 `OK`，GA/LNS/PSO/VNS 两个 seed 全部为 `5174.345121253789`、EV share `0.6818181818181818`；ALNS 变体为 `3569-3653`。这说明“baseline 会动”已成立，但也说明“baseline 同质化平台”必须解释。
+- 最新同实例长复核：`ev_heavy_findability_gate_long_same_instance_v2_data/raw_runs.csv` 中 14 行全 `OK`，GA/LNS/PSO/VNS 两个 seed 全部为 `5174.345121253789`、EV share `0.6818181818181818`；ALNS 变体为 `3569-3653`。C1 审计 `baselines/e2_alns/e2_g0_same_value_platform_audit_20260702.md` 判定：四个 baseline 的 best 更新均由共享车型翻转通道在 eval≤42 内推到同一平台，之后至少 15958 eval 无 native best 更新；所以该 30% 不能写成对健康 baseline 的正式领先。
 - 主 ALNS 还不独立：`alns_wouda.py` 仍通过 `Reference Algorithm/ALNS-7.0.0@N-Wouda` 引入 ALNS 骨架，`winner_operators.py:914` 仍 import `alns.accept.SimulatedAnnealing`。正式论文算法必须剥离。
 - DR-ALNS 未 paper-ready：Track17/19/20/21/Pilot25 仍是证据修复和动作面 sanity 阶段，不能拿来救 E2 结论；但必须预留接口，并行推进。
 
 推荐主线裁决：
 
-1. 先做 **E2-G0 同值平台审计**，解释 `5174.345` 是合理共同邻域收敛，还是人为同质化通道。
-2. 同步做 **G2 场景口径裁决**，推荐“280kWh 正式化为 modern-battery 主场景，Goeke80 保留为文献基准/对照”，但必须走四同步链和来源说明。
+1. **E2-G0 同值平台审计已完成但未过门**：verdict=`ARTIFICIAL_HOMOGENIZATION`。下一步不是扩跑，而是 C1-R1/C1-R2，把共享车型翻转通道从 baseline 算法成绩中剥离或单独记账，再重跑 G0。
+2. **场景口径已由 user 06-26 拍板,不再重开**：主场景默认 = Goeke80（Q=3650kg, B=80kWh）；280kWh 只作诊断场景,明确不作当前默认、不作现代物流主张、禁止在其 EV-dominant 状态写"混合最优"（MASTER §33/§42）。**电池单参数路线已关门**（09l `BATTERY_ONLY_INSUFFICIENT`：19 个真实来源电池值无一能跨规模稳定 20-80% 混合），不要再调电池。混合车队主故事的正路是**现实运营约束**（车场充电桩容量/资本→公共桩稀缺→EV资本/长路线 eligibility），或诚实降级算法主张。**关键解耦**：E2（算法能不能赢）不依赖混合场景是否解决——ALNS vs 基线在 Goeke80 同一问题上就是有效对比,EV 高低不影响比较合法性。
 3. 在任何正式 T3 前完成 **G1 ALNS 独立化剥离**。
 4. E2 正式比较采用“双账本”：主账本等墙钟公平，副账本固定 eval 闭合子集；任何实际 eval 不足都必须报告，不准把 wall-clock OK 写成 16000 eval OK。
 5. DR-ALNS 作为并行研发线：若过独立门槛，可成为第二算法/扩展表；若不过，写 future work，不污染 E2。
@@ -112,7 +112,7 @@ Codex 每个任务必须先写任务卡：
 
 2026-07-02 本轮圆桌形成如下裁决，已写入本文后续施工图：
 
-- 审稿人票：D1 推荐 `Modern-280 主场景 + Goeke80 文献基准对照`；D2 认为 `5174.345121253789` 同值平台不解释就不能引用 30% 领先；D3 要求正式 T3 前剥离 N-Wouda；D4 DR 只能是第二算法或 future work 候选；D5 顺序为 G0/G2/G1/G3/G5。
+- 审稿人票：D1 曾推荐 `Modern-280 主场景`——**此裁决已作废**（Claude 2026-07-02 核查发现它违背 user 06-26 拍板：主场景锁 Goeke80、280 只作诊断、禁止 280 EV-dominant 下写混合最优。圆桌当时未读到 06-26 决策）。D2/D3/D4/D5 仍有效：`5174.345121253789` 同值平台不解释不能引用 30% 领先；正式 T3 前剥离 N-Wouda；DR 只能第二算法/future work；顺序 G0 先行。
 - 工程负责人票：当前主工作区里 GA under-eval 已由 `16000/16000 OK` 修正，旧 PRD 不能再写成 open HALT；但 `5174.345121253789` 平台仍是最大风险。AppleDouble `._*` 已经污染至少一个 hash 清单的可能性很高，正式证据链必须先清理并重生 hash。
 - 算法/DR 负责人票：DR-ALNS 架构可接入，但性能贡献未成立；`solver/rl` 与 x86 报告只能作为并行研发线，正式 E2 默认关闭 DR checkpoint。`_dynamic_reward` 在缺动态字段时信号不足，不能用 reward shaping 叙事代替动态决策证据。
 
@@ -167,7 +167,7 @@ Act：
 
 1. E2-G0：同值平台与 baseline 健康审计。
 2. E2-G1：ALNS 独立化剥离。
-3. E2-G2：场景口径与 280kWh 正式化。
+3. E2-G2：场景口径合规核对（user 06-26 拍板的落实，不是重新裁决）。
 4. E2-G3：基线集补全与预算协议。
 5. E2-G4：三班稳定性小全量复核。
 6. E2-G5：正式 T3/F2。
@@ -178,15 +178,27 @@ Act：
 
 目标：让 Goeke80/280kWh/其他参数的角色在论文中清楚，不互相救场。
 
-推荐裁决：
+已拍板裁决（user 06-26，不重开）：
 
-- Goeke80 = 文献基准与历史对照。
-- 280kWh = modern-battery 主候选，只有通过四同步链和 E2/E7 机制门槛后才成为正式主场景。
+- **Goeke80（Q=3650kg, B=80kWh）= 当前默认工作场景 / Goeke 对齐基线**。它不是"现代混合车队主张"，只是参数对齐 + 算法可行性底座。
+- **280kWh = 诊断场景，不作当前默认、不作主场景**；禁止在其 EV-dominant 状态写"混合最优"。
+- **电池单参数路线已关门**（09l `BATTERY_ONLY_INSUFFICIENT`）：不再调电池凑混合。
+- **混合车队主故事若要立起来，走现实运营约束**（车场充电桩容量/资本 → 公共桩稀缺 → EV资本/长路线 eligibility），先做证据矩阵 + 最小语义设计，可开关、旧语义可复现；否则诚实降级算法/混合主张。
 
 停止条件：
 
-- 280kWh 若只能在单实例成立，不能全篇主场景化。
-- 若 280kWh 退化为 all-EV 或 EV-heavy 无混合解释，必须写成 modern-battery/EV-dominant 场景，而不是稳定混合车队。
+- 不得为凑混合无来源地调电池或回潮把 80/280 包装成现代主场景。
+- 运营约束路线是潜在长活（09m-09q 多次 HALT），不得为它无限长跑；每步用最小可判实验，跑不出就诚实降级。
+
+**已关闭路线台账（历史已试尽；任何 agent 重提其中一条前，必须先说明"与当时失败条件有何不同"并经 user 明示同意）：**
+
+1. **调电池凑混合** — 09l `BATTERY_ONLY_INSUFFICIENT`：19 个真实来源电池值（60-291kWh）全梯度跑满，无一跨规模稳住 20-80% 混合带。
+2. **拿电池档当机制活跃度轴救 vanilla ALNS** — 09v/09w `INCONCLUSIVE_NO_NONDEGENERATE_TENSION`：80/100/150/280 四档在 75-200c 全部 0/12/0 平局、EV share 恒 ~0.057、充电动作恒 1.0，两次跑满均无分离。
+3. **车队上限直接当混合故事** — 09n `HALT_COLLECTION_COST`：直接套 Goeke metadata cap 大面积 `INIT_INFEASIBLE`，`ev_cap_only` 假平衡出带。正确的实体车硬上限+多趟语义已由 09s 落地为代码事实；但 09s/09t/09u 证明 Goeke80 + 硬上限下 winner EV share 仍仅 ~0.057——**上限本身造不出混合，混合的前提是 EV 物理可行（电池够）**。
+4. **"280+三班+上限能不能出混合"的小验证** — 已跑过且已过：09y Stage A `THREESHIFT_MIXED_GENERALIZES`（9 个三班 100/150/200c 实例 8 个过 EV≥30% 且零违约）。不需要再跑一遍。
+5. **用小算例/低预算快跑先分算法胜负** — 系统性失败：09s smoke 15/17 平 → 09t Stage A 60/69 平 → 09u 等墙钟 20/23 平 → 09v/09w 全平 → 09y Stage B（280 三班正式对比,144/144 行零缺失）0/24/0 全平、mean gap 0.0000%。**低预算配对在本问题上判别力不足,平局是常态输出,不是信号。** 唯一出现过大差距的是 baseline 活性修复后的同实例长复核（5174 vs 3364）——其真伪正是 C1 要审计的对象。
+6. **手写碳算子当算法贡献** — 09x `WEAK_CARBON_SIGNAL` + 09y Stage B carbon vs ablation 全平。算法创新主线出口只剩：C1 审计裁决 5174 平台真伪 → 若真,ALNS 领先成立;若假,按 MASTER 预案诚实降级（"ALNS 与 LNS 同档第一梯队,差异化靠碳机制+DR"）或转 DR-ALNS。
+7. **280kWh 正式化为主场景** — user 06-26 否决（本 v2 圆桌曾误重开,2026-07-02 已作废）。
 
 ### Phase 3：E1/E3/E4/E5/E6/E7 实验重设计
 
@@ -197,6 +209,7 @@ Act：
 - 每个实验必须保留机制指标，不只看 best cost。
 - 动态需求必须证明三交互：动态×协同、动态×公平、动态×时变碳。
 - 如果场景里没有 EV 充电，动态×碳必须诚实降级。
+- **最小充分实验集纪律（战略主编票）**：每个贡献句至少配一张表，多余实验一律不进投稿版。映射：贡献1（模型）→E1/T4 + 跨车场服务量>0；贡献2（碳入决策）→E4/T7/F5 充电时段迁移 + E3/T5 消融边际；贡献3（动态机制）→E7/T9 三交互（③做不出则贡献3 措辞收缩为"机制+接口"，不写四要素耦合）；贡献4（算法）→E2/T3/F2 健康基线 seeds≥5 Wilcoxon。E6/T8 公平 θ 扫描保留（公平是标题要素）。除此之外"看起来更全"的实验不进投稿版。
 
 ### Phase 4：DR-ALNS 并行研发与接入
 
@@ -232,7 +245,7 @@ Act：
 写法原则：
 
 - 论文正文只写最终证据。
-- 附录/方法补充可写“为何选择 modern battery / 为何保留 Goeke baseline / baseline health gate”。
+- 附录/方法补充可写“为何 Goeke80 作为默认基准、为何 280kWh 仅作诊断场景、baseline health gate”。
 - HANDOFF 与报告保留失败史，服务未来答辩和复查。
 
 ---
@@ -256,6 +269,8 @@ E2 = 算法有效性验证。它回答：在同一 ReSETP referee（`evaluate()`
 ### E2-G0：同值平台与 baseline 健康审计
 
 目的：解释 `5174.345121253789` 平台，判断它是合理共同邻域收敛还是人为同质化。
+
+2026-07-02 执行结果：`baselines/e2_alns/e2_g0_same_value_platform_audit_20260702.md` 已完成 C1 审计，输出目录 `baselines/e2_alns/e2_g0_same_value_platform_audit_data/`。verdict=`ARTIFICIAL_HOMOGENIZATION`，标签 `HASH_CONTAMINATED_APPLEDOUBLE`、`EV_MAXIMAL_REFERENCE_NOT_BOUND`。关键证据：8 条 baseline 行全部 `16000/16000 OK` 且 checkpoint 回放零违约，但 best cost/signature/EV share 跨 GA/LNS/PSO/VNS 与 seed1/2 完全相同；所有 best 更新均在 eval≤42 通过共享车型翻转通道完成，之后至少 15958 eval 无 native best 更新。
 
 Plan：
 
@@ -283,6 +298,7 @@ Act：
 - 若 `HEALTHY_SHARED_LOCAL_OPTIMUM`：可进入 G1/G2。
 - 若 `ARTIFICIAL_HOMOGENIZATION`：把车型翻转/充电修复改成各算法自有邻域或显式共同 repair layer，并重跑 G0。
 - 若 unresolved：不得扩大实验。
+- 当前 Act：按 `ARTIFICIAL_HOMOGENIZATION` 执行。G4/G5 冻结；单实例 30% 领先不得写入论文；下一步做 C1-R1 common preprocessing / common repair layer 分账与 C1-R2 operator provenance gate。
 
 约束：
 
@@ -304,9 +320,11 @@ Plan：
 Do：
 
 - 一次 commit 只做剥离，不做算法改进。
-- 加单测：
+- 加单测（**多路径锚集**，单一 100-01 锚不够——它只覆盖 Goeke80 默认路径，覆盖不到 280 override、多趟 `CV1#T1` 语义、`FLEET_SIZE` 硬上限、分级墙钟帽这些新代码路径；审稿人若查算法出身，这些路径都要能证明剥离前后逐位一致）：
   - 无 `Reference Algorithm` / `from alns` / `import alns` 命中主算法路径。
-  - 100-01 锚复现：`4878.331796187524` mean、seed2 `4779.053444002934`，或若当前 E2 280 runner 用另一个锚，则同时记录。
+  - 锚 1（Goeke80 默认）：100-01 `4878.331796187524` mean、seed2 `4779.053444002934`。
+  - 锚 2（280 override + 多趟 + 硬上限）：`e2-threeshift-150c-01` 上 ALNS 主变体的 `best_cost`（当前 `3569-3653` 区间那组）+ best-solution history hash 剥离前后一致。
+  - 若剥离前后任一锚有一位漂移：先做 adapter parity audit 定位（RNG 消耗顺序、浮点求和顺序是常见嫌疑点），可解释则重新钉锚并记录，不可解释不得继续。
   - `solver/tests/` 相关测试全绿。
 
 Check：
@@ -318,29 +336,23 @@ Act：
 
 - 若数值漂移：先做 adapter parity audit，不能带漂移继续。
 
-### E2-G2：场景口径裁决
+### E2-G2：场景口径（已拍板，不重开）
 
-目的：决定 Goeke80 与 280kWh 在论文和正式实验中的角色。
+目的：**不是重新裁决场景**——user 06-26 已锁 Goeke80 为默认、280 只作诊断、电池路线关门（见 Phase 2 与 §0）。本节只做两件事：(a) 确保 E2 正式跑用 Goeke80 默认参数,不用内存 override 冒充默认;(b) 若后续要把混合车队主故事立起来,单独走"运营约束"设计（另起 gate,不在 E2 关键路径上,不阻塞 E2 算法结论）。
 
-Plan：
+关键解耦（省时间的核心）：
 
-- 汇总 09h/09k/09q/09y 证据。
-- 核查 280kWh 来源、质量/容量/固定费/载重口径是否一致。
-- 若正式化 280kWh，执行四同步链。
-- 若保留双场景，明确定义主表/副表/机制表。
-
-推荐：
-
-- 走 `Modern-280 主场景 + Goeke80 文献基准对照`。理由：Goeke80 下 EV/充电/动态×碳退化，无法支撑论文四机制耦合；280kWh 在三班场景有可见机制，但必须来源化和限制叙事。
+- **E2 = 算法能不能赢,在 Goeke80 上就能答**。EV 占比高低不影响"ALNS vs 基线"这个对比的合法性。别再为了让 EV 活跃而反复换场景——那正是 21 天长跑无果的根源。
+- 混合车队 / 时变碳 / 动态×碳 的"可见性"是 **E3/E4/E7 的模型侧问题**,靠运营约束或诚实降级解决,不该拖着 E2 一起卡。
 
 Check：
 
-- `prices.py`、TeX、HANDOFF、证据报告一致。
-- 不再使用内存 override 冒充正式默认。
+- E2 正式跑 `prices.py` 默认 = Goeke80,不用 override。
+- 若启动运营约束设计,先证据矩阵 + 最小语义 + 可开关,不改 cost/check/evaluation。
 
 Act：
 
-- 若用户不拍板：停止正式 E2，仅允许继续审计/剥离。
+- 若正式 E2 入口仍依赖 280kWh 内存 override 冒充默认，或 `prices.py` / TeX / HANDOFF 三处口径不一致：标 `SCENARIO_COMPLIANCE_BLOCKED`，停止正式 E2，仅允许继续 C1 审计和 C3 剥离。
 
 ### E2-G3：基线集补全与预算协议
 
@@ -604,7 +616,9 @@ Act：
 
 ### 5.3 x86 DR PDCA
 
-DR-G0：证据整合
+> **执行地点约束（Claude 2026-07-02 核查）**：Track17/18/19/20/21/Pilot25 的报告**不在 M1 主盘**（`grep` 只命中提到这些标签的规划文档，`solver/rl` 下无对应报告）。它们在 x86 `D:\ReSETP` 的 `dr-x86` 分支/机器上。因此 DR-G0~G4 **只能在 x86 执行**；M1 侧对 DR 的唯一动作是 §5.2 接口预留。M1 的 Codex 不要尝试在本盘"汇总 Track 报告"，会扑空。
+
+DR-G0：证据整合（x86 only）
 
 - Plan：汇总 Track17/18/19/20/21/Pilot25。
 - Check：每条有 verdict、数据路径、当前 blocker。
@@ -662,12 +676,12 @@ future work 门槛：
 |---|---:|---|---|
 | E2 同值平台不可解释 | 高 | GA/LNS/PSO/VNS 同 cost/EV share | E2-G0 一票否决 |
 | 主 ALNS 不独立 | 高 | `from alns` / `Reference Algorithm` | E2-G1 剥离 |
-| 280kWh 参数故事被审稿质疑 | 高 | 只用 override，无来源同步 | G2 四同步链 |
+| 场景口径漂移 / override 污染正式 E2 | 高 | 正式跑仍用 280kWh 内存 override 冒充默认，或 `prices.py` / TeX / HANDOFF 不一致 | C2 场景合规核对；不重开 280 主场景 |
 | 动态需求割裂 | 高 | T9 只报动态成本/累计碳 | E7 三交互门槛 |
 | 对手单薄 | 高 | 只比 SA 或 4 个弱 baseline | G3 补全基线 |
 | 固定 eval 与等墙钟混写 | 高 | status OK 但 actual_evals<16000 | 双账本 |
 | DR 线过度包装 | 高 | `VALID_BUT_WEAK` 写成 win | DR 入论文门槛 |
-| AppleDouble/Git 噪声 | 中 | `._*`、pack warning | C0 仓库卫生 |
+| AppleDouble 污染证据链 | 高（已实锤，非隐患） | `._*` 已进入 `artifact_hashes.json`（含 C1 审计目标 `long_same_instance_v2_data`）；repo 有 14394 个 `._*` 文件；`.git/objects/pack` 有 `._pack-*` | C0 先清理再重算 hash；受污染 hash 标 `HASH_CONTAMINATED_APPLEDOUBLE`，不作正式证据 |
 | 旧 471 数字污染新场景 | 中 | 表图混旧参数 | Phase 5 前清单 |
 | carbon 算子无增益 | 中 | carbon≈ablation | E2 主变体预注册 |
 
@@ -697,6 +711,8 @@ future work 门槛：
 
 目标：解释同值平台。
 
+状态：2026-07-02 已完成，未过门。报告 `baselines/e2_alns/e2_g0_same_value_platform_audit_20260702.md`；数据 `baselines/e2_alns/e2_g0_same_value_platform_audit_data/summary.json`；verdict=`ARTIFICIAL_HOMOGENIZATION`。禁止继续把 `5174 vs 3569-3653` 写成健康 baseline 下的 30% 正式领先。
+
 执行提示词：`docs/handoff/codex_prompts/20260702_c1_e2_g0_plateau_5174_audit.md`。
 
 输入：
@@ -715,22 +731,23 @@ future work 门槛：
 验收：
 
 - verdict 三选一：`HEALTHY_SHARED_LOCAL_OPTIMUM` / `ARTIFICIAL_HOMOGENIZATION` / `BASELINE_HEALTH_UNRESOLVED`。
+- 实际验收：`ARTIFICIAL_HOMOGENIZATION`。后续任务改为 C1-R1/C1-R2 整改与重审，不启动 C5/C6。
 
-### C2 E2-G2 场景裁决包
+### C2 E2-G2 场景合规包（不是重新裁决）
 
-目标：给用户一个可拍板的 Goeke80/280kWh 方案。
+场景口径 user 06-26 已拍板、不重开：Goeke80 默认、280kWh 只作诊断（见 Phase 2 已拍板裁决 + 已关闭路线台账第 7 条）。本包只做合规落实：
 
 步骤：
 
-1. 汇总 Goeke80 失败证据。
-2. 汇总 280kWh 成功与退化证据。
-3. 列四同步变更点。
-4. 给推荐裁决与替代方案。
+1. 盘点代码/runner 中所有 280 内存 override 使用点，确认正式 E2 入口用 `prices.py` 默认参数（Goeke80）、不用 override 冒充默认。
+2. 核对 `prices.py` 注释、TeX 参数表、HANDOFF 三处口径一致（Goeke80 默认 + 80/280 历史痕迹保留）；发现漂移只登记并报 user，不擅自改 TeX 主张。
+3. 280kWh 诊断产物（09y 三班混合泛化、5174 平台链）在论文中只进"诊断/机制"叙述位，不进主场景表图。
 
 验收：
 
-- 用户可直接拍板。
-- 未拍板不跑正式 E2。
+- 正式 E2 运行配置 = 默认 `prices.py`，零 override。
+- 三处事实源口径一致，或差异已登记报 user。
+- 全程不需要 user 重新拍板场景。
 
 ### C3 E2-G1 独立 ALNS 剥离
 
@@ -791,21 +808,23 @@ future work 门槛：
 
 - `decision.json` 为正式通过，或明确 `HALT_FORMAL_E2`。
 
-### D1 DR 证据整合
+### DR-C1 DR 证据整合（x86 only）
 
 目标：把 x86 DR 线从散点变成 gate 表。
 
-输入：Track17/18/19/20/21/Pilot25 报告。
+输入：Track17/18/19/20/21/Pilot25 报告（在 x86 `dr-x86`，不在 M1 主盘）。
 
 验收：每条线有 verdict、blocker、下一步、是否可入论文。
 
-### D2 DR 接口预留
+（任务代号用 `DR-C1`/`DR-C2`/`E7-C1`，避免与圆桌决策标签 D1-D5 混淆。）
+
+### DR-C2 DR 接口预留（M1 侧最小实现）
 
 目标：独立 ALNS 提供策略注入点。
 
 验收：假策略单测通过，默认结果不变。
 
-### R1 E7 动态三交互设计
+### E7-C1 E7 动态三交互设计
 
 目标：正式跑 E7 前先设计指标。
 
@@ -827,6 +846,8 @@ future work 门槛：
 
 这些内容不一定进正文，但必须进入 HANDOFF、appendix 候选和答辩材料。
 
+**叙事三分置（战略主编票）**：正文只留"结晶"（三个建模级修正的终态作为模型定义如实写：`m^g/m^e` 实体车硬上限 + 多趟 `CV1#T1` 语义进 §2/§3，`Q=3650` Goeke 口径进参数表；至多一句"实现经过多轮语义审计"），失败链留作审稿回复"弹药"，全史留 HANDOFF/reports。后续应新建一份 `docs/handoff/review_rebuttal_ammunition_index.md`（Claude 写文档职责内）：预先把常见质疑映射到证据——"基线是否健康"→liveness 修复 + C1 审计链；"参数为何 280"→09h/09l/09y 时间线（参数选择先于且独立于算法胜负）；"多趟语义依据"→`fleet_hard_cap` 证据文档。
+
 ---
 
 ## 9. 下一步裁决
@@ -835,12 +856,14 @@ future work 门槛：
 
 1. C0：本 v2 入主线、仓库卫生、事实冻结。
 2. C1：`5174.345` 平台审计。
-3. C2：Goeke80/280kWh 场景拍板包。
+3. C2：Goeke80/280kWh 场景合规核对（06-26 拍板的落实，无需 user 重新决策）。
 4. C3：ALNS 独立化。
 5. C4：预算协议与 baseline health gate。
 6. C5：三班稳定性复核。
 7. C6：正式 E2。
-8. R1：E7 三交互设计。
+8. E7-C1：E7 三交互设计。
 9. Phase 5：正式 E1-E7 重跑与论文重灌。
 
-若 C1 失败，不做 C5/C6。若 C2 未拍板，不做正式重跑。若 C3 漂移，不做正式 T3。若 DR 未过门，只写 future work。
+C1、C2、C3 三者的依赖关系：C1（G0 审计）是硬前置，必须先过。C2（场景合规核对，纯文档/配置核对，无需 user 决策）与 C3（ALNS 独立化剥离，纯代码）**相互独立、可并行**——C3 的锚集已设计成不依赖 C2（见 G1 多路径锚集）。两者都必须在 C5/C6 正式跑之前完成，但彼此不阻塞，不强制串行。
+
+若 C1 失败，不做 C5/C6。若 C2 合规核对未过（正式跑仍依赖 override 冒充默认或三处口径漂移未登记），不做正式重跑。若 C3 漂移，不做正式 T3。若 DR 未过门，只写 future work。
