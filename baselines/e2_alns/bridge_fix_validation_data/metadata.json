@@ -1,0 +1,28 @@
+{
+  "battery_override": "dataclasses.replace(DEFAULT_PRICES, B_battery_kwh=280.0, carbon_price=0.05034)",
+  "boundary": "baseline health repair only; not formal T3; no algorithm win/loss claim",
+  "eval_budget": 2000,
+  "head": "dda5e6d1d008ec4ccd8301db3e21ad88ae76fbbf",
+  "instance": "e2-threeshift-150c-01",
+  "numpy": "2.3.5",
+  "objective": "让 baseline 的 destroy/repair 桥在 5174 平台解上能产出可行邻居，同时不改变 ALNS 主算法任何行为。",
+  "output_dir": "baselines/e2_alns/bridge_fix_validation_data",
+  "protected_files": [
+    "cost.py",
+    "check.py",
+    "search/evaluation.py",
+    "prices.py defaults",
+    "TeX",
+    "feasible_repair.py",
+    "resetp_alns/",
+    "ALNS main path"
+  ],
+  "python": "/opt/anaconda3/bin/python3.13",
+  "pythonhashseed": "0",
+  "runtime_cap_seconds": 600.0,
+  "schema": "setp-c1-r1b-bridge-fix-validation.v1",
+  "seed": 1,
+  "started_at_epoch": 1783012179.112134,
+  "task": "C1-R1b bridge-side destroy/repair fix",
+  "trials": 200
+}
