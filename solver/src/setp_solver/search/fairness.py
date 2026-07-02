@@ -22,7 +22,7 @@ from ..instance_loader import Instance, Node
 from ..prices import DEFAULT_PRICES, PriceParameters
 from ..profit import calculate_depot_profits, infer_customer_home_depots
 from ..solution import ChargingAction, Route, Solution
-from .alns_wouda import SearchPolicy, run_alns_wouda
+from .alns_wouda import run_alns_wouda
 from .bundle import load_search_bundle
 
 
@@ -69,7 +69,6 @@ def run_independent_profit_baselines(
             carbon_quota_kg=carbon_quota_kg,
             eval_budget=eval_budget,
             max_runtime_seconds=max_runtime_seconds,
-            policy=SearchPolicy(require_charging_signal=False),
         )
         subbundle = load_search_bundle(subbundle_dir)
         sub_owners = {
@@ -261,7 +260,6 @@ def run_equal_budget_fairness_comparison(
         carbon_weight=1.0,
         eval_budget=eval_budget,
         max_runtime_seconds=max_runtime_seconds,
-        policy=SearchPolicy(require_charging_signal=False),
         fairness_enabled=True,
         independent_profit=independent_profit,
         fairness_theta=theta,
@@ -275,7 +273,6 @@ def run_equal_budget_fairness_comparison(
         carbon_weight=1.0,
         eval_budget=eval_budget,
         max_runtime_seconds=max_runtime_seconds,
-        policy=SearchPolicy(require_charging_signal=False),
         fairness_enabled=False,
         independent_profit=independent_profit,
         fairness_theta=theta,

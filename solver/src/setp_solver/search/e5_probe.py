@@ -24,7 +24,7 @@ from ..cost import (
 )
 from ..prices import DEFAULT_PRICES, PriceParameters
 from ..solution import Solution
-from .alns_wouda import AlnsRunResult, SearchPolicy, run_alns_wouda
+from .alns_wouda import AlnsRunResult, SearchPolicy, run_alns_wouda, search_policy_for_bundle
 from .bundle import load_search_bundle
 
 
@@ -94,7 +94,7 @@ def run_e5_probe(
     bundle = load_search_bundle(bundle_dir)
     real_budget_mode = iterations is None
     check_k0 = real_budget_mode if enforce_k0 is None else enforce_k0
-    probe_policy = policy or SearchPolicy(require_charging_signal=True)
+    probe_policy = policy or search_policy_for_bundle(bundle_dir, require_charging_signal=True)
     carbon_on = run_alns_wouda(
         bundle_dir,
         iterations=iterations,

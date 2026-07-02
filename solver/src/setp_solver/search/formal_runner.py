@@ -26,7 +26,7 @@ from ..cost import evaluate
 from ..prices import DEFAULT_PRICES, PriceParameters
 from ..profit import calculate_depot_profits
 from ..solution import ChargingAction, CrossSiteService, Route, Solution
-from .alns_wouda import SearchPolicy, run_alns_wouda
+from .alns_wouda import SearchPolicy, run_alns_wouda, search_policy_for_bundle
 from .bundle import load_search_bundle
 from .candidates import PRIMARY_ALGORITHM, Z1_CANDIDATES, run_candidate
 from .candidates import make_shared_initial_solution
@@ -183,7 +183,6 @@ def compute_default_carbon_quota(
         seed=seed,
         eval_budget=eval_budget,
         max_runtime_seconds=max_runtime_seconds,
-        policy=SearchPolicy(require_charging_signal=False),
         carbon_quota_kg=math.inf,
     )
     elapsed_seconds = time.perf_counter() - started
@@ -410,9 +409,9 @@ def run_e1_main_and_counterfactuals(
     )["default_ce_kg"]
     ledger = ResumeLedger(out / "formal_runner_manifest.json")
     variants = {
-        "mixed": SearchPolicy(require_charging_signal=False),
-        "cv_only": SearchPolicy(require_charging_signal=False, max_ev=0),
-        "ev_only": SearchPolicy(require_charging_signal=False, max_cv=0),
+        "mixed": search_policy_for_bundle(bundle_dir, require_charging_signal=False),
+        "cv_only": search_policy_for_bundle(bundle_dir, require_charging_signal=False, max_ev=0),
+        "ev_only": search_policy_for_bundle(bundle_dir, require_charging_signal=False, max_cv=0),
     }
     rows = []
     for variant, policy in variants.items():
@@ -1011,7 +1010,6 @@ def _run_e4_once(
         max_runtime_seconds=max_runtime_seconds,
         carbon_quota_kg=float(base_emissions) * float(quota_factor),
         prices=prices,
-        policy=SearchPolicy(require_charging_signal=False),
     )
     result.update(
         {
@@ -1170,7 +1168,6 @@ def _run_e3_variant(
         seed=seed,
         eval_budget=eval_budget,
         max_runtime_seconds=max_runtime_seconds,
-        policy=SearchPolicy(require_charging_signal=False),
         carbon_quota_kg=float(spec["carbon_quota_kg"]),
         carbon_weight=float(spec["carbon_weight"]),
         prices=prices,
@@ -1329,7 +1326,6 @@ def _run_e3_fairness_variant(
         seed=seed,
         eval_budget=eval_budget,
         max_runtime_seconds=max_runtime_seconds,
-        policy=SearchPolicy(require_charging_signal=False),
         carbon_quota_kg=carbon_quota_kg,
         carbon_weight=carbon_price_factor,
         fairness_enabled=True,

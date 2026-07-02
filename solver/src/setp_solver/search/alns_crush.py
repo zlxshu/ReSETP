@@ -26,7 +26,7 @@ from ..cost import evaluate
 from ..instance_loader import Instance
 from ..prices import DEFAULT_PRICES, PriceParameters
 from ..solution import ChargingAction, CrossSiteService, Route, Solution
-from .alns_wouda import SearchPolicy, run_alns_wouda
+from .alns_wouda import run_alns_wouda
 from .bundle import load_search_bundle
 from .candidates import make_shared_initial_solution, run_candidate
 from .charging import repair_route_charging
@@ -544,7 +544,6 @@ def _phase0_solutions(
         bundle_dir,
         iterations=None,
         seed=seed,
-        policy=SearchPolicy(require_charging_signal=False),
         eval_budget=eval_budget,
         max_runtime_seconds=max_runtime_seconds,
         initial_solution=warm,
@@ -567,7 +566,6 @@ def _run_phase0_algorithm(task: tuple[str, str, str, int, int, float, Solution])
             bundle_path,
             iterations=None,
             seed=seed,
-            policy=SearchPolicy(require_charging_signal=False),
             eval_budget=eval_budget,
             max_runtime_seconds=max_runtime_seconds,
             initial_solution=warm,
@@ -601,7 +599,6 @@ def _run_compare_algorithm(task: tuple[str, str, str, int, int, float, str, dict
                 bundle_path,
                 iterations=None,
                 seed=seed,
-                policy=SearchPolicy(require_charging_signal=False),
                 eval_budget=eval_budget,
                 max_runtime_seconds=max_runtime_seconds,
                 initial_solution=warm,

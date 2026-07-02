@@ -9,6 +9,7 @@ import numpy as np
 from setp_solver.search.bundle import load_search_bundle
 from setp_solver.search.construction import build_initial_solution
 from setp_solver.search.evaluation import EvalBudget, EvaluationContext, score_reference
+from setp_solver.search.fleet import UNBOUNDED_FLEET, infer_fleet_limits
 
 
 MANIFEST = Path("solver/reports/alns_crush_v2/winner_operator_manifest.json")
@@ -84,6 +85,11 @@ def test_apply_winner_action_scores_exactly_one_candidate_and_traces_base() -> N
     assert result["operator_base_id"] == operator_base_id
     assert result["trace"]["operator_base_id"] == operator_base_id
     assert result["trace"]["winner_operator_module"] == winner_operator_module
+    limits = infer_fleet_limits(FIXTURE_DIR)
+    assert result["trace"]["policy_max_cv"] == limits.cv
+    assert result["trace"]["policy_max_ev"] == limits.ev
+    assert result["trace"]["policy_max_cv"] < UNBOUNDED_FLEET
+    assert result["trace"]["policy_max_ev"] < UNBOUNDED_FLEET
     assert result["actual_evals_added"] == 1
     assert context.budget.count == 1
     assert context.score_counts["candidate"] == 1

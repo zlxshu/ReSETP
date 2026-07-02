@@ -23,7 +23,7 @@ from ..cost import evaluate, route_node_schedule
 from ..instance_loader import Instance, Node
 from ..prices import DEFAULT_PRICES, PriceParameters
 from ..solution import ChargingAction, Route, Solution
-from .alns_wouda import SearchPolicy, run_alns_wouda
+from .alns_wouda import run_alns_wouda
 from .bundle import load_search_bundle
 from .charging import repair_route_charging
 from .construction import build_initial_solution
@@ -456,7 +456,6 @@ def run_rolling_reoptimization(
         seed=seed,
         eval_budget=eval_budget,
         max_runtime_seconds=max_runtime_seconds,
-        policy=SearchPolicy(require_charging_signal=False),
     )
     total_evaluations += int(static_run.evaluations)
     dynamic_metrics = evaluate(dynamic_solution, final_instance, bundle.carbon_profile, prices)
@@ -868,7 +867,6 @@ def _run_stage_plan(
         seed=seed,
         eval_budget=stage_eval_budget,
         max_runtime_seconds=stage_max_runtime_seconds,
-        policy=SearchPolicy(require_charging_signal=False),
         initial_solution=initial_solution,
     )
     violations = check_solution(run.best_solution, stage_instance, prices)

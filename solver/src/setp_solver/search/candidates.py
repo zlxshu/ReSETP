@@ -26,7 +26,7 @@ from ..cost import evaluate, route_node_schedule
 from ..instance_loader import Instance, Node
 from ..prices import DEFAULT_PRICES, PriceParameters
 from ..solution import ChargingAction, Route, Solution
-from .alns_wouda import SearchPolicy, run_alns_wouda
+from .alns_wouda import run_alns_wouda
 from .bundle import SearchBundle, load_search_bundle
 from .charging import repair_route_charging
 from .construction import build_initial_solution
@@ -418,7 +418,6 @@ def _run_primary_alns(
             bundle_dir,
             iterations=None,
             seed=seed,
-            policy=SearchPolicy(require_charging_signal=False),
             eval_budget=eval_budget,
             max_runtime_seconds=max_runtime_seconds,
             initial_solution=initial_solution,

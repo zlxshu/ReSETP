@@ -59,6 +59,7 @@ class WorkerState:
     rng: np.random.Generator
     destroy_counts: dict[str, int]
     repair_counts: dict[str, int]
+    policy: SearchPolicy
     alpha_selector: Any | None = None
     step_index: int = 0
     stagnation_steps: int = 0
@@ -464,7 +465,7 @@ class JsonlWorker:
             previous_solution,
             state.context,
             objective_value=float(state.current_obj),
-            policy=SearchPolicy(require_charging_signal=False),
+            policy=state.policy,
         )
 
         scored: list[dict[str, Any]] = []
@@ -616,6 +617,7 @@ class JsonlWorker:
             state.context,
             rng=state.rng,
             operator_set=OPERATOR_SET,
+            policy=state.policy,
             current_obj=state.current_obj,
             progress=self._progress(),
         )
@@ -722,7 +724,7 @@ class JsonlWorker:
             state.current_solution,
             state.context,
             objective_value=float(state.current_obj),
-            policy=SearchPolicy(require_charging_signal=False),
+            policy=state.policy,
         )
         destroyed = _remove_customers(previous_state, list(remove_customer_ids))
         repair_op = OPERATOR_SET.repair_callable(repair_id)
@@ -884,6 +886,8 @@ class JsonlWorker:
             carbon_quota_kg=self.carbon_quota_kg,
             carbon_weight=self.carbon_weight,
         )
+        limits = infer_fleet_limits(self.bundle.bundle_dir)
+        policy = SearchPolicy(require_charging_signal=False, max_cv=limits.cv, max_ev=limits.ev)
         initial = build_initial_solution(
             self.bundle.instance,
             self.bundle.carbon_profile,
@@ -902,6 +906,7 @@ class JsonlWorker:
             rng=np.random.default_rng(self.seed),
             destroy_counts={operator_id: 0 for operator_id in DESTROY_IDS},
             repair_counts={operator_id: 0 for operator_id in REPAIR_IDS},
+            policy=policy,
         )
 
     def _state_response(self, request_id: Any, *, op: str) -> dict[str, Any]:

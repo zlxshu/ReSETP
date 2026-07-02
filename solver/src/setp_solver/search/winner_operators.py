@@ -35,6 +35,7 @@ from .alns_wouda import (
     route_elimination_removal,
     route_segment_removal,
     run_alns_wouda,
+    search_policy_for_instance,
     shaw_related_removal,
     vehicle_type_swap_destroy,
     whole_route_removal,
@@ -313,7 +314,7 @@ def apply_winner_action(
 
     ops = operator_set or WinnerOperatorSet.create()
     rng = rng or np.random.default_rng()
-    search_policy = policy or SearchPolicy(require_charging_signal=False)
+    search_policy = policy or search_policy_for_instance(context.instance, require_charging_signal=False)
     previous_state = AlnsState(
         solution,
         context,
@@ -374,6 +375,8 @@ def apply_winner_action(
         "remove_fraction": action.remove_fraction,
         "temperature": action.temperature,
         "raw_action": list(action.raw_action),
+        "policy_max_cv": int(search_policy.max_cv),
+        "policy_max_ev": int(search_policy.max_ev),
         "changed": changed,
         "removed_count": len(candidate.removed_customers),
         "hard_violation_count": hard_violation_count,
@@ -653,7 +656,7 @@ def _run_winner_kernel_loop(
     config: WinnerKernelConfig,
     variant_flags: dict[str, str] | None = None,
 ) -> AlnsRunResult:
-    policy = SearchPolicy(require_charging_signal=config.require_charging_signal)
+    policy = search_policy_for_instance(instance, require_charging_signal=config.require_charging_signal)
     context = EvaluationContext(
         instance,
         carbon_profile,

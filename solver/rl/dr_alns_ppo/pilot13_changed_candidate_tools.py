@@ -16,7 +16,7 @@ import numpy as np
 from setp_solver.check import check_solution
 from setp_solver.search.alns_wouda import (
     AlnsState,
-    SearchPolicy,
+    search_policy_for_bundle,
     _solution_changed,
     _try_cv_to_ev_candidates,
 )
@@ -254,7 +254,7 @@ def probe_bundle(
         require_charging_signal=require_charging_signal,
     )
     initial_obj = score_reference(initial, context)
-    policy = SearchPolicy(require_charging_signal=False)
+    policy = search_policy_for_bundle(bundle.bundle_path, require_charging_signal=False)
     state = AlnsState(initial, context, objective_value=initial_obj, policy=policy)
     customer_count = _customer_count(initial, context)
     remove_count_q = max(1, int(math.ceil(float(remove_fraction) * max(1, customer_count))))

@@ -61,6 +61,49 @@ class SearchPolicy:
     max_ev: int = UNBOUNDED_FLEET
 
 
+def search_policy_for_bundle(
+    bundle_dir: str | Path,
+    *,
+    require_charging_signal: bool = False,
+    max_cv: int | None = None,
+    max_ev: int | None = None,
+) -> SearchPolicy:
+    """Build a search policy that preserves bundle fleet caps."""
+
+    limits = infer_fleet_limits(bundle_dir)
+    return SearchPolicy(
+        require_charging_signal=bool(require_charging_signal),
+        max_cv=limits.cv if max_cv is None else int(max_cv),
+        max_ev=limits.ev if max_ev is None else int(max_ev),
+    )
+
+
+def search_policy_for_instance(
+    instance: Any,
+    *,
+    require_charging_signal: bool = False,
+    max_cv: int | None = None,
+    max_ev: int | None = None,
+) -> SearchPolicy:
+    """Build a search policy from an already loaded instance."""
+
+    inferred_cv = getattr(instance, "num_cv", None)
+    inferred_ev = getattr(instance, "num_ev", None)
+    return SearchPolicy(
+        require_charging_signal=bool(require_charging_signal),
+        max_cv=(
+            UNBOUNDED_FLEET
+            if inferred_cv is None and max_cv is None
+            else int(inferred_cv if max_cv is None else max_cv)
+        ),
+        max_ev=(
+            UNBOUNDED_FLEET
+            if inferred_ev is None and max_ev is None
+            else int(inferred_ev if max_ev is None else max_ev)
+        ),
+    )
+
+
 @dataclass(frozen=True)
 class AlnsState:
     solution: Solution
@@ -117,7 +160,7 @@ def run_alns_wouda(
 
     bundle = load_search_bundle(bundle_dir)
     limits = infer_fleet_limits(bundle.bundle_dir)
-    search_policy = policy or SearchPolicy(require_charging_signal=False, max_cv=limits.cv, max_ev=limits.ev)
+    search_policy = policy or search_policy_for_bundle(bundle.bundle_dir, require_charging_signal=False)
     # v2026-06-12: X1 can seed the cooperative search with the concatenated
     # independent-depot solution, proving theta=1.0 starts from a feasible
     # individual-rational point. Default construction is unchanged.
