@@ -5,6 +5,7 @@ import tempfile
 import unittest
 import csv
 from pathlib import Path
+from unittest import mock
 
 from setp_solver.prices import DEFAULT_PRICES
 
@@ -80,6 +81,50 @@ class EvHeavyRegimeProbeTest(unittest.TestCase):
         self.assertEqual(probe.stageB_runtime_cap(100), 900.0)
         self.assertEqual(probe.stageB_runtime_cap(150), 1800.0)
         self.assertEqual(probe.stageB_runtime_cap(200), 2700.0)
+
+    def test_stageB_decision_requires_every_reported_baseline(self) -> None:
+        rows = [{
+            "gate_status": "OK",
+            "violation_count": 0,
+            "python": probe.GOLD_PYTHON,
+            "numpy": probe.GOLD_NUMPY,
+            "algorithm": "alns_e2_carbon",
+            "ev_route_share": 0.50,
+        }]
+        pairs = []
+        for baseline in ("LNS", "GA", "PSO"):
+            pairs.extend({"right_algorithm": baseline, "gap_pct_left_minus_right": -10.0} for _ in range(6))
+        pairs.extend({"right_algorithm": "VNS", "gap_pct_left_minus_right": 1.0} for _ in range(6))
+
+        decision = probe.stageB_decision(
+            {"phase0_ok": True},
+            rows,
+            pairs,
+            pairs_ablation=[],
+            expected_rows=1,
+        )
+
+        self.assertEqual(decision["verdict"], "MECHANISM_BUT_TIE")
+        self.assertIn("VNS", decision["plain"])
+
+    def test_retry_failures_reruns_runtime_under_eval_even_when_gate_status_ok(self) -> None:
+        task = {"stage": "stageB", "instance": "e2-threeshift-100c-02", "seed": 1, "algorithm": "GA"}
+        stale_row = task | {"status": "HALT_RUNTIME_UNDER_EVAL", "gate_status": "OK"}
+        rerun_row = task | {"status": "OK", "gate_status": "OK"}
+
+        with tempfile.TemporaryDirectory() as tmp:
+            raw_path = Path(tmp) / "raw_runs.csv"
+            with raw_path.open("w", encoding="utf-8", newline="") as fh:
+                writer = csv.DictWriter(fh, fieldnames=list(stale_row))
+                writer.writeheader()
+                writer.writerow(stale_row)
+
+            with mock.patch.object(probe, "run_search_task", return_value=rerun_row) as runner:
+                rows = probe.run_search_tasks([task], workers=1, incremental_csv=raw_path, retry_failures=True)
+
+        runner.assert_called_once_with(task)
+        self.assertEqual(rows[0]["status"], "OK")
+        self.assertNotEqual(rows[0].get("queue_action"), "SKIPPED_EXISTING")
 
     def test_stage0_instance_constructs_checked_rows_without_polluting_default_prices(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:

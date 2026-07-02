@@ -1,3 +1,9 @@
+# ReSETP Project Override — Mandatory Read Before Action
+
+For ReSETP project work, this file is not the project truth source. Before any non-trivial task, Claude/Codex/any agent MUST read `docs/handoff/READ_ME_FIRST_FOR_AGENTS.md` and follow its required startup list. The project truth source is `HANDOFF.md` plus `docs/handoff/READ_ME_FIRST_FOR_AGENTS.md`, PRD v2, the planning map, and repo memory.
+
+Do not edit code, run experiments, or make paper-facing conclusions before reading those files. After material work, update `HANDOFF.md`, relevant `docs/handoff/memory/*.md`, and required experiment artifacts as specified in `docs/handoff/READ_ME_FIRST_FOR_AGENTS.md`.
+
 # Claude Fable 5 — System Prompt
 ---
 

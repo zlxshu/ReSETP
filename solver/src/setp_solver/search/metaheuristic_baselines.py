@@ -1136,7 +1136,9 @@ def _nearest_node_reinsert_order(order: list[str], instance: Instance, rng: rand
 def _ga_diversify(population: list[_ScoredSolution], session: _SearchSession) -> None:
     if len(population) <= 2:
         return
-    keep = max(1, len(population) // 2)
+    # Keep at least two parents; a singleton population cannot produce children
+    # and will otherwise spin until the wall-clock cap without consuming evals.
+    keep = max(2, len(population) // 2)
     del population[keep:]
 
 

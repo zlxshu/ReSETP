@@ -1,6 +1,6 @@
 # ReSETP — Claude 项目指令
 
-**开工前必读**：完整读仓库根目录的 `HANDOFF.md`（项目单一事实源：机器/环境坑、三条工作线状态、纪律、来龙去脉、下一步）+ `docs/handoff/memory/`（记忆快照）。读完之前不要动手、不要下结论。
+**开工前必读（强制）**：先完整读 `docs/handoff/READ_ME_FIRST_FOR_AGENTS.md`，再按其中清单读取 `HANDOFF.md`、`docs/handoff/project_prd_execution_map_v2_20260702.md`、`docs/handoff/project_planning_map_20260701.md`、`docs/handoff/memory/MEMORY.md`、`docs/handoff/memory/project-prd-execution-v2.md`、`docs/handoff/codex_prompts/MASTER_codex_takeover_plan.md`。读完之前不要动手、不要下结论。第一条工作汇报必须写明“已读强制入口”和当前停止条件。
 
 **每次重大决策 / 任务 / 对话后**：把变化追加进 `HANDOFF.md` 文末「变更日志」，并同步更新 `docs/handoff/memory/`，让它们始终是最新单一事实源（跨机器迁移防偏差全靠这个）。
 

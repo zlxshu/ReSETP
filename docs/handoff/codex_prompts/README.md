@@ -1,6 +1,6 @@
 # Codex 提示词存档（按序发）
 
-每条发给 Codex 前，让它**先完整读仓库根 `HANDOFF.md` + `docs/handoff/memory/baseline-algorithm-catalog.md`**（项目单一事实源、8 基线设计转录、公平对比 harness 接口、环境铁律、来龙去脉）。
+每条发给 Codex 前，让它**先完整读 `docs/handoff/READ_ME_FIRST_FOR_AGENTS.md`**，并按其中清单读取 `HANDOFF.md`、PRD v2、规划地图、memory index、当前任务提示词和相关 memory 节点。读完前不得动手、不得跑实验、不得下论文结论。
 
 DR lane（x86）历史：
 - `01_offline_probe.md` — 轨①：DR 离线探针。**已跑，verdict = PROMISING**。留档。

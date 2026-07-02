@@ -1,9 +1,9 @@
 # MASTER — Codex 接管总规划（Claude credits 将尽，转 Codex 思考+执行）
 
-> 这是 Claude(M1)交给 Codex 的总纲。**Claude 之后基本不在场,Codex 既思考也执行。** 本文件 = 剩余全部规划(总体+局部) + 预备方案 + 行为铁律。每段对话先读 `HANDOFF.md` + `docs/handoff/project_planning_map_20260701.md` + 本文件 + `CLAUDE-FABLE-5.md` + `docs/handoff/memory/`，再动手。
+> 这是 Claude(M1)交给 Codex 的总纲。**Claude 之后基本不在场,Codex 既思考也执行。** 本文件 = 剩余全部规划(总体+局部) + 预备方案 + 行为铁律。每段对话先读 `docs/handoff/READ_ME_FIRST_FOR_AGENTS.md`，再按其中清单读 `HANDOFF.md` + `docs/handoff/project_prd_execution_map_v2_20260702.md` + `docs/handoff/project_planning_map_20260701.md` + 本文件 + `docs/handoff/memory/MEMORY.md` + 相关 memory 节点，再动手。
 
 ## 0. 给 Codex 的行为铁律(每段对话自我约束,务必照做)
-- **先读后做**:每轮先读 `CLAUDE-FABLE-5.md`(用它的思考方式:严谨认知、假设驱动、用代码/数据/文献坐实、不臆测、不停在表面猜测、证据与假设冲突就改假设) + 本文件 + `HANDOFF.md` + `docs/handoff/memory/`。
+- **先读后做**:每轮先读 `docs/handoff/READ_ME_FIRST_FOR_AGENTS.md` 并执行其强制读取清单；读完前不得改代码、跑实验、下结论。Fable5/Claude 的合理规划可继承，但最终事实以 `HANDOFF.md` 和原始 CSV/JSON/checkpoint 为准。
 - **诚实(最高优先)**:跑不出/没收敛/没赢就诚实 HALT 并如实写,**绝不注水、不混旧数据、不拿弱版/没跑满的结果充数、不把推断冒充实证**。哪个档输、和谁打平,照实报。
 - **克制**:不自创算法、不无限加料硬刚;碰卡点先翻 Zotero 文献 + 上网找现成解,别重复造轮子;每个改动绑证据 + commit hash;拿不准停下报告,别擅自扩大范围。
 - **边界(硬)**:禁改 `cost.py`/`check.py`/`evaluation.py` 语义(唯一真值源);系统 Python `/opt/anaconda3/bin/python3.13` + numpy 2.3.5 + `PYTHONHASHSEED=0`;改核心代码立即 commit、数字绑 hash;分支 `codex/reporting-pipeline`。

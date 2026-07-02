@@ -565,9 +565,12 @@ def run_search_tasks(
     pending: list[dict[str, Any]] = []
     for task in tasks:
         prior = existing.get(search_task_key(task))
-        if prior is not None and (str(prior.get("gate_status")) == "OK" or not retry_failures):
-            rows.append(prior | {"queue_action": "SKIPPED_EXISTING"})
-            continue
+        if prior is not None:
+            prior_status_ok = str(prior.get("status")) == "OK"
+            prior_gate_ok = str(prior.get("gate_status")) == "OK"
+            if not retry_failures or (prior_status_ok and prior_gate_ok):
+                rows.append(prior | {"queue_action": "SKIPPED_EXISTING"})
+                continue
         pending.append(task)
     runner = execute_search_task_subprocess if hard_timeout else run_search_task
 
@@ -1221,8 +1224,11 @@ def stageB_decision(phase0: dict[str, Any], rows: list[dict[str, Any]], pairs_ba
         plain = "Stage B 数据没有完整闭合，或存在环境漂移/违约/checkpoint 问题；不能下算法对比结论。"
     else:
         baseline_stats = stageB_baseline_stats(pairs_baselines)
-        required = ("LNS", "GA", "PSO")
-        alns_wins_required = all(baseline_stats.get(name, {}).get("significant_win", False) for name in required)
+        baseline_order = ("LNS", "GA", "PSO", "VNS")
+        required = tuple(name for name in baseline_order if name in baseline_stats)
+        required += tuple(name for name in sorted(baseline_stats) if name not in baseline_order)
+        required_label = "/".join(required) if required else "已选 baseline"
+        alns_wins_required = bool(required) and all(baseline_stats.get(name, {}).get("significant_win", False) for name in required)
         ablation_stats = wilcoxon_or_sign([as_float(row.get("gap_pct_left_minus_right")) for row in pairs_ablation])
         ablation_wins = sum(1 for row in pairs_ablation if as_float(row.get("gap_pct_left_minus_right")) < -1e-9)
         ablation_losses = sum(1 for row in pairs_ablation if as_float(row.get("gap_pct_left_minus_right")) > 1e-9)
@@ -1232,10 +1238,10 @@ def stageB_decision(phase0: dict[str, Any], rows: list[dict[str, Any]], pairs_ba
         ev_retained = mean_ev_share >= 0.30
         if alns_wins_required:
             verdict = "CARBON_REGIME_ALNS_WINS"
-            plain = "EV 在场时，alns_e2_carbon 对 LNS/GA/PSO 达到预注册显著胜出门槛；可进入正式 T3 候选。"
+            plain = f"EV 在场时，alns_e2_carbon 对 {required_label} 达到预注册显著胜出门槛；可进入正式 T3 候选。"
         else:
             verdict = "MECHANISM_BUT_TIE"
-            plain = "EV/充电机制在场，但 alns_e2_carbon 未同时显著胜过 LNS/GA/PSO；算法主线应诚实转 DR-ALNS 或更强搜索设计。"
+            plain = f"EV/充电机制在场，但 alns_e2_carbon 未同时显著胜过 {required_label}；算法主线应诚实转 DR-ALNS 或更强搜索设计。"
         return {
             "verdict": verdict,
             "plain": plain,
