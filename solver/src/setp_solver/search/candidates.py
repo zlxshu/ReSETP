@@ -1311,7 +1311,8 @@ def _apply_strong_alns_destroy_repair(
         return _OperatorOutcome(solution, produced=False, feasible=False, changed=False, detail="destroy_selected_no_customers", metadata={"removed_count": 0})
     partial_routes = _routes_without_customers(solution.routes, set(removed), context.instance)
     mode = {"greedy_insert_repair": "greedy", "regret2_insert_repair": "regret2", "regret3_insert_repair": "regret3"}[repair_operator]
-    repaired = repair_removed_customers(Solution(routes=partial_routes, charging_actions=_actions_for_routes(solution, partial_routes)), list(removed), context, _ThinPolicy(), mode=mode)
+    policy = _bridge_policy_for_context(context)
+    repaired = repair_removed_customers(Solution(routes=partial_routes, charging_actions=_actions_for_routes(solution, partial_routes)), list(removed), context, policy, mode=mode)
     if repaired is None:
         return _OperatorOutcome(solution, produced=True, feasible=False, changed=False, detail="strong_repair_failed", metadata={"removed_count": len(removed)})
     violations = check_solution(repaired, context.instance, context.prices)
@@ -1331,6 +1332,21 @@ class _ThinPolicy:
     require_charging_signal: bool = False
     max_cv: int = 10**9
     max_ev: int = 10**9
+
+
+def _bridge_policy_for_context(context: EvaluationContext) -> _ThinPolicy:
+    return _ThinPolicy(
+        require_charging_signal=False,
+        max_cv=_bridge_instance_limit(context.instance, "num_cv"),
+        max_ev=_bridge_instance_limit(context.instance, "num_ev"),
+    )
+
+
+def _bridge_instance_limit(instance: Instance, attr: str) -> int:
+    value = getattr(instance, attr, None)
+    if value is None:
+        return 10**9
+    return int(float(value))
 
 
 def _strong_destroy_customer_ids(
