@@ -9,12 +9,12 @@ generated bundles so new customers have real coordinates and time windows.
 from __future__ import annotations
 
 import csv
-from dataclasses import asdict, dataclass, replace
+from dataclasses import asdict, dataclass, field, replace
 import json
 from pathlib import Path
 import random
 import time
-from typing import Any
+from typing import Any, Callable
 
 import numpy as np
 
@@ -70,6 +70,36 @@ class StagePlanResult:
     evaluations: int
     feasible: bool
     violations: list[Any]
+
+
+@dataclass(frozen=True)
+class RollingPolicyContext:
+    stage_index: int
+    trigger_time: float
+    stage_events: list[DynamicEvent]
+    all_events: list[DynamicEvent]
+    settings: RollingParameters
+    base_instance: Instance
+    effective_instance: Instance
+    active_ids: set[str]
+    served_customers: set[str]
+    previous_plan: Solution | None
+    previous_instance: Instance | None
+
+
+@dataclass(frozen=True)
+class RollingPolicyDecision:
+    active_ids: set[str] | None = None
+    initial_plan: Solution | None = None
+    metadata: dict[str, Any] = field(default_factory=dict)
+
+
+RollingPolicyCallback = Callable[[RollingPolicyContext], RollingPolicyDecision | dict[str, Any] | None]
+
+
+def myopic_rolling_policy(context: RollingPolicyContext) -> RollingPolicyDecision:
+    _ = context
+    return RollingPolicyDecision(metadata={"action": "myopic"})
 
 
 def load_or_generate_dynamic_events(
@@ -185,6 +215,7 @@ def run_rolling_reoptimization(
     stage_max_runtime_seconds: float = 120.0,
     params: RollingParameters | None = None,
     prices: PriceParameters | dict[str, float] | Any = DEFAULT_PRICES,
+    policy_callback: RollingPolicyCallback | None = None,
 ) -> dict[str, Any]:
     """Run the E7 rolling loop with qbar/delta-t triggers and static control."""
 
@@ -214,6 +245,7 @@ def run_rolling_reoptimization(
     committed_node_state: dict[str, Node] = {}
     frozen_sequences: dict[str, list[str]] = {}
     stage_plan_customer_ids: dict[str, list[str]] = {}
+    policy_trace: list[dict[str, Any]] = []
 
     for stage_index, batch in enumerate(batches):
         trigger = float(batch["trigger_time"])
@@ -278,16 +310,46 @@ def run_rolling_reoptimization(
         stage_carbon = cumulative_carbon - initial_carbon
         effective_instance = _instance_after_events(bundle.instance, events, trigger, served_customers)
         active_ids = _active_customer_ids(effective_instance, served_customers)
+        policy_decision = _policy_decision_for_stage(
+            policy_callback,
+            stage_index=stage_index,
+            trigger=trigger,
+            stage_events=stage_events,
+            events=events,
+            settings=settings,
+            base_instance=bundle.instance,
+            effective_instance=effective_instance,
+            active_ids=active_ids,
+            served_customers=served_customers,
+            previous_plan=previous_plan,
+            previous_instance=previous_instance,
+        )
+        stage_active_ids = set(active_ids if policy_decision.active_ids is None else policy_decision.active_ids)
+        stage_initial_plan = previous_plan if policy_decision.initial_plan is None else policy_decision.initial_plan
+        if policy_callback is not None:
+            deferred_ids = sorted(set(active_ids) - set(stage_active_ids))
+            policy_trace.append(
+                {
+                    "stage": int(stage_index),
+                    "trigger_time": float(trigger),
+                    "policy": getattr(policy_callback, "__name__", policy_callback.__class__.__name__),
+                    "active_count_before": len(active_ids),
+                    "active_count_after": len(stage_active_ids),
+                    "deferred_count": len(deferred_ids),
+                    "deferred_ids": deferred_ids,
+                    "metadata": dict(policy_decision.metadata),
+                }
+            )
         stage_plan = _run_stage_plan(
             bundle,
             effective_instance,
-            active_ids,
+            stage_active_ids,
             work_root / f"stage_{stage_index:03d}",
             seed=seed + stage_index,
             stage_eval_budget=stage_eval_budget,
             stage_max_runtime_seconds=stage_max_runtime_seconds,
             prices=prices,
-            initial_plan=previous_plan,
+            initial_plan=stage_initial_plan,
         )
         total_evaluations += stage_plan.evaluations
         if stage_plan.violations:
@@ -439,6 +501,7 @@ def run_rolling_reoptimization(
         "stage_rows": rows,
         "assertions": assertions,
         "all_assertions_pass": all(row["conservation_ok"] and row["frozen_paths_ok"] for row in assertions),
+        "policy_trace": policy_trace,
         "dynamic_final_control": {
             "scorer": "setp_solver.cost.evaluate",
             "total_cost": float(dynamic_metrics["total_cost"]),
@@ -716,6 +779,67 @@ def _instance_after_events(
         # planned against, overriding any later reversion to the original value.
         nodes = [frozen_nodes.get(node.node_id, node) for node in nodes]
     return _rebuild_instance_matrix(instance, nodes)
+
+
+def _policy_decision_for_stage(
+    policy_callback: RollingPolicyCallback | None,
+    *,
+    stage_index: int,
+    trigger: float,
+    stage_events: list[DynamicEvent],
+    events: list[DynamicEvent],
+    settings: RollingParameters,
+    base_instance: Instance,
+    effective_instance: Instance,
+    active_ids: set[str],
+    served_customers: set[str],
+    previous_plan: Solution | None,
+    previous_instance: Instance | None,
+) -> RollingPolicyDecision:
+    if policy_callback is None:
+        return RollingPolicyDecision()
+    context = RollingPolicyContext(
+        stage_index=int(stage_index),
+        trigger_time=float(trigger),
+        stage_events=list(stage_events),
+        all_events=list(events),
+        settings=settings,
+        base_instance=base_instance,
+        effective_instance=effective_instance,
+        active_ids=set(active_ids),
+        served_customers=set(served_customers),
+        previous_plan=previous_plan,
+        previous_instance=previous_instance,
+    )
+    decision = _coerce_policy_decision(policy_callback(context))
+    if decision.active_ids is None:
+        return decision
+    chosen = {str(customer_id) for customer_id in decision.active_ids}
+    unknown = chosen - set(active_ids)
+    if unknown:
+        raise ValueError(f"rolling policy selected customers not active in this stage: {sorted(unknown)}")
+    if active_ids and not chosen:
+        raise ValueError("rolling policy may not defer every active customer in a non-empty stage")
+    return RollingPolicyDecision(active_ids=chosen, initial_plan=decision.initial_plan, metadata=dict(decision.metadata))
+
+
+def _coerce_policy_decision(raw: RollingPolicyDecision | dict[str, Any] | None) -> RollingPolicyDecision:
+    if raw is None:
+        return RollingPolicyDecision()
+    if isinstance(raw, RollingPolicyDecision):
+        return raw
+    if isinstance(raw, dict):
+        active_ids = raw.get("active_ids", raw.get("active_customer_ids"))
+        metadata = dict(raw.get("metadata") or {})
+        for key in ("action", "deferred_ids", "reserve_capacity_fraction", "preposition_depot_id"):
+            if key in raw and key not in metadata:
+                metadata[key] = raw[key]
+        return RollingPolicyDecision(
+            active_ids={str(customer_id) for customer_id in active_ids} if active_ids is not None else None,
+            initial_plan=raw.get("initial_plan"),
+            metadata=metadata,
+        )
+    raise TypeError(f"rolling policy returned unsupported decision type: {type(raw).__name__}")
 
 
 def _run_stage_plan(

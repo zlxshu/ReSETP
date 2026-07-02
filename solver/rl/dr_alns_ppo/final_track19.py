@@ -32,10 +32,20 @@ from .pilot22_grounded_fixes import _load_state, _log, _save_state, _write_json
 DEFAULT_OUTPUT_DIR = Path("solver/reports/dr_alns_ppo_v3/final_track19")
 TRACK17_ROWS = Path("solver/reports/dr_alns_ppo_v3/final_track17/track17_rows.csv")
 DEFAULT_MAIN_METHOD = "winner_kernel_true_repair_adaptive_q"
+DEFAULT_DIAGNOSTIC_METHODS = (
+    DEFAULT_MAIN_METHOD,
+    "plain_alns",
+    "winner_kernel",
+    "winner_kernel_local_search",
+    "winner_kernel_charging_required",
+    "winner_kernel_scan_bridge",
+    "winner_kernel_sa_lns_cooling",
+)
 TERMINAL_STATUSES = {
     "WIN_REAL",
     "MARGIN_REAL",
     "HALT_100C_STILL_STARVED",
+    "HALT_MAIN_100C_WEAK",
     "HALT_INVALID_COMPARISON",
     "HALT_PREFLIGHT",
     "HALT_PROTECTED_DIRTY",
@@ -65,6 +75,8 @@ def run(args: argparse.Namespace) -> int:
             state["final_reason"] = "Force recompute requested."
             if args.stop_after in {"calibration", "fair_comparison"}:
                 state["calibration_done"] = False
+            if args.stop_after in {"method_diagnostic", "fair_comparison"}:
+                state["method_diagnostic_done"] = False
             if args.stop_after == "fair_comparison":
                 state["fair_comparison_done"] = False
         _log(progress_path, "Track19 start")
@@ -104,6 +116,29 @@ def run(args: argparse.Namespace) -> int:
             state["final_status"] = final_status
             state["final_reason"] = final_reason
             return 0
+
+        if args.stop_after == "method_diagnostic" and not state.get("method_diagnostic_done"):
+            diagnostic = run_stage1b_method_diagnostic(args, output_dir, progress_path, started)
+            state["method_diagnostic"] = diagnostic
+            state["method_diagnostic_done"] = True
+            _save_state(state_path, state)
+            _write_json(output_dir / "track19_100c_method_diagnostic.json", diagnostic)
+            _write_text(output_dir / "track19_100c_method_diagnostic.md", _method_diagnostic_report(diagnostic))
+
+        if args.stop_after == "method_diagnostic":
+            diagnostic = state.get("method_diagnostic") or {}
+            if diagnostic.get("verdict") == "DIAGNOSTIC_MAIN_100C_WEAK":
+                final_status = "HALT_MAIN_100C_WEAK"
+                final_reason = str(diagnostic.get("reason", "100c main method diagnostic found no moving Track19 candidate."))
+            elif diagnostic.get("verdict") == "DIAGNOSTIC_RESELECT_MAIN":
+                final_status = "HALT_RESELECT_MAIN_100C"
+                final_reason = str(diagnostic.get("reason", "100c diagnostic rejected the current main method."))
+            else:
+                final_status = "STOP_AFTER_METHOD_DIAGNOSTIC"
+                final_reason = "Stopped after Track19 100c method diagnostic."
+            state["final_status"] = final_status
+            state["final_reason"] = final_reason
+            return 0 if final_status == "STOP_AFTER_METHOD_DIAGNOSTIC" else 2
 
         if not state.get("fair_comparison_done"):
             fair = run_stage2_fair_comparison(args, output_dir, progress_path, started)
@@ -246,6 +281,59 @@ def run_stage1_calibration(args: argparse.Namespace, output_dir: Path, progress_
     }
 
 
+def run_stage1b_method_diagnostic(args: argparse.Namespace, output_dir: Path, progress_path: Path, started: float) -> dict[str, Any]:
+    rows_path = output_dir / "track19_100c_method_diagnostic.csv"
+    rows = [] if args.force else (_read_rows(rows_path) if args.resume and rows_path.exists() else [])
+    for row in rows:
+        _reclassify_existing_row(row, args=args)
+        _annotate_diagnostic_metrics(row)
+    if rows:
+        _write_rows(rows_path, rows)
+    bundle_dir = args.diagnostic_bundle
+    bundle_name = Path(bundle_dir).name
+    warm = _warm_start_metrics(bundle_dir)
+    methods = _dedupe([*_parse_csv(args.diagnostic_methods), args.main_method])
+    done = {(row["bundle"], int(row["seed"]), row["algorithm"]) for row in rows}
+    for seed in _parse_int_list(args.diagnostic_seeds):
+        for method in methods:
+            if (bundle_name, int(seed), method) in done:
+                continue
+            _check_wall(started, float(args.max_wall_seconds))
+            _log(progress_path, f"Stage1b 100c method diagnostic bundle={bundle_name} seed={seed} method={method}")
+            scale_args = _scale_args(args, "100")
+            scale_args.eval_budget = int(args.diagnostic_eval_budget)
+            scale_args.max_runtime_seconds = float(args.diagnostic_max_runtime_seconds)
+            row, _solution = _run_method(bundle_dir, method, seed=int(seed), args=scale_args, warm=warm, stage="method_diagnostic_100c")
+            _annotate_track19_row(row, bundle_dir=bundle_dir, seed=int(seed), args=args)
+            _annotate_diagnostic_metrics(row)
+            rows.append(row)
+            _write_rows(rows_path, rows)
+    summary = _method_diagnostic_summary(rows, args.main_method)
+    improving = list(summary.get("methods_improving_warm") or [])
+    current = summary.get("current_main") or {}
+    current_improves = bool(current.get("improves_warm", False))
+    if current_improves:
+        verdict = "DIAGNOSTIC_MAIN_100C_CAN_MOVE"
+        reason = f"{args.main_method} improved warm start in the 100c diagnostic."
+    elif improving:
+        verdict = "DIAGNOSTIC_RESELECT_MAIN"
+        reason = f"{args.main_method} stayed at warm start, while {', '.join(improving)} improved it in the 100c diagnostic."
+    else:
+        verdict = "DIAGNOSTIC_MAIN_100C_WEAK"
+        reason = "No tested Track19 candidate improved the 100c warm start in the diagnostic budget."
+    return {
+        "verdict": verdict,
+        "reason": reason,
+        "bundle": bundle_name,
+        "bundle_dir": str(bundle_dir),
+        "seeds": _parse_int_list(args.diagnostic_seeds),
+        "eval_budget": int(args.diagnostic_eval_budget),
+        "max_runtime_seconds": float(args.diagnostic_max_runtime_seconds),
+        "rows": rows,
+        "summary": summary,
+    }
+
+
 def run_stage2_fair_comparison(args: argparse.Namespace, output_dir: Path, progress_path: Path, started: float) -> dict[str, Any]:
     rows_path = output_dir / "track19_rows.csv"
     rows = _read_rows(rows_path) if args.resume and rows_path.exists() else []
@@ -375,6 +463,102 @@ def _operator_attempt_count(operator_counts: Any) -> int:
     return int(total)
 
 
+def _operator_outcome_counts(operator_counts: Any) -> dict[str, int]:
+    parsed = _coerce_operator_counts(operator_counts)
+    if not isinstance(parsed, dict):
+        return {"best": 0, "better_current": 0, "accepted": 0, "rejected": 0, "attempts": 0}
+    destroy = parsed.get("destroy") or {}
+    if not isinstance(destroy, dict):
+        return {"best": 0, "better_current": 0, "accepted": 0, "rejected": 0, "attempts": 0}
+    best = better_current = accepted = rejected = 0
+    for counts in destroy.values():
+        if not isinstance(counts, (list, tuple)):
+            continue
+        padded = list(counts) + [0, 0, 0, 0]
+        best += int(float(padded[0] or 0))
+        better_current += int(float(padded[1] or 0))
+        accepted += int(float(padded[2] or 0))
+        rejected += int(float(padded[3] or 0))
+    return {
+        "best": int(best),
+        "better_current": int(better_current),
+        "accepted": int(best + better_current + accepted),
+        "rejected": int(rejected),
+        "attempts": int(best + better_current + accepted + rejected),
+    }
+
+
+def _coerce_operator_counts(operator_counts: Any) -> Any:
+    if isinstance(operator_counts, str):
+        try:
+            return json.loads(operator_counts)
+        except json.JSONDecodeError:
+            return None
+    return operator_counts
+
+
+def _annotate_diagnostic_metrics(row: dict[str, Any]) -> None:
+    outcomes = _operator_outcome_counts(row.get("operator_counts"))
+    warm_cost = _to_float(row.get("warm_start_cost"))
+    best_cost = _to_float(row.get("best_cost"))
+    improves = math.isfinite(best_cost) and math.isfinite(warm_cost) and best_cost < warm_cost - 1e-9
+    row["diagnostic_best_outcome_count"] = int(outcomes["best"])
+    row["diagnostic_accepted_move_count"] = int(outcomes["accepted"])
+    row["diagnostic_rejected_move_count"] = int(outcomes["rejected"])
+    row["diagnostic_operator_attempts"] = int(outcomes["attempts"])
+    row["diagnostic_improves_warm"] = bool(improves)
+    if int(outcomes["attempts"]) > 0 and int(outcomes["accepted"]) == 0:
+        row["diagnostic_note"] = "all_operator_attempts_rejected"
+    elif improves:
+        row["diagnostic_note"] = "improved_warm_start"
+    else:
+        row["diagnostic_note"] = "no_warm_start_improvement"
+
+
+def _method_diagnostic_summary(rows: list[dict[str, Any]], main_method: str) -> dict[str, Any]:
+    by_method: dict[str, list[dict[str, Any]]] = {}
+    for row in rows:
+        by_method.setdefault(str(row.get("algorithm")), []).append(row)
+    methods: dict[str, dict[str, Any]] = {}
+    for method, method_rows in sorted(by_method.items()):
+        finite_costs = [_to_float(row.get("best_cost")) for row in method_rows if math.isfinite(_to_float(row.get("best_cost")))]
+        warm_costs = [_to_float(row.get("warm_start_cost")) for row in method_rows if math.isfinite(_to_float(row.get("warm_start_cost")))]
+        improvements = [_to_float(row.get("improvement_vs_warm_pct")) for row in method_rows if math.isfinite(_to_float(row.get("improvement_vs_warm_pct")))]
+        methods[method] = {
+            "row_count": len(method_rows),
+            "mean_best_cost": sum(finite_costs) / len(finite_costs) if finite_costs else math.nan,
+            "mean_warm_start_cost": sum(warm_costs) / len(warm_costs) if warm_costs else math.nan,
+            "mean_improvement_vs_warm_pct": sum(improvements) / len(improvements) if improvements else math.nan,
+            "improves_warm": any(str(row.get("diagnostic_improves_warm")).lower() == "true" for row in method_rows),
+            "best_update_count": sum(int(float(row.get("best_update_count", 0) or 0)) for row in method_rows),
+            "accepted_move_count": sum(int(float(row.get("diagnostic_accepted_move_count", 0) or 0)) for row in method_rows),
+            "rejected_move_count": sum(int(float(row.get("diagnostic_rejected_move_count", 0) or 0)) for row in method_rows),
+            "status_counts": _status_counts(method_rows),
+        }
+    improving = [method for method, data in methods.items() if bool(data.get("improves_warm"))]
+    finite_methods = [(method, _to_float(data.get("mean_best_cost"))) for method, data in methods.items()]
+    finite_methods = [(method, cost) for method, cost in finite_methods if math.isfinite(cost)]
+    best_method = min(finite_methods, key=lambda item: (item[1], item[0]))[0] if finite_methods else ""
+    return {
+        "main_method": main_method,
+        "current_main": methods.get(main_method, {}),
+        "methods": methods,
+        "methods_improving_warm": improving,
+        "best_method_by_mean_cost": best_method,
+    }
+
+
+def _dedupe(values: list[str]) -> list[str]:
+    seen: set[str] = set()
+    out: list[str] = []
+    for value in values:
+        if not value or value in seen:
+            continue
+        seen.add(value)
+        out.append(value)
+    return out
+
+
 def _track19_fair_summary(rows: list[dict[str, Any]], main_method: str, baseline_algorithms: list[str]) -> dict[str, Any]:
     legal_rows = [row for row in rows if str(row.get("track19_status")) in {"HEALTHY", "VALID_BUT_WEAK"} or row.get("algorithm") == main_method]
     legal_baselines = [
@@ -429,6 +613,46 @@ def _calibration_report(calibration: dict[str, Any]) -> str:
     ) + "\n"
 
 
+def _method_diagnostic_report(diagnostic: dict[str, Any]) -> str:
+    summary = diagnostic.get("summary") or {}
+    methods = summary.get("methods") or {}
+    lines = [
+        "# Track19 100c Method Diagnostic",
+        "",
+        f"Verdict: {diagnostic.get('verdict')}",
+        f"Reason: {diagnostic.get('reason')}",
+        f"Bundle: {diagnostic.get('bundle')}",
+        f"Seeds: {', '.join(str(seed) for seed in diagnostic.get('seeds') or [])}",
+        f"Diagnostic eval budget: {diagnostic.get('eval_budget')}",
+        f"Diagnostic max runtime seconds: {diagnostic.get('max_runtime_seconds')}",
+        f"Best method by mean cost: {summary.get('best_method_by_mean_cost', '')}",
+        "",
+        "| method | rows | improves_warm | mean_best_cost | mean_improvement_pct | best_updates | accepted | rejected |",
+        "|---|---:|---|---:|---:|---:|---:|---:|",
+    ]
+    for method, data in sorted(methods.items()):
+        lines.append(
+            "| {method} | {rows} | {improves} | {cost:.6f} | {gain:.6f} | {updates} | {accepted} | {rejected} |".format(
+                method=method,
+                rows=int(data.get("row_count", 0) or 0),
+                improves=bool(data.get("improves_warm", False)),
+                cost=_to_float(data.get("mean_best_cost")),
+                gain=_to_float(data.get("mean_improvement_vs_warm_pct")),
+                updates=int(data.get("best_update_count", 0) or 0),
+                accepted=int(data.get("accepted_move_count", 0) or 0),
+                rejected=int(data.get("rejected_move_count", 0) or 0),
+            )
+        )
+    lines.extend(
+        [
+            "",
+            "Rows are also written to `track19_100c_method_diagnostic.csv`.",
+            "This is a diagnostic route-selection artifact, not a final paper claim.",
+        ]
+    )
+    return "\n".join(lines) + "\n"
+
+
 def _fair_report(fair: dict[str, Any]) -> str:
     summary = fair.get("summary") or {}
     return "\n".join(
@@ -456,14 +680,27 @@ def _summarize_final(state: dict[str, Any]) -> tuple[str, str]:
     calibration = state.get("calibration") or {}
     if calibration.get("verdict") == "HALT_100C_STILL_STARVED":
         return str(calibration["verdict"]), str(calibration.get("reason", ""))
+    diagnostic = state.get("method_diagnostic") or {}
+    if diagnostic.get("verdict") == "DIAGNOSTIC_MAIN_100C_WEAK":
+        return "HALT_MAIN_100C_WEAK", str(diagnostic.get("reason", ""))
     return "RUNNING", "Track19 is not complete."
 
 
 def _final_report(state: dict[str, Any]) -> str:
     audit = state.get("budget_audit") or {}
     calibration = state.get("calibration") or {}
+    diagnostic = state.get("method_diagnostic") or {}
+    diagnostic_summary = diagnostic.get("summary") or {}
     fair = state.get("fair_comparison") or {}
     fair_summary = fair.get("summary") or {}
+    if diagnostic.get("verdict") == "DIAGNOSTIC_MAIN_100C_WEAK":
+        decision = (
+            "HALT_MAIN_100C_WEAK: 100c budget legality is fixed, but the tested Track19 ALNS main-method candidates "
+            "did not improve the 100c warm start in the diagnostic budget. Do not resume the formal 100c claim with "
+            "the current main method."
+        )
+    else:
+        decision = "Track19 separates under-run invalid rows from legal-but-weak rows. Only non-invalid baselines can support a paper claim."
     lines = [
         "# Final Track19 Report",
         "",
@@ -478,6 +715,11 @@ def _final_report(state: dict[str, Any]) -> str:
         f"Verdict: {calibration.get('verdict', 'NOT_RUN')}",
         f"Reason: {calibration.get('reason', '')}",
         "",
+        "## 100c Method Diagnostic",
+        f"Verdict: {diagnostic.get('verdict', 'NOT_RUN')}",
+        f"Reason: {diagnostic.get('reason', '')}",
+        f"Best diagnostic method: {diagnostic_summary.get('best_method_by_mean_cost', '')}",
+        "",
         "## Fair Comparison",
         f"Verdict: {fair.get('verdict', 'NOT_RUN')}",
         f"Main method: {fair_summary.get('main_method', DEFAULT_MAIN_METHOD)}",
@@ -487,7 +729,7 @@ def _final_report(state: dict[str, Any]) -> str:
         f"Scale mean gains pct: {json.dumps(fair_summary.get('scale_mean_gains', {}), sort_keys=True)}",
         "",
         "## Decision",
-        "Track19 separates under-run invalid rows from legal-but-weak rows. Only non-invalid baselines can support a paper claim.",
+        decision,
     ]
     return "\n".join(lines) + "\n"
 
@@ -504,7 +746,7 @@ def _scale_from_bundle_name(name: str) -> str:
 
 def _enforce_resume_guard(state: dict[str, Any], *, resume: bool, force: bool) -> None:
     status = str(state.get("final_status") or "")
-    if force or resume or not status or status in {"RUNNING", "HALT_WALL_CLOCK", "STOP_AFTER_BUDGET_AUDIT", "STOP_AFTER_CALIBRATION"}:
+    if force or resume or not status or status in {"RUNNING", "HALT_WALL_CLOCK", "STOP_AFTER_BUDGET_AUDIT", "STOP_AFTER_CALIBRATION", "STOP_AFTER_METHOD_DIAGNOSTIC"}:
         return
     if status in TERMINAL_STATUSES:
         raise Track19Halt(status, f"Existing terminal Track19 state found ({status}); use a fresh output-dir to rerun.")
@@ -526,6 +768,11 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--formal-seeds", default="901,902,903,904,905,906,907,908,909,910")
     parser.add_argument("--calibration-bundle", default=TRACK17_FORMAL_BUNDLES[2])
     parser.add_argument("--calibration-seeds", default="901")
+    parser.add_argument("--diagnostic-bundle", default=TRACK17_FORMAL_BUNDLES[2])
+    parser.add_argument("--diagnostic-seeds", default="901")
+    parser.add_argument("--diagnostic-methods", default=",".join(DEFAULT_DIAGNOSTIC_METHODS))
+    parser.add_argument("--diagnostic-eval-budget", type=int, default=4_000)
+    parser.add_argument("--diagnostic-max-runtime-seconds", type=float, default=1200.0)
     parser.add_argument("--eval-budget", type=int, default=16_000)
     parser.add_argument("--max-runtime-seconds", type=float, default=900.0)
     parser.add_argument("--eval-budget-100c", type=int, default=16_000)
@@ -537,7 +784,7 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--health-bundles", default=TRACK17_FORMAL_BUNDLES[0])
     parser.add_argument("--health-seeds", default="901")
     parser.add_argument("--ablation-bundles", default=TRACK17_FORMAL_BUNDLES[0])
-    parser.add_argument("--stop-after", choices=("budget_audit", "calibration", "fair_comparison"), default="fair_comparison")
+    parser.add_argument("--stop-after", choices=("budget_audit", "calibration", "method_diagnostic", "fair_comparison"), default="fair_comparison")
     return parser
 
 

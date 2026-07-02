@@ -1,4 +1,4 @@
-from dr_alns_ppo.final_track19 import track19_status
+from dr_alns_ppo.final_track19 import _annotate_diagnostic_metrics, _operator_outcome_counts, track19_status
 
 
 def _row(**overrides):
@@ -36,3 +36,35 @@ def test_track19_status_uses_operator_attempts_as_method_exploration_proxy():
         operator_counts='{"destroy":{"random_customer_removal":[0,0,0,16000]}}',
     )
     assert track19_status(row) == "VALID_BUT_WEAK"
+
+
+def test_operator_outcome_counts_use_destroy_counts_once():
+    counts = {
+        "destroy": {
+            "a": [1, 2, 3, 4],
+            "b": [0, 1, 0, 9],
+        },
+        "repair": {
+            "r": [100, 100, 100, 100],
+        },
+    }
+    assert _operator_outcome_counts(counts) == {
+        "best": 1,
+        "better_current": 3,
+        "accepted": 7,
+        "rejected": 13,
+        "attempts": 20,
+    }
+
+
+def test_diagnostic_metrics_mark_all_rejected_attempts():
+    row = _row(
+        best_cost=110.0,
+        solution_hash="warm",
+        operator_counts='{"destroy":{"random_customer_removal":[0,0,0,16000]}}',
+    )
+    _annotate_diagnostic_metrics(row)
+    assert row["diagnostic_improves_warm"] is False
+    assert row["diagnostic_accepted_move_count"] == 0
+    assert row["diagnostic_rejected_move_count"] == 16000
+    assert row["diagnostic_note"] == "all_operator_attempts_rejected"

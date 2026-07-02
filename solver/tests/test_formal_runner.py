@@ -16,7 +16,15 @@ from setp_solver.profit import infer_customer_home_depots
 from setp_solver.profit import calculate_depot_profits
 from setp_solver.solution import ChargingAction, Route, Solution
 from setp_solver.search import dynamic as dynamic_module
-from setp_solver.search.dynamic import RollingParameters, StagePlanResult, generate_dynamic_events, run_rolling_reoptimization, _solution_for_customer_subset
+from setp_solver.search.dynamic import (
+    RollingParameters,
+    RollingPolicyDecision,
+    StagePlanResult,
+    generate_dynamic_events,
+    myopic_rolling_policy,
+    run_rolling_reoptimization,
+    _solution_for_customer_subset,
+)
 from setp_solver.search import formal_runner
 from setp_solver.search.formal_runner import (
     ResumeLedger,
@@ -857,6 +865,55 @@ class FormalRunnerTests(unittest.TestCase):
 
         self.assertEqual(report["dynamic_final_control"]["scorer"], "setp_solver.cost.evaluate")
         self.assertEqual(report["static_revealed_control"]["scorer"], "setp_solver.cost.evaluate")
+
+    # v2026-07-01: Track20 policy hook must default to the old myopic active
+    # customer set when the callback returns no stage override.
+    def test_dynamic_myopic_policy_callback_keeps_stage_active_set(self) -> None:
+        captured: list[set[str]] = []
+
+        def fake_stage_plan(*args, **kwargs):
+            _bundle, instance, active_ids = args[:3]
+            captured.append(set(active_ids))
+            return StagePlanResult(Solution(), instance, 0, True, [])
+
+        with patch.object(dynamic_module, "load_or_generate_dynamic_events", return_value=[]), patch.object(
+            dynamic_module, "_active_customer_ids", return_value={"C1", "C2"}
+        ), patch.object(dynamic_module, "_run_stage_plan", fake_stage_plan), patch.object(
+            dynamic_module, "run_alns_wouda", return_value=SimpleNamespace(best_solution=Solution(), feasible=True, evaluations=0)
+        ), patch.object(dynamic_module, "evaluate", return_value={"total_cost": 100.0, "E_total": 10.0}), patch.object(
+            dynamic_module, "check_solution", return_value=[]
+        ):
+            report = run_rolling_reoptimization(FIXTURE_DIR, seed=1, eval_budget=1, stage_eval_budget=1, policy_callback=myopic_rolling_policy)
+
+        self.assertEqual(captured[0], {"C1", "C2"})
+        self.assertEqual(report["policy_trace"][0]["deferred_count"], 0)
+
+    # v2026-07-01: Track20 policy hook is allowed to defer a strict subset of
+    # currently active customers, and the action is auditable in policy_trace.
+    def test_dynamic_policy_callback_can_defer_stage_customers(self) -> None:
+        captured: list[set[str]] = []
+
+        def fake_stage_plan(*args, **kwargs):
+            _bundle, instance, active_ids = args[:3]
+            captured.append(set(active_ids))
+            return StagePlanResult(Solution(), instance, 0, True, [])
+
+        def defer_one(context):
+            chosen = {sorted(context.active_ids)[0]}
+            return RollingPolicyDecision(active_ids=chosen, metadata={"action": "defer_one"})
+
+        with patch.object(dynamic_module, "load_or_generate_dynamic_events", return_value=[]), patch.object(
+            dynamic_module, "_active_customer_ids", return_value={"C1", "C2"}
+        ), patch.object(dynamic_module, "_run_stage_plan", fake_stage_plan), patch.object(
+            dynamic_module, "run_alns_wouda", return_value=SimpleNamespace(best_solution=Solution(), feasible=True, evaluations=0)
+        ), patch.object(dynamic_module, "evaluate", return_value={"total_cost": 100.0, "E_total": 10.0}), patch.object(
+            dynamic_module, "check_solution", return_value=[]
+        ):
+            report = run_rolling_reoptimization(FIXTURE_DIR, seed=1, eval_budget=1, stage_eval_budget=1, policy_callback=defer_one)
+
+        self.assertEqual(len(captured[0]), 1)
+        self.assertEqual(report["policy_trace"][0]["deferred_count"], 1)
+        self.assertEqual(report["policy_trace"][0]["metadata"]["action"], "defer_one")
 
     # v2026-06-12: E7 rolling gate must preserve cumulative-state continuity and frozen paths.
     def test_dynamic_rolling_gate_conservation_assertions_pass(self) -> None:
