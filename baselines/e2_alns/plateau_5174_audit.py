@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import csv
+import argparse
 from dataclasses import replace
 import hashlib
 import json
@@ -12,13 +13,26 @@ from typing import Any
 
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
-INPUT_DIR = REPO_ROOT / "baselines/e2_alns/ev_heavy_findability_gate_long_same_instance_v2_data"
-OUTPUT_DIR = REPO_ROOT / "baselines/e2_alns/e2_g0_same_value_platform_audit_data"
+DEFAULT_INPUT_DIR = REPO_ROOT / "baselines/e2_alns/ev_heavy_findability_gate_long_same_instance_v2_data"
+DEFAULT_OUTPUT_DIR = REPO_ROOT / "baselines/e2_alns/e2_g0_same_value_platform_audit_data"
+INPUT_DIR = DEFAULT_INPUT_DIR
+OUTPUT_DIR = DEFAULT_OUTPUT_DIR
 BASELINE_ALGORITHMS = {"GA", "LNS", "PSO", "VNS"}
 
 
 def main() -> None:
+    global INPUT_DIR, OUTPUT_DIR
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--input-dir", default=str(DEFAULT_INPUT_DIR))
+    parser.add_argument("--output-dir", default=str(DEFAULT_OUTPUT_DIR))
+    args = parser.parse_args()
+    INPUT_DIR = Path(args.input_dir).resolve()
+    OUTPUT_DIR = Path(args.output_dir).resolve()
     OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
+    if (INPUT_DIR / "liveness_verdicts.csv").exists() and (INPUT_DIR / "decision.json").exists():
+        summary = audit_g0_reaudit_dir()
+        print(json.dumps(summary, ensure_ascii=False, indent=2))
+        return
     raw_rows = read_csv(INPUT_DIR / "raw_runs.csv")
     task_rows = read_task_rows(INPUT_DIR / ".tasks")
     metadata = read_json(INPUT_DIR / "metadata.json")
@@ -56,6 +70,98 @@ def main() -> None:
     write_json(OUTPUT_DIR / "summary.json", summary)
     write_artifact_hashes(OUTPUT_DIR / "artifact_hashes.json")
     print(json.dumps(summary, ensure_ascii=False, indent=2))
+
+
+def audit_g0_reaudit_dir() -> dict[str, Any]:
+    raw_rows = read_csv(INPUT_DIR / "raw_runs.csv")
+    liveness_rows = read_csv(INPUT_DIR / "liveness_verdicts.csv")
+    decision = read_json(INPUT_DIR / "decision.json")
+    metadata = read_json(INPUT_DIR / "metadata.json") if (INPUT_DIR / "metadata.json").exists() else {}
+    baseline_rows = [row for row in raw_rows if row.get("algorithm") in BASELINE_ALGORITHMS]
+    history_summary_rows = g0_reaudit_history_summary(baseline_rows)
+    seed_rows = g0_reaudit_seed_invariance(baseline_rows)
+    full_ok = all(row.get("gate_status") == "OK" and int(row.get("actual_evals", -1)) == int(row.get("eval_budget", -2)) for row in raw_rows)
+    exact_identity_recurred = (
+        len({row.get("best_cost") for row in baseline_rows}) == 1
+        and len({row.get("best_signature") for row in baseline_rows}) == 1
+    )
+    liveness_fail_rows = [row for row in liveness_rows if row.get("verdict") == "BASELINE_LIVENESS_FAIL"]
+    identity_suspects = [
+        row for row in liveness_rows
+        if row.get("verdict") in {"SEED_INVARIANCE_SUSPECT", "CROSS_ALGO_IDENTITY_SUSPECT"}
+    ]
+    verdict = "G0_RESIDUAL_HOMOGENIZATION" if liveness_fail_rows or identity_suspects else "G0_PASS_BASELINES_HEALTHY"
+    if not full_ok:
+        verdict = "G0_COLLECTION_INCOMPLETE"
+    summary = {
+        "schema": "setp-e2-g0-reaudit-plateau-audit.v1",
+        "input_dir": rel(INPUT_DIR),
+        "output_dir": rel(OUTPUT_DIR),
+        "metadata_head": metadata.get("head", ""),
+        "decision_verdict": decision.get("verdict", ""),
+        "verdict": verdict,
+        "rows_total": len(raw_rows),
+        "baseline_rows": len(baseline_rows),
+        "all_rows_full_ok": full_ok,
+        "old_exact_5174_identity_recurred": exact_identity_recurred,
+        "unique_baseline_best_costs": len({row.get("best_cost") for row in baseline_rows}),
+        "unique_baseline_best_signatures": len({row.get("best_signature") for row in baseline_rows}),
+        "identity_suspect_count": len(identity_suspects),
+        "liveness_fail_count": len(liveness_fail_rows),
+        "liveness_fail_run_ids": [row.get("run_id") for row in liveness_fail_rows],
+        "reason": (
+            "Old exact platform identity did not recur, but at least one baseline run still has no native best update."
+            if liveness_fail_rows and not exact_identity_recurred
+            else "See liveness and seed-invariance tables."
+        ),
+    }
+    write_csv(OUTPUT_DIR / "g0_reaudit_seed_invariance.csv", seed_rows)
+    write_csv(OUTPUT_DIR / "g0_reaudit_history_summary.csv", history_summary_rows)
+    write_csv(OUTPUT_DIR / "g0_reaudit_liveness_rows.csv", liveness_rows)
+    write_json(OUTPUT_DIR / "summary.json", summary)
+    write_artifact_hashes(OUTPUT_DIR / "artifact_hashes.json")
+    return summary
+
+
+def g0_reaudit_history_summary(raw_rows: list[dict[str, str]]) -> list[dict[str, Any]]:
+    rows: list[dict[str, Any]] = []
+    for row in raw_rows:
+        history = json.loads(row.get("history_json") or "[]")
+        updates = history[1:]
+        rows.append(
+            {
+                "algorithm": row.get("algorithm"),
+                "seed": row.get("seed"),
+                "run_id": row.get("run_id"),
+                "actual_evals": row.get("actual_evals"),
+                "best_cost": row.get("best_cost"),
+                "native_best_updates": row.get("native_best_updates"),
+                "flip_best_updates": row.get("flip_best_updates"),
+                "common_best_updates": row.get("common_best_updates"),
+                "route_count_unique": row.get("route_count_unique"),
+                "liveness_verdict": row.get("liveness_verdict"),
+                "final_improvement_eval": updates[-1].get("eval", "") if updates else "",
+                "unique_channels": "|".join(sorted({str(item.get("channel", "")) for item in updates if item.get("channel", "")})),
+            }
+        )
+    return rows
+
+
+def g0_reaudit_seed_invariance(raw_rows: list[dict[str, str]]) -> list[dict[str, Any]]:
+    rows: list[dict[str, Any]] = []
+    for algorithm in sorted(BASELINE_ALGORITHMS):
+        group = [row for row in raw_rows if row.get("algorithm") == algorithm]
+        rows.append(
+            {
+                "algorithm": algorithm,
+                "seeds": "|".join(str(row.get("seed")) for row in sorted(group, key=lambda item: int(item.get("seed", 0)))),
+                "unique_best_costs": len({row.get("best_cost") for row in group}),
+                "best_cost_values": "|".join(sorted({str(row.get("best_cost")) for row in group})),
+                "unique_best_signatures": len({row.get("best_signature") for row in group}),
+                "all_eval_budget_full": all(int(row.get("actual_evals", -1)) == int(row.get("eval_budget", -2)) for row in group),
+            }
+        )
+    return rows
 
 
 def read_csv(path: Path) -> list[dict[str, str]]:
