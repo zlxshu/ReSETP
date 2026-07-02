@@ -15,7 +15,7 @@ class NativeChannelAutopsyTest(unittest.TestCase):
         checks = autopsy.static_fact_checks()
 
         self.assertEqual(set(checks), {
-            "A1_baseline_forces_true_repair_zero",
+            "A1_baseline_no_longer_forces_true_repair_zero",
             "A2_route_scoring_downgrades_to_distance",
             "A3_e2_alns_uses_true_repair_one",
             "A4_decode_fallback_to_all_cv_on_violations",

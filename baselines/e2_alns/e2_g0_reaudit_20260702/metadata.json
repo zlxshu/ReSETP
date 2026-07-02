@@ -1,0 +1,27 @@
+{
+  "ab_eval_budget": 2000,
+  "ab_runtime_cap_seconds": 600.0,
+  "battery_override": "dataclasses.replace(DEFAULT_PRICES, B_battery_kwh=280.0, carbon_price=0.05034)",
+  "eval_budget": 16000,
+  "head": "0506cddebfaeb671c94c52ea94eb0a1caeadbca8",
+  "instance": "e2-threeshift-150c-01",
+  "numpy": "2.3.5",
+  "output_dir": "baselines/e2_alns/e2_g0_reaudit_20260702",
+  "phase": "true-repair-ab",
+  "protected_boundary": [
+    "no cost.py/check.py/evaluation.py/prices.py default/TeX changes",
+    "no feasible_repair.py/resetp_alns/ALNS main path semantic changes",
+    "not formal T3; no algorithm win/loss claim"
+  ],
+  "python": "/opt/anaconda3/bin/python3.13",
+  "pythonhashseed": "0",
+  "runtime_cap_seconds": 2700.0,
+  "schema": "setp-e2-g0-reaudit.v1",
+  "seeds": [
+    1,
+    2,
+    3
+  ],
+  "started_at_epoch": 1783015865.5460858,
+  "task": "E2-G0 closure: common flip accounting, liveness gate, true repair alignment, G0 reaudit"
+}

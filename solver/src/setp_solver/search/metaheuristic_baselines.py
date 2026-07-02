@@ -1620,15 +1620,10 @@ def _alns_neighbor(session: _SearchSession, solution: Solution, destroy: str, re
 
 @contextmanager
 def _baseline_fast_repair_flags() -> Any:
-    old_value = os.environ.get("SETP_ALNS_CRUSH_TRUE_REPAIR")
-    try:
-        os.environ["SETP_ALNS_CRUSH_TRUE_REPAIR"] = "0"
-        yield
-    finally:
-        if old_value is None:
-            os.environ.pop("SETP_ALNS_CRUSH_TRUE_REPAIR", None)
-        else:
-            os.environ["SETP_ALNS_CRUSH_TRUE_REPAIR"] = old_value
+    # Baseline repair scoring now uses the same cost-aware insertion metric as
+    # the independent ALNS path unless a caller explicitly overrides the
+    # environment for a diagnostic A/B run.
+    yield
 
 
 def _local_order_search(session: _SearchSession, solution: Solution, *, max_trials: int = 6) -> Solution:

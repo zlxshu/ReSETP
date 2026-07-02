@@ -194,9 +194,9 @@ def static_fact_checks() -> dict[str, dict[str, Any]]:
     source_route_plan = inspect.getsource(mb._route_customer_plan_feasible_cached)
     source_check = inspect.getsource(check_solution)
     checks = {
-        "A1_baseline_forces_true_repair_zero": {
-            "pass": 'SETP_ALNS_CRUSH_TRUE_REPAIR' in source_fast_flags and '"0"' in source_fast_flags,
-            "evidence": "metaheuristic_baselines._baseline_fast_repair_flags sets SETP_ALNS_CRUSH_TRUE_REPAIR to 0",
+        "A1_baseline_no_longer_forces_true_repair_zero": {
+            "pass": not ("SETP_ALNS_CRUSH_TRUE_REPAIR" in source_fast_flags and '"0"' in source_fast_flags),
+            "evidence": "metaheuristic_baselines._baseline_fast_repair_flags no longer forces SETP_ALNS_CRUSH_TRUE_REPAIR to 0 after C1-R1d alignment",
         },
         "A2_route_scoring_downgrades_to_distance": {
             "pass": "SETP_ALNS_CRUSH_TRUE_REPAIR" in source_repair and "_route_distance_delta" in source_repair,
