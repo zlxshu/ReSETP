@@ -1,0 +1,22 @@
+{
+  "A1_baseline_forces_true_repair_zero": {
+    "evidence": "metaheuristic_baselines._baseline_fast_repair_flags sets SETP_ALNS_CRUSH_TRUE_REPAIR to 0",
+    "pass": true
+  },
+  "A2_route_scoring_downgrades_to_distance": {
+    "evidence": "repair_scoring.route_model_cost_delta returns _route_distance_delta when TRUE_REPAIR is disabled",
+    "pass": true
+  },
+  "A3_e2_alns_uses_true_repair_one": {
+    "evidence": "winner_operators.e2_alns_variant_flags sets TRUE_REPAIR to 1",
+    "pass": true
+  },
+  "A4_decode_fallback_to_all_cv_on_violations": {
+    "evidence": "check_solution returns violation list; _decode_order_like_random_key falls back to all-CV when violations are present",
+    "pass": true
+  },
+  "A5_route_plan_feasible_uses_cv_temp_route": {
+    "evidence": "_route_customer_plan_feasible_cached checks a temporary CV route schedule",
+    "pass": true
+  }
+}
