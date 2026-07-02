@@ -1,0 +1,77 @@
+{
+  "status": "NO_DESTROY_LEVERAGE_CLEAN",
+  "reason": "Clean best-of-k destroy leverage <1%; max_scale=-1.405%.",
+  "row_count": 45,
+  "worker_integrity_ok": true,
+  "zero_violations": true,
+  "overall": {
+    "label": "overall",
+    "operator_select_mean": 716.4039416548876,
+    "worst_removal_mean": 755.9744484084757,
+    "best_of_k_mean": 749.24589390351,
+    "best_of_k_headroom_pct": -4.584278552789333,
+    "worst_improvement_pct": -5.523490931970663
+  },
+  "scale_rows": [
+    {
+      "label": "25c",
+      "operator_select_mean": 577.5465061669412,
+      "worst_removal_mean": 597.0660214269644,
+      "best_of_k_mean": 585.6618644387933,
+      "best_of_k_headroom_pct": -1.4051436871659146,
+      "worst_improvement_pct": -3.379730472195269
+    },
+    {
+      "label": "50c",
+      "operator_select_mean": 924.6900948868071,
+      "worst_removal_mean": 994.337088880743,
+      "best_of_k_mean": 994.621938100585,
+      "best_of_k_headroom_pct": -7.562733028122078,
+      "worst_improvement_pct": -7.531928197247696
+    }
+  ],
+  "bundle_rows": [
+    {
+      "label": "models/data_bundle/generated_instances/E-UK25_11__curric_d2_s3_seed2211_24h",
+      "operator_select_mean": 615.0384939190468,
+      "worst_removal_mean": 644.5096985813939,
+      "best_of_k_mean": 618.8650358524277,
+      "best_of_k_headroom_pct": -0.6221629981235867,
+      "worst_improvement_pct": -4.791765873800115
+    },
+    {
+      "label": "models/data_bundle/generated_instances/E-UK25_12__curric_d2_s3_seed2212_24h",
+      "operator_select_mean": 509.46012121597306,
+      "worst_removal_mean": 529.3620546238368,
+      "best_of_k_mean": 521.7809516965591,
+      "best_of_k_headroom_pct": -2.4184092076095838,
+      "worst_improvement_pct": -3.906475223293641
+    },
+    {
+      "label": "models/data_bundle/generated_instances/E-UK25_13__curric_d2_s3_seed2213_24h",
+      "operator_select_mean": 608.1409033658034,
+      "worst_removal_mean": 617.3263110756625,
+      "best_of_k_mean": 616.339605767393,
+      "best_of_k_headroom_pct": -1.348158355442499,
+      "worst_improvement_pct": -1.5104078115814479
+    },
+    {
+      "label": "models/data_bundle/generated_instances/E-UK50_11__curric_d2_s3_seed2251_24h",
+      "operator_select_mean": 966.9003786331178,
+      "worst_removal_mean": 1048.3776254368456,
+      "best_of_k_mean": 1067.5500658304543,
+      "best_of_k_headroom_pct": -10.409519886590832,
+      "worst_improvement_pct": -8.42664338583775
+    },
+    {
+      "label": "models/data_bundle/generated_instances/E-UK50_12__curric_d2_s3_seed2252_24h",
+      "operator_select_mean": 882.4798111404965,
+      "worst_removal_mean": 940.2965523246403,
+      "best_of_k_mean": 921.6938103707158,
+      "best_of_k_headroom_pct": -4.443614316744544,
+      "worst_improvement_pct": -6.551621969620218
+    }
+  ],
+  "max_scale_best_of_k_headroom_pct": -1.4051436871659146,
+  "gate_rule": "DESTROY_LEVERAGE_CLEAN if any scale >=3%; LEVERAGE_MARGINAL if any scale is 1-3%; NO_DESTROY_LEVERAGE_CLEAN if all scales <1%."
+}
