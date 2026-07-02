@@ -878,26 +878,34 @@ def _vehicle_type_mutation(solution: Solution, session: _SearchSession, *, attem
 
 
 def _append_customer_to_cached_plan(customer_id: str, plans: dict[str, list[list[str]]], session: _SearchSession) -> None:
-    best: tuple[float, str, int | None] | None = None
+    best_key: tuple[float, str, int, int] | None = None
+    best_target: tuple[str, int | None] | None = None
+    c_km = _price(session.context.prices, "c_km")
+    fixed_cost = _price(session.context.prices, "vehicle_fixed_cost")
     for depot_id in session.depots_by_customer[customer_id]:
         depot_plans = plans[depot_id]
         for idx, customer_ids in enumerate(depot_plans):
             candidate = (*customer_ids, customer_id)
             if _route_customer_plan_feasible_cached(depot_id, candidate, session):
-                distance = _route_distance_cached(depot_id, candidate, session)
-                key = (distance, depot_id, idx)
-                if best is None or key < best:
-                    best = key
+                old_distance = _route_distance_cached(depot_id, tuple(customer_ids), session)
+                new_distance = _route_distance_cached(depot_id, candidate, session)
+                marginal_cost = ((new_distance - old_distance) / 1000.0) * c_km
+                key = (marginal_cost, depot_id, 0, idx)
+                if best_key is None or key < best_key:
+                    best_key = key
+                    best_target = (depot_id, idx)
         single = (customer_id,)
         if _route_customer_plan_feasible_cached(depot_id, single, session):
-            key = (_route_distance_cached(depot_id, single, session), depot_id, None)
-            if best is None or key < best:
-                best = key
-    if best is None:
+            new_route_cost = (_route_distance_cached(depot_id, single, session) / 1000.0) * c_km + fixed_cost
+            key = (new_route_cost, depot_id, 1, 0)
+            if best_key is None or key < best_key:
+                best_key = key
+                best_target = (depot_id, None)
+    if best_target is None:
         depot_id = session.depots_by_customer[customer_id][0]
         plans[depot_id].append([customer_id])
         return
-    _, depot_id, route_idx = best
+    depot_id, route_idx = best_target
     if route_idx is None:
         plans[depot_id].append([customer_id])
     else:
