@@ -65,7 +65,7 @@ baseline destroy/repair 桥已能产出 20-40 路线级可行邻居；本结论�
 {
   "anchor": "goeke80_100_01_seed2_Q1600_in_memory_override",
   "best_cost": 5480.399324501256,
-  "elapsed_seconds": 58.936748457999784,
+  "elapsed_seconds": 57.04410475000077,
   "failure_reason": "Q_capacity=1600.0 rerun did not reproduce the 4878 legacy scale",
   "note": "D4 is explanatory and does not block BRIDGE_FIXED.",
   "schema": "setp-c1-r1b-legacy-q1600-anchor.v1",
