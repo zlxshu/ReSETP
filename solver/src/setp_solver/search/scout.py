@@ -11,8 +11,7 @@ from dataclasses import dataclass
 import importlib
 from pathlib import Path
 import sys
-
-from .alns_wouda import _ensure_matplotlib_stub
+import types
 
 
 @dataclass(frozen=True)
@@ -55,3 +54,53 @@ def _probe(name: str, path: Path, module: str | None, adapter: str, status: str)
         return CandidateStatus(name, False, f"{type(exc).__name__}: {exc}", adapter, status)
     finally:
         sys.path[:] = old_path
+
+
+def _ensure_matplotlib_stub() -> None:
+    # Scout imports reference packages only to record interface status. N-Wouda
+    # ALNS imports matplotlib for optional plotting, so keep that stub local to
+    # the diagnostic scout instead of wiring it into the main ALNS path.
+    if "matplotlib.pyplot" in sys.modules:
+        return
+    matplotlib = types.ModuleType("matplotlib")
+    pyplot = types.ModuleType("matplotlib.pyplot")
+
+    class _Axes:
+        def plot(self, *args: object, **kwargs: object) -> None:
+            return None
+
+        def barh(self, *args: object, **kwargs: object) -> None:
+            return None
+
+        def set_title(self, *args: object, **kwargs: object) -> None:
+            return None
+
+        def set_ylabel(self, *args: object, **kwargs: object) -> None:
+            return None
+
+        def set_xlabel(self, *args: object, **kwargs: object) -> None:
+            return None
+
+        def legend(self, *args: object, **kwargs: object) -> None:
+            return None
+
+    class _Figure:
+        def subplots(self, *args: object, **kwargs: object) -> tuple[_Axes, _Axes]:
+            return _Axes(), _Axes()
+
+        def subplots_adjust(self, *args: object, **kwargs: object) -> None:
+            return None
+
+        def suptitle(self, *args: object, **kwargs: object) -> None:
+            return None
+
+    def subplots(*args: object, **kwargs: object) -> tuple[_Figure, _Axes]:
+        return _Figure(), _Axes()
+
+    pyplot.Axes = _Axes
+    pyplot.Figure = _Figure
+    pyplot.subplots = subplots
+    pyplot.draw_if_interactive = lambda *args, **kwargs: None
+    matplotlib.pyplot = pyplot
+    sys.modules["matplotlib"] = matplotlib
+    sys.modules["matplotlib.pyplot"] = pyplot

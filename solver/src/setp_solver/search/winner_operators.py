@@ -47,6 +47,7 @@ from .construction import build_initial_solution
 from .evaluation import EvalBudget, model_cost, EvaluationContext, score_candidate, score_reference
 from .fleet import UNBOUNDED_FLEET
 from .local_search import improve_solution_locally
+from .resetp_alns import SimulatedAnnealing
 from .timing import TimingLedger, attach_timing_ledger, timed_section
 
 
@@ -910,8 +911,6 @@ def _make_winner_acceptance_criterion(initial_state: AlnsState, *, config: Winne
     if not _flag_enabled_from(flags, "SETP_ALNS_CRUSH_SA_ACCEPTANCE"):
         with _temporary_flags(flags):
             return _make_acceptance_criterion(initial_state, _target_iterations(None, config.eval_budget))
-    _ensure_sa_acceptance_available()
-    from alns.accept import SimulatedAnnealing
 
     mode = str(flags.get("SETP_ALNS_CRUSH_SA_MODE", "autofit")).strip().lower().replace("-", "_")
     initial_obj = max(1.0, abs(float(initial_state.objective())))
@@ -927,12 +926,6 @@ def _make_winner_acceptance_criterion(initial_state: AlnsState, *, config: Winne
         start_temperature = max(1e-9, -SA_LNS_PHI * initial_obj / math.log(0.5))
         return SimulatedAnnealing(start_temperature, 1e-9, SA_LNS_MU, method="exponential")
     raise ValueError(f"Unsupported E2 ALNS SA mode: {mode}")
-
-
-def _ensure_sa_acceptance_available() -> None:
-    from .alns_wouda import _ensure_local_alns_on_path
-
-    _ensure_local_alns_on_path()
 
 
 def _sa_target_iterations(config: WinnerKernelConfig) -> int:

@@ -1,9 +1,11 @@
-"""Adapter for the local N-Wouda ALNS package.
+"""Independent ReSETP ALNS runtime entrypoint.
 
 v2026-06-11: This module is only an adapter shell for paper_main.tex
 lines 553 and 661. ``AlnsState.objective`` delegates to ``penalized_obj``;
 operators mutate only Solution routes and never duplicate model semantics.
-Use ``run_alns_wouda`` for the G4 gate.
+Use ``run_alns_wouda`` for the G4 gate. The function name is retained for
+runner compatibility; runtime acceptance and selection now use the project
+local ``resetp_alns`` backend.
 """
 
 from __future__ import annotations
@@ -12,9 +14,7 @@ from dataclasses import dataclass, field, replace
 import math
 import os
 from pathlib import Path
-import sys
 import time
-import types
 from typing import Any, Callable
 
 import numpy as np
@@ -38,6 +38,7 @@ from .feasible_repair import (
 from .fleet import FleetLimits, UNBOUNDED_FLEET, infer_fleet_limits, normalize_solution_vehicle_trips, route_ev_energy_summary
 from .local_search import improve_solution_locally
 from .repair_scoring import route_model_cost_delta
+from .resetp_alns import AlphaUCB, HillClimbing, RecordToRecordTravel
 from .timing import timed_section
 
 
@@ -111,9 +112,7 @@ def run_alns_wouda(
     carbon_quota_kg: float = 0.0,
     prices: Any = DEFAULT_PRICES,
 ) -> AlnsRunResult:
-    """Run a small-budget ALNS-Wouda pass on a generated bundle."""
-
-    _ensure_local_alns_on_path()
+    """Run a small-budget ReSETP ALNS pass on a generated bundle."""
 
     bundle = load_search_bundle(bundle_dir)
     limits = infer_fleet_limits(bundle.bundle_dir)
@@ -233,12 +232,8 @@ def _target_iterations(iterations: int | None, eval_budget: int | None) -> int:
 
 
 def _make_acceptance_criterion(initial_state: AlnsState, target_iterations: int) -> Any:
-    _ensure_local_alns_on_path()
     if not _flag_enabled("SETP_ALNS_CRUSH_TRUE_ACCEPTANCE"):
-        from alns.accept import HillClimbing
-
         return HillClimbing()
-    from alns.accept import RecordToRecordTravel
 
     initial_obj = max(1.0, float(initial_state.objective()))
     start_threshold = max(5.0, 0.02 * initial_obj)
@@ -254,9 +249,6 @@ def _make_acceptance_criterion(initial_state: AlnsState, target_iterations: int)
 
 
 def _make_operator_selector(num_destroy: int, num_repair: int) -> Any:
-    _ensure_local_alns_on_path()
-    from alns.select import AlphaUCB
-
     return AlphaUCB([20.0, 8.0, 2.0, 0.05], alpha=0.08, num_destroy=num_destroy, num_repair=num_repair)
 
 
@@ -943,60 +935,3 @@ def _next_vehicle_id(solution: Solution, prefix: str) -> str:
     while f"{prefix}{idx}" in used:
         idx += 1
     return f"{prefix}{idx}"
-
-
-def _ensure_local_alns_on_path() -> None:
-    repo_root = Path(__file__).resolve().parents[4]
-    alns_path = repo_root / "Reference Algorithm" / "ALNS-7.0.0@N-Wouda"
-    if str(alns_path) not in sys.path:
-        sys.path.insert(0, str(alns_path))
-    _ensure_matplotlib_stub()
-
-
-def _ensure_matplotlib_stub() -> None:
-    # v2026-06-11: local ALNS imports matplotlib only for optional plotting;
-    # tests and gates never plot, so provide a no-op stub instead of installing.
-    if "matplotlib.pyplot" in sys.modules:
-        return
-    matplotlib = types.ModuleType("matplotlib")
-    pyplot = types.ModuleType("matplotlib.pyplot")
-
-    class _Axes:
-        def plot(self, *args: Any, **kwargs: Any) -> None:
-            return None
-
-        def barh(self, *args: Any, **kwargs: Any) -> None:
-            return None
-
-        def set_title(self, *args: Any, **kwargs: Any) -> None:
-            return None
-
-        def set_ylabel(self, *args: Any, **kwargs: Any) -> None:
-            return None
-
-        def set_xlabel(self, *args: Any, **kwargs: Any) -> None:
-            return None
-
-        def legend(self, *args: Any, **kwargs: Any) -> None:
-            return None
-
-    class _Figure:
-        def subplots(self, *args: Any, **kwargs: Any) -> tuple[_Axes, _Axes]:
-            return _Axes(), _Axes()
-
-        def subplots_adjust(self, *args: Any, **kwargs: Any) -> None:
-            return None
-
-        def suptitle(self, *args: Any, **kwargs: Any) -> None:
-            return None
-
-    def subplots(*args: Any, **kwargs: Any) -> tuple[_Figure, _Axes]:
-        return _Figure(), _Axes()
-
-    pyplot.Axes = _Axes
-    pyplot.Figure = _Figure
-    pyplot.subplots = subplots
-    pyplot.draw_if_interactive = lambda *args, **kwargs: None
-    matplotlib.pyplot = pyplot
-    sys.modules["matplotlib"] = matplotlib
-    sys.modules["matplotlib.pyplot"] = pyplot
