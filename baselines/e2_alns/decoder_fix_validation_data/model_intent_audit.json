@@ -1,0 +1,12 @@
+{
+  "checks": {
+    "cost_has_km_cost": true,
+    "cost_has_route_fixed_cost": true,
+    "prices_fixed_cost_per_shift": true,
+    "prices_has_c_km": true,
+    "tex_fixed_cost_dispatch_text": true,
+    "tex_objective_fixed_and_km": true
+  },
+  "decision": "不改建模；固定费沿用每趟/每次派遣口径，不改为每实体车固定费，不引入 fleet-size-and-mix。",
+  "model_intent_ok": true
+}

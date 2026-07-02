@@ -1,0 +1,55 @@
+{
+  "bridge_decision": "BRIDGE_CAUSE_LOCATED",
+  "bridge_global_failure_histogram": {
+    "REPAIR_NONE": 200
+  },
+  "bridge_rows": 200,
+  "candidate_rows": 4000,
+  "collection_failure_count": 0,
+  "decode_rows": 2496,
+  "decoded_cost_lt_platform_count": 1,
+  "decoded_cost_lt_platform_rate": 0.00040064102564102563,
+  "decoded_cost_min": 5158.94347036807,
+  "decoded_cost_p50": 7296.815044758418,
+  "decoded_route_count_max": 33,
+  "decoded_route_count_min": 21,
+  "decoded_route_count_p50": 25.0,
+  "decoded_route_count_unique_count": 13,
+  "decoder_decision": "DECODER_FIXED",
+  "decoder_micro_check_ok": true,
+  "expected_run_summary_rows": 2,
+  "failure_sample": [],
+  "model_intent_ok": true,
+  "plain": "解码器已恢复多客户路线候选；桥尸检已完成。本结论只说明 baseline health probe，不是算法胜负。",
+  "pre_fix_decode_summary": {
+    "available": true,
+    "by_algorithm": {
+      "GA": {
+        "cost_min": 20997.633223472087,
+        "cost_p50": 21009.041568215667,
+        "route_count_max": 150,
+        "route_count_min": 150,
+        "route_count_p50": 150.0,
+        "rows": 1094,
+        "unique_route_counts": [
+          150
+        ]
+      },
+      "PSO": {
+        "cost_min": 20993.53221428402,
+        "cost_p50": 21022.442187034758,
+        "route_count_max": 150,
+        "route_count_min": 150,
+        "route_count_p50": 150.0,
+        "rows": 1432,
+        "unique_route_counts": [
+          150
+        ]
+      }
+    },
+    "path": "baselines/e2_alns/native_channel_autopsy_data/decode_events.csv",
+    "rows": 5214
+  },
+  "run_summary_rows": 2,
+  "verdict": "DECODER_FIXED_AND_BRIDGE_CAUSE_LOCATED"
+}

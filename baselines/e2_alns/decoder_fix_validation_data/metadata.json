@@ -1,0 +1,31 @@
+{
+  "battery_kwh": 280.0,
+  "bridge_trials": 200,
+  "carbon_price": 0.05034,
+  "category": "threeshift",
+  "decision_boundary": "baseline health probe; not formal T3; no algorithm win/loss claim",
+  "eval_budget": 2000,
+  "evidence_level": "PROBE / 非正式 T3",
+  "head": "ee1f7bfb1ac8466322f671d453e20359335e2e63",
+  "instance": "e2-threeshift-150c-01",
+  "modeling_decision": "不改建模；只修 baseline decoder 实现偏差；固定费仍按每趟/每次派遣口径。",
+  "numpy": "2.3.5",
+  "output_dir": "baselines/e2_alns/decoder_fix_validation_data",
+  "platform_cost": 5174.345121253789,
+  "protected_semantics": [
+    "cost.py",
+    "check.py",
+    "search/evaluation.py",
+    "prices.py defaults",
+    "TeX model equations"
+  ],
+  "python": "/opt/anaconda3/bin/python3.13",
+  "repo_root": "/Volumes/移动硬盘（512G）/ReSETP",
+  "report_path": "baselines/e2_alns/decoder_fix_validation.md",
+  "runtime_cap_seconds": 600.0,
+  "schema": "setp-c1-r1a-r3-decoder-fix-validation.v1",
+  "seed": 1,
+  "size": 150,
+  "started_at_epoch": 1783005084.427395,
+  "task": "C1-R1a/R3 decoder marginal repair and bridge autopsy"
+}
