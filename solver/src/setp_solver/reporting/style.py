@@ -6,11 +6,12 @@ import sys
 
 
 PALETTE = {
-    "blue": "#1F5A85",
-    "green": "#2E6F55",
-    "red": "#9E3D36",
-    "amber": "#9A6A20",
-    "purple": "#654A83",
+    "blue": "#0072B2",
+    "green": "#009E73",
+    "red": "#D55E00",
+    "amber": "#E69F00",
+    "purple": "#CC79A7",
+    "sky": "#56B4E9",
     "gray": "#666666",
     "light_gray": "#D9D9D9",
     "dark": "#1A1A1A",
@@ -86,11 +87,11 @@ def sample_watermark(ax) -> None:
     ax.text(
         0.5,
         0.5,
-        "样张",
+        "样例数据/非实验结果",
         transform=ax.transAxes,
         ha="center",
         va="center",
-        fontsize=34,
+        fontsize=24,
         color="#9CA3AF",
         alpha=0.22,
         rotation=18,

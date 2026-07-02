@@ -94,7 +94,8 @@
 \Title{兼顾收益公平与时变碳强度的动态协同多车场混合车队路径优化}
 \Author{周雷习书, 干宏程, 邱莹莹}{上海理工大学 管理学院, 上海 200093}
 % v2026-06-13: formal-backfill updates abstract wording from pre-run draft to final W2 experiment wording.
-\Abstract{在动态城市配送中，电网碳强度的时段差异会通过电动汽车充电决策影响油电混合车队协同调度，同时多车场协同还需兼顾车场间收益公平。本文研究考虑动态需求、时变电网碳强度和收益公平的协同多车场混合车队车辆路径问题，构建以系统总运营成本最小化为目标、以车场协同收益公平下界为约束的优化模型，综合刻画共享车辆池、客户跨车场分配、车场间调拨、共享充电站容量、非线性部分充电、电动汽车充电侧间接碳排放和碳配额惩罚等机制。针对新增、取消及需求变化三类动态事件，设计定量--定时联合触发的滚动重规划机制，并在冻结已执行路径的基础上继承车辆位置、时间、载重、电量、充电站占用和已产生碳排放状态。求解部分采用统一解表示、可行性检查、成本评价和断点续算记录组织8类求解算法，并在相同预算下进行正式对比。数值实验从算法有效性、静态基准、车型反事实、机制消融、碳强度与碳配额敏感性、收益公平阈值敏感性和动态滚动重规划等维度验证模型与算法的有效性。}
+% v2026-07-03: algorithm list is still being rebuilt under the E2 health gate; avoid a fixed algorithm count in the abstract.
+\Abstract{在动态城市配送中，电网碳强度的时段差异会通过电动汽车充电决策影响油电混合车队协同调度，同时多车场协同还需兼顾车场间收益公平。本文研究考虑动态需求、时变电网碳强度和收益公平的协同多车场混合车队车辆路径问题，构建以系统总运营成本最小化为目标、以车场协同收益公平下界为约束的优化模型，综合刻画共享车辆池、客户跨车场分配、车场间调拨、共享充电站容量、非线性部分充电、电动汽车充电侧间接碳排放和碳配额惩罚等机制。针对新增、取消及需求变化三类动态事件，设计定量--定时联合触发的滚动重规划机制，并在冻结已执行路径的基础上继承车辆位置、时间、载重、电量、充电站占用和已产生碳排放状态。求解部分采用统一解表示、可行性检查、成本评价和断点续算记录组织多类文献主流元启发式算法，并在统一接口与相同预算下进行正式对比。数值实验从算法有效性、静态基准、车型反事实、机制消融、碳强度与碳价敏感性、收益公平阈值敏感性和动态滚动重规划等维度验证模型与算法的有效性。}
 \Keywords{协同多车场; 混合车队; 车辆路径问题; 动态需求; 时变电网碳强度; 收益公平}
 \ETitle{Dynamic Collaborative Multi-depot Mixed-fleet Vehicle Routing with Profit Fairness and Time-varying Grid Carbon Intensity}
 \EAuthor{ZHOU Leixishu, GAN Hongcheng, QIU Yingying}{University of Shanghai for Science and Technology, Shanghai 200093, China}
@@ -558,8 +559,8 @@ u_{ijk}^{\tau},a_{ik}^{\tau},b_{ik}^{\tau},y_{skt}^{\tau},g_{skt}^{\tau},y_{ikt}
 
 \subsection{算法定位}
 
-% v2026-06-13: replace pre-run algorithm wording with the formal W2 solver contract.
-本文采用统一编码、统一可行性核验和统一成本评价接口组织算法实验，并将 DR-ALNS、ALNS、VNS、GA、SA、NSGA-II 等8类求解算法放在同一预算和同一评价函数下比较。主结果不依赖单一算法的内部标签，而以正式数值实验中所有可行解的已观测最优值作为算法对比参照；滚动重规划实验则在同一接口下重复调用阶段求解器。
+% v2026-07-03: E2 baseline set is being rebuilt; keep the interface claim without freezing a count or final list.
+本文采用统一编码、统一可行性核验和统一成本评价接口组织算法实验，并在统一接口与相同预算下与多类文献主流元启发式算法对比，最终清单以算法对比表为准。主结果不依赖单一算法的内部标签，而以正式数值实验中所有可行解的已观测最优值作为算法对比参照；滚动重规划实验则在同一接口下重复调用阶段求解器。
 
 \subsection{输入输出接口}
 
@@ -593,7 +594,8 @@ u_{ijk}^{\tau},a_{ik}^{\tau},b_{ik}^{\tau},y_{skt}^{\tau},g_{skt}^{\tau},y_{ikt}
 
 考虑到时变电网碳强度、公共充电电价和碳交易价格等细粒度数据在国内尚不完全公开，本文采用来源完整、可公开核验的英国公开数据完成参数标定，所得机制性结论用于为中国物流低碳管理提供参考。本文成本统一以英镑计量。电网碳强度采用NESO发布的Great Britain范围actual national carbon intensity，并按固定时间粒度换算为kgCO\textsubscript{2}/kWh\textsuperscript{\cite{ref:29}}；Carbon Intensity API用于核对碳强度接口和时间粒度\textsuperscript{\cite{ref:30}}。柴油CO\textsubscript{2}因子、柴油价格、电价和碳交易价格分别来自GOV.UK温室气体转换因子、道路燃油价格、非居民部门电价和UK ETS碳价相关资料\textsuperscript{\cite{ref:31,ref:32,ref:33,ref:34,ref:35}}。充电占用成本$c_s^{occ}$作为补能技术场景参数处理，不引用非同口径的工资或车辆租赁报价。
 
-车辆能耗参数与第2节模型保持一致。燃油车油耗和碳排放按CMEM相关公式计算，电动汽车行驶阶段不计直接尾气排放，充电侧间接碳排放由实际充电量和对应时段电网碳强度确定。求解算法尚未最终确定，因此正文不列出具体算法参数；后续确定主算法后，应统一说明主算法、基准算法、共同评价函数、终止准则和独立运行次数。
+% v2026-07-03: remove obsolete pre-run sentence; algorithm protocol belongs to Section 3 and T3.
+车辆能耗参数与第2节模型保持一致。燃油车油耗和碳排放按CMEM相关公式计算，电动汽车行驶阶段不计直接尾气排放，充电侧间接碳排放由实际充电量和对应时段电网碳强度确定。算法输入输出、共同评价函数和终止准则见第3节；最终基准算法清单、预算账本和独立运行次数以后续算法对比表为准。
 
 {
 \setptabsetup
@@ -605,9 +607,8 @@ u_{ijk}^{\tau},a_{ik}^{\tau},b_{ik}^{\tau},y_{skt}^{\tau},g_{skt}^{\tau},y_{ikt}
 \tablelasttail{\bottomrule}
 \begin{supertabular}{@{}>{\centering\arraybackslash}p{0.12\linewidth}>{\RaggedRight\arraybackslash}p{0.38\linewidth}>{\centering\arraybackslash}p{0.22\linewidth}>{\centering\arraybackslash}p{0.20\linewidth}@{}}
 \multicolumn{4}{l}{\textbf{A 网络与算例基础}}\\
-$|\mathcal{D}|$ & 车场数量 & 2 & 个\\
-$|N^0|$ & 客户总数 & 25 & 个\\
-$|\mathcal{S}|$ & 共享充电站数量 & 3 & 个\\
+% v2026-07-03: keep network scale in T1; parameter table should not carry stale 25-customer draft values.
+网络规模 & 车场、客户与共享充电站规模 & 见表 \ref{tab:formal-instances} & ---\\
 $m$ & 可用车辆总数上限(含油车与电动车) & 20 & 辆\\
 $m^g$ & 可用燃油车数量上限 & 10 & 辆\\
 $m^e$ & 可用电动车数量上限 & 10 & 辆\\
@@ -722,7 +723,7 @@ $\theta=1.0$ 表示协同后各车场收益不低于独立运营基准,对应协
 
 \subsection{算法有效性验证}
 
-算法有效性实验采用相同算例、相同约束口径、相同评价函数和相同计算预算。由于论文专用算例无公开BKS，表 \ref{tab:formal-algorithms} 中的偏差均以本轮所有可行解中的已观测最优值为参照，不称为BKS gap。收敛过程和终值分布见图 \ref{fig:formal-f2}。
+算法有效性实验采用相同算例、相同约束口径、相同评价函数和相同计算预算。由于论文专用算例无公开BKS，表 \ref{tab:formal-algorithms} 中的偏差均以本轮所有可行解中的已观测最优值为参照，不称为BKS gap。收敛过程见图 \ref{fig:formal-f2}。
 
 \begin{table}[H]
 \centering
@@ -735,7 +736,7 @@ $\theta=1.0$ 表示协同后各车场收益不低于独立运营基准,对应协
 \begin{figure}[H]
 \centering
 \includegraphics[width=0.92\linewidth]{generated_figures/figure_f2_algorithm_performance.pdf}
-\caption{算法收敛过程与终值分布}
+\caption{算法收敛过程}
 \label{fig:formal-f2}
 \end{figure}
 
@@ -770,7 +771,7 @@ $\theta=1.0$ 表示协同后各车场收益不低于独立运营基准,对应协
 \input{generated_tables/t5_ablation.tex}
 \end{table}
 
-\subsection{碳强度、碳配额与碳价敏感性}
+\subsection{碳强度与碳价敏感性}
 
 碳情景实验用于判断低碳信号是否真实进入决策。本文从两个层面刻画配送碳排放：一是燃油车燃油消耗产生的直接排放，二是电动车充电按对应时段电网碳强度折算的间接排放。表 \ref{tab:formal-two-layer-carbon} 给出三类充电策略下的碳排放结果，图 \ref{fig:formal-f3} 和图 \ref{fig:formal-f4} 分别展示两层减碳效果与48个时段的充电负荷分布。由表 \ref{tab:formal-two-layer-carbon} 可知，碳感知择时充电的混合车队方案总碳排放约为 1935.2 kgCO$_2$e，其中燃油车直接排放约 1885.6 kgCO$_2$e，电动车充电间接排放约 49.7 kgCO$_2$e；而在仅使用燃油车的方案下，总碳排放高达 2330.7 kgCO$_2$e 且全部为直接排放。这表明以电代油在显著降低总碳排放的同时，会将一部分排放由燃油车尾气的直接排放转移为电网侧的间接排放；配送碳排放的真实水平取决于两层排放的净效应，若仅统计燃油车尾气而忽略充电间接排放，将系统性低估混合车队的真实碳足迹。在相同车队结构下，碳感知择时充电相比即时充电进一步将间接排放由约 78.6 kgCO$_2$e 降至约 49.7 kgCO$_2$e，说明将分时电网碳强度引入充电时刻决策能够在不改变路径的前提下降低间接排放。
 
@@ -786,7 +787,8 @@ $\theta=1.0$ 表示协同后各车场收益不低于独立运营基准,对应协
 \centering
 \includegraphics[width=0.48\linewidth]{generated_figures/figure_f3_two_layer_carbon_waterfall.pdf}\hfill
 \includegraphics[width=0.48\linewidth]{generated_figures/figure_f3_two_layer_carbon_bars.pdf}
-\caption{两层减碳效果（F3 以混合最优解同路线全燃油为基线，刻画动力替换的两层分解；与表 T6 中 CV-only 独立重优化基线口径不同。）}
+% v2026-07-03: F3 and T6 now share one three-row carbon chain; no dual-baseline explanation.
+\caption{两层减碳效果（与表 \ref{tab:formal-two-layer-carbon} 使用同一口径链：仅油车重优化基线、混合车队朴素即充、混合车队碳感知择时。）}
 \label{fig:formal-f3}
 \end{figure}
 
@@ -797,11 +799,12 @@ $\theta=1.0$ 表示协同后各车场收益不低于独立运营基准,对应协
 \label{fig:formal-f4}
 \end{figure}
 
-在两层减碳的基础上，进一步考察碳配额与碳价对配送方案的影响。固定其余参数，对比现实碳价邻域内的求解结果，如表 \ref{tab:formal-carbon-sensitivity} 与图 \ref{fig:formal-f5} 所示。由表可知，单位碳价一定时，配额水平的变化仅改变碳交易成本的核算：当企业持有配额高于经营活动所需时，可通过出售剩余配额获得收益而降低总成本，反之则需购入配额而提高总成本；然而不同配额下求解方案的总碳排放量基本相同。究其原因，在可买可卖的线性碳交易核算下，阶段可用配额 $CE^\tau$ 以与决策无关的常数项 $-p^{car}CE^\tau$ 进入目标函数，理论上其变化不改变最优路径与车型选择，该结论与文献\textsuperscript{\cite{ref:23}}中``不同碳限额下求解方案碳排量几乎相同''的报告相吻合。
+% v2026-07-03: remove the heatmap framing; quota is a constant term under linear buy/sell trading.
+在两层减碳的基础上，进一步考察碳价对配送方案的影响。固定其余参数，对比现实碳价邻域内的求解结果，如表 \ref{tab:formal-carbon-sensitivity} 与图 \ref{fig:formal-f5} 所示。在线性可买卖碳交易核算下，阶段可用配额 $CE^\tau$ 以与决策无关的常数项 $-p^{car}CE^\tau$ 进入目标函数，理论上其变化不改变最优路径与车型选择；因此正文主表图聚焦碳价响应，配额变化仅在表注或附录硬配额情景中说明。
 
 \begin{table}[H]
 \centering
-\caption{碳价与碳配额敏感性}
+\caption{碳价敏感性}
 \label{tab:formal-carbon-sensitivity}
 \setptabsetup
 \input{generated_tables/t7_carbon_sensitivity.tex}
@@ -809,8 +812,13 @@ $\theta=1.0$ 表示协同后各车场收益不低于独立运营基准,对应协
 
 \begin{figure}[H]
 \centering
-\includegraphics[width=0.74\linewidth]{generated_figures/figure_f5_carbon_heatmap.pdf}
-\caption{碳价--配额情景下的总碳热力图}
+% v2026-07-03: prefer the redesigned response curve once generated; keep old PDF as compile fallback until formal regeneration.
+\IfFileExists{generated_figures/figure_f5_carbon_response.pdf}{%
+\includegraphics[width=0.92\linewidth]{generated_figures/figure_f5_carbon_response.pdf}%
+}{%
+\includegraphics[width=0.74\linewidth]{generated_figures/figure_f5_carbon_heatmap.pdf}%
+}
+\caption{碳价响应下的总排放与电动车路线数变化}
 \label{fig:formal-f5}
 \end{figure}
 
@@ -846,7 +854,8 @@ $\theta=1.0$ 表示协同后各车场收益不低于独立运营基准,对应协
 
 \subsection{动态需求滚动重规划}
 
-动态实验引入新增、取消和需求变化事件，按$\overline q=8$与$\Delta t=3$ h 先到先触发滚动重规划。每次更新记录冻结路径、已服务顾客、车辆状态和累计成本与碳排放。表 \ref{tab:formal-dynamic} 汇总3条事件流的阶段结果；所有阶段的守恒性条件与路径冻结条件均得到满足，动态最终解在同一评价函数下通过可行性核验。
+% v2026-07-03: T9 design is event-flow summary for 10 streams, with dynamic interaction columns.
+动态实验引入新增、取消和需求变化事件，按$\overline q=8$与$\Delta t=3$ h 先到先触发滚动重规划。每次更新记录冻结路径、已服务顾客、车辆状态和累计成本与碳排放。表 \ref{tab:formal-dynamic} 汇总10条事件流的结果；所有阶段的守恒性条件与路径冻结条件均得到满足，动态最终解在同一评价函数下通过可行性核验。
 
 \begin{table}[H]
 \centering
@@ -877,7 +886,7 @@ $\theta=1.0$ 表示协同后各车场收益不低于独立运营基准,对应协
 
 本文围绕动态城市配送中时变电网碳强度、混合车队协同调度和车场收益公平之间的耦合关系，构建了考虑共享车辆池、车场间调拨、共享充电站容量、非线性部分充电、EV充电间接碳排、碳配额惩罚和动态需求扰动的协同多车场混合车队路径模型，并实现面向该模型的统一求解算法接口、正式批量实验记录和滚动重规划机制。
 
-实验分析从算法对比、车型反事实、机制消融、碳价--配额敏感性、两层减碳、收益公平阈值变化和动态滚动重规划等方面展开，用于检验统一算法接口下的求解表现、时变电网碳强度对充电和车型分工的影响、收益公平下界约束带来的成本变化，以及不可回滚条件下车辆状态继承和剩余碳配额核算的闭合性。
+实验分析从算法对比、车型反事实、机制消融、碳价敏感性、两层减碳、收益公平阈值变化和动态滚动重规划等方面展开，用于检验统一算法接口下的求解表现、时变电网碳强度对充电和车型分工的影响、收益公平下界约束带来的成本变化，以及不可回滚条件下车辆状态继承和剩余碳配额核算的闭合性。
 
 本文仍存在一定局限。电动车能耗已考虑载重影响，但尚未显式刻画速度波动、坡度和天气等因素；动态方案与一次性静态方案的信息条件不同，后续需在同等信息和同等求解预算下进一步比较其边界性能。
 

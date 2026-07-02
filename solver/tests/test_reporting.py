@@ -8,6 +8,8 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
 from setp_solver.reporting.figures import CARBON_MAIN_PRICE_GBP_PER_TONNE, carbon_stress_points, charging_period_shares, figure_f4_48slot_charging
+from setp_solver.reporting.registry import get_runner
+import setp_solver.reporting.runner  # noqa: F401 - registers reporting runners
 from setp_solver.reporting.samples import build_figure_sources
 from setp_solver.reporting.schema import read_records, write_records
 from setp_solver.reporting.tables import (
@@ -34,8 +36,7 @@ class ReportingOutputTest(unittest.TestCase):
                         "stations": 2,
                         "total_demand_kg": "12.0",
                         "window_width_h": "4.0",
-                        "deleted_customers": 0,
-                        "isolated": "关闭",
+                        "isolated_customer_share_pct": "0.0",
                         "gamma_slots": 48,
                         "anchor_day": "2025-11-13 UTC",
                     }
@@ -45,7 +46,7 @@ class ReportingOutputTest(unittest.TestCase):
             raw = path.read_bytes()
             first_line = raw.decode("utf-8-sig").splitlines()[0]
             self.assertTrue(raw.startswith(b"\xef\xbb\xbf"))
-            self.assertEqual(first_line, "算例,客户数,车场,站点,总需求kg,窗宽h,删除客户数,孤立客户,$\\gamma$槽,锚定日")
+            self.assertEqual(first_line, "算例,客户数,车场数,充电站数,总需求/kg,平均时间窗宽/h,孤立客户占比/\\%,$\\gamma$槽数,碳强度锚定日")
 
     def test_booktabs_reads_chinese_header_csv(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
@@ -61,8 +62,7 @@ class ReportingOutputTest(unittest.TestCase):
                         "stations": 2,
                         "total_demand_kg": "12.0",
                         "window_width_h": "4.0",
-                        "deleted_customers": 0,
-                        "isolated": "关闭",
+                        "isolated_customer_share_pct": "0.0",
                         "gamma_slots": 48,
                         "anchor_day": "2025-11-13 UTC",
                     }
@@ -147,7 +147,7 @@ class ReportingOutputTest(unittest.TestCase):
 
     def test_t5_chen_table8_columns(self) -> None:
         headers = [header for _, header in TABLE_SPECS["T5"]]
-        self.assertEqual(headers, ["消融层级", "最优", "均值", "std", "总碳kg", "相对完整模型变化\\%", "电车数", "跨场数", "$\\min\\Pi/\\Pi^0$"])
+        self.assertEqual(headers, ["消融层级", "成本均值±std/£", "相对完整模型Δ/\\%", "显著性", "总排放/kgCO$_2$e", "电车路线数", "跨场服务数", "最小公平比"])
 
     def test_t7_chen_table10_quota_blocks_allow_negative_trading_cost(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
@@ -263,6 +263,33 @@ class ReportingOutputTest(unittest.TestCase):
             rows = sources["F6"].read_text(encoding="utf-8-sig").splitlines()
         self.assertIn("总成本/独立运营总成本", rows[0])
         self.assertIn("独立运营总成本", rows[0])
+
+    def test_design_templates_runner_outputs_mock_only_package(self) -> None:
+        root = Path(__file__).resolve().parents[2]
+        runner = get_runner("design-templates")
+        with tempfile.TemporaryDirectory() as tmp:
+            output_dir = Path(tmp) / "design_templates"
+            args = type("Args", (), {"repo_root": str(root), "output_dir": str(output_dir)})()
+
+            result = runner(args)
+
+            self.assertTrue((output_dir / "DATA_CONTRACT.md").exists())
+            self.assertTrue((output_dir / "design_preview.tex").exists())
+            self.assertTrue((output_dir / "tables" / "t4_solution_decomposition.tex").exists())
+            self.assertTrue((output_dir / "figures" / "figure_f7_dynamic_timeline.pdf").exists())
+            self.assertTrue((output_dir / "figures" / "figure_f5_carbon_response.pdf").exists())
+            self.assertFalse((output_dir / "figures" / "figure_f5_carbon_heatmap.pdf").exists())
+            self.assertNotIn("formal", "\n".join(str(path) for path in result["mock_data"].values()))
+
+            contract = (output_dir / "DATA_CONTRACT.md").read_text(encoding="utf-8")
+            self.assertIn("样例数据/非实验结果", contract)
+            self.assertIn("F7 动态时间线", contract)
+            self.assertIn("直接排放（燃油）", contract)
+            t4 = (output_dir / "tables" / "t4_solution_decomposition.tex").read_text(encoding="utf-8")
+            self.assertIn("仅油车", t4)
+            self.assertIn("混合", t4)
+            self.assertNotIn("source_seed", t4)
+            self.assertNotIn("cv_only total_cost", t4)
 
 
 if __name__ == "__main__":

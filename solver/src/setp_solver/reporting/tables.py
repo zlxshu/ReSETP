@@ -11,11 +11,14 @@ ColumnSpec = tuple[str, str]
 
 ALGORITHM_DISPLAY_LABELS = {
     "ALNS-Wouda": "ALNS",
-    "ALNS@wangqianlongucas": "ALNS-WQL",
+    "ALNS@wangqianlongucas": "ALNS",
+    "ALNS-WQL": "ALNS",
+    "PyGAD": "GA",
     "NSGA-II@haris989": "NSGA-II",
     "VNS@Valdecy": "VNS",
     "scikit-opt-GA": "GA",
     "scikit-opt-SA": "SA",
+    "winner kernel": "ALNS",
 }
 
 
@@ -23,14 +26,13 @@ TABLE_SPECS: dict[str, list[ColumnSpec]] = {
     "T1": [
         ("instance", "算例"),
         ("customers", "客户数"),
-        ("depots", "车场"),
-        ("stations", "站点"),
-        ("total_demand_kg", "总需求kg"),
-        ("window_width_h", "窗宽h"),
-        ("deleted_customers", "删除客户数"),
-        ("isolated", "孤立客户"),
-        ("gamma_slots", "$\\gamma$槽"),
-        ("anchor_day", "锚定日"),
+        ("depots", "车场数"),
+        ("stations", "充电站数"),
+        ("total_demand_kg", "总需求/kg"),
+        ("window_width_h", "平均时间窗宽/h"),
+        ("isolated_customer_share_pct", "孤立客户占比/\\%"),
+        ("gamma_slots", "$\\gamma$槽数"),
+        ("anchor_day", "碳强度锚定日"),
     ],
     "T2": [
         ("symbol", "符号"),
@@ -42,68 +44,80 @@ TABLE_SPECS: dict[str, list[ColumnSpec]] = {
     ],
     "T3": [
         ("instance", "算例"),
-        ("n_d", "n/d"),
-        ("reference_best", "参考最优(来源算法)"),
+        ("algorithm", "算法"),
+        ("best", "最优/£"),
+        ("mean", "均值/£"),
+        ("std", "标准差"),
+        ("observed_gap_pct", "相对已观测最优偏差/\\%"),
+        ("feasible_rate_pct", "可行率/\\%"),
+        ("equal_eval_time_s", "等eval耗时/s"),
+        ("equal_wallclock_score", "等墙钟成绩"),
+        ("significance", "显著性"),
     ],
     "T4": [
         ("metric", "指标"),
-        ("value", "数值"),
-        ("share_pct", "占比\\%"),
+        ("cv_only", "仅油车"),
+        ("ev_only", "仅电车"),
+        ("mixed", "混合"),
     ],
     "T5": [
         ("step", "消融层级"),
-        ("best", "最优"),
-        ("mean", "均值"),
-        ("std", "std"),
-        ("E_total_kg", "总碳kg"),
-        ("delta_vs_full_pct", "相对完整模型变化\\%"),
-        ("ev_count", "电车数"),
-        ("cross_site_customers", "跨场数"),
-        ("min_profit_ratio", "$\\min\\Pi/\\Pi^0$"),
+        ("mean_std_cost", "成本均值±std/£"),
+        ("delta_vs_full_pct", "相对完整模型Δ/\\%"),
+        ("significance", "显著性"),
+        ("total_carbon_kg", "总排放/kgCO$_2$e"),
+        ("ev_routes", "电车路线数"),
+        ("cross_site_customers", "跨场服务数"),
+        ("min_fairness_ratio", "最小公平比"),
     ],
     "T6": [
         ("case", "方案"),
-        ("total_carbon_kg", "总碳"),
-        ("charging_carbon_kg", "充电碳"),
-        ("mean_intensity_gco2_per_kwh", "均强度"),
-        ("total_cost", "总成本"),
+        ("total_cost", "总成本/£"),
+        ("diesel_carbon_kg", "直接排放（燃油）/kgCO$_2$e"),
+        ("charging_carbon_kg", "充电间接排放/kgCO$_2$e"),
+        ("total_carbon_kg", "总排放/kgCO$_2$e"),
+        ("mean_intensity_gco2_per_kwh", "充电加权碳强度/(gCO$_2$/kWh)"),
+        ("delta_emission_prev_pct", "相对上一行Δ排放/\\%"),
     ],
     "T7": [
-        ("carbon_price", "碳价"),
-        ("quota", "配额"),
-        ("total_cost", "总成本"),
-        ("fuel_liters", "油耗"),
-        ("electricity_cost", "电费"),
-        ("carbon_trading_cost", "碳交易成本"),
-        ("total_carbon_kg", "总碳"),
-        ("ev_count", "电车数"),
-        ("feasible", "可行"),
+        ("carbon_price_level", "碳价档"),
+        ("total_cost", "总成本/£"),
+        ("fuel_liters", "燃油量/L"),
+        ("charging_kwh", "充电量/kWh"),
+        ("charging_centroid_h", "充电时段重心/h"),
+        ("carbon_trading_cost", "碳交易成本/£"),
+        ("diesel_carbon_kg", "直接排放（燃油）/kgCO$_2$e"),
+        ("charging_carbon_kg", "充电间接排放/kgCO$_2$e"),
+        ("total_carbon_kg", "总排放/kgCO$_2$e"),
+        ("ev_routes", "电车路线数"),
     ],
     "T8": [
         ("theta", "$\\theta$"),
         ("pi_ratio_by_depot", "各场$\\Pi_d/\\Pi_d^0$"),
         ("min_ratio", "最小比值"),
-        ("total_cost", "总成本"),
-        ("total_carbon_kg", "总碳"),
-        ("cross_site_customers", "跨场数"),
+        ("total_cost", "总成本/£"),
+        ("total_carbon_kg", "总排放/kgCO$_2$e"),
+        ("cross_site_customers", "跨场服务数"),
         ("feasible", "可行"),
     ],
     "T9": [
-        ("stage", "阶段$\\tau$"),
-        ("trigger_time", "触发时刻"),
-        ("event_counts", "新增/取消/变更数"),
-        ("frozen_routes", "冻结路线"),
-        ("stage_cost", "阶段成本"),
-        ("cumulative_cost", "累计成本"),
-        ("cumulative_carbon_kg", "累计碳"),
-        ("min_fairness_ratio", "最小公平比"),
-        ("feasible", "可行"),
+        ("event_flow", "事件流"),
+        ("event_counts", "事件数(新增/取消/变更)"),
+        ("replans", "重规划次数"),
+        ("final_cost", "最终成本/£"),
+        ("hindsight_cost", "静态后见基线/£"),
+        ("information_cost", "信息成本"),
+        ("total_carbon_kg", "总排放/kgCO$_2$e"),
+        ("cross_site_customers", "跨场服务数"),
+        ("min_fairness_ratio", "公平比最低值"),
+        ("low_carbon_charge_share_pct", "低碳时段充电占比/\\%"),
+        ("conservation_audit", "守恒审计"),
     ],
 }
 
 
 def table_t1_instances(csv_path: str | Path) -> str:
-    return csv_to_booktabs(csv_path, TABLE_SPECS["T1"], col_format=r"@{}lrrrrrrcrl@{}")
+    return csv_to_booktabs(csv_path, TABLE_SPECS["T1"], col_format=r"@{}lrrrrrrrl@{}")
 
 
 def table_t2_parameters(csv_path: str | Path) -> str:
@@ -111,6 +125,9 @@ def table_t2_parameters(csv_path: str | Path) -> str:
 
 
 def table_t3_algorithm_comparison(csv_path: str | Path) -> str:
+    fieldnames, _ = _read_rows_with_fieldnames(csv_path)
+    if not any("|" in field for field in fieldnames):
+        return csv_to_booktabs(csv_path, TABLE_SPECS["T3"], col_format=r"@{}llrrrrrrll@{}", table_id="T3")
     return grouped_csv_to_long_booktabs(
         csv_path,
         # v2026-06-13: Formal CSV stores base columns as field names; labels are
@@ -121,15 +138,42 @@ def table_t3_algorithm_comparison(csv_path: str | Path) -> str:
 
 
 def table_t4_solution_decomposition(csv_path: str | Path) -> str:
-    return csv_to_booktabs(csv_path, TABLE_SPECS["T4"])
+    return csv_to_booktabs(csv_path, TABLE_SPECS["T4"], col_format=r"@{}lrrr@{}", table_id="T4")
 
 
 def table_t5_ablation(csv_path: str | Path) -> str:
-    return csv_to_booktabs(csv_path, TABLE_SPECS["T5"], col_format=r"@{}p{0.25\linewidth}rrrrrrrl@{}", table_id="T5")
+    return csv_to_booktabs(
+        csv_path,
+        TABLE_SPECS["T5"],
+        col_format=(
+            r"@{}>{\RaggedRight\arraybackslash}p{0.22\linewidth}"
+            r">{\centering\arraybackslash}p{0.12\linewidth}"
+            r">{\centering\arraybackslash}p{0.11\linewidth}"
+            r">{\centering\arraybackslash}p{0.07\linewidth}"
+            r">{\centering\arraybackslash}p{0.13\linewidth}"
+            r">{\centering\arraybackslash}p{0.09\linewidth}"
+            r">{\centering\arraybackslash}p{0.09\linewidth}"
+            r">{\centering\arraybackslash}p{0.09\linewidth}@{}"
+        ),
+        table_id="T5",
+    )
 
 
 def table_t6_two_layer_carbon(csv_path: str | Path) -> str:
-    return csv_to_booktabs(csv_path, TABLE_SPECS["T6"])
+    return csv_to_booktabs(
+        csv_path,
+        TABLE_SPECS["T6"],
+        col_format=(
+            r"@{}>{\RaggedRight\arraybackslash}p{0.18\linewidth}"
+            r">{\centering\arraybackslash}p{0.09\linewidth}"
+            r">{\centering\arraybackslash}p{0.13\linewidth}"
+            r">{\centering\arraybackslash}p{0.13\linewidth}"
+            r">{\centering\arraybackslash}p{0.11\linewidth}"
+            r">{\centering\arraybackslash}p{0.14\linewidth}"
+            r">{\centering\arraybackslash}p{0.10\linewidth}@{}"
+        ),
+        table_id="T6",
+    )
 
 
 def table_t7_carbon_sensitivity(csv_path: str | Path) -> str:
@@ -140,7 +184,23 @@ def table_t7_carbon_sensitivity(csv_path: str | Path) -> str:
             base_headers=["碳价"],
             group_metric_headers=["总成本", "油耗", "电费", "碳交易成本", "总碳", "电车数"],
         )
-    return csv_to_booktabs(csv_path, TABLE_SPECS["T7"], col_format=r"@{}rrrrrrrrc@{}", table_id="T7")
+    return csv_to_booktabs(
+        csv_path,
+        TABLE_SPECS["T7"],
+        col_format=(
+            r"@{}>{\RaggedRight\arraybackslash}p{0.105\linewidth}"
+            r">{\centering\arraybackslash}p{0.08\linewidth}"
+            r">{\centering\arraybackslash}p{0.07\linewidth}"
+            r">{\centering\arraybackslash}p{0.07\linewidth}"
+            r">{\centering\arraybackslash}p{0.085\linewidth}"
+            r">{\centering\arraybackslash}p{0.09\linewidth}"
+            r">{\centering\arraybackslash}p{0.11\linewidth}"
+            r">{\centering\arraybackslash}p{0.11\linewidth}"
+            r">{\centering\arraybackslash}p{0.09\linewidth}"
+            r">{\centering\arraybackslash}p{0.06\linewidth}@{}"
+        ),
+        table_id="T7",
+    )
 
 
 def table_t8_fairness_threshold(csv_path: str | Path) -> str:
@@ -148,7 +208,24 @@ def table_t8_fairness_threshold(csv_path: str | Path) -> str:
 
 
 def table_t9_dynamic(csv_path: str | Path) -> str:
-    return csv_to_booktabs(csv_path, TABLE_SPECS["T9"], col_format=r"@{}llcrrrrrc@{}", table_id="T9")
+    return csv_to_booktabs(
+        csv_path,
+        TABLE_SPECS["T9"],
+        col_format=(
+            r"@{}>{\centering\arraybackslash}p{0.055\linewidth}"
+            r">{\centering\arraybackslash}p{0.09\linewidth}"
+            r">{\centering\arraybackslash}p{0.07\linewidth}"
+            r">{\centering\arraybackslash}p{0.08\linewidth}"
+            r">{\centering\arraybackslash}p{0.09\linewidth}"
+            r">{\centering\arraybackslash}p{0.095\linewidth}"
+            r">{\centering\arraybackslash}p{0.09\linewidth}"
+            r">{\centering\arraybackslash}p{0.07\linewidth}"
+            r">{\centering\arraybackslash}p{0.08\linewidth}"
+            r">{\centering\arraybackslash}p{0.085\linewidth}"
+            r">{\centering\arraybackslash}p{0.06\linewidth}@{}"
+        ),
+        table_id="T9",
+    )
 
 
 TABLE_BUILDERS = {
@@ -299,11 +376,17 @@ def _display_value(table_id: str | None, field: str, value: object) -> str:
         return ""
     if table_id == "T5" and field == "step":
         return _compact_ablation_label(text)
-    if table_id == "T9" and field in {"stage_cost", "cumulative_cost", "cumulative_carbon_kg"}:
+    if field in {"total_cost", "best", "mean", "std", "equal_eval_time_s", "final_cost", "hindsight_cost"}:
         return _format_number(text, digits=1)
-    if table_id in {"T3", "T5", "T7", "T8"} and field not in {"step", "pi_ratio_by_depot", "feasible"}:
+    if field in {"observed_gap_pct", "feasible_rate_pct", "delta_vs_full_pct", "delta_emission_prev_pct", "low_carbon_charge_share_pct"}:
+        return _format_number(text, digits=1)
+    if field in {"min_ratio", "min_fairness_ratio", "charging_centroid_h"}:
         return _format_number(text, digits=3)
-    if table_id == "T9" and field == "feasible":
+    if field in {"diesel_carbon_kg", "charging_carbon_kg", "total_carbon_kg", "mean_intensity_gco2_per_kwh", "fuel_liters", "charging_kwh", "carbon_trading_cost"}:
+        return _format_number(text, digits=1)
+    if table_id in {"T3", "T7", "T8"} and field not in {"algorithm", "carbon_price_level", "pi_ratio_by_depot", "feasible", "equal_wallclock_score", "significance"}:
+        return _format_number(text, digits=1)
+    if field == "feasible":
         return {"True": "是", "False": "否"}.get(text, text)
     return text
 

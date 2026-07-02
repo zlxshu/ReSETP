@@ -122,6 +122,12 @@ metadata:
 - **要点**: 数据基本全齐(13图仅F6真缺数据), 字段结构齐=壳填得进; 但数字是坏ALNS跑的=要等大重跑(修好winner kernel)替换。**待办: ①F6补跑θ扫描 ②F4修画图代码渲染 ③大重跑替换全部数字 ④T3补n/d+BKS**。
 - **顺序**: 1数据适配(完成)→2审核(进行)→user确认后第四阶段写Codex施工提示词(数字待大重跑)。
 
+**🧩 图表样板定稿实现(2026-07-03, Codex, mock-only / no solver)**:
+- 新增 `solver/src/setp_solver/reporting/design_templates.py` 与 runner `design-templates`，输出到 `docs/paper_submission_final/design_templates/`；只读 `mock_data/*.csv`，不走 formal fallback，不覆盖正式 `generated_tables/` 或 `generated_figures/`。
+- 样板包含 `mock_data/`、T1/T3/T4/T5/T6/T7/T8/T9 的 `.tex` 表片段、F1-F7 的 PDF+PNG、`DATA_CONTRACT.md`、`design_preview.tex`、`design_preview.pdf`、`design_template_report.md`。所有 mock 图带“样例数据/非实验结果”水印，表片段带同义注释。
+- 契约调整落地：T3 加均值/std/偏差/可行率/等eval/等墙钟/显著性；T4 转置成仅油/仅电/混合反事实分解；T5 使用“均值±std + 相对完整模型Δ% + 显著性 + 跨场/公平”结构；T6/F3 统一三行链条“仅油车重优化→混合朴素充电→混合碳感知择时”；T7/F5 删除配额热力图轴，改碳价响应；T8/F6 用细 θ 网格和不可行底纹；T9/F7 承载动态事件、冻结/重规划、信息成本、跨场、公平、低碳充电占比。
+- `paper_main.tex` 只做编辑性修复：去掉算法数/残句/3条事件流/25客户等旧口径，F5 改为优先未来 response curve，未改模型公式与旧数字结论。验证：reporting 单测 15 passed，样板预览与主文档均可 XeLaTeX 编译；全量 `solver/tests` 仍有 5 个非 reporting 旧链失败。
+
 **🔁 大重跑提示词②已写好(2026-06-17, 可与离线体检①并行发Codex)**:
 - formal_runner.py跑E0-E7(resumable/RunKey去重), PRIMARY_ALGORITHM="ALNS-Wouda"(candidates.py:40)。**E1-E7→表图**: E1主解+车型反事实→T4(+F1); E2算法对比→T3/F2源; E3消融M0-M5→T5; E4碳价×配额→T7/F5b; E5 replay→T6/F3/F4源; **E6 theta扫描→T8/F6**; E7动态→T9。
 - **F6的θ扫描数据=跑E6生成**(之前以为要专门补, 其实E6就是; 大重跑E6加密θ网格0.80-1.10每0.05→F6饱满前沿, 解锁)。**F4数据来自E5(97行在), 空图是figure_f4渲染bug**。

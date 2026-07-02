@@ -6,6 +6,7 @@ import shutil
 from typing import Any
 
 from .converters import convert_legacy_reports
+from .design_templates import build_design_templates
 from .figures import (
     carbon_stress_points,
     figure_f1_route_map,
@@ -84,6 +85,13 @@ def run_build_samples(args: argparse.Namespace) -> dict[str, Any]:
     summary_path.write_text(_summary_markdown(w0, w1, w2), encoding="utf-8")
     _cleanup_appledouble(Path(args.output_dir))
     return {"w0": w0, "w1": w1, "w2": w2, "summary": summary_path}
+
+
+@register_runner("design-templates")
+def run_design_templates(args: argparse.Namespace) -> dict[str, Any]:
+    """Build the mock-only paper figure/table template package."""
+
+    return build_design_templates(Path(args.repo_root), Path(args.output_dir))
 
 
 @register_runner("formal-backfill")
