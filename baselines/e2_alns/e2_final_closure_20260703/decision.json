@@ -1,19 +1,28 @@
 {
   "algorithm_win_loss_claim": false,
-  "blocked_phase": "phase_b",
+  "blocked_phase": "phase_c",
   "carbon_diagnostic_verdict": "NOT_RUN_NONBLOCKING",
   "final_material_verdict": "MISSING",
-  "head": "8ec332e5d715f4680b93c6bb7d0881edf113739e",
+  "head": "f6704c0c4eb564f428e16dfa2cb77185074eed01",
   "not_paper_text": true,
   "phase_verdicts": {
     "carbon_diagnostic": "MISSING",
     "phase_a": "ALNS_GATE_READY",
-    "phase_b": "MISSING",
+    "phase_b": "G3_BASELINE_SET_READY",
     "phase_c": "MISSING",
     "phase_d": "MISSING"
   },
   "schema": "setp-e2-final-closure-decision.v1",
-  "t3_baseline_set": null,
+  "t3_baseline_set": [
+    "GA",
+    "LNS",
+    "PSO",
+    "VNS",
+    "ACO",
+    "GA-VNS",
+    "GWO",
+    "IWD"
+  ],
   "t3_main_profile": {
     "base_variant": "alns_e2_throughput",
     "selected_components": [

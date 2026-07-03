@@ -8,7 +8,7 @@ Verdict: `MISSING`
 
 - carbon_diagnostic: `MISSING`
 - phase_a: `ALNS_GATE_READY`
-- phase_b: `MISSING`
+- phase_b: `G3_BASELINE_SET_READY`
 - phase_c: `MISSING`
 - phase_d: `MISSING`
 
