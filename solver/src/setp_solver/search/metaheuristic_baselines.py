@@ -80,6 +80,11 @@ class BaselineRunResult:
     common_preprocess_cost: float | None = None
     common_preprocess_attempts: int = 0
     common_preprocess_accepted_flips: int = 0
+    reference_flip_closure_cost: float | None = None
+    reference_flip_closure_attempts: int = 0
+    reference_flip_closure_accepted_flips: int = 0
+    reference_flip_closure_lift: float = 0.0
+    reference_flip_closure_signature: str = ""
     common_lift: float = 0.0
     native_lift: float = 0.0
     flip_lift: float = 0.0
@@ -155,6 +160,11 @@ class _SearchSession:
         self.common_preprocess_cost: float | None = None
         self.common_preprocess_attempts = 0
         self.common_preprocess_accepted_flips = 0
+        self.reference_flip_closure_cost: float | None = None
+        self.reference_flip_closure_attempts = 0
+        self.reference_flip_closure_accepted_flips = 0
+        self.reference_flip_closure_lift = 0.0
+        self.reference_flip_closure_signature = ""
         self.current = _ScoredSolution(
             solution=initial_solution,
             objective=float(seed_obj),
@@ -178,7 +188,7 @@ class _SearchSession:
         self.operator_counts: dict[str, int] = {}
         self.reference_objective_cache[self.current.signature] = float(seed_obj)
         if common_flip_preprocess:
-            self.apply_common_flip_preprocess()
+            self.record_reference_flip_closure()
 
     @property
     def evals(self) -> int:
@@ -247,41 +257,37 @@ class _SearchSession:
         return scored
 
     def apply_common_flip_preprocess(self) -> None:
+        self.record_reference_flip_closure()
+
+    def record_reference_flip_closure(self) -> None:
         before = self.best
         outcome = _deterministic_common_flip_closure(self.best.solution, self)
-        self.common_preprocess_attempts = int(outcome["attempts"])
-        self.common_preprocess_accepted_flips = int(outcome["accepted_flips"])
+        self.reference_flip_closure_attempts = int(outcome["attempts"])
+        self.reference_flip_closure_accepted_flips = int(outcome["accepted_flips"])
         solution = outcome["solution"]
         cost = float(outcome["cost"])
-        self.common_preprocess_cost = cost if math.isfinite(cost) else None
-        if not math.isfinite(cost) or cost >= before.cost - 1e-9:
-            return
-        objective = self.reference_objective(solution)
-        scored = _ScoredSolution(
-            solution=solution,
-            objective=float(objective),
-            cost=cost,
-            feasible=True,
-            signature=solution_signature_hash(solution),
-        )
-        self.current = scored
-        self.best = scored
+        reference_signature = solution_signature_hash(solution)
+        self.reference_flip_closure_cost = cost if math.isfinite(cost) else None
+        self.reference_flip_closure_lift = max(0.0, before.cost - cost) if math.isfinite(cost) else 0.0
+        self.reference_flip_closure_signature = reference_signature
         self.history.append(
             {
                 "eval": 0,
                 "time_seconds": time.perf_counter() - self.started,
-                "best_cost": cost,
-                "best_cost_before": before.cost,
-                "current_cost": cost,
-                "operator": "common_flip_preprocess",
-                "channel": "common_flip_preprocess",
+                "best_cost": before.cost,
+                "current_cost": self.current.cost if self.current.feasible else math.inf,
+                "operator": "reference_flip_closure",
+                "channel": "reference_flip_closure",
                 "route_count": len(solution.routes),
-                "signature": scored.signature,
-                "accepted_flips": self.common_preprocess_accepted_flips,
-                "attempts": self.common_preprocess_attempts,
+                "signature": before.signature,
+                "reference_cost": cost if math.isfinite(cost) else "",
+                "reference_signature": reference_signature,
+                "reference_lift": self.reference_flip_closure_lift,
+                "accepted_flips": self.reference_flip_closure_accepted_flips,
+                "attempts": self.reference_flip_closure_attempts,
+                "is_reference": True,
             }
         )
-        _maybe_write_e2_checkpoint(scored.solution, cost, objective, 0, time.perf_counter() - self.started, "common_flip_preprocess")
 
     def accept_if_better(self, scored: _ScoredSolution | None) -> bool:
         if scored is None:
@@ -348,6 +354,11 @@ class _SearchSession:
             common_preprocess_cost=self.common_preprocess_cost,
             common_preprocess_attempts=int(self.common_preprocess_attempts),
             common_preprocess_accepted_flips=int(self.common_preprocess_accepted_flips),
+            reference_flip_closure_cost=self.reference_flip_closure_cost,
+            reference_flip_closure_attempts=int(self.reference_flip_closure_attempts),
+            reference_flip_closure_accepted_flips=int(self.reference_flip_closure_accepted_flips),
+            reference_flip_closure_lift=float(self.reference_flip_closure_lift),
+            reference_flip_closure_signature=self.reference_flip_closure_signature,
             common_lift=float(channel_stats["common_lift"]),
             native_lift=float(channel_stats["native_lift"]),
             flip_lift=float(channel_stats["flip_lift"]),
@@ -454,6 +465,11 @@ def baseline_result_to_dict(result: BaselineRunResult, *, include_solution: bool
         "common_preprocess_cost": result.common_preprocess_cost,
         "common_preprocess_attempts": result.common_preprocess_attempts,
         "common_preprocess_accepted_flips": result.common_preprocess_accepted_flips,
+        "reference_flip_closure_cost": result.reference_flip_closure_cost,
+        "reference_flip_closure_attempts": result.reference_flip_closure_attempts,
+        "reference_flip_closure_accepted_flips": result.reference_flip_closure_accepted_flips,
+        "reference_flip_closure_lift": result.reference_flip_closure_lift,
+        "reference_flip_closure_signature": result.reference_flip_closure_signature,
         "common_lift": result.common_lift,
         "native_lift": result.native_lift,
         "flip_lift": result.flip_lift,
@@ -817,6 +833,8 @@ def _is_feasible(solution: Solution, context: EvaluationContext) -> bool:
 def _operator_channel(operator: str) -> str:
     if operator == "shared_warm_start":
         return "shared_warm_start"
+    if operator == "reference_flip_closure":
+        return "reference_flip_closure"
     if operator == "common_flip_preprocess":
         return "common_flip_preprocess"
     if "vehicle_type" in operator:
