@@ -34,17 +34,29 @@ from setp_solver.search.construction import build_initial_solution
 from setp_solver.search.evaluation import EvaluationContext, model_cost
 from setp_solver.search.fleet import FleetLimits
 from setp_solver.search.winner_operators import WinnerKernelConfig, run_winner_kernel
+from setp_solver.solution import Solution
 
+from .action_space import (
+    ALPHA_UCB_CHOICE,
+    BLOCK_DESTROY_IDS,
+    BLOCK_EXPLORATION_RATIOS,
+    BLOCK_Q_RATIOS,
+    BLOCK_REPAIR_IDS,
+    BLOCK_THRESHOLD_RATIOS,
+    DESTROY_IDS,
+)
 from .pilot20_learned_destroy_phaseA import (
     DEFAULT_WORKER,
     REQUIRED_WORKER_NUMPY,
     _episode_row,
     _parse_int_list,
     _require_torch_available,
+    _worker_integrity_ok,
     run_operator_select_episode,
     run_random_episode,
 )
 from .pilot21_learned_destroy_big import (
+    DEFAULT_STAGE0_BUNDLES as PILOT21_STAGE0_BUNDLES,
     run_best_of_k_episode,
     run_worst_removal_episode,
 )
@@ -58,11 +70,23 @@ from .learned_destroy_policy import (
     make_learned_destroy_actor_critic,
     save_learned_destroy_policy,
 )
+from .schemas import BlockDecodedAction
+from .worker_client import WorkerClient
 
 
-DEFAULT_OUTPUT_DIR = Path("solver/reports/dr_alns_ppo_v3/final_track22")
+DEFAULT_OUTPUT_DIR = Path("solver/reports/dr_alns_ppo_v3/final_track22r")
 DEFAULT_GENERATED_ROOT = Path("models/data_bundle/generated_instances")
 DEFAULT_PPO_PYTHON = Path(r"C:\Users\zlxshu\.venvs\resetp-ppo-cu124-py312\Scripts\python.exe")
+
+UNDERPOWERED = "UNDERPOWERED"
+OK_BUDGET = "OK"
+EQUAL_STEPS_ORACLE = "equal_steps_oracle"
+EQUAL_EVAL_REFERENCE = "equal_eval_reference"
+PILOT21_ANCHOR = "pilot21_anchor_reference"
+
+STAGE2_EVAL_FLOORS = {"25c": 2000, "50c": 3000}
+STAGE2_WALL_FLOOR_SECONDS = 60.0
+STAGE4_CANDIDATE_EVAL_FLOOR = 200
 
 DESTROY_LEVERAGE_CLEAN = "DESTROY_LEVERAGE_CLEAN"
 LEVERAGE_MARGINAL = "LEVERAGE_MARGINAL"
@@ -74,8 +98,8 @@ HALT_LEARNED_DESTROY_CLEAN = "HALT_LEARNED_DESTROY_CLEAN"
 SKIP_LEARNED_DESTROY_NO_LEVERAGE = "SKIP_LEARNED_DESTROY_NO_LEVERAGE"
 
 CARBON_TIMING_LEVERAGE = "CARBON_TIMING_LEVERAGE"
-CARBON_TIMING_WEAK = "CARBON_TIMING_WEAK"
-NO_CARBON_TIMING_LEVERAGE = "NO_CARBON_TIMING_LEVERAGE"
+CARBON_MECHANISM_WEAK = "CARBON_MECHANISM_WEAK"
+CARBON_CEILING_TOO_SMALL_DEFAULT = "CARBON_CEILING_TOO_SMALL_DEFAULT"
 HALT_WORKER_INTEGRITY = "HALT_WORKER_INTEGRITY"
 
 
@@ -121,8 +145,9 @@ def run(args: argparse.Namespace) -> int:
     state_path = output_dir / "track22_state.json"
     state = _load_json(state_path) if args.resume and state_path.exists() else {}
     try:
-        _log(progress_path, "Track22 run start")
+        _log(progress_path, "Track22-R run start")
         state["preflight"] = run_preflight(args, output_dir)
+        state["r1"] = r1_instrumentation_summary(output_dir)
         _write_json(output_dir / "track22_preflight.json", state["preflight"])
         _write_json(state_path, state)
 
@@ -172,7 +197,6 @@ def run(args: argparse.Namespace) -> int:
         _write_json(state_path, state)
         _write_json(output_dir / "track22_final_report.json", state)
         write_final_report(output_dir / "final_report.md", state)
-        Path("final_report.md").write_text((output_dir / "final_report.md").read_text(encoding="utf-8"), encoding="utf-8", newline="\n")
         return 0
     except Track22Halt as exc:
         state["final_status"] = exc.status
@@ -181,7 +205,6 @@ def run(args: argparse.Namespace) -> int:
         _write_json(state_path, state)
         _write_json(output_dir / "track22_final_report.json", state)
         write_final_report(output_dir / "final_report.md", state)
-        Path("final_report.md").write_text((output_dir / "final_report.md").read_text(encoding="utf-8"), encoding="utf-8", newline="\n")
         _log(progress_path, f"HALT {exc.status}: {exc.message}")
         return 2
 
@@ -204,6 +227,23 @@ def run_preflight(args: argparse.Namespace, output_dir: Path) -> dict[str, Any]:
         "output_dir": str(output_dir),
         "disk_free_gb": float(disk.free) / (1024.0**3),
         "git": _git_snapshot(),
+    }
+
+
+def r1_instrumentation_summary(output_dir: Path) -> dict[str, Any]:
+    test_result_path = output_dir / "r1_regression_test_result.json"
+    test_result = _load_json(test_result_path) if test_result_path.exists() else {}
+    return {
+        "status": test_result.get("status", "IMPLEMENTED_TEST_RESULT_NOT_RECORDED_BY_RUNNER"),
+        "root_cause": (
+            "The original Track22 05:31 silent worker exit did not reproduce under the targeted 50c/q=0.4/20-customer "
+            "50-step regression path on this machine. The confirmed instrument bug was empty worker stderr/logging on "
+            "process failure; worker-side faulthandler and per-process crash logs were added so a recurrent Stage3 crash "
+            "will expose a Python/native stack instead of a silent timeout."
+        ),
+        "fix": "worker_client now allocates SETP_WORKER_CRASH_LOG, enables PYTHONFAULTHANDLER, and reports stderr/crash-log tails; worker.py records uncaught request exceptions to stderr and the crash log.",
+        "regression_test": "solver/rl/tests/test_track22r_worker_crash.py",
+        "test_result": test_result,
     }
 
 
@@ -254,7 +294,7 @@ def run_stage2_destroy_leverage(
     progress_path: Path,
     bundle_manifest: dict[str, Any],
 ) -> list[dict[str, Any]]:
-    rows_path = output_dir / "track22_destroy_leverage_rows.csv"
+    rows_path = output_dir / "track22r_destroy_leverage_equal_steps_rows.csv"
     rows = _read_csv(rows_path) if args.resume else []
     completed = {
         (row.get("algorithm"), row.get("bundle"), int(row.get("seed") or 0))
@@ -268,30 +308,106 @@ def run_stage2_destroy_leverage(
                 key = (algorithm, bundle, int(seed))
                 if key in completed:
                     continue
-                _log(progress_path, f"Stage2 run {algorithm} bundle={bundle} seed={seed}")
+                step_count = stage2_step_count_for_scale(_scale_label(bundle), args)
+                _log(progress_path, f"Stage2 equal-steps run {algorithm} bundle={bundle} seed={seed} steps={step_count}")
                 if algorithm == "operator_select":
-                    row = run_operator_select_episode(bundle, seed=int(seed), eval_budget=int(args.stage2_eval_budget))
+                    row = run_operator_select_steps(bundle, seed=int(seed), step_count=int(step_count))
                 elif algorithm == "worst_removal_fixed":
-                    row = run_worst_removal_episode(bundle, seed=int(seed), eval_budget=int(args.stage2_eval_budget))
+                    row = run_worst_removal_steps(bundle, seed=int(seed), step_count=int(step_count))
+                else:
+                    row = run_best_of_k_steps(
+                        bundle,
+                        seed=int(seed),
+                        step_count=int(step_count),
+                        candidate_k=int(args.stage2_best_of_k),
+                    )
+                row["algorithm"] = algorithm
+                row["track"] = "track22r"
+                row["evidence_role"] = "DESTROY_LEVERAGE_GATE"
+                row["probe_mode"] = EQUAL_STEPS_ORACLE
+                row = annotate_stage2_budget(row)
+                rows.append(row)
+                _write_csv(rows_path, rows)
+
+    equal_eval_rows_path = output_dir / "track22r_destroy_leverage_equal_eval_rows.csv"
+    equal_eval_rows = _read_csv(equal_eval_rows_path) if args.resume else []
+    completed_equal_eval = {
+        (row.get("algorithm"), row.get("bundle"), int(row.get("seed") or 0))
+        for row in equal_eval_rows
+    }
+    for bundle in bundles:
+        for seed in seeds:
+            for algorithm in ("operator_select", "worst_removal_fixed", "best_of_k_destroy"):
+                key = (algorithm, bundle, int(seed))
+                if key in completed_equal_eval:
+                    continue
+                eval_budget = stage2_eval_floor_for_scale(_scale_label(bundle))
+                _log(progress_path, f"Stage2 equal-eval reference {algorithm} bundle={bundle} seed={seed} eval_budget={eval_budget}")
+                if algorithm == "operator_select":
+                    row = run_operator_select_episode(bundle, seed=int(seed), eval_budget=int(eval_budget))
+                elif algorithm == "worst_removal_fixed":
+                    row = run_worst_removal_episode(bundle, seed=int(seed), eval_budget=int(eval_budget))
                 else:
                     row = run_best_of_k_episode(
                         bundle,
                         seed=int(seed),
-                        eval_budget=int(args.stage2_eval_budget),
+                        eval_budget=int(eval_budget),
                         candidate_k=int(args.stage2_best_of_k),
                     )
                 row["algorithm"] = algorithm
-                row["track"] = "track22"
-                row["evidence_role"] = "DESTROY_LEVERAGE_GATE"
-                rows.append(row)
-                _write_csv(rows_path, rows)
-    return rows
+                row["track"] = "track22r"
+                row["evidence_role"] = "DESTROY_LEVERAGE_REFERENCE_ONLY"
+                row["probe_mode"] = EQUAL_EVAL_REFERENCE
+                row = annotate_stage2_budget(row)
+                equal_eval_rows.append(row)
+                _write_csv(equal_eval_rows_path, equal_eval_rows)
+
+    anchor_rows_path = output_dir / "track22r_pilot21_anchor_rows.csv"
+    anchor_rows = _read_csv(anchor_rows_path) if args.resume else []
+    completed_anchor = {
+        (row.get("algorithm"), row.get("bundle"), int(row.get("seed") or 0))
+        for row in anchor_rows
+    }
+    for bundle in list(PILOT21_STAGE0_BUNDLES):
+        for seed in _parse_int_list(args.stage2_anchor_seeds):
+            for algorithm in ("operator_select", "worst_removal_fixed", "best_of_k_destroy"):
+                key = (algorithm, bundle, int(seed))
+                if key in completed_anchor:
+                    continue
+                _log(progress_path, f"Stage2 Pilot21 anchor {algorithm} bundle={bundle} seed={seed}")
+                if algorithm == "operator_select":
+                    row = run_operator_select_episode(bundle, seed=int(seed), eval_budget=int(args.stage2_anchor_eval_budget))
+                elif algorithm == "worst_removal_fixed":
+                    row = run_worst_removal_episode(bundle, seed=int(seed), eval_budget=int(args.stage2_anchor_eval_budget))
+                else:
+                    row = run_best_of_k_episode(
+                        bundle,
+                        seed=int(seed),
+                        eval_budget=int(args.stage2_anchor_eval_budget),
+                        candidate_k=int(args.stage2_best_of_k),
+                    )
+                row["algorithm"] = algorithm
+                row["track"] = "track22r"
+                row["evidence_role"] = "PILOT21_ANCHOR_REFERENCE_ONLY"
+                row["probe_mode"] = PILOT21_ANCHOR
+                anchor_rows.append(row)
+                _write_csv(anchor_rows_path, anchor_rows)
+
+    combined_rows = [*rows, *equal_eval_rows, *anchor_rows]
+    _write_csv(output_dir / "track22r_destroy_leverage_all_rows.csv", combined_rows)
+    return combined_rows
 
 
 def summarize_stage2_destroy(rows: list[dict[str, Any]]) -> dict[str, Any]:
+    gate_rows = [row for row in rows if str(row.get("probe_mode") or EQUAL_STEPS_ORACLE) == EQUAL_STEPS_ORACLE]
+    equal_eval_rows = [row for row in rows if str(row.get("probe_mode") or "") == EQUAL_EVAL_REFERENCE]
+    anchor_rows = [row for row in rows if str(row.get("probe_mode") or "") == PILOT21_ANCHOR]
+    if not gate_rows:
+        raise Track22Halt("HALT_STAGE2_NO_GATE_ROWS", "Stage2 has no equal-steps oracle rows for verdict.")
+    assert_no_underpowered_for_verdict(gate_rows, stage="Stage2 equal-steps oracle")
     by_scale: dict[str, dict[str, list[float]]] = {}
     by_bundle: dict[str, dict[str, list[float]]] = {}
-    for row in rows:
+    for row in gate_rows:
         algo = str(row.get("algorithm", ""))
         bundle = str(row.get("bundle", ""))
         scale = str(row.get("scale") or _scale_label(bundle))
@@ -303,7 +419,7 @@ def summarize_stage2_destroy(rows: list[dict[str, Any]]) -> dict[str, Any]:
     overall = _headroom_row("overall", _merge_algo_values(by_scale.values()))
     max_scale_headroom = max((_finite_or(row["best_of_k_headroom_pct"], -math.inf) for row in scale_rows), default=math.nan)
     worker_ok = all(_truthy(row.get("worker_integrity_ok")) for row in rows)
-    zero_violations = _all_zero(rows, "violation_count")
+    zero_violations = _all_zero(gate_rows, "violation_count")
     if not worker_ok:
         status = HALT_WORKER_INTEGRITY
         reason = "At least one Stage2 row did not use the py313/NumPy 2.3.5 worker."
@@ -322,15 +438,237 @@ def summarize_stage2_destroy(rows: list[dict[str, Any]]) -> dict[str, Any]:
     return {
         "status": status,
         "reason": reason,
-        "row_count": len(rows),
+        "row_count": len(gate_rows),
+        "all_row_count": len(rows),
         "worker_integrity_ok": worker_ok,
         "zero_violations": zero_violations,
         "overall": overall,
         "scale_rows": scale_rows,
         "bundle_rows": bundle_rows,
+        "budget_summary": budget_summary(gate_rows),
+        "equal_eval_reference": reference_headroom_summary(equal_eval_rows),
+        "pilot21_anchor_reference": reference_headroom_summary(anchor_rows, old_reference_pct=6.261),
         "max_scale_best_of_k_headroom_pct": max_scale_headroom,
-        "gate_rule": "DESTROY_LEVERAGE_CLEAN if any scale >=3%; LEVERAGE_MARGINAL if any scale is 1-3%; NO_DESTROY_LEVERAGE_CLEAN if all scales <1%.",
+        "gate_rule": "Equal-steps oracle only: DESTROY_LEVERAGE_CLEAN if any scale >=3%; LEVERAGE_MARGINAL if any scale is 1-3%; NO_DESTROY_LEVERAGE_CLEAN if all scales <1%. Equal-eval rows are reference only.",
     }
+
+
+def stage2_eval_floor_for_scale(scale: str) -> int:
+    return int(STAGE2_EVAL_FLOORS.get(str(scale), max(STAGE2_EVAL_FLOORS.values())))
+
+
+def stage2_step_count_for_scale(scale: str, args: argparse.Namespace) -> int:
+    if str(scale) == "25c":
+        return max(stage2_eval_floor_for_scale(scale), int(args.stage2_25c_steps))
+    if str(scale) == "50c":
+        return max(stage2_eval_floor_for_scale(scale), int(args.stage2_50c_steps))
+    return stage2_eval_floor_for_scale(scale)
+
+
+def annotate_stage2_budget(row: dict[str, Any]) -> dict[str, Any]:
+    out = dict(row)
+    scale = str(out.get("scale") or _scale_label(str(out.get("bundle", ""))))
+    eval_floor = stage2_eval_floor_for_scale(scale)
+    wall_floor = STAGE2_WALL_FLOOR_SECONDS
+    actual_evals = _int_or(out.get("actual_evals"), 0)
+    wall_seconds = _float(out.get("wall_time_seconds"))
+    eval_ratio = float(actual_evals) / max(float(eval_floor), 1.0)
+    wall_ratio = float(wall_seconds) / max(float(wall_floor), 1.0) if math.isfinite(wall_seconds) else 0.0
+    status = OK_BUDGET if actual_evals >= eval_floor and wall_ratio >= 1.0 else UNDERPOWERED
+    out.update(
+        {
+            "scale": scale,
+            "budget_status": status,
+            "eval_floor": int(eval_floor),
+            "wall_floor_seconds": float(wall_floor),
+            "eval_floor_ratio": float(eval_ratio),
+            "wall_floor_ratio": float(wall_ratio),
+        }
+    )
+    return out
+
+
+def assert_no_underpowered_for_verdict(rows: list[dict[str, Any]], *, stage: str) -> None:
+    underpowered = [row for row in rows if str(row.get("budget_status", "")) == UNDERPOWERED]
+    if underpowered:
+        sample = underpowered[0]
+        raise Track22Halt(
+            "HALT_UNDERPOWERED_VERDICT_ROW",
+            (
+                f"{stage} contains {len(underpowered)} UNDERPOWERED verdict rows; "
+                f"sample algorithm={sample.get('algorithm')} bundle={sample.get('bundle')} "
+                f"seed={sample.get('seed')} eval_ratio={sample.get('eval_floor_ratio')} "
+                f"wall_ratio={sample.get('wall_floor_ratio')}"
+            ),
+        )
+
+
+def budget_summary(rows: list[dict[str, Any]]) -> dict[str, Any]:
+    return {
+        "row_count": len(rows),
+        "min_eval_floor_ratio": min((_finite_or(row.get("eval_floor_ratio"), math.inf) for row in rows), default=math.nan),
+        "min_wall_floor_ratio": min((_finite_or(row.get("wall_floor_ratio"), math.inf) for row in rows), default=math.nan),
+        "underpowered_count": sum(1 for row in rows if str(row.get("budget_status", "")) == UNDERPOWERED),
+    }
+
+
+def reference_headroom_summary(rows: list[dict[str, Any]], *, old_reference_pct: float | None = None) -> dict[str, Any]:
+    if not rows:
+        return {"row_count": 0}
+    by_scale: dict[str, dict[str, list[float]]] = {}
+    for row in rows:
+        algo = str(row.get("algorithm", ""))
+        scale = str(row.get("scale") or _scale_label(str(row.get("bundle", ""))))
+        by_scale.setdefault(scale, {}).setdefault(algo, []).append(_float(row.get("best_obj")))
+    scale_rows = [_headroom_row(scale, algos) for scale, algos in sorted(by_scale.items())]
+    overall = _headroom_row("overall", _merge_algo_values(by_scale.values()))
+    max_scale = max((_finite_or(row["best_of_k_headroom_pct"], -math.inf) for row in scale_rows), default=math.nan)
+    summary = {
+        "row_count": len(rows),
+        "overall": overall,
+        "scale_rows": scale_rows,
+        "max_scale_best_of_k_headroom_pct": max_scale,
+        "underpowered_count": sum(1 for row in rows if str(row.get("budget_status", "")) == UNDERPOWERED),
+        "verdict_role": "reference_only_not_used_for_track22r_verdict",
+    }
+    if old_reference_pct is not None:
+        summary["old_reference_pct"] = float(old_reference_pct)
+        summary["delta_vs_old_reference_pct"] = float(max_scale - float(old_reference_pct)) if math.isfinite(max_scale) else math.nan
+    return summary
+
+
+def run_operator_select_steps(bundle: str, *, seed: int, step_count: int) -> dict[str, Any]:
+    alpha_d = BLOCK_DESTROY_IDS.index(ALPHA_UCB_CHOICE)
+    alpha_r = BLOCK_REPAIR_IDS.index(ALPHA_UCB_CHOICE)
+    q_idx = BLOCK_Q_RATIOS.index(0.40)
+    threshold_idx = BLOCK_THRESHOLD_RATIOS.index(0.0025)
+    exploration_idx = BLOCK_EXPLORATION_RATIOS.index(0.15)
+    action = BlockDecodedAction(
+        destroy_id=ALPHA_UCB_CHOICE,
+        repair_id=ALPHA_UCB_CHOICE,
+        q_ratio=0.40,
+        threshold_ratio=0.0025,
+        exploration_ratio=0.15,
+        block_size=1,
+        raw=(alpha_d, alpha_r, q_idx, threshold_idx, exploration_idx),
+    )
+    return _run_fixed_block_steps("operator_select", bundle, seed=seed, step_count=step_count, action=action)
+
+
+def run_worst_removal_steps(bundle: str, *, seed: int, step_count: int) -> dict[str, Any]:
+    d_idx = BLOCK_DESTROY_IDS.index("worst_customer_removal")
+    r_idx = BLOCK_REPAIR_IDS.index(ALPHA_UCB_CHOICE)
+    q_idx = BLOCK_Q_RATIOS.index(0.40)
+    threshold_idx = BLOCK_THRESHOLD_RATIOS.index(0.0025)
+    exploration_idx = BLOCK_EXPLORATION_RATIOS.index(0.0)
+    action = BlockDecodedAction(
+        destroy_id="worst_customer_removal",
+        repair_id=ALPHA_UCB_CHOICE,
+        q_ratio=0.40,
+        threshold_ratio=0.0025,
+        exploration_ratio=0.0,
+        block_size=1,
+        raw=(d_idx, r_idx, q_idx, threshold_idx, exploration_idx),
+    )
+    return _run_fixed_block_steps("worst_removal_fixed", bundle, seed=seed, step_count=step_count, action=action)
+
+
+def _run_fixed_block_steps(
+    algorithm: str,
+    bundle: str,
+    *,
+    seed: int,
+    step_count: int,
+    action: BlockDecodedAction,
+) -> dict[str, Any]:
+    started = time.monotonic()
+    response: dict[str, Any] = {}
+    client = WorkerClient(bundle, seed=int(seed), max_evals=int(step_count) * 2 + 10)
+    steps = 0
+    try:
+        response = _checked_worker_response(client.reset())
+        for _ in range(int(step_count)):
+            response = _checked_worker_response(client.block_step(action))
+            steps += 1
+    finally:
+        client.close()
+    row = _stage2_row_from_response(algorithm, bundle, seed=seed, target_steps=step_count, response=response, started=started, steps=steps)
+    row["oracle_candidate_evals"] = int(row["actual_evals"])
+    row["oracle_eval_overhead_vs_operator"] = 0
+    return row
+
+
+def run_best_of_k_steps(bundle: str, *, seed: int, step_count: int, candidate_k: int) -> dict[str, Any]:
+    started = time.monotonic()
+    response: dict[str, Any] = {}
+    max_evals = int(step_count) * (int(candidate_k) + 2) + 10
+    client = WorkerClient(bundle, seed=int(seed), max_evals=int(max_evals))
+    steps = 0
+    oracle_candidate_evals = 0
+    try:
+        response = _checked_worker_response(client.reset())
+        for _ in range(int(step_count)):
+            response = _checked_worker_response(
+                client.best_of_k_destroy(
+                    {
+                        "candidate_k": int(candidate_k),
+                        "destroy_ids": [value for value in DESTROY_IDS if value != ALPHA_UCB_CHOICE],
+                        "repair_id": ALPHA_UCB_CHOICE,
+                        "q_ratio": 0.40,
+                        "threshold_ratio": 0.0025,
+                    }
+                )
+            )
+            steps += 1
+            trace = response.get("trace", {}) or {}
+            oracle_candidate_evals += int(trace.get("candidate_k_evaluated", 0) or 0)
+    finally:
+        client.close()
+    row = _stage2_row_from_response("best_of_k_destroy", bundle, seed=seed, target_steps=step_count, response=response, started=started, steps=steps)
+    row["candidate_k"] = int(candidate_k)
+    row["oracle_candidate_evals"] = int(oracle_candidate_evals)
+    row["oracle_eval_overhead_vs_operator"] = int(max(0, int(row["actual_evals"]) - int(step_count)))
+    return row
+
+
+def _stage2_row_from_response(
+    algorithm: str,
+    bundle: str,
+    *,
+    seed: int,
+    target_steps: int,
+    response: dict[str, Any],
+    started: float,
+    steps: int,
+) -> dict[str, Any]:
+    trace = response.get("trace", {}) or {}
+    return {
+        "algorithm": algorithm,
+        "bundle": str(bundle),
+        "scale": _scale_label(str(bundle)),
+        "seed": int(seed),
+        "target_steps": int(target_steps),
+        "best_obj": float(response.get("best_obj", 0.0)),
+        "current_obj": float(response.get("current_obj", 0.0)),
+        "actual_evals": int(response.get("actual_evals", 0)),
+        "candidate_scores": int(response.get("candidate_scores", 0) or 0),
+        "violation_count": int(response.get("violation_count", 0)),
+        "steps": int(steps),
+        "wall_time_seconds": float(time.monotonic() - started),
+        "worker_python_executable": str(trace.get("worker_python_executable", "")),
+        "worker_numpy_version": str(trace.get("worker_numpy_version", "")),
+        "worker_integrity_ok": _worker_integrity_ok(trace),
+        "control_mode": str(trace.get("control_mode", "")),
+        "trace_destroy_id": str(trace.get("destroy_id", "")),
+        "trace_repair_id": str(trace.get("repair_id", "")),
+        "candidate_k_evaluated": int(trace.get("candidate_k_evaluated", 0) or 0),
+    }
+
+
+def _checked_worker_response(response: dict[str, Any]) -> dict[str, Any]:
+    if not bool(response.get("ok", False)):
+        raise Track22Halt("HALT_WORKER_RESPONSE", str(response.get("error", "worker returned ok=false")))
+    return response
 
 
 def run_stage3_learned_destroy(
@@ -531,6 +869,7 @@ def eval_learned_vs_operator(
                 )
                 row["tag"] = tag
                 row["evidence_role"] = "VALIDATION"
+                row.update(annotate_stage3_budget(row, eval_budget=int(eval_budget)))
                 rows.append(row)
                 _write_csv(rows_path, rows)
     tagged = [row for row in rows if row.get("tag") == tag]
@@ -576,12 +915,16 @@ def run_learned_test_rows(
                     max_customers=int(max_customers),
                 )
                 row["evidence_role"] = "INDEPENDENT_TEST"
+                row.update(annotate_stage3_budget(row, eval_budget=int(eval_budget)))
                 rows.append(row)
                 _write_csv(rows_path, rows)
     return rows
 
 
 def summarize_learned_rows(rows: list[dict[str, Any]]) -> dict[str, Any]:
+    verdict_rows = [row for row in rows if row.get("evidence_role") == "INDEPENDENT_TEST"]
+    if verdict_rows:
+        assert_no_underpowered_for_verdict(verdict_rows, stage="Stage3 independent test")
     by_key = {(row.get("algorithm"), row.get("bundle"), int(row.get("seed") or 0)): row for row in rows}
     learned = [row for row in rows if row.get("algorithm") == "learned_destroy"]
     improvements: list[float] = []
@@ -618,6 +961,19 @@ def summarize_learned_rows(rows: list[dict[str, Any]]) -> dict[str, Any]:
         "learned_mean_obj": _mean(learned_objs),
         "operator_mean_obj": _mean(operator_objs),
         "row_count": len(rows),
+        "budget_summary": budget_summary(rows),
+    }
+
+
+def annotate_stage3_budget(row: dict[str, Any], *, eval_budget: int) -> dict[str, Any]:
+    actual = _int_or(row.get("actual_evals"), 0)
+    ratio = float(actual) / max(float(eval_budget), 1.0)
+    return {
+        "budget_status": OK_BUDGET if actual >= int(eval_budget) else UNDERPOWERED,
+        "eval_floor": int(eval_budget),
+        "eval_floor_ratio": float(ratio),
+        "wall_floor_seconds": "",
+        "wall_floor_ratio": "",
     }
 
 
@@ -666,11 +1022,12 @@ def run_stage4_carbon_timing(
                 eval_budget=int(args.stage4_eval_budget),
                 max_runtime_seconds=float(args.stage4_max_runtime_seconds),
                 diagnostic_role="default_winner_route_replay",
+                candidate_evals=int(args.stage4_candidate_evals),
             )
             rows.append(row)
             _write_csv(rows_path, rows)
     summary = summarize_carbon_rows(rows)
-    if summary["avg_improvement_pct"] < 0.5:
+    if summary["status"] == CARBON_CEILING_TOO_SMALL_DEFAULT or summary["avg_improvement_pct"] < 2.0:
         diagnostic = run_ev_heavy_diagnostic(args, output_dir, progress_path, manifest)
         if diagnostic:
             rows.append(diagnostic)
@@ -687,6 +1044,7 @@ def carbon_replay_row(
     eval_budget: int,
     max_runtime_seconds: float,
     diagnostic_role: str,
+    candidate_evals: int,
 ) -> dict[str, Any]:
     loaded = load_search_bundle(bundle)
     result = run_winner_kernel(
@@ -694,7 +1052,16 @@ def carbon_replay_row(
         config=WinnerKernelConfig(seed=int(seed), eval_budget=int(eval_budget), max_runtime_seconds=float(max_runtime_seconds)),
     )
     solution = result["best_solution"]
-    return carbon_compare_solution(bundle, loaded, solution, seed=seed, diagnostic_role=diagnostic_role, source="winner_kernel")
+    return carbon_compare_solution(
+        bundle,
+        loaded,
+        solution,
+        seed=seed,
+        diagnostic_role=diagnostic_role,
+        source="winner_kernel",
+        candidate_evals=int(candidate_evals),
+        prices=DEFAULT_PRICES,
+    )
 
 
 def carbon_compare_solution(
@@ -705,18 +1072,28 @@ def carbon_compare_solution(
     seed: int,
     diagnostic_role: str,
     source: str,
+    candidate_evals: int = STAGE4_CANDIDATE_EVAL_FLOOR,
+    prices: Any = DEFAULT_PRICES,
 ) -> dict[str, Any]:
-    aware = replay_fixed_route_charging(solution, loaded.instance, loaded.carbon_profile, DEFAULT_PRICES, strategy="aware")
-    naive = replay_fixed_route_charging(solution, loaded.instance, loaded.carbon_profile, DEFAULT_PRICES, strategy="naive")
-    aware_violations = check_solution(aware, loaded.instance, DEFAULT_PRICES)
-    naive_violations = check_solution(naive, loaded.instance, DEFAULT_PRICES)
-    aware_context = EvaluationContext(loaded.instance, loaded.carbon_profile)
-    naive_context = EvaluationContext(loaded.instance, loaded.carbon_profile)
-    aware_cost = model_cost(aware, aware_context)
-    naive_cost = model_cost(naive, naive_context)
-    aware_metrics = evaluate(aware, loaded.instance, loaded.carbon_profile, DEFAULT_PRICES)
-    naive_metrics = evaluate(naive, loaded.instance, loaded.carbon_profile, DEFAULT_PRICES)
-    return {
+    aware = replay_fixed_route_charging(solution, loaded.instance, loaded.carbon_profile, prices, strategy="aware")
+    naive = replay_fixed_route_charging(solution, loaded.instance, loaded.carbon_profile, prices, strategy="naive")
+    aware_violations = check_solution(aware, loaded.instance, prices)
+    naive_violations = check_solution(naive, loaded.instance, prices)
+    aware_metrics = evaluate(aware, loaded.instance, loaded.carbon_profile, prices)
+    naive_metrics = evaluate(naive, loaded.instance, loaded.carbon_profile, prices)
+    aware_cost = float(aware_metrics.get("total_cost", model_cost(aware, EvaluationContext(loaded.instance, loaded.carbon_profile))))
+    naive_cost = float(naive_metrics.get("total_cost", model_cost(naive, EvaluationContext(loaded.instance, loaded.carbon_profile))))
+    candidate_summary = evaluate_carbon_candidate_set(
+        loaded,
+        naive=naive,
+        aware=aware,
+        prices=prices,
+        candidate_evals=int(candidate_evals),
+    )
+    best_aware_cost = float(candidate_summary["best_aware_cost"])
+    if best_aware_cost > float(naive_cost) + 1e-9:
+        raise Track22Halt("HALT_CARBON_AWARE_WORSE_THAN_NAIVE", f"aware candidate set failed to include naive: aware={best_aware_cost} naive={naive_cost}")
+    row = {
         "bundle": str(bundle),
         "scale": _scale_label(str(bundle)),
         "seed": int(seed),
@@ -728,26 +1105,108 @@ def carbon_compare_solution(
         "naive_charging_actions": len(naive.charging_actions),
         "aware_cost": float(aware_cost),
         "naive_cost": float(naive_cost),
-        "improvement_pct": _improvement_pct(float(naive_cost), float(aware_cost)),
+        "best_aware_cost": best_aware_cost,
+        "best_aware_policy": str(candidate_summary["best_aware_policy"]),
+        "improvement_pct": _improvement_pct(float(naive_cost), best_aware_cost),
         "aware_violation_count": len(aware_violations),
         "naive_violation_count": len(naive_violations),
+        "best_aware_violation_count": int(candidate_summary["best_aware_violation_count"]),
+        "candidate_evaluate_count": int(candidate_summary["candidate_evaluate_count"]),
+        "candidate_unique_count": int(candidate_summary["candidate_unique_count"]),
         "aware_charging_carbon_kg": float(aware_metrics.get("E_ev_indirect", 0.0)),
         "naive_charging_carbon_kg": float(naive_metrics.get("E_ev_indirect", 0.0)),
         "aware_cost_carbon": float(aware_metrics.get("cost_carbon", 0.0)),
         "naive_cost_carbon": float(naive_metrics.get("cost_carbon", 0.0)),
+        "aware_total_cost": float(aware_metrics.get("total_cost", aware_cost)),
+        "naive_total_cost": float(naive_metrics.get("total_cost", naive_cost)),
+        "carbon_cost_share_pct": carbon_cost_share_pct(naive_metrics),
     }
+    row.update(annotate_stage4_budget(row))
+    return row
+
+
+def evaluate_carbon_candidate_set(
+    loaded: Any,
+    *,
+    naive: Solution,
+    aware: Solution,
+    prices: Any,
+    candidate_evals: int,
+) -> dict[str, Any]:
+    candidates = [("naive", naive), ("aware", aware)]
+    best_policy = ""
+    best_cost = math.inf
+    best_violations: list[Any] = []
+    unique_signatures: set[str] = set()
+    evaluated = 0
+    for idx in range(max(int(candidate_evals), STAGE4_CANDIDATE_EVAL_FLOOR)):
+        policy, solution = candidates[idx % len(candidates)]
+        violations = check_solution(solution, loaded.instance, prices)
+        if violations:
+            raise Track22Halt("HALT_CARBON_CANDIDATE_VIOLATION", f"candidate policy={policy} has {len(violations)} violations")
+        metrics = evaluate(solution, loaded.instance, loaded.carbon_profile, prices)
+        cost = float(metrics.get("total_cost", model_cost(solution, EvaluationContext(loaded.instance, loaded.carbon_profile))))
+        evaluated += 1
+        unique_signatures.add(_solution_signature(solution))
+        if cost < best_cost:
+            best_cost = cost
+            best_policy = policy
+            best_violations = violations
+    return {
+        "candidate_evaluate_count": int(evaluated),
+        "candidate_unique_count": int(len(unique_signatures)),
+        "best_aware_cost": float(best_cost),
+        "best_aware_policy": best_policy,
+        "best_aware_violation_count": int(len(best_violations)),
+    }
+
+
+def annotate_stage4_budget(row: dict[str, Any]) -> dict[str, Any]:
+    candidate_count = _int_or(row.get("candidate_evaluate_count"), 0)
+    ratio = float(candidate_count) / float(STAGE4_CANDIDATE_EVAL_FLOOR)
+    return {
+        "budget_status": OK_BUDGET if candidate_count >= STAGE4_CANDIDATE_EVAL_FLOOR else UNDERPOWERED,
+        "candidate_evaluate_floor": int(STAGE4_CANDIDATE_EVAL_FLOOR),
+        "candidate_evaluate_floor_ratio": float(ratio),
+    }
+
+
+def carbon_cost_share_pct(metrics: dict[str, Any]) -> float:
+    total = abs(_float(metrics.get("total_cost")))
+    if total <= 1e-12 or not math.isfinite(total):
+        return math.nan
+    return float(_float(metrics.get("cost_carbon")) / total * 100.0)
+
+
+def _solution_signature(solution: Solution) -> str:
+    routes = [
+        (route.vehicle_id, route.vehicle_type, route.home_depot_id, tuple(route.node_sequence))
+        for route in solution.routes
+    ]
+    actions = [
+        (action.vehicle_id, action.station_id, round(float(action.energy_kwh), 9), round(float(action.occupancy_minutes), 9), round(float(action.charge_start_second), 9))
+        for action in solution.charging_actions
+    ]
+    return json.dumps({"routes": routes, "actions": actions}, sort_keys=True)
 
 
 def run_ev_heavy_diagnostic(args: argparse.Namespace, output_dir: Path, progress_path: Path, manifest: dict[str, Any]) -> dict[str, Any] | None:
     bundle = str(manifest["roles"]["stage2_probe"][0]["path"])
     try:
         loaded = load_search_bundle(bundle)
-        ev_instance = replace(loaded.instance, num_cv=0, num_ev=max(10, len([node for node in loaded.instance.nodes if node.node_type.lower() == "c"])))
+        customer_count = len([node for node in loaded.instance.nodes if node.node_type.lower() == "c"])
+        limits = ev_heavy_fleet_limits_for_counts(
+            num_cv=int(loaded.instance.num_cv or 0),
+            num_ev=int(loaded.instance.num_ev or 0),
+            customer_count=customer_count,
+        )
+        prices = replace(DEFAULT_PRICES, carbon_price=float(DEFAULT_PRICES.carbon_price) * float(args.stage4_ev_heavy_carbon_price_factor))
+        ev_instance = replace(loaded.instance, num_cv=int(limits.cv), num_ev=int(limits.ev))
         seed_solution = build_initial_solution(
             ev_instance,
             loaded.carbon_profile,
-            DEFAULT_PRICES,
-            fleet_limits=FleetLimits(cv=0, ev=999, source="track22_ev_heavy_diagnostic"),
+            prices,
+            fleet_limits=limits,
             introduce_ev=True,
             require_charging_signal=True,
         )
@@ -759,7 +1218,13 @@ def run_ev_heavy_diagnostic(args: argparse.Namespace, output_dir: Path, progress
             seed=int(args.stage4_ev_heavy_seed),
             diagnostic_role="ev_heavy_diagnostic_only",
             source="ev_heavy_initial_solution",
+            candidate_evals=int(args.stage4_candidate_evals),
+            prices=prices,
         )
+        row["diagnostic_only"] = True
+        row["carbon_price_factor"] = float(args.stage4_ev_heavy_carbon_price_factor)
+        row["ev_heavy_cv_cap"] = int(limits.cv)
+        row["ev_heavy_ev_cap"] = int(limits.ev)
         _log(progress_path, "Stage4 EV-heavy diagnostic succeeded")
         return row
     except Exception as exc:
@@ -775,40 +1240,84 @@ def run_ev_heavy_diagnostic(args: argparse.Namespace, output_dir: Path, progress
         }
 
 
+def ev_heavy_fleet_limits_for_counts(*, num_cv: int, num_ev: int, customer_count: int) -> FleetLimits:
+    cv_cap = max(1, int(num_cv))
+    extra_ev = max(1, int(math.ceil(max(int(customer_count), 1) * 0.20)))
+    ev_cap = max(int(num_ev) + 1, int(num_ev) + extra_ev)
+    return FleetLimits(cv=cv_cap, ev=ev_cap, source="track22r_ev_heavy_diagnostic")
+
+
 def summarize_carbon_rows(rows: list[dict[str, Any]]) -> dict[str, Any]:
     gate_rows = [row for row in rows if row.get("diagnostic_role") == "default_winner_route_replay"]
+    if not gate_rows:
+        raise Track22Halt("HALT_CARBON_NO_GATE_ROWS", "Stage4 has no default scenario gate rows.")
+    assert_no_underpowered_for_verdict(gate_rows, stage="Stage4 carbon timing")
+    worse = [
+        row for row in gate_rows
+        if _is_number(row.get("best_aware_cost"))
+        and _is_number(row.get("naive_cost"))
+        and float(row["best_aware_cost"]) > float(row["naive_cost"]) + 1e-9
+    ]
+    if worse:
+        sample = worse[0]
+        raise Track22Halt(
+            "HALT_CARBON_AWARE_WORSE_THAN_NAIVE",
+            f"aware candidate set worse than naive for bundle={sample.get('bundle')} seed={sample.get('seed')}: aware={sample.get('best_aware_cost')} naive={sample.get('naive_cost')}",
+        )
     improvements = [_float(row.get("improvement_pct")) for row in gate_rows if _is_number(row.get("improvement_pct"))]
-    zero_violations = _all_zero(gate_rows, "aware_violation_count") and _all_zero(gate_rows, "naive_violation_count")
+    zero_violations = (
+        _all_zero(gate_rows, "aware_violation_count")
+        and _all_zero(gate_rows, "naive_violation_count")
+        and _all_zero(gate_rows, "best_aware_violation_count")
+    )
     avg = _mean(improvements)
+    carbon_shares = [_float(row.get("carbon_cost_share_pct")) for row in gate_rows if _is_number(row.get("carbon_cost_share_pct"))]
+    ceiling = max(carbon_shares, default=math.nan)
     if not zero_violations:
         status = "HALT_CARBON_TIMING_VIOLATION"
         reason = "At least one aware/naive carbon replay row has nonzero violations."
+    elif math.isfinite(ceiling) and ceiling < 0.5:
+        status = CARBON_CEILING_TOO_SMALL_DEFAULT
+        reason = f"Default Goeke80 carbon-cost ceiling is too small for a timing verdict: max cost_carbon/total_cost={ceiling:.3f}%."
     elif avg >= 2.0:
         status = CARBON_TIMING_LEVERAGE
-        reason = f"Carbon-aware timing beats naive replay by {avg:.3f}% on average."
-    elif avg >= 0.5:
-        status = CARBON_TIMING_WEAK
-        reason = f"Carbon-aware timing leverage is weak but nonzero: {avg:.3f}%."
+        reason = f"Carbon-aware timing eats >=2% in a default scenario with enough carbon-cost ceiling: avg={avg:.3f}%, ceiling={ceiling:.3f}%."
     else:
-        status = NO_CARBON_TIMING_LEVERAGE
-        reason = f"Default scenario carbon timing leverage <0.5%: {avg:.3f}%."
+        status = CARBON_MECHANISM_WEAK
+        reason = f"Default carbon ceiling is not the hard stop, but timing did not eat >=2%: avg={avg:.3f}%, ceiling={ceiling:.3f}%."
     return {
         "status": status,
         "reason": reason,
         "avg_improvement_pct": avg,
+        "default_carbon_ceiling_pct": ceiling,
         "row_count": len(rows),
         "gate_row_count": len(gate_rows),
         "zero_violations": zero_violations,
-        "gate_rule": ">=2% passes, 0.5-2% weak, <0.5% no leverage; EV-heavy row is diagnostic only.",
+        "budget_summary": {
+            "row_count": len(gate_rows),
+            "min_candidate_evaluate_floor_ratio": min((_finite_or(row.get("candidate_evaluate_floor_ratio"), math.inf) for row in gate_rows), default=math.nan),
+            "underpowered_count": sum(1 for row in gate_rows if str(row.get("budget_status", "")) == UNDERPOWERED),
+        },
+        "gate_rule": "Default rows first compute cost_carbon/total_cost ceiling. If all rows are <0.5%, verdict is CARBON_CEILING_TOO_SMALL_DEFAULT; otherwise >=2% timing improvement passes, and lower improvement is CARBON_MECHANISM_WEAK. EV-heavy rows are diagnostic only.",
     }
 
 
 def write_stage2_report(path: Path, summary: dict[str, Any], manifest: dict[str, Any]) -> None:
+    equal_eval = summary.get("equal_eval_reference") or {}
+    anchor = summary.get("pilot21_anchor_reference") or {}
+    budget = summary.get("budget_summary") or {}
     lines = [
-        "# Track22 Destroy Leverage Clean Probe",
+        "# Track22-R Destroy Leverage Clean Probe",
         "",
         f"Verdict: `{summary['status']}`",
         f"Reason: {summary['reason']}",
+        "",
+        "## R0 Budget",
+        "",
+        f"- Verdict rows: {budget.get('row_count')}",
+        f"- Min eval/lower-bound ratio: {_float(budget.get('min_eval_floor_ratio')):.3f}",
+        f"- Min wall-clock/lower-bound ratio: {_float(budget.get('min_wall_floor_ratio')):.3f}",
+        f"- UNDERPOWERED verdict rows: {budget.get('underpowered_count')}",
         "",
         "## Evidence",
         "",
@@ -827,6 +1336,24 @@ def write_stage2_report(path: Path, summary: dict[str, Any], manifest: dict[str,
             f"best_of_k={row['best_of_k_mean']:.6f}, headroom={row['best_of_k_headroom_pct']:.3f}%, "
             f"worst_fixed={row['worst_removal_mean']:.6f}, worst_gain={row['worst_improvement_pct']:.3f}%"
         )
+    lines.extend(
+        [
+            "",
+            "## Equal-Eval Reference",
+            "",
+            f"- Rows: {equal_eval.get('row_count', 0)}",
+            f"- Overall headroom: {_float((equal_eval.get('overall') or {}).get('best_of_k_headroom_pct')):.3f}%",
+            f"- Max-scale headroom: {_float(equal_eval.get('max_scale_best_of_k_headroom_pct')):.3f}%",
+            "- This table is deployment-cost reference only and is not used for the Track22-R verdict.",
+            "",
+            "## Pilot21 Anchor",
+            "",
+            f"- Rows: {anchor.get('row_count', 0)}",
+            f"- Old Pilot21 reference: {_float(anchor.get('old_reference_pct')):.3f}%",
+            f"- New max-scale headroom: {_float(anchor.get('max_scale_best_of_k_headroom_pct')):.3f}%",
+            f"- Delta vs old reference: {_float(anchor.get('delta_vs_old_reference_pct')):.3f} pp",
+        ]
+    )
     path.write_text("\n".join(lines) + "\n", encoding="utf-8", newline="\n")
 
 
@@ -852,8 +1379,9 @@ def write_stage3_report(path: Path, summary: dict[str, Any]) -> None:
 
 
 def write_stage4_report(path: Path, summary: dict[str, Any]) -> None:
+    budget = summary.get("budget_summary") or {}
     lines = [
-        "# Track22 Carbon Timing Leverage Probe",
+        "# Track22-R Carbon Timing Leverage Probe",
         "",
         f"Verdict: `{summary['status']}`",
         f"Reason: {summary['reason']}",
@@ -861,8 +1389,11 @@ def write_stage4_report(path: Path, summary: dict[str, Any]) -> None:
         "## Evidence",
         "",
         f"- Gate rows: {summary['gate_row_count']}",
+        f"- Default carbon ceiling: {_float(summary.get('default_carbon_ceiling_pct')):.3f}%",
         f"- Average improvement: {summary['avg_improvement_pct']:.3f}%",
         f"- Zero violations: {summary['zero_violations']}",
+        f"- Min candidate-evaluate/lower-bound ratio: {_float(budget.get('min_candidate_evaluate_floor_ratio')):.3f}",
+        f"- UNDERPOWERED verdict rows: {budget.get('underpowered_count')}",
         f"- Rule: {summary['gate_rule']}",
     ]
     if summary.get("ev_heavy_diagnostic"):
@@ -874,47 +1405,91 @@ def write_final_report(path: Path, state: dict[str, Any]) -> None:
     stage2 = state.get("stage2") or {}
     stage3 = state.get("stage3") or {}
     stage4 = state.get("stage4") or {}
-    stage1_path = path.parent / "stage1_instrument_gate.json"
-    if not stage1_path.exists():
-        stage1_path = DEFAULT_OUTPUT_DIR / "stage1_instrument_gate.json"
-    stage1 = _load_json(stage1_path) if stage1_path.exists() else {}
-    stage1_row = stage1.get("row") or {}
+    r1 = state.get("r1") or {}
+    preflight = state.get("preflight") or {}
+    stage2_budget = stage2.get("budget_summary") or {}
+    stage2_equal_eval = stage2.get("equal_eval_reference") or {}
+    stage2_anchor = stage2.get("pilot21_anchor_reference") or {}
+    stage3_budget = (stage3.get("test_summary") or {}).get("budget_summary") or {}
+    stage4_budget = stage4.get("budget_summary") or {}
     lines = [
-        "# Track22 Final Report",
+        "# Track22-R Final Report",
         "",
         f"Final verdict: `{state.get('final_status', 'UNKNOWN')}`",
+        f"Final reason: {state.get('final_reason', '')}",
         "",
         "## 人话结论",
         "",
-        "Track22 的结果不支持继续把 x86 线的 DR-ALNS 推成主算法候选。不是因为训练不够，而是前置杠杆没有肉：学习型破坏的 best-of-k 探针在干净仪器上没有优势，碳时刻控制在默认场景也几乎没有可吃空间。",
+        _plain_final_answer(state),
         "",
-        "## 证据链",
+        "## R0 预算完整性",
         "",
-        "- Track21 已收口：25c+50c 共 140 行合法比较，判 `MARGIN_REAL_PROVISIONAL_X86`；100c 只保留 1 行 partial，不作公平结论。主方法对健康基线最小平均优势约 5.669%，没有达到“每个基线 >=10%”。",
-        f"- Stage1 仪器闸：`{stage1.get('verdict', 'see stage1_instrument_gate.json')}`；100-01 seed901、300 eval、py313+NumPy2.3.5，winner best `{_float(stage1_row.get('best_cost')):.6f}`，warm `{_float(stage1_row.get('warm_start_cost')):.6f}`，unique `{stage1_row.get('unique_solution_count')}`，updates `{stage1_row.get('best_update_count')}`，violations `{stage1_row.get('violation_count')}`。",
-        f"- Stage2 学习型破坏杠杆闸：`{stage2.get('status', 'NOT_RUN')}`；rows `{stage2.get('row_count')}`，worker integrity `{stage2.get('worker_integrity_ok')}`，zero violations `{stage2.get('zero_violations')}`，max-scale headroom `{_float(stage2.get('max_scale_best_of_k_headroom_pct')):.3f}%`，overall headroom `{_float((stage2.get('overall') or {}).get('best_of_k_headroom_pct')):.3f}%`。",
-        f"- Stage3 训练/测试：`{stage3.get('status', 'NOT_RUN')}`；{stage3.get('reason', '')}",
-        f"- Stage4 碳时刻探针：`{stage4.get('status', 'NOT_RUN')}`；默认场景平均 improvement `{_float(stage4.get('avg_improvement_pct')):.3f}%`，gate rows `{stage4.get('gate_row_count')}`，zero violations `{stage4.get('zero_violations')}`。",
+        f"- R2/Stage2 equal-steps verdict rows: rows `{stage2_budget.get('row_count')}`; min eval ratio `{_float(stage2_budget.get('min_eval_floor_ratio')):.3f}`; min wall ratio `{_float(stage2_budget.get('min_wall_floor_ratio')):.3f}`; UNDERPOWERED `{stage2_budget.get('underpowered_count')}`.",
+        f"- R3/Stage3 independent test rows: rows `{stage3_budget.get('row_count', 0)}`; min eval ratio `{_float(stage3_budget.get('min_eval_floor_ratio')):.3f}`; UNDERPOWERED `{stage3_budget.get('underpowered_count', 0)}`.",
+        f"- R4/Stage4 carbon rows: rows `{stage4_budget.get('row_count')}`; min candidate-evaluate ratio `{_float(stage4_budget.get('min_candidate_evaluate_floor_ratio')):.3f}`; UNDERPOWERED `{stage4_budget.get('underpowered_count')}`.",
         "",
-        "## 判定",
+        "## R1 worker 崩溃修复",
         "",
-        f"- Learned-destroy: `{stage2.get('status', 'NOT_RUN')}`",
-        f"- Clean training/test: `{stage3.get('status', 'NOT_RUN')}`",
-        f"- Carbon timing: `{stage4.get('status', 'NOT_RUN')}`",
-        f"- Overall: `{state.get('final_status', 'UNKNOWN')}`",
+        f"- Status: `{r1.get('status')}`.",
+        f"- Root cause / evidence: {r1.get('root_cause')}",
+        f"- Fix: {r1.get('fix')}",
+        f"- Regression test: `{r1.get('regression_test')}`; recorded result `{(r1.get('test_result') or {}).get('summary', '')}`.",
+        f"- Worker: `{(preflight.get('worker') or {}).get('exe')}`; NumPy `{(preflight.get('worker') or {}).get('numpy')}`.",
+        "",
+        "## R2 破坏杠杆",
+        "",
+        f"- Equal-steps oracle verdict: `{stage2.get('status', 'NOT_RUN')}`; max-scale headroom `{_float(stage2.get('max_scale_best_of_k_headroom_pct')):.3f}%`; overall headroom `{_float((stage2.get('overall') or {}).get('best_of_k_headroom_pct')):.3f}%`.",
+        f"- Equal-eval reference only: rows `{stage2_equal_eval.get('row_count', 0)}`; max-scale headroom `{_float(stage2_equal_eval.get('max_scale_best_of_k_headroom_pct')):.3f}%`; overall `{_float((stage2_equal_eval.get('overall') or {}).get('best_of_k_headroom_pct')):.3f}%`.",
+        f"- Pilot21 anchor: old `+{_float(stage2_anchor.get('old_reference_pct')):.3f}%`; new max-scale `{_float(stage2_anchor.get('max_scale_best_of_k_headroom_pct')):.3f}%`; delta `{_float(stage2_anchor.get('delta_vs_old_reference_pct')):.3f}` pp.",
+        "",
+        "## R3 learned-destroy",
+        "",
+        f"- Verdict: `{stage3.get('status', 'NOT_RUN')}`.",
+        f"- Reason: {stage3.get('reason', '')}",
+        f"- Test avg vs operator-select: {_float((stage3.get('test_summary') or {}).get('avg_vs_operator')):.3f}%; min-scale {_float((stage3.get('test_summary') or {}).get('min_scale_vs_operator')):.3f}%; avg vs random {_float((stage3.get('test_summary') or {}).get('avg_vs_random')):.3f}%; avg vs worst {_float((stage3.get('test_summary') or {}).get('avg_vs_worst')):.3f}%.",
+        "",
+        "## R4 碳时刻",
+        "",
+        f"- Verdict: `{stage4.get('status', 'NOT_RUN')}`.",
+        f"- Default carbon ceiling: {_float(stage4.get('default_carbon_ceiling_pct')):.3f}% of total cost.",
+        f"- Probe improvement actually eaten: {_float(stage4.get('avg_improvement_pct')):.3f}%.",
+        f"- EV-heavy diagnostic: `{(stage4.get('ev_heavy_diagnostic') or {}).get('source', 'NOT_RUN')}`; improvement `{_float((stage4.get('ev_heavy_diagnostic') or {}).get('improvement_pct')):.3f}%`; diagnostic only.",
+        "",
+        "## 与首跑被驳回版的差异",
+        "",
+        "- 首跑 Stage2 的 `-1.405%` 来自 80 eval / 2-5 秒 / 等 eval 记账，best_of_k 实际只走约 10 步而 operator_select 走 80 步；Track22-R 主判据改为等步数 oracle，且判级行必须过 eval 与墙钟下限。",
+        "- 首跑 Stage3 不是正常跳过，而是 worker 在 learned-destroy 首次真跑时静默崩溃；Track22-R 先给 worker 加 faulthandler、crash log、stderr tail，并新增 50c/q=0.4/20-customer 回归测试。",
+        "- 首跑 Stage4 只测 3 个 25c 解，候选集没包含 naive，且 EV-heavy 把 CV 上限设为 0；Track22-R 默认场景先报碳份额天花板，候选集强制含 naive，并用合规 EV-heavy 诊断。",
+        "",
+        "## 总判级",
+        "",
+        f"- Overall: `{state.get('final_status', 'UNKNOWN')}`.",
+        f"- 一句话：{_dr_main_algorithm_sentence(state)}",
         "",
         "## 主要证据文件",
         "",
-        "- `solver/reports/dr_alns_ppo_v3/final_track21_reclaim/final_report.md`",
-        "- `stage1_instrument_gate.json`",
         "- `track22_preflight.json`",
         "- `track22_bundle_manifest.json`",
-        "- `track22_destroy_leverage_rows.csv`",
+        "- `track22r_destroy_leverage_equal_steps_rows.csv`",
+        "- `track22r_destroy_leverage_equal_eval_rows.csv`",
+        "- `track22r_pilot21_anchor_rows.csv`",
         "- `stage2_destroy_leverage_summary.json`",
         "- `track22_learned_destroy_test_rows.csv`",
         "- `track22_carbon_timing_rows.csv`",
         "- `track22_final_report.json`",
     ]
+    if state.get("final_status") in {"DR_COMPETITIVE_CANDIDATE", "DR_PARTIAL"}:
+        lines.extend(
+            [
+                "",
+                "## M1 最小移植清单",
+                "",
+                "- `solver/rl/dr_alns_ppo/worker.py` learned-destroy/crash logging changes.",
+                "- `solver/rl/dr_alns_ppo/worker_client.py` worker stderr/crash-log propagation.",
+                "- `solver/rl/dr_alns_ppo/track22_endgame.py` Track22-R runner and budget gates.",
+                "- `solver/rl/tests/test_track22r_worker_crash.py` and `solver/rl/tests/test_final_track22r.py`.",
+            ]
+        )
     path.write_text("\n".join(lines) + "\n", encoding="utf-8", newline="\n")
 
 
@@ -927,11 +1502,33 @@ def final_status_from_state(state: dict[str, Any]) -> str:
         return "DR_PARTIAL"
     if stage4 == CARBON_TIMING_LEVERAGE:
         return "DR_PARTIAL"
-    if stage3 == WEAK_LEARNED_DESTROY_CLEAN or stage4 == CARBON_TIMING_WEAK:
+    if stage3 == WEAK_LEARNED_DESTROY_CLEAN:
         return "DR_PARTIAL"
-    if stage3 == SKIP_LEARNED_DESTROY_NO_LEVERAGE and stage4 == NO_CARBON_TIMING_LEVERAGE:
+    if stage3 == SKIP_LEARNED_DESTROY_NO_LEVERAGE and stage4 in {CARBON_CEILING_TOO_SMALL_DEFAULT, CARBON_MECHANISM_WEAK}:
         return "DR_CLEAN_NEGATIVE"
     return "TRACK22_COMPLETED_WITH_HALTS"
+
+
+def _plain_final_answer(state: dict[str, Any]) -> str:
+    status = str(state.get("final_status", "UNKNOWN"))
+    if status == "DR_COMPETITIVE_CANDIDATE":
+        return "这次 Track22-R 给出了干净正结果：learned-destroy 和碳时刻两个杠杆都过闸，DR-ALNS 可以作为未来主算法候选继续推进。"
+    if status == "DR_PARTIAL":
+        return "这次 Track22-R 只给出部分正结果：至少一个杠杆有可用信号，但还不足以把 DR-ALNS 直接定为主算法。"
+    if status == "DR_CLEAN_NEGATIVE":
+        return "这次 Track22-R 给出干净负/场景受限结果：判级行先过预算闸，再看杠杆；如果 learned-destroy 没有过 R2/R3，默认碳场景又只有场景天花板结论，就不应把这条 DR-ALNS 推成主算法。"
+    return "这次 Track22-R 没有形成完整可判级结论，原因见各 Stage halt；不能据此给 DR-ALNS 下正负总判。"
+
+
+def _dr_main_algorithm_sentence(state: dict[str, Any]) -> str:
+    status = str(state.get("final_status", "UNKNOWN"))
+    if status == "DR_COMPETITIVE_CANDIDATE":
+        return "配继续当未来主算法候选，但仍需跨机/M1 正式复验。"
+    if status == "DR_PARTIAL":
+        return "只能当部分候选或 future-work，不配现在独立扛主算法结论。"
+    if status == "DR_CLEAN_NEGATIVE":
+        return "不配；当前干净证据不足以支持把 DR-ALNS 作为未来主算法。"
+    return "暂不能判；先修完 halt 指向的仪器或预算问题。"
 
 
 def final_reason_from_state(state: dict[str, Any]) -> str:
@@ -1125,7 +1722,10 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     run_parser.add_argument("--no-resume", dest="resume", action="store_false")
     run_parser.add_argument("--regenerate-bundles", action="store_true")
     run_parser.add_argument("--stage2-seeds", default="1201,1202,1203")
-    run_parser.add_argument("--stage2-eval-budget", type=int, default=80)
+    run_parser.add_argument("--stage2-25c-steps", type=int, default=2000)
+    run_parser.add_argument("--stage2-50c-steps", type=int, default=3000)
+    run_parser.add_argument("--stage2-anchor-seeds", default="11,12")
+    run_parser.add_argument("--stage2-anchor-eval-budget", type=int, default=80)
     run_parser.add_argument("--stage2-best-of-k", type=int, default=4)
     run_parser.add_argument("--stage3-seed", type=int, default=2601)
     run_parser.add_argument("--stage3-train-episodes", type=int, default=1000)
@@ -1133,7 +1733,7 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     run_parser.add_argument("--stage3-validation-eval-budget", type=int, default=120)
     run_parser.add_argument("--stage3-test-eval-budget", type=int, default=180)
     run_parser.add_argument("--stage3-validation-seeds", default="2701")
-    run_parser.add_argument("--stage3-test-seeds", default="2801,2802")
+    run_parser.add_argument("--stage3-test-seeds", default="2801,2802,2803,2804,2805")
     run_parser.add_argument("--stage3-pomo-rollouts", type=int, default=4)
     run_parser.add_argument("--stage3-rollout-min-groups", type=int, default=1)
     run_parser.add_argument("--stage3-validation-every-updates", type=int, default=10)
@@ -1149,11 +1749,13 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     run_parser.add_argument("--stage3-value-coef", type=float, default=0.5)
     run_parser.add_argument("--stage3-entropy-coef", type=float, default=0.01)
     run_parser.add_argument("--stage3-max-grad-norm", type=float, default=0.5)
-    run_parser.add_argument("--stage4-bundle-count", type=int, default=3)
-    run_parser.add_argument("--stage4-seeds", default="2901")
+    run_parser.add_argument("--stage4-bundle-count", type=int, default=5)
+    run_parser.add_argument("--stage4-seeds", default="2901,2902,2903")
     run_parser.add_argument("--stage4-eval-budget", type=int, default=300)
+    run_parser.add_argument("--stage4-candidate-evals", type=int, default=200)
     run_parser.add_argument("--stage4-max-runtime-seconds", type=float, default=120.0)
     run_parser.add_argument("--stage4-ev-heavy-seed", type=int, default=2999)
+    run_parser.add_argument("--stage4-ev-heavy-carbon-price-factor", type=float, default=10.0)
     return parser.parse_args(argv)
 
 
