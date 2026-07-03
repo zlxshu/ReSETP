@@ -113,6 +113,18 @@ TABLE_SPECS: dict[str, list[ColumnSpec]] = {
         ("low_carbon_charge_share_pct", "低碳时段充电占比/\\%"),
         ("conservation_audit", "守恒审计"),
     ],
+    "T9_APPENDIX": [
+        ("stage", "阶段"),
+        ("trigger_time_h", "触发时刻"),
+        ("event_counts", "事件数(新增/取消/变更)"),
+        ("frozen_route_count", "冻结路线数"),
+        ("stage_cost", "阶段成本/£"),
+        ("cumulative_cost", "累计成本/£"),
+        ("cumulative_carbon_kg", "累计排放/kgCO$_2$e"),
+        ("stage_min_fairness_ratio", "阶段最小公平比"),
+        ("stage_cross_site_customers", "阶段跨场服务数"),
+        ("stage_low_carbon_charge_share_pct", "阶段低碳充电占比/\\%"),
+    ],
 }
 
 
@@ -127,7 +139,7 @@ def table_t2_parameters(csv_path: str | Path) -> str:
 def table_t3_algorithm_comparison(csv_path: str | Path) -> str:
     fieldnames, _ = _read_rows_with_fieldnames(csv_path)
     if not any("|" in field for field in fieldnames):
-        return csv_to_booktabs(csv_path, TABLE_SPECS["T3"], col_format=r"@{}llrrrrrrll@{}", table_id="T3")
+        return standard_t3_csv_to_booktabs(csv_path)
     return grouped_csv_to_long_booktabs(
         csv_path,
         # v2026-06-13: Formal CSV stores base columns as field names; labels are
@@ -228,6 +240,26 @@ def table_t9_dynamic(csv_path: str | Path) -> str:
     )
 
 
+def table_t9_appendix_stage_detail(csv_path: str | Path) -> str:
+    return csv_to_booktabs(
+        csv_path,
+        TABLE_SPECS["T9_APPENDIX"],
+        col_format=(
+            r"@{}>{\centering\arraybackslash}p{0.055\linewidth}"
+            r">{\centering\arraybackslash}p{0.07\linewidth}"
+            r">{\centering\arraybackslash}p{0.10\linewidth}"
+            r">{\centering\arraybackslash}p{0.075\linewidth}"
+            r">{\centering\arraybackslash}p{0.08\linewidth}"
+            r">{\centering\arraybackslash}p{0.085\linewidth}"
+            r">{\centering\arraybackslash}p{0.10\linewidth}"
+            r">{\centering\arraybackslash}p{0.09\linewidth}"
+            r">{\centering\arraybackslash}p{0.09\linewidth}"
+            r">{\centering\arraybackslash}p{0.10\linewidth}@{}"
+        ),
+        table_id="T9_APPENDIX",
+    )
+
+
 TABLE_BUILDERS = {
     "T1": table_t1_instances,
     "T2": table_t2_parameters,
@@ -238,7 +270,27 @@ TABLE_BUILDERS = {
     "T7": table_t7_carbon_sensitivity,
     "T8": table_t8_fairness_threshold,
     "T9": table_t9_dynamic,
+    "T9_APPENDIX": table_t9_appendix_stage_detail,
 }
+
+
+def standard_t3_csv_to_booktabs(csv_path: str | Path) -> str:
+    rows = read_rows(csv_path)
+    columns = TABLE_SPECS["T3"]
+    lines = [r"\begin{tabular}{@{}llrrrrrrll@{}}", r"\toprule"]
+    lines.append(" & ".join(header for _, header in columns) + r"\\")
+    lines.append(r"\midrule")
+    summary_started = False
+    if not rows:
+        lines.append(r"\multicolumn{" + str(len(columns)) + r"}{l}{无可用行}\\")
+    for row in rows:
+        is_summary = str(_cell_value(row, "instance", "算例")).strip() in {"达优次数", "平均偏差"}
+        if is_summary and not summary_started:
+            lines.append(r"\midrule")
+            summary_started = True
+        lines.append(" & ".join(_latex_cell(_display_value("T3", field, _cell_value(row, field, header))) for field, header in columns) + r"\\")
+    lines.extend([r"\bottomrule", r"\end{tabular}", ""])
+    return "\n".join(lines)
 
 
 def csv_to_booktabs(csv_path: str | Path, columns: list[ColumnSpec], *, col_format: str | None = None, table_id: str | None = None) -> str:
@@ -357,7 +409,7 @@ def write_table_fragment(table_id: str, csv_path: str | Path, tex_path: str | Pa
 
 def _latex_cell(value: object) -> str:
     text = "" if value is None else str(value)
-    if text.startswith("$") or "\\" in text:
+    if "$" in text or "\\" in text:
         return text
     replacements = {
         "&": r"\&",
@@ -376,13 +428,13 @@ def _display_value(table_id: str | None, field: str, value: object) -> str:
         return ""
     if table_id == "T5" and field == "step":
         return _compact_ablation_label(text)
-    if field in {"total_cost", "best", "mean", "std", "equal_eval_time_s", "final_cost", "hindsight_cost"}:
+    if field in {"total_cost", "best", "mean", "std", "equal_eval_time_s", "final_cost", "hindsight_cost", "stage_cost", "cumulative_cost"}:
         return _format_number(text, digits=1)
     if field in {"observed_gap_pct", "feasible_rate_pct", "delta_vs_full_pct", "delta_emission_prev_pct", "low_carbon_charge_share_pct"}:
         return _format_number(text, digits=1)
-    if field in {"min_ratio", "min_fairness_ratio", "charging_centroid_h"}:
+    if field in {"min_ratio", "min_fairness_ratio", "charging_centroid_h", "stage_min_fairness_ratio"}:
         return _format_number(text, digits=3)
-    if field in {"diesel_carbon_kg", "charging_carbon_kg", "total_carbon_kg", "mean_intensity_gco2_per_kwh", "fuel_liters", "charging_kwh", "carbon_trading_cost"}:
+    if field in {"diesel_carbon_kg", "charging_carbon_kg", "total_carbon_kg", "mean_intensity_gco2_per_kwh", "fuel_liters", "charging_kwh", "carbon_trading_cost", "cumulative_carbon_kg", "stage_low_carbon_charge_share_pct"}:
         return _format_number(text, digits=1)
     if table_id in {"T3", "T7", "T8"} and field not in {"algorithm", "carbon_price_level", "pi_ratio_by_depot", "feasible", "equal_wallclock_score", "significance"}:
         return _format_number(text, digits=1)

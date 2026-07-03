@@ -36,7 +36,12 @@ def figure_f1_route_map(nodes_csv: str | Path, routes_csv: str | Path, output_st
     routes = _read_rows(routes_csv)
     fig, axes = plt.subplots(1, 2, figsize=DOUBLE_COL_FIGSIZE)
     depot_colors = {"D0": PALETTE["blue"], "D1": PALETTE["green"]}
-    route_colors = [PALETTE["blue"], PALETTE["green"], PALETTE["red"], PALETTE["purple"], PALETTE["amber"], PALETTE["gray"]]
+    route_style = {
+        "cv": (PALETTE["blue"], "-"),
+        "油车": (PALETTE["blue"], "-"),
+        "ev": (PALETTE["green"], "--"),
+        "电车": (PALETTE["green"], "--"),
+    }
 
     _draw_nodes(axes[0], nodes, depot_colors)
     axes[0].set_title("(a) 节点地理分布")
@@ -45,15 +50,17 @@ def figure_f1_route_map(nodes_csv: str | Path, routes_csv: str | Path, output_st
         seq = [item for item in route["node_sequence"].split(">") if item in nodes]
         xs = [float(nodes[item]["x"]) for item in seq]
         ys = [float(nodes[item]["y"]) for item in seq]
-        is_cv = route["vehicle_type"].lower() == "cv" or route["vehicle_type"] == "油车"
+        vehicle_key = route["vehicle_type"].lower()
+        color, linestyle = route_style.get(vehicle_key, route_style.get(route["vehicle_type"], (PALETTE["gray"], "-")))
         axes[1].plot(
             xs,
             ys,
-            color=route_colors[idx % len(route_colors)],
-            linestyle="-" if is_cv else "--",
+            color=color,
+            linestyle=linestyle,
             marker=MARKERS[idx % len(MARKERS)],
             markersize=2.6,
-            linewidth=0.85,
+            linewidth=0.75 + 0.08 * (idx % 3),
+            alpha=0.74 + 0.08 * (idx % 2),
         )
     _draw_nodes(axes[1], nodes, depot_colors)
     axes[1].set_title("(b) 路线方案")
@@ -64,8 +71,9 @@ def figure_f1_route_map(nodes_csv: str | Path, routes_csv: str | Path, output_st
         ax.set_aspect("equal", adjustable="box")
     axes[1].legend(
         handles=[
-            Line2D([0], [0], color=PALETTE["gray"], linestyle="-", linewidth=0.9, label="燃油车路线"),
-            Line2D([0], [0], color=PALETTE["gray"], linestyle="--", linewidth=0.9, label="电动车路线"),
+            Line2D([0], [0], color=PALETTE["blue"], linestyle="-", linewidth=0.9, label="燃油车路线"),
+            Line2D([0], [0], color=PALETTE["green"], linestyle="--", linewidth=0.9, label="电动车路线"),
+            Line2D([0], [0], marker="o", color="none", markerfacecolor="white", markeredgecolor=PALETTE["dark"], markeredgewidth=1.7, markersize=5, label="跨场服务客户（黑色描边）"),
         ],
         loc="upper right",
         fontsize=7,
@@ -85,7 +93,7 @@ def figure_f2_algorithm_performance(curves_csv: str | Path, finals_csv: str | Pa
     curve_rows = _read_rows(curves_csv)
     final_rows = _read_rows(finals_csv)
     if curve_rows and "instance" in curve_rows[0]:
-        return _figure_f2_faceted_algorithm_performance(curve_rows, output_stem, watermark=watermark)
+        return _figure_f2_faceted_algorithm_performance(curve_rows, final_rows, output_stem, watermark=watermark)
     algorithms = sorted({row["algorithm"] for row in curve_rows})
     colors = [PALETTE["blue"], PALETTE["green"], PALETTE["red"], PALETTE["purple"]]
     fig, axes = plt.subplots(1, 2, figsize=DOUBLE_COL_FIGSIZE, constrained_layout=True)
@@ -117,13 +125,13 @@ def figure_f2_algorithm_performance(curves_csv: str | Path, finals_csv: str | Pa
     return save_pdf_png(fig, output_stem)
 
 
-def _figure_f2_faceted_algorithm_performance(curve_rows: list[dict[str, str]], output_stem: str | Path, *, watermark: bool) -> tuple[Path, Path]:
+def _figure_f2_faceted_algorithm_performance(curve_rows: list[dict[str, str]], final_rows: list[dict[str, str]], output_stem: str | Path, *, watermark: bool) -> tuple[Path, Path]:
     from matplotlib import pyplot as plt
 
     instances = sorted({row["instance"] for row in curve_rows})
     algorithms = sorted({row["algorithm"] for row in curve_rows})
     colors = [PALETTE["blue"], PALETTE["green"], PALETTE["red"], PALETTE["purple"], PALETTE["amber"], PALETTE["sky"]]
-    fig, axes = plt.subplots(1, len(instances), figsize=DOUBLE_COL_FIGSIZE, squeeze=False, constrained_layout=True)
+    fig, axes = plt.subplots(2, len(instances), figsize=(DOUBLE_COL_FIGSIZE[0], DOUBLE_COL_FIGSIZE[1] * 1.24), squeeze=False, constrained_layout=True)
     for ax, instance in zip(axes[0], instances):
         instance_rows = [row for row in curve_rows if row["instance"] == instance]
         ref_values = [float(row["reference_best"]) for row in instance_rows if row.get("reference_best")]
@@ -143,14 +151,31 @@ def _figure_f2_faceted_algorithm_performance(curve_rows: list[dict[str, str]], o
             color = colors[idx % len(colors)]
             ax.plot(xs, median, color=color, linestyle=LINE_STYLES[idx % len(LINE_STYLES)], marker=MARKERS[idx % len(MARKERS)], markersize=2.5, label=_algorithm_label(algorithm))
             ax.fill_between(xs, q1, q3, color=color, alpha=0.10)
-        ax.set_title(instance)
+        ax.set_title(f"(a) {instance} 收敛曲线")
         ax.set_xlabel("评估次数")
         ax.set_ylabel("最优目标")
         ax.tick_params(axis="x", labelrotation=20)
+    for ax, instance in zip(axes[1], instances):
+        grouped = []
+        labels = []
+        for algorithm in algorithms:
+            values = [float(row["final_obj"]) for row in final_rows if row.get("instance") == instance and row["algorithm"] == algorithm]
+            if values:
+                grouped.append(values)
+                labels.append(_algorithm_label(algorithm))
+        boxes = ax.boxplot(grouped, tick_labels=labels, patch_artist=True, widths=0.58)
+        for idx, patch in enumerate(boxes["boxes"]):
+            patch.set_facecolor(colors[idx % len(colors)])
+            patch.set_alpha(0.24)
+            patch.set_edgecolor(PALETTE["dark"])
+        ax.set_title(f"(b) {instance} 终值箱线图")
+        ax.set_ylabel("终值目标")
+        ax.tick_params(axis="x", rotation=24)
     axes[0][0].legend(ncols=2, fontsize=6.8, handlelength=1.35, columnspacing=0.85)
     if watermark:
-        for ax in axes[0]:
-            sample_watermark(ax)
+        for row in axes:
+            for ax in row:
+                sample_watermark(ax)
     return save_pdf_png(fig, output_stem)
 
 
@@ -515,50 +540,84 @@ def figure_f6_fairness_frontier(csv_path: str | Path, output_stem: str | Path, *
 
 def figure_f7_dynamic_timeline(csv_path: str | Path, output_stem: str | Path, *, watermark: bool = True) -> tuple[Path, Path]:
     setup_matplotlib()
+    from matplotlib.lines import Line2D
+    from matplotlib.patches import Patch
     from matplotlib import pyplot as plt
 
-    rows = sorted(_read_rows(csv_path), key=lambda row: float(row["stage_start_h"]))
+    rows = sorted(_read_rows(csv_path), key=lambda row: (row.get("vehicle_id", ""), float(row["stage_start_h"])))
     if not rows:
         raise ValueError("F7 dynamic source has no rows")
-    fig, axes = plt.subplots(3, 1, figsize=DOUBLE_COL_FIGSIZE, sharex=True, constrained_layout=True, gridspec_kw={"height_ratios": [1.0, 1.0, 1.15]})
-    y = 0.0
+    fig, axes = plt.subplots(3, 1, figsize=(DOUBLE_COL_FIGSIZE[0], DOUBLE_COL_FIGSIZE[1] * 1.12), sharex=True, constrained_layout=True, gridspec_kw={"height_ratios": [1.15, 1.0, 1.12]})
+    vehicles = sorted({row.get("vehicle_id", "代表事件流") or "代表事件流" for row in rows})
+    y_by_vehicle = {vehicle: idx for idx, vehicle in enumerate(vehicles)}
+    segment_colors = {"冻结段": PALETTE["gray"], "重规划段": PALETTE["sky"]}
     for row in rows:
         start = float(row["stage_start_h"])
         end = float(row["stage_end_h"])
-        color = PALETTE["gray"] if row.get("segment_type") == "冻结段" else PALETTE["sky"]
-        axes[0].barh([y], [end - start], left=[start], height=0.42, color=color, edgecolor=PALETTE["dark"], linewidth=0.55)
-        if row.get("event_label"):
-            axes[0].axvline(start, color=PALETTE["red"], linestyle=":", linewidth=0.8)
-            axes[0].text(start + 0.08, y, row["event_label"], fontsize=6.6, ha="left", va="center", color=PALETTE["dark"])
-    axes[0].set_yticks([y], ["代表事件流"])
+        vehicle = row.get("vehicle_id", "代表事件流") or "代表事件流"
+        color = segment_colors.get(row.get("segment_type", ""), PALETTE["light_gray"])
+        axes[0].barh([y_by_vehicle[vehicle]], [max(end - start, 0.01)], left=[start], height=0.42, color=color, edgecolor=PALETTE["dark"], linewidth=0.55, zorder=2)
+    event_markers = {"新增": "^", "取消": "x", "变更": "D"}
+    event_labels = {"新增": "新增 ▲", "取消": r"取消 $\times$", "变更": "变更 ◆"}
+    seen_events: set[tuple[str, float]] = set()
+    event_y = len(vehicles) - 0.10
+    for row in rows:
+        event_type = row.get("event_type", "")
+        event_time = row.get("event_time_h", "")
+        if not event_type or not event_time:
+            continue
+        key = (event_type, float(event_time))
+        if key in seen_events:
+            continue
+        seen_events.add(key)
+        marker = event_markers.get(event_type, "o")
+        if marker == "x":
+            axes[0].scatter([float(event_time)], [event_y], marker=marker, s=42, color=PALETTE["red"], linewidth=0.8, zorder=5)
+        else:
+            axes[0].scatter([float(event_time)], [event_y], marker=marker, s=42, color=PALETTE["red"], edgecolor=PALETTE["dark"], linewidth=0.45, zorder=5)
+        axes[0].axvline(float(event_time), color=PALETTE["red"], linestyle=":", linewidth=0.55, alpha=0.55, zorder=1)
+    axes[0].set_yticks(list(y_by_vehicle.values()), vehicles)
+    axes[0].set_ylim(-0.6, len(vehicles) + 0.35)
     axes[0].set_title("(a) 事件到达与冻结/重规划段")
+    axes[0].legend(
+        handles=[
+            Patch(facecolor=PALETTE["gray"], edgecolor=PALETTE["dark"], label="冻结段"),
+            Patch(facecolor=PALETTE["sky"], edgecolor=PALETTE["dark"], label="重规划段"),
+            *[Line2D([0], [0], marker=marker, color="none", markerfacecolor=PALETTE["red"], markeredgecolor=PALETTE["dark"], markersize=5, label=event_labels[event]) for event, marker in event_markers.items()],
+        ],
+        loc="upper right",
+        ncols=3,
+        fontsize=6.6,
+    )
 
-    xs = [float(row["stage_end_h"]) for row in rows]
-    cost = [float(row["cumulative_cost"]) for row in rows]
-    carbon = [float(row["cumulative_carbon_kg"]) for row in rows]
-    hindsight = [float(row["hindsight_cost"]) for row in rows]
-    axes[1].step(xs, cost, where="post", color=PALETTE["blue"], marker=MARKERS[0], label="累计成本")
-    axes[1].step(xs, hindsight, where="post", color=PALETTE["dark"], linestyle=":", label="静态后见基线")
+    stage_rows = _f7_stage_metric_rows(rows)
+    xs = [float(row["stage_end_h"]) for row in stage_rows]
+    cost = [float(row["cumulative_cost"]) for row in stage_rows]
+    carbon = [float(row["cumulative_carbon_kg"]) for row in stage_rows]
+    hindsight = [float(row["hindsight_cost"]) for row in stage_rows]
+    axes[1].step(xs, cost, where="post", color=PALETTE["blue"], marker=MARKERS[0], linewidth=1.15, zorder=5, label="累计成本")
+    axes[1].step(xs, hindsight, where="post", color=PALETTE["dark"], linestyle=":", linewidth=1.0, zorder=4, label="静态后见基线")
     ax2 = axes[1].twinx()
-    ax2.step(xs, carbon, where="post", color=PALETTE["green"], marker=MARKERS[1], label="累计排放")
-    axes[1].set_ylabel("成本 / £")
+    ax2.step(xs, carbon, where="post", color=PALETTE["green"], marker=MARKERS[1], linestyle="--", linewidth=0.95, alpha=0.86, zorder=3, label="累计排放")
+    axes[1].set_ylabel("成本/£")
     ax2.set_ylabel("排放 kgCO$_2$e")
     axes[1].set_title("(b) 信息成本与累计排放")
     handles, labels = axes[1].get_legend_handles_labels()
     handles2, labels2 = ax2.get_legend_handles_labels()
     axes[1].legend(handles + handles2, labels + labels2, loc="best", fontsize=6.8)
 
-    cross_site = [float(row["cross_site_customers"]) for row in rows]
-    low_carbon = [float(row["low_carbon_charge_share_pct"]) for row in rows]
-    fairness = [float(row["min_fairness_ratio"]) for row in rows]
-    theta_values = [float(row.get("theta", "1.0") or 1.0) for row in rows]
-    width = 0.26
-    axes[2].bar([x - width / 2 for x in xs], cross_site, width=width, color=PALETTE["purple"], label="跨场服务数")
-    axes[2].bar([x + width / 2 for x in xs], low_carbon, width=width, color=PALETTE["amber"], label="低碳充电占比%")
+    cross_site = [float(row["cross_site_customers"]) for row in stage_rows]
+    low_carbon = [float(row["low_carbon_charge_share_pct"]) for row in stage_rows]
+    fairness = [float(row["min_fairness_ratio"]) for row in stage_rows]
+    theta_values = [float(row.get("theta", "1.0") or 1.0) for row in stage_rows]
+    width = 0.32
+    bars = axes[2].bar(xs, low_carbon, width=width, color=PALETTE["amber"], alpha=0.78, label="低碳充电占比%")
+    for bar, value in zip(bars, cross_site):
+        axes[2].text(bar.get_x() + bar.get_width() / 2, bar.get_height() + 2.0, f"跨场{value:.0f}", ha="center", va="bottom", fontsize=6.5, color=PALETTE["purple"])
     ax3 = axes[2].twinx()
     ax3.plot(xs, fairness, color=PALETTE["red"], marker=MARKERS[2], label="最小公平比")
     ax3.plot(xs, theta_values, color=PALETTE["dark"], linestyle="--", linewidth=0.8, label="$\\theta$")
-    axes[2].set_ylabel("数量 / %")
+    axes[2].set_ylabel("低碳充电占比/%")
     ax3.set_ylabel("公平比")
     axes[2].set_xlabel("时间 / h")
     axes[2].set_title("(c) 协同、公平与低碳充电持续活跃度")
@@ -569,6 +628,15 @@ def figure_f7_dynamic_timeline(csv_path: str | Path, output_stem: str | Path, *,
         for ax in axes:
             sample_watermark(ax)
     return save_pdf_png(fig, output_stem)
+
+
+def _f7_stage_metric_rows(rows: list[dict[str, str]]) -> list[dict[str, str]]:
+    selected: dict[float, dict[str, str]] = {}
+    for row in rows:
+        if not row.get("cumulative_cost"):
+            continue
+        selected[float(row["stage_end_h"])] = row
+    return [selected[key] for key in sorted(selected)]
 
 
 def _read_rows(path: str | Path) -> list[dict[str, str]]:

@@ -124,7 +124,7 @@ def write_rows(csv_path: str | Path, rows: list[dict[str, Any]], fieldnames: lis
                     keys.append(key)
         fieldnames = keys
     with path.open("w", newline="", encoding="utf-8-sig") as handle:
-        writer = csv.DictWriter(handle, fieldnames=fieldnames)
+        writer = csv.DictWriter(handle, fieldnames=fieldnames, lineterminator="\n")
         writer.writeheader()
         for row in rows:
             writer.writerow({field: row.get(field, "") for field in fieldnames})

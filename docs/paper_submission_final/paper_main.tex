@@ -723,7 +723,8 @@ $\theta=1.0$ 表示协同后各车场收益不低于独立运营基准,对应协
 
 \subsection{算法有效性验证}
 
-算法有效性实验采用相同算例、相同约束口径、相同评价函数和相同计算预算。由于论文专用算例无公开BKS，表 \ref{tab:formal-algorithms} 中的偏差均以本轮所有可行解中的已观测最优值为参照，不称为BKS gap。收敛过程见图 \ref{fig:formal-f2}。
+% v2026-07-03: restore F2 wording to include terminal-value distribution in the fixed design template.
+算法有效性实验采用相同算例、相同约束口径、相同评价函数和相同计算预算。由于论文专用算例无公开BKS，表 \ref{tab:formal-algorithms} 中的偏差均以本轮所有可行解中的已观测最优值为参照，不称为BKS gap。收敛过程与终值分布见图 \ref{fig:formal-f2}。
 
 \begin{table}[H]
 \centering
@@ -736,7 +737,8 @@ $\theta=1.0$ 表示协同后各车场收益不低于独立运营基准,对应协
 \begin{figure}[H]
 \centering
 \includegraphics[width=0.92\linewidth]{generated_figures/figure_f2_algorithm_performance.pdf}
-\caption{算法收敛过程}
+% v2026-07-03: restore caption required by the figure-template contract.
+\caption{算法收敛过程与终值分布}
 \label{fig:formal-f2}
 \end{figure}
 

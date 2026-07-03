@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import csv
+import re
 import sys
 import tempfile
 import unittest
@@ -285,11 +287,72 @@ class ReportingOutputTest(unittest.TestCase):
             self.assertIn("样例数据/非实验结果", contract)
             self.assertIn("F7 动态时间线", contract)
             self.assertIn("直接排放（燃油）", contract)
+            self.assertIn("终值箱线图", contract)
+            self.assertIn("燃油车同色实线", contract)
+            self.assertIn("电动车同色虚线", contract)
+            self.assertIn("黑色描边", contract)
             t4 = (output_dir / "tables" / "t4_solution_decomposition.tex").read_text(encoding="utf-8")
             self.assertIn("仅油车", t4)
             self.assertIn("混合", t4)
+            self.assertIn("kgCO$_2$e", t4)
+            self.assertNotIn("kgCO2e", t4)
             self.assertNotIn("source_seed", t4)
             self.assertNotIn("cv_only total_cost", t4)
+
+            expected_notes = {
+                "t1_instances.tex": "scenario manifest",
+                "t3_algorithm_comparison.tex": "Wilcoxon",
+                "t4_solution_decomposition.tex": "同预算独立重优化",
+                "t5_ablation.tex": "不得靠表格掩饰",
+                "t6_two_layer_carbon.tex": "仅油车重优化基线",
+                "t7_carbon_sensitivity.tex": "不设配额轴",
+                "t8_fairness_threshold.tex": "自然比值",
+                "t9_dynamic.tex": "守恒审计",
+            }
+            for filename, snippet in expected_notes.items():
+                text = (output_dir / "tables" / filename).read_text(encoding="utf-8")
+                self.assertIn("样例数据/非实验结果", text)
+                self.assertIn(snippet, text)
+                self.assertIn(snippet, contract)
+                self.assertIsNone(re.search(r"\d+\.\d{4,}", text))
+
+            t3 = (output_dir / "tables" / "t3_algorithm_comparison.tex").read_text(encoding="utf-8")
+            self.assertIn("\\midrule\n达优次数", t3)
+            self.assertIn("平均偏差", t3)
+
+            with (output_dir / "mock_data" / "t9_dynamic.csv").open(newline="", encoding="utf-8-sig") as handle:
+                t9_rows = list(csv.DictReader(handle))
+            self.assertEqual(len(t9_rows), 10)
+
+            stage_csv = output_dir / "mock_data" / "t9_appendix_stage_detail.csv"
+            self.assertTrue(stage_csv.exists())
+            with stage_csv.open(newline="", encoding="utf-8-sig") as handle:
+                stage_rows = list(csv.DictReader(handle))
+            self.assertEqual(
+                list(stage_rows[0]),
+                [
+                    "stage",
+                    "trigger_time_h",
+                    "event_counts",
+                    "frozen_route_count",
+                    "stage_cost",
+                    "cumulative_cost",
+                    "cumulative_carbon_kg",
+                    "stage_min_fairness_ratio",
+                    "stage_cross_site_customers",
+                    "stage_low_carbon_charge_share_pct",
+                ],
+            )
+            self.assertTrue((output_dir / "tables" / "t9_appendix_stage_detail.tex").exists())
+            preview = (output_dir / "design_preview.tex").read_text(encoding="utf-8")
+            self.assertIn("附录", preview)
+            self.assertIn("t9_appendix_stage_detail.tex", preview)
+
+            with (output_dir / "mock_data" / "f7_dynamic_timeline.csv").open(newline="", encoding="utf-8-sig") as handle:
+                f7_rows = list(csv.DictReader(handle))
+            self.assertGreaterEqual(len({row["vehicle_id"] for row in f7_rows}), 4)
+            self.assertGreaterEqual(len({row["event_type"] for row in f7_rows if row["event_type"]}), 3)
+            self.assertIn("event_time_h", f7_rows[0])
 
 
 if __name__ == "__main__":

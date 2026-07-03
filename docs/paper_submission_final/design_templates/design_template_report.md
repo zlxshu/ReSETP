@@ -20,6 +20,7 @@
 - T7: `/Volumes/移动硬盘（512G）/ReSETP/docs/paper_submission_final/design_templates/mock_data/t7_carbon_sensitivity.csv`
 - T8: `/Volumes/移动硬盘（512G）/ReSETP/docs/paper_submission_final/design_templates/mock_data/t8_fairness_threshold.csv`
 - T9: `/Volumes/移动硬盘（512G）/ReSETP/docs/paper_submission_final/design_templates/mock_data/t9_dynamic.csv`
+- T9_APPENDIX: `/Volumes/移动硬盘（512G）/ReSETP/docs/paper_submission_final/design_templates/mock_data/t9_appendix_stage_detail.csv`
 
 ## Tables
 - T1: `/Volumes/移动硬盘（512G）/ReSETP/docs/paper_submission_final/design_templates/tables/t1_instances.tex`
@@ -30,6 +31,7 @@
 - T7: `/Volumes/移动硬盘（512G）/ReSETP/docs/paper_submission_final/design_templates/tables/t7_carbon_sensitivity.tex`
 - T8: `/Volumes/移动硬盘（512G）/ReSETP/docs/paper_submission_final/design_templates/tables/t8_fairness_threshold.tex`
 - T9: `/Volumes/移动硬盘（512G）/ReSETP/docs/paper_submission_final/design_templates/tables/t9_dynamic.tex`
+- T9_APPENDIX: `/Volumes/移动硬盘（512G）/ReSETP/docs/paper_submission_final/design_templates/tables/t9_appendix_stage_detail.tex`
 
 ## Figures
 - F1: `/Volumes/移动硬盘（512G）/ReSETP/docs/paper_submission_final/design_templates/figures/figure_f1_route_map.pdf` / `/Volumes/移动硬盘（512G）/ReSETP/docs/paper_submission_final/design_templates/figures/figure_f1_route_map.png`
