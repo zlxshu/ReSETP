@@ -1,0 +1,33 @@
+{
+  "created_at_epoch": 1783070284.9993348,
+  "diagnostic_price_policy": "Phase A only: replace(DEFAULT_PRICES, B_battery_kwh=280.0, carbon_price=0.05034)",
+  "eval_budget": 16000,
+  "formal_price_policy": "DEFAULT_PRICES / Goeke80 / zero override",
+  "head": "4d4641f18186a26bbdef8e8e957d8aaa0c96eebc",
+  "not_formal_algorithm_claim": true,
+  "not_paper_text": true,
+  "numpy": "2.3.5",
+  "output_dir": "baselines/e2_alns/e2_final_closure_20260703",
+  "phase": "preflight",
+  "protected_paths": [
+    "solver/src/setp_solver/cost.py",
+    "solver/src/setp_solver/check.py",
+    "solver/src/setp_solver/search/evaluation.py",
+    "solver/src/setp_solver/prices.py",
+    "solver/src/setp_solver/search/feasible_repair.py",
+    "solver/src/setp_solver/search/resetp_alns",
+    "solver/src/setp_solver/search/alns_wouda.py",
+    "solver/src/setp_solver/search/winner_operators.py",
+    "docs/paper_submission_final/paper_main.tex"
+  ],
+  "python": "/opt/anaconda3/bin/python3.13",
+  "pythonhashseed": "0",
+  "schema": "setp-e2-final-closure-metadata.v1",
+  "seeds": [
+    1,
+    2,
+    3
+  ],
+  "task": "E2 final closure: ALNS gate, G3 baseline health, G4 stability, G5 T3/F2 material",
+  "workers": 1
+}
