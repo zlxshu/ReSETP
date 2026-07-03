@@ -1,0 +1,21 @@
+{
+  "status": "HALT_R0_STAGE2_WALL_UNSTABLE_WITHOUT_VERDICT",
+  "reason": "Stage2 equal-steps oracle did not produce a R0-valid verdict set. A 4000-step 25c operator_select row still finished in 50.953s (<60s wall-clock floor).",
+  "partial_equal_steps_rows": 10,
+  "ok_rows": 9,
+  "underpowered_rows": 1,
+  "underpowered_sample": {
+    "bundle": "models/data_bundle/generated_instances/E-UK25_12__curric_d2_s3_seed2212_24h",
+    "scale": "25c",
+    "seed": 1201,
+    "algorithm": "operator_select",
+    "target_steps": 4000,
+    "actual_evals": 4000,
+    "wall_time_seconds": 50.95299999997951,
+    "eval_floor_ratio": 2.0,
+    "wall_floor_ratio": 0.8492166666663252,
+    "budget_status": "UNDERPOWERED"
+  },
+  "verdict_rows_may_be_used": false,
+  "gate_rule": "Any UNDERPOWERED row in a verdict set makes the verdict invalid."
+}
