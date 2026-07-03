@@ -17,7 +17,7 @@ Final verdict: `HALT_R0_STAGE2_WALL_UNSTABLE_WITHOUT_VERDICT`
 
 ## R1 worker 崩溃修复
 
-- Regression result: `26 passed in 24.29s`.
+- Regression result: `28 passed in 23.01s`.
 - Test command: `pytest solver/rl/tests/test_track22r_worker_crash.py solver/rl/tests/test_worker_contract.py solver/rl/tests/test_learned_destroy_phaseA.py solver/rl/tests/test_final_track22r.py -q`.
 - The original Track22 05:31 learned-destroy silent worker exit did not reproduce on the targeted 50c/q=0.4/20-customer/50-step path.
 - Confirmed instrumentation bug: worker failures could leave stderr empty. Fix: `worker_client.py` now allocates per-process crash logs, enables `PYTHONFAULTHANDLER`, and reports stderr/crash-log tails; `worker.py` records uncaught request exceptions to stderr and the crash log.

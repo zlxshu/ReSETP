@@ -8,7 +8,7 @@
   },
   "r1": {
     "status": "PASS_R1_REGRESSION",
-    "summary": "26 passed in 24.29s",
+    "summary": "28 passed in 23.01s",
     "root_cause": "The original silent worker crash did not reproduce under the targeted regression path; the confirmed instrumentation defect was empty stderr/logging on worker failure.",
     "fix": "faulthandler plus per-process worker crash logs and stderr/crash-log tails in WorkerClient errors"
   },
