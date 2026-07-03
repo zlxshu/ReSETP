@@ -1726,7 +1726,7 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     run_parser.add_argument("--no-resume", dest="resume", action="store_false")
     run_parser.add_argument("--regenerate-bundles", action="store_true")
     run_parser.add_argument("--stage2-seeds", default="1201,1202,1203")
-    run_parser.add_argument("--stage2-25c-steps", type=int, default=2000)
+    run_parser.add_argument("--stage2-25c-steps", type=int, default=3000)
     run_parser.add_argument("--stage2-50c-steps", type=int, default=3000)
     run_parser.add_argument("--stage2-anchor-seeds", default="11,12")
     run_parser.add_argument("--stage2-anchor-eval-budget", type=int, default=80)
