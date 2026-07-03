@@ -7,10 +7,10 @@
     },
     "required_worker_numpy": "2.3.5",
     "output_dir": "solver\\reports\\dr_alns_ppo_v3\\final_track23",
-    "disk_free_gb": 102.69449615478516,
+    "disk_free_gb": 102.69443893432617,
     "git": {
-      "status_short_branch": "## dr-x86...origin/dr-x86 [ahead 1]",
-      "head": "68a8f7553bfdc2eb440296039905ed7e415c30b3",
+      "status_short_branch": "## dr-x86...origin/dr-x86 [ahead 3]",
+      "head": "676efac96f09de2ad364e69dc7d54bdb530dbc4c",
       "branch": "dr-x86"
     }
   },
@@ -417,10 +417,60 @@
   },
   "final_status": "TRACK23_COMPLETE",
   "final_reason": "DR_PILLAR_QUALITY=未判, DR_PILLAR_EFFICIENCY=没站住, DR_PILLAR_DYNAMIC=未判",
-  "wall_time_seconds": 0.6559999999590218,
+  "wall_time_seconds": 84.53099999995902,
   "stage_a2": {
     "status": "SKIP_A2_NO_LEVERAGE",
     "trained": false,
     "reason": "Stage A status=NO_DESTROY_LEVERAGE_ANY_BUDGET; learned-destroy training skipped."
+  },
+  "stage_b": {
+    "status": "CARBON_MECHANISM_WEAK",
+    "reason": "Default carbon ceiling is not the hard stop, but timing did not eat >=2%: avg=0.000%, ceiling=1.934%.",
+    "avg_improvement_pct": 0.0,
+    "default_carbon_ceiling_pct": 1.9338007994994613,
+    "row_count": 16,
+    "gate_row_count": 15,
+    "zero_violations": true,
+    "budget_summary": {
+      "row_count": 15,
+      "min_candidate_evaluate_floor_ratio": 1.0,
+      "underpowered_count": 0
+    },
+    "gate_rule": "Default rows first compute cost_carbon/total_cost ceiling. If all rows are <0.5%, verdict is CARBON_CEILING_TOO_SMALL_DEFAULT; otherwise >=2% timing improvement passes, and lower improvement is CARBON_MECHANISM_WEAK. EV-heavy rows are diagnostic only.",
+    "ev_heavy_diagnostic": {
+      "bundle": "models/data_bundle/generated_instances/E-UK25_11__curric_d2_s3_seed2211_24h",
+      "scale": "25c",
+      "seed": 2999,
+      "diagnostic_role": "ev_heavy_diagnostic_only",
+      "source": "ev_heavy_initial_solution",
+      "route_count": 6,
+      "ev_route_count": 1,
+      "aware_charging_actions": 2,
+      "naive_charging_actions": 2,
+      "aware_cost": 1292.4846550756401,
+      "naive_cost": 1292.7616110714384,
+      "best_aware_cost": 1292.4846550756401,
+      "best_aware_policy": "aware",
+      "improvement_pct": 0.021423593756682534,
+      "aware_violation_count": 0,
+      "naive_violation_count": 0,
+      "best_aware_violation_count": 0,
+      "candidate_evaluate_count": 200,
+      "candidate_unique_count": 2,
+      "aware_charging_carbon_kg": 4.342790287722455,
+      "naive_charging_carbon_kg": 4.892961117675187,
+      "aware_cost_carbon": 189.67773077677995,
+      "naive_cost_carbon": 189.95468677257816,
+      "aware_total_cost": 1292.4846550756401,
+      "naive_total_cost": 1292.7616110714384,
+      "carbon_cost_share_pct": 14.693713453878326,
+      "budget_status": "OK",
+      "candidate_evaluate_floor": 200,
+      "candidate_evaluate_floor_ratio": 1.0,
+      "diagnostic_only": true,
+      "carbon_price_factor": 10.0,
+      "ev_heavy_cv_cap": 10,
+      "ev_heavy_ev_cap": 15
+    }
   }
 }

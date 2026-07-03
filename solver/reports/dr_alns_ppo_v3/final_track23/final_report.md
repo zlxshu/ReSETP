@@ -13,7 +13,7 @@ Final reason: DR_PILLAR_QUALITY=未判, DR_PILLAR_EFFICIENCY=没站住, DR_PILLA
 
 - Stage A: `NO_DESTROY_LEVERAGE_ANY_BUDGET` - All budget ladder rows are <1%; max=-0.960% at 25c_4000.
 - Stage A2: `SKIP_A2_NO_LEVERAGE` - Stage A status=NO_DESTROY_LEVERAGE_ANY_BUDGET; learned-destroy training skipped.
-- Stage B: `NOT_RUN` - 
+- Stage B: `CARBON_MECHANISM_WEAK` - Default carbon ceiling is not the hard stop, but timing did not eat >=2%: avg=0.000%, ceiling=1.934%.
 - Stage C: `NOT_RUN` - 
 - Stage D: `NOT_RUN` - 
 
