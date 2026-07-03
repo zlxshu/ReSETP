@@ -29,7 +29,7 @@ function Read-JsonOrNull {
 
 function Write-Json {
     param([string] $Path, [object] $Payload)
-    $json = $Payload | ConvertTo-Json -Depth 20
+    $json = ($Payload | ConvertTo-Json -Depth 20) -replace "`r`n", "`n"
     [System.IO.File]::WriteAllText($Path, $json + "`n", [System.Text.UTF8Encoding]::new($false))
 }
 
