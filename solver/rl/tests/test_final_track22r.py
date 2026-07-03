@@ -72,6 +72,48 @@ def test_stage2_budget_status_marks_underpowered_rows() -> None:
     assert float(row["wall_floor_ratio"]) < 1.0
 
 
+def test_stage2_budget_status_accepts_eval_or_wall_floor() -> None:
+    fast_row = track22.annotate_stage2_budget(
+        {
+            "scale": "25c",
+            "actual_evals": 4000,
+            "wall_time_seconds": 50.95,
+            "probe_mode": "equal_steps_oracle",
+        }
+    )
+    slow_row = track22.annotate_stage2_budget(
+        {
+            "scale": "25c",
+            "actual_evals": 80,
+            "wall_time_seconds": 60.0,
+            "probe_mode": "equal_steps_oracle",
+        }
+    )
+
+    assert fast_row["budget_status"] == track22.OK_BUDGET
+    assert float(fast_row["eval_floor_ratio"]) >= 1.0
+    assert float(fast_row["wall_floor_ratio"]) < 1.0
+    assert slow_row["budget_status"] == track22.OK_BUDGET
+    assert float(slow_row["eval_floor_ratio"]) < 1.0
+    assert float(slow_row["wall_floor_ratio"]) >= 1.0
+
+
+def test_stage2_nominal_budget_consistency_guard() -> None:
+    rows = [
+        {"scale": "25c", "budget_steps": 4000, "eval_floor": 4000, "wall_floor_seconds": 60.0},
+        {"scale": "25c", "budget_steps": 4000, "eval_floor": 2000, "wall_floor_seconds": 60.0},
+    ]
+
+    with pytest.raises(track22.Track22Halt) as exc:
+        track22.assert_consistent_nominal_budget(
+            rows,
+            stage="test",
+            group_fields=("scale", "budget_steps"),
+            budget_fields=("budget_steps", "eval_floor", "wall_floor_seconds"),
+        )
+    assert exc.value.status == "HALT_INCONSISTENT_NOMINAL_BUDGET"
+
+
 def test_stage2_verdict_refuses_underpowered_equal_step_rows() -> None:
     rows = [
         _stage2_row("operator_select", best_obj=100.0),

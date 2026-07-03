@@ -9,6 +9,7 @@ import time
 from typing import Any
 
 from setp_solver.search.dynamic import RollingParameters, RollingPolicyContext, RollingPolicyDecision, myopic_rolling_policy, run_rolling_reoptimization
+from setp_solver.solution import Route, Solution
 
 from .final_track16 import Track16Halt, _check_wall, _wilcoxon_pvalue, _write_text, run_preflight
 from .final_track18 import DEFAULT_BUNDLES, _payload_row, _read_rows, _safe_name, _to_float, _write_rows
@@ -179,6 +180,9 @@ def run_action_sanity(args: argparse.Namespace, output_dir: Path, progress_path:
 
 def build_reserve_defer_policy(*, mode: str = "defer_adds", reserve_fraction: float, min_slack_seconds: float):
     def reserve_defer_policy(context: RollingPolicyContext) -> RollingPolicyDecision:
+        if mode == "preposition":
+            return _preposition_decision(context)
+        defer_mode = {"reserve_capacity": "reserve_defer", "commit_defer": "defer_adds"}.get(mode, mode)
         future_events = [event for event in context.all_events if float(event.t_appear) > float(context.trigger_time) + 1e-9]
         if not future_events or len(context.active_ids) <= 1:
             return RollingPolicyDecision(metadata={"action": "myopic_no_future"})
@@ -187,7 +191,7 @@ def build_reserve_defer_policy(*, mode: str = "defer_adds", reserve_fraction: fl
         add_ids = {event.customer_id for event in context.stage_events if str(event.event_type).lower() == "add"}
         candidates: list[tuple[float, str]] = []
         for customer_id in sorted(context.active_ids):
-            if mode == "defer_adds" and customer_id not in add_ids:
+            if defer_mode == "defer_adds" and customer_id not in add_ids:
                 continue
             node = node_by_id.get(customer_id)
             if node is None:
@@ -202,7 +206,7 @@ def build_reserve_defer_policy(*, mode: str = "defer_adds", reserve_fraction: fl
         return RollingPolicyDecision(
             active_ids=active,
             metadata={
-                "action": f"{mode}_reserve_capacity_defer",
+                "action": f"{defer_mode}_reserve_capacity_defer",
                 "policy_mode": mode,
                 "reserve_capacity_fraction": float(reserve_fraction),
                 "deferred_ids": sorted(deferred),
@@ -212,6 +216,45 @@ def build_reserve_defer_policy(*, mode: str = "defer_adds", reserve_fraction: fl
 
     reserve_defer_policy.__name__ = f"track20_{mode}_policy"
     return reserve_defer_policy
+
+
+def _preposition_decision(context: RollingPolicyContext) -> RollingPolicyDecision:
+    future_adds = [
+        event
+        for event in context.all_events
+        if str(event.event_type).lower() == "add" and float(event.t_appear) > float(context.trigger_time) + 1e-9
+    ]
+    if not future_adds or not context.active_ids:
+        return RollingPolicyDecision(metadata={"action": "preposition_no_future_adds", "policy_mode": "preposition"})
+    depots = sorted(
+        [node for node in context.effective_instance.nodes if str(node.node_type).lower() == "d"],
+        key=lambda node: str(node.node_id),
+    )
+    if not depots:
+        return RollingPolicyDecision(metadata={"action": "preposition_no_depots", "policy_mode": "preposition"})
+    cx = sum(float(event.x) for event in future_adds) / len(future_adds)
+    cy = sum(float(event.y) for event in future_adds) / len(future_adds)
+    depot = min(depots, key=lambda node: ((float(node.x) - cx) ** 2 + (float(node.y) - cy) ** 2, str(node.node_id)))
+    node_by_id = {str(node.node_id): node for node in context.effective_instance.nodes}
+    active = [customer_id for customer_id in sorted(context.active_ids) if customer_id in node_by_id]
+    if not active:
+        return RollingPolicyDecision(metadata={"action": "preposition_no_active_customers", "policy_mode": "preposition"})
+    vehicle_count = max(1, min(int(context.effective_instance.num_cv or 1), len(active)))
+    chunk_size = max(1, int(math.ceil(len(active) / vehicle_count)))
+    routes = []
+    for idx in range(0, len(active), chunk_size):
+        customers = active[idx : idx + chunk_size]
+        routes.append(Route(f"CV_PREPOSITION_{len(routes) + 1}", "cv", str(depot.node_id), [str(depot.node_id), *customers, str(depot.node_id)]))
+    return RollingPolicyDecision(
+        initial_plan=Solution(routes=routes),
+        metadata={
+            "action": "preposition_initial_plan",
+            "policy_mode": "preposition",
+            "preposition_depot_id": str(depot.node_id),
+            "preposition_route_count": len(routes),
+            "future_add_count": len(future_adds),
+        },
+    )
 
 
 def _regression_row(baseline: dict[str, Any], candidate: dict[str, Any]) -> dict[str, Any]:
@@ -435,7 +478,11 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--stage-max-runtime-seconds", type=float, default=120.0)
     parser.add_argument("--stages", type=int, default=4)
     parser.add_argument("--reserve-fraction", type=float, default=0.20)
-    parser.add_argument("--policy-mode", choices=("defer_adds", "reserve_defer"), default="defer_adds")
+    parser.add_argument(
+        "--policy-mode",
+        choices=("defer_adds", "reserve_defer", "reserve_capacity", "commit_defer", "preposition"),
+        default="defer_adds",
+    )
     parser.add_argument("--defer-min-slack-seconds", type=float, default=7200.0)
     parser.add_argument("--max-wall-seconds", type=float, default=6 * 3600.0)
     parser.add_argument("--min-free-disk-gb", type=float, default=5.0)

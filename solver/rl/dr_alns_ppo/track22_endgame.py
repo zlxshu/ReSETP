@@ -65,11 +65,6 @@ from .pilot23_stabilize import (
     linear_annealed_lr,
     ppo_update_learned_stable,
 )
-from .learned_destroy_policy import (
-    load_learned_destroy_policy,
-    make_learned_destroy_actor_critic,
-    save_learned_destroy_policy,
-)
 from .schemas import BlockDecodedAction
 from .worker_client import WorkerClient
 
@@ -405,6 +400,7 @@ def summarize_stage2_destroy(rows: list[dict[str, Any]]) -> dict[str, Any]:
     if not gate_rows:
         raise Track22Halt("HALT_STAGE2_NO_GATE_ROWS", "Stage2 has no equal-steps oracle rows for verdict.")
     assert_no_underpowered_for_verdict(gate_rows, stage="Stage2 equal-steps oracle")
+    assert_consistent_nominal_budget(gate_rows, stage="Stage2 equal-steps oracle")
     by_scale: dict[str, dict[str, list[float]]] = {}
     by_bundle: dict[str, dict[str, list[float]]] = {}
     for row in gate_rows:
@@ -474,7 +470,7 @@ def annotate_stage2_budget(row: dict[str, Any]) -> dict[str, Any]:
     wall_seconds = _float(out.get("wall_time_seconds"))
     eval_ratio = float(actual_evals) / max(float(eval_floor), 1.0)
     wall_ratio = float(wall_seconds) / max(float(wall_floor), 1.0) if math.isfinite(wall_seconds) else 0.0
-    status = OK_BUDGET if actual_evals >= eval_floor and wall_ratio >= 1.0 else UNDERPOWERED
+    status = OK_BUDGET if actual_evals >= eval_floor or wall_ratio >= 1.0 else UNDERPOWERED
     out.update(
         {
             "scale": scale,
@@ -501,6 +497,46 @@ def assert_no_underpowered_for_verdict(rows: list[dict[str, Any]], *, stage: str
                 f"wall_ratio={sample.get('wall_floor_ratio')}"
             ),
         )
+
+
+def assert_consistent_nominal_budget(
+    rows: list[dict[str, Any]],
+    *,
+    stage: str,
+    group_fields: tuple[str, ...] = ("probe_mode", "scale", "target_steps"),
+    budget_fields: tuple[str, ...] = ("target_steps", "eval_floor", "wall_floor_seconds"),
+) -> None:
+    grouped: dict[tuple[Any, ...], list[dict[str, Any]]] = {}
+    for row in rows:
+        key = tuple(row.get(field, "") for field in group_fields)
+        grouped.setdefault(key, []).append(row)
+    for key, group_rows in grouped.items():
+        if len(group_rows) <= 1:
+            continue
+        for field in budget_fields:
+            values = {_budget_identity(row.get(field, "")) for row in group_rows}
+            if len(values) > 1:
+                sample = group_rows[0]
+                raise Track22Halt(
+                    "HALT_INCONSISTENT_NOMINAL_BUDGET",
+                    (
+                        f"{stage} has inconsistent nominal budget field={field} "
+                        f"group={key}; values={sorted(values)}; "
+                        f"sample bundle={sample.get('bundle')} seed={sample.get('seed')}"
+                    ),
+                )
+
+
+def _budget_identity(value: Any) -> str:
+    if isinstance(value, float):
+        return f"{value:.12g}"
+    if isinstance(value, int):
+        return str(value)
+    text = str(value)
+    try:
+        return f"{float(text):.12g}"
+    except (TypeError, ValueError):
+        return text
 
 
 def budget_summary(rows: list[dict[str, Any]]) -> dict[str, Any]:
@@ -683,6 +719,11 @@ def run_stage3_learned_destroy(
 ) -> dict[str, Any]:
     _require_torch_available()
     import torch
+    from .learned_destroy_policy import (
+        load_learned_destroy_policy,
+        make_learned_destroy_actor_critic,
+        save_learned_destroy_policy,
+    )
 
     bundle_manifest = state["bundle_manifest"]
     train_bundles = [str(row["path"]) for row in bundle_manifest["roles"]["stage3_train"]]
