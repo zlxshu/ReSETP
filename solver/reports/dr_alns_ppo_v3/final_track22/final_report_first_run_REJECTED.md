@@ -1,3 +1,5 @@
+本判级已被 07-03 把关驳回，理由见 HANDOFF
+
 # Track22 Final Report
 
 Final verdict: `DR_CLEAN_NEGATIVE`

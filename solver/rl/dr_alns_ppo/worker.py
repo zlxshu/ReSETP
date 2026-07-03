@@ -1,9 +1,13 @@
 from __future__ import annotations
 
 import argparse
+import faulthandler
 import json
 import math
+import os
 import sys
+import time
+import traceback
 from dataclasses import dataclass, replace
 from pathlib import Path
 from typing import Any
@@ -45,6 +49,9 @@ RUNTIME_TRACE = {
     "worker_python_version": sys.version,
     "worker_numpy_version": np.__version__,
 }
+WORKER_CRASH_LOG_DIR_ENV = "SETP_WORKER_CRASH_LOG_DIR"
+WORKER_CRASH_LOG_ENV = "SETP_WORKER_CRASH_LOG"
+_CRASH_LOG_HANDLE: Any | None = None
 
 
 @dataclass
@@ -1243,6 +1250,7 @@ def _dispatch(worker: JsonlWorker, request: dict[str, Any]) -> tuple[dict[str, A
 
 
 def main(argv: list[str] | None = None) -> int:
+    _enable_crash_diagnostics()
     args = _parse_args(argv)
     worker = JsonlWorker(
         bundle_dir=args.bundle_dir,
@@ -1260,6 +1268,7 @@ def main(argv: list[str] | None = None) -> int:
             request_id = request.get("request_id")
             response, should_close = _dispatch(worker, request)
         except Exception as exc:
+            _record_request_exception(request_id, exc)
             response = worker.error_response(request_id, str(exc))
             should_close = False
         sys.stdout.write(json.dumps(response, separators=(",", ":"), allow_nan=False) + "\n")
@@ -1271,6 +1280,41 @@ def main(argv: list[str] | None = None) -> int:
 
 def _reject_json_constant(value: str) -> None:
     raise ValueError(f"invalid JSON constant: {value}")
+
+
+def _enable_crash_diagnostics() -> None:
+    global _CRASH_LOG_HANDLE
+    path_text = os.environ.get(WORKER_CRASH_LOG_ENV, "")
+    if not path_text:
+        directory_text = os.environ.get(WORKER_CRASH_LOG_DIR_ENV, "")
+        if not directory_text:
+            return
+        directory = Path(directory_text)
+        path_text = str(directory / f"worker_{os.getpid()}_{int(time.time() * 1000)}.log")
+    path = Path(path_text)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    _CRASH_LOG_HANDLE = path.open("a", encoding="utf-8")
+    print(
+        f"worker crash diagnostics enabled pid={os.getpid()} log={path}",
+        file=sys.stderr,
+        flush=True,
+    )
+    print(
+        f"worker crash diagnostics enabled pid={os.getpid()} executable={sys.executable}",
+        file=_CRASH_LOG_HANDLE,
+        flush=True,
+    )
+    faulthandler.enable(file=_CRASH_LOG_HANDLE, all_threads=True)
+
+
+def _record_request_exception(request_id: Any, exc: BaseException) -> None:
+    message = f"worker request exception request_id={request_id!r}: {type(exc).__name__}: {exc}"
+    print(message, file=sys.stderr, flush=True)
+    traceback.print_exception(type(exc), exc, exc.__traceback__, file=sys.stderr)
+    if _CRASH_LOG_HANDLE is not None:
+        print(message, file=_CRASH_LOG_HANDLE, flush=True)
+        traceback.print_exception(type(exc), exc, exc.__traceback__, file=_CRASH_LOG_HANDLE)
+        _CRASH_LOG_HANDLE.flush()
 
 
 if __name__ == "__main__":
