@@ -90,7 +90,12 @@ def audit_g0_reaudit_dir() -> dict[str, Any]:
         row for row in liveness_rows
         if row.get("verdict") in {"SEED_INVARIANCE_SUSPECT", "CROSS_ALGO_IDENTITY_SUSPECT"}
     ]
-    verdict = "G0_RESIDUAL_HOMOGENIZATION" if liveness_fail_rows or identity_suspects else "G0_PASS_BASELINES_HEALTHY"
+    if identity_suspects:
+        verdict = "G0_RESIDUAL_HOMOGENIZATION"
+    elif liveness_fail_rows:
+        verdict = "G0_PARTIAL_WEAK_BASELINES"
+    else:
+        verdict = "G0_PASS_BASELINES_HEALTHY"
     if not full_ok:
         verdict = "G0_COLLECTION_INCOMPLETE"
     summary = {
@@ -127,7 +132,7 @@ def g0_reaudit_history_summary(raw_rows: list[dict[str, str]]) -> list[dict[str,
     rows: list[dict[str, Any]] = []
     for row in raw_rows:
         history = json.loads(row.get("history_json") or "[]")
-        updates = history[1:]
+        updates = [item for item in history[1:] if not item.get("is_reference")]
         rows.append(
             {
                 "algorithm": row.get("algorithm"),
@@ -284,9 +289,10 @@ def history_tables(raw_rows: list[dict[str, str]]) -> tuple[list[dict[str, Any]]
         if row["algorithm"] not in BASELINE_ALGORITHMS:
             continue
         history = json.loads(row.get("history_json") or "[]")
-        improvement_ops = [str(item.get("operator", "")) for item in history[1:]]
-        improvement_channels = [str(item.get("channel", "")) for item in history[1:]]
-        improvement_evals = [int(item.get("eval", -1)) for item in history[1:]]
+        updates = [item for item in history[1:] if not item.get("is_reference")]
+        improvement_ops = [str(item.get("operator", "")) for item in updates]
+        improvement_channels = [str(item.get("channel", "")) for item in updates]
+        improvement_evals = [int(item.get("eval", -1)) for item in updates]
         direct_vehicle_channel_ops = [op for op in improvement_ops if "vehicle_type" in op]
         native_channel_ops = [
             op

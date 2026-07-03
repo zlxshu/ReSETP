@@ -51,7 +51,7 @@ INSTANCE_NAME = "e2-threeshift-150c-01"
 INSTANCE_ROOT = REPO_ROOT / "models/data_bundle/generated_instances/e2_benchmark"
 THREESHIFT_BUNDLE = INSTANCE_ROOT / INSTANCE_CATEGORY / INSTANCE_NAME
 GOEKE_BUNDLE = REPO_ROOT / "models/data_bundle/generated_instances/E-UK100_01__d2_s3_seed1_24h_20251113"
-OUTPUT_DIR = REPO_ROOT / "baselines/e2_alns/e2_g0_reaudit_20260702"
+OUTPUT_DIR = REPO_ROOT / "baselines/e2_alns/e2_g0_reaudit_v2_20260703"
 BASELINES = ("GA", "LNS", "PSO", "VNS")
 HASH_EXCLUDE_NAMES = {".DS_Store", "artifact_hashes.json"}
 HASH_EXCLUDE_PARTS = {"__pycache__", ".pytest_cache"}
@@ -99,6 +99,8 @@ def main() -> int:
     if args.phase in {"legacy", "all"}:
         legacy = {"status": "SKIPPED"} if args.skip_legacy else legacy_anchor_archaeology()
         write_json(output_dir / "legacy_anchor.json", legacy)
+        write_json(output_dir / "anchor_lineage.json", legacy)
+        write_csv(output_dir / "anchor_lineage.csv", legacy.get("rows", []) if isinstance(legacy, dict) else [])
 
     if args.phase in {"decision", "all"}:
         decision = decide(output_dir)
@@ -114,8 +116,8 @@ def main() -> int:
 
 def build_metadata(args: argparse.Namespace, output_dir: Path) -> dict[str, Any]:
     return {
-        "schema": "setp-e2-g0-reaudit.v1",
-        "task": "E2-G0 closure: common flip accounting, liveness gate, true repair alignment, G0 reaudit",
+        "schema": "setp-e2-g0-reaudit.v2",
+        "task": "E2-G0 v2: shared-warm-start origin correction, liveness gate, G0 reaudit, anchor lineage closure",
         "head": git_head(),
         "python": sys.executable,
         "numpy": numpy_version(),
@@ -124,6 +126,7 @@ def build_metadata(args: argparse.Namespace, output_dir: Path) -> dict[str, Any]
         "output_dir": rel(output_dir),
         "instance": INSTANCE_NAME,
         "battery_override": "dataclasses.replace(DEFAULT_PRICES, B_battery_kwh=280.0, carbon_price=0.05034)",
+        "start_policy": "shared_warm_start; deterministic flip closure is recorded only as reference_flip_closure_*",
         "eval_budget": int(args.eval_budget),
         "ab_eval_budget": int(args.ab_eval_budget),
         "runtime_cap_seconds": float(args.runtime_cap_seconds),
@@ -226,6 +229,7 @@ def run_g0(
                 seed=seed,
                 eval_budget=eval_budget,
                 runtime_cap_seconds=runtime_cap_seconds,
+                output_dir=output_dir,
             )
             raw_rows = [existing for existing in raw_rows if existing.get("run_id") != run_id]
             raw_rows.append(row)
@@ -294,6 +298,11 @@ def run_baseline_row(
             "common_preprocess_cost": result.common_preprocess_cost,
             "common_preprocess_attempts": result.common_preprocess_attempts,
             "common_preprocess_accepted_flips": result.common_preprocess_accepted_flips,
+            "reference_flip_closure_cost": result.reference_flip_closure_cost,
+            "reference_flip_closure_attempts": result.reference_flip_closure_attempts,
+            "reference_flip_closure_accepted_flips": result.reference_flip_closure_accepted_flips,
+            "reference_flip_closure_lift": result.reference_flip_closure_lift,
+            "reference_flip_closure_signature": result.reference_flip_closure_signature,
             "common_lift": result.common_lift,
             "native_lift": result.native_lift,
             "flip_lift": result.flip_lift,
@@ -304,7 +313,9 @@ def run_baseline_row(
             "liveness_verdict": result.liveness_verdict,
             "liveness_flags": "|".join(result.liveness_flags),
             "true_repair_mode": true_repair_mode,
-            "common_flip_preprocess": bool(common_flip_preprocess),
+            "common_flip_preprocess": False,
+            "reference_flip_closure": bool(common_flip_preprocess),
+            "start_policy": "shared_warm_start",
             "checkpoint_path": rel(checkpoint) if checkpoint.exists() else "",
             "history_json": json.dumps(payload.get("history", []), ensure_ascii=False, sort_keys=True),
             "operator_counts_json": json.dumps(payload.get("operator_counts", {}), ensure_ascii=False, sort_keys=True),
@@ -315,11 +326,11 @@ def run_baseline_row(
         return failure_row(run_id, phase, algorithm, seed, eval_budget, runtime_cap_seconds, started, repr(exc))
 
 
-def run_alns_row(*, run_id: str, phase: str, seed: int, eval_budget: int, runtime_cap_seconds: float) -> dict[str, Any]:
+def run_alns_row(*, run_id: str, phase: str, seed: int, eval_budget: int, runtime_cap_seconds: float, output_dir: Path) -> dict[str, Any]:
     prices = make_probe_prices()
     bundle = load_search_bundle(THREESHIFT_BUNDLE)
-    preprocess = common_preprocess_solution(bundle, prices)
-    checkpoint = OUTPUT_DIR / "checkpoints" / f"{run_id}.json"
+    reference = reference_flip_closure_solution(bundle, prices)
+    checkpoint = output_dir / "checkpoints" / f"{run_id}.json"
     started = time.perf_counter()
     old_checkpoint = os.environ.get("SETP_E2_ALNS_CHECKPOINT_PATH")
     os.environ["SETP_E2_ALNS_CHECKPOINT_PATH"] = str(checkpoint)
@@ -327,7 +338,7 @@ def run_alns_row(*, run_id: str, phase: str, seed: int, eval_budget: int, runtim
         result = run_e2_alns_throughput(
             THREESHIFT_BUNDLE,
             config=WinnerKernelConfig(seed=int(seed), eval_budget=int(eval_budget), max_runtime_seconds=float(runtime_cap_seconds)),
-            initial_solution=preprocess["solution"],
+            initial_solution=reference["start_solution"],
             prices=prices,
         )
     except Exception as exc:
@@ -349,7 +360,7 @@ def run_alns_row(*, run_id: str, phase: str, seed: int, eval_budget: int, runtim
     elif int(result.get("evaluations", 0)) < int(eval_budget):
         status = "HALT_RUNTIME_UNDER_EVAL" if float(result.get("elapsed_seconds", 0.0)) >= float(runtime_cap_seconds) else "HALT_UNDER_EVAL"
         reason = f"Stopped at {result.get('evaluations')}/{eval_budget} complete evaluations."
-    history = normalize_alns_history(result.get("history", []), preprocess)
+    history = normalize_alns_history(result.get("history", []), reference)
     return {
         "run_id": run_id,
         "phase": phase,
@@ -371,20 +382,27 @@ def run_alns_row(*, run_id: str, phase: str, seed: int, eval_budget: int, runtim
         "cv_route_count": sum(1 for route in solution.routes if route.vehicle_type.lower() == "cv"),
         "ev_route_count": sum(1 for route in solution.routes if route.vehicle_type.lower() == "ev"),
         "charging_action_count": len(solution.charging_actions),
-        "common_preprocess_cost": preprocess["cost"],
-        "common_preprocess_attempts": preprocess["attempts"],
-        "common_preprocess_accepted_flips": preprocess["accepted_flips"],
-        "common_lift": preprocess["common_lift"],
-        "native_lift": max(0.0, float(preprocess["cost"]) - float(result["best_cost"])),
+        "common_preprocess_cost": None,
+        "common_preprocess_attempts": 0,
+        "common_preprocess_accepted_flips": 0,
+        "reference_flip_closure_cost": reference["reference_flip_closure_cost"],
+        "reference_flip_closure_attempts": reference["reference_flip_closure_attempts"],
+        "reference_flip_closure_accepted_flips": reference["reference_flip_closure_accepted_flips"],
+        "reference_flip_closure_lift": reference["reference_flip_closure_lift"],
+        "reference_flip_closure_signature": reference["reference_flip_closure_signature"],
+        "common_lift": 0.0,
+        "native_lift": max(0.0, float(reference["start_cost"]) - float(result["best_cost"])),
         "flip_lift": 0.0,
         "native_best_updates": len([item for item in history if str(item.get("channel", "")).startswith("native_")]),
         "flip_best_updates": 0,
-        "common_best_updates": 1 if preprocess["common_lift"] > 1e-9 else 0,
+        "common_best_updates": 0,
         "route_count_unique": "",
         "liveness_verdict": "NOT_BASELINE_ALNS_REFERENCE",
         "liveness_flags": "",
         "true_repair_mode": "alns_e2_throughput",
-        "common_flip_preprocess": True,
+        "common_flip_preprocess": False,
+        "reference_flip_closure": True,
+        "start_policy": "shared_warm_start",
         "checkpoint_path": rel(checkpoint) if checkpoint.exists() else "",
         "history_json": json.dumps(history, ensure_ascii=False, sort_keys=True),
         "operator_counts_json": json.dumps(result.get("operator_counts", {}), ensure_ascii=False, sort_keys=True),
@@ -393,15 +411,26 @@ def run_alns_row(*, run_id: str, phase: str, seed: int, eval_budget: int, runtim
 
 
 def common_preprocess_solution(bundle: Any, prices: Any) -> dict[str, Any]:
+    return reference_flip_closure_solution(bundle, prices)
+
+
+def reference_flip_closure_solution(bundle: Any, prices: Any) -> dict[str, Any]:
     warm = make_shared_initial_solution(bundle, prices=prices)
     session = mb._SearchSession("LNS", bundle, 1, 1, 600.0, warm, prices=prices, common_flip_preprocess=True)
-    cost = session.best.cost
+    reference_cost = session.reference_flip_closure_cost
     return {
-        "solution": session.best.solution,
-        "cost": float(cost),
-        "attempts": int(session.common_preprocess_attempts),
-        "accepted_flips": int(session.common_preprocess_accepted_flips),
-        "common_lift": max(0.0, float(session.shared_seed_cost) - float(cost)),
+        "solution": warm,
+        "start_solution": warm,
+        "start_cost": float(session.shared_seed_cost),
+        "cost": float(session.shared_seed_cost),
+        "attempts": int(session.reference_flip_closure_attempts),
+        "accepted_flips": int(session.reference_flip_closure_accepted_flips),
+        "common_lift": 0.0,
+        "reference_flip_closure_cost": reference_cost,
+        "reference_flip_closure_attempts": int(session.reference_flip_closure_attempts),
+        "reference_flip_closure_accepted_flips": int(session.reference_flip_closure_accepted_flips),
+        "reference_flip_closure_lift": float(session.reference_flip_closure_lift),
+        "reference_flip_closure_signature": session.reference_flip_closure_signature,
         "history": list(session.history),
     }
 
@@ -558,12 +587,16 @@ def decide(output_dir: Path) -> dict[str, Any]:
             failures.append({"failure_bucket": "run_not_ok", "run_id": row.get("run_id"), "status": row.get("gate_status"), "reason": row.get("failure_reason")})
         if row.get("algorithm") in BASELINES and int(as_float(row.get("actual_evals"))) < int(as_float(row.get("eval_budget"))):
             failures.append({"failure_bucket": "baseline_under_eval", "run_id": row.get("run_id"), "actual": row.get("actual_evals"), "expected": row.get("eval_budget")})
-    suspect_rows = [row for row in liveness_rows if str(row.get("verdict", "")).endswith("_SUSPECT") or row.get("verdict") == "BASELINE_LIVENESS_FAIL"]
+    identity_suspects = [row for row in liveness_rows if str(row.get("verdict", "")).endswith("_SUSPECT")]
+    liveness_fail_rows = [row for row in liveness_rows if row.get("verdict") == "BASELINE_LIVENESS_FAIL"]
+    suspect_rows = [*identity_suspects, *liveness_fail_rows]
     scenario_blocked = scenario.get("verdict") == "SCENARIO_COMPLIANCE_BLOCKED"
     if failures:
         verdict = "G0_COLLECTION_INCOMPLETE"
-    elif suspect_rows:
+    elif identity_suspects:
         verdict = "G0_RESIDUAL_HOMOGENIZATION"
+    elif liveness_fail_rows:
+        verdict = "G0_PARTIAL_WEAK_BASELINES"
     else:
         verdict = "G0_PASS_BASELINES_HEALTHY"
     return {
@@ -574,6 +607,9 @@ def decide(output_dir: Path) -> dict[str, Any]:
         "failure_sample": failures[:20],
         "suspect_count": len(suspect_rows),
         "suspect_sample": suspect_rows[:20],
+        "identity_suspect_count": len(identity_suspects),
+        "liveness_fail_count": len(liveness_fail_rows),
+        "weak_implementation_runs": [row.get("run_id") for row in liveness_fail_rows],
         "true_repair_decision": true_repair.get("verdict", "MISSING"),
         "scenario_compliance": scenario.get("verdict", "MISSING"),
         "scenario_compliance_blocked": scenario_blocked,
@@ -665,47 +701,143 @@ def legacy_anchor_archaeology() -> dict[str, Any]:
     worktree_root = Path(tempfile.mkdtemp(prefix="resetp_legacy_anchor_"))
     worktree = worktree_root / "df608660"
     try:
+        existing = legacy_anchor_existing_evidence()
         add = subprocess.run(["git", "worktree", "add", "--detach", str(worktree), "df608660"], cwd=REPO_ROOT, check=False, text=True, capture_output=True, timeout=300)
         if add.returncode != 0:
-            return {"schema": "setp-e2-g0-legacy-anchor.v1", "status": "LEGACY_ANCHOR_STILL_UNEXPLAINED", "failure_reason": add.stderr.strip(), "elapsed_seconds": time.perf_counter() - started}
-        code = legacy_anchor_code(worktree)
+            return {"schema": "setp-e2-g0-anchor-lineage.v2", "status": "ANCHOR_LINEAGE_STILL_UNEXPLAINED", "existing_evidence": existing, "failure_reason": add.stderr.strip(), "elapsed_seconds": time.perf_counter() - started}
+        ensure_legacy_bundle_available(worktree)
         proc = subprocess.run(
-            [GOLD_PYTHON, "-c", code],
+            [
+                GOLD_PYTHON,
+                "-m",
+                "setp_solver.search.winner_restoration",
+                "run-current",
+                "--seeds",
+                "1,2,3,4,5,6,7,8,9,10",
+                "--eval-budget",
+                "16000",
+                "--max-runtime-seconds",
+                "900.0",
+            ],
             cwd=worktree,
             check=False,
             text=True,
             capture_output=True,
-            timeout=3600,
-            env={**os.environ, "PYTHONPATH": "solver/src:models/src:.", "PYTHONHASHSEED": "0"},
+            timeout=5400,
+            env={**os.environ, "PYTHONPATH": "solver/src:models/src:.", "PYTHONHASHSEED": "0", "SETP_ALNS_PARALLEL_WORKERS": "6"},
         )
+        output_dir = worktree / "solver/reports/dr_alns_ppo_v2/restoration"
+        result_path = output_dir / "phase2_current_vs_gold.json"
         if proc.returncode != 0:
-            return {"schema": "setp-e2-g0-legacy-anchor.v1", "status": "LEGACY_ANCHOR_STILL_UNEXPLAINED", "failure_reason": proc.stderr[-2000:], "stdout": proc.stdout[-2000:], "elapsed_seconds": time.perf_counter() - started}
-        payload = json.loads(proc.stdout.strip().splitlines()[-1])
-        cost = float(payload.get("best_cost", math.nan))
-        status = "LEGACY_ANCHOR_REPRODUCED" if abs(cost - 4878.331796187524) <= 1e-9 else "LEGACY_ANCHOR_STILL_UNEXPLAINED"
-        payload.update({"schema": "setp-e2-g0-legacy-anchor.v1", "status": status, "target": 4878.331796187524, "elapsed_seconds": time.perf_counter() - started})
+            return {"schema": "setp-e2-g0-anchor-lineage.v2", "status": "ANCHOR_LINEAGE_STILL_UNEXPLAINED", "existing_evidence": existing, "failure_reason": proc.stderr[-2000:], "stdout": proc.stdout[-2000:], "elapsed_seconds": time.perf_counter() - started}
+        payload = read_json(result_path) if result_path.exists() else parse_winner_restoration_stdout(proc.stdout)
+        summary = payload.get("summary", payload)
+        rows = payload.get("rows", [])
+        seed2 = next((row for row in rows if int(as_float(row.get("seed"), -1)) == 2), {})
+        mean_cost = float(summary.get("mean_current_total_cost", math.nan))
+        seed2_cost = float(seed2.get("total_cost", seed2.get("current_total_cost", math.nan)))
+        zero_violations = int(summary.get("zero_violation_count", 0))
+        status = (
+            "ANCHOR_LINEAGE_CLOSED"
+            if abs(mean_cost - 4878.331796187524) <= 1e-9
+            and abs(seed2_cost - 4779.053444002934) <= 1e-9
+            and zero_violations == 10
+            else "ANCHOR_LINEAGE_STILL_UNEXPLAINED"
+        )
+        lineage_rows = legacy_anchor_lineage_rows(rows)
+        payload = {
+            "schema": "setp-e2-g0-anchor-lineage.v2",
+            "status": status,
+            "mean_target": 4878.331796187524,
+            "seed2_target": 4779.053444002934,
+            "mean_current_total_cost": mean_cost,
+            "seed2_current_total_cost": seed2_cost,
+            "zero_violation_count": zero_violations,
+            "seed_count": int(summary.get("seed_count", len(rows))),
+            "classification": payload.get("classification", {}),
+            "existing_evidence": existing,
+            "lineage_notes": anchor_lineage_notes(),
+            "rows": lineage_rows,
+            "stdout_tail": proc.stdout[-2000:],
+            "elapsed_seconds": time.perf_counter() - started,
+        }
         return payload
     except subprocess.TimeoutExpired as exc:
-        return {"schema": "setp-e2-g0-legacy-anchor.v1", "status": "LEGACY_ANCHOR_STILL_UNEXPLAINED", "failure_reason": f"timeout: {exc}", "elapsed_seconds": time.perf_counter() - started}
+        return {"schema": "setp-e2-g0-anchor-lineage.v2", "status": "ANCHOR_LINEAGE_STILL_UNEXPLAINED", "existing_evidence": legacy_anchor_existing_evidence(), "failure_reason": f"timeout: {exc}", "elapsed_seconds": time.perf_counter() - started}
     finally:
         subprocess.run(["git", "worktree", "remove", "--force", str(worktree)], cwd=REPO_ROOT, check=False, text=True, capture_output=True)
         shutil.rmtree(worktree_root, ignore_errors=True)
 
 
-def legacy_anchor_code(worktree: Path) -> str:
-    current_bundle = REPO_ROOT / "models/data_bundle/generated_instances/E-UK100_01__d2_s3_seed1_24h_20251113"
-    return f"""
-import json, sys
-from pathlib import Path
-sys.path.insert(0, str(Path({str(worktree)!r}) / 'solver/src'))
-sys.path.insert(0, str(Path({str(worktree)!r}) / 'models/src'))
-from setp_solver.search.winner_operators import WinnerKernelConfig, run_winner_kernel
-worktree_bundle = Path({str(worktree)!r}) / 'models/data_bundle/generated_instances/E-UK100_01__d2_s3_seed1_24h_20251113'
-current_bundle = Path({str(current_bundle)!r})
-bundle = worktree_bundle if (worktree_bundle / 'instance.json').exists() else current_bundle
-result = run_winner_kernel(bundle, config=WinnerKernelConfig(seed=2, eval_budget=16000, max_runtime_seconds=900.0))
-print(json.dumps({{'best_cost': float(result['best_cost']), 'feasible': bool(result['feasible']), 'violation_count': int(result['violation_count']), 'evaluations': int(result['evaluations']), 'bundle_source': 'worktree' if bundle == worktree_bundle else 'current_repo'}}, sort_keys=True))
-"""
+def legacy_anchor_existing_evidence() -> dict[str, Any]:
+    result_path = REPO_ROOT / "baselines/e2_alns/sa_acceptance_legacy_anchor/phase2_current_vs_gold.json"
+    log_path = REPO_ROOT / "baselines/e2_alns/sa_acceptance_legacy_anchor/diagnosis_log.md"
+    payload = read_json(result_path) if result_path.exists() else {}
+    summary = payload.get("summary", {})
+    rows = payload.get("rows", [])
+    seed2 = next((row for row in rows if int(as_float(row.get("seed"), -1)) == 2), {})
+    return {
+        "source": rel(result_path) if result_path.exists() else "",
+        "diagnosis_log": rel(log_path) if log_path.exists() else "",
+        "mean_current_total_cost": summary.get("mean_current_total_cost"),
+        "seed2_total_cost": seed2.get("total_cost"),
+        "zero_violation_count": summary.get("zero_violation_count"),
+        "seed_count": summary.get("seed_count"),
+        "classification": (payload.get("classification") or {}).get("classification"),
+    }
+
+
+def ensure_legacy_bundle_available(worktree: Path) -> None:
+    target = worktree / "models/data_bundle/generated_instances/E-UK100_01__d2_s3_seed1_24h_20251113"
+    if (target / "instance.json").exists():
+        return
+    source = REPO_ROOT / "models/data_bundle/generated_instances/E-UK100_01__d2_s3_seed1_24h_20251113"
+    target.parent.mkdir(parents=True, exist_ok=True)
+    try:
+        target.symlink_to(source, target_is_directory=True)
+    except OSError:
+        shutil.copytree(source, target, dirs_exist_ok=True)
+
+
+def parse_winner_restoration_stdout(stdout: str) -> dict[str, Any]:
+    for line in reversed(stdout.splitlines()):
+        if "GATE WINNER_RESTORATION" not in line:
+            continue
+        try:
+            return json.loads(line.split(" ", 3)[-1])
+        except (IndexError, json.JSONDecodeError):
+            continue
+    return {}
+
+
+def legacy_anchor_lineage_rows(rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    lineage_rows: list[dict[str, Any]] = []
+    for row in rows:
+        lineage_rows.append(
+            {
+                "anchor_family": "winner_restoration_df608660",
+                "seed": int(as_float(row.get("seed"), 0.0)),
+                "current_total_cost": row.get("total_cost", row.get("current_total_cost")),
+                "gold_total_cost": row.get("gold_total_cost"),
+                "total_delta": row.get("total_delta"),
+                "route_count": row.get("route_count"),
+                "cv_routes": row.get("cv_routes"),
+                "ev_routes": row.get("ev_routes"),
+                "charging_actions": row.get("charging_actions"),
+                "violation_count": row.get("violation_count"),
+            }
+        )
+    return lineage_rows
+
+
+def anchor_lineage_notes() -> list[dict[str, Any]]:
+    return [
+        {"label": "4878.331796187524", "meaning": "df608660 winner_restoration seed1-10 mean under old Q1600/code-era anchor"},
+        {"label": "4779.053444002934", "meaning": "df608660 winner_restoration seed2 best member of the same anchor family"},
+        {"label": "2677.7953638343815", "meaning": "current independent ALNS Goeke80/Q3650 seed2 parity anchor"},
+        {"label": "3561.080964207054", "meaning": "current independent ALNS e2-threeshift-150c-01 B280 warm-start seed1/eval2000 parity anchor"},
+        {"label": "4844.796", "meaning": "formal_20260619 ALNS-Wouda 100-01 mean from another runner/configuration; do not mix with winner_restoration family"},
+    ]
 
 
 def history_rows(row: dict[str, Any]) -> list[dict[str, Any]]:
@@ -729,6 +861,10 @@ def history_rows(row: dict[str, Any]) -> list[dict[str, Any]]:
                 "best_cost_before": item.get("best_cost_before", ""),
                 "route_count": item.get("route_count", ""),
                 "signature": item.get("signature", ""),
+                "reference_cost": item.get("reference_cost", ""),
+                "reference_lift": item.get("reference_lift", ""),
+                "reference_signature": item.get("reference_signature", ""),
+                "is_reference": item.get("is_reference", ""),
                 "time_seconds": item.get("time_seconds", ""),
             }
         )
@@ -745,6 +881,10 @@ def channel_lift_row(row: dict[str, Any]) -> dict[str, Any]:
         "common_lift": row.get("common_lift"),
         "native_lift": row.get("native_lift"),
         "flip_lift": row.get("flip_lift"),
+        "reference_flip_closure_cost": row.get("reference_flip_closure_cost"),
+        "reference_flip_closure_lift": row.get("reference_flip_closure_lift"),
+        "reference_flip_closure_attempts": row.get("reference_flip_closure_attempts"),
+        "reference_flip_closure_accepted_flips": row.get("reference_flip_closure_accepted_flips"),
         "native_best_updates": row.get("native_best_updates"),
         "flip_best_updates": row.get("flip_best_updates"),
         "common_best_updates": row.get("common_best_updates"),
@@ -777,7 +917,7 @@ def render_report(output_dir: Path, decision: dict[str, Any]) -> str:
     lines = [
         "# E2-G0 Closure Reaudit",
         "",
-        "本任务目标：把 E2-G0 从同质化假象整改到可重审状态，输出 baseline health / G0 gate 证据。它不是正式 T3，不写算法胜负。",
+        "本任务目标：修正上一轮 G0 的起点扭曲，所有算法从 shared warm start 起跑；翻转闭包只作为 reference 字段记录。它不是正式 T3，不写算法胜负。",
         "",
         f"Verdict: `{decision.get('verdict')}`",
         "",
@@ -799,8 +939,8 @@ def render_report(output_dir: Path, decision: dict[str, Any]) -> str:
         "",
         "## Artifacts",
         "",
-        "- `metadata.json`, `preflight.json`, `true_repair_ab.csv`, `raw_runs.csv`, `best_trajectory.csv`, `channel_lift.csv`, `liveness_verdicts.csv`",
-        "- `true_repair_decision.json`, `scenario_compliance.json`, `legacy_anchor.json`, `decision.json`, `artifact_hashes.json`",
+        "- `metadata.json`, `preflight.json`, `raw_runs.csv`, `best_trajectory.csv`, `channel_lift.csv`, `liveness_verdicts.csv`",
+        "- `scenario_compliance.json`, `legacy_anchor.json`, `anchor_lineage.json`, `anchor_lineage.csv`, `decision.json`, `artifact_hashes.json`",
         "",
     ]
     if decision.get("suspect_sample"):
@@ -815,7 +955,9 @@ def plain_decision(decision: dict[str, Any]) -> str:
     if verdict == "G0_PASS_BASELINES_HEALTHY":
         return "四个 baseline 的 liveness 门禁通过，未触发 seed/cross-algorithm 同质化嫌疑；这里只说明 G0 健康门通过，不构成正式 T3 胜负主张。"
     if verdict == "G0_RESIDUAL_HOMOGENIZATION":
-        return "采集闭合，但仍触发 liveness 或同质化嫌疑；按预注册停下，不扩跑 G4/G5。"
+        return "采集闭合，但触发 seed/cross-algorithm exact identity 嫌疑；按预注册停下，不扩跑 G4/G5。"
+    if verdict == "G0_PARTIAL_WEAK_BASELINES":
+        return "旧同质化未复发，但仍有个别 baseline 没有 native best update；这些算法标 WEAK_IMPLEMENTATION，交给 G3 文献重建或用户另行拍板。"
     return "采集、环境、under-eval 或 protected-file 门未闭合；按 G0_COLLECTION_INCOMPLETE 收口。"
 
 
@@ -849,11 +991,11 @@ def key_findings(
     return [
         f"- 采集闭合：{len(full_rows)}/{len(raw_rows)} 行均为 OK 且 eval 跑满；没有把 under-eval 包装成 16000 OK。",
         f"- 旧的 5174 精确同质化没有复现：跨 seed / 跨算法逐位同签名嫌疑数为 {len(identity_suspects)}。这说明旧平台假象已清掉，但还不足以让 G0 过门。",
-        f"- liveness 仍有 {len(run_fails)} 条 baseline run 未过：" + ", ".join(str(row.get("run_id")) for row in run_fails) + "。这些失败全部是 `NO_NATIVE_BEST_UPDATE`。",
+        f"- liveness 仍有 {len(run_fails)} 条 baseline run 未过：" + ", ".join(str(row.get("run_id")) for row in run_fails) + "。这些失败标 `WEAK_IMPLEMENTATION`，不是算法胜负证据。",
         "- best-cost 只作定位台账，不作算法胜负主张：" + " | ".join(best_by_algorithm) + "。",
         f"- TRUE_REPAIR 评分对齐：{true_repair.get('verdict', 'MISSING')}。" + (true_repair_summary or "没有可用 A/B 摘要。") + "。",
         f"- 场景合规：{scenario.get('verdict', 'MISSING')}；`DEFAULT_PRICES` 与 `paper_main.tex` 口径一致，{scenario.get('paper_generated_table_hit_count', 'NA')} 个历史生成表命中只登记、不改表。",
-        f"- 旧锚考古：{legacy.get('status', 'MISSING')}；旧代码 + 当前同名 bundle 得到 {legacy.get('best_cost', 'NA')}，目标旧锚为 {legacy.get('target', 'NA')}，所以 4878 谱系仍未解释。",
+        f"- 锚谱系：{legacy.get('status', 'MISSING')}；全 seed 均值 {legacy.get('mean_current_total_cost', 'NA')}，seed2 {legacy.get('seed2_current_total_cost', 'NA')}，目标 mean/seed2 分别为 4878.331796187524 / 4779.053444002934。",
     ]
 
 
