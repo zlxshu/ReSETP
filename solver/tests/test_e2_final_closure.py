@@ -95,6 +95,45 @@ class E2FinalClosureTest(unittest.TestCase):
         self.assertEqual(len(paths), 1)
         self.assertTrue(paths[0].endswith("keep.txt"))
 
+    def test_phase_a_formal_under_eval_blocks_before_diagnostic(self) -> None:
+        rows = [
+            {
+                "phase": "A1_CARBON_GATE",
+                "scenario_type": "formal_goeke80",
+                "run_id": "formal-under-eval",
+                "gate_status": "HALT_RUNTIME_UNDER_EVAL",
+                "failure_reason": "Stopped at 5575/16000 evaluations.",
+                "actual_evals": 5575,
+                "eval_budget": 16000,
+            },
+            {
+                "phase": "A1_CARBON_GATE",
+                "scenario_type": "diagnostic_280_override",
+                "run_id": "diagnostic-under-eval",
+                "gate_status": "HALT_RUNTIME_UNDER_EVAL",
+                "failure_reason": "Diagnostic arm should not define the formal blocker.",
+                "actual_evals": 5575,
+                "eval_budget": 16000,
+            },
+        ]
+
+        blockers = closure.phase_a_formal_blockers(rows)
+
+        self.assertEqual(len(blockers), 1)
+        self.assertEqual(blockers[0]["run_id"], "formal-under-eval")
+
+    def test_final_decision_surfaces_phase_a_blocker(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            phase_a = root / "phase_a_alns_gate"
+            phase_a.mkdir(parents=True)
+            (phase_a / "decision.json").write_text('{"verdict":"ALNS_GATE_BLOCKED"}', encoding="utf-8")
+
+            decision = closure.final_decision(root)
+
+        self.assertEqual(decision["blocked_phase"], "phase_a")
+        self.assertEqual(decision["final_material_verdict"], "ALNS_GATE_BLOCKED")
+
 
 if __name__ == "__main__":
     unittest.main()

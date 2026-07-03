@@ -193,24 +193,24 @@ def preflight() -> dict[str, Any]:
 
 def run_phase_a(phase_dir: Path, *, seeds: list[int], eval_budget: int, workers: int, force: bool) -> None:
     phase_dir.mkdir(parents=True, exist_ok=True)
+    rows = read_csv(phase_dir / "raw_runs.csv")
+    formal_blockers = phase_a_formal_blockers(rows)
+    if formal_blockers:
+        write_phase_a_blocked(phase_dir, rows, formal_blockers)
+        return
+    for formal_tasks in make_phase_a_carbon_gate_batches(phase_dir, seeds=seeds, eval_budget=eval_budget, scenario_type="formal_goeke80"):
+        rows = run_tasks(phase_dir, formal_tasks, workers=workers, force=force)
+        write_phase_a_common_outputs(phase_dir, rows)
+        formal_blockers = phase_a_formal_blockers(rows)
+        if formal_blockers:
+            write_phase_a_blocked(phase_dir, rows, formal_blockers)
+            return
+
+    diagnostic_tasks = make_phase_a_carbon_gate_tasks(phase_dir, seeds=seeds, eval_budget=eval_budget, scenario_type="diagnostic_280_override")
+    rows = run_tasks(phase_dir, diagnostic_tasks, workers=workers, force=force)
+    write_phase_a_common_outputs(phase_dir, rows)
+
     tasks: list[dict[str, Any]] = []
-    for scenario_type in ("formal_goeke80", "diagnostic_280_override"):
-        for category, instance in ALNS_GATE_INSTANCES:
-            for algorithm in ALNS_GATE_ALGORITHMS:
-                for seed in seeds:
-                    tasks.append(
-                        make_task(
-                            phase="A1_CARBON_GATE",
-                            phase_dir=phase_dir,
-                            category=category,
-                            instance=instance,
-                            algorithm=algorithm,
-                            seed=seed,
-                            eval_budget=eval_budget,
-                            runtime_cap_seconds=runtime_cap_for_instance(instance),
-                            scenario_type=scenario_type,
-                        )
-                    )
     for component in ("BASE", *COMPONENT_ORDER):
         algorithm = "alns_e2_throughput" if component == "BASE" else f"alns_component_{component}"
         for seed in seeds:
@@ -229,9 +229,7 @@ def run_phase_a(phase_dir: Path, *, seeds: list[int], eval_budget: int, workers:
                 )
             )
     rows = run_tasks(phase_dir, tasks, workers=workers, force=force)
-    write_csv(phase_dir / "raw_runs.csv", rows)
-    write_csv(phase_dir / "best_trajectory.csv", all_history_rows(rows))
-    write_csv(phase_dir / "channel_lift.csv", [channel_lift_row(row) for row in rows])
+    write_phase_a_common_outputs(phase_dir, rows)
     decision = decide_phase_a(rows)
     if decision.get("stack_retest_tasks"):
         stack_tasks = [
@@ -250,10 +248,60 @@ def run_phase_a(phase_dir: Path, *, seeds: list[int], eval_budget: int, workers:
             for seed in seeds
         ]
         rows = run_tasks(phase_dir, stack_tasks, workers=workers, force=force)
-        write_csv(phase_dir / "raw_runs.csv", rows)
-        write_csv(phase_dir / "best_trajectory.csv", all_history_rows(rows))
-        write_csv(phase_dir / "channel_lift.csv", [channel_lift_row(row) for row in rows])
+        write_phase_a_common_outputs(phase_dir, rows)
         decision = decide_phase_a(rows)
+    write_phase_a_decision_outputs(phase_dir, rows, decision)
+
+
+def write_phase_a_blocked(phase_dir: Path, rows: list[dict[str, Any]], formal_blockers: list[dict[str, Any]]) -> None:
+    write_phase_a_common_outputs(phase_dir, rows)
+    decision = {
+        "schema": "setp-e2-final-phase-a-decision.v1",
+        "verdict": "ALNS_GATE_BLOCKED",
+        "failure_count": len(formal_blockers),
+        "failure_sample": formal_blockers[:20],
+        "skipped_diagnostic_280": True,
+        "skipped_component_gate": True,
+        "block_reason": "Formal Goeke80 Phase-A run did not close; diagnostic and component gates were not started.",
+        "algorithm_win_loss_claim": False,
+    }
+    write_phase_a_decision_outputs(phase_dir, rows, decision)
+
+
+def make_phase_a_carbon_gate_batches(phase_dir: Path, *, seeds: list[int], eval_budget: int, scenario_type: str) -> list[list[dict[str, Any]]]:
+    batches: list[list[dict[str, Any]]] = []
+    for category, instance in ALNS_GATE_INSTANCES:
+        for algorithm in ALNS_GATE_ALGORITHMS:
+            batches.append(
+                [
+                    make_task(
+                        phase="A1_CARBON_GATE",
+                        phase_dir=phase_dir,
+                        category=category,
+                        instance=instance,
+                        algorithm=algorithm,
+                        seed=seed,
+                        eval_budget=eval_budget,
+                        runtime_cap_seconds=runtime_cap_for_instance(instance),
+                        scenario_type=scenario_type,
+                    )
+                    for seed in seeds
+                ]
+            )
+    return batches
+
+
+def make_phase_a_carbon_gate_tasks(phase_dir: Path, *, seeds: list[int], eval_budget: int, scenario_type: str) -> list[dict[str, Any]]:
+    return [task for batch in make_phase_a_carbon_gate_batches(phase_dir, seeds=seeds, eval_budget=eval_budget, scenario_type=scenario_type) for task in batch]
+
+
+def write_phase_a_common_outputs(phase_dir: Path, rows: list[dict[str, Any]]) -> None:
+    write_csv(phase_dir / "raw_runs.csv", rows)
+    write_csv(phase_dir / "best_trajectory.csv", all_history_rows(rows))
+    write_csv(phase_dir / "channel_lift.csv", [channel_lift_row(row) for row in rows])
+
+
+def write_phase_a_decision_outputs(phase_dir: Path, rows: list[dict[str, Any]], decision: dict[str, Any]) -> None:
     write_json(phase_dir / "phase_a_decision.json", decision)
     write_json(phase_dir / "decision.json", decision)
     write_csv(phase_dir / "carbon_gate_summary.csv", summarize_rows(rows, keys=("scenario_type", "category", "instance", "algorithm")))
@@ -477,12 +525,23 @@ def run_tasks(phase_dir: Path, tasks: list[dict[str, Any]], *, workers: int, for
 
         with ProcessPoolExecutor(max_workers=int(workers)) as pool:
             futures = {pool.submit(execute_task_subprocess, task_root, task, idx): task for idx, task in enumerate(todo)}
-            for future in as_completed(futures):
-                task = futures[future]
-                row = future.result()
-                existing[str(row.get("run_id", task["run_id"]))] = row
-                write_csv(phase_dir / "raw_runs.csv", sorted_rows(list(existing.values())))
+            try:
+                for future in as_completed(futures):
+                    task = futures[future]
+                    row = future.result()
+                    existing[str(row.get("run_id", task["run_id"]))] = row
+                    write_csv(phase_dir / "raw_runs.csv", sorted_rows(list(existing.values())))
+            except KeyboardInterrupt:
+                for future in futures:
+                    future.cancel()
+                terminate_phase_subprocesses(phase_dir)
+                raise
     return sorted_rows(list(existing.values()))
+
+
+def terminate_phase_subprocesses(phase_dir: Path) -> None:
+    task_root = str((phase_dir / ".tasks").resolve())
+    subprocess.run(["pkill", "-TERM", "-f", task_root], cwd=REPO_ROOT, check=False, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
 
 
 def execute_task_subprocess(task_root: Path, task: dict[str, Any], idx: int) -> dict[str, Any]:
@@ -864,13 +923,23 @@ def final_decision(output_dir: Path) -> dict[str, Any]:
         "phase_c": read_json(output_dir / "phase_c_g4_stability/decision.json") if (output_dir / "phase_c_g4_stability/decision.json").exists() else {},
         "phase_d": read_json(output_dir / "phase_d_g5_t3_material/decision.json") if (output_dir / "phase_d_g5_t3_material/decision.json").exists() else {},
     }
+    phase_verdicts = {key: value.get("verdict", "MISSING") for key, value in phases.items()}
+    blocked_phase = ""
+    final_material_verdict = phases["phase_d"].get("verdict", "MISSING")
+    for phase in ("phase_a", "phase_b", "phase_c"):
+        verdict = phase_verdicts[phase]
+        if verdict not in {"ALNS_GATE_READY", "G3_BASELINE_SET_READY", "G3_WEAK_IMPLEMENTATIONS_EXCLUDED", "G4_STABILITY_PASS"}:
+            blocked_phase = phase
+            final_material_verdict = verdict
+            break
     return {
         "schema": "setp-e2-final-closure-decision.v1",
         "head": git_head(),
-        "phase_verdicts": {key: value.get("verdict", "MISSING") for key, value in phases.items()},
+        "phase_verdicts": phase_verdicts,
+        "blocked_phase": blocked_phase,
         "t3_main_profile": phases["phase_a"].get("t3_main_profile"),
         "t3_baseline_set": phases["phase_b"].get("t3_baseline_set"),
-        "final_material_verdict": phases["phase_d"].get("verdict", "MISSING"),
+        "final_material_verdict": final_material_verdict,
         "not_paper_text": True,
         "algorithm_win_loss_claim": False,
         "user_decisions_remaining": [
@@ -1033,6 +1102,11 @@ def incomplete_rows(rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
         elif int(as_float(row.get("actual_evals"), -1)) < int(as_float(row.get("eval_budget"), -2)):
             failures.append({"run_id": row.get("run_id"), "status": "UNDER_EVAL", "actual": row.get("actual_evals"), "expected": row.get("eval_budget")})
     return failures
+
+
+def phase_a_formal_blockers(rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    formal_rows = [row for row in rows if row.get("phase") == "A1_CARBON_GATE" and row.get("scenario_type") == "formal_goeke80"]
+    return incomplete_rows(formal_rows)
 
 
 def all_history_rows(rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
