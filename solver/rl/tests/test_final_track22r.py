@@ -148,4 +148,4 @@ def test_best_of_k_equal_step_worker_cap_is_not_tight_budget() -> None:
 def test_track22r_default_25c_steps_clear_wall_clock_guard_band() -> None:
     args = track22.parse_args(["run"])
 
-    assert args.stage2_25c_steps >= 3000
+    assert args.stage2_25c_steps >= 4000
