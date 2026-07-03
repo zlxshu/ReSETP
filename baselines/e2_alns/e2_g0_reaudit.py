@@ -988,12 +988,30 @@ def key_findings(
         for algorithm, payload in sorted((true_repair.get("comparisons") or {}).items())
         if isinstance(payload, dict)
     )
+    true_repair_sentence = (
+        f"- TRUE_REPAIR 评分对齐：{true_repair.get('verdict')}。{true_repair_summary}。"
+        if true_repair_summary
+        else f"- TRUE_REPAIR 评分对齐：{true_repair.get('verdict', 'MISSING')}。没有可用 A/B 摘要。"
+    )
+    identity_sentence = (
+        f"- 旧的 5174 精确同质化没有复现：跨 seed / 跨算法逐位同签名嫌疑数为 {len(identity_suspects)}。"
+        "这说明旧平台假象已清掉，G0 健康门在本次证据上通过。"
+        if not identity_suspects
+        else f"- 旧的 5174 精确同质化风险仍未清：跨 seed / 跨算法逐位同签名嫌疑数为 {len(identity_suspects)}。按预注册停下。"
+    )
+    liveness_sentence = (
+        "- liveness 门禁：12/12 baseline run 通过，未标 `WEAK_IMPLEMENTATION`。"
+        if not run_fails
+        else f"- liveness 仍有 {len(run_fails)} 条 baseline run 未过："
+        + ", ".join(str(row.get("run_id")) for row in run_fails)
+        + "。这些失败标 `WEAK_IMPLEMENTATION`，不是算法胜负证据。"
+    )
     return [
         f"- 采集闭合：{len(full_rows)}/{len(raw_rows)} 行均为 OK 且 eval 跑满；没有把 under-eval 包装成 16000 OK。",
-        f"- 旧的 5174 精确同质化没有复现：跨 seed / 跨算法逐位同签名嫌疑数为 {len(identity_suspects)}。这说明旧平台假象已清掉，但还不足以让 G0 过门。",
-        f"- liveness 仍有 {len(run_fails)} 条 baseline run 未过：" + ", ".join(str(row.get("run_id")) for row in run_fails) + "。这些失败标 `WEAK_IMPLEMENTATION`，不是算法胜负证据。",
+        identity_sentence,
+        liveness_sentence,
         "- best-cost 只作定位台账，不作算法胜负主张：" + " | ".join(best_by_algorithm) + "。",
-        f"- TRUE_REPAIR 评分对齐：{true_repair.get('verdict', 'MISSING')}。" + (true_repair_summary or "没有可用 A/B 摘要。") + "。",
+        true_repair_sentence,
         f"- 场景合规：{scenario.get('verdict', 'MISSING')}；`DEFAULT_PRICES` 与 `paper_main.tex` 口径一致，{scenario.get('paper_generated_table_hit_count', 'NA')} 个历史生成表命中只登记、不改表。",
         f"- 锚谱系：{legacy.get('status', 'MISSING')}；全 seed 均值 {legacy.get('mean_current_total_cost', 'NA')}，seed2 {legacy.get('seed2_current_total_cost', 'NA')}，目标 mean/seed2 分别为 4878.331796187524 / 4779.053444002934。",
     ]
@@ -1036,10 +1054,9 @@ def artifact_hashes(root: Path) -> dict[str, Any]:
             continue
         files[str(path.relative_to(root))] = sha256_file(path)
     return {
-        "schema": "setp-artifact-hashes.v1",
+        "schema": "setp-artifact-hashes.v2-clean-files-only",
         "root": rel(root),
         "generated_at_epoch": time.time(),
-        "exclude": sorted([*HASH_EXCLUDE_NAMES, *HASH_EXCLUDE_PARTS, "._*"]),
         "files": files,
     }
 
@@ -1080,7 +1097,7 @@ def write_csv(path: Path, rows: list[dict[str, Any]]) -> None:
             if key not in fields:
                 fields.append(key)
     with path.open("w", newline="", encoding="utf-8") as handle:
-        writer = csv.DictWriter(handle, fieldnames=fields)
+        writer = csv.DictWriter(handle, fieldnames=fields, lineterminator="\n")
         writer.writeheader()
         writer.writerows(rows)
 

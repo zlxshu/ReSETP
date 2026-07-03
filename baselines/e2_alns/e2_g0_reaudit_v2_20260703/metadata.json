@@ -1,0 +1,28 @@
+{
+  "ab_eval_budget": 2000,
+  "ab_runtime_cap_seconds": 600.0,
+  "battery_override": "dataclasses.replace(DEFAULT_PRICES, B_battery_kwh=280.0, carbon_price=0.05034)",
+  "eval_budget": 16000,
+  "head": "04f2d2be1e5a206d67a7d1c5333ebe7caa572835",
+  "instance": "e2-threeshift-150c-01",
+  "numpy": "2.3.5",
+  "output_dir": "baselines/e2_alns/e2_g0_reaudit_v2_20260703",
+  "phase": "decision",
+  "protected_boundary": [
+    "no cost.py/check.py/evaluation.py/prices.py default/TeX changes",
+    "no feasible_repair.py/resetp_alns/ALNS main path semantic changes",
+    "not formal T3; no algorithm win/loss claim"
+  ],
+  "python": "/opt/anaconda3/bin/python3.13",
+  "pythonhashseed": "0",
+  "runtime_cap_seconds": 2700.0,
+  "schema": "setp-e2-g0-reaudit.v2",
+  "seeds": [
+    1,
+    2,
+    3
+  ],
+  "start_policy": "shared_warm_start; deterministic flip closure is recorded only as reference_flip_closure_*",
+  "started_at_epoch": 1783053129.324328,
+  "task": "E2-G0 v2: shared-warm-start origin correction, liveness gate, G0 reaudit, anchor lineage closure"
+}

@@ -1,0 +1,180 @@
+{
+  "classification": {
+    "charging_changed_count": 0,
+    "classification": "not_regressed",
+    "conclusion": "Current winner is not worse than gold on mean; restoration should not change search logic without more evidence.",
+    "cost_fix_explained_share": 0.0,
+    "cost_km_explained_share": 0.0,
+    "mean_cost_fix_delta": 0.0,
+    "mean_cost_km_delta": 0.0,
+    "mean_route_count_delta": 0.0,
+    "mean_total_delta": 0.0,
+    "route_high_count": 0,
+    "static_mismatch_count": 0,
+    "static_mismatches": [],
+    "vehicle_changed_count": 0
+  },
+  "elapsed_seconds": 883.4597544170028,
+  "existing_evidence": {
+    "classification": "not_regressed",
+    "diagnosis_log": "baselines/e2_alns/sa_acceptance_legacy_anchor/diagnosis_log.md",
+    "mean_current_total_cost": 4878.331796187524,
+    "seed2_total_cost": 4779.053444002934,
+    "seed_count": 10,
+    "source": "baselines/e2_alns/sa_acceptance_legacy_anchor/phase2_current_vs_gold.json",
+    "zero_violation_count": 10
+  },
+  "lineage_notes": [
+    {
+      "label": "4878.331796187524",
+      "meaning": "df608660 winner_restoration seed1-10 mean under old Q1600/code-era anchor"
+    },
+    {
+      "label": "4779.053444002934",
+      "meaning": "df608660 winner_restoration seed2 best member of the same anchor family"
+    },
+    {
+      "label": "2677.7953638343815",
+      "meaning": "current independent ALNS Goeke80/Q3650 seed2 parity anchor"
+    },
+    {
+      "label": "3561.080964207054",
+      "meaning": "current independent ALNS e2-threeshift-150c-01 B280 warm-start seed1/eval2000 parity anchor"
+    },
+    {
+      "label": "4844.796",
+      "meaning": "formal_20260619 ALNS-Wouda 100-01 mean from another runner/configuration; do not mix with winner_restoration family"
+    }
+  ],
+  "mean_current_total_cost": 4878.331796187524,
+  "mean_target": 4878.331796187524,
+  "rows": [
+    {
+      "anchor_family": "winner_restoration_df608660",
+      "charging_actions": 20,
+      "current_total_cost": 5055.051020529177,
+      "cv_routes": 14,
+      "ev_routes": 19,
+      "gold_total_cost": 5055.051020529177,
+      "route_count": 33,
+      "seed": 1,
+      "total_delta": 0.0,
+      "violation_count": 0
+    },
+    {
+      "anchor_family": "winner_restoration_df608660",
+      "charging_actions": 22,
+      "current_total_cost": 4779.053444002934,
+      "cv_routes": 11,
+      "ev_routes": 21,
+      "gold_total_cost": 4779.053444002934,
+      "route_count": 32,
+      "seed": 2,
+      "total_delta": 0.0,
+      "violation_count": 0
+    },
+    {
+      "anchor_family": "winner_restoration_df608660",
+      "charging_actions": 23,
+      "current_total_cost": 4791.036659140152,
+      "cv_routes": 11,
+      "ev_routes": 21,
+      "gold_total_cost": 4791.036659140152,
+      "route_count": 32,
+      "seed": 3,
+      "total_delta": 0.0,
+      "violation_count": 0
+    },
+    {
+      "anchor_family": "winner_restoration_df608660",
+      "charging_actions": 20,
+      "current_total_cost": 4872.345693557946,
+      "cv_routes": 12,
+      "ev_routes": 20,
+      "gold_total_cost": 4872.345693557946,
+      "route_count": 32,
+      "seed": 4,
+      "total_delta": 0.0,
+      "violation_count": 0
+    },
+    {
+      "anchor_family": "winner_restoration_df608660",
+      "charging_actions": 16,
+      "current_total_cost": 4938.529675802791,
+      "cv_routes": 17,
+      "ev_routes": 15,
+      "gold_total_cost": 4938.529675802791,
+      "route_count": 32,
+      "seed": 5,
+      "total_delta": 0.0,
+      "violation_count": 0
+    },
+    {
+      "anchor_family": "winner_restoration_df608660",
+      "charging_actions": 19,
+      "current_total_cost": 4857.299029647395,
+      "cv_routes": 14,
+      "ev_routes": 18,
+      "gold_total_cost": 4857.299029647395,
+      "route_count": 32,
+      "seed": 6,
+      "total_delta": 0.0,
+      "violation_count": 0
+    },
+    {
+      "anchor_family": "winner_restoration_df608660",
+      "charging_actions": 21,
+      "current_total_cost": 4839.940665975059,
+      "cv_routes": 12,
+      "ev_routes": 20,
+      "gold_total_cost": 4839.940665975059,
+      "route_count": 32,
+      "seed": 7,
+      "total_delta": 0.0,
+      "violation_count": 0
+    },
+    {
+      "anchor_family": "winner_restoration_df608660",
+      "charging_actions": 22,
+      "current_total_cost": 4839.22405845257,
+      "cv_routes": 12,
+      "ev_routes": 20,
+      "gold_total_cost": 4839.22405845257,
+      "route_count": 32,
+      "seed": 8,
+      "total_delta": 0.0,
+      "violation_count": 0
+    },
+    {
+      "anchor_family": "winner_restoration_df608660",
+      "charging_actions": 20,
+      "current_total_cost": 4794.909333913854,
+      "cv_routes": 12,
+      "ev_routes": 20,
+      "gold_total_cost": 4794.909333913854,
+      "route_count": 32,
+      "seed": 9,
+      "total_delta": 0.0,
+      "violation_count": 0
+    },
+    {
+      "anchor_family": "winner_restoration_df608660",
+      "charging_actions": 12,
+      "current_total_cost": 5015.928380853362,
+      "cv_routes": 22,
+      "ev_routes": 12,
+      "gold_total_cost": 5015.928380853362,
+      "route_count": 34,
+      "seed": 10,
+      "total_delta": 0.0,
+      "violation_count": 0
+    }
+  ],
+  "schema": "setp-e2-g0-anchor-lineage.v2",
+  "seed2_current_total_cost": 4779.053444002934,
+  "seed2_target": 4779.053444002934,
+  "seed_count": 10,
+  "status": "ANCHOR_LINEAGE_CLOSED",
+  "stdout_tail": "GATE WINNER_RESTORATION run-current {\"gate\": \"PASS_CURRENT_RUN_CLASSIFIED\", \"summary\": {\"seed_count\": 10, \"mean_current_total_cost\": 4878.331796187524, \"median_current_total_cost\": 4848.619847811227, \"best_current_total_cost\": 4779.053444002934, \"std_current_total_cost\": 95.27954961466529, \"mean_gold_total_cost\": 4878.331796187524, \"mean_total_delta\": 0.0, \"median_total_delta\": 0.0, \"mean_route_count\": 32.3, \"mean_gold_route_count\": 32.3, \"mean_route_count_delta\": 0.0, \"zero_violation_count\": 10}, \"classification\": {\"classification\": \"not_regressed\", \"mean_total_delta\": 0.0, \"mean_route_count_delta\": 0.0, \"route_high_count\": 0, \"mean_cost_fix_delta\": 0.0, \"mean_cost_km_delta\": 0.0, \"cost_fix_explained_share\": 0.0, \"cost_km_explained_share\": 0.0, \"vehicle_changed_count\": 0, \"charging_changed_count\": 0, \"static_mismatch_count\": 0, \"static_mismatches\": [], \"conclusion\": \"Current winner is not worse than gold on mean; restoration should not change search logic without more evidence.\"}}\n",
+  "zero_violation_count": 10
+}
