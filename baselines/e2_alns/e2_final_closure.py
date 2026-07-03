@@ -458,10 +458,12 @@ def run_phase_c(phase_dir: Path, phase_a_dir: Path, *, seeds: list[int], eval_bu
                 )
             )
     rows = run_tasks(phase_dir, tasks, workers=workers, force=force)
-    decision = decide_phase_c(rows)
+    liveness_rows = liveness_verdicts(rows, ("LNS",))
+    decision = decide_phase_c(rows, liveness_rows)
     write_csv(phase_dir / "raw_runs.csv", rows)
     write_csv(phase_dir / "best_trajectory.csv", all_history_rows(rows))
     write_csv(phase_dir / "channel_lift.csv", [channel_lift_row(row) for row in rows])
+    write_csv(phase_dir / "liveness_verdicts.csv", liveness_rows)
     write_csv(phase_dir / "g4_gap_by_instance.csv", g4_gap_rows(rows))
     write_json(phase_dir / "decision.json", decision)
     write_phase_report(phase_dir, "Phase C G4 Stability", decision)
@@ -1081,14 +1083,32 @@ def decide_phase_b(rows: list[dict[str, Any]], liveness_rows: list[dict[str, Any
     }
 
 
-def decide_phase_c(rows: list[dict[str, Any]]) -> dict[str, Any]:
+def decide_phase_c(rows: list[dict[str, Any]], liveness_rows: list[dict[str, Any]] | None = None) -> dict[str, Any]:
     failures = incomplete_rows(rows)
+    liveness_rows = liveness_rows if liveness_rows is not None else [
+        {"scope": "run", "algorithm": row.get("algorithm"), "seed": row.get("seed"), "run_id": row.get("run_id"), "verdict": row.get("liveness_verdict"), "flags": row.get("liveness_flags")}
+        for row in rows
+        if row.get("algorithm") == "LNS" and row.get("liveness_verdict")
+    ]
+    liveness_suspects = [
+        row
+        for row in liveness_rows
+        if row.get("verdict") == "BASELINE_LIVENESS_FAIL" or str(row.get("verdict", "")).endswith("_SUSPECT")
+    ]
     gaps = g4_gap_rows(rows)
     nonnegative_count = sum(1 for row in gaps if as_float(row.get("gap_fraction")) >= 0.0)
     pooled_gap = pooled_g4_gap(rows)
     max_lns_advantage = min([as_float(row.get("gap_fraction")) for row in gaps] or [math.nan])
+    hard_direction_violations = [row for row in gaps if as_float(row.get("gap_fraction")) < -0.02]
     direction_ok = len(gaps) == 9 and nonnegative_count >= 6 and pooled_gap >= 0.0 and max_lns_advantage >= -0.02
-    verdict = "G4_STABILITY_PASS" if not failures and direction_ok else ("G4_COLLECTION_PARTIAL" if failures else "HALT_G4_SUSPECT")
+    if liveness_suspects or hard_direction_violations:
+        verdict = "HALT_G4_SUSPECT"
+    elif not failures and direction_ok:
+        verdict = "G4_STABILITY_PASS"
+    elif failures or len(gaps) < 9:
+        verdict = "G4_COLLECTION_PARTIAL"
+    else:
+        verdict = "HALT_G4_SUSPECT"
     return {
         "schema": "setp-e2-final-phase-c-decision.v1",
         "verdict": verdict,
@@ -1098,6 +1118,10 @@ def decide_phase_c(rows: list[dict[str, Any]]) -> dict[str, Any]:
         "nonnegative_gap_instances": nonnegative_count,
         "pooled_gap_fraction": pooled_gap,
         "worst_instance_gap_fraction": max_lns_advantage,
+        "hard_direction_violation_count": len(hard_direction_violations),
+        "hard_direction_violation_sample": hard_direction_violations[:20],
+        "liveness_suspect_count": len(liveness_suspects),
+        "liveness_suspect_sample": liveness_suspects[:20],
         "direction_rule": ">=6/9 gap>=0, pooled gap>=0, no instance below -2%",
     }
 
@@ -1523,7 +1547,7 @@ def write_csv(path: Path, rows: list[dict[str, Any]]) -> None:
             if key not in fields:
                 fields.append(key)
     with path.open("w", newline="", encoding="utf-8") as fh:
-        writer = csv.DictWriter(fh, fieldnames=fields)
+        writer = csv.DictWriter(fh, fieldnames=fields, lineterminator="\n")
         writer.writeheader()
         for row in rows:
             writer.writerow(row)
