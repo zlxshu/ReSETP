@@ -136,3 +136,10 @@ def test_ev_heavy_fleet_limits_keep_cv_available() -> None:
     assert limits.cv > 0
     assert limits.ev > 5
     assert "diagnostic" in limits.source
+
+
+def test_best_of_k_equal_step_worker_cap_is_not_tight_budget() -> None:
+    cap = track22.stage2_best_of_k_worker_eval_cap(step_count=2000, candidate_k=4)
+
+    assert cap > 12010
+    assert cap >= 100000

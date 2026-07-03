@@ -601,7 +601,7 @@ def _run_fixed_block_steps(
 def run_best_of_k_steps(bundle: str, *, seed: int, step_count: int, candidate_k: int) -> dict[str, Any]:
     started = time.monotonic()
     response: dict[str, Any] = {}
-    max_evals = int(step_count) * (int(candidate_k) + 2) + 10
+    max_evals = stage2_best_of_k_worker_eval_cap(step_count=int(step_count), candidate_k=int(candidate_k))
     client = WorkerClient(bundle, seed=int(seed), max_evals=int(max_evals))
     steps = 0
     oracle_candidate_evals = 0
@@ -663,6 +663,10 @@ def _stage2_row_from_response(
         "trace_repair_id": str(trace.get("repair_id", "")),
         "candidate_k_evaluated": int(trace.get("candidate_k_evaluated", 0) or 0),
     }
+
+
+def stage2_best_of_k_worker_eval_cap(*, step_count: int, candidate_k: int) -> int:
+    return int(step_count) * max(50, int(candidate_k) * 12) + 100
 
 
 def _checked_worker_response(response: dict[str, Any]) -> dict[str, Any]:
