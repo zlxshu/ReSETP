@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import argparse
+
 import pytest
 
 from dr_alns_ppo import final_track20
@@ -105,6 +107,20 @@ def test_stage_c_parity_rule_allows_two_percent_floor() -> None:
     assert summary["min_gap_pct_vs_strongest_non_dr"] == pytest.approx(-1.0)
 
 
+def test_stage_c_parity_accepts_24d_dr_algorithm() -> None:
+    rows = [
+        _parity_row("b1", "ppo_block_best_24d", 101.0),
+        _parity_row("b1", "alpha_ucb_block", 100.0),
+        _parity_row("b1", "best_static_meta", 102.0),
+        _parity_row("b1", "official_winner_kernel", 103.0),
+    ]
+
+    summary = track23.summarize_stage_c_parity(rows)
+
+    assert summary["status"] == track23.NO_TUNING_PARITY_CLEAN
+    assert summary["bundle_rows"][0]["strongest_non_dr_algorithm"] == "alpha_ucb_block"
+
+
 def test_stage_c_parity_lost_below_two_percent_floor() -> None:
     rows = [
         _parity_row("b1", "ppo_block_best", 103.0),
@@ -117,6 +133,62 @@ def test_stage_c_parity_lost_below_two_percent_floor() -> None:
 
     assert summary["status"] == track23.PARITY_LOST_CLEAN
     assert summary["min_gap_pct_vs_strongest_non_dr"] == pytest.approx(-3.0)
+
+
+def test_stage_error_does_not_block_later_stages(tmp_path, monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr(track23.track22, "run_preflight", lambda args, output_dir: {"status": "OK"})
+
+    def boom(*args, **kwargs):
+        raise RuntimeError("fake stage c failure")
+
+    monkeypatch.setattr(track23, "run_stage_c_parity", boom)
+    monkeypatch.setattr(
+        track23,
+        "run_stage_d_dynamic",
+        lambda *args, **kwargs: {"status": track23.HEURISTIC_FLAT, "reason": "fake flat"},
+    )
+    args = argparse.Namespace(
+        output_dir=str(tmp_path),
+        worker_python="C:/fake/python.exe",
+        resume=False,
+        stages="C,D,E",
+    )
+
+    exit_code = track23.run(args)
+    state = track23.track22._load_json(tmp_path / "track23_final_report.json")
+
+    assert exit_code == 0
+    assert state["stage_c"]["status"] == track23.STAGE_ERROR
+    assert state["stage_d"]["status"] == track23.HEURISTIC_FLAT
+    assert state["final_status"] == "TRACK23_COMPLETE_WITH_STAGE_ERRORS"
+
+
+def test_stage_b_existing_summary_can_add_knob_table(tmp_path, monkeypatch: pytest.MonkeyPatch) -> None:
+    state = {"stage_b": {"status": "CARBON_MECHANISM_WEAK", "reason": "kept"}}
+    monkeypatch.setattr(
+        track23,
+        "build_carbon_knob_table",
+        lambda *args, **kwargs: [
+            {
+                "ev_vehicle_factor": 1.0,
+                "carbon_price_factor": 1.0,
+                "carbon_intensity_amplitude_factor": 1.0,
+                "carbon_cost_share_pct": 2.5,
+            }
+        ],
+    )
+
+    summary = track23.ensure_stage_b_carbon_knobs(
+        argparse.Namespace(),
+        tmp_path,
+        tmp_path / "progress.log",
+        state,
+    )
+
+    assert summary["status"] == "CARBON_MECHANISM_WEAK"
+    assert summary["scenario_knob_rows"] == 1
+    assert (tmp_path / "stage_b_carbon_scenario_knobs.csv").is_file()
+    assert (tmp_path / "stage_b_carbon_scenario_knobs_summary.json").is_file()
 
 
 def test_stage_d_summary_headroom_and_heuristic_rules() -> None:
@@ -150,6 +222,19 @@ def test_pillar_triple_uses_only_required_labels() -> None:
         "DR_PILLAR_EFFICIENCY": "没站住",
         "DR_PILLAR_DYNAMIC": "没站住",
     }
+
+
+def test_pilot16_sidecar_does_not_override_stage_c_pillar() -> None:
+    pillars = track23.summarize_pillars(
+        {
+            "stage_c": {
+                "status": track23.NO_TUNING_PARITY_CLEAN,
+                "pilot16_reval": {"status": "PILOT16_CLEAN_REVAL_COMPLETE", "min_gap_pct_vs_strongest_non_dr": -99.0},
+            }
+        }
+    )
+
+    assert pillars["DR_PILLAR_QUALITY"] == "站住"
 
 
 def test_preposition_policy_returns_real_initial_plan() -> None:

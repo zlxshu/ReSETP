@@ -34,6 +34,7 @@ from .bundle_manifest import load_manifest, validate_curriculum_manifest
 SYSTEM_WORKER_PYTHON = os.environ.get("SETP_WORKER_PYTHON", "/opt/anaconda3/bin/python3.13")
 SYSTEM_WORKER_NUMPY = "2.3.5"
 REPORT_ROOT_FRAGMENT = "solver/reports/dr_alns_ppo_v3_block_dr_alns/async_pilot"
+TRACK23_STAGE_C_TRAIN_FRAGMENT = "solver/reports/dr_alns_ppo_v3/final_track23/stage_c_train24"
 CURRICULUM_PHASES = ("route", "energy", "carbon", "dynamic")
 
 
@@ -332,9 +333,12 @@ def ppo_update(
     entropy_coef: float,
     max_grad_norm: float,
     value_clip_range: float | None = None,
+    target_kl: float = 0.0,
 ) -> dict[str, float]:
     sample_count = int(batch["obs"].shape[0])
     losses: list[dict[str, float]] = []
+    target_kl_hit = False
+    target_kl_value = float("nan")
     for _epoch in range(int(epochs)):
         permutation = torch.randperm(sample_count, device=batch["obs"].device)
         for start in range(0, sample_count, int(minibatch_size)):
@@ -370,6 +374,7 @@ def ppo_update(
             with torch.no_grad():
                 approx_kl = (old_log_probs - log_probs).mean().abs()
                 clip_fraction = ((ratio - 1.0).abs() > float(clip_range)).float().mean()
+            target_kl_value = float(approx_kl.detach())
             losses.append(
                 {
                     "policy_loss": float(policy_loss.detach()),
@@ -379,7 +384,15 @@ def ppo_update(
                     "clip_fraction": float(clip_fraction.detach()),
                 }
             )
-    return _mean_metrics(losses)
+            if float(target_kl) > 0.0 and target_kl_value > float(target_kl):
+                target_kl_hit = True
+                break
+        if target_kl_hit:
+            break
+    metrics = _mean_metrics(losses)
+    metrics["target_kl_hit"] = float(int(target_kl_hit))
+    metrics["target_kl_value"] = target_kl_value
+    return metrics
 
 
 def run_self_check(args: argparse.Namespace) -> int:
@@ -693,6 +706,7 @@ def run_train(args: argparse.Namespace) -> int:
     all_episodes: list[dict[str, Any]] = []
     rollout_buffer: list[dict[str, Any]] = []
     start_time = time.monotonic()
+    stopped_by_max_train_seconds = False
     next_cpu_probe = start_time
     expected_episode_steps = _expected_episode_steps(int(args.eval_budget), int(args.block_size))
 
@@ -723,6 +737,10 @@ def run_train(args: argparse.Namespace) -> int:
             submit_one()
 
         while valid_steps_total < int(args.timesteps):
+            if float(getattr(args, "max_train_seconds", 0.0) or 0.0) > 0.0:
+                if time.monotonic() - start_time >= float(args.max_train_seconds):
+                    stopped_by_max_train_seconds = True
+                    break
             done, _pending = concurrent.futures.wait(
                 list(futures),
                 timeout=float(args.poll_seconds),
@@ -810,6 +828,7 @@ def run_train(args: argparse.Namespace) -> int:
                         entropy_coef=float(phase_entropy if phase_entropy is not None else args.entropy_coef),
                         max_grad_norm=float(args.max_grad_norm),
                         value_clip_range=phase_value_clip_ranges[update_phase_index],
+                        target_kl=float(args.target_kl),
                     )
                     checkpoint_path = _save_periodic_checkpoint(
                         output_dir,
@@ -876,6 +895,8 @@ def run_train(args: argparse.Namespace) -> int:
         "shared_baseline_by_bundle": not bool(args.disable_shared_baseline),
         "checkpoint_every_updates": int(args.checkpoint_every_updates),
         "train_wall_time_seconds": time.monotonic() - start_time,
+        "stopped_by_max_train_seconds": bool(stopped_by_max_train_seconds),
+        "max_train_seconds": float(getattr(args, "max_train_seconds", 0.0) or 0.0),
     }
     save_async_block_policy(output_dir / "async_block_ppo_model.pt", model, metadata=metadata)
     _write_json(output_dir / "async_train_summary.json", metadata)
@@ -1302,6 +1323,8 @@ def _update_fieldnames() -> list[str]:
         "entropy",
         "approx_kl",
         "clip_fraction",
+        "target_kl_hit",
+        "target_kl_value",
     ]
 
 
@@ -1316,8 +1339,9 @@ def _phase_transition_fieldnames() -> list[str]:
 
 def _checked_output_dir(path: Path) -> Path:
     text = path.as_posix()
-    if REPORT_ROOT_FRAGMENT not in text:
-        raise ValueError(f"async PPO reports must stay under {REPORT_ROOT_FRAGMENT}: {path}")
+    allowed = (REPORT_ROOT_FRAGMENT, TRACK23_STAGE_C_TRAIN_FRAGMENT)
+    if not any(fragment in text for fragment in allowed):
+        raise ValueError(f"async PPO reports must stay under an allowed report dir {allowed}: {path}")
     return path
 
 
@@ -1382,6 +1406,8 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
             p.add_argument("--epochs", type=int, default=4)
             p.add_argument("--minibatch-size", type=int, default=256)
             p.add_argument("--max-grad-norm", type=float, default=0.5)
+            p.add_argument("--target-kl", type=float, default=0.0)
+            p.add_argument("--max-train-seconds", type=float, default=0.0)
             p.add_argument("--checkpoint-every-updates", type=int, default=10)
             p.add_argument("--poll-seconds", type=float, default=5.0)
             p.add_argument("--cpu-sample-interval-seconds", type=float, default=60.0)

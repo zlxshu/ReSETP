@@ -3,10 +3,12 @@ from __future__ import annotations
 import argparse
 import math
 import os
+import shutil
 import time
+import traceback
 from dataclasses import replace
 from pathlib import Path
-from typing import Any
+from typing import Any, Callable
 
 from setp_solver.prices import DEFAULT_PRICES
 
@@ -20,9 +22,13 @@ PILOT08_BLOCK_SIZE = 32
 PILOT08_UPDATE_0240 = Path(
     "solver/reports/dr_alns_ppo_v3_block_dr_alns/async_pilot/pilot08/train_final/checkpoints/async_block_ppo_update_0240.pt"
 )
+PILOT16_FINAL_MODEL = Path(
+    "solver/reports/dr_alns_ppo_v3_block_dr_alns/async_pilot/pilot16/train_final/async_block_ppo_model.pt"
+)
 EUK100_01 = "models/data_bundle/generated_instances/E-UK100_01__d2_s3_seed1_24h_20251113"
 EUK100_02 = "models/data_bundle/generated_instances/E-UK100_02__u0_seed2_24h_20251113"
 EUK100_03 = "models/data_bundle/generated_instances/E-UK100_03__u0_seed3_24h_20251113"
+STAGE_C_DR_ALGORITHMS = {"ppo_block_best", "ppo_block_best_24d"}
 
 DESTROY_LEVERAGE_AT_BUDGET = "DESTROY_LEVERAGE_AT_BUDGET"
 LEVERAGE_MARGINAL = "LEVERAGE_MARGINAL"
@@ -37,6 +43,7 @@ NO_ANTICIPATION_HEADROOM_CLEAN = "NO_ANTICIPATION_HEADROOM_CLEAN"
 HEURISTIC_MOVES_HEADROOM = "HEURISTIC_MOVES_HEADROOM"
 HEURISTIC_FLAT = "HEURISTIC_FLAT"
 DYNAMIC_INTERFACE_PARTIAL = "DYNAMIC_INTERFACE_PARTIAL"
+STAGE_ERROR = "STAGE_ERROR"
 
 
 class Track23Halt(RuntimeError):
@@ -44,6 +51,30 @@ class Track23Halt(RuntimeError):
         super().__init__(message)
         self.status = str(status)
         self.message = str(message)
+
+
+def _stage_error_record(stage: str, exc: BaseException, started: float, *, original_status: str = "") -> dict[str, Any]:
+    return {
+        "status": STAGE_ERROR,
+        "stage": str(stage),
+        "original_status": str(original_status or ""),
+        "error_type": exc.__class__.__name__,
+        "error_message": str(exc),
+        "traceback_tail": "".join(traceback.format_exception(type(exc), exc, exc.__traceback__)[-8:]),
+        "wall_time_seconds": float(time.monotonic() - started),
+    }
+
+
+def _write_stage_error(output_dir: Path, stage: str, record: dict[str, Any]) -> None:
+    track22._write_json(output_dir / f"stage_{stage.lower()}_error.json", record)
+
+
+def _has_stage_errors(state: dict[str, Any]) -> bool:
+    return any(isinstance(value, dict) and value.get("status") == STAGE_ERROR for key, value in state.items() if key.startswith("stage_"))
+
+
+def _load_json_if_exists(path: Path) -> dict[str, Any]:
+    return track22._load_json(path) if path.is_file() else {}
 
 
 def run(args: argparse.Namespace) -> int:
@@ -56,14 +87,51 @@ def run(args: argparse.Namespace) -> int:
     selected = {item.strip().upper() for item in str(args.stages).split(",") if item.strip()}
     if not selected:
         selected = {"A", "A2", "B", "C", "D", "E"}
+
+    def save_and_report() -> None:
+        state["pillar_summary"] = summarize_pillars(state)
+        state["final_status"] = "TRACK23_COMPLETE_WITH_STAGE_ERRORS" if _has_stage_errors(state) else "TRACK23_COMPLETE"
+        state["final_reason"] = _pillar_sentence(state["pillar_summary"])
+        state["wall_time_seconds"] = float(time.monotonic() - started)
+        track22._write_json(output_dir / "track23_final_report.json", state)
+        write_final_report(output_dir / "final_report.md", state)
+        _save_state(state_path, state)
+
+    def run_guarded(stage: str, state_key: str, body: Callable[[], None]) -> None:
+        stage_start = time.monotonic()
+        try:
+            body()
+        except (track22.Track22Halt, Track23Halt) as exc:
+            state[state_key] = _stage_error_record(stage, exc, stage_start, original_status=getattr(exc, "status", "HALT_STAGE"))
+            _write_stage_error(output_dir, stage, state[state_key])
+            _save_state(state_path, state)
+            _log(progress_path, f"Stage {stage} status={STAGE_ERROR}: {state[state_key]['error_message']}")
+        except Exception as exc:  # noqa: BLE001 - stage isolation is intentional for Track23-D2.
+            state[state_key] = _stage_error_record(stage, exc, stage_start)
+            _write_stage_error(output_dir, stage, state[state_key])
+            _save_state(state_path, state)
+            _log(progress_path, f"Stage {stage} status={STAGE_ERROR}: {state[state_key]['error_message']}")
+
+    _log(progress_path, "Track23 run start")
+    os.environ["SETP_WORKER_PYTHON"] = str(Path(args.worker_python).resolve())
     try:
-        _log(progress_path, "Track23 run start")
-        os.environ["SETP_WORKER_PYTHON"] = str(Path(args.worker_python).resolve())
         state["preflight"] = track22.run_preflight(args, output_dir)
         track22._write_json(output_dir / "track23_preflight.json", state["preflight"])
         _save_state(state_path, state)
+    except (track22.Track22Halt, Track23Halt) as exc:
+        status = getattr(exc, "status", "HALT_TRACK23")
+        message = getattr(exc, "message", str(exc))
+        state["final_status"] = status
+        state["final_reason"] = message
+        state["wall_time_seconds"] = float(time.monotonic() - started)
+        track22._write_json(output_dir / "track23_final_report.json", state)
+        write_final_report(output_dir / "final_report.md", state)
+        _save_state(state_path, state)
+        _log(progress_path, f"HALT {status}: {message}")
+        return 2
 
-        if "A" in selected and not state.get("stage_a"):
+    if "A" in selected and not state.get("stage_a"):
+        def stage_a_body() -> None:
             manifest = track22.ensure_track22_bundles(args, output_dir)
             state["bundle_manifest"] = manifest
             track22._write_json(output_dir / "track23_bundle_manifest.json", manifest)
@@ -74,7 +142,10 @@ def run(args: argparse.Namespace) -> int:
             _save_state(state_path, state)
             _log(progress_path, f"Stage A status={state['stage_a']['status']}")
 
-        if "A2" in selected and not state.get("stage_a2"):
+        run_guarded("A", "stage_a", stage_a_body)
+
+    if "A2" in selected and not state.get("stage_a2"):
+        def stage_a2_body() -> None:
             stage_a = state.get("stage_a") or {}
             if not should_run_stage_a2(stage_a):
                 state["stage_a2"] = {
@@ -88,47 +159,45 @@ def run(args: argparse.Namespace) -> int:
             _save_state(state_path, state)
             _log(progress_path, f"Stage A2 status={state['stage_a2']['status']}")
 
-        if "B" in selected and not state.get("stage_b"):
+        run_guarded("A2", "stage_a2", stage_a2_body)
+
+    if "B" in selected and (not state.get("stage_b") or not _stage_b_has_knob_table(state.get("stage_b") or {}, output_dir)):
+        def stage_b_body() -> None:
             manifest = state.get("bundle_manifest") or track22.ensure_track22_bundles(args, output_dir)
             state["bundle_manifest"] = manifest
-            state["stage_b"] = run_stage_b_carbon(args, output_dir, progress_path, state)
+            if not state.get("stage_b"):
+                state["stage_b"] = run_stage_b_carbon(args, output_dir, progress_path, state)
+            state["stage_b"] = ensure_stage_b_carbon_knobs(args, output_dir, progress_path, state)
             track22._write_json(output_dir / "stage_b_carbon_summary.json", state["stage_b"])
             _save_state(state_path, state)
             _log(progress_path, f"Stage B status={state['stage_b']['status']}")
 
-        if "C" in selected and not state.get("stage_c"):
-            rows = run_stage_c_parity(args, output_dir, progress_path)
+        run_guarded("B", "stage_b", stage_b_body)
+
+    if "C" in selected and _should_run_stage_c(state, output_dir):
+        def stage_c_body() -> None:
+            rows = run_stage_c_parity(args, output_dir, progress_path, state)
             state["stage_c"] = summarize_stage_c_parity(rows)
-            track22._write_json(output_dir / "stage_c_no_tuning_parity_summary.json", state["stage_c"])
-            write_stage_c_report(output_dir / "stage_c_no_tuning_parity_report.md", state["stage_c"])
+            state["stage_c"]["training"] = _load_json_if_exists(output_dir / "stage_c_train24" / "best_val_checkpoint.json")
+            state["stage_c"]["pilot16_reval"] = _load_json_if_exists(output_dir / "stage_c_pilot16_clean_reval_summary.json")
+            track22._write_json(output_dir / "stage_c24_no_tuning_parity_summary.json", state["stage_c"])
+            write_stage_c_report(output_dir / "stage_c24_no_tuning_parity_report.md", state["stage_c"])
             _save_state(state_path, state)
             _log(progress_path, f"Stage C status={state['stage_c']['status']}")
 
-        if "D" in selected and not state.get("stage_d"):
+        run_guarded("C", "stage_c", stage_c_body)
+
+    if "D" in selected and not state.get("stage_d"):
+        def stage_d_body() -> None:
             state["stage_d"] = run_stage_d_dynamic(args, output_dir, progress_path, started)
             track22._write_json(output_dir / "stage_d_dynamic_summary.json", state["stage_d"])
             _save_state(state_path, state)
             _log(progress_path, f"Stage D status={state['stage_d']['status']}")
 
-        state["pillar_summary"] = summarize_pillars(state)
-        state["final_status"] = "TRACK23_COMPLETE"
-        state["final_reason"] = _pillar_sentence(state["pillar_summary"])
-        state["wall_time_seconds"] = float(time.monotonic() - started)
-        track22._write_json(output_dir / "track23_final_report.json", state)
-        write_final_report(output_dir / "final_report.md", state)
-        _save_state(state_path, state)
-        return 0
-    except (track22.Track22Halt, Track23Halt) as exc:
-        status = getattr(exc, "status", "HALT_TRACK23")
-        message = getattr(exc, "message", str(exc))
-        state["final_status"] = status
-        state["final_reason"] = message
-        state["wall_time_seconds"] = float(time.monotonic() - started)
-        track22._write_json(output_dir / "track23_final_report.json", state)
-        write_final_report(output_dir / "final_report.md", state)
-        _save_state(state_path, state)
-        _log(progress_path, f"HALT {status}: {message}")
-        return 2
+        run_guarded("D", "stage_d", stage_d_body)
+
+    save_and_report()
+    return 0
 
 
 def run_stage_a_destroy_ladder(
@@ -444,11 +513,43 @@ def run_stage_b_carbon(
     state: dict[str, Any],
 ) -> dict[str, Any]:
     summary = track22.run_stage4_carbon_timing(args, output_dir, progress_path, state)
-    if summary.get("status") == track22.CARBON_CEILING_TOO_SMALL_DEFAULT:
-        knob_rows = build_carbon_knob_table(args, output_dir, progress_path, state)
-        track22._write_csv(output_dir / "stage_b_carbon_scenario_knobs.csv", knob_rows)
-        summary["scenario_knob_rows"] = len(knob_rows)
-        summary["scenario_knob_table"] = "stage_b_carbon_scenario_knobs.csv"
+    state["stage_b"] = summary
+    return ensure_stage_b_carbon_knobs(args, output_dir, progress_path, state)
+
+
+def _stage_b_has_knob_table(summary: dict[str, Any], output_dir: Path) -> bool:
+    table = str(summary.get("scenario_knob_table") or "stage_b_carbon_scenario_knobs.csv")
+    return bool(summary.get("scenario_knob_rows")) and (output_dir / table).is_file()
+
+
+def _should_run_stage_c(state: dict[str, Any], output_dir: Path) -> bool:
+    summary = state.get("stage_c") or {}
+    if not summary:
+        return True
+    if summary.get("status") == STAGE_ERROR:
+        return True
+    return not (output_dir / "stage_c24_no_tuning_parity_rows.csv").is_file()
+
+
+def ensure_stage_b_carbon_knobs(
+    args: argparse.Namespace,
+    output_dir: Path,
+    progress_path: Path,
+    state: dict[str, Any],
+) -> dict[str, Any]:
+    summary = dict(state.get("stage_b") or {})
+    rows_path = output_dir / "stage_b_carbon_scenario_knobs.csv"
+    if rows_path.is_file() and _stage_b_has_knob_table(summary, output_dir):
+        return summary
+    knob_rows = build_carbon_knob_table(args, output_dir, progress_path, state)
+    track22._write_csv(rows_path, knob_rows)
+    knob_summary = summarize_carbon_knob_table(knob_rows)
+    track22._write_json(output_dir / "stage_b_carbon_scenario_knobs_summary.json", knob_summary)
+    write_carbon_knob_report(output_dir / "stage_b_carbon_scenario_knobs.md", knob_summary)
+    summary["scenario_knob_rows"] = len(knob_rows)
+    summary["scenario_knob_table"] = rows_path.name
+    summary["scenario_knob_summary"] = "stage_b_carbon_scenario_knobs_summary.json"
+    summary["scenario_knob_report"] = "stage_b_carbon_scenario_knobs.md"
     return summary
 
 
@@ -524,13 +625,274 @@ def amplify_carbon_profile(profile: list[dict[str, Any]], *, amplitude_factor: f
     return out
 
 
-def run_stage_c_parity(args: argparse.Namespace, output_dir: Path, progress_path: Path) -> list[dict[str, Any]]:
+def summarize_carbon_knob_table(rows: list[dict[str, Any]]) -> dict[str, Any]:
+    shares = [_float(row.get("carbon_cost_share_pct")) for row in rows if math.isfinite(_float(row.get("carbon_cost_share_pct")))]
+    by_combo: dict[str, list[float]] = {}
+    for row in rows:
+        label = (
+            f"ev{_float(row.get('ev_vehicle_factor')):.1f}|"
+            f"price{_float(row.get('carbon_price_factor')):.1f}|"
+            f"amp{_float(row.get('carbon_intensity_amplitude_factor')):.1f}"
+        )
+        value = _float(row.get("carbon_cost_share_pct"))
+        if math.isfinite(value):
+            by_combo.setdefault(label, []).append(value)
+    combo_rows = [
+        {"combo": label, "mean_carbon_cost_share_pct": _mean(values), "row_count": len(values)}
+        for label, values in sorted(by_combo.items())
+    ]
+    return {
+        "status": "SCENARIO_KNOB_TABLE_ONLY",
+        "row_count": len(rows),
+        "mean_carbon_cost_share_pct": _mean(shares),
+        "max_carbon_cost_share_pct": max(shares) if shares else math.nan,
+        "combo_rows": combo_rows,
+        "verdict_role": "scenario_design_material_only",
+    }
+
+
+def write_carbon_knob_report(path: Path, summary: dict[str, Any]) -> None:
+    lines = [
+        "# Track23 Stage B Carbon Scenario Knobs",
+        "",
+        "Verdict role: scenario design material only.",
+        f"Rows: {summary.get('row_count', 0)}",
+        f"Mean carbon cost share: {_float(summary.get('mean_carbon_cost_share_pct')):.3f}%",
+        f"Max carbon cost share: {_float(summary.get('max_carbon_cost_share_pct')):.3f}%",
+        "",
+        "## Sweep Cells",
+        "",
+    ]
+    for row in summary.get("combo_rows", []):
+        lines.append(f"- {row['combo']}: mean carbon share {_float(row['mean_carbon_cost_share_pct']):.3f}% across {row['row_count']} rows")
+    path.write_text("\n".join(lines) + "\n", encoding="utf-8", newline="\n")
+
+
+def run_stage_c_parity(
+    args: argparse.Namespace,
+    output_dir: Path,
+    progress_path: Path,
+    state: dict[str, Any],
+) -> list[dict[str, Any]]:
+    best = ensure_stage_c24_training(args, output_dir, progress_path, state)
+    rows = run_stage_c24_formal_eval(args, output_dir, progress_path, best)
+    pilot16 = run_stage_c_pilot16_reval(args, output_dir, progress_path, rows)
+    track22._write_json(output_dir / "stage_c_pilot16_clean_reval_summary.json", pilot16)
+    write_stage_c_pilot16_report(output_dir / "stage_c_pilot16_clean_reval_report.md", pilot16)
+    return rows
+
+
+def ensure_stage_c24_training(
+    args: argparse.Namespace,
+    output_dir: Path,
+    progress_path: Path,
+    state: dict[str, Any],
+) -> dict[str, Any]:
+    train_dir = output_dir / "stage_c_train24"
+    train_dir.mkdir(parents=True, exist_ok=True)
+    best_json = train_dir / "best_val_checkpoint.json"
+    best_model = train_dir / "best_val_async_block_ppo.pt"
+    if args.resume and best_json.is_file() and best_model.is_file():
+        return track22._load_json(best_json)
+
+    training_manifest = build_stage_c24_training_manifest(args, output_dir, state)
+    manifest_path = train_dir / "training_manifest.json"
+    track22._write_json(manifest_path, training_manifest)
+
+    from . import train_async_block_ppo as async_train
+
+    train_args = argparse.Namespace(
+        manifest=str(manifest_path),
+        curriculum=True,
+        meta_mode=False,
+        candidate_generator_mode=False,
+        search_control_mode=False,
+        output_dir=str(train_dir),
+        seed=int(args.stage_c_train24_seed),
+        eval_budget=int(args.stage_c_train24_eval_budget),
+        block_size=int(args.stage_c_train24_block_size),
+        num_actors=int(args.stage_c_train24_num_actors),
+        hidden_size=int(args.stage_c_train24_hidden_size),
+        required_worker_python=str(Path(args.worker_python).resolve()),
+        timesteps=int(args.stage_c_train24_timesteps),
+        rollout_min_steps=int(args.stage_c_train24_rollout_min_steps),
+        rollout_min_episodes=int(args.stage_c_train24_rollout_min_episodes),
+        max_policy_lag=1,
+        curriculum_schedule="route,energy,carbon",
+        phase_min_episodes=int(args.stage_c_train24_phase_min_episodes),
+        phase_learning_rates=str(args.stage_c_train24_phase_learning_rates),
+        phase_entropy_coefs=str(args.stage_c_train24_phase_entropy_coefs),
+        phase_clip_ranges=str(args.stage_c_train24_phase_clip_ranges),
+        phase_value_clip_ranges=str(args.stage_c_train24_phase_value_clip_ranges),
+        phase_advantage_clip_ranges=str(args.stage_c_train24_phase_advantage_clip_ranges),
+        device=str(args.stage_c_train24_device),
+        disable_shared_baseline=False,
+        gamma=0.99,
+        gae_lambda=0.95,
+        clip_range=float(args.stage_c_train24_clip_range),
+        value_coef=float(args.stage_c_train24_value_coef),
+        entropy_coef=float(args.stage_c_train24_entropy_coef),
+        learning_rate=float(args.stage_c_train24_learning_rate),
+        epochs=int(args.stage_c_train24_epochs),
+        minibatch_size=int(args.stage_c_train24_minibatch_size),
+        max_grad_norm=float(args.stage_c_train24_max_grad_norm),
+        target_kl=float(args.stage_c_train24_target_kl),
+        max_train_seconds=float(args.stage_c_train24_max_seconds),
+        checkpoint_every_updates=1,
+        poll_seconds=5.0,
+        cpu_sample_interval_seconds=60.0,
+    )
+    _log(progress_path, "Stage C 24d train start")
+    exit_code = async_train.run_train(train_args)
+    if int(exit_code) != 0:
+        raise Track23Halt("HALT_STAGE_C24_TRAIN", f"24d Stage C training returned exit code {exit_code}")
+    _log(progress_path, "Stage C 24d train finished")
+
+    validation_rows = run_stage_c24_validation(args, train_dir, progress_path, training_manifest)
+    best = select_stage_c24_best_checkpoint(train_dir, validation_rows)
+    shutil.copyfile(best["source_model_path"], best_model)
+    best["best_model_path"] = best_model.as_posix()
+    best["training_manifest"] = manifest_path.as_posix()
+    best["validation_rows"] = (train_dir / "stage_c24_validation_rows.csv").as_posix()
+    track22._write_json(best_json, best)
+    write_stage_c24_training_report(train_dir / "stage_c24_training_report.md", best)
+    return best
+
+
+def build_stage_c24_training_manifest(args: argparse.Namespace, output_dir: Path, state: dict[str, Any]) -> dict[str, Any]:
+    manifest = state.get("bundle_manifest") or _load_json_if_exists(output_dir / "track23_bundle_manifest.json")
+    if not manifest:
+        manifest = track22.ensure_track22_bundles(args, output_dir)
+        state["bundle_manifest"] = manifest
+        track22._write_json(output_dir / "track23_bundle_manifest.json", manifest)
+    roles = manifest.get("roles") or {}
+    train = [str(row["path"]) for row in roles.get("stage3_train", [])]
+    held_out = [str(row["path"]) for row in roles.get("stage3_val", [])]
+    if not train or not held_out:
+        raise Track23Halt("HALT_STAGE_C24_MISSING_FRESH_BUNDLES", "Track23 stage3_train/stage3_val bundles are missing.")
+    return {
+        "schema_version": "dr-alns-ppo-bundle-manifest.v1",
+        "train": train,
+        "held_out": held_out,
+        "formal_eval": [EUK100_01],
+        "source": "track23_stage3_fresh_bundles",
+    }
+
+
+def run_stage_c24_validation(
+    args: argparse.Namespace,
+    train_dir: Path,
+    progress_path: Path,
+    training_manifest: dict[str, Any],
+) -> list[dict[str, Any]]:
+    from .pilot08_eval_tools import run_policy_row
+
+    rows_path = train_dir / "stage_c24_validation_rows.csv"
+    rows = track22._read_csv(rows_path) if args.resume and rows_path.is_file() else []
+    completed = {(row.get("model_path"), row.get("bundle"), int(row.get("seed") or 0)) for row in rows}
+    model_candidates = discover_stage_c24_model_candidates(train_dir)
+    for model in model_candidates:
+        for bundle in training_manifest["held_out"]:
+            for seed in _parse_int_list(args.stage_c_train24_validation_seeds):
+                key = (model["path"], bundle, int(seed))
+                if key in completed:
+                    continue
+                _log(progress_path, f"Stage C 24d validation model={model['label']} bundle={bundle} seed={seed}")
+                row = run_policy_row(
+                    algorithm="ppo_block",
+                    bundle=bundle,
+                    seed=int(seed),
+                    eval_budget=int(args.stage_c_train24_validation_eval_budget),
+                    model_path=Path(model["path"]),
+                    model_label=str(model["label"]),
+                    checkpoint_update_value=model["checkpoint_update"],
+                    bundle_role="stage3_val",
+                    eval_mode="budget",
+                    runtime_target_seconds=0.0,
+                    block_size=int(args.stage_c_train24_block_size),
+                    official_max_runtime_seconds=0.0,
+                )
+                row["algorithm"] = "ppo_block_stage_c24_validation"
+                row["stage"] = "C_validation"
+                row["track"] = "track23_d2"
+                row["model_path"] = model["path"]
+                row["obs_dim"] = 24
+                rows.append(row)
+                track22._write_csv(rows_path, rows)
+    return rows
+
+
+def discover_stage_c24_model_candidates(train_dir: Path) -> list[dict[str, Any]]:
+    candidates: list[dict[str, Any]] = []
+    for path in sorted((train_dir / "checkpoints").glob("async_block_ppo_update_*.pt"), key=_checkpoint_update_from_path):
+        update = _checkpoint_update_from_path(path)
+        candidates.append({"path": path.as_posix(), "label": f"checkpoint_{update:04d}", "checkpoint_update": update})
+    final_path = train_dir / "async_block_ppo_model.pt"
+    if final_path.is_file():
+        summary = _load_json_if_exists(train_dir / "async_train_summary.json")
+        update = int(summary.get("policy_version") or -1)
+        candidates.append({"path": final_path.as_posix(), "label": "final", "checkpoint_update": update})
+    if not candidates:
+        raise Track23Halt("HALT_STAGE_C24_NO_MODELS", f"No Stage C 24d model candidates under {train_dir}")
+    return candidates
+
+
+def _checkpoint_update_from_path(path: str | Path) -> int:
+    stem = Path(path).stem
+    digits = "".join(ch for ch in stem.rsplit("_", 1)[-1] if ch.isdigit())
+    return int(digits) if digits else -1
+
+
+def select_stage_c24_best_checkpoint(train_dir: Path, rows: list[dict[str, Any]]) -> dict[str, Any]:
+    by_model: dict[str, list[float]] = {}
+    meta: dict[str, dict[str, Any]] = {}
+    for row in rows:
+        model_path = str(row.get("model_path") or "")
+        value = _float(row.get("best_obj"))
+        if model_path and math.isfinite(value):
+            by_model.setdefault(model_path, []).append(value)
+            meta.setdefault(model_path, row)
+    if not by_model:
+        raise Track23Halt("HALT_STAGE_C24_NO_VALIDATION_ROWS", "No finite Stage C 24d validation rows.")
+    best_path, values = min(by_model.items(), key=lambda item: (_mean(item[1]), str(item[0])))
+    row = meta[best_path]
+    return {
+        "status": "BEST_VAL_CHECKPOINT_SELECTED",
+        "source_model_path": best_path,
+        "model_label": str(row.get("model_label") or ""),
+        "checkpoint_update": int(row.get("checkpoint_update") or -1),
+        "validation_mean_best_obj": _mean(values),
+        "validation_row_count": len(values),
+        "obs_dim": 24,
+        "train_dir": train_dir.as_posix(),
+    }
+
+
+def write_stage_c24_training_report(path: Path, best: dict[str, Any]) -> None:
+    lines = [
+        "# Track23 Stage C 24d Training",
+        "",
+        f"Status: `{best.get('status')}`",
+        f"Best model: `{best.get('model_label')}` update `{best.get('checkpoint_update')}`",
+        f"Validation mean best_obj: {_float(best.get('validation_mean_best_obj')):.6f}",
+        f"Best-val checkpoint: `{best.get('best_model_path')}`",
+    ]
+    path.write_text("\n".join(lines) + "\n", encoding="utf-8", newline="\n")
+
+
+def run_stage_c24_formal_eval(
+    args: argparse.Namespace,
+    output_dir: Path,
+    progress_path: Path,
+    best: dict[str, Any],
+) -> list[dict[str, Any]]:
     from .pilot08_eval_tools import run_policy_row
     from .pilot09_rescue_tools import run_alpha_ucb_meta_row
 
-    if not PILOT08_UPDATE_0240.is_file():
-        raise Track23Halt("HALT_STAGE_C_MISSING_PILOT08_CKPT", f"Missing checkpoint: {PILOT08_UPDATE_0240}")
-    rows_path = output_dir / "stage_c_no_tuning_parity_rows.csv"
+    model_path = Path(str(best.get("best_model_path") or ""))
+    if not model_path.is_file():
+        raise Track23Halt("HALT_STAGE_C24_MISSING_BEST_VAL", f"Missing best-val 24d checkpoint: {model_path}")
+    rows_path = output_dir / "stage_c24_no_tuning_parity_rows.csv"
     rows = track22._read_csv(rows_path) if args.resume else []
     completed = {(row.get("algorithm"), row.get("bundle"), int(row.get("seed") or 0)) for row in rows}
     bundles = [EUK100_01, EUK100_02, EUK100_03]
@@ -538,7 +900,7 @@ def run_stage_c_parity(args: argparse.Namespace, output_dir: Path, progress_path
         role = Path(bundle).name.split("__", 1)[0]
         for seed in _parse_int_list(args.stage_c_seeds):
             tasks = (
-                ("ppo_block_best", "ppo_block"),
+                ("ppo_block_best_24d", "ppo_block"),
                 ("alpha_ucb_block", "alpha_ucb_block"),
                 ("best_static_meta", "best_static_meta"),
                 ("official_winner_kernel", "official_winner_kernel"),
@@ -567,9 +929,9 @@ def run_stage_c_parity(args: argparse.Namespace, output_dir: Path, progress_path
                         bundle=bundle,
                         seed=int(seed),
                         eval_budget=int(args.stage_c_eval_budget),
-                        model_path=PILOT08_UPDATE_0240 if algorithm == "ppo_block" else None,
-                        model_label="best" if algorithm == "ppo_block" else "",
-                        checkpoint_update_value=240 if algorithm == "ppo_block" else "",
+                        model_path=model_path if algorithm == "ppo_block" else None,
+                        model_label="best_val_24d" if algorithm == "ppo_block" else "",
+                        checkpoint_update_value=best.get("checkpoint_update", -1) if algorithm == "ppo_block" else "",
                         bundle_role=role,
                         eval_mode="budget",
                         runtime_target_seconds=0.0,
@@ -578,11 +940,124 @@ def run_stage_c_parity(args: argparse.Namespace, output_dir: Path, progress_path
                     )
                     if algorithm == "ppo_block":
                         row["algorithm"] = label
+                        row["model_path"] = model_path.as_posix()
+                        row["obs_dim"] = 24
                 row["stage"] = "C"
                 row["track"] = "track23"
                 rows.append(row)
                 track22._write_csv(rows_path, rows)
     return rows
+
+
+def run_stage_c_pilot16_reval(
+    args: argparse.Namespace,
+    output_dir: Path,
+    progress_path: Path,
+    main_rows: list[dict[str, Any]],
+) -> dict[str, Any]:
+    from .pilot17_allscale_eval_tools import run_pilot16_ppo_row
+
+    rows_path = output_dir / "stage_c_pilot16_clean_reval_rows.csv"
+    rows = track22._read_csv(rows_path) if args.resume and rows_path.is_file() else []
+    completed = {(row.get("algorithm"), row.get("bundle"), int(row.get("seed") or 0)) for row in rows}
+    baselines = [dict(row) for row in main_rows if str(row.get("algorithm")) not in STAGE_C_DR_ALGORITHMS]
+    for row in baselines:
+        key = (row.get("algorithm"), row.get("bundle"), int(row.get("seed") or 0))
+        if key not in completed:
+            row["stage"] = "C_pilot16_reval"
+            row["track"] = "track23_d2"
+            row["sidecar_source"] = "stage_c24_baseline_copy"
+            rows.append(row)
+            completed.add(key)
+    if not PILOT16_FINAL_MODEL.is_file():
+        raise Track23Halt("HALT_STAGE_C_PILOT16_MISSING_MODEL", f"Missing Pilot16 final model: {PILOT16_FINAL_MODEL}")
+    for bundle in [EUK100_01, EUK100_02, EUK100_03]:
+        role = Path(bundle).name.split("__", 1)[0]
+        for seed in _parse_int_list(args.stage_c_seeds):
+            key = ("pilot16_final_clean", bundle, int(seed))
+            if key in completed:
+                continue
+            _log(progress_path, f"Stage C pilot16 clean reval bundle={bundle} seed={seed}")
+            row = run_pilot16_ppo_row(
+                model_path=PILOT16_FINAL_MODEL,
+                bundle=bundle,
+                seed=int(seed),
+                eval_budget=int(args.stage_c_eval_budget),
+                block_size=int(args.stage_c_pilot16_block_size),
+                algorithm="pilot16_final_clean",
+                model_label="pilot16_final",
+                checkpoint_update_value=375,
+                bundle_role=role,
+                selection_subset="track23_d2_sidecar",
+            )
+            row["stage"] = "C_pilot16_reval"
+            row["track"] = "track23_d2"
+            rows.append(row)
+            completed.add(key)
+            track22._write_csv(rows_path, rows)
+    track22._write_csv(rows_path, rows)
+    return summarize_stage_c_pilot16_reval(rows)
+
+
+def summarize_stage_c_pilot16_reval(rows: list[dict[str, Any]]) -> dict[str, Any]:
+    by_bundle: dict[str, dict[str, list[float]]] = {}
+    eval_fracs: list[float] = []
+    for row in rows:
+        algorithm = str(row.get("algorithm"))
+        bundle = str(row.get("bundle"))
+        value = _float(row.get("best_obj"))
+        if math.isfinite(value):
+            by_bundle.setdefault(bundle, {}).setdefault(algorithm, []).append(value)
+        if algorithm == "pilot16_final_clean":
+            eval_fracs.append(_float(row.get("actual_eval_fraction")))
+    bundle_rows = []
+    gaps = []
+    for bundle, algos in sorted(by_bundle.items()):
+        pilot_mean = _mean(algos.get("pilot16_final_clean", []))
+        non_dr = {algo: _mean(values) for algo, values in algos.items() if algo != "pilot16_final_clean" and values}
+        strongest_algo, strongest_mean = min(non_dr.items(), key=lambda item: item[1]) if non_dr else ("", math.nan)
+        gap = _improvement_pct(strongest_mean, pilot_mean) if math.isfinite(strongest_mean) and math.isfinite(pilot_mean) else math.nan
+        if math.isfinite(gap):
+            gaps.append(gap)
+        bundle_rows.append(
+            {
+                "bundle": bundle,
+                "pilot16_mean_obj": pilot_mean,
+                "strongest_non_dr_algorithm": strongest_algo,
+                "strongest_non_dr_mean_obj": strongest_mean,
+                "pilot16_gap_pct_vs_strongest_non_dr": gap,
+            }
+        )
+    return {
+        "status": "PILOT16_CLEAN_REVAL_COMPLETE",
+        "row_count": len(rows),
+        "old_pilot17_reported_allscale_gain_pct": 0.57,
+        "mean_gap_pct_vs_strongest_non_dr": _mean(gaps),
+        "min_gap_pct_vs_strongest_non_dr": min(gaps) if gaps else math.nan,
+        "mean_actual_eval_fraction": _mean([value for value in eval_fracs if math.isfinite(value)]),
+        "bundle_rows": bundle_rows,
+        "verdict_role": "sidecar_only_not_stage_c_gate",
+    }
+
+
+def write_stage_c_pilot16_report(path: Path, summary: dict[str, Any]) -> None:
+    lines = [
+        "# Track23 Stage C Pilot16 Clean Re-evaluation",
+        "",
+        f"Status: `{summary.get('status')}`",
+        f"Old Pilot17 reported all-scale gain: {_float(summary.get('old_pilot17_reported_allscale_gain_pct')):.3f}%",
+        f"Clean mean gap vs strongest non-DR: {_float(summary.get('mean_gap_pct_vs_strongest_non_dr')):.3f}%",
+        f"Clean min gap vs strongest non-DR: {_float(summary.get('min_gap_pct_vs_strongest_non_dr')):.3f}%",
+        f"Mean actual eval fraction: {_float(summary.get('mean_actual_eval_fraction')):.3f}",
+        "",
+        "## Bundles",
+        "",
+    ]
+    for row in summary.get("bundle_rows", []):
+        lines.append(
+            f"- {Path(str(row['bundle'])).name}: pilot16 mean={_float(row['pilot16_mean_obj']):.6f}, strongest={row['strongest_non_dr_algorithm']} mean={_float(row['strongest_non_dr_mean_obj']):.6f}, gap={_float(row['pilot16_gap_pct_vs_strongest_non_dr']):.3f}%"
+        )
+    path.write_text("\n".join(lines) + "\n", encoding="utf-8", newline="\n")
 
 
 def summarize_stage_c_parity(rows: list[dict[str, Any]]) -> dict[str, Any]:
@@ -599,11 +1074,14 @@ def summarize_stage_c_parity(rows: list[dict[str, Any]]) -> dict[str, Any]:
         by_bundle.setdefault(str(row.get("bundle")), {}).setdefault(str(row.get("algorithm")), []).append(_float(row.get("best_obj")))
     bundle_rows = []
     for bundle, algos in sorted(by_bundle.items()):
-        dr_mean = _mean(algos.get("ppo_block_best", []))
+        dr_values: list[float] = []
+        for algo in STAGE_C_DR_ALGORITHMS:
+            dr_values.extend(algos.get(algo, []))
+        dr_mean = _mean(dr_values)
         non_dr = {
             algo: _mean(values)
             for algo, values in algos.items()
-            if algo != "ppo_block_best" and values
+            if algo not in STAGE_C_DR_ALGORITHMS and values
         }
         strongest_algo, strongest_mean = min(non_dr.items(), key=lambda item: item[1]) if non_dr else ("", math.nan)
         gap = _improvement_pct(strongest_mean, dr_mean) if math.isfinite(strongest_mean) and math.isfinite(dr_mean) else math.nan
@@ -773,7 +1251,7 @@ def write_stage_a_report(path: Path, summary: dict[str, Any]) -> None:
 
 def write_stage_c_report(path: Path, summary: dict[str, Any]) -> None:
     lines = [
-        "# Track23 Stage C No-Tuning Parity",
+        "# Track23 Stage C 24d No-Tuning Parity",
         "",
         f"Verdict: `{summary.get('status')}`",
         f"Reason: {summary.get('reason')}",
@@ -784,6 +1262,28 @@ def write_stage_c_report(path: Path, summary: dict[str, Any]) -> None:
     for row in summary.get("bundle_rows", []):
         lines.append(
             f"- {Path(str(row['bundle'])).name}: DR mean={_float(row['dr_mean_obj']):.6f}, strongest={row['strongest_non_dr_algorithm']} mean={_float(row['strongest_non_dr_mean_obj']):.6f}, gap={_float(row['dr_gap_pct_vs_strongest_non_dr']):.3f}%"
+        )
+    training = summary.get("training") or {}
+    pilot16 = summary.get("pilot16_reval") or {}
+    if training:
+        lines.extend(
+            [
+                "",
+                "## 24d Training",
+                "",
+                f"- Best checkpoint: `{training.get('best_model_path', '')}`",
+                f"- Validation mean best_obj: {_float(training.get('validation_mean_best_obj')):.6f}",
+            ]
+        )
+    if pilot16:
+        lines.extend(
+            [
+                "",
+                "## Pilot16 Sidecar",
+                "",
+                f"- Role: `{pilot16.get('verdict_role', 'sidecar_only_not_stage_c_gate')}`",
+                f"- Clean mean gap vs strongest non-DR: {_float(pilot16.get('mean_gap_pct_vs_strongest_non_dr')):.3f}%",
+            ]
         )
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text("\n".join(lines) + "\n", encoding="utf-8", newline="\n")
@@ -825,8 +1325,12 @@ def write_final_report(path: Path, state: dict[str, Any]) -> None:
         "- `stage_a_destroy_ladder_rows.csv`",
         "- `stage_a_destroy_ladder_summary.json`",
         "- `track22_carbon_timing_rows.csv`",
-        "- `stage_c_no_tuning_parity_rows.csv`",
+        "- `stage_b_carbon_scenario_knobs.csv`",
+        "- `stage_c_train24/best_val_checkpoint.json`",
+        "- `stage_c24_no_tuning_parity_rows.csv`",
+        "- `stage_c_pilot16_clean_reval_rows.csv`",
         "- `stage_d_track18/track18_headroom.csv`",
+        "- `stage_d_dynamic_summary.json`",
         "- `track23_final_report.json`",
     ]
     path.parent.mkdir(parents=True, exist_ok=True)
@@ -837,7 +1341,9 @@ def _claim_lines(state: dict[str, Any]) -> list[str]:
     lines: list[str] = []
     stage_c = state.get("stage_c") or {}
     if stage_c.get("status") == NO_TUNING_PARITY_CLEAN:
-        lines.append("- Now writable: DR no-tuning parity held against the strongest non-DR opponent in Stage C; evidence `stage_c_no_tuning_parity_rows.csv`.")
+        lines.append("- Now writable: DR no-tuning parity held against the strongest non-DR opponent in Stage C using a current 24d checkpoint; evidence `stage_c24_no_tuning_parity_rows.csv` and `stage_c_train24/best_val_checkpoint.json`.")
+    elif stage_c.get("status") == STAGE_ERROR:
+        lines.append("- Not yet writable: no-tuning parity hit a Stage C runtime/interface error; evidence `stage_c_error.json`.")
     else:
         lines.append("- Not yet writable: no-tuning parity still needs a clean Stage C pass.")
     stage_a2 = state.get("stage_a2") or {}
@@ -939,6 +1445,33 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     run_parser.add_argument("--stage-c-eval-budget", type=int, default=3000)
     run_parser.add_argument("--stage-c-block-size", type=int, default=PILOT08_BLOCK_SIZE)
     run_parser.add_argument("--stage-c-official-max-runtime-seconds", type=float, default=900.0)
+    run_parser.add_argument("--stage-c-train24-seed", type=int, default=3201)
+    run_parser.add_argument("--stage-c-train24-timesteps", type=int, default=7200)
+    run_parser.add_argument("--stage-c-train24-max-seconds", type=float, default=10800.0)
+    run_parser.add_argument("--stage-c-train24-eval-budget", type=int, default=120)
+    run_parser.add_argument("--stage-c-train24-block-size", type=int, default=PILOT08_BLOCK_SIZE)
+    run_parser.add_argument("--stage-c-train24-validation-eval-budget", type=int, default=600)
+    run_parser.add_argument("--stage-c-train24-validation-seeds", default="2701,2702")
+    run_parser.add_argument("--stage-c-train24-num-actors", type=int, default=6)
+    run_parser.add_argument("--stage-c-train24-hidden-size", type=int, default=128)
+    run_parser.add_argument("--stage-c-train24-rollout-min-steps", type=int, default=256)
+    run_parser.add_argument("--stage-c-train24-rollout-min-episodes", type=int, default=12)
+    run_parser.add_argument("--stage-c-train24-phase-min-episodes", type=int, default=200)
+    run_parser.add_argument("--stage-c-train24-phase-learning-rates", default="0.0001,0.00005,0.00001")
+    run_parser.add_argument("--stage-c-train24-phase-entropy-coefs", default="0.02,0.01,0.005")
+    run_parser.add_argument("--stage-c-train24-phase-clip-ranges", default="0.20,0.15,0.10")
+    run_parser.add_argument("--stage-c-train24-phase-value-clip-ranges", default="")
+    run_parser.add_argument("--stage-c-train24-phase-advantage-clip-ranges", default="")
+    run_parser.add_argument("--stage-c-train24-device", choices=("auto", "cpu", "cuda"), default="cuda")
+    run_parser.add_argument("--stage-c-train24-learning-rate", type=float, default=1e-4)
+    run_parser.add_argument("--stage-c-train24-clip-range", type=float, default=0.1)
+    run_parser.add_argument("--stage-c-train24-value-coef", type=float, default=0.5)
+    run_parser.add_argument("--stage-c-train24-entropy-coef", type=float, default=0.01)
+    run_parser.add_argument("--stage-c-train24-epochs", type=int, default=2)
+    run_parser.add_argument("--stage-c-train24-minibatch-size", type=int, default=128)
+    run_parser.add_argument("--stage-c-train24-max-grad-norm", type=float, default=0.5)
+    run_parser.add_argument("--stage-c-train24-target-kl", type=float, default=0.08)
+    run_parser.add_argument("--stage-c-pilot16-block-size", type=int, default=4)
 
     run_parser.add_argument("--stage-d-bundles", default=",".join(final_track18.DEFAULT_BUNDLES))
     run_parser.add_argument("--stage-d-seeds", default="901,902,903,904,905,906,907,908,909,910")

@@ -168,8 +168,40 @@ def test_ppo_update_uses_old_log_probs_and_returns_metrics() -> None:
         value_clip_range=0.1,
     )
 
-    assert set(metrics) == {"policy_loss", "value_loss", "entropy", "approx_kl", "clip_fraction"}
+    assert set(metrics) == {"policy_loss", "value_loss", "entropy", "approx_kl", "clip_fraction", "target_kl_hit", "target_kl_value"}
     assert metrics["entropy"] > 0.0
+    assert metrics["target_kl_hit"] == 0.0
+
+
+def test_ppo_update_marks_target_kl_hit() -> None:
+    model = make_block_actor_critic(seed=2)
+    optimizer = torch.optim.Adam(model.parameters(), lr=1e-3)
+    episode = {
+        "observations": [[0.0] * BLOCK_OBSERVATION_SIZE, [0.1] * BLOCK_OBSERVATION_SIZE],
+        "actions": [[0, 0, 0, 0, 0], [1, 1, 1, 1, 1]],
+        "rewards": [0.1, 0.2],
+        "values": [0.0, 0.0],
+        "old_log_probs": [10.0, 10.0],
+        "bundle": "A",
+    }
+    batch = flatten_episodes([episode], gamma=0.99, gae_lambda=0.95)
+
+    metrics = ppo_update(
+        model,
+        optimizer,
+        batch,
+        epochs=2,
+        minibatch_size=2,
+        clip_range=0.2,
+        value_coef=0.5,
+        entropy_coef=0.01,
+        max_grad_norm=0.5,
+        value_clip_range=0.1,
+        target_kl=1e-9,
+    )
+
+    assert metrics["target_kl_hit"] == 1.0
+    assert metrics["target_kl_value"] > 1e-9
 
 
 def test_shared_baseline_subtracts_bundle_mean_before_normalization() -> None:
@@ -242,6 +274,23 @@ def test_train_parser_exposes_checkpoint_interval() -> None:
     args = parse_args(["train", "--output-dir", "solver/reports/dr_alns_ppo_v3_block_dr_alns/async_pilot/x"])
 
     assert args.checkpoint_every_updates == 10
+
+
+def test_train_parser_exposes_target_kl_and_max_train_seconds() -> None:
+    args = parse_args(
+        [
+            "train",
+            "--output-dir",
+            "solver/reports/dr_alns_ppo_v3_block_dr_alns/async_pilot/x",
+            "--target-kl",
+            "0.03",
+            "--max-train-seconds",
+            "12.5",
+        ]
+    )
+
+    assert args.target_kl == pytest.approx(0.03)
+    assert args.max_train_seconds == pytest.approx(12.5)
 
 
 def test_train_parser_exposes_meta_mode() -> None:
@@ -755,7 +804,9 @@ def test_async_actor_search_control_mode_uses_control_action_head(monkeypatch: p
 
 def test_async_reports_stay_under_async_pilot_dir(tmp_path: Path) -> None:
     allowed = Path("solver/reports/dr_alns_ppo_v3_block_dr_alns/async_pilot/self_check")
+    track23_allowed = Path("solver/reports/dr_alns_ppo_v3/final_track23/stage_c_train24")
     assert _checked_output_dir(allowed) == allowed
+    assert _checked_output_dir(track23_allowed) == track23_allowed
 
     with pytest.raises(ValueError, match="async PPO reports"):
         _checked_output_dir(tmp_path)
