@@ -2,11 +2,12 @@
 
 本工程只生成交稿前证据素材：ALNS 定型 gate、G3 baseline health、G4 stability、G5 T3/F2 material。它不自动写 TeX，不写算法胜负主张。
 
-Verdict: `ALNS_GATE_BLOCKED`
+Verdict: `MISSING`
 
 ## Phase Verdicts
 
-- phase_a: `ALNS_GATE_BLOCKED`
+- carbon_diagnostic: `MISSING`
+- phase_a: `ALNS_GATE_READY`
 - phase_b: `MISSING`
 - phase_c: `MISSING`
 - phase_d: `MISSING`

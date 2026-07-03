@@ -1,18 +1,25 @@
 {
   "algorithm_win_loss_claim": false,
-  "blocked_phase": "phase_a",
-  "final_material_verdict": "ALNS_GATE_BLOCKED",
-  "head": "4f23928729abd18d51a1f0cc05ba92fd002b48cf",
+  "blocked_phase": "phase_b",
+  "carbon_diagnostic_verdict": "NOT_RUN_NONBLOCKING",
+  "final_material_verdict": "MISSING",
+  "head": "8ec332e5d715f4680b93c6bb7d0881edf113739e",
   "not_paper_text": true,
   "phase_verdicts": {
-    "phase_a": "ALNS_GATE_BLOCKED",
+    "carbon_diagnostic": "MISSING",
+    "phase_a": "ALNS_GATE_READY",
     "phase_b": "MISSING",
     "phase_c": "MISSING",
     "phase_d": "MISSING"
   },
   "schema": "setp-e2-final-closure-decision.v1",
   "t3_baseline_set": null,
-  "t3_main_profile": null,
+  "t3_main_profile": {
+    "base_variant": "alns_e2_throughput",
+    "selected_components": [
+      "LOCAL_SEARCH"
+    ]
+  },
   "user_decisions_remaining": [
     "T3 table wording and paper posture",
     "Whether SA/TS absence is stated as limitation",

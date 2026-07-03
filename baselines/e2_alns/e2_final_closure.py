@@ -143,7 +143,22 @@ def main() -> int:
         write_json(output_dir / "decision.json", final_decision(output_dir))
         write_report(output_dir)
     write_hashes(output_dir)
-    print(json.dumps(read_json(output_dir / "decision.json") if (output_dir / "decision.json").exists() else {"phase": args.phase, "status": "DONE"}, ensure_ascii=False, indent=2, sort_keys=True))
+    if args.phase in {"decide", "all"} and (output_dir / "decision.json").exists():
+        payload = read_json(output_dir / "decision.json")
+    else:
+        phase_decision = {}
+        if args.phase == "phase-a":
+            phase_decision = read_json(output_dir / "phase_a_alns_gate/decision.json")
+        elif args.phase == "carbon-diagnostic":
+            phase_decision = read_json(output_dir / "phase_a_carbon_wallclock_diagnostic/decision.json")
+        elif args.phase == "phase-b":
+            phase_decision = read_json(output_dir / "phase_b_g3_baseline_health/decision.json")
+        elif args.phase == "phase-c":
+            phase_decision = read_json(output_dir / "phase_c_g4_stability/decision.json")
+        elif args.phase == "phase-d":
+            phase_decision = read_json(output_dir / "phase_d_g5_t3_material/decision.json")
+        payload = {"phase": args.phase, "phase_verdict": phase_decision.get("verdict", "DONE"), "status": "DONE"}
+    print(json.dumps(payload, ensure_ascii=False, indent=2, sort_keys=True))
     return 0
 
 
@@ -1477,7 +1492,7 @@ def clean_artifact_dir(output_dir: Path) -> None:
     if not output_dir.exists():
         return
     for path in sorted(output_dir.rglob("*"), reverse=True):
-        if path.name.startswith("._") or path.name in {"__pycache__", ".pytest_cache"}:
+        if path.name.startswith("._") or path.name in {"__pycache__", ".pytest_cache", ".tasks"}:
             if path.is_dir():
                 import shutil
 
