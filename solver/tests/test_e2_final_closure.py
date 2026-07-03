@@ -95,44 +95,131 @@ class E2FinalClosureTest(unittest.TestCase):
         self.assertEqual(len(paths), 1)
         self.assertTrue(paths[0].endswith("keep.txt"))
 
-    def test_phase_a_formal_under_eval_blocks_before_diagnostic(self) -> None:
+    def test_carbon_diagnostic_under_eval_is_nonblocking_partial(self) -> None:
+        rows = [
+            {
+                "phase": "A1_CARBON_WALLCLOCK_DIAGNOSTIC",
+                "scenario_type": "formal_goeke80",
+                "run_id": "carbon-wallclock-partial",
+                "gate_status": "OK",
+                "failure_reason": "Equal-wallclock diagnostic stopped at 5575/16000 evaluations.",
+                "actual_evals": 5575,
+                "eval_budget": 16000,
+                "eval_closure_required": False,
+            },
+        ]
+
+        blockers = closure.incomplete_rows(rows)
+
+        self.assertEqual(blockers, [])
+
+    def test_phase_a_decision_locks_throughput_and_ignores_carbon_gate_rows(self) -> None:
         rows = [
             {
                 "phase": "A1_CARBON_GATE",
                 "scenario_type": "formal_goeke80",
-                "run_id": "formal-under-eval",
+                "run_id": "superseded-carbon-under-eval",
+                "algorithm": "alns_e2_carbon",
+                "seed": 1,
                 "gate_status": "HALT_RUNTIME_UNDER_EVAL",
-                "failure_reason": "Stopped at 5575/16000 evaluations.",
                 "actual_evals": 5575,
                 "eval_budget": 16000,
-            },
-            {
-                "phase": "A1_CARBON_GATE",
-                "scenario_type": "diagnostic_280_override",
-                "run_id": "diagnostic-under-eval",
-                "gate_status": "HALT_RUNTIME_UNDER_EVAL",
-                "failure_reason": "Diagnostic arm should not define the formal blocker.",
-                "actual_evals": 5575,
-                "eval_budget": 16000,
-            },
+            }
         ]
+        for seed in (1, 2, 3):
+            rows.append(
+                {
+                    "phase": "A2_COMPONENT_ABLATION",
+                    "scenario_type": "formal_goeke80",
+                    "run_id": f"base-{seed}",
+                    "algorithm": "alns_e2_throughput",
+                    "components": "",
+                    "seed": seed,
+                    "gate_status": "OK",
+                    "actual_evals": 16000,
+                    "eval_budget": 16000,
+                    "best_cost": 100.0,
+                }
+            )
+            rows.append(
+                {
+                    "phase": "A2_COMPONENT_ABLATION",
+                    "scenario_type": "formal_goeke80",
+                    "run_id": f"local-search-{seed}",
+                    "algorithm": "alns_component_LOCAL_SEARCH",
+                    "components": "LOCAL_SEARCH",
+                    "seed": seed,
+                    "gate_status": "OK",
+                    "actual_evals": 16000,
+                    "eval_budget": 16000,
+                    "best_cost": 99.0,
+                }
+            )
 
-        blockers = closure.phase_a_formal_blockers(rows)
+        decision = closure.decide_phase_a(rows)
 
-        self.assertEqual(len(blockers), 1)
-        self.assertEqual(blockers[0]["run_id"], "formal-under-eval")
+        self.assertEqual(decision["verdict"], "ALNS_GATE_READY")
+        self.assertEqual(decision["t3_main_variant"], "alns_e2_throughput")
+        self.assertEqual(decision["t3_main_profile"]["base_variant"], "alns_e2_throughput")
+        self.assertEqual(decision["selected_components"], ["LOCAL_SEARCH"])
 
-    def test_final_decision_surfaces_phase_a_blocker(self) -> None:
+    def test_phase_a_schedules_progressive_component_stack_retest(self) -> None:
+        rows = []
+        for seed in (1, 2, 3):
+            rows.extend(
+                [
+                    {
+                        "phase": "A2_COMPONENT_ABLATION",
+                        "algorithm": "alns_e2_throughput",
+                        "components": "",
+                        "seed": seed,
+                        "gate_status": "OK",
+                        "actual_evals": 16000,
+                        "eval_budget": 16000,
+                        "best_cost": 100.0,
+                    },
+                    {
+                        "phase": "A2_COMPONENT_ABLATION",
+                        "algorithm": "alns_component_LOCAL_SEARCH",
+                        "components": "LOCAL_SEARCH",
+                        "seed": seed,
+                        "gate_status": "OK",
+                        "actual_evals": 16000,
+                        "eval_budget": 16000,
+                        "best_cost": 99.0,
+                    },
+                    {
+                        "phase": "A2_COMPONENT_ABLATION",
+                        "algorithm": "alns_component_ROUTE_ELIMINATION",
+                        "components": "ROUTE_ELIMINATION",
+                        "seed": seed,
+                        "gate_status": "OK",
+                        "actual_evals": 16000,
+                        "eval_budget": 16000,
+                        "best_cost": 98.0,
+                    },
+                ]
+            )
+
+        decision = closure.decide_phase_a(rows)
+
+        self.assertEqual(decision["stack_retest_tasks"], ["ROUTE_ELIMINATION", "LOCAL_SEARCH"])
+
+    def test_final_decision_continues_after_throughput_phase_a_ready(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
             phase_a = root / "phase_a_alns_gate"
             phase_a.mkdir(parents=True)
-            (phase_a / "decision.json").write_text('{"verdict":"ALNS_GATE_BLOCKED"}', encoding="utf-8")
+            (phase_a / "decision.json").write_text(
+                '{"verdict":"ALNS_GATE_READY","t3_main_profile":{"base_variant":"alns_e2_throughput","selected_components":[]}}',
+                encoding="utf-8",
+            )
 
             decision = closure.final_decision(root)
 
-        self.assertEqual(decision["blocked_phase"], "phase_a")
-        self.assertEqual(decision["final_material_verdict"], "ALNS_GATE_BLOCKED")
+        self.assertEqual(decision["blocked_phase"], "phase_b")
+        self.assertEqual(decision["final_material_verdict"], "MISSING")
+        self.assertEqual(decision["t3_main_profile"]["base_variant"], "alns_e2_throughput")
 
 
 if __name__ == "__main__":

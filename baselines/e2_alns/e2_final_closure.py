@@ -17,6 +17,7 @@ import math
 import os
 from pathlib import Path
 import re
+import shutil
 import statistics
 import subprocess
 import sys
@@ -82,7 +83,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--output-dir", default=str(OUTPUT_DIR))
     parser.add_argument(
         "--phase",
-        choices=["preflight", "phase-a", "phase-b", "phase-c", "phase-d", "decide", "all"],
+        choices=["preflight", "phase-a", "carbon-diagnostic", "phase-b", "phase-c", "phase-d", "decide", "all"],
         default="all",
     )
     parser.add_argument("--eval-budget", type=int, default=16000)
@@ -121,6 +122,8 @@ def main() -> int:
         return 0
     if args.phase in {"phase-a", "all"}:
         run_phase_a(output_dir / "phase_a_alns_gate", seeds=seeds, eval_budget=args.eval_budget, workers=args.workers, force=args.force)
+    if args.phase in {"carbon-diagnostic"}:
+        run_carbon_diagnostic(output_dir / "phase_a_carbon_wallclock_diagnostic", seeds=seeds, eval_budget=args.eval_budget, workers=args.workers, force=args.force)
     if args.phase in {"phase-b", "all"}:
         run_phase_b(output_dir / "phase_b_g3_baseline_health", seeds=seeds, eval_budget=args.eval_budget, workers=args.workers, force=args.force)
     if args.phase in {"phase-c", "all"}:
@@ -193,22 +196,8 @@ def preflight() -> dict[str, Any]:
 
 def run_phase_a(phase_dir: Path, *, seeds: list[int], eval_budget: int, workers: int, force: bool) -> None:
     phase_dir.mkdir(parents=True, exist_ok=True)
+    archive_dir = archive_superseded_carbon_gate(phase_dir)
     rows = read_csv(phase_dir / "raw_runs.csv")
-    formal_blockers = phase_a_formal_blockers(rows)
-    if formal_blockers:
-        write_phase_a_blocked(phase_dir, rows, formal_blockers)
-        return
-    for formal_tasks in make_phase_a_carbon_gate_batches(phase_dir, seeds=seeds, eval_budget=eval_budget, scenario_type="formal_goeke80"):
-        rows = run_tasks(phase_dir, formal_tasks, workers=workers, force=force)
-        write_phase_a_common_outputs(phase_dir, rows)
-        formal_blockers = phase_a_formal_blockers(rows)
-        if formal_blockers:
-            write_phase_a_blocked(phase_dir, rows, formal_blockers)
-            return
-
-    diagnostic_tasks = make_phase_a_carbon_gate_tasks(phase_dir, seeds=seeds, eval_budget=eval_budget, scenario_type="diagnostic_280_override")
-    rows = run_tasks(phase_dir, diagnostic_tasks, workers=workers, force=force)
-    write_phase_a_common_outputs(phase_dir, rows)
 
     tasks: list[dict[str, Any]] = []
     for component in ("BASE", *COMPONENT_ORDER):
@@ -231,7 +220,7 @@ def run_phase_a(phase_dir: Path, *, seeds: list[int], eval_budget: int, workers:
     rows = run_tasks(phase_dir, tasks, workers=workers, force=force)
     write_phase_a_common_outputs(phase_dir, rows)
     decision = decide_phase_a(rows)
-    if decision.get("stack_retest_tasks"):
+    while decision.get("stack_retest_tasks"):
         stack_tasks = [
             make_task(
                 phase="A3_COMPONENT_STACK_RETEST",
@@ -250,7 +239,50 @@ def run_phase_a(phase_dir: Path, *, seeds: list[int], eval_budget: int, workers:
         rows = run_tasks(phase_dir, stack_tasks, workers=workers, force=force)
         write_phase_a_common_outputs(phase_dir, rows)
         decision = decide_phase_a(rows)
+    if archive_dir:
+        decision["superseded_carbon_gate_archive"] = rel(archive_dir)
     write_phase_a_decision_outputs(phase_dir, rows, decision)
+
+
+def archive_superseded_carbon_gate(phase_dir: Path) -> Path | None:
+    decision_path = phase_dir / "decision.json"
+    raw_path = phase_dir / "raw_runs.csv"
+    if not decision_path.exists() or not raw_path.exists():
+        return None
+    decision = read_json(decision_path)
+    rows = read_csv(raw_path)
+    has_carbon_gate = any(row.get("phase") == "A1_CARBON_GATE" for row in rows)
+    if decision.get("verdict") != "ALNS_GATE_BLOCKED" or not has_carbon_gate:
+        return None
+    archive_dir = phase_dir.with_name("phase_a_carbon_gate_superseded_under_eval")
+    if archive_dir.exists():
+        archive_dir = phase_dir.with_name(f"phase_a_carbon_gate_superseded_under_eval_{int(time.time())}")
+    shutil.move(str(phase_dir), str(archive_dir))
+    phase_dir.mkdir(parents=True, exist_ok=True)
+    return archive_dir
+
+
+def run_carbon_diagnostic(phase_dir: Path, *, seeds: list[int], eval_budget: int, workers: int, force: bool) -> None:
+    phase_dir.mkdir(parents=True, exist_ok=True)
+    tasks: list[dict[str, Any]] = []
+    for scenario_type in ("formal_goeke80", "diagnostic_280_override"):
+        tasks.extend(
+            make_phase_a_carbon_gate_tasks(
+                phase_dir,
+                seeds=seeds,
+                eval_budget=eval_budget,
+                scenario_type=scenario_type,
+                phase="A1_CARBON_WALLCLOCK_DIAGNOSTIC",
+                allow_under_eval=True,
+            )
+        )
+    rows = run_tasks(phase_dir, tasks, workers=workers, force=force)
+    write_phase_a_common_outputs(phase_dir, rows)
+    decision = decide_carbon_diagnostic(rows)
+    write_json(phase_dir / "decision.json", decision)
+    write_csv(phase_dir / "carbon_wallclock_summary.csv", carbon_wallclock_summary(rows))
+    write_phase_report(phase_dir, "Phase A Carbon Wallclock Diagnostic", decision)
+    write_hashes(phase_dir)
 
 
 def write_phase_a_blocked(phase_dir: Path, rows: list[dict[str, Any]], formal_blockers: list[dict[str, Any]]) -> None:
@@ -268,14 +300,22 @@ def write_phase_a_blocked(phase_dir: Path, rows: list[dict[str, Any]], formal_bl
     write_phase_a_decision_outputs(phase_dir, rows, decision)
 
 
-def make_phase_a_carbon_gate_batches(phase_dir: Path, *, seeds: list[int], eval_budget: int, scenario_type: str) -> list[list[dict[str, Any]]]:
+def make_phase_a_carbon_gate_batches(
+    phase_dir: Path,
+    *,
+    seeds: list[int],
+    eval_budget: int,
+    scenario_type: str,
+    phase: str = "A1_CARBON_GATE",
+    allow_under_eval: bool = False,
+) -> list[list[dict[str, Any]]]:
     batches: list[list[dict[str, Any]]] = []
     for category, instance in ALNS_GATE_INSTANCES:
         for algorithm in ALNS_GATE_ALGORITHMS:
             batches.append(
                 [
                     make_task(
-                        phase="A1_CARBON_GATE",
+                        phase=phase,
                         phase_dir=phase_dir,
                         category=category,
                         instance=instance,
@@ -284,6 +324,7 @@ def make_phase_a_carbon_gate_batches(phase_dir: Path, *, seeds: list[int], eval_
                         eval_budget=eval_budget,
                         runtime_cap_seconds=runtime_cap_for_instance(instance),
                         scenario_type=scenario_type,
+                        allow_under_eval=allow_under_eval,
                     )
                     for seed in seeds
                 ]
@@ -291,8 +332,27 @@ def make_phase_a_carbon_gate_batches(phase_dir: Path, *, seeds: list[int], eval_
     return batches
 
 
-def make_phase_a_carbon_gate_tasks(phase_dir: Path, *, seeds: list[int], eval_budget: int, scenario_type: str) -> list[dict[str, Any]]:
-    return [task for batch in make_phase_a_carbon_gate_batches(phase_dir, seeds=seeds, eval_budget=eval_budget, scenario_type=scenario_type) for task in batch]
+def make_phase_a_carbon_gate_tasks(
+    phase_dir: Path,
+    *,
+    seeds: list[int],
+    eval_budget: int,
+    scenario_type: str,
+    phase: str = "A1_CARBON_GATE",
+    allow_under_eval: bool = False,
+) -> list[dict[str, Any]]:
+    return [
+        task
+        for batch in make_phase_a_carbon_gate_batches(
+            phase_dir,
+            seeds=seeds,
+            eval_budget=eval_budget,
+            scenario_type=scenario_type,
+            phase=phase,
+            allow_under_eval=allow_under_eval,
+        )
+        for task in batch
+    ]
 
 
 def write_phase_a_common_outputs(phase_dir: Path, rows: list[dict[str, Any]]) -> None:
@@ -304,7 +364,9 @@ def write_phase_a_common_outputs(phase_dir: Path, rows: list[dict[str, Any]]) ->
 def write_phase_a_decision_outputs(phase_dir: Path, rows: list[dict[str, Any]], decision: dict[str, Any]) -> None:
     write_json(phase_dir / "phase_a_decision.json", decision)
     write_json(phase_dir / "decision.json", decision)
-    write_csv(phase_dir / "carbon_gate_summary.csv", summarize_rows(rows, keys=("scenario_type", "category", "instance", "algorithm")))
+    carbon_rows = [row for row in rows if str(row.get("phase", "")).startswith("A1_CARBON")]
+    write_csv(phase_dir / "phase_a_summary.csv", summarize_rows(rows, keys=("scenario_type", "category", "instance", "algorithm")))
+    write_csv(phase_dir / "carbon_gate_summary.csv", summarize_rows(carbon_rows, keys=("scenario_type", "category", "instance", "algorithm")))
     write_csv(phase_dir / "component_ablation_summary.csv", summarize_rows([row for row in rows if str(row.get("phase")).startswith("A2") or str(row.get("phase")).startswith("A3")], keys=("algorithm", "components")))
     write_phase_report(phase_dir, "Phase A ALNS Gate", decision)
     write_hashes(phase_dir)
@@ -483,6 +545,7 @@ def make_task(
     scenario_type: str,
     components: list[str] | None = None,
     t3_profile: dict[str, Any] | None = None,
+    allow_under_eval: bool = False,
 ) -> dict[str, Any]:
     run_id = run_id_for(phase, scenario_type, category, instance, algorithm, seed, components or [])
     checkpoint = phase_dir / "checkpoints" / f"{run_id}.json"
@@ -500,6 +563,8 @@ def make_task(
         "runtime_cap_seconds": float(runtime_cap_seconds),
         "scenario_type": scenario_type,
         "price_override": price_override_payload(scenario_type),
+        "allow_under_eval": bool(allow_under_eval),
+        "eval_closure_required": not bool(allow_under_eval),
         "components": list(components or []),
         "t3_profile": t3_profile or {},
         "checkpoint_path": str(checkpoint),
@@ -649,8 +714,12 @@ def run_task(task: dict[str, Any]) -> dict[str, Any]:
         failure_reason = "; ".join(str(item) for item in violations[:3])
         violation_count = len(violations)
     elif actual_evals < int(task["eval_budget"]):
-        status = "HALT_RUNTIME_UNDER_EVAL" if time.perf_counter() - started >= float(task["runtime_cap_seconds"]) else "HALT_UNDER_EVAL"
-        failure_reason = f"Stopped at {actual_evals}/{task['eval_budget']} evaluations."
+        if truthy(task.get("allow_under_eval")):
+            status = "OK_WALLCLOCK_PARTIAL"
+            failure_reason = f"Equal-wallclock diagnostic stopped at {actual_evals}/{task['eval_budget']} evaluations."
+        else:
+            status = "HALT_RUNTIME_UNDER_EVAL" if time.perf_counter() - started >= float(task["runtime_cap_seconds"]) else "HALT_UNDER_EVAL"
+            failure_reason = f"Stopped at {actual_evals}/{task['eval_budget']} evaluations."
     metrics = evaluate(solution, bundle.instance, bundle.carbon_profile, prices) if solution is not None else {}
     row = {
         "run_id": task["run_id"],
@@ -665,10 +734,12 @@ def run_task(task: dict[str, Any]) -> dict[str, Any]:
         "price_override": json.dumps(task.get("price_override"), ensure_ascii=False, sort_keys=True) if task.get("price_override") is not None else "",
         "components": "|".join(task.get("components", [])),
         "status": status,
-        "gate_status": "OK" if status == "OK" else status,
+        "gate_status": "OK" if status in {"OK", "OK_WALLCLOCK_PARTIAL"} else status,
         "failure_reason": failure_reason,
         "eval_budget": int(task["eval_budget"]),
         "actual_evals": actual_evals,
+        "eval_closed": actual_evals >= int(task["eval_budget"]),
+        "eval_closure_required": not truthy(task.get("allow_under_eval")),
         "runtime_cap_seconds": float(task["runtime_cap_seconds"]),
         "elapsed_seconds": time.perf_counter() - started,
         "evals_per_second": safe_ratio(actual_evals, time.perf_counter() - started),
@@ -766,31 +837,54 @@ def flags_for_profile(base_variant: str, components: list[str]) -> tuple[dict[st
 
 
 def decide_phase_a(rows: list[dict[str, Any]]) -> dict[str, Any]:
-    failures = incomplete_rows(rows)
+    phase_rows = [row for row in rows if row.get("phase") in {"A2_COMPONENT_ABLATION", "A3_COMPONENT_STACK_RETEST"}]
+    failures = incomplete_rows(phase_rows)
     if failures:
         return {"schema": "setp-e2-final-phase-a-decision.v1", "verdict": "ALNS_GATE_BLOCKED", "failure_count": len(failures), "failure_sample": failures[:20]}
     component_decisions = component_adoption(rows)
-    selected_components = [item["component"] for item in component_decisions if item["adopted"]]
-    stack_rows = [row for row in rows if row.get("phase") == "A3_COMPONENT_STACK_RETEST"]
-    if len(selected_components) > 1 and not stack_rows:
+    candidates = [item["component"] for item in component_decisions if item["adopted"]]
+    selected_components: list[str] = []
+    stack_results: list[dict[str, Any]] = []
+    if candidates:
+        selected_components = [candidates[0]]
+    for component in candidates[1:]:
+        trial_components = [*selected_components, component]
+        trial_rows = component_stack_rows(rows, trial_components)
+        expected = component_seed_count(rows)
+        if len(trial_rows) < expected:
+            return {
+                "schema": "setp-e2-final-phase-a-decision.v1",
+                "verdict": "ALNS_GATE_READY",
+                "t3_main_variant": "alns_e2_throughput",
+                "stack_retest_tasks": trial_components,
+                "component_decisions": component_decisions,
+                "selected_components_so_far": selected_components,
+                "note": "Multiple components passed one-at-a-time gate; next progressive stack retest has been scheduled.",
+            }
+        stack_result = component_stack_result(rows, trial_components)
+        stack_results.append(stack_result)
+        if stack_result["adopted"]:
+            selected_components = trial_components
+    if not candidates and not phase_rows:
         return {
             "schema": "setp-e2-final-phase-a-decision.v1",
-            "verdict": "ALNS_GATE_READY",
-            "stack_retest_tasks": selected_components,
-            "component_decisions": component_decisions,
-            "note": "Multiple components passed one-at-a-time gate; stack retest has been scheduled.",
+            "verdict": "ALNS_GATE_BLOCKED",
+            "failure_count": 1,
+            "failure_sample": [{"status": "MISSING_A2_COMPONENT_ABLATION", "reason": "No throughput component rows were collected."}],
         }
-    if stack_rows and not component_stack_passes(rows, selected_components):
-        selected_components = []
-    main_variant, carbon_evidence = choose_t3_main_variant(rows)
     return {
         "schema": "setp-e2-final-phase-a-decision.v1",
         "verdict": "ALNS_GATE_READY",
-        "t3_main_variant": main_variant,
+        "t3_main_variant": "alns_e2_throughput",
         "selected_components": selected_components,
-        "t3_main_profile": {"base_variant": main_variant, "selected_components": selected_components},
+        "t3_main_profile": {"base_variant": "alns_e2_throughput", "selected_components": selected_components},
         "component_decisions": component_decisions,
-        "carbon_evidence": carbon_evidence,
+        "component_stack_results": stack_results,
+        "carbon_operator_policy": "DIAGNOSTIC_WALLCLOCK_NONBLOCKING",
+        "carbon_evidence": {
+            "t3_main_variant_locked_by_user": "alns_e2_throughput",
+            "carbon_operators": "diagnostic evidence only; never changes T3 main variant in this run",
+        },
         "algorithm_win_loss_claim": False,
     }
 
@@ -815,11 +909,110 @@ def component_adoption(rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
     return sorted(decisions, key=lambda item: as_float(item["mean_improvement_fraction"]), reverse=True)
 
 
-def component_stack_passes(rows: list[dict[str, Any]], components: list[str]) -> bool:
+def component_seed_count(rows: list[dict[str, Any]]) -> int:
+    return len({int(row["seed"]) for row in rows if row.get("phase") == "A2_COMPONENT_ABLATION" and row.get("algorithm") == "alns_e2_throughput"})
+
+
+def component_stack_rows(rows: list[dict[str, Any]], components: list[str]) -> list[dict[str, Any]]:
+    label = "|".join(components)
+    return [row for row in rows if row.get("phase") == "A3_COMPONENT_STACK_RETEST" and row.get("components") == label]
+
+
+def component_stack_result(rows: list[dict[str, Any]], components: list[str]) -> dict[str, Any]:
     base = {int(row["seed"]): row for row in rows if row.get("phase") == "A2_COMPONENT_ABLATION" and row.get("algorithm") == "alns_e2_throughput"}
-    stack = {int(row["seed"]): row for row in rows if row.get("phase") == "A3_COMPONENT_STACK_RETEST"}
-    improvements = [safe_ratio(as_float(base[seed]["best_cost"]) - as_float(stack[seed]["best_cost"]), as_float(base[seed]["best_cost"])) for seed in base if seed in stack]
-    return bool(improvements) and statistics.mean(improvements) > 0.005 and min(improvements) >= -0.01
+    stack = {int(row["seed"]): row for row in component_stack_rows(rows, components)}
+    improvements = [
+        safe_ratio(as_float(base[seed]["best_cost"]) - as_float(stack[seed]["best_cost"]), as_float(base[seed]["best_cost"]))
+        for seed in base
+        if seed in stack
+    ]
+    mean_improvement = statistics.mean(improvements) if improvements else math.nan
+    worst_seed = min(improvements) if improvements else math.nan
+    adopted = len(improvements) == len(base) and mean_improvement > 0.005 and worst_seed >= -0.01 and not incomplete_rows(list(stack.values()))
+    return {
+        "components": components,
+        "rows": len(stack),
+        "mean_improvement_fraction": mean_improvement,
+        "worst_seed_improvement_fraction": worst_seed,
+        "adopted": adopted,
+    }
+
+
+def component_stack_passes(rows: list[dict[str, Any]], components: list[str]) -> bool:
+    return bool(component_stack_result(rows, components)["adopted"])
+
+
+def decide_carbon_diagnostic(rows: list[dict[str, Any]]) -> dict[str, Any]:
+    failures = [row for row in rows if row.get("gate_status") != "OK"]
+    group_results = carbon_wallclock_summary(rows)
+    positive_groups = [
+        row
+        for row in group_results
+        if row.get("pair_count") == 3
+        and (truthy(row.get("carbon_e_total_all_lower")) or truthy(row.get("carbon_cost_carbon_all_lower")))
+        and truthy(row.get("carbon_cost_not_worse_all"))
+    ]
+    verdict = "CARBON_OPS_WALLCLOCK_POSITIVE" if positive_groups and not failures else "CARBON_OPS_NO_BENEFIT"
+    if failures:
+        verdict = "CARBON_DIAGNOSTIC_COLLECTION_PARTIAL"
+    return {
+        "schema": "setp-e2-final-carbon-diagnostic-decision.v1",
+        "verdict": verdict,
+        "diagnostic_not_t3": True,
+        "t3_main_variant_locked": "alns_e2_throughput",
+        "rows": len(rows),
+        "failure_count": len(failures),
+        "failure_sample": failures[:20],
+        "positive_group_count": len(positive_groups),
+        "positive_groups": positive_groups,
+        "algorithm_win_loss_claim": False,
+    }
+
+
+def carbon_wallclock_summary(rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    groups: dict[tuple[str, str, str], list[dict[str, Any]]] = {}
+    for row in rows:
+        groups.setdefault((str(row.get("scenario_type")), str(row.get("category")), str(row.get("instance"))), []).append(row)
+    out: list[dict[str, Any]] = []
+    for (scenario_type, category, instance), group in groups.items():
+        pairs = paired_by_instance_seed(group, "alns_e2_carbon", "alns_e2_carbon_ablation")
+        ablation_cost_pairs = paired_by_instance_seed(group, "alns_e2_carbon", "alns_e2_carbon_ablation")
+        throughput_cost_pairs = paired_by_instance_seed(group, "alns_e2_carbon", "alns_e2_throughput")
+        e_lower = [as_float(left.get("E_total")) < as_float(right.get("E_total")) for left, right in pairs]
+        c_lower = [as_float(left.get("cost_carbon")) < as_float(right.get("cost_carbon")) for left, right in pairs]
+        ablation_cost_not_worse = [
+            as_float(left.get("best_cost")) <= as_float(right.get("best_cost")) * 1.005
+            for left, right in ablation_cost_pairs
+        ]
+        throughput_cost_not_worse = [
+            as_float(left.get("best_cost")) <= as_float(right.get("best_cost")) * 1.005
+            for left, right in throughput_cost_pairs
+        ]
+        item = {"scenario_type": scenario_type, "category": category, "instance": instance}
+        item.update(
+            {
+                "rows": len(group),
+                "ok_rows": len(group) - len([row for row in group if row.get("gate_status") != "OK"]),
+                "pair_count": len(pairs),
+                "carbon_vs_ablation_pair_count": len(ablation_cost_pairs),
+                "carbon_vs_throughput_pair_count": len(throughput_cost_pairs),
+                "carbon_e_total_all_lower": bool(e_lower) and all(e_lower),
+                "carbon_cost_carbon_all_lower": bool(c_lower) and all(c_lower),
+                "carbon_cost_not_worse_vs_ablation_all": bool(ablation_cost_not_worse) and all(ablation_cost_not_worse),
+                "carbon_cost_not_worse_vs_throughput_all": bool(throughput_cost_not_worse) and all(throughput_cost_not_worse),
+                "carbon_cost_not_worse_all": bool(ablation_cost_not_worse) and all(ablation_cost_not_worse) and bool(throughput_cost_not_worse) and all(throughput_cost_not_worse),
+                "mean_carbon_actual_evals": mean_field([row for row in group if row.get("algorithm") == "alns_e2_carbon"], "actual_evals"),
+                "mean_ablation_actual_evals": mean_field([row for row in group if row.get("algorithm") == "alns_e2_carbon_ablation"], "actual_evals"),
+                "mean_throughput_actual_evals": mean_field([row for row in group if row.get("algorithm") == "alns_e2_throughput"], "actual_evals"),
+                "mean_carbon_best_cost": mean_field([row for row in group if row.get("algorithm") == "alns_e2_carbon"], "best_cost"),
+                "mean_ablation_best_cost": mean_field([row for row in group if row.get("algorithm") == "alns_e2_carbon_ablation"], "best_cost"),
+                "mean_throughput_best_cost": mean_field([row for row in group if row.get("algorithm") == "alns_e2_throughput"], "best_cost"),
+                "note": "equal wallclock diagnostic; eval closure is not required",
+            }
+        )
+        out.append(item)
+    return sorted_rows(out)
+
 
 
 def choose_t3_main_variant(rows: list[dict[str, Any]]) -> tuple[str, dict[str, Any]]:
@@ -919,6 +1112,7 @@ def decide_phase_d(rows: list[dict[str, Any]], liveness_rows: list[dict[str, Any
 def final_decision(output_dir: Path) -> dict[str, Any]:
     phases = {
         "phase_a": read_json(output_dir / "phase_a_alns_gate/decision.json") if (output_dir / "phase_a_alns_gate/decision.json").exists() else {},
+        "carbon_diagnostic": read_json(output_dir / "phase_a_carbon_wallclock_diagnostic/decision.json") if (output_dir / "phase_a_carbon_wallclock_diagnostic/decision.json").exists() else {},
         "phase_b": read_json(output_dir / "phase_b_g3_baseline_health/decision.json") if (output_dir / "phase_b_g3_baseline_health/decision.json").exists() else {},
         "phase_c": read_json(output_dir / "phase_c_g4_stability/decision.json") if (output_dir / "phase_c_g4_stability/decision.json").exists() else {},
         "phase_d": read_json(output_dir / "phase_d_g5_t3_material/decision.json") if (output_dir / "phase_d_g5_t3_material/decision.json").exists() else {},
@@ -938,6 +1132,7 @@ def final_decision(output_dir: Path) -> dict[str, Any]:
         "phase_verdicts": phase_verdicts,
         "blocked_phase": blocked_phase,
         "t3_main_profile": phases["phase_a"].get("t3_main_profile"),
+        "carbon_diagnostic_verdict": phases["carbon_diagnostic"].get("verdict", "NOT_RUN_NONBLOCKING"),
         "t3_baseline_set": phases["phase_b"].get("t3_baseline_set"),
         "final_material_verdict": final_material_verdict,
         "not_paper_text": True,
@@ -1099,7 +1294,7 @@ def incomplete_rows(rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
     for row in rows:
         if row.get("gate_status") != "OK":
             failures.append({"run_id": row.get("run_id"), "status": row.get("gate_status"), "reason": row.get("failure_reason")})
-        elif int(as_float(row.get("actual_evals"), -1)) < int(as_float(row.get("eval_budget"), -2)):
+        elif truthy(row.get("eval_closure_required", True)) and int(as_float(row.get("actual_evals"), -1)) < int(as_float(row.get("eval_budget"), -2)):
             failures.append({"run_id": row.get("run_id"), "status": "UNDER_EVAL", "actual": row.get("actual_evals"), "expected": row.get("eval_budget")})
     return failures
 
@@ -1360,6 +1555,14 @@ def safe_ratio(num: Any, denom: Any) -> float:
     if not math.isfinite(d) or abs(d) <= 1e-12:
         return math.nan
     return as_float(num) / d
+
+
+def truthy(value: Any) -> bool:
+    if isinstance(value, bool):
+        return value
+    if value is None:
+        return False
+    return str(value).strip().lower() in {"1", "true", "yes", "y", "on"}
 
 
 def as_float(value: Any, default: float = math.nan) -> float:
