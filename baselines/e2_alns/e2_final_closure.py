@@ -83,7 +83,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--output-dir", default=str(OUTPUT_DIR))
     parser.add_argument(
         "--phase",
-        choices=["preflight", "phase-a", "carbon-diagnostic", "phase-b", "phase-c", "phase-d", "decide", "all"],
+        choices=["preflight", "phase-a", "phase-a-prime", "carbon-diagnostic", "phase-b", "phase-c", "phase-d", "decide", "all"],
         default="all",
     )
     parser.add_argument("--eval-budget", type=int, default=16000)
@@ -122,6 +122,8 @@ def main() -> int:
         return 0
     if args.phase in {"phase-a", "all"}:
         run_phase_a(output_dir / "phase_a_alns_gate", seeds=seeds, eval_budget=args.eval_budget, workers=args.workers, force=args.force)
+    if args.phase in {"phase-a-prime"}:
+        run_phase_a_prime(output_dir / "phase_a_prime_route_elimination_retest", output_dir, seeds=seeds, eval_budget=args.eval_budget, workers=args.workers, force=args.force)
     if args.phase in {"carbon-diagnostic"}:
         run_carbon_diagnostic(output_dir / "phase_a_carbon_wallclock_diagnostic", seeds=seeds, eval_budget=args.eval_budget, workers=args.workers, force=args.force)
     if args.phase in {"phase-b", "all"}:
@@ -149,6 +151,8 @@ def main() -> int:
         phase_decision = {}
         if args.phase == "phase-a":
             phase_decision = read_json(output_dir / "phase_a_alns_gate/decision.json")
+        elif args.phase == "phase-a-prime":
+            phase_decision = read_json(output_dir / "phase_a_prime_route_elimination_retest/decision.json")
         elif args.phase == "carbon-diagnostic":
             phase_decision = read_json(output_dir / "phase_a_carbon_wallclock_diagnostic/decision.json")
         elif args.phase == "phase-b":
@@ -387,6 +391,84 @@ def write_phase_a_decision_outputs(phase_dir: Path, rows: list[dict[str, Any]], 
     write_hashes(phase_dir)
 
 
+def run_phase_a_prime(phase_dir: Path, output_dir: Path, *, seeds: list[int], eval_budget: int, workers: int, force: bool) -> None:
+    phase_dir.mkdir(parents=True, exist_ok=True)
+    phase_a_rows = read_csv(output_dir / "phase_a_alns_gate/raw_runs.csv")
+    phase_c_rows = read_csv(output_dir / "phase_c_g4_stability/raw_runs.csv")
+    existing_rows = [*phase_a_rows, *phase_c_rows, *read_csv(phase_dir / "raw_runs.csv")]
+    tasks = phase_a_prime_missing_tasks(phase_dir, existing_rows, seeds=seeds, eval_budget=eval_budget)
+    retest_rows = run_tasks(phase_dir, tasks, workers=workers, force=force) if tasks else read_csv(phase_dir / "raw_runs.csv")
+    source_rows = [*phase_a_rows, *phase_c_rows, *retest_rows]
+    evidence_rows = phase_a_prime_evidence_rows(source_rows)
+    liveness_rows = liveness_verdicts(source_rows, ("LNS", "t3_main_alns", "alns_component_LOCAL_SEARCH", "alns_component_ROUTE_ELIMINATION", "alns_component_stack"))
+    comparison_rows = phase_a_prime_comparison_rows(evidence_rows)
+    decision = decide_phase_a_prime(retest_rows, evidence_rows, comparison_rows)
+    write_json(phase_dir / "metadata.json", {
+        "schema": "setp-e2-final-phase-a-prime-metadata.v1",
+        "phase": "A_PRIME_ROUTE_ELIMINATION_RETEST",
+        "head": git_head(),
+        "scenario_type": "formal_goeke80",
+        "price_override": None,
+        "eval_budget": int(eval_budget),
+        "seeds": seeds,
+        "goal": "Review whether ROUTE_ELIMINATION-only fixes the G4 100c-01 route-compression halt without changing model or ALNS main-path semantics.",
+    })
+    write_csv(phase_dir / "raw_runs.csv", sorted_rows(retest_rows))
+    write_csv(phase_dir / "evidence_rows.csv", evidence_rows)
+    write_csv(phase_dir / "variant_vs_lns.csv", comparison_rows)
+    write_csv(phase_dir / "liveness_verdicts.csv", liveness_rows)
+    write_json(phase_dir / "decision.json", decision)
+    write_phase_report(phase_dir, "Phase A Prime Route Elimination Retest", decision)
+    write_hashes(phase_dir)
+    write_json(output_dir / "decision.json", final_decision(output_dir))
+    write_report(output_dir)
+    write_hashes(output_dir)
+
+
+def phase_a_prime_missing_tasks(phase_dir: Path, rows: list[dict[str, Any]], *, seeds: list[int], eval_budget: int) -> list[dict[str, Any]]:
+    tasks: list[dict[str, Any]] = []
+    requirements = [
+        ("threeshift", "e2-threeshift-100c-01", "alns_component_ROUTE_ELIMINATION", ["ROUTE_ELIMINATION"], "A_PRIME_ROUTE_RETEST"),
+        ("threeshift", "e2-threeshift-150c-01", "alns_component_ROUTE_ELIMINATION", ["ROUTE_ELIMINATION"], "A_PRIME_ROUTE_RETEST"),
+        ("threeshift", "e2-threeshift-100c-01", "t3_main_alns", [], "A_PRIME_LOCAL_REFERENCE"),
+        ("threeshift", "e2-threeshift-150c-01", "alns_component_LOCAL_SEARCH", ["LOCAL_SEARCH"], "A_PRIME_LOCAL_REFERENCE"),
+        ("threeshift", "e2-threeshift-100c-01", "LNS", [], "A_PRIME_LNS_REFERENCE"),
+        ("threeshift", "e2-threeshift-150c-01", "LNS", [], "A_PRIME_LNS_REFERENCE"),
+    ]
+    for category, instance, algorithm, components, phase in requirements:
+        for seed in seeds:
+            if phase_a_prime_has_row(rows, instance=instance, algorithm=algorithm, components=components, seed=seed):
+                continue
+            tasks.append(
+                make_task(
+                    phase=phase,
+                    phase_dir=phase_dir,
+                    category=category,
+                    instance=instance,
+                    algorithm=algorithm,
+                    seed=seed,
+                    eval_budget=eval_budget,
+                    runtime_cap_seconds=runtime_cap_for_instance(instance),
+                    scenario_type="formal_goeke80",
+                    components=components,
+                    t3_profile={"base_variant": "alns_e2_throughput", "selected_components": ["LOCAL_SEARCH"]} if algorithm == "t3_main_alns" else None,
+                )
+            )
+    return tasks
+
+
+def phase_a_prime_has_row(rows: list[dict[str, Any]], *, instance: str, algorithm: str, components: list[str], seed: int) -> bool:
+    component_label = "|".join(components)
+    for row in rows:
+        if row.get("instance") != instance or row.get("algorithm") != algorithm or int(as_float(row.get("seed"), -1)) != int(seed):
+            continue
+        if component_label and row.get("components") != component_label:
+            continue
+        if row.get("gate_status") == "OK" and int(as_float(row.get("actual_evals"), -1)) >= int(as_float(row.get("eval_budget"), -2)):
+            return True
+    return False
+
+
 def run_phase_b(phase_dir: Path, *, seeds: list[int], eval_budget: int, workers: int, force: bool) -> None:
     phase_dir.mkdir(parents=True, exist_ok=True)
     tasks = [
@@ -458,7 +540,7 @@ def run_phase_c(phase_dir: Path, phase_a_dir: Path, *, seeds: list[int], eval_bu
                 )
             )
     rows = run_tasks(phase_dir, tasks, workers=workers, force=force)
-    liveness_rows = liveness_verdicts(rows, ("LNS",))
+    liveness_rows = liveness_verdicts(rows, ("LNS", "t3_main_alns"))
     decision = decide_phase_c(rows, liveness_rows)
     write_csv(phase_dir / "raw_runs.csv", rows)
     write_csv(phase_dir / "best_trajectory.csv", all_history_rows(rows))
@@ -959,6 +1041,177 @@ def component_stack_passes(rows: list[dict[str, Any]], components: list[str]) ->
     return bool(component_stack_result(rows, components)["adopted"])
 
 
+def phase_a_prime_evidence_rows(rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    out: list[dict[str, Any]] = []
+    for row in rows:
+        instance = str(row.get("instance", ""))
+        if instance not in {"e2-threeshift-100c-01", "e2-threeshift-150c-01"}:
+            continue
+        variant = phase_a_prime_variant(row)
+        if not variant:
+            continue
+        out.append({
+            "variant": variant,
+            "instance": instance,
+            "seed": row.get("seed"),
+            "source_phase": row.get("phase"),
+            "algorithm": row.get("algorithm"),
+            "components": row.get("components"),
+            "gate_status": row.get("gate_status"),
+            "actual_evals": row.get("actual_evals"),
+            "eval_budget": row.get("eval_budget"),
+            "best_cost": row.get("best_cost"),
+            "route_count": row.get("route_count"),
+            "route_count_unique": row.get("route_count_unique"),
+            "liveness_verdict": row.get("liveness_verdict"),
+            "run_id": row.get("run_id"),
+        })
+    return sorted_rows(out)
+
+
+def phase_a_prime_variant(row: dict[str, Any]) -> str:
+    algorithm = str(row.get("algorithm", ""))
+    components = str(row.get("components", ""))
+    if algorithm == "LNS":
+        return "LNS"
+    if algorithm == "t3_main_alns":
+        return "LOCAL_SEARCH_ONLY"
+    if algorithm == "alns_component_LOCAL_SEARCH" and components == "LOCAL_SEARCH":
+        return "LOCAL_SEARCH_ONLY"
+    if algorithm == "alns_component_ROUTE_ELIMINATION" and components == "ROUTE_ELIMINATION":
+        return "ROUTE_ELIMINATION_ONLY"
+    if algorithm == "alns_component_stack" and components == "LOCAL_SEARCH|ROUTE_ELIMINATION":
+        return "LOCAL_SEARCH_ROUTE_ELIMINATION_STACK"
+    return ""
+
+
+def phase_a_prime_comparison_rows(evidence_rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    out: list[dict[str, Any]] = []
+    variants = ("LOCAL_SEARCH_ONLY", "ROUTE_ELIMINATION_ONLY", "LOCAL_SEARCH_ROUTE_ELIMINATION_STACK")
+    instances = ("e2-threeshift-100c-01", "e2-threeshift-150c-01")
+    by_key = {
+        (row.get("variant"), row.get("instance"), int(as_float(row.get("seed"), 0))): row
+        for row in evidence_rows
+        if row.get("gate_status") == "OK"
+    }
+    for variant in variants:
+        for instance in instances:
+            pairs = []
+            for seed in (1, 2, 3):
+                candidate = by_key.get((variant, instance, seed))
+                lns = by_key.get(("LNS", instance, seed))
+                if candidate and lns:
+                    pairs.append((candidate, lns))
+            if not pairs:
+                continue
+            candidate_costs = [as_float(candidate.get("best_cost")) for candidate, _ in pairs]
+            lns_costs = [as_float(lns.get("best_cost")) for _, lns in pairs]
+            seed_gaps = [
+                safe_ratio(as_float(lns.get("best_cost")) - as_float(candidate.get("best_cost")), as_float(lns.get("best_cost")))
+                for candidate, lns in pairs
+            ]
+            out.append({
+                "variant": variant,
+                "instance": instance,
+                "pair_count": len(pairs),
+                "mean_candidate": statistics.mean(candidate_costs),
+                "mean_lns": statistics.mean(lns_costs),
+                "gap_fraction": safe_ratio(statistics.mean(lns_costs) - statistics.mean(candidate_costs), statistics.mean(lns_costs)),
+                "worst_seed_gap_fraction": min(seed_gaps),
+                "best_seed_gap_fraction": max(seed_gaps),
+            })
+    for variant in variants:
+        pairs = []
+        for instance in instances:
+            for seed in (1, 2, 3):
+                candidate = by_key.get((variant, instance, seed))
+                lns = by_key.get(("LNS", instance, seed))
+                if candidate and lns:
+                    pairs.append((candidate, lns))
+        if pairs:
+            candidate_costs = [as_float(candidate.get("best_cost")) for candidate, _ in pairs]
+            lns_costs = [as_float(lns.get("best_cost")) for _, lns in pairs]
+            seed_gaps = [
+                safe_ratio(as_float(lns.get("best_cost")) - as_float(candidate.get("best_cost")), as_float(lns.get("best_cost")))
+                for candidate, lns in pairs
+            ]
+            out.append({
+                "variant": variant,
+                "instance": "POOLED_100C_150C",
+                "pair_count": len(pairs),
+                "mean_candidate": statistics.mean(candidate_costs),
+                "mean_lns": statistics.mean(lns_costs),
+                "gap_fraction": safe_ratio(statistics.mean(lns_costs) - statistics.mean(candidate_costs), statistics.mean(lns_costs)),
+                "worst_seed_gap_fraction": min(seed_gaps),
+                "best_seed_gap_fraction": max(seed_gaps),
+            })
+    return sorted_rows(out)
+
+
+def decide_phase_a_prime(retest_rows: list[dict[str, Any]], evidence_rows: list[dict[str, Any]], comparison_rows: list[dict[str, Any]]) -> dict[str, Any]:
+    failures = incomplete_rows(retest_rows)
+    required = [
+        ("LOCAL_SEARCH_ONLY", "e2-threeshift-100c-01"),
+        ("LOCAL_SEARCH_ONLY", "e2-threeshift-150c-01"),
+        ("ROUTE_ELIMINATION_ONLY", "e2-threeshift-100c-01"),
+        ("ROUTE_ELIMINATION_ONLY", "e2-threeshift-150c-01"),
+        ("LNS", "e2-threeshift-100c-01"),
+        ("LNS", "e2-threeshift-150c-01"),
+    ]
+    missing = []
+    for variant, instance in required:
+        count = sum(1 for row in evidence_rows if row.get("variant") == variant and row.get("instance") == instance and row.get("gate_status") == "OK")
+        if count < 3:
+            missing.append({"variant": variant, "instance": instance, "ok_rows": count, "expected_rows": 3})
+    comparison = {(row.get("variant"), row.get("instance")): row for row in comparison_rows}
+    local_100 = comparison.get(("LOCAL_SEARCH_ONLY", "e2-threeshift-100c-01"), {})
+    local_pooled = comparison.get(("LOCAL_SEARCH_ONLY", "POOLED_100C_150C"), {})
+    route_100 = comparison.get(("ROUTE_ELIMINATION_ONLY", "e2-threeshift-100c-01"), {})
+    route_150 = comparison.get(("ROUTE_ELIMINATION_ONLY", "e2-threeshift-150c-01"), {})
+    route_pooled = comparison.get(("ROUTE_ELIMINATION_ONLY", "POOLED_100C_150C"), {})
+    if failures or missing:
+        return {
+            "schema": "setp-e2-final-phase-a-prime-decision.v1",
+            "verdict": "HALT_COLLECTION_COST",
+            "failure_count": len(failures),
+            "failure_sample": failures[:20],
+            "missing_evidence": missing,
+            "algorithm_win_loss_claim": False,
+        }
+    route_no_big_seed_loss_100 = as_float(route_100.get("worst_seed_gap_fraction")) >= -0.01
+    route_both_not_worse = as_float(route_100.get("gap_fraction")) >= 0.0 and as_float(route_150.get("gap_fraction")) >= 0.0
+    route_pooled_better_than_local = as_float(route_pooled.get("gap_fraction")) > as_float(local_pooled.get("gap_fraction"))
+    route_100_passes_g4_limit = as_float(route_100.get("gap_fraction")) >= -0.02
+    if route_no_big_seed_loss_100 and route_100_passes_g4_limit and (route_both_not_worse or route_pooled_better_than_local):
+        verdict = "ROUTE_ELIMINATION_PROFILE_SELECTED"
+        selected = {"base_variant": "alns_e2_throughput", "selected_components": ["ROUTE_ELIMINATION"]}
+        halt_lifted = True
+    elif as_float(local_100.get("gap_fraction")) < -0.02 and as_float(route_100.get("gap_fraction")) < -0.02:
+        verdict = "STRUCTURAL_GAP_CONFIRMED"
+        selected = {"base_variant": "alns_e2_throughput", "selected_components": ["LOCAL_SEARCH"]}
+        halt_lifted = True
+    else:
+        verdict = "ROUTE_RETEST_INCONCLUSIVE"
+        selected = None
+        halt_lifted = False
+    return {
+        "schema": "setp-e2-final-phase-a-prime-decision.v1",
+        "verdict": verdict,
+        "selected_t3_main_profile": selected,
+        "halt_lifted_for_100c01": halt_lifted,
+        "route_elimination_no_seed_worse_than_one_percent_on_100c01": route_no_big_seed_loss_100,
+        "route_elimination_100c01_passes_g4_two_percent_limit": route_100_passes_g4_limit,
+        "route_elimination_both_instances_not_worse_than_lns": route_both_not_worse,
+        "route_elimination_pooled_gap_better_than_local_search": route_pooled_better_than_local,
+        "local_search_100c01_gap_fraction": as_float(local_100.get("gap_fraction")),
+        "route_elimination_100c01_gap_fraction": as_float(route_100.get("gap_fraction")),
+        "local_search_pooled_gap_fraction": as_float(local_pooled.get("gap_fraction")),
+        "route_elimination_pooled_gap_fraction": as_float(route_pooled.get("gap_fraction")),
+        "comparison_rows": comparison_rows,
+        "algorithm_win_loss_claim": False,
+    }
+
+
 def decide_carbon_diagnostic(rows: list[dict[str, Any]]) -> dict[str, Any]:
     failures = [row for row in rows if row.get("gate_status") != "OK"]
     group_results = carbon_wallclock_summary(rows)
@@ -1151,6 +1404,7 @@ def decide_phase_d(rows: list[dict[str, Any]], liveness_rows: list[dict[str, Any
 def final_decision(output_dir: Path) -> dict[str, Any]:
     phases = {
         "phase_a": read_json(output_dir / "phase_a_alns_gate/decision.json") if (output_dir / "phase_a_alns_gate/decision.json").exists() else {},
+        "phase_a_prime": read_json(output_dir / "phase_a_prime_route_elimination_retest/decision.json") if (output_dir / "phase_a_prime_route_elimination_retest/decision.json").exists() else {},
         "carbon_diagnostic": read_json(output_dir / "phase_a_carbon_wallclock_diagnostic/decision.json") if (output_dir / "phase_a_carbon_wallclock_diagnostic/decision.json").exists() else {},
         "phase_b": read_json(output_dir / "phase_b_g3_baseline_health/decision.json") if (output_dir / "phase_b_g3_baseline_health/decision.json").exists() else {},
         "phase_c": read_json(output_dir / "phase_c_g4_stability/decision.json") if (output_dir / "phase_c_g4_stability/decision.json").exists() else {},
@@ -1159,18 +1413,24 @@ def final_decision(output_dir: Path) -> dict[str, Any]:
     phase_verdicts = {key: value.get("verdict", "MISSING") for key, value in phases.items()}
     blocked_phase = ""
     final_material_verdict = phases["phase_d"].get("verdict", "MISSING")
+    phase_a_prime_lifted_g4_halt = bool(phases["phase_a_prime"].get("halt_lifted_for_100c01"))
     for phase in ("phase_a", "phase_b", "phase_c"):
         verdict = phase_verdicts[phase]
+        if phase == "phase_c" and verdict == "HALT_G4_SUSPECT" and phase_a_prime_lifted_g4_halt:
+            continue
         if verdict not in {"ALNS_GATE_READY", "G3_BASELINE_SET_READY", "G3_WEAK_IMPLEMENTATIONS_EXCLUDED", "G4_STABILITY_PASS"}:
             blocked_phase = phase
             final_material_verdict = verdict
             break
+    t3_main_profile = phases["phase_a_prime"].get("selected_t3_main_profile") or phases["phase_a"].get("t3_main_profile")
     return {
         "schema": "setp-e2-final-closure-decision.v1",
         "head": git_head(),
         "phase_verdicts": phase_verdicts,
         "blocked_phase": blocked_phase,
-        "t3_main_profile": phases["phase_a"].get("t3_main_profile"),
+        "t3_main_profile": t3_main_profile,
+        "phase_a_prime_halt_lifted_for_100c01": phase_a_prime_lifted_g4_halt,
+        "phase_c_original_verdict": phase_verdicts.get("phase_c"),
         "carbon_diagnostic_verdict": phases["carbon_diagnostic"].get("verdict", "NOT_RUN_NONBLOCKING"),
         "t3_baseline_set": phases["phase_b"].get("t3_baseline_set"),
         "final_material_verdict": final_material_verdict,
@@ -1309,7 +1569,13 @@ def liveness_verdicts(rows: list[dict[str, Any]], algorithms: tuple[str, ...] | 
     out: list[dict[str, Any]] = []
     for row in rows:
         if row.get("algorithm") in algorithms:
-            out.append({"scope": "run", "algorithm": row.get("algorithm"), "seed": row.get("seed"), "run_id": row.get("run_id"), "verdict": row.get("liveness_verdict"), "flags": row.get("liveness_flags"), "native_best_updates": row.get("native_best_updates"), "route_count_unique": row.get("route_count_unique")})
+            verdict = row.get("liveness_verdict")
+            flags = row.get("liveness_flags")
+            route_unique = as_float(row.get("route_count_unique"))
+            if row.get("algorithm") not in BASELINE_ALGORITHMS and math.isfinite(route_unique):
+                verdict = "ALNS_ROUTE_COUNT_INFO"
+                flags = "LOW_ROUTE_COUNT_DIVERSITY_INFO" if route_unique < 5 else "ROUTE_COUNT_DIVERSITY_INFO"
+            out.append({"scope": "run", "algorithm": row.get("algorithm"), "seed": row.get("seed"), "run_id": row.get("run_id"), "verdict": verdict, "flags": flags, "native_best_updates": row.get("native_best_updates"), "route_count_unique": row.get("route_count_unique")})
     for algorithm in algorithms:
         group = [row for row in rows if row.get("algorithm") == algorithm]
         if len(group) < 2:

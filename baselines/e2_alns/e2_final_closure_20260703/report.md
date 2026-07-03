@@ -8,6 +8,7 @@ Verdict: `HALT_G4_SUSPECT`
 
 - carbon_diagnostic: `MISSING`
 - phase_a: `ALNS_GATE_READY`
+- phase_a_prime: `ROUTE_RETEST_INCONCLUSIVE`
 - phase_b: `G3_BASELINE_SET_READY`
 - phase_c: `HALT_G4_SUSPECT`
 - phase_d: `MISSING`

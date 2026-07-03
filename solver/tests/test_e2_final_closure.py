@@ -157,6 +157,68 @@ class E2FinalClosureTest(unittest.TestCase):
         self.assertEqual(decision["verdict"], "HALT_G4_SUSPECT")
         self.assertEqual(decision["liveness_suspect_count"], 1)
 
+    def test_alns_route_count_liveness_is_info_not_failure(self) -> None:
+        rows = [
+            {
+                "algorithm": "t3_main_alns",
+                "seed": 1,
+                "run_id": "alns-fixed-route-count",
+                "liveness_verdict": "NOT_BASELINE_ALNS_REFERENCE",
+                "liveness_flags": "",
+                "native_best_updates": 3,
+                "route_count_unique": 1,
+            }
+        ]
+
+        liveness = closure.liveness_verdicts(rows, ("t3_main_alns",))
+        run_row = [row for row in liveness if row["scope"] == "run"][0]
+        decision = closure.decide_phase_c([], liveness)
+
+        self.assertEqual(run_row["verdict"], "ALNS_ROUTE_COUNT_INFO")
+        self.assertEqual(run_row["flags"], "LOW_ROUTE_COUNT_DIVERSITY_INFO")
+        self.assertEqual(decision["liveness_suspect_count"], 0)
+
+    def test_phase_a_prime_selects_route_elimination_when_retest_clears_100c_halt(self) -> None:
+        evidence = self._phase_a_prime_evidence()
+        comparison = [
+            {"variant": "LOCAL_SEARCH_ONLY", "instance": "e2-threeshift-100c-01", "gap_fraction": -0.0217, "worst_seed_gap_fraction": -0.04},
+            {"variant": "LOCAL_SEARCH_ONLY", "instance": "POOLED_100C_150C", "gap_fraction": -0.01, "worst_seed_gap_fraction": -0.04},
+            {"variant": "ROUTE_ELIMINATION_ONLY", "instance": "e2-threeshift-100c-01", "gap_fraction": 0.002, "worst_seed_gap_fraction": -0.004},
+            {"variant": "ROUTE_ELIMINATION_ONLY", "instance": "e2-threeshift-150c-01", "gap_fraction": 0.001, "worst_seed_gap_fraction": -0.003},
+            {"variant": "ROUTE_ELIMINATION_ONLY", "instance": "POOLED_100C_150C", "gap_fraction": 0.0015, "worst_seed_gap_fraction": -0.004},
+        ]
+
+        decision = closure.decide_phase_a_prime([], evidence, comparison)
+
+        self.assertEqual(decision["verdict"], "ROUTE_ELIMINATION_PROFILE_SELECTED")
+        self.assertTrue(decision["halt_lifted_for_100c01"])
+        self.assertEqual(decision["selected_t3_main_profile"]["selected_components"], ["ROUTE_ELIMINATION"])
+
+    def test_phase_a_prime_confirms_structural_gap_when_both_single_components_miss_100c(self) -> None:
+        evidence = self._phase_a_prime_evidence()
+        comparison = [
+            {"variant": "LOCAL_SEARCH_ONLY", "instance": "e2-threeshift-100c-01", "gap_fraction": -0.03, "worst_seed_gap_fraction": -0.04},
+            {"variant": "LOCAL_SEARCH_ONLY", "instance": "POOLED_100C_150C", "gap_fraction": -0.02, "worst_seed_gap_fraction": -0.04},
+            {"variant": "ROUTE_ELIMINATION_ONLY", "instance": "e2-threeshift-100c-01", "gap_fraction": -0.025, "worst_seed_gap_fraction": -0.009},
+            {"variant": "ROUTE_ELIMINATION_ONLY", "instance": "e2-threeshift-150c-01", "gap_fraction": 0.003, "worst_seed_gap_fraction": -0.001},
+            {"variant": "ROUTE_ELIMINATION_ONLY", "instance": "POOLED_100C_150C", "gap_fraction": -0.011, "worst_seed_gap_fraction": -0.009},
+        ]
+
+        decision = closure.decide_phase_a_prime([], evidence, comparison)
+
+        self.assertEqual(decision["verdict"], "STRUCTURAL_GAP_CONFIRMED")
+        self.assertTrue(decision["halt_lifted_for_100c01"])
+        self.assertEqual(decision["selected_t3_main_profile"]["selected_components"], ["LOCAL_SEARCH"])
+
+    @staticmethod
+    def _phase_a_prime_evidence() -> list[dict[str, object]]:
+        rows: list[dict[str, object]] = []
+        for variant in ("LOCAL_SEARCH_ONLY", "ROUTE_ELIMINATION_ONLY", "LNS"):
+            for instance in ("e2-threeshift-100c-01", "e2-threeshift-150c-01"):
+                for seed in (1, 2, 3):
+                    rows.append({"variant": variant, "instance": instance, "seed": seed, "gate_status": "OK"})
+        return rows
+
     def test_artifact_hashes_exclude_appledouble_caches_and_hash_file(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
