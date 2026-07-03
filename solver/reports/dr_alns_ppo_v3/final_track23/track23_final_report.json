@@ -7,10 +7,10 @@
     },
     "required_worker_numpy": "2.3.5",
     "output_dir": "solver\\reports\\dr_alns_ppo_v3\\final_track23",
-    "disk_free_gb": 102.69443893432617,
+    "disk_free_gb": 102.68846893310547,
     "git": {
-      "status_short_branch": "## dr-x86...origin/dr-x86 [ahead 3]",
-      "head": "676efac96f09de2ad364e69dc7d54bdb530dbc4c",
+      "status_short_branch": "## dr-x86...origin/dr-x86 [ahead 1]\n M HANDOFF.md",
+      "head": "ed30aaee8cd189527ffe716c01edf94b5fe0ea0a",
       "branch": "dr-x86"
     }
   },
@@ -417,7 +417,7 @@
   },
   "final_status": "TRACK23_COMPLETE",
   "final_reason": "DR_PILLAR_QUALITY=未判, DR_PILLAR_EFFICIENCY=没站住, DR_PILLAR_DYNAMIC=未判",
-  "wall_time_seconds": 84.53099999995902,
+  "wall_time_seconds": 9.718999999808148,
   "stage_a2": {
     "status": "SKIP_A2_NO_LEVERAGE",
     "trained": false,
@@ -471,6 +471,10 @@
       "carbon_price_factor": 10.0,
       "ev_heavy_cv_cap": 10,
       "ev_heavy_ev_cap": 15
-    }
+    },
+    "scenario_knob_rows": 54,
+    "scenario_knob_table": "stage_b_carbon_scenario_knobs.csv",
+    "scenario_knob_summary": "stage_b_carbon_scenario_knobs_summary.json",
+    "scenario_knob_report": "stage_b_carbon_scenario_knobs.md"
   }
 }

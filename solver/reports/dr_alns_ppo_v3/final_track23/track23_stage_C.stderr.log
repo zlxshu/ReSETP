@@ -1,0 +1,64 @@
+Traceback (most recent call last):
+  File "<frozen runpy>", line 198, in _run_module_as_main
+  File "<frozen runpy>", line 88, in _run_code
+  File "D:\ReSETP\solver\rl\dr_alns_ppo\track23_standing.py", line 965, in <module>
+    raise SystemExit(main())
+                     ^^^^^^
+  File "D:\ReSETP\solver\rl\dr_alns_ppo\track23_standing.py", line 960, in main
+    return run(args)
+           ^^^^^^^^^
+  File "D:\ReSETP\solver\rl\dr_alns_ppo\track23_standing.py", line 100, in run
+    rows = run_stage_c_parity(args, output_dir, progress_path)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\ReSETP\solver\rl\dr_alns_ppo\track23_standing.py", line 565, in run_stage_c_parity
+    row = run_policy_row(
+          ^^^^^^^^^^^^^^^
+  File "D:\ReSETP\solver\rl\dr_alns_ppo\pilot08_eval_tools.py", line 122, in run_policy_row
+    row = _evaluate_one_task(algorithm, bundle, int(seed), worker_args)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\ReSETP\solver\rl\dr_alns_ppo\evaluate_policy.py", line 168, in _evaluate_one_task
+    return run_ppo_block_policy(
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "D:\ReSETP\solver\rl\dr_alns_ppo\baselines.py", line 146, in run_ppo_block_policy
+    return _run_env_policy(
+           ^^^^^^^^^^^^^^^^
+  File "D:\ReSETP\solver\rl\dr_alns_ppo\baselines.py", line 410, in _run_env_policy
+    action = action_fn(obs)
+             ^^^^^^^^^^^^^^
+  File "D:\ReSETP\solver\rl\dr_alns_ppo\baselines.py", line 148, in <lambda>
+    lambda obs: model.predict(obs, deterministic=deterministic)[0],
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\ReSETP\solver\rl\dr_alns_ppo\async_block_policy.py", line 110, in predict
+    action = self.model.act(obs, deterministic=deterministic)["action"]
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\zlxshu\.venvs\resetp-ppo-cu124-py312\Lib\site-packages\torch\utils\_contextlib.py", line 116, in decorate_context
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "D:\ReSETP\solver\rl\dr_alns_ppo\async_block_policy.py", line 66, in act
+    dists, values = self.distributions(obs_tensor, masks=masks)
+                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\ReSETP\solver\rl\dr_alns_ppo\async_block_policy.py", line 54, in distributions
+    logits, values = self.forward(obs, masks=masks)
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\ReSETP\solver\rl\dr_alns_ppo\async_block_policy.py", line 42, in forward
+    features = self.backbone(obs.float())
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\zlxshu\.venvs\resetp-ppo-cu124-py312\Lib\site-packages\torch\nn\modules\module.py", line 1736, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\zlxshu\.venvs\resetp-ppo-cu124-py312\Lib\site-packages\torch\nn\modules\module.py", line 1747, in _call_impl
+    return forward_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\zlxshu\.venvs\resetp-ppo-cu124-py312\Lib\site-packages\torch\nn\modules\container.py", line 250, in forward
+    input = module(input)
+            ^^^^^^^^^^^^^
+  File "C:\Users\zlxshu\.venvs\resetp-ppo-cu124-py312\Lib\site-packages\torch\nn\modules\module.py", line 1736, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\zlxshu\.venvs\resetp-ppo-cu124-py312\Lib\site-packages\torch\nn\modules\module.py", line 1747, in _call_impl
+    return forward_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\zlxshu\.venvs\resetp-ppo-cu124-py312\Lib\site-packages\torch\nn\modules\linear.py", line 125, in forward
+    return F.linear(input, self.weight, self.bias)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+RuntimeError: mat1 and mat2 shapes cannot be multiplied (1x24 and 19x128)
