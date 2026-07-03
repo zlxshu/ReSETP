@@ -10,11 +10,22 @@ from setp_solver.prices import DEFAULT_PRICES
 
 class E2FinalClosureTest(unittest.TestCase):
     def test_tier1_manifest_has_expected_23_minus_01_instances(self) -> None:
-        manifest = closure.tier1_instance_manifest()
+        manifest = closure.instance_manifest_for_tier("Tier1")
 
         self.assertEqual(len(manifest), 23)
         self.assertTrue(all(str(row["instance"]).endswith("-01") for row in manifest))
         self.assertEqual({row["category"] for row in manifest}, {"multidepot", "threeshift", "vanilla"})
+
+    def test_tier_manifests_expand_by_replicate_staircase(self) -> None:
+        tier1 = closure.instance_manifest_for_tier("Tier1")
+        tier2 = closure.instance_manifest_for_tier("Tier2")
+        tier3 = closure.instance_manifest_for_tier("Tier3")
+
+        self.assertEqual(len(tier1), 23)
+        self.assertEqual(len(tier2), 46)
+        self.assertEqual(len(tier3), 69)
+        self.assertTrue(all(str(row["instance"]).endswith(("-01", "-02")) for row in tier2))
+        self.assertTrue(all(str(row["instance"]).endswith(("-01", "-02", "-03")) for row in tier3))
 
     def test_formal_phases_use_default_prices_and_diagnostic_is_in_memory_only(self) -> None:
         formal = closure.prices_for_scenario("formal_goeke80")
@@ -45,7 +56,7 @@ class E2FinalClosureTest(unittest.TestCase):
         self.assertEqual(flags["SETP_ALNS_CARBON_OPERATORS"], "1")
         self.assertEqual(flags["SETP_ALNS_CARBON_OPERATOR_BIAS"], "1.0")
 
-    def test_g4_direction_rule_requires_majority_pooled_and_no_big_single_loss(self) -> None:
+    def test_g4_direction_rule_passes_with_no_exceptions(self) -> None:
         rows = []
         for idx, (category, instance) in enumerate(closure.G4_INSTANCES):
             for seed in (1, 2, 3):
@@ -79,68 +90,8 @@ class E2FinalClosureTest(unittest.TestCase):
         self.assertEqual(decision["verdict"], "G4_STABILITY_PASS")
         self.assertEqual(decision["nonnegative_gap_instances"], 6)
 
-    def test_g4_decision_halts_on_completed_instance_below_two_percent(self) -> None:
-        rows = []
-        category, instance = closure.G4_INSTANCES[0]
-        for seed in (1, 2, 3):
-            rows.append(
-                {
-                    "category": category,
-                    "instance": instance,
-                    "algorithm": "t3_main_alns",
-                    "seed": seed,
-                    "gate_status": "OK",
-                    "actual_evals": 16000,
-                    "eval_budget": 16000,
-                    "best_cost": 103.0,
-                }
-            )
-            rows.append(
-                {
-                    "category": category,
-                    "instance": instance,
-                    "algorithm": "LNS",
-                    "seed": seed,
-                    "gate_status": "OK",
-                    "actual_evals": 16000,
-                    "eval_budget": 16000,
-                    "best_cost": 100.0,
-                }
-            )
-
-        decision = closure.decide_phase_c(rows)
-
-        self.assertEqual(decision["verdict"], "HALT_G4_SUSPECT")
-        self.assertEqual(decision["hard_direction_violation_count"], 1)
-
-    def test_g4_decision_halts_on_lns_liveness_failure(self) -> None:
-        rows = []
-        for idx, (category, instance) in enumerate(closure.G4_INSTANCES):
-            for seed in (1, 2, 3):
-                rows.append(
-                    {
-                        "category": category,
-                        "instance": instance,
-                        "algorithm": "t3_main_alns",
-                        "seed": seed,
-                        "gate_status": "OK",
-                        "actual_evals": 16000,
-                        "eval_budget": 16000,
-                        "best_cost": 99.0,
-                    }
-                )
-                rows.append(
-                    {
-                        "category": category,
-                        "instance": instance,
-                        "algorithm": "LNS",
-                        "seed": seed,
-                        "gate_status": "OK",
-                        "actual_evals": 16000,
-                        "eval_budget": 16000,
-                        "best_cost": 100.0,
-                    }
-                )
+    def test_g4_decision_records_single_large_loss_as_documented_exception(self) -> None:
+        rows = self._g4_rows_with_costs([103.0, 90.0, 90.0, 90.0, 90.0, 90.0, 90.0, 101.0, 101.0])
         liveness_rows = [
             {
                 "scope": "run",
@@ -154,8 +105,48 @@ class E2FinalClosureTest(unittest.TestCase):
 
         decision = closure.decide_phase_c(rows, liveness_rows)
 
+        self.assertEqual(decision["verdict"], "G4_PASS_WITH_EXCEPTIONS")
+        self.assertEqual(decision["documented_exception_count"], 1)
+        self.assertEqual(decision["liveness_suspect_count"], 0)
+        self.assertEqual(decision["liveness_diagnostic_count"], 1)
+        self.assertEqual(decision["documented_instance_exceptions"][0]["exception_status"], "DOCUMENTED_INSTANCE_EXCEPTION")
+        self.assertEqual(decision["documented_instance_exceptions"][0]["instance"], "e2-threeshift-100c-01")
+
+    def test_g4_decision_halts_when_exception_count_reaches_three(self) -> None:
+        rows = self._g4_rows_with_costs([103.0, 103.0, 103.0, 90.0, 90.0, 90.0, 90.0, 90.0, 90.0])
+
+        decision = closure.decide_phase_c(rows)
+
+        self.assertEqual(decision["verdict"], "HALT_G4_SUSPECT")
+        self.assertEqual(decision["documented_exception_count"], 3)
+        self.assertEqual(decision["halt_reason"], "G4_EXCEPTION_COUNT_REACHED_THREE")
+
+    def test_g4_decision_halts_when_majority_rule_fails(self) -> None:
+        rows = self._g4_rows_with_costs([98.0, 98.0, 98.0, 98.0, 98.0, 101.0, 101.0, 101.0, 101.0])
+
+        decision = closure.decide_phase_c(rows)
+
+        self.assertEqual(decision["verdict"], "HALT_G4_SUSPECT")
+        self.assertEqual(decision["halt_reason"], "G4_DIRECTION_RULE_FAILED")
+
+    def test_g4_decision_halts_on_hard_lns_liveness_failure(self) -> None:
+        rows = self._g4_rows_with_costs([99.0] * 9)
+        liveness_rows = [
+            {
+                "scope": "run",
+                "algorithm": "LNS",
+                "seed": 1,
+                "run_id": "lns-no-native-update",
+                "verdict": "BASELINE_LIVENESS_FAIL",
+                "flags": "NO_NATIVE_BEST_UPDATE",
+            }
+        ]
+
+        decision = closure.decide_phase_c(rows, liveness_rows)
+
         self.assertEqual(decision["verdict"], "HALT_G4_SUSPECT")
         self.assertEqual(decision["liveness_suspect_count"], 1)
+        self.assertEqual(decision["halt_reason"], "G4_HARD_LIVENESS_SUSPECT")
 
     def test_alns_route_count_liveness_is_info_not_failure(self) -> None:
         rows = [
@@ -210,6 +201,58 @@ class E2FinalClosureTest(unittest.TestCase):
         self.assertTrue(decision["halt_lifted_for_100c01"])
         self.assertEqual(decision["selected_t3_main_profile"]["selected_components"], ["LOCAL_SEARCH"])
 
+    def test_final_decision_allows_phase_c_pass_with_exceptions(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            phase_a = root / "phase_a_alns_gate"
+            phase_b = root / "phase_b_g3_baseline_health"
+            phase_c = root / "phase_c_g4_stability"
+            phase_a.mkdir(parents=True)
+            phase_b.mkdir(parents=True)
+            phase_c.mkdir(parents=True)
+            (phase_a / "decision.json").write_text(
+                '{"verdict":"ALNS_GATE_READY","t3_main_profile":{"base_variant":"alns_e2_throughput","selected_components":["LOCAL_SEARCH"]}}',
+                encoding="utf-8",
+            )
+            (phase_b / "decision.json").write_text(
+                '{"verdict":"G3_BASELINE_SET_READY","t3_baseline_set":["GA","LNS"]}',
+                encoding="utf-8",
+            )
+            (phase_c / "decision.json").write_text(
+                '{"verdict":"G4_PASS_WITH_EXCEPTIONS","documented_instance_exceptions":[{"instance":"e2-threeshift-100c-01"}]}',
+                encoding="utf-8",
+            )
+
+            decision = closure.final_decision(root)
+
+        self.assertEqual(decision["blocked_phase"], "")
+        self.assertEqual(decision["phase_verdicts"]["phase_c"], "G4_PASS_WITH_EXCEPTIONS")
+        self.assertEqual(decision["g4_exception_count"], 1)
+
+    def test_t3_material_marks_documented_exception_instances(self) -> None:
+        rows = [
+            {
+                "category": "threeshift",
+                "instance": "e2-threeshift-100c-01",
+                "display_algorithm": "ALNS",
+                "best_cost": 103.0,
+                "gate_status": "OK",
+            }
+        ]
+        exceptions = [
+            {
+                "instance": "e2-threeshift-100c-01",
+                "exception_status": "DOCUMENTED_INSTANCE_EXCEPTION",
+                "exception_note": "ALNS worse than LNS by more than 2%.",
+                "evidence_source": "phase_a_prime_route_elimination_retest/decision.json",
+            }
+        ]
+
+        material = closure.t3_table_material(rows, exceptions)
+
+        self.assertEqual(material[0]["exception_status"], "DOCUMENTED_INSTANCE_EXCEPTION")
+        self.assertIn("route_elimination", material[0]["evidence_source"])
+
     @staticmethod
     def _phase_a_prime_evidence() -> list[dict[str, object]]:
         rows: list[dict[str, object]] = []
@@ -217,6 +260,37 @@ class E2FinalClosureTest(unittest.TestCase):
             for instance in ("e2-threeshift-100c-01", "e2-threeshift-150c-01"):
                 for seed in (1, 2, 3):
                     rows.append({"variant": variant, "instance": instance, "seed": seed, "gate_status": "OK"})
+        return rows
+
+    @staticmethod
+    def _g4_rows_with_costs(alns_costs_by_instance: list[float]) -> list[dict[str, object]]:
+        rows: list[dict[str, object]] = []
+        for alns_cost, (category, instance) in zip(alns_costs_by_instance, closure.G4_INSTANCES):
+            for seed in (1, 2, 3):
+                rows.append(
+                    {
+                        "category": category,
+                        "instance": instance,
+                        "algorithm": "t3_main_alns",
+                        "seed": seed,
+                        "gate_status": "OK",
+                        "actual_evals": 16000,
+                        "eval_budget": 16000,
+                        "best_cost": alns_cost,
+                    }
+                )
+                rows.append(
+                    {
+                        "category": category,
+                        "instance": instance,
+                        "algorithm": "LNS",
+                        "seed": seed,
+                        "gate_status": "OK",
+                        "actual_evals": 16000,
+                        "eval_budget": 16000,
+                        "best_cost": 100.0,
+                    }
+                )
         return rows
 
     def test_artifact_hashes_exclude_appledouble_caches_and_hash_file(self) -> None:

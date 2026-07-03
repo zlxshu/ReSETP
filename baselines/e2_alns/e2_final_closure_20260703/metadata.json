@@ -1,14 +1,14 @@
 {
-  "created_at_epoch": 1783091813.082743,
+  "created_at_epoch": 1783116312.581655,
   "diagnostic_price_policy": "Phase A only: replace(DEFAULT_PRICES, B_battery_kwh=280.0, carbon_price=0.05034)",
   "eval_budget": 16000,
   "formal_price_policy": "DEFAULT_PRICES / Goeke80 / zero override",
-  "head": "52cf788658f4ffc5eedabe42c51dd743e37408dc",
+  "head": "f6eddd39018b91318bea55afcc0ae6d9aa4d9bd2",
   "not_formal_algorithm_claim": true,
   "not_paper_text": true,
   "numpy": "2.3.5",
   "output_dir": "baselines/e2_alns/e2_final_closure_20260703",
-  "phase": "phase-a-prime",
+  "phase": "decide",
   "protected_paths": [
     "solver/src/setp_solver/cost.py",
     "solver/src/setp_solver/check.py",
@@ -29,5 +29,6 @@
     3
   ],
   "task": "E2 final closure: ALNS gate, G3 baseline health, G4 stability, G5 T3/F2 material",
+  "tier": "Tier3",
   "workers": 3
 }
