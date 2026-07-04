@@ -168,6 +168,7 @@ def main() -> int:
             output_dir / "phase_b_g3_baseline_health",
             output_dir / "phase_c_g4_stability",
             tier=args.tier,
+            seeds=seeds,
         )
     if args.phase in {"decide", "all"}:
         write_json(output_dir / "decision.json", final_decision(output_dir))
@@ -777,11 +778,11 @@ def run_phase_d(
     rows = run_tasks(phase_dir, tasks, workers=workers, force=force)
     liveness_rows = liveness_verdicts(rows, tuple(["t3_main_alns", *baseline_set]))
     documented_exceptions = list(phase_c.get("documented_instance_exceptions") or [])
-    decision = decide_phase_d(rows, liveness_rows, baseline_set, tier=tier, documented_exceptions=documented_exceptions)
-    write_phase_d_outputs(phase_dir, rows, liveness_rows, decision, baseline_set, documented_exceptions, tier=tier, phase_b=phase_b)
+    decision = decide_phase_d(rows, liveness_rows, baseline_set, tier=tier, documented_exceptions=documented_exceptions, expected_seeds=seeds)
+    write_phase_d_outputs(phase_dir, rows, liveness_rows, decision, baseline_set, documented_exceptions, tier=tier, phase_b=phase_b, expected_seeds=seeds)
 
 
-def freeze_phase_d(phase_dir: Path, phase_b_dir: Path, phase_c_dir: Path, *, tier: str) -> None:
+def freeze_phase_d(phase_dir: Path, phase_b_dir: Path, phase_c_dir: Path, *, tier: str, seeds: tuple[int, ...] = (1, 2, 3)) -> None:
     phase_dir.mkdir(parents=True, exist_ok=True)
     rows = read_csv(phase_dir / "raw_runs.csv")
     phase_b = read_json(phase_b_dir / "decision.json") if (phase_b_dir / "decision.json").exists() else {}
@@ -789,10 +790,10 @@ def freeze_phase_d(phase_dir: Path, phase_b_dir: Path, phase_c_dir: Path, *, tie
     baseline_set = list(phase_b.get("t3_baseline_set", BASE_T3_BASELINES))
     liveness_rows = liveness_verdicts(rows, tuple(["t3_main_alns", *baseline_set]))
     documented_exceptions = list(phase_c.get("documented_instance_exceptions") or [])
-    decision = decide_phase_d(rows, liveness_rows, baseline_set, tier=tier, documented_exceptions=documented_exceptions)
+    decision = decide_phase_d(rows, liveness_rows, baseline_set, tier=tier, documented_exceptions=documented_exceptions, expected_seeds=seeds)
     decision["record_only_freeze"] = True
-    decision["freeze_reason"] = "Phase D was stopped after a pre-registered homogeneity red line was observed in partial raw_runs.csv."
-    write_phase_d_outputs(phase_dir, rows, liveness_rows, decision, baseline_set, documented_exceptions, tier=tier, phase_b=phase_b)
+    decision["freeze_reason"] = "Phase D partial raw_runs.csv was reclassified by the identity-cluster gate without rerunning solver rows."
+    write_phase_d_outputs(phase_dir, rows, liveness_rows, decision, baseline_set, documented_exceptions, tier=tier, phase_b=phase_b, expected_seeds=seeds)
 
 
 def write_phase_d_outputs(
@@ -805,21 +806,25 @@ def write_phase_d_outputs(
     *,
     tier: str,
     phase_b: dict[str, Any] | None = None,
+    expected_seeds: tuple[int, ...] = (1, 2, 3),
 ) -> None:
-    write_csv(phase_dir / "raw_runs.csv", rows)
-    write_csv(phase_dir / "wallclock_ledger.csv", sorted_rows(rows))
-    write_csv(phase_dir / "fixed_eval_closed_subset.csv", fixed_eval_closed_rows(rows))
-    write_csv(phase_dir / "best_trajectory.csv", all_history_rows(rows))
-    write_csv(phase_dir / "channel_lift.csv", [channel_lift_row(row) for row in rows])
+    clusters = phase_d_identity_clusters(rows, baseline_set, expected_seeds=expected_seeds)
+    annotated_rows = annotate_phase_d_identity_clusters(rows, clusters)
+    write_csv(phase_dir / "raw_runs.csv", annotated_rows)
+    write_csv(phase_dir / "wallclock_ledger.csv", sorted_rows(annotated_rows))
+    write_csv(phase_dir / "fixed_eval_closed_subset.csv", fixed_eval_closed_rows(annotated_rows))
+    write_csv(phase_dir / "best_trajectory.csv", all_history_rows(annotated_rows))
+    write_csv(phase_dir / "channel_lift.csv", [channel_lift_row(row) for row in annotated_rows])
     write_csv(phase_dir / "liveness_verdicts.csv", liveness_rows)
     write_csv(phase_dir / "documented_instance_exceptions.csv", documented_exceptions)
-    write_csv(phase_dir / "t3_table_material.csv", t3_table_material(rows, documented_exceptions))
-    write_csv(phase_dir / "wilcoxon_pairwise.csv", wilcoxon_rows(rows, baseline_set))
-    write_csv(phase_dir / "wilcoxon_pairwise_by_instance.csv", wilcoxon_instance_rows(rows, baseline_set))
-    write_csv(phase_dir / "win_tie_loss.csv", win_tie_loss_rows(rows, baseline_set))
-    write_csv(phase_dir / "size_bucket_summary.csv", size_bucket_summary(rows, baseline_set))
-    write_csv(phase_dir / "gate_summary.csv", gate_summary_rows(rows, liveness_rows, decision))
-    write_csv(phase_dir / "f2_convergence_data.csv", all_history_rows(rows))
+    write_csv(phase_dir / "identity_clusters.csv", clusters)
+    write_csv(phase_dir / "t3_table_material.csv", t3_table_material(annotated_rows, documented_exceptions))
+    write_csv(phase_dir / "wilcoxon_pairwise.csv", wilcoxon_rows(annotated_rows, baseline_set))
+    write_csv(phase_dir / "wilcoxon_pairwise_by_instance.csv", wilcoxon_instance_rows(annotated_rows, baseline_set))
+    write_csv(phase_dir / "win_tie_loss.csv", win_tie_loss_rows(annotated_rows, baseline_set))
+    write_csv(phase_dir / "size_bucket_summary.csv", size_bucket_summary(annotated_rows, baseline_set))
+    write_csv(phase_dir / "gate_summary.csv", gate_summary_rows(annotated_rows, liveness_rows, decision))
+    write_csv(phase_dir / "f2_convergence_data.csv", all_history_rows(annotated_rows))
     write_json(phase_dir / "baseline_set_boundary.json", {"t3_baseline_set": baseline_set, "phase_b_decision": phase_b or {}})
     write_json(phase_dir / "decision.json", decision)
     write_json(phase_dir / f"decision_{tier.lower()}.json", decision)
@@ -1788,19 +1793,23 @@ def decide_phase_d(
     *,
     tier: str = "Tier1",
     documented_exceptions: list[dict[str, Any]] | None = None,
+    expected_seeds: list[int] | tuple[int, ...] = (1, 2, 3),
 ) -> dict[str, Any]:
     failures = incomplete_rows(rows)
-    suspects = [row for row in liveness_rows if str(row.get("verdict", "")).endswith("_SUSPECT") or row.get("verdict") == "BASELINE_LIVENESS_FAIL"]
-    exact_identity_suspects = phase_d_exact_identity_suspects(rows)
-    homogeneity_suspects = [
-        row for row in liveness_rows if row.get("verdict") in {"SEED_INVARIANCE_SUSPECT", "CROSS_ALGO_IDENTITY_SUSPECT"}
-    ] + exact_identity_suspects
+    hard_liveness_suspects = phase_d_hard_liveness_suspects(liveness_rows)
+    liveness_diagnostics = phase_d_liveness_diagnostics(liveness_rows)
+    identity_clusters = phase_d_identity_clusters(rows, baseline_set, expected_seeds=expected_seeds)
+    identity_halts = [row for row in identity_clusters if row.get("identity_cluster_class") == "HALT_T3_HOMOGENIZATION"]
+    class_counts = identity_cluster_class_counts(identity_clusters)
     documented_exceptions = documented_exceptions or []
-    if homogeneity_suspects:
+    expected_instances = G5_TIER_EXPECTED_COUNTS.get(tier, 0)
+    expected_material_rows = expected_instances * (len(baseline_set) + 1) * len(tuple(expected_seeds))
+    closed_material_rows = len(rows) - len(failures)
+    missing_material_rows = max(0, expected_material_rows - len(rows))
+    collection_complete = bool(expected_material_rows) and len(rows) >= expected_material_rows and not failures
+    if identity_halts or hard_liveness_suspects:
         verdict = "HALT_T3_HOMOGENIZATION"
-    elif suspects:
-        verdict = "HALT_T3_SUSPECT"
-    elif failures:
+    elif failures or not collection_complete:
         verdict = "T3_COLLECTION_PARTIAL"
     else:
         verdict = "T3_MATERIAL_READY"
@@ -1809,53 +1818,212 @@ def decide_phase_d(
         "verdict": verdict,
         "tier": tier,
         "material_rows": len(rows),
-        "expected_instance_count": G5_TIER_EXPECTED_COUNTS.get(tier),
+        "expected_instance_count": expected_instances,
+        "expected_material_rows": expected_material_rows,
+        "closed_material_rows": closed_material_rows,
+        "missing_material_rows": missing_material_rows,
+        "collection_complete": collection_complete,
+        "expected_seeds": list(expected_seeds),
         "observed_instance_count": len({(row.get("category"), row.get("instance")) for row in rows}),
         "baseline_set": baseline_set,
         "documented_exception_count": len(documented_exceptions),
         "documented_instance_exceptions": documented_exceptions,
         "failure_count": len(failures),
         "failure_sample": failures[:20],
-        "suspect_count": len(suspects),
-        "suspect_sample": suspects[:20],
-        "homogeneity_suspect_count": len(homogeneity_suspects),
-        "homogeneity_suspect_sample": homogeneity_suspects[:20],
-        "exact_identity_suspect_count": len(exact_identity_suspects),
-        "exact_identity_suspect_sample": exact_identity_suspects[:20],
+        "suspect_count": len(hard_liveness_suspects),
+        "suspect_sample": hard_liveness_suspects[:20],
+        "liveness_diagnostic_count": len(liveness_diagnostics),
+        "liveness_diagnostic_sample": liveness_diagnostics[:20],
+        "homogeneity_suspect_count": len(identity_halts) + len(hard_liveness_suspects),
+        "homogeneity_suspect_sample": (identity_halts + hard_liveness_suspects)[:20],
+        "exact_identity_suspect_count": len(identity_halts),
+        "exact_identity_suspect_sample": identity_halts[:20],
+        "identity_cluster_count": len(identity_clusters),
+        "identity_clusters_by_class": class_counts,
+        "identity_halt_count": len(identity_halts),
+        "identity_halt_sample": identity_halts[:20],
+        "identity_disclosure_count": sum(class_counts.get(name, 0) for name in ("NATURAL_CONVERGENCE", "SECONDARY_ATTRACTOR", "SHARED_STALL")),
+        "identity_cluster_source": "phase_d_g5_t3_material/identity_clusters.csv;raw_runs.csv",
         "algorithm_win_loss_claim": False,
     }
 
 
-def phase_d_exact_identity_suspects(rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
+def phase_d_hard_liveness_suspects(liveness_rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    suspects: list[dict[str, Any]] = []
+    for row in liveness_rows:
+        verdict = row.get("verdict")
+        flags = {flag for flag in str(row.get("flags", "")).split("|") if flag}
+        if verdict == "SEED_INVARIANCE_SUSPECT":
+            suspects.append(row)
+        elif verdict == "BASELINE_LIVENESS_FAIL" and not is_route_count_only_liveness(row):
+            suspects.append(row)
+        elif "NO_NATIVE_BEST_UPDATE" in flags:
+            suspects.append(row)
+    return sorted_rows(suspects)
+
+
+def phase_d_liveness_diagnostics(liveness_rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    diagnostics: list[dict[str, Any]] = []
+    for row in liveness_rows:
+        verdict = row.get("verdict")
+        if verdict == "CROSS_ALGO_IDENTITY_SUSPECT" or is_route_count_only_liveness(row):
+            diagnostics.append(row)
+    return sorted_rows(diagnostics)
+
+
+def phase_d_identity_clusters(
+    rows: list[dict[str, Any]],
+    baseline_set: list[str],
+    *,
+    expected_seeds: list[int] | tuple[int, ...] = (1, 2, 3),
+) -> list[dict[str, Any]]:
     groups: dict[tuple[str, str, str, str], list[dict[str, Any]]] = {}
+    instance_frontiers: dict[tuple[str, str], float] = {}
     for row in rows:
         signature = str(row.get("best_signature", ""))
-        cost = str(row.get("best_cost", ""))
-        if not signature or not cost:
+        cost = as_float(row.get("best_cost"))
+        if not signature or not math.isfinite(cost):
             continue
-        key = (str(row.get("category", "")), str(row.get("instance", "")), signature, cost)
+        category = str(row.get("category", ""))
+        instance = str(row.get("instance", ""))
+        instance_key = (category, instance)
+        if instance_key not in instance_frontiers or cost < instance_frontiers[instance_key]:
+            instance_frontiers[instance_key] = cost
+        key = (category, instance, signature, phase_d_cost_key(cost))
         groups.setdefault(key, []).append(row)
-    suspects: list[dict[str, Any]] = []
+    clusters: list[dict[str, Any]] = []
+    expected_algorithms = tuple(["t3_main_alns", *baseline_set])
+    expected_pairs = {(algorithm, str(seed)) for algorithm in expected_algorithms for seed in expected_seeds}
+    baseline_algorithms = set(baseline_set)
+    cluster_index = 1
     for (category, instance, signature, cost), group in groups.items():
-        algorithms = sorted({str(row.get("algorithm", "")) for row in group})
-        seeds = sorted({str(row.get("seed", "")) for row in group})
-        if len(group) < 2 or (len(algorithms) < 2 and len(seeds) < 2):
+        if len(group) < 2:
             continue
-        suspects.append(
+        algorithms = sorted({str(row.get("algorithm", "")) for row in group})
+        seeds = sorted({str(row.get("seed", "")) for row in group}, key=seed_sort_key)
+        cluster_cost = as_float(group[0].get("best_cost"))
+        frontier_cost = instance_frontiers.get((category, instance), math.nan)
+        is_frontier = math.isfinite(cluster_cost) and math.isfinite(frontier_cost) and abs(cluster_cost - frontier_cost) <= 1e-9
+        updates = [native_update_value(row) for row in group]
+        zero_update = any(value <= 0 for value in updates)
+        cluster_pairs = {(str(row.get("algorithm", "")), str(row.get("seed", ""))) for row in group}
+        covers_expected_matrix = bool(expected_pairs) and expected_pairs <= cluster_pairs
+        baseline_only = bool(algorithms) and set(algorithms) <= baseline_algorithms
+        cluster_class, reason = classify_phase_d_identity_cluster(
+            zero_update=zero_update,
+            is_frontier=is_frontier,
+            baseline_only=baseline_only,
+            covers_expected_matrix=covers_expected_matrix,
+        )
+        note = identity_cluster_note(cluster_class, reason)
+        run_ids = sorted({str(row.get("run_id", "")) for row in group if row.get("run_id")})
+        clusters.append(
             {
-                "scope": "phase_d_instance_exact_identity",
+                "identity_cluster_id": f"IDC{cluster_index:03d}",
+                "identity_cluster_class": cluster_class,
+                "identity_cluster_reason": reason,
+                "identity_cluster_note": note,
+                "identity_cluster_source": "phase_d_g5_t3_material/identity_clusters.csv;raw_runs.csv",
                 "category": category,
                 "instance": instance,
                 "algorithm": "|".join(algorithms),
                 "seed": "|".join(seeds),
                 "run_count": len(group),
                 "best_cost": cost,
+                "instance_frontier_cost": frontier_cost,
+                "gap_to_frontier_fraction": safe_ratio(cluster_cost - frontier_cost, frontier_cost),
+                "best_signature": signature,
                 "signature_prefix": signature[:16],
-                "verdict": "CROSS_ALGO_OR_SEED_EXACT_IDENTITY_SUSPECT",
-                "flags": "exact_cost_and_signature_repeated_within_instance",
+                "native_best_updates_min": min(updates) if updates else math.nan,
+                "native_best_updates_max": max(updates) if updates else math.nan,
+                "baseline_only": baseline_only,
+                "covers_expected_matrix": covers_expected_matrix,
+                "run_ids": "|".join(run_ids),
             }
         )
-    return sorted_rows(suspects)
+        cluster_index += 1
+    return sorted_rows(clusters)
+
+
+def classify_phase_d_identity_cluster(*, zero_update: bool, is_frontier: bool, baseline_only: bool, covers_expected_matrix: bool) -> tuple[str, str]:
+    if zero_update:
+        return "HALT_T3_HOMOGENIZATION", "ZERO_NATIVE_BEST_UPDATE_MEMBER"
+    if covers_expected_matrix and not is_frontier:
+        return "HALT_T3_HOMOGENIZATION", "FULL_EXPECTED_MATRIX_NONFRONTIER_IDENTITY"
+    if is_frontier:
+        return "NATURAL_CONVERGENCE", "FRONTIER_CLUSTER_WITH_NATIVE_UPDATES"
+    if baseline_only:
+        return "SHARED_STALL", "BASELINE_ONLY_NONFRONTIER_ACTIVE_CLUSTER"
+    return "SECONDARY_ATTRACTOR", "NONFRONTIER_ACTIVE_CLUSTER"
+
+
+def identity_cluster_note(cluster_class: str, reason: str) -> str:
+    if cluster_class == "NATURAL_CONVERGENCE":
+        return "Cluster equals the current instance frontier and all members have native_best_updates>=1; treat as natural convergence."
+    if cluster_class == "SECONDARY_ATTRACTOR":
+        return "Cluster is non-frontier but members have native_best_updates>=1; disclose as a secondary attractor, not a homogeneity halt."
+    if cluster_class == "SHARED_STALL":
+        return "Cluster is non-frontier, baseline-only, and members have native_best_updates>=1; disclose as shared stall without excluding rows."
+    return f"Identity cluster triggers the Phase D hard red line: {reason}."
+
+
+def annotate_phase_d_identity_clusters(rows: list[dict[str, Any]], clusters: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    cluster_by_key = {
+        (str(cluster.get("category", "")), str(cluster.get("instance", "")), str(cluster.get("best_signature", "")), phase_d_cost_key(as_float(cluster.get("best_cost")))): cluster
+        for cluster in clusters
+    }
+    out: list[dict[str, Any]] = []
+    for row in rows:
+        item = dict(row)
+        key = (str(row.get("category", "")), str(row.get("instance", "")), str(row.get("best_signature", "")), phase_d_cost_key(as_float(row.get("best_cost"))))
+        cluster = cluster_by_key.get(key)
+        item.update(
+            {
+                "identity_cluster_id": cluster.get("identity_cluster_id", "") if cluster else "",
+                "identity_cluster_class": cluster.get("identity_cluster_class", "") if cluster else "",
+                "identity_cluster_note": cluster.get("identity_cluster_note", "") if cluster else "",
+                "identity_cluster_source": cluster.get("identity_cluster_source", "") if cluster else "",
+            }
+        )
+        out.append(item)
+    return sorted_rows(out)
+
+
+def identity_cluster_class_counts(clusters: list[dict[str, Any]]) -> dict[str, int]:
+    counts: dict[str, int] = {}
+    for cluster in clusters:
+        key = str(cluster.get("identity_cluster_class", ""))
+        if not key:
+            continue
+        counts[key] = counts.get(key, 0) + 1
+    return counts
+
+
+def native_update_value(row: dict[str, Any]) -> int:
+    value = as_float(row.get("native_best_updates"), 0.0)
+    if not math.isfinite(value):
+        return 0
+    return int(value)
+
+
+def phase_d_cost_key(cost: Any) -> str:
+    value = as_float(cost)
+    return f"{value:.17g}" if math.isfinite(value) else str(cost)
+
+
+def seed_sort_key(seed: str) -> tuple[int, str]:
+    value = as_float(seed)
+    return (int(value) if math.isfinite(value) else 10**9, seed)
+
+
+def unique_join(values: Any, sep: str = "|") -> str:
+    seen: list[str] = []
+    for value in values:
+        text = str(value)
+        if not text or text in seen:
+            continue
+        seen.append(text)
+    return sep.join(seen)
 
 
 def final_decision(output_dir: Path) -> dict[str, Any]:
@@ -2229,12 +2397,27 @@ def t3_table_material(rows: list[dict[str, Any]], documented_exceptions: list[di
     out: list[dict[str, Any]] = []
     for row in summarize_rows(rows, keys=("category", "instance", "display_algorithm")):
         exception = exceptions_by_instance.get(str(row.get("instance")), {})
+        group = [
+            item
+            for item in rows
+            if str(item.get("category", "")) == str(row.get("category", ""))
+            and str(item.get("instance", "")) == str(row.get("instance", ""))
+            and str(item.get("display_algorithm", "")) == str(row.get("display_algorithm", ""))
+        ]
+        identity_classes = unique_join(item.get("identity_cluster_class") for item in group if item.get("identity_cluster_class"))
+        identity_notes = unique_join(item.get("identity_cluster_note") for item in group if item.get("identity_cluster_note"))
+        identity_sources = unique_join(item.get("identity_cluster_source") for item in group if item.get("identity_cluster_source"))
+        identity_ids = unique_join(item.get("identity_cluster_id") for item in group if item.get("identity_cluster_id"))
         row.update(
             {
                 "exception_status": exception.get("exception_status", "NONE"),
                 "exception_note": exception.get("exception_note", ""),
                 "mechanism_explanation": exception.get("mechanism_explanation", ""),
                 "evidence_source": exception.get("evidence_source", ""),
+                "identity_cluster_id": identity_ids,
+                "identity_cluster_class": identity_classes,
+                "identity_cluster_note": identity_notes,
+                "identity_cluster_source": identity_sources,
             }
         )
         out.append(row)
@@ -2327,12 +2510,23 @@ def size_bucket_summary(rows: list[dict[str, Any]], baseline_set: list[str]) -> 
 
 
 def gate_summary_rows(rows: list[dict[str, Any]], liveness_rows: list[dict[str, Any]], decision: dict[str, Any]) -> list[dict[str, Any]]:
+    identity_counts = decision.get("identity_clusters_by_class") or {}
     return [
         {"metric": "raw_rows", "value": len(rows)},
+        {"metric": "expected_material_rows", "value": decision.get("expected_material_rows", "")},
+        {"metric": "closed_material_rows", "value": decision.get("closed_material_rows", "")},
+        {"metric": "missing_material_rows", "value": decision.get("missing_material_rows", "")},
+        {"metric": "collection_complete", "value": decision.get("collection_complete", "")},
         {"metric": "failure_count", "value": decision.get("failure_count", 0)},
         {"metric": "suspect_count", "value": decision.get("suspect_count", 0)},
+        {"metric": "liveness_diagnostic_count", "value": decision.get("liveness_diagnostic_count", 0)},
         {"metric": "homogeneity_suspect_count", "value": decision.get("homogeneity_suspect_count", 0)},
         {"metric": "exact_identity_suspect_count", "value": decision.get("exact_identity_suspect_count", 0)},
+        {"metric": "identity_cluster_count", "value": decision.get("identity_cluster_count", 0)},
+        {"metric": "identity_halt_count", "value": decision.get("identity_halt_count", 0)},
+        {"metric": "natural_convergence_count", "value": identity_counts.get("NATURAL_CONVERGENCE", 0)},
+        {"metric": "secondary_attractor_count", "value": identity_counts.get("SECONDARY_ATTRACTOR", 0)},
+        {"metric": "shared_stall_count", "value": identity_counts.get("SHARED_STALL", 0)},
         {"metric": "liveness_rows", "value": len(liveness_rows)},
         {"metric": "documented_exception_count", "value": decision.get("documented_exception_count", 0)},
     ]

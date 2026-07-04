@@ -361,29 +361,77 @@ class E2FinalClosureTest(unittest.TestCase):
         self.assertEqual(summary[0]["baseline"], "LNS")
         self.assertAlmostEqual(summary[0]["mean_gap_fraction"], 0.1)
 
-    def test_phase_d_exact_identity_suspect_is_per_instance(self) -> None:
+    def test_phase_d_identity_clusters_classify_partial_freeze_shapes(self) -> None:
         rows = [
-            {"category": "multidepot", "instance": "e2-multidepot-10c-01", "algorithm": "GA", "seed": 1, "best_cost": 371.0, "best_signature": "same"},
-            {"category": "multidepot", "instance": "e2-multidepot-10c-01", "algorithm": "LNS", "seed": 2, "best_cost": 371.0, "best_signature": "same"},
-            {"category": "multidepot", "instance": "e2-multidepot-20c-01", "algorithm": "GA", "seed": 1, "best_cost": 371.0, "best_signature": "same"},
+            {"category": "multidepot", "instance": "e2-multidepot-10c-01", "algorithm": "GA", "seed": 1, "gate_status": "OK", "actual_evals": 16000, "eval_budget": 16000, "best_cost": 371.0, "best_signature": "frontier", "native_best_updates": 1},
+            {"category": "multidepot", "instance": "e2-multidepot-10c-01", "algorithm": "LNS", "seed": 2, "gate_status": "OK", "actual_evals": 16000, "eval_budget": 16000, "best_cost": 371.0, "best_signature": "frontier", "native_best_updates": 3},
+            {"category": "multidepot", "instance": "e2-multidepot-10c-01", "algorithm": "GA", "seed": 2, "gate_status": "OK", "actual_evals": 16000, "eval_budget": 16000, "best_cost": 387.0, "best_signature": "secondary", "native_best_updates": 4},
+            {"category": "multidepot", "instance": "e2-multidepot-10c-01", "algorithm": "t3_main_alns", "seed": 1, "gate_status": "OK", "actual_evals": 16000, "eval_budget": 16000, "best_cost": 387.0, "best_signature": "secondary", "native_best_updates": 5},
+            {"category": "multidepot", "instance": "e2-multidepot-100c-01", "algorithm": "t3_main_alns", "seed": 1, "gate_status": "OK", "actual_evals": 16000, "eval_budget": 16000, "best_cost": 2467.0, "best_signature": "real-frontier", "native_best_updates": 10},
+            {"category": "multidepot", "instance": "e2-multidepot-100c-01", "algorithm": "GA", "seed": 1, "gate_status": "OK", "actual_evals": 16000, "eval_budget": 16000, "best_cost": 2894.0, "best_signature": "shared-stall", "native_best_updates": 2},
+            {"category": "multidepot", "instance": "e2-multidepot-100c-01", "algorithm": "PSO", "seed": 3, "gate_status": "OK", "actual_evals": 16000, "eval_budget": 16000, "best_cost": 2894.0, "best_signature": "shared-stall", "native_best_updates": 3},
         ]
 
-        suspects = closure.phase_d_exact_identity_suspects(rows)
+        clusters = closure.phase_d_identity_clusters(rows, ["GA", "LNS", "PSO"], expected_seeds=[1, 2, 3])
+        classes = {row["best_signature"]: row["identity_cluster_class"] for row in clusters}
+        decision = closure.decide_phase_d(rows, [], ["GA", "LNS", "PSO"], tier="Tier1", expected_seeds=[1, 2, 3])
 
-        self.assertEqual(len(suspects), 1)
-        self.assertEqual(suspects[0]["instance"], "e2-multidepot-10c-01")
-        self.assertEqual(suspects[0]["verdict"], "CROSS_ALGO_OR_SEED_EXACT_IDENTITY_SUSPECT")
+        self.assertEqual(classes["frontier"], "NATURAL_CONVERGENCE")
+        self.assertEqual(classes["secondary"], "SECONDARY_ATTRACTOR")
+        self.assertEqual(classes["shared-stall"], "SHARED_STALL")
+        self.assertEqual(decision["verdict"], "T3_COLLECTION_PARTIAL")
+        self.assertEqual(decision["identity_halt_count"], 0)
+        self.assertGreater(decision["missing_material_rows"], 0)
 
-    def test_phase_d_halts_on_instance_exact_identity(self) -> None:
+    def test_phase_d_identity_cluster_halts_on_zero_native_update(self) -> None:
         rows = [
-            {"category": "multidepot", "instance": "e2-multidepot-10c-01", "algorithm": "GA", "seed": 1, "gate_status": "OK", "best_cost": 371.0, "best_signature": "same"},
-            {"category": "multidepot", "instance": "e2-multidepot-10c-01", "algorithm": "LNS", "seed": 2, "gate_status": "OK", "best_cost": 371.0, "best_signature": "same"},
+            {"category": "multidepot", "instance": "e2-multidepot-10c-01", "algorithm": "GA", "seed": 1, "gate_status": "OK", "actual_evals": 16000, "eval_budget": 16000, "best_cost": 371.0, "best_signature": "same", "native_best_updates": 0},
+            {"category": "multidepot", "instance": "e2-multidepot-10c-01", "algorithm": "LNS", "seed": 2, "gate_status": "OK", "actual_evals": 16000, "eval_budget": 16000, "best_cost": 371.0, "best_signature": "same", "native_best_updates": 1},
         ]
 
-        decision = closure.decide_phase_d(rows, [], ["GA", "LNS"], tier="Tier1")
+        decision = closure.decide_phase_d(rows, [], ["GA", "LNS"], tier="Tier1", expected_seeds=[1, 2, 3])
 
         self.assertEqual(decision["verdict"], "HALT_T3_HOMOGENIZATION")
-        self.assertEqual(decision["exact_identity_suspect_count"], 1)
+        self.assertEqual(decision["identity_halt_count"], 1)
+
+    def test_phase_d_identity_cluster_halts_on_full_nonfrontier_expected_matrix(self) -> None:
+        rows = [
+            {"category": "multidepot", "instance": "e2-multidepot-10c-01", "algorithm": "DIAGNOSTIC_FRONTIER", "seed": 1, "gate_status": "OK", "actual_evals": 16000, "eval_budget": 16000, "best_cost": 90.0, "best_signature": "frontier", "native_best_updates": 1},
+        ]
+        for algorithm in ("t3_main_alns", "GA"):
+            for seed in (1, 2):
+                rows.append(
+                    {
+                        "category": "multidepot",
+                        "instance": "e2-multidepot-10c-01",
+                        "algorithm": algorithm,
+                        "seed": seed,
+                        "gate_status": "OK",
+                        "actual_evals": 16000,
+                        "eval_budget": 16000,
+                        "best_cost": 100.0,
+                        "best_signature": "full-stall",
+                        "native_best_updates": 1,
+                    }
+                )
+
+        decision = closure.decide_phase_d(rows, [], ["GA"], tier="Tier1", expected_seeds=[1, 2])
+
+        self.assertEqual(decision["verdict"], "HALT_T3_HOMOGENIZATION")
+        self.assertEqual(decision["identity_halt_sample"][0]["identity_cluster_reason"], "FULL_EXPECTED_MATRIX_NONFRONTIER_IDENTITY")
+
+    def test_t3_material_includes_identity_cluster_fields_and_shared_stall_source(self) -> None:
+        rows = [
+            {"category": "multidepot", "instance": "e2-multidepot-100c-01", "algorithm": "t3_main_alns", "display_algorithm": "ALNS", "seed": 1, "gate_status": "OK", "actual_evals": 16000, "eval_budget": 16000, "best_cost": 2467.0, "best_signature": "frontier", "native_best_updates": 10},
+            {"category": "multidepot", "instance": "e2-multidepot-100c-01", "algorithm": "GA", "display_algorithm": "GA", "seed": 1, "gate_status": "OK", "actual_evals": 16000, "eval_budget": 16000, "best_cost": 2894.0, "best_signature": "shared-stall", "native_best_updates": 2},
+            {"category": "multidepot", "instance": "e2-multidepot-100c-01", "algorithm": "PSO", "display_algorithm": "PSO", "seed": 3, "gate_status": "OK", "actual_evals": 16000, "eval_budget": 16000, "best_cost": 2894.0, "best_signature": "shared-stall", "native_best_updates": 3},
+        ]
+        clusters = closure.phase_d_identity_clusters(rows, ["GA", "PSO"], expected_seeds=[1, 2, 3])
+        material = closure.t3_table_material(closure.annotate_phase_d_identity_clusters(rows, clusters), [])
+        ga_row = next(row for row in material if row["display_algorithm"] == "GA")
+
+        self.assertEqual(ga_row["identity_cluster_class"], "SHARED_STALL")
+        self.assertEqual(ga_row["identity_cluster_source"], "phase_d_g5_t3_material/identity_clusters.csv;raw_runs.csv")
 
     def test_t3_material_marks_documented_exception_instances(self) -> None:
         rows = [
