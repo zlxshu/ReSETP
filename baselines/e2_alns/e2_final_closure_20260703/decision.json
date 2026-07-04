@@ -1,8 +1,8 @@
 {
   "algorithm_win_loss_claim": false,
-  "blocked_phase": "phase_c",
+  "blocked_phase": "phase_e_carbon",
   "carbon_diagnostic_verdict": "NOT_RUN_NONBLOCKING",
-  "final_material_verdict": "HALT_G4_SUSPECT",
+  "final_material_verdict": "CARBON_DIAGNOSTIC_REQUIRED_BEFORE_G5",
   "g4_documented_instance_exceptions": [
     {
       "category": "threeshift",
@@ -32,17 +32,17 @@
     }
   ],
   "g4_exception_count": 2,
-  "head": "f6eddd39018b91318bea55afcc0ae6d9aa4d9bd2",
+  "head": "db1e4acc995913e51f5335fb825f94ad655658f2",
   "not_paper_text": true,
   "phase_a_prime_halt_lifted_for_100c01": false,
   "phase_c_original_verdict": "HALT_G4_SUSPECT",
   "phase_verdicts": {
-    "carbon_diagnostic": "MISSING",
     "phase_a": "ALNS_GATE_READY",
     "phase_a_prime": "ROUTE_RETEST_INCONCLUSIVE",
     "phase_b": "G3_BASELINE_SET_READY",
-    "phase_c": "HALT_G4_SUSPECT",
-    "phase_d": "MISSING"
+    "phase_c": "HEALTH_PASS_WITH_SIZE_DEPENDENT_PROFILE",
+    "phase_d": "MISSING",
+    "phase_e_carbon": "MISSING"
   },
   "schema": "setp-e2-final-closure-decision.v1",
   "t3_baseline_set": [
@@ -63,6 +63,8 @@
   },
   "user_decisions_remaining": [
     "T3 table wording and paper posture",
+    "Carbon-operator wording: mechanism contribution vs limitation/future work",
+    "If CARBON_OPS_DOMINANT, whether carbon becomes main variant or a separate column",
     "Whether SA/TS absence is stated as limitation",
     "Whether DR-ALNS waits for x86 lane as future work or extended table"
   ]
