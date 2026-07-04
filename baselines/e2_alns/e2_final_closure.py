@@ -99,7 +99,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--output-dir", default=str(OUTPUT_DIR))
     parser.add_argument(
         "--phase",
-        choices=["preflight", "phase-a", "phase-a-prime", "g4-record", "phase-e-carbon", "carbon-diagnostic", "phase-b", "phase-c", "phase-d", "decide", "all"],
+        choices=["preflight", "phase-a", "phase-a-prime", "g4-record", "phase-e-carbon", "carbon-diagnostic", "phase-b", "phase-c", "phase-d", "phase-d-freeze", "decide", "all"],
         default="all",
     )
     parser.add_argument("--eval-budget", type=int, default=16000)
@@ -162,6 +162,13 @@ def main() -> int:
             force=args.force,
             tier=args.tier,
         )
+    if args.phase in {"phase-d-freeze"}:
+        freeze_phase_d(
+            output_dir / "phase_d_g5_t3_material",
+            output_dir / "phase_b_g3_baseline_health",
+            output_dir / "phase_c_g4_stability",
+            tier=args.tier,
+        )
     if args.phase in {"decide", "all"}:
         write_json(output_dir / "decision.json", final_decision(output_dir))
         write_report(output_dir)
@@ -182,7 +189,7 @@ def main() -> int:
             phase_decision = read_json(output_dir / "phase_b_g3_baseline_health/decision.json")
         elif args.phase == "phase-c":
             phase_decision = read_json(output_dir / "phase_c_g4_stability/decision.json")
-        elif args.phase == "phase-d":
+        elif args.phase in {"phase-d", "phase-d-freeze"}:
             phase_decision = read_json(output_dir / "phase_d_g5_t3_material/decision.json")
         payload = {"phase": args.phase, "phase_verdict": phase_decision.get("verdict", "DONE"), "status": "DONE"}
     print(json.dumps(payload, ensure_ascii=False, indent=2, sort_keys=True))
@@ -771,6 +778,34 @@ def run_phase_d(
     liveness_rows = liveness_verdicts(rows, tuple(["t3_main_alns", *baseline_set]))
     documented_exceptions = list(phase_c.get("documented_instance_exceptions") or [])
     decision = decide_phase_d(rows, liveness_rows, baseline_set, tier=tier, documented_exceptions=documented_exceptions)
+    write_phase_d_outputs(phase_dir, rows, liveness_rows, decision, baseline_set, documented_exceptions, tier=tier, phase_b=phase_b)
+
+
+def freeze_phase_d(phase_dir: Path, phase_b_dir: Path, phase_c_dir: Path, *, tier: str) -> None:
+    phase_dir.mkdir(parents=True, exist_ok=True)
+    rows = read_csv(phase_dir / "raw_runs.csv")
+    phase_b = read_json(phase_b_dir / "decision.json") if (phase_b_dir / "decision.json").exists() else {}
+    phase_c = read_json(phase_c_dir / "decision.json") if (phase_c_dir / "decision.json").exists() else {}
+    baseline_set = list(phase_b.get("t3_baseline_set", BASE_T3_BASELINES))
+    liveness_rows = liveness_verdicts(rows, tuple(["t3_main_alns", *baseline_set]))
+    documented_exceptions = list(phase_c.get("documented_instance_exceptions") or [])
+    decision = decide_phase_d(rows, liveness_rows, baseline_set, tier=tier, documented_exceptions=documented_exceptions)
+    decision["record_only_freeze"] = True
+    decision["freeze_reason"] = "Phase D was stopped after a pre-registered homogeneity red line was observed in partial raw_runs.csv."
+    write_phase_d_outputs(phase_dir, rows, liveness_rows, decision, baseline_set, documented_exceptions, tier=tier, phase_b=phase_b)
+
+
+def write_phase_d_outputs(
+    phase_dir: Path,
+    rows: list[dict[str, Any]],
+    liveness_rows: list[dict[str, Any]],
+    decision: dict[str, Any],
+    baseline_set: list[str],
+    documented_exceptions: list[dict[str, Any]],
+    *,
+    tier: str,
+    phase_b: dict[str, Any] | None = None,
+) -> None:
     write_csv(phase_dir / "raw_runs.csv", rows)
     write_csv(phase_dir / "wallclock_ledger.csv", sorted_rows(rows))
     write_csv(phase_dir / "fixed_eval_closed_subset.csv", fixed_eval_closed_rows(rows))
@@ -785,7 +820,7 @@ def run_phase_d(
     write_csv(phase_dir / "size_bucket_summary.csv", size_bucket_summary(rows, baseline_set))
     write_csv(phase_dir / "gate_summary.csv", gate_summary_rows(rows, liveness_rows, decision))
     write_csv(phase_dir / "f2_convergence_data.csv", all_history_rows(rows))
-    write_json(phase_dir / "baseline_set_boundary.json", {"t3_baseline_set": baseline_set, "phase_b_decision": phase_b})
+    write_json(phase_dir / "baseline_set_boundary.json", {"t3_baseline_set": baseline_set, "phase_b_decision": phase_b or {}})
     write_json(phase_dir / "decision.json", decision)
     write_json(phase_dir / f"decision_{tier.lower()}.json", decision)
     write_phase_report(phase_dir, "Phase D G5 T3/F2 Material", decision)
@@ -1756,7 +1791,10 @@ def decide_phase_d(
 ) -> dict[str, Any]:
     failures = incomplete_rows(rows)
     suspects = [row for row in liveness_rows if str(row.get("verdict", "")).endswith("_SUSPECT") or row.get("verdict") == "BASELINE_LIVENESS_FAIL"]
-    homogeneity_suspects = [row for row in liveness_rows if row.get("verdict") in {"SEED_INVARIANCE_SUSPECT", "CROSS_ALGO_IDENTITY_SUSPECT"}]
+    exact_identity_suspects = phase_d_exact_identity_suspects(rows)
+    homogeneity_suspects = [
+        row for row in liveness_rows if row.get("verdict") in {"SEED_INVARIANCE_SUSPECT", "CROSS_ALGO_IDENTITY_SUSPECT"}
+    ] + exact_identity_suspects
     documented_exceptions = documented_exceptions or []
     if homogeneity_suspects:
         verdict = "HALT_T3_HOMOGENIZATION"
@@ -1782,8 +1820,42 @@ def decide_phase_d(
         "suspect_sample": suspects[:20],
         "homogeneity_suspect_count": len(homogeneity_suspects),
         "homogeneity_suspect_sample": homogeneity_suspects[:20],
+        "exact_identity_suspect_count": len(exact_identity_suspects),
+        "exact_identity_suspect_sample": exact_identity_suspects[:20],
         "algorithm_win_loss_claim": False,
     }
+
+
+def phase_d_exact_identity_suspects(rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    groups: dict[tuple[str, str, str, str], list[dict[str, Any]]] = {}
+    for row in rows:
+        signature = str(row.get("best_signature", ""))
+        cost = str(row.get("best_cost", ""))
+        if not signature or not cost:
+            continue
+        key = (str(row.get("category", "")), str(row.get("instance", "")), signature, cost)
+        groups.setdefault(key, []).append(row)
+    suspects: list[dict[str, Any]] = []
+    for (category, instance, signature, cost), group in groups.items():
+        algorithms = sorted({str(row.get("algorithm", "")) for row in group})
+        seeds = sorted({str(row.get("seed", "")) for row in group})
+        if len(group) < 2 or (len(algorithms) < 2 and len(seeds) < 2):
+            continue
+        suspects.append(
+            {
+                "scope": "phase_d_instance_exact_identity",
+                "category": category,
+                "instance": instance,
+                "algorithm": "|".join(algorithms),
+                "seed": "|".join(seeds),
+                "run_count": len(group),
+                "best_cost": cost,
+                "signature_prefix": signature[:16],
+                "verdict": "CROSS_ALGO_OR_SEED_EXACT_IDENTITY_SUSPECT",
+                "flags": "exact_cost_and_signature_repeated_within_instance",
+            }
+        )
+    return sorted_rows(suspects)
 
 
 def final_decision(output_dir: Path) -> dict[str, Any]:
@@ -2260,6 +2332,7 @@ def gate_summary_rows(rows: list[dict[str, Any]], liveness_rows: list[dict[str, 
         {"metric": "failure_count", "value": decision.get("failure_count", 0)},
         {"metric": "suspect_count", "value": decision.get("suspect_count", 0)},
         {"metric": "homogeneity_suspect_count", "value": decision.get("homogeneity_suspect_count", 0)},
+        {"metric": "exact_identity_suspect_count", "value": decision.get("exact_identity_suspect_count", 0)},
         {"metric": "liveness_rows", "value": len(liveness_rows)},
         {"metric": "documented_exception_count", "value": decision.get("documented_exception_count", 0)},
     ]

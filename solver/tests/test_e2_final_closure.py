@@ -361,6 +361,30 @@ class E2FinalClosureTest(unittest.TestCase):
         self.assertEqual(summary[0]["baseline"], "LNS")
         self.assertAlmostEqual(summary[0]["mean_gap_fraction"], 0.1)
 
+    def test_phase_d_exact_identity_suspect_is_per_instance(self) -> None:
+        rows = [
+            {"category": "multidepot", "instance": "e2-multidepot-10c-01", "algorithm": "GA", "seed": 1, "best_cost": 371.0, "best_signature": "same"},
+            {"category": "multidepot", "instance": "e2-multidepot-10c-01", "algorithm": "LNS", "seed": 2, "best_cost": 371.0, "best_signature": "same"},
+            {"category": "multidepot", "instance": "e2-multidepot-20c-01", "algorithm": "GA", "seed": 1, "best_cost": 371.0, "best_signature": "same"},
+        ]
+
+        suspects = closure.phase_d_exact_identity_suspects(rows)
+
+        self.assertEqual(len(suspects), 1)
+        self.assertEqual(suspects[0]["instance"], "e2-multidepot-10c-01")
+        self.assertEqual(suspects[0]["verdict"], "CROSS_ALGO_OR_SEED_EXACT_IDENTITY_SUSPECT")
+
+    def test_phase_d_halts_on_instance_exact_identity(self) -> None:
+        rows = [
+            {"category": "multidepot", "instance": "e2-multidepot-10c-01", "algorithm": "GA", "seed": 1, "gate_status": "OK", "best_cost": 371.0, "best_signature": "same"},
+            {"category": "multidepot", "instance": "e2-multidepot-10c-01", "algorithm": "LNS", "seed": 2, "gate_status": "OK", "best_cost": 371.0, "best_signature": "same"},
+        ]
+
+        decision = closure.decide_phase_d(rows, [], ["GA", "LNS"], tier="Tier1")
+
+        self.assertEqual(decision["verdict"], "HALT_T3_HOMOGENIZATION")
+        self.assertEqual(decision["exact_identity_suspect_count"], 1)
+
     def test_t3_material_marks_documented_exception_instances(self) -> None:
         rows = [
             {
