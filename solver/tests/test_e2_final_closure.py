@@ -16,16 +16,26 @@ class E2FinalClosureTest(unittest.TestCase):
         self.assertTrue(all(str(row["instance"]).endswith("-01") for row in manifest))
         self.assertEqual({row["category"] for row in manifest}, {"multidepot", "threeshift", "vanilla"})
 
-    def test_tier_manifests_expand_by_replicate_staircase(self) -> None:
+    def test_g5_tier_manifests_follow_20260704_scope(self) -> None:
         tier1 = closure.instance_manifest_for_tier("Tier1")
         tier2 = closure.instance_manifest_for_tier("Tier2")
         tier3 = closure.instance_manifest_for_tier("Tier3")
 
         self.assertEqual(len(tier1), 23)
-        self.assertEqual(len(tier2), 46)
+        self.assertEqual(len(tier2), 29)
         self.assertEqual(len(tier3), 69)
-        self.assertTrue(all(str(row["instance"]).endswith(("-01", "-02")) for row in tier2))
+        self.assertTrue({instance for _, instance in closure.G4_INSTANCES}.issubset({row["instance"] for row in tier2}))
         self.assertTrue(all(str(row["instance"]).endswith(("-01", "-02", "-03")) for row in tier3))
+
+    def test_phase_e_carbon_tier_manifests_are_ev_structure_focused(self) -> None:
+        tier1 = closure.phase_e_carbon_manifest("Tier1")
+        tier2 = closure.phase_e_carbon_manifest("Tier2")
+        tier3 = closure.phase_e_carbon_manifest("Tier3")
+
+        self.assertEqual([row["instance"] for row in tier1], ["e2-threeshift-150c-02", "e2-threeshift-200c-02", "e2-threeshift-200c-03"])
+        self.assertEqual(len(tier2), 5)
+        self.assertEqual(len(tier3), 6)
+        self.assertIn("e2-threeshift-100c-02", {row["instance"] for row in tier3})
 
     def test_formal_phases_use_default_prices_and_diagnostic_is_in_memory_only(self) -> None:
         formal = closure.prices_for_scenario("formal_goeke80")
@@ -201,15 +211,35 @@ class E2FinalClosureTest(unittest.TestCase):
         self.assertTrue(decision["halt_lifted_for_100c01"])
         self.assertEqual(decision["selected_t3_main_profile"]["selected_components"], ["LOCAL_SEARCH"])
 
-    def test_final_decision_allows_phase_c_pass_with_exceptions(self) -> None:
+    def test_g4_record_decision_reclassifies_size_dependent_profile(self) -> None:
+        old_decision = {
+            "verdict": "HALT_G4_SUSPECT",
+            "halt_reason": "G4_DIRECTION_RULE_FAILED",
+            "nonnegative_gap_instances": 5,
+            "pooled_gap_fraction": 0.02085891464891202,
+            "documented_exception_count": 2,
+            "documented_instance_exceptions": [{"instance": "e2-threeshift-100c-01"}],
+        }
+
+        record = closure.g4_record_decision(old_decision, [{"instance": "e2-threeshift-100c-01", "gap_fraction": -0.0217}])
+
+        self.assertEqual(record["verdict"], "HEALTH_PASS_WITH_SIZE_DEPENDENT_PROFILE")
+        self.assertEqual(record["original_verdict"], "HALT_G4_SUSPECT")
+        self.assertEqual(record["nonnegative_gap_instances"], 5)
+        self.assertFalse(record["algorithm_win_loss_claim"])
+        self.assertIn("user 2026-07-04 option 2", record["authorization"])
+
+    def test_final_decision_allows_health_pass_after_carbon_diagnostic(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
             phase_a = root / "phase_a_alns_gate"
             phase_b = root / "phase_b_g3_baseline_health"
             phase_c = root / "phase_c_g4_stability"
+            phase_e = root / "phase_e_carbon_operator_diagnostic"
             phase_a.mkdir(parents=True)
             phase_b.mkdir(parents=True)
             phase_c.mkdir(parents=True)
+            phase_e.mkdir(parents=True)
             (phase_a / "decision.json").write_text(
                 '{"verdict":"ALNS_GATE_READY","t3_main_profile":{"base_variant":"alns_e2_throughput","selected_components":["LOCAL_SEARCH"]}}',
                 encoding="utf-8",
@@ -219,15 +249,117 @@ class E2FinalClosureTest(unittest.TestCase):
                 encoding="utf-8",
             )
             (phase_c / "decision.json").write_text(
-                '{"verdict":"G4_PASS_WITH_EXCEPTIONS","documented_instance_exceptions":[{"instance":"e2-threeshift-100c-01"}]}',
+                '{"verdict":"HEALTH_PASS_WITH_SIZE_DEPENDENT_PROFILE","original_verdict":"HALT_G4_SUSPECT","documented_instance_exceptions":[{"instance":"e2-threeshift-100c-01"}]}',
+                encoding="utf-8",
+            )
+            (phase_e / "decision.json").write_text(
+                '{"verdict":"CARBON_OPS_WEAK"}',
                 encoding="utf-8",
             )
 
             decision = closure.final_decision(root)
 
         self.assertEqual(decision["blocked_phase"], "")
-        self.assertEqual(decision["phase_verdicts"]["phase_c"], "G4_PASS_WITH_EXCEPTIONS")
+        self.assertEqual(decision["phase_verdicts"]["phase_c"], "HEALTH_PASS_WITH_SIZE_DEPENDENT_PROFILE")
+        self.assertEqual(decision["phase_c_original_verdict"], "HALT_G4_SUSPECT")
         self.assertEqual(decision["g4_exception_count"], 1)
+        self.assertEqual(decision["carbon_diagnostic_verdict"], "CARBON_OPS_WEAK")
+
+    def test_final_decision_blocks_health_pass_until_carbon_diagnostic_runs(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            for phase_name, payload in {
+                "phase_a_alns_gate": '{"verdict":"ALNS_GATE_READY","t3_main_profile":{"base_variant":"alns_e2_throughput","selected_components":["LOCAL_SEARCH"]}}',
+                "phase_b_g3_baseline_health": '{"verdict":"G3_BASELINE_SET_READY","t3_baseline_set":["GA","LNS"]}',
+                "phase_c_g4_stability": '{"verdict":"HEALTH_PASS_WITH_SIZE_DEPENDENT_PROFILE"}',
+            }.items():
+                phase_dir = root / phase_name
+                phase_dir.mkdir(parents=True)
+                (phase_dir / "decision.json").write_text(payload, encoding="utf-8")
+
+            decision = closure.final_decision(root)
+
+        self.assertEqual(decision["blocked_phase"], "phase_e_carbon")
+        self.assertEqual(decision["final_material_verdict"], "CARBON_DIAGNOSTIC_REQUIRED_BEFORE_G5")
+
+    def test_phase_e_carbon_supported_and_dominant_verdicts(self) -> None:
+        supported = closure.decide_phase_e_carbon(self._carbon_rows(cost_delta=0.5, carbon_delta=-1.0))
+        dominant = closure.decide_phase_e_carbon(self._carbon_rows(cost_delta=-0.1, carbon_delta=-1.0))
+
+        self.assertEqual(supported["verdict"], "CARBON_OPS_INNOVATION_SUPPORTED")
+        self.assertEqual(dominant["verdict"], "CARBON_OPS_DOMINANT")
+        self.assertEqual(supported["tier1_instance_count"], 3)
+
+    def test_phase_e_carbon_weak_when_cost_premium_exceeds_one_percent(self) -> None:
+        decision = closure.decide_phase_e_carbon(self._carbon_rows(cost_delta=1.5, carbon_delta=-1.0))
+
+        self.assertEqual(decision["verdict"], "CARBON_OPS_WEAK")
+
+    def test_phase_e_timing_ledger_hotspots_extracts_seed1_200c03(self) -> None:
+        rows = [
+            {
+                "phase": "E_CARBON_TIER1",
+                "instance": "e2-threeshift-200c-03",
+                "algorithm": "alns_e2_carbon",
+                "seed": 1,
+                "operator_counts_json": '{"timing":{"carbon_operator":{"seconds":12.0,"count":3}}}',
+            },
+            {
+                "phase": "E_CARBON_TIER1",
+                "instance": "e2-threeshift-200c-03",
+                "algorithm": "alns_e2_carbon",
+                "seed": 2,
+                "operator_counts_json": '{"timing":{"ignored":{"seconds":99.0,"count":1}}}',
+            },
+        ]
+
+        hotspots = closure.timing_ledger_hotspots(rows)
+
+        self.assertEqual(len(hotspots), 1)
+        self.assertEqual(hotspots[0]["label"], "carbon_operator")
+        self.assertEqual(hotspots[0]["seconds"], 12.0)
+
+    def test_t3_material_includes_std_and_runtime_fields(self) -> None:
+        rows = [
+            {
+                "category": "threeshift",
+                "instance": "e2-threeshift-100c-01",
+                "display_algorithm": "ALNS",
+                "best_cost": 100.0,
+                "actual_evals": 16000,
+                "elapsed_seconds": 10.0,
+                "evals_per_second": 1600.0,
+                "gate_status": "OK",
+            },
+            {
+                "category": "threeshift",
+                "instance": "e2-threeshift-100c-01",
+                "display_algorithm": "ALNS",
+                "best_cost": 104.0,
+                "actual_evals": 16000,
+                "elapsed_seconds": 20.0,
+                "evals_per_second": 800.0,
+                "gate_status": "OK",
+            },
+        ]
+
+        material = closure.t3_table_material(rows, [])
+
+        self.assertAlmostEqual(material[0]["std_best_cost"], 2.8284271247461903)
+        self.assertEqual(material[0]["mean_actual_evals"], 16000)
+        self.assertEqual(material[0]["mean_elapsed_seconds"], 15.0)
+
+    def test_size_bucket_summary_groups_alns_against_baselines(self) -> None:
+        rows = [
+            {"category": "threeshift", "instance": "e2-threeshift-100c-01", "algorithm": "t3_main_alns", "display_algorithm": "ALNS", "seed": 1, "best_cost": 90.0, "gate_status": "OK"},
+            {"category": "threeshift", "instance": "e2-threeshift-100c-01", "algorithm": "LNS", "display_algorithm": "LNS", "seed": 1, "best_cost": 100.0, "gate_status": "OK"},
+        ]
+
+        summary = closure.size_bucket_summary(rows, ["LNS"])
+
+        self.assertEqual(summary[0]["size_bucket"], "100c")
+        self.assertEqual(summary[0]["baseline"], "LNS")
+        self.assertAlmostEqual(summary[0]["mean_gap_fraction"], 0.1)
 
     def test_t3_material_marks_documented_exception_instances(self) -> None:
         rows = [
@@ -252,6 +384,50 @@ class E2FinalClosureTest(unittest.TestCase):
 
         self.assertEqual(material[0]["exception_status"], "DOCUMENTED_INSTANCE_EXCEPTION")
         self.assertIn("route_elimination", material[0]["evidence_source"])
+
+    @staticmethod
+    def _carbon_rows(cost_delta: float, carbon_delta: float) -> list[dict[str, object]]:
+        rows: list[dict[str, object]] = []
+        tier1 = {"e2-threeshift-150c-02", "e2-threeshift-200c-02", "e2-threeshift-200c-03"}
+        for instance in tier1:
+            for seed in (1, 2, 3):
+                rows.append(
+                    {
+                        "category": "threeshift",
+                        "instance": instance,
+                        "algorithm": "alns_e2_carbon_ablation",
+                        "seed": seed,
+                        "gate_status": "OK",
+                        "best_cost": 100.0,
+                        "E_total": 1000.0,
+                        "cost_carbon": 50.0,
+                    }
+                )
+                rows.append(
+                    {
+                        "category": "threeshift",
+                        "instance": instance,
+                        "algorithm": "alns_e2_carbon",
+                        "seed": seed,
+                        "gate_status": "OK",
+                        "best_cost": 100.0 + cost_delta,
+                        "E_total": 1000.0 + carbon_delta,
+                        "cost_carbon": 50.0 + carbon_delta,
+                    }
+                )
+                rows.append(
+                    {
+                        "category": "threeshift",
+                        "instance": instance,
+                        "algorithm": "t3_main_alns",
+                        "seed": seed,
+                        "gate_status": "OK",
+                        "best_cost": 99.0,
+                        "E_total": 990.0,
+                        "cost_carbon": 49.5,
+                    }
+                )
+        return rows
 
     @staticmethod
     def _phase_a_prime_evidence() -> list[dict[str, object]]:

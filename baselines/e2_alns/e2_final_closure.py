@@ -62,11 +62,22 @@ G4_INSTANCES = tuple(
     for size in (100, 150, 200)
     for idx in (1, 2, 3)
 )
-TIER_REPLICATES = {
-    "Tier1": ("01",),
-    "Tier2": ("01", "02"),
-    "Tier3": ("01", "02", "03"),
+TIER_NAMES = ("Tier1", "Tier2", "Tier3")
+G5_TIER_EXPECTED_COUNTS = {"Tier1": 23, "Tier2": 29, "Tier3": 69}
+PHASE_E_CARBON_TIERS = {
+    "Tier1": (
+        ("threeshift", "e2-threeshift-150c-02"),
+        ("threeshift", "e2-threeshift-200c-02"),
+        ("threeshift", "e2-threeshift-200c-03"),
+    ),
+    "Tier2": (
+        ("threeshift", "e2-threeshift-150c-01"),
+        ("threeshift", "e2-threeshift-200c-01"),
+    ),
+    "Tier3": (("threeshift", "e2-threeshift-100c-02"),),
 }
+PHASE_E_VALID_VERDICTS = {"CARBON_OPS_INNOVATION_SUPPORTED", "CARBON_OPS_DOMINANT", "CARBON_OPS_WEAK"}
+PHASE_E_CONTEXT_ALGORITHM = "t3_main_alns"
 COMPONENT_ORDER = ("LOCAL_SEARCH", "ROUTE_ELIMINATION", "RRT_TRUE_ACCEPTANCE")
 HASH_EXCLUDE_NAMES = {".DS_Store", "artifact_hashes.json"}
 HASH_EXCLUDE_PARTS = {"__pycache__", ".pytest_cache", ".tasks"}
@@ -88,13 +99,13 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--output-dir", default=str(OUTPUT_DIR))
     parser.add_argument(
         "--phase",
-        choices=["preflight", "phase-a", "phase-a-prime", "carbon-diagnostic", "phase-b", "phase-c", "phase-d", "decide", "all"],
+        choices=["preflight", "phase-a", "phase-a-prime", "g4-record", "phase-e-carbon", "carbon-diagnostic", "phase-b", "phase-c", "phase-d", "decide", "all"],
         default="all",
     )
     parser.add_argument("--eval-budget", type=int, default=16000)
     parser.add_argument("--seeds", default="1,2,3")
     parser.add_argument("--workers", type=int, default=1)
-    parser.add_argument("--tier", choices=sorted(TIER_REPLICATES), default="Tier3")
+    parser.add_argument("--tier", choices=sorted(TIER_NAMES), default="Tier3")
     parser.add_argument("--force", action="store_true")
     parser.add_argument("--task-json", default="")
     parser.add_argument("--task-output-json", default="")
@@ -130,8 +141,10 @@ def main() -> int:
         run_phase_a(output_dir / "phase_a_alns_gate", seeds=seeds, eval_budget=args.eval_budget, workers=args.workers, force=args.force)
     if args.phase in {"phase-a-prime"}:
         run_phase_a_prime(output_dir / "phase_a_prime_route_elimination_retest", output_dir, seeds=seeds, eval_budget=args.eval_budget, workers=args.workers, force=args.force)
-    if args.phase in {"carbon-diagnostic"}:
-        run_carbon_diagnostic(output_dir / "phase_a_carbon_wallclock_diagnostic", seeds=seeds, eval_budget=args.eval_budget, workers=args.workers, force=args.force)
+    if args.phase in {"g4-record"}:
+        run_g4_record(output_dir / "phase_c_g4_stability")
+    if args.phase in {"phase-e-carbon", "carbon-diagnostic"}:
+        run_phase_e_carbon(output_dir / "phase_e_carbon_operator_diagnostic", output_dir / "phase_a_alns_gate", seeds=seeds, eval_budget=args.eval_budget, workers=args.workers, force=args.force, tier=args.tier)
     if args.phase in {"phase-b", "all"}:
         run_phase_b(output_dir / "phase_b_g3_baseline_health", seeds=seeds, eval_budget=args.eval_budget, workers=args.workers, force=args.force)
     if args.phase in {"phase-c", "all"}:
@@ -142,6 +155,7 @@ def main() -> int:
             output_dir / "phase_a_alns_gate",
             output_dir / "phase_b_g3_baseline_health",
             output_dir / "phase_c_g4_stability",
+            output_dir / "phase_e_carbon_operator_diagnostic",
             seeds=seeds,
             eval_budget=args.eval_budget,
             workers=args.workers,
@@ -160,8 +174,10 @@ def main() -> int:
             phase_decision = read_json(output_dir / "phase_a_alns_gate/decision.json")
         elif args.phase == "phase-a-prime":
             phase_decision = read_json(output_dir / "phase_a_prime_route_elimination_retest/decision.json")
-        elif args.phase == "carbon-diagnostic":
-            phase_decision = read_json(output_dir / "phase_a_carbon_wallclock_diagnostic/decision.json")
+        elif args.phase == "g4-record":
+            phase_decision = read_json(output_dir / "phase_c_g4_stability/decision.json")
+        elif args.phase in {"phase-e-carbon", "carbon-diagnostic"}:
+            phase_decision = read_json(output_dir / "phase_e_carbon_operator_diagnostic/decision.json")
         elif args.phase == "phase-b":
             phase_decision = read_json(output_dir / "phase_b_g3_baseline_health/decision.json")
         elif args.phase == "phase-c":
@@ -199,7 +215,7 @@ def metadata_payload(args: argparse.Namespace, output_dir: Path) -> dict[str, An
 def preflight() -> dict[str, Any]:
     g0_decision_path = REPO_ROOT / "baselines/e2_alns/e2_g0_reaudit_v2_20260703/decision.json"
     g0_decision = read_json(g0_decision_path) if g0_decision_path.exists() else {}
-    tier_counts = {tier: len(instance_manifest_for_tier(tier)) for tier in TIER_REPLICATES}
+    tier_counts = {tier: len(instance_manifest_for_tier(tier)) for tier in TIER_NAMES}
     return {
         "schema": "setp-e2-final-closure-preflight.v1",
         "env_ok": sys.executable == GOLD_PYTHON and numpy_version() == GOLD_NUMPY and os.environ.get("PYTHONHASHSEED") == "0",
@@ -211,7 +227,7 @@ def preflight() -> dict[str, Any]:
         "g0_v2_verdict": g0_decision.get("verdict"),
         "g0_v2_ok": g0_decision.get("verdict") == "G0_PASS_BASELINES_HEALTHY",
         "tier_instance_counts": tier_counts,
-        "tier_manifest_ok": tier_counts == {"Tier1": 23, "Tier2": 46, "Tier3": 69},
+        "tier_manifest_ok": tier_counts == G5_TIER_EXPECTED_COUNTS,
         "tier1_instance_count": tier_counts["Tier1"],
         "tier1_manifest_ok": tier_counts["Tier1"] == 23,
         "protected_diff": protected_diff(),
@@ -289,6 +305,121 @@ def archive_superseded_carbon_gate(phase_dir: Path) -> Path | None:
     shutil.move(str(phase_dir), str(archive_dir))
     phase_dir.mkdir(parents=True, exist_ok=True)
     return archive_dir
+
+
+def run_g4_record(phase_dir: Path) -> None:
+    phase_dir.mkdir(parents=True, exist_ok=True)
+    decision_path = phase_dir / "decision.json"
+    original_path = phase_dir / "decision_before_g4_record.json"
+    old_decision = read_json(original_path if original_path.exists() else decision_path)
+    gap_rows = read_csv(phase_dir / "g4_gap_by_instance.csv")
+    if decision_path.exists() and not original_path.exists():
+        write_json(original_path, read_json(decision_path))
+    raw_path = phase_dir / "raw_runs.csv"
+    raw_sha = hashlib.sha256(raw_path.read_bytes()).hexdigest() if raw_path.exists() else ""
+    decision = g4_record_decision(old_decision, gap_rows, raw_sha256=raw_sha)
+    write_json(phase_dir / "g4_record_decision.json", decision)
+    write_json(decision_path, decision)
+    write_csv(phase_dir / "g4_size_profile_summary.csv", g4_size_profile_summary(gap_rows))
+    write_phase_report(phase_dir, "Phase C G4 Stability Record", decision)
+    write_hashes(phase_dir)
+
+
+def g4_record_decision(old_decision: dict[str, Any], gap_rows: list[dict[str, Any]], *, raw_sha256: str = "") -> dict[str, Any]:
+    return {
+        "schema": "setp-e2-final-g4-record-decision.v1",
+        "verdict": "HEALTH_PASS_WITH_SIZE_DEPENDENT_PROFILE",
+        "original_verdict": old_decision.get("verdict"),
+        "original_halt_reason": old_decision.get("halt_reason", ""),
+        "authorization": "user 2026-07-04 option 2: classify the G4 majority-rule miss as a size-dependent performance profile, not a data-integrity failure.",
+        "health_gate_passed": True,
+        "size_dependent_profile": True,
+        "nonnegative_gap_instances": int(as_float(old_decision.get("nonnegative_gap_instances"), math.nan)) if math.isfinite(as_float(old_decision.get("nonnegative_gap_instances"), math.nan)) else old_decision.get("nonnegative_gap_instances"),
+        "pooled_gap_fraction": as_float(old_decision.get("pooled_gap_fraction")),
+        "documented_exception_count": int(as_float(old_decision.get("documented_exception_count"), 0)),
+        "documented_instance_exceptions": list(old_decision.get("documented_instance_exceptions") or []),
+        "g4_gap_rows": sorted_rows(gap_rows),
+        "scale_profile_summary": g4_size_profile_summary(gap_rows),
+        "raw_runs_sha256_preserved": raw_sha256,
+        "raw_data_mutated": False,
+        "t3_main_profile_unchanged": {"base_variant": "alns_e2_throughput", "selected_components": ["LOCAL_SEARCH"]},
+        "next_required_phase": "phase_e_carbon_operator_diagnostic",
+        "algorithm_win_loss_claim": False,
+        "not_paper_text": True,
+    }
+
+
+def g4_size_profile_summary(gap_rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    groups: dict[int, list[dict[str, Any]]] = {}
+    for row in gap_rows:
+        groups.setdefault(instance_size(str(row.get("instance", ""))), []).append(row)
+    out: list[dict[str, Any]] = []
+    for size, rows in groups.items():
+        gaps = [as_float(row.get("gap_fraction")) for row in rows if math.isfinite(as_float(row.get("gap_fraction")))]
+        out.append(
+            {
+                "size_bucket": f"{size}c",
+                "instances": len(rows),
+                "mean_gap_fraction": statistics.mean(gaps) if gaps else math.nan,
+                "min_gap_fraction": min(gaps) if gaps else math.nan,
+                "max_gap_fraction": max(gaps) if gaps else math.nan,
+                "nonnegative_gap_instances": sum(1 for gap in gaps if gap >= -1e-12),
+            }
+        )
+    return sorted_rows(out)
+
+
+def run_phase_e_carbon(
+    phase_dir: Path,
+    phase_a_dir: Path,
+    *,
+    seeds: list[int],
+    eval_budget: int,
+    workers: int,
+    force: bool,
+    tier: str,
+) -> None:
+    phase_dir.mkdir(parents=True, exist_ok=True)
+    phase_a = read_json(phase_a_dir / "phase_a_decision.json") or read_json(phase_a_dir / "decision.json")
+    t3_profile = phase_a.get("t3_main_profile") or {"base_variant": "alns_e2_throughput", "selected_components": ["LOCAL_SEARCH"]}
+    manifest = phase_e_carbon_manifest(tier)
+    write_csv(phase_dir / f"instance_manifest_{tier.lower()}.csv", manifest)
+    write_csv(phase_dir / "instance_manifest.csv", manifest)
+    tasks: list[dict[str, Any]] = []
+    for item in manifest:
+        carbon_tier = str(item["carbon_tier"])
+        for seed in seeds:
+            for algorithm in ("alns_e2_carbon", "alns_e2_carbon_ablation", PHASE_E_CONTEXT_ALGORITHM):
+                tasks.append(
+                    make_task(
+                        phase=f"E_CARBON_{carbon_tier.upper()}",
+                        phase_dir=phase_dir,
+                        category=str(item["category"]),
+                        instance=str(item["instance"]),
+                        algorithm=algorithm,
+                        seed=seed,
+                        eval_budget=eval_budget,
+                        runtime_cap_seconds=runtime_cap_for_instance(str(item["instance"])),
+                        scenario_type="formal_goeke80",
+                        t3_profile=t3_profile if algorithm == PHASE_E_CONTEXT_ALGORITHM else None,
+                        allow_under_eval=True,
+                        carbon_tier=carbon_tier,
+                    )
+                )
+    rows = run_tasks(phase_dir, tasks, workers=workers, force=force)
+    decision = decide_phase_e_carbon(rows)
+    write_csv(phase_dir / "raw_runs.csv", rows)
+    write_csv(phase_dir / "wallclock_ledger.csv", sorted_rows(rows))
+    write_csv(phase_dir / "best_trajectory.csv", all_history_rows(rows))
+    write_csv(phase_dir / "channel_lift.csv", [channel_lift_row(row) for row in rows])
+    write_csv(phase_dir / "carbon_operator_summary.csv", carbon_operator_summary(rows))
+    write_csv(phase_dir / "carbon_vs_ablation_by_instance.csv", carbon_vs_ablation_by_instance(rows))
+    write_csv(phase_dir / "carbon_vs_throughput_context.csv", carbon_vs_throughput_context(rows))
+    write_csv(phase_dir / "timing_ledger_hotspots.csv", timing_ledger_hotspots(rows))
+    write_json(phase_dir / "decision.json", decision)
+    write_json(phase_dir / f"decision_{tier.lower()}.json", decision)
+    write_phase_report(phase_dir, "Phase E Carbon Operator Diagnostic", decision)
+    write_hashes(phase_dir)
 
 
 def run_carbon_diagnostic(phase_dir: Path, *, seeds: list[int], eval_budget: int, workers: int, force: bool) -> None:
@@ -568,6 +699,7 @@ def run_phase_d(
     phase_a_dir: Path,
     phase_b_dir: Path,
     phase_c_dir: Path,
+    phase_e_dir: Path,
     *,
     seeds: list[int],
     eval_budget: int,
@@ -579,8 +711,15 @@ def run_phase_d(
     phase_a = read_json(phase_a_dir / "phase_a_decision.json")
     phase_b = read_json(phase_b_dir / "decision.json")
     phase_c = read_json(phase_c_dir / "decision.json")
-    if phase_c.get("verdict") not in {"G4_STABILITY_PASS", "G4_PASS_WITH_EXCEPTIONS"}:
+    phase_e = read_json(phase_e_dir / "decision.json")
+    if phase_c.get("verdict") not in {"G4_STABILITY_PASS", "G4_PASS_WITH_EXCEPTIONS", "HEALTH_PASS_WITH_SIZE_DEPENDENT_PROFILE"}:
         decision = {"schema": "setp-e2-final-phase-d-decision.v1", "verdict": "HALT_T3_SUSPECT", "reason": "Phase C did not pass.", "phase_c_verdict": phase_c.get("verdict")}
+        write_json(phase_dir / "decision.json", decision)
+        write_phase_report(phase_dir, "Phase D G5 T3 Material", decision)
+        write_hashes(phase_dir)
+        return
+    if phase_e.get("verdict") not in PHASE_E_VALID_VERDICTS:
+        decision = {"schema": "setp-e2-final-phase-d-decision.v1", "verdict": "HALT_T3_SUSPECT", "reason": "Phase E carbon diagnostic must close before G5.", "phase_e_verdict": phase_e.get("verdict", "MISSING")}
         write_json(phase_dir / "decision.json", decision)
         write_phase_report(phase_dir, "Phase D G5 T3 Material", decision)
         write_hashes(phase_dir)
@@ -588,13 +727,14 @@ def run_phase_d(
     baseline_set = list(phase_b.get("t3_baseline_set", BASE_T3_BASELINES))
     t3_profile = phase_a["t3_main_profile"]
     manifest = instance_manifest_for_tier(tier)
-    expected_count = {"Tier1": 23, "Tier2": 46, "Tier3": 69}[tier]
+    expected_count = G5_TIER_EXPECTED_COUNTS[tier]
     if len(manifest) != expected_count:
         decision = {"schema": "setp-e2-final-phase-d-decision.v1", "verdict": "HALT_INSTANCE_MANIFEST_UNRESOLVED", "tier": tier, "instance_count": len(manifest), "expected_count": expected_count}
         write_json(phase_dir / "decision.json", decision)
         write_phase_report(phase_dir, "Phase D G5 T3 Material", decision)
         write_hashes(phase_dir)
         return
+    write_csv(phase_dir / f"instance_manifest_{tier.lower()}.csv", manifest)
     write_csv(phase_dir / "instance_manifest.csv", manifest)
     tasks: list[dict[str, Any]] = []
     for item in manifest:
@@ -628,7 +768,7 @@ def run_phase_d(
                     )
                 )
     rows = run_tasks(phase_dir, tasks, workers=workers, force=force)
-    liveness_rows = liveness_verdicts(rows, tuple(baseline_set))
+    liveness_rows = liveness_verdicts(rows, tuple(["t3_main_alns", *baseline_set]))
     documented_exceptions = list(phase_c.get("documented_instance_exceptions") or [])
     decision = decide_phase_d(rows, liveness_rows, baseline_set, tier=tier, documented_exceptions=documented_exceptions)
     write_csv(phase_dir / "raw_runs.csv", rows)
@@ -640,10 +780,14 @@ def run_phase_d(
     write_csv(phase_dir / "documented_instance_exceptions.csv", documented_exceptions)
     write_csv(phase_dir / "t3_table_material.csv", t3_table_material(rows, documented_exceptions))
     write_csv(phase_dir / "wilcoxon_pairwise.csv", wilcoxon_rows(rows, baseline_set))
+    write_csv(phase_dir / "wilcoxon_pairwise_by_instance.csv", wilcoxon_instance_rows(rows, baseline_set))
     write_csv(phase_dir / "win_tie_loss.csv", win_tie_loss_rows(rows, baseline_set))
+    write_csv(phase_dir / "size_bucket_summary.csv", size_bucket_summary(rows, baseline_set))
+    write_csv(phase_dir / "gate_summary.csv", gate_summary_rows(rows, liveness_rows, decision))
     write_csv(phase_dir / "f2_convergence_data.csv", all_history_rows(rows))
     write_json(phase_dir / "baseline_set_boundary.json", {"t3_baseline_set": baseline_set, "phase_b_decision": phase_b})
     write_json(phase_dir / "decision.json", decision)
+    write_json(phase_dir / f"decision_{tier.lower()}.json", decision)
     write_phase_report(phase_dir, "Phase D G5 T3/F2 Material", decision)
     write_hashes(phase_dir)
 
@@ -662,6 +806,7 @@ def make_task(
     components: list[str] | None = None,
     t3_profile: dict[str, Any] | None = None,
     allow_under_eval: bool = False,
+    carbon_tier: str = "",
 ) -> dict[str, Any]:
     run_id = run_id_for(phase, scenario_type, category, instance, algorithm, seed, components or [])
     checkpoint = phase_dir / "checkpoints" / f"{run_id}.json"
@@ -681,6 +826,7 @@ def make_task(
         "price_override": price_override_payload(scenario_type),
         "allow_under_eval": bool(allow_under_eval),
         "eval_closure_required": not bool(allow_under_eval),
+        "carbon_tier": str(carbon_tier),
         "components": list(components or []),
         "t3_profile": t3_profile or {},
         "checkpoint_path": str(checkpoint),
@@ -840,6 +986,7 @@ def run_task(task: dict[str, Any]) -> dict[str, Any]:
     row = {
         "run_id": task["run_id"],
         "phase": task["phase"],
+        "carbon_tier": task.get("carbon_tier", ""),
         "category": task["category"],
         "instance": task["instance"],
         "size": instance_size(str(task["instance"])),
@@ -1229,6 +1376,151 @@ def decide_phase_a_prime(retest_rows: list[dict[str, Any]], evidence_rows: list[
     }
 
 
+def decide_phase_e_carbon(rows: list[dict[str, Any]]) -> dict[str, Any]:
+    tier1_instances = {instance for _, instance in PHASE_E_CARBON_TIERS["Tier1"]}
+    tier1_rows = [row for row in rows if row.get("instance") in tier1_instances]
+    tier1_failures = [row for row in tier1_rows if row.get("gate_status") != "OK"]
+    optional_failures = [row for row in rows if row.get("instance") not in tier1_instances and row.get("gate_status") != "OK"]
+    ablation_rows = carbon_vs_ablation_by_instance(rows)
+    tier1_summary = [row for row in ablation_rows if row.get("instance") in tier1_instances]
+    tier1_ready = len(tier1_summary) == len(tier1_instances) and all(int(as_float(row.get("pair_count"), 0)) == 3 for row in tier1_summary) and not tier1_failures
+    supported = tier1_ready and all(
+        (truthy(row.get("carbon_e_total_all_lower")) or truthy(row.get("carbon_cost_carbon_all_lower")))
+        and truthy(row.get("carbon_cost_within_one_percent_all"))
+        for row in tier1_summary
+    )
+    dominant = supported and all(truthy(row.get("carbon_best_cost_not_worse_all")) for row in tier1_summary)
+    if not tier1_ready:
+        verdict = "CARBON_DIAGNOSTIC_COLLECTION_PARTIAL"
+    elif dominant:
+        verdict = "CARBON_OPS_DOMINANT"
+    elif supported:
+        verdict = "CARBON_OPS_INNOVATION_SUPPORTED"
+    else:
+        verdict = "CARBON_OPS_WEAK"
+    return {
+        "schema": "setp-e2-final-phase-e-carbon-decision.v1",
+        "verdict": verdict,
+        "diagnostic_not_t3": True,
+        "t3_main_profile_locked": {"base_variant": "alns_e2_throughput", "selected_components": ["LOCAL_SEARCH"]},
+        "primary_contrast": "alns_e2_carbon vs alns_e2_carbon_ablation",
+        "context_contrast": "alns_e2_carbon vs t3_main_alns (throughput+LOCAL_SEARCH)",
+        "tier1_instance_count": len(tier1_instances),
+        "tier1_ready": tier1_ready,
+        "tier1_failure_count": len(tier1_failures),
+        "tier1_failure_sample": tier1_failures[:20],
+        "optional_failure_count": len(optional_failures),
+        "optional_failure_sample": optional_failures[:20],
+        "summary": tier1_summary,
+        "all_instance_summary": ablation_rows,
+        "algorithm_win_loss_claim": False,
+        "user_decision_if_dominant": "If CARBON_OPS_DOMINANT, user decides whether to promote carbon or add a carbon-aware variant column.",
+    }
+
+
+def carbon_operator_summary(rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    out: list[dict[str, Any]] = []
+    for row in summarize_rows(rows, keys=("carbon_tier", "category", "instance", "algorithm")):
+        group = [
+            source
+            for source in rows
+            if str(source.get("carbon_tier", "")) == str(row.get("carbon_tier", ""))
+            and str(source.get("category", "")) == str(row.get("category", ""))
+            and str(source.get("instance", "")) == str(row.get("instance", ""))
+            and str(source.get("algorithm", "")) == str(row.get("algorithm", ""))
+        ]
+        row["mean_ev_route_share"] = mean_ev_route_share(group)
+        row["mean_charging_action_count"] = mean_field(group, "charging_action_count")
+        row["mean_evals_per_second"] = mean_field(group, "evals_per_second")
+        out.append(row)
+    return sorted_rows(out)
+
+
+def carbon_vs_ablation_by_instance(rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    return carbon_pair_summary(rows, "alns_e2_carbon_ablation")
+
+
+def carbon_vs_throughput_context(rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    return carbon_pair_summary(rows, PHASE_E_CONTEXT_ALGORITHM)
+
+
+def carbon_pair_summary(rows: list[dict[str, Any]], right_algorithm: str) -> list[dict[str, Any]]:
+    instances = sorted({(str(row.get("carbon_tier", "")), str(row.get("category", "")), str(row.get("instance", ""))) for row in rows if row.get("algorithm") in {"alns_e2_carbon", right_algorithm}})
+    out: list[dict[str, Any]] = []
+    for carbon_tier, category, instance in instances:
+        group = [row for row in rows if row.get("category") == category and row.get("instance") == instance]
+        pairs = paired_by_instance_seed(group, "alns_e2_carbon", right_algorithm)
+        e_lower = [as_float(left.get("E_total")) < as_float(right.get("E_total")) for left, right in pairs]
+        carbon_cost_lower = [as_float(left.get("cost_carbon")) < as_float(right.get("cost_carbon")) for left, right in pairs]
+        cost_within_one_percent = [as_float(left.get("best_cost")) <= as_float(right.get("best_cost")) * 1.01 for left, right in pairs]
+        best_cost_not_worse = [as_float(left.get("best_cost")) <= as_float(right.get("best_cost")) + 1e-12 for left, right in pairs]
+        out.append(
+            {
+                "carbon_tier": carbon_tier or phase_e_carbon_instance_tier(instance),
+                "category": category,
+                "instance": instance,
+                "right_algorithm": right_algorithm,
+                "pair_count": len(pairs),
+                "carbon_e_total_all_lower": bool(e_lower) and all(e_lower),
+                "carbon_cost_carbon_all_lower": bool(carbon_cost_lower) and all(carbon_cost_lower),
+                "carbon_cost_within_one_percent_all": bool(cost_within_one_percent) and all(cost_within_one_percent),
+                "carbon_best_cost_not_worse_all": bool(best_cost_not_worse) and all(best_cost_not_worse),
+                "mean_carbon_best_cost": mean_field([left for left, _ in pairs], "best_cost"),
+                "mean_right_best_cost": mean_field([right for _, right in pairs], "best_cost"),
+                "mean_carbon_E_total": mean_field([left for left, _ in pairs], "E_total"),
+                "mean_right_E_total": mean_field([right for _, right in pairs], "E_total"),
+                "mean_carbon_cost_carbon": mean_field([left for left, _ in pairs], "cost_carbon"),
+                "mean_right_cost_carbon": mean_field([right for _, right in pairs], "cost_carbon"),
+            }
+        )
+    return sorted_rows(out)
+
+
+def timing_ledger_hotspots(rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    out: list[dict[str, Any]] = []
+    for row in rows:
+        if row.get("instance") != "e2-threeshift-200c-03" or int(as_float(row.get("seed"), -1)) != 1:
+            continue
+        try:
+            operator_counts = json.loads(row.get("operator_counts_json") or "{}")
+        except json.JSONDecodeError:
+            operator_counts = {}
+        timing = operator_counts.get("timing") if isinstance(operator_counts, dict) else {}
+        if not isinstance(timing, dict):
+            continue
+        for label, payload in sorted(timing.items()):
+            if not isinstance(payload, dict):
+                continue
+            out.append(
+                {
+                    "instance": row.get("instance"),
+                    "algorithm": row.get("algorithm"),
+                    "seed": row.get("seed"),
+                    "label": label,
+                    "seconds": as_float(payload.get("seconds")),
+                    "count": as_float(payload.get("count")),
+                }
+            )
+    return sorted(out, key=lambda row: (-as_float(row.get("seconds")), str(row.get("algorithm")), str(row.get("label"))))
+
+
+def phase_e_carbon_instance_tier(instance: str) -> str:
+    for tier_name, items in PHASE_E_CARBON_TIERS.items():
+        if any(item_instance == instance for _, item_instance in items):
+            return tier_name
+    return ""
+
+
+def mean_ev_route_share(rows: list[dict[str, Any]]) -> float:
+    values = []
+    for row in rows:
+        route_count = as_float(row.get("route_count"))
+        ev_count = as_float(row.get("ev_route_count"))
+        if route_count > 0 and math.isfinite(ev_count):
+            values.append(ev_count / route_count)
+    return statistics.mean(values) if values else math.nan
+
+
 def decide_carbon_diagnostic(rows: list[dict[str, Any]]) -> dict[str, Any]:
     failures = [row for row in rows if row.get("gate_status") != "OK"]
     group_results = carbon_wallclock_summary(rows)
@@ -1464,8 +1756,11 @@ def decide_phase_d(
 ) -> dict[str, Any]:
     failures = incomplete_rows(rows)
     suspects = [row for row in liveness_rows if str(row.get("verdict", "")).endswith("_SUSPECT") or row.get("verdict") == "BASELINE_LIVENESS_FAIL"]
+    homogeneity_suspects = [row for row in liveness_rows if row.get("verdict") in {"SEED_INVARIANCE_SUSPECT", "CROSS_ALGO_IDENTITY_SUSPECT"}]
     documented_exceptions = documented_exceptions or []
-    if suspects:
+    if homogeneity_suspects:
+        verdict = "HALT_T3_HOMOGENIZATION"
+    elif suspects:
         verdict = "HALT_T3_SUSPECT"
     elif failures:
         verdict = "T3_COLLECTION_PARTIAL"
@@ -1476,7 +1771,8 @@ def decide_phase_d(
         "verdict": verdict,
         "tier": tier,
         "material_rows": len(rows),
-        "tier1_rows": len(rows),
+        "expected_instance_count": G5_TIER_EXPECTED_COUNTS.get(tier),
+        "observed_instance_count": len({(row.get("category"), row.get("instance")) for row in rows}),
         "baseline_set": baseline_set,
         "documented_exception_count": len(documented_exceptions),
         "documented_instance_exceptions": documented_exceptions,
@@ -1484,6 +1780,8 @@ def decide_phase_d(
         "failure_sample": failures[:20],
         "suspect_count": len(suspects),
         "suspect_sample": suspects[:20],
+        "homogeneity_suspect_count": len(homogeneity_suspects),
+        "homogeneity_suspect_sample": homogeneity_suspects[:20],
         "algorithm_win_loss_claim": False,
     }
 
@@ -1492,7 +1790,7 @@ def final_decision(output_dir: Path) -> dict[str, Any]:
     phases = {
         "phase_a": read_json(output_dir / "phase_a_alns_gate/decision.json") if (output_dir / "phase_a_alns_gate/decision.json").exists() else {},
         "phase_a_prime": read_json(output_dir / "phase_a_prime_route_elimination_retest/decision.json") if (output_dir / "phase_a_prime_route_elimination_retest/decision.json").exists() else {},
-        "carbon_diagnostic": read_json(output_dir / "phase_a_carbon_wallclock_diagnostic/decision.json") if (output_dir / "phase_a_carbon_wallclock_diagnostic/decision.json").exists() else {},
+        "phase_e_carbon": read_json(output_dir / "phase_e_carbon_operator_diagnostic/decision.json") if (output_dir / "phase_e_carbon_operator_diagnostic/decision.json").exists() else {},
         "phase_b": read_json(output_dir / "phase_b_g3_baseline_health/decision.json") if (output_dir / "phase_b_g3_baseline_health/decision.json").exists() else {},
         "phase_c": read_json(output_dir / "phase_c_g4_stability/decision.json") if (output_dir / "phase_c_g4_stability/decision.json").exists() else {},
         "phase_d": read_json(output_dir / "phase_d_g5_t3_material/decision.json") if (output_dir / "phase_d_g5_t3_material/decision.json").exists() else {},
@@ -1501,7 +1799,7 @@ def final_decision(output_dir: Path) -> dict[str, Any]:
     blocked_phase = ""
     final_material_verdict = phases["phase_d"].get("verdict", "MISSING")
     phase_a_prime_lifted_g4_halt = bool(phases["phase_a_prime"].get("halt_lifted_for_100c01"))
-    allowed_phase_verdicts = {"ALNS_GATE_READY", "G3_BASELINE_SET_READY", "G3_WEAK_IMPLEMENTATIONS_EXCLUDED", "G4_STABILITY_PASS", "G4_PASS_WITH_EXCEPTIONS"}
+    allowed_phase_verdicts = {"ALNS_GATE_READY", "G3_BASELINE_SET_READY", "G3_WEAK_IMPLEMENTATIONS_EXCLUDED", "G4_STABILITY_PASS", "G4_PASS_WITH_EXCEPTIONS", "HEALTH_PASS_WITH_SIZE_DEPENDENT_PROFILE"}
     for phase in ("phase_a", "phase_b", "phase_c"):
         verdict = phase_verdicts[phase]
         if phase == "phase_c" and verdict == "HALT_G4_SUSPECT" and phase_a_prime_lifted_g4_halt:
@@ -1510,6 +1808,9 @@ def final_decision(output_dir: Path) -> dict[str, Any]:
             blocked_phase = phase
             final_material_verdict = verdict
             break
+    if not blocked_phase and phase_verdicts.get("phase_e_carbon") not in PHASE_E_VALID_VERDICTS:
+        blocked_phase = "phase_e_carbon"
+        final_material_verdict = "CARBON_DIAGNOSTIC_REQUIRED_BEFORE_G5"
     t3_main_profile = phases["phase_a_prime"].get("selected_t3_main_profile") or phases["phase_a"].get("t3_main_profile")
     g4_exceptions = list(phases["phase_c"].get("documented_instance_exceptions") or [])
     g4_exception_count = int(as_float(phases["phase_c"].get("documented_exception_count"), len(g4_exceptions)))
@@ -1520,16 +1821,18 @@ def final_decision(output_dir: Path) -> dict[str, Any]:
         "blocked_phase": blocked_phase,
         "t3_main_profile": t3_main_profile,
         "phase_a_prime_halt_lifted_for_100c01": phase_a_prime_lifted_g4_halt,
-        "phase_c_original_verdict": phase_verdicts.get("phase_c"),
+        "phase_c_original_verdict": phases["phase_c"].get("original_verdict") or phase_verdicts.get("phase_c"),
         "g4_exception_count": g4_exception_count,
         "g4_documented_instance_exceptions": g4_exceptions,
-        "carbon_diagnostic_verdict": phases["carbon_diagnostic"].get("verdict", "NOT_RUN_NONBLOCKING"),
+        "carbon_diagnostic_verdict": phases["phase_e_carbon"].get("verdict", "NOT_RUN_NONBLOCKING"),
         "t3_baseline_set": phases["phase_b"].get("t3_baseline_set"),
         "final_material_verdict": final_material_verdict,
         "not_paper_text": True,
         "algorithm_win_loss_claim": False,
         "user_decisions_remaining": [
             "T3 table wording and paper posture",
+            "Carbon-operator wording: mechanism contribution vs limitation/future work",
+            "If CARBON_OPS_DOMINANT, whether carbon becomes main variant or a separate column",
             "Whether SA/TS absence is stated as limitation",
             "Whether DR-ALNS waits for x86 lane as future work or extended table",
         ],
@@ -1553,9 +1856,23 @@ def price_override_payload(scenario_type: str) -> dict[str, float] | None:
 
 
 def instance_manifest_for_tier(tier: str) -> list[dict[str, Any]]:
-    if tier not in TIER_REPLICATES:
+    if tier not in TIER_NAMES:
         raise ValueError(f"unknown G5 tier: {tier}")
-    allowed_replicates = set(TIER_REPLICATES[tier])
+    all_rows = all_e2_instance_manifest()
+    if tier == "Tier1":
+        rows = [row for row in all_rows if row["replicate"] == "01"]
+    elif tier == "Tier2":
+        selected = {(row["category"], row["instance"]) for row in all_rows if row["replicate"] == "01"}
+        selected.update(G4_INSTANCES)
+        rows = [row for row in all_rows if (row["category"], row["instance"]) in selected]
+    else:
+        rows = list(all_rows)
+    for row in rows:
+        row["tier_scope"] = tier
+    return sorted_rows(rows)
+
+
+def all_e2_instance_manifest() -> list[dict[str, Any]]:
     rows: list[dict[str, Any]] = []
     for category_dir in sorted(INSTANCE_ROOT.iterdir()):
         if not category_dir.is_dir():
@@ -1565,11 +1882,9 @@ def instance_manifest_for_tier(tier: str) -> list[dict[str, Any]]:
             if not instance_dir.is_dir():
                 continue
             replicate = instance_dir.name.rsplit("-", 1)[-1]
-            if replicate not in allowed_replicates:
-                continue
             rows.append(
                 {
-                    "tier_scope": tier,
+                    "tier_scope": "Tier3",
                     "replicate": replicate,
                     "category": category,
                     "instance": instance_dir.name,
@@ -1579,6 +1894,31 @@ def instance_manifest_for_tier(tier: str) -> list[dict[str, Any]]:
             )
     rows.sort(key=lambda row: (int(row["size"]), str(row["category"]), str(row["instance"])))
     return rows
+
+
+def phase_e_carbon_manifest(tier: str) -> list[dict[str, Any]]:
+    if tier not in TIER_NAMES:
+        raise ValueError(f"unknown Phase E carbon tier: {tier}")
+    selected: list[tuple[str, str, str]] = []
+    for tier_name in TIER_NAMES:
+        for category, instance in PHASE_E_CARBON_TIERS[tier_name]:
+            selected.append((tier_name, category, instance))
+        if tier_name == tier:
+            break
+    rows = []
+    for tier_name, category, instance in selected:
+        rows.append(
+            {
+                "tier_scope": tier,
+                "carbon_tier": tier_name,
+                "category": category,
+                "instance": instance,
+                "size": instance_size(instance),
+                "bundle_dir": rel(INSTANCE_ROOT / category / instance),
+                "selection_reason": "EV/charging structure enriched Goeke80 three-shift diagnostic instance",
+            }
+        )
+    return sorted_rows(rows)
 
 
 def tier1_instance_manifest() -> list[dict[str, Any]]:
@@ -1744,7 +2084,21 @@ def summarize_rows(rows: list[dict[str, Any]], *, keys: tuple[str, ...]) -> list
     for group_key, group in groups.items():
         costs = [as_float(row.get("best_cost")) for row in group if math.isfinite(as_float(row.get("best_cost")))]
         item = {key: value for key, value in zip(keys, group_key)}
-        item.update({"rows": len(group), "ok_rows": len(group) - len(incomplete_rows(group)), "mean_best_cost": statistics.mean(costs) if costs else math.nan, "min_best_cost": min(costs) if costs else math.nan, "mean_E_total": mean_field(group, "E_total"), "mean_cost_carbon": mean_field(group, "cost_carbon"), "mean_low_carbon_charging_share": mean_field(group, "low_carbon_charging_share")})
+        item.update(
+            {
+                "rows": len(group),
+                "ok_rows": len(group) - len(incomplete_rows(group)),
+                "mean_best_cost": statistics.mean(costs) if costs else math.nan,
+                "std_best_cost": statistics.stdev(costs) if len(costs) > 1 else 0.0 if costs else math.nan,
+                "min_best_cost": min(costs) if costs else math.nan,
+                "mean_actual_evals": mean_field(group, "actual_evals"),
+                "mean_elapsed_seconds": mean_field(group, "elapsed_seconds"),
+                "mean_evals_per_second": mean_field(group, "evals_per_second"),
+                "mean_E_total": mean_field(group, "E_total"),
+                "mean_cost_carbon": mean_field(group, "cost_carbon"),
+                "mean_low_carbon_charging_share": mean_field(group, "low_carbon_charging_share"),
+            }
+        )
         out.append(item)
     return sorted_rows(out)
 
@@ -1835,6 +2189,29 @@ def wilcoxon_rows(rows: list[dict[str, Any]], baseline_set: list[str]) -> list[d
     return out
 
 
+def wilcoxon_instance_rows(rows: list[dict[str, Any]], baseline_set: list[str]) -> list[dict[str, Any]]:
+    out: list[dict[str, Any]] = []
+    instances = sorted({(str(row.get("category")), str(row.get("instance"))) for row in rows})
+    for category, instance in instances:
+        group = [row for row in rows if row.get("category") == category and row.get("instance") == instance]
+        for baseline in baseline_set:
+            pairs = paired_costs(group, "t3_main_alns", baseline)
+            diffs = [left - right for left, right in pairs]
+            p_value = math.nan
+            statistic = math.nan
+            if diffs:
+                try:
+                    from scipy.stats import wilcoxon  # type: ignore
+
+                    result = wilcoxon(diffs, zero_method="wilcox", alternative="less")
+                    statistic = float(result.statistic)
+                    p_value = float(result.pvalue)
+                except Exception:
+                    pass
+            out.append({"category": category, "instance": instance, "baseline": baseline, "paired_count": len(pairs), "wilcoxon_statistic": statistic, "p_value_alns_less": p_value, "note": "per-instance neutral material only"})
+    return sorted_rows(out)
+
+
 def win_tie_loss_rows(rows: list[dict[str, Any]], baseline_set: list[str]) -> list[dict[str, Any]]:
     out = []
     for baseline in baseline_set:
@@ -1844,6 +2221,48 @@ def win_tie_loss_rows(rows: list[dict[str, Any]], baseline_set: list[str]) -> li
         losses = sum(1 for left, right in pairs if left > right + 1e-9)
         out.append({"baseline": baseline, "paired_count": len(pairs), "alns_lower": wins, "tie": ties, "alns_higher": losses})
     return out
+
+
+def size_bucket_summary(rows: list[dict[str, Any]], baseline_set: list[str]) -> list[dict[str, Any]]:
+    out: list[dict[str, Any]] = []
+    for baseline in baseline_set:
+        pairs_by_size: dict[str, list[tuple[float, float]]] = {}
+        left = {(row.get("category"), row.get("instance"), int(as_float(row.get("seed"), 0))): row for row in rows if row.get("algorithm") == "t3_main_alns"}
+        right = {(row.get("category"), row.get("instance"), int(as_float(row.get("seed"), 0))): row for row in rows if row.get("algorithm") == baseline}
+        for key, left_row in left.items():
+            if key not in right:
+                continue
+            left_cost = as_float(left_row.get("best_cost"))
+            right_cost = as_float(right[key].get("best_cost"))
+            if not math.isfinite(left_cost) or not math.isfinite(right_cost) or right_cost == 0:
+                continue
+            size_bucket = f"{instance_size(str(key[1]))}c"
+            pairs_by_size.setdefault(size_bucket, []).append((left_cost, right_cost))
+        for size_bucket, pairs in sorted(pairs_by_size.items()):
+            gaps = [(right_cost - left_cost) / right_cost for left_cost, right_cost in pairs]
+            out.append(
+                {
+                    "size_bucket": size_bucket,
+                    "baseline": baseline,
+                    "paired_count": len(pairs),
+                    "mean_gap_fraction": statistics.mean(gaps) if gaps else math.nan,
+                    "alns_lower": sum(1 for left_cost, right_cost in pairs if left_cost < right_cost - 1e-9),
+                    "tie": sum(1 for left_cost, right_cost in pairs if abs(left_cost - right_cost) <= 1e-9),
+                    "alns_higher": sum(1 for left_cost, right_cost in pairs if left_cost > right_cost + 1e-9),
+                }
+            )
+    return sorted_rows(out)
+
+
+def gate_summary_rows(rows: list[dict[str, Any]], liveness_rows: list[dict[str, Any]], decision: dict[str, Any]) -> list[dict[str, Any]]:
+    return [
+        {"metric": "raw_rows", "value": len(rows)},
+        {"metric": "failure_count", "value": decision.get("failure_count", 0)},
+        {"metric": "suspect_count", "value": decision.get("suspect_count", 0)},
+        {"metric": "homogeneity_suspect_count", "value": decision.get("homogeneity_suspect_count", 0)},
+        {"metric": "liveness_rows", "value": len(liveness_rows)},
+        {"metric": "documented_exception_count", "value": decision.get("documented_exception_count", 0)},
+    ]
 
 
 def paired_costs(rows: list[dict[str, Any]], left_alg: str, right_alg: str) -> list[tuple[float, float]]:
