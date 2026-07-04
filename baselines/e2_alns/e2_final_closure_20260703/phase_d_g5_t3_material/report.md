@@ -1,6 +1,6 @@
 # Phase D G5 T3/F2 Material
 
-Verdict: `HALT_T3_HOMOGENIZATION`
+Verdict: `T3_COLLECTION_PARTIAL`
 
 本报告是 evidence material，不自动写入 TeX，不构成论文胜负表述。
 
@@ -17,6 +17,8 @@ Verdict: `HALT_T3_HOMOGENIZATION`
     "GWO",
     "IWD"
   ],
+  "closed_material_rows": 54,
+  "collection_complete": false,
   "documented_exception_count": 2,
   "documented_instance_exceptions": [
     {
@@ -46,124 +48,48 @@ Verdict: `HALT_T3_HOMOGENIZATION`
       "mechanism_explanation": "Record as a documented instance exception; do not change the T3 main profile from alns_e2_throughput+LOCAL_SEARCH."
     }
   ],
-  "exact_identity_suspect_count": 3,
-  "exact_identity_suspect_sample": [
-    {
-      "algorithm": "GA|GA-VNS|PSO",
-      "best_cost": "2894.1244745663066",
-      "category": "multidepot",
-      "flags": "exact_cost_and_signature_repeated_within_instance",
-      "instance": "e2-multidepot-100c-01",
-      "run_count": 3,
-      "scope": "phase_d_instance_exact_identity",
-      "seed": "1|3",
-      "signature_prefix": "b80ab177a9dac862",
-      "verdict": "CROSS_ALGO_OR_SEED_EXACT_IDENTITY_SUSPECT"
-    },
-    {
-      "algorithm": "GA|GA-VNS|LNS|VNS|t3_main_alns",
-      "best_cost": "371.9993673208387",
-      "category": "multidepot",
-      "flags": "exact_cost_and_signature_repeated_within_instance",
-      "instance": "e2-multidepot-10c-01",
-      "run_count": 11,
-      "scope": "phase_d_instance_exact_identity",
-      "seed": "1|2|3",
-      "signature_prefix": "af2703e54ec34282",
-      "verdict": "CROSS_ALGO_OR_SEED_EXACT_IDENTITY_SUSPECT"
-    },
-    {
-      "algorithm": "GA|GWO|PSO|t3_main_alns",
-      "best_cost": "387.9007343319535",
-      "category": "multidepot",
-      "flags": "exact_cost_and_signature_repeated_within_instance",
-      "instance": "e2-multidepot-10c-01",
-      "run_count": 9,
-      "scope": "phase_d_instance_exact_identity",
-      "seed": "1|2|3",
-      "signature_prefix": "e912d411804e6ecf",
-      "verdict": "CROSS_ALGO_OR_SEED_EXACT_IDENTITY_SUSPECT"
-    }
-  ],
+  "exact_identity_suspect_count": 0,
+  "exact_identity_suspect_sample": [],
   "expected_instance_count": 23,
+  "expected_material_rows": 621,
+  "expected_seeds": [
+    1,
+    2,
+    3
+  ],
   "failure_count": 0,
   "failure_sample": [],
-  "freeze_reason": "Phase D was stopped after a pre-registered homogeneity red line was observed in partial raw_runs.csv.",
-  "homogeneity_suspect_count": 6,
-  "homogeneity_suspect_sample": [
-    {
-      "algorithm": "GA|GA-VNS|LNS|VNS|t3_main_alns",
-      "flags": "shared_signature=af2703e54ec342829fe77a826735a17f481316c42fe3c058bfcf010a64da731d",
-      "run_id": "",
-      "scope": "cross_algorithm",
-      "seed": "",
-      "verdict": "CROSS_ALGO_IDENTITY_SUSPECT"
-    },
-    {
-      "algorithm": "GA|GA-VNS|PSO",
-      "flags": "shared_signature=b80ab177a9dac86214e7bfd23c63ecc053b649735bed7fe417a0edfbdf32b820",
-      "run_id": "",
-      "scope": "cross_algorithm",
-      "seed": "",
-      "verdict": "CROSS_ALGO_IDENTITY_SUSPECT"
-    },
-    {
-      "algorithm": "GA|GWO|PSO|t3_main_alns",
-      "flags": "shared_signature=e912d411804e6ecf628a63c74039a895c2c57ece27acdb7f93879d282d362c2b",
-      "run_id": "",
-      "scope": "cross_algorithm",
-      "seed": "",
-      "verdict": "CROSS_ALGO_IDENTITY_SUSPECT"
-    },
-    {
-      "algorithm": "GA|GA-VNS|PSO",
-      "best_cost": "2894.1244745663066",
-      "category": "multidepot",
-      "flags": "exact_cost_and_signature_repeated_within_instance",
-      "instance": "e2-multidepot-100c-01",
-      "run_count": 3,
-      "scope": "phase_d_instance_exact_identity",
-      "seed": "1|3",
-      "signature_prefix": "b80ab177a9dac862",
-      "verdict": "CROSS_ALGO_OR_SEED_EXACT_IDENTITY_SUSPECT"
-    },
-    {
-      "algorithm": "GA|GA-VNS|LNS|VNS|t3_main_alns",
-      "best_cost": "371.9993673208387",
-      "category": "multidepot",
-      "flags": "exact_cost_and_signature_repeated_within_instance",
-      "instance": "e2-multidepot-10c-01",
-      "run_count": 11,
-      "scope": "phase_d_instance_exact_identity",
-      "seed": "1|2|3",
-      "signature_prefix": "af2703e54ec34282",
-      "verdict": "CROSS_ALGO_OR_SEED_EXACT_IDENTITY_SUSPECT"
-    },
-    {
-      "algorithm": "GA|GWO|PSO|t3_main_alns",
-      "best_cost": "387.9007343319535",
-      "category": "multidepot",
-      "flags": "exact_cost_and_signature_repeated_within_instance",
-      "instance": "e2-multidepot-10c-01",
-      "run_count": 9,
-      "scope": "phase_d_instance_exact_identity",
-      "seed": "1|2|3",
-      "signature_prefix": "e912d411804e6ecf",
-      "verdict": "CROSS_ALGO_OR_SEED_EXACT_IDENTITY_SUSPECT"
-    }
-  ],
-  "material_rows": 54,
-  "observed_instance_count": 3,
-  "record_only_freeze": true,
-  "schema": "setp-e2-final-phase-d-decision.v1",
-  "suspect_count": 51,
-  "suspect_sample": [
+  "freeze_reason": "Phase D partial raw_runs.csv was reclassified by the identity-cluster gate without rerunning solver rows.",
+  "homogeneity_suspect_count": 0,
+  "homogeneity_suspect_sample": [],
+  "identity_cluster_count": 3,
+  "identity_cluster_source": "phase_d_g5_t3_material/identity_clusters.csv;raw_runs.csv",
+  "identity_clusters_by_class": {
+    "NATURAL_CONVERGENCE": 1,
+    "SECONDARY_ATTRACTOR": 1,
+    "SHARED_STALL": 1
+  },
+  "identity_disclosure_count": 3,
+  "identity_halt_count": 0,
+  "identity_halt_sample": [],
+  "liveness_diagnostic_count": 51,
+  "liveness_diagnostic_sample": [
     {
       "algorithm": "ACO",
       "flags": "LOW_ROUTE_COUNT_DIVERSITY",
       "native_best_updates": "19",
       "route_count_unique": "2",
       "run_id": "D_G5_TIER1__formal_goeke80__multidepot__e2-multidepot-100c-01__ACO__seed1",
+      "scope": "run",
+      "seed": "1",
+      "verdict": "BASELINE_LIVENESS_FAIL"
+    },
+    {
+      "algorithm": "ACO",
+      "flags": "LOW_ROUTE_COUNT_DIVERSITY",
+      "native_best_updates": "14",
+      "route_count_unique": "2",
+      "run_id": "D_G5_TIER1__formal_goeke80__multidepot__e2-multidepot-10c-01__ACO__seed1",
       "scope": "run",
       "seed": "1",
       "verdict": "BASELINE_LIVENESS_FAIL"
@@ -181,9 +107,29 @@ Verdict: `HALT_T3_HOMOGENIZATION`
     {
       "algorithm": "ACO",
       "flags": "LOW_ROUTE_COUNT_DIVERSITY",
+      "native_best_updates": "8",
+      "route_count_unique": "2",
+      "run_id": "D_G5_TIER1__formal_goeke80__multidepot__e2-multidepot-10c-01__ACO__seed2",
+      "scope": "run",
+      "seed": "2",
+      "verdict": "BASELINE_LIVENESS_FAIL"
+    },
+    {
+      "algorithm": "ACO",
+      "flags": "LOW_ROUTE_COUNT_DIVERSITY",
       "native_best_updates": "24",
       "route_count_unique": "2",
       "run_id": "D_G5_TIER1__formal_goeke80__multidepot__e2-multidepot-100c-01__ACO__seed3",
+      "scope": "run",
+      "seed": "3",
+      "verdict": "BASELINE_LIVENESS_FAIL"
+    },
+    {
+      "algorithm": "ACO",
+      "flags": "LOW_ROUTE_COUNT_DIVERSITY",
+      "native_best_updates": "10",
+      "route_count_unique": "2",
+      "run_id": "D_G5_TIER1__formal_goeke80__multidepot__e2-multidepot-10c-01__ACO__seed3",
       "scope": "run",
       "seed": "3",
       "verdict": "BASELINE_LIVENESS_FAIL"
@@ -201,6 +147,26 @@ Verdict: `HALT_T3_HOMOGENIZATION`
     {
       "algorithm": "GA",
       "flags": "LOW_ROUTE_COUNT_DIVERSITY",
+      "native_best_updates": "7",
+      "route_count_unique": "2",
+      "run_id": "D_G5_TIER1__formal_goeke80__multidepot__e2-multidepot-10c-01__GA__seed1",
+      "scope": "run",
+      "seed": "1",
+      "verdict": "BASELINE_LIVENESS_FAIL"
+    },
+    {
+      "algorithm": "GA",
+      "flags": "LOW_ROUTE_COUNT_DIVERSITY",
+      "native_best_updates": "5",
+      "route_count_unique": "3",
+      "run_id": "D_G5_TIER1__formal_goeke80__multidepot__e2-multidepot-150c-01__GA__seed1",
+      "scope": "run",
+      "seed": "1",
+      "verdict": "BASELINE_LIVENESS_FAIL"
+    },
+    {
+      "algorithm": "GA",
+      "flags": "LOW_ROUTE_COUNT_DIVERSITY",
       "native_best_updates": "4",
       "route_count_unique": "2",
       "run_id": "D_G5_TIER1__formal_goeke80__multidepot__e2-multidepot-100c-01__GA__seed2",
@@ -211,9 +177,29 @@ Verdict: `HALT_T3_HOMOGENIZATION`
     {
       "algorithm": "GA",
       "flags": "LOW_ROUTE_COUNT_DIVERSITY",
+      "native_best_updates": "7",
+      "route_count_unique": "2",
+      "run_id": "D_G5_TIER1__formal_goeke80__multidepot__e2-multidepot-10c-01__GA__seed2",
+      "scope": "run",
+      "seed": "2",
+      "verdict": "BASELINE_LIVENESS_FAIL"
+    },
+    {
+      "algorithm": "GA",
+      "flags": "LOW_ROUTE_COUNT_DIVERSITY",
       "native_best_updates": "6",
       "route_count_unique": "2",
       "run_id": "D_G5_TIER1__formal_goeke80__multidepot__e2-multidepot-100c-01__GA__seed3",
+      "scope": "run",
+      "seed": "3",
+      "verdict": "BASELINE_LIVENESS_FAIL"
+    },
+    {
+      "algorithm": "GA",
+      "flags": "LOW_ROUTE_COUNT_DIVERSITY",
+      "native_best_updates": "8",
+      "route_count_unique": "2",
+      "run_id": "D_G5_TIER1__formal_goeke80__multidepot__e2-multidepot-10c-01__GA__seed3",
       "scope": "run",
       "seed": "3",
       "verdict": "BASELINE_LIVENESS_FAIL"
@@ -231,9 +217,29 @@ Verdict: `HALT_T3_HOMOGENIZATION`
     {
       "algorithm": "GA-VNS",
       "flags": "LOW_ROUTE_COUNT_DIVERSITY",
+      "native_best_updates": "4",
+      "route_count_unique": "2",
+      "run_id": "D_G5_TIER1__formal_goeke80__multidepot__e2-multidepot-10c-01__GA-VNS__seed1",
+      "scope": "run",
+      "seed": "1",
+      "verdict": "BASELINE_LIVENESS_FAIL"
+    },
+    {
+      "algorithm": "GA-VNS",
+      "flags": "LOW_ROUTE_COUNT_DIVERSITY",
       "native_best_updates": "3",
       "route_count_unique": "2",
       "run_id": "D_G5_TIER1__formal_goeke80__multidepot__e2-multidepot-100c-01__GA-VNS__seed2",
+      "scope": "run",
+      "seed": "2",
+      "verdict": "BASELINE_LIVENESS_FAIL"
+    },
+    {
+      "algorithm": "GA-VNS",
+      "flags": "LOW_ROUTE_COUNT_DIVERSITY",
+      "native_best_updates": "9",
+      "route_count_unique": "2",
+      "run_id": "D_G5_TIER1__formal_goeke80__multidepot__e2-multidepot-10c-01__GA-VNS__seed2",
       "scope": "run",
       "seed": "2",
       "verdict": "BASELINE_LIVENESS_FAIL"
@@ -249,117 +255,32 @@ Verdict: `HALT_T3_HOMOGENIZATION`
       "verdict": "BASELINE_LIVENESS_FAIL"
     },
     {
-      "algorithm": "GWO",
+      "algorithm": "GA-VNS",
       "flags": "LOW_ROUTE_COUNT_DIVERSITY",
-      "native_best_updates": "4",
+      "native_best_updates": "5",
       "route_count_unique": "2",
-      "run_id": "D_G5_TIER1__formal_goeke80__multidepot__e2-multidepot-100c-01__GWO__seed1",
-      "scope": "run",
-      "seed": "1",
-      "verdict": "BASELINE_LIVENESS_FAIL"
-    },
-    {
-      "algorithm": "GWO",
-      "flags": "LOW_ROUTE_COUNT_DIVERSITY",
-      "native_best_updates": "12",
-      "route_count_unique": "2",
-      "run_id": "D_G5_TIER1__formal_goeke80__multidepot__e2-multidepot-100c-01__GWO__seed2",
-      "scope": "run",
-      "seed": "2",
-      "verdict": "BASELINE_LIVENESS_FAIL"
-    },
-    {
-      "algorithm": "IWD",
-      "flags": "LOW_ROUTE_COUNT_DIVERSITY",
-      "native_best_updates": "18",
-      "route_count_unique": "2",
-      "run_id": "D_G5_TIER1__formal_goeke80__multidepot__e2-multidepot-100c-01__IWD__seed1",
-      "scope": "run",
-      "seed": "1",
-      "verdict": "BASELINE_LIVENESS_FAIL"
-    },
-    {
-      "algorithm": "IWD",
-      "flags": "LOW_ROUTE_COUNT_DIVERSITY",
-      "native_best_updates": "25",
-      "route_count_unique": "2",
-      "run_id": "D_G5_TIER1__formal_goeke80__multidepot__e2-multidepot-100c-01__IWD__seed2",
-      "scope": "run",
-      "seed": "2",
-      "verdict": "BASELINE_LIVENESS_FAIL"
-    },
-    {
-      "algorithm": "IWD",
-      "flags": "LOW_ROUTE_COUNT_DIVERSITY",
-      "native_best_updates": "28",
-      "route_count_unique": "2",
-      "run_id": "D_G5_TIER1__formal_goeke80__multidepot__e2-multidepot-100c-01__IWD__seed3",
+      "run_id": "D_G5_TIER1__formal_goeke80__multidepot__e2-multidepot-10c-01__GA-VNS__seed3",
       "scope": "run",
       "seed": "3",
       "verdict": "BASELINE_LIVENESS_FAIL"
     },
     {
-      "algorithm": "LNS",
-      "flags": "LOW_ROUTE_COUNT_DIVERSITY",
-      "native_best_updates": "67",
-      "route_count_unique": "2",
-      "run_id": "D_G5_TIER1__formal_goeke80__multidepot__e2-multidepot-100c-01__LNS__seed1",
-      "scope": "run",
-      "seed": "1",
-      "verdict": "BASELINE_LIVENESS_FAIL"
-    },
-    {
-      "algorithm": "LNS",
-      "flags": "LOW_ROUTE_COUNT_DIVERSITY",
-      "native_best_updates": "44",
-      "route_count_unique": "3",
-      "run_id": "D_G5_TIER1__formal_goeke80__multidepot__e2-multidepot-100c-01__LNS__seed2",
-      "scope": "run",
-      "seed": "2",
-      "verdict": "BASELINE_LIVENESS_FAIL"
-    },
-    {
-      "algorithm": "LNS",
-      "flags": "LOW_ROUTE_COUNT_DIVERSITY",
-      "native_best_updates": "67",
-      "route_count_unique": "2",
-      "run_id": "D_G5_TIER1__formal_goeke80__multidepot__e2-multidepot-100c-01__LNS__seed3",
-      "scope": "run",
-      "seed": "3",
-      "verdict": "BASELINE_LIVENESS_FAIL"
-    },
-    {
-      "algorithm": "PSO",
-      "flags": "LOW_ROUTE_COUNT_DIVERSITY",
-      "native_best_updates": "2",
-      "route_count_unique": "2",
-      "run_id": "D_G5_TIER1__formal_goeke80__multidepot__e2-multidepot-100c-01__PSO__seed1",
-      "scope": "run",
-      "seed": "1",
-      "verdict": "BASELINE_LIVENESS_FAIL"
-    },
-    {
-      "algorithm": "PSO",
-      "flags": "LOW_ROUTE_COUNT_DIVERSITY",
-      "native_best_updates": "2",
-      "route_count_unique": "2",
-      "run_id": "D_G5_TIER1__formal_goeke80__multidepot__e2-multidepot-100c-01__PSO__seed2",
-      "scope": "run",
-      "seed": "2",
-      "verdict": "BASELINE_LIVENESS_FAIL"
-    },
-    {
-      "algorithm": "PSO",
-      "flags": "LOW_ROUTE_COUNT_DIVERSITY",
-      "native_best_updates": "2",
-      "route_count_unique": "2",
-      "run_id": "D_G5_TIER1__formal_goeke80__multidepot__e2-multidepot-100c-01__PSO__seed3",
-      "scope": "run",
-      "seed": "3",
-      "verdict": "BASELINE_LIVENESS_FAIL"
+      "algorithm": "GA|GA-VNS|LNS|VNS|t3_main_alns",
+      "flags": "shared_signature=af2703e54ec342829fe77a826735a17f481316c42fe3c058bfcf010a64da731d",
+      "run_id": "",
+      "scope": "cross_algorithm",
+      "seed": "",
+      "verdict": "CROSS_ALGO_IDENTITY_SUSPECT"
     }
   ],
+  "material_rows": 54,
+  "missing_material_rows": 567,
+  "observed_instance_count": 3,
+  "record_only_freeze": true,
+  "schema": "setp-e2-final-phase-d-decision.v1",
+  "suspect_count": 0,
+  "suspect_sample": [],
   "tier": "Tier1",
-  "verdict": "HALT_T3_HOMOGENIZATION"
+  "verdict": "T3_COLLECTION_PARTIAL"
 }
 ```
