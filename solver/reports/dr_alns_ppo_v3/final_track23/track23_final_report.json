@@ -7,10 +7,10 @@
     },
     "required_worker_numpy": "2.3.5",
     "output_dir": "solver\\reports\\dr_alns_ppo_v3\\final_track23",
-    "disk_free_gb": 102.68846893310547,
+    "disk_free_gb": 102.68839263916016,
     "git": {
-      "status_short_branch": "## dr-x86...origin/dr-x86 [ahead 1]\n M HANDOFF.md",
-      "head": "ed30aaee8cd189527ffe716c01edf94b5fe0ea0a",
+      "status_short_branch": "## dr-x86...origin/dr-x86 [ahead 2]\n M HANDOFF.md\n M solver/reports/dr_alns_ppo_v3/final_track23/track23_controller_d2.log\n M solver/reports/dr_alns_ppo_v3/final_track23/track23_progress.log",
+      "head": "2181352ebbae9047ad4c8c1c792b5da6114cc018",
       "branch": "dr-x86"
     }
   },
@@ -411,13 +411,13 @@
     "gate_rule": "Max paired best_of_k vs operator_select over all scale-budget cells: >=3 pass, 1-3 marginal, <1 clean negative."
   },
   "pillar_summary": {
-    "DR_PILLAR_QUALITY": "未判",
+    "DR_PILLAR_QUALITY": "站住",
     "DR_PILLAR_EFFICIENCY": "没站住",
     "DR_PILLAR_DYNAMIC": "未判"
   },
   "final_status": "TRACK23_COMPLETE",
-  "final_reason": "DR_PILLAR_QUALITY=未判, DR_PILLAR_EFFICIENCY=没站住, DR_PILLAR_DYNAMIC=未判",
-  "wall_time_seconds": 9.718999999808148,
+  "final_reason": "DR_PILLAR_QUALITY=站住, DR_PILLAR_EFFICIENCY=没站住, DR_PILLAR_DYNAMIC=未判",
+  "wall_time_seconds": 69445.17200000002,
   "stage_a2": {
     "status": "SKIP_A2_NO_LEVERAGE",
     "trained": false,
@@ -476,5 +476,80 @@
     "scenario_knob_table": "stage_b_carbon_scenario_knobs.csv",
     "scenario_knob_summary": "stage_b_carbon_scenario_knobs_summary.json",
     "scenario_knob_report": "stage_b_carbon_scenario_knobs.md"
+  },
+  "stage_c": {
+    "status": "NO_TUNING_PARITY_CLEAN",
+    "reason": "DR stayed within -2% of the strongest non-DR opponent on every bundle; min_gap=-1.926%.",
+    "row_count": 60,
+    "health_ok": true,
+    "bundle_rows": [
+      {
+        "bundle": "models/data_bundle/generated_instances/E-UK100_01__d2_s3_seed1_24h_20251113",
+        "dr_mean_obj": 2601.6163200571455,
+        "strongest_non_dr_algorithm": "best_static_meta",
+        "strongest_non_dr_mean_obj": 2552.459037976393,
+        "dr_gap_pct_vs_strongest_non_dr": -1.9258793715931508
+      },
+      {
+        "bundle": "models/data_bundle/generated_instances/E-UK100_02__u0_seed2_24h_20251113",
+        "dr_mean_obj": 1769.5935318037416,
+        "strongest_non_dr_algorithm": "best_static_meta",
+        "strongest_non_dr_mean_obj": 1763.6862245902598,
+        "dr_gap_pct_vs_strongest_non_dr": -0.3349409396704995
+      },
+      {
+        "bundle": "models/data_bundle/generated_instances/E-UK100_03__u0_seed3_24h_20251113",
+        "dr_mean_obj": 1761.3013760089457,
+        "strongest_non_dr_algorithm": "best_static_meta",
+        "strongest_non_dr_mean_obj": 1762.919962976738,
+        "dr_gap_pct_vs_strongest_non_dr": 0.0918128446999487
+      }
+    ],
+    "min_gap_pct_vs_strongest_non_dr": -1.9258793715931508,
+    "training": {
+      "status": "BEST_VAL_CHECKPOINT_SELECTED",
+      "source_model_path": "solver/reports/dr_alns_ppo_v3/final_track23/stage_c_train24/checkpoints/async_block_ppo_update_0022.pt",
+      "model_label": "checkpoint_0022",
+      "checkpoint_update": 22,
+      "validation_mean_best_obj": 720.4766569494685,
+      "validation_row_count": 4,
+      "obs_dim": 24,
+      "train_dir": "solver/reports/dr_alns_ppo_v3/final_track23/stage_c_train24",
+      "best_model_path": "solver/reports/dr_alns_ppo_v3/final_track23/stage_c_train24/best_val_async_block_ppo.pt",
+      "training_manifest": "solver/reports/dr_alns_ppo_v3/final_track23/stage_c_train24/training_manifest.json",
+      "validation_rows": "solver/reports/dr_alns_ppo_v3/final_track23/stage_c_train24/stage_c24_validation_rows.csv"
+    },
+    "pilot16_reval": {
+      "status": "PILOT16_CLEAN_REVAL_COMPLETE",
+      "row_count": 60,
+      "old_pilot17_reported_allscale_gain_pct": 0.57,
+      "mean_gap_pct_vs_strongest_non_dr": -43.86990572843566,
+      "min_gap_pct_vs_strongest_non_dr": -56.70778115228225,
+      "mean_actual_eval_fraction": 0.2511111111111111,
+      "bundle_rows": [
+        {
+          "bundle": "models/data_bundle/generated_instances/E-UK100_01__d2_s3_seed1_24h_20251113",
+          "pilot16_mean_obj": 3999.901923233695,
+          "strongest_non_dr_algorithm": "best_static_meta",
+          "strongest_non_dr_mean_obj": 2552.459037976393,
+          "pilot16_gap_pct_vs_strongest_non_dr": -56.70778115228225
+        },
+        {
+          "bundle": "models/data_bundle/generated_instances/E-UK100_02__u0_seed2_24h_20251113",
+          "pilot16_mean_obj": 2416.0601894487863,
+          "strongest_non_dr_algorithm": "best_static_meta",
+          "strongest_non_dr_mean_obj": 1763.6862245902598,
+          "pilot16_gap_pct_vs_strongest_non_dr": -36.98923061045545
+        },
+        {
+          "bundle": "models/data_bundle/generated_instances/E-UK100_03__u0_seed3_24h_20251113",
+          "pilot16_mean_obj": 2431.290615375776,
+          "strongest_non_dr_algorithm": "best_static_meta",
+          "strongest_non_dr_mean_obj": 1762.919962976738,
+          "pilot16_gap_pct_vs_strongest_non_dr": -37.91270542256927
+        }
+      ],
+      "verdict_role": "sidecar_only_not_stage_c_gate"
+    }
   }
 }
