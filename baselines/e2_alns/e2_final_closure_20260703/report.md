@@ -2,7 +2,7 @@
 
 本工程只生成交稿前证据素材：ALNS 定型 gate、G3 baseline health、G4 stability、G5 T3/F2 material。它不自动写 TeX，不写算法胜负主张。
 
-Verdict: `CARBON_DIAGNOSTIC_REQUIRED_BEFORE_G5`
+Verdict: `MISSING`
 
 ## Phase Verdicts
 
@@ -11,7 +11,7 @@ Verdict: `CARBON_DIAGNOSTIC_REQUIRED_BEFORE_G5`
 - phase_b: `G3_BASELINE_SET_READY`
 - phase_c: `HEALTH_PASS_WITH_SIZE_DEPENDENT_PROFILE`
 - phase_d: `MISSING`
-- phase_e_carbon: `MISSING`
+- phase_e_carbon: `CARBON_OPS_WEAK`
 
 ## Remaining User Decisions
 

@@ -1,5 +1,5 @@
 {
-  "file_count": 154,
+  "file_count": 194,
   "files": [
     {
       "path": "baselines/e2_alns/e2_final_closure_20260703/anchor_parity_after_g4_recovery.json",
@@ -23,11 +23,11 @@
     },
     {
       "path": "baselines/e2_alns/e2_final_closure_20260703/decision.json",
-      "sha256": "da3e20c2dde16b41247a0fdfc2aba6359bdf7bbb44e66dcbe5fb753670053beb"
+      "sha256": "a18d23bda3286800a60ce2376c86433912ee4e39953f94f20bb9493767ae416b"
     },
     {
       "path": "baselines/e2_alns/e2_final_closure_20260703/metadata.json",
-      "sha256": "b9d7df078aeb9e2a2cef26d5bf97631ea0f32eff37b5a1c3f82fe12984909e23"
+      "sha256": "b6a8875249ba0b4d92fff2aaaae5950de3b00bf3e479d88453bdef9849758a1e"
     },
     {
       "path": "baselines/e2_alns/e2_final_closure_20260703/phase_a_alns_gate/best_trajectory.csv",
@@ -610,12 +610,172 @@
       "sha256": "db8d22462ade6715d908a9936610fb49a7ca1a23914331565f5548449da2f028"
     },
     {
+      "path": "baselines/e2_alns/e2_final_closure_20260703/phase_e_carbon_operator_diagnostic/best_trajectory.csv",
+      "sha256": "50c229b4f9058edf0b4678566e58dc80180c572f2019937c914d1b00f9847dfd"
+    },
+    {
+      "path": "baselines/e2_alns/e2_final_closure_20260703/phase_e_carbon_operator_diagnostic/carbon_operator_summary.csv",
+      "sha256": "451848caa9b9c5797ec5305a6413ee6310241dfe5ce8f7b8023140c64ba43042"
+    },
+    {
+      "path": "baselines/e2_alns/e2_final_closure_20260703/phase_e_carbon_operator_diagnostic/carbon_vs_ablation_by_instance.csv",
+      "sha256": "669b4705812de2ad8b03c9fb19eaf5e89e754419f73c4f00c8eea8d97d11b9d9"
+    },
+    {
+      "path": "baselines/e2_alns/e2_final_closure_20260703/phase_e_carbon_operator_diagnostic/carbon_vs_throughput_context.csv",
+      "sha256": "3c558ce9b1779d34a857da32d5329d4ed00fc326ca85451a8fe82be5f130fcdf"
+    },
+    {
+      "path": "baselines/e2_alns/e2_final_closure_20260703/phase_e_carbon_operator_diagnostic/channel_lift.csv",
+      "sha256": "de2cf150fd87fe0f951c0c27bcdb476fe918f7108703c2c1306c1822fd5ae867"
+    },
+    {
+      "path": "baselines/e2_alns/e2_final_closure_20260703/phase_e_carbon_operator_diagnostic/checkpoints/E_CARBON_TIER1__formal_goeke80__threeshift__e2-threeshift-150c-02__alns_e2_carbon__seed1.json",
+      "sha256": "cd901e7617bc3e0dd8a742fc2710f6d7c01e053238a750488ce1f93ed1050434"
+    },
+    {
+      "path": "baselines/e2_alns/e2_final_closure_20260703/phase_e_carbon_operator_diagnostic/checkpoints/E_CARBON_TIER1__formal_goeke80__threeshift__e2-threeshift-150c-02__alns_e2_carbon__seed2.json",
+      "sha256": "1106f2a7bb938a6d91081ea39fb687895576e37170b253ce31bb79605464ca66"
+    },
+    {
+      "path": "baselines/e2_alns/e2_final_closure_20260703/phase_e_carbon_operator_diagnostic/checkpoints/E_CARBON_TIER1__formal_goeke80__threeshift__e2-threeshift-150c-02__alns_e2_carbon__seed3.json",
+      "sha256": "e4c2926a98a43d39523aff88d23910e69189ce5cf7bdff08f56113c170f4102e"
+    },
+    {
+      "path": "baselines/e2_alns/e2_final_closure_20260703/phase_e_carbon_operator_diagnostic/checkpoints/E_CARBON_TIER1__formal_goeke80__threeshift__e2-threeshift-150c-02__alns_e2_carbon_ablation__seed1.json",
+      "sha256": "c914851a22a69067371781e3d31698f6a9d94842657ab2454c313126e261e44f"
+    },
+    {
+      "path": "baselines/e2_alns/e2_final_closure_20260703/phase_e_carbon_operator_diagnostic/checkpoints/E_CARBON_TIER1__formal_goeke80__threeshift__e2-threeshift-150c-02__alns_e2_carbon_ablation__seed2.json",
+      "sha256": "56fe49af208da301b792a9ad9f070486b7fddc9f914e35d3e582c87f7c5ad159"
+    },
+    {
+      "path": "baselines/e2_alns/e2_final_closure_20260703/phase_e_carbon_operator_diagnostic/checkpoints/E_CARBON_TIER1__formal_goeke80__threeshift__e2-threeshift-150c-02__alns_e2_carbon_ablation__seed3.json",
+      "sha256": "f74fb08fb41208e9689efd30622c1a93d962ea35e1a87c8af8fbeb626fb7ac9e"
+    },
+    {
+      "path": "baselines/e2_alns/e2_final_closure_20260703/phase_e_carbon_operator_diagnostic/checkpoints/E_CARBON_TIER1__formal_goeke80__threeshift__e2-threeshift-150c-02__t3_main_alns__seed1.json",
+      "sha256": "6166c65e02c11a20f9f4ba55a07b4cb97bbe3a58fdc5fe9dd6b6990de040dfb6"
+    },
+    {
+      "path": "baselines/e2_alns/e2_final_closure_20260703/phase_e_carbon_operator_diagnostic/checkpoints/E_CARBON_TIER1__formal_goeke80__threeshift__e2-threeshift-150c-02__t3_main_alns__seed2.json",
+      "sha256": "ca26a49e7df6afc55fcb7deeb22d0a9721b396d4cbeb95d24a99c30b5c400950"
+    },
+    {
+      "path": "baselines/e2_alns/e2_final_closure_20260703/phase_e_carbon_operator_diagnostic/checkpoints/E_CARBON_TIER1__formal_goeke80__threeshift__e2-threeshift-150c-02__t3_main_alns__seed3.json",
+      "sha256": "7de02df0313aee8460ff0aabb6e80a7a56bd2aac067e27568c3b72b0d7b4eb8f"
+    },
+    {
+      "path": "baselines/e2_alns/e2_final_closure_20260703/phase_e_carbon_operator_diagnostic/checkpoints/E_CARBON_TIER1__formal_goeke80__threeshift__e2-threeshift-200c-02__alns_e2_carbon__seed1.json",
+      "sha256": "572e123c534e4fa1fa6e66503c4cfe4af9d7241f69b8ad48444341a37db69e13"
+    },
+    {
+      "path": "baselines/e2_alns/e2_final_closure_20260703/phase_e_carbon_operator_diagnostic/checkpoints/E_CARBON_TIER1__formal_goeke80__threeshift__e2-threeshift-200c-02__alns_e2_carbon__seed2.json",
+      "sha256": "b80a54c6f900f4fb336c17b3187dcdf0f6fc9ceea38f28acca0f7a32450b785e"
+    },
+    {
+      "path": "baselines/e2_alns/e2_final_closure_20260703/phase_e_carbon_operator_diagnostic/checkpoints/E_CARBON_TIER1__formal_goeke80__threeshift__e2-threeshift-200c-02__alns_e2_carbon__seed3.json",
+      "sha256": "b894b7a30c1b3aa1289c64785e06c6e65d62c407eeed3a8796370fdfb39531ce"
+    },
+    {
+      "path": "baselines/e2_alns/e2_final_closure_20260703/phase_e_carbon_operator_diagnostic/checkpoints/E_CARBON_TIER1__formal_goeke80__threeshift__e2-threeshift-200c-02__alns_e2_carbon_ablation__seed1.json",
+      "sha256": "6e24b04bee079f308e3582edf55ee073e13f16061b1083e6e3e6f84cb23ba6c3"
+    },
+    {
+      "path": "baselines/e2_alns/e2_final_closure_20260703/phase_e_carbon_operator_diagnostic/checkpoints/E_CARBON_TIER1__formal_goeke80__threeshift__e2-threeshift-200c-02__alns_e2_carbon_ablation__seed2.json",
+      "sha256": "4b2be44d19acea4aa3285402de0f1e228e8b81b41f73c7b60756cfe10d23dbb9"
+    },
+    {
+      "path": "baselines/e2_alns/e2_final_closure_20260703/phase_e_carbon_operator_diagnostic/checkpoints/E_CARBON_TIER1__formal_goeke80__threeshift__e2-threeshift-200c-02__alns_e2_carbon_ablation__seed3.json",
+      "sha256": "a2dba068d2013bcbe2422fc8832725e05ee2497fcfe088f4fd51545e2d93ed78"
+    },
+    {
+      "path": "baselines/e2_alns/e2_final_closure_20260703/phase_e_carbon_operator_diagnostic/checkpoints/E_CARBON_TIER1__formal_goeke80__threeshift__e2-threeshift-200c-02__t3_main_alns__seed1.json",
+      "sha256": "9d5098ca4a5f079932ba5100d9b726a4649cba333391b27afd0abf48c21b2542"
+    },
+    {
+      "path": "baselines/e2_alns/e2_final_closure_20260703/phase_e_carbon_operator_diagnostic/checkpoints/E_CARBON_TIER1__formal_goeke80__threeshift__e2-threeshift-200c-02__t3_main_alns__seed2.json",
+      "sha256": "7ab7bbffacdf0a01dea23d37ec8a3ef41002f331d1b4318a4cb07cc2cd2ea493"
+    },
+    {
+      "path": "baselines/e2_alns/e2_final_closure_20260703/phase_e_carbon_operator_diagnostic/checkpoints/E_CARBON_TIER1__formal_goeke80__threeshift__e2-threeshift-200c-02__t3_main_alns__seed3.json",
+      "sha256": "bda042a9e482466fd13961c043805492070fa6c9ec35ce4ad8f5f780afb9ceb3"
+    },
+    {
+      "path": "baselines/e2_alns/e2_final_closure_20260703/phase_e_carbon_operator_diagnostic/checkpoints/E_CARBON_TIER1__formal_goeke80__threeshift__e2-threeshift-200c-03__alns_e2_carbon__seed1.json",
+      "sha256": "4221bd658d344ea89a1ff726b1be9859d761b79c72049edc45b05e02b3405a55"
+    },
+    {
+      "path": "baselines/e2_alns/e2_final_closure_20260703/phase_e_carbon_operator_diagnostic/checkpoints/E_CARBON_TIER1__formal_goeke80__threeshift__e2-threeshift-200c-03__alns_e2_carbon__seed2.json",
+      "sha256": "f0edb3fdfe0bc4e0fa554ccee2b428ec606a530b746066c840ee62ab7b12851a"
+    },
+    {
+      "path": "baselines/e2_alns/e2_final_closure_20260703/phase_e_carbon_operator_diagnostic/checkpoints/E_CARBON_TIER1__formal_goeke80__threeshift__e2-threeshift-200c-03__alns_e2_carbon__seed3.json",
+      "sha256": "01ab57ec906605c660c5f4be272ebd863b400741d2a1a96a722a092f516c72ff"
+    },
+    {
+      "path": "baselines/e2_alns/e2_final_closure_20260703/phase_e_carbon_operator_diagnostic/checkpoints/E_CARBON_TIER1__formal_goeke80__threeshift__e2-threeshift-200c-03__alns_e2_carbon_ablation__seed1.json",
+      "sha256": "ffd7d774340d490e15463f9643df247f7212bd6fbaa63f45c4dce198bfbb99a9"
+    },
+    {
+      "path": "baselines/e2_alns/e2_final_closure_20260703/phase_e_carbon_operator_diagnostic/checkpoints/E_CARBON_TIER1__formal_goeke80__threeshift__e2-threeshift-200c-03__alns_e2_carbon_ablation__seed2.json",
+      "sha256": "aebe4826c73ecb46a03f21d5b31ebc1aa1d22d42cca74d30554fbf7d08368b30"
+    },
+    {
+      "path": "baselines/e2_alns/e2_final_closure_20260703/phase_e_carbon_operator_diagnostic/checkpoints/E_CARBON_TIER1__formal_goeke80__threeshift__e2-threeshift-200c-03__alns_e2_carbon_ablation__seed3.json",
+      "sha256": "661574491fae4a96c362d87456437500ebd1d0d144611fb2764050a81ea975e4"
+    },
+    {
+      "path": "baselines/e2_alns/e2_final_closure_20260703/phase_e_carbon_operator_diagnostic/checkpoints/E_CARBON_TIER1__formal_goeke80__threeshift__e2-threeshift-200c-03__t3_main_alns__seed1.json",
+      "sha256": "23b26572b9c372581891a3b5d1b8bb1f5fecadbd1825e0fe8d07f1b277ae7ad0"
+    },
+    {
+      "path": "baselines/e2_alns/e2_final_closure_20260703/phase_e_carbon_operator_diagnostic/checkpoints/E_CARBON_TIER1__formal_goeke80__threeshift__e2-threeshift-200c-03__t3_main_alns__seed2.json",
+      "sha256": "fc63718ba18a67272c041bf3c271ac8284932d3d4e90d6c5e1e674755c37b5b4"
+    },
+    {
+      "path": "baselines/e2_alns/e2_final_closure_20260703/phase_e_carbon_operator_diagnostic/checkpoints/E_CARBON_TIER1__formal_goeke80__threeshift__e2-threeshift-200c-03__t3_main_alns__seed3.json",
+      "sha256": "c96212840df35bd8adb67f42e04c5f8260d2bd3e69b359e27463614357c2eb3e"
+    },
+    {
+      "path": "baselines/e2_alns/e2_final_closure_20260703/phase_e_carbon_operator_diagnostic/decision.json",
+      "sha256": "aef506c60afbfae02ac2b250049996a1127a46c8c0baa2f97ee36f4d4064cba7"
+    },
+    {
+      "path": "baselines/e2_alns/e2_final_closure_20260703/phase_e_carbon_operator_diagnostic/decision_tier1.json",
+      "sha256": "aef506c60afbfae02ac2b250049996a1127a46c8c0baa2f97ee36f4d4064cba7"
+    },
+    {
+      "path": "baselines/e2_alns/e2_final_closure_20260703/phase_e_carbon_operator_diagnostic/instance_manifest.csv",
+      "sha256": "d77c40e447b2a3d57588c48d4a4090ebdb27164a88869d03d32a98618a54ceb8"
+    },
+    {
+      "path": "baselines/e2_alns/e2_final_closure_20260703/phase_e_carbon_operator_diagnostic/instance_manifest_tier1.csv",
+      "sha256": "d77c40e447b2a3d57588c48d4a4090ebdb27164a88869d03d32a98618a54ceb8"
+    },
+    {
+      "path": "baselines/e2_alns/e2_final_closure_20260703/phase_e_carbon_operator_diagnostic/raw_runs.csv",
+      "sha256": "ac9931b553054c49d212258630e3f1299c7845f9675a944ea2c31c16dbfab942"
+    },
+    {
+      "path": "baselines/e2_alns/e2_final_closure_20260703/phase_e_carbon_operator_diagnostic/report.md",
+      "sha256": "e5b0dffac9acc47ddd7e6a9d15823138003c5c81ff1d4b0c25f27730202f319a"
+    },
+    {
+      "path": "baselines/e2_alns/e2_final_closure_20260703/phase_e_carbon_operator_diagnostic/timing_ledger_hotspots.csv",
+      "sha256": "e0bfa3ac6a6fe4d888c85b1ee51daf3d3cd4363e201dea9645974d91c0367458"
+    },
+    {
+      "path": "baselines/e2_alns/e2_final_closure_20260703/phase_e_carbon_operator_diagnostic/wallclock_ledger.csv",
+      "sha256": "ac9931b553054c49d212258630e3f1299c7845f9675a944ea2c31c16dbfab942"
+    },
+    {
       "path": "baselines/e2_alns/e2_final_closure_20260703/preflight.json",
-      "sha256": "d929a93ad78e829ab6a9929d3affa3e3fb1302f2f69e7e9aedbd902a7cd19ad0"
+      "sha256": "113982af03f03f27c5ff1a9dc9f89b4bfe2eed1e0a53b0b06ac609556da46fd9"
     },
     {
       "path": "baselines/e2_alns/e2_final_closure_20260703/report.md",
-      "sha256": "1e1fcf7b929fb884df6a32a99f4b8f399758943a592cdb78df23cf8e848f3c21"
+      "sha256": "3dabb4ce2de1b4eb8d68f97bff2f308b3312d4c19ab183702ad305012dd6b5e3"
     }
   ],
   "root": "baselines/e2_alns/e2_final_closure_20260703",
