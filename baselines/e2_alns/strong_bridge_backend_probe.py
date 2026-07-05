@@ -32,10 +32,30 @@ import setp_solver.search.winner_operators as wo
 from setp_solver.search.winner_operators import STRONG_BRIDGE_BACKEND_FLAG, TRACE_DIAGNOSTIC_FLAG, WinnerKernelConfig
 
 
-OUTPUT_DIR = REPO_ROOT / "baselines/e2_alns/strong_bridge_backend_probe_20260705"
+OUTPUT_DIR = REPO_ROOT / "baselines/e2_alns/strong_bridge_backend_probe_local_search_check_20260706"
 HARD_SUBSET_PATH = REPO_ROOT / "baselines/e2_alns/route_compression_probe_20260705/hard_subset_instances.csv"
 LNS_REFERENCE_DIR = REPO_ROOT / "baselines/e2_alns/lns_acceptance_scheduler_audit_20260705"
-PROFILES = ("A0_TRACE", "A3_STRONG_BRIDGE_BACKEND", "LNS_TRACE_REFERENCE")
+ALNS_PROFILES = (
+    "A0_THROUGHPUT_ONLY",
+    "A3_BACKEND_ONLY",
+    "A0_MAIN_LOCAL_SEARCH",
+    "A3_BACKEND_LOCAL_SEARCH",
+)
+PROFILES = (*ALNS_PROFILES, "LNS_TRACE_REFERENCE")
+PROFILE_COMPARISONS = {
+    "BACKEND_ONLY": {
+        "a0": "A0_THROUGHPUT_ONLY",
+        "a3": "A3_BACKEND_ONLY",
+        "promising": "A3_BACKEND_ONLY_PROMISING",
+        "not_supported": "A3_BACKEND_ONLY_NOT_SUPPORTED",
+    },
+    "MAIN_LOCAL_SEARCH": {
+        "a0": "A0_MAIN_LOCAL_SEARCH",
+        "a3": "A3_BACKEND_LOCAL_SEARCH",
+        "promising": "A3_BACKEND_LOCAL_SEARCH_PROMISING",
+        "not_supported": "A3_BACKEND_LOCAL_SEARCH_NOT_SUPPORTED",
+    },
+}
 HASH_EXCLUDE_NAMES = {"artifact_hashes.json", ".DS_Store"}
 HASH_EXCLUDE_PARTS = {"__pycache__", ".pytest_cache", ".tasks"}
 PROTECTED_PATHS = trace_audit.PROTECTED_PATHS
@@ -105,13 +125,9 @@ def main() -> int:
         rows = run_probe_tasks(output_dir, tasks, workers=int(args.workers), force=bool(args.force), logs=logs)
 
     raw_rows = raw_run_rows(rows)
-    candidate_trace = trace_audit.flatten_trace_rows(
-        [row for row in rows if row.get("profile") in {"A0_TRACE", "A3_STRONG_BRIDGE_BACKEND"}],
-        "A0_TRACE",
-    ) + trace_audit.flatten_trace_rows(
-        [row for row in rows if row.get("profile") in {"A0_TRACE", "A3_STRONG_BRIDGE_BACKEND"}],
-        "A3_STRONG_BRIDGE_BACKEND",
-    )
+    candidate_trace: list[dict[str, Any]] = []
+    for profile in ALNS_PROFILES:
+        candidate_trace.extend(trace_audit.flatten_trace_rows(rows, profile))
     profile_summary = summarize_profiles(raw_rows, candidate_trace)
     pair_comparison = compare_a3_vs_a0(raw_rows, candidate_trace)
     diagnosis = write_diagnosis(rows, expected_rows, profile_summary, pair_comparison)
@@ -128,6 +144,7 @@ def main() -> int:
     fc.write_csv(output_dir / "alns_candidate_trace.csv", candidate_trace)
     fc.write_csv(output_dir / "profile_summary.csv", profile_summary)
     fc.write_csv(output_dir / "a3_vs_a0_pair_comparison.csv", pair_comparison)
+    write_flags_by_profile(output_dir)
     (output_dir / "diagnosis.md").write_text(diagnosis, encoding="utf-8")
     (output_dir / "next_action.md").write_text(next_action, encoding="utf-8")
     fc.write_json(output_dir / "decision.json", decision)
@@ -175,6 +192,43 @@ def build_metadata(args: argparse.Namespace, output_dir: Path) -> dict[str, Any]
 def load_hard_subset(path: Path = HARD_SUBSET_PATH) -> list[dict[str, str]]:
     rows = fc.read_csv(path)
     return [{"category": str(row["category"]), "instance": str(row["instance"])} for row in rows if row.get("category") and row.get("instance")]
+
+
+def profile_flags(profile: str) -> dict[str, str]:
+    normalized = str(profile)
+    if normalized not in ALNS_PROFILES:
+        raise ValueError(f"Unsupported ALNS probe profile: {profile}")
+    flags = wo.e2_alns_throughput_flags(route_cost_cache=True, repair_structure_cache=True, timing_ledger=True)
+    flags[TRACE_DIAGNOSTIC_FLAG] = "1"
+    flags[STRONG_BRIDGE_BACKEND_FLAG] = "1" if normalized.startswith("A3_") else "0"
+    flags["SETP_ALNS_CRUSH_LOCAL_SEARCH"] = "1" if normalized.endswith("_LOCAL_SEARCH") else "0"
+    assert_profile_flags(normalized, flags)
+    return flags
+
+
+def assert_profile_flags(profile: str, flags: dict[str, str]) -> None:
+    expected_local = "1" if str(profile).endswith("_LOCAL_SEARCH") else "0"
+    expected_backend = "1" if str(profile).startswith("A3_") else "0"
+    actual_local = str(flags.get("SETP_ALNS_CRUSH_LOCAL_SEARCH"))
+    actual_backend = str(flags.get(STRONG_BRIDGE_BACKEND_FLAG))
+    if actual_local != expected_local:
+        raise AssertionError(f"{profile} expected SETP_ALNS_CRUSH_LOCAL_SEARCH={expected_local}, got {actual_local}")
+    if actual_backend != expected_backend:
+        raise AssertionError(f"{profile} expected {STRONG_BRIDGE_BACKEND_FLAG}={expected_backend}, got {actual_backend}")
+
+
+def flags_by_profile() -> dict[str, dict[str, str]]:
+    return {profile: profile_flags(profile) for profile in ALNS_PROFILES}
+
+
+def write_flags_by_profile(output_dir: Path) -> None:
+    fc.write_json(
+        output_dir / "flags_by_profile.json",
+        {
+            "schema": "setp-e2-strong-bridge-backend-flags-by-profile.v1",
+            "profiles": flags_by_profile(),
+        },
+    )
 
 
 def build_probe_tasks(
@@ -284,9 +338,8 @@ def run_probe_task(task: dict[str, Any]) -> dict[str, Any]:
         bundle = load_search_bundle(bundle_dir)
         prices = fc.prices_for_scenario(str(task["scenario_type"]))
         warm = make_shared_initial_solution(bundle, prices=prices)
-        flags = wo.e2_alns_throughput_flags(route_cost_cache=True, repair_structure_cache=True, timing_ledger=True)
-        flags[TRACE_DIAGNOSTIC_FLAG] = "1"
-        flags[STRONG_BRIDGE_BACKEND_FLAG] = "1" if profile == "A3_STRONG_BRIDGE_BACKEND" else "0"
+        flags = profile_flags(profile)
+        os.environ[STRONG_BRIDGE_BACKEND_FLAG] = flags[STRONG_BRIDGE_BACKEND_FLAG]
         config = WinnerKernelConfig(
             seed=int(task["seed"]),
             eval_budget=int(task["eval_budget"]),
@@ -488,68 +541,115 @@ def compare_a3_vs_a0(raw_rows: list[dict[str, Any]], trace_rows: list[dict[str, 
         for row in raw_rows
         if row.get("status") == "OK"
     }
-    trace_by_profile = {profile: [row for row in trace_rows if row.get("profile") == profile] for profile in ("A0_TRACE", "A3_STRONG_BRIDGE_BACKEND")}
+    trace_by_profile = {profile: [row for row in trace_rows if row.get("profile") == profile] for profile in ALNS_PROFILES}
     rows: list[dict[str, Any]] = []
-    wins = losses = ties = 0
-    a0_gaps: list[float] = []
-    a3_gaps: list[float] = []
-    for category, instance, seed, profile in sorted(by_key_profile):
-        if profile != "A0_TRACE":
-            continue
-        a0 = by_key_profile.get((category, instance, seed, "A0_TRACE"))
-        a3 = by_key_profile.get((category, instance, seed, "A3_STRONG_BRIDGE_BACKEND"))
-        lns = by_key_profile.get((category, instance, seed, "LNS_TRACE_REFERENCE"))
-        if not (a0 and a3 and lns):
-            continue
-        lns_cost = as_float(lns["best_cost"])
-        a0_cost = as_float(a0["best_cost"])
-        a3_cost = as_float(a3["best_cost"])
-        a0_gap = (lns_cost - a0_cost) / lns_cost
-        a3_gap = (lns_cost - a3_cost) / lns_cost
-        a0_gaps.append(a0_gap)
-        a3_gaps.append(a3_gap)
-        if a3_cost < a0_cost - 1e-9:
-            outcome = "A3_BETTER"
-            wins += 1
-        elif a3_cost > a0_cost + 1e-9:
-            outcome = "A3_WORSE"
-            losses += 1
-        else:
-            outcome = "TIE"
-            ties += 1
-        rows.append(
+    aggregate_rows: list[dict[str, Any]] = []
+    keys = sorted({(category, instance, seed) for category, instance, seed, _profile in by_key_profile})
+    for group, spec in PROFILE_COMPARISONS.items():
+        a0_profile = str(spec["a0"])
+        a3_profile = str(spec["a3"])
+        wins = losses = ties = 0
+        a0_gaps: list[float] = []
+        a3_gaps: list[float] = []
+        for category, instance, seed in keys:
+            a0 = by_key_profile.get((category, instance, seed, a0_profile))
+            a3 = by_key_profile.get((category, instance, seed, a3_profile))
+            lns = by_key_profile.get((category, instance, seed, "LNS_TRACE_REFERENCE"))
+            if not (a0 and a3 and lns):
+                continue
+            lns_cost = as_float(lns["best_cost"])
+            a0_cost = as_float(a0["best_cost"])
+            a3_cost = as_float(a3["best_cost"])
+            a0_gap = (lns_cost - a0_cost) / lns_cost
+            a3_gap = (lns_cost - a3_cost) / lns_cost
+            a0_gaps.append(a0_gap)
+            a3_gaps.append(a3_gap)
+            if a3_cost < a0_cost - 1e-9:
+                outcome = "A3_BETTER"
+                wins += 1
+            elif a3_cost > a0_cost + 1e-9:
+                outcome = "A3_WORSE"
+                losses += 1
+            else:
+                outcome = "TIE"
+                ties += 1
+            rows.append(
+                {
+                    "scope": "run",
+                    "comparison_group": group,
+                    "category": category,
+                    "instance": instance,
+                    "seed": seed,
+                    "a0_profile": a0_profile,
+                    "a3_profile": a3_profile,
+                    "a0_best_cost": a0_cost,
+                    "a3_best_cost": a3_cost,
+                    "lns_best_cost": lns_cost,
+                    "a0_gap_vs_lns": a0_gap,
+                    "a3_gap_vs_lns": a3_gap,
+                    "outcome_vs_a0": outcome,
+                }
+            )
+        aggregate_rows.append(
             {
-                "scope": "run",
-                "category": category,
-                "instance": instance,
-                "seed": seed,
-                "a0_best_cost": a0_cost,
-                "a3_best_cost": a3_cost,
-                "lns_best_cost": lns_cost,
-                "a0_gap_vs_lns": a0_gap,
-                "a3_gap_vs_lns": a3_gap,
-                "outcome_vs_a0": outcome,
+                "scope": "ALL",
+                "comparison_group": group,
+                "category": "ALL",
+                "instance": "ALL",
+                "seed": "ALL",
+                "a0_profile": a0_profile,
+                "a3_profile": a3_profile,
+                "wins_vs_a0": wins,
+                "losses_vs_a0": losses,
+                "ties_vs_a0": ties,
+                "a0_mean_gap_vs_lns": mean_known(a0_gaps),
+                "a3_mean_gap_vs_lns": mean_known(a3_gaps),
+                "a0_unchanged_rate": rate(trace_by_profile.get(a0_profile, []), lambda row: str(row.get("revert_reason")) == "unchanged"),
+                "a3_unchanged_rate": rate(trace_by_profile.get(a3_profile, []), lambda row: str(row.get("revert_reason")) == "unchanged"),
+                "a0_best_improved_rate": rate(trace_by_profile.get(a0_profile, []), lambda row: truthy(row.get("best_improved"))),
+                "a3_best_improved_rate": rate(trace_by_profile.get(a3_profile, []), lambda row: truthy(row.get("best_improved"))),
             }
         )
-    rows.insert(
-        0,
-        {
-            "scope": "ALL",
-            "category": "ALL",
-            "instance": "ALL",
-            "seed": "ALL",
-            "wins_vs_a0": wins,
-            "losses_vs_a0": losses,
-            "ties_vs_a0": ties,
-            "a0_mean_gap_vs_lns": mean_known(a0_gaps),
-            "a3_mean_gap_vs_lns": mean_known(a3_gaps),
-            "a0_unchanged_rate": rate(trace_by_profile.get("A0_TRACE", []), lambda row: str(row.get("revert_reason")) == "unchanged"),
-            "a3_unchanged_rate": rate(trace_by_profile.get("A3_STRONG_BRIDGE_BACKEND", []), lambda row: str(row.get("revert_reason")) == "unchanged"),
-            "a0_best_improved_rate": rate(trace_by_profile.get("A0_TRACE", []), lambda row: truthy(row.get("best_improved"))),
-            "a3_best_improved_rate": rate(trace_by_profile.get("A3_STRONG_BRIDGE_BACKEND", []), lambda row: truthy(row.get("best_improved"))),
-        },
-    )
+    rows = aggregate_rows + rows
     return rows
+
+
+def comparison_aggregate(pair_comparison: list[dict[str, Any]], group: str) -> dict[str, Any]:
+    return next((row for row in pair_comparison if row.get("scope") == "ALL" and row.get("comparison_group") == group), {})
+
+
+def comparison_supported(
+    group: str,
+    summary: dict[str, dict[str, Any]],
+    aggregate: dict[str, Any],
+) -> bool:
+    spec = PROFILE_COMPARISONS[group]
+    a0 = summary.get(str(spec["a0"]), {})
+    a3 = summary.get(str(spec["a3"]), {})
+    return (
+        as_float(a3.get("mean_gap_vs_lns")) > as_float(a0.get("mean_gap_vs_lns"))
+        and as_int(aggregate.get("wins_vs_a0")) >= as_int(aggregate.get("losses_vs_a0"))
+        and as_float(a3.get("unchanged_rate")) < as_float(a0.get("unchanged_rate"))
+        and as_float(a3.get("best_improved_rate")) > as_float(a0.get("best_improved_rate"))
+        and as_int(a3.get("infeasible_rows")) == 0
+        and as_int(a3.get("under_eval_rows")) == 0
+    )
+
+
+def build_comparison_results(profile_summary: list[dict[str, Any]], pair_comparison: list[dict[str, Any]]) -> dict[str, dict[str, Any]]:
+    summary = {str(row.get("profile")): row for row in profile_summary}
+    out: dict[str, dict[str, Any]] = {}
+    for group, spec in PROFILE_COMPARISONS.items():
+        aggregate = comparison_aggregate(pair_comparison, group)
+        supported = comparison_supported(group, summary, aggregate)
+        verdict = str(spec["promising"] if supported else spec["not_supported"])
+        out[group] = {
+            "verdict": verdict,
+            "a0_profile": spec["a0"],
+            "a3_profile": spec["a3"],
+            "aggregate": aggregate,
+        }
+    return out
 
 
 def build_decision(
@@ -563,20 +663,12 @@ def build_decision(
     fail_rows = [row for row in rows if row.get("status") != "OK"]
     protected = protected_diff()
     if fail_rows or len(rows) != expected_rows or protected:
-        verdict = "HALT_STRONG_BRIDGE_BACKEND_PROBE"
+        verdict = "HALT_STRONG_BRIDGE_BACKEND_PROFILE_ALIGNMENT"
         halt = True
+        comparison_results = build_comparison_results(profile_summary, pair_comparison)
     else:
-        summary = {row.get("profile"): row for row in profile_summary}
-        aggregate = next((row for row in pair_comparison if row.get("scope") == "ALL"), pair_comparison[0] if pair_comparison else {})
-        promising = (
-            as_float(summary.get("A3_STRONG_BRIDGE_BACKEND", {}).get("mean_gap_vs_lns")) > as_float(summary.get("A0_TRACE", {}).get("mean_gap_vs_lns"))
-            and as_int(aggregate.get("wins_vs_a0")) >= as_int(aggregate.get("losses_vs_a0"))
-            and as_float(summary.get("A3_STRONG_BRIDGE_BACKEND", {}).get("unchanged_rate")) < as_float(summary.get("A0_TRACE", {}).get("unchanged_rate"))
-            and as_float(summary.get("A3_STRONG_BRIDGE_BACKEND", {}).get("best_improved_rate")) > as_float(summary.get("A0_TRACE", {}).get("best_improved_rate"))
-            and as_int(summary.get("A3_STRONG_BRIDGE_BACKEND", {}).get("infeasible_rows")) == 0
-            and as_int(summary.get("A3_STRONG_BRIDGE_BACKEND", {}).get("under_eval_rows")) == 0
-        )
-        verdict = "A3_STRONG_BRIDGE_BACKEND_PROMISING" if promising else "A3_STRONG_BRIDGE_BACKEND_NOT_SUPPORTED"
+        comparison_results = build_comparison_results(profile_summary, pair_comparison)
+        verdict = str(comparison_results.get("MAIN_LOCAL_SEARCH", {}).get("verdict", "A3_BACKEND_LOCAL_SEARCH_NOT_SUPPORTED"))
         halt = False
     return {
         "schema": "setp-e2-strong-bridge-backend-probe-decision.v1",
@@ -591,20 +683,24 @@ def build_decision(
         "fail_rows": len(fail_rows),
         "halt": halt,
         "profile_summary": profile_summary,
-        "a3_vs_a0": next((row for row in pair_comparison if row.get("scope") == "ALL"), {}),
+        "comparison_results": comparison_results,
+        "a3_vs_a0": comparison_results.get("MAIN_LOCAL_SEARCH", {}).get("aggregate", {}),
+        "a3_vs_a0_by_group": {group: data.get("aggregate", {}) for group, data in comparison_results.items()},
         "protected_diff": protected,
     }
 
 
 def write_diagnosis(rows: list[dict[str, Any]], expected_rows: int, profile_summary: list[dict[str, Any]], pair_comparison: list[dict[str, Any]]) -> str:
     ok = sum(1 for row in rows if row.get("status") == "OK")
-    aggregate = next((row for row in pair_comparison if row.get("scope") == "ALL"), {})
+    comparison_results = build_comparison_results(profile_summary, pair_comparison)
     return "\n".join(
         [
-            "# A3 Strong-Bridge Backend Probe Diagnosis",
+            "# A3 Strong-Bridge Backend Profile-Alignment Diagnosis",
             "",
             "Verdict scope: diagnostic only, not formal T3.",
             f"Rows: {len(rows)}/{expected_rows}; OK={ok}; fail={len(rows) - ok}.",
+            "",
+            "Root-cause correction: this run separates backend-only from the current main profile with LOCAL_SEARCH.",
             "",
             "Profile summary:",
             *[
@@ -612,20 +708,32 @@ def write_diagnosis(rows: list[dict[str, Any]], expected_rows: int, profile_summ
                 for row in profile_summary
             ],
             "",
-            f"A3 vs A0 aggregate: wins={aggregate.get('wins_vs_a0')}, losses={aggregate.get('losses_vs_a0')}, ties={aggregate.get('ties_vs_a0')}.",
+            "Comparison summary:",
+            *[
+                (
+                    f"- {group}: verdict={data.get('verdict')}, "
+                    f"a0={data.get('a0_profile')}, a3={data.get('a3_profile')}, "
+                    f"wins={data.get('aggregate', {}).get('wins_vs_a0')}, "
+                    f"losses={data.get('aggregate', {}).get('losses_vs_a0')}, "
+                    f"ties={data.get('aggregate', {}).get('ties_vs_a0')}, "
+                    f"a0_mean_gap={data.get('aggregate', {}).get('a0_mean_gap_vs_lns')}, "
+                    f"a3_mean_gap={data.get('aggregate', {}).get('a3_mean_gap_vs_lns')}"
+                )
+                for group, data in comparison_results.items()
+            ],
         ]
     )
 
 
 def write_next_action(profile_summary: list[dict[str, Any]], pair_comparison: list[dict[str, Any]]) -> str:
     decision = build_decision(metadata={}, rows=[{"status": "OK"}], expected_rows=1, profile_summary=profile_summary, pair_comparison=pair_comparison)
-    if decision["verdict"] == "A3_STRONG_BRIDGE_BACKEND_PROMISING":
-        symptom = "A3 backend alignment improved A0 hard-subset diagnostics"
+    if decision["verdict"] == "A3_BACKEND_LOCAL_SEARCH_PROMISING":
+        symptom = "A3 backend alignment improved the current main LOCAL_SEARCH profile"
         remedy = "rerun A3 at 8000 eval hard subset before any additional algorithm change"
         pass_gate = "8000 eval repeats mean-gap, win/loss, unchanged-rate, and best-improved-rate improvements with zero HALT rows"
         fail_gate = "8000 eval loses the 4000 eval improvements or any protected/under-eval/worker-failure condition appears"
     else:
-        symptom = "A3 backend alignment did not pass the direction-support gate"
+        symptom = "A3 backend alignment did not pass the corrected main LOCAL_SEARCH direction-support gate"
         remedy = "stop backend tuning and split q-size, scheduler, and acceptance as separate one-variable probes"
         pass_gate = "a later single-variable probe passes without protected/under-eval/worker failures"
         fail_gate = "the same unsupported backend pattern repeats or UNKNOWN dominates trace fields"
@@ -663,6 +771,7 @@ def write_empty_outputs(output_dir: Path) -> None:
     fc.write_csv(output_dir / "alns_candidate_trace.csv", [])
     fc.write_csv(output_dir / "profile_summary.csv", [])
     fc.write_csv(output_dir / "a3_vs_a0_pair_comparison.csv", [])
+    fc.write_json(output_dir / "flags_by_profile.json", {"schema": "setp-e2-strong-bridge-backend-flags-by-profile.v1", "profiles": {}})
     (output_dir / "diagnosis.md").write_text("", encoding="utf-8")
     (output_dir / "next_action.md").write_text("", encoding="utf-8")
 

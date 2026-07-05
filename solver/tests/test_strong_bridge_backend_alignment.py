@@ -93,7 +93,7 @@ class StrongBridgeBackendAlignmentTests(unittest.TestCase):
         self.assertEqual(first.random(), second.random())
         self.assertEqual(first.randint(1, 1000), second.randint(1, 1000))
 
-    def test_probe_task_contract_and_decision_gate(self) -> None:
+    def test_probe_profiles_include_backend_only_and_main_local_search(self) -> None:
         from baselines.e2_alns import strong_bridge_backend_probe as probe
 
         hard_subset = [{"category": "vanilla", "instance": "e2-vanilla-10c-01"}]
@@ -105,38 +105,87 @@ class StrongBridgeBackendAlignmentTests(unittest.TestCase):
                 eval_budget=4000,
                 runtime_cap_seconds=900.0,
             )
-            decision = probe.build_decision(
-                metadata={"head": "abc"},
-                rows=[
-                    {"status": "OK", "profile": "A0_TRACE"},
-                    {"status": "OK", "profile": "A3_STRONG_BRIDGE_BACKEND"},
-                    {"status": "OK", "profile": "LNS_TRACE_REFERENCE"},
-                ],
-                expected_rows=3,
-                profile_summary=[
-                    {"profile": "A0_TRACE", "mean_gap_vs_lns": -0.05, "unchanged_rate": 0.60, "best_improved_rate": 0.010},
-                    {"profile": "A3_STRONG_BRIDGE_BACKEND", "mean_gap_vs_lns": -0.02, "unchanged_rate": 0.40, "best_improved_rate": 0.020},
-                ],
-                pair_comparison=[
-                    {
-                        "wins_vs_a0": 1,
-                        "losses_vs_a0": 0,
-                        "a3_mean_gap_vs_lns": -0.02,
-                        "a0_mean_gap_vs_lns": -0.05,
-                        "a3_unchanged_rate": 0.40,
-                        "a0_unchanged_rate": 0.60,
-                        "a3_best_improved_rate": 0.020,
-                        "a0_best_improved_rate": 0.010,
-                    }
-                ],
-            )
 
-        self.assertEqual([task["profile"] for task in tasks], ["A0_TRACE", "A3_STRONG_BRIDGE_BACKEND", "LNS_TRACE_REFERENCE"])
-        self.assertEqual(len(tasks), 3)
+        self.assertEqual(
+            [task["profile"] for task in tasks],
+            [
+                "A0_THROUGHPUT_ONLY",
+                "A3_BACKEND_ONLY",
+                "A0_MAIN_LOCAL_SEARCH",
+                "A3_BACKEND_LOCAL_SEARCH",
+                "LNS_TRACE_REFERENCE",
+            ],
+        )
+        self.assertNotIn("A0_TRACE", [task["profile"] for task in tasks])
+        self.assertNotIn("A3_STRONG_BRIDGE_BACKEND", [task["profile"] for task in tasks])
+
+    def test_profile_flags_lock_local_search_and_backend_alignment(self) -> None:
+        from baselines.e2_alns import strong_bridge_backend_probe as probe
+
+        cases = {
+            "A0_THROUGHPUT_ONLY": ("0", "0"),
+            "A3_BACKEND_ONLY": ("0", "1"),
+            "A0_MAIN_LOCAL_SEARCH": ("1", "0"),
+            "A3_BACKEND_LOCAL_SEARCH": ("1", "1"),
+        }
+
+        for profile, (expected_local, expected_backend) in cases.items():
+            with self.subTest(profile=profile):
+                flags = probe.profile_flags(profile)
+                self.assertEqual(flags["SETP_ALNS_CRUSH_LOCAL_SEARCH"], expected_local)
+                self.assertEqual(flags[STRONG_BRIDGE_BACKEND_FLAG], expected_backend)
+
+    def test_decision_gate_reports_backend_only_and_main_local_search_separately(self) -> None:
+        from baselines.e2_alns import strong_bridge_backend_probe as probe
+
+        rows = [{"status": "OK", "profile": profile} for profile in probe.PROFILES]
+        profile_summary = [
+            {"profile": "A0_THROUGHPUT_ONLY", "mean_gap_vs_lns": -0.05, "unchanged_rate": 0.60, "best_improved_rate": 0.010, "infeasible_rows": 0, "under_eval_rows": 0},
+            {"profile": "A3_BACKEND_ONLY", "mean_gap_vs_lns": -0.02, "unchanged_rate": 0.40, "best_improved_rate": 0.020, "infeasible_rows": 0, "under_eval_rows": 0},
+            {"profile": "A0_MAIN_LOCAL_SEARCH", "mean_gap_vs_lns": -0.01, "unchanged_rate": 0.50, "best_improved_rate": 0.030, "infeasible_rows": 0, "under_eval_rows": 0},
+            {"profile": "A3_BACKEND_LOCAL_SEARCH", "mean_gap_vs_lns": -0.03, "unchanged_rate": 0.40, "best_improved_rate": 0.040, "infeasible_rows": 0, "under_eval_rows": 0},
+        ]
+        pair_comparison = [
+            {
+                "scope": "ALL",
+                "comparison_group": "BACKEND_ONLY",
+                "wins_vs_a0": 2,
+                "losses_vs_a0": 0,
+                "a3_mean_gap_vs_lns": -0.02,
+                "a0_mean_gap_vs_lns": -0.05,
+                "a3_unchanged_rate": 0.40,
+                "a0_unchanged_rate": 0.60,
+                "a3_best_improved_rate": 0.020,
+                "a0_best_improved_rate": 0.010,
+            },
+            {
+                "scope": "ALL",
+                "comparison_group": "MAIN_LOCAL_SEARCH",
+                "wins_vs_a0": 0,
+                "losses_vs_a0": 2,
+                "a3_mean_gap_vs_lns": -0.03,
+                "a0_mean_gap_vs_lns": -0.01,
+                "a3_unchanged_rate": 0.40,
+                "a0_unchanged_rate": 0.50,
+                "a3_best_improved_rate": 0.040,
+                "a0_best_improved_rate": 0.030,
+            },
+        ]
+
+        decision = probe.build_decision(
+            metadata={"head": "abc"},
+            rows=rows,
+            expected_rows=len(rows),
+            profile_summary=profile_summary,
+            pair_comparison=pair_comparison,
+        )
+
         self.assertTrue(decision["diagnostic_only"])
         self.assertFalse(decision["formal_t3"])
         self.assertFalse(decision["algorithm_win_loss_claim"])
-        self.assertEqual(decision["verdict"], "A3_STRONG_BRIDGE_BACKEND_PROMISING")
+        self.assertEqual(decision["verdict"], "A3_BACKEND_LOCAL_SEARCH_NOT_SUPPORTED")
+        self.assertEqual(decision["comparison_results"]["BACKEND_ONLY"]["verdict"], "A3_BACKEND_ONLY_PROMISING")
+        self.assertEqual(decision["comparison_results"]["MAIN_LOCAL_SEARCH"]["verdict"], "A3_BACKEND_LOCAL_SEARCH_NOT_SUPPORTED")
 
     def test_probe_hashes_exclude_sidecars_and_task_dirs(self) -> None:
         from baselines.e2_alns import strong_bridge_backend_probe as probe
