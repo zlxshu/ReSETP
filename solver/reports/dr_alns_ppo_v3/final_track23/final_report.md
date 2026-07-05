@@ -1,13 +1,13 @@
 # Track23 DR-ALNS Standing Report
 
 Final status: `TRACK23_COMPLETE`
-Final reason: DR_PILLAR_QUALITY=站住, DR_PILLAR_EFFICIENCY=没站住, DR_PILLAR_DYNAMIC=未判
+Final reason: DR_PILLAR_QUALITY=站住, DR_PILLAR_EFFICIENCY=没站住, DR_PILLAR_DYNAMIC=没站住
 
 ## Pillars
 
 - DR_PILLAR_QUALITY: `站住`
 - DR_PILLAR_EFFICIENCY: `没站住`
-- DR_PILLAR_DYNAMIC: `未判`
+- DR_PILLAR_DYNAMIC: `没站住`
 
 ## Stage Status
 
@@ -15,7 +15,7 @@ Final reason: DR_PILLAR_QUALITY=站住, DR_PILLAR_EFFICIENCY=没站住, DR_PILLA
 - Stage A2: `SKIP_A2_NO_LEVERAGE` - Stage A status=NO_DESTROY_LEVERAGE_ANY_BUDGET; learned-destroy training skipped.
 - Stage B: `CARBON_MECHANISM_WEAK` - Default carbon ceiling is not the hard stop, but timing did not eat >=2%: avg=0.000%, ceiling=1.934%.
 - Stage C: `NO_TUNING_PARITY_CLEAN` - DR stayed within -2% of the strongest non-DR opponent on every bundle; min_gap=-1.926%.
-- Stage D: `NOT_RUN` -
+- Stage D: `HEURISTIC_FLAT` - No heuristic reduced information_cost_pct by >=2 percentage points; best=1.849 pp.
 
 ## Claim List
 
