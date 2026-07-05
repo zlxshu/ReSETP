@@ -24,12 +24,12 @@ Verdict: `ROUTE_COMPRESSION_FIX_NOT_SUPPORTED`
 | profile | wins | losses | mean gap | route delta vs A0 | infeasible | under-eval | eligible |
 |---|---:|---:|---:|---:|---:|---:|---|
 | A0_CURRENT | 0 | 16 | -0.016857446185637868 | 0.0 | 0 | 0 | False |
-| A1_RELAXED_ROUTE_COMPRESSION | 0 | 0 | nan | nan | 0 | 0 | False |
-| A2_RELAXED_ROUTE_COMPRESSION_LOCAL_SEARCH | 0 | 0 | nan | nan | 0 | 0 | False |
+| A1_RELAXED_ROUTE_COMPRESSION | 4 | 12 | -0.013073362074800225 | -0.1041666666666666 | 0 | 0 | False |
+| A2_RELAXED_ROUTE_COMPRESSION_LOCAL_SEARCH | 0 | 16 | -0.016189810717862328 | -2.220446049250313e-16 | 0 | 0 | False |
 
 ## Anchors
 
-- parity ok: `None`
+- parity ok: `True`
 
 ## Artifacts
 
