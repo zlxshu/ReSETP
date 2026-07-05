@@ -43,6 +43,7 @@ from .alns_wouda import (
 from .bundle import load_search_bundle
 from .carbon_operators import carbon_related_removal, low_carbon_charging_repair, worst_carbon_removal
 from .candidates import run_candidate
+from .candidates import solution_signature_hash
 from .construction import build_initial_solution
 from .evaluation import EvalBudget, model_cost, EvaluationContext, score_candidate, score_reference
 from .fleet import UNBOUNDED_FLEET
@@ -69,7 +70,10 @@ _CRUSH_FLAG_NAMES = (
     "SETP_ALNS_CRUSH_ROUTE_COST_CACHE",
     "SETP_ALNS_CRUSH_REPAIR_STRUCTURE_CACHE",
     "SETP_ALNS_CRUSH_TIMING_LEDGER",
+    "SETP_ALNS_CRUSH_TRACE_DIAGNOSTIC",
 )
+
+TRACE_DIAGNOSTIC_FLAG = "SETP_ALNS_CRUSH_TRACE_DIAGNOSTIC"
 
 
 E2_ALNS_COMPONENT_SOURCES = {
@@ -86,6 +90,7 @@ E2_ALNS_COMPONENT_SOURCES = {
     "SETP_ALNS_CRUSH_ROUTE_COST_CACHE": "Engineering: route-local model-cost cache for E2 throughput profiling",
     "SETP_ALNS_CRUSH_REPAIR_STRUCTURE_CACHE": "Engineering: route/EV repair structure cache for E2 throughput profiling",
     "SETP_ALNS_CRUSH_TIMING_LEDGER": "Engineering: opt-in timing ledger for E2 throughput profiling",
+    TRACE_DIAGNOSTIC_FLAG: "Diagnostic only: scheduler/acceptance trace fields; no formal semantics change",
 }
 
 
@@ -363,6 +368,10 @@ def apply_winner_action(
     destroy_op = ops.destroy_callable(action.destroy_op_id)
     repair_op = ops.repair_callable(action.repair_op_id)
     flags = variant_flags or winner_variant_flags(include_route_elimination=ops.include_route_elimination)
+    trace_diagnostic = _trace_diagnostic_enabled(flags)
+    local_search_trace: dict[str, Any] | None = {} if trace_diagnostic else None
+    revert_reason = "candidate_usable"
+    previous_route_count = len(previous_state.solution.routes)
     with _temporary_flags(flags):
         with timed_section(context, f"destroy:{action.destroy_op_id}"):
             destroyed = destroy_op(
@@ -373,7 +382,11 @@ def apply_winner_action(
             )
         with timed_section(context, f"repair:{action.repair_op_id}"):
             candidate = repair_op(destroyed, rng)
-        candidate, changed, hard_violation_count = _candidate_change_and_violations(previous_state, candidate)
+        candidate, changed, hard_violation_count = _candidate_change_and_violations(
+            previous_state,
+            candidate,
+            trace=local_search_trace,
+        )
         relaxed_route_compression = (
             action.destroy_op_id == "route_elimination_removal"
             and _flag_enabled_from(flags, "SETP_ALNS_CRUSH_RELAXED_ROUTE_COMPRESSION")
@@ -382,19 +395,32 @@ def apply_winner_action(
             retry_state = replace(destroyed, allow_new_route_repair=True)
             with timed_section(context, f"repair:{action.repair_op_id}:allow_new_route"):
                 retry = repair_op(retry_state, rng)
-            retry, retry_changed, retry_hard_violation_count = _candidate_change_and_violations(previous_state, retry)
+            retry_trace: dict[str, Any] | None = {} if trace_diagnostic else None
+            retry, retry_changed, retry_hard_violation_count = _candidate_change_and_violations(
+                previous_state,
+                retry,
+                trace=retry_trace,
+            )
             if _relaxed_route_candidate_usable(previous_state, retry, retry_changed, retry_hard_violation_count):
                 candidate = retry
                 changed = retry_changed
                 hard_violation_count = retry_hard_violation_count
+                local_search_trace = retry_trace
         previous_obj = previous_state.objective()
+        raw_candidate_obj = candidate.objective()
+        raw_candidate_route_count = len(candidate.solution.routes)
+        raw_changed = bool(changed)
+        raw_removed_count = len(candidate.removed_customers)
+        raw_hard_violation_count = int(hard_violation_count)
         if action.destroy_op_id == "route_elimination_removal":
             if relaxed_route_compression:
                 if candidate.objective() >= previous_obj - 1e-9:
+                    revert_reason = "relaxed_route_compression_no_objective_drop"
                     candidate = previous_state
                     changed = False
                     hard_violation_count = 0
             elif len(candidate.solution.routes) >= len(previous_state.solution.routes) or candidate.objective() >= previous_obj - 1e-9:
+                revert_reason = "route_elimination_no_route_or_objective_drop"
                 candidate = previous_state
                 changed = False
                 hard_violation_count = 0
@@ -403,6 +429,13 @@ def apply_winner_action(
             or hard_violation_count
             or not changed
         ):
+            if revert_reason == "candidate_usable":
+                if candidate.removed_customers:
+                    revert_reason = "removed_customers_remaining"
+                elif hard_violation_count:
+                    revert_reason = "hard_violation"
+                else:
+                    revert_reason = "unchanged"
             candidate = previous_state
             changed = False
             hard_violation_count = 0
@@ -423,6 +456,23 @@ def apply_winner_action(
         "candidate_obj": float(candidate_obj),
         "actual_evals_added": after_evals - before_evals,
     }
+    if trace_diagnostic:
+        trace.update(
+            {
+                "previous_obj": float(previous_obj),
+                "previous_route_count": previous_route_count,
+                "raw_candidate_obj": float(raw_candidate_obj),
+                "raw_candidate_route_count": int(raw_candidate_route_count),
+                "raw_candidate_route_count_delta": int(raw_candidate_route_count - previous_route_count),
+                "raw_changed": bool(raw_changed),
+                "raw_removed_count": int(raw_removed_count),
+                "raw_hard_violation_count": int(raw_hard_violation_count),
+                "candidate_route_count": len(candidate.solution.routes),
+                "candidate_route_count_delta": len(candidate.solution.routes) - previous_route_count,
+                "revert_reason": revert_reason,
+                **(local_search_trace or _unknown_local_search_trace()),
+            }
+        )
     return {
         "operator_base_id": operator_base_id,
         "candidate_solution": candidate.solution,
@@ -758,6 +808,7 @@ def _run_winner_kernel_loop(
         repair_delta_mode="fast",
     )
     flags = variant_flags or winner_variant_flags(include_route_elimination=config.include_route_elimination)
+    trace_diagnostic = _trace_diagnostic_enabled(flags)
     ledger: TimingLedger | None = attach_timing_ledger(context) if _flag_enabled_from(flags, "SETP_ALNS_CRUSH_TIMING_LEDGER") else None
     with timed_section(context, "initial_reference_score"):
         initial_obj = score_reference(initial_solution, context)
@@ -781,7 +832,18 @@ def _run_winner_kernel_loop(
     rng = np.random.default_rng(config.seed)
     target = int(config.eval_budget)
     started = time.perf_counter()
-    history = [_winner_history_entry(context, best.solution, best.objective(), 0, started, "shared_warm_start")]
+    history = [
+        _winner_history_entry(
+            context,
+            best.solution,
+            best.objective(),
+            0,
+            started,
+            "shared_warm_start",
+            include_trace_fields=trace_diagnostic,
+        )
+    ]
+    candidate_trace: list[dict[str, Any]] = []
     _maybe_write_e2_checkpoint(best.solution, context, best.objective(), 0, started, "shared_warm_start")
     moves = 0
     scan_attempts = 0
@@ -794,7 +856,17 @@ def _run_winner_kernel_loop(
             scan_counts["restart_accepts"] += 1
             if scan_state.objective() < best.objective() - 1e-9:
                 best = scan_state
-                history.append(_winner_history_entry(context, best.solution, best.objective(), context.budget.count if context.budget else 0, started, "scan_restart"))
+                history.append(
+                    _winner_history_entry(
+                        context,
+                        best.solution,
+                        best.objective(),
+                        context.budget.count if context.budget else 0,
+                        started,
+                        "scan_restart",
+                        include_trace_fields=trace_diagnostic,
+                    )
+                )
     while True:
         if context.budget is not None and context.budget.reached_target:
             break
@@ -816,7 +888,17 @@ def _run_winner_kernel_loop(
                 scan_counts["rebuild_accepts"] += 1
                 if scan_state.objective() < best.objective() - 1e-9:
                     best = scan_state
-                    history.append(_winner_history_entry(context, best.solution, best.objective(), context.budget.count if context.budget else 0, started, "scan_rebuild"))
+                    history.append(
+                        _winner_history_entry(
+                            context,
+                            best.solution,
+                            best.objective(),
+                            context.budget.count if context.budget else 0,
+                            started,
+                            "scan_rebuild",
+                            include_trace_fields=trace_diagnostic,
+                        )
+                    )
                 continue
         progress = min(1.0, moves / max(1, target))
         destroy_idx, repair_idx = selector(rng, best, current)
@@ -848,6 +930,22 @@ def _run_winner_kernel_loop(
         hard_violation_count = int(result.get("hard_violation_count", _hard_violation_count(candidate.solution, candidate.context)))
         best_improved = accepted and candidate_obj < previous_best_obj - 1e-9 and hard_violation_count == 0
         better_current = accepted and candidate_obj < previous_obj - 1e-9
+        if trace_diagnostic:
+            trace_row = dict(result.get("trace", {}))
+            trace_row.update(
+                {
+                    "move": int(moves),
+                    "eval": int(context.budget.count if context.budget else 0),
+                    "previous_best_obj": float(previous_best_obj),
+                    "accepted": bool(accepted),
+                    "best_improved": bool(best_improved),
+                    "accepted_worse": bool(accepted and candidate_obj > previous_obj + 1e-9),
+                    "better_current": bool(better_current),
+                    "outcome_candidate_obj": float(candidate_obj),
+                    "outcome_hard_violation_count": int(hard_violation_count),
+                }
+            )
+            candidate_trace.append(trace_row)
         outcome_idx = 3
         if accepted:
             current = candidate
@@ -866,6 +964,7 @@ def _run_winner_kernel_loop(
                         context.budget.count if context.budget else 0,
                         started,
                         f"{destroy_name}+{repair_name}",
+                        include_trace_fields=trace_diagnostic,
                     )
                 )
                 _maybe_write_e2_checkpoint(
@@ -887,6 +986,9 @@ def _run_winner_kernel_loop(
         feasible = len(check_solution(best.solution, instance, effective_prices)) == 0
     actual_moves = sum(sum(row) for row in destroy_counts_out.values())
     timing_snapshot = ledger.snapshot() if ledger is not None else {}
+    operator_counts_out = {"destroy": destroy_counts_out, "repair": repair_counts_out, "scan": dict(scan_counts), "timing": timing_snapshot}
+    if trace_diagnostic:
+        operator_counts_out["candidate_trace"] = candidate_trace
     return AlnsRunResult(
         initial_solution,
         best.solution,
@@ -901,7 +1003,7 @@ def _run_winner_kernel_loop(
         int(context.score_counts.get("candidate", 0)),
         int(context.score_counts.get("repair_delta", 0)),
         int(context.score_counts.get("repair_delta", 0)),
-        {"destroy": destroy_counts_out, "repair": repair_counts_out, "scan": dict(scan_counts), "timing": timing_snapshot},
+        operator_counts_out,
         history,
     )
 
@@ -953,28 +1055,75 @@ def _winner_history_entry(
     eval_count: int,
     started: float,
     operator: str,
+    *,
+    include_trace_fields: bool = False,
 ) -> dict[str, Any]:
     with timed_section(context, "history_model_cost"):
         best_cost = float(model_cost(solution, context))
-    return {
+    row = {
         "eval": int(eval_count),
         "time_seconds": max(0.0, time.perf_counter() - started),
         "best_cost": best_cost,
         "best_obj": float(objective),
         "operator": str(operator),
     }
+    if include_trace_fields:
+        row["route_count"] = len(solution.routes)
+        row["signature"] = solution_signature_hash(solution)
+    return row
 
 
 def _flag_enabled_from(flags: dict[str, str], name: str) -> bool:
     return str(flags.get(name, "0")).lower() not in {"0", "false", "no"}
 
 
-def _candidate_change_and_violations(previous_state: AlnsState, candidate: AlnsState) -> tuple[AlnsState, bool, int]:
+def _trace_diagnostic_enabled(flags: dict[str, str] | None = None) -> bool:
+    if flags is not None and TRACE_DIAGNOSTIC_FLAG in flags:
+        return _flag_enabled_from(flags, TRACE_DIAGNOSTIC_FLAG)
+    return os.environ.get(TRACE_DIAGNOSTIC_FLAG, "0").lower() not in {"0", "false", "no"}
+
+
+def _unknown_local_search_trace() -> dict[str, Any]:
+    return {
+        "local_search_attempted": False,
+        "local_search_improved": "UNKNOWN",
+        "local_search_obj_before": "UNKNOWN",
+        "local_search_obj_after": "UNKNOWN",
+        "local_search_route_count_before": "UNKNOWN",
+        "local_search_route_count_after": "UNKNOWN",
+        "local_search_route_count_delta": "UNKNOWN",
+    }
+
+
+def _candidate_change_and_violations(
+    previous_state: AlnsState,
+    candidate: AlnsState,
+    *,
+    trace: dict[str, Any] | None = None,
+) -> tuple[AlnsState, bool, int]:
     changed = _solution_changed(previous_state.solution, candidate.solution)
     hard_violation_count = _hard_violation_count(candidate.solution, candidate.context) if not candidate.removed_customers else 1
+    if trace is not None:
+        trace.update(_unknown_local_search_trace())
     if not candidate.removed_customers and hard_violation_count == 0 and changed:
+        before_solution = candidate.solution
+        before_obj = candidate.objective()
         with timed_section(candidate.context, "local_search"):
             improved_solution = improve_solution_locally(candidate.solution, candidate.context)
+        if trace is not None:
+            improved = _solution_changed(before_solution, improved_solution)
+            after_state = replace(candidate, solution=improved_solution, objective_value=None) if improved else candidate
+            trace.update(
+                {
+                    "local_search_attempted": True,
+                    "local_search_improved": bool(improved),
+                    "local_search_obj_before": float(before_obj),
+                    "local_search_obj_after": float(after_state.objective()),
+                    "local_search_route_count_before": len(before_solution.routes),
+                    "local_search_route_count_after": len(improved_solution.routes),
+                    "local_search_route_count_delta": len(improved_solution.routes) - len(before_solution.routes),
+                }
+            )
         if _solution_changed(candidate.solution, improved_solution):
             candidate = replace(candidate, solution=improved_solution, objective_value=None)
             changed = _solution_changed(previous_state.solution, candidate.solution)

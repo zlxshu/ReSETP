@@ -43,6 +43,7 @@ from .fleet import normalize_solution_vehicle_trips
 
 
 BASELINE_ALGORITHMS = ("GA", "PSO", "VNS", "ACO", "GA-VNS", "LNS", "GWO", "IWD")
+TRACE_DIAGNOSTIC_FLAG = "SETP_ALNS_CRUSH_TRACE_DIAGNOSTIC"
 
 BASELINE_SOURCES = {
     "GA": "Narayanan et al. 2022 arXiv:2204.05545 sec.2.3",
@@ -68,6 +69,7 @@ class BaselineRunResult:
     best_penalized_obj: float | None
     best_solution: Solution | None
     history: list[dict[str, Any]] = field(default_factory=list)
+    trace: list[dict[str, Any]] = field(default_factory=list)
     failure_reason: str = ""
     shared_seed_cost: float | None = None
     solution_signature_hash: str = ""
@@ -103,6 +105,7 @@ class _ScoredSolution:
     cost: float
     feasible: bool
     signature: str
+    violation_count: int = 0
 
 
 @dataclass(frozen=True)
@@ -185,6 +188,7 @@ class _SearchSession:
                 "signature": self.current.signature,
             }
         ]
+        self.trace: list[dict[str, Any]] = []
         self.operator_counts: dict[str, int] = {}
         self.reference_objective_cache[self.current.signature] = float(seed_obj)
         if common_flip_preprocess:
@@ -236,6 +240,7 @@ class _SearchSession:
             cost=cost,
             feasible=feasible,
             signature=solution_signature_hash(solution),
+            violation_count=violation_count,
         )
         if feasible and objective < self.best.objective - 1e-9:
             before_best_cost = self.best.cost
@@ -311,6 +316,60 @@ class _SearchSession:
             return True
         return False
 
+    def record_lns_trace(
+        self,
+        *,
+        iteration: int,
+        operator: str,
+        trace_path: str,
+        destroy: str,
+        repair: str,
+        fallback_used: bool,
+        previous_obj: float,
+        previous_best_obj: float,
+        previous_route_count: int,
+        candidate: Solution,
+        scored: _ScoredSolution | None,
+        accepted: bool,
+        temperature: float,
+    ) -> None:
+        if not _lns_trace_diagnostic_enabled():
+            return
+        candidate_obj = float(scored.objective) if scored is not None else math.inf
+        hard_violation_count = int(scored.violation_count) if scored is not None else 1
+        trace_flags = _trace_acceptance_fields(
+            previous_obj=previous_obj,
+            candidate_obj=candidate_obj,
+            previous_best_obj=previous_best_obj,
+            accepted=accepted,
+            hard_violation_count=hard_violation_count,
+        )
+        self.trace.append(
+            {
+                "eval": self.evals,
+                "time_seconds": time.perf_counter() - self.started,
+                "iteration": int(iteration),
+                "operator": operator,
+                "trace_path": trace_path,
+                "destroy": destroy,
+                "repair": repair,
+                "fallback_used": bool(fallback_used),
+                "accepted": bool(accepted),
+                "temperature": float(temperature),
+                "previous_obj": float(previous_obj),
+                "candidate_obj": candidate_obj if math.isfinite(candidate_obj) else "UNKNOWN",
+                "delta_obj": candidate_obj - float(previous_obj) if math.isfinite(candidate_obj) else "UNKNOWN",
+                "previous_best_obj": float(previous_best_obj),
+                "previous_route_count": int(previous_route_count),
+                "candidate_route_count": len(candidate.routes),
+                "route_count_delta": len(candidate.routes) - int(previous_route_count),
+                "hard_violation_count": hard_violation_count,
+                "feasible": bool(scored.feasible) if scored is not None else False,
+                "signature": scored.signature if scored is not None else "UNKNOWN",
+                **trace_flags,
+            }
+        )
+
     def finalize(self, parameter_notes: dict[str, Any] | None = None, failure_reason: str = "") -> BaselineRunResult:
         elapsed = time.perf_counter() - self.started
         best_solution = self.best.solution if self.best.feasible else None
@@ -342,6 +401,7 @@ class _SearchSession:
             best_penalized_obj=float(self.best.objective) if self.best.feasible else None,
             best_solution=best_solution,
             history=list(self.history),
+            trace=list(self.trace),
             failure_reason=reason,
             shared_seed_cost=float(self.shared_seed_cost),
             solution_signature_hash=solution_signature_hash(best_solution) if best_solution is not None else "",
@@ -462,6 +522,7 @@ def baseline_result_to_dict(result: BaselineRunResult, *, include_solution: bool
         "operator_counts": result.operator_counts,
         "parameter_notes": result.parameter_notes,
         "history": result.history,
+        "trace": result.trace,
         "common_preprocess_cost": result.common_preprocess_cost,
         "common_preprocess_attempts": result.common_preprocess_attempts,
         "common_preprocess_accepted_flips": result.common_preprocess_accepted_flips,
@@ -724,23 +785,63 @@ def _run_ga_vns(session: _SearchSession) -> BaselineRunResult:
 def _run_lns(session: _SearchSession) -> BaselineRunResult:
     params = {"max_iter": 1000, "epsilon": 0.3, "phi": 0.05, "mu": 0.95, "destroy": "random+shaw", "repair": "farthest+regret"}
     scan_solution = _order_to_solution(_angle_scan_order(session.context.instance), session)
+    previous_obj = session.current.objective
+    previous_best_obj = session.best.objective
+    previous_route_count = len(session.current.solution.routes)
     scored_scan = session.score(scan_solution, operator="lns_scan_initial")
+    scan_accepted = False
     if scored_scan is not None and scored_scan.feasible and scored_scan.objective < session.current.objective - 1e-9:
         session.current = scored_scan
+        scan_accepted = True
+    session.record_lns_trace(
+        iteration=0,
+        operator="lns_scan_initial",
+        trace_path=_classify_lns_trace_path("lns_scan_initial", fallback_used=False),
+        destroy="",
+        repair="",
+        fallback_used=False,
+        previous_obj=previous_obj,
+        previous_best_obj=previous_best_obj,
+        previous_route_count=previous_route_count,
+        candidate=scan_solution,
+        scored=scored_scan,
+        accepted=scan_accepted,
+        temperature=0.0,
+    )
     temperature = -float(params["phi"]) * abs(session.current.objective) / math.log(0.5)
     iteration = 0
     while session.can_score():
         iteration += 1
         destroy, repair = _lns_operator_pair(session.rng)
+        previous_obj = session.current.objective
+        previous_best_obj = session.best.objective
+        previous_route_count = len(session.current.solution.routes)
+        fallback_used = False
         if session.rng.random() < 0.35:
             candidate = _vehicle_type_mutation(session.current.solution, session)
             operator = "lns_vehicle_type_mutation"
         else:
             outcome = _alns_neighbor(session, session.current.solution, destroy, repair)
-            candidate = outcome.solution if outcome.produced and outcome.feasible else _order_to_solution(_apply_order_move(_solution_order(session.current.solution, session.context.instance), session.rng, "relocate"), session)
+            fallback_used = not (outcome.produced and outcome.feasible)
+            candidate = outcome.solution if not fallback_used else _order_to_solution(_apply_order_move(_solution_order(session.current.solution, session.context.instance), session.rng, "relocate"), session)
             operator = f"lns_{destroy}_{repair}"
         scored = session.score(candidate, operator=operator)
-        session.accept_metropolis(scored, temperature)
+        accepted = session.accept_metropolis(scored, temperature)
+        session.record_lns_trace(
+            iteration=iteration,
+            operator=operator,
+            trace_path=_classify_lns_trace_path(operator, fallback_used=fallback_used),
+            destroy=destroy if operator.startswith("lns_") and operator != "lns_vehicle_type_mutation" else "",
+            repair=repair if operator.startswith("lns_") and operator != "lns_vehicle_type_mutation" else "",
+            fallback_used=fallback_used,
+            previous_obj=previous_obj,
+            previous_best_obj=previous_best_obj,
+            previous_route_count=previous_route_count,
+            candidate=candidate,
+            scored=scored,
+            accepted=accepted,
+            temperature=temperature,
+        )
         temperature *= float(params["mu"])
         if iteration >= int(params["max_iter"]):
             iteration = 0
@@ -828,6 +929,33 @@ def _normalize_algorithm(algorithm: str) -> str:
 
 def _is_feasible(solution: Solution, context: EvaluationContext) -> bool:
     return not check_solution(solution, context.instance, context.prices)
+
+
+def _lns_trace_diagnostic_enabled() -> bool:
+    return os.environ.get(TRACE_DIAGNOSTIC_FLAG, "0").lower() not in {"0", "false", "no"}
+
+
+def _classify_lns_trace_path(operator: str, *, fallback_used: bool) -> str:
+    if operator == "lns_scan_initial":
+        return "scan_initial"
+    if operator == "lns_vehicle_type_mutation":
+        return "vehicle_type_mutation"
+    return "fallback_relocate" if fallback_used else "strong_bridge"
+
+
+def _trace_acceptance_fields(
+    *,
+    previous_obj: float,
+    candidate_obj: float,
+    previous_best_obj: float,
+    accepted: bool,
+    hard_violation_count: int,
+) -> dict[str, bool]:
+    finite_candidate = math.isfinite(float(candidate_obj))
+    return {
+        "accepted_worse": bool(accepted) and finite_candidate and float(candidate_obj) > float(previous_obj) + 1e-9,
+        "best_improved": finite_candidate and int(hard_violation_count) == 0 and float(candidate_obj) < float(previous_best_obj) - 1e-9,
+    }
 
 
 def _operator_channel(operator: str) -> str:

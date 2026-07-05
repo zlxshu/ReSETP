@@ -1,0 +1,26 @@
+{
+  "boundary": "diagnostic trace only; no Tier1/Tier2/Tier3 claim; no solver/evaluator protected edits",
+  "diagnostic_only": true,
+  "eval_budget": 4000,
+  "formal_t3": false,
+  "hard_subset_source": "baselines/e2_alns/route_compression_probe_20260705/hard_subset_instances.csv",
+  "head": "52f0bf709ca726ab1dc7372620fcbd042bbc8d05",
+  "output_dir": "baselines/e2_alns/lns_acceptance_scheduler_audit_20260705",
+  "profiles": [
+    "LNS_TRACE",
+    "A0_TRACE"
+  ],
+  "python": "/opt/anaconda3/bin/python3.13",
+  "pythonhashseed": "0",
+  "runtime_cap_seconds": 900.0,
+  "schema": "setp-e2-lns-acceptance-scheduler-audit-metadata.v1",
+  "seeds": [
+    1,
+    2,
+    3
+  ],
+  "started_at_epoch": 1783259824.367605,
+  "task": "lns_acceptance_scheduler_audit",
+  "trace_flag": "SETP_ALNS_CRUSH_TRACE_DIAGNOSTIC",
+  "workers": 3
+}
