@@ -58,6 +58,7 @@ operator_base_id = "winner_kernel_v1"
 _CRUSH_FLAG_NAMES = (
     "SETP_ALNS_CRUSH_TRUE_REPAIR",
     "SETP_ALNS_CRUSH_ROUTE_ELIMINATION",
+    "SETP_ALNS_CRUSH_RELAXED_ROUTE_COMPRESSION",
     "SETP_ALNS_CRUSH_TRUE_ACCEPTANCE",
     "SETP_ALNS_CRUSH_SA_ACCEPTANCE",
     "SETP_ALNS_CRUSH_SA_MODE",
@@ -74,6 +75,7 @@ _CRUSH_FLAG_NAMES = (
 E2_ALNS_COMPONENT_SOURCES = {
     "SETP_ALNS_CRUSH_TRUE_REPAIR": "Ropke-Pisinger/Wu: cost-aware greedy/regret repair",
     "SETP_ALNS_CRUSH_ROUTE_ELIMINATION": "Gao GLNS: route elimination large neighborhood",
+    "SETP_ALNS_CRUSH_RELAXED_ROUTE_COMPRESSION": "Diagnostic: route-compression repair may improve cost before immediate route-count drop",
     "SETP_ALNS_CRUSH_TRUE_ACCEPTANCE": "Wu/Ropke-Pisinger: non-hillclimbing ALNS acceptance",
     "SETP_ALNS_CRUSH_SA_ACCEPTANCE": "Ropke-Pisinger: simulated annealing acceptance with geometric cooling",
     "SETP_ALNS_CRUSH_SA_MODE": "Ropke-Pisinger/Gao GLNS: SA cooling schedule selector",
@@ -196,6 +198,7 @@ def winner_variant_flags(*, include_route_elimination: bool = False) -> dict[str
     return {
         "SETP_ALNS_CRUSH_TRUE_REPAIR": "0",
         "SETP_ALNS_CRUSH_ROUTE_ELIMINATION": "1" if include_route_elimination else "0",
+        "SETP_ALNS_CRUSH_RELAXED_ROUTE_COMPRESSION": "0",
         "SETP_ALNS_CRUSH_TRUE_ACCEPTANCE": "0",
         "SETP_ALNS_CRUSH_SA_ACCEPTANCE": "0",
         "SETP_ALNS_CRUSH_SA_MODE": "off",
@@ -221,6 +224,7 @@ def e2_alns_variant_flags() -> dict[str, str]:
     return {
         "SETP_ALNS_CRUSH_TRUE_REPAIR": "1",
         "SETP_ALNS_CRUSH_ROUTE_ELIMINATION": "0",
+        "SETP_ALNS_CRUSH_RELAXED_ROUTE_COMPRESSION": "0",
         "SETP_ALNS_CRUSH_TRUE_ACCEPTANCE": "0",
         "SETP_ALNS_CRUSH_SA_ACCEPTANCE": "0",
         "SETP_ALNS_CRUSH_SA_MODE": "off",
@@ -240,6 +244,7 @@ def e2_alns_scan_bridge_flags() -> dict[str, str]:
     return {
         "SETP_ALNS_CRUSH_TRUE_REPAIR": "1",
         "SETP_ALNS_CRUSH_ROUTE_ELIMINATION": "0",
+        "SETP_ALNS_CRUSH_RELAXED_ROUTE_COMPRESSION": "0",
         "SETP_ALNS_CRUSH_TRUE_ACCEPTANCE": "0",
         "SETP_ALNS_CRUSH_SA_ACCEPTANCE": "0",
         "SETP_ALNS_CRUSH_SA_MODE": "off",
@@ -368,23 +373,31 @@ def apply_winner_action(
             )
         with timed_section(context, f"repair:{action.repair_op_id}"):
             candidate = repair_op(destroyed, rng)
-        changed = _solution_changed(previous_state.solution, candidate.solution)
-        hard_violation_count = _hard_violation_count(candidate.solution, candidate.context) if not candidate.removed_customers else 1
-        if not candidate.removed_customers and hard_violation_count == 0 and changed:
-            with timed_section(context, "local_search"):
-                improved_solution = improve_solution_locally(candidate.solution, candidate.context)
-            if _solution_changed(candidate.solution, improved_solution):
-                candidate = replace(candidate, solution=improved_solution, objective_value=None)
-                changed = _solution_changed(previous_state.solution, candidate.solution)
-                hard_violation_count = _hard_violation_count(candidate.solution, candidate.context)
+        candidate, changed, hard_violation_count = _candidate_change_and_violations(previous_state, candidate)
+        relaxed_route_compression = (
+            action.destroy_op_id == "route_elimination_removal"
+            and _flag_enabled_from(flags, "SETP_ALNS_CRUSH_RELAXED_ROUTE_COMPRESSION")
+        )
+        if relaxed_route_compression and not _relaxed_route_candidate_usable(previous_state, candidate, changed, hard_violation_count):
+            retry_state = replace(destroyed, allow_new_route_repair=True)
+            with timed_section(context, f"repair:{action.repair_op_id}:allow_new_route"):
+                retry = repair_op(retry_state, rng)
+            retry, retry_changed, retry_hard_violation_count = _candidate_change_and_violations(previous_state, retry)
+            if _relaxed_route_candidate_usable(previous_state, retry, retry_changed, retry_hard_violation_count):
+                candidate = retry
+                changed = retry_changed
+                hard_violation_count = retry_hard_violation_count
         previous_obj = previous_state.objective()
-        if action.destroy_op_id == "route_elimination_removal" and (
-            len(candidate.solution.routes) >= len(previous_state.solution.routes)
-            or candidate.objective() >= previous_obj - 1e-9
-        ):
-            candidate = previous_state
-            changed = False
-            hard_violation_count = 0
+        if action.destroy_op_id == "route_elimination_removal":
+            if relaxed_route_compression:
+                if candidate.objective() >= previous_obj - 1e-9:
+                    candidate = previous_state
+                    changed = False
+                    hard_violation_count = 0
+            elif len(candidate.solution.routes) >= len(previous_state.solution.routes) or candidate.objective() >= previous_obj - 1e-9:
+                candidate = previous_state
+                changed = False
+                hard_violation_count = 0
         if (
             candidate.removed_customers
             or hard_violation_count
@@ -416,6 +429,7 @@ def apply_winner_action(
         "candidate_state": candidate,
         "candidate_obj": float(candidate_obj),
         "actual_evals_added": after_evals - before_evals,
+        "changed": bool(changed),
         "hard_violation_count": int(hard_violation_count),
         "trace": trace,
     }
@@ -953,6 +967,30 @@ def _winner_history_entry(
 
 def _flag_enabled_from(flags: dict[str, str], name: str) -> bool:
     return str(flags.get(name, "0")).lower() not in {"0", "false", "no"}
+
+
+def _candidate_change_and_violations(previous_state: AlnsState, candidate: AlnsState) -> tuple[AlnsState, bool, int]:
+    changed = _solution_changed(previous_state.solution, candidate.solution)
+    hard_violation_count = _hard_violation_count(candidate.solution, candidate.context) if not candidate.removed_customers else 1
+    if not candidate.removed_customers and hard_violation_count == 0 and changed:
+        with timed_section(candidate.context, "local_search"):
+            improved_solution = improve_solution_locally(candidate.solution, candidate.context)
+        if _solution_changed(candidate.solution, improved_solution):
+            candidate = replace(candidate, solution=improved_solution, objective_value=None)
+            changed = _solution_changed(previous_state.solution, candidate.solution)
+            hard_violation_count = _hard_violation_count(candidate.solution, candidate.context)
+    return candidate, changed, hard_violation_count
+
+
+def _relaxed_route_candidate_usable(
+    previous_state: AlnsState,
+    candidate: AlnsState,
+    changed: bool,
+    hard_violation_count: int,
+) -> bool:
+    if candidate.removed_customers or hard_violation_count or not changed:
+        return False
+    return candidate.objective() < previous_state.objective() - 1e-9
 
 
 def _hard_violation_count(solution: Solution, context: EvaluationContext) -> int:

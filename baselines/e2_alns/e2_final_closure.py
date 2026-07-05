@@ -1130,6 +1130,9 @@ def flags_for_profile(base_variant: str, components: list[str]) -> tuple[dict[st
             flags["SETP_ALNS_CRUSH_LOCAL_SEARCH"] = "1"
         elif component == "ROUTE_ELIMINATION":
             flags["SETP_ALNS_CRUSH_ROUTE_ELIMINATION"] = "1"
+        elif component == "RELAXED_ROUTE_COMPRESSION":
+            flags["SETP_ALNS_CRUSH_ROUTE_ELIMINATION"] = "1"
+            flags["SETP_ALNS_CRUSH_RELAXED_ROUTE_COMPRESSION"] = "1"
         elif component == "RRT_TRUE_ACCEPTANCE":
             flags["SETP_ALNS_CRUSH_TRUE_ACCEPTANCE"] = "1"
             flags["SETP_ALNS_CRUSH_SA_ACCEPTANCE"] = "0"

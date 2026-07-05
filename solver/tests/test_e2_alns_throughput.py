@@ -3,11 +3,13 @@ from __future__ import annotations
 from dataclasses import replace
 import math
 import os
+import random
 import tempfile
 import unittest
 from unittest.mock import patch
 from pathlib import Path
 
+import setp_solver.search.candidates as candidate_ops
 import setp_solver.search.winner_operators as winner_ops
 from setp_solver.check import check_solution
 from setp_solver.cost import evaluate
@@ -37,12 +39,164 @@ class E2AlnsThroughputTest(unittest.TestCase):
 
         self.assertEqual(flags["SETP_ALNS_CRUSH_ROUTE_COST_CACHE"], "0")
         self.assertEqual(flags["SETP_ALNS_CRUSH_TIMING_LEDGER"], "0")
+        self.assertEqual(flags["SETP_ALNS_CRUSH_RELAXED_ROUTE_COMPRESSION"], "0")
 
         throughput = e2_alns_throughput_flags()
         self.assertEqual(throughput["SETP_ALNS_CRUSH_SA_MODE"], "lns_cooling")
         self.assertEqual(throughput["SETP_ALNS_CRUSH_ROUTE_COST_CACHE"], "1")
         self.assertEqual(throughput["SETP_ALNS_CRUSH_REPAIR_STRUCTURE_CACHE"], "1")
         self.assertEqual(throughput["SETP_ALNS_CRUSH_TIMING_LEDGER"], "1")
+        self.assertEqual(throughput["SETP_ALNS_CRUSH_RELAXED_ROUTE_COMPRESSION"], "0")
+
+    def test_relaxed_route_compression_component_sets_explicit_flags(self) -> None:
+        from baselines.e2_alns.e2_final_closure import flags_for_profile
+
+        flags, carbon_bias = flags_for_profile("alns_e2_throughput", ["RELAXED_ROUTE_COMPRESSION"])
+
+        self.assertEqual(carbon_bias, 0.0)
+        self.assertEqual(flags["SETP_ALNS_CRUSH_ROUTE_ELIMINATION"], "1")
+        self.assertEqual(flags["SETP_ALNS_CRUSH_RELAXED_ROUTE_COMPRESSION"], "1")
+
+    def test_route_elimination_default_rejects_same_route_count_candidate(self) -> None:
+        bundle = load_search_bundle(VERIFY_BUNDLE)
+        solution = make_shared_initial_solution(bundle)
+        context = EvaluationContext(bundle.instance, bundle.carbon_profile)
+        current_obj = float(evaluate(solution, bundle.instance, bundle.carbon_profile, DEFAULT_PRICES)["total_cost"])
+        candidate_solution = replace(solution, routes=list(reversed(solution.routes)))
+
+        def fake_destroy(state: winner_ops.AlnsState, rng: object, **kwargs: object) -> winner_ops.AlnsState:
+            return replace(state, removed_customers=("C1",), source_solution=state.solution, allow_new_route_repair=False)
+
+        def fake_repair(state: winner_ops.AlnsState, rng: object, **kwargs: object) -> winner_ops.AlnsState:
+            return winner_ops.AlnsState(
+                candidate_solution,
+                state.context,
+                objective_value=state.objective() - 1.0,
+                policy=state.policy,
+            )
+
+        operator_set = winner_ops.WinnerOperatorSet(
+            destroy_ops=(("route_elimination_removal", fake_destroy),),
+            repair_ops=(("fake_repair", fake_repair),),
+            include_route_elimination=True,
+        )
+        flags = e2_alns_throughput_flags()
+        flags["SETP_ALNS_CRUSH_ROUTE_ELIMINATION"] = "1"
+
+        result = winner_ops.apply_winner_action(
+            solution,
+            winner_ops.WinnerOperatorAction("route_elimination_removal", "fake_repair"),
+            context,
+            operator_set=operator_set,
+            current_obj=current_obj,
+            variant_flags=flags,
+        )
+
+        self.assertIs(result["candidate_state"].solution, solution)
+        self.assertFalse(result["changed"])
+
+    def test_relaxed_route_compression_accepts_lower_cost_same_route_count_candidate(self) -> None:
+        bundle = load_search_bundle(VERIFY_BUNDLE)
+        solution = make_shared_initial_solution(bundle)
+        context = EvaluationContext(bundle.instance, bundle.carbon_profile)
+        current_obj = float(evaluate(solution, bundle.instance, bundle.carbon_profile, DEFAULT_PRICES)["total_cost"])
+        candidate_solution = replace(solution, routes=list(reversed(solution.routes)))
+
+        def fake_destroy(state: winner_ops.AlnsState, rng: object, **kwargs: object) -> winner_ops.AlnsState:
+            return replace(state, removed_customers=("C1",), source_solution=state.solution, allow_new_route_repair=False)
+
+        def fake_repair(state: winner_ops.AlnsState, rng: object, **kwargs: object) -> winner_ops.AlnsState:
+            return winner_ops.AlnsState(
+                candidate_solution,
+                state.context,
+                objective_value=state.objective() - 1.0,
+                policy=state.policy,
+            )
+
+        operator_set = winner_ops.WinnerOperatorSet(
+            destroy_ops=(("route_elimination_removal", fake_destroy),),
+            repair_ops=(("fake_repair", fake_repair),),
+            include_route_elimination=True,
+        )
+        flags = e2_alns_throughput_flags()
+        flags["SETP_ALNS_CRUSH_ROUTE_ELIMINATION"] = "1"
+        flags["SETP_ALNS_CRUSH_RELAXED_ROUTE_COMPRESSION"] = "1"
+
+        result = winner_ops.apply_winner_action(
+            solution,
+            winner_ops.WinnerOperatorAction("route_elimination_removal", "fake_repair"),
+            context,
+            operator_set=operator_set,
+            current_obj=current_obj,
+            variant_flags=flags,
+        )
+
+        self.assertIs(result["candidate_state"].solution, candidate_solution)
+        self.assertTrue(result["changed"])
+
+    def test_relaxed_route_compression_rejects_infeasible_candidate(self) -> None:
+        bundle = load_search_bundle(VERIFY_BUNDLE)
+        solution = make_shared_initial_solution(bundle)
+        context = EvaluationContext(bundle.instance, bundle.carbon_profile)
+        current_obj = float(evaluate(solution, bundle.instance, bundle.carbon_profile, DEFAULT_PRICES)["total_cost"])
+        infeasible_solution = replace(solution, routes=solution.routes[:-1])
+
+        def fake_destroy(state: winner_ops.AlnsState, rng: object, **kwargs: object) -> winner_ops.AlnsState:
+            return replace(state, removed_customers=("C1",), source_solution=state.solution, allow_new_route_repair=False)
+
+        def fake_repair(state: winner_ops.AlnsState, rng: object, **kwargs: object) -> winner_ops.AlnsState:
+            return winner_ops.AlnsState(
+                infeasible_solution,
+                state.context,
+                objective_value=state.objective() - 1.0,
+                policy=state.policy,
+            )
+
+        operator_set = winner_ops.WinnerOperatorSet(
+            destroy_ops=(("route_elimination_removal", fake_destroy),),
+            repair_ops=(("fake_repair", fake_repair),),
+            include_route_elimination=True,
+        )
+        flags = e2_alns_throughput_flags()
+        flags["SETP_ALNS_CRUSH_ROUTE_ELIMINATION"] = "1"
+        flags["SETP_ALNS_CRUSH_RELAXED_ROUTE_COMPRESSION"] = "1"
+
+        result = winner_ops.apply_winner_action(
+            solution,
+            winner_ops.WinnerOperatorAction("route_elimination_removal", "fake_repair"),
+            context,
+            operator_set=operator_set,
+            current_obj=current_obj,
+            variant_flags=flags,
+        )
+
+        self.assertIs(result["candidate_state"].solution, solution)
+        self.assertFalse(result["changed"])
+
+    def test_candidate_route_elimination_relaxed_gate_accepts_cost_drop_without_route_drop(self) -> None:
+        bundle = load_search_bundle(VERIFY_BUNDLE)
+        solution = make_shared_initial_solution(bundle)
+        candidate_solution = replace(solution, routes=list(reversed(solution.routes)))
+        context = EvaluationContext(bundle.instance, bundle.carbon_profile)
+
+        with patch.object(candidate_ops, "_regret_reinsert_removed", return_value=candidate_solution), patch.object(
+            candidate_ops,
+            "model_cost",
+            side_effect=lambda item, _context: 9.0 if item is candidate_solution else 10.0,
+        ), patch.object(
+            candidate_ops,
+            "solution_signature_hash",
+            side_effect=lambda item: "candidate" if item is candidate_solution else "source",
+        ):
+            with patch.dict(os.environ, {"SETP_ALNS_CRUSH_RELAXED_ROUTE_COMPRESSION": "0"}):
+                strict = candidate_ops._apply_dr_route_elimination(solution, context, random.Random(1))
+            with patch.dict(os.environ, {"SETP_ALNS_CRUSH_RELAXED_ROUTE_COMPRESSION": "1"}):
+                relaxed = candidate_ops._apply_dr_route_elimination(solution, context, random.Random(1))
+
+        self.assertIs(strict.solution, solution)
+        self.assertFalse(strict.changed)
+        self.assertIs(relaxed.solution, candidate_solution)
+        self.assertTrue(relaxed.changed)
 
     def test_route_cost_cache_matches_uncached_route_cost(self) -> None:
         bundle = load_search_bundle(VERIFY_BUNDLE)

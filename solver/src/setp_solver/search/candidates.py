@@ -1281,21 +1281,30 @@ def _apply_dr_route_elimination(solution: Solution, context: EvaluationContext, 
         return _OperatorOutcome(solution, produced=False, feasible=False, changed=False, detail="route_elimination_selected_no_customers", metadata={"removed_count": 0})
     partial_routes = _routes_without_customers(solution.routes, set(removed_customers), context.instance)
     repaired = _regret_reinsert_removed(partial_routes, removed_customers, context, allow_new_route=False)
+    relaxed = _crush_flag_enabled("SETP_ALNS_CRUSH_RELAXED_ROUTE_COMPRESSION")
+    if relaxed and repaired is not None:
+        violations = check_solution(repaired, context.instance, context.prices)
+        cost_delta = model_cost(repaired, context) - model_cost(solution, context) if not violations else math.inf
+        changed = solution_signature_hash(repaired) != solution_signature_hash(solution)
+        if violations or not changed or cost_delta >= -1e-9:
+            repaired = _regret_reinsert_removed(partial_routes, removed_customers, context, allow_new_route=True)
+    elif relaxed and repaired is None:
+        repaired = _regret_reinsert_removed(partial_routes, removed_customers, context, allow_new_route=True)
     if repaired is None:
         return _OperatorOutcome(solution, produced=True, feasible=False, changed=False, detail="route_elimination_repair_failed", metadata={"removed_count": len(removed_customers)})
     violations = check_solution(repaired, context.instance, context.prices)
     route_count_delta = len(repaired.routes) - len(solution.routes)
     cost_delta = model_cost(repaired, context) - model_cost(solution, context) if not violations else math.inf
     changed = solution_signature_hash(repaired) != solution_signature_hash(solution)
-    accepted_shape = changed and not violations and route_count_delta < 0 and cost_delta < -1e-9
+    accepted_shape = changed and not violations and cost_delta < -1e-9 and (relaxed or route_count_delta < 0)
     return _OperatorOutcome(
         repaired if accepted_shape else solution,
         produced=True,
         feasible=accepted_shape,
         changed=accepted_shape,
         violation_count=len(violations),
-        detail="route_elimination_improved" if accepted_shape else "route_elimination_no_route_cost_drop",
-        metadata={"removed_count": len(removed_customers), "route_count_delta": route_count_delta, "cost_delta": float(cost_delta)},
+        detail=("relaxed_route_compression_improved" if relaxed else "route_elimination_improved") if accepted_shape else "route_elimination_no_route_cost_drop",
+        metadata={"removed_count": len(removed_customers), "route_count_delta": route_count_delta, "cost_delta": float(cost_delta), "relaxed_route_compression": relaxed},
     )
 
 
