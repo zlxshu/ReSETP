@@ -1,0 +1,10 @@
+# Track24 Evidence Index
+
+Status: `EVIDENCE_INDEX_COMPLETE`
+HEAD: `c2d070c9cd41e3b3f7a9c35d8790359803200ec4`
+Branch: `dr-x86`
+origin/dr-x86: `baab206ab085f437c70a872967d424e149415a6c`
+Track21: `MARGIN_REAL` / `HALT_100C_STILL_STARVED`
+Track23: `TRACK23_COMPLETE`
+Breakthrough map sha256: `b4fb59a4777277c3a70325b5f05c423c457a1813e436372449adee4d32331699`
+HANDOFF placeholders remaining: `False`

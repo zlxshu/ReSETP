@@ -138,3 +138,15 @@ def test_final_decision_blocks_old_training_when_oracle_flat() -> None:
     )
 
     assert decision["final_status"] == "TRACK24_HALT_NO_MECHANISM_ACTION_HEADROOM"
+
+
+def test_final_decision_prioritizes_dynamic_oracle_health_halt() -> None:
+    decision = track24.summarize_final_decision(
+        {
+            "stage3": {"status": "HALT_DYNAMIC_ORACLE_HEALTH"},
+            "stage5": {"status": "FAIRNESS_SIGNAL_EXPOSED_ORACLE_NOT_RUN"},
+            "stage6": {"status": track24.CARBON_CHARGING_SCENARIO_ONLY},
+        }
+    )
+
+    assert decision["final_status"] == "TRACK24_HALT_DYNAMIC_ORACLE_HEALTH"

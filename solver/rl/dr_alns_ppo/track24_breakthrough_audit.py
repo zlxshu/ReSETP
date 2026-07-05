@@ -714,14 +714,16 @@ def summarize_final_decision(state: dict[str, Any]) -> dict[str, Any]:
     stage4 = state.get("stage4") or {}
     stage5 = state.get("stage5") or {}
     stage6 = state.get("stage6") or {}
-    if stage3.get("status") == STRONG_DYNAMIC_ACTION_SPACE and stage4.get("status") == PASS_DYNAMIC_IMITATION:
+    if stage3.get("status") == "HALT_DYNAMIC_ORACLE_HEALTH":
+        final = "TRACK24_HALT_DYNAMIC_ORACLE_HEALTH"
+    elif stage3.get("status") == "RUNNING":
+        final = "TRACK24_BLOCKED_BY_M1_CONTRACT"
+    elif stage3.get("status") == STRONG_DYNAMIC_ACTION_SPACE and stage4.get("status") == PASS_DYNAMIC_IMITATION:
         final = "TRACK24_DYNAMIC_BREAKTHROUGH_READY"
     elif stage3.get("status") in {STRONG_DYNAMIC_ACTION_SPACE, WEAK_DYNAMIC_ACTION_SPACE}:
         final = "TRACK24_DYNAMIC_ORACLE_ONLY"
     elif stage5.get("status") in {FAIRNESS_ACTION_SPACE_REAL, FAIRNESS_ACTION_SPACE_WEAK} or stage6.get("status") in {CARBON_CHARGING_SIGNAL_REAL, CARBON_CHARGING_SCENARIO_ONLY}:
         final = "TRACK24_MECHANISM_SIGNALS_ONLY"
-    elif stage3.get("status") in {"RUNNING", "HALT_DYNAMIC_ORACLE_HEALTH"}:
-        final = "TRACK24_BLOCKED_BY_M1_CONTRACT"
     else:
         final = "TRACK24_HALT_NO_MECHANISM_ACTION_HEADROOM"
     return {
@@ -880,7 +882,7 @@ def _write_csv(path: Path, rows: list[dict[str, Any]]) -> None:
             if key not in fields:
                 fields.append(key)
     with path.open("w", newline="", encoding="utf-8") as handle:
-        writer = csv.DictWriter(handle, fieldnames=fields)
+        writer = csv.DictWriter(handle, fieldnames=fields, lineterminator="\n")
         writer.writeheader()
         writer.writerows(rows)
 

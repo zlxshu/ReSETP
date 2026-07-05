@@ -1,0 +1,70 @@
+{
+  "status": "HEADROOM_MATRIX_COMPLETE",
+  "rows": [
+    {
+      "experiment_id": "E2",
+      "paper_role": "algorithm strength / no-tuning parity",
+      "current_evidence": "Track23 Stage C NO_TUNING_PARITY_CLEAN; 60 rows; worst DR gap -1.926% vs strongest non-DR.",
+      "current_status": "DR parity stands, old operator/meta is not a breakthrough route.",
+      "missing_action_head": "None for old operator/meta; mechanism heads needed elsewhere.",
+      "missing_observation_signal": "Regime/mechanism features beyond static 24d block state.",
+      "possible_oracle": "Best static meta / no-tuning selector only as reference.",
+      "oracle_gate": "No direct training gate; E2 alone cannot justify new PPO.",
+      "train_if_oracle_passes": "False for old operator/meta.",
+      "hard_stop_condition": "Do not continue old operator/meta PPO.",
+      "required_m1_dependency": "Formal absolute E2 table remains M1-only."
+    },
+    {
+      "experiment_id": "E3",
+      "paper_role": "mechanism ablation",
+      "current_evidence": "Breakthrough map says mechanism switches must alter action payoff before DR is meaningful.",
+      "current_status": "HEADROOM_UNKNOWN",
+      "missing_action_head": "Mechanism-aware switch/gate head.",
+      "missing_observation_signal": "Mechanism-on/off state and payoff deltas.",
+      "possible_oracle": "Non-learning selector across mechanism switch states.",
+      "oracle_gate": "Only train if switch changes cost/fairness/carbon action payoff.",
+      "train_if_oracle_passes": "Conditional.",
+      "hard_stop_condition": "No measurable mechanism action payoff delta.",
+      "required_m1_dependency": "Final mechanism contract and ablation scenario definitions."
+    },
+    {
+      "experiment_id": "E4/E5",
+      "paper_role": "carbon and charging timing",
+      "current_evidence": "Track23 Stage B CARBON_MECHANISM_WEAK; default timing delta 0.000%, ceiling 1.934%; EV-heavy diagnostic carbon share 14.694%.",
+      "current_status": "Default weak; scenario knobs may create signal.",
+      "missing_action_head": "Carbon/charging timing head.",
+      "missing_observation_signal": "Carbon share, gamma amplitude, EV route count, charging slack.",
+      "possible_oracle": "Aware-vs-naive timing under knob grid.",
+      "oracle_gate": "carbon share >=8% and timing delta >=2% for REAL.",
+      "train_if_oracle_passes": "Only after Stage 6 REAL; never train carbon head here.",
+      "hard_stop_condition": "All knobs flat or infeasible.",
+      "required_m1_dependency": "Final carbon price/intensity/charging capacity scenario contract."
+    },
+    {
+      "experiment_id": "E6",
+      "paper_role": "profit fairness",
+      "current_evidence": "fairness.py exposes Pi_d0, Pi_d, profit_ratio and fairness violations, but Track24 must verify stable export.",
+      "current_status": "SIGNAL_AUDIT_REQUIRED",
+      "missing_action_head": "fairness-safe repair / depot-ratio slack head.",
+      "missing_observation_signal": "Pi_d0, Pi_d, Pi_d/Pi_d0, min ratio, fairness slack.",
+      "possible_oracle": "fairness-safe repair selector vs ordinary repair at theta low/medium/high.",
+      "oracle_gate": "reduced penalty/violations with controlled cost increase.",
+      "train_if_oracle_passes": "False in Track24; audit only.",
+      "hard_stop_condition": "BLOCKED_FAIRNESS_BASELINE_NOT_EXPOSED or flat oracle.",
+      "required_m1_dependency": "Final theta and fairness baseline semantics."
+    },
+    {
+      "experiment_id": "E7",
+      "paper_role": "dynamic rolling reoptimization",
+      "current_evidence": "Track23 Stage D HEADROOM_REAL mean information_cost_pct=44.707%, but old reserve/commit/preposition HEURISTIC_FLAT.",
+      "current_status": "Highest-priority action-space audit.",
+      "missing_action_head": "capacity reserve, commit threshold, future-cluster reserve, EV/charging slack, optional stage budget allocation.",
+      "missing_observation_signal": "stage load, event density, slack, route/charging counts, depot balance.",
+      "possible_oracle": "post-hoc non-learning dynamic action oracle over real RollingPolicyDecision actions.",
+      "oracle_gate": ">=5 pp strong; 2-5 pp weak; <2 pp halt.",
+      "train_if_oracle_passes": "Only if oracle >=2 pp, then Stage 4 imitation/bandit.",
+      "hard_stop_condition": "Illegal row, underbudget row, violation, or oracle reduction <2 pp.",
+      "required_m1_dependency": "Final dynamic event/scenario contract for paper numbers."
+    }
+  ]
+}
