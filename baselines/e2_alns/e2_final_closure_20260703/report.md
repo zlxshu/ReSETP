@@ -2,7 +2,7 @@
 
 本工程只生成交稿前证据素材：ALNS 定型 gate、G3 baseline health、G4 stability、G5 T3/F2 material。它不自动写 TeX，不写算法胜负主张。
 
-Verdict: `T3_COLLECTION_PARTIAL`
+Verdict: `T3_MATERIAL_READY`
 
 ## Phase Verdicts
 
@@ -10,7 +10,7 @@ Verdict: `T3_COLLECTION_PARTIAL`
 - phase_a_prime: `ROUTE_RETEST_INCONCLUSIVE`
 - phase_b: `G3_BASELINE_SET_READY`
 - phase_c: `HEALTH_PASS_WITH_SIZE_DEPENDENT_PROFILE`
-- phase_d: `T3_COLLECTION_PARTIAL`
+- phase_d: `T3_MATERIAL_READY`
 - phase_e_carbon: `CARBON_OPS_WEAK`
 
 ## Remaining User Decisions
