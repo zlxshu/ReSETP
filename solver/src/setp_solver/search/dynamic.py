@@ -91,6 +91,8 @@ class RollingPolicyContext:
 class RollingPolicyDecision:
     active_ids: set[str] | None = None
     initial_plan: Solution | None = None
+    stage_eval_budget: int | None = None
+    stage_max_runtime_seconds: float | None = None
     metadata: dict[str, Any] = field(default_factory=dict)
 
 
@@ -326,6 +328,12 @@ def run_rolling_reoptimization(
         )
         stage_active_ids = set(active_ids if policy_decision.active_ids is None else policy_decision.active_ids)
         stage_initial_plan = previous_plan if policy_decision.initial_plan is None else policy_decision.initial_plan
+        stage_budget = int(stage_eval_budget if policy_decision.stage_eval_budget is None else policy_decision.stage_eval_budget)
+        stage_runtime = float(
+            stage_max_runtime_seconds
+            if policy_decision.stage_max_runtime_seconds is None
+            else policy_decision.stage_max_runtime_seconds
+        )
         if policy_callback is not None:
             deferred_ids = sorted(set(active_ids) - set(stage_active_ids))
             policy_trace.append(
@@ -337,6 +345,8 @@ def run_rolling_reoptimization(
                     "active_count_after": len(stage_active_ids),
                     "deferred_count": len(deferred_ids),
                     "deferred_ids": deferred_ids,
+                    "stage_eval_budget": int(stage_budget),
+                    "stage_max_runtime_seconds": float(stage_runtime),
                     "metadata": dict(policy_decision.metadata),
                 }
             )
@@ -346,8 +356,8 @@ def run_rolling_reoptimization(
             stage_active_ids,
             work_root / f"stage_{stage_index:03d}",
             seed=seed + stage_index,
-            stage_eval_budget=stage_eval_budget,
-            stage_max_runtime_seconds=stage_max_runtime_seconds,
+            stage_eval_budget=stage_budget,
+            stage_max_runtime_seconds=stage_runtime,
             prices=prices,
             initial_plan=stage_initial_plan,
         )
@@ -399,7 +409,16 @@ def run_rolling_reoptimization(
                 "trigger_time": _format_hour(trigger),
                 "trigger_reason": batch["trigger_reason"],
                 "event_counts": _event_count_string(stage_events),
+                "active_customer_count": len(active_ids),
+                "planned_customer_count": len(stage_active_ids),
+                "deferred_customer_count": max(0, len(active_ids) - len(stage_active_ids)),
+                "newly_revealed_customer_count": sum(1 for event in stage_events if str(event.event_type).lower() == "add"),
+                "committed_customer_count": len(served_customers),
+                "stage_eval_budget_used": int(stage_budget),
                 "frozen_routes": len(current_frozen),
+                "stage_route_count": len(stage_solution.routes),
+                "stage_ev_route_count": sum(1 for route in stage_solution.routes if str(route.vehicle_type).lower() == "ev"),
+                "stage_charging_action_count": len(stage_solution.charging_actions),
                 "stage_cost": stage_cost,
                 "cumulative_cost": cumulative_cost,
                 "cumulative_carbon_kg": cumulative_carbon,
