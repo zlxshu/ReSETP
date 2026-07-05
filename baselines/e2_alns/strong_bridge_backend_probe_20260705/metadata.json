@@ -1,0 +1,30 @@
+{
+  "algorithm_win_loss_claim": false,
+  "boundary": "diagnostic A3 backend alignment only; no Tier1/Tier2/Tier3 claim",
+  "diagnostic_only": true,
+  "eval_budget": 4000,
+  "formal_t3": false,
+  "hard_subset_source": "baselines/e2_alns/route_compression_probe_20260705/hard_subset_instances.csv",
+  "head": "cef2d49fd7665f8d9319cb64ebeea4d7fa29e543",
+  "lns_reference_source": "baselines/e2_alns/lns_acceptance_scheduler_audit_20260705",
+  "output_dir": "baselines/e2_alns/strong_bridge_backend_probe_20260705",
+  "profiles": [
+    "A0_TRACE",
+    "A3_STRONG_BRIDGE_BACKEND",
+    "LNS_TRACE_REFERENCE"
+  ],
+  "python": "/opt/anaconda3/bin/python3.13",
+  "pythonhashseed": "0",
+  "runtime_cap_seconds": 900.0,
+  "schema": "setp-e2-strong-bridge-backend-probe-metadata.v1",
+  "seeds": [
+    1,
+    2,
+    3
+  ],
+  "started_at_epoch": 1783267184.7340028,
+  "strong_bridge_backend_flag": "SETP_ALNS_CRUSH_STRONG_BRIDGE_BACKEND",
+  "task": "strong_bridge_backend_probe",
+  "trace_flag": "SETP_ALNS_CRUSH_TRACE_DIAGNOSTIC",
+  "workers": 3
+}

@@ -8,6 +8,7 @@ import json
 import math
 import os
 from pathlib import Path
+import random
 import time
 from typing import Any, Callable, Iterator
 
@@ -42,7 +43,7 @@ from .alns_wouda import (
 )
 from .bundle import load_search_bundle
 from .carbon_operators import carbon_related_removal, low_carbon_charging_repair, worst_carbon_removal
-from .candidates import run_candidate
+from .candidates import _apply_strong_alns_destroy_repair, run_candidate
 from .candidates import solution_signature_hash
 from .construction import build_initial_solution
 from .evaluation import EvalBudget, model_cost, EvaluationContext, score_candidate, score_reference
@@ -71,9 +72,25 @@ _CRUSH_FLAG_NAMES = (
     "SETP_ALNS_CRUSH_REPAIR_STRUCTURE_CACHE",
     "SETP_ALNS_CRUSH_TIMING_LEDGER",
     "SETP_ALNS_CRUSH_TRACE_DIAGNOSTIC",
+    "SETP_ALNS_CRUSH_STRONG_BRIDGE_BACKEND",
 )
 
 TRACE_DIAGNOSTIC_FLAG = "SETP_ALNS_CRUSH_TRACE_DIAGNOSTIC"
+STRONG_BRIDGE_BACKEND_FLAG = "SETP_ALNS_CRUSH_STRONG_BRIDGE_BACKEND"
+_STRONG_BRIDGE_BACKEND_DESTROY_OPS = frozenset(
+    {
+        "random_customer_removal",
+        "shaw_related_removal",
+        "worst_customer_removal",
+    }
+)
+_STRONG_BRIDGE_BACKEND_REPAIR_OPS = frozenset(
+    {
+        "greedy_insert_repair",
+        "regret2_insert_repair",
+        "regret3_insert_repair",
+    }
+)
 
 
 E2_ALNS_COMPONENT_SOURCES = {
@@ -91,6 +108,7 @@ E2_ALNS_COMPONENT_SOURCES = {
     "SETP_ALNS_CRUSH_REPAIR_STRUCTURE_CACHE": "Engineering: route/EV repair structure cache for E2 throughput profiling",
     "SETP_ALNS_CRUSH_TIMING_LEDGER": "Engineering: opt-in timing ledger for E2 throughput profiling",
     TRACE_DIAGNOSTIC_FLAG: "Diagnostic only: scheduler/acceptance trace fields; no formal semantics change",
+    STRONG_BRIDGE_BACKEND_FLAG: "Diagnostic only: align official ALNS candidate backend with LNS strong bridge for supported destroy/repair pairs",
 }
 
 
@@ -214,6 +232,7 @@ def winner_variant_flags(*, include_route_elimination: bool = False) -> dict[str
         "SETP_ALNS_CRUSH_ROUTE_COST_CACHE": "0",
         "SETP_ALNS_CRUSH_REPAIR_STRUCTURE_CACHE": "0",
         "SETP_ALNS_CRUSH_TIMING_LEDGER": "0",
+        STRONG_BRIDGE_BACKEND_FLAG: "0",
     }
 
 
@@ -240,6 +259,7 @@ def e2_alns_variant_flags() -> dict[str, str]:
         "SETP_ALNS_CRUSH_ROUTE_COST_CACHE": "0",
         "SETP_ALNS_CRUSH_REPAIR_STRUCTURE_CACHE": "0",
         "SETP_ALNS_CRUSH_TIMING_LEDGER": "0",
+        STRONG_BRIDGE_BACKEND_FLAG: "0",
     }
 
 
@@ -260,6 +280,7 @@ def e2_alns_scan_bridge_flags() -> dict[str, str]:
         "SETP_ALNS_CRUSH_ROUTE_COST_CACHE": "0",
         "SETP_ALNS_CRUSH_REPAIR_STRUCTURE_CACHE": "0",
         "SETP_ALNS_CRUSH_TIMING_LEDGER": "0",
+        STRONG_BRIDGE_BACKEND_FLAG: "0",
     }
 
 
@@ -337,6 +358,19 @@ def decode_winner_action(
     )
 
 
+def _strong_bridge_backend_pair_enabled(flags: dict[str, str], destroy_op_id: str, repair_op_id: str) -> bool:
+    return (
+        _flag_enabled_from(flags, STRONG_BRIDGE_BACKEND_FLAG)
+        and str(destroy_op_id) in _STRONG_BRIDGE_BACKEND_DESTROY_OPS
+        and str(repair_op_id) in _STRONG_BRIDGE_BACKEND_REPAIR_OPS
+    )
+
+
+def _derive_strong_bridge_rng(rng: np.random.Generator) -> random.Random:
+    seed = int(rng.integers(0, np.iinfo(np.int64).max, dtype=np.int64))
+    return random.Random(seed)
+
+
 def apply_winner_action(
     solution: Solution,
     action: WinnerOperatorAction,
@@ -368,20 +402,51 @@ def apply_winner_action(
     destroy_op = ops.destroy_callable(action.destroy_op_id)
     repair_op = ops.repair_callable(action.repair_op_id)
     flags = variant_flags or winner_variant_flags(include_route_elimination=ops.include_route_elimination)
+    strong_bridge_backend = _strong_bridge_backend_pair_enabled(flags, action.destroy_op_id, action.repair_op_id)
     trace_diagnostic = _trace_diagnostic_enabled(flags)
     local_search_trace: dict[str, Any] | None = {} if trace_diagnostic else None
     revert_reason = "candidate_usable"
     previous_route_count = len(previous_state.solution.routes)
+    bridge_metadata: dict[str, Any] = {}
+    bridge_detail = "N/A"
+    bridge_produced: bool | str = "N/A"
+    bridge_feasible: bool | str = "N/A"
+    bridge_changed: bool | str = "N/A"
     with _temporary_flags(flags):
-        with timed_section(context, f"destroy:{action.destroy_op_id}"):
-            destroyed = destroy_op(
+        if strong_bridge_backend:
+            with timed_section(context, f"strong_bridge_backend:{action.destroy_op_id}+{action.repair_op_id}"):
+                bridge_outcome = _apply_strong_alns_destroy_repair(
+                    previous_state.solution,
+                    context,
+                    _derive_strong_bridge_rng(rng),
+                    action.destroy_op_id,
+                    action.repair_op_id,
+                )
+            bridge_metadata = dict(getattr(bridge_outcome, "metadata", {}) or {})
+            bridge_detail = str(getattr(bridge_outcome, "detail", "") or "")
+            bridge_produced = bool(getattr(bridge_outcome, "produced", False))
+            bridge_feasible = bool(getattr(bridge_outcome, "feasible", False))
+            bridge_changed = bool(getattr(bridge_outcome, "changed", False))
+            with timed_section(context, "score:strong_bridge_backend"):
+                bridge_obj = float(score_candidate(bridge_outcome.solution, context, label="candidate"))
+            candidate = replace(
                 previous_state,
-                rng,
-                progress=float(progress),
-                remove_count_q=remove_count_q,
+                solution=bridge_outcome.solution,
+                objective_value=bridge_obj,
+                removed_customers=(),
+                source_solution=previous_state.solution,
+                allow_new_route_repair=True,
             )
-        with timed_section(context, f"repair:{action.repair_op_id}"):
-            candidate = repair_op(destroyed, rng)
+        else:
+            with timed_section(context, f"destroy:{action.destroy_op_id}"):
+                destroyed = destroy_op(
+                    previous_state,
+                    rng,
+                    progress=float(progress),
+                    remove_count_q=remove_count_q,
+                )
+            with timed_section(context, f"repair:{action.repair_op_id}"):
+                candidate = repair_op(destroyed, rng)
         candidate, changed, hard_violation_count = _candidate_change_and_violations(
             previous_state,
             candidate,
@@ -450,6 +515,7 @@ def apply_winner_action(
         "remove_fraction": action.remove_fraction,
         "temperature": action.temperature,
         "raw_action": list(action.raw_action),
+        "candidate_backend": "strong_bridge_backend" if strong_bridge_backend else "winner_operator_set",
         "changed": changed,
         "removed_count": len(candidate.removed_customers),
         "hard_violation_count": hard_violation_count,
@@ -470,6 +536,13 @@ def apply_winner_action(
                 "candidate_route_count": len(candidate.solution.routes),
                 "candidate_route_count_delta": len(candidate.solution.routes) - previous_route_count,
                 "revert_reason": revert_reason,
+                "strong_bridge_backend_destroy": action.destroy_op_id if strong_bridge_backend else "N/A",
+                "strong_bridge_backend_repair": action.repair_op_id if strong_bridge_backend else "N/A",
+                "strong_bridge_backend_removed_count": bridge_metadata.get("removed_count", "N/A") if strong_bridge_backend else "N/A",
+                "strong_bridge_backend_detail": bridge_detail,
+                "strong_bridge_backend_produced": bridge_produced,
+                "strong_bridge_backend_feasible": bridge_feasible,
+                "strong_bridge_backend_changed": bridge_changed,
                 **(local_search_trace or _unknown_local_search_trace()),
             }
         )
