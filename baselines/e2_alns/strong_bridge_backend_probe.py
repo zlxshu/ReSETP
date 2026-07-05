@@ -351,7 +351,7 @@ def lns_reference_row(task: dict[str, Any], started: float) -> dict[str, Any]:
     rows = lns_reference_trace_rows(str(task["category"]), str(task["instance"]), int(task["seed"]))
     if len(rows) < int(task["eval_budget"]):
         return worker_failure_row(task, "HALT_LNS_REFERENCE_INCOMPLETE", f"reference_trace_rows={len(rows)}", started)
-    best_cost = min(as_float(row.get("previous_best_obj")) for row in rows)
+    best_cost = best_lns_reference_cost(rows)
     best_candidates = [row for row in rows if as_float(row.get("candidate_obj")) <= best_cost + 1e-9]
     route_count = int(as_float((best_candidates[-1] if best_candidates else rows[-1]).get("candidate_route_count", 0)))
     return {
@@ -390,6 +390,14 @@ def lns_reference_trace_rows(category: str, instance: str, seed: int) -> list[di
             if row.get("category") == category and row.get("instance") == instance and int(as_float(row.get("seed"))) == int(seed):
                 out.append(row)
     return out
+
+
+def best_lns_reference_cost(rows: list[dict[str, Any]]) -> float:
+    candidates: list[float] = []
+    for row in rows:
+        candidates.extend([as_float(row.get("previous_best_obj")), as_float(row.get("candidate_obj"))])
+    finite = [value for value in candidates if math.isfinite(value)]
+    return min(finite) if finite else math.inf
 
 
 def validate_lns_reference(hard_subset: list[dict[str, str]], seeds: list[int], eval_budget: int) -> list[str]:

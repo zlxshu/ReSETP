@@ -157,6 +157,16 @@ class StrongBridgeBackendAlignmentTests(unittest.TestCase):
 
         self.assertEqual(sorted(hashes["files"]), ["keep.txt"])
 
+    def test_lns_reference_cost_uses_candidate_improvement_not_only_previous_best(self) -> None:
+        from baselines.e2_alns import strong_bridge_backend_probe as probe
+
+        rows = [
+            {"previous_best_obj": "100.0", "candidate_obj": "105.0"},
+            {"previous_best_obj": "100.0", "candidate_obj": "90.0"},
+        ]
+
+        self.assertEqual(probe.best_lns_reference_cost(rows), 90.0)
+
 
 if __name__ == "__main__":
     unittest.main()
