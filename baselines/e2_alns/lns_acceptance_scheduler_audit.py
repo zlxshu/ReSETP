@@ -453,6 +453,8 @@ def write_diagnosis(
 ) -> str:
     ok = sum(1 for row in rows if row.get("status") == "OK")
     fail = len(rows) - ok
+    lns_by_path = aggregate_counts(lns_summary, "trace_path", ("attempts", "best_improved_count"))
+    alns_by_reason = aggregate_counts(alns_summary, "revert_reason", ("attempts", "best_improved_count"))
     lines = [
         "# LNS Scheduler/Acceptance Trace Audit Diagnosis",
         "",
@@ -462,18 +464,21 @@ def write_diagnosis(
         "LNS path contribution summary is reported from explicit trace_path values: scan_initial, vehicle_type_mutation, strong_bridge, fallback_relocate.",
         "ALNS candidate summary is reported from diagnostic candidate_trace; UNKNOWN means the trace did not record enough information and is not inferred.",
         "",
-        "Top LNS paths:",
-        *summary_lines(lns_summary, "trace_path", "best_improved_count"),
+        "LNS best-improved counts by path:",
+        *aggregate_lines(lns_by_path, "best_improved_count"),
         "",
-        "Top ALNS revert reasons:",
-        *summary_lines(alns_summary, "revert_reason", "attempts"),
+        "ALNS attempts by revert reason:",
+        *aggregate_lines(alns_by_reason, "attempts"),
         "",
     ]
     return "\n".join(lines)
 
 
 def write_next_action(lns_summary: list[dict[str, Any]], alns_summary: list[dict[str, Any]]) -> str:
-    path_best = {str(row.get("trace_path")): as_int(row.get("best_improved_count")) for row in lns_summary}
+    path_best = {
+        key: as_int(values.get("best_improved_count"))
+        for key, values in aggregate_counts(lns_summary, "trace_path", ("best_improved_count",)).items()
+    }
     total_best = sum(path_best.values())
     dominant = max(path_best, key=lambda key: path_best[key]) if path_best else "UNKNOWN"
     if total_best == 0:
@@ -522,6 +527,8 @@ def build_decision(
     alns_summary: list[dict[str, Any]],
 ) -> dict[str, Any]:
     fail_rows = [row for row in rows if row.get("status") != "OK"]
+    lns_by_path = aggregate_counts(lns_summary, "trace_path", ("attempts", "best_improved_count"))
+    alns_by_reason = aggregate_counts(alns_summary, "revert_reason", ("attempts",))
     return {
         "schema": "setp-e2-lns-acceptance-scheduler-audit-decision.v1",
         "verdict": "TRACE_AUDIT_COMPLETE" if not fail_rows and len(rows) == expected_rows else "HALT_TRACE_AUDIT_INCOMPLETE",
@@ -534,9 +541,9 @@ def build_decision(
         "ok_rows": len(rows) - len(fail_rows),
         "fail_rows": len(fail_rows),
         "halt": bool(fail_rows or len(rows) != expected_rows),
-        "lns_trace_paths": {str(row.get("trace_path")): as_int(row.get("attempts")) for row in lns_summary},
-        "lns_best_improved_by_path": {str(row.get("trace_path")): as_int(row.get("best_improved_count")) for row in lns_summary},
-        "alns_revert_reasons": {str(row.get("revert_reason")): as_int(row.get("attempts")) for row in alns_summary},
+        "lns_trace_paths": {key: as_int(values.get("attempts")) for key, values in lns_by_path.items()},
+        "lns_best_improved_by_path": {key: as_int(values.get("best_improved_count")) for key, values in lns_by_path.items()},
+        "alns_revert_reasons": {key: as_int(values.get("attempts")) for key, values in alns_by_reason.items()},
         "protected_diff": protected_diff(),
     }
 
@@ -661,6 +668,23 @@ def summary_lines(rows: list[dict[str, Any]], key: str, value: str) -> list[str]
     if not selected:
         return ["- UNKNOWN"]
     return [f"- {row.get(key, 'UNKNOWN')}: {row.get(value, 'UNKNOWN')}" for row in selected]
+
+
+def aggregate_counts(rows: list[dict[str, Any]], key_field: str, value_fields: tuple[str, ...]) -> dict[str, dict[str, int]]:
+    out: dict[str, dict[str, int]] = {}
+    for row in rows:
+        key = str(row.get(key_field, "UNKNOWN") or "UNKNOWN")
+        bucket = out.setdefault(key, {field: 0 for field in value_fields})
+        for field in value_fields:
+            bucket[field] += as_int(row.get(field))
+    return out
+
+
+def aggregate_lines(groups: dict[str, dict[str, int]], value_field: str) -> list[str]:
+    selected = sorted(groups.items(), key=lambda item: as_int(item[1].get(value_field)), reverse=True)
+    if not selected:
+        return ["- UNKNOWN"]
+    return [f"- {key}: {values.get(value_field, 0)}" for key, values in selected]
 
 
 def parse_seeds(text: str) -> list[int]:
