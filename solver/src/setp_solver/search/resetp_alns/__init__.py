@@ -9,14 +9,17 @@ from __future__ import annotations
 
 from .accept import HillClimbing, RecordToRecordTravel, SimulatedAnnealing, update
 from .outcome import Outcome
-from .select import AlphaUCB, BalancedAlphaUCB
+from .select import AlphaUCB, BalancedAlphaUCB, EpsilonDecayAlphaUCB, SoftmaxAlphaUCB, ThompsonPairSelector
 
 __all__ = [
     "AlphaUCB",
     "BalancedAlphaUCB",
+    "EpsilonDecayAlphaUCB",
     "HillClimbing",
     "Outcome",
     "RecordToRecordTravel",
     "SimulatedAnnealing",
+    "SoftmaxAlphaUCB",
+    "ThompsonPairSelector",
     "update",
 ]

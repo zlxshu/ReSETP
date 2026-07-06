@@ -74,11 +74,23 @@ _CRUSH_FLAG_NAMES = (
     "SETP_ALNS_CRUSH_TRACE_DIAGNOSTIC",
     "SETP_ALNS_CRUSH_STRONG_BRIDGE_BACKEND",
     "SETP_ALNS_CRUSH_BALANCED_SELECTOR",
+    "SETP_ALNS_CRUSH_EPS_DECAY_SELECTOR",
+    "SETP_ALNS_CRUSH_THOMPSON_SELECTOR",
+    "SETP_ALNS_CRUSH_SOFTMAX_SELECTOR",
 )
 
 TRACE_DIAGNOSTIC_FLAG = "SETP_ALNS_CRUSH_TRACE_DIAGNOSTIC"
 STRONG_BRIDGE_BACKEND_FLAG = "SETP_ALNS_CRUSH_STRONG_BRIDGE_BACKEND"
 BALANCED_SELECTOR_FLAG = "SETP_ALNS_CRUSH_BALANCED_SELECTOR"
+EPS_DECAY_SELECTOR_FLAG = "SETP_ALNS_CRUSH_EPS_DECAY_SELECTOR"
+THOMPSON_SELECTOR_FLAG = "SETP_ALNS_CRUSH_THOMPSON_SELECTOR"
+SOFTMAX_SELECTOR_FLAG = "SETP_ALNS_CRUSH_SOFTMAX_SELECTOR"
+SELECTOR_FLAGS = (
+    BALANCED_SELECTOR_FLAG,
+    EPS_DECAY_SELECTOR_FLAG,
+    THOMPSON_SELECTOR_FLAG,
+    SOFTMAX_SELECTOR_FLAG,
+)
 _STRONG_BRIDGE_BACKEND_DESTROY_OPS = frozenset(
     {
         "random_customer_removal",
@@ -112,6 +124,9 @@ E2_ALNS_COMPONENT_SOURCES = {
     TRACE_DIAGNOSTIC_FLAG: "Diagnostic only: scheduler/acceptance trace fields; no formal semantics change",
     STRONG_BRIDGE_BACKEND_FLAG: "Diagnostic only: align official ALNS candidate backend with LNS strong bridge for supported destroy/repair pairs",
     BALANCED_SELECTOR_FLAG: "Diagnostic only: balanced operator pair scheduler warmup plus epsilon exploration",
+    EPS_DECAY_SELECTOR_FLAG: "Diagnostic only: balanced scheduler with decaying epsilon exploration",
+    THOMPSON_SELECTOR_FLAG: "Diagnostic only: Thompson-sampling operator pair scheduler",
+    SOFTMAX_SELECTOR_FLAG: "Diagnostic only: softmax operator pair scheduler over AlphaUCB values",
 }
 
 
@@ -237,6 +252,9 @@ def winner_variant_flags(*, include_route_elimination: bool = False) -> dict[str
         "SETP_ALNS_CRUSH_TIMING_LEDGER": "0",
         STRONG_BRIDGE_BACKEND_FLAG: "0",
         BALANCED_SELECTOR_FLAG: "0",
+        EPS_DECAY_SELECTOR_FLAG: "0",
+        THOMPSON_SELECTOR_FLAG: "0",
+        SOFTMAX_SELECTOR_FLAG: "0",
     }
 
 
@@ -265,6 +283,9 @@ def e2_alns_variant_flags() -> dict[str, str]:
         "SETP_ALNS_CRUSH_TIMING_LEDGER": "0",
         STRONG_BRIDGE_BACKEND_FLAG: "0",
         BALANCED_SELECTOR_FLAG: "0",
+        EPS_DECAY_SELECTOR_FLAG: "0",
+        THOMPSON_SELECTOR_FLAG: "0",
+        SOFTMAX_SELECTOR_FLAG: "0",
     }
 
 
@@ -287,6 +308,9 @@ def e2_alns_scan_bridge_flags() -> dict[str, str]:
         "SETP_ALNS_CRUSH_TIMING_LEDGER": "0",
         STRONG_BRIDGE_BACKEND_FLAG: "0",
         BALANCED_SELECTOR_FLAG: "0",
+        EPS_DECAY_SELECTOR_FLAG: "0",
+        THOMPSON_SELECTOR_FLAG: "0",
+        SOFTMAX_SELECTOR_FLAG: "0",
     }
 
 
@@ -900,7 +924,9 @@ def _run_winner_kernel_loop(
     selector = _make_operator_selector(
         len(operator_set.destroy_ops),
         len(operator_set.repair_ops),
+        selector_kind=_selector_kind_from_flags(flags),
         balanced=_flag_enabled_from(flags, BALANCED_SELECTOR_FLAG),
+        target_iterations=int(config.eval_budget),
     )
     acceptance = _make_winner_acceptance_criterion(current, config=config, flags=flags)
     destroy_counts = {name: [0, 0, 0, 0] for name, _ in operator_set.destroy_ops}
@@ -1015,6 +1041,7 @@ def _run_winner_kernel_loop(
         better_current = accepted and candidate_obj < previous_obj - 1e-9
         if trace_diagnostic:
             trace_row = dict(result.get("trace", {}))
+            selector_info = selector.last_selection_info() if hasattr(selector, "last_selection_info") else {}
             trace_row.update(
                 {
                     "move": int(moves),
@@ -1028,6 +1055,7 @@ def _run_winner_kernel_loop(
                     "outcome_hard_violation_count": int(hard_violation_count),
                 }
             )
+            trace_row.update(selector_info)
             candidate_trace.append(trace_row)
         outcome_idx = 3
         if accepted:
@@ -1158,6 +1186,21 @@ def _winner_history_entry(
 
 def _flag_enabled_from(flags: dict[str, str], name: str) -> bool:
     return str(flags.get(name, "0")).lower() not in {"0", "false", "no"}
+
+
+def _selector_kind_from_flags(flags: dict[str, str]) -> str:
+    enabled = [name for name in SELECTOR_FLAGS if _flag_enabled_from(flags, name)]
+    if len(enabled) > 1:
+        raise ValueError(f"HALT_CONFIG_CONFLICT_SELECTOR_FLAGS:{','.join(enabled)}")
+    if not enabled:
+        return "alpha_ucb"
+    mapping = {
+        BALANCED_SELECTOR_FLAG: "balanced",
+        EPS_DECAY_SELECTOR_FLAG: "eps_decay",
+        THOMPSON_SELECTOR_FLAG: "thompson",
+        SOFTMAX_SELECTOR_FLAG: "softmax",
+    }
+    return mapping[enabled[0]]
 
 
 def _trace_diagnostic_enabled(flags: dict[str, str] | None = None) -> bool:

@@ -38,7 +38,15 @@ from .feasible_repair import (
 from .fleet import FleetLimits, UNBOUNDED_FLEET, infer_fleet_limits, normalize_solution_vehicle_trips, route_ev_energy_summary
 from .local_search import improve_solution_locally
 from .repair_scoring import route_model_cost_delta
-from .resetp_alns import AlphaUCB, BalancedAlphaUCB, HillClimbing, RecordToRecordTravel
+from .resetp_alns import (
+    AlphaUCB,
+    BalancedAlphaUCB,
+    EpsilonDecayAlphaUCB,
+    HillClimbing,
+    RecordToRecordTravel,
+    SoftmaxAlphaUCB,
+    ThompsonPairSelector,
+)
 from .timing import timed_section
 
 
@@ -253,10 +261,15 @@ def _make_operator_selector(
     num_repair: int,
     *,
     balanced: bool = False,
+    selector_kind: str = "alpha_ucb",
     warmup_per_pair: int = 10,
     epsilon: float = 0.10,
+    target_iterations: int = 4000,
 ) -> Any:
-    if balanced:
+    normalized = str(selector_kind or "alpha_ucb").strip().lower()
+    if balanced and normalized == "alpha_ucb":
+        normalized = "balanced"
+    if normalized == "balanced":
         return BalancedAlphaUCB(
             [20.0, 8.0, 2.0, 0.05],
             alpha=0.08,
@@ -265,6 +278,31 @@ def _make_operator_selector(
             warmup_per_pair=warmup_per_pair,
             epsilon=epsilon,
         )
+    if normalized == "eps_decay":
+        return EpsilonDecayAlphaUCB(
+            [20.0, 8.0, 2.0, 0.05],
+            alpha=0.08,
+            num_destroy=num_destroy,
+            num_repair=num_repair,
+            warmup_per_pair=warmup_per_pair,
+            epsilon_start=0.15,
+            epsilon_end=0.02,
+            target_iterations=target_iterations,
+        )
+    if normalized == "thompson":
+        return ThompsonPairSelector(num_destroy, num_repair, warmup_per_pair=5)
+    if normalized == "softmax":
+        return SoftmaxAlphaUCB(
+            [20.0, 8.0, 2.0, 0.05],
+            alpha=0.08,
+            num_destroy=num_destroy,
+            num_repair=num_repair,
+            temperature_start=1.0,
+            temperature_end=0.1,
+            target_iterations=target_iterations,
+        )
+    if normalized != "alpha_ucb":
+        raise ValueError(f"Unsupported selector_kind: {selector_kind}")
     return AlphaUCB([20.0, 8.0, 2.0, 0.05], alpha=0.08, num_destroy=num_destroy, num_repair=num_repair)
 
 

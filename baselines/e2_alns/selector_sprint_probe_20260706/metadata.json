@@ -1,0 +1,34 @@
+{
+  "balanced_probe_source": "baselines/e2_alns/balanced_selector_probe_20260706",
+  "boundary": "diagnostic selector scheduling only; no backend/q-size/acceptance/local-search depth change",
+  "budgets": [
+    4000,
+    8000,
+    16000
+  ],
+  "diagnostic_only": true,
+  "formal_t3": false,
+  "hard_subset_source": "baselines/e2_alns/route_compression_probe_20260705/hard_subset_instances.csv",
+  "head": "df525dfb8d0f934557e1096ca6bbd6175d396d93",
+  "output_dir": "baselines/e2_alns/selector_sprint_probe_20260706",
+  "profiles_4000": [
+    "A0_MAIN_LOCAL_SEARCH",
+    "A4_BALANCED_SELECTOR_LOCAL_SEARCH",
+    "A5_EPS_DECAY_SELECTOR_LOCAL_SEARCH",
+    "A6_THOMPSON_SELECTOR_LOCAL_SEARCH",
+    "A7_SOFTMAX_SELECTOR_LOCAL_SEARCH",
+    "LNS_REFERENCE"
+  ],
+  "python": "/opt/anaconda3/bin/python3.13",
+  "pythonhashseed": "0",
+  "schema": "setp-e2-selector-sprint-metadata.v1",
+  "seeds": [
+    1,
+    2,
+    3
+  ],
+  "selector_audit_source": "baselines/e2_alns/selector_pathology_audit_20260706",
+  "started_at_epoch": 1783323932.4883451,
+  "task": "selector_sprint_probe",
+  "workers": 3
+}
