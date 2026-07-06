@@ -915,6 +915,136 @@ class FormalRunnerTests(unittest.TestCase):
         self.assertEqual(report["policy_trace"][0]["deferred_count"], 1)
         self.assertEqual(report["policy_trace"][0]["metadata"]["action"], "defer_one")
 
+    # v2026-07-06: Track24-R policy defer must keep skipped customers in the
+    # runner's pending queue instead of making them disappear from later stages.
+    def test_dynamic_policy_defer_keeps_customer_pending_until_later_stage(self) -> None:
+        instance = _synthetic_dynamic_instance([("C1", 1.0, 10.0, 0.0), ("C2", 1.0, 20.0, 0.0)], stations=[])
+        bundle = SimpleNamespace(instance=instance, carbon_profile=_flat_carbon_profile(), bundle_dir=str(FIXTURE_DIR))
+        captured: list[set[str]] = []
+
+        def fake_stage_plan(*args, **kwargs):
+            _bundle, _instance, active_ids = args[:3]
+            captured.append(set(active_ids))
+            routes = []
+            if active_ids:
+                routes.append(Route(f"CV{len(captured)}", "cv", "D0", ["D0", *sorted(active_ids), "D0"]))
+            return StagePlanResult(Solution(routes=routes), instance, 1, True, [])
+
+        def defer_first_stage(context):
+            if context.stage_index == 0:
+                return RollingPolicyDecision(active_ids={"C1"}, metadata={"action": "defer_c2"})
+            return RollingPolicyDecision(metadata={"action": "serve_pending"})
+
+        event = formal_runner.dynamic_event_for_test("1", "demand_change", 1.0, "C1", new_demand=1.0)
+        with tempfile.TemporaryDirectory() as tmp, patch.object(dynamic_module, "load_search_bundle", return_value=bundle), patch.object(
+            dynamic_module, "load_or_generate_dynamic_events", return_value=[event]
+        ), patch.object(dynamic_module, "_active_customer_ids", side_effect=[{"C1", "C2"}, set(), set()]), patch.object(
+            dynamic_module, "_run_stage_plan", fake_stage_plan
+        ), patch.object(
+            dynamic_module, "run_alns_wouda", return_value=SimpleNamespace(best_solution=Solution(), feasible=True, evaluations=0)
+        ), patch.object(
+            dynamic_module, "evaluate", return_value={"total_cost": 100.0, "E_total": 10.0}
+        ), patch.object(dynamic_module, "check_solution", return_value=[]):
+            report = run_rolling_reoptimization(
+                FIXTURE_DIR,
+                output_json_path=Path(tmp) / "payload.json",
+                seed=1,
+                eval_budget=1,
+                stage_eval_budget=1,
+                policy_callback=defer_first_stage,
+                params=RollingParameters(delta_t_seconds=2.0, q_bar=8),
+            )
+
+        self.assertEqual(captured[0], {"C1"})
+        self.assertIn("C2", captured[1])
+        self.assertEqual(report["policy_trace"][0]["new_deferred_count"], 1)
+        self.assertEqual(report["policy_trace"][1]["pending_count_before"], 1)
+
+    # v2026-07-06: final remaining customers may be absent from the previous
+    # stage plan; they need a final repair/reoptimization, not a plan slice.
+    def test_dynamic_final_repair_services_customer_absent_from_previous_plan(self) -> None:
+        report, calls = _run_final_repair_scenario()
+
+        self.assertNotIn("gate", report)
+        self.assertEqual(calls[0], {"C1"})
+        self.assertIn("C2", calls[1])
+        self.assertEqual(report["dynamic_final_control"]["violations"], [])
+
+    # v2026-07-06: active-subset decisions must not drop per-stage budget
+    # overrides; Track24 stage_budget_event_density depends on both fields.
+    def test_policy_decision_preserves_active_subset_and_budget_override(self) -> None:
+        instance = _synthetic_dynamic_instance([("C1", 1.0, 10.0, 0.0), ("C2", 1.0, 20.0, 0.0)], stations=[])
+
+        def choose_one(_context):
+            return RollingPolicyDecision(active_ids={"C1"}, stage_eval_budget=17, stage_max_runtime_seconds=3.5)
+
+        decision = dynamic_module._policy_decision_for_stage(
+            choose_one,
+            stage_index=0,
+            trigger=0.0,
+            stage_events=[],
+            events=[],
+            settings=RollingParameters(),
+            base_instance=instance,
+            effective_instance=instance,
+            active_ids={"C1", "C2"},
+            served_customers=set(),
+            previous_plan=None,
+            previous_instance=None,
+        )
+
+        self.assertEqual(decision.active_ids, {"C1"})
+        self.assertEqual(decision.stage_eval_budget, 17)
+        self.assertEqual(decision.stage_max_runtime_seconds, 3.5)
+
+    # v2026-07-06: dict callbacks are part of the public hook; they need the
+    # same budget-preservation path as RollingPolicyDecision objects.
+    def test_dict_policy_decision_preserves_budget_override(self) -> None:
+        instance = _synthetic_dynamic_instance([("C1", 1.0, 10.0, 0.0), ("C2", 1.0, 20.0, 0.0)], stations=[])
+
+        def choose_one(_context):
+            return {"active_ids": {"C1"}, "stage_eval_budget": 19, "stage_max_runtime_seconds": 4.5}
+
+        decision = dynamic_module._policy_decision_for_stage(
+            choose_one,
+            stage_index=0,
+            trigger=0.0,
+            stage_events=[],
+            events=[],
+            settings=RollingParameters(),
+            base_instance=instance,
+            effective_instance=instance,
+            active_ids={"C1", "C2"},
+            served_customers=set(),
+            previous_plan=None,
+            previous_instance=None,
+        )
+
+        self.assertEqual(decision.active_ids, {"C1"})
+        self.assertEqual(decision.stage_eval_budget, 19)
+        self.assertEqual(decision.stage_max_runtime_seconds, 4.5)
+
+    # v2026-07-06: Track24-R payloads need enough counters to audit whether
+    # defer and final repair semantics were used.
+    def test_dynamic_payload_reports_pending_and_final_repair_counts(self) -> None:
+        report, _calls = _run_final_repair_scenario()
+
+        self.assertEqual(report["policy_trace"][0]["pending_count_before"], 0)
+        self.assertEqual(report["policy_trace"][0]["new_deferred_count"], 1)
+        self.assertEqual(report["policy_trace"][0]["pending_count_after"], 1)
+        self.assertEqual(report["final_repair_customer_count"], 2)
+        self.assertGreaterEqual(report["final_repair_evaluations"], 1)
+        self.assertEqual(report["final_repair_violation_count"], 0)
+
+    # v2026-07-06: final repair has its own legality gate so true infeasible
+    # repair output is not mislabeled as a generic final chunk failure.
+    def test_dynamic_final_repair_halts_on_repair_violation(self) -> None:
+        report, _calls = _run_final_repair_scenario(final_repair_empty=True)
+
+        self.assertEqual(report["gate"], "HALT_E7_FINAL_REPAIR_CHECK")
+        self.assertEqual(report["first_bad_stage"], "final_repair")
+        self.assertEqual(report["final_repair_violation_count"], 1)
+
     # v2026-06-12: E7 rolling gate must preserve cumulative-state continuity and frozen paths.
     def test_dynamic_rolling_gate_conservation_assertions_pass(self) -> None:
         report = run_rolling_reoptimization(
@@ -937,6 +1067,63 @@ class FormalRunnerTests(unittest.TestCase):
 
             self.assertEqual(result["gate"], "PASS")
             self.assertEqual(len(result["rows"]), 2)
+
+
+def _run_final_repair_scenario(*, final_repair_empty: bool = False) -> tuple[dict[str, object], list[set[str]]]:
+    from setp_solver.check import Violation
+
+    instance = _synthetic_dynamic_instance([("C1", 1.0, 10.0, 0.0), ("C2", 1.0, 20.0, 0.0)], stations=[])
+    bundle = SimpleNamespace(instance=instance, carbon_profile=_flat_carbon_profile(), bundle_dir=str(FIXTURE_DIR))
+    calls: list[set[str]] = []
+
+    def fake_stage_plan(*args, **kwargs):
+        _bundle, _instance, active_ids = args[:3]
+        calls.append(set(active_ids))
+        routes = []
+        if active_ids and not (final_repair_empty and len(calls) == 2):
+            routes.append(Route(f"CV{len(calls)}", "cv", "D0", ["D0", *sorted(active_ids), "D0"]))
+        return StagePlanResult(Solution(routes=routes), instance, 1, True, [])
+
+    def defer_c2(_context):
+        return RollingPolicyDecision(active_ids={"C1"}, metadata={"action": "defer_c2"})
+
+    def coverage_check(solution, checked_instance, prices=DEFAULT_PRICES):
+        _ = prices
+        expected = {
+            node.node_id
+            for node in checked_instance.nodes
+            if node.node_type.lower() == "c" and float(node.demand) > 1e-9
+        }
+        served = {
+            node_id
+            for route in solution.routes
+            for node_id in route.node_sequence
+            if node_id in expected
+        }
+        missing = sorted(expected - served)
+        if missing:
+            return [Violation("CUSTOMER_COVERAGE", "", missing[0], "customer not served")]
+        return []
+
+    with tempfile.TemporaryDirectory() as tmp, patch.object(dynamic_module, "load_search_bundle", return_value=bundle), patch.object(
+        dynamic_module, "load_or_generate_dynamic_events", return_value=[]
+    ), patch.object(dynamic_module, "_active_customer_ids", return_value={"C1", "C2"}), patch.object(
+        dynamic_module, "_run_stage_plan", fake_stage_plan
+    ), patch.object(
+        dynamic_module, "run_alns_wouda", return_value=SimpleNamespace(best_solution=Solution(routes=[Route("CVS", "cv", "D0", ["D0", "C1", "C2", "D0"])]), feasible=True, evaluations=0)
+    ), patch.object(
+        dynamic_module, "evaluate", return_value={"total_cost": 100.0, "E_total": 10.0}
+    ), patch.object(dynamic_module, "check_solution", side_effect=coverage_check):
+        report = run_rolling_reoptimization(
+            FIXTURE_DIR,
+            output_json_path=Path(tmp) / "payload.json",
+            seed=1,
+            eval_budget=1,
+            stage_eval_budget=1,
+            policy_callback=defer_c2,
+        )
+
+    return report, calls
 
 
 def _first_depot_id(bundle) -> str:

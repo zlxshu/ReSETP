@@ -85,6 +85,7 @@ class RollingPolicyContext:
     served_customers: set[str]
     previous_plan: Solution | None
     previous_instance: Instance | None
+    pending_customer_ids: set[str] = field(default_factory=set)
 
 
 @dataclass(frozen=True)
@@ -248,6 +249,7 @@ def run_rolling_reoptimization(
     frozen_sequences: dict[str, list[str]] = {}
     stage_plan_customer_ids: dict[str, list[str]] = {}
     policy_trace: list[dict[str, Any]] = []
+    pending_deferred_ids: set[str] = set()
 
     for stage_index, batch in enumerate(batches):
         trigger = float(batch["trigger_time"])
@@ -307,11 +309,16 @@ def run_rolling_reoptimization(
                 frozen = prev_lookup.get(customer_id)
                 if frozen is not None:
                     committed_node_state[customer_id] = frozen
+            pending_deferred_ids.difference_update(newly_committed)
 
         stage_cost = cumulative_cost - initial_cost
         stage_carbon = cumulative_carbon - initial_carbon
         effective_instance = _instance_after_events(bundle.instance, events, trigger, served_customers)
-        active_ids = _active_customer_ids(effective_instance, served_customers)
+        legal_unserved_ids = _legal_unserved_customer_ids(effective_instance, served_customers)
+        pending_deferred_ids.intersection_update(legal_unserved_ids)
+        pending_count_before = len(pending_deferred_ids)
+        pending_ids_before = sorted(pending_deferred_ids)
+        active_ids = set(_active_customer_ids(effective_instance, served_customers)) | set(pending_deferred_ids)
         policy_decision = _policy_decision_for_stage(
             policy_callback,
             stage_index=stage_index,
@@ -322,6 +329,7 @@ def run_rolling_reoptimization(
             base_instance=bundle.instance,
             effective_instance=effective_instance,
             active_ids=active_ids,
+            pending_customer_ids=pending_deferred_ids,
             served_customers=served_customers,
             previous_plan=previous_plan,
             previous_instance=previous_instance,
@@ -334,22 +342,7 @@ def run_rolling_reoptimization(
             if policy_decision.stage_max_runtime_seconds is None
             else policy_decision.stage_max_runtime_seconds
         )
-        if policy_callback is not None:
-            deferred_ids = sorted(set(active_ids) - set(stage_active_ids))
-            policy_trace.append(
-                {
-                    "stage": int(stage_index),
-                    "trigger_time": float(trigger),
-                    "policy": getattr(policy_callback, "__name__", policy_callback.__class__.__name__),
-                    "active_count_before": len(active_ids),
-                    "active_count_after": len(stage_active_ids),
-                    "deferred_count": len(deferred_ids),
-                    "deferred_ids": deferred_ids,
-                    "stage_eval_budget": int(stage_budget),
-                    "stage_max_runtime_seconds": float(stage_runtime),
-                    "metadata": dict(policy_decision.metadata),
-                }
-            )
+        deferred_ids = sorted(set(active_ids) - set(stage_active_ids))
         stage_plan = _run_stage_plan(
             bundle,
             effective_instance,
@@ -386,6 +379,33 @@ def run_rolling_reoptimization(
                 path.write_text(json.dumps(payload, ensure_ascii=False, indent=2, sort_keys=True), encoding="utf-8")
             return payload
         stage_solution = stage_plan.solution
+        planned_customer_ids = _solution_customer_ids(stage_solution, effective_instance)
+        pending_deferred_ids.update(deferred_ids)
+        pending_deferred_ids.difference_update(planned_customer_ids)
+        pending_deferred_ids.difference_update(served_customers)
+        pending_deferred_ids.intersection_update(legal_unserved_ids)
+        pending_count_after = len(pending_deferred_ids)
+        pending_ids_after = sorted(pending_deferred_ids)
+        if policy_callback is not None:
+            policy_trace.append(
+                {
+                    "stage": int(stage_index),
+                    "trigger_time": float(trigger),
+                    "policy": getattr(policy_callback, "__name__", policy_callback.__class__.__name__),
+                    "active_count_before": len(active_ids),
+                    "active_count_after": len(stage_active_ids),
+                    "deferred_count": len(deferred_ids),
+                    "deferred_ids": deferred_ids,
+                    "pending_count_before": int(pending_count_before),
+                    "pending_ids_before": pending_ids_before,
+                    "new_deferred_count": len(deferred_ids),
+                    "pending_count_after": int(pending_count_after),
+                    "pending_ids_after": pending_ids_after,
+                    "stage_eval_budget": int(stage_budget),
+                    "stage_max_runtime_seconds": float(stage_runtime),
+                    "metadata": dict(policy_decision.metadata),
+                }
+            )
         previous_plan = stage_solution
         previous_instance = effective_instance
         current_frozen = _frozen_route_sequences_from_routes(committed_routes)
@@ -412,6 +432,9 @@ def run_rolling_reoptimization(
                 "active_customer_count": len(active_ids),
                 "planned_customer_count": len(stage_active_ids),
                 "deferred_customer_count": max(0, len(active_ids) - len(stage_active_ids)),
+                "pending_count_before": int(pending_count_before),
+                "pending_count_after": int(pending_count_after),
+                "new_deferred_count": len(deferred_ids),
                 "newly_revealed_customer_count": sum(1 for event in stage_events if str(event.event_type).lower() == "add"),
                 "committed_customer_count": len(served_customers),
                 "stage_eval_budget_used": int(stage_budget),
@@ -429,21 +452,47 @@ def run_rolling_reoptimization(
 
     final_trigger = max((float(event.t_appear) for event in events), default=0.0)
     final_instance = _instance_after_events(bundle.instance, events, final_trigger, served_customers, committed_node_state)
-    remaining = _active_customer_ids(final_instance, served_customers)
-    if previous_plan is not None and remaining:
-        final_chunk = _solution_for_customer_subset(
-            previous_plan,
+    pending_deferred_ids.intersection_update(_legal_unserved_customer_ids(final_instance, served_customers))
+    remaining = set(_active_customer_ids(final_instance, served_customers)) | set(pending_deferred_ids)
+    final_repair_customer_count = 0
+    final_repair_evaluations = 0
+    final_repair_violation_count = 0
+    if remaining:
+        final_repair_customer_count = len(remaining)
+        final_repair = _run_stage_plan(
+            bundle,
             final_instance,
-            bundle.carbon_profile,
             remaining,
-            prefix="FINAL_",
+            work_root / "final_repair",
+            seed=seed + len(batches),
+            stage_eval_budget=stage_eval_budget,
+            stage_max_runtime_seconds=stage_max_runtime_seconds,
             prices=prices,
+            initial_plan=previous_plan,
         )
-        final_chunk_violations = check_solution(final_chunk, _subinstance_for_customers(final_instance, remaining), prices)
-        if final_chunk_violations:
+        total_evaluations += final_repair.evaluations
+        final_repair_evaluations = int(final_repair.evaluations)
+        final_repair_violations = list(final_repair.violations)
+        if not final_repair_violations:
+            final_repair_violations = check_solution(
+                final_repair.solution,
+                _subinstance_for_customers(final_instance, remaining),
+                prices,
+            )
+        final_repair_violation_count = len(final_repair_violations)
+        if final_repair_violations:
+            failure = dynamic_chunk_failure_payload("final_repair", final_repair_violations)
+            failure.update(
+                {
+                    "final_repair_customer_count": int(final_repair_customer_count),
+                    "final_repair_evaluations": int(final_repair_evaluations),
+                    "final_repair_violation_count": int(final_repair_violation_count),
+                    "policy_trace": policy_trace,
+                }
+            )
             payload = _halt_payload(
                 "setp-dynamic-rolling.v3",
-                "HALT_E7_FINAL_CHUNK_CHECK",
+                "HALT_E7_FINAL_REPAIR_CHECK",
                 bundle_dir,
                 seed,
                 eval_budget,
@@ -456,15 +505,16 @@ def run_rolling_reoptimization(
                 assertions,
                 total_evaluations,
                 started,
-                dynamic_chunk_failure_payload("dynamic_vs_static", final_chunk_violations),
+                failure,
             )
             if output_json_path is not None:
                 path = Path(output_json_path)
                 path.parent.mkdir(parents=True, exist_ok=True)
                 path.write_text(json.dumps(payload, ensure_ascii=False, indent=2, sort_keys=True), encoding="utf-8")
             return payload
-        committed_routes.extend(final_chunk.routes)
-        committed_actions.extend(final_chunk.charging_actions)
+        committed_routes.extend(final_repair.solution.routes)
+        committed_actions.extend(final_repair.solution.charging_actions)
+        pending_deferred_ids.difference_update(_solution_customer_ids(final_repair.solution, final_instance))
     dynamic_solution = Solution(routes=committed_routes, charging_actions=committed_actions)
 
     final_bundle_dir = work_root / "full_information_static"
@@ -520,6 +570,9 @@ def run_rolling_reoptimization(
         "assertions": assertions,
         "all_assertions_pass": all(row["conservation_ok"] and row["frozen_paths_ok"] for row in assertions),
         "policy_trace": policy_trace,
+        "final_repair_customer_count": int(final_repair_customer_count),
+        "final_repair_evaluations": int(final_repair_evaluations),
+        "final_repair_violation_count": int(final_repair_violation_count),
         "dynamic_final_control": {
             "scorer": "setp_solver.cost.evaluate",
             "total_cost": float(dynamic_metrics["total_cost"]),
@@ -748,6 +801,10 @@ def _active_customer_ids_after_events(
 
 
 def _active_customer_ids(instance: Instance, already_served: set[str]) -> set[str]:
+    return _legal_unserved_customer_ids(instance, already_served)
+
+
+def _legal_unserved_customer_ids(instance: Instance, already_served: set[str]) -> set[str]:
     return {
         node.node_id
         for node in instance.nodes
@@ -813,6 +870,7 @@ def _policy_decision_for_stage(
     served_customers: set[str],
     previous_plan: Solution | None,
     previous_instance: Instance | None,
+    pending_customer_ids: set[str] | None = None,
 ) -> RollingPolicyDecision:
     if policy_callback is None:
         return RollingPolicyDecision()
@@ -825,6 +883,7 @@ def _policy_decision_for_stage(
         base_instance=base_instance,
         effective_instance=effective_instance,
         active_ids=set(active_ids),
+        pending_customer_ids=set(pending_customer_ids or set()),
         served_customers=set(served_customers),
         previous_plan=previous_plan,
         previous_instance=previous_instance,
@@ -838,7 +897,13 @@ def _policy_decision_for_stage(
         raise ValueError(f"rolling policy selected customers not active in this stage: {sorted(unknown)}")
     if active_ids and not chosen:
         raise ValueError("rolling policy may not defer every active customer in a non-empty stage")
-    return RollingPolicyDecision(active_ids=chosen, initial_plan=decision.initial_plan, metadata=dict(decision.metadata))
+    return RollingPolicyDecision(
+        active_ids=chosen,
+        initial_plan=decision.initial_plan,
+        stage_eval_budget=decision.stage_eval_budget,
+        stage_max_runtime_seconds=decision.stage_max_runtime_seconds,
+        metadata=dict(decision.metadata),
+    )
 
 
 def _coerce_policy_decision(raw: RollingPolicyDecision | dict[str, Any] | None) -> RollingPolicyDecision:
@@ -852,9 +917,13 @@ def _coerce_policy_decision(raw: RollingPolicyDecision | dict[str, Any] | None) 
         for key in ("action", "deferred_ids", "reserve_capacity_fraction", "preposition_depot_id"):
             if key in raw and key not in metadata:
                 metadata[key] = raw[key]
+        budget = raw.get("stage_eval_budget")
+        runtime = raw.get("stage_max_runtime_seconds")
         return RollingPolicyDecision(
             active_ids={str(customer_id) for customer_id in active_ids} if active_ids is not None else None,
             initial_plan=raw.get("initial_plan"),
+            stage_eval_budget=int(budget) if budget is not None else None,
+            stage_max_runtime_seconds=float(runtime) if runtime is not None else None,
             metadata=metadata,
         )
     raise TypeError(f"rolling policy returned unsupported decision type: {type(raw).__name__}")

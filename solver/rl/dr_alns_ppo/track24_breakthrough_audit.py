@@ -28,6 +28,7 @@ from . import track22_endgame as track22
 
 
 DEFAULT_OUTPUT_DIR = Path("solver/reports/dr_alns_ppo_v3/final_track24_breakthrough_audit")
+DEFAULT_TRACK24R_OUTPUT_DIR = Path("solver/reports/dr_alns_ppo_v3/final_track24r_dynamic_legality")
 DEFAULT_TRACK23_DIR = Path("solver/reports/dr_alns_ppo_v3/final_track23")
 DEFAULT_TRACK21_DIR = Path("solver/reports/dr_alns_ppo_v3/final_track21_reclaim")
 BREAKTHROUGH_MAP = Path("docs/handoff/dr_alns_breakthrough_map_20260705.md")
@@ -52,6 +53,8 @@ HALT_FAIRNESS_ACTION_SPACE_FLAT = "HALT_FAIRNESS_ACTION_SPACE_FLAT"
 CARBON_CHARGING_SIGNAL_REAL = "CARBON_CHARGING_SIGNAL_REAL"
 CARBON_CHARGING_SCENARIO_ONLY = "CARBON_CHARGING_SCENARIO_ONLY"
 HALT_CARBON_CHARGING_FLAT = "HALT_CARBON_CHARGING_FLAT"
+TRACK24R_FAILURE_ONLY_HEALTHY_MIXED_REFERENCE = "TRACK24R_FAILURE_ONLY_HEALTHY_MIXED_REFERENCE"
+STAGE3_RERUN_HEALTH_FAILURE_STATUSES = {"HALT_E7_FINAL_CHUNK_CHECK", "HALT_E7_COMMIT_CHUNK_CHECK"}
 
 
 class Track24Halt(RuntimeError):
@@ -63,6 +66,8 @@ class Track24Halt(RuntimeError):
 
 def run(args: argparse.Namespace) -> int:
     output_dir = Path(args.output_dir)
+    if bool(args.stage3_rerun_health_failures_only) and output_dir == DEFAULT_OUTPUT_DIR:
+        output_dir = DEFAULT_TRACK24R_OUTPUT_DIR
     output_dir.mkdir(parents=True, exist_ok=True)
     progress_path = output_dir / "track24_progress.log"
     state_path = output_dir / "track24_state.json"
@@ -319,12 +324,37 @@ def run_stage3(args: argparse.Namespace, output_dir: Path, progress_path: Path, 
     ]
     rows_path = output_dir / "stage3_dynamic_oracle_rows.csv"
     rows = _read_csv(rows_path) if args.resume and rows_path.is_file() and not args.force else []
-    done = {(row.get("bundle"), int(float(row.get("seed") or 0)), row.get("action_id")) for row in rows}
     action_specs = build_stage3_action_specs(int(args.stage3_stage_eval_budget), float(args.stage3_stage_max_runtime_seconds))
+    failure_only = bool(args.stage3_rerun_health_failures_only)
+    source_by_key: dict[tuple[str, int, str], dict[str, Any]] = {}
+    failure_keys: set[tuple[str, int, str]] = set()
+    if failure_only:
+        source_path = Path(args.stage3_source_rows) if str(args.stage3_source_rows or "").strip() else DEFAULT_OUTPUT_DIR / "stage3_dynamic_oracle_rows.csv"
+        source_rows = _read_csv(source_path)
+        if not source_rows:
+            raise Track24Halt("HALT_STAGE3_SOURCE_ROWS_MISSING", f"Stage3 source rows not found or empty: {source_path}")
+        existing = {_stage3_row_key(row) for row in rows}
+        for source_row in source_rows:
+            key = _stage3_row_key(source_row)
+            source_by_key[key] = source_row
+            if source_row.get("health_status") in STAGE3_RERUN_HEALTH_FAILURE_STATUSES:
+                failure_keys.add(key)
+                continue
+            if key not in existing:
+                carried = dict(source_row)
+                carried["row_source"] = "carried_forward_pre_fix"
+                carried["mixed_code"] = True
+                carried["source_health_status"] = source_row.get("health_status")
+                rows.append(carried)
+        if not failure_keys:
+            raise Track24Halt("HALT_STAGE3_NO_RERUN_FAILURES", f"No rerunnable health failures in {source_path}")
+    done = {_stage3_row_key(row) for row in rows}
     launched = 0
     for baseline in baseline_rows:
         for spec in action_specs:
-            key = (baseline.get("bundle"), int(float(baseline.get("seed") or 0)), spec["action_id"])
+            key = (str(baseline.get("bundle") or ""), int(float(baseline.get("seed") or 0)), str(spec["action_id"]))
+            if failure_only and key not in failure_keys:
+                continue
             if key in done:
                 continue
             if int(args.stage3_max_runs) > 0 and launched >= int(args.stage3_max_runs):
@@ -352,6 +382,12 @@ def run_stage3(args: argparse.Namespace, output_dir: Path, progress_path: Path, 
                 output_json=payload_path,
             )
             row = oracle_comparison_row(baseline, candidate, payload, spec)
+            if failure_only:
+                source_row = source_by_key.get(key, {})
+                row["row_source"] = "rerun_fixed_code"
+                row["mixed_code"] = False
+                row["source_health_status"] = source_row.get("health_status", "")
+                row["source_payload_path"] = source_row.get("payload_path", "")
             rows.append(row)
             _write_csv(rows_path, rows)
             launched += 1
@@ -363,13 +399,29 @@ def run_stage3(args: argparse.Namespace, output_dir: Path, progress_path: Path, 
 def build_stage3_action_specs(stage_eval_budget: int, stage_runtime: float) -> list[dict[str, Any]]:
     specs: list[dict[str, Any]] = []
     for level, fraction in (("low", 0.10), ("medium", 0.20), ("high", 0.30)):
-        specs.append({"action_id": f"capacity_reserve_{level}", "action_class": "depot_capacity_reserve", "level": level, "fraction": fraction})
+        specs.append(
+            {
+                "action_id": f"capacity_reserve_{level}",
+                "action_class": "depot_capacity_reserve",
+                "level": level,
+                "fraction": fraction,
+                "semantic_status": "proxy_time_slack_defer_not_real_depot_capacity",
+            }
+        )
     for level, fraction in (("conservative", 0.30), ("normal", 0.15), ("aggressive", 0.05)):
         specs.append({"action_id": f"commit_threshold_{level}", "action_class": "customer_commit_threshold", "level": level, "fraction": fraction})
     for level, fraction in (("low", 0.10), ("medium", 0.20), ("high", 0.30)):
         specs.append({"action_id": f"future_cluster_reserve_{level}", "action_class": "future_cluster_reserve", "level": level, "fraction": fraction})
     for level, fraction in (("low", 0.10), ("medium", 0.20), ("high", 0.30)):
-        specs.append({"action_id": f"ev_charging_slack_reserve_{level}", "action_class": "ev_charging_slack_reserve", "level": level, "fraction": fraction})
+        specs.append(
+            {
+                "action_id": f"ev_charging_slack_reserve_{level}",
+                "action_class": "ev_charging_slack_reserve",
+                "level": level,
+                "fraction": fraction,
+                "semantic_status": "proxy_distance_demand_defer_not_soc_slack",
+            }
+        )
     specs.append(
         {
             "action_id": "stage_budget_event_density",
@@ -393,6 +445,7 @@ def build_track24_dynamic_policy(spec: dict[str, Any]):
             "action_class": action_class,
             "action_level": spec.get("level"),
             "fraction": fraction,
+            "semantic_status": spec.get("semantic_status", _default_action_semantics(action_class)),
         }
         if action_class == "stage_budget_allocation":
             event_count = len(context.stage_events)
@@ -464,6 +517,7 @@ def oracle_comparison_row(baseline: dict[str, Any], candidate: dict[str, Any], p
         "action_id": spec["action_id"],
         "action_class": spec["action_class"],
         "action_level": spec.get("level"),
+        "action_semantics": spec.get("semantic_status", _default_action_semantics(str(spec["action_class"]))),
         "bundle": baseline.get("bundle"),
         "bundle_dir": baseline.get("bundle_dir"),
         "seed": int(float(baseline.get("seed") or 0)),
@@ -500,6 +554,9 @@ def summarize_stage3_oracle(
 ) -> dict[str, Any]:
     healthy = [row for row in action_rows if row.get("health_status") == "HEALTHY" and str(row.get("action_real_effect")).lower() == "true"]
     failures = [row for row in action_rows if row.get("health_status") not in {"HEALTHY", ""}]
+    health_failure_groups = _health_failure_groups(failures)
+    first_failure_sample = _first_failure_sample(failures)
+    mixed_code_result = any(str(row.get("row_source")) == "carried_forward_pre_fix" for row in action_rows)
     by_case: dict[tuple[str, int], list[dict[str, Any]]] = {}
     for row in healthy:
         by_case.setdefault((str(row.get("bundle")), int(float(row.get("seed") or 0))), []).append(row)
@@ -518,6 +575,9 @@ def summarize_stage3_oracle(
     elif partial or len(action_rows) < len(baseline_rows) * len(action_specs):
         status = "RUNNING"
         verdict_reason = reason or f"Partial oracle rows {len(action_rows)}/{len(baseline_rows) * len(action_specs)}."
+    elif mixed_code_result:
+        status = TRACK24R_FAILURE_ONLY_HEALTHY_MIXED_REFERENCE
+        verdict_reason = "Failure-only rerun is healthy, but healthy rows are carried forward from pre-fix code; full fixed-code Stage3 is required before any breakthrough claim."
     elif mean_reduction >= 5.0:
         status = STRONG_DYNAMIC_ACTION_SPACE
         verdict_reason = f"Oracle mean information-cost reduction is {mean_reduction:.3f} pp."
@@ -537,6 +597,11 @@ def summarize_stage3_oracle(
         "mean_information_cost_reduction_pp": mean_reduction,
         "selected_oracle_rows": selected,
         "health_failure_count": len(failures),
+        "health_failure_groups": health_failure_groups,
+        "first_health_failure_sample": first_failure_sample,
+        "mixed_code_result": mixed_code_result,
+        "carried_forward_pre_fix_count": sum(1 for row in action_rows if str(row.get("row_source")) == "carried_forward_pre_fix"),
+        "rerun_fixed_code_count": sum(1 for row in action_rows if str(row.get("row_source")) == "rerun_fixed_code"),
     }
 
 
@@ -776,6 +841,14 @@ def _take_fraction(items: list[str], fraction: float) -> set[str]:
     return set(items[: min(count, len(items) - 1)])
 
 
+def _default_action_semantics(action_class: str) -> str:
+    if action_class == "depot_capacity_reserve":
+        return "proxy_time_slack_defer_not_real_depot_capacity"
+    if action_class == "ev_charging_slack_reserve":
+        return "proxy_distance_demand_defer_not_soc_slack"
+    return "direct"
+
+
 def _event_cluster_proxy(events: list[dict[str, Any]]) -> float | str:
     adds = [event for event in events if str(event.get("event_type", "")).lower() == "add"]
     if len(adds) < 2:
@@ -839,17 +912,51 @@ def render_stage2_report(summary: dict[str, Any]) -> str:
 
 
 def render_stage3_report(summary: dict[str, Any]) -> str:
-    return "\n".join(
+    lines = [
+        "# Stage 3 Dynamic Oracle",
+        "",
+        f"Status: `{summary.get('status')}`",
+        f"Reason: {summary.get('reason')}",
+        f"Rows: {summary.get('row_count')}/{summary.get('planned_row_count')}",
+        f"Mean reduction pp: {summary.get('mean_information_cost_reduction_pp')}",
+        f"Mixed code result: `{summary.get('mixed_code_result', False)}`",
+        f"Carried-forward pre-fix rows: {summary.get('carried_forward_pre_fix_count', 0)}",
+        f"Rerun fixed-code rows: {summary.get('rerun_fixed_code_count', 0)}",
+        "",
+        "## Health Failure Groups",
+        "",
+    ]
+    groups = list(summary.get("health_failure_groups") or [])
+    if groups:
+        lines.extend(["| health_status | count |", "|---|---:|"])
+        for group in groups:
+            lines.append(f"| `{group.get('health_status')}` | {group.get('count')} |")
+    else:
+        lines.append("None.")
+    sample = dict(summary.get("first_health_failure_sample") or {})
+    if sample:
+        lines.extend(
+            [
+                "",
+                "## First Failure Sample",
+                "",
+                f"- health_status: `{sample.get('health_status')}`",
+                f"- bundle: `{sample.get('bundle')}`",
+                f"- seed: `{sample.get('seed')}`",
+                f"- action_id: `{sample.get('action_id')}`",
+                f"- payload_path: `{sample.get('payload_path')}`",
+            ]
+        )
+    lines.extend(
         [
-            "# Stage 3 Dynamic Oracle",
             "",
-            f"Status: `{summary.get('status')}`",
-            f"Reason: {summary.get('reason')}",
-            f"Rows: {summary.get('row_count')}/{summary.get('planned_row_count')}",
-            f"Mean reduction pp: {summary.get('mean_information_cost_reduction_pp')}",
+            "## Semantics Note",
+            "",
+            "`capacity_reserve_*` is a proxy time-slack defer action, not a real depot-capacity implementation. `ev_charging_slack_reserve_*` is a proxy distance/demand defer action, not a real SOC-slack implementation.",
             "",
         ]
     )
+    return "\n".join(lines)
 
 
 def render_stage4_report(summary: dict[str, Any]) -> str:
@@ -892,6 +999,32 @@ def _read_csv(path: Path) -> list[dict[str, Any]]:
         return []
     with path.open("r", newline="", encoding="utf-8") as handle:
         return list(csv.DictReader(handle))
+
+
+def _stage3_row_key(row: dict[str, Any]) -> tuple[str, int, str]:
+    return (str(row.get("bundle") or ""), int(float(row.get("seed") or 0)), str(row.get("action_id") or ""))
+
+
+def _health_failure_groups(rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    counts: dict[str, int] = {}
+    for row in rows:
+        status = str(row.get("health_status") or "UNKNOWN")
+        counts[status] = counts.get(status, 0) + 1
+    return [{"health_status": key, "count": counts[key]} for key in sorted(counts)]
+
+
+def _first_failure_sample(rows: list[dict[str, Any]]) -> dict[str, Any]:
+    if not rows:
+        return {}
+    row = rows[0]
+    return {
+        "bundle": row.get("bundle", ""),
+        "seed": row.get("seed", ""),
+        "action_id": row.get("action_id", ""),
+        "health_status": row.get("health_status", ""),
+        "payload_path": row.get("payload_path", ""),
+        "source_health_status": row.get("source_health_status", ""),
+    }
 
 
 def _load_json(path: Path) -> dict[str, Any]:
@@ -984,6 +1117,8 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     run_parser.add_argument("--stage3-rolling-stages", type=int, default=4)
     run_parser.add_argument("--stage3-max-runs", type=int, default=0)
     run_parser.add_argument("--stage3-max-wall-seconds", type=float, default=12 * 3600.0)
+    run_parser.add_argument("--stage3-rerun-health-failures-only", action="store_true")
+    run_parser.add_argument("--stage3-source-rows", default="")
     run_parser.add_argument("--stage5-bundle", default="models/data_bundle/generated_instances/E-UK100_01__d2_s3_seed1_24h_20251113")
     run_parser.add_argument("--stage5-run-oracle", action="store_true")
     run_parser.add_argument("--stage5-thetas", default="0.8,1.0,1.2")

@@ -69,6 +69,37 @@ def test_stage3_ignores_metadata_only_actions() -> None:
     assert summary["selected_count"] == 0
 
 
+def test_stage3_summary_groups_health_failures() -> None:
+    actions = [{"action_id": "a1"}, {"action_id": "a2"}]
+    baselines = [_baseline("b1", 1)]
+    rows = [
+        {"bundle": "b1", "seed": 1, "action_id": "a1", "health_status": "HALT_E7_FINAL_CHUNK_CHECK", "payload_path": "p1.json"},
+        {"bundle": "b1", "seed": 1, "action_id": "a2", "health_status": "HALT_E7_COMMIT_CHUNK_CHECK", "payload_path": "p2.json"},
+    ]
+
+    summary = track24.summarize_stage3_oracle(baselines, rows, actions, partial=False, reason="")
+
+    assert summary["status"] == "HALT_DYNAMIC_ORACLE_HEALTH"
+    assert summary["health_failure_groups"] == [
+        {"health_status": "HALT_E7_COMMIT_CHUNK_CHECK", "count": 1},
+        {"health_status": "HALT_E7_FINAL_CHUNK_CHECK", "count": 1},
+    ]
+    assert summary["first_health_failure_sample"]["payload_path"] == "p1.json"
+
+
+def test_stage3_failure_only_mixed_rows_do_not_pass_oracle_gate() -> None:
+    actions = [{"action_id": "a1"}]
+    baselines = [_baseline("b1", 1)]
+    rows = [
+        _oracle_row("b1", 1, "a1", 6.0) | {"row_source": "carried_forward_pre_fix", "mixed_code": True},
+    ]
+
+    summary = track24.summarize_stage3_oracle(baselines, rows, actions, partial=False, reason="")
+
+    assert summary["status"] == track24.TRACK24R_FAILURE_ONLY_HEALTHY_MIXED_REFERENCE
+    assert summary["mixed_code_result"] is True
+
+
 def test_track24_policy_changes_active_ids_for_capacity_reserve() -> None:
     nodes = [
         Node("D1", "d", 0.0, 0.0),
@@ -99,6 +130,20 @@ def test_track24_policy_changes_active_ids_for_capacity_reserve() -> None:
     assert decision.active_ids is not None
     assert len(decision.active_ids) == 1
     assert decision.metadata["action_effect"] == "active_ids_changed"
+    assert decision.metadata["semantic_status"] == "proxy_time_slack_defer_not_real_depot_capacity"
+
+
+def test_track24_oracle_rows_mark_proxy_semantics() -> None:
+    spec = next(item for item in track24.build_stage3_action_specs(100, 10.0) if item["action_id"] == "ev_charging_slack_reserve_low")
+
+    row = track24.oracle_comparison_row(
+        _baseline("b1", 1),
+        {"status": "completed", "health_status": "HEALTHY", "information_cost_pct": 35.0, "payload_path": "p.json"},
+        {"policy_trace": [{"deferred_count": 1, "stage_eval_budget": 100}], "stage_eval_budget": 100},
+        spec,
+    )
+
+    assert row["action_semantics"] == "proxy_distance_demand_defer_not_soc_slack"
 
 
 def test_stage4_skips_when_oracle_gate_not_passed(tmp_path) -> None:
