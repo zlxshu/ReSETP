@@ -1,0 +1,733 @@
+#!/usr/bin/env python3
+"""Diagnostic-only A4 balanced-selector probe."""
+
+from __future__ import annotations
+
+import argparse
+from concurrent.futures import ProcessPoolExecutor, as_completed
+import csv
+import hashlib
+import json
+import math
+import os
+from pathlib import Path
+import shutil
+import subprocess
+import sys
+import time
+from typing import Any
+
+
+REPO_ROOT = Path(__file__).resolve().parents[2]
+for _path in (REPO_ROOT / "solver/src", REPO_ROOT / "models/src", REPO_ROOT):
+    if str(_path) not in sys.path:
+        sys.path.insert(0, str(_path))
+
+from baselines.e2_alns import e2_final_closure as fc
+from baselines.e2_alns import lns_acceptance_scheduler_audit as trace_audit
+from baselines.e2_alns import selector_pathology_audit as selector_audit
+from baselines.e2_alns import strong_bridge_backend_probe as a3_probe
+from setp_solver.check import check_solution
+from setp_solver.search.bundle import load_search_bundle
+from setp_solver.search.candidates import make_shared_initial_solution, solution_signature_hash
+import setp_solver.search.winner_operators as wo
+from setp_solver.search.winner_operators import (
+    BALANCED_SELECTOR_FLAG,
+    STRONG_BRIDGE_BACKEND_FLAG,
+    TRACE_DIAGNOSTIC_FLAG,
+    WinnerKernelConfig,
+)
+
+
+OUTPUT_DIR = REPO_ROOT / "baselines/e2_alns/balanced_selector_probe_20260706"
+HARD_SUBSET_PATH = REPO_ROOT / "baselines/e2_alns/route_compression_probe_20260705/hard_subset_instances.csv"
+LNS_REFERENCE_DIR = REPO_ROOT / "baselines/e2_alns/lns_acceptance_scheduler_audit_20260705"
+SELECTOR_AUDIT_DIR = REPO_ROOT / "baselines/e2_alns/selector_pathology_audit_20260706"
+ALNS_PROFILES = ("A0_MAIN_LOCAL_SEARCH", "A4_BALANCED_SELECTOR_LOCAL_SEARCH")
+PROFILES = (*ALNS_PROFILES, "LNS_TRACE_REFERENCE")
+HASH_EXCLUDE_NAMES = {"artifact_hashes.json", ".DS_Store"}
+HASH_EXCLUDE_PARTS = {"__pycache__", ".pytest_cache", ".tasks"}
+PROTECTED_PATHS = (
+    "solver/src/setp_solver/cost.py",
+    "solver/src/setp_solver/check.py",
+    "solver/src/setp_solver/search/evaluation.py",
+    "solver/src/setp_solver/prices.py",
+    "solver/src/setp_solver/search/feasible_repair.py",
+    "docs/paper_submission_final/paper_main.tex",
+)
+
+
+def parse_args() -> argparse.Namespace:
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--output-dir", default=str(OUTPUT_DIR))
+    parser.add_argument("--eval-budget", type=int, default=4000)
+    parser.add_argument("--seeds", default="1,2,3")
+    parser.add_argument("--workers", type=int, default=3)
+    parser.add_argument("--runtime-cap-seconds", type=float, default=900.0)
+    parser.add_argument("--force", action="store_true")
+    parser.add_argument("--skip-runs", action="store_true")
+    return parser.parse_args()
+
+
+def main() -> int:
+    args = parse_args()
+    output_dir = fc.repo_path(Path(args.output_dir))
+    if output_dir.exists() and args.force:
+        shutil.rmtree(output_dir)
+    output_dir.mkdir(parents=True, exist_ok=True)
+    logs = output_dir / "logs/full_run.log"
+    logs.parent.mkdir(parents=True, exist_ok=True)
+    metadata = build_metadata(args, output_dir)
+    fc.write_json(output_dir / "metadata.json", metadata)
+    log_event(logs, "start", head=metadata["head"])
+
+    seeds = parse_seeds(args.seeds)
+    hard_subset = a3_probe.load_hard_subset(HARD_SUBSET_PATH) if HARD_SUBSET_PATH.exists() else []
+    preflight_issues = preflight_issues_for(hard_subset, seeds, int(args.eval_budget))
+    if preflight_issues:
+        write_empty_outputs(output_dir)
+        decision = halt_decision(metadata, preflight_issues)
+        fc.write_json(output_dir / "decision.json", decision)
+        write_hashes(output_dir)
+        log_event(logs, "halt", issues=preflight_issues)
+        return 2
+
+    tasks = build_probe_tasks(
+        output_dir,
+        hard_subset,
+        seeds=seeds,
+        eval_budget=int(args.eval_budget),
+        runtime_cap_seconds=float(args.runtime_cap_seconds),
+    )
+    rows = collect_existing_rows(output_dir, tasks)
+    if not args.skip_runs:
+        rows = run_probe_tasks(output_dir, tasks, workers=int(args.workers), force=bool(args.force), logs=logs)
+
+    raw_rows = raw_run_rows(rows)
+    candidate_trace: list[dict[str, Any]] = []
+    for profile in ALNS_PROFILES:
+        candidate_trace.extend(trace_audit.flatten_trace_rows(rows, profile))
+    profile_summary = summarize_profiles(raw_rows, candidate_trace)
+    pair_comparison = compare_a4_vs_a0(raw_rows, candidate_trace)
+    decision = build_decision(metadata=metadata, rows=rows, expected_rows=len(tasks), profile_summary=profile_summary, pair_comparison=pair_comparison, trace_rows=candidate_trace)
+
+    fc.write_csv(output_dir / "raw_runs.csv", raw_rows)
+    fc.write_csv(output_dir / "alns_candidate_trace.csv", candidate_trace)
+    fc.write_csv(output_dir / "profile_summary.csv", profile_summary)
+    fc.write_csv(output_dir / "a4_vs_a0_pair_comparison.csv", pair_comparison)
+    fc.write_json(output_dir / "flags_by_profile.json", {"schema": "setp-e2-balanced-selector-flags-by-profile.v1", "profiles": flags_by_profile()})
+    (output_dir / "diagnosis.md").write_text(write_diagnosis(decision, profile_summary, pair_comparison), encoding="utf-8")
+    (output_dir / "next_action.md").write_text(write_next_action(decision), encoding="utf-8")
+    fc.write_json(output_dir / "decision.json", decision)
+    write_hashes(output_dir)
+    fail = sum(1 for row in rows if row.get("status") != "OK")
+    log_event(logs, "complete", rows=len(rows), fail=fail, verdict=decision["verdict"])
+    print(json.dumps({"phase": "balanced_selector_probe_complete", "verdict": decision["verdict"], "rows": f"{len(rows)}/{len(tasks)}"}, ensure_ascii=False))
+    return 0 if not decision["halt"] else 2
+
+
+def profile_flags(profile: str) -> dict[str, str]:
+    normalized = str(profile)
+    if normalized not in ALNS_PROFILES:
+        raise ValueError(f"Unsupported balanced selector profile: {profile}")
+    flags = wo.e2_alns_throughput_flags()
+    flags[TRACE_DIAGNOSTIC_FLAG] = "1"
+    flags["SETP_ALNS_CRUSH_LOCAL_SEARCH"] = "1"
+    flags[STRONG_BRIDGE_BACKEND_FLAG] = "0"
+    flags[BALANCED_SELECTOR_FLAG] = "1" if normalized == "A4_BALANCED_SELECTOR_LOCAL_SEARCH" else "0"
+    return flags
+
+
+def flags_by_profile() -> dict[str, dict[str, str]]:
+    return {profile: profile_flags(profile) for profile in ALNS_PROFILES}
+
+
+def build_probe_tasks(
+    output_dir: Path,
+    hard_subset: list[dict[str, Any]],
+    *,
+    seeds: list[int],
+    eval_budget: int,
+    runtime_cap_seconds: float,
+) -> list[dict[str, Any]]:
+    tasks: list[dict[str, Any]] = []
+    for item in hard_subset:
+        category = str(item["category"])
+        instance = str(item["instance"])
+        for seed in seeds:
+            for profile in PROFILES:
+                run_id = f"BALANCED_SELECTOR_PROBE__{category}__{instance}__{profile}__seed{int(seed)}"
+                tasks.append(
+                    {
+                        "schema": "setp-e2-balanced-selector-probe-task.v1",
+                        "repo_root": str(REPO_ROOT),
+                        "phase": "BALANCED_SELECTOR_PROBE",
+                        "run_id": sanitize_run_id(run_id),
+                        "category": category,
+                        "instance": instance,
+                        "bundle_dir": str(Path("models/data_bundle/generated_instances/e2_benchmark") / category / instance),
+                        "profile": profile,
+                        "algorithm": "LNS" if profile == "LNS_TRACE_REFERENCE" else "alns_e2_throughput",
+                        "seed": int(seed),
+                        "eval_budget": int(eval_budget),
+                        "runtime_cap_seconds": float(runtime_cap_seconds),
+                        "scenario_type": "formal_goeke80",
+                        "checkpoint_path": str(output_dir / "checkpoints" / f"{sanitize_run_id(run_id)}.json"),
+                        "head": fc.git_head(),
+                    }
+                )
+    return tasks
+
+
+def run_probe_tasks(output_dir: Path, tasks: list[dict[str, Any]], *, workers: int, force: bool, logs: Path) -> list[dict[str, Any]]:
+    existing = {str(row.get("run_id")): row for row in collect_existing_rows(output_dir, tasks)}
+    todo = [task for task in tasks if force or task["run_id"] not in existing]
+    if workers <= 1:
+        for task in todo:
+            row = run_probe_task(task)
+            existing[str(row.get("run_id", task["run_id"]))] = row
+            fc.write_json(task_row_path(output_dir, str(row.get("run_id", task["run_id"]))), row)
+            log_event(logs, "task_complete", run_id=task["run_id"], status=row.get("status"))
+    else:
+        with ProcessPoolExecutor(max_workers=int(workers)) as pool:
+            futures = {pool.submit(run_probe_task, task): task for task in todo}
+            for future in as_completed(futures):
+                task = futures[future]
+                row = future.result()
+                existing[str(row.get("run_id", task["run_id"]))] = row
+                fc.write_json(task_row_path(output_dir, str(row.get("run_id", task["run_id"]))), row)
+                log_event(logs, "task_complete", run_id=task["run_id"], status=row.get("status"))
+    return [existing[task["run_id"]] for task in tasks if task["run_id"] in existing]
+
+
+def run_probe_task(task: dict[str, Any]) -> dict[str, Any]:
+    started = time.perf_counter()
+    profile = str(task["profile"])
+    if profile == "LNS_TRACE_REFERENCE":
+        return lns_reference_row(task, started)
+
+    old_trace = os.environ.get(TRACE_DIAGNOSTIC_FLAG)
+    old_backend = os.environ.get(STRONG_BRIDGE_BACKEND_FLAG)
+    old_balanced = os.environ.get(BALANCED_SELECTOR_FLAG)
+    os.environ[TRACE_DIAGNOSTIC_FLAG] = "1"
+    try:
+        bundle_dir = REPO_ROOT / str(task["bundle_dir"])
+        bundle = load_search_bundle(bundle_dir)
+        prices = fc.prices_for_scenario(str(task["scenario_type"]))
+        warm = make_shared_initial_solution(bundle, prices=prices)
+        flags = profile_flags(profile)
+        os.environ[STRONG_BRIDGE_BACKEND_FLAG] = "0"
+        os.environ[BALANCED_SELECTOR_FLAG] = flags[BALANCED_SELECTOR_FLAG]
+        config = WinnerKernelConfig(
+            seed=int(task["seed"]),
+            eval_budget=int(task["eval_budget"]),
+            max_runtime_seconds=float(task["runtime_cap_seconds"]),
+            include_route_elimination=flags.get("SETP_ALNS_CRUSH_ROUTE_ELIMINATION") == "1",
+        )
+        result = wo._run_winner_variant(  # noqa: SLF001 - diagnostic runner needs explicit flag injection.
+            bundle_dir,
+            config,
+            initial_solution=warm,
+            prices=prices,
+            variant_flags=flags,
+            variant_id=profile,
+        )
+        solution = result["best_solution"]
+        best_cost = float(result["best_cost"])
+        actual_evals = int(result["evaluations"])
+        violations = check_solution(solution, bundle.instance, prices) if solution is not None else ["missing_solution"]
+        status = "OK"
+        failure_reason = ""
+        if violations:
+            status = "HALT_INFEASIBLE"
+            failure_reason = "; ".join(str(item) for item in violations[:3])
+        elif actual_evals < int(task["eval_budget"]):
+            status = "HALT_UNDER_EVAL"
+            failure_reason = f"Stopped at {actual_evals}/{task['eval_budget']} evaluations."
+        operator_counts = dict(result.get("operator_counts", {}))
+        return {
+            "schema": "setp-e2-balanced-selector-probe-row.v1",
+            "run_id": task["run_id"],
+            "phase": task["phase"],
+            "category": task["category"],
+            "instance": task["instance"],
+            "profile": profile,
+            "algorithm": task["algorithm"],
+            "seed": int(task["seed"]),
+            "status": status,
+            "failure_reason": failure_reason,
+            "eval_budget": int(task["eval_budget"]),
+            "actual_evals": actual_evals,
+            "runtime_cap_seconds": float(task["runtime_cap_seconds"]),
+            "elapsed_seconds": time.perf_counter() - started,
+            "best_cost": best_cost,
+            "best_signature": solution_signature_hash(solution) if solution is not None else "",
+            "feasible": solution is not None and not violations and math.isfinite(best_cost),
+            "violation_count": len(violations),
+            "route_count": len(solution.routes) if solution is not None else 0,
+            "history": list(result.get("history", [])),
+            "trace": list(operator_counts.get("candidate_trace", [])),
+            "operator_counts": operator_counts,
+            "flags": flags,
+            "head": fc.git_head(),
+        }
+    except Exception as exc:
+        return worker_failure_row(task, "HALT_WORKER_EXCEPTION", repr(exc), started)
+    finally:
+        restore_env(TRACE_DIAGNOSTIC_FLAG, old_trace)
+        restore_env(STRONG_BRIDGE_BACKEND_FLAG, old_backend)
+        restore_env(BALANCED_SELECTOR_FLAG, old_balanced)
+
+
+def lns_reference_row(task: dict[str, Any], started: float) -> dict[str, Any]:
+    rows = a3_probe.lns_reference_trace_rows(str(task["category"]), str(task["instance"]), int(task["seed"]))
+    if len(rows) < int(task["eval_budget"]):
+        return worker_failure_row(task, "HALT_LNS_REFERENCE_INCOMPLETE", f"reference_trace_rows={len(rows)}", started)
+    best_cost = a3_probe.best_lns_reference_cost(rows)
+    best_candidates = [row for row in rows if as_float(row.get("candidate_obj")) <= best_cost + 1e-9]
+    route_count = int(as_float((best_candidates[-1] if best_candidates else rows[-1]).get("candidate_route_count", 0)))
+    return {
+        "schema": "setp-e2-balanced-selector-probe-row.v1",
+        "run_id": task["run_id"],
+        "phase": task["phase"],
+        "category": task["category"],
+        "instance": task["instance"],
+        "profile": "LNS_TRACE_REFERENCE",
+        "algorithm": "LNS",
+        "seed": int(task["seed"]),
+        "status": "OK",
+        "failure_reason": "",
+        "eval_budget": int(task["eval_budget"]),
+        "actual_evals": int(task["eval_budget"]),
+        "runtime_cap_seconds": float(task["runtime_cap_seconds"]),
+        "elapsed_seconds": time.perf_counter() - started,
+        "best_cost": float(best_cost),
+        "best_signature": str(rows[-1].get("signature", "")),
+        "feasible": True,
+        "violation_count": 0,
+        "route_count": route_count,
+        "history": [],
+        "trace": [],
+        "operator_counts": {},
+        "flags": {"baseline": "LNS_TRACE_REFERENCE", "source": fc.rel(LNS_REFERENCE_DIR)},
+        "head": fc.git_head(),
+    }
+
+
+def raw_run_rows(rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    keys = [
+        "run_id",
+        "phase",
+        "category",
+        "instance",
+        "profile",
+        "algorithm",
+        "seed",
+        "status",
+        "failure_reason",
+        "eval_budget",
+        "actual_evals",
+        "best_cost",
+        "best_signature",
+        "feasible",
+        "violation_count",
+        "route_count",
+    ]
+    return [{key: row.get(key, "") for key in keys} for row in rows]
+
+
+def summarize_profiles(raw_rows: list[dict[str, Any]], trace_rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    lns_by_key = {
+        (row["category"], row["instance"], int(as_float(row["seed"]))): as_float(row["best_cost"])
+        for row in raw_rows
+        if row.get("profile") == "LNS_TRACE_REFERENCE" and row.get("status") == "OK"
+    }
+    usage = selector_audit.selector_pair_usage(trace_rows)
+    entropy = {row["profile"]: row for row in selector_audit.selector_entropy_by_profile(usage, expected_pair_count_by_profile=selector_audit.expected_pair_counts(usage))}
+    out = []
+    for profile in PROFILES:
+        items = [row for row in raw_rows if row.get("profile") == profile]
+        ok_items = [row for row in items if row.get("status") == "OK"]
+        gaps = []
+        for row in ok_items:
+            key = (row["category"], row["instance"], int(as_float(row["seed"])))
+            lns = lns_by_key.get(key)
+            if lns and math.isfinite(lns):
+                gaps.append((lns - as_float(row["best_cost"])) / lns)
+        traces = [row for row in trace_rows if row.get("profile") == profile]
+        ent = entropy.get(profile, {})
+        out.append(
+            {
+                "profile": profile,
+                "rows": len(items),
+                "ok_rows": len(ok_items),
+                "fail_rows": len(items) - len(ok_items),
+                "infeasible_rows": sum(1 for row in items if row.get("status") == "HALT_INFEASIBLE" or as_int(row.get("violation_count")) > 0),
+                "under_eval_rows": sum(1 for row in items if row.get("status") == "HALT_UNDER_EVAL" or as_int(row.get("actual_evals")) < as_int(row.get("eval_budget"))),
+                "mean_best_cost": mean_known(row.get("best_cost") for row in ok_items),
+                "mean_gap_vs_lns": mean_known(gaps),
+                "unchanged_rate": rate(traces, lambda row: str(row.get("revert_reason")) == "unchanged"),
+                "best_improved_rate": rate(traces, lambda row: truthy(row.get("best_improved"))),
+                "normalized_pair_entropy": ent.get("normalized_pair_entropy", "UNKNOWN"),
+                "top1_pair_share": ent.get("top1_pair_share", "UNKNOWN"),
+                "top2_pair_share": ent.get("top2_pair_share", "UNKNOWN"),
+            }
+        )
+    return out
+
+
+def compare_a4_vs_a0(raw_rows: list[dict[str, Any]], trace_rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    by_key_profile = {
+        (row["category"], row["instance"], int(as_float(row["seed"])), row["profile"]): row
+        for row in raw_rows
+        if row.get("status") == "OK"
+    }
+    keys = sorted({(category, instance, seed) for category, instance, seed, _profile in by_key_profile})
+    rows: list[dict[str, Any]] = []
+    wins = losses = ties = 0
+    a0_gaps: list[float] = []
+    a4_gaps: list[float] = []
+    for category, instance, seed in keys:
+        a0 = by_key_profile.get((category, instance, seed, "A0_MAIN_LOCAL_SEARCH"))
+        a4 = by_key_profile.get((category, instance, seed, "A4_BALANCED_SELECTOR_LOCAL_SEARCH"))
+        lns = by_key_profile.get((category, instance, seed, "LNS_TRACE_REFERENCE"))
+        if not (a0 and a4 and lns):
+            continue
+        lns_cost = as_float(lns["best_cost"])
+        a0_cost = as_float(a0["best_cost"])
+        a4_cost = as_float(a4["best_cost"])
+        a0_gap = (lns_cost - a0_cost) / lns_cost
+        a4_gap = (lns_cost - a4_cost) / lns_cost
+        a0_gaps.append(a0_gap)
+        a4_gaps.append(a4_gap)
+        if a4_cost < a0_cost - 1e-9:
+            outcome = "A4_BETTER"
+            wins += 1
+        elif a4_cost > a0_cost + 1e-9:
+            outcome = "A4_WORSE"
+            losses += 1
+        else:
+            outcome = "TIE"
+            ties += 1
+        rows.append(
+            {
+                "scope": "run",
+                "category": category,
+                "instance": instance,
+                "seed": seed,
+                "a0_best_cost": a0_cost,
+                "a4_best_cost": a4_cost,
+                "lns_best_cost": lns_cost,
+                "a0_gap_vs_lns": a0_gap,
+                "a4_gap_vs_lns": a4_gap,
+                "outcome_vs_a0": outcome,
+            }
+        )
+    trace_by_profile = {profile: [row for row in trace_rows if row.get("profile") == profile] for profile in ALNS_PROFILES}
+    aggregate = {
+        "scope": "ALL",
+        "category": "ALL",
+        "instance": "ALL",
+        "seed": "ALL",
+        "wins_vs_a0": wins,
+        "losses_vs_a0": losses,
+        "ties_vs_a0": ties,
+        "a0_mean_gap_vs_lns": mean_known(a0_gaps),
+        "a4_mean_gap_vs_lns": mean_known(a4_gaps),
+        "a0_best_improved_rate": rate(trace_by_profile["A0_MAIN_LOCAL_SEARCH"], lambda row: truthy(row.get("best_improved"))),
+        "a4_best_improved_rate": rate(trace_by_profile["A4_BALANCED_SELECTOR_LOCAL_SEARCH"], lambda row: truthy(row.get("best_improved"))),
+    }
+    return [aggregate, *rows]
+
+
+def build_decision(
+    *,
+    metadata: dict[str, Any],
+    rows: list[dict[str, Any]],
+    expected_rows: int,
+    profile_summary: list[dict[str, Any]],
+    pair_comparison: list[dict[str, Any]],
+    trace_rows: list[dict[str, Any]],
+) -> dict[str, Any]:
+    fail_rows = [row for row in rows if row.get("status") != "OK"]
+    protected = protected_diff()
+    summary = {row["profile"]: row for row in profile_summary}
+    aggregate = next((row for row in pair_comparison if row.get("scope") == "ALL"), {})
+    a0 = summary.get("A0_MAIN_LOCAL_SEARCH", {})
+    a4 = summary.get("A4_BALANCED_SELECTOR_LOCAL_SEARCH", {})
+    entropy_better = as_float(a4.get("normalized_pair_entropy")) > as_float(a0.get("normalized_pair_entropy"))
+    top_share_lower = as_float(a4.get("top1_pair_share")) < as_float(a0.get("top1_pair_share")) and as_float(a4.get("top2_pair_share")) < as_float(a0.get("top2_pair_share"))
+    gap_better = as_float(a4.get("mean_gap_vs_lns")) > as_float(a0.get("mean_gap_vs_lns"))
+    wins_ok = as_int(aggregate.get("wins_vs_a0")) >= as_int(aggregate.get("losses_vs_a0"))
+    clean = not fail_rows and len(rows) == expected_rows and not protected and as_int(a4.get("infeasible_rows")) == 0 and as_int(a4.get("under_eval_rows")) == 0
+    promising = clean and entropy_better and top_share_lower and gap_better and wins_ok
+    return {
+        "schema": "setp-e2-balanced-selector-probe-decision.v1",
+        "verdict": "A4_BALANCED_SELECTOR_PROMISING" if promising else ("HALT_BALANCED_SELECTOR_PROBE" if not clean else "A4_BALANCED_SELECTOR_NOT_SUPPORTED"),
+        "diagnostic_only": True,
+        "formal_t3": False,
+        "algorithm_win_loss_claim": False,
+        "head": metadata.get("head", ""),
+        "expected_rows": int(expected_rows),
+        "rows": len(rows),
+        "ok_rows": len(rows) - len(fail_rows),
+        "fail_rows": len(fail_rows),
+        "halt": not clean,
+        "profile_summary": profile_summary,
+        "a4_vs_a0": aggregate,
+        "support_gates": {
+            "a4_mean_gap_improves_vs_lns": gap_better,
+            "wins_vs_a0_at_least_losses": wins_ok,
+            "normalized_entropy_higher_than_a0": entropy_better,
+            "top1_top2_pair_share_lower_than_a0": top_share_lower,
+            "zero_fail_under_eval_infeasible_protected": clean,
+        },
+        "protected_diff": protected,
+    }
+
+
+def write_diagnosis(decision: dict[str, Any], profile_summary: list[dict[str, Any]], pair_comparison: list[dict[str, Any]]) -> str:
+    lines = [
+        "# Balanced Selector Probe Diagnosis",
+        "",
+        f"Verdict: `{decision.get('verdict')}`.",
+        "",
+        "This is a diagnostic-only scheduler probe, not formal T3.",
+        "",
+        "Profile summary:",
+    ]
+    for row in profile_summary:
+        lines.append(
+            f"- {row.get('profile')}: mean_gap={row.get('mean_gap_vs_lns')}, entropy={row.get('normalized_pair_entropy')}, "
+            f"top1={row.get('top1_pair_share')}, top2={row.get('top2_pair_share')}"
+        )
+    aggregate = next((row for row in pair_comparison if row.get("scope") == "ALL"), {})
+    lines.extend(
+        [
+            "",
+            f"A4 vs A0: wins={aggregate.get('wins_vs_a0')}, losses={aggregate.get('losses_vs_a0')}, ties={aggregate.get('ties_vs_a0')}.",
+            "",
+            "Support gates:",
+            *[f"- {key}: {value}" for key, value in decision.get("support_gates", {}).items()],
+        ]
+    )
+    return "\n".join(lines) + "\n"
+
+
+def write_next_action(decision: dict[str, Any]) -> str:
+    if decision.get("verdict") == "A4_BALANCED_SELECTOR_PROMISING":
+        remedy = "rerun A4 at 8000 eval hard subset before any additional scheduler or acceptance change"
+    elif decision.get("verdict") == "A4_BALANCED_SELECTOR_NOT_SUPPORTED":
+        remedy = "stop scheduler tuning and move to q-size or acceptance source-level audit"
+    else:
+        remedy = "fix HALT condition before any further diagnostic"
+    return "\n".join(
+        [
+            "# Next Action",
+            "",
+            "problem_symptom -> selector pathology was supported by read-only audit",
+            "evidence -> see decision.json, profile_summary.csv, and a4_vs_a0_pair_comparison.csv",
+            f"minimal_remedy -> {remedy}",
+            "pass_gate -> same direction gates hold with zero HALT rows",
+            "fail_gate -> any direction gate fails or protected/under-eval/worker issue appears",
+            "",
+            "Boundary: no Tier1/Tier2/Tier3, no LNS weakening, no backend/q-size/acceptance stacking.",
+        ]
+    )
+
+
+def build_metadata(args: argparse.Namespace, output_dir: Path) -> dict[str, Any]:
+    return {
+        "schema": "setp-e2-balanced-selector-probe-metadata.v1",
+        "task": "balanced_selector_probe",
+        "diagnostic_only": True,
+        "formal_t3": False,
+        "head": fc.git_head(),
+        "python": sys.executable,
+        "pythonhashseed": os.environ.get("PYTHONHASHSEED", ""),
+        "output_dir": fc.rel(output_dir),
+        "hard_subset_source": fc.rel(HARD_SUBSET_PATH),
+        "selector_audit_source": fc.rel(SELECTOR_AUDIT_DIR),
+        "profiles": list(PROFILES),
+        "seeds": parse_seeds(args.seeds),
+        "eval_budget": int(args.eval_budget),
+        "workers": int(args.workers),
+        "balanced_selector_flag": BALANCED_SELECTOR_FLAG,
+        "boundary": "diagnostic scheduler only; no backend/q-size/acceptance/local-search semantic stacking",
+        "started_at_epoch": time.time(),
+    }
+
+
+def preflight_issues_for(hard_subset: list[dict[str, str]], seeds: list[int], eval_budget: int) -> list[str]:
+    issues: list[str] = []
+    if not HARD_SUBSET_PATH.exists():
+        issues.append(fc.rel(HARD_SUBSET_PATH))
+    selector_decision = SELECTOR_AUDIT_DIR / "decision.json"
+    if not selector_decision.exists():
+        issues.append(fc.rel(selector_decision))
+    else:
+        decision = fc.read_json(selector_decision)
+        if decision.get("verdict") != "SELECTOR_PATHOLOGY_SUPPORTED":
+            issues.append(f"{fc.rel(selector_decision)}: verdict={decision.get('verdict')}")
+    issues.extend(a3_probe.validate_lns_reference(hard_subset, seeds, eval_budget))
+    issues.extend([f"PROTECTED_DIFF:{path}" for path in protected_diff()])
+    return issues
+
+
+def collect_existing_rows(output_dir: Path, tasks: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    rows = []
+    for task in tasks:
+        path = task_row_path(output_dir, str(task["run_id"]))
+        if path.exists():
+            rows.append(fc.read_json(path))
+    return rows
+
+
+def task_row_path(output_dir: Path, run_id: str) -> Path:
+    return output_dir / ".tasks" / "rows" / f"{sanitize_run_id(run_id)}.json"
+
+
+def worker_failure_row(task: dict[str, Any], status: str, reason: str, started: float) -> dict[str, Any]:
+    return {
+        "schema": "setp-e2-balanced-selector-probe-row.v1",
+        "run_id": task.get("run_id", ""),
+        "phase": task.get("phase", ""),
+        "category": task.get("category", ""),
+        "instance": task.get("instance", ""),
+        "profile": task.get("profile", ""),
+        "algorithm": task.get("algorithm", ""),
+        "seed": task.get("seed", ""),
+        "status": status,
+        "failure_reason": reason,
+        "eval_budget": task.get("eval_budget", 0),
+        "actual_evals": 0,
+        "runtime_cap_seconds": task.get("runtime_cap_seconds", 0),
+        "elapsed_seconds": time.perf_counter() - started,
+        "best_cost": math.inf,
+        "best_signature": "",
+        "feasible": False,
+        "violation_count": -1,
+        "route_count": 0,
+        "history": [],
+        "trace": [],
+        "operator_counts": {},
+        "flags": {},
+        "head": fc.git_head(),
+    }
+
+
+def halt_decision(metadata: dict[str, Any], issues: list[str]) -> dict[str, Any]:
+    return {
+        "schema": "setp-e2-balanced-selector-probe-decision.v1",
+        "verdict": "HALT_BALANCED_SELECTOR_PROBE",
+        "diagnostic_only": True,
+        "formal_t3": False,
+        "algorithm_win_loss_claim": False,
+        "head": metadata.get("head", ""),
+        "halt": True,
+        "issues": issues,
+    }
+
+
+def write_empty_outputs(output_dir: Path) -> None:
+    fc.write_csv(output_dir / "raw_runs.csv", [])
+    fc.write_csv(output_dir / "alns_candidate_trace.csv", [])
+    fc.write_csv(output_dir / "profile_summary.csv", [])
+    fc.write_csv(output_dir / "a4_vs_a0_pair_comparison.csv", [])
+    fc.write_json(output_dir / "flags_by_profile.json", {"schema": "setp-e2-balanced-selector-flags-by-profile.v1", "profiles": {}})
+    (output_dir / "diagnosis.md").write_text("", encoding="utf-8")
+    (output_dir / "next_action.md").write_text("", encoding="utf-8")
+
+
+def protected_diff() -> list[str]:
+    changed: set[str] = set()
+    for args in (["git", "diff", "--name-only", "--"], ["git", "diff", "--cached", "--name-only", "--"]):
+        result = subprocess.run([*args, *PROTECTED_PATHS], cwd=REPO_ROOT, text=True, capture_output=True, check=False)
+        if result.stdout:
+            changed.update(line.strip() for line in result.stdout.splitlines() if line.strip())
+    return sorted(changed)
+
+
+def write_hashes(output_dir: Path) -> None:
+    files: dict[str, str] = {}
+    for path in sorted(output_dir.rglob("*")):
+        if not path.is_file():
+            continue
+        rel = path.relative_to(output_dir)
+        if path.name.startswith("._") or path.name in a3_probe.HASH_EXCLUDE_NAMES:
+            continue
+        if any(part in a3_probe.HASH_EXCLUDE_PARTS for part in rel.parts):
+            continue
+        files[str(rel)] = sha256_file(path)
+    fc.write_json(
+        output_dir / "artifact_hashes.json",
+        {
+            "schema": "setp-artifact-hashes.v1",
+            "root": fc.rel(output_dir),
+            "excluded_names": sorted(a3_probe.HASH_EXCLUDE_NAMES),
+            "excluded_parts": sorted(a3_probe.HASH_EXCLUDE_PARTS),
+            "files": files,
+        },
+    )
+
+
+def parse_seeds(text: str) -> list[int]:
+    return [int(part.strip()) for part in str(text).split(",") if part.strip()]
+
+
+def sanitize_run_id(text: str) -> str:
+    return "".join(ch if ch.isalnum() or ch in "._=-" else "_" for ch in str(text))
+
+
+def restore_env(name: str, value: str | None) -> None:
+    if value is None:
+        os.environ.pop(name, None)
+    else:
+        os.environ[name] = value
+
+
+def truthy(value: object) -> bool:
+    if isinstance(value, bool):
+        return value
+    return str(value).lower() in {"1", "true", "yes"}
+
+
+def rate(rows: list[dict[str, Any]], predicate: Any) -> float:
+    return sum(1 for row in rows if predicate(row)) / len(rows) if rows else 0.0
+
+
+def mean_known(values: Any) -> float | str:
+    numeric = [as_float(value) for value in values if math.isfinite(as_float(value))]
+    return sum(numeric) / len(numeric) if numeric else "UNKNOWN"
+
+
+def as_float(value: object) -> float:
+    try:
+        if value in (None, "", "UNKNOWN", "N/A"):
+            return math.nan
+        return float(value)
+    except (TypeError, ValueError):
+        return math.nan
+
+
+def as_int(value: object) -> int:
+    number = as_float(value)
+    return int(number) if math.isfinite(number) else 0
+
+
+def log_event(path: Path, event: str, **payload: Any) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    with path.open("a", encoding="utf-8") as handle:
+        handle.write(json.dumps({"event": event, "time": time.time(), **payload}, ensure_ascii=False, sort_keys=True) + "\n")
+
+
+def sha256_file(path: Path) -> str:
+    digest = hashlib.sha256()
+    with path.open("rb") as handle:
+        for chunk in iter(lambda: handle.read(1024 * 1024), b""):
+            digest.update(chunk)
+    return digest.hexdigest()
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

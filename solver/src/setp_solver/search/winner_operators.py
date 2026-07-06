@@ -73,10 +73,12 @@ _CRUSH_FLAG_NAMES = (
     "SETP_ALNS_CRUSH_TIMING_LEDGER",
     "SETP_ALNS_CRUSH_TRACE_DIAGNOSTIC",
     "SETP_ALNS_CRUSH_STRONG_BRIDGE_BACKEND",
+    "SETP_ALNS_CRUSH_BALANCED_SELECTOR",
 )
 
 TRACE_DIAGNOSTIC_FLAG = "SETP_ALNS_CRUSH_TRACE_DIAGNOSTIC"
 STRONG_BRIDGE_BACKEND_FLAG = "SETP_ALNS_CRUSH_STRONG_BRIDGE_BACKEND"
+BALANCED_SELECTOR_FLAG = "SETP_ALNS_CRUSH_BALANCED_SELECTOR"
 _STRONG_BRIDGE_BACKEND_DESTROY_OPS = frozenset(
     {
         "random_customer_removal",
@@ -109,6 +111,7 @@ E2_ALNS_COMPONENT_SOURCES = {
     "SETP_ALNS_CRUSH_TIMING_LEDGER": "Engineering: opt-in timing ledger for E2 throughput profiling",
     TRACE_DIAGNOSTIC_FLAG: "Diagnostic only: scheduler/acceptance trace fields; no formal semantics change",
     STRONG_BRIDGE_BACKEND_FLAG: "Diagnostic only: align official ALNS candidate backend with LNS strong bridge for supported destroy/repair pairs",
+    BALANCED_SELECTOR_FLAG: "Diagnostic only: balanced operator pair scheduler warmup plus epsilon exploration",
 }
 
 
@@ -233,6 +236,7 @@ def winner_variant_flags(*, include_route_elimination: bool = False) -> dict[str
         "SETP_ALNS_CRUSH_REPAIR_STRUCTURE_CACHE": "0",
         "SETP_ALNS_CRUSH_TIMING_LEDGER": "0",
         STRONG_BRIDGE_BACKEND_FLAG: "0",
+        BALANCED_SELECTOR_FLAG: "0",
     }
 
 
@@ -260,6 +264,7 @@ def e2_alns_variant_flags() -> dict[str, str]:
         "SETP_ALNS_CRUSH_REPAIR_STRUCTURE_CACHE": "0",
         "SETP_ALNS_CRUSH_TIMING_LEDGER": "0",
         STRONG_BRIDGE_BACKEND_FLAG: "0",
+        BALANCED_SELECTOR_FLAG: "0",
     }
 
 
@@ -281,6 +286,7 @@ def e2_alns_scan_bridge_flags() -> dict[str, str]:
         "SETP_ALNS_CRUSH_REPAIR_STRUCTURE_CACHE": "0",
         "SETP_ALNS_CRUSH_TIMING_LEDGER": "0",
         STRONG_BRIDGE_BACKEND_FLAG: "0",
+        BALANCED_SELECTOR_FLAG: "0",
     }
 
 
@@ -891,7 +897,11 @@ def _run_winner_kernel_loop(
         carbon_aware=config.carbon_aware_operators,
         carbon_bias_weight=config.carbon_operator_bias,
     )
-    selector = _make_operator_selector(len(operator_set.destroy_ops), len(operator_set.repair_ops))
+    selector = _make_operator_selector(
+        len(operator_set.destroy_ops),
+        len(operator_set.repair_ops),
+        balanced=_flag_enabled_from(flags, BALANCED_SELECTOR_FLAG),
+    )
     acceptance = _make_winner_acceptance_criterion(current, config=config, flags=flags)
     destroy_counts = {name: [0, 0, 0, 0] for name, _ in operator_set.destroy_ops}
     repair_counts = {name: [0, 0, 0, 0] for name, _ in operator_set.repair_ops}

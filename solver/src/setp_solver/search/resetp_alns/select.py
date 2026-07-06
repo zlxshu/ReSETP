@@ -100,3 +100,56 @@ class AlphaUCB(OperatorSelectionScheme):
         values = value + explore_bonus
         values[~self._op_coupling] = -1
         return values
+
+
+class BalancedAlphaUCB(AlphaUCB):
+    """Diagnostic selector that prevents early pair starvation.
+
+    It preserves AlphaUCB scoring and update semantics, but adds a deterministic
+    warmup pass over all legal pairs plus a small uniform exploration rate.
+    """
+
+    def __init__(
+        self,
+        scores: Sequence[float],
+        alpha: float,
+        num_destroy: int,
+        num_repair: int,
+        op_coupling: np.ndarray | None = None,
+        *,
+        warmup_per_pair: int = 10,
+        epsilon: float = 0.10,
+    ) -> None:
+        super().__init__(scores, alpha, num_destroy, num_repair, op_coupling)
+        if warmup_per_pair < 0:
+            raise ValueError("warmup_per_pair must be non-negative.")
+        if not 0.0 <= float(epsilon) <= 1.0:
+            raise ValueError("epsilon must be in [0, 1].")
+        self._warmup_per_pair = int(warmup_per_pair)
+        self._epsilon = float(epsilon)
+        self._legal_pairs = [
+            (int(d_idx), int(r_idx))
+            for d_idx in range(self.num_destroy)
+            for r_idx in range(self.num_repair)
+            if bool(self.op_coupling[d_idx, r_idx])
+        ]
+
+    @property
+    def warmup_per_pair(self) -> int:
+        return self._warmup_per_pair
+
+    @property
+    def epsilon(self) -> float:
+        return self._epsilon
+
+    def __call__(self, rng: object, best: object, curr: object) -> tuple[int, int]:
+        for d_idx, r_idx in self._legal_pairs:
+            if int(self._times[d_idx, r_idx]) < self._warmup_per_pair:
+                return d_idx, r_idx
+
+        random_value = float(rng.random()) if hasattr(rng, "random") else 1.0
+        if self._epsilon > 0.0 and random_value < self._epsilon:
+            pick = int(rng.integers(0, len(self._legal_pairs))) if hasattr(rng, "integers") else 0
+            return self._legal_pairs[pick]
+
+        return super().__call__(rng, best, curr)

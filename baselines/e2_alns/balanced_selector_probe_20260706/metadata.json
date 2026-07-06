@@ -1,0 +1,27 @@
+{
+  "balanced_selector_flag": "SETP_ALNS_CRUSH_BALANCED_SELECTOR",
+  "boundary": "diagnostic scheduler only; no backend/q-size/acceptance/local-search semantic stacking",
+  "diagnostic_only": true,
+  "eval_budget": 4000,
+  "formal_t3": false,
+  "hard_subset_source": "baselines/e2_alns/route_compression_probe_20260705/hard_subset_instances.csv",
+  "head": "7a43e8b59321ebd29e5ea1da8eee1163392cf05e",
+  "output_dir": "baselines/e2_alns/balanced_selector_probe_20260706",
+  "profiles": [
+    "A0_MAIN_LOCAL_SEARCH",
+    "A4_BALANCED_SELECTOR_LOCAL_SEARCH",
+    "LNS_TRACE_REFERENCE"
+  ],
+  "python": "/opt/anaconda3/bin/python3.13",
+  "pythonhashseed": "0",
+  "schema": "setp-e2-balanced-selector-probe-metadata.v1",
+  "seeds": [
+    1,
+    2,
+    3
+  ],
+  "selector_audit_source": "baselines/e2_alns/selector_pathology_audit_20260706",
+  "started_at_epoch": 1783315398.027919,
+  "task": "balanced_selector_probe",
+  "workers": 3
+}

@@ -38,7 +38,7 @@ from .feasible_repair import (
 from .fleet import FleetLimits, UNBOUNDED_FLEET, infer_fleet_limits, normalize_solution_vehicle_trips, route_ev_energy_summary
 from .local_search import improve_solution_locally
 from .repair_scoring import route_model_cost_delta
-from .resetp_alns import AlphaUCB, HillClimbing, RecordToRecordTravel
+from .resetp_alns import AlphaUCB, BalancedAlphaUCB, HillClimbing, RecordToRecordTravel
 from .timing import timed_section
 
 
@@ -248,7 +248,23 @@ def _make_acceptance_criterion(initial_state: AlnsState, target_iterations: int)
     )
 
 
-def _make_operator_selector(num_destroy: int, num_repair: int) -> Any:
+def _make_operator_selector(
+    num_destroy: int,
+    num_repair: int,
+    *,
+    balanced: bool = False,
+    warmup_per_pair: int = 10,
+    epsilon: float = 0.10,
+) -> Any:
+    if balanced:
+        return BalancedAlphaUCB(
+            [20.0, 8.0, 2.0, 0.05],
+            alpha=0.08,
+            num_destroy=num_destroy,
+            num_repair=num_repair,
+            warmup_per_pair=warmup_per_pair,
+            epsilon=epsilon,
+        )
     return AlphaUCB([20.0, 8.0, 2.0, 0.05], alpha=0.08, num_destroy=num_destroy, num_repair=num_repair)
 
 

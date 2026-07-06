@@ -9,10 +9,11 @@ from __future__ import annotations
 
 from .accept import HillClimbing, RecordToRecordTravel, SimulatedAnnealing, update
 from .outcome import Outcome
-from .select import AlphaUCB
+from .select import AlphaUCB, BalancedAlphaUCB
 
 __all__ = [
     "AlphaUCB",
+    "BalancedAlphaUCB",
     "HillClimbing",
     "Outcome",
     "RecordToRecordTravel",

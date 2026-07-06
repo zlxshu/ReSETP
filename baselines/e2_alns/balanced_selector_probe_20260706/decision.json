@@ -1,0 +1,81 @@
+{
+  "a4_vs_a0": {
+    "a0_best_improved_rate": 0.011338200531347405,
+    "a0_mean_gap_vs_lns": -0.004385253026182812,
+    "a4_best_improved_rate": 0.009241341798897525,
+    "a4_mean_gap_vs_lns": 0.00048527397136235187,
+    "category": "ALL",
+    "instance": "ALL",
+    "losses_vs_a0": 18,
+    "scope": "ALL",
+    "seed": "ALL",
+    "ties_vs_a0": 7,
+    "wins_vs_a0": 23
+  },
+  "algorithm_win_loss_claim": false,
+  "diagnostic_only": true,
+  "expected_rows": 144,
+  "fail_rows": 0,
+  "formal_t3": false,
+  "halt": false,
+  "head": "7a43e8b59321ebd29e5ea1da8eee1163392cf05e",
+  "ok_rows": 144,
+  "profile_summary": [
+    {
+      "best_improved_rate": 0.011338200531347405,
+      "fail_rows": 0,
+      "infeasible_rows": 0,
+      "mean_best_cost": 1886.9758195362608,
+      "mean_gap_vs_lns": -0.004385253026182812,
+      "normalized_pair_entropy": 0.5479450509066646,
+      "ok_rows": 48,
+      "profile": "A0_MAIN_LOCAL_SEARCH",
+      "rows": 48,
+      "top1_pair_share": 0.5102399430998055,
+      "top2_pair_share": 0.7646329728259733,
+      "unchanged_rate": 0.5219023910633224,
+      "under_eval_rows": 0
+    },
+    {
+      "best_improved_rate": 0.009241341798897525,
+      "fail_rows": 0,
+      "infeasible_rows": 0,
+      "mean_best_cost": 1878.2385059139972,
+      "mean_gap_vs_lns": 0.00048527397136235187,
+      "normalized_pair_entropy": 0.8227620351716587,
+      "ok_rows": 48,
+      "profile": "A4_BALANCED_SELECTOR_LOCAL_SEARCH",
+      "rows": 48,
+      "top1_pair_share": 0.24319320523414537,
+      "top2_pair_share": 0.4628254343482945,
+      "unchanged_rate": 0.5528592198989571,
+      "under_eval_rows": 0
+    },
+    {
+      "best_improved_rate": 0.0,
+      "fail_rows": 0,
+      "infeasible_rows": 0,
+      "mean_best_cost": 1897.9023840670818,
+      "mean_gap_vs_lns": 0.0,
+      "normalized_pair_entropy": "UNKNOWN",
+      "ok_rows": 48,
+      "profile": "LNS_TRACE_REFERENCE",
+      "rows": 48,
+      "top1_pair_share": "UNKNOWN",
+      "top2_pair_share": "UNKNOWN",
+      "unchanged_rate": 0.0,
+      "under_eval_rows": 0
+    }
+  ],
+  "protected_diff": [],
+  "rows": 144,
+  "schema": "setp-e2-balanced-selector-probe-decision.v1",
+  "support_gates": {
+    "a4_mean_gap_improves_vs_lns": true,
+    "normalized_entropy_higher_than_a0": true,
+    "top1_top2_pair_share_lower_than_a0": true,
+    "wins_vs_a0_at_least_losses": true,
+    "zero_fail_under_eval_infeasible_protected": true
+  },
+  "verdict": "A4_BALANCED_SELECTOR_PROMISING"
+}
