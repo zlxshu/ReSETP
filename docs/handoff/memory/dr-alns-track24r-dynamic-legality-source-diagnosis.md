@@ -2,18 +2,27 @@
 
 Date: 2026-07-06
 
-Context: Track24-R reportedly fixed the final pending/final-repair deletion bug in unit tests, but the failure-only Stage3 rerun is still blocked by one `HALT_E7_COMMIT_CHUNK_CHECK` row: `E-UK50_01__curric_d2_s3_seed1_24h`, seed `907`, action `stage_budget_event_density`, first violation `TIME_WINDOW` for `C32`, late by `228.326s`.
+Update after push: `dynamic.py` on `dr-x86` is now visibly changed in GitHub. It adds `pending_deferred_ids`, carries pending customers into future active sets, routes final remaining customers through a final repair stage, preserves `stage_eval_budget` / `stage_max_runtime_seconds` in `_policy_decision_for_stage`, and replaces commit extraction with `_solution_for_committed_customers` that keeps the route prefix through the last committed customer.
+
+Current user-reported Track24-R2 result: commit-chunk HALT is cleared in failure-only resume, 260/260 rows are written, but the result is `TRACK24R_FAILURE_ONLY_HEALTHY_MIXED_REFERENCE` with `mixed_code=true`, `carried=136`, `rerun=124`, `mean_reduction_pp=12.6924`. This is legality evidence only, not breakthrough evidence; a full fixed-code 260-row rerun is still required before any Stage4 imitation/bandit.
 
 Source-grounded diagnosis from committed dr-x86 code:
 
-1. Track24 Stage3 policies are not training-ready while any rolling legality gate fails. `track24_decision.json` status is `TRACK24_HALT_DYNAMIC_ORACLE_HEALTH`; Stage4 imitation is skipped until Stage3 oracle is healthy and >=2pp.
-2. `dynamic.py` commits executed customers before each new rolling stage by extracting a chunk from the previous plan and checking it against a subinstance. Any chunk violation returns `HALT_E7_COMMIT_CHUNK_CHECK` before the next stage plan is accepted.
-3. A remaining commit-chunk `TIME_WINDOW` violation means the final pending deletion issue is not the only problem. The likely source class is replay/extraction semantics: committed chunks are rebuilt as depot-customer-depot routes in `_solution_for_customer_subset`, then re-scheduled and checked in isolation. This may alter timing versus the original route segment that actually served the customer, especially for customers whose planned service depended on predecessor sequence, waiting, charging, or route start timing.
-4. Fix direction: do not mask the health gate. Build a red test reproducing seed907/stage_budget_event_density C32; inspect the original previous-plan route schedule and extracted commit chunk schedule. If extraction changes service timing, commit chunk must preserve executed route prefix/segment timing or use a dynamic-specific committed-segment checker instead of rebuilding an artificial depot-customer-depot route.
-5. Parallel investigation branches allowed: A) schedule-preserving commit extraction, B) dynamic commit checker that validates frozen executed segments against original route schedule, C) event-window/frozen-node audit for C32, D) budget-policy interaction audit for `stage_budget_event_density`. Stop only if all branches show no source-level defect.
+1. The fix is materially better than the previous final-pending deletion patch: rolling state now has `pending_deferred_ids`, pending customers re-enter active sets, and final repair runs `_run_stage_plan` on remaining customers instead of extracting them from `previous_plan`.
+2. However the dynamic abstraction is still not a full committed-request state machine. `RollingPolicyDecision` still exposes only `active_ids`, `initial_plan`, and budget/runtime; it has no explicit `mandatory_ids`, `defer_ids`, acceptance/confirmation state, or latest-service/deadline metadata. Pending is inferred as `active_ids - stage_active_ids`, not typed as a first-class decision.
+3. `_solution_for_committed_customers` now keeps route prefix through the last committed customer, avoiding the old depot-customer-depot replay bug. But it still materializes a synthetic route ending at the depot and filters non-committed intermediate customers. This is a pragmatic legality patch, not a full executed-segment cost/schedule ledger.
+4. The correct next step is not Stage4/PPO. It is a full fixed-code Stage3 confirmation plus a parallel source-level state-machine audit. If full fixed-code mean reduction remains >=2pp and all rows are healthy, only then may imitation/contextual bandit be planned; PPO remains later.
+5. If fixed-code signal disappears or is mostly budget allocation, stop dynamic-DR as the main rescue path and move to E2 route-compression/stability or E6 fairness-safe repair.
+
+Next execution package should run in parallel:
+- A) full fixed-code 260-row Stage3 confirmation (`mixed_code=false`, no carried rows), with action-class distribution and selected action distribution;
+- B) source audit of dynamic customer lifecycle: unrevealed/revealed/pending/mandatory/committed/served/cancelled;
+- C) typed decision extension proposal: `mandatory_ids`, `defer_ids`, `plan_now_ids`, deadline/feasibility guards;
+- D) cheap feasibility guard for defer actions: due-time reachability, direct depot feasibility, EV/charging proxy;
+- E) only after A-D pass, plan Stage4 imitation/bandit, not PPO.
 
 Hard rules:
-- Do not run Stage4/PPO until Stage3 health is all clear.
+- Do not run Stage4/PPO from mixed-code evidence.
+- Do not declare Track24 breakthrough from carried/rerun mixed references.
 - Do not change `cost.py`, `check.py`, or `evaluation.py` semantics.
-- Do not declare Track24 breakthrough from the healthy subset while any commit/final chunk HALT remains.
-- Resume only failed Stage3 rows after the fix, then recompute oracle headroom.
+- Resume/full rerun evidence must write metadata/raw rows/decision/report/hash and worker integrity.
