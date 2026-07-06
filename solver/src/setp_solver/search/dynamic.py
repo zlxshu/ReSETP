@@ -260,7 +260,7 @@ def run_rolling_reoptimization(
 
         newly_committed = _commit_executed_customers(previous_plan, previous_instance, trigger, served_customers)
         if newly_committed:
-            chunk = _solution_for_customer_subset(
+            chunk = _solution_for_committed_customers(
                 previous_plan,
                 previous_instance,
                 bundle.carbon_profile,
@@ -1049,6 +1049,51 @@ def _commit_executed_customers(plan: Solution | None, instance: Instance, trigge
             if float(row.t_start) <= float(trigger_time) + 1e-9:
                 served.add(row.node_id)
     return served
+
+
+def _solution_for_committed_customers(
+    plan: Solution | None,
+    instance: Instance,
+    carbon_profile: list[dict[str, Any]],
+    customer_ids: set[str],
+    *,
+    prefix: str,
+    prices: PriceParameters | dict[str, float] | Any = DEFAULT_PRICES,
+) -> Solution:
+    _ = carbon_profile, prices
+    if plan is None or not customer_ids:
+        return Solution()
+    node_lookup = {node.node_id: node for node in instance.nodes}
+    routes: list[Route] = []
+    vehicle_map: dict[str, str] = {}
+    kept_nodes_by_vehicle: dict[str, set[str]] = {}
+    for route in plan.routes:
+        committed_positions = [idx for idx, node_id in enumerate(route.node_sequence) if node_id in customer_ids and node_id in node_lookup]
+        if not committed_positions or route.home_depot_id not in node_lookup:
+            continue
+        last_committed_idx = max(committed_positions)
+        sequence: list[str] = []
+        for node_id in route.node_sequence[: last_committed_idx + 1]:
+            node = node_lookup.get(node_id)
+            if node is None:
+                continue
+            if node.node_type.lower() == "c" and node_id not in customer_ids:
+                continue
+            sequence.append(node_id)
+        if not sequence or sequence[0] != route.home_depot_id:
+            sequence.insert(0, route.home_depot_id)
+        if sequence[-1] != route.home_depot_id:
+            sequence.append(route.home_depot_id)
+        vehicle_id = f"{prefix}{len(routes) + 1}_{route.vehicle_id}"
+        vehicle_map[route.vehicle_id] = vehicle_id
+        kept_nodes_by_vehicle[route.vehicle_id] = set(sequence)
+        routes.append(Route(vehicle_id, route.vehicle_type.lower(), route.home_depot_id, sequence))
+    actions = [
+        replace(action, vehicle_id=vehicle_map[action.vehicle_id])
+        for action in plan.charging_actions
+        if action.vehicle_id in vehicle_map and action.station_id in kept_nodes_by_vehicle.get(action.vehicle_id, set())
+    ]
+    return Solution(routes=routes, charging_actions=actions)
 
 
 def _solution_for_customer_subset(

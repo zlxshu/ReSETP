@@ -1045,6 +1045,86 @@ class FormalRunnerTests(unittest.TestCase):
         self.assertEqual(report["first_bad_stage"], "final_repair")
         self.assertEqual(report["final_repair_violation_count"], 1)
 
+    # v2026-07-06: committed chunks are executed prefixes of the previous
+    # rolling plan. They must not be rebuilt through the generic subset helper,
+    # because EV repair may reorder charging context and change service times.
+    def test_dynamic_commit_chunk_preserves_original_planned_service_time(self) -> None:
+        instance = _synthetic_dynamic_instance(
+            [("C1", 1.0, 10.0, 0.0), ("C2", 1.0, 20.0, 0.0), ("C3", 1.0, 30.0, 0.0)],
+            stations=[("F1", 15.0, 0.0)],
+        )
+        plan = Solution(
+            routes=[Route("EV1#T1", "ev", "D0", ["D0", "C1", "F1", "C2", "C3", "D0"])],
+            charging_actions=[ChargingAction("EV1#T1", "F1", 5.0, 10.0, 0.0)],
+        )
+
+        chunk = dynamic_module._solution_for_committed_customers(
+            plan,
+            instance,
+            _flat_carbon_profile(),
+            {"C1", "C2"},
+            prefix="S2_",
+        )
+
+        self.assertEqual(chunk.routes[0].node_sequence, ["D0", "C1", "F1", "C2", "D0"])
+        self.assertEqual(chunk.charging_actions[0].station_id, "F1")
+        self.assertTrue(chunk.charging_actions[0].vehicle_id.startswith("S2_1_"))
+
+    # v2026-07-06: the rolling runner's commit legality gate must validate the
+    # committed route context from the previous plan, not a freshly repaired
+    # customer-only route.
+    def test_dynamic_commit_chunk_uses_committed_route_context(self) -> None:
+        from setp_solver.check import Violation
+
+        instance = _synthetic_dynamic_instance(
+            [("C1", 1.0, 10.0, 0.0), ("C2", 1.0, 20.0, 0.0)],
+            stations=[("F1", 15.0, 0.0)],
+        )
+        bundle = SimpleNamespace(instance=instance, carbon_profile=_flat_carbon_profile(), bundle_dir=str(FIXTURE_DIR))
+        previous_plan = Solution(
+            routes=[Route("EV1#T1", "ev", "D0", ["D0", "C1", "F1", "C2", "D0"])],
+            charging_actions=[ChargingAction("EV1#T1", "F1", 5.0, 10.0, 0.0)],
+        )
+        calls = {"stage_plan": 0}
+
+        def fake_stage_plan(*args, **kwargs):
+            _ = args, kwargs
+            calls["stage_plan"] += 1
+            solution = previous_plan if calls["stage_plan"] == 1 else Solution()
+            return StagePlanResult(solution, instance, 1, True, [])
+
+        def fake_commit(plan, _instance, _trigger, _already_served):
+            return {"C1", "C2"} if plan is not None else set()
+
+        def context_check(solution, checked_instance, prices=DEFAULT_PRICES):
+            _ = checked_instance, prices
+            for route in solution.routes:
+                if route.vehicle_id.startswith("S1_") and "C2" in route.node_sequence:
+                    if route.node_sequence != ["D0", "C1", "F1", "C2", "D0"]:
+                        return [Violation("TIME_WINDOW", route.vehicle_id, "C2", "commit replay changed route context")]
+            return []
+
+        event = formal_runner.dynamic_event_for_test("1", "demand_change", 1.0, "C1", new_demand=1.0)
+        with tempfile.TemporaryDirectory() as tmp, patch.object(dynamic_module, "load_search_bundle", return_value=bundle), patch.object(
+            dynamic_module, "load_or_generate_dynamic_events", return_value=[event]
+        ), patch.object(dynamic_module, "_run_stage_plan", fake_stage_plan), patch.object(
+            dynamic_module, "_commit_executed_customers", fake_commit
+        ), patch.object(
+            dynamic_module, "run_alns_wouda", return_value=SimpleNamespace(best_solution=Solution(), feasible=True, evaluations=0)
+        ), patch.object(
+            dynamic_module, "evaluate", return_value={"total_cost": 100.0, "E_total": 10.0}
+        ), patch.object(dynamic_module, "check_solution", side_effect=context_check):
+            report = run_rolling_reoptimization(
+                FIXTURE_DIR,
+                output_json_path=Path(tmp) / "payload.json",
+                seed=1,
+                eval_budget=1,
+                stage_eval_budget=1,
+                params=RollingParameters(delta_t_seconds=2.0, q_bar=8),
+            )
+
+        self.assertNotEqual(report.get("gate"), "HALT_E7_COMMIT_CHUNK_CHECK")
+
     # v2026-06-12: E7 rolling gate must preserve cumulative-state continuity and frozen paths.
     def test_dynamic_rolling_gate_conservation_assertions_pass(self) -> None:
         report = run_rolling_reoptimization(
