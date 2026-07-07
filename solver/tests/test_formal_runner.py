@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from dataclasses import replace
 import json
 import math
 from pathlib import Path
@@ -738,8 +739,8 @@ class FormalRunnerTests(unittest.TestCase):
     def test_dynamic_customer_subset_splits_over_capacity_committed_chunk(self) -> None:
         instance = _synthetic_dynamic_instance(
             [
-                ("C1", 900.0, 1_000.0, 0.0),
-                ("C2", 900.0, 2_000.0, 0.0),
+                ("C1", 3_000.0, 1_000.0, 0.0),
+                ("C2", 3_000.0, 2_000.0, 0.0),
             ],
             stations=[],
         )
@@ -1024,6 +1025,84 @@ class FormalRunnerTests(unittest.TestCase):
         self.assertEqual(decision.stage_eval_budget, 19)
         self.assertEqual(decision.stage_max_runtime_seconds, 4.5)
 
+    # v2026-07-07: Track24-R3 lifecycle fields make defer semantics explicit
+    # while keeping legacy active_ids adapters available.
+    def test_policy_decision_normalizes_lifecycle_fields(self) -> None:
+        instance = _synthetic_dynamic_instance([("C1", 1.0, 10.0, 0.0), ("C2", 1.0, 20.0, 0.0)], stations=[])
+
+        def choose_lifecycle(_context):
+            return {
+                "plan_now_ids": {"C1"},
+                "defer_ids": {"C2"},
+                "mandatory_ids": {"C1"},
+                "stage_eval_budget": 23,
+            }
+
+        decision = dynamic_module._policy_decision_for_stage(
+            choose_lifecycle,
+            stage_index=0,
+            trigger=0.0,
+            stage_events=[],
+            events=[],
+            settings=RollingParameters(),
+            base_instance=instance,
+            effective_instance=instance,
+            active_ids={"C1", "C2"},
+            served_customers=set(),
+            previous_plan=None,
+            previous_instance=None,
+        )
+
+        self.assertEqual(decision.plan_now_ids, {"C1"})
+        self.assertEqual(decision.defer_ids, {"C2"})
+        self.assertEqual(decision.mandatory_ids, {"C1"})
+        self.assertEqual(decision.active_ids, {"C1"})
+        self.assertEqual(decision.stage_eval_budget, 23)
+
+    def test_policy_decision_rejects_deferred_mandatory_customer(self) -> None:
+        instance = _synthetic_dynamic_instance([("C1", 1.0, 10.0, 0.0), ("C2", 1.0, 20.0, 0.0)], stations=[])
+
+        def defer_mandatory(_context):
+            return {"plan_now_ids": {"C1"}, "defer_ids": {"C2"}, "mandatory_ids": {"C2"}}
+
+        with self.assertRaises(ValueError):
+            dynamic_module._policy_decision_for_stage(
+                defer_mandatory,
+                stage_index=0,
+                trigger=0.0,
+                stage_events=[],
+                events=[],
+                settings=RollingParameters(),
+                base_instance=instance,
+                effective_instance=instance,
+                active_ids={"C1", "C2"},
+                served_customers=set(),
+                previous_plan=None,
+                previous_instance=None,
+            )
+
+    def test_policy_decision_rejects_committed_customer_replan(self) -> None:
+        instance = _synthetic_dynamic_instance([("C1", 1.0, 10.0, 0.0), ("C2", 1.0, 20.0, 0.0)], stations=[])
+
+        def replan_committed(_context):
+            return {"plan_now_ids": {"C1", "C2"}}
+
+        with self.assertRaises(ValueError):
+            dynamic_module._policy_decision_for_stage(
+                replan_committed,
+                stage_index=1,
+                trigger=10.0,
+                stage_events=[],
+                events=[],
+                settings=RollingParameters(),
+                base_instance=instance,
+                effective_instance=instance,
+                active_ids={"C1"},
+                served_customers={"C2"},
+                previous_plan=None,
+                previous_instance=None,
+            )
+
     # v2026-07-06: Track24-R payloads need enough counters to audit whether
     # defer and final repair semantics were used.
     def test_dynamic_payload_reports_pending_and_final_repair_counts(self) -> None:
@@ -1035,6 +1114,100 @@ class FormalRunnerTests(unittest.TestCase):
         self.assertEqual(report["final_repair_customer_count"], 2)
         self.assertGreaterEqual(report["final_repair_evaluations"], 1)
         self.assertEqual(report["final_repair_violation_count"], 0)
+
+    def test_dynamic_payload_reports_lifecycle_counts(self) -> None:
+        report, _calls = _run_final_repair_scenario()
+
+        first_trace = report["policy_trace"][0]
+        self.assertEqual(first_trace["plan_now_count"], 1)
+        self.assertEqual(first_trace["defer_count"], 1)
+        self.assertEqual(first_trace["mandatory_count"], 0)
+        self.assertEqual(first_trace["committed_count"], 0)
+        self.assertEqual(first_trace["lifecycle_violation_count"], 0)
+
+    def test_defer_guard_marks_due_before_next_stage_mandatory(self) -> None:
+        base = _synthetic_dynamic_instance([("C1", 1.0, 0.0, 0.0), ("C2", 1.0, 20.0, 0.0)], stations=[])
+        instance = replace(base, nodes=[replace(node, due_time=10.0) if node.node_id == "C1" else node for node in base.nodes])
+
+        guard = dynamic_module._classify_defer_eligibility(
+            instance,
+            {"C1", "C2"},
+            trigger_time=0.0,
+            next_trigger_time=15.0,
+        )
+
+        self.assertIn("C1", guard.mandatory_ids)
+        self.assertEqual(guard.reasons["C1"], "due_before_next_stage")
+        self.assertIn("C2", guard.defer_eligible_ids)
+
+    def test_defer_guard_marks_direct_depot_infeasible_mandatory(self) -> None:
+        base = _synthetic_dynamic_instance([("C1", 1.0, 10.0, 0.0)], stations=[])
+        instance = replace(base, nodes=[replace(node, due_time=5.0) if node.node_id == "C1" else node for node in base.nodes])
+
+        guard = dynamic_module._classify_defer_eligibility(
+            instance,
+            {"C1"},
+            trigger_time=0.0,
+            next_trigger_time=1.0,
+            prices={"v_speed_ms": 1.0, "Q_capacity": 100.0},
+        )
+
+        self.assertIn("C1", guard.mandatory_ids)
+        self.assertEqual(guard.reasons["C1"], "direct_depot_infeasible_now")
+
+    def test_defer_guard_marks_capacity_upper_bound_mandatory(self) -> None:
+        instance = _synthetic_dynamic_instance([("C1", 50.0, 10.0, 0.0)], stations=[])
+
+        guard = dynamic_module._classify_defer_eligibility(
+            instance,
+            {"C1"},
+            trigger_time=0.0,
+            next_trigger_time=1.0,
+            prices={"v_speed_ms": 100.0, "Q_capacity": 10.0},
+        )
+
+        self.assertIn("C1", guard.mandatory_ids)
+        self.assertEqual(guard.reasons["C1"], "capacity_upper_bound_infeasible")
+
+    def test_defer_guard_marks_pending_age_mandatory_and_soc_proxy_note(self) -> None:
+        instance = _synthetic_dynamic_instance([("C1", 1.0, 10.0, 0.0)], stations=[])
+
+        guard = dynamic_module._classify_defer_eligibility(
+            instance,
+            {"C1"},
+            trigger_time=0.0,
+            next_trigger_time=1.0,
+            pending_customer_ids={"C1"},
+            pending_age_by_customer={"C1": 2},
+            max_pending_stages=2,
+        )
+
+        self.assertIn("C1", guard.mandatory_ids)
+        self.assertEqual(guard.reasons["C1"], "pending_age_limit")
+        self.assertEqual(guard.proxy_notes["ev_soc"], "proxy_not_real_soc_guard")
+
+    def test_defer_guard_mandatory_customer_cannot_be_deferred_by_policy(self) -> None:
+        instance = _synthetic_dynamic_instance([("C1", 1.0, 10.0, 0.0), ("C2", 1.0, 20.0, 0.0)], stations=[])
+
+        def defer_due_customer(_context):
+            return {"plan_now_ids": {"C2"}, "defer_ids": {"C1"}}
+
+        with self.assertRaises(ValueError):
+            dynamic_module._policy_decision_for_stage(
+                defer_due_customer,
+                stage_index=0,
+                trigger=0.0,
+                stage_events=[],
+                events=[],
+                settings=RollingParameters(),
+                base_instance=instance,
+                effective_instance=instance,
+                active_ids={"C1", "C2"},
+                mandatory_customer_ids={"C1"},
+                served_customers=set(),
+                previous_plan=None,
+                previous_instance=None,
+            )
 
     # v2026-07-06: final repair has its own legality gate so true infeasible
     # repair output is not mislabeled as a generic final chunk failure.

@@ -594,16 +594,14 @@ def whole_route_removal(state: AlnsState, rng: np.random.Generator, **kwargs: An
 
 
 def route_elimination_removal(state: AlnsState, rng: np.random.Generator, **kwargs: Any) -> AlnsState:
-    """Remove 1-3 weak routes and force repair into the remaining routes."""
+    """Remove one weak route and force repair into the remaining routes."""
 
     _ = kwargs
     route_items = [(idx, route) for idx, route in enumerate(state.solution.routes) if _route_customer_ids(route, state.context.instance)]
     if len(route_items) < 2:
         return state
-    max_remove = min(3, len(route_items) - 1)
-    remove_count = int(rng.integers(1, max_remove + 1))
     ranked = sorted(route_items, key=lambda item: _weak_route_key(item[1], state.context.instance))
-    selected = ranked[:remove_count]
+    selected = ranked[:1]
     removed_customers = [
         customer_id
         for _, route in selected

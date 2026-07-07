@@ -506,6 +506,8 @@ def oracle_comparison_row(baseline: dict[str, Any], candidate: dict[str, Any], p
     myopic_pct = _float(baseline.get("information_cost_pct"))
     candidate_pct = _float(candidate.get("information_cost_pct"))
     trace = list(payload.get("policy_trace") or [])
+    action_semantics = spec.get("semantic_status", _default_action_semantics(str(spec["action_class"])))
+    proxy_or_true = _proxy_or_true(str(action_semantics))
     changed_stages = sum(
         1
         for row in trace
@@ -517,7 +519,9 @@ def oracle_comparison_row(baseline: dict[str, Any], candidate: dict[str, Any], p
         "action_id": spec["action_id"],
         "action_class": spec["action_class"],
         "action_level": spec.get("level"),
-        "action_semantics": spec.get("semantic_status", _default_action_semantics(str(spec["action_class"]))),
+        "action_semantics": action_semantics,
+        "proxy_or_true": proxy_or_true,
+        "evidence_note": _action_semantics_note(str(action_semantics)),
         "bundle": baseline.get("bundle"),
         "bundle_dir": baseline.get("bundle_dir"),
         "seed": int(float(baseline.get("seed") or 0)),
@@ -569,6 +573,9 @@ def summarize_stage3_oracle(
         selected.append(min(candidates, key=lambda row: (_float(row.get("oracle_information_cost_pct")), str(row.get("action_id")))))
     reductions = [_float(row.get("information_cost_reduction_pp")) for row in selected if math.isfinite(_float(row.get("information_cost_reduction_pp")))]
     mean_reduction = _mean(reductions)
+    selected_action_semantics = _selected_action_semantics_table(selected, action_specs)
+    proxy_selected_count = sum(1 for row in selected if _proxy_or_true(str(row.get("action_semantics", _semantics_for_action(action_specs, str(row.get("action_id")))))) == "proxy")
+    proxy_selected_share = (proxy_selected_count / len(selected)) if selected else 0.0
     if failures:
         status = "HALT_DYNAMIC_ORACLE_HEALTH"
         verdict_reason = f"{len(failures)} oracle rows failed health; fix runner before judging."
@@ -587,6 +594,9 @@ def summarize_stage3_oracle(
     else:
         status = HALT_DYNAMIC_ACTION_SPACE_FLAT
         verdict_reason = f"Oracle mean information-cost reduction is {mean_reduction:.3f} pp < 2 pp."
+    proxy_dominant = bool(selected) and proxy_selected_share > 0.5
+    ppo_allowed = status in {STRONG_DYNAMIC_ACTION_SPACE, WEAK_DYNAMIC_ACTION_SPACE} and not mixed_code_result and not proxy_dominant
+    decision_status = "PPO_BLOCKED_PROXY_DOMINANT" if proxy_dominant else ("PPO_ALLOWED_ORACLE_HEADROOM" if ppo_allowed else status)
     return {
         "status": status,
         "reason": verdict_reason,
@@ -596,6 +606,11 @@ def summarize_stage3_oracle(
         "selected_count": len(selected),
         "mean_information_cost_reduction_pp": mean_reduction,
         "selected_oracle_rows": selected,
+        "selected_action_semantics": selected_action_semantics,
+        "proxy_selected_count": int(proxy_selected_count),
+        "proxy_selected_share": float(proxy_selected_share),
+        "ppo_allowed": bool(ppo_allowed),
+        "decision_status": decision_status,
         "health_failure_count": len(failures),
         "health_failure_groups": health_failure_groups,
         "first_health_failure_sample": first_failure_sample,
@@ -609,6 +624,44 @@ def _write_stage3_outputs(output_dir: Path, summary: dict[str, Any], rows: list[
     _write_csv(output_dir / "stage3_dynamic_oracle_rows.csv", rows)
     _write_json(output_dir / "stage3_dynamic_oracle_summary.json", summary)
     _write_text(output_dir / "stage3_dynamic_oracle_report.md", render_stage3_report(summary))
+
+
+def _selected_action_semantics_table(selected: list[dict[str, Any]], action_specs: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    grouped: dict[str, list[dict[str, Any]]] = {}
+    for row in selected:
+        grouped.setdefault(str(row.get("action_id")), []).append(row)
+    rows: list[dict[str, Any]] = []
+    for action_id in sorted(grouped):
+        action_rows = grouped[action_id]
+        first = action_rows[0]
+        semantics = str(first.get("action_semantics") or _semantics_for_action(action_specs, action_id))
+        reductions = [_float(row.get("information_cost_reduction_pp")) for row in action_rows]
+        rows.append(
+            {
+                "action_id": action_id,
+                "action_class": first.get("action_class") or _action_class_for_action(action_specs, action_id),
+                "selected_count": len(action_rows),
+                "mean_reduction_pp": _mean([value for value in reductions if math.isfinite(value)]),
+                "action_semantics": semantics,
+                "proxy_or_true": _proxy_or_true(semantics),
+                "evidence_note": _action_semantics_note(semantics),
+            }
+        )
+    return rows
+
+
+def _semantics_for_action(action_specs: list[dict[str, Any]], action_id: str) -> str:
+    for spec in action_specs:
+        if str(spec.get("action_id")) == str(action_id):
+            return str(spec.get("semantic_status", _default_action_semantics(str(spec.get("action_class", "")))))
+    return "direct"
+
+
+def _action_class_for_action(action_specs: list[dict[str, Any]], action_id: str) -> str:
+    for spec in action_specs:
+        if str(spec.get("action_id")) == str(action_id):
+            return str(spec.get("action_class", ""))
+    return ""
 
 
 def run_stage4(args: argparse.Namespace, output_dir: Path, progress_path: Path, state: dict[str, Any]) -> dict[str, Any]:
@@ -783,6 +836,8 @@ def summarize_final_decision(state: dict[str, Any]) -> dict[str, Any]:
         final = "TRACK24_HALT_DYNAMIC_ORACLE_HEALTH"
     elif stage3.get("status") == "RUNNING":
         final = "TRACK24_BLOCKED_BY_M1_CONTRACT"
+    elif stage3.get("decision_status") == "PPO_BLOCKED_PROXY_DOMINANT" or stage3.get("ppo_allowed") is False and int(stage3.get("proxy_selected_count", 0) or 0) > 0:
+        final = "PPO_BLOCKED_PROXY_DOMINANT"
     elif stage3.get("status") == STRONG_DYNAMIC_ACTION_SPACE and stage4.get("status") == PASS_DYNAMIC_IMITATION:
         final = "TRACK24_DYNAMIC_BREAKTHROUGH_READY"
     elif stage3.get("status") in {STRONG_DYNAMIC_ACTION_SPACE, WEAK_DYNAMIC_ACTION_SPACE}:
@@ -847,6 +902,18 @@ def _default_action_semantics(action_class: str) -> str:
     if action_class == "ev_charging_slack_reserve":
         return "proxy_distance_demand_defer_not_soc_slack"
     return "direct"
+
+
+def _proxy_or_true(action_semantics: str) -> str:
+    return "proxy" if str(action_semantics).startswith("proxy_") else "true"
+
+
+def _action_semantics_note(action_semantics: str) -> str:
+    if action_semantics == "proxy_time_slack_defer_not_real_depot_capacity":
+        return "time-slack defer proxy; no depot capacity state is consumed"
+    if action_semantics == "proxy_distance_demand_defer_not_soc_slack":
+        return "distance+demand defer proxy; no SOC or charging slack state is consumed"
+    return "uses direct runner control fields"
 
 
 def _event_cluster_proxy(events: list[dict[str, Any]]) -> float | str:
@@ -922,10 +989,28 @@ def render_stage3_report(summary: dict[str, Any]) -> str:
         f"Mixed code result: `{summary.get('mixed_code_result', False)}`",
         f"Carried-forward pre-fix rows: {summary.get('carried_forward_pre_fix_count', 0)}",
         f"Rerun fixed-code rows: {summary.get('rerun_fixed_code_count', 0)}",
+        f"PPO allowed: `{summary.get('ppo_allowed', False)}`",
+        f"Proxy selected count: {summary.get('proxy_selected_count', 0)}",
         "",
-        "## Health Failure Groups",
+        "## Selected Action Semantics",
         "",
     ]
+    semantics_rows = list(summary.get("selected_action_semantics") or [])
+    if semantics_rows:
+        lines.extend(["| action_id | class | selected | mean reduction pp | semantics | proxy/true | evidence |", "|---|---|---:|---:|---|---|---|"])
+        for row in semantics_rows:
+            lines.append(
+                f"| `{row.get('action_id')}` | `{row.get('action_class')}` | {row.get('selected_count')} | {row.get('mean_reduction_pp')} | `{row.get('action_semantics')}` | `{row.get('proxy_or_true')}` | {row.get('evidence_note')} |"
+            )
+    else:
+        lines.append("None.")
+    lines.extend(
+        [
+            "",
+        "## Health Failure Groups",
+        "",
+        ]
+    )
     groups = list(summary.get("health_failure_groups") or [])
     if groups:
         lines.extend(["| health_status | count |", "|---|---:|"])

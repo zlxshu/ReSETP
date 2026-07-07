@@ -41,6 +41,7 @@ from .alns_wouda import (
     whole_route_removal,
     worst_customer_removal,
 )
+from .alns_crush import low_utilization_route_elimination_probe
 from .bundle import load_search_bundle
 from .candidates import run_candidate
 from .construction import build_initial_solution
@@ -413,11 +414,82 @@ def run_winner_kernel_plus_route_elimination(
     config: WinnerKernelConfig | None = None,
     initial_solution: Solution | None = None,
 ) -> dict[str, Any]:
-    """Run winner kernel with route elimination as the only V2 add-on."""
+    """Run winner kernel with safe route-compression candidates guarded by winner cost."""
 
+    started = time.perf_counter()
     cfg = config or WinnerKernelConfig()
-    cfg = WinnerKernelConfig(**{**asdict(cfg), "include_route_elimination": True})
-    return _run_winner_variant(bundle_dir, cfg, initial_solution=initial_solution)
+    base_cfg = WinnerKernelConfig(**{**asdict(cfg), "include_route_elimination": False})
+    bundle = load_search_bundle(bundle_dir)
+    warm = initial_solution or build_initial_solution(
+        bundle.instance,
+        bundle.carbon_profile,
+        DEFAULT_PRICES,
+        introduce_ev=cfg.require_charging_signal,
+        require_charging_signal=cfg.require_charging_signal,
+    )
+    base = _run_winner_variant(
+        bundle_dir,
+        base_cfg,
+        initial_solution=warm,
+        variant_id="winner_kernel_plus_route_elimination",
+    )
+    result = dict(base)
+    best_solution = base["best_solution"]
+    best_cost = float(base["best_cost"])
+    pre_probe = low_utilization_route_elimination_probe(
+        warm,
+        bundle.instance,
+        bundle.carbon_profile,
+        max_seconds=min(30.0, max(5.0, float(cfg.max_runtime_seconds) * 0.25)),
+    )
+    pre_run_accepted = False
+    if pre_probe.improved:
+        pre_run = _run_winner_variant(
+            bundle_dir,
+            base_cfg,
+            initial_solution=pre_probe.best_solution,
+            variant_id="winner_kernel_plus_route_elimination",
+        )
+        if bool(pre_run["feasible"]) and float(pre_run["best_cost"]) < best_cost - 1e-9:
+            result = dict(pre_run)
+            best_solution = pre_run["best_solution"]
+            best_cost = float(pre_run["best_cost"])
+            pre_run_accepted = True
+    post_probe = low_utilization_route_elimination_probe(
+        base["best_solution"],
+        bundle.instance,
+        bundle.carbon_profile,
+        max_seconds=min(30.0, max(5.0, float(cfg.max_runtime_seconds) * 0.25)),
+    )
+    postprocess_accepted = bool(post_probe.improved) and float(post_probe.best_cost) < best_cost - 1e-9
+    solution = post_probe.best_solution if postprocess_accepted else best_solution
+    context = EvaluationContext(bundle.instance, bundle.carbon_profile)
+    violations = check_solution(solution, bundle.instance, DEFAULT_PRICES)
+    return {
+        **result,
+        "include_route_elimination": True,
+        "elapsed_seconds": time.perf_counter() - started,
+        "best_solution": solution,
+        "best_cost": model_cost(solution, context),
+        "feasible": len(violations) == 0,
+        "violation_count": len(violations),
+        "flags": winner_variant_flags(include_route_elimination=True),
+        "route_elimination_postprocess": {
+            "pre_probe_attempts": int(pre_probe.attempts),
+            "pre_probe_accepted_merges": int(pre_probe.accepted_merges),
+            "pre_probe_improved": bool(pre_probe.improved),
+            "pre_run_accepted": bool(pre_run_accepted),
+            "post_probe_attempts": int(post_probe.attempts),
+            "post_probe_accepted_merges": int(post_probe.accepted_merges),
+            "post_probe_improved": bool(post_probe.improved),
+            "postprocess_accepted": bool(postprocess_accepted),
+            "original_route_count": int(len(base["best_solution"].routes)),
+            "best_route_count": int(len(solution.routes)),
+            "original_cost": float(base["best_cost"]),
+            "best_cost": float(model_cost(solution, context)),
+            "verdict": "route_compression_accepted" if (pre_run_accepted or postprocess_accepted) else "route_compression_no_safe_improvement",
+        },
+    }
 
 
 def run_e2_alns_final(

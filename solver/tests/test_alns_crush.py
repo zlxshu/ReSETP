@@ -49,6 +49,14 @@ def _two_opt_instance() -> Instance:
     )
 
 
+def _four_singleton_route_instance() -> Instance:
+    nodes = [Node("D0", "d", 0.0, 0.0, demand=0.0, due_time=100_000.0)]
+    nodes.extend(Node(f"C{idx}", "c", float(idx), 0.0, demand=10.0, due_time=100_000.0) for idx in range(1, 5))
+    size = len(nodes)
+    distance_matrix = [[0.0 if i == j else 1.0 for j in range(size)] for i in range(size)]
+    return Instance(nodes=nodes, distance_matrix=distance_matrix)
+
+
 class AlnsCrushTests(unittest.TestCase):
     def test_route_repair_delta_scores_new_route_fixed_cost(self) -> None:
         instance = _mergeable_instance()
@@ -118,6 +126,30 @@ class AlnsCrushTests(unittest.TestCase):
         self.assertFalse(repaired.removed_customers)
         self.assertLess(model_cost(repaired.solution, context), model_cost(solution, context))
         self.assertEqual(check_solution(repaired.solution, instance), [])
+
+    def test_route_elimination_removes_one_weak_route_per_action(self) -> None:
+        import numpy as np
+
+        instance = _four_singleton_route_instance()
+        solution = Solution(
+            routes=[
+                Route(f"CV{idx}", "cv", "D0", ["D0", f"C{idx}", "D0"])
+                for idx in range(1, 5)
+            ]
+        )
+        context = EvaluationContext(instance, [])
+        state = AlnsState(
+            solution,
+            context,
+            objective_value=score_reference(solution, context),
+            policy=SearchPolicy(require_charging_signal=False),
+        )
+
+        destroyed = route_elimination_removal(state, np.random.default_rng(1))
+
+        self.assertEqual(len(destroyed.solution.routes), len(solution.routes) - 1)
+        self.assertEqual(len(destroyed.removed_customers), 1)
+        self.assertFalse(destroyed.allow_new_route_repair)
 
     def test_dr_route_elimination_accepts_only_route_and_cost_drop(self) -> None:
         import random

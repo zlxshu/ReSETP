@@ -73,6 +73,14 @@ class StagePlanResult:
 
 
 @dataclass(frozen=True)
+class DeferEligibilityResult:
+    mandatory_ids: set[str]
+    defer_eligible_ids: set[str]
+    reasons: dict[str, str]
+    proxy_notes: dict[str, str]
+
+
+@dataclass(frozen=True)
 class RollingPolicyContext:
     stage_index: int
     trigger_time: float
@@ -86,11 +94,16 @@ class RollingPolicyContext:
     previous_plan: Solution | None
     previous_instance: Instance | None
     pending_customer_ids: set[str] = field(default_factory=set)
+    mandatory_customer_ids: set[str] = field(default_factory=set)
+    committed_customer_ids: set[str] = field(default_factory=set)
 
 
 @dataclass(frozen=True)
 class RollingPolicyDecision:
     active_ids: set[str] | None = None
+    plan_now_ids: set[str] | None = None
+    defer_ids: set[str] | None = None
+    mandatory_ids: set[str] | None = None
     initial_plan: Solution | None = None
     stage_eval_budget: int | None = None
     stage_max_runtime_seconds: float | None = None
@@ -250,6 +263,7 @@ def run_rolling_reoptimization(
     stage_plan_customer_ids: dict[str, list[str]] = {}
     policy_trace: list[dict[str, Any]] = []
     pending_deferred_ids: set[str] = set()
+    pending_defer_age: dict[str, int] = {}
 
     for stage_index, batch in enumerate(batches):
         trigger = float(batch["trigger_time"])
@@ -310,15 +324,35 @@ def run_rolling_reoptimization(
                 if frozen is not None:
                     committed_node_state[customer_id] = frozen
             pending_deferred_ids.difference_update(newly_committed)
+            for customer_id in newly_committed:
+                pending_defer_age.pop(customer_id, None)
 
         stage_cost = cumulative_cost - initial_cost
         stage_carbon = cumulative_carbon - initial_carbon
         effective_instance = _instance_after_events(bundle.instance, events, trigger, served_customers)
         legal_unserved_ids = _legal_unserved_customer_ids(effective_instance, served_customers)
         pending_deferred_ids.intersection_update(legal_unserved_ids)
+        for customer_id in list(pending_defer_age):
+            if customer_id not in pending_deferred_ids:
+                pending_defer_age.pop(customer_id, None)
         pending_count_before = len(pending_deferred_ids)
         pending_ids_before = sorted(pending_deferred_ids)
         active_ids = set(_active_customer_ids(effective_instance, served_customers)) | set(pending_deferred_ids)
+        next_trigger = (
+            float(batches[stage_index + 1]["trigger_time"])
+            if stage_index + 1 < len(batches)
+            else float(trigger + settings.delta_t_seconds)
+        )
+        defer_guard = _classify_defer_eligibility(
+            effective_instance,
+            active_ids,
+            trigger_time=trigger,
+            next_trigger_time=next_trigger,
+            pending_customer_ids=pending_deferred_ids,
+            pending_age_by_customer=pending_defer_age,
+            prices=prices,
+        )
+        mandatory_customer_ids: set[str] = set(defer_guard.mandatory_ids)
         policy_decision = _policy_decision_for_stage(
             policy_callback,
             stage_index=stage_index,
@@ -329,12 +363,13 @@ def run_rolling_reoptimization(
             base_instance=bundle.instance,
             effective_instance=effective_instance,
             active_ids=active_ids,
+            mandatory_customer_ids=mandatory_customer_ids,
             pending_customer_ids=pending_deferred_ids,
             served_customers=served_customers,
             previous_plan=previous_plan,
             previous_instance=previous_instance,
         )
-        stage_active_ids = set(active_ids if policy_decision.active_ids is None else policy_decision.active_ids)
+        stage_active_ids = set(active_ids if policy_decision.plan_now_ids is None else policy_decision.plan_now_ids)
         stage_initial_plan = previous_plan if policy_decision.initial_plan is None else policy_decision.initial_plan
         stage_budget = int(stage_eval_budget if policy_decision.stage_eval_budget is None else policy_decision.stage_eval_budget)
         stage_runtime = float(
@@ -342,7 +377,13 @@ def run_rolling_reoptimization(
             if policy_decision.stage_max_runtime_seconds is None
             else policy_decision.stage_max_runtime_seconds
         )
-        deferred_ids = sorted(set(active_ids) - set(stage_active_ids))
+        deferred_ids = sorted(
+            set(active_ids) - set(stage_active_ids)
+            if policy_decision.defer_ids is None
+            else set(policy_decision.defer_ids)
+        )
+        lifecycle_violation_count = 0
+        first_lifecycle_violation = ""
         stage_plan = _run_stage_plan(
             bundle,
             effective_instance,
@@ -384,6 +425,11 @@ def run_rolling_reoptimization(
         pending_deferred_ids.difference_update(planned_customer_ids)
         pending_deferred_ids.difference_update(served_customers)
         pending_deferred_ids.intersection_update(legal_unserved_ids)
+        for customer_id in list(pending_defer_age):
+            if customer_id not in pending_deferred_ids:
+                pending_defer_age.pop(customer_id, None)
+        for customer_id in pending_deferred_ids:
+            pending_defer_age[customer_id] = int(pending_defer_age.get(customer_id, 0)) + 1
         pending_count_after = len(pending_deferred_ids)
         pending_ids_after = sorted(pending_deferred_ids)
         if policy_callback is not None:
@@ -396,6 +442,14 @@ def run_rolling_reoptimization(
                     "active_count_after": len(stage_active_ids),
                     "deferred_count": len(deferred_ids),
                     "deferred_ids": deferred_ids,
+                    "plan_now_count": len(stage_active_ids),
+                    "defer_count": len(deferred_ids),
+                    "mandatory_count": len(policy_decision.mandatory_ids or set()),
+                    "committed_count": len(served_customers),
+                    "lifecycle_violation_count": int(lifecycle_violation_count),
+                    "first_lifecycle_violation": first_lifecycle_violation,
+                    "defer_guard_reasons": dict(defer_guard.reasons),
+                    "defer_guard_proxy_notes": dict(defer_guard.proxy_notes),
                     "pending_count_before": int(pending_count_before),
                     "pending_ids_before": pending_ids_before,
                     "new_deferred_count": len(deferred_ids),
@@ -432,6 +486,12 @@ def run_rolling_reoptimization(
                 "active_customer_count": len(active_ids),
                 "planned_customer_count": len(stage_active_ids),
                 "deferred_customer_count": max(0, len(active_ids) - len(stage_active_ids)),
+                "plan_now_count": len(stage_active_ids),
+                "defer_count": len(deferred_ids),
+                "mandatory_count": len(policy_decision.mandatory_ids or set()),
+                "lifecycle_violation_count": int(lifecycle_violation_count),
+                "first_lifecycle_violation": first_lifecycle_violation,
+                "defer_guard_mandatory_count": len(defer_guard.mandatory_ids),
                 "pending_count_before": int(pending_count_before),
                 "pending_count_after": int(pending_count_after),
                 "new_deferred_count": len(deferred_ids),
@@ -871,9 +931,13 @@ def _policy_decision_for_stage(
     previous_plan: Solution | None,
     previous_instance: Instance | None,
     pending_customer_ids: set[str] | None = None,
+    mandatory_customer_ids: set[str] | None = None,
 ) -> RollingPolicyDecision:
     if policy_callback is None:
-        return RollingPolicyDecision()
+        return RollingPolicyDecision(mandatory_ids=set(mandatory_customer_ids or set()))
+    active = {str(customer_id) for customer_id in active_ids}
+    mandatory = {str(customer_id) for customer_id in (mandatory_customer_ids or set())}
+    committed = {str(customer_id) for customer_id in served_customers}
     context = RollingPolicyContext(
         stage_index=int(stage_index),
         trigger_time=float(trigger),
@@ -882,28 +946,77 @@ def _policy_decision_for_stage(
         settings=settings,
         base_instance=base_instance,
         effective_instance=effective_instance,
-        active_ids=set(active_ids),
+        active_ids=set(active),
         pending_customer_ids=set(pending_customer_ids or set()),
+        mandatory_customer_ids=set(mandatory),
+        committed_customer_ids=set(committed),
         served_customers=set(served_customers),
         previous_plan=previous_plan,
         previous_instance=previous_instance,
     )
     decision = _coerce_policy_decision(policy_callback(context))
-    if decision.active_ids is None:
-        return decision
-    chosen = {str(customer_id) for customer_id in decision.active_ids}
-    unknown = chosen - set(active_ids)
+    return _normalize_policy_decision(decision, active, mandatory, committed)
+
+
+def _normalize_policy_decision(
+    decision: RollingPolicyDecision,
+    active_ids: set[str],
+    mandatory_customer_ids: set[str],
+    committed_customer_ids: set[str],
+) -> RollingPolicyDecision:
+    active = {str(customer_id) for customer_id in active_ids}
+    committed = {str(customer_id) for customer_id in committed_customer_ids}
+    mandatory = {str(customer_id) for customer_id in mandatory_customer_ids}
+    if decision.mandatory_ids is not None:
+        mandatory |= {str(customer_id) for customer_id in decision.mandatory_ids}
+    legacy_active = _optional_id_set(decision.active_ids)
+    plan_now = _optional_id_set(decision.plan_now_ids)
+    defer = _optional_id_set(decision.defer_ids)
+    if legacy_active is not None and plan_now is None and defer is None:
+        plan_now = set(legacy_active)
+    elif plan_now is None and defer is not None:
+        plan_now = active - defer
+    elif plan_now is None:
+        plan_now = None
+    if defer is None and plan_now is not None:
+        defer = active - plan_now
+
+    referenced = set()
+    for ids in (legacy_active, plan_now, defer, mandatory):
+        if ids is not None:
+            referenced.update(ids)
+    committed_references = referenced & committed
+    if committed_references:
+        raise ValueError(f"rolling policy referenced already committed customers: {sorted(committed_references)}")
+    unknown = referenced - active
     if unknown:
         raise ValueError(f"rolling policy selected customers not active in this stage: {sorted(unknown)}")
-    if active_ids and not chosen:
+    if plan_now is not None and defer is not None and plan_now & defer:
+        raise ValueError(f"rolling policy lifecycle overlap between plan_now and defer: {sorted(plan_now & defer)}")
+    if mandatory - active:
+        raise ValueError(f"rolling policy mandatory customers not active in this stage: {sorted(mandatory - active)}")
+    effective_plan_now = active if plan_now is None else plan_now
+    deferred_mandatory = mandatory - effective_plan_now
+    if deferred_mandatory:
+        raise ValueError(f"rolling policy may not defer mandatory customers: {sorted(deferred_mandatory)}")
+    if active and plan_now is not None and not plan_now:
         raise ValueError("rolling policy may not defer every active customer in a non-empty stage")
     return RollingPolicyDecision(
-        active_ids=chosen,
+        active_ids=set(effective_plan_now) if (plan_now is not None or legacy_active is not None) else None,
+        plan_now_ids=set(plan_now) if plan_now is not None else None,
+        defer_ids=set(defer) if defer is not None else None,
+        mandatory_ids=set(mandatory),
         initial_plan=decision.initial_plan,
         stage_eval_budget=decision.stage_eval_budget,
         stage_max_runtime_seconds=decision.stage_max_runtime_seconds,
         metadata=dict(decision.metadata),
     )
+
+
+def _optional_id_set(ids: set[str] | list[str] | tuple[str, ...] | None) -> set[str] | None:
+    if ids is None:
+        return None
+    return {str(customer_id) for customer_id in ids}
 
 
 def _coerce_policy_decision(raw: RollingPolicyDecision | dict[str, Any] | None) -> RollingPolicyDecision:
@@ -913,6 +1026,9 @@ def _coerce_policy_decision(raw: RollingPolicyDecision | dict[str, Any] | None) 
         return raw
     if isinstance(raw, dict):
         active_ids = raw.get("active_ids", raw.get("active_customer_ids"))
+        plan_now_ids = raw.get("plan_now_ids", raw.get("plan_now_customer_ids"))
+        defer_ids = raw.get("defer_ids", raw.get("deferred_customer_ids"))
+        mandatory_ids = raw.get("mandatory_ids", raw.get("mandatory_customer_ids"))
         metadata = dict(raw.get("metadata") or {})
         for key in ("action", "deferred_ids", "reserve_capacity_fraction", "preposition_depot_id"):
             if key in raw and key not in metadata:
@@ -921,6 +1037,9 @@ def _coerce_policy_decision(raw: RollingPolicyDecision | dict[str, Any] | None) 
         runtime = raw.get("stage_max_runtime_seconds")
         return RollingPolicyDecision(
             active_ids={str(customer_id) for customer_id in active_ids} if active_ids is not None else None,
+            plan_now_ids={str(customer_id) for customer_id in plan_now_ids} if plan_now_ids is not None else None,
+            defer_ids={str(customer_id) for customer_id in defer_ids} if defer_ids is not None else None,
+            mandatory_ids={str(customer_id) for customer_id in mandatory_ids} if mandatory_ids is not None else None,
             initial_plan=raw.get("initial_plan"),
             stage_eval_budget=int(budget) if budget is not None else None,
             stage_max_runtime_seconds=float(runtime) if runtime is not None else None,
@@ -1148,6 +1267,72 @@ def _capacity_feasible_groups(
     if current:
         groups.append(current)
     return groups
+
+
+def _classify_defer_eligibility(
+    instance: Instance,
+    active_ids: set[str],
+    *,
+    trigger_time: float,
+    next_trigger_time: float,
+    pending_customer_ids: set[str] | None = None,
+    pending_age_by_customer: dict[str, int] | None = None,
+    max_pending_stages: int = 2,
+    prices: PriceParameters | dict[str, float] | Any = DEFAULT_PRICES,
+) -> DeferEligibilityResult:
+    node_lookup = {node.node_id: node for node in instance.nodes}
+    mandatory: set[str] = set()
+    reasons: dict[str, str] = {}
+    pending = {str(customer_id) for customer_id in (pending_customer_ids or set())}
+    ages = {str(customer_id): int(age) for customer_id, age in (pending_age_by_customer or {}).items()}
+    capacity = _price(prices, "Q_capacity")
+    for customer_id in sorted(str(customer_id) for customer_id in active_ids):
+        node = node_lookup.get(customer_id)
+        if node is None or node.node_type.lower() != "c":
+            continue
+        reason = ""
+        if float(node.demand) > capacity + 1e-9:
+            reason = "capacity_upper_bound_infeasible"
+        elif float(node.due_time) <= float(next_trigger_time) + 1e-9:
+            reason = "due_before_next_stage"
+        elif not _direct_depot_service_feasible(instance, node, float(trigger_time), prices):
+            reason = "direct_depot_infeasible_now"
+        elif customer_id in pending and ages.get(customer_id, 0) >= int(max_pending_stages):
+            reason = "pending_age_limit"
+        if reason:
+            mandatory.add(customer_id)
+            reasons[customer_id] = reason
+    active = {str(customer_id) for customer_id in active_ids}
+    return DeferEligibilityResult(
+        mandatory_ids=mandatory,
+        defer_eligible_ids=active - mandatory,
+        reasons=reasons,
+        proxy_notes={"ev_soc": "proxy_not_real_soc_guard"},
+    )
+
+
+def _direct_depot_service_feasible(
+    instance: Instance,
+    customer: Node,
+    trigger_time: float,
+    prices: PriceParameters | dict[str, float] | Any,
+) -> bool:
+    depots = [node for node in instance.nodes if node.node_type.lower() == "d"]
+    if not depots:
+        return False
+    speed = max(1e-9, _price(prices, "v_speed_ms"))
+    for depot in depots:
+        try:
+            out = instance.distance(depot.node_id, customer.node_id) / speed
+            back = instance.distance(customer.node_id, depot.node_id) / speed
+        except KeyError:
+            continue
+        service_start = max(float(trigger_time) + out, float(customer.ready_time))
+        service_depart = service_start + float(customer.service_time)
+        return_time = service_depart + back
+        if service_start <= float(customer.due_time) + 1e-9 and return_time <= float(depot.due_time) + 1e-9:
+            return True
+    return False
 
 
 def _solution_customer_ids(solution: Solution, instance: Instance) -> set[str]:

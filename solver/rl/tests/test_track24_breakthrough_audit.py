@@ -144,6 +144,7 @@ def test_track24_oracle_rows_mark_proxy_semantics() -> None:
     )
 
     assert row["action_semantics"] == "proxy_distance_demand_defer_not_soc_slack"
+    assert row["proxy_or_true"] == "proxy"
 
 
 def test_stage4_skips_when_oracle_gate_not_passed(tmp_path) -> None:
@@ -156,6 +157,49 @@ def test_stage4_skips_when_oracle_gate_not_passed(tmp_path) -> None:
 
     assert summary["status"] == "SKIP_DYNAMIC_IMITATION_ORACLE_GATE"
     assert not summary["trained"]
+
+
+def test_stage3_summary_reports_proxy_dominant_semantics_block() -> None:
+    actions = [
+        {"action_id": "capacity_reserve_high", "action_class": "depot_capacity_reserve", "semantic_status": "proxy_time_slack_defer_not_real_depot_capacity"},
+    ]
+    baselines = [_baseline("b1", 1), _baseline("b2", 2)]
+    rows = [
+        _oracle_row("b1", 1, "capacity_reserve_high", 7.0)
+        | {
+            "action_class": "depot_capacity_reserve",
+            "action_semantics": "proxy_time_slack_defer_not_real_depot_capacity",
+            "proxy_or_true": "proxy",
+        },
+        _oracle_row("b2", 2, "capacity_reserve_high", 6.0)
+        | {
+            "action_class": "depot_capacity_reserve",
+            "action_semantics": "proxy_time_slack_defer_not_real_depot_capacity",
+            "proxy_or_true": "proxy",
+        },
+    ]
+
+    summary = track24.summarize_stage3_oracle(baselines, rows, actions, partial=False, reason="")
+
+    assert summary["status"] == track24.STRONG_DYNAMIC_ACTION_SPACE
+    assert summary["proxy_selected_count"] == 2
+    assert summary["ppo_allowed"] is False
+    assert summary["decision_status"] == "PPO_BLOCKED_PROXY_DOMINANT"
+    assert summary["selected_action_semantics"][0]["proxy_or_true"] == "proxy"
+
+
+def test_final_decision_blocks_ppo_when_stage3_proxy_dominant() -> None:
+    decision = track24.summarize_final_decision(
+        {
+            "stage3": {
+                "status": track24.STRONG_DYNAMIC_ACTION_SPACE,
+                "ppo_allowed": False,
+                "decision_status": "PPO_BLOCKED_PROXY_DOMINANT",
+            }
+        }
+    )
+
+    assert decision["final_status"] == "PPO_BLOCKED_PROXY_DOMINANT"
 
 
 def test_stage6_signal_rules() -> None:
