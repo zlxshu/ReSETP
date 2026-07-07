@@ -3,14 +3,25 @@
 from __future__ import annotations
 
 from collections.abc import Iterator
-from dataclasses import replace
+from dataclasses import dataclass, replace
 import os
+import time
 
 from ..check import check_solution
 from ..instance_loader import Instance
 from ..solution import ChargingAction, Route, Solution
 from .charging import repair_route_charging
 from .evaluation import EvaluationContext, fairness_context_for_solution, score_reference
+
+
+@dataclass(frozen=True)
+class RvndResult:
+    solution: Solution | None
+    call_count: int
+    improve_count: int
+    moves_used: int
+    time_seconds: float
+    route_count_delta: int
 
 
 def improve_solution_locally(
@@ -38,6 +49,50 @@ def improve_solution_locally(
         if not improved:
             break
     return best
+
+
+def rvnd_swapstar_intensify(
+    solution: Solution,
+    context: EvaluationContext,
+    *,
+    max_moves: int = 120,
+) -> RvndResult:
+    """Run a bounded inter-route intensification pass for diagnostics."""
+
+    started = time.perf_counter()
+    before_routes = len(solution.routes)
+    best = solution
+    best_score = score_reference(best, context)
+    moves_used = 0
+    improve_count = 0
+    neighborhoods = (
+        lambda item: _relocate_neighbors(item, context),
+        lambda item: _swapstar_lite_neighbors(item, context),
+        lambda item: _two_opt_star_neighbors(item, context),
+    )
+    for neighborhood in neighborhoods:
+        improved = True
+        while improved and moves_used < max_moves:
+            improved = False
+            for candidate in neighborhood(best):
+                moves_used += 1
+                score = score_reference(candidate, context)
+                if score < best_score - 1e-9:
+                    best = candidate
+                    best_score = score
+                    improve_count += 1
+                    improved = True
+                    break
+                if moves_used >= max_moves:
+                    break
+    return RvndResult(
+        solution=best,
+        call_count=1,
+        improve_count=improve_count,
+        moves_used=moves_used,
+        time_seconds=max(0.0, time.perf_counter() - started),
+        route_count_delta=len(best.routes) - before_routes,
+    )
 
 
 def _neighborhood(solution: Solution, context: EvaluationContext, *, max_neighbors: int) -> Iterator[Solution]:
@@ -105,6 +160,56 @@ def _relocate_neighbors(solution: Solution, context: EvaluationContext) -> Itera
                     new_dst = list(dst_customers)
                     new_dst.insert(dst_pos, customer_id)
                     candidate = _candidate_with_route_customers(solution, context, {src_idx: new_src, dst_idx: new_dst})
+                    if candidate is not None:
+                        yield candidate
+
+
+def _swapstar_lite_neighbors(solution: Solution, context: EvaluationContext) -> Iterator[Solution]:
+    for left_idx, left_route in enumerate(solution.routes):
+        left_customers = _route_customers(left_route, context.instance)
+        if not left_customers:
+            continue
+        for right_idx in range(left_idx + 1, len(solution.routes)):
+            right_route = solution.routes[right_idx]
+            right_customers = _route_customers(right_route, context.instance)
+            if not right_customers:
+                continue
+            for left_pos, left_customer in enumerate(left_customers):
+                for right_pos, right_customer in enumerate(right_customers):
+                    new_left = list(left_customers)
+                    new_right = list(right_customers)
+                    new_left[left_pos] = right_customer
+                    new_right[right_pos] = left_customer
+                    candidate = _candidate_with_route_customers(
+                        solution,
+                        context,
+                        {left_idx: new_left, right_idx: new_right},
+                    )
+                    if candidate is not None:
+                        yield candidate
+
+
+def _two_opt_star_neighbors(solution: Solution, context: EvaluationContext) -> Iterator[Solution]:
+    for left_idx, left_route in enumerate(solution.routes):
+        left_customers = _route_customers(left_route, context.instance)
+        if len(left_customers) < 2:
+            continue
+        for right_idx in range(left_idx + 1, len(solution.routes)):
+            right_route = solution.routes[right_idx]
+            right_customers = _route_customers(right_route, context.instance)
+            if len(right_customers) < 2:
+                continue
+            for left_cut in range(1, len(left_customers)):
+                for right_cut in range(1, len(right_customers)):
+                    new_left = [*left_customers[:left_cut], *right_customers[right_cut:]]
+                    new_right = [*right_customers[:right_cut], *left_customers[left_cut:]]
+                    if not new_left or not new_right:
+                        continue
+                    candidate = _candidate_with_route_customers(
+                        solution,
+                        context,
+                        {left_idx: new_left, right_idx: new_right},
+                    )
                     if candidate is not None:
                         yield candidate
 

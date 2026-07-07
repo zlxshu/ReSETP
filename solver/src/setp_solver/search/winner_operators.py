@@ -46,9 +46,11 @@ from .carbon_operators import carbon_related_removal, low_carbon_charging_repair
 from .candidates import _apply_strong_alns_destroy_repair, run_candidate
 from .candidates import solution_signature_hash
 from .construction import build_initial_solution
+from .elite_archive import EliteArchive
 from .evaluation import EvalBudget, model_cost, EvaluationContext, score_candidate, score_reference
 from .fleet import UNBOUNDED_FLEET
-from .local_search import improve_solution_locally
+from .local_search import improve_solution_locally, rvnd_swapstar_intensify
+from .route_pool import RoutePool
 from .resetp_alns import SimulatedAnnealing
 from .timing import TimingLedger, attach_timing_ledger, timed_section
 
@@ -77,6 +79,9 @@ _CRUSH_FLAG_NAMES = (
     "SETP_ALNS_CRUSH_EPS_DECAY_SELECTOR",
     "SETP_ALNS_CRUSH_THOMPSON_SELECTOR",
     "SETP_ALNS_CRUSH_SOFTMAX_SELECTOR",
+    "SETP_ALNS_CRUSH_ROUTE_POOL_RECOMBINATION",
+    "SETP_ALNS_CRUSH_RVND_SWAPSTAR",
+    "SETP_ALNS_CRUSH_ELITE_ARCHIVE_RESTART",
 )
 
 TRACE_DIAGNOSTIC_FLAG = "SETP_ALNS_CRUSH_TRACE_DIAGNOSTIC"
@@ -90,6 +95,14 @@ SELECTOR_FLAGS = (
     EPS_DECAY_SELECTOR_FLAG,
     THOMPSON_SELECTOR_FLAG,
     SOFTMAX_SELECTOR_FLAG,
+)
+ROUTE_POOL_RECOMBINATION_FLAG = "SETP_ALNS_CRUSH_ROUTE_POOL_RECOMBINATION"
+RVND_SWAPSTAR_FLAG = "SETP_ALNS_CRUSH_RVND_SWAPSTAR"
+ELITE_ARCHIVE_RESTART_FLAG = "SETP_ALNS_CRUSH_ELITE_ARCHIVE_RESTART"
+STRUCTURAL_FLAGS = (
+    ROUTE_POOL_RECOMBINATION_FLAG,
+    RVND_SWAPSTAR_FLAG,
+    ELITE_ARCHIVE_RESTART_FLAG,
 )
 _STRONG_BRIDGE_BACKEND_DESTROY_OPS = frozenset(
     {
@@ -127,6 +140,9 @@ E2_ALNS_COMPONENT_SOURCES = {
     EPS_DECAY_SELECTOR_FLAG: "Diagnostic only: balanced scheduler with decaying epsilon exploration",
     THOMPSON_SELECTOR_FLAG: "Diagnostic only: Thompson-sampling operator pair scheduler",
     SOFTMAX_SELECTOR_FLAG: "Diagnostic only: softmax operator pair scheduler over AlphaUCB values",
+    ROUTE_POOL_RECOMBINATION_FLAG: "Diagnostic only: route-pool recombination on stagnation; candidate still uses existing evaluator/checker",
+    RVND_SWAPSTAR_FLAG: "Diagnostic only: bounded RVND/SWAP*-lite intensification on stagnation",
+    ELITE_ARCHIVE_RESTART_FLAG: "Diagnostic only: diverse elite archive current-restart on stagnation",
 }
 
 
@@ -255,6 +271,9 @@ def winner_variant_flags(*, include_route_elimination: bool = False) -> dict[str
         EPS_DECAY_SELECTOR_FLAG: "0",
         THOMPSON_SELECTOR_FLAG: "0",
         SOFTMAX_SELECTOR_FLAG: "0",
+        ROUTE_POOL_RECOMBINATION_FLAG: "0",
+        RVND_SWAPSTAR_FLAG: "0",
+        ELITE_ARCHIVE_RESTART_FLAG: "0",
     }
 
 
@@ -286,6 +305,9 @@ def e2_alns_variant_flags() -> dict[str, str]:
         EPS_DECAY_SELECTOR_FLAG: "0",
         THOMPSON_SELECTOR_FLAG: "0",
         SOFTMAX_SELECTOR_FLAG: "0",
+        ROUTE_POOL_RECOMBINATION_FLAG: "0",
+        RVND_SWAPSTAR_FLAG: "0",
+        ELITE_ARCHIVE_RESTART_FLAG: "0",
     }
 
 
@@ -311,6 +333,9 @@ def e2_alns_scan_bridge_flags() -> dict[str, str]:
         EPS_DECAY_SELECTOR_FLAG: "0",
         THOMPSON_SELECTOR_FLAG: "0",
         SOFTMAX_SELECTOR_FLAG: "0",
+        ROUTE_POOL_RECOMBINATION_FLAG: "0",
+        RVND_SWAPSTAR_FLAG: "0",
+        ELITE_ARCHIVE_RESTART_FLAG: "0",
     }
 
 
@@ -912,10 +937,17 @@ def _run_winner_kernel_loop(
     )
     flags = variant_flags or winner_variant_flags(include_route_elimination=config.include_route_elimination)
     trace_diagnostic = _trace_diagnostic_enabled(flags)
+    structural_component = structural_component_from_flags(flags)
     ledger: TimingLedger | None = attach_timing_ledger(context) if _flag_enabled_from(flags, "SETP_ALNS_CRUSH_TIMING_LEDGER") else None
     with timed_section(context, "initial_reference_score"):
         initial_obj = score_reference(initial_solution, context)
     current = best = AlnsState(initial_solution, context, objective_value=initial_obj, policy=policy)
+    route_pool = RoutePool(max_routes=512) if structural_component == "route_pool" else None
+    elite_archive = EliteArchive(max_size=16, diversity_min=0.10) if structural_component == "elite_archive" else None
+    if route_pool is not None:
+        route_pool.record_solution(current.solution, objective=current.objective())
+    if elite_archive is not None:
+        elite_archive.maybe_add(current.solution, objective=current.objective())
     operator_set = WinnerOperatorSet.create(
         include_route_elimination=config.include_route_elimination,
         carbon_aware=config.carbon_aware_operators,
@@ -953,6 +985,7 @@ def _run_winner_kernel_loop(
         )
     ]
     candidate_trace: list[dict[str, Any]] = []
+    structural_counts = {"attempts": 0, "accepted": 0, "best_improved": 0, "rejected": 0}
     _maybe_write_e2_checkpoint(best.solution, context, best.objective(), 0, started, "shared_warm_start")
     moves = 0
     scan_attempts = 0
@@ -1009,6 +1042,99 @@ def _run_winner_kernel_loop(
                         )
                     )
                 continue
+        if (
+            structural_component in {"route_pool", "elite_archive"}
+            and moves_since_best_improvement >= _structural_rescue_interval(target)
+            and moves >= _structural_late_stage_start(target)
+            and _can_consume_scan_eval(context, target)
+        ):
+            proposal: Solution | None = None
+            structural_operator = structural_component
+            if route_pool is not None:
+                proposal = route_pool.recombine(set(_customers_in_solution(current.solution, instance)))
+                structural_operator = "route_pool_recombination"
+            elif elite_archive is not None:
+                proposal = elite_archive.propose_restart(_derive_strong_bridge_rng(rng))
+                structural_operator = "elite_archive_restart"
+            structural_counts["attempts"] += 1
+            previous_obj = current.objective()
+            previous_best_obj = best.objective()
+            hard_violation_count = 1
+            changed = False
+            accepted = False
+            candidate_obj = math.inf
+            if proposal is not None:
+                with timed_section(context, structural_operator):
+                    candidate_obj = float(score_candidate(proposal, context, label="candidate"))
+                candidate = AlnsState(proposal, context, objective_value=candidate_obj, policy=policy)
+                hard_violation_count = _hard_violation_count(candidate.solution, candidate.context)
+                changed = _solution_changed(current.solution, candidate.solution)
+                with timed_section(context, "acceptance"):
+                    accepted = changed and hard_violation_count == 0 and bool(acceptance(rng, best, current, candidate))
+                best_improved = accepted and candidate_obj < previous_best_obj - 1e-9
+                better_current = accepted and candidate_obj < previous_obj - 1e-9
+                if accepted:
+                    current = candidate
+                    structural_counts["accepted"] += 1
+                    if route_pool is not None:
+                        route_pool.record_solution(current.solution, objective=current.objective())
+                    if elite_archive is not None:
+                        elite_archive.maybe_add(current.solution, objective=current.objective())
+                    if best_improved:
+                        best = candidate
+                        structural_counts["best_improved"] += 1
+                        history.append(
+                            _winner_history_entry(
+                                context,
+                                best.solution,
+                                best.objective(),
+                                context.budget.count if context.budget else 0,
+                                started,
+                                structural_operator,
+                                include_trace_fields=trace_diagnostic,
+                            )
+                        )
+                        _maybe_write_e2_checkpoint(
+                            best.solution,
+                            context,
+                            best.objective(),
+                            context.budget.count if context.budget else 0,
+                            started,
+                            structural_operator,
+                        )
+                else:
+                    structural_counts["rejected"] += 1
+                if trace_diagnostic:
+                    candidate_trace.append(
+                        {
+                            "operator_base_id": operator_base_id,
+                            "winner_operator_module": winner_operator_module,
+                            "move": int(moves),
+                            "eval": int(context.budget.count if context.budget else 0),
+                            "destroy_id": structural_operator,
+                            "repair_id": structural_operator,
+                            "candidate_backend": structural_operator,
+                            "changed": bool(changed),
+                            "removed_count": 0,
+                            "hard_violation_count": int(hard_violation_count),
+                            "candidate_obj": float(candidate_obj),
+                            "previous_obj": float(previous_obj),
+                            "previous_best_obj": float(previous_best_obj),
+                            "accepted": bool(accepted),
+                            "best_improved": bool(best_improved),
+                            "accepted_worse": bool(accepted and candidate_obj > previous_obj + 1e-9),
+                            "better_current": bool(better_current),
+                            "outcome_candidate_obj": float(candidate_obj),
+                            "outcome_hard_violation_count": int(hard_violation_count),
+                            "revert_reason": "candidate_usable" if accepted else "structural_not_accepted",
+                            "structural_component": structural_component,
+                        }
+                    )
+                moves_since_best_improvement = 0
+                continue
+            structural_counts["rejected"] += 1
+            moves_since_best_improvement = 0
+            continue
         progress = min(1.0, moves / max(1, target))
         destroy_idx, repair_idx = selector(rng, best, current)
         destroy_name = operator_set.destroy_ops[int(destroy_idx)][0]
@@ -1033,6 +1159,47 @@ def _run_winner_kernel_loop(
         )
         candidate = result["candidate_state"]
         candidate_obj = float(result["candidate_obj"])
+        if (
+            structural_component == "rvnd_swapstar"
+            and moves_since_best_improvement >= 3 * _structural_rescue_interval(target)
+            and moves >= _structural_late_stage_start(target)
+            and not candidate.removed_customers
+            and int(result.get("hard_violation_count", 0)) == 0
+            and _solution_changed(current.solution, candidate.solution)
+            and _can_consume_scan_eval(context, target)
+        ):
+            with timed_section(context, "rvnd_swapstar"):
+                rvnd_result = rvnd_swapstar_intensify(candidate.solution, context, max_moves=4)
+            if rvnd_result.solution is not None and _solution_changed(candidate.solution, rvnd_result.solution):
+                rvnd_obj = float(score_candidate(rvnd_result.solution, context, label="candidate"))
+                if rvnd_obj < candidate_obj - 1e-9:
+                    candidate = replace(candidate, solution=rvnd_result.solution, objective_value=rvnd_obj)
+                    candidate_obj = rvnd_obj
+                    result["candidate_state"] = candidate
+                    result["candidate_obj"] = candidate_obj
+                    result["trace"].update(
+                        {
+                            "structural_component": "rvnd_swapstar",
+                            "rvnd_swapstar_attempted": True,
+                            "rvnd_swapstar_improved": True,
+                            "rvnd_swapstar_moves_used": rvnd_result.moves_used,
+                            "rvnd_swapstar_improve_count": rvnd_result.improve_count,
+                            "rvnd_swapstar_time_seconds": rvnd_result.time_seconds,
+                            "rvnd_swapstar_route_count_delta": rvnd_result.route_count_delta,
+                        }
+                    )
+                else:
+                    result["trace"].update(
+                        {
+                            "structural_component": "rvnd_swapstar",
+                            "rvnd_swapstar_attempted": True,
+                            "rvnd_swapstar_improved": False,
+                            "rvnd_swapstar_moves_used": rvnd_result.moves_used,
+                            "rvnd_swapstar_improve_count": rvnd_result.improve_count,
+                            "rvnd_swapstar_time_seconds": rvnd_result.time_seconds,
+                            "rvnd_swapstar_route_count_delta": rvnd_result.route_count_delta,
+                        }
+                    )
         changed = _solution_changed(current.solution, candidate.solution)
         with timed_section(context, "acceptance"):
             accepted = changed and bool(acceptance(rng, best, current, candidate))
@@ -1060,11 +1227,19 @@ def _run_winner_kernel_loop(
         outcome_idx = 3
         if accepted:
             current = candidate
+            if route_pool is not None:
+                route_pool.record_solution(current.solution, objective=current.objective())
+            if elite_archive is not None:
+                elite_archive.maybe_add(current.solution, objective=current.objective())
             outcome_idx = 2
             if better_current:
                 outcome_idx = 1
             if best_improved:
                 best = candidate
+                if route_pool is not None:
+                    route_pool.record_solution(best.solution, objective=best.objective())
+                if elite_archive is not None:
+                    elite_archive.maybe_add(best.solution, objective=best.objective())
                 outcome_idx = 0
                 moves_since_best_improvement = 0
                 history.append(
@@ -1097,7 +1272,13 @@ def _run_winner_kernel_loop(
         feasible = len(check_solution(best.solution, instance, effective_prices)) == 0
     actual_moves = sum(sum(row) for row in destroy_counts_out.values())
     timing_snapshot = ledger.snapshot() if ledger is not None else {}
-    operator_counts_out = {"destroy": destroy_counts_out, "repair": repair_counts_out, "scan": dict(scan_counts), "timing": timing_snapshot}
+    operator_counts_out = {
+        "destroy": destroy_counts_out,
+        "repair": repair_counts_out,
+        "scan": dict(scan_counts),
+        "timing": timing_snapshot,
+        "structural": dict(structural_counts),
+    }
     if trace_diagnostic:
         operator_counts_out["candidate_trace"] = candidate_trace
     return AlnsRunResult(
@@ -1199,6 +1380,21 @@ def _selector_kind_from_flags(flags: dict[str, str]) -> str:
         EPS_DECAY_SELECTOR_FLAG: "eps_decay",
         THOMPSON_SELECTOR_FLAG: "thompson",
         SOFTMAX_SELECTOR_FLAG: "softmax",
+    }
+    return mapping[enabled[0]]
+
+
+def structural_component_from_flags(flags: dict[str, str] | None = None) -> str | None:
+    active_flags = flags or {}
+    enabled = [name for name in STRUCTURAL_FLAGS if _flag_enabled_from(active_flags, name)]
+    if len(enabled) > 1:
+        raise ValueError(f"HALT_CONFIG_CONFLICT_STRUCTURAL_FLAGS:{','.join(enabled)}")
+    if not enabled:
+        return None
+    mapping = {
+        ROUTE_POOL_RECOMBINATION_FLAG: "route_pool",
+        RVND_SWAPSTAR_FLAG: "rvnd_swapstar",
+        ELITE_ARCHIVE_RESTART_FLAG: "elite_archive",
     }
     return mapping[enabled[0]]
 
@@ -1309,6 +1505,14 @@ def _maybe_write_e2_checkpoint(
 
 def _scan_rebuild_interval(target: int) -> int:
     return max(25, min(250, int(target) // 20))
+
+
+def _structural_rescue_interval(target: int) -> int:
+    return max(40, min(300, int(target) // 24))
+
+
+def _structural_late_stage_start(target: int) -> int:
+    return max(1, int(0.75 * int(target)))
 
 
 def _can_consume_scan_eval(context: EvaluationContext, target: int) -> bool:

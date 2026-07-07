@@ -1,0 +1,34 @@
+{
+  "boundary": "diagnostic structural rescue only; no cost/check/evaluation/prices/feasible_repair/TeX change",
+  "budgets": [
+    4000,
+    8000,
+    16000
+  ],
+  "diagnostic_only": true,
+  "formal_t3": false,
+  "hard_subset_source": "baselines/e2_alns/route_compression_probe_20260705/hard_subset_instances.csv",
+  "head": "d967cae19b1b1437878ee80e0a38133f2bf6a73d",
+  "output_dir": "baselines/e2_alns/structural_rescue_probe_20260707",
+  "precheck_source": "baselines/e2_alns/selector_sprint_failure_analysis_20260707",
+  "profiles_4000": [
+    "A0_MAIN_LOCAL_SEARCH",
+    "A7_SOFTMAX_SELECTOR_LOCAL_SEARCH",
+    "A8_ROUTE_POOL_RECOMBINATION",
+    "A9_RVND_SWAPSTAR_LOCAL_SEARCH",
+    "A10_ELITE_ARCHIVE_RESTART",
+    "LNS_REFERENCE"
+  ],
+  "python": "/opt/anaconda3/bin/python3.13",
+  "pythonhashseed": "0",
+  "schema": "setp-e2-structural-rescue-metadata.v1",
+  "seeds": [
+    1,
+    2,
+    3
+  ],
+  "selector_sprint_reference_source": "baselines/e2_alns/selector_sprint_probe_20260706",
+  "started_at_epoch": 1783423717.539456,
+  "task": "structural_rescue_probe",
+  "workers": 3
+}
