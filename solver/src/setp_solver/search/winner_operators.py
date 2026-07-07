@@ -43,7 +43,7 @@ from .alns_wouda import (
 )
 from .alns_crush import low_utilization_route_elimination_probe
 from .bundle import load_search_bundle
-from .candidates import run_candidate
+from .candidates import run_candidate, solution_signature_hash
 from .construction import build_initial_solution
 from .evaluation import EvalBudget, model_cost, EvaluationContext, score_candidate, score_reference
 from .local_search import improve_solution_locally
@@ -932,6 +932,7 @@ def _winner_history_entry(
         "best_cost": best_cost,
         "best_obj": float(objective),
         "operator": str(operator),
+        "solution_signature_hash": solution_signature_hash(solution),
     }
 
 
