@@ -6,6 +6,7 @@ from __future__ import annotations
 import argparse
 from concurrent.futures import ProcessPoolExecutor, as_completed
 import csv
+import gc
 import gzip
 import hashlib
 import json
@@ -107,9 +108,15 @@ def main() -> int:
         write_hashes(output_dir)
         log_event(logs, "halt", issues=issues)
         return 2
+    if args.skip_runs:
+        return finalize_from_existing_outputs(output_dir, metadata, budgets, seeds, hard_subset, logs)
 
-    all_rows: list[dict[str, Any]] = []
-    all_trace_rows: list[dict[str, Any]] = []
+    all_status_rows: list[dict[str, Any]] = []
+    all_raw_rows: list[dict[str, Any]] = []
+    all_usage_rows: list[dict[str, Any]] = []
+    all_entropy_rows: list[dict[str, Any]] = []
+    all_decomposition_rows: list[dict[str, Any]] = []
+    all_trace_sample_rows: list[dict[str, Any]] = []
     all_gate_rows: list[dict[str, Any]] = []
     expected_total = 0
     selector_profiles = list(SELECTOR_PROFILES)
@@ -122,14 +129,21 @@ def main() -> int:
         rows = collect_existing_rows(output_dir, tasks)
         if not args.skip_runs:
             rows = run_tasks(output_dir, tasks, workers=int(args.workers), force=bool(args.force), logs=logs)
-        all_rows.extend(rows)
+        all_status_rows.extend(status_rows(rows))
 
         raw_rows = raw_run_rows(rows)
         trace_rows = flatten_alns_traces(rows, [BASE_PROFILE, *selector_profiles])
-        all_trace_rows.extend(trace_rows)
+        all_raw_rows.extend(raw_rows)
+        remaining_sample = max(0, 2000 - len(all_trace_sample_rows))
+        if remaining_sample:
+            all_trace_sample_rows.extend(trace_sample(trace_rows, limit=remaining_sample))
         profile_summary = summarize_profiles(raw_rows, trace_rows, budget=int(budget), profiles=[BASE_PROFILE, *selector_profiles, LNS_PROFILE])
         usage_rows = pair_usage_rows(trace_rows, budget=int(budget))
         entropy_rows = entropy_rows_for_usage(usage_rows, budget=int(budget))
+        decomposition_rows = route_fixed_cost_decomposition(raw_rows, budget=int(budget))
+        all_usage_rows.extend(usage_rows)
+        all_entropy_rows.extend(entropy_rows)
+        all_decomposition_rows.extend(decomposition_rows)
         comparison_rows = compare_selectors_vs_a0(raw_rows, trace_rows, budget=int(budget), selector_profiles=selector_profiles)
         previous_gaps = previous_gap_by_profile(all_gate_rows, previous_budget=int(budget))
         gate_rows = gate_rows_for_budget(
@@ -137,7 +151,7 @@ def main() -> int:
             profile_summary=profile_summary,
             comparisons=comparison_rows,
             entropy_rows=entropy_rows,
-            decomposition_rows=route_fixed_cost_decomposition(raw_rows, budget=int(budget)),
+            decomposition_rows=decomposition_rows,
             previous_gaps=previous_gaps,
             protected=protected_diff(),
         )
@@ -148,28 +162,97 @@ def main() -> int:
         write_trace_gzip(output_dir / f"selector_candidate_trace_{int(budget)}.csv.gz", trace_rows)
         selector_profiles = [str(row["profile"]) for row in gate_rows if truthy(row.get("pass_gate"))]
         log_event(logs, "budget_complete", budget=int(budget), rows=len(rows), survivors=selector_profiles)
+        del rows, raw_rows, trace_rows
+        gc.collect()
 
-    raw_rows_all = raw_run_rows(all_rows)
-    pair_usage_all = pair_usage_rows(all_trace_rows)
-    entropy_all = entropy_rows_for_usage(pair_usage_all)
-    decomposition_all = route_fixed_cost_decomposition(raw_rows_all)
     winner_board = selector_winner_board(all_gate_rows)
-    decision = build_decision(metadata, all_rows, expected_total, all_gate_rows)
+    decision = build_decision(metadata, all_status_rows, expected_total, all_gate_rows)
 
-    fc.write_csv(output_dir / "raw_runs.csv", raw_rows_all)
-    fc.write_csv(output_dir / "selector_entropy_by_budget.csv", entropy_all)
-    fc.write_csv(output_dir / "pair_usage_by_budget.csv", pair_usage_all)
-    fc.write_csv(output_dir / "route_fixed_cost_decomposition_by_budget.csv", decomposition_all)
+    fc.write_csv(output_dir / "raw_runs.csv", all_raw_rows)
+    fc.write_csv(output_dir / "selector_entropy_by_budget.csv", all_entropy_rows)
+    fc.write_csv(output_dir / "pair_usage_by_budget.csv", all_usage_rows)
+    fc.write_csv(output_dir / "route_fixed_cost_decomposition_by_budget.csv", all_decomposition_rows)
     fc.write_csv(output_dir / "selector_winner_board.csv", winner_board)
-    fc.write_csv(output_dir / "selector_trace_sample.csv", trace_sample(all_trace_rows))
+    fc.write_csv(output_dir / "selector_trace_sample.csv", all_trace_sample_rows)
     fc.write_json(output_dir / "tier1_pilot_manifest.json", tier1_manifest(decision, winner_board))
     (output_dir / "diagnosis.md").write_text(write_diagnosis(decision, all_gate_rows), encoding="utf-8")
     (output_dir / "next_action.md").write_text(write_next_action(decision), encoding="utf-8")
     (output_dir / "report.md").write_text(write_diagnosis(decision, all_gate_rows), encoding="utf-8")
     fc.write_json(output_dir / "decision.json", decision)
     write_hashes(output_dir)
-    log_event(logs, "complete", verdict=decision["verdict"], rows=len(all_rows), expected=expected_total)
-    print(json.dumps({"phase": "selector_sprint_complete", "verdict": decision["verdict"], "rows": f"{len(all_rows)}/{expected_total}"}, ensure_ascii=False))
+    log_event(logs, "complete", verdict=decision["verdict"], rows=len(all_status_rows), expected=expected_total)
+    print(json.dumps({"phase": "selector_sprint_complete", "verdict": decision["verdict"], "rows": f"{len(all_status_rows)}/{expected_total}"}, ensure_ascii=False))
+    return 0 if not decision.get("halt") else 2
+
+
+def finalize_from_existing_outputs(
+    output_dir: Path,
+    metadata: dict[str, Any],
+    budgets: list[int],
+    seeds: list[int],
+    hard_subset: list[dict[str, Any]],
+    logs: Path,
+) -> int:
+    all_raw_rows: list[dict[str, Any]] = []
+    all_status_rows: list[dict[str, Any]] = []
+    all_usage_rows: list[dict[str, Any]] = []
+    all_entropy_rows: list[dict[str, Any]] = []
+    all_decomposition_rows: list[dict[str, Any]] = []
+    all_gate_rows: list[dict[str, Any]] = []
+    expected_total = 0
+    selector_profiles = list(SELECTOR_PROFILES)
+
+    for budget in budgets:
+        if not selector_profiles:
+            break
+        tasks = build_stage_tasks(output_dir, hard_subset, seeds=seeds, budget=int(budget), selector_profiles=selector_profiles)
+        expected_total += len(tasks)
+        raw_rows = [dict(row) for row in fc.read_csv(output_dir / f"raw_runs_{int(budget)}.csv")]
+        profile_summary = [dict(row) for row in fc.read_csv(output_dir / f"profile_summary_{int(budget)}.csv")]
+        if not raw_rows or not profile_summary:
+            issues = [f"missing_existing_budget_outputs:{int(budget)}"]
+            decision = halt_decision(metadata, issues)
+            fc.write_json(output_dir / "decision.json", decision)
+            write_hashes(output_dir)
+            log_event(logs, "halt", issues=issues)
+            return 2
+        all_raw_rows.extend(raw_rows)
+        all_status_rows.extend(status_rows(raw_rows))
+        all_usage_rows.extend(pair_usage_from_gzip(output_dir / f"selector_candidate_trace_{int(budget)}.csv.gz", budget=int(budget)))
+        entropy_rows = entropy_rows_from_profile_summary(profile_summary, budget=int(budget))
+        decomposition_rows = route_fixed_cost_decomposition(raw_rows, budget=int(budget))
+        comparison_rows = compare_selectors_vs_a0(raw_rows, [], budget=int(budget), selector_profiles=selector_profiles)
+        previous_gaps = previous_gap_by_profile(all_gate_rows, previous_budget=int(budget))
+        gate_rows = gate_rows_for_budget(
+            budget=int(budget),
+            profile_summary=profile_summary,
+            comparisons=comparison_rows,
+            entropy_rows=entropy_rows,
+            decomposition_rows=decomposition_rows,
+            previous_gaps=previous_gaps,
+            protected=protected_diff(),
+        )
+        all_entropy_rows.extend(entropy_rows)
+        all_decomposition_rows.extend(decomposition_rows)
+        all_gate_rows.extend(gate_rows)
+        selector_profiles = [str(row["profile"]) for row in gate_rows if truthy(row.get("pass_gate"))]
+
+    winner_board = selector_winner_board(all_gate_rows)
+    decision = build_decision(metadata, all_status_rows, expected_total, all_gate_rows)
+    fc.write_csv(output_dir / "raw_runs.csv", all_raw_rows)
+    fc.write_csv(output_dir / "selector_entropy_by_budget.csv", all_entropy_rows)
+    fc.write_csv(output_dir / "pair_usage_by_budget.csv", all_usage_rows)
+    fc.write_csv(output_dir / "route_fixed_cost_decomposition_by_budget.csv", all_decomposition_rows)
+    fc.write_csv(output_dir / "selector_winner_board.csv", winner_board)
+    fc.write_csv(output_dir / "selector_trace_sample.csv", trace_sample_from_gzip(output_dir, budgets))
+    fc.write_json(output_dir / "tier1_pilot_manifest.json", tier1_manifest(decision, winner_board))
+    (output_dir / "diagnosis.md").write_text(write_diagnosis(decision, all_gate_rows), encoding="utf-8")
+    (output_dir / "next_action.md").write_text(write_next_action(decision), encoding="utf-8")
+    (output_dir / "report.md").write_text(write_diagnosis(decision, all_gate_rows), encoding="utf-8")
+    fc.write_json(output_dir / "decision.json", decision)
+    write_hashes(output_dir)
+    log_event(logs, "complete", verdict=decision["verdict"], rows=len(all_status_rows), expected=expected_total)
+    print(json.dumps({"phase": "selector_sprint_complete", "verdict": decision["verdict"], "rows": f"{len(all_status_rows)}/{expected_total}"}, ensure_ascii=False))
     return 0 if not decision.get("halt") else 2
 
 
@@ -416,6 +499,38 @@ def raw_run_rows(rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
         "head",
     ]
     return [{key: row.get(key, "") for key in keys} for row in rows]
+
+
+def status_rows(rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    keys = [
+        "run_id",
+        "budget",
+        "category",
+        "instance",
+        "profile",
+        "seed",
+        "status",
+        "failure_reason",
+        "actual_evals",
+        "eval_budget",
+        "violation_count",
+    ]
+    return [{key: row.get(key, "") for key in keys} for row in rows]
+
+
+def entropy_rows_from_profile_summary(profile_summary: list[dict[str, Any]], *, budget: int) -> list[dict[str, Any]]:
+    rows: list[dict[str, Any]] = []
+    for row in profile_summary:
+        rows.append(
+            {
+                "budget": int(budget),
+                "profile": row.get("profile", ""),
+                "normalized_pair_entropy": row.get("normalized_pair_entropy", "UNKNOWN"),
+                "top1_pair_share": row.get("top1_pair_share", "UNKNOWN"),
+                "top2_pair_share": row.get("top2_pair_share", "UNKNOWN"),
+            }
+        )
+    return rows
 
 
 def flatten_alns_traces(rows: list[dict[str, Any]], profiles: list[str]) -> list[dict[str, Any]]:
@@ -756,6 +871,73 @@ def trace_sample(trace_rows: list[dict[str, Any]], *, limit: int = 2000) -> list
         "selector_temperature",
     ]
     return [{key: row.get(key, "") for key in keys} for row in trace_rows[:limit]]
+
+
+def trace_sample_from_gzip(output_dir: Path, budgets: list[int], *, limit: int = 2000) -> list[dict[str, Any]]:
+    rows: list[dict[str, Any]] = []
+    for budget in budgets:
+        path = output_dir / f"selector_candidate_trace_{int(budget)}.csv.gz"
+        if not path.exists():
+            continue
+        with gzip.open(path, "rt", newline="", encoding="utf-8") as handle:
+            for row in csv.DictReader(handle):
+                rows.append(row)
+                if len(rows) >= limit:
+                    return rows
+    return rows
+
+
+def pair_usage_from_gzip(path: Path, *, budget: int) -> list[dict[str, Any]]:
+    if not path.exists():
+        return []
+    buckets: dict[tuple[str, str, str], dict[str, Any]] = {}
+    route_delta_sums: dict[tuple[str, str, str], float] = {}
+    route_delta_counts: dict[tuple[str, str, str], int] = {}
+    with gzip.open(path, "rt", newline="", encoding="utf-8") as handle:
+        for row in csv.DictReader(handle):
+            profile = str(row.get("profile", "UNKNOWN") or "UNKNOWN")
+            destroy = str(row.get("destroy_id", "UNKNOWN") or "UNKNOWN")
+            repair = str(row.get("repair_id", "UNKNOWN") or "UNKNOWN")
+            key = (profile, destroy, repair)
+            bucket = buckets.setdefault(
+                key,
+                {
+                    "budget": int(budget),
+                    "profile": profile,
+                    "destroy_id": destroy,
+                    "repair_id": repair,
+                    "pair": f"{destroy}+{repair}",
+                    "attempts": 0,
+                    "accepted_count": 0,
+                    "best_improved_count": 0,
+                    "unchanged_count": 0,
+                },
+            )
+            bucket["attempts"] += 1
+            if truthy(row.get("accepted")):
+                bucket["accepted_count"] += 1
+            if truthy(row.get("best_improved")):
+                bucket["best_improved_count"] += 1
+            if str(row.get("revert_reason")) == "unchanged":
+                bucket["unchanged_count"] += 1
+            delta = as_float(row.get("candidate_route_count_delta"))
+            if math.isfinite(delta):
+                route_delta_sums[key] = route_delta_sums.get(key, 0.0) + delta
+                route_delta_counts[key] = route_delta_counts.get(key, 0) + 1
+    rows: list[dict[str, Any]] = []
+    for key, bucket in buckets.items():
+        attempts = int(bucket["attempts"])
+        delta_count = route_delta_counts.get(key, 0)
+        row = {
+            **bucket,
+            "accepted_rate": safe_ratio(float(bucket["accepted_count"]), float(attempts)),
+            "best_improved_rate": safe_ratio(float(bucket["best_improved_count"]), float(attempts)),
+            "unchanged_rate": safe_ratio(float(bucket["unchanged_count"]), float(attempts)),
+            "mean_candidate_route_count_delta": safe_ratio(route_delta_sums.get(key, 0.0), float(delta_count)) if delta_count else "UNKNOWN",
+        }
+        rows.append(row)
+    selector_audit.mark_best_improved_top_members(rows, top_n=3)
+    return sorted(rows, key=lambda row: (as_int(row.get("budget")), str(row["profile"]), -as_int(row["attempts"]), str(row["pair"])))
 
 
 def write_trace_gzip(path: Path, rows: list[dict[str, Any]]) -> None:
