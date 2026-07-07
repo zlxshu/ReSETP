@@ -49,6 +49,8 @@ from .construction import build_initial_solution
 from .elite_archive import EliteArchive
 from .evaluation import EvalBudget, model_cost, EvaluationContext, score_candidate, score_reference
 from .fleet import UNBOUNDED_FLEET
+from .fleet_charge_corepair import propose_fleet_charge_corepair
+from .global_order_repack import propose_global_order_repack
 from .local_search import improve_solution_locally, rvnd_swapstar_intensify
 from .route_pool import RoutePool
 from .resetp_alns import SimulatedAnnealing
@@ -82,6 +84,8 @@ _CRUSH_FLAG_NAMES = (
     "SETP_ALNS_CRUSH_ROUTE_POOL_RECOMBINATION",
     "SETP_ALNS_CRUSH_RVND_SWAPSTAR",
     "SETP_ALNS_CRUSH_ELITE_ARCHIVE_RESTART",
+    "SETP_ALNS_CRUSH_GLOBAL_ORDER_REPACK",
+    "SETP_ALNS_CRUSH_FLEET_CHARGE_COREPAIR",
 )
 
 TRACE_DIAGNOSTIC_FLAG = "SETP_ALNS_CRUSH_TRACE_DIAGNOSTIC"
@@ -99,10 +103,14 @@ SELECTOR_FLAGS = (
 ROUTE_POOL_RECOMBINATION_FLAG = "SETP_ALNS_CRUSH_ROUTE_POOL_RECOMBINATION"
 RVND_SWAPSTAR_FLAG = "SETP_ALNS_CRUSH_RVND_SWAPSTAR"
 ELITE_ARCHIVE_RESTART_FLAG = "SETP_ALNS_CRUSH_ELITE_ARCHIVE_RESTART"
+GLOBAL_ORDER_REPACK_FLAG = "SETP_ALNS_CRUSH_GLOBAL_ORDER_REPACK"
+FLEET_CHARGE_COREPAIR_FLAG = "SETP_ALNS_CRUSH_FLEET_CHARGE_COREPAIR"
 STRUCTURAL_FLAGS = (
     ROUTE_POOL_RECOMBINATION_FLAG,
     RVND_SWAPSTAR_FLAG,
     ELITE_ARCHIVE_RESTART_FLAG,
+    GLOBAL_ORDER_REPACK_FLAG,
+    FLEET_CHARGE_COREPAIR_FLAG,
 )
 _STRONG_BRIDGE_BACKEND_DESTROY_OPS = frozenset(
     {
@@ -143,6 +151,8 @@ E2_ALNS_COMPONENT_SOURCES = {
     ROUTE_POOL_RECOMBINATION_FLAG: "Diagnostic only: route-pool recombination on stagnation; candidate still uses existing evaluator/checker",
     RVND_SWAPSTAR_FLAG: "Diagnostic only: bounded RVND/SWAP*-lite intensification on stagnation",
     ELITE_ARCHIVE_RESTART_FLAG: "Diagnostic only: diverse elite archive current-restart on stagnation",
+    GLOBAL_ORDER_REPACK_FLAG: "Diagnostic only: global customer-order repack using the shared LNS order decoder",
+    FLEET_CHARGE_COREPAIR_FLAG: "Diagnostic only: fleet-type and charging co-repair for complete candidate routes",
 }
 
 
@@ -274,6 +284,8 @@ def winner_variant_flags(*, include_route_elimination: bool = False) -> dict[str
         ROUTE_POOL_RECOMBINATION_FLAG: "0",
         RVND_SWAPSTAR_FLAG: "0",
         ELITE_ARCHIVE_RESTART_FLAG: "0",
+        GLOBAL_ORDER_REPACK_FLAG: "0",
+        FLEET_CHARGE_COREPAIR_FLAG: "0",
     }
 
 
@@ -308,6 +320,8 @@ def e2_alns_variant_flags() -> dict[str, str]:
         ROUTE_POOL_RECOMBINATION_FLAG: "0",
         RVND_SWAPSTAR_FLAG: "0",
         ELITE_ARCHIVE_RESTART_FLAG: "0",
+        GLOBAL_ORDER_REPACK_FLAG: "0",
+        FLEET_CHARGE_COREPAIR_FLAG: "0",
     }
 
 
@@ -336,6 +350,8 @@ def e2_alns_scan_bridge_flags() -> dict[str, str]:
         ROUTE_POOL_RECOMBINATION_FLAG: "0",
         RVND_SWAPSTAR_FLAG: "0",
         ELITE_ARCHIVE_RESTART_FLAG: "0",
+        GLOBAL_ORDER_REPACK_FLAG: "0",
+        FLEET_CHARGE_COREPAIR_FLAG: "0",
     }
 
 
@@ -1043,19 +1059,58 @@ def _run_winner_kernel_loop(
                     )
                 continue
         if (
-            structural_component in {"route_pool", "elite_archive"}
-            and moves_since_best_improvement >= _structural_rescue_interval(target)
-            and moves >= _structural_late_stage_start(target)
+            structural_component in {"route_pool", "elite_archive", "global_order_repack", "fleet_charge_corepair"}
+            and _structural_component_due(structural_component, moves=moves, moves_since_best_improvement=moves_since_best_improvement, target=target)
             and _can_consume_scan_eval(context, target)
         ):
             proposal: Solution | None = None
             structural_operator = structural_component
+            structural_trace: dict[str, Any] = {}
             if route_pool is not None:
                 proposal = route_pool.recombine(set(_customers_in_solution(current.solution, instance)))
                 structural_operator = "route_pool_recombination"
             elif elite_archive is not None:
                 proposal = elite_archive.propose_restart(_derive_strong_bridge_rng(rng))
                 structural_operator = "elite_archive_restart"
+            elif structural_component == "global_order_repack":
+                structural_operator = "global_order_repack"
+                outcome = propose_global_order_repack(current.solution, best.solution, context, _derive_strong_bridge_rng(rng))
+                proposal = outcome.solution
+                structural_trace.update(
+                    {
+                        "repack_attempts": int(outcome.attempts),
+                        "repack_feasible": int(outcome.feasible),
+                        "repack_accepted": bool(outcome.accepted),
+                        "repack_best_improved": bool(outcome.best_improved),
+                        "repack_route_count_delta": int(outcome.route_count_delta),
+                        "repack_cost_fix_delta": float(outcome.cost_fix_delta),
+                        "repack_order_source": outcome.order_source,
+                        "repack_trace_rows": outcome.trace_rows,
+                    }
+                )
+            elif structural_component == "fleet_charge_corepair":
+                structural_operator = "fleet_charge_corepair"
+                outcome = propose_fleet_charge_corepair(current.solution, context, max_attempts=16)
+                proposal = outcome.solution
+                if proposal is None and best.solution is not current.solution:
+                    outcome = propose_fleet_charge_corepair(best.solution, context, max_attempts=16)
+                    proposal = outcome.solution
+                structural_trace.update(
+                    {
+                        "fleet_charge_attempts": int(outcome.attempts),
+                        "fleet_charge_feasible": int(outcome.feasible),
+                        "fleet_charge_accepted": bool(outcome.accepted),
+                        "fleet_charge_best_improved": bool(outcome.best_improved),
+                        "fleet_charge_source_route_type": outcome.source_route_type,
+                        "fleet_charge_target_route_type": outcome.target_route_type,
+                        "fleet_charge_fuel_delta": float(outcome.fuel_delta),
+                        "fleet_charge_electric_delta": float(outcome.electric_delta),
+                        "fleet_charge_carbon_delta": float(outcome.carbon_delta),
+                        "fleet_charge_fixed_delta": float(outcome.fixed_delta),
+                        "fleet_charge_route_index": int(outcome.route_index),
+                        "fleet_charge_trace_rows": outcome.trace_rows,
+                    }
+                )
             structural_counts["attempts"] += 1
             previous_obj = current.objective()
             previous_best_obj = best.objective()
@@ -1128,13 +1183,39 @@ def _run_winner_kernel_loop(
                             "outcome_hard_violation_count": int(hard_violation_count),
                             "revert_reason": "candidate_usable" if accepted else "structural_not_accepted",
                             "structural_component": structural_component,
+                            **structural_trace,
                         }
                     )
                 moves_since_best_improvement = 0
                 continue
             structural_counts["rejected"] += 1
-            moves_since_best_improvement = 0
-            continue
+            if trace_diagnostic:
+                candidate_trace.append(
+                    {
+                        "operator_base_id": operator_base_id,
+                        "winner_operator_module": winner_operator_module,
+                        "move": int(moves),
+                        "eval": int(context.budget.count if context.budget else 0),
+                        "destroy_id": structural_operator,
+                        "repair_id": structural_operator,
+                        "candidate_backend": structural_operator,
+                        "changed": False,
+                        "removed_count": 0,
+                        "hard_violation_count": 1,
+                        "candidate_obj": math.inf,
+                        "previous_obj": float(previous_obj),
+                        "previous_best_obj": float(previous_best_obj),
+                        "accepted": False,
+                        "best_improved": False,
+                        "accepted_worse": False,
+                        "better_current": False,
+                        "outcome_candidate_obj": math.inf,
+                        "outcome_hard_violation_count": 1,
+                        "revert_reason": "structural_no_candidate",
+                        "structural_component": structural_component,
+                        **structural_trace,
+                    }
+                )
         progress = min(1.0, moves / max(1, target))
         destroy_idx, repair_idx = selector(rng, best, current)
         destroy_name = operator_set.destroy_ops[int(destroy_idx)][0]
@@ -1395,6 +1476,8 @@ def structural_component_from_flags(flags: dict[str, str] | None = None) -> str 
         ROUTE_POOL_RECOMBINATION_FLAG: "route_pool",
         RVND_SWAPSTAR_FLAG: "rvnd_swapstar",
         ELITE_ARCHIVE_RESTART_FLAG: "elite_archive",
+        GLOBAL_ORDER_REPACK_FLAG: "global_order_repack",
+        FLEET_CHARGE_COREPAIR_FLAG: "fleet_charge_corepair",
     }
     return mapping[enabled[0]]
 
@@ -1513,6 +1596,20 @@ def _structural_rescue_interval(target: int) -> int:
 
 def _structural_late_stage_start(target: int) -> int:
     return max(1, int(0.75 * int(target)))
+
+
+def _structural_component_due(
+    component: str | None,
+    *,
+    moves: int,
+    moves_since_best_improvement: int,
+    target: int,
+) -> bool:
+    interval = _structural_rescue_interval(target)
+    late_stage = _structural_late_stage_start(target)
+    if component in {"global_order_repack", "fleet_charge_corepair"}:
+        return moves_since_best_improvement >= interval or (moves >= late_stage and moves % interval == 0)
+    return moves_since_best_improvement >= interval and moves >= late_stage
 
 
 def _can_consume_scan_eval(context: EvaluationContext, target: int) -> bool:

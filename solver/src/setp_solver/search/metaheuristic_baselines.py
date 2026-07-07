@@ -40,6 +40,21 @@ from .candidates import (
 )
 from .evaluation import EvalBudget, EvaluationContext, model_cost, score_candidate, score_reference
 from .fleet import normalize_solution_vehicle_trips
+from .order_decoder import (
+    OrderDecodeCache,
+    OrderDecodeContext,
+    all_cv_solution_for_order as _shared_all_cv_solution_for_order,
+    append_customer_to_cached_plan as _shared_append_customer_to_cached_plan,
+    complete_order as _shared_complete_order,
+    decode_order_like_random_key as _shared_decode_order_like_random_key,
+    exploratory_type_hints as _shared_exploratory_type_hints,
+    mutated_type_hints as _shared_mutated_type_hints,
+    order_to_solution as _shared_order_to_solution,
+    route_customer_plan_feasible_cached as _shared_route_customer_plan_feasible_cached,
+    route_distance_cached as _shared_route_distance_cached,
+    route_type_hints as _shared_route_type_hints,
+    solution_order as _shared_solution_order,
+)
 
 
 BASELINE_ALGORITHMS = ("GA", "PSO", "VNS", "ACO", "GA-VNS", "LNS", "GWO", "IWD")
@@ -1000,29 +1015,34 @@ def _all_customer_ids(instance: Instance) -> list[str]:
     return [node.node_id for node in instance.nodes if node.node_type.lower() == "c"]
 
 
+def _order_decode_context(session: _SearchSession) -> OrderDecodeContext:
+    return OrderDecodeContext(
+        session.context.instance,
+        session.context.prices,
+        session.context.carbon_profile,
+        session.rng,
+        cache=OrderDecodeCache(
+            decode_cache=session.decode_cache,
+            route_feasible_cache=session.route_feasible_cache,
+            route_distance_cache=session.route_distance_cache,
+        ),
+        customer_ids=session.customer_ids,
+        node_lookup=session.node_lookup,
+        depots=session.depots,
+        depots_by_customer=session.depots_by_customer,
+    )
+
+
 def _solution_order(solution: Solution, instance: Instance) -> list[str]:
-    order: list[str] = []
-    for route in solution.routes:
-        order.extend(_route_customers(route, instance))
-    return order
+    return _shared_solution_order(solution, instance)
 
 
 def _route_type_hints(solution: Solution, instance: Instance) -> dict[str, float]:
-    hints: dict[str, float] = {}
-    for route in solution.routes:
-        value = 0.95 if route.vehicle_type.lower() == "ev" else 0.05
-        for customer_id in _route_customers(route, instance):
-            hints[customer_id] = value
-    return hints
+    return _shared_route_type_hints(solution, instance)
 
 
 def _exploratory_type_hints(order: list[str], session: _SearchSession, index: int = 0) -> dict[str, float]:
-    probabilities = (0.05, 0.35, 0.65, 0.85, 1.0)
-    probability = probabilities[int(index) % len(probabilities)]
-    return {
-        customer_id: 0.95 if session.rng.random() < probability else 0.05
-        for customer_id in order
-    }
+    return _shared_exploratory_type_hints(order, _order_decode_context(session), index=index)
 
 
 def _mutated_type_hints(
@@ -1033,17 +1053,13 @@ def _mutated_type_hints(
     flip_probability: float = 0.12,
     force_ev: bool = False,
 ) -> dict[str, float]:
-    hints = {customer_id: float(base.get(customer_id, 0.05)) for customer_id in order}
-    changed = False
-    for customer_id in order:
-        if session.rng.random() < float(flip_probability):
-            hints[customer_id] = 0.05 if hints.get(customer_id, 0.05) >= 0.5 else 0.95
-            changed = True
-    if force_ev and order and (not changed or max(hints.values(), default=0.05) < 0.5):
-        sample_size = max(1, min(len(order), len(order) // 3 or 1))
-        for customer_id in session.rng.sample(order, sample_size):
-            hints[customer_id] = 0.95
-    return hints
+    return _shared_mutated_type_hints(
+        base,
+        order,
+        _order_decode_context(session),
+        flip_probability=flip_probability,
+        force_ev=force_ev,
+    )
 
 
 def _crossover_type_hints(parent_a: Solution, parent_b: Solution, order: list[str], session: _SearchSession) -> dict[str, float]:
@@ -1062,18 +1078,13 @@ def _order_to_solution(
     type_hints: dict[str, float] | None = None,
     ev_threshold: float = 0.82,
 ) -> Solution:
-    ordered = _complete_order_for_session(order, session)
-    hints = type_hints or _route_type_hints(session.current.solution, session.context.instance)
-    type_key = tuple((customer_id, float(hints.get(customer_id, 0.05))) for customer_id in ordered)
-    cache_key = (tuple(ordered), type_key, float(ev_threshold))
-    cached = session.decode_cache.get(cache_key)
-    if cached is not None:
-        return cached
-    decoded = _decode_order_like_random_key(ordered, session, dict(type_key), ev_threshold=float(ev_threshold))
-    if len(session.decode_cache) > 2048:
-        session.decode_cache.clear()
-    session.decode_cache[cache_key] = decoded
-    return decoded
+    return _shared_order_to_solution(
+        order,
+        _order_decode_context(session),
+        current_solution=session.current.solution,
+        type_hints=type_hints,
+        ev_threshold=ev_threshold,
+    )
 
 
 def _complete_order(order: list[str], instance: Instance) -> list[str]:
@@ -1085,43 +1096,11 @@ def _complete_order(order: list[str], instance: Instance) -> list[str]:
 
 
 def _complete_order_for_session(order: list[str], session: _SearchSession) -> list[str]:
-    seen: set[str] = set()
-    complete = [customer_id for customer_id in order if customer_id in session.customer_set and not (customer_id in seen or seen.add(customer_id))]
-    missing = [customer_id for customer_id in session.customer_ids if customer_id not in seen]
-    return [*complete, *missing]
+    return _shared_complete_order(order, _order_decode_context(session))
 
 
 def _decode_order_like_random_key(ordered: list[str], session: _SearchSession, type_keys: dict[str, float], *, ev_threshold: float) -> Solution:
-    plans: dict[str, list[list[str]]] = {depot.node_id: [] for depot in session.depots}
-    for customer_id in ordered:
-        _append_customer_to_cached_plan(customer_id, plans, session)
-
-    routes: list[Route] = []
-    actions: list[ChargingAction] = []
-    next_cv = 1
-    next_ev = 1
-    for depot_id, depot_plans in sorted(plans.items()):
-        for customer_ids in depot_plans:
-            avg_type_key = sum(type_keys.get(customer_id, 0.0) for customer_id in customer_ids) / max(1, len(customer_ids))
-            if avg_type_key >= ev_threshold:
-                route = Route(f"EV{next_ev}", "ev", depot_id, [depot_id, *customer_ids, depot_id])
-                try:
-                    repaired, route_actions = repair_route_charging(route, session.context.instance, session.context.carbon_profile, session.context.prices)
-                    candidate = _normalize_solution_for_session(Solution(routes=[*routes, repaired], charging_actions=[*actions, *route_actions]), session)
-                    if not check_solution(candidate, session.context.instance, session.context.prices):
-                        routes = list(candidate.routes)
-                        actions = list(candidate.charging_actions)
-                        next_ev += 1
-                        continue
-                except ValueError:
-                    pass
-            routes.append(Route(f"CV{next_cv}", "cv", depot_id, [depot_id, *customer_ids, depot_id]))
-            next_cv += 1
-
-    solution = _normalize_solution_for_session(Solution(routes=routes, charging_actions=actions), session)
-    if check_solution(solution, session.context.instance, session.context.prices):
-        return _all_cv_solution_for_session(ordered, session)
-    return solution
+    return _shared_decode_order_like_random_key(ordered, _order_decode_context(session), type_keys, ev_threshold=ev_threshold)
 
 
 def _normalize_solution_for_session(solution: Solution, session: _SearchSession) -> Solution:
@@ -1232,84 +1211,19 @@ def _vehicle_type_mutation(solution: Solution, session: _SearchSession, *, attem
 
 
 def _append_customer_to_cached_plan(customer_id: str, plans: dict[str, list[list[str]]], session: _SearchSession) -> None:
-    best_key: tuple[float, str, int, int] | None = None
-    best_target: tuple[str, int | None] | None = None
-    c_km = _price(session.context.prices, "c_km")
-    fixed_cost = _price(session.context.prices, "vehicle_fixed_cost")
-    for depot_id in session.depots_by_customer[customer_id]:
-        depot_plans = plans[depot_id]
-        for idx, customer_ids in enumerate(depot_plans):
-            candidate = (*customer_ids, customer_id)
-            if _route_customer_plan_feasible_cached(depot_id, candidate, session):
-                old_distance = _route_distance_cached(depot_id, tuple(customer_ids), session)
-                new_distance = _route_distance_cached(depot_id, candidate, session)
-                marginal_cost = ((new_distance - old_distance) / 1000.0) * c_km
-                key = (marginal_cost, depot_id, 0, idx)
-                if best_key is None or key < best_key:
-                    best_key = key
-                    best_target = (depot_id, idx)
-        single = (customer_id,)
-        if _route_customer_plan_feasible_cached(depot_id, single, session):
-            new_route_cost = (_route_distance_cached(depot_id, single, session) / 1000.0) * c_km + fixed_cost
-            key = (new_route_cost, depot_id, 1, 0)
-            if best_key is None or key < best_key:
-                best_key = key
-                best_target = (depot_id, None)
-    if best_target is None:
-        depot_id = session.depots_by_customer[customer_id][0]
-        plans[depot_id].append([customer_id])
-        return
-    depot_id, route_idx = best_target
-    if route_idx is None:
-        plans[depot_id].append([customer_id])
-    else:
-        plans[depot_id][route_idx].append(customer_id)
+    _shared_append_customer_to_cached_plan(customer_id, plans, _order_decode_context(session))
 
 
 def _route_customer_plan_feasible_cached(depot_id: str, customer_ids: tuple[str, ...], session: _SearchSession) -> bool:
-    key = (depot_id, customer_ids)
-    cached = session.route_feasible_cache.get(key)
-    if cached is not None:
-        return cached
-    node_lookup = session.node_lookup
-    feasible = sum(float(node_lookup[customer_id].demand) for customer_id in customer_ids) <= _price(session.context.prices, "Q_capacity") + 1e-9
-    if feasible:
-        route = Route("TMP", "cv", depot_id, [depot_id, *customer_ids, depot_id])
-        for row in route_node_schedule(route, session.context.instance, session.context.prices):
-            if row.t_start > float(node_lookup[row.node_id].due_time) + 1e-9:
-                feasible = False
-                break
-    if len(session.route_feasible_cache) > 100_000:
-        session.route_feasible_cache.clear()
-    session.route_feasible_cache[key] = feasible
-    return feasible
+    return _shared_route_customer_plan_feasible_cached(depot_id, customer_ids, _order_decode_context(session))
 
 
 def _route_distance_cached(depot_id: str, customer_ids: tuple[str, ...], session: _SearchSession) -> float:
-    key = (depot_id, customer_ids)
-    cached = session.route_distance_cache.get(key)
-    if cached is not None:
-        return cached
-    sequence = (depot_id, *customer_ids, depot_id)
-    index = session.context.instance.node_index
-    distance = sum(float(session.context.instance.distance_matrix[index[a]][index[b]]) for a, b in zip(sequence, sequence[1:]))
-    if len(session.route_distance_cache) > 100_000:
-        session.route_distance_cache.clear()
-    session.route_distance_cache[key] = distance
-    return distance
+    return _shared_route_distance_cached(depot_id, customer_ids, _order_decode_context(session))
 
 
 def _all_cv_solution_for_session(ordered: list[str], session: _SearchSession) -> Solution:
-    plans: dict[str, list[list[str]]] = {depot.node_id: [] for depot in session.depots}
-    for customer_id in ordered:
-        _append_customer_to_cached_plan(customer_id, plans, session)
-    routes: list[Route] = []
-    idx = 1
-    for depot_id, depot_plans in sorted(plans.items()):
-        for customer_ids in depot_plans:
-            routes.append(Route(f"CV{idx}", "cv", depot_id, [depot_id, *customer_ids, depot_id]))
-            idx += 1
-    return _normalize_solution_for_session(Solution(routes=routes), session)
+    return _shared_all_cv_solution_for_order(ordered, _order_decode_context(session))
 
 
 def _distance(instance: Instance, a: str, b: str) -> float:
