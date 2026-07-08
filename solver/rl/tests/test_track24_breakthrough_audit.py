@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from types import SimpleNamespace
+
 import pytest
 
 from dr_alns_ppo import track24_breakthrough_audit as track24
@@ -100,6 +102,19 @@ def test_stage3_failure_only_mixed_rows_do_not_pass_oracle_gate() -> None:
     assert summary["mixed_code_result"] is True
 
 
+def test_stage3_wall_cap_state_is_resumeable() -> None:
+    assert track24._stage_can_resume_after_halt(
+        "stage3",
+        {"status": "HALT_TRACK24_WALL_CAP"},
+        SimpleNamespace(resume=True),
+    )
+    assert not track24._stage_can_resume_after_halt(
+        "stage3",
+        {"status": "HALT_DYNAMIC_ORACLE_HEALTH"},
+        SimpleNamespace(resume=True),
+    )
+
+
 def test_track24_policy_changes_active_ids_for_capacity_reserve() -> None:
     nodes = [
         Node("D1", "d", 0.0, 0.0),
@@ -131,6 +146,40 @@ def test_track24_policy_changes_active_ids_for_capacity_reserve() -> None:
     assert len(decision.active_ids) == 1
     assert decision.metadata["action_effect"] == "active_ids_changed"
     assert decision.metadata["semantic_status"] == "proxy_time_slack_defer_not_real_depot_capacity"
+
+
+def test_track24_policy_does_not_defer_mandatory_customer() -> None:
+    nodes = [
+        Node("D1", "d", 0.0, 0.0),
+        Node("C1", "c", 1.0, 0.0, due_time=10_000.0),
+        Node("C2", "c", 2.0, 0.0, due_time=20_000.0),
+        Node("C3", "c", 3.0, 0.0, due_time=30_000.0),
+    ]
+    instance = Instance(nodes=nodes, distance_matrix=[[0.0] * len(nodes) for _ in nodes], num_cv=2, num_ev=0)
+    context = RollingPolicyContext(
+        stage_index=0,
+        trigger_time=0.0,
+        stage_events=[],
+        all_events=[],
+        settings=RollingParameters(),
+        base_instance=instance,
+        effective_instance=instance,
+        active_ids={"C1", "C2", "C3"},
+        mandatory_customer_ids={"C3"},
+        served_customers=set(),
+        previous_plan=None,
+        previous_instance=None,
+    )
+    policy = track24.build_track24_dynamic_policy(
+        {"action_id": "capacity_reserve_high", "action_class": "depot_capacity_reserve", "level": "high", "fraction": 0.34}
+    )
+
+    decision = policy(context)
+
+    assert decision.active_ids is not None
+    assert "C3" in decision.active_ids
+    assert "C3" not in decision.metadata["deferred_ids"]
+    assert decision.metadata["mandatory_guarded_ids"] == ["C3"]
 
 
 def test_track24_oracle_rows_mark_proxy_semantics() -> None:

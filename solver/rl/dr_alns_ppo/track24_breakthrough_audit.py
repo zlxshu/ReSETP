@@ -96,7 +96,9 @@ def run(args: argparse.Namespace) -> int:
         "7": ("stage7", lambda: summarize_final_decision(state)),
     }
     for label, (key, body) in stage_funcs.items():
-        if label not in selected or (key in state and key != "stage7" and not args.force):
+        if label not in selected or (
+            key in state and key != "stage7" and not args.force and not _stage_can_resume_after_halt(key, state[key], args)
+        ):
             continue
         try:
             _log(progress_path, f"Stage {label} start")
@@ -117,6 +119,14 @@ def run(args: argparse.Namespace) -> int:
                 return 1
     save()
     return 0
+
+
+def _stage_can_resume_after_halt(key: str, stage_state: Any, args: argparse.Namespace) -> bool:
+    if key != "stage3" or not bool(getattr(args, "resume", False)):
+        return False
+    if not isinstance(stage_state, dict):
+        return False
+    return str(stage_state.get("status") or "") == "HALT_TRACK24_WALL_CAP"
 
 
 def run_stage0(args: argparse.Namespace, output_dir: Path) -> dict[str, Any]:
@@ -447,6 +457,10 @@ def build_track24_dynamic_policy(spec: dict[str, Any]):
             "fraction": fraction,
             "semantic_status": spec.get("semantic_status", _default_action_semantics(action_class)),
         }
+        mandatory_guarded = set(context.mandatory_customer_ids) | set(context.committed_customer_ids)
+        deferable_ids = set(context.active_ids) - mandatory_guarded
+        metadata["mandatory_guarded_ids"] = sorted(mandatory_guarded & set(context.active_ids))
+        metadata["mandatory_guarded_count"] = len(mandatory_guarded & set(context.active_ids))
         if action_class == "stage_budget_allocation":
             event_count = len(context.stage_events)
             factor = 1.4 if event_count >= 2 else (0.75 if int(context.stage_index) <= 1 else 1.1)
@@ -466,33 +480,33 @@ def build_track24_dynamic_policy(spec: dict[str, Any]):
             cy = sum(float(event.y) for event in future_adds) / len(future_adds)
             scored = [
                 (((float(node_by_id[cid].x) - cx) ** 2 + (float(node_by_id[cid].y) - cy) ** 2), cid)
-                for cid in context.active_ids
+                for cid in deferable_ids
                 if cid in node_by_id
             ]
-            deferred = _take_fraction([cid for _score, cid in sorted(scored)], fraction)
+            deferred = _take_fraction([cid for _score, cid in sorted(scored)], fraction, active_count=len(context.active_ids))
         elif action_class == "ev_charging_slack_reserve":
             depots = [node for node in context.effective_instance.nodes if str(node.node_type).lower() == "d"]
             scored = []
-            for cid in context.active_ids:
+            for cid in deferable_ids:
                 node = node_by_id.get(cid)
                 if node is None:
                     continue
                 nearest = min((((float(node.x) - float(depot.x)) ** 2 + (float(node.y) - float(depot.y)) ** 2) for depot in depots), default=0.0)
                 scored.append((nearest + float(node.demand) * 10.0, cid))
-            deferred = _take_fraction([cid for _score, cid in sorted(scored, reverse=True)], fraction)
+            deferred = _take_fraction([cid for _score, cid in sorted(scored, reverse=True)], fraction, active_count=len(context.active_ids))
         elif action_class == "customer_commit_threshold":
             stage_adds = {event.customer_id for event in context.stage_events if str(event.event_type).lower() == "add"}
-            pool = [cid for cid in sorted(context.active_ids) if cid in stage_adds] or sorted(context.active_ids)
-            deferred = _take_fraction(pool, fraction)
+            pool = [cid for cid in sorted(deferable_ids) if cid in stage_adds] or sorted(deferable_ids)
+            deferred = _take_fraction(pool, fraction, active_count=len(context.active_ids))
         else:
             scored = []
-            for cid in context.active_ids:
+            for cid in deferable_ids:
                 node = node_by_id.get(cid)
                 if node is None:
                     continue
                 slack = float(node.due_time) - float(context.trigger_time)
                 scored.append((slack, cid))
-            deferred = _take_fraction([cid for _score, cid in sorted(scored, reverse=True)], fraction)
+            deferred = _take_fraction([cid for _score, cid in sorted(scored, reverse=True)], fraction, active_count=len(context.active_ids))
         active = set(context.active_ids) - set(deferred)
         metadata["deferred_ids"] = sorted(deferred)
         metadata["action_effect"] = "active_ids_changed" if deferred else "no_safe_defer"
@@ -889,11 +903,14 @@ def write_final_report(path: Path, state: dict[str, Any]) -> None:
     _write_text(path, "\n".join(lines))
 
 
-def _take_fraction(items: list[str], fraction: float) -> set[str]:
-    if len(items) <= 1 or fraction <= 0:
+def _take_fraction(items: list[str], fraction: float, *, active_count: int | None = None) -> set[str]:
+    if not items or fraction <= 0:
+        return set()
+    max_defer = len(items) - 1 if active_count is None else min(len(items), max(0, int(active_count) - 1))
+    if max_defer <= 0:
         return set()
     count = max(1, int(math.ceil(len(items) * fraction)))
-    return set(items[: min(count, len(items) - 1)])
+    return set(items[: min(count, max_defer)])
 
 
 def _default_action_semantics(action_class: str) -> str:
