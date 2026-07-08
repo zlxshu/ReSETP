@@ -13,7 +13,9 @@ from setp_solver.prices import DEFAULT_PRICES
 from setp_solver.search.alns_crush import low_utilization_route_elimination_probe
 from setp_solver.search.bundle import load_search_bundle
 from setp_solver.search.candidates import make_shared_initial_solution, solution_signature_hash
+from setp_solver.search.metaheuristic_baselines import BaselineRunResult, run_metaheuristic_baseline
 from setp_solver.search.winner_operators import WinnerKernelConfig, run_winner_kernel, run_winner_kernel_plus_route_elimination
+from setp_solver.search.winner_operators import _run_winner_variant, winner_variant_flags
 from setp_solver.solution import Solution
 
 
@@ -23,6 +25,12 @@ DEFAULT_BUNDLES = [
     Path("models/data_bundle/generated_instances/e2_benchmark/threeshift/e2-threeshift-200c-01"),
 ]
 DEFAULT_OUTPUT_DIR = Path("solver/reports/e2_route_compression_probe_20260707")
+MATRIX_PROFILES = (
+    "winner_kernel",
+    "winner_kernel_local_search",
+    "winner_kernel_route_elimination",
+    "winner_kernel_route_elimination_local_search",
+)
 
 
 def solution_row(
@@ -40,6 +48,7 @@ def solution_row(
     accepted_merges: int | None = None,
     best_update_count: int | None = None,
     unique_solution_count: int | None = None,
+    profile_flags: dict[str, str] | None = None,
 ) -> dict[str, Any]:
     metrics = evaluate(solution, instance, carbon_profile, DEFAULT_PRICES)
     violations = check_solution(solution, instance, DEFAULT_PRICES)
@@ -67,6 +76,7 @@ def solution_row(
         "accepted_merges": "" if accepted_merges is None else int(accepted_merges),
         "best_update_count": "" if best_update_count is None else int(best_update_count),
         "unique_solution_count": "" if unique_solution_count is None else int(unique_solution_count),
+        "profile_flags_json": "" if profile_flags is None else json.dumps(profile_flags, sort_keys=True, separators=(",", ":")),
         "route_count_delta_vs_winner": "",
         "fixed_cost_delta_vs_winner": "",
         "objective_delta_vs_winner": "",
@@ -74,24 +84,47 @@ def solution_row(
     }
 
 
+def winner_profile_flags(*, include_route_elimination: bool, local_search: bool) -> dict[str, str]:
+    flags = winner_variant_flags(include_route_elimination=bool(include_route_elimination))
+    flags["SETP_ALNS_CRUSH_LOCAL_SEARCH"] = "1" if bool(local_search) else "0"
+    return flags
+
+
 def annotate_vs_winner(rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
     winners: dict[tuple[str, int], dict[str, Any]] = {}
+    lns_refs: dict[tuple[str, int], dict[str, Any]] = {}
     for row in rows:
         if row["algorithm"] == "winner_kernel":
             winners[(str(row["bundle"]), int(row["seed"]))] = row
+        if row["algorithm"] == "lns_reference":
+            lns_refs[(str(row["bundle"]), int(row["seed"]))] = row
     annotated: list[dict[str, Any]] = []
     for row in rows:
         out = dict(row)
-        winner = winners.get((str(row["bundle"]), int(row["seed"])))
+        key = (str(row["bundle"]), int(row["seed"]))
+        winner = winners.get(key)
         if winner is not None and row["algorithm"] != "winner_kernel":
             out["route_count_delta_vs_winner"] = int(row["route_count"]) - int(winner["route_count"])
             out["fixed_cost_delta_vs_winner"] = float(row["fixed_cost"]) - float(winner["fixed_cost"])
             out["objective_delta_vs_winner"] = float(row["best_cost"]) - float(winner["best_cost"])
+        lns = lns_refs.get(key)
+        if lns is not None and row["algorithm"] != "lns_reference":
+            lns_cost = float(lns["best_cost"])
+            if lns_cost > 1e-9:
+                out["gap_vs_lns_delta_pp"] = 100.0 * (float(row["best_cost"]) - lns_cost) / lns_cost
         annotated.append(out)
     return annotated
 
 
-def probe_bundle(bundle_dir: Path, *, seed: int, eval_budget: int, max_runtime_seconds: float) -> list[dict[str, Any]]:
+def probe_bundle(
+    bundle_dir: Path,
+    *,
+    seed: int,
+    eval_budget: int,
+    max_runtime_seconds: float,
+    include_lns: bool = False,
+    matrix_profiles: bool = False,
+) -> list[dict[str, Any]]:
     bundle = load_search_bundle(bundle_dir)
     bundle_id = bundle_dir.name
     warm = make_shared_initial_solution(bundle)
@@ -125,42 +158,132 @@ def probe_bundle(bundle_dir: Path, *, seed: int, eval_budget: int, max_runtime_s
             accepted_merges=headroom.accepted_merges,
         )
     )
+    if include_lns:
+        lns = run_metaheuristic_baseline(
+            "LNS",
+            bundle_dir,
+            seed=seed,
+            eval_budget=eval_budget,
+            max_runtime_seconds=max_runtime_seconds,
+            initial_solution=warm,
+        )
+        if lns.best_solution is not None:
+            rows.append(
+                baseline_solution_row(
+                    bundle_id=bundle_id,
+                    algorithm="lns_reference",
+                    seed=seed,
+                    result=lns,
+                    carbon_profile=bundle.carbon_profile,
+                    instance=bundle.instance,
+                    eval_budget=eval_budget,
+                )
+            )
     config = WinnerKernelConfig(seed=seed, eval_budget=eval_budget, max_runtime_seconds=max_runtime_seconds)
-    winner = run_winner_kernel(bundle_dir, config=config, initial_solution=warm)
-    winner_stats = _history_stats(winner, winner["best_solution"])
-    rows.append(
-        solution_row(
-            bundle_id=bundle_id,
-            algorithm="winner_kernel",
-            seed=seed,
-            solution=winner["best_solution"],
-            carbon_profile=bundle.carbon_profile,
-            instance=bundle.instance,
-            eval_budget=eval_budget,
-            evaluations=int(winner["evaluations"]),
-            elapsed_seconds=float(winner["elapsed_seconds"]),
-            best_update_count=winner_stats["best_update_count"],
-            unique_solution_count=winner_stats["unique_solution_count"],
+    if matrix_profiles:
+        for profile in MATRIX_PROFILES:
+            include_route_elimination = "route_elimination" in profile
+            local_search = "local_search" in profile
+            flags = winner_profile_flags(
+                include_route_elimination=include_route_elimination,
+                local_search=local_search,
+            )
+            profile_config = WinnerKernelConfig(
+                **{
+                    **config.__dict__,
+                    "include_route_elimination": include_route_elimination,
+                }
+            )
+            result = _run_winner_variant(
+                bundle_dir,
+                profile_config,
+                initial_solution=warm,
+                variant_flags=flags,
+                variant_id=profile,
+            )
+            stats = _history_stats(result, result["best_solution"])
+            rows.append(
+                solution_row(
+                    bundle_id=bundle_id,
+                    algorithm=profile,
+                    seed=seed,
+                    solution=result["best_solution"],
+                    carbon_profile=bundle.carbon_profile,
+                    instance=bundle.instance,
+                    eval_budget=eval_budget,
+                    evaluations=int(result["evaluations"]),
+                    elapsed_seconds=float(result["elapsed_seconds"]),
+                    best_update_count=stats["best_update_count"],
+                    unique_solution_count=stats["unique_solution_count"],
+                    profile_flags=flags,
+                )
+            )
+    else:
+        winner = run_winner_kernel(bundle_dir, config=config, initial_solution=warm)
+        winner_stats = _history_stats(winner, winner["best_solution"])
+        rows.append(
+            solution_row(
+                bundle_id=bundle_id,
+                algorithm="winner_kernel",
+                seed=seed,
+                solution=winner["best_solution"],
+                carbon_profile=bundle.carbon_profile,
+                instance=bundle.instance,
+                eval_budget=eval_budget,
+                evaluations=int(winner["evaluations"]),
+                elapsed_seconds=float(winner["elapsed_seconds"]),
+                best_update_count=winner_stats["best_update_count"],
+                unique_solution_count=winner_stats["unique_solution_count"],
+                profile_flags=dict(winner.get("flags") or {}),
+            )
         )
-    )
-    route_elim = run_winner_kernel_plus_route_elimination(bundle_dir, config=config, initial_solution=warm)
-    route_elim_stats = _history_stats(route_elim, route_elim["best_solution"])
-    rows.append(
-        solution_row(
-            bundle_id=bundle_id,
-            algorithm="winner_kernel_plus_route_elimination",
-            seed=seed,
-            solution=route_elim["best_solution"],
-            carbon_profile=bundle.carbon_profile,
-            instance=bundle.instance,
-            eval_budget=eval_budget,
-            evaluations=int(route_elim["evaluations"]),
-            elapsed_seconds=float(route_elim["elapsed_seconds"]),
-            best_update_count=route_elim_stats["best_update_count"],
-            unique_solution_count=route_elim_stats["unique_solution_count"],
+        route_elim = run_winner_kernel_plus_route_elimination(bundle_dir, config=config, initial_solution=warm)
+        route_elim_stats = _history_stats(route_elim, route_elim["best_solution"])
+        rows.append(
+            solution_row(
+                bundle_id=bundle_id,
+                algorithm="winner_kernel_plus_route_elimination",
+                seed=seed,
+                solution=route_elim["best_solution"],
+                carbon_profile=bundle.carbon_profile,
+                instance=bundle.instance,
+                eval_budget=eval_budget,
+                evaluations=int(route_elim["evaluations"]),
+                elapsed_seconds=float(route_elim["elapsed_seconds"]),
+                best_update_count=route_elim_stats["best_update_count"],
+                unique_solution_count=route_elim_stats["unique_solution_count"],
+                profile_flags=dict(route_elim.get("flags") or {}),
+            )
         )
-    )
     return annotate_vs_winner(rows)
+
+
+def baseline_solution_row(
+    *,
+    bundle_id: str,
+    algorithm: str,
+    seed: int,
+    result: BaselineRunResult,
+    carbon_profile: list[dict[str, Any]],
+    instance: Any,
+    eval_budget: int,
+) -> dict[str, Any]:
+    solution = result.best_solution
+    if solution is None:
+        raise ValueError(f"{algorithm} produced no solution for {bundle_id} seed {seed}")
+    return solution_row(
+        bundle_id=bundle_id,
+        algorithm=algorithm,
+        seed=seed,
+        solution=solution,
+        carbon_profile=carbon_profile,
+        instance=instance,
+        eval_budget=eval_budget,
+        evaluations=int(result.evals),
+        elapsed_seconds=float(result.elapsed_seconds),
+        best_update_count=len(result.history),
+        unique_solution_count=len({str(row.get("best_cost", "")) for row in result.history}),
+    )
 
 
 def _history_stats(result: dict[str, Any], best_solution: Solution) -> dict[str, int]:
@@ -178,7 +301,7 @@ def _history_stats(result: dict[str, Any], best_solution: Solution) -> dict[str,
 
 
 def decision_from_rows(rows: list[dict[str, Any]]) -> dict[str, Any]:
-    route_rows = [row for row in rows if row["algorithm"] == "winner_kernel_plus_route_elimination"]
+    route_rows = [row for row in rows if _is_route_elimination_profile(row)]
     regressions = [row for row in route_rows if _float(row["objective_delta_vs_winner"]) > max(1e-9, abs(_winner_cost(rows, row)) * 0.005)]
     improved = [
         row
@@ -207,8 +330,8 @@ def decision_from_rows(rows: list[dict[str, Any]]) -> dict[str, Any]:
         "first_gate_pass": bool(first_gate["pass"]),
         "first_gate_100c_improved_count": int(first_gate["improved_100c_count"]),
         "first_gate_sanity_regression_count": int(first_gate["sanity_regression_count"]),
-        "lns_reference_available": False,
-        "requires_code_fix": bool(regressions) or not bool(improved),
+        "lns_reference_available": any(row.get("algorithm") == "lns_reference" for row in rows),
+        "requires_code_fix": bool(regressions) or not bool(improved) or not bool(first_gate["pass"]),
     }
 
 
@@ -227,6 +350,7 @@ def write_outputs(rows: list[dict[str, Any]], output_dir: Path) -> None:
             "best_update_count": "max(0, len(winner history) - 1); history records warm start and each accepted best improvement",
             "unique_solution_count": "distinct solution_signature_hash values in winner history plus final best solution",
             "zero_violations": "check_solution returned no hard or soft violations for the reported solution",
+            "gap_vs_lns_delta_pp": "100 * (profile best_cost - lns_reference best_cost) / lns_reference best_cost for the same bundle and seed",
             "first_gate_pass": "at least one documented 100c exception improves and no 150/200c sanity row regresses by more than 0.5 percent",
         },
     }
@@ -241,7 +365,8 @@ def write_outputs(rows: list[dict[str, Any]], output_dir: Path) -> None:
         f"First gate pass: {decision['first_gate_pass']}",
         f"100c improved count: {decision['first_gate_100c_improved_count']}",
         f"Sanity regression count: {decision['first_gate_sanity_regression_count']}",
-        "LNS reference available: false",
+        f"LNS reference available: {decision['lns_reference_available']}",
+        f"Requires code/mechanism fix: {decision['requires_code_fix']}",
         "",
     ]
     (output_dir / "report.md").write_text("\n".join(report), encoding="utf-8", newline="\n")
@@ -252,7 +377,7 @@ def write_outputs(rows: list[dict[str, Any]], output_dir: Path) -> None:
 
 
 def _first_gate_status(rows: list[dict[str, Any]]) -> dict[str, int | bool]:
-    route_rows = [row for row in rows if row["algorithm"] == "winner_kernel_plus_route_elimination"]
+    route_rows = [row for row in rows if _is_route_elimination_profile(row)]
     exception_rows = [row for row in route_rows if str(row.get("bundle")) in {"e2-threeshift-100c-01", "e2-threeshift-100c-02"}]
     sanity_rows = [row for row in route_rows if str(row.get("bundle")).startswith(("e2-threeshift-150c", "e2-threeshift-200c"))]
     improved = [
@@ -293,6 +418,13 @@ def _truthy(value: Any) -> bool:
     return str(value).strip().lower() in {"1", "true", "yes"}
 
 
+def _is_route_elimination_profile(row: dict[str, Any]) -> bool:
+    algorithm = str(row.get("algorithm", ""))
+    return algorithm == "winner_kernel_plus_route_elimination" or (
+        algorithm.startswith("winner_kernel_route_elimination")
+    )
+
+
 def _winner_cost(rows: list[dict[str, Any]], row: dict[str, Any]) -> float:
     for candidate in rows:
         if candidate["algorithm"] == "winner_kernel" and candidate["bundle"] == row["bundle"] and int(candidate["seed"]) == int(row["seed"]):
@@ -306,6 +438,8 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser.add_argument("--seed", type=int, default=1)
     parser.add_argument("--eval-budget", type=int, default=800)
     parser.add_argument("--max-runtime-seconds", type=float, default=120.0)
+    parser.add_argument("--include-lns", action="store_true")
+    parser.add_argument("--matrix-profiles", action="store_true")
     parser.add_argument("--output-dir", default=str(DEFAULT_OUTPUT_DIR))
     return parser.parse_args(argv)
 
@@ -315,7 +449,16 @@ def main(argv: list[str] | None = None) -> int:
     bundles = [Path(item) for item in args.bundles] if args.bundles else DEFAULT_BUNDLES
     rows: list[dict[str, Any]] = []
     for bundle_dir in bundles:
-        rows.extend(probe_bundle(bundle_dir, seed=int(args.seed), eval_budget=int(args.eval_budget), max_runtime_seconds=float(args.max_runtime_seconds)))
+        rows.extend(
+            probe_bundle(
+                bundle_dir,
+                seed=int(args.seed),
+                eval_budget=int(args.eval_budget),
+                max_runtime_seconds=float(args.max_runtime_seconds),
+                include_lns=bool(args.include_lns),
+                matrix_profiles=bool(args.matrix_profiles),
+            )
+        )
     rows = annotate_vs_winner(rows)
     write_outputs(rows, Path(args.output_dir))
     print(json.dumps(decision_from_rows(rows), separators=(",", ":")))
