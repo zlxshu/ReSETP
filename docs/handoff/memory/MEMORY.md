@@ -12,4 +12,4 @@
 
 - [Instance lineage](instance-lineage.md) — formal L-main v2 = 9 threeshift ladders only; mixed23/100-01 ARCHIVE_ONLY
 - [ReSETP ALNS full independence](resetp-alns-independence.md) — algorithms/resetp_alns package; no N-Wouda runtime; PROVENANCE
-
+- [Control console](control-console.md) — root one-click CONTROL_CONSOLE + PARAMETERS; input/output layout

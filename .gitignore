@@ -17,3 +17,11 @@ solver/reports/
 Reference Algorithm/
 *.npy
 *.npz
+
+# Control console I/O (keep structure via README; ignore run products)
+output/by_experiment/**/*
+output/by_type/**/*
+!output/**/README.md
+input/**/*
+!input/README.md
+!input/**/.gitkeep

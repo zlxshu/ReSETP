@@ -1,0 +1,44 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "ReSETP Control Console (dry-run)",
+      "type": "debugpy",
+      "request": "launch",
+      "program": "${workspaceFolder}/CONTROL_CONSOLE.py",
+      "console": "integratedTerminal",
+      "cwd": "${workspaceFolder}",
+      "args": ["--dry-run"],
+      "env": {
+        "PYTHONPATH": "${workspaceFolder}/solver/src:${workspaceFolder}"
+      },
+      "justMyCode": true
+    },
+    {
+      "name": "ReSETP Control Console (self-check)",
+      "type": "debugpy",
+      "request": "launch",
+      "program": "${workspaceFolder}/CONTROL_CONSOLE.py",
+      "console": "integratedTerminal",
+      "cwd": "${workspaceFolder}",
+      "args": ["--self-check"],
+      "env": {
+        "PYTHONPATH": "${workspaceFolder}/solver/src:${workspaceFolder}"
+      },
+      "justMyCode": true
+    },
+    {
+      "name": "ReSETP Control Console (list)",
+      "type": "debugpy",
+      "request": "launch",
+      "program": "${workspaceFolder}/CONTROL_CONSOLE.py",
+      "console": "integratedTerminal",
+      "cwd": "${workspaceFolder}",
+      "args": ["--list"],
+      "env": {
+        "PYTHONPATH": "${workspaceFolder}/solver/src:${workspaceFolder}"
+      },
+      "justMyCode": true
+    }
+  ]
+}
