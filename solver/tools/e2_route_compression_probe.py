@@ -30,6 +30,10 @@ MATRIX_PROFILES = (
     "winner_kernel_local_search",
     "winner_kernel_route_elimination",
     "winner_kernel_route_elimination_local_search",
+    "winner_kernel_scan_rebuild",
+    "winner_kernel_route_elimination_scan_rebuild",
+    "winner_kernel_scan_rebuild_local_search",
+    "winner_kernel_route_elimination_scan_rebuild_local_search",
 )
 
 
@@ -80,13 +84,23 @@ def solution_row(
         "route_count_delta_vs_winner": "",
         "fixed_cost_delta_vs_winner": "",
         "objective_delta_vs_winner": "",
+        "winner_gap_vs_lns_pp": "",
+        "profile_gap_vs_lns_pp": "",
+        "gap_improvement_vs_winner_pp": "",
         "gap_vs_lns_delta_pp": "",
     }
 
 
-def winner_profile_flags(*, include_route_elimination: bool, local_search: bool) -> dict[str, str]:
+def winner_profile_flags(
+    *,
+    include_route_elimination: bool,
+    local_search: bool,
+    scan_rebuild: bool,
+) -> dict[str, str]:
     flags = winner_variant_flags(include_route_elimination=bool(include_route_elimination))
     flags["SETP_ALNS_CRUSH_LOCAL_SEARCH"] = "1" if bool(local_search) else "0"
+    flags["SETP_ALNS_CRUSH_SCAN_RESTART"] = "1" if bool(scan_rebuild) else "0"
+    flags["SETP_ALNS_CRUSH_SCAN_REBUILD"] = "1" if bool(scan_rebuild) else "0"
     return flags
 
 
@@ -111,7 +125,14 @@ def annotate_vs_winner(rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
         if lns is not None and row["algorithm"] != "lns_reference":
             lns_cost = float(lns["best_cost"])
             if lns_cost > 1e-9:
-                out["gap_vs_lns_delta_pp"] = 100.0 * (float(row["best_cost"]) - lns_cost) / lns_cost
+                profile_gap = 100.0 * (float(row["best_cost"]) - lns_cost) / lns_cost
+                winner_gap = profile_gap
+                if winner is not None:
+                    winner_gap = 100.0 * (float(winner["best_cost"]) - lns_cost) / lns_cost
+                out["winner_gap_vs_lns_pp"] = winner_gap
+                out["profile_gap_vs_lns_pp"] = profile_gap
+                out["gap_improvement_vs_winner_pp"] = winner_gap - profile_gap
+                out["gap_vs_lns_delta_pp"] = profile_gap
         annotated.append(out)
     return annotated
 
@@ -184,9 +205,11 @@ def probe_bundle(
         for profile in MATRIX_PROFILES:
             include_route_elimination = "route_elimination" in profile
             local_search = "local_search" in profile
+            scan_rebuild = "scan_rebuild" in profile
             flags = winner_profile_flags(
                 include_route_elimination=include_route_elimination,
                 local_search=local_search,
+                scan_rebuild=scan_rebuild,
             )
             profile_config = WinnerKernelConfig(
                 **{
@@ -301,11 +324,13 @@ def _history_stats(result: dict[str, Any], best_solution: Solution) -> dict[str,
 
 
 def decision_from_rows(rows: list[dict[str, Any]]) -> dict[str, Any]:
+    candidate_rows = [row for row in rows if _is_e2_hypothesis_profile(row)]
     route_rows = [row for row in rows if _is_route_elimination_profile(row)]
-    regressions = [row for row in route_rows if _float(row["objective_delta_vs_winner"]) > max(1e-9, abs(_winner_cost(rows, row)) * 0.005)]
-    improved = [
+    scan_rows = [row for row in rows if _is_scan_rebuild_profile(row)]
+    regressions = [row for row in candidate_rows if _float(row["objective_delta_vs_winner"]) > max(1e-9, abs(_winner_cost(rows, row)) * 0.005)]
+    mechanism_rows = [
         row
-        for row in route_rows
+        for row in candidate_rows
         if bool(row["feasible"])
         and row not in regressions
         and (
@@ -314,24 +339,41 @@ def decision_from_rows(rows: list[dict[str, Any]]) -> dict[str, Any]:
             or _float(row["route_count_delta_vs_winner"]) < 0
         )
     ]
+    objective_rows = [
+        row
+        for row in candidate_rows
+        if _truthy(row.get("zero_violations", row.get("feasible")))
+        and _float(row.get("objective_delta_vs_winner")) < -1e-9
+    ]
     if regressions:
         status = "ROUTE_COMPRESSION_INTEGRATION_REGRESSED"
-    elif improved:
+    elif mechanism_rows:
         status = "ROUTE_COMPRESSION_SIGNAL_FOUND"
     else:
         status = "ROUTE_COMPRESSION_NO_SHORT_BUDGET_SIGNAL"
     first_gate = _first_gate_status(rows)
+    e2_gate = _e2_objective_gate_status(rows)
+    mechanism_signal_found = bool(mechanism_rows)
     return {
         "status": status,
         "row_count": len(rows),
+        "candidate_profile_rows": len(candidate_rows),
         "route_elimination_rows": len(route_rows),
-        "improved_rows": len(improved),
+        "scan_rebuild_rows": len(scan_rows),
+        "improved_rows": len(mechanism_rows),
+        "objective_improved_rows": len(objective_rows),
         "regression_rows_over_0_5pct": len(regressions),
+        "mechanism_signal_found": mechanism_signal_found,
         "first_gate_pass": bool(first_gate["pass"]),
         "first_gate_100c_improved_count": int(first_gate["improved_100c_count"]),
         "first_gate_sanity_regression_count": int(first_gate["sanity_regression_count"]),
+        "e2_objective_gate_pass": bool(e2_gate["pass"]),
+        "documented_exception_objective_improved_count": int(e2_gate["documented_exception_objective_improved_count"]),
+        "documented_exception_gap_improved_count": int(e2_gate["documented_exception_gap_improved_count"]),
+        "route_count_explanation_count": int(e2_gate["route_count_explanation_count"]),
+        "requires_scan_order_rebuild": bool(mechanism_signal_found and not bool(e2_gate["pass"])),
         "lns_reference_available": any(row.get("algorithm") == "lns_reference" for row in rows),
-        "requires_code_fix": bool(regressions) or not bool(improved) or not bool(first_gate["pass"]),
+        "requires_code_fix": bool(regressions) or not mechanism_signal_found or not bool(e2_gate["pass"]),
     }
 
 
@@ -350,8 +392,12 @@ def write_outputs(rows: list[dict[str, Any]], output_dir: Path) -> None:
             "best_update_count": "max(0, len(winner history) - 1); history records warm start and each accepted best improvement",
             "unique_solution_count": "distinct solution_signature_hash values in winner history plus final best solution",
             "zero_violations": "check_solution returned no hard or soft violations for the reported solution",
-            "gap_vs_lns_delta_pp": "100 * (profile best_cost - lns_reference best_cost) / lns_reference best_cost for the same bundle and seed",
+            "winner_gap_vs_lns_pp": "100 * (winner_kernel best_cost - lns_reference best_cost) / lns_reference best_cost for the same bundle and seed",
+            "profile_gap_vs_lns_pp": "100 * (profile best_cost - lns_reference best_cost) / lns_reference best_cost for the same bundle and seed",
+            "gap_improvement_vs_winner_pp": "winner_gap_vs_lns_pp - profile_gap_vs_lns_pp; positive means the profile closes the gap to LNS versus winner",
+            "gap_vs_lns_delta_pp": "legacy alias for profile_gap_vs_lns_pp; do not use as an improvement metric",
             "first_gate_pass": "at least one documented 100c exception improves and no 150/200c sanity row regresses by more than 0.5 percent",
+            "e2_objective_gate_pass": "documented 100c route-elimination profile has objective_delta_vs_winner < 0, gap_improvement_vs_winner_pp > 0, and zero violations",
         },
     }
     (output_dir / "metadata.json").write_text(json.dumps(metadata, indent=2), encoding="utf-8", newline="\n")
@@ -360,11 +406,21 @@ def write_outputs(rows: list[dict[str, Any]], output_dir: Path) -> None:
         "",
         f"Verdict: {decision['status']}",
         f"Rows: {len(rows)}",
-        f"Route-elimination improved rows: {decision['improved_rows']}/{decision['route_elimination_rows']}",
+        f"Candidate profile rows: {decision['candidate_profile_rows']}",
+        f"Route-elimination rows: {decision['route_elimination_rows']}",
+        f"Scan/order rebuild hypothesis rows: {decision['scan_rebuild_rows']}",
+        f"Candidate mechanism-improved rows: {decision['improved_rows']}/{decision['candidate_profile_rows']}",
+        f"Candidate objective-improved rows: {decision['objective_improved_rows']}/{decision['candidate_profile_rows']}",
         f"Regressions over 0.5%: {decision['regression_rows_over_0_5pct']}",
+        f"Mechanism signal found: {decision['mechanism_signal_found']}",
         f"First gate pass: {decision['first_gate_pass']}",
         f"100c improved count: {decision['first_gate_100c_improved_count']}",
         f"Sanity regression count: {decision['first_gate_sanity_regression_count']}",
+        f"E2 objective gate pass: {decision['e2_objective_gate_pass']}",
+        f"Documented exception objective improved count: {decision['documented_exception_objective_improved_count']}",
+        f"Documented exception gap improved count: {decision['documented_exception_gap_improved_count']}",
+        f"Route-count explanation count: {decision['route_count_explanation_count']}",
+        f"Requires scan/order rebuild: {decision['requires_scan_order_rebuild']}",
         f"LNS reference available: {decision['lns_reference_available']}",
         f"Requires code/mechanism fix: {decision['requires_code_fix']}",
         "",
@@ -377,9 +433,9 @@ def write_outputs(rows: list[dict[str, Any]], output_dir: Path) -> None:
 
 
 def _first_gate_status(rows: list[dict[str, Any]]) -> dict[str, int | bool]:
-    route_rows = [row for row in rows if _is_route_elimination_profile(row)]
-    exception_rows = [row for row in route_rows if str(row.get("bundle")) in {"e2-threeshift-100c-01", "e2-threeshift-100c-02"}]
-    sanity_rows = [row for row in route_rows if str(row.get("bundle")).startswith(("e2-threeshift-150c", "e2-threeshift-200c"))]
+    candidate_rows = [row for row in rows if _is_e2_hypothesis_profile(row)]
+    exception_rows = [row for row in candidate_rows if str(row.get("bundle")) in {"e2-threeshift-100c-01", "e2-threeshift-100c-02"}]
+    sanity_rows = [row for row in candidate_rows if str(row.get("bundle")).startswith(("e2-threeshift-150c", "e2-threeshift-200c"))]
     improved = [
         row
         for row in exception_rows
@@ -403,6 +459,39 @@ def _first_gate_status(rows: list[dict[str, Any]]) -> dict[str, int | bool]:
     }
 
 
+def _e2_objective_gate_status(rows: list[dict[str, Any]]) -> dict[str, int | bool]:
+    candidate_rows = [row for row in rows if _is_e2_hypothesis_profile(row)]
+    exception_rows = [
+        row
+        for row in candidate_rows
+        if str(row.get("bundle")) in {"e2-threeshift-100c-01", "e2-threeshift-100c-02"}
+    ]
+    objective_improved = [
+        row
+        for row in exception_rows
+        if _truthy(row.get("zero_violations", row.get("feasible")))
+        and _float(row.get("objective_delta_vs_winner")) < -1e-9
+    ]
+    gap_improved = [
+        row
+        for row in objective_improved
+        if _float(row.get("gap_improvement_vs_winner_pp")) > 1e-9
+    ]
+    route_explained = [
+        row
+        for row in gap_improved
+        if _float(row.get("route_count_delta_vs_winner")) < 0
+        or _float(row.get("fixed_cost_delta_vs_winner")) < -1e-9
+    ]
+    any_violation = any(not _truthy(row.get("zero_violations", row.get("feasible"))) for row in candidate_rows)
+    return {
+        "pass": bool(objective_improved) and bool(gap_improved) and not any_violation,
+        "documented_exception_objective_improved_count": len(objective_improved),
+        "documented_exception_gap_improved_count": len(gap_improved),
+        "route_count_explanation_count": len(route_explained),
+    }
+
+
 def _float(value: Any) -> float:
     try:
         if value == "":
@@ -423,6 +512,15 @@ def _is_route_elimination_profile(row: dict[str, Any]) -> bool:
     return algorithm == "winner_kernel_plus_route_elimination" or (
         algorithm.startswith("winner_kernel_route_elimination")
     )
+
+
+def _is_scan_rebuild_profile(row: dict[str, Any]) -> bool:
+    return "scan_rebuild" in str(row.get("algorithm", ""))
+
+
+def _is_e2_hypothesis_profile(row: dict[str, Any]) -> bool:
+    algorithm = str(row.get("algorithm", ""))
+    return algorithm.startswith("winner_kernel_") and algorithm != "winner_kernel"
 
 
 def _winner_cost(rows: list[dict[str, Any]], row: dict[str, Any]) -> float:

@@ -65,7 +65,10 @@ def test_annotate_vs_winner_reports_route_and_cost_deltas() -> None:
     assert annotated[2]["route_count_delta_vs_winner"] == -1
     assert annotated[2]["fixed_cost_delta_vs_winner"] == -10.0
     assert annotated[2]["objective_delta_vs_winner"] == -5.0
-    assert annotated[2]["gap_vs_lns_delta_pp"] == 5.555555555555555
+    assert annotated[1]["winner_gap_vs_lns_pp"] == 11.11111111111111
+    assert annotated[2]["winner_gap_vs_lns_pp"] == 11.11111111111111
+    assert annotated[2]["profile_gap_vs_lns_pp"] == 5.555555555555555
+    assert annotated[2]["gap_improvement_vs_winner_pp"] == 5.555555555555555
 
 
 def test_solution_row_reports_auditable_route_metrics() -> None:
@@ -116,22 +119,45 @@ def test_history_stats_counts_best_updates_and_unique_solutions() -> None:
     assert stats["unique_solution_count"] == 3
 
 
-def test_winner_profile_flags_make_local_search_and_route_elimination_explicit() -> None:
+def test_winner_profile_flags_make_local_search_route_elimination_and_scan_explicit() -> None:
     probe = _load_probe_module()
 
-    base = probe.winner_profile_flags(include_route_elimination=False, local_search=False)
-    local = probe.winner_profile_flags(include_route_elimination=False, local_search=True)
-    route = probe.winner_profile_flags(include_route_elimination=True, local_search=False)
-    combined = probe.winner_profile_flags(include_route_elimination=True, local_search=True)
+    base = probe.winner_profile_flags(include_route_elimination=False, local_search=False, scan_rebuild=False)
+    local = probe.winner_profile_flags(include_route_elimination=False, local_search=True, scan_rebuild=False)
+    route = probe.winner_profile_flags(include_route_elimination=True, local_search=False, scan_rebuild=False)
+    combined = probe.winner_profile_flags(include_route_elimination=True, local_search=True, scan_rebuild=True)
 
     assert base["SETP_ALNS_CRUSH_ROUTE_ELIMINATION"] == "0"
     assert base["SETP_ALNS_CRUSH_LOCAL_SEARCH"] == "0"
+    assert base["SETP_ALNS_CRUSH_SCAN_RESTART"] == "0"
+    assert base["SETP_ALNS_CRUSH_SCAN_REBUILD"] == "0"
     assert local["SETP_ALNS_CRUSH_ROUTE_ELIMINATION"] == "0"
     assert local["SETP_ALNS_CRUSH_LOCAL_SEARCH"] == "1"
+    assert local["SETP_ALNS_CRUSH_SCAN_RESTART"] == "0"
+    assert local["SETP_ALNS_CRUSH_SCAN_REBUILD"] == "0"
     assert route["SETP_ALNS_CRUSH_ROUTE_ELIMINATION"] == "1"
     assert route["SETP_ALNS_CRUSH_LOCAL_SEARCH"] == "0"
+    assert route["SETP_ALNS_CRUSH_SCAN_RESTART"] == "0"
+    assert route["SETP_ALNS_CRUSH_SCAN_REBUILD"] == "0"
     assert combined["SETP_ALNS_CRUSH_ROUTE_ELIMINATION"] == "1"
     assert combined["SETP_ALNS_CRUSH_LOCAL_SEARCH"] == "1"
+    assert combined["SETP_ALNS_CRUSH_SCAN_RESTART"] == "1"
+    assert combined["SETP_ALNS_CRUSH_SCAN_REBUILD"] == "1"
+
+
+def test_matrix_profiles_include_scan_order_rebuild_hypotheses() -> None:
+    probe = _load_probe_module()
+
+    assert probe.MATRIX_PROFILES == (
+        "winner_kernel",
+        "winner_kernel_local_search",
+        "winner_kernel_route_elimination",
+        "winner_kernel_route_elimination_local_search",
+        "winner_kernel_scan_rebuild",
+        "winner_kernel_route_elimination_scan_rebuild",
+        "winner_kernel_scan_rebuild_local_search",
+        "winner_kernel_route_elimination_scan_rebuild_local_search",
+    )
 
 
 def test_decision_from_rows_marks_missing_short_budget_signal_as_fix_required() -> None:
@@ -318,7 +344,62 @@ def test_decision_from_rows_requires_fix_when_route_signal_misses_100c_gate() ->
 
     assert decision["status"] == "ROUTE_COMPRESSION_SIGNAL_FOUND"
     assert decision["first_gate_pass"] is False
+    assert decision["e2_objective_gate_pass"] is False
     assert decision["requires_code_fix"] is True
+
+
+def test_decision_from_rows_keeps_mechanism_signal_separate_from_objective_gate() -> None:
+    probe = _load_probe_module()
+    rows = [
+        {
+            "bundle": "e2-threeshift-100c-01",
+            "seed": 1,
+            "algorithm": "lns_reference",
+            "best_cost": 90.0,
+            "route_count": 3,
+            "fixed_cost": 30.0,
+            "feasible": True,
+            "zero_violations": True,
+        },
+        {
+            "bundle": "e2-threeshift-100c-01",
+            "seed": 1,
+            "algorithm": "winner_kernel",
+            "best_cost": 100.0,
+            "route_count": 4,
+            "fixed_cost": 40.0,
+            "feasible": True,
+            "zero_violations": True,
+            "winner_gap_vs_lns_pp": 11.11111111111111,
+            "profile_gap_vs_lns_pp": 11.11111111111111,
+            "gap_improvement_vs_winner_pp": 0.0,
+        },
+        {
+            "bundle": "e2-threeshift-100c-01",
+            "seed": 1,
+            "algorithm": "winner_kernel_route_elimination",
+            "best_cost": 100.0,
+            "route_count": 3,
+            "fixed_cost": 30.0,
+            "feasible": True,
+            "zero_violations": True,
+            "route_count_delta_vs_winner": -1,
+            "fixed_cost_delta_vs_winner": -10.0,
+            "objective_delta_vs_winner": 0.0,
+            "winner_gap_vs_lns_pp": 11.11111111111111,
+            "profile_gap_vs_lns_pp": 11.11111111111111,
+            "gap_improvement_vs_winner_pp": 0.0,
+        },
+    ]
+
+    decision = probe.decision_from_rows(rows)
+
+    assert decision["mechanism_signal_found"] is True
+    assert decision["e2_objective_gate_pass"] is False
+    assert decision["documented_exception_objective_improved_count"] == 0
+    assert decision["documented_exception_gap_improved_count"] == 0
+    assert decision["route_count_explanation_count"] == 0
+    assert decision["requires_scan_order_rebuild"] is True
 
 
 def test_decision_from_rows_reports_lns_reference_availability() -> None:
@@ -412,3 +493,53 @@ def test_decision_from_rows_counts_matrix_route_elimination_profiles() -> None:
 
     assert decision["route_elimination_rows"] == 2
     assert decision["improved_rows"] == 2
+
+
+def test_decision_from_rows_counts_scan_rebuild_profile_in_objective_gate() -> None:
+    probe = _load_probe_module()
+    rows = [
+        {
+            "bundle": "e2-threeshift-100c-01",
+            "seed": 1,
+            "algorithm": "lns_reference",
+            "best_cost": 90.0,
+            "route_count": 3,
+            "fixed_cost": 30.0,
+            "feasible": True,
+            "zero_violations": True,
+        },
+        {
+            "bundle": "e2-threeshift-100c-01",
+            "seed": 1,
+            "algorithm": "winner_kernel",
+            "best_cost": 100.0,
+            "route_count": 4,
+            "fixed_cost": 40.0,
+            "feasible": True,
+            "zero_violations": True,
+        },
+        {
+            "bundle": "e2-threeshift-100c-01",
+            "seed": 1,
+            "algorithm": "winner_kernel_scan_rebuild",
+            "best_cost": 95.0,
+            "route_count": 3,
+            "fixed_cost": 30.0,
+            "feasible": True,
+            "zero_violations": True,
+            "route_count_delta_vs_winner": -1,
+            "fixed_cost_delta_vs_winner": -10.0,
+            "objective_delta_vs_winner": -5.0,
+            "winner_gap_vs_lns_pp": 11.11111111111111,
+            "profile_gap_vs_lns_pp": 5.555555555555555,
+            "gap_improvement_vs_winner_pp": 5.555555555555555,
+        },
+    ]
+
+    decision = probe.decision_from_rows(rows)
+
+    assert decision["candidate_profile_rows"] == 1
+    assert decision["scan_rebuild_rows"] == 1
+    assert decision["e2_objective_gate_pass"] is True
+    assert decision["documented_exception_objective_improved_count"] == 1
+    assert decision["documented_exception_gap_improved_count"] == 1
