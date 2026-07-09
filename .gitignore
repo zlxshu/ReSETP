@@ -6,17 +6,26 @@ __pycache__/
 .tasks/
 .mypy_cache/
 .ruff_cache/
+.superpowers/
 build/
 dist/
 *.egg-info/
+*.tmp
 
 # Large generated artifacts — tracked outside git
 data/
-models/
+models/*
+!models/src/
+!models/src/**
+!models/scripts/
+!models/scripts/**
+!models/tests/
+!models/tests/**
 solver/reports/
 Reference Algorithm/
 *.npy
 *.npz
+**/checkpoints/
 
 # Control console I/O (keep structure via README; ignore run products)
 output/by_experiment/**/*
