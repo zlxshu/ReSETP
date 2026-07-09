@@ -21,4 +21,4 @@ Updated: 2026-07-09
 
 ## Hang-account
 
-E2 +5% performance push paused while control console is built.
+E2 +5% performance push **resumed 2026-07-09**: A13 full parity resume in progress (`lns_policy_kernel_probe_20260708`, complete 16000 budget → then A14 if `A13_PARITY_SUPPORTED`).

@@ -213,3 +213,5 @@ ReSETP = 投《系统工程理论与实践》的绿色车辆路径论文。多�
 
 - [M1] 2026-07-09（挂帐 + 中控台）：**E2 性能冲刺（约超第二名 5% / A14 hybrid）挂帐暂停**，不阻塞中控台建设。已提交并推送上一轮底座：`fca004f` → `origin/codex/reporting-pipeline`（L-main 9 阶三班倒正式集 + `algorithms/resetp_alns` 完全独立；实例数据仍在盘上 `models/` gitignore）。新增根目录中控体系：`CONTROL_CONSOLE.py` + `CONTROL_CONSOLE.yaml`（batch/select/range 选实验与图表）+ `PARAMETERS_CONSOLE.yaml`（算法参数/路径/图风格）+ `input/`（按类型）+ `output/`（按实验与类型）+ `console/` 实现 + `.vscode/launch.json` 一键 dry-run/self-check。默认 `dry_run: true`；预检正式 9 算例与保护文件；运行日志写 `output/by_type/logs/`。验收：`--list/--self-check/--dry-run` 均 DONE OK。
 
+- [M1] 2026-07-09（挂帐恢复：E2 A13 full parity 续跑）：用户启动挂帐任务。事实：A13 4000/8000 hard-subset 已 192/192 OK 且 A13 vs LNS 全 tie（policy/formal 两组 gap=0），但 `decision.json` 仍为 `A13_PARITY_SMOKE_SUPPORTED`（`full_gate` 未闭合），`b16000` checkpoint 仅 60/192。已在后台续跑 `lns_policy_kernel_probe.py --budgets 4000,8000,16000 --workers 3` 复用既有 checkpoint，目标 `A13_PARITY_SUPPORTED`（576 rows）后才允许 A14 hybrid；任务卡 `docs/handoff/codex_prompts/20260709_e2_a13_full_parity_resume.md`。不改 cost/check/evaluation。
+
