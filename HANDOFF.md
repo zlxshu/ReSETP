@@ -7,6 +7,8 @@
 
 ## 0. 一分钟速览
 ReSETP = 投《系统工程理论与实践》的绿色车辆路径论文。多车场、油车(CV)+电车(EV)混合车队、EV 非线性充电（时变碳强度）、时间窗、收益公平、动态需求滚动重规划。
+
+- [M1] 2026-07-10（已批准、未实施的 L-main 重建契约）：正式 E1--E7 仍收敛为九阶三班倒，但 `10..200` 改为**每个 Goeke 子来源的规模标签**，不再强制合并后客户数等于标签。每个正式实例须由三个完整来源子集按 `0h/9h/18h` 合并为 24h，只删超过 24h 的第三班尾部，以保留时变碳强度的全天语义；Goeke 原始来源为单车场，正式生成实例必须保留 `D0` 并生成 `D1`、三班共享该多车场设施布局。当前 size-preserving 9 集保留为历史快照，重建和验收通过前不作为新正式 E2 证据。完整设计：`docs/handoff/e2_lmain_reconstruction_design_20260710.md`。
 贡献 = 模型 + 机制（碳两层/协同/公平/动态）；算法也必须有创新，且要**打过文献主流算法**（GA-VNS/GA/PSO/ACO/VNS/LNS/GWO/IWD），不只赢 SA（SA 是地板，赢它只算"合格"）。
 主线算法 = ALNS(winner kernel) + DR-ALNS（强化学习指挥 ALNS）。
 
@@ -214,4 +216,3 @@ ReSETP = 投《系统工程理论与实践》的绿色车辆路径论文。多�
 - [M1] 2026-07-09（挂帐 + 中控台）：**E2 性能冲刺（约超第二名 5% / A14 hybrid）挂帐暂停**，不阻塞中控台建设。已提交并推送上一轮底座：`fca004f` → `origin/codex/reporting-pipeline`（L-main 9 阶三班倒正式集 + `algorithms/resetp_alns` 完全独立；实例数据仍在盘上 `models/` gitignore）。新增根目录中控体系：`CONTROL_CONSOLE.py` + `CONTROL_CONSOLE.yaml`（batch/select/range 选实验与图表）+ `PARAMETERS_CONSOLE.yaml`（算法参数/路径/图风格）+ `input/`（按类型）+ `output/`（按实验与类型）+ `console/` 实现 + `.vscode/launch.json` 一键 dry-run/self-check。默认 `dry_run: true`；预检正式 9 算例与保护文件；运行日志写 `output/by_type/logs/`。验收：`--list/--self-check/--dry-run` 均 DONE OK。
 
 - [M1] 2026-07-09（挂帐恢复：E2 A13 full parity 续跑）：用户启动挂帐任务。事实：A13 4000/8000 hard-subset 已 192/192 OK 且 A13 vs LNS 全 tie（policy/formal 两组 gap=0），但 `decision.json` 仍为 `A13_PARITY_SMOKE_SUPPORTED`（`full_gate` 未闭合），`b16000` checkpoint 仅 60/192。已在后台续跑 `lns_policy_kernel_probe.py --budgets 4000,8000,16000 --workers 3` 复用既有 checkpoint，目标 `A13_PARITY_SUPPORTED`（576 rows）后才允许 A14 hybrid；任务卡 `docs/handoff/codex_prompts/20260709_e2_a13_full_parity_resume.md`。不改 cost/check/evaluation。
-

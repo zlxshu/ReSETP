@@ -36,3 +36,7 @@ Source copies: `e2_benchmark/threeshift/e2-threeshift-{size}c-01` (including new
 
 - 2026-07-09 user: formal set = **9 threeshift ladders only**; mixed 23 and 100-01 not formal.
 - Generator: `THREESHIFT_SIZES` extended to 9 steps in `models/scripts/build_e2_benchmark_instances.py`.
+
+## Approved 2026-07-10 reconstruction contract (not yet active)
+
+The user clarified that the nine labels are **source-scale** ladders, not required final customer counts.  Formal L-main must be a 24-hour multi-depot three-shift merge of three complete Goeke child sources at offsets `0h/9h/18h`; only the `>24h` shifted tail may be removed.  Goeke is single-depot at source, while the generated formal instance must retain original `D0`, generate `D1`, and share that two-depot facility layout across all three shifts.  Current size-preserving L-main v2 remains a historical snapshot until the approved reconstruction and its gates pass.  See `docs/handoff/e2_lmain_reconstruction_design_20260710.md`.
