@@ -31,9 +31,11 @@
 
 E2 / 算法对比 / T3 / baseline 相关任务还必须读：
 
-- `docs/handoff/codex_prompts/20260702_c1_e2_g0_plateau_5174_audit.md`（当前下一步）
+- `docs/handoff/memory/instance-lineage.md`（正式 9 阶三班倒）
+- `docs/handoff/memory/resetp-alns-independence.md`（完全独立 ALNS 包）
 - `docs/handoff/memory/baseline-algorithm-catalog.md`
 - `docs/handoff/memory/alns-crush-root-cause.md`
+- 历史：`docs/handoff/codex_prompts/20260702_c1_e2_g0_plateau_5174_audit.md`（已执行完，仅档案）
 
 动态需求 / E7 / T9 相关任务还必须读：
 
@@ -88,17 +90,16 @@ artifact_hashes.json
 
 ## 5. 当前最高优先级
 
-当前下一步不是正式扩跑，而是：
+2026-07-09 起正式算例与算法底座已拨正：
 
 ```text
-C1 / E2-G0：审计 5174.345121253789 同值平台
+正式算例 = L-main v2：9 阶三班倒 only（10..200，-01）
+正式算法包 = setp_solver.algorithms.resetp_alns（完全独立，禁止半独立）
 ```
 
-执行入口：
+登记：`docs/handoff/memory/instance-lineage.md`、`docs/handoff/memory/resetp-alns-independence.md`。
 
-```text
-docs/handoff/codex_prompts/20260702_c1_e2_g0_plateau_5174_audit.md
-```
+E2 性能主线（目标：相对第二名约 +5%）必须在上述算例+独立包上重采；旧 e2 混族 / 100-01 结果仅 ARCHIVE。
 
-若 C1 不能解释同值平台，停止 G4/G5，不跑正式 T3。
+历史 C1/G0 链（5174 平台等）已 closure 进 memory；不得用旧混族 T3 CSV 写新正式胜负。
 

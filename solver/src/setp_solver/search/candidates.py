@@ -26,7 +26,6 @@ from ..cost import evaluate, route_node_schedule
 from ..instance_loader import Instance, Node
 from ..prices import DEFAULT_PRICES, PriceParameters
 from ..solution import ChargingAction, Route, Solution
-from .alns_wouda import SearchPolicy, run_alns_wouda
 from .bundle import SearchBundle, load_search_bundle
 from .charging import repair_route_charging
 from .construction import build_initial_solution
@@ -36,6 +35,27 @@ from .fleet import FleetLimits, UNBOUNDED_FLEET, infer_fleet_limits, normalize_s
 from .local_search import improve_solution_locally
 from .repair_scoring import route_model_cost_delta
 from .scout import scout_reference_algorithms
+
+def _lazy_alns():
+    from . import alns_wouda as _m
+    return _m
+
+
+def run_alns_wouda(*args, **kwargs):
+    return _lazy_alns().run_alns_wouda(*args, **kwargs)
+
+
+class SearchPolicy:
+    """Lazy proxy to independent ALNS SearchPolicy."""
+
+    def __new__(cls, *args, **kwargs):
+        real = _lazy_alns().SearchPolicy
+        return real(*args, **kwargs)
+
+    def __class_getitem__(cls, item):
+        return _lazy_alns().SearchPolicy
+
+
 
 
 PRIMARY_ALGORITHM = "ALNS-Wouda"

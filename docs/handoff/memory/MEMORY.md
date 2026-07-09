@@ -9,3 +9,7 @@
 - [Algorithm pivot: CA-ALNS](algorithm-pivot-ca-alns.md) — 历史快照(2026-06-14/15); 注: 其"目标=碾压SA"口径已纠正(见 project-plan-overview 真目标=DR-ALNS真训练+创新, 干过GA-VNS/GA/PSO); rerun all experiments; carbon numbers change
 - [Baseline algorithm catalog](baseline-algorithm-catalog.md) — Zotero整理: 各论文主流算法+item key+复刻来源+推荐基线集; keystone=周鲜成2021综述(在目标期刊); ALNS/DR-ALNS要赢过这些(GA/PSO/SA/TS/ACO/VNS/GA-VNS+混合)
 - [Deferred instance robustness](deferred-instance-robustness.md) — later task: re-run carbon stress on three-shift 100/150/200c instances (150/200 not generated yet)
+
+- [Instance lineage](instance-lineage.md) — formal L-main v2 = 9 threeshift ladders only; mixed23/100-01 ARCHIVE_ONLY
+- [ReSETP ALNS full independence](resetp-alns-independence.md) — algorithms/resetp_alns package; no N-Wouda runtime; PROVENANCE
+

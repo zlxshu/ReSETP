@@ -27,6 +27,7 @@ from ..prices import DEFAULT_PRICES, PriceParameters
 from ..profit import calculate_depot_profits
 from ..solution import ChargingAction, CrossSiteService, Route, Solution
 from .alns_wouda import SearchPolicy, run_alns_wouda
+from .alns_crush import ALNS_DEFAULT_INSTANCE_ORDER, INSTANCE_DIRS
 from .bundle import load_search_bundle
 from .candidates import PRIMARY_ALGORITHM, Z1_CANDIDATES, run_candidate
 from .candidates import make_shared_initial_solution
@@ -47,6 +48,11 @@ from .root_cause import WANG_ROOT_CAUSE_ALGORITHMS, run_alns_root_cause_diagnost
 
 
 RunCallable = Callable[[], dict[str, Any]]
+FORMAL_MAIN_INSTANCE = "L-main-threeshift-200c"
+
+
+def _main_bundle_dir(repo_root: str | Path, instance_name: str = FORMAL_MAIN_INSTANCE) -> Path:
+    return Path(repo_root) / INSTANCE_DIRS[instance_name]
 
 
 @dataclass(frozen=True)
@@ -127,21 +133,18 @@ class ResumeLedger:
 
 
 def run_e0_gate(repo_root: str | Path, output_csv_path: str | Path) -> dict[str, Any]:
-    """Write T1 instance-gate rows for L-main and 100-01-24h."""
+    """Write T1 instance-gate rows for the 23-instance L-main main set."""
 
     root = Path(repo_root)
-    instances = [
-        root / "models" / "data_bundle" / "generated_instances" / "E-UK24h-三班-01",
-        root / "models" / "data_bundle" / "generated_instances" / "E-UK100_01__d2_s3_seed1_24h_20251113",
-    ]
+    instances = [(name, root / INSTANCE_DIRS[name]) for name in ALNS_DEFAULT_INSTANCE_ORDER]
     rows = []
-    for bundle_dir in instances:
+    for instance_name, bundle_dir in instances:
         bundle = load_search_bundle(bundle_dir)
         gate = b2_feasible_domain_gate(bundle_dir)
         manifest = _load_optional_json(bundle_dir / "scenario_manifest.json")
         rows.append(
             {
-                "instance": "L-main" if "三班" in bundle_dir.name else "100-01-24h",
+                "instance": instance_name,
                 "customers": _node_count(bundle.instance, "c"),
                 "depots": _node_count(bundle.instance, "d"),
                 "stations": _node_count(bundle.instance, "f"),
@@ -156,7 +159,7 @@ def run_e0_gate(repo_root: str | Path, output_csv_path: str | Path) -> dict[str,
             }
         )
     _write_csv(output_csv_path, rows)
-    return {"gate": "PASS" if all(row["gamma_slots"] == 48 and row["b2_safe"] for row in rows) else "HALT_E0", "rows": rows}
+    return {"gate": "PASS" if len(rows) == 23 and all(row["gamma_slots"] == 48 and row["b2_safe"] for row in rows) else "HALT_E0", "rows": rows}
 
 
 def compute_default_carbon_quota(
@@ -224,10 +227,7 @@ def run_e2_algorithm_comparison(
     out = Path(output_dir)
     ledger = ResumeLedger(out / "formal_runner_manifest.json")
     seeds = seeds or list(range(1, 11))
-    instances = {
-        "L-main": root / "models" / "data_bundle" / "generated_instances" / "E-UK24h-三班-01",
-        "100-01-24h": root / "models" / "data_bundle" / "generated_instances" / "E-UK100_01__d2_s3_seed1_24h_20251113",
-    }
+    instances = {name: root / INSTANCE_DIRS[name] for name in ALNS_DEFAULT_INSTANCE_ORDER}
     algorithms = _resolve_e2_algorithms(algorithms, exclude_algorithms)
     initial_solutions = {
         instance_name: make_shared_initial_solution(load_search_bundle(bundle_dir))
@@ -400,7 +400,7 @@ def run_e1_main_and_counterfactuals(
     root = Path(repo_root)
     out = Path(output_dir)
     run_seeds = seeds or [seed]
-    bundle_dir = root / "models" / "data_bundle" / "generated_instances" / "E-UK24h-三班-01"
+    bundle_dir = _main_bundle_dir(root)
     quota = compute_default_carbon_quota(
         bundle_dir,
         out / "carbon_quota_L-main.json",
@@ -417,7 +417,7 @@ def run_e1_main_and_counterfactuals(
     rows = []
     for variant, policy in variants.items():
         for run_seed in run_seeds:
-            key = RunKey("E1", "L-main", PRIMARY_ALGORITHM, run_seed, variant)
+            key = RunKey("E1", FORMAL_MAIN_INSTANCE, PRIMARY_ALGORITHM, run_seed, variant)
             row = ledger.run(
                 key,
                 lambda policy=policy, run_seed=run_seed: _run_alns_metrics(
@@ -449,7 +449,7 @@ def run_e3_ablation(
 
     root = Path(repo_root)
     out = Path(output_dir)
-    bundle_dir = root / "models" / "data_bundle" / "generated_instances" / "E-UK24h-三班-01"
+    bundle_dir = _main_bundle_dir(root)
     quota = compute_default_carbon_quota(
         bundle_dir,
         out / "carbon_quota_L-main.json",
@@ -472,7 +472,7 @@ def run_e3_ablation(
     for spec in variants:
         for seed in seeds:
             code = str(spec["code"])
-            key = RunKey("E3", "L-main", PRIMARY_ALGORITHM, seed, code)
+            key = RunKey("E3", FORMAL_MAIN_INSTANCE, PRIMARY_ALGORITHM, seed, code)
             row = ledger.run(
                 key,
                 lambda spec=spec, seed=seed: _run_e3_variant(
@@ -510,7 +510,7 @@ def run_e4_carbon_sensitivity(
 
     root = Path(repo_root)
     out = Path(output_dir)
-    bundle_dir = root / "models" / "data_bundle" / "generated_instances" / "E-UK24h-三班-01"
+    bundle_dir = _main_bundle_dir(root)
     baseline = compute_default_carbon_quota(
         bundle_dir,
         out / "carbon_quota_L-main.json",
@@ -528,7 +528,7 @@ def run_e4_carbon_sensitivity(
         for quota_factor in quotas:
             variant = f"p={price_factor:g};ce={quota_factor:g}"
             for run_seed in run_seeds:
-                key = RunKey("E4", "L-main", PRIMARY_ALGORITHM, run_seed, variant)
+                key = RunKey("E4", FORMAL_MAIN_INSTANCE, PRIMARY_ALGORITHM, run_seed, variant)
                 row = ledger.run(
                     key,
                     lambda price_factor=price_factor, quota_factor=quota_factor, run_seed=run_seed: _run_e4_once(
@@ -563,7 +563,7 @@ def run_e6_fairness_scan(
 
     root = Path(repo_root)
     out = Path(output_dir)
-    bundle_dir = root / "models" / "data_bundle" / "generated_instances" / "E-UK24h-三班-01"
+    bundle_dir = _main_bundle_dir(root)
     pi_path = root / "solver" / "reports" / "pi_d0_L-main.json"
     seed_path = out / "x0_L-main_independent_concat_seed_formal.json"
     if not seed_path.exists():
@@ -574,7 +574,7 @@ def run_e6_fairness_scan(
     run_rows = []
     for theta in thetas:
         for seed in seeds:
-            key = RunKey("E6", "L-main", PRIMARY_ALGORITHM, seed, f"theta={theta:.2f}")
+            key = RunKey("E6", FORMAL_MAIN_INSTANCE, PRIMARY_ALGORITHM, seed, f"theta={theta:.2f}")
             row = ledger.run(
                 key,
                 lambda theta=theta, seed=seed: run_equal_budget_fairness_comparison(
@@ -608,8 +608,13 @@ def run_e5_formal(
     # already created the output root.
     (out / "tables").mkdir(parents=True, exist_ok=True)
     (out / "figures").mkdir(parents=True, exist_ok=True)
-    bundle_dir = root / "models" / "data_bundle" / "generated_instances" / "E-UK100_01__d2_s3_seed1_24h_20251113"
-    source = Path(source_report_path) if source_report_path else root / "solver" / "reports" / "t0_100-01_24h_20251113_seed1_forward_repair_real_budget.json"
+    bundle_dir = _main_bundle_dir(root)
+    default_source = root / "solver" / "reports" / "t0_L-main_20251113_seed1_forward_repair_real_budget.json"
+    source = Path(source_report_path) if source_report_path else default_source
+    if not source.exists():
+        raise FileNotFoundError(
+            f"E5 replay source report missing: {source}. Run E1 for L-main first and set source_report_path explicitly."
+        )
     report = run_e5_charging_ablation(
         bundle_dir,
         source,
@@ -643,12 +648,12 @@ def run_e7_dynamic(
 ) -> dict[str, Any]:
     root = Path(repo_root)
     out = Path(output_dir)
-    bundle_dir = root / "models" / "data_bundle" / "generated_instances" / "E-UK24h-三班-01"
+    bundle_dir = _main_bundle_dir(root)
     ledger = ResumeLedger(out / "formal_runner_manifest.json")
     run_seeds = seeds or [seed]
     reports: dict[int, dict[str, Any]] = {}
     for run_seed in run_seeds:
-        key = RunKey("E7", "L-main", PRIMARY_ALGORITHM, run_seed, "dynamic")
+        key = RunKey("E7", FORMAL_MAIN_INSTANCE, PRIMARY_ALGORITHM, run_seed, "dynamic")
         output_json = out / ("e7_dynamic_rolling.json" if len(run_seeds) == 1 else f"e7_dynamic_rolling_seed{run_seed}.json")
         row = ledger.run(
             key,
@@ -1733,10 +1738,13 @@ def _run_feasible_with_cost(row: dict[str, Any]) -> bool:
 
 
 def _n_d_label(instance: str) -> str:
-    if instance == "L-main":
-        return "219/2"
-    if instance == "100-01-24h":
-        return "100/2"
+    if instance.startswith("L-main-"):
+        parts = instance.split("-")
+        family = parts[2] if len(parts) > 2 else ""
+        depots = 1 if family == "vanilla" else 2
+        for part in parts:
+            if part.endswith("c") and part[:-1].isdigit():
+                return f"{part[:-1]}/{depots}"
     return ""
 
 
@@ -1806,15 +1814,14 @@ def _write_e2_solution_outputs(repo_root: Path, output_dir: Path, run_rows: list
     candidates = [
         row
         for row in run_rows
-        if row["instance"] == "L-main"
-        and row["algorithm"] == PRIMARY_ALGORITHM
+        if row["algorithm"] == PRIMARY_ALGORITHM
         and _run_feasible_with_cost(row)
         and _solution_payload_from_result(row.get("result", {}))
     ]
     if not candidates:
         return
     best = min(candidates, key=lambda row: float(row["result"]["best_cost"]))
-    bundle_dir = repo_root / "models" / "data_bundle" / "generated_instances" / "E-UK24h-三班-01"
+    bundle_dir = repo_root / INSTANCE_DIRS[best["instance"]]
     bundle = load_search_bundle(bundle_dir)
     solution = _solution_from_dict(_solution_payload_from_result(best["result"]))
     metrics = best["result"].get("metrics") or evaluate(solution, bundle.instance, bundle.carbon_profile, DEFAULT_PRICES)

@@ -50,20 +50,26 @@ GOLD_PYTHON = "/opt/anaconda3/bin/python3.13"
 GOLD_NUMPY = "2.3.5"
 CARBON_PRICE = 0.05034
 DIAGNOSTIC_BATTERY_KWH = 280.0
-INSTANCE_ROOT = REPO_ROOT / "models/data_bundle/generated_instances/e2_benchmark"
+# Formal default (2026-07-09): L-main 9-step threeshift-only. e2_benchmark remains
+# the raw generation pool / archive for multi-donor stability slices.
+INSTANCE_ROOT = REPO_ROOT / "models/data_bundle/generated_instances/L-main"
+E2_POOL_ROOT = REPO_ROOT / "models/data_bundle/generated_instances/e2_benchmark"
 OUTPUT_DIR = REPO_ROOT / "baselines/e2_alns/e2_final_closure_20260703"
 
 BASE_T3_BASELINES = ("GA", "LNS", "PSO", "VNS")
 G3_CANDIDATE_BASELINES = ("ACO", "GA-VNS", "GWO", "IWD")
 ALNS_GATE_ALGORITHMS = ("alns_e2_carbon", "alns_e2_carbon_ablation", "alns_e2_throughput")
-ALNS_GATE_INSTANCES = (("threeshift", "e2-threeshift-150c-01"), ("vanilla", "e2-vanilla-100c-01"))
+ALNS_GATE_INSTANCES = (
+    ("threeshift", "L-main-threeshift-100c-01"),
+    ("threeshift", "L-main-threeshift-150c-01"),
+)
 G4_INSTANCES = tuple(
-    ("threeshift", f"e2-threeshift-{size}c-{idx:02d}")
+    ("threeshift", f"L-main-threeshift-{size}c-01")
     for size in (100, 150, 200)
-    for idx in (1, 2, 3)
 )
 TIER_NAMES = ("Tier1", "Tier2", "Tier3")
-G5_TIER_EXPECTED_COUNTS = {"Tier1": 23, "Tier2": 29, "Tier3": 69}
+# Tier1 = formal 9 threeshift -01 ladders. Tier2/3 expand into e2 pool donors if needed.
+G5_TIER_EXPECTED_COUNTS = {"Tier1": 9, "Tier2": 15, "Tier3": 27}
 PHASE_E_CARBON_TIERS = {
     "Tier1": (
         ("threeshift", "e2-threeshift-150c-02"),
@@ -857,7 +863,7 @@ def make_task(
         "run_id": run_id,
         "category": category,
         "instance": instance,
-        "bundle_dir": str(Path("models/data_bundle/generated_instances/e2_benchmark") / category / instance),
+        "bundle_dir": rel(_resolve_bundle_dir(category, instance)),
         "algorithm": algorithm,
         "seed": int(seed),
         "eval_budget": int(eval_budget),
@@ -2101,42 +2107,75 @@ def price_override_payload(scenario_type: str) -> dict[str, float] | None:
 def instance_manifest_for_tier(tier: str) -> list[dict[str, Any]]:
     if tier not in TIER_NAMES:
         raise ValueError(f"unknown G5 tier: {tier}")
-    all_rows = all_e2_instance_manifest()
+    formal_rows = all_formal_lmain_threeshift_manifest()
     if tier == "Tier1":
-        rows = [row for row in all_rows if row["replicate"] == "01"]
+        rows = list(formal_rows)
     elif tier == "Tier2":
-        selected = {(row["category"], row["instance"]) for row in all_rows if row["replicate"] == "01"}
-        selected.update(G4_INSTANCES)
-        rows = [row for row in all_rows if (row["category"], row["instance"]) in selected]
+        # Formal 9 + e2 threeshift -02/-03 for mid sizes (stability expansion).
+        rows = list(formal_rows)
+        pool = all_e2_threeshift_pool_manifest()
+        for row in pool:
+            if row["replicate"] in {"02", "03"} and int(row["size"]) in {100, 150, 200}:
+                rows.append(row)
     else:
-        rows = list(all_rows)
+        rows = all_e2_threeshift_pool_manifest()
     for row in rows:
         row["tier_scope"] = tier
     return sorted_rows(rows)
 
 
-def all_e2_instance_manifest() -> list[dict[str, Any]]:
+def all_formal_lmain_threeshift_manifest() -> list[dict[str, Any]]:
+    """Formal default: 9 L-main threeshift -01 ladders only."""
     rows: list[dict[str, Any]] = []
-    for category_dir in sorted(INSTANCE_ROOT.iterdir()):
-        if not category_dir.is_dir():
+    if not INSTANCE_ROOT.is_dir():
+        return rows
+    for instance_dir in sorted(INSTANCE_ROOT.iterdir()):
+        if not instance_dir.is_dir():
             continue
-        category = category_dir.name
-        for instance_dir in sorted(category_dir.iterdir()):
-            if not instance_dir.is_dir():
-                continue
-            replicate = instance_dir.name.rsplit("-", 1)[-1]
-            rows.append(
-                {
-                    "tier_scope": "Tier3",
-                    "replicate": replicate,
-                    "category": category,
-                    "instance": instance_dir.name,
-                    "size": instance_size(instance_dir.name),
-                    "bundle_dir": rel(instance_dir),
-                }
-            )
-    rows.sort(key=lambda row: (int(row["size"]), str(row["category"]), str(row["instance"])))
+        if not instance_dir.name.startswith("L-main-threeshift-"):
+            continue
+        replicate = instance_dir.name.rsplit("-", 1)[-1]
+        rows.append(
+            {
+                "tier_scope": "Tier1",
+                "replicate": replicate,
+                "category": "threeshift",
+                "instance": instance_dir.name,
+                "size": instance_size(instance_dir.name),
+                "bundle_dir": rel(instance_dir),
+            }
+        )
+    rows.sort(key=lambda row: (int(row["size"]), str(row["instance"])))
     return rows
+
+
+def all_e2_threeshift_pool_manifest() -> list[dict[str, Any]]:
+    """Full e2 threeshift pool (all donors/sizes) for Tier3 stability expansion only."""
+    rows: list[dict[str, Any]] = []
+    category_dir = E2_POOL_ROOT / "threeshift"
+    if not category_dir.is_dir():
+        return rows
+    for instance_dir in sorted(category_dir.iterdir()):
+        if not instance_dir.is_dir():
+            continue
+        replicate = instance_dir.name.rsplit("-", 1)[-1]
+        rows.append(
+            {
+                "tier_scope": "Tier3",
+                "replicate": replicate,
+                "category": "threeshift",
+                "instance": instance_dir.name,
+                "size": instance_size(instance_dir.name),
+                "bundle_dir": rel(instance_dir),
+            }
+        )
+    rows.sort(key=lambda row: (int(row["size"]), str(row["instance"])))
+    return rows
+
+
+def all_e2_instance_manifest() -> list[dict[str, Any]]:
+    """Backward-compatible name: formal L-main threeshift set (not mixed vanilla/multidepot)."""
+    return all_formal_lmain_threeshift_manifest()
 
 
 def phase_e_carbon_manifest(tier: str) -> list[dict[str, Any]]:
@@ -2157,11 +2196,27 @@ def phase_e_carbon_manifest(tier: str) -> list[dict[str, Any]]:
                 "category": category,
                 "instance": instance,
                 "size": instance_size(instance),
-                "bundle_dir": rel(INSTANCE_ROOT / category / instance),
+                "bundle_dir": rel(_resolve_bundle_dir(category, instance)),
                 "selection_reason": "EV/charging structure enriched Goeke80 three-shift diagnostic instance",
             }
         )
     return sorted_rows(rows)
+
+
+def _resolve_bundle_dir(category: str, instance: str) -> Path:
+    """Resolve formal L-main or e2 pool bundle path."""
+    if instance.startswith("L-main-"):
+        path = INSTANCE_ROOT / instance
+        if path.is_dir():
+            return path
+    e2_path = E2_POOL_ROOT / category / instance
+    if e2_path.is_dir():
+        return e2_path
+    # L-main name without category nesting
+    lmain = INSTANCE_ROOT / instance
+    if lmain.is_dir():
+        return lmain
+    raise FileNotFoundError(f"Cannot resolve instance bundle: category={category} instance={instance}")
 
 
 def tier1_instance_manifest() -> list[dict[str, Any]]:

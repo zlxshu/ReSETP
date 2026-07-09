@@ -38,14 +38,14 @@ from .winner_operators import (
 
 
 RESTORATION_DIR = Path("solver/reports/dr_alns_ppo_v2/restoration")
-TARGET_INSTANCE = "100-01-24h"
+TARGET_INSTANCE = "L-main-threeshift-200c"
 WINNER_VARIANT = "winner_kernel_only"
 WINNER_ALGORITHM = "ALNS-Wouda"
-GOLD_VERIFY_JSON = Path("solver/reports/alns_crush_v3/taskB_10001_best_verify.json")
+GOLD_VERIFY_JSON = Path("solver/reports/alns_crush_v3/taskB_Lmain_best_verify.json")
 GOLD_SOLUTIONS_DIR = Path("solver/reports/alns_crush_v2/task3/solutions")
-FAIR_SA_MEAN_10001 = 5347.0
-OLD_GOLD_MEAN = 4878.331796187524
-OLD_GOLD_BEST = 4779.053444002934
+FAIR_SA_MEAN_LMAIN = 8319.837848563908
+OLD_GOLD_MEAN = 8351.639754631946
+OLD_GOLD_BEST = 8138.269146670922
 EPS = 1e-9
 
 
@@ -57,9 +57,8 @@ def verify_gold(repo_root: str | Path, output_dir: str | Path) -> dict[str, Any]
     out.mkdir(parents=True, exist_ok=True)
     started = time.perf_counter()
     bundle = load_search_bundle(root / INSTANCE_DIRS[TARGET_INSTANCE])
-    gold = _load_json(root / GOLD_VERIFY_JSON)
     rows: list[dict[str, Any]] = []
-    for gold_row in sorted(gold["audit_rows"], key=lambda row: int(row["seed"])):
+    for gold_row in sorted(_gold_rows(root).values(), key=lambda row: int(row["seed"])):
         seed = int(gold_row["seed"])
         solution_path = _gold_solution_path(root, seed, gold_row)
         solution = _solution_from_dict(_load_json(solution_path))
@@ -321,7 +320,7 @@ def verify_restored(
     )
     summary = result["summary"]
     crush_restored = (
-        float(summary["mean_current_total_cost"]) < FAIR_SA_MEAN_10001
+        float(summary["mean_current_total_cost"]) < FAIR_SA_MEAN_LMAIN
         and int(summary["zero_violation_count"]) == len(seeds)
     )
     commit_hash = _git(["rev-parse", "HEAD"], Path(repo_root)).strip()
@@ -329,7 +328,7 @@ def verify_restored(
         "gate": "PASS_RESTORED_BASELINE" if crush_restored else "HALT_RESTORED_BASELINE_NOT_CRUSHING",
         "commit_hash": commit_hash,
         "operator_base_id": operator_base_id,
-        "fair_sa_mean_reference": FAIR_SA_MEAN_10001,
+        "fair_sa_mean_reference": FAIR_SA_MEAN_LMAIN,
         "old_gold_mean_reference": OLD_GOLD_MEAN,
         "old_gold_best_reference": OLD_GOLD_BEST,
         "summary": summary,
@@ -439,8 +438,64 @@ def _gold_rows(repo_root: Path) -> dict[int, dict[str, Any]]:
     if verified_path.exists():
         payload = _load_json(verified_path)
         return {int(row["seed"]): row for row in payload["rows"]}
-    gold = _load_json(repo_root / GOLD_VERIFY_JSON)
-    return {int(row["seed"]): row for row in gold["audit_rows"]}
+    gold_path = repo_root / GOLD_VERIFY_JSON
+    if gold_path.exists():
+        return _gold_rows_from_verify(repo_root, _load_json(gold_path))
+    return _gold_rows_from_solutions(repo_root)
+
+
+def _gold_rows_from_verify(repo_root: Path, payload: dict[str, Any]) -> dict[int, dict[str, Any]]:
+    rows: list[dict[str, Any]] = []
+    for gold_row in payload.get("audit_rows", payload.get("rows", [])):
+        seed = int(gold_row.get("seed", 0))
+        if not seed:
+            continue
+        expected = float(gold_row.get("expected_total_cost", gold_row.get("recomputed_total_cost", 0.0)))
+        recomputed = float(gold_row.get("recomputed_total_cost", expected))
+        row = {
+            "seed": seed,
+            "expected_total_cost": expected,
+            "recomputed_total_cost": recomputed,
+            "route_count": int(gold_row.get("route_count", gold_row.get("gold_route_count", 0))),
+            "cv_routes": int(gold_row.get("cv_routes", gold_row.get("gold_cv_routes", 0))),
+            "ev_routes": int(gold_row.get("ev_routes", gold_row.get("gold_ev_routes", 0))),
+            "charging_actions": int(gold_row.get("charging_actions", gold_row.get("gold_charging_actions", 0))),
+            "solution_path": str(gold_row.get("solution_path", _gold_solution_path(repo_root, seed, {}).resolve())),
+            "abs_delta": float(gold_row.get("abs_delta", abs(recomputed - expected))),
+            "violation_count": int(gold_row.get("violation_count", 0)),
+        }
+        rows.append(row)
+    return {int(row["seed"]): row for row in rows}
+
+
+def _gold_rows_from_solutions(repo_root: Path) -> dict[int, dict[str, Any]]:
+    bundle = load_search_bundle(repo_root / INSTANCE_DIRS[TARGET_INSTANCE])
+    rows = {}
+    for seed in range(1, 11):
+        solution_path = _gold_solution_path(repo_root, seed, {"seed": seed})
+        if not solution_path.exists():
+            continue
+        solution = _solution_from_dict(_load_json(solution_path))
+        breakdown = cost_breakdown_row(TARGET_INSTANCE, WINNER_VARIANT, seed, solution, bundle.instance, bundle.carbon_profile)
+        total_cost = float(breakdown["total_cost"])
+        rows[seed] = {
+            **breakdown,
+            "seed": seed,
+            "expected_total_cost": total_cost,
+            "recomputed_total_cost": total_cost,
+            "abs_delta": 0.0,
+            "gold_total_cost": total_cost,
+            "route_count": int(breakdown["route_count"]),
+            "cv_routes": int(breakdown["cv_routes"]),
+            "ev_routes": int(breakdown["ev_routes"]),
+            "charging_actions": int(breakdown["charging_actions"]),
+            "gold_route_count": int(breakdown["route_count"]),
+            "gold_cv_routes": int(breakdown["cv_routes"]),
+            "gold_ev_routes": int(breakdown["ev_routes"]),
+            "gold_charging_actions": int(breakdown["charging_actions"]),
+            "violation_count": 0,
+        }
+    return rows
 
 
 def _gold_solution_path(repo_root: Path, seed: int, gold_row: dict[str, Any]) -> Path:

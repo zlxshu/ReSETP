@@ -24,6 +24,7 @@ from ..check import check_solution
 from ..cost import evaluate
 from ..prices import DEFAULT_PRICES
 from ..solution import Solution
+from .alns_crush import ALNS_DEFAULT_INSTANCE_ORDER, INSTANCE_DIRS
 from . import alns_wouda
 from .alns_wouda import AlnsState, SearchPolicy
 from .bundle import SearchBundle, load_search_bundle
@@ -117,10 +118,7 @@ def run_alns_root_cause_diagnostics(
     seeds = seeds or [1]
     run_seeds = [int(seed) for seed in seeds]
     run_algorithms = algorithms or ROOT_CAUSE_ALGORITHMS
-    instances = {
-        "L-main": root / "models" / "data_bundle" / "generated_instances" / "E-UK24h-三班-01",
-        "100-01-24h": root / "models" / "data_bundle" / "generated_instances" / "E-UK100_01__d2_s3_seed1_24h_20251113",
-    }
+    instances = {name: root / INSTANCE_DIRS[name] for name in ALNS_DEFAULT_INSTANCE_ORDER}
     warm_starts = {
         name: make_shared_initial_solution(load_search_bundle(path))
         for name, path in instances.items()
@@ -692,13 +690,9 @@ def _structure_row(
     warm_structure: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     if bundle is None:
-        bundle = load_search_bundle(
-            Path(__file__).resolve().parents[4] / (
-                "models/data_bundle/generated_instances/E-UK24h-三班-01"
-                if run.instance == "L-main"
-                else "models/data_bundle/generated_instances/E-UK100_01__d2_s3_seed1_24h_20251113"
-            )
-        )
+        if run.instance not in INSTANCE_DIRS:
+            raise ValueError(f"unsupported instance for root-cause structure summary: {run.instance}")
+        bundle = load_search_bundle(Path(__file__).resolve().parents[4] / INSTANCE_DIRS[run.instance])
     structure = solution_structure(run.best_solution, bundle)
     warm_structure = warm_structure or solution_structure(make_shared_initial_solution(bundle), bundle)
     return {

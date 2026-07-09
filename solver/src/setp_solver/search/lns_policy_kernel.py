@@ -123,6 +123,7 @@ def run_lns_policy_baseline(
     max_runtime_seconds: float,
     initial_solution: Any,
     prices: Any,
+    common_flip_preprocess: bool = False,
 ) -> Any:
     """Construct a baseline session and run the diagnostic policy kernel."""
 
@@ -137,6 +138,6 @@ def run_lns_policy_baseline(
         float(max_runtime_seconds),
         initial_solution,
         prices=prices,
-        common_flip_preprocess=False,
+        common_flip_preprocess=bool(common_flip_preprocess),
     )
     return run_lns_policy_kernel(session)

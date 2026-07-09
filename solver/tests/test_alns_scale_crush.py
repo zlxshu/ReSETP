@@ -5,6 +5,7 @@ import sys
 import unittest
 from pathlib import Path
 
+from setp_solver.search.alns_crush import ALNS_DEFAULT_INSTANCE_ORDER
 from setp_solver.search.alns_crush_v2 import V2_INSTANCE_DIRS
 from setp_solver.search.alns_scale_crush import (
     capacity_route_lower_bound,
@@ -118,7 +119,8 @@ class AlnsScaleCrushTests(unittest.TestCase):
         self.assertEqual(verdict["verdict"], "失败")
 
     def test_v2_default_instances_do_not_expand_when_scale_registered(self) -> None:
-        self.assertEqual(set(V2_INSTANCE_DIRS), {"100-01-24h", "L-main"})
+        self.assertEqual(tuple(V2_INSTANCE_DIRS), ALNS_DEFAULT_INSTANCE_ORDER)
+        self.assertEqual(len(V2_INSTANCE_DIRS), 23)
 
 
 if __name__ == "__main__":

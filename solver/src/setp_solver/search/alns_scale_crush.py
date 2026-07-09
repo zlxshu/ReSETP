@@ -20,7 +20,7 @@ from typing import Any
 import numpy as np
 
 from ..prices import DEFAULT_PRICES
-from .alns_crush import INSTANCE_DIRS
+from .alns_crush import ALNS_DEFAULT_INSTANCE_ORDER, INSTANCE_DIRS
 from .alns_crush_v2 import (
     FAIR_SA_EVAL_BUDGET,
     FAIR_SA_MAX_RUNTIME_SECONDS,
@@ -38,15 +38,9 @@ from .winner_operators import operator_base_id, winner_operator_module
 
 
 SCALE_CRUSH_DIR = Path("solver/reports/alns_scale_crush")
-SCALE_INSTANCE_NAMES = ("Scale-150", "Scale-200")
+SCALE_INSTANCE_NAMES = ALNS_DEFAULT_INSTANCE_ORDER
 SCALE_INSTANCE_DIRS = {name: INSTANCE_DIRS[name] for name in SCALE_INSTANCE_NAMES}
 KNOWN_CONTEXT_ROWS = [
-    {
-        "instance": "100-01-24h",
-        "known_status": "碾压",
-        "known_evidence": "V2: winner kernel mean £4878 vs fair SA £5347, about 8.8% lower; 32 routes.",
-        "constraint_note": "single 100-customer static instance, looser route-count headroom.",
-    },
     {
         "instance": "L-main",
         "known_status": "持平",

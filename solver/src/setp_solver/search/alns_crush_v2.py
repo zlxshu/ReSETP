@@ -19,7 +19,7 @@ from ..check import check_solution
 from ..cost import evaluate
 from ..prices import DEFAULT_PRICES
 from ..solution import ChargingAction, CrossSiteService, Route, Solution
-from .alns_crush import COMPONENT_FIELDS, INSTANCE_DIRS, cost_breakdown_row
+from .alns_crush import ALNS_DEFAULT_INSTANCE_ORDER, COMPONENT_FIELDS, INSTANCE_DIRS, cost_breakdown_row
 from .bundle import load_search_bundle
 from .candidates import make_shared_initial_solution, run_candidate
 from .winner_operators import (
@@ -38,8 +38,8 @@ FAIR_SA_MAX_RUNTIME_SECONDS = 900.0
 PHASE0_SA_100_SEED1 = 5331.576889799002
 CRUSH_V2_DIR = Path("solver/reports/alns_crush_v2")
 V2_INSTANCE_DIRS = {
-    "100-01-24h": INSTANCE_DIRS["100-01-24h"],
-    "L-main": INSTANCE_DIRS["L-main"],
+    name: INSTANCE_DIRS[name]
+    for name in ALNS_DEFAULT_INSTANCE_ORDER
 }
 
 
@@ -121,7 +121,7 @@ def run_task1(
         _write_json(out / "solutions" / f"{result['instance']}_scikit-opt-SA_seed{result['seed']}.json", result["solution"])
     summary = _summary_rows(rows, variant="fair_sa")
     reference = _fair_sa_reference(summary, rows, eval_budget=eval_budget, max_runtime_seconds=max_runtime_seconds)
-    reproduce_row = next((row for row in rows if row["instance"] == "100-01-24h" and int(row["seed"]) == 1), None)
+    reproduce_row = next((row for row in rows if row["instance"] == "L-main" and int(row["seed"]) == 1), None)
     if reproduce_row is not None:
         diff["phase0_sa_100_seed1_target"] = PHASE0_SA_100_SEED1
         diff["fair_sa_100_seed1_reproduced_cost"] = float(reproduce_row["total_cost"])

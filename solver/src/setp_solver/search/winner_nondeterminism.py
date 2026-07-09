@@ -24,10 +24,10 @@ from .alns_crush import INSTANCE_DIRS
 
 
 RESTORATION_DIR = Path("solver/reports/dr_alns_ppo_v2/restoration")
-TARGET_INSTANCE = "100-01-24h"
-TARGET_BUNDLE_FILTER = "E-UK100_01"
-GOLD_SEED2_COST = 4779.053444002934
-GOLD_MEAN_COST = 4878.331796187524
+TARGET_INSTANCE = "L-main-threeshift-200c"
+TARGET_BUNDLE_FILTER = "L-main-threeshift-200c"
+GOLD_SEED2_COST = 8138.269146670922
+GOLD_MEAN_COST = 8351.639754631946
 DEFAULT_EVAL_BUDGET = 16_000
 DEFAULT_MAX_RUNTIME_SECONDS = 900.0
 DEFAULT_SEED = 2
@@ -788,7 +788,7 @@ print(json.dumps(payload, ensure_ascii=False, sort_keys=True))
 
 
 def _official_wrapper_script() -> str:
-    return r"""
+    return rf"""
 import json
 import sys
 from setp_solver.search.alns_crush import INSTANCE_DIRS
@@ -797,7 +797,7 @@ seed = int(sys.argv[1])
 eval_budget = int(sys.argv[2])
 max_runtime_seconds = float(sys.argv[3])
 row = run_official_winner_kernel(
-    INSTANCE_DIRS["100-01-24h"],
+    INSTANCE_DIRS["{TARGET_INSTANCE}"],
     seed=seed,
     eval_budget=eval_budget,
     max_runtime_seconds=max_runtime_seconds,
@@ -819,7 +819,7 @@ print(json.dumps(payload, ensure_ascii=False, sort_keys=True))
 
 
 def _sa_script() -> str:
-    return r"""
+    return rf"""
 import json
 import sys
 from setp_solver.search.alns_crush import INSTANCE_DIRS
@@ -832,12 +832,12 @@ eval_budget = int(sys.argv[2])
 max_runtime_seconds = float(sys.argv[3])
 result = run_candidate(
     "scikit-opt-SA",
-    INSTANCE_DIRS["100-01-24h"],
+    INSTANCE_DIRS["{TARGET_INSTANCE}"],
     seed=seed,
     eval_budget=eval_budget,
     max_runtime_seconds=max_runtime_seconds,
 )
-bundle = load_search_bundle(INSTANCE_DIRS["100-01-24h"])
+bundle = load_search_bundle(INSTANCE_DIRS["{TARGET_INSTANCE}"])
 violations = check_solution(result.best_solution, bundle.instance, DEFAULT_PRICES) if result.best_solution is not None else ["missing_solution"]
 payload = {
     "success": result.best_solution is not None,
@@ -1237,7 +1237,7 @@ def _fair_sa_mean_reference(root: Path) -> float | None:
     try:
         payload = json.loads(path.read_text(encoding="utf-8"))
         return float(
-            payload["instances"]["100-01-24h"]["scikit-opt-SA"]["mean_total_cost"]
+            payload["instances"][TARGET_INSTANCE]["scikit-opt-SA"]["mean_total_cost"]
         )
     except Exception:
         return None

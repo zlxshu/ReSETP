@@ -30,6 +30,11 @@ from .alns_wouda import SearchPolicy, run_alns_wouda
 from .bundle import load_search_bundle
 from .candidates import make_shared_initial_solution, run_candidate
 from .charging import repair_route_charging
+from .instance_registry import (
+    FORMAL_INSTANCE_ORDER,
+    INSTANCE_REL_DIRS,
+    L_MAIN_THREESHIFT_SIZES,
+)
 
 
 COMPONENT_FIELDS = [
@@ -42,12 +47,11 @@ COMPONENT_FIELDS = [
     "cost_transship",
 ]
 
-INSTANCE_DIRS = {
-    "100-01-24h": Path("models/data_bundle/generated_instances/E-UK100_01__d2_s3_seed1_24h_20251113"),
-    "L-main": Path("models/data_bundle/generated_instances/E-UK24h-三班-01"),
-    "Scale-150": Path("models/data_bundle/generated_instances/E-UK24h-三班-150"),
-    "Scale-200": Path("models/data_bundle/generated_instances/E-UK24h-三班-200"),
-}
+# Formal default (2026-07-09): 9-step threeshift-only L-main. Vanilla/multidepot
+# remain ARCHIVE_ONLY under L-main_mixed23_archive_20260709 / e2_benchmark.
+L_MAIN_INSTANCE_ORDER = FORMAL_INSTANCE_ORDER
+INSTANCE_DIRS = dict(INSTANCE_REL_DIRS)
+ALNS_DEFAULT_INSTANCE_ORDER = L_MAIN_INSTANCE_ORDER
 
 ALGORITHMS = ["scikit-opt-SA", "DR-ALNS", "ALNS-Wouda"]
 
@@ -372,7 +376,7 @@ def run_compare(
     (out / "solutions").mkdir(parents=True, exist_ok=True)
     started = time.perf_counter()
     selected_algorithms = algorithms or list(ALGORITHMS)
-    selected_instances = instance_names or list(INSTANCE_DIRS)
+    selected_instances = instance_names or [name for name in ALNS_DEFAULT_INSTANCE_ORDER if name in INSTANCE_DIRS]
     flags = dict(variant_flags or ABLATION_VARIANTS.get(variant, ABLATION_VARIANTS["local_search"]))
     references = _load_reference_costs(reference_path)
     tasks = [

@@ -11,6 +11,7 @@ from pathlib import Path
 
 import setp_solver.search.candidates as candidate_ops
 import setp_solver.search.winner_operators as winner_ops
+from setp_solver.algorithms.resetp_alns.kernel import winner as winner_impl
 from setp_solver.check import check_solution
 from setp_solver.cost import evaluate
 from setp_solver.prices import DEFAULT_PRICES
@@ -260,14 +261,15 @@ class E2AlnsThroughputTest(unittest.TestCase):
     def test_e2_alns_throughput_prices_override_reaches_search_context(self) -> None:
         override = replace(DEFAULT_PRICES, B_battery_kwh=280.0)
         captured_batteries: list[float] = []
-        real_context = winner_ops.EvaluationContext
+        real_context = winner_impl.EvaluationContext
 
         def recording_context(*args: object, **kwargs: object) -> EvaluationContext:
             context = real_context(*args, **kwargs)
             captured_batteries.append(float(getattr(context.prices, "B_battery_kwh")))
             return context
 
-        with patch.object(winner_ops, "EvaluationContext", side_effect=recording_context):
+        # Patch the independent algorithm module (shim re-exports only).
+        with patch.object(winner_impl, "EvaluationContext", side_effect=recording_context):
             result = winner_ops.run_e2_alns_throughput(
                 VERIFY_BUNDLE,
                 config=WinnerKernelConfig(seed=13, eval_budget=2, max_runtime_seconds=120.0),

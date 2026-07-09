@@ -469,7 +469,9 @@ class FormalRunnerTests(unittest.TestCase):
 
         with tempfile.TemporaryDirectory() as tmp, patch.object(formal_runner, "run_e5_charging_ablation", fake_ablation):
             out = Path(tmp) / "missing-output-root"
-            result = run_e5_formal(REPO_ROOT, out)
+            source_report = out / "source.json"
+            source_report.write_text("{}", encoding="utf-8")
+            result = run_e5_formal(REPO_ROOT, out, source_report_path=source_report)
 
             self.assertIn("carbon_aware", result)
             self.assertTrue((out / "tables" / "t6_two_layer_carbon.csv").exists())
@@ -494,8 +496,10 @@ class FormalRunnerTests(unittest.TestCase):
                 "cv_only total_carbon_kg,456.7,\n",
                 encoding="utf-8",
             )
+            source_report = out / "source.json"
+            source_report.write_text("{}", encoding="utf-8")
 
-            run_e5_formal(REPO_ROOT, out)
+            run_e5_formal(REPO_ROOT, out, source_report_path=source_report)
 
             text = (out / "tables" / "t6_two_layer_carbon.csv").read_text(encoding="utf-8")
             self.assertIn("CV-only", text)

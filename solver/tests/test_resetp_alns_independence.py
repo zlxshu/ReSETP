@@ -62,10 +62,14 @@ class ResetpAlnsIndependenceTest(unittest.TestCase):
         for rel in [
             "solver/src/setp_solver/search/alns_wouda.py",
             "solver/src/setp_solver/search/winner_operators.py",
+            "solver/src/setp_solver/algorithms/resetp_alns/kernel/alns_core.py",
+            "solver/src/setp_solver/algorithms/resetp_alns/kernel/winner.py",
         ]:
             with self.subTest(path=rel):
                 text = (REPO_ROOT / rel).read_text(encoding="utf-8")
-                self.assertIsNone(pattern.search(text))
+                # Match real third-party imports only (not alns_core / alns_wouda identifiers).
+                strict = re.compile(r"(from alns(?:\.|\s)|import alns(?:\.|\s|$)|ALNS-7\.0\.0@N-Wouda|_ensure_local_alns_on_path)")
+                self.assertIsNone(strict.search(text))
 
     def test_winner_kernel_runs_when_external_alns_import_is_blocked(self) -> None:
         original_import = builtins.__import__
@@ -78,7 +82,7 @@ class ResetpAlnsIndependenceTest(unittest.TestCase):
                 raise AssertionError(f"external N-Wouda ALNS import attempted: {name}")
             return original_import(name, *args, **kwargs)
 
-        bundle = REPO_ROOT / INSTANCE_DIRS["100-01-24h"]
+        bundle = REPO_ROOT / INSTANCE_DIRS["L-main-threeshift-10c-01"]
         config = WinnerKernelConfig(seed=1, eval_budget=4, max_runtime_seconds=120.0)
         with mock.patch.object(builtins, "__import__", side_effect=guarded_import):
             result = run_winner_kernel(bundle, config=config)

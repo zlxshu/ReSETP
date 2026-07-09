@@ -26,7 +26,7 @@ from . import candidates as candidates_module
 from . import evaluation as evaluation_module
 from . import metaheuristic_baselines as baseline_module
 from . import repair_scoring as repair_scoring_module
-from .alns_crush import INSTANCE_DIRS
+from .alns_crush import ALNS_DEFAULT_INSTANCE_ORDER, INSTANCE_DIRS
 from .bundle import load_search_bundle
 from .candidates import make_shared_initial_solution, run_candidate
 from .metaheuristic_baselines import (
@@ -45,7 +45,7 @@ DEFAULT_EVAL_BUDGET = 16_000
 DEFAULT_MAX_RUNTIME_SECONDS = 900.0
 DEFAULT_FALLBACK_MAX_RUNTIME_SECONDS = 3600.0
 DEFAULT_PROFILE_EVAL_BUDGET = 100
-DEFAULT_INSTANCES = ("100-01-24h", "L-main", "Scale-150", "Scale-200")
+DEFAULT_INSTANCES = ALNS_DEFAULT_INSTANCE_ORDER
 PROFILE_ALGORITHMS = ("IWD", "GWO", "ACO", "VNS")
 
 
@@ -287,7 +287,7 @@ def run_profile(
     repo_root: str | Path,
     output_dir: str | Path,
     *,
-    instance: str = "100-01-24h",
+    instance: str = "L-main",
     seed: int = 1,
     eval_budget: int = DEFAULT_PROFILE_EVAL_BUDGET,
     max_runtime_seconds: float = 300.0,
@@ -490,9 +490,9 @@ def _runtime_caps(
     caps.update({algorithm: float(max_runtime_seconds) for algorithm in algorithms})
     if not auto_runtime_fallback or fallback_max_runtime_seconds is None:
         return caps
-    if "100-01-24h" not in selected:
+    if "L-main" not in selected:
         return caps
-    bundle_dir = root / selected["100-01-24h"]
+    bundle_dir = root / selected["L-main"]
     bundle = load_search_bundle(bundle_dir)
     warm = make_shared_initial_solution(bundle)
     for algorithm in algorithms:
@@ -979,8 +979,8 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--repo-root", default=str(Path(__file__).resolve().parents[4]))
     parser.add_argument("--output-dir", default="baselines")
     parser.add_argument("--previous-output-dir", default="")
-    parser.add_argument("--instances", default="100-01-24h,L-main,Scale-150,Scale-200")
-    parser.add_argument("--profile-instance", default="100-01-24h")
+    parser.add_argument("--instances", default="all")
+    parser.add_argument("--profile-instance", default=ALNS_DEFAULT_INSTANCE_ORDER[0])
     parser.add_argument("--seeds", default="1-10")
     parser.add_argument("--eval-budget", type=int, default=DEFAULT_EVAL_BUDGET)
     parser.add_argument("--max-runtime-seconds", type=float, default=DEFAULT_MAX_RUNTIME_SECONDS)
