@@ -413,27 +413,20 @@ class M1JointRepackFleetHeadroomTests(unittest.TestCase):
     def test_staged_carbon_schedule_has_clean_aware_and_naive_variants(self) -> None:
         from setp_solver.algorithms.resetp_alns.kernel.winner import (
             WinnerKernelConfig,
-            run_staged_carbon_aware_hybrid,
+            run_staged_carbon_schedule_pair,
         )
 
         bundle = load_search_bundle(VERIFY_BUNDLE)
         start = make_shared_initial_solution(bundle, prices=DEFAULT_PRICES)
         config = WinnerKernelConfig(seed=1, eval_budget=2, max_runtime_seconds=30.0)
 
-        aware = run_staged_carbon_aware_hybrid(
+        aware = run_staged_carbon_schedule_pair(
             bundle.bundle_dir,
             config=config,
             initial_solution=start,
             prices=DEFAULT_PRICES,
-            charging_strategy="aware",
         )
-        naive = run_staged_carbon_aware_hybrid(
-            bundle.bundle_dir,
-            config=config,
-            initial_solution=start,
-            prices=DEFAULT_PRICES,
-            charging_strategy="naive",
-        )
+        naive = aware["charging_ablation_result"]
 
         self.assertTrue(aware["carbon_aware_operators"])
         self.assertFalse(naive["carbon_aware_operators"])

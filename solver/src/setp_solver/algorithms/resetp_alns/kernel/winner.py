@@ -734,6 +734,35 @@ def run_staged_carbon_aware_hybrid(
         initial_solution=initial_solution,
         prices=prices,
     )
+    return _reschedule_staged_result(result, bundle_dir, prices, charging_strategy)
+
+
+def run_staged_carbon_schedule_pair(
+    bundle_dir: str | Path,
+    *,
+    config: WinnerKernelConfig | None = None,
+    initial_solution: Solution | None = None,
+    prices: Any = DEFAULT_PRICES,
+) -> dict[str, Any]:
+    """Run route search once and emit aware plus immediate-charge variants."""
+
+    result = run_staged_alns_lns_hybrid(
+        bundle_dir,
+        config=config,
+        initial_solution=initial_solution,
+        prices=prices,
+    )
+    aware = _reschedule_staged_result(result, bundle_dir, prices, "aware")
+    naive = _reschedule_staged_result(result, bundle_dir, prices, "naive")
+    return {**aware, "charging_ablation_result": naive}
+
+
+def _reschedule_staged_result(
+    result: dict[str, Any],
+    bundle_dir: str | Path,
+    prices: Any,
+    charging_strategy: str,
+) -> dict[str, Any]:
     bundle = _load_search_bundle(bundle_dir)
     rescheduled = replay_fixed_route_charging(
         result["best_solution"],
@@ -958,6 +987,7 @@ def write_winner_manifest(output_dir: str | Path) -> Path:
             "run_e2_alns_throughput",
             "run_staged_alns_lns_hybrid",
             "run_staged_carbon_aware_hybrid",
+            "run_staged_carbon_schedule_pair",
             "scan_all_cv_solution",
             "winner_variant_flags",
             "run_e2_alns_final",

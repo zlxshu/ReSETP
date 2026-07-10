@@ -971,6 +971,7 @@ def run_task(task: dict[str, Any]) -> dict[str, Any]:
             "alns_e2_carbon_ablation",
             "staged_hybrid_carbon_aware",
             "staged_hybrid_carbon_naive",
+            "staged_hybrid_carbon_pair",
         }:
             result = run_alns_variant(algorithm, bundle_dir, warm, prices, task)
             solution = result["best_solution"]
@@ -1081,6 +1082,7 @@ def run_task(task: dict[str, Any]) -> dict[str, Any]:
         "charging_strategy": result_meta.get("charging_strategy", ""),
         "charging_actions_moved_from_search_output": result_meta.get("charging_actions_moved_from_search_output", 0),
         "legacy_carbon_search_operators": result_meta.get("legacy_carbon_search_operators", ""),
+        "charging_ablation_json": charging_ablation_payload(result_meta, bundle, prices),
         "E_total": metrics.get("E_total", math.nan),
         "E_cv_direct": metrics.get("E_cv_direct", math.nan),
         "E_ev_indirect": metrics.get("E_ev_indirect", math.nan),
@@ -1134,7 +1136,52 @@ def run_alns_variant(algorithm: str, bundle_dir: Path, warm: Any, prices: Any, t
             prices=prices,
             charging_strategy="naive",
         )
+    if algorithm == "staged_hybrid_carbon_pair":
+        return wo.run_staged_carbon_schedule_pair(
+            bundle_dir,
+            config=config,
+            initial_solution=warm,
+            prices=prices,
+        )
     raise ValueError(f"unsupported ALNS variant: {algorithm}")
+
+
+def charging_ablation_payload(result: dict[str, Any], bundle: Any, prices: Any) -> str:
+    ablation = result.get("charging_ablation_result")
+    if not isinstance(ablation, dict):
+        return ""
+    solution = ablation.get("best_solution")
+    if solution is None:
+        return ""
+    metrics = evaluate(solution, bundle.instance, bundle.carbon_profile, prices)
+    return json.dumps(
+        {
+            "algorithm": "staged_hybrid_carbon_naive",
+            "best_cost": float(ablation["best_cost"]),
+            "violation_count": int(ablation["violation_count"]),
+            "charging_strategy": "naive",
+            "charging_action_count": len(solution.charging_actions),
+            "best_signature": solution_signature_hash(solution),
+            "route_structure_signature": hashlib.sha256(
+                json.dumps(
+                    sorted(
+                        (route.vehicle_id, route.vehicle_type.lower(), tuple(route.node_sequence))
+                        for route in solution.routes
+                    ),
+                    ensure_ascii=False,
+                    sort_keys=True,
+                ).encode("utf-8")
+            ).hexdigest(),
+            "E_total": metrics.get("E_total", math.nan),
+            "E_cv_direct": metrics.get("E_cv_direct", math.nan),
+            "E_ev_indirect": metrics.get("E_ev_indirect", math.nan),
+            "electricity_kwh": metrics.get("electricity_kwh", math.nan),
+            "cost_carbon": metrics.get("cost_carbon", math.nan),
+            "solution": solution_to_dict(solution),
+        },
+        ensure_ascii=False,
+        sort_keys=True,
+    )
 
 
 def run_custom_alns_variant(bundle_dir: Path, warm: Any, prices: Any, task: dict[str, Any]) -> dict[str, Any]:

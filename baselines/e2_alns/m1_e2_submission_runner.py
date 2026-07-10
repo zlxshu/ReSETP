@@ -24,7 +24,7 @@ from baselines.e2_alns import e2_final_closure as closure
 OUTPUT_DIR = REPO_ROOT / "baselines/e2_alns/e2_submission_20260711"
 INSTANCES = tuple(f"L-main-threeshift-{size}c-01" for size in (10, 15, 20, 25, 50, 75, 100, 150, 200))
 PREFLIGHT_INSTANCES = tuple(f"L-main-threeshift-{size}c-01" for size in (100, 150, 200))
-ALGORITHMS = (
+EVIDENCE_ALGORITHMS = (
     "staged_hybrid_carbon_aware",
     "staged_hybrid_carbon_naive",
     "LNS",
@@ -33,6 +33,7 @@ ALGORITHMS = (
     "VNS",
 )
 BASELINES = ("LNS", "GA", "PSO", "VNS")
+TASK_ALGORITHMS = ("staged_hybrid_carbon_pair", *BASELINES)
 
 
 def parse_args() -> argparse.Namespace:
@@ -43,6 +44,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--eval-budget", type=int, default=4000)
     parser.add_argument("--seeds", default="1,2,3,4,5")
     parser.add_argument("--force", action="store_true")
+    parser.add_argument("--dry-run", action="store_true")
     parser.add_argument("--task-json", default="")
     parser.add_argument("--task-output-json", default="")
     return parser.parse_args()
@@ -63,7 +65,7 @@ def main() -> int:
         seeds = [1]
         eval_budget = min(400, int(args.eval_budget))
         scenario = "diagnostic_280_override"
-        algorithms = ALGORITHMS
+        algorithms = TASK_ALGORITHMS
     elif args.phase == "baseline-health":
         phase_dir = output_dir / "baseline_health"
         instances = ("L-main-threeshift-100c-01",)
@@ -76,13 +78,13 @@ def main() -> int:
         instances = INSTANCES
         eval_budget = int(args.eval_budget)
         scenario = "formal_goeke80"
-        algorithms = ALGORITHMS
+        algorithms = TASK_ALGORITHMS
     elif args.phase == "carbon-280":
         phase_dir = output_dir / "carbon_280"
         instances = INSTANCES
         eval_budget = int(args.eval_budget)
         scenario = "diagnostic_280_override"
-        algorithms = ALGORITHMS
+        algorithms = TASK_ALGORITHMS
     else:
         decision = final_decision(output_dir)
         closure.write_json(output_dir / "decision.json", decision)
@@ -97,18 +99,39 @@ def main() -> int:
         "phase": args.phase,
         "head": closure.git_head(),
         "instances": list(instances),
-        "algorithms": list(algorithms),
+        "task_algorithms": list(algorithms),
+        "evidence_algorithms": list(EVIDENCE_ALGORITHMS if args.phase != "baseline-health" else BASELINES),
         "seeds": seeds,
         "eval_budget": eval_budget,
         "scenario_type": scenario,
         "workers": int(args.workers),
         "expected_tasks": len(instances) * len(seeds) * len(algorithms),
+        "expected_evidence_rows": len(instances) * len(seeds) * (len(EVIDENCE_ALGORITHMS) if args.phase != "baseline-health" else len(BASELINES)),
         "legacy_carbon_search_operators": False,
         "protected_paths": list(closure.PROTECTED_PATHS),
     }
     closure.write_json(phase_dir / "metadata.json", metadata)
     tasks = build_tasks(phase_dir, instances, seeds, eval_budget, scenario, algorithms)
-    rows = closure.run_tasks(phase_dir, tasks, workers=int(args.workers), force=bool(args.force))
+    closure.write_csv(phase_dir / "task_manifest.csv", tasks)
+    if args.dry_run:
+        run_ids = [str(task["run_id"]) for task in tasks]
+        decision = {
+            "schema": "setp-e2-task-manifest-decision.v1",
+            "verdict": "E2_TASK_MANIFEST_READY" if len(tasks) == metadata["expected_tasks"] and len(set(run_ids)) == len(run_ids) else "HALT_E2_TASK_MANIFEST",
+            "head": closure.git_head(),
+            "expected_tasks": metadata["expected_tasks"],
+            "expected_evidence_rows": metadata["expected_evidence_rows"],
+            "observed_tasks": len(tasks),
+            "unique_run_ids": len(set(run_ids)),
+            "scenario_type": scenario,
+            "eval_budget": eval_budget,
+        }
+        closure.write_json(phase_dir / "task_manifest_decision.json", decision)
+        closure.write_hashes(phase_dir)
+        print(json.dumps(decision, ensure_ascii=False, indent=2, sort_keys=True))
+        return 0 if decision["verdict"] == "E2_TASK_MANIFEST_READY" else 2
+    task_rows = closure.run_tasks(phase_dir, tasks, workers=int(args.workers), force=bool(args.force))
+    rows = expand_carbon_pair_rows(task_rows)
     export_solutions(phase_dir, rows)
     decision = baseline_health_decision(rows, metadata) if args.phase == "baseline-health" else phase_decision(rows, metadata)
     closure.write_csv(phase_dir / "raw_runs.csv", rows)
@@ -151,7 +174,7 @@ def build_tasks(
 
 
 def phase_decision(rows: list[dict[str, Any]], metadata: dict[str, Any]) -> dict[str, Any]:
-    expected = int(metadata["expected_tasks"])
+    expected = int(metadata["expected_evidence_rows"])
     ok = [row for row in rows if row.get("gate_status") == "OK"]
     closed = [row for row in rows if closure.truthy(row.get("eval_closed"))]
     zero_violation = [row for row in rows if int(closure.as_float(row.get("violation_count"), -1)) == 0]
@@ -232,6 +255,40 @@ def baseline_health_decision(rows: list[dict[str, Any]], metadata: dict[str, Any
         "unique_best_signatures": len(signatures),
         "algorithm_win_loss_claim": False,
     }
+
+
+def expand_carbon_pair_rows(rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    expanded: list[dict[str, Any]] = []
+    for row in rows:
+        if row.get("algorithm") != "staged_hybrid_carbon_pair":
+            expanded.append(row)
+            continue
+        aware = dict(row)
+        aware["run_id"] = str(row["run_id"]).replace("staged_hybrid_carbon_pair", "staged_hybrid_carbon_aware")
+        aware["algorithm"] = "staged_hybrid_carbon_aware"
+        aware["display_algorithm"] = "staged ALNS-LNS hybrid + carbon-aware charging schedule"
+        expanded.append(aware)
+        payload = json.loads(str(row.get("charging_ablation_json", "{}")))
+        if not payload:
+            continue
+        naive = dict(row)
+        naive["run_id"] = str(row["run_id"]).replace("staged_hybrid_carbon_pair", "staged_hybrid_carbon_naive")
+        naive["algorithm"] = "staged_hybrid_carbon_naive"
+        naive["display_algorithm"] = "staged ALNS-LNS hybrid + immediate charging ablation"
+        naive["charging_strategy"] = "naive"
+        naive["best_cost"] = payload["best_cost"]
+        naive["best_signature"] = payload["best_signature"]
+        naive["route_structure_signature"] = payload["route_structure_signature"]
+        naive["violation_count"] = payload["violation_count"]
+        naive["charging_action_count"] = payload["charging_action_count"]
+        naive["E_total"] = payload["E_total"]
+        naive["E_cv_direct"] = payload["E_cv_direct"]
+        naive["E_ev_indirect"] = payload["E_ev_indirect"]
+        naive["electricity_kwh"] = payload["electricity_kwh"]
+        naive["cost_carbon"] = payload["cost_carbon"]
+        naive["solution_json"] = json.dumps(payload["solution"], ensure_ascii=False, sort_keys=True)
+        expanded.append(naive)
+    return closure.sorted_rows(expanded)
 
 
 def algorithm_specific_update_count(row: dict[str, Any]) -> int:
