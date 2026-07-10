@@ -28,15 +28,13 @@ class ChargerRollingEvidence:
     contexts: tuple[RollingPolicyContext, ...]
     previous_stage_output: Solution
     stage_one_output: Solution | None
-    full_ledger_conflicts: tuple[str, ...]
 
 
 @dataclass(frozen=True)
 class LifecycleRollingEvidence:
     event_type: str
-    report: dict[str, Any] | None
+    report: dict[str, Any]
     contexts: tuple[RollingPolicyContext, ...]
-    explicit_conflict: str | None = None
 
 
 def _clock_case() -> tuple[Instance, Route, Solution, DynamicCheckContext]:
@@ -176,10 +174,11 @@ def test_real_rolling_charger_fixture_reaches_both_stages(
     assert prior_action.station_id == "F1"
     assert prior_action.charge_start_second == pytest.approx(0.0)
     assert prior_action.occupancy_minutes == pytest.approx(30.0)
+    assert prior_action.vehicle_id == "EV2#T1"
     assert prior_action.vehicle_id == prior_route.vehicle_id and prior_route.vehicle_type == "ev"
 
     if evidence.stage_one_output is None:
-        assert evidence.full_ledger_conflicts == ()
+        _require_exact_stage_one_charger_halt(evidence.report)
     else:
         assert evidence.contexts[2].previous_plan is evidence.stage_one_output
         assert len(evidence.stage_one_output.charging_actions) == 1
@@ -188,8 +187,31 @@ def test_real_rolling_charger_fixture_reaches_both_stages(
         assert stage_one_action.station_id == "F1"
         assert stage_one_action.charge_start_second == pytest.approx(900.0)
         assert stage_one_action.occupancy_minutes == pytest.approx(10.0)
+        assert stage_one_action.vehicle_id == "EV1#T1"
         assert stage_one_action.vehicle_id == stage_one_route.vehicle_id and stage_one_route.vehicle_type == "ev"
-        assert evidence.full_ledger_conflicts == ("F1@slot0",)
+        full_ledger = _cross_stage_charging_ledger_for_audit(
+            evidence.previous_stage_output,
+            evidence.stage_one_output,
+        )
+        assert full_ledger.routes == [prior_route, stage_one_route]
+        assert full_ledger.charging_actions == [prior_action, stage_one_action]
+        audit_instance = dynamic_module._subinstance_for_customers(
+            evidence.contexts[1].effective_instance,
+            {"C_PAST", "C_NEXT"},
+        )
+        audit_customers = {
+            node.node_id for node in audit_instance.nodes if node.node_type.lower() == "c"
+        }
+        assert audit_customers == {"C_PAST", "C_NEXT"}
+        assert _solution_customer_ids(full_ledger, audit_instance) == audit_customers
+        assert {route.vehicle_id for route in full_ledger.routes} == {
+            prior_action.vehicle_id,
+            stage_one_action.vehicle_id,
+        }
+        assert [
+            (violation.type, violation.location)
+            for violation in check_solution(full_ledger, audit_instance)
+        ] == [("STATION_CAPACITY", "F1@slot0")]
         stage_one = next(row for row in evidence.report["stage_rows"] if row["stage"] == 1)
         assert stage_one["stage_charging_action_count"] == 1
         assert stage_one["feasible"] is True
@@ -216,13 +238,25 @@ def test_dynamic_stage_check_keeps_pre_boundary_charger_occupancy(
 def lifecycle_rolling_evidence(
     tmp_path_factory: pytest.TempPathFactory,
 ) -> tuple[LifecycleRollingEvidence, LifecycleRollingEvidence]:
-    return tuple(
-        _run_lifecycle_rolling_scenario(
-            tmp_path_factory.mktemp(f"dynamic-lifecycle-{event_type}"),
-            event_type,
-        )
-        for event_type in ("cancel", "demand_change")
-    )
+    evidence: list[LifecycleRollingEvidence] = []
+    failures: list[Exception] = []
+    for event_type in ("cancel", "demand_change"):
+        try:
+            evidence.append(
+                _run_lifecycle_rolling_scenario(
+                    tmp_path_factory.mktemp(f"dynamic-lifecycle-{event_type}"),
+                    event_type,
+                )
+            )
+        except Exception as exc:
+            # Run the other independent scenario before surfacing either error.
+            # No runner exception is accepted as lifecycle truth.
+            failures.append(exc)
+    if failures:
+        raise ExceptionGroup("independent lifecycle rolling scenarios failed", failures)
+    if len(evidence) != 2:
+        raise RuntimeError(f"expected two lifecycle rolling reports, got {len(evidence)}")
+    return evidence[0], evidence[1]
 
 
 def test_real_rolling_lifecycle_fixture_executes_cancel_and_change_events(
@@ -230,10 +264,8 @@ def test_real_rolling_lifecycle_fixture_executes_cancel_and_change_events(
 ) -> None:
     assert {evidence.event_type for evidence in lifecycle_rolling_evidence} == {"cancel", "demand_change"}
     for evidence in lifecycle_rolling_evidence:
-        if evidence.explicit_conflict is not None:
-            _require_exact_lifecycle_conflict(evidence)
-            continue
-
+        assert [context.stage_index for context in evidence.contexts] == [0, 1]
+        assert {"gate", "first_bad_stage", "violations"}.isdisjoint(evidence.report)
         stage_one = _stage_context(evidence.contexts, 1)
         assert {event.event_id for event in stage_one.stage_events} == {
             f"1-done-{evidence.event_type}",
@@ -262,10 +294,6 @@ def test_real_rolling_lifecycle_preserves_completed_and_applies_open_events(
     lifecycle_rolling_evidence: tuple[LifecycleRollingEvidence, LifecycleRollingEvidence],
 ) -> None:
     for evidence in lifecycle_rolling_evidence:
-        if evidence.explicit_conflict is not None:
-            _require_exact_lifecycle_conflict(evidence)
-            continue
-
         stage_one = _stage_context(evidence.contexts, 1)
         lookup = {node.node_id: node for node in stage_one.effective_instance.nodes}
         assert lookup["C_DONE"].demand == pytest.approx(10.0)
@@ -288,27 +316,22 @@ def test_dynamic_events_distinguish_completed_committed_and_open_customers(
     outcomes: list[bool] = []
     diagnostics: list[str] = []
     for evidence in lifecycle_rolling_evidence:
-        if evidence.explicit_conflict is not None:
-            _require_exact_lifecycle_conflict(evidence)
-            outcomes.append(True)
-            diagnostics.append(f"{evidence.event_type}: {evidence.explicit_conflict}")
-        else:
-            stage_one = _stage_context(evidence.contexts, 1)
-            lookup = {node.node_id: node for node in stage_one.effective_instance.nodes}
-            explicit_four_states = (
-                stage_one.served_customers == {"C_DONE"}
-                and stage_one.committed_customer_ids == {"C_LOCK"}
-                and "C_PLANNED_OPEN" not in stage_one.committed_customer_ids
-                and "C_OPEN" not in stage_one.committed_customer_ids
-            )
-            locked_event_preserved = "C_LOCK" in lookup and lookup["C_LOCK"].demand == pytest.approx(20.0)
-            outcomes.append(bool(explicit_four_states and locked_event_preserved))
-            diagnostics.append(
-                f"{evidence.event_type}: served={sorted(stage_one.served_customers)}, "
-                f"committed-not-completed={sorted(stage_one.committed_customer_ids)}, "
-                f"C_LOCK present={'C_LOCK' in lookup}, "
-                f"demand={lookup.get('C_LOCK').demand if 'C_LOCK' in lookup else None}"
-            )
+        stage_one = _stage_context(evidence.contexts, 1)
+        lookup = {node.node_id: node for node in stage_one.effective_instance.nodes}
+        explicit_four_states = (
+            stage_one.served_customers == {"C_DONE"}
+            and stage_one.committed_customer_ids == {"C_LOCK"}
+            and "C_PLANNED_OPEN" not in stage_one.committed_customer_ids
+            and "C_OPEN" not in stage_one.committed_customer_ids
+        )
+        locked_event_preserved = "C_LOCK" in lookup and lookup["C_LOCK"].demand == pytest.approx(20.0)
+        outcomes.append(bool(explicit_four_states and locked_event_preserved))
+        diagnostics.append(
+            f"{evidence.event_type}: served={sorted(stage_one.served_customers)}, "
+            f"committed-not-completed={sorted(stage_one.committed_customer_ids)}, "
+            f"C_LOCK present={'C_LOCK' in lookup}, "
+            f"demand={lookup.get('C_LOCK').demand if 'C_LOCK' in lookup else None}"
+        )
 
     assert all(outcomes), "; ".join(diagnostics)
 
@@ -405,7 +428,7 @@ def _run_charger_rolling_scenario(root: Path) -> ChargerRollingEvidence:
         prior_output = contexts[1].previous_plan
         if prior_output is None:
             raise RuntimeError("charger halt did not expose the real previous-stage output")
-        return ChargerRollingEvidence(report, tuple(contexts), prior_output, None, ())
+        return ChargerRollingEvidence(report, tuple(contexts), prior_output, None)
     if [context.stage_index for context in contexts] != [0, 1, 2]:
         raise RuntimeError(f"charger truth fixture reached unexpected stages: {[c.stage_index for c in contexts]}")
     prior_output = contexts[1].previous_plan
@@ -413,17 +436,32 @@ def _run_charger_rolling_scenario(root: Path) -> ChargerRollingEvidence:
     if prior_output is None or stage_one_output is None:
         raise RuntimeError("charger truth fixture did not capture both real stage outputs")
 
-    revealed = contexts[1].effective_instance
-    full_ledger = Solution(
-        routes=[*prior_output.routes, *stage_one_output.routes],
-        charging_actions=[*prior_output.charging_actions, *stage_one_output.charging_actions],
+    return ChargerRollingEvidence(report, tuple(contexts), prior_output, stage_one_output)
+
+
+def _cross_stage_charging_ledger_for_audit(
+    previous_output: Solution,
+    stage_one_output: Solution,
+) -> Solution:
+    previous_action = previous_output.charging_actions[0]
+    stage_one_action = stage_one_output.charging_actions[0]
+    if previous_action.vehicle_id == stage_one_action.vehicle_id:
+        raise RuntimeError("real cross-stage charging actions reuse one route vehicle id")
+
+    def charging_route(output: Solution, vehicle_id: str) -> Route:
+        matches = [route for route in output.routes if route.vehicle_id == vehicle_id]
+        if len(matches) != 1:
+            raise RuntimeError(f"expected one real charging route for {vehicle_id}, got {len(matches)}")
+        return matches[0]
+
+    return Solution(
+        routes=[
+            charging_route(previous_output, previous_action.vehicle_id),
+            charging_route(stage_one_output, stage_one_action.vehicle_id),
+        ],
+        charging_actions=[previous_action, stage_one_action],
+        cross_site_services=[*previous_output.cross_site_services, *stage_one_output.cross_site_services],
     )
-    conflicts = tuple(
-        violation.location
-        for violation in check_solution(full_ledger, revealed)
-        if violation.type == "STATION_CAPACITY"
-    )
-    return ChargerRollingEvidence(report, tuple(contexts), prior_output, stage_one_output, conflicts)
 
 
 def _require_exact_stage_one_charger_halt(report: dict[str, Any]) -> None:
@@ -513,37 +551,18 @@ def _run_lifecycle_rolling_scenario(root: Path, event_type: str) -> LifecycleRol
 
     bundle_dir = root / "bundle"
     _write_truth_bundle(bundle_dir, instance, events)
-    try:
-        report = run_rolling_reoptimization(
-            bundle_dir,
-            output_json_path=root / "output" / "report.json",
-            seed=1,
-            eval_budget=0,
-            max_runtime_seconds=2.0,
-            stage_eval_budget=0,
-            stage_max_runtime_seconds=2.0,
-            params=RollingParameters(delta_t_seconds=100.0, q_bar=8, stages=2),
-            policy_callback=policy,
-        )
-    except ValueError as exc:
-        return LifecycleRollingEvidence(event_type, None, tuple(contexts), str(exc))
-
-    if [context.stage_index for context in contexts] != [0, 1]:
-        raise RuntimeError(f"lifecycle truth fixture reached unexpected stages: {[c.stage_index for c in contexts]}")
-    return LifecycleRollingEvidence(event_type, report, tuple(contexts))
-
-
-def _require_exact_lifecycle_conflict(evidence: LifecycleRollingEvidence) -> None:
-    message = evidence.explicit_conflict or ""
-    lowered = message.lower()
-    exact = (
-        evidence.report is None
-        and "commit" in lowered
-        and "c_lock" in lowered
-        and evidence.event_type in lowered
+    report = run_rolling_reoptimization(
+        bundle_dir,
+        output_json_path=root / "output" / "report.json",
+        seed=1,
+        eval_budget=0,
+        max_runtime_seconds=2.0,
+        stage_eval_budget=0,
+        stage_max_runtime_seconds=2.0,
+        params=RollingParameters(delta_t_seconds=100.0, q_bar=8, stages=2),
+        policy_callback=policy,
     )
-    if not exact:
-        raise RuntimeError(f"unexpected {evidence.event_type} lifecycle ValueError: {message}")
+    return LifecycleRollingEvidence(event_type, report, tuple(contexts))
 
 
 def _write_truth_bundle(path: Path, instance: Instance, events: list[DynamicEvent]) -> None:
