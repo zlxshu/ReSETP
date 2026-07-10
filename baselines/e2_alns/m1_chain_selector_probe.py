@@ -5,6 +5,7 @@ from __future__ import annotations
 import argparse
 import csv
 import json
+import math
 from pathlib import Path
 import sys
 from dataclasses import replace
@@ -16,7 +17,7 @@ for _path in (REPO_ROOT, SOLVER_SRC):
     if str(_path) not in sys.path:
         sys.path.insert(0, str(_path))
 
-from baselines.e2_alns.m1_fair_selector_probe import INSTANCES, _run_alns
+from baselines.e2_alns.m1_fair_selector_probe import INSTANCES, _run_alns, _run_lns
 from baselines.e2_alns.m1_joint_repack_fleet_headroom import _cv_start, _sha256, _write_csv, evidence_files
 from setp_solver.prices import DEFAULT_PRICES
 from setp_solver.search.bundle import load_search_bundle
@@ -33,7 +34,7 @@ def classify(rows: list[dict[str, object]]) -> str:
     wins = sum(float(row["gain_vs_lns_pct"]) >= 5.0 for row in rows)
     mean_gain = sum(float(row["gain_vs_lns_pct"]) for row in rows) / len(rows)
     mean_time = sum(float(row["runtime_delta_vs_lns"]) for row in rows) / len(rows)
-    if wins >= 6 and mean_gain >= 5.0 and mean_time < 0:
+    if wins >= math.ceil(2.0 * len(rows) / 3.0) and mean_gain >= 5.0 and mean_time < 0:
         return "CHAIN_UCB_400_SUPPORTED"
     return "CHAIN_UCB_400_NOT_SUPPORTED"
 
@@ -45,15 +46,24 @@ def run_probe(args: argparse.Namespace) -> dict[str, object]:
     output_dir.mkdir(parents=True, exist_ok=True)
     prices = replace(DEFAULT_PRICES, B_battery_kwh=float(args.battery_kwh))
     seeds = [int(value) for value in str(args.seeds).split(",") if value.strip()]
+    scales = {value.strip() for value in str(args.scales).split(",") if value.strip()}
     with (repo_root / args.lns_reference).open(newline="", encoding="utf-8") as handle:
         lns = {
             (str(row["scale"]), int(row["seed"])): row
             for row in csv.DictReader(handle)
             if row["algorithm"] == "LNS"
         }
+    selected_instances = (
+        ((str(args.instance_scale), str(args.instance)),)
+        if str(args.instance).strip()
+        else INSTANCES
+    )
     raw_rows: list[dict[str, object]] = []
+    fresh_lns_rows: list[dict[str, object]] = []
     comparisons: list[dict[str, object]] = []
-    for scale, instance_name in INSTANCES:
+    for scale, instance_name in selected_instances:
+        if not str(args.instance).strip() and scale not in scales:
+            continue
         bundle = load_search_bundle(instance_abs_dir(repo_root, instance_name))
         start = _cv_start(bundle, prices)
         for seed in seeds:
@@ -68,7 +78,20 @@ def run_probe(args: argparse.Namespace) -> dict[str, object]:
             )
             row.update({"scale": scale, "instance": instance_name})
             raw_rows.append(row)
-            baseline = lns[(scale, seed)]
+            if bool(args.fresh_lns) or (scale, seed) not in lns:
+                baseline, _baseline_solution = _run_lns(
+                    bundle,
+                    prices,
+                    start,
+                    seed,
+                    int(args.eval_budget),
+                    float(args.max_runtime_seconds),
+                )
+                baseline.update({"scale": scale, "instance": instance_name})
+                fresh_lns_rows.append(baseline)
+                _write_csv(output_dir / "lns_runs.csv", fresh_lns_rows)
+            else:
+                baseline = lns[(scale, seed)]
             gain = (float(baseline["best_cost"]) - float(row["best_cost"])) / float(baseline["best_cost"]) * 100.0
             comparisons.append(
                 {
@@ -100,7 +123,7 @@ def run_probe(args: argparse.Namespace) -> dict[str, object]:
     }
     (output_dir / "decision.json").write_text(json.dumps(decision, indent=2, sort_keys=True) + "\n", encoding="utf-8")
     (output_dir / "metadata.json").write_text(
-        json.dumps({**decision, "lns_reference": str(args.lns_reference), "eval_budget": int(args.eval_budget), "seeds": seeds}, indent=2, sort_keys=True) + "\n",
+        json.dumps({**decision, "lns_reference": str(args.lns_reference), "fresh_lns": bool(args.fresh_lns), "eval_budget": int(args.eval_budget), "seeds": seeds, "scales": sorted(scales), "instance": str(args.instance)}, indent=2, sort_keys=True) + "\n",
         encoding="utf-8",
     )
     (output_dir / "report.md").write_text(
@@ -122,6 +145,10 @@ def main() -> int:
     parser.add_argument("--eval-budget", type=int, default=400)
     parser.add_argument("--max-runtime-seconds", type=float, default=180.0)
     parser.add_argument("--battery-kwh", type=float, default=280.0)
+    parser.add_argument("--scales", default="small,medium,large")
+    parser.add_argument("--instance", default="")
+    parser.add_argument("--instance-scale", default="hardest")
+    parser.add_argument("--fresh-lns", action="store_true")
     args = parser.parse_args()
     print(json.dumps(run_probe(args), indent=2, sort_keys=True))
     return 0

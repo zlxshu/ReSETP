@@ -96,7 +96,22 @@ def enumerate_feasible_insertions(
 
     if allow_new_route:
         options.extend(_new_route_options(solution, customer_id, context, policy))
-    return sorted(options, key=lambda item: (item.score, item.opened_new_route, item.vehicle_type, _solution_key(item.solution)))
+    return _sort_insertion_options(options)
+
+
+def _sort_insertion_options(options: list[InsertionOption]) -> list[InsertionOption]:
+    primary = lambda item: (item.score, item.opened_new_route, item.vehicle_type)
+    ordered = sorted(options, key=primary)
+    start = 0
+    while start < len(ordered):
+        end = start + 1
+        key = primary(ordered[start])
+        while end < len(ordered) and primary(ordered[end]) == key:
+            end += 1
+        if end - start > 1:
+            ordered[start:end] = sorted(ordered[start:end], key=lambda item: _solution_key(item.solution))
+        start = end
+    return ordered
 
 
 def repair_removed_customers(
@@ -180,25 +195,25 @@ def nearest_depot_id(customer_id: str, instance: Instance) -> str:
     if not _structure_cache_enabled(instance):
         customer = next(node for node in instance.nodes if node.node_id == customer_id)
         depots = _depots(instance)
-        return min(depots, key=lambda depot: (instance.distance(depot.node_id, customer.node_id), depot.node_id)).node_id
+        return min(depots, key=lambda depot: (_distance(instance, depot.node_id, customer.node_id), depot.node_id)).node_id
     cache = _instance_cache(instance, "_setp_nearest_depot_cache")
     if customer_id in cache:
         return str(cache[customer_id])
     depots = _depots(instance)
-    nearest = min(depots, key=lambda depot: (instance.distance(depot.node_id, customer_id), depot.node_id)).node_id
+    nearest = min(depots, key=lambda depot: (_distance(instance, depot.node_id, customer_id), depot.node_id)).node_id
     cache[customer_id] = nearest
     return str(nearest)
 
 
 def route_distance(route: Route, instance: Instance) -> float:
     if not _structure_cache_enabled(instance):
-        return sum(float(instance.distance(a, b)) for a, b in zip(route.node_sequence, route.node_sequence[1:]))
+        return sum(_distance(instance, a, b) for a, b in zip(route.node_sequence, route.node_sequence[1:]))
     cache = _instance_cache(instance, "_setp_route_distance_cache")
     key = _route_key(route)
     cached = cache.get(key)
     if cached is not None:
         return float(cached)
-    distance = sum(float(instance.distance(a, b)) for a, b in zip(route.node_sequence, route.node_sequence[1:]))
+    distance = sum(_distance(instance, a, b) for a, b in zip(route.node_sequence, route.node_sequence[1:]))
     if len(cache) > 100_000:
         cache.clear()
     cache[key] = distance
@@ -222,7 +237,7 @@ def _ranked_routes(
         if not customers:
             continue
         anchors = customers or route.node_sequence
-        proximity = min(float(instance.distance(customer_id, node_id)) for node_id in anchors)
+        proximity = min(_distance(instance, customer_id, node_id) for node_id in anchors)
         scored.append((proximity, idx, route))
     scored.sort(key=lambda item: (item[0], item[1]))
     return [(idx, route) for _, idx, route in scored[: max(1, int(limit))]]
@@ -241,7 +256,7 @@ def _ranked_positions(
     for customer_pos in range(len(customers) + 1):
         prev_node = clean[customer_pos]
         next_node = clean[customer_pos + 1]
-        delta = float(instance.distance(prev_node, customer_id)) + float(instance.distance(customer_id, next_node)) - float(instance.distance(prev_node, next_node))
+        delta = _distance(instance, prev_node, customer_id) + _distance(instance, customer_id, next_node) - _distance(instance, prev_node, next_node)
         scored.append((delta, customer_pos))
     scored.sort(key=lambda item: (item[0], item[1]))
     return [pos for _, pos in scored[: max(1, int(limit))]]
@@ -350,7 +365,7 @@ def _ev_battery_locally_feasible(
     if battery > cap + 1e-9:
         return False
     for (from_node, to_node), load in zip(zip(route.node_sequence, route.node_sequence[1:]), loads):
-        battery -= ev_arc_energy_kwh(context.instance.distance(from_node, to_node), load, context.prices)
+        battery -= ev_arc_energy_kwh(_distance(context.instance, from_node, to_node), load, context.prices)
         if battery < -1e-9:
             return False
         if node_lookup[to_node].node_type.lower() == "f":
@@ -364,6 +379,11 @@ def _price(prices: Any, name: str) -> float:
     if isinstance(prices, dict):
         return float(prices[name])
     return float(getattr(prices, name))
+
+
+def _distance(instance: Instance, from_node: str, to_node: str) -> float:
+    index = instance.node_index
+    return float(instance.distance_matrix[index[from_node]][index[to_node]])
 
 
 def _is_full_solution_feasible(solution: Solution, context: EvaluationContext, policy: Any) -> bool:

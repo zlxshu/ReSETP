@@ -1313,7 +1313,17 @@ def _run_winner_kernel_loop(
                     )
         changed = _solution_changed(current.solution, candidate.solution)
         with timed_section(context, "acceptance"):
-            accepted = changed and bool(acceptance(rng, best, current, candidate))
+            accepted = _accept_winner_candidate(
+                destroy_name,
+                changed,
+                candidate_obj,
+                previous_obj,
+                acceptance,
+                rng,
+                best,
+                current,
+                candidate,
+            )
         hard_violation_count = int(result.get("hard_violation_count", _hard_violation_count(candidate.solution, candidate.context)))
         best_improved = accepted and candidate_obj < previous_best_obj - 1e-9 and hard_violation_count == 0
         better_current = accepted and candidate_obj < previous_obj - 1e-9
@@ -1479,6 +1489,24 @@ def _winner_history_entry(
 
 def _flag_enabled_from(flags: dict[str, str], name: str) -> bool:
     return str(flags.get(name, "0")).lower() not in {"0", "false", "no"}
+
+
+def _accept_winner_candidate(
+    destroy_name: str,
+    changed: bool,
+    candidate_obj: float,
+    previous_obj: float,
+    acceptance: Any,
+    rng: Any,
+    best: Any,
+    current: Any,
+    candidate: Any,
+) -> bool:
+    if not changed:
+        return False
+    if str(destroy_name) == "vehicle_type_swap":
+        return float(candidate_obj) < float(previous_obj) - 1e-9
+    return bool(acceptance(rng, best, current, candidate))
 
 
 def _selector_kind_from_flags(flags: dict[str, str]) -> str:

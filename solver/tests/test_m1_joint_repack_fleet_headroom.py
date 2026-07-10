@@ -242,12 +242,51 @@ class M1JointRepackFleetHeadroomTests(unittest.TestCase):
         with patch.object(repair.os.environ, "get", side_effect=AssertionError("environment was reread")):
             self.assertTrue(repair._structure_cache_enabled(bundle.instance))
 
+    def test_repair_fast_distance_is_exactly_the_instance_distance(self) -> None:
+        import setp_solver.algorithms.resetp_alns.operators.feasible_repair as repair
+
+        bundle = load_search_bundle(VERIFY_BUNDLE)
+        left = bundle.instance.nodes[0].node_id
+        right = bundle.instance.nodes[-1].node_id
+
+        self.assertEqual(repair._distance(bundle.instance, left, right), bundle.instance.distance(left, right))
+
+    def test_lazy_insertion_sort_matches_the_original_full_tie_break(self) -> None:
+        import setp_solver.algorithms.resetp_alns.operators.feasible_repair as repair
+
+        bundle = load_search_bundle(VERIFY_BUNDLE)
+        start = make_shared_initial_solution(bundle, prices=DEFAULT_PRICES)
+        context = EvaluationContext(bundle.instance, bundle.carbon_profile, prices=DEFAULT_PRICES)
+        customer_id = next(node.node_id for node in bundle.instance.nodes if node.node_type.lower() == "c")
+        options = repair.enumerate_feasible_insertions(
+            start,
+            customer_id,
+            context,
+            type("Policy", (), {"max_cv": 100, "max_ev": 100, "require_charging_signal": False})(),
+        )
+        expected = sorted(
+            reversed(options),
+            key=lambda item: (item.score, item.opened_new_route, item.vehicle_type, repair._solution_key(item.solution)),
+        )
+
+        actual = repair._sort_insertion_options(list(reversed(options)))
+
+        self.assertEqual([repair._solution_key(item.solution) for item in actual], [repair._solution_key(item.solution) for item in expected])
+
     def test_chain_selector_preserves_accepted_move_continuity_without_twenty_point_lock(self) -> None:
         from setp_solver.algorithms.resetp_alns.kernel.alns_core import _make_operator_selector
 
         selector = _make_operator_selector(2, 2, selector_kind="chain_ucb")
 
         self.assertEqual(selector.scores, [4.0, 3.0, 2.0, 0.05])
+
+    def test_vehicle_type_closure_does_not_accept_a_worse_flip(self) -> None:
+        from setp_solver.algorithms.resetp_alns.kernel.winner import _accept_winner_candidate
+
+        always_accept = lambda *_args: True
+
+        self.assertFalse(_accept_winner_candidate("vehicle_type_swap", True, 101.0, 100.0, always_accept, None, None, None, None))
+        self.assertTrue(_accept_winner_candidate("random_customer_removal", True, 101.0, 100.0, always_accept, None, None, None, None))
 
 if __name__ == "__main__":
     unittest.main()
