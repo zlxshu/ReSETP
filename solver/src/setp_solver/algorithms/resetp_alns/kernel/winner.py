@@ -17,7 +17,7 @@ import numpy as np
 from setp_solver.check import check_solution
 from setp_solver.cost import route_node_schedule
 from setp_solver.prices import DEFAULT_PRICES, PriceParameters
-from setp_solver.solution import Route, Solution
+from setp_solver.solution import CrossSiteService, Route, Solution
 from setp_solver.algorithms.resetp_alns.kernel.alns_core import (
     AlnsRunResult,
     AlnsState,
@@ -46,7 +46,7 @@ from setp_solver.algorithms.resetp_alns.operators.strong_bridge import _apply_st
 from setp_solver.algorithms.resetp_alns.operators.strong_bridge import solution_signature_hash
 from setp_solver.algorithms.resetp_alns.support.construction import build_initial_solution
 from setp_solver.algorithms.resetp_alns.support.elite_archive import EliteArchive
-from setp_solver.search.evaluation import EvalBudget, model_cost, EvaluationContext, score_candidate, score_reference
+from setp_solver.search.evaluation import EvalBudget, model_cost, EvaluationContext, fairness_context_for_solution, score_candidate, score_reference
 from setp_solver.search.charging import replay_fixed_route_charging
 from setp_solver.algorithms.resetp_alns.support.fleet import UNBOUNDED_FLEET
 from setp_solver.algorithms.resetp_alns.support.fleet_charge_corepair import propose_fleet_charge_corepair
@@ -480,7 +480,7 @@ def apply_winner_action(
     rng = rng or np.random.default_rng()
     search_policy = policy or _search_policy_for_instance(context.instance, require_charging_signal=False)
     previous_state = AlnsState(
-        solution,
+        _annotate_cross_site_services(solution, context),
         context,
         objective_value=current_obj,
         policy=search_policy,
@@ -519,11 +519,12 @@ def apply_winner_action(
             bridge_produced = bool(getattr(bridge_outcome, "produced", False))
             bridge_feasible = bool(getattr(bridge_outcome, "feasible", False))
             bridge_changed = bool(getattr(bridge_outcome, "changed", False))
+            annotated_bridge = _annotate_cross_site_services(bridge_outcome.solution, context)
             with timed_section(context, "score:strong_bridge_backend"):
-                bridge_obj = float(score_candidate(bridge_outcome.solution, context, label="candidate"))
+                bridge_obj = float(score_candidate(annotated_bridge, context, label="candidate"))
             candidate = replace(
                 previous_state,
-                solution=bridge_outcome.solution,
+                solution=annotated_bridge,
                 objective_value=bridge_obj,
                 removed_customers=(),
                 source_solution=previous_state.solution,
@@ -670,6 +671,12 @@ def run_staged_alns_lns_hybrid(
     initial_solution: Solution | None = None,
     prices: Any = DEFAULT_PRICES,
     policy: SearchPolicy | None = None,
+    carbon_weight: float = 1.0,
+    carbon_quota_kg: float = 0.0,
+    fairness_enabled: bool = False,
+    independent_profit: dict[str, float] | None = None,
+    fairness_theta: float | None = None,
+    customer_home_depot: dict[str, str] | None = None,
 ) -> dict[str, Any]:
     """Run the explicitly named staged ALNS-LNS hybrid under one budget."""
 
@@ -690,9 +697,31 @@ def run_staged_alns_lns_hybrid(
         config=cfg,
         prices=prices,
         policy=policy,
+        carbon_weight=carbon_weight,
+        carbon_quota_kg=carbon_quota_kg,
+        fairness_enabled=fairness_enabled,
+        independent_profit=independent_profit,
+        fairness_theta=fairness_theta,
+        customer_home_depot=customer_home_depot,
     )
-    context = EvaluationContext(bundle.instance, bundle.carbon_profile, prices=prices)
-    violations = check_solution(run.best_solution, bundle.instance, prices)
+    context = EvaluationContext(
+        bundle.instance,
+        bundle.carbon_profile,
+        prices=prices,
+        carbon_weight=carbon_weight,
+        carbon_quota_kg=carbon_quota_kg,
+        fairness_enabled=fairness_enabled,
+        independent_profit=independent_profit,
+        fairness_theta=fairness_theta,
+        customer_home_depot=customer_home_depot,
+    )
+    violations = check_solution(
+        run.best_solution,
+        bundle.instance,
+        prices,
+        fairness_context=fairness_context_for_solution(run.best_solution, context),
+        fairness_enabled=fairness_enabled,
+    )
     return {
         "operator_base_id": operator_base_id,
         "variant": "staged_alns_lns_hybrid",
@@ -721,6 +750,12 @@ def run_staged_carbon_aware_hybrid(
     prices: Any = DEFAULT_PRICES,
     charging_strategy: str = "aware",
     policy: SearchPolicy | None = None,
+    carbon_weight: float = 1.0,
+    carbon_quota_kg: float = 0.0,
+    fairness_enabled: bool = False,
+    independent_profit: dict[str, float] | None = None,
+    fairness_theta: float | None = None,
+    customer_home_depot: dict[str, str] | None = None,
 ) -> dict[str, Any]:
     """Run staged hybrid search followed by fixed-route charging rescheduling.
 
@@ -738,8 +773,25 @@ def run_staged_carbon_aware_hybrid(
         initial_solution=initial_solution,
         prices=prices,
         policy=policy,
+        carbon_weight=carbon_weight,
+        carbon_quota_kg=carbon_quota_kg,
+        fairness_enabled=fairness_enabled,
+        independent_profit=independent_profit,
+        fairness_theta=fairness_theta,
+        customer_home_depot=customer_home_depot,
     )
-    return _reschedule_staged_result(result, bundle_dir, prices, charging_strategy)
+    return _reschedule_staged_result(
+        result,
+        bundle_dir,
+        prices,
+        charging_strategy,
+        carbon_weight=carbon_weight,
+        carbon_quota_kg=carbon_quota_kg,
+        fairness_enabled=fairness_enabled,
+        independent_profit=independent_profit,
+        fairness_theta=fairness_theta,
+        customer_home_depot=customer_home_depot,
+    )
 
 
 def run_staged_carbon_schedule_pair(
@@ -749,6 +801,12 @@ def run_staged_carbon_schedule_pair(
     initial_solution: Solution | None = None,
     prices: Any = DEFAULT_PRICES,
     policy: SearchPolicy | None = None,
+    carbon_weight: float = 1.0,
+    carbon_quota_kg: float = 0.0,
+    fairness_enabled: bool = False,
+    independent_profit: dict[str, float] | None = None,
+    fairness_theta: float | None = None,
+    customer_home_depot: dict[str, str] | None = None,
 ) -> dict[str, Any]:
     """Run route search once and emit aware plus immediate-charge variants."""
 
@@ -758,9 +816,23 @@ def run_staged_carbon_schedule_pair(
         initial_solution=initial_solution,
         prices=prices,
         policy=policy,
+        carbon_weight=carbon_weight,
+        carbon_quota_kg=carbon_quota_kg,
+        fairness_enabled=fairness_enabled,
+        independent_profit=independent_profit,
+        fairness_theta=fairness_theta,
+        customer_home_depot=customer_home_depot,
     )
-    aware = _reschedule_staged_result(result, bundle_dir, prices, "aware")
-    naive = _reschedule_staged_result(result, bundle_dir, prices, "naive")
+    replay_kwargs = {
+        "carbon_weight": carbon_weight,
+        "carbon_quota_kg": carbon_quota_kg,
+        "fairness_enabled": fairness_enabled,
+        "independent_profit": independent_profit,
+        "fairness_theta": fairness_theta,
+        "customer_home_depot": customer_home_depot,
+    }
+    aware = _reschedule_staged_result(result, bundle_dir, prices, "aware", **replay_kwargs)
+    naive = _reschedule_staged_result(result, bundle_dir, prices, "naive", **replay_kwargs)
     return {**aware, "charging_ablation_result": naive}
 
 
@@ -769,6 +841,13 @@ def _reschedule_staged_result(
     bundle_dir: str | Path,
     prices: Any,
     charging_strategy: str,
+    *,
+    carbon_weight: float = 1.0,
+    carbon_quota_kg: float = 0.0,
+    fairness_enabled: bool = False,
+    independent_profit: dict[str, float] | None = None,
+    fairness_theta: float | None = None,
+    customer_home_depot: dict[str, str] | None = None,
 ) -> dict[str, Any]:
     bundle = _load_search_bundle(bundle_dir)
     rescheduled = replay_fixed_route_charging(
@@ -778,8 +857,24 @@ def _reschedule_staged_result(
         prices,
         strategy=charging_strategy,
     )
-    violations = check_solution(rescheduled, bundle.instance, prices)
-    context = EvaluationContext(bundle.instance, bundle.carbon_profile, prices=prices)
+    context = EvaluationContext(
+        bundle.instance,
+        bundle.carbon_profile,
+        prices=prices,
+        carbon_weight=carbon_weight,
+        carbon_quota_kg=carbon_quota_kg,
+        fairness_enabled=fairness_enabled,
+        independent_profit=independent_profit,
+        fairness_theta=fairness_theta,
+        customer_home_depot=customer_home_depot,
+    )
+    violations = check_solution(
+        rescheduled,
+        bundle.instance,
+        prices,
+        fairness_context=fairness_context_for_solution(rescheduled, context),
+        fairness_enabled=fairness_enabled,
+    )
     original_actions = list(result["best_solution"].charging_actions)
     rescheduled_actions = list(rescheduled.charging_actions)
     moved_actions = sum(
@@ -1107,6 +1202,12 @@ def _run_winner_kernel_loop(
     prices: PriceParameters | None = None,
     variant_flags: dict[str, str] | None = None,
     policy: SearchPolicy | None = None,
+    carbon_weight: float = 1.0,
+    carbon_quota_kg: float = 0.0,
+    fairness_enabled: bool = False,
+    independent_profit: dict[str, float] | None = None,
+    fairness_theta: float | None = None,
+    customer_home_depot: dict[str, str] | None = None,
 ) -> AlnsRunResult:
     policy = policy or _search_policy_for_instance(instance, require_charging_signal=config.require_charging_signal)
     effective_prices = prices or DEFAULT_PRICES
@@ -1114,11 +1215,17 @@ def _run_winner_kernel_loop(
         instance,
         carbon_profile,
         prices=effective_prices,
+        carbon_weight=carbon_weight,
         budget=EvalBudget(
             limit=_budget_limit(None, config.eval_budget),
             target=int(config.eval_budget),
         ),
         repair_delta_mode="fast",
+        carbon_quota_kg=carbon_quota_kg,
+        fairness_enabled=fairness_enabled,
+        independent_profit=independent_profit,
+        fairness_theta=fairness_theta,
+        customer_home_depot=customer_home_depot,
     )
     flags = variant_flags or winner_variant_flags(include_route_elimination=config.include_route_elimination)
     object.__setattr__(
@@ -1129,6 +1236,7 @@ def _run_winner_kernel_loop(
     trace_diagnostic = _trace_diagnostic_enabled(flags)
     structural_component = structural_component_from_flags(flags)
     ledger: TimingLedger | None = attach_timing_ledger(context) if _flag_enabled_from(flags, "SETP_ALNS_CRUSH_TIMING_LEDGER") else None
+    initial_solution = _annotate_cross_site_services(initial_solution, context)
     with timed_section(context, "initial_reference_score"):
         initial_obj = score_reference(initial_solution, context)
     current = best = AlnsState(initial_solution, context, objective_value=initial_obj, policy=policy)
@@ -1300,6 +1408,7 @@ def _run_winner_kernel_loop(
             accepted = False
             candidate_obj = math.inf
             if proposal is not None:
+                proposal = _annotate_cross_site_services(proposal, context)
                 with timed_section(context, structural_operator):
                     candidate_obj = float(score_candidate(proposal, context, label="candidate"))
                 candidate = AlnsState(proposal, context, objective_value=candidate_obj, policy=policy)
@@ -1691,6 +1800,12 @@ def run_staged_chain_alns(
     prices: Any = DEFAULT_PRICES,
     variant_flags: dict[str, str] | None = None,
     policy: SearchPolicy | None = None,
+    carbon_weight: float = 1.0,
+    carbon_quota_kg: float = 0.0,
+    fairness_enabled: bool = False,
+    independent_profit: dict[str, float] | None = None,
+    fairness_theta: float | None = None,
+    customer_home_depot: dict[str, str] | None = None,
 ) -> AlnsRunResult:
     """Run regular, global-repair, then regular ALNS phases under one budget."""
 
@@ -1727,6 +1842,12 @@ def run_staged_chain_alns(
             prices=prices,
             variant_flags=phase_flags,
             policy=policy,
+            carbon_weight=carbon_weight,
+            carbon_quota_kg=carbon_quota_kg,
+            fairness_enabled=fairness_enabled,
+            independent_profit=independent_profit,
+            fairness_theta=fairness_theta,
+            customer_home_depot=customer_home_depot,
         )
         phase_runs.append(phase_run)
         current_initial = phase_run.best_solution
@@ -1868,6 +1989,9 @@ def _candidate_change_and_violations(
     *,
     trace: dict[str, Any] | None = None,
 ) -> tuple[AlnsState, bool, int]:
+    annotated = _annotate_cross_site_services(candidate.solution, candidate.context)
+    if annotated is not candidate.solution:
+        candidate = replace(candidate, solution=annotated, objective_value=None)
     changed = _solution_changed(previous_state.solution, candidate.solution)
     hard_violation_count = _hard_violation_count(candidate.solution, candidate.context) if not candidate.removed_customers else 1
     if trace is not None:
@@ -1877,6 +2001,7 @@ def _candidate_change_and_violations(
         before_obj = candidate.objective()
         with timed_section(candidate.context, "local_search"):
             improved_solution = improve_solution_locally(candidate.solution, candidate.context)
+        improved_solution = _annotate_cross_site_services(improved_solution, candidate.context)
         if trace is not None:
             improved = _solution_changed(before_solution, improved_solution)
             after_state = replace(candidate, solution=improved_solution, objective_value=None) if improved else candidate
@@ -1896,6 +2021,26 @@ def _candidate_change_and_violations(
             changed = _solution_changed(previous_state.solution, candidate.solution)
             hard_violation_count = _hard_violation_count(candidate.solution, candidate.context)
     return candidate, changed, hard_violation_count
+
+
+def _annotate_cross_site_services(solution: Solution, context: EvaluationContext) -> Solution:
+    """Keep cooperative-service accounting synchronized for E3/E6 contexts."""
+
+    owners = context.customer_home_depot
+    if not owners:
+        return solution
+    node_lookup = {node.node_id: node for node in context.instance.nodes}
+    services: list[CrossSiteService] = []
+    for route in solution.routes:
+        for node_id in route.node_sequence:
+            node = node_lookup.get(node_id)
+            if node is None or node.node_type.lower() != "c":
+                continue
+            if owners.get(node_id) != route.home_depot_id:
+                services.append(CrossSiteService(customer_id=node_id, served_by_depot_id=route.home_depot_id))
+    if services == list(solution.cross_site_services):
+        return solution
+    return replace(solution, cross_site_services=services)
 
 
 def _relaxed_route_candidate_usable(
@@ -1988,6 +2133,7 @@ def _scan_restart_state(
     counter[f"{counter_prefix}_attempts"] += 1
     with timed_section(state.context, "scan_build"):
         solution = scan_all_cv_solution(state.context.instance, offset=offset, prices=state.context.prices)
+        solution = _annotate_cross_site_services(solution, state.context)
     with timed_section(state.context, "scan_score"):
         objective = float(score_candidate(solution, state.context, label="candidate"))
     breakdown = state.context.score_breakdowns.get(id(solution), {})

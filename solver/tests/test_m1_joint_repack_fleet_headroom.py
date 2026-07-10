@@ -390,6 +390,65 @@ class M1JointRepackFleetHeadroomTests(unittest.TestCase):
 
         self.assertEqual([call.kwargs["policy"] for call in phase_run.call_args_list], [policy, policy, policy])
 
+    def test_staged_chain_forwards_e3_context_to_every_phase(self) -> None:
+        import setp_solver.algorithms.resetp_alns.kernel.winner as winner
+        from setp_solver.algorithms.resetp_alns.kernel.alns_core import AlnsRunResult
+
+        bundle = load_search_bundle(VERIFY_BUNDLE)
+        start = make_shared_initial_solution(bundle, prices=DEFAULT_PRICES)
+        phase_results = [
+            AlnsRunResult(start, start, 10.0, 9.0, 400, True),
+            AlnsRunResult(start, start, 9.0, 8.0, 200, True),
+            AlnsRunResult(start, start, 8.0, 7.0, 400, True),
+        ]
+        owners = {node.node_id: "D0" for node in bundle.instance.nodes if node.node_type.lower() == "c"}
+
+        with patch.object(winner, "_run_winner_kernel_loop", side_effect=phase_results) as phase_run:
+            winner.run_staged_chain_alns(
+                start,
+                bundle.instance,
+                bundle.carbon_profile,
+                config=winner.WinnerKernelConfig(seed=7, eval_budget=1000, max_runtime_seconds=30.0),
+                prices=DEFAULT_PRICES,
+                carbon_weight=0.5,
+                carbon_quota_kg=123.0,
+                fairness_enabled=True,
+                independent_profit={"D0": 10.0},
+                fairness_theta=1.0,
+                customer_home_depot=owners,
+            )
+
+        for call in phase_run.call_args_list:
+            self.assertEqual(call.kwargs["carbon_weight"], 0.5)
+            self.assertEqual(call.kwargs["carbon_quota_kg"], 123.0)
+            self.assertTrue(call.kwargs["fairness_enabled"])
+            self.assertEqual(call.kwargs["independent_profit"], {"D0": 10.0})
+            self.assertEqual(call.kwargs["customer_home_depot"], owners)
+
+    def test_e3_cross_site_accounting_is_rebuilt_from_route_assignments(self) -> None:
+        import setp_solver.algorithms.resetp_alns.kernel.winner as winner
+        from setp_solver.search.evaluation import EvaluationContext
+        from setp_solver.solution import Route, Solution
+
+        bundle = load_search_bundle(VERIFY_BUNDLE)
+        customer = next(node for node in bundle.instance.nodes if node.node_type.lower() == "c")
+        depots = [node.node_id for node in bundle.instance.nodes if node.node_type.lower() == "d"]
+        self.assertGreaterEqual(len(depots), 2)
+        serving = depots[1]
+        solution = Solution(routes=[Route("CV1", "cv", serving, [serving, customer.node_id, serving])])
+        context = EvaluationContext(
+            bundle.instance,
+            bundle.carbon_profile,
+            prices=DEFAULT_PRICES,
+            customer_home_depot={customer.node_id: depots[0]},
+        )
+
+        annotated = winner._annotate_cross_site_services(solution, context)
+
+        self.assertEqual(len(annotated.cross_site_services), 1)
+        self.assertEqual(annotated.cross_site_services[0].customer_id, customer.node_id)
+        self.assertEqual(annotated.cross_site_services[0].served_by_depot_id, serving)
+
     def test_staged_hybrid_has_a_distinct_public_identity_and_price_override(self) -> None:
         from setp_solver.algorithms.resetp_alns.kernel.winner import (
             WinnerKernelConfig,
