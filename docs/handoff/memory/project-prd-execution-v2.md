@@ -9,6 +9,8 @@ metadata:
 
 2026-07-02 新增 `docs/handoff/project_prd_execution_map_v2_20260702.md`。这是全项目级 PRD/施工图，不只是 E2 PRD。
 
+2026-07-11 当前主线纠偏：**E2 算法性能闭合优先**。30 次 staged ALNS-LNS hybrid/LNS 稳定性门完成前，电池容量/车型结构/充电活跃度复核，以及动态需求是否能创造低碳充电空间，均标记为 `DEFERRED / BLOCKED_BY_E2_ALGORITHM_FOUNDATION`。这些是挂账任务，不是当前代码或实验待办；不得启动容量筛选、谷时充电算子、动态低碳实验、正式 E7 或修改论文默认 80 kWh。解冻条件和未来验收指标见 `docs/handoff/m1_e2_deferred_tasks_20260711.md`。
+
 同日新增强制启动入口 `docs/handoff/READ_ME_FIRST_FOR_AGENTS.md`，并已挂入 `AGENTS.md`、`CLAUDE.md`、`docs/handoff/codex_prompts/MASTER_codex_takeover_plan.md`、`docs/handoff/codex_prompts/README.md`。Codex/Claude 每轮非平凡任务必须先读该入口和其清单，读完前不得动手。
 
 核心裁决：E2 是关键路径。`5174.345121253789` 同值平台 C1 审计已完成，verdict=`ARTIFICIAL_HOMOGENIZATION`，所以当前 E2-G0 未过门；C1-R2 探针已完成但只到 `PARTIAL_OR_WEAK_SUPPORT`（H2 确认、H1 未确认），所以后续不是扩跑，而是做 C1-R1，把共享车型翻转通道从 baseline 算法成绩中剥离/单独记账，并加 operator provenance gate，同时重新设计解码/表达能力审计后再重审 G0。ALNS 独立化、场景口径合规核对（06-26 拍板的落实，非重新裁决）、基线补全、多实例复核、正式 T3 仍在后面，但 G4/G5 必须继续冻结。
