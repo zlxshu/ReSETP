@@ -251,6 +251,8 @@ def test_real_rolling_lifecycle_fixture_executes_cancel_and_change_events(
     for evidence in lifecycle_rolling_evidence:
         assert [context.stage_index for context in evidence.contexts] == [0, 1]
         assert {"gate", "first_bad_stage", "violations"}.isdisjoint(evidence.report)
+        assert evidence.report["dynamic_solver_backend"] == "setp_solver.algorithms.resetp_alns"
+        assert evidence.report["static_control_backend"] == "setp_solver.algorithms.resetp_alns"
         stage_one = _stage_context(evidence.contexts, 1)
         assert {event.event_id for event in stage_one.stage_events} == {
             f"1-done-{evidence.event_type}",
@@ -656,3 +658,64 @@ def _flat_carbon_profile() -> list[dict[str, object]]:
         }
         for index in range(48)
     ]
+
+
+@pytest.mark.parametrize("policy_mode", ["normal", "random", "model", "exception_fallback"])
+def test_every_dynamic_policy_branch_avoids_the_legacy_alns_entrypoint(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    policy_mode: str,
+) -> None:
+    instance = _zero_distance_instance(
+        [
+            Node("D0", "d", 0.0, 0.0, due_time=86_400.0, station_chargers=2),
+            Node("C1", "c", 0.0, 0.0, demand=1.0, ready_time=150.0, due_time=10_000.0),
+        ]
+    )
+    events = [_event("change-c1", "demand_change", "C1", 1.0, 2.0)]
+    bundle_dir = tmp_path / policy_mode / "bundle"
+    _write_truth_bundle(bundle_dir, instance, events)
+
+    def legacy_tripwire(*_args: Any, **_kwargs: Any) -> None:
+        raise AssertionError("legacy ALNS entrypoint was executed")
+
+    # The attribute exists before the fix and is deliberately allowed to be
+    # absent after it.  A successful real rolling run proves the bound legacy
+    # function was not used, rather than merely checking an import name.
+    monkeypatch.setattr(dynamic_module, "run_alns_wouda", legacy_tripwire, raising=False)
+
+    policy = None
+    if policy_mode == "random":
+        def random_policy(context: RollingPolicyContext) -> RollingPolicyDecision:
+            chosen = set(sorted(context.active_ids)[::2]) or set(context.active_ids)
+            return RollingPolicyDecision(plan_now_ids=chosen, metadata={"selector": "forced_random_probe"})
+
+        policy = random_policy
+    elif policy_mode == "model":
+        def model_policy(context: RollingPolicyContext) -> RollingPolicyDecision:
+            return RollingPolicyDecision(plan_now_ids=set(context.active_ids), metadata={"selector": "forced_model_probe"})
+
+        policy = model_policy
+    elif policy_mode == "exception_fallback":
+        def broken_model_policy(_context: RollingPolicyContext) -> RollingPolicyDecision:
+            raise RuntimeError("forced model failure")
+
+        policy = broken_model_policy
+
+    report = run_rolling_reoptimization(
+        bundle_dir,
+        output_json_path=tmp_path / policy_mode / "report.json",
+        seed=7,
+        eval_budget=0,
+        max_runtime_seconds=2.0,
+        stage_eval_budget=0,
+        stage_max_runtime_seconds=2.0,
+        params=RollingParameters(delta_t_seconds=100.0, q_bar=8, stages=2),
+        policy_callback=policy,
+    )
+
+    assert "gate" not in report
+    assert report["dynamic_solver_backend"] == "setp_solver.algorithms.resetp_alns"
+    assert report["static_control_backend"] == "setp_solver.algorithms.resetp_alns"
+    expected_fallbacks = 1 if policy_mode == "exception_fallback" else 0
+    assert report["policy_fallback_count"] == expected_fallbacks

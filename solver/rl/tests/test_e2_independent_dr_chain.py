@@ -9,6 +9,7 @@ import pytest
 REPO_ROOT = Path(__file__).resolve().parents[3]
 INDEPENDENT_PACKAGE = REPO_ROOT / "solver/src/setp_solver/algorithms/resetp_alns"
 E2_CHAIN = REPO_ROOT / "solver/rl/independent_dr_alns/chain.py"
+DYNAMIC_RUNNER = REPO_ROOT / "solver/src/setp_solver/search/dynamic.py"
 _LOCAL_FIXTURE = REPO_ROOT / "models/data_bundle/generated_instances/verify_20251113"
 FIXTURE_DIR = (
     _LOCAL_FIXTURE
@@ -35,10 +36,11 @@ def test_e2_uses_the_m1_independent_kernel_and_no_legacy_alns() -> None:
 
     banned = {
         "alns",
+        "alns_wouda",
         "setp_solver.search.alns_wouda",
         "setp_solver.search.winner_operators",
     }
-    for path in [*INDEPENDENT_PACKAGE.rglob("*.py"), E2_CHAIN]:
+    for path in [*INDEPENDENT_PACKAGE.rglob("*.py"), E2_CHAIN, DYNAMIC_RUNNER]:
         imports = _imports(path)
         offenders = sorted(
             name
