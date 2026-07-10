@@ -363,7 +363,8 @@ def _route_bottleneck_observation(session: IndependentDrSession) -> np.ndarray:
 
 
 def _session_observation(session: IndependentDrSession) -> np.ndarray:
-    summary = session._summary(session.current_solution, session.current_obj, best_obj=session.best_obj)
+    summary = session.current_summary
+    summary["best_obj"] = float(session.best_obj)
     metrics = summary["metrics"]
     total = max(abs(float(metrics.get("total_cost", 0.0))), 1.0)
     ev = float(metrics.get("n_veh_ev", 0.0))

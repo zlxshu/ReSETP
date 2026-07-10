@@ -257,3 +257,17 @@ def test_independent_cache_path_preserves_exact_solution_and_cost() -> None:
     assert [row["after"]["best_obj"] for row in cached_rows] == pytest.approx(
         [row["after"]["best_obj"] for row in uncached_rows]
     )
+
+
+def test_reused_current_summary_matches_a_fresh_full_recalculation() -> None:
+    from independent_dr_alns.chain import DrAction, IndependentDrSession
+
+    session = IndependentDrSession(FIXTURE_DIR, seed=5, max_evals=2)
+    session.step(DrAction("worst_customer_removal", "regret2_insert_repair", 0.20, 0.02))
+
+    reused = session.current_summary
+    fresh = session._summary(session.current_solution, session.current_obj, best_obj=session.best_obj)
+    assert reused["solution_hash"] == fresh["solution_hash"]
+    assert reused["violation_count"] == fresh["violation_count"]
+    assert reused["objective"] == pytest.approx(fresh["objective"])
+    assert reused["metrics"] == pytest.approx(fresh["metrics"])

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import asdict, dataclass
+import copy
 import hashlib
 import json
 from pathlib import Path
@@ -86,10 +87,11 @@ class IndependentDrSession:
         self.best_solution = self.initial_solution
         self.best_obj = self.initial_obj
         self.initial_summary = self._summary(self.initial_solution, self.initial_obj)
+        self._current_summary = copy.deepcopy(self.initial_summary)
         self.step_index = 0
 
     def action_mask(self) -> dict[str, bool]:
-        summary = self._summary(self.current_solution, self.current_obj)
+        summary = self.current_summary
         has_charging = bool(self.current_solution.charging_actions)
         mask = {name: True for name in self.destroy_ids}
         for name in ("worst_carbon_removal", "carbon_related_removal"):
@@ -110,7 +112,8 @@ class IndependentDrSession:
             raise RuntimeError(f"evaluation budget reached: {budget.count} >= {budget.target_count}")
 
         before_best = float(self.best_obj)
-        before = self._summary(self.current_solution, self.current_obj, best_obj=self.best_obj)
+        before = self.current_summary
+        before["best_obj"] = float(self.best_obj)
         winner_action = WinnerOperatorAction(
             destroy_op_id=action.destroy_id,
             repair_op_id=action.repair_id,
@@ -146,7 +149,10 @@ class IndependentDrSession:
             self.best_obj = candidate_obj
         self.step_index += 1
 
-        after = self._summary(self.current_solution, self.current_obj, best_obj=self.best_obj)
+        if accepted:
+            self._current_summary = copy.deepcopy(candidate_summary)
+        after = self.current_summary
+        after["best_obj"] = float(self.best_obj)
         requested = asdict(action)
         executed = {
             "destroy_id": str(result["trace"]["destroy_id"]),
@@ -172,6 +178,10 @@ class IndependentDrSession:
             "actual_evals_added": int(result.get("actual_evals_added", 0)),
             "kernel_trace": dict(result.get("trace") or {}),
         }
+
+    @property
+    def current_summary(self) -> dict[str, Any]:
+        return copy.deepcopy(self._current_summary)
 
     def _validate_action(self, action: DrAction) -> None:
         if action.destroy_id not in self.destroy_ids:
