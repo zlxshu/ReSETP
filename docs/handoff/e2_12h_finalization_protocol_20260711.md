@@ -110,3 +110,6 @@
 Goeke 与 Schneider 的混合车队 EVRP 使用问题专用充电站邻域；Macrina 等把客户/充电站的移除插入与固定路线充电决策结合；Lin、Ghaddar 与 Nathwani把路径和时变电价下的充放电时刻联合考虑。共同启示是：充电决策需要成为明确子问题，不能只在整条解上加一个粗糙碳分数。
 
 主要来源：Goeke & Schneider (2015), DOI `10.1016/j.ejor.2015.01.049`；Macrina et al. (2019), *Transportation Research Part D*；Lin, Ghaddar, & Nathwani (2021), DOI `10.1016/j.trc.2021.102974`；Keskin & Çatay (2018), DOI `10.1016/j.cor.2018.06.019`。
+## Long-run probing cadence
+
+Under Goal mode, any long-running experiment must use local scripts for frequent health checks. Agent-side/manual progress probing must be spaced at least 30 minutes apart and should normally be hourly. Only a concrete watchdog alert may trigger earlier inspection. Routine automatic continuations must not probe or report status.

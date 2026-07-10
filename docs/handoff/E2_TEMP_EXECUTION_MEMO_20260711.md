@@ -68,3 +68,11 @@
 - `HALT_INTEGRITY`：违规、未跑满、复算不一致、manifest或hash异常。
 
 任何HALT都不是失败羞耻，而是避免把一天算力烧在错误协议上。
+## OpenAI product bug feedback after E2 closeout
+
+After the E2 run is fully closed out, prepare an English bug report for OpenAI about the Codex Goal-mode continuation loop observed in this task. The report must explain that automatic goal continuations repeatedly created assistant turns even after the user explicitly requested hourly-only monitoring; invisible or zero-width replies still counted as messages; the assistant-facing goal API exposed only `complete` and `blocked`, not `pause`; and the local Computer Use runtime failed to start when the assistant attempted to pause Goal mode through the UI. Include reproduction steps, expected behavior, actual behavior, user impact (message spam and unnecessary credit/token consumption), and suggested fixes (assistant-callable pause/resume, configurable continuation interval, and no-op continuations that do not create visible turns).
+
+Do not submit the report silently. Create the English draft and obtain the user's confirmation at the final submission step if an external feedback channel is available.
+## Goal-mode long-run monitoring hard rule
+
+For long-running experiments under Goal mode, manual/agent-side probing must never occur more frequently than once every 30 minutes. The default interval is 60 minutes. Earlier intervention is allowed only when the local watchdog has already emitted a concrete failure, stale-progress, or resource-health alert. Automatic goal continuations are not valid reasons to read progress or emit status messages; they must remain silent.
