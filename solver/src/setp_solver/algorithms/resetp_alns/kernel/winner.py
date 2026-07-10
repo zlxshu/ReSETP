@@ -661,6 +661,54 @@ def run_winner_kernel(
     return _run_winner_variant(bundle_dir, cfg, initial_solution=initial_solution)
 
 
+def run_staged_alns_lns_hybrid(
+    bundle_dir: str | Path,
+    *,
+    config: WinnerKernelConfig | None = None,
+    initial_solution: Solution | None = None,
+    prices: Any = DEFAULT_PRICES,
+) -> dict[str, Any]:
+    """Run the explicitly named staged ALNS-LNS hybrid under one budget."""
+
+    cfg = config or WinnerKernelConfig()
+    bundle = _load_search_bundle(bundle_dir)
+    warm = initial_solution or build_initial_solution(
+        bundle.instance,
+        bundle.carbon_profile,
+        prices,
+        introduce_ev=False,
+        require_charging_signal=False,
+    )
+    started = time.perf_counter()
+    run = run_staged_chain_alns(
+        warm,
+        bundle.instance,
+        bundle.carbon_profile,
+        config=cfg,
+        prices=prices,
+    )
+    context = EvaluationContext(bundle.instance, bundle.carbon_profile, prices=prices)
+    violations = check_solution(run.best_solution, bundle.instance, prices)
+    return {
+        "operator_base_id": operator_base_id,
+        "variant": "staged_alns_lns_hybrid",
+        "algorithm": "staged ALNS-LNS hybrid",
+        "seed": int(cfg.seed),
+        "eval_budget": int(cfg.eval_budget),
+        "max_runtime_seconds": float(cfg.max_runtime_seconds),
+        "evaluations": int(run.evaluations),
+        "elapsed_seconds": time.perf_counter() - started,
+        "best_solution": run.best_solution,
+        "best_cost": model_cost(run.best_solution, context),
+        "feasible": len(violations) == 0,
+        "violation_count": len(violations),
+        "battery_kwh": float(getattr(prices, "B_battery_kwh")),
+        "carbon_aware_operators": False,
+        "history": list(run.history),
+        "operator_counts": dict(run.operator_counts),
+    }
+
+
 def run_winner_kernel_plus_route_elimination(
     bundle_dir: str | Path,
     *,

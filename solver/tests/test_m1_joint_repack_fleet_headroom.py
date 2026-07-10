@@ -363,5 +363,43 @@ class M1JointRepackFleetHeadroomTests(unittest.TestCase):
         self.assertEqual(result.evaluations, 1000)
         self.assertEqual(result.best_obj, 5.0)
 
+    def test_staged_hybrid_has_a_distinct_public_identity_and_price_override(self) -> None:
+        from setp_solver.algorithms.resetp_alns.kernel.winner import (
+            WinnerKernelConfig,
+            run_staged_alns_lns_hybrid,
+        )
+
+        bundle = load_search_bundle(VERIFY_BUNDLE)
+        start = make_shared_initial_solution(bundle, prices=DEFAULT_PRICES)
+        prices = replace(DEFAULT_PRICES, B_battery_kwh=280.0)
+
+        result = run_staged_alns_lns_hybrid(
+            bundle.bundle_dir,
+            config=WinnerKernelConfig(seed=1, eval_budget=2, max_runtime_seconds=30.0),
+            initial_solution=start,
+            prices=prices,
+        )
+
+        self.assertEqual(result["algorithm"], "staged ALNS-LNS hybrid")
+        self.assertEqual(result["variant"], "staged_alns_lns_hybrid")
+        self.assertEqual(result["evaluations"], 2)
+        self.assertEqual(result["battery_kwh"], 280.0)
+
+    def test_stability_gate_builds_exactly_thirty_frozen_tasks(self) -> None:
+        from baselines.e2_alns.m1_staged_hybrid_stability_gate import build_tasks
+
+        tasks = build_tasks(
+            instances=(
+                "L-main-threeshift-100c-01",
+                "L-main-threeshift-150c-01",
+                "L-main-threeshift-200c-01",
+            ),
+            seeds=(1, 2, 3, 4, 5),
+        )
+
+        self.assertEqual(len(tasks), 30)
+        self.assertEqual({task.algorithm for task in tasks}, {"staged ALNS-LNS hybrid", "LNS"})
+        self.assertEqual({task.seed for task in tasks}, {1, 2, 3, 4, 5})
+
 if __name__ == "__main__":
     unittest.main()

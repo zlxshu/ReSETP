@@ -6,6 +6,7 @@ from setp_solver.algorithms.resetp_alns.kernel.winner import (  # noqa: F401
     e2_alns_throughput_flags,
     operator_base_id,
     run_e2_alns_throughput,
+    run_staged_alns_lns_hybrid,
     run_winner_kernel,
     winner_operator_module,
 )
