@@ -37,7 +37,7 @@ BASELINES = ("LNS", "GA", "PSO", "VNS")
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--phase", choices=("preflight", "formal-80", "carbon-280", "decide"), required=True)
+    parser.add_argument("--phase", choices=("preflight", "baseline-health", "formal-80", "carbon-280", "decide"), required=True)
     parser.add_argument("--output-dir", default=str(OUTPUT_DIR))
     parser.add_argument("--workers", type=int, default=6)
     parser.add_argument("--eval-budget", type=int, default=4000)
@@ -63,16 +63,26 @@ def main() -> int:
         seeds = [1]
         eval_budget = min(400, int(args.eval_budget))
         scenario = "diagnostic_280_override"
+        algorithms = ALGORITHMS
+    elif args.phase == "baseline-health":
+        phase_dir = output_dir / "baseline_health"
+        instances = ("L-main-threeshift-100c-01",)
+        seeds = [1]
+        eval_budget = int(args.eval_budget)
+        scenario = "diagnostic_280_override"
+        algorithms = BASELINES
     elif args.phase == "formal-80":
         phase_dir = output_dir / "formal_80"
         instances = INSTANCES
         eval_budget = int(args.eval_budget)
         scenario = "formal_goeke80"
+        algorithms = ALGORITHMS
     elif args.phase == "carbon-280":
         phase_dir = output_dir / "carbon_280"
         instances = INSTANCES
         eval_budget = int(args.eval_budget)
         scenario = "diagnostic_280_override"
+        algorithms = ALGORITHMS
     else:
         decision = final_decision(output_dir)
         closure.write_json(output_dir / "decision.json", decision)
@@ -87,20 +97,20 @@ def main() -> int:
         "phase": args.phase,
         "head": closure.git_head(),
         "instances": list(instances),
-        "algorithms": list(ALGORITHMS),
+        "algorithms": list(algorithms),
         "seeds": seeds,
         "eval_budget": eval_budget,
         "scenario_type": scenario,
         "workers": int(args.workers),
-        "expected_tasks": len(instances) * len(seeds) * len(ALGORITHMS),
+        "expected_tasks": len(instances) * len(seeds) * len(algorithms),
         "legacy_carbon_search_operators": False,
         "protected_paths": list(closure.PROTECTED_PATHS),
     }
     closure.write_json(phase_dir / "metadata.json", metadata)
-    tasks = build_tasks(phase_dir, instances, seeds, eval_budget, scenario)
+    tasks = build_tasks(phase_dir, instances, seeds, eval_budget, scenario, algorithms)
     rows = closure.run_tasks(phase_dir, tasks, workers=int(args.workers), force=bool(args.force))
     export_solutions(phase_dir, rows)
-    decision = phase_decision(rows, metadata)
+    decision = baseline_health_decision(rows, metadata) if args.phase == "baseline-health" else phase_decision(rows, metadata)
     closure.write_csv(phase_dir / "raw_runs.csv", rows)
     closure.write_csv(phase_dir / "paired_comparisons.csv", paired_comparisons(rows))
     closure.write_csv(phase_dir / "per_instance_summary.csv", per_instance_summary(rows))
@@ -109,7 +119,7 @@ def main() -> int:
     write_phase_report(phase_dir, decision)
     closure.write_hashes(phase_dir)
     print(json.dumps(decision, ensure_ascii=False, indent=2, sort_keys=True))
-    return 0 if decision["verdict"].endswith("READY") else 2
+    return 0 if decision["verdict"].endswith("READY") or decision["verdict"] == "E2_BASELINES_HEALTHY" else 2
 
 
 def build_tasks(
@@ -118,11 +128,12 @@ def build_tasks(
     seeds: list[int],
     eval_budget: int,
     scenario: str,
+    algorithms: tuple[str, ...],
 ) -> list[dict[str, Any]]:
     tasks: list[dict[str, Any]] = []
     for instance in instances:
         for seed in seeds:
-            for algorithm in ALGORITHMS:
+            for algorithm in algorithms:
                 tasks.append(
                     closure.make_task(
                         phase="E2_SUBMISSION",
@@ -185,6 +196,37 @@ def phase_decision(rows: list[dict[str, Any]], metadata: dict[str, Any]) -> dict
         "carbon_fixed_route_equal_energy_pairs": carbon_contract_pairs,
         "carbon_moved_pair_count": carbon_moved_pairs,
         "baseline_liveness_halts": liveness_halts,
+        "algorithm_win_loss_claim": False,
+    }
+
+
+def baseline_health_decision(rows: list[dict[str, Any]], metadata: dict[str, Any]) -> dict[str, Any]:
+    expected = int(metadata["expected_tasks"])
+    ok = [row for row in rows if row.get("gate_status") == "OK"]
+    closed = [row for row in rows if closure.truthy(row.get("eval_closed"))]
+    zero_violation = [row for row in rows if int(closure.as_float(row.get("violation_count"), -1)) == 0]
+    native = [row for row in rows if int(closure.as_float(row.get("native_best_updates"), 0)) >= 1]
+    signatures = {str(row.get("best_signature")) for row in rows}
+    ready = (
+        len(rows) == expected
+        and len(ok) == expected
+        and len(closed) == expected
+        and len(zero_violation) == expected
+        and len(native) == expected
+        and len(signatures) == expected
+    )
+    return {
+        "schema": "setp-e2-baseline-health-decision.v1",
+        "verdict": "E2_BASELINES_HEALTHY" if ready else "HALT_E2_BASELINES",
+        "phase": metadata["phase"],
+        "head": closure.git_head(),
+        "expected_tasks": expected,
+        "observed_tasks": len(rows),
+        "ok_tasks": len(ok),
+        "eval_closed_tasks": len(closed),
+        "zero_violation_tasks": len(zero_violation),
+        "native_update_tasks": len(native),
+        "unique_best_signatures": len(signatures),
         "algorithm_win_loss_claim": False,
     }
 
@@ -279,7 +321,11 @@ def write_phase_report(phase_dir: Path, decision: dict[str, Any]) -> None:
         f"Verdict: `{decision['verdict']}`",
         "",
         f"Tasks: {decision['ok_tasks']}/{decision['expected_tasks']} OK; eval-closed {decision['eval_closed_tasks']}; zero-violation {decision['zero_violation_tasks']}.",
-        f"Carbon pairs: {decision['carbon_pair_count']}; pairs with a recorded charging-time mechanism signal: {decision['carbon_moved_pair_count']}.",
+        (
+            f"Carbon pairs: {decision['carbon_pair_count']}; pairs with a recorded charging-time mechanism signal: {decision['carbon_moved_pair_count']}."
+            if "carbon_pair_count" in decision
+            else f"Native-update tasks: {decision.get('native_update_tasks', 0)}; unique best signatures: {decision.get('unique_best_signatures', 0)}."
+        ),
         "",
         "This is experiment evidence, not paper prose. Algorithm win/loss claims remain disabled until the complete matrix is reviewed.",
     ]
