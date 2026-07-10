@@ -77,11 +77,6 @@ def test_dynamic_clock_fixture_is_a_ten_second_arc_from_the_inherited_position()
     assert context.vehicle_states["CV1"].position_node_id == route.node_sequence[0]
 
 
-@pytest.mark.xfail(
-    strict=True,
-    raises=AssertionError,
-    reason="dynamic checker resets inherited vehicle time to the static route clock",
-)
 def test_dynamic_clock_starts_at_inherited_vehicle_time() -> None:
     instance, _route, solution, context = _clock_case()
     late = [
@@ -139,11 +134,6 @@ def test_dynamic_battery_fixture_has_an_exact_two_kwh_arc() -> None:
     assert solution.routes[0].node_sequence == ["P0", "D0"]
 
 
-@pytest.mark.xfail(
-    strict=True,
-    raises=AssertionError,
-    reason="dynamic checker resets EV energy to static initial battery",
-)
 def test_dynamic_ev_uses_inherited_remaining_battery() -> None:
     instance, solution, context, prices = _battery_case()
     depleted = [
@@ -217,11 +207,6 @@ def test_real_rolling_charger_fixture_reaches_both_stages(
         assert stage_one["feasible"] is True
 
 
-@pytest.mark.xfail(
-    strict=True,
-    raises=AssertionError,
-    reason="real rolling stage omits the pre-boundary charger occupancy",
-)
 def test_dynamic_stage_check_keeps_pre_boundary_charger_occupancy(
     charger_rolling_evidence: ChargerRollingEvidence,
 ) -> None:
@@ -308,7 +293,7 @@ def test_real_rolling_lifecycle_preserves_completed_and_applies_open_events(
 @pytest.mark.xfail(
     strict=True,
     raises=AssertionError,
-    reason="real rolling lifecycle has no distinct committed-but-not-completed state",
+    reason="committed-but-not-completed customer still re-enters final repair",
 )
 def test_dynamic_events_distinguish_completed_committed_and_open_customers(
     lifecycle_rolling_evidence: tuple[LifecycleRollingEvidence, LifecycleRollingEvidence],
@@ -325,12 +310,14 @@ def test_dynamic_events_distinguish_completed_committed_and_open_customers(
             and "C_OPEN" not in stage_one.committed_customer_ids
         )
         locked_event_preserved = "C_LOCK" in lookup and lookup["C_LOCK"].demand == pytest.approx(20.0)
-        outcomes.append(bool(explicit_four_states and locked_event_preserved))
+        locked_not_replanned = "C_LOCK" not in evidence.report.get("final_repair_customer_ids", [])
+        outcomes.append(bool(explicit_four_states and locked_event_preserved and locked_not_replanned))
         diagnostics.append(
             f"{evidence.event_type}: served={sorted(stage_one.served_customers)}, "
             f"committed-not-completed={sorted(stage_one.committed_customer_ids)}, "
             f"C_LOCK present={'C_LOCK' in lookup}, "
-            f"demand={lookup.get('C_LOCK').demand if 'C_LOCK' in lookup else None}"
+            f"demand={lookup.get('C_LOCK').demand if 'C_LOCK' in lookup else None}, "
+            f"final-repair={evidence.report.get('final_repair_customer_ids', [])}"
         )
 
     assert all(outcomes), "; ".join(diagnostics)

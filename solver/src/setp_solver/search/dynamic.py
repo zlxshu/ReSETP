@@ -18,7 +18,7 @@ from typing import Any, Callable
 
 import numpy as np
 
-from ..check import check_solution
+from ..check import DynamicCheckContext, check_solution
 from ..cost import evaluate, route_node_schedule
 from ..instance_loader import Instance, Node
 from ..prices import DEFAULT_PRICES, PriceParameters
@@ -258,6 +258,8 @@ def run_rolling_reoptimization(
     served_customers: set[str] = set()
     committed_routes: list[Route] = []
     committed_actions: list[ChargingAction] = []
+    reserved_charging_actions: list[ChargingAction] = []
+    reserved_charging_keys: set[tuple[Any, ...]] = set()
     committed_node_state: dict[str, Node] = {}
     frozen_sequences: dict[str, list[str]] = {}
     stage_plan_customer_ids: dict[str, list[str]] = {}
@@ -268,6 +270,11 @@ def run_rolling_reoptimization(
     for stage_index, batch in enumerate(batches):
         trigger = float(batch["trigger_time"])
         stage_events = list(batch["events"])
+        for action in _charging_actions_started_by(previous_plan, trigger):
+            key = _charging_action_key(action)
+            if key not in reserved_charging_keys:
+                reserved_charging_keys.add(key)
+                reserved_charging_actions.append(action)
         initial_cost = cumulative_cost
         initial_carbon = cumulative_carbon
         conservation_ok = abs(initial_cost - previous_end_cost) <= 1e-6 and abs(initial_carbon - previous_end_carbon) <= 1e-6
@@ -329,7 +336,24 @@ def run_rolling_reoptimization(
 
         stage_cost = cumulative_cost - initial_cost
         stage_carbon = cumulative_carbon - initial_carbon
-        effective_instance = _instance_after_events(bundle.instance, events, trigger, served_customers)
+        next_trigger = (
+            float(batches[stage_index + 1]["trigger_time"])
+            if stage_index + 1 < len(batches)
+            else float(trigger + settings.delta_t_seconds)
+        )
+        committed_not_completed = _committed_not_completed_customers(
+            previous_plan,
+            previous_instance,
+            trigger_time=trigger,
+            commitment_deadline=next_trigger,
+            already_served=served_customers,
+        )
+        effective_instance = _instance_after_events(
+            bundle.instance,
+            events,
+            trigger,
+            served_customers | committed_not_completed,
+        )
         legal_unserved_ids = _legal_unserved_customer_ids(effective_instance, served_customers)
         pending_deferred_ids.intersection_update(legal_unserved_ids)
         for customer_id in list(pending_defer_age):
@@ -337,12 +361,10 @@ def run_rolling_reoptimization(
                 pending_defer_age.pop(customer_id, None)
         pending_count_before = len(pending_deferred_ids)
         pending_ids_before = sorted(pending_deferred_ids)
-        active_ids = set(_active_customer_ids(effective_instance, served_customers)) | set(pending_deferred_ids)
-        next_trigger = (
-            float(batches[stage_index + 1]["trigger_time"])
-            if stage_index + 1 < len(batches)
-            else float(trigger + settings.delta_t_seconds)
-        )
+        active_ids = (
+            set(_active_customer_ids(effective_instance, served_customers))
+            - set(committed_not_completed)
+        ) | set(pending_deferred_ids)
         defer_guard = _classify_defer_eligibility(
             effective_instance,
             active_ids,
@@ -366,6 +388,7 @@ def run_rolling_reoptimization(
             mandatory_customer_ids=mandatory_customer_ids,
             pending_customer_ids=pending_deferred_ids,
             served_customers=served_customers,
+            committed_customer_ids=committed_not_completed,
             previous_plan=previous_plan,
             previous_instance=previous_instance,
         )
@@ -394,6 +417,7 @@ def run_rolling_reoptimization(
             stage_max_runtime_seconds=stage_runtime,
             prices=prices,
             initial_plan=stage_initial_plan,
+            reserved_charging_actions=reserved_charging_actions,
         )
         total_evaluations += stage_plan.evaluations
         if stage_plan.violations:
@@ -511,14 +535,21 @@ def run_rolling_reoptimization(
         )
 
     final_trigger = max((float(event.t_appear) for event in events), default=0.0)
+    for action in _charging_actions_started_by(previous_plan, final_trigger):
+        key = _charging_action_key(action)
+        if key not in reserved_charging_keys:
+            reserved_charging_keys.add(key)
+            reserved_charging_actions.append(action)
     final_instance = _instance_after_events(bundle.instance, events, final_trigger, served_customers, committed_node_state)
     pending_deferred_ids.intersection_update(_legal_unserved_customer_ids(final_instance, served_customers))
     remaining = set(_active_customer_ids(final_instance, served_customers)) | set(pending_deferred_ids)
     final_repair_customer_count = 0
+    final_repair_customer_ids: list[str] = []
     final_repair_evaluations = 0
     final_repair_violation_count = 0
     if remaining:
         final_repair_customer_count = len(remaining)
+        final_repair_customer_ids = sorted(remaining)
         final_repair = _run_stage_plan(
             bundle,
             final_instance,
@@ -529,6 +560,7 @@ def run_rolling_reoptimization(
             stage_max_runtime_seconds=stage_max_runtime_seconds,
             prices=prices,
             initial_plan=previous_plan,
+            reserved_charging_actions=reserved_charging_actions,
         )
         total_evaluations += final_repair.evaluations
         final_repair_evaluations = int(final_repair.evaluations)
@@ -631,6 +663,7 @@ def run_rolling_reoptimization(
         "all_assertions_pass": all(row["conservation_ok"] and row["frozen_paths_ok"] for row in assertions),
         "policy_trace": policy_trace,
         "final_repair_customer_count": int(final_repair_customer_count),
+        "final_repair_customer_ids": final_repair_customer_ids,
         "final_repair_evaluations": int(final_repair_evaluations),
         "final_repair_violation_count": int(final_repair_violation_count),
         "dynamic_final_control": {
@@ -928,6 +961,7 @@ def _policy_decision_for_stage(
     effective_instance: Instance,
     active_ids: set[str],
     served_customers: set[str],
+    committed_customer_ids: set[str] | None = None,
     previous_plan: Solution | None,
     previous_instance: Instance | None,
     pending_customer_ids: set[str] | None = None,
@@ -937,7 +971,7 @@ def _policy_decision_for_stage(
         return RollingPolicyDecision(mandatory_ids=set(mandatory_customer_ids or set()))
     active = {str(customer_id) for customer_id in active_ids}
     mandatory = {str(customer_id) for customer_id in (mandatory_customer_ids or set())}
-    committed = {str(customer_id) for customer_id in served_customers}
+    committed = {str(customer_id) for customer_id in (committed_customer_ids or set())}
     context = RollingPolicyContext(
         stage_index=int(stage_index),
         trigger_time=float(trigger),
@@ -955,7 +989,7 @@ def _policy_decision_for_stage(
         previous_instance=previous_instance,
     )
     decision = _coerce_policy_decision(policy_callback(context))
-    return _normalize_policy_decision(decision, active, mandatory, committed)
+    return _normalize_policy_decision(decision, active, mandatory, committed | set(served_customers))
 
 
 def _normalize_policy_decision(
@@ -1059,6 +1093,7 @@ def _run_stage_plan(
     stage_max_runtime_seconds: float,
     prices: PriceParameters | dict[str, float] | Any,
     initial_plan: Solution | None,
+    reserved_charging_actions: list[ChargingAction] | tuple[ChargingAction, ...] = (),
 ) -> StagePlanResult:
     if not active_ids:
         empty = Solution()
@@ -1076,7 +1111,14 @@ def _run_stage_plan(
         max_runtime_seconds=stage_max_runtime_seconds,
         initial_solution=initial_solution,
     )
-    violations = check_solution(run.best_solution, stage_instance, prices)
+    violations = check_solution(
+        run.best_solution,
+        stage_instance,
+        prices,
+        dynamic_context=DynamicCheckContext(
+            reserved_charging_actions=tuple(reserved_charging_actions),
+        ),
+    )
     feasible = bool(run.feasible and not violations)
     return StagePlanResult(run.best_solution, stage_instance, int(run.evaluations), feasible, violations)
 
@@ -1168,6 +1210,52 @@ def _commit_executed_customers(plan: Solution | None, instance: Instance, trigge
             if float(row.t_start) <= float(trigger_time) + 1e-9:
                 served.add(row.node_id)
     return served
+
+
+def _committed_not_completed_customers(
+    plan: Solution | None,
+    instance: Instance,
+    *,
+    trigger_time: float,
+    commitment_deadline: float,
+    already_served: set[str],
+) -> set[str]:
+    if plan is None:
+        return set()
+    node_lookup = {node.node_id: node for node in instance.nodes}
+    committed: set[str] = set()
+    for route in plan.routes:
+        try:
+            schedule = route_node_schedule(route, instance)
+        except Exception:
+            continue
+        for row in schedule:
+            node = node_lookup.get(row.node_id)
+            if node is None or node.node_type.lower() != "c" or row.node_id in already_served:
+                continue
+            if float(trigger_time) < float(row.t_start) <= float(commitment_deadline) + 1e-9:
+                committed.add(row.node_id)
+    return committed
+
+
+def _charging_actions_started_by(plan: Solution | None, trigger_time: float) -> list[ChargingAction]:
+    if plan is None:
+        return []
+    return [
+        action
+        for action in plan.charging_actions
+        if float(action.charge_start_second) <= float(trigger_time) + 1e-9
+    ]
+
+
+def _charging_action_key(action: ChargingAction) -> tuple[Any, ...]:
+    return (
+        str(action.vehicle_id),
+        str(action.station_id),
+        round(float(action.charge_start_second), 9),
+        round(float(action.occupancy_minutes), 9),
+        round(float(action.energy_kwh), 9),
+    )
 
 
 def _solution_for_committed_customers(
