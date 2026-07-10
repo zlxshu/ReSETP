@@ -21,7 +21,7 @@ CONTEXT_ACTIONS = (
     DrAction("shaw_related_removal", "greedy_insert_repair", 0.10, 0.0),
 )
 
-SEARCH_ACTIONS = tuple(
+FULL_SEARCH_ACTIONS = tuple(
     DrAction(destroy_id, repair_id, 0.10, 0.02)
     for destroy_id in (
         "random_customer_removal",
@@ -36,6 +36,16 @@ SEARCH_ACTIONS = tuple(
         "regret2_insert_repair",
         "regret3_insert_repair",
     )
+)
+
+# The three insertion repairs frequently produce the same complete candidate
+# for a fixed destroy move.  Exposing all 18 combinations gives the learner
+# three labels for one effect and diluted the mid-search signal in the E2
+# action audit.  The six-action control surface keeps the destroy decisions
+# distinct and uses the stable regret-2 repair.  FULL_SEARCH_ACTIONS remains
+# available for diagnostics and can justify restoring a repair choice later.
+SEARCH_ACTIONS = tuple(
+    action for action in FULL_SEARCH_ACTIONS if action.repair_id == "regret2_insert_repair"
 )
 
 
@@ -163,6 +173,7 @@ class IndependentDrSearchEnv(gym.Env):
         horizon: int,
         seed: int = 1,
         reward_scales: dict[str, float] | None = None,
+        training_warmup_action_indices: list[int] | None = None,
     ) -> None:
         super().__init__()
         if not bundle_dirs:
@@ -172,6 +183,11 @@ class IndependentDrSearchEnv(gym.Env):
         self.bundle_dirs = tuple(Path(path) for path in bundle_dirs)
         self.horizon = int(horizon)
         self.seed_value = int(seed)
+        self.training_warmup_action_indices = tuple(int(index) for index in (training_warmup_action_indices or ()))
+        if len(self.training_warmup_action_indices) >= self.horizon:
+            raise ValueError("training warmup must leave at least one policy decision")
+        if any(not 0 <= index < len(SEARCH_ACTIONS) for index in self.training_warmup_action_indices):
+            raise ValueError("training warmup action index out of range")
         self.reward_scales = {
             str(Path(path).resolve()): float(scale)
             for path, scale in (reward_scales or {}).items()
@@ -179,7 +195,7 @@ class IndependentDrSearchEnv(gym.Env):
         if any(not np.isfinite(scale) or scale <= 0.0 for scale in self.reward_scales.values()):
             raise ValueError("reward scales must be finite and positive")
         self.action_space = spaces.Discrete(len(SEARCH_ACTIONS))
-        self.observation_space = spaces.Box(0.0, 1.0, shape=(9 + 2 * len(SEARCH_ACTIONS),), dtype=np.float32)
+        self.observation_space = spaces.Box(0.0, 1.0, shape=(17 + 2 * len(SEARCH_ACTIONS),), dtype=np.float32)
         self.session: IndependentDrSession | None = None
         self.bundle_index = 0
         self.steps = 0
@@ -212,9 +228,17 @@ class IndependentDrSearchEnv(gym.Env):
         self.last_reward = 0.0
         self.accept_ema.fill(0.0)
         self.improve_ema.fill(0.0)
+        warmup_reward = 0.0
+        for action_index in self.training_warmup_action_indices:
+            _, reward, terminated, _, _ = self.step(action_index)
+            if terminated:
+                raise RuntimeError("training warmup exhausted the episode")
+            warmup_reward += float(reward)
         return self._observation(), {
             "bundle_index": int(self.bundle_index),
             "initial_obj": float(self.session.initial_obj),
+            "training_warmup_steps": len(self.training_warmup_action_indices),
+            "training_warmup_reward_discarded": float(warmup_reward),
         }
 
     def step(self, action: int):
@@ -224,22 +248,35 @@ class IndependentDrSearchEnv(gym.Env):
         if not 0 <= index < len(SEARCH_ACTIONS):
             raise ValueError(f"action index out of range: {index}")
         result = self.session.step(SEARCH_ACTIONS[index])
-        raw_reward = float(result["reward"]) * 100.0
+        self.steps += 1
+        initial = max(abs(float(result["initial_obj"])), 1.0)
+        best_cost_reward = float(result["reward"]) * 100.0
+        current_cost_reward = (
+            float(result["before"]["objective"]) - float(result["after"]["objective"])
+        ) / initial * 100.0
+        terminated = self.steps >= self.horizon
+        terminal_reconciliation = 0.0
+        if terminated:
+            terminal_reconciliation = (
+                float(result["after"]["objective"]) - float(result["after"]["best_obj"])
+            ) / initial * 100.0
+        raw_reward = current_cost_reward + terminal_reconciliation
         scale = self.reward_scales.get(str(self.bundle_dirs[self.bundle_index].resolve()), 1.0)
         reward = raw_reward / scale
-        self.steps += 1
         self.stagnation = 0 if bool(result["improved_best"]) else self.stagnation + 1
         self.last_reward = max(0.0, min(1.0, reward))
         self.accept_ema *= 0.95
         self.improve_ema *= 0.95
         self.accept_ema[index] += 0.05 * float(bool(result["accepted"]))
         self.improve_ema[index] += 0.05 * float(bool(result["improved_best"]))
-        terminated = self.steps >= self.horizon
         result.update(
             {
                 "action_index": index,
                 "bundle_index": int(self.bundle_index),
                 "raw_cost_reward": float(raw_reward),
+                "best_cost_reward": float(best_cost_reward),
+                "current_cost_reward": float(current_cost_reward),
+                "terminal_reconciliation": float(terminal_reconciliation),
                 "training_reward_scale": float(scale),
             }
         )
@@ -253,6 +290,7 @@ class IndependentDrSearchEnv(gym.Env):
         prefix = np.concatenate(
             [
                 _session_observation(self.session),
+                _route_bottleneck_observation(self.session),
                 np.array(
                     [
                         min(1.0, current_gap),
@@ -264,6 +302,56 @@ class IndependentDrSearchEnv(gym.Env):
             ]
         )
         return np.concatenate([prefix, self.accept_ema, self.improve_ema]).astype(np.float32, copy=False)
+
+
+def _route_bottleneck_observation(session: IndependentDrSession) -> np.ndarray:
+    """Cheap current-route shape signals; no candidate lookahead or future data."""
+
+    solution = session.current_solution
+    instance = session.bundle.instance
+    routes = list(solution.routes)
+    if not routes:
+        return np.zeros(8, dtype=np.float32)
+    node_lookup = {node.node_id: node for node in instance.nodes}
+    customer_counts: list[float] = []
+    distances: list[float] = []
+    loads: list[float] = []
+    depot_counts: dict[str, int] = {}
+    for route in routes:
+        customers = [
+            node_id
+            for node_id in route.node_sequence
+            if node_id in node_lookup and str(node_lookup[node_id].node_type).lower() == "c"
+        ]
+        customer_counts.append(float(len(customers)))
+        distances.append(
+            sum(
+                float(instance.distance(left, right))
+                for left, right in zip(route.node_sequence, route.node_sequence[1:])
+            )
+        )
+        loads.append(sum(float(node_lookup[node_id].demand) for node_id in customers))
+        depot_counts[route.home_depot_id] = depot_counts.get(route.home_depot_id, 0) + 1
+    count_array = np.asarray(customer_counts, dtype=float)
+    distance_array = np.asarray(distances, dtype=float)
+    load_array = np.asarray(loads, dtype=float)
+    total_customers = max(float(count_array.sum()), 1.0)
+    total_distance = max(float(distance_array.sum()), 1.0)
+    capacity = max(float(getattr(session.context.prices, "Q_capacity", 1.0)), 1.0)
+    route_count = max(float(len(routes)), 1.0)
+    return np.asarray(
+        [
+            min(1.0, total_customers / 200.0),
+            float(np.count_nonzero(count_array <= 1.0)) / route_count,
+            min(1.0, float(count_array.max(initial=0.0)) / total_customers),
+            min(1.0, float(count_array.std()) / max(float(count_array.mean()), 1.0)),
+            min(1.0, float(distance_array.max(initial=0.0)) / total_distance),
+            min(1.0, float(distance_array.std()) / max(float(distance_array.mean()), 1.0)),
+            min(1.0, float(load_array.max(initial=0.0)) / capacity),
+            min(1.0, max(depot_counts.values(), default=0) / route_count),
+        ],
+        dtype=np.float32,
+    )
 
 
 def _session_observation(session: IndependentDrSession) -> np.ndarray:
@@ -293,6 +381,7 @@ __all__ = [
     "IndependentDrContextEnv",
     "IndependentDrMicroEnv",
     "IndependentDrSearchEnv",
+    "FULL_SEARCH_ACTIONS",
     "MICRO_ACTIONS",
     "SEARCH_ACTIONS",
 ]

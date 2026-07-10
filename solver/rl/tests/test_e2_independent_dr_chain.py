@@ -174,7 +174,7 @@ def test_multistep_search_reselects_one_exact_action_per_evaluation() -> None:
     vehicle_action = next(
         index
         for index, action in enumerate(SEARCH_ACTIONS)
-        if action.destroy_id == "vehicle_type_swap" and action.repair_id == "greedy_insert_repair"
+        if action.destroy_id == "vehicle_type_swap" and action.repair_id == "regret2_insert_repair"
     )
     next_observation, _, done, _, info = env.step(vehicle_action)
 
@@ -194,7 +194,7 @@ def test_multistep_reward_telescopes_to_final_full_evaluator_gain() -> None:
     vehicle_action = next(
         index
         for index, action in enumerate(SEARCH_ACTIONS)
-        if action.destroy_id == "vehicle_type_swap" and action.repair_id == "greedy_insert_repair"
+        if action.destroy_id == "vehicle_type_swap" and action.repair_id == "regret2_insert_repair"
     )
     rewards = []
     done = False
@@ -206,3 +206,30 @@ def test_multistep_reward_telescopes_to_final_full_evaluator_gain() -> None:
     expected = 100.0 * (env.session.initial_obj - env.session.best_obj) / max(abs(env.session.initial_obj), 1.0)
     assert sum(rewards) == pytest.approx(expected)
     assert info["after"]["violation_count"] == 0
+
+
+def test_training_curriculum_exposes_mid_search_state_without_changing_action_contract() -> None:
+    from independent_dr_alns.micro_env import IndependentDrSearchEnv, SEARCH_ACTIONS
+
+    vehicle_action = next(
+        index
+        for index, action in enumerate(SEARCH_ACTIONS)
+        if action.destroy_id == "vehicle_type_swap" and action.repair_id == "regret2_insert_repair"
+    )
+    env = IndependentDrSearchEnv(
+        [FIXTURE_DIR],
+        horizon=4,
+        seed=1,
+        training_warmup_action_indices=[vehicle_action, vehicle_action],
+    )
+    observation, reset_info = env.reset(seed=1)
+
+    assert reset_info["training_warmup_steps"] == 2
+    assert env.steps == 2
+    assert env.session is not None and env.session.context.budget is not None
+    assert env.session.context.budget.count == 2
+    assert observation[5] == pytest.approx(0.5)
+
+    _, _, done, _, info = env.step(vehicle_action)
+    assert done is False
+    assert info["requested_action"] == info["executed_action"]
