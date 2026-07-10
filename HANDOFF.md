@@ -14,7 +14,7 @@ ReSETP = 投《系统工程理论与实践》的绿色车辆路径论文。多�
 
 **总实验管理入口（白话版）：** `docs/handoff/project_experiment_master_plan_20260711.md` 是当前整体实验施工总图，包含论文贡献映射、阶段门、E0--E7逐项方案、统计/复算规则、CPU运行规则、7.31两周冲刺和Not-To-Do；`docs/handoff/project_board_20260711.md` 是实时看板；新实验先复制 `docs/handoff/templates/EXPERIMENT_CARD_TEMPLATE.md` 写任务卡，再启动。
 
-**当前主线：E2 算法性能闭合。** 正在运行 100c/150c/200c × 5 seeds × staged ALNS-LNS hybrid/LNS 的 30 次、4000 次评价稳定性门；完成前不启动其他机制实验。
+**当前主线：关闭最小正式E2。** 2026-07-11，100c/150c/200c × 5 seeds × staged ALNS-LNS hybrid/LNS 的30次、4000次评价稳定性门已全部完成：30/30 OK、零违规、全部跑满预算；三个规模hybrid相对LNS平均改善6.45%/0.69%/14.08%，合计11/15胜，verdict=`STAGED_HYBRID_STABILITY_SUPPORTED`。这是诊断稳定性门，不是正式T3。hybrid身份从此冻结，不再改算子、不扩九规模/长预算调试；下一步仅做健康基线体检和一次最小正式E2。
 
 以下两项已登记为 `DEFERRED / BLOCKED_BY_E2_ALGORITHM_FOUNDATION`，不是当前施工任务：
 
