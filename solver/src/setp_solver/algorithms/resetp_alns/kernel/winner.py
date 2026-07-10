@@ -90,6 +90,7 @@ _CRUSH_FLAG_NAMES = (
     "SETP_ALNS_CRUSH_THOMPSON_SELECTOR",
     "SETP_ALNS_CRUSH_SOFTMAX_SELECTOR",
     "SETP_ALNS_CRUSH_MINIMUM_COVERAGE_SELECTOR",
+    "SETP_ALNS_CRUSH_CHAIN_UCB_SELECTOR",
     "SETP_ALNS_CRUSH_ROUTE_POOL_RECOMBINATION",
     "SETP_ALNS_CRUSH_RVND_SWAPSTAR",
     "SETP_ALNS_CRUSH_ELITE_ARCHIVE_RESTART",
@@ -104,12 +105,14 @@ EPS_DECAY_SELECTOR_FLAG = "SETP_ALNS_CRUSH_EPS_DECAY_SELECTOR"
 THOMPSON_SELECTOR_FLAG = "SETP_ALNS_CRUSH_THOMPSON_SELECTOR"
 SOFTMAX_SELECTOR_FLAG = "SETP_ALNS_CRUSH_SOFTMAX_SELECTOR"
 MINIMUM_COVERAGE_SELECTOR_FLAG = "SETP_ALNS_CRUSH_MINIMUM_COVERAGE_SELECTOR"
+CHAIN_UCB_SELECTOR_FLAG = "SETP_ALNS_CRUSH_CHAIN_UCB_SELECTOR"
 SELECTOR_FLAGS = (
     BALANCED_SELECTOR_FLAG,
     EPS_DECAY_SELECTOR_FLAG,
     THOMPSON_SELECTOR_FLAG,
     SOFTMAX_SELECTOR_FLAG,
     MINIMUM_COVERAGE_SELECTOR_FLAG,
+    CHAIN_UCB_SELECTOR_FLAG,
 )
 ROUTE_POOL_RECOMBINATION_FLAG = "SETP_ALNS_CRUSH_ROUTE_POOL_RECOMBINATION"
 RVND_SWAPSTAR_FLAG = "SETP_ALNS_CRUSH_RVND_SWAPSTAR"
@@ -160,6 +163,7 @@ E2_ALNS_COMPONENT_SOURCES = {
     THOMPSON_SELECTOR_FLAG: "Diagnostic only: Thompson-sampling operator pair scheduler",
     SOFTMAX_SELECTOR_FLAG: "Diagnostic only: softmax operator pair scheduler over AlphaUCB values",
     MINIMUM_COVERAGE_SELECTOR_FLAG: "Diagnostic only: one-pass legal-pair coverage plus sparse structural-family refresh",
+    CHAIN_UCB_SELECTOR_FLAG: "Diagnostic only: bounded rewards preserve accepted-move continuity without twenty-point lock-in",
     ROUTE_POOL_RECOMBINATION_FLAG: "Diagnostic only: route-pool recombination on stagnation; candidate still uses existing evaluator/checker",
     RVND_SWAPSTAR_FLAG: "Diagnostic only: bounded RVND/SWAP*-lite intensification on stagnation",
     ELITE_ARCHIVE_RESTART_FLAG: "Diagnostic only: diverse elite archive current-restart on stagnation",
@@ -967,6 +971,11 @@ def _run_winner_kernel_loop(
         repair_delta_mode="fast",
     )
     flags = variant_flags or winner_variant_flags(include_route_elimination=config.include_route_elimination)
+    object.__setattr__(
+        instance,
+        "_setp_repair_structure_cache_enabled",
+        _flag_enabled_from(flags, "SETP_ALNS_CRUSH_REPAIR_STRUCTURE_CACHE"),
+    )
     trace_diagnostic = _trace_diagnostic_enabled(flags)
     structural_component = structural_component_from_flags(flags)
     ledger: TimingLedger | None = attach_timing_ledger(context) if _flag_enabled_from(flags, "SETP_ALNS_CRUSH_TIMING_LEDGER") else None
@@ -1077,6 +1086,8 @@ def _run_winner_kernel_loop(
                         )
                     )
                 continue
+        if context.budget is not None and context.budget.reached_target:
+            break
         if (
             structural_component in {"route_pool", "elite_archive", "global_order_repack", "fleet_charge_corepair"}
             and _structural_component_due(structural_component, moves=moves, moves_since_best_improvement=moves_since_best_improvement, target=target)
@@ -1378,6 +1389,7 @@ def _run_winner_kernel_loop(
         "scan": dict(scan_counts),
         "timing": timing_snapshot,
         "structural": dict(structural_counts),
+        "score_counts": dict(context.score_counts),
     }
     if trace_diagnostic:
         operator_counts_out["candidate_trace"] = candidate_trace
@@ -1481,6 +1493,7 @@ def _selector_kind_from_flags(flags: dict[str, str]) -> str:
         THOMPSON_SELECTOR_FLAG: "thompson",
         SOFTMAX_SELECTOR_FLAG: "softmax",
         MINIMUM_COVERAGE_SELECTOR_FLAG: "minimum_coverage",
+        CHAIN_UCB_SELECTOR_FLAG: "chain_ucb",
     }
     return mapping[enabled[0]]
 
@@ -1489,20 +1502,26 @@ def _minimum_coverage_contract(
     operator_set: WinnerOperatorSet,
     selector_kind: str,
 ) -> tuple[np.ndarray | None, tuple[int, ...]]:
+    coupling = _selector_coupling_contract(operator_set)
     if selector_kind != "minimum_coverage":
-        return None, ()
+        return coupling, ()
     destroy_names = [name for name, _ in operator_set.destroy_ops]
-    repair_count = len(operator_set.repair_ops)
-    coupling = np.ones((len(destroy_names), repair_count), dtype=bool)
-    vehicle_idx = destroy_names.index("vehicle_type_swap")
-    if repair_count > 1:
-        coupling[vehicle_idx, 1:] = False
     protected = tuple(
         destroy_names.index(name)
         for name in ("whole_route_removal", "route_segment_removal", "vehicle_type_swap")
         if name in destroy_names
     )
     return coupling, protected
+
+
+def _selector_coupling_contract(operator_set: WinnerOperatorSet) -> np.ndarray:
+    destroy_names = [name for name, _ in operator_set.destroy_ops]
+    repair_count = len(operator_set.repair_ops)
+    coupling = np.ones((len(destroy_names), repair_count), dtype=bool)
+    vehicle_idx = destroy_names.index("vehicle_type_swap")
+    if repair_count > 1:
+        coupling[vehicle_idx, 1:] = False
+    return coupling
 
 
 def structural_component_from_flags(flags: dict[str, str] | None = None) -> str | None:

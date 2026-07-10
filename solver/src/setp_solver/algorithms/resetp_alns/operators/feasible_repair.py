@@ -41,6 +41,7 @@ def enumerate_feasible_insertions(
     max_route_candidates: int = MAX_ROUTE_CANDIDATES,
     max_positions_per_route: int = MAX_POSITIONS_PER_ROUTE,
     allow_new_route: bool = True,
+    route_customer_cache: dict[int, list[str]] | None = None,
 ) -> list[InsertionOption]:
     """Return route-local feasible insertions for one missing customer.
 
@@ -51,15 +52,30 @@ def enumerate_feasible_insertions(
     """
 
     options: list[InsertionOption] = []
-    route_items = _ranked_routes(solution.routes, customer_id, context.instance, max_route_candidates)
+    cached_customers = route_customer_cache or {
+        idx: route_customers(route, context.instance) for idx, route in enumerate(solution.routes)
+    }
+    route_items = _ranked_routes(
+        solution.routes,
+        customer_id,
+        context.instance,
+        max_route_candidates,
+        cached_customers,
+    )
     ev_route_candidates = 0
     for route_idx, route in route_items:
         if route.vehicle_type.lower() == "ev":
             if ev_route_candidates >= MAX_EXISTING_EV_ROUTE_CANDIDATES:
                 continue
             ev_route_candidates += 1
-        customers = route_customers(route, context.instance)
-        positions = _ranked_positions(route, customer_id, context.instance, max_positions_per_route)
+        customers = cached_customers[route_idx]
+        positions = _ranked_positions(
+            route,
+            customer_id,
+            context.instance,
+            max_positions_per_route,
+            customers,
+        )
         for insert_at in positions:
             candidate_customers = [*customers[:insert_at], customer_id, *customers[insert_at:]]
             built = _solution_with_route_customers(solution, route_idx, route, candidate_customers, context, policy)
@@ -96,8 +112,18 @@ def repair_removed_customers(
     current = partial_solution
     while pending:
         scored: list[tuple[float, float, str, Solution]] = []
+        route_customer_cache = {
+            idx: route_customers(route, context.instance) for idx, route in enumerate(current.routes)
+        }
         for customer_id in pending:
-            options = enumerate_feasible_insertions(current, customer_id, context, policy, allow_new_route=allow_new_route)
+            options = enumerate_feasible_insertions(
+                current,
+                customer_id,
+                context,
+                policy,
+                allow_new_route=allow_new_route,
+                route_customer_cache=route_customer_cache,
+            )
             if not options:
                 continue
             best = options[0]
@@ -126,7 +152,7 @@ def repair_removed_customers(
 
 
 def route_customers(route: Route, instance: Instance) -> list[str]:
-    if not _structure_cache_enabled():
+    if not _structure_cache_enabled(instance):
         node_lookup = {node.node_id: node for node in instance.nodes}
         return [
             node_id
@@ -151,7 +177,7 @@ def route_customers(route: Route, instance: Instance) -> list[str]:
 
 
 def nearest_depot_id(customer_id: str, instance: Instance) -> str:
-    if not _structure_cache_enabled():
+    if not _structure_cache_enabled(instance):
         customer = next(node for node in instance.nodes if node.node_id == customer_id)
         depots = _depots(instance)
         return min(depots, key=lambda depot: (instance.distance(depot.node_id, customer.node_id), depot.node_id)).node_id
@@ -165,7 +191,7 @@ def nearest_depot_id(customer_id: str, instance: Instance) -> str:
 
 
 def route_distance(route: Route, instance: Instance) -> float:
-    if not _structure_cache_enabled():
+    if not _structure_cache_enabled(instance):
         return sum(float(instance.distance(a, b)) for a, b in zip(route.node_sequence, route.node_sequence[1:]))
     cache = _instance_cache(instance, "_setp_route_distance_cache")
     key = _route_key(route)
@@ -179,10 +205,20 @@ def route_distance(route: Route, instance: Instance) -> float:
     return float(distance)
 
 
-def _ranked_routes(routes: list[Route], customer_id: str, instance: Instance, limit: int) -> list[tuple[int, Route]]:
+def _ranked_routes(
+    routes: list[Route],
+    customer_id: str,
+    instance: Instance,
+    limit: int,
+    route_customer_cache: dict[int, list[str]] | None = None,
+) -> list[tuple[int, Route]]:
     scored = []
     for idx, route in enumerate(routes):
-        customers = route_customers(route, instance)
+        customers = (
+            route_customer_cache[idx]
+            if route_customer_cache is not None
+            else route_customers(route, instance)
+        )
         if not customers:
             continue
         anchors = customers or route.node_sequence
@@ -192,8 +228,14 @@ def _ranked_routes(routes: list[Route], customer_id: str, instance: Instance, li
     return [(idx, route) for _, idx, route in scored[: max(1, int(limit))]]
 
 
-def _ranked_positions(route: Route, customer_id: str, instance: Instance, limit: int) -> list[int]:
-    customers = route_customers(route, instance)
+def _ranked_positions(
+    route: Route,
+    customer_id: str,
+    instance: Instance,
+    limit: int,
+    customers: list[str] | None = None,
+) -> list[int]:
+    customers = route_customers(route, instance) if customers is None else customers
     scored: list[tuple[float, int]] = []
     clean = [route.home_depot_id, *customers, route.home_depot_id]
     for customer_pos in range(len(customers) + 1):
@@ -256,7 +298,7 @@ def _new_route_options(solution: Solution, customer_id: str, context: Evaluation
 
 
 def _route_locally_feasible(route: Route, actions: list[ChargingAction], context: EvaluationContext) -> bool:
-    if not _structure_cache_enabled():
+    if not _structure_cache_enabled(context.instance):
         return _route_locally_feasible_uncached(route, actions, context)
     cache = _instance_cache(context.instance, "_setp_local_feasible_cache")
     key = (_route_key(route), _action_key(actions))
@@ -391,7 +433,7 @@ def _solution_key(solution: Solution) -> tuple[Any, ...]:
 
 
 def _depots(instance: Instance) -> list[Node]:
-    if not _structure_cache_enabled():
+    if not _structure_cache_enabled(instance):
         return sorted((node for node in instance.nodes if node.node_type.lower() == "d"), key=lambda node: node.node_id)
     cache = _instance_cache(instance, "_setp_depot_cache")
     if "depots" not in cache:
@@ -400,7 +442,7 @@ def _depots(instance: Instance) -> list[Node]:
 
 
 def _node_lookup(instance: Instance) -> dict[str, Node]:
-    if not _structure_cache_enabled():
+    if not _structure_cache_enabled(instance):
         return {node.node_id: node for node in instance.nodes}
     cache = _instance_cache(instance, "_setp_node_lookup_cache")
     if "lookup" not in cache:
@@ -437,7 +479,7 @@ def _action_key(actions: list[ChargingAction]) -> tuple[tuple[str, str, float, f
 
 
 def _repair_ev_route_cached(route: Route, context: EvaluationContext) -> tuple[Route, list[ChargingAction]] | None:
-    if not _structure_cache_enabled():
+    if not _structure_cache_enabled(context.instance):
         try:
             repaired, actions = repair_route_charging(route, context.instance, context.carbon_profile, context.prices)
         except ValueError:
@@ -462,7 +504,11 @@ def _repair_ev_route_cached(route: Route, context: EvaluationContext) -> tuple[R
     return repaired, list(actions)
 
 
-def _structure_cache_enabled() -> bool:
+def _structure_cache_enabled(instance: Instance | None = None) -> bool:
+    if instance is not None:
+        cached = getattr(instance, "_setp_repair_structure_cache_enabled", None)
+        if cached is not None:
+            return bool(cached)
     return os.environ.get("SETP_ALNS_CRUSH_REPAIR_STRUCTURE_CACHE", "0").lower() not in {"0", "false", "no"}
 
 

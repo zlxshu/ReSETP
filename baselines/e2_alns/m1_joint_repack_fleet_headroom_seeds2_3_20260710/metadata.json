@@ -1,0 +1,38 @@
+{
+  "algorithm_win_loss_claim": false,
+  "algorithms": [
+    "ALNS_T3",
+    "LNS",
+    "SA"
+  ],
+  "battery_kwh": 280.0,
+  "calibration_source": "baselines/e2_alns/m1_fleet_opportunity_20260710",
+  "diagnostic_only": true,
+  "eval_budget": 400,
+  "formal_manifest_sha256": "bf904ef254aeeb1a76cb1308eae7a5caee14a814a15e1087254b024992c5d39c",
+  "formal_t3": false,
+  "instances": [
+    {
+      "instance": "L-main-threeshift-20c-01",
+      "scale": "small"
+    },
+    {
+      "instance": "L-main-threeshift-50c-01",
+      "scale": "medium"
+    },
+    {
+      "instance": "L-main-threeshift-100c-01",
+      "scale": "large"
+    }
+  ],
+  "max_runtime_seconds": 180.0,
+  "repack_trials": 4,
+  "repo_commit": "a0af7d912d3ed83488c2e4054456362011c20945",
+  "repo_dirty_at_run": true,
+  "schema_version": "setp-m1-joint-repack-fleet-headroom.v1",
+  "seeds": [
+    2,
+    3
+  ],
+  "source_fingerprint": "105f5e7004d11d03212b83770cfbd2a55d945160ee96d54f1fa82b2cfd487b0c"
+}

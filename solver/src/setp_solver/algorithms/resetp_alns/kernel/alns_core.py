@@ -322,6 +322,14 @@ def _make_operator_selector(
             temperature_end=0.1,
             target_iterations=target_iterations,
         )
+    if normalized == "chain_ucb":
+        return AlphaUCB(
+            [4.0, 3.0, 2.0, 0.05],
+            alpha=0.08,
+            num_destroy=num_destroy,
+            num_repair=num_repair,
+            op_coupling=op_coupling,
+        )
     if normalized != "alpha_ucb":
         raise ValueError(f"Unsupported selector_kind: {selector_kind}")
     return AlphaUCB(
@@ -688,7 +696,10 @@ def vehicle_type_swap(state: AlnsState, rng: np.random.Generator) -> AlnsState:
     candidates = [*_try_cv_to_ev_candidates(state, rng), *_try_ev_to_cv_candidates(state, rng)]
     if not candidates:
         return state
-    scored = [(_repair_solution_delta_score(candidate, state.context), candidate) for candidate in candidates]
+    scored = []
+    for candidate in candidates:
+        record_repair_delta(state.context)
+        scored.append((_vehicle_type_route_delta(state.solution, candidate, state.context), candidate))
     if not scored:
         return state
     for _, candidate in sorted(scored, key=lambda item: item[0]):
@@ -696,6 +707,24 @@ def vehicle_type_swap(state: AlnsState, rng: np.random.Generator) -> AlnsState:
         if not check_solution(candidate, state.context.instance, state.context.prices):
             return replace(state, solution=candidate, objective_value=None)
     return state
+
+
+def _vehicle_type_route_delta(source: Solution, candidate: Solution, context: EvaluationContext) -> float:
+    if len(source.routes) != len(candidate.routes):
+        return BIG_M
+    for before, after in zip(source.routes, candidate.routes):
+        if before.vehicle_type.lower() == after.vehicle_type.lower():
+            continue
+        before_actions = [action for action in source.charging_actions if action.vehicle_id == before.vehicle_id]
+        after_actions = [action for action in candidate.charging_actions if action.vehicle_id == after.vehicle_id]
+        return route_model_cost_delta(
+            after,
+            after_actions,
+            context,
+            base_route=before,
+            base_actions=before_actions,
+        )
+    return BIG_M
 
 
 def _remove_customers(state: AlnsState, customer_ids: list[str]) -> AlnsState:

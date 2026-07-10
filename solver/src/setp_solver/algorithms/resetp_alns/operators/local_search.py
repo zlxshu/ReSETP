@@ -36,11 +36,11 @@ def improve_solution_locally(
     if os.environ.get("SETP_ALNS_CRUSH_LOCAL_SEARCH", "1").lower() in {"0", "false", "no"}:
         return solution
     best = solution
-    best_score = score_reference(best, context)
+    best_score = _score_internal_solution(best, context, channel="local_search", neighbor=False)
     for _ in range(max(1, int(max_passes))):
         improved = False
         for candidate in _neighborhood(best, context, max_neighbors=max_neighbors):
-            score = score_reference(candidate, context)
+            score = _score_internal_solution(candidate, context, channel="local_search", neighbor=True)
             if score < best_score - 1e-9:
                 best = candidate
                 best_score = score
@@ -62,7 +62,7 @@ def rvnd_swapstar_intensify(
     started = time.perf_counter()
     before_routes = len(solution.routes)
     best = solution
-    best_score = score_reference(best, context)
+    best_score = _score_internal_solution(best, context, channel="rvnd", neighbor=False)
     moves_used = 0
     improve_count = 0
     neighborhoods = (
@@ -76,7 +76,7 @@ def rvnd_swapstar_intensify(
             improved = False
             for candidate in neighborhood(best):
                 moves_used += 1
-                score = score_reference(candidate, context)
+                score = _score_internal_solution(candidate, context, channel="rvnd", neighbor=True)
                 if score < best_score - 1e-9:
                     best = candidate
                     best_score = score
@@ -93,6 +93,21 @@ def rvnd_swapstar_intensify(
         time_seconds=max(0.0, time.perf_counter() - started),
         route_count_delta=len(best.routes) - before_routes,
     )
+
+
+def _score_internal_solution(
+    solution: Solution,
+    context: EvaluationContext,
+    *,
+    channel: str,
+    neighbor: bool,
+) -> float:
+    full_key = f"{channel}_full_solution"
+    context.score_counts[full_key] = int(context.score_counts.get(full_key, 0)) + 1
+    if neighbor:
+        neighbor_key = f"{channel}_neighbor"
+        context.score_counts[neighbor_key] = int(context.score_counts.get(neighbor_key, 0)) + 1
+    return score_reference(solution, context)
 
 
 def _neighborhood(solution: Solution, context: EvaluationContext, *, max_neighbors: int) -> Iterator[Solution]:
