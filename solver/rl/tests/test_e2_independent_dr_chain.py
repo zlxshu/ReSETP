@@ -164,3 +164,45 @@ def test_context_training_reward_can_be_scaled_per_training_instance() -> None:
     assert info["raw_cost_reward"] == pytest.approx(raw_reward)
     assert info["training_reward_scale"] == pytest.approx(2.0)
     assert reward == pytest.approx(raw_reward / 2.0)
+
+
+def test_multistep_search_reselects_one_exact_action_per_evaluation() -> None:
+    from independent_dr_alns.micro_env import IndependentDrSearchEnv, SEARCH_ACTIONS
+
+    env = IndependentDrSearchEnv([FIXTURE_DIR], horizon=3, seed=1)
+    observation, _ = env.reset(seed=1)
+    vehicle_action = next(
+        index
+        for index, action in enumerate(SEARCH_ACTIONS)
+        if action.destroy_id == "vehicle_type_swap" and action.repair_id == "greedy_insert_repair"
+    )
+    next_observation, _, done, _, info = env.step(vehicle_action)
+
+    assert done is False
+    assert info["action_index"] == vehicle_action
+    assert info["requested_action"] == info["executed_action"]
+    assert info["actual_evals_added"] == 1
+    assert observation.shape == next_observation.shape == env.observation_space.shape
+    assert next_observation.tolist() != observation.tolist()
+
+
+def test_multistep_reward_telescopes_to_final_full_evaluator_gain() -> None:
+    from independent_dr_alns.micro_env import IndependentDrSearchEnv, SEARCH_ACTIONS
+
+    env = IndependentDrSearchEnv([FIXTURE_DIR], horizon=3, seed=1)
+    env.reset(seed=1)
+    vehicle_action = next(
+        index
+        for index, action in enumerate(SEARCH_ACTIONS)
+        if action.destroy_id == "vehicle_type_swap" and action.repair_id == "greedy_insert_repair"
+    )
+    rewards = []
+    done = False
+    while not done:
+        _, reward, done, _, info = env.step(vehicle_action)
+        rewards.append(reward)
+
+    assert env.session is not None
+    expected = 100.0 * (env.session.initial_obj - env.session.best_obj) / max(abs(env.session.initial_obj), 1.0)
+    assert sum(rewards) == pytest.approx(expected)
+    assert info["after"]["violation_count"] == 0

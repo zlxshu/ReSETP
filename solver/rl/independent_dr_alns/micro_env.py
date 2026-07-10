@@ -21,6 +21,23 @@ CONTEXT_ACTIONS = (
     DrAction("shaw_related_removal", "greedy_insert_repair", 0.10, 0.0),
 )
 
+SEARCH_ACTIONS = tuple(
+    DrAction(destroy_id, repair_id, 0.10, 0.02)
+    for destroy_id in (
+        "random_customer_removal",
+        "worst_customer_removal",
+        "shaw_related_removal",
+        "whole_route_removal",
+        "route_segment_removal",
+        "vehicle_type_swap",
+    )
+    for repair_id in (
+        "greedy_insert_repair",
+        "regret2_insert_repair",
+        "regret3_insert_repair",
+    )
+)
+
 
 class IndependentDrMicroEnv(gym.Env):
     """One-decision proof that a policy can learn a real independent action.
@@ -127,6 +144,128 @@ class IndependentDrContextEnv(gym.Env):
         return _session_observation(self.session), reward, True, False, result
 
 
+class IndependentDrSearchEnv(gym.Env):
+    """Multi-step DR control with fixed action meanings and cost-only reward.
+
+    The policy chooses again after every complete candidate evaluation.  There
+    is no random replacement or fallback selector.  The observation contains
+    only the current solution, elapsed budget, and outcomes of past actions in
+    this episode; it cannot contain future events or a static full-information
+    answer.
+    """
+
+    metadata = {"render_modes": []}
+
+    def __init__(
+        self,
+        bundle_dirs: list[str | Path],
+        *,
+        horizon: int,
+        seed: int = 1,
+        reward_scales: dict[str, float] | None = None,
+    ) -> None:
+        super().__init__()
+        if not bundle_dirs:
+            raise ValueError("bundle_dirs must not be empty")
+        if int(horizon) < 1:
+            raise ValueError("horizon must be positive")
+        self.bundle_dirs = tuple(Path(path) for path in bundle_dirs)
+        self.horizon = int(horizon)
+        self.seed_value = int(seed)
+        self.reward_scales = {
+            str(Path(path).resolve()): float(scale)
+            for path, scale in (reward_scales or {}).items()
+        }
+        if any(not np.isfinite(scale) or scale <= 0.0 for scale in self.reward_scales.values()):
+            raise ValueError("reward scales must be finite and positive")
+        self.action_space = spaces.Discrete(len(SEARCH_ACTIONS))
+        self.observation_space = spaces.Box(0.0, 1.0, shape=(9 + 2 * len(SEARCH_ACTIONS),), dtype=np.float32)
+        self.session: IndependentDrSession | None = None
+        self.bundle_index = 0
+        self.steps = 0
+        self.stagnation = 0
+        self.last_reward = 0.0
+        self.accept_ema = np.zeros(len(SEARCH_ACTIONS), dtype=np.float32)
+        self.improve_ema = np.zeros(len(SEARCH_ACTIONS), dtype=np.float32)
+
+    def reset(self, *, seed: int | None = None, options: dict[str, Any] | None = None):
+        _ = options
+        super().reset(seed=seed)
+        if seed is not None:
+            self.seed_value = int(seed)
+        self.bundle_index = int(self.np_random.integers(0, len(self.bundle_dirs)))
+        self.session = IndependentDrSession(
+            self.bundle_dirs[self.bundle_index],
+            seed=self.seed_value,
+            max_evals=self.horizon,
+            carbon_aware_operators=False,
+        )
+        missing = [
+            action
+            for action in SEARCH_ACTIONS
+            if action.destroy_id not in self.session.destroy_ids or action.repair_id not in self.session.repair_ids
+        ]
+        if missing:
+            raise RuntimeError(f"independent kernel action contract changed: {missing}")
+        self.steps = 0
+        self.stagnation = 0
+        self.last_reward = 0.0
+        self.accept_ema.fill(0.0)
+        self.improve_ema.fill(0.0)
+        return self._observation(), {
+            "bundle_index": int(self.bundle_index),
+            "initial_obj": float(self.session.initial_obj),
+        }
+
+    def step(self, action: int):
+        if self.session is None:
+            raise RuntimeError("reset must be called before step")
+        index = int(action)
+        if not 0 <= index < len(SEARCH_ACTIONS):
+            raise ValueError(f"action index out of range: {index}")
+        result = self.session.step(SEARCH_ACTIONS[index])
+        raw_reward = float(result["reward"]) * 100.0
+        scale = self.reward_scales.get(str(self.bundle_dirs[self.bundle_index].resolve()), 1.0)
+        reward = raw_reward / scale
+        self.steps += 1
+        self.stagnation = 0 if bool(result["improved_best"]) else self.stagnation + 1
+        self.last_reward = max(0.0, min(1.0, reward))
+        self.accept_ema *= 0.95
+        self.improve_ema *= 0.95
+        self.accept_ema[index] += 0.05 * float(bool(result["accepted"]))
+        self.improve_ema[index] += 0.05 * float(bool(result["improved_best"]))
+        terminated = self.steps >= self.horizon
+        result.update(
+            {
+                "action_index": index,
+                "bundle_index": int(self.bundle_index),
+                "raw_cost_reward": float(raw_reward),
+                "training_reward_scale": float(scale),
+            }
+        )
+        return self._observation(), reward, terminated, False, result
+
+    def _observation(self) -> np.ndarray:
+        if self.session is None:
+            return np.zeros(self.observation_space.shape, dtype=np.float32)
+        initial = max(abs(float(self.session.initial_obj)), 1.0)
+        current_gap = max(0.0, float(self.session.current_obj - self.session.best_obj) / initial)
+        prefix = np.concatenate(
+            [
+                _session_observation(self.session),
+                np.array(
+                    [
+                        min(1.0, current_gap),
+                        min(1.0, float(self.stagnation) / float(self.horizon)),
+                        float(self.last_reward),
+                    ],
+                    dtype=np.float32,
+                ),
+            ]
+        )
+        return np.concatenate([prefix, self.accept_ema, self.improve_ema]).astype(np.float32, copy=False)
+
+
 def _session_observation(session: IndependentDrSession) -> np.ndarray:
     summary = session._summary(session.current_solution, session.current_obj, best_obj=session.best_obj)
     metrics = summary["metrics"]
@@ -149,4 +288,11 @@ def _session_observation(session: IndependentDrSession) -> np.ndarray:
     )
 
 
-__all__ = ["CONTEXT_ACTIONS", "IndependentDrContextEnv", "IndependentDrMicroEnv", "MICRO_ACTIONS"]
+__all__ = [
+    "CONTEXT_ACTIONS",
+    "IndependentDrContextEnv",
+    "IndependentDrMicroEnv",
+    "IndependentDrSearchEnv",
+    "MICRO_ACTIONS",
+    "SEARCH_ACTIONS",
+]
