@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import ast
+import json
 from pathlib import Path
 
 import pytest
@@ -86,3 +87,25 @@ def test_alns_crush_uses_formal_registry():
 
     assert ALNS_DEFAULT_INSTANCE_ORDER == FORMAL_INSTANCE_ORDER
     assert set(INSTANCE_DIRS) == set(FORMAL_INSTANCE_ORDER)
+
+
+def test_formal_registry_rejects_benchmark_without_ready_audit(tmp_path: Path):
+    from setp_solver.search import instance_registry
+
+    checker = getattr(instance_registry, "assert_formal_benchmark_ready", None)
+    assert checker is not None, "formal registry needs an activation gate"
+    active = tmp_path / "models/data_bundle/generated_instances/L-main"
+    active.mkdir(parents=True)
+    manifest = {
+        "schema_version": "resetp-l-main-main-benchmark.v3",
+        "formal_default": True,
+        "activation_requires_verdict": "LMAIN_V3_READY",
+        "instances": [
+            {"instance_id": name, "bundle_file_hashes": {}}
+            for name in instance_registry.FORMAL_INSTANCE_ORDER
+        ],
+    }
+    (active / instance_registry.FORMAL_MANIFEST_NAME).write_text(json.dumps(manifest), encoding="utf-8")
+
+    with pytest.raises(RuntimeError, match="LMAIN_V3_READY audit"):
+        checker(tmp_path)

@@ -44,6 +44,42 @@ FIXTURE_DIR = REPO_ROOT / "models" / "data_bundle" / "generated_instances" / "ve
 
 
 class FormalRunnerTests(unittest.TestCase):
+    def test_formal_main_instance_matches_active_registry(self) -> None:
+        from setp_solver.search.instance_registry import FORMAL_INSTANCE_ORDER, INSTANCE_REL_DIRS
+
+        self.assertEqual(formal_runner.FORMAL_MAIN_INSTANCE, FORMAL_INSTANCE_ORDER[-1])
+        self.assertIn(formal_runner.FORMAL_MAIN_INSTANCE, INSTANCE_REL_DIRS)
+
+    def test_e0_stops_before_loading_unapproved_formal_benchmark(self) -> None:
+        gate = getattr(formal_runner, "assert_formal_benchmark_ready", None)
+        self.assertIsNotNone(gate, "formal runner needs the registry activation gate")
+        with tempfile.TemporaryDirectory() as tmp, patch.object(
+            formal_runner,
+            "assert_formal_benchmark_ready",
+            side_effect=RuntimeError("unapproved benchmark"),
+        ) as mocked_gate:
+            with self.assertRaisesRegex(RuntimeError, "unapproved benchmark"):
+                run_e0_gate(REPO_ROOT, Path(tmp) / "t1.csv")
+        mocked_gate.assert_called_once_with(REPO_ROOT)
+
+    def test_e0_accepts_the_nine_instance_formal_registry(self) -> None:
+        fake_bundle = SimpleNamespace(instance=SimpleNamespace(nodes=[]), carbon_profile=[{} for _ in range(48)])
+        with tempfile.TemporaryDirectory() as tmp, patch.object(
+            formal_runner, "assert_formal_benchmark_ready"
+        ), patch.object(
+            formal_runner, "load_search_bundle", return_value=fake_bundle
+        ), patch.object(
+            formal_runner, "b2_feasible_domain_gate", return_value=SimpleNamespace(safe=True)
+        ), patch.object(
+            formal_runner, "_load_optional_json", return_value={}
+        ), patch.object(
+            formal_runner, "_bundle_hash", return_value="fixture-hash"
+        ):
+            result = run_e0_gate(REPO_ROOT, Path(tmp) / "t1.csv")
+
+        self.assertEqual(result["gate"], "PASS")
+        self.assertEqual(len(result["rows"]), 9)
+
     # v2026-06-12: Z2-Z4 long runs must be restartable without repeating completed work.
     def test_resume_ledger_skips_completed_run(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
@@ -469,7 +505,7 @@ class FormalRunnerTests(unittest.TestCase):
 
         with tempfile.TemporaryDirectory() as tmp, patch.object(formal_runner, "run_e5_charging_ablation", fake_ablation):
             out = Path(tmp) / "missing-output-root"
-            source_report = out / "source.json"
+            source_report = Path(tmp) / "source.json"
             source_report.write_text("{}", encoding="utf-8")
             result = run_e5_formal(REPO_ROOT, out, source_report_path=source_report)
 
@@ -734,8 +770,8 @@ class FormalRunnerTests(unittest.TestCase):
     def test_dynamic_customer_subset_splits_over_capacity_committed_chunk(self) -> None:
         instance = _synthetic_dynamic_instance(
             [
-                ("C1", 900.0, 1_000.0, 0.0),
-                ("C2", 900.0, 2_000.0, 0.0),
+                ("C1", 2_000.0, 1_000.0, 0.0),
+                ("C2", 2_000.0, 2_000.0, 0.0),
             ],
             stations=[],
         )

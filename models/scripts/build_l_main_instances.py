@@ -95,7 +95,7 @@ def _instance_record(bundle_dir: Path, row: Any, raw_index: dict[str, Any], scal
         "bundle_file_hashes": {
             path.name: sha256_file(path)
             for path in sorted(bundle_dir.iterdir())
-            if path.is_file()
+            if path.is_file() and not path.name.startswith("._")
         },
     }
 

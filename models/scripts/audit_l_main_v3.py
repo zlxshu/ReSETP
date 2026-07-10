@@ -60,6 +60,9 @@ def _audit_instance(candidate_root: Path, entry: dict[str, Any], expected: dict[
     if entry.get("merged_customer_count") != expected.get(scale):
         failures.append(f"{instance_id}:merged_count")
     for name, expected_hash in entry.get("bundle_file_hashes", {}).items():
+        if str(name).startswith("._"):
+            failures.append(f"{instance_id}:appledouble_hash:{name}")
+            continue
         path = bundle_dir / name
         if not path.is_file() or sha256_file(path) != expected_hash:
             failures.append(f"{instance_id}:hash:{name}")
@@ -67,11 +70,19 @@ def _audit_instance(candidate_root: Path, entry: dict[str, Any], expected: dict[
     children = three.get("source_children", [])
     if [item.get("input_customer_count") for item in children] != [scale, scale, scale]:
         failures.append(f"{instance_id}:full_sources")
+    if not children or three.get("facility_layout_source") != children[0].get("scenario_id"):
+        failures.append(f"{instance_id}:shared_facility_layout")
     if any(item.get("deleted_customer_count") for item in children[:2]):
         failures.append(f"{instance_id}:nonthird_deletion")
     if children and int(children[2].get("kept_customer_count", 0)) < 1:
         failures.append(f"{instance_id}:third_shift_coverage")
-    if any(float(item["shifted_due_time"]) <= 86400.0 for item in three.get("deleted_customers", [])):
+    deleted = three.get("deleted_customers", [])
+    if any(
+        item.get("reason") != "shifted_due_time_exceeds_24h"
+        or float(item["shifted_due_time"]) <= 86400.0
+        or float(item.get("shift_seconds", 0.0)) != 64800.0
+        for item in deleted
+    ):
         failures.append(f"{instance_id}:invalid_deletion_reason")
     instance = json.loads((bundle_dir / "instance.json").read_text(encoding="utf-8"))
     depots = [node for node in instance["nodes"] if node["node_type"] == "d"]

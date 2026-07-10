@@ -162,6 +162,19 @@ def test_candidate_cli_writes_v3_manifest_and_rejects_active_directory(tmp_path:
         cli.build_l_main_instances(cli.ACTIVE_ROOT)
 
 
+def test_manifest_hashes_exclude_appledouble_sidecars(tmp_path: Path) -> None:
+    builder = _load_builder()
+    cli = _load_lmain_cli()
+    raw_index = builder._raw_inventory()
+    bundle_dir = tmp_path / "L-main-threeshift-10c-01"
+    row = builder.build_full_source_threeshift(raw_index, 10, "01", "L-main-threeshift-10c-01", bundle_dir)
+    (bundle_dir / "._instance.json").write_bytes(b"appledouble-noise")
+
+    record = cli._instance_record(bundle_dir, row, raw_index, 10, "01")
+
+    assert all(not name.startswith("._") for name in record["bundle_file_hashes"])
+
+
 def test_audit_emits_ready_decision_and_required_record_surfaces(tmp_path: Path) -> None:
     cli = _load_lmain_cli()
     audit = _load_lmain_audit()
@@ -173,3 +186,82 @@ def test_audit_emits_ready_decision_and_required_record_surfaces(tmp_path: Path)
     assert decision["verdict"] == "LMAIN_V3_READY", decision
     for name in ("metadata.json", "raw_runs.csv", "decision.json", "artifact_hashes.json", "report.md"):
         assert (output / name).is_file()
+
+
+def test_audit_rejects_appledouble_entries_in_manifest(tmp_path: Path) -> None:
+    builder = _load_builder()
+    cli = _load_lmain_cli()
+    audit = _load_lmain_audit()
+    candidate = tmp_path / "candidate"
+    output = tmp_path / "audit"
+    bundle_dir = candidate / "L-main-threeshift-10c-01"
+    raw_index = builder._raw_inventory()
+    row = builder.build_full_source_threeshift(raw_index, 10, "01", "L-main-threeshift-10c-01", bundle_dir)
+    entry = cli._instance_record(bundle_dir, row, raw_index, 10, "01")
+    manifest = {
+        "schema_version": "resetp-l-main-main-benchmark.v3",
+        "source_scales": list(EXPECTED_SOURCE_SCALES),
+        "instances": [entry],
+    }
+    candidate.mkdir(parents=True, exist_ok=True)
+    sidecar = bundle_dir / "._instance.json"
+    sidecar.write_bytes(b"appledouble-noise")
+    entry["bundle_file_hashes"][sidecar.name] = cli.sha256_file(sidecar)
+    (candidate / cli.MANIFEST_NAME).write_text(json.dumps(manifest), encoding="utf-8")
+
+    decision = audit.audit_l_main_v3(candidate, output)
+
+    assert decision["verdict"] == "HALT_LMAIN_V3_AUDIT"
+    assert any("appledouble" in failure for failure in decision["failures"])
+
+
+def test_audit_rejects_deleted_customer_with_wrong_reason(tmp_path: Path) -> None:
+    builder = _load_builder()
+    cli = _load_lmain_cli()
+    audit = _load_lmain_audit()
+    candidate = tmp_path / "candidate"
+    output = tmp_path / "audit"
+    bundle_dir = candidate / "L-main-threeshift-10c-01"
+    raw_index = builder._raw_inventory()
+    row = builder.build_full_source_threeshift(raw_index, 10, "01", "L-main-threeshift-10c-01", bundle_dir)
+    three_path = bundle_dir / "three_shift_manifest.json"
+    three = json.loads(three_path.read_text(encoding="utf-8"))
+    three["deleted_customers"][0]["reason"] = "count_target_trim"
+    three_path.write_text(json.dumps(three), encoding="utf-8")
+    entry = cli._instance_record(bundle_dir, row, raw_index, 10, "01")
+    manifest = {
+        "schema_version": "resetp-l-main-main-benchmark.v3",
+        "source_scales": list(EXPECTED_SOURCE_SCALES),
+        "instances": [entry],
+    }
+    (candidate / cli.MANIFEST_NAME).write_text(json.dumps(manifest), encoding="utf-8")
+
+    decision = audit.audit_l_main_v3(candidate, output)
+
+    assert any("invalid_deletion_reason" in failure for failure in decision["failures"])
+
+
+def test_audit_rejects_wrong_shared_facility_source(tmp_path: Path) -> None:
+    builder = _load_builder()
+    cli = _load_lmain_cli()
+    audit = _load_lmain_audit()
+    candidate = tmp_path / "candidate"
+    output = tmp_path / "audit"
+    bundle_dir = candidate / "L-main-threeshift-10c-01"
+    raw_index = builder._raw_inventory()
+    row = builder.build_full_source_threeshift(raw_index, 10, "01", "L-main-threeshift-10c-01", bundle_dir)
+    three_path = bundle_dir / "three_shift_manifest.json"
+    three = json.loads(three_path.read_text(encoding="utf-8"))
+    three["facility_layout_source"] = "unrelated-layout"
+    three_path.write_text(json.dumps(three), encoding="utf-8")
+    entry = cli._instance_record(bundle_dir, row, raw_index, 10, "01")
+    manifest = {
+        "schema_version": "resetp-l-main-main-benchmark.v3",
+        "source_scales": list(EXPECTED_SOURCE_SCALES),
+        "instances": [entry],
+    }
+    (candidate / cli.MANIFEST_NAME).write_text(json.dumps(manifest), encoding="utf-8")
+
+    decision = audit.audit_l_main_v3(candidate, output)
+
+    assert any("shared_facility_layout" in failure for failure in decision["failures"])

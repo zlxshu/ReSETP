@@ -48,9 +48,9 @@ from setp_solver.algorithms.resetp_alns.runtime import (
 )
 from setp_solver.algorithms.resetp_alns.support.timing import timed_section
 
-def __load_search_bundle(path):
+def _load_search_bundle(path):
     from setp_solver.search.bundle import load_search_bundle
-    return _load_search_bundle(path)
+    return load_search_bundle(path)
 
 
 

@@ -44,14 +44,16 @@ from .e5_ablation import run_e5_charging_ablation
 from .evaluation import EvaluationContext, fairness_context_for_solution
 from .fairness import build_concatenated_independent_seed, infer_customer_home_depots, run_equal_budget_fairness_comparison, run_independent_profit_baselines
 from .gates import b2_feasible_domain_gate
+from .instance_registry import assert_formal_benchmark_ready
 from .root_cause import WANG_ROOT_CAUSE_ALGORITHMS, run_alns_root_cause_diagnostics
 
 
 RunCallable = Callable[[], dict[str, Any]]
-FORMAL_MAIN_INSTANCE = "L-main-threeshift-200c"
+FORMAL_MAIN_INSTANCE = ALNS_DEFAULT_INSTANCE_ORDER[-1]
 
 
 def _main_bundle_dir(repo_root: str | Path, instance_name: str = FORMAL_MAIN_INSTANCE) -> Path:
+    assert_formal_benchmark_ready(repo_root)
     return Path(repo_root) / INSTANCE_DIRS[instance_name]
 
 
@@ -133,9 +135,10 @@ class ResumeLedger:
 
 
 def run_e0_gate(repo_root: str | Path, output_csv_path: str | Path) -> dict[str, Any]:
-    """Write T1 instance-gate rows for the 23-instance L-main main set."""
+    """Write T1 instance-gate rows for the active formal L-main set."""
 
     root = Path(repo_root)
+    assert_formal_benchmark_ready(repo_root)
     instances = [(name, root / INSTANCE_DIRS[name]) for name in ALNS_DEFAULT_INSTANCE_ORDER]
     rows = []
     for instance_name, bundle_dir in instances:
@@ -159,7 +162,8 @@ def run_e0_gate(repo_root: str | Path, output_csv_path: str | Path) -> dict[str,
             }
         )
     _write_csv(output_csv_path, rows)
-    return {"gate": "PASS" if len(rows) == 23 and all(row["gamma_slots"] == 48 and row["b2_safe"] for row in rows) else "HALT_E0", "rows": rows}
+    expected_rows = len(ALNS_DEFAULT_INSTANCE_ORDER)
+    return {"gate": "PASS" if len(rows) == expected_rows and all(row["gamma_slots"] == 48 and row["b2_safe"] for row in rows) else "HALT_E0", "rows": rows}
 
 
 def compute_default_carbon_quota(
@@ -224,6 +228,7 @@ def run_e2_algorithm_comparison(
     """Run E2 for all Z1-available algorithms and write T3/F2 sources."""
 
     root = Path(repo_root)
+    assert_formal_benchmark_ready(repo_root)
     out = Path(output_dir)
     ledger = ResumeLedger(out / "formal_runner_manifest.json")
     seeds = seeds or list(range(1, 11))
