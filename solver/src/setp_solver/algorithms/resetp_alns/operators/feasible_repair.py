@@ -42,6 +42,7 @@ def enumerate_feasible_insertions(
     max_positions_per_route: int = MAX_POSITIONS_PER_ROUTE,
     allow_new_route: bool = True,
     route_customer_cache: dict[int, list[str]] | None = None,
+    route_proximity_cache: dict[tuple[str, int], float] | None = None,
 ) -> list[InsertionOption]:
     """Return route-local feasible insertions for one missing customer.
 
@@ -61,6 +62,7 @@ def enumerate_feasible_insertions(
         context.instance,
         max_route_candidates,
         cached_customers,
+        route_proximity_cache,
     )
     ev_route_candidates = 0
     for route_idx, route in route_items:
@@ -125,11 +127,29 @@ def repair_removed_customers(
 ) -> Solution | None:
     pending = list(dict.fromkeys(removed_customers))
     current = partial_solution
+    previous_route_customers: dict[int, list[str]] = {}
+    route_proximity_cache: dict[tuple[str, int], float] = {}
     while pending:
         scored: list[tuple[float, float, str, Solution]] = []
         route_customer_cache = {
             idx: route_customers(route, context.instance) for idx, route in enumerate(current.routes)
         }
+        changed_indices = {
+            idx
+            for idx in set(previous_route_customers) | set(route_customer_cache)
+            if previous_route_customers.get(idx) != route_customer_cache.get(idx)
+        }
+        for pending_customer in pending:
+            for idx in changed_indices:
+                route_items = route_customer_cache.get(idx, [])
+                key = (pending_customer, idx)
+                if route_items:
+                    route_proximity_cache[key] = min(
+                        _distance(context.instance, pending_customer, node_id) for node_id in route_items
+                    )
+                else:
+                    route_proximity_cache.pop(key, None)
+        previous_route_customers = route_customer_cache
         for customer_id in pending:
             options = enumerate_feasible_insertions(
                 current,
@@ -138,6 +158,7 @@ def repair_removed_customers(
                 policy,
                 allow_new_route=allow_new_route,
                 route_customer_cache=route_customer_cache,
+                route_proximity_cache=route_proximity_cache,
             )
             if not options:
                 continue
@@ -226,6 +247,7 @@ def _ranked_routes(
     instance: Instance,
     limit: int,
     route_customer_cache: dict[int, list[str]] | None = None,
+    route_proximity_cache: dict[tuple[str, int], float] | None = None,
 ) -> list[tuple[int, Route]]:
     scored = []
     for idx, route in enumerate(routes):
@@ -236,8 +258,11 @@ def _ranked_routes(
         )
         if not customers:
             continue
-        anchors = customers or route.node_sequence
-        proximity = min(_distance(instance, customer_id, node_id) for node_id in anchors)
+        proximity = (
+            route_proximity_cache[(customer_id, idx)]
+            if route_proximity_cache is not None and (customer_id, idx) in route_proximity_cache
+            else min(_distance(instance, customer_id, node_id) for node_id in customers)
+        )
         scored.append((proximity, idx, route))
     scored.sort(key=lambda item: (item[0], item[1]))
     return [(idx, route) for _, idx, route in scored[: max(1, int(limit))]]

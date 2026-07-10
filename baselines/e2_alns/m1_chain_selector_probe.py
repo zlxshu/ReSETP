@@ -18,7 +18,8 @@ for _path in (REPO_ROOT, SOLVER_SRC):
         sys.path.insert(0, str(_path))
 
 from baselines.e2_alns.m1_fair_selector_probe import INSTANCES, _run_alns, _run_lns
-from baselines.e2_alns.m1_joint_repack_fleet_headroom import _cv_start, _sha256, _write_csv, evidence_files
+from baselines.e2_alns.m1_joint_repack_fleet_headroom import _cv_start, _save_solution, _sha256, _write_csv, evidence_files
+from baselines.e2_alns.m1_joint_repack_fleet_headroom import greedy_fleet_closure
 from setp_solver.prices import DEFAULT_PRICES
 from setp_solver.search.bundle import load_search_bundle
 from setp_solver.search.instance_registry import assert_formal_benchmark_ready, instance_abs_dir
@@ -67,7 +68,7 @@ def run_probe(args: argparse.Namespace) -> dict[str, object]:
         bundle = load_search_bundle(instance_abs_dir(repo_root, instance_name))
         start = _cv_start(bundle, prices)
         for seed in seeds:
-            row, _solution = _run_alns(
+            row, solution = _run_alns(
                 bundle,
                 prices,
                 start,
@@ -76,7 +77,24 @@ def run_probe(args: argparse.Namespace) -> dict[str, object]:
                 int(args.eval_budget),
                 float(args.max_runtime_seconds),
             )
+            if bool(args.closure_headroom):
+                from setp_solver.search.evaluation import EvaluationContext
+
+                closure = greedy_fleet_closure(
+                    solution,
+                    EvaluationContext(bundle.instance, bundle.carbon_profile, prices=prices),
+                )
+                row.update(
+                    {
+                        "closure_cost": float(closure.cost),
+                        "closure_gain": float(row["best_cost"]) - float(closure.cost),
+                        "closure_accepted_flips": int(closure.accepted_flips),
+                    }
+                )
             row.update({"scale": scale, "instance": instance_name})
+            solution_path = output_dir / "solutions" / f"{scale}__{instance_name}__CHAIN_UCB__seed{seed}.json"
+            _save_solution(solution_path, solution)
+            row["solution_path"] = str(solution_path.relative_to(repo_root))
             raw_rows.append(row)
             if bool(args.fresh_lns) or (scale, seed) not in lns:
                 baseline, _baseline_solution = _run_lns(
@@ -149,6 +167,7 @@ def main() -> int:
     parser.add_argument("--instance", default="")
     parser.add_argument("--instance-scale", default="hardest")
     parser.add_argument("--fresh-lns", action="store_true")
+    parser.add_argument("--closure-headroom", action="store_true")
     args = parser.parse_args()
     print(json.dumps(run_probe(args), indent=2, sort_keys=True))
     return 0

@@ -1004,7 +1004,8 @@ def _run_winner_kernel_loop(
         op_coupling=selector_coupling,
         protected_destroy_indices=protected_destroy_indices,
     )
-    acceptance = _make_winner_acceptance_criterion(current, config=config, flags=flags)
+    acceptance_config = _chain_acceptance_config(selector_kind, config)
+    acceptance = _make_winner_acceptance_criterion(current, config=acceptance_config, flags=flags)
     destroy_counts = {name: [0, 0, 0, 0] for name, _ in operator_set.destroy_ops}
     repair_counts = {name: [0, 0, 0, 0] for name, _ in operator_set.repair_ops}
     scan_counts = {
@@ -1246,7 +1247,7 @@ def _run_winner_kernel_loop(
                         **structural_trace,
                     }
                 )
-        progress = min(1.0, moves / max(1, target))
+        progress = _chain_phase_progress(selector_kind, moves, target)
         destroy_idx, repair_idx = selector(rng, best, current)
         destroy_name = operator_set.destroy_ops[int(destroy_idx)][0]
         repair_name = operator_set.repair_ops[int(repair_idx)][0]
@@ -1387,6 +1388,16 @@ def _run_winner_kernel_loop(
         destroy_counts[destroy_name][outcome_idx] += 1
         repair_counts[repair_name][outcome_idx] += 1
         selector.update(candidate, int(destroy_idx), int(repair_idx), outcome_idx)
+        if _should_reset_chain_selector(selector_kind, moves):
+            selector = _make_operator_selector(
+                len(operator_set.destroy_ops),
+                len(operator_set.repair_ops),
+                selector_kind=selector_kind,
+                target_iterations=int(config.eval_budget),
+                op_coupling=selector_coupling,
+                protected_destroy_indices=protected_destroy_indices,
+            )
+            acceptance = _make_winner_acceptance_criterion(current, config=acceptance_config, flags=flags)
     destroy_counts_out = {name: tuple(row) for name, row in destroy_counts.items()}
     repair_counts_out = {name: tuple(row) for name, row in repair_counts.items()}
     with timed_section(context, "final_check"):
@@ -1489,6 +1500,116 @@ def _winner_history_entry(
 
 def _flag_enabled_from(flags: dict[str, str], name: str) -> bool:
     return str(flags.get(name, "0")).lower() not in {"0", "false", "no"}
+
+
+def _should_reset_chain_selector(selector_kind: str, completed_moves: int, interval: int = 400) -> bool:
+    return (
+        str(selector_kind) == "chain_ucb"
+        and int(completed_moves) > 0
+        and int(completed_moves) % max(1, int(interval)) == 0
+    )
+
+
+def _chain_acceptance_config(selector_kind: str, config: WinnerKernelConfig, interval: int = 400) -> WinnerKernelConfig:
+    if str(selector_kind) != "chain_ucb":
+        return config
+    return replace(config, eval_budget=min(int(config.eval_budget), max(1, int(interval))))
+
+
+def _chain_phase_progress(selector_kind: str, completed_moves: int, target: int, interval: int = 400) -> float:
+    if str(selector_kind) != "chain_ucb":
+        return min(1.0, int(completed_moves) / max(1, int(target)))
+    phase_move = ((max(1, int(completed_moves)) - 1) % max(1, int(interval))) + 1
+    return min(1.0, phase_move / max(1, int(interval)))
+
+
+def _staged_chain_budgets(total_budget: int, interval: int = 400) -> tuple[int, int, int]:
+    total = max(0, int(total_budget))
+    phase = max(1, int(interval))
+    opening = min(phase, total)
+    closing = min(phase, max(0, total - opening))
+    bridge = max(0, total - opening - closing)
+    return opening, bridge, closing
+
+
+def run_staged_chain_alns(
+    initial_solution: Solution,
+    instance: Any,
+    carbon_profile: list[dict[str, Any]],
+    *,
+    config: WinnerKernelConfig,
+    prices: Any = DEFAULT_PRICES,
+    variant_flags: dict[str, str] | None = None,
+) -> AlnsRunResult:
+    """Run regular, global-repair, then regular ALNS phases under one budget."""
+
+    budgets = _staged_chain_budgets(config.eval_budget)
+    flags = dict(variant_flags or e2_alns_throughput_flags())
+    for selector_flag in SELECTOR_FLAGS:
+        flags[selector_flag] = "0"
+    flags[CHAIN_UCB_SELECTOR_FLAG] = "1"
+    started = time.perf_counter()
+    phase_runs: list[AlnsRunResult] = []
+    current_initial = initial_solution
+    for phase_index, phase_budget in enumerate(budgets):
+        if phase_budget <= 0:
+            continue
+        phase_flags = dict(flags)
+        phase_flags[STRONG_BRIDGE_BACKEND_FLAG] = "1" if phase_index == 1 else "0"
+        elapsed = time.perf_counter() - started
+        remaining_runtime = max(1e-3, float(config.max_runtime_seconds) - elapsed)
+        phase_seed = (
+            int(config.seed)
+            if phase_index == 0
+            else int(config.seed) * (1_000_003 if phase_index == 1 else 9_000_000) + 1
+        )
+        phase_run = _run_winner_kernel_loop(
+            current_initial,
+            instance,
+            carbon_profile,
+            config=replace(
+                config,
+                seed=phase_seed,
+                eval_budget=int(phase_budget),
+                max_runtime_seconds=remaining_runtime,
+            ),
+            prices=prices,
+            variant_flags=phase_flags,
+        )
+        phase_runs.append(phase_run)
+        current_initial = phase_run.best_solution
+        if time.perf_counter() - started >= float(config.max_runtime_seconds):
+            break
+    if not phase_runs:
+        raise ValueError("staged chain ALNS requires a positive evaluation budget")
+    best_run = min(phase_runs, key=lambda run: float(run.best_obj))
+    history: list[dict[str, Any]] = []
+    eval_offset = 0
+    for phase_number, phase_run in enumerate(phase_runs, start=1):
+        for row in phase_run.history:
+            history.append({**row, "eval": eval_offset + int(row.get("eval", 0)), "stage": phase_number})
+        eval_offset += int(phase_run.evaluations)
+    operator_counts = dict(best_run.operator_counts)
+    operator_counts["staged_chain"] = {
+        "budgets": list(budgets),
+        "phase_best_objs": [float(run.best_obj) for run in phase_runs],
+        "phase_evaluations": [int(run.evaluations) for run in phase_runs],
+    }
+    return replace(
+        best_run,
+        initial_solution=phase_runs[0].initial_solution,
+        initial_obj=float(phase_runs[0].initial_obj),
+        best_solution=best_run.best_solution,
+        best_obj=float(best_run.best_obj),
+        evaluations=sum(int(run.evaluations) for run in phase_runs),
+        feasible=bool(best_run.feasible),
+        actual_moves=sum(int(run.actual_moves) for run in phase_runs),
+        candidate_scores=sum(int(run.candidate_scores) for run in phase_runs),
+        repair_scores=sum(int(run.repair_scores) for run in phase_runs),
+        repair_delta_count=sum(int(run.repair_delta_count) for run in phase_runs),
+        operator_counts=operator_counts,
+        history=history,
+    )
 
 
 def _accept_winner_candidate(

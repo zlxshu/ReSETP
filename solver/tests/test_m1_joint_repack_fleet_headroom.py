@@ -233,6 +233,24 @@ class M1JointRepackFleetHeadroomTests(unittest.TestCase):
 
         self.assertTrue(ranked)
 
+    def test_repair_route_ranking_reuses_precomputed_proximity(self) -> None:
+        import setp_solver.algorithms.resetp_alns.operators.feasible_repair as repair
+
+        bundle = load_search_bundle(VERIFY_BUNDLE)
+        start = make_shared_initial_solution(bundle, prices=DEFAULT_PRICES)
+        customer_id = next(node.node_id for node in bundle.instance.nodes if node.node_type.lower() == "c")
+        customers = {idx: repair.route_customers(route, bundle.instance) for idx, route in enumerate(start.routes)}
+        proximity = {
+            (customer_id, idx): min(repair._distance(bundle.instance, customer_id, node_id) for node_id in route_customers)
+            for idx, route_customers in customers.items()
+            if route_customers
+        }
+
+        with patch.object(repair, "_distance", side_effect=AssertionError("proximity cache was ignored")):
+            ranked = repair._ranked_routes(start.routes, customer_id, bundle.instance, 4, customers, proximity)
+
+        self.assertTrue(ranked)
+
     def test_repair_cache_flag_is_read_once_from_the_instance(self) -> None:
         import setp_solver.algorithms.resetp_alns.operators.feasible_repair as repair
 
@@ -280,6 +298,25 @@ class M1JointRepackFleetHeadroomTests(unittest.TestCase):
 
         self.assertEqual(selector.scores, [4.0, 3.0, 2.0, 0.05])
 
+    def test_chain_selector_resets_only_at_completed_400_move_phases(self) -> None:
+        from setp_solver.algorithms.resetp_alns.kernel.winner import (
+            WinnerKernelConfig,
+            _chain_acceptance_config,
+            _chain_phase_progress,
+            _should_reset_chain_selector,
+        )
+
+        self.assertFalse(_should_reset_chain_selector("chain_ucb", 0))
+        self.assertFalse(_should_reset_chain_selector("chain_ucb", 399))
+        self.assertTrue(_should_reset_chain_selector("chain_ucb", 400))
+        self.assertFalse(_should_reset_chain_selector("alpha_ucb", 400))
+        self.assertEqual(_chain_acceptance_config("chain_ucb", WinnerKernelConfig(eval_budget=4000)).eval_budget, 400)
+        self.assertEqual(_chain_acceptance_config("alpha_ucb", WinnerKernelConfig(eval_budget=4000)).eval_budget, 4000)
+        self.assertEqual(_chain_phase_progress("chain_ucb", 1, 4000), 1 / 400)
+        self.assertEqual(_chain_phase_progress("chain_ucb", 400, 4000), 1.0)
+        self.assertEqual(_chain_phase_progress("chain_ucb", 401, 4000), 1 / 400)
+        self.assertEqual(_chain_phase_progress("alpha_ucb", 400, 4000), 0.1)
+
     def test_vehicle_type_closure_does_not_accept_a_worse_flip(self) -> None:
         from setp_solver.algorithms.resetp_alns.kernel.winner import _accept_winner_candidate
 
@@ -287,6 +324,44 @@ class M1JointRepackFleetHeadroomTests(unittest.TestCase):
 
         self.assertFalse(_accept_winner_candidate("vehicle_type_swap", True, 101.0, 100.0, always_accept, None, None, None, None))
         self.assertTrue(_accept_winner_candidate("random_customer_removal", True, 101.0, 100.0, always_accept, None, None, None, None))
+
+    def test_staged_chain_splits_but_never_increases_the_evaluation_budget(self) -> None:
+        from setp_solver.algorithms.resetp_alns.kernel.winner import _staged_chain_budgets
+
+        self.assertEqual(_staged_chain_budgets(4000), (400, 3200, 400))
+        self.assertEqual(_staged_chain_budgets(800), (400, 0, 400))
+        self.assertEqual(_staged_chain_budgets(401), (400, 0, 1))
+        self.assertEqual(_staged_chain_budgets(400), (400, 0, 0))
+        self.assertEqual(sum(_staged_chain_budgets(16000)), 16000)
+
+    def test_staged_chain_runs_regular_bridge_regular_under_one_total_budget(self) -> None:
+        import setp_solver.algorithms.resetp_alns.kernel.winner as winner
+        from setp_solver.algorithms.resetp_alns.kernel.alns_core import AlnsRunResult
+
+        bundle = load_search_bundle(VERIFY_BUNDLE)
+        start = make_shared_initial_solution(bundle, prices=DEFAULT_PRICES)
+        phase_results = [
+            AlnsRunResult(start, start, 10.0, 9.0, 400, True),
+            AlnsRunResult(start, start, 9.0, 5.0, 200, True),
+            AlnsRunResult(start, start, 5.0, 6.0, 400, True),
+        ]
+
+        with patch.object(winner, "_run_winner_kernel_loop", side_effect=phase_results) as phase_run:
+            result = winner.run_staged_chain_alns(
+                start,
+                bundle.instance,
+                bundle.carbon_profile,
+                config=winner.WinnerKernelConfig(seed=7, eval_budget=1000, max_runtime_seconds=30.0),
+                prices=DEFAULT_PRICES,
+            )
+
+        self.assertEqual([call.kwargs["config"].eval_budget for call in phase_run.call_args_list], [400, 200, 400])
+        self.assertEqual(
+            [call.kwargs["variant_flags"][winner.STRONG_BRIDGE_BACKEND_FLAG] for call in phase_run.call_args_list],
+            ["0", "1", "0"],
+        )
+        self.assertEqual(result.evaluations, 1000)
+        self.assertEqual(result.best_obj, 5.0)
 
 if __name__ == "__main__":
     unittest.main()
