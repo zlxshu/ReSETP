@@ -594,6 +594,57 @@ def test_real_stage_solver_cannot_invent_a_second_vehicle_while_the_only_vehicle
     )
 
 
+def test_returned_ev_cannot_reappear_with_full_battery_without_recorded_charging(tmp_path: Path) -> None:
+    instance = Instance(
+        nodes=[
+            Node("D0", "d", 0.0, 0.0, due_time=10_000.0, station_chargers=2),
+            Node("C_DONE", "c", 100.0, 0.0, demand=1.0, due_time=10_000.0),
+        ],
+        distance_matrix=[[0.0, 100.0], [100.0, 0.0]],
+        num_cv=0,
+        num_ev=1,
+    )
+    event = DynamicEvent(
+        event_id="add-after-ev-return",
+        event_type="add",
+        t_appear=60.0,
+        customer_id="C_NEW",
+        old_demand=0.0,
+        new_demand=1.0,
+        x=100.0,
+        y=0.0,
+        new_ready_time=60.0,
+        new_due_time=10_000.0,
+    )
+    first_trip = Solution(routes=[Route("EV1#T1", "ev", "D0", ["D0", "C_DONE", "D0"])])
+    second_trip = Solution(routes=[Route("EV1#T2", "ev", "D0", ["D0", "C_NEW", "D0"])])
+
+    def policy(context: RollingPolicyContext) -> RollingPolicyDecision:
+        return RollingPolicyDecision(
+            initial_plan=first_trip if context.stage_index == 0 else second_trip,
+            stage_eval_budget=0,
+        )
+
+    bundle_dir = tmp_path / "ev-no-reset" / "bundle"
+    _write_truth_bundle(bundle_dir, instance, [event])
+    report = run_rolling_reoptimization(
+        bundle_dir,
+        output_json_path=tmp_path / "ev-no-reset" / "report.json",
+        seed=13,
+        eval_budget=0,
+        max_runtime_seconds=2.0,
+        stage_eval_budget=0,
+        stage_max_runtime_seconds=2.0,
+        params=RollingParameters(delta_t_seconds=60.0, q_bar=8, stages=2),
+        prices=PriceParameters(initial_ev_battery_kwh=80.0, B_battery_kwh=80.0),
+        policy_callback=policy,
+    )
+
+    assert report.get("gate") == "HALT_E7_STAGE_CHECK"
+    assert report.get("first_bad_stage") == 1
+    assert report.get("reserved_physical_vehicle_ids") == ["EV1"]
+
+
 def _run_charger_rolling_scenario(root: Path) -> ChargerRollingEvidence:
     instance = _zero_distance_instance(
         [

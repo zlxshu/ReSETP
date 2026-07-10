@@ -283,6 +283,7 @@ def run_rolling_reoptimization(
     pending_deferred_ids: set[str] = set()
     pending_defer_age: dict[str, int] = {}
     in_progress_vehicle_deadlines: dict[str, float] = {}
+    ev_vehicles_requiring_stateful_reuse: set[str] = set()
 
     for stage_index, batch in enumerate(batches):
         trigger = float(batch["trigger_time"])
@@ -302,6 +303,14 @@ def run_rolling_reoptimization(
                 float(deadline),
                 float(in_progress_vehicle_deadlines.get(vehicle_id, 0.0)),
             )
+        ev_vehicles_requiring_stateful_reuse.update(
+            _ev_physical_vehicles_started_by(
+                previous_plan,
+                previous_instance,
+                trigger_time=trigger,
+                prices=prices,
+            )
+        )
         in_progress_vehicle_deadlines = {
             vehicle_id: deadline
             for vehicle_id, deadline in in_progress_vehicle_deadlines.items()
@@ -472,7 +481,7 @@ def run_rolling_reoptimization(
         )
         lifecycle_violation_count = 0
         first_lifecycle_violation = ""
-        current_reserved_physical_vehicle_ids = set(in_progress_vehicle_deadlines) | {
+        current_reserved_physical_vehicle_ids = set(in_progress_vehicle_deadlines) | set(ev_vehicles_requiring_stateful_reuse) | {
             physical_vehicle_id(snapshot.route.vehicle_id)
             for snapshot in locked_route_snapshots.values()
         }
@@ -1568,6 +1577,33 @@ def _in_progress_physical_vehicle_deadlines(
             physical_id = physical_vehicle_id(route.vehicle_id)
             deadlines[physical_id] = max(route_end, deadlines.get(physical_id, 0.0))
     return deadlines
+
+
+def _ev_physical_vehicles_started_by(
+    plan: Solution | None,
+    instance: Instance,
+    *,
+    trigger_time: float,
+    prices: PriceParameters | dict[str, float] | Any,
+) -> set[str]:
+    if plan is None:
+        return set()
+    used: set[str] = set()
+    for route in plan.routes:
+        if route.vehicle_type.lower() != "ev":
+            continue
+        try:
+            schedule = route_node_schedule(
+                route,
+                instance,
+                prices,
+                charging_actions=plan.charging_actions,
+            )
+        except Exception:
+            continue
+        if schedule and float(schedule[0].t_depart) <= float(trigger_time) + 1e-9:
+            used.add(physical_vehicle_id(route.vehicle_id))
+    return used
 
 
 def _charging_action_key(action: ChargingAction) -> tuple[Any, ...]:
