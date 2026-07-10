@@ -415,7 +415,7 @@ def run_probe(args: argparse.Namespace) -> dict[str, Any]:
         output_dir / "metadata.json",
         output_dir / "decision.json",
         output_dir / "report.md",
-        *sorted(solution_dir.glob("*.json")),
+        *sorted(path for path in solution_dir.glob("*.json") if not path.name.startswith("._")),
     ]
     (output_dir / "artifact_hashes.json").write_text(
         json.dumps(
