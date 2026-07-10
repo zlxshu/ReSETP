@@ -4,6 +4,8 @@
 执行对象：Codex / M1 主仓 + x86 DR 线
 状态：执行规划，不是实验结论
 
+> 2026-07-11 执行入口更新：本PRD保留完整技术背景和历史gate；面向7.31投稿的白话总实验方案、E0--E7详细任务、阶段门和日程，以 `docs/handoff/project_experiment_master_plan_20260711.md` 为当前施工入口，实时状态看 `docs/handoff/project_board_20260711.md`。
+
 本文件把 ReSETP 从“单个 E2 卡点排查”升级为“全项目可执行 PRD 与施工图”。它继承 `docs/handoff/project_planning_map_20260701.md` 与 Claude worktree 里的 `docs/handoff/e2_prd_and_planning_map_20260702.md`，但修正两个时效事实：当前主工作区的 GA 长复核已补跑到 `16000/16000 OK`，所以 “GA 仍 9229/16000 HALT” 已过时；`5174.345121253789` 同值平台已由 C1 审计判为 `ARTIFICIAL_HOMOGENIZATION`，E2-G0 当前未过门。
 
 `HANDOFF.md` 仍是单一事实源；本文件负责定义“目标、顺序、PDCA、停止条件、记录制度、Codex 任务队列”。冲突时先查 `HANDOFF.md` 和原始 CSV/JSON，再更新本文。

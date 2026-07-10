@@ -10,6 +10,10 @@ ReSETP = 投《系统工程理论与实践》的绿色车辆路径论文。多�
 
 ### 当前主线与挂账（2026-07-11）
 
+**项目调度裁决（2026-07-11，用户纠偏）：研究计划不并行推进，实验任务并行运行。** 项目仍按 E2 判决 → 算法/场景冻结 → 其余正式实验 → 表图论文的依赖顺序推进；不得同时抢跑未满足前置条件的研究线。某一批实验获准启动后，默认按实例/seed/算法或参数臂拆分，以受控 worker 池尽量利用 CPU。当前 30 次旧 runner 串行写同一 CSV，不中途插入并发写者；下一批必须使用安全并行 runner。7.31 收稿止损路线见 `docs/handoff/project_parallel_execution_plan_20260711.md`。
+
+**总实验管理入口（白话版）：** `docs/handoff/project_experiment_master_plan_20260711.md` 是当前整体实验施工总图，包含论文贡献映射、阶段门、E0--E7逐项方案、统计/复算规则、CPU运行规则、7.31两周冲刺和Not-To-Do；`docs/handoff/project_board_20260711.md` 是实时看板；新实验先复制 `docs/handoff/templates/EXPERIMENT_CARD_TEMPLATE.md` 写任务卡，再启动。
+
 **当前主线：E2 算法性能闭合。** 正在运行 100c/150c/200c × 5 seeds × staged ALNS-LNS hybrid/LNS 的 30 次、4000 次评价稳定性门；完成前不启动其他机制实验。
 
 以下两项已登记为 `DEFERRED / BLOCKED_BY_E2_ALGORITHM_FOUNDATION`，不是当前施工任务：
@@ -247,3 +251,6 @@ ReSETP = 投《系统工程理论与实践》的绿色车辆路径论文。多�
 - [M1/E2] 2026-07-10（322客户多种子纠偏）：`m1_staged_chain_150c_multiseed_20260710` 补齐 staged-chain ALNS/LNS seeds1--3、同CV起点、4000 eval。ALNS=`9442.467022/8411.767895/7711.826221`，LNS=`8569.634861/8879.785729/8856.384620`，ALNS 2胜1负；均值8522.020379对8768.601737，低2.812094%，平均时间低78.079697%。seed1反输10.185173%未在seed2/3复现，后两者分别胜5.270602%/12.923540%；因此旧“322结构性失败”降级为“种子稳定性不足”，verdict=`STAGED_CHAIN_150C_MULTISEED_PARTIAL`。仍不能写该档稳定超5%，九阶正式推广继续被多种子/16000门阻塞。
 
 - [M1/E2] 2026-07-10（正式稳定性入口预检）：新增明确身份的公开入口 `run_staged_alns_lns_hybrid()`，算法名固定为 `staged ALNS-LNS hybrid`，不覆盖旧 `run_winner_kernel`；新增可恢复/逐行落盘 runner `m1_staged_hybrid_stability_gate.py`，冻结任务为 `{100c,150c,200c} × seeds1--5 × {hybrid,LNS}` 共30次、每次4000 eval、900s。场景显式为280kWh现代电池诊断覆盖，论文/prices默认仍为Goeke 80kWh；其余参数、checker/evaluator不改，碳感知算子关闭并写入每行与metadata。2-eval烟雾测试2/2 OK，任务身份/参数/落盘路径通过；尚未启动30次前不得写稳定性结论。
+- [M1/全项目] 2026-07-11（用户纠偏 + 7.31 收稿止损）：研究计划仍按 E2判决→算法/场景冻结→其余正式实验→表图论文的依赖顺序推进；“并行”只指获准实验批次内部按 instance/seed/algorithm/parameter task 用 worker 池并行跑。当前30次结束后冻结E2方向：支持则仅做一次最小正式E2，不支持则降低算法主张；两种情况都不再开rescue分支。7月16日前永久关闭E2，7月24日前完成最小其余正式实验，7月28日起只做论文收口。详见 `docs/handoff/project_parallel_execution_plan_20260711.md`。
+- [M1/全项目] 2026-07-11（建立白话总实验管理体系）：新增 `project_experiment_master_plan_20260711.md`、`project_board_20260711.md` 和实验任务卡模板。总计划把论文四类证据映射到E0--E7，明确每项“想证明什么/怎么跑/输出什么/什么算通过/失败怎么降级”，并将旧471次结果限定为可复用管线和历史锚。项目采用单科学问题WIP、阶段门、两周冲刺、每日一屏汇报和Not-To-Do管理；正式实验批次内部再按任务并行。
+- [M1/E2] 2026-07-11（30次稳定性门完成，运行提交=`a51de1a2`）：100c/150c/200c × seeds1--5 × staged ALNS-LNS hybrid/LNS 共30次，280kWh诊断覆盖、4000 eval、900s上限；30/30 `OK`，全部零违规且实际评价数=4000，保存解、配对表、摘要、决策和hash清单完整。实例均值成本差 hybrid 相对 LNS：100c `+6.448%`、150c `+0.688%`、200c `+14.080%`；三档中位数均为正，平均运行时间分别低 `76.6%`、`79.2%`、`72.7%`；成本胜负 `11/15`。判决=`STAGED_HYBRID_STABILITY_SUPPORTED`。这只支持“280kWh诊断场景下的稳定性晋级”，不等于论文默认80kWh正式冠军，也不等于纯独立ALNS；下一步按用户门槛只允许考虑一次九梯度/4000正式门，禁止直接跳16000或继续rescue调参。证据目录：`baselines/e2_alns/m1_staged_hybrid_stability_20260710/`。

@@ -13,3 +13,5 @@
 - [Instance lineage](instance-lineage.md) — formal L-main v2 = 9 threeshift ladders only; mixed23/100-01 ARCHIVE_ONLY
 - [ReSETP ALNS full independence](resetp-alns-independence.md) — algorithms/resetp_alns package; no N-Wouda runtime; PROVENANCE
 - [Control console](control-console.md) — root one-click CONTROL_CONSOLE + PARAMETERS; input/output layout
+- [M1/全项目] 2026-07-11（7.31 收稿调度裁决）：研究计划按证据依赖串行推进，只有已经批准的实验批次内部按 instance/seed/algorithm/parameter task 并行运行以利用 CPU；不得把“实验任务并行”误写成 E2、机制、动态、DR 等研究线同时推进。当前 30 次 E2 稳定性门结束后冻结算法方向：通过则只做一次最小正式 E2，不通过则降低算法主张；两种情况都禁止继续 E2 rescue。路线与止损日期见 `docs/handoff/project_parallel_execution_plan_20260711.md`。
+- [M1/全项目] 2026-07-11（白话总实验管理体系）：`docs/handoff/project_experiment_master_plan_20260711.md` 是E0--E7总施工图，逐项写明科学问题、设计、任务量、指标、通过/HALT、论文表图和降级路径；`docs/handoff/project_board_20260711.md` 是实时看板；`docs/handoff/templates/EXPERIMENT_CARD_TEMPLATE.md` 是每批实验启动门。管理规则为一个科学问题在制、批内任务并行、结果绑定四件套、7.28后禁止探索实验。
