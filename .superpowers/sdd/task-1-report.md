@@ -81,3 +81,108 @@ Re-running the RED command with `--runxfail` after marking still exits 1 with th
 - [x] No mock/monkeypatch of `evaluate`, `check_solution`, or the rolling solver is present.
 - [x] No production code was modified and no long experiment was run.
 - [x] Normal focused run reports exactly four strict expected failures; `--runxfail` reproduces exactly four failures.
+
+## Review correction — real rolling-path evidence
+
+This section supersedes the earlier scenario 3/4 evidence and the earlier
+interpreter line.  The first version hand-assembled a stage view for charging
+and called `_instance_after_events` directly for lifecycle state.  Those were
+useful probes but did not prove the real `run_rolling_reoptimization` path, so
+they are no longer the acceptance evidence.
+
+### Corrected environment and xfail boundary
+
+The corrected rolling tests use:
+
+- Interpreter: `C:\Users\zlxshu\AppData\Local\Temp\resetp-codex-py312\Scripts\python.exe`
+- Python: `3.12.13`
+- pytest: `9.1.1`
+- numpy: `2.5.1`
+- scipy: `1.18.0`
+- real `alns` package loaded from that interpreter's `site-packages`
+
+The preferred py313 environment does not contain `alns`.  Running the revised
+suite there produced two intended assertion failures, two passing setup tests,
+and five `ModuleNotFoundError: No module named 'alns'` errors.  The rolling
+tests did **not** xfail those setup errors.  Every gap marker now specifies
+both `strict=True` and `raises=AssertionError`; each rolling fixture is first
+consumed by an ordinary passing test, and unexpected callback/stage structure
+raises `RuntimeError`.
+
+### Corrected real rolling fixtures
+
+Both scenarios create a minimal temporary bundle containing real
+`instance.json`, `distance_matrix.npy`, `carbon_profile.csv`, and
+`dynamic_events.tsv`.  They invoke the real `run_rolling_reoptimization`,
+real stage bundle writer/loader, real ALNS entry, real evaluator, and real
+checker.  There is no mock or monkeypatch.  The public `policy_callback`
+returns deterministic initial plans.  The charging scenario uses stage/global
+evaluation budget zero so the resource witness cannot be mutated by a vehicle
+type swap; the lifecycle scenario uses budget one.  Both still exercise the
+real rolling, solver-initialization, evaluation, checking, commit, event,
+final-repair, and static-control path.  One focused run remains below one
+second.
+
+Five prerequisite facts are ordinary passing tests rather than xfails:
+
+1. The clock fixture is exactly a 250 m / 25 m/s = 10 s arc from the inherited position, and its dynamic state says time 100 s.
+2. The EV fixture's real energy function returns exactly 2 kWh and the inherited battery is 1 kWh.
+3. The real charger run reaches stages 0 and 1; stage 1 receives a real `previous_plan` with one action starting at 0 s; the full-ledger checker reports exactly `F1@slot0`; and the current stage-1 row contains one new charging action and is marked feasible.
+4. The real lifecycle stage-1 callback receives all six cancel/change events; its real `previous_plan` contains both locked customers and excludes both open customers.
+5. In that same real context, completed cancel/change preserve demands 10/11, while open cancel removes its customer and open demand-change becomes 311.
+
+### Corrected RED command and four failures
+
+```powershell
+Set-Location -LiteralPath 'D:\ReSETP\.claude\worktrees\codex-dynamic-truth-gate'
+$env:PYTHONPATH = 'D:\ReSETP\.claude\worktrees\codex-dynamic-truth-gate\solver\src'
+& 'C:\Users\zlxshu\AppData\Local\Temp\resetp-codex-py312\Scripts\python.exe' -m pytest -q solver/tests/test_dynamic_truth_gate.py --runxfail
+```
+
+Fresh pre-commit observation: exit 1, `4 failed, 5 passed in 0.61s`.
+
+1. Clock: the checker still emits no 5-second `TIME_WINDOW` violation at start 110 s.
+2. Battery: the checker still emits no `-1.000000 kWh` depletion violation for inherited 1 kWh minus the exact 2 kWh arc.
+3. Charging: EV1 occupies the one-charger F1 from 0–1800 s; the rolling boundary is 600 s; EV2 is planned at 900–1500 s.  The real full-ledger checker reports `F1@slot0`, and stage 1's captured `previous_plan` contains EV1's action, but the real rolling report has no `HALT_E7_STAGE_CHECK` and treats the one-action stage plan as feasible.  Fixing only a helper cannot satisfy this assertion: the real runner must include historical resource occupancy in the actual stage check.
+4. Lifecycle: the real stage-1 event batch executed both locked-customer operations.  Cancellation produced `present=False, demand=None`; demand-change independently produced `observed=211.0, expected=21.0`.  The same callback context reports committed IDs only as `C_DONE_CANCEL` and `C_DONE_CHANGE`, even though `previous_plan` contains `C_LOCK_CANCEL` and `C_LOCK_CHANGE`.  Thus locked-but-incomplete and open customers are not distinct in the real rolling state.
+
+### Corrected strict-xfail and coverage commands
+
+Normal focused command:
+
+```powershell
+Set-Location -LiteralPath 'D:\ReSETP\.claude\worktrees\codex-dynamic-truth-gate'
+$env:PYTHONPATH = 'D:\ReSETP\.claude\worktrees\codex-dynamic-truth-gate\solver\src'
+& 'C:\Users\zlxshu\AppData\Local\Temp\resetp-codex-py312\Scripts\python.exe' -m pytest -q solver/tests/test_dynamic_truth_gate.py
+```
+
+Fresh pre-commit observation: exit 0, `5 passed, 4 xfailed in 0.61s`.
+
+Related checker coverage:
+
+```powershell
+& 'C:\Users\zlxshu\AppData\Local\Temp\resetp-codex-py312\Scripts\python.exe' -m pytest -q solver/tests/test_check.py solver/tests/test_dynamic_truth_gate.py
+```
+
+Fresh pre-commit observation: exit 0, `38 passed, 4 xfailed in 0.66s`.
+
+An additional attempt to run the two existing tests selected by
+`dynamic_new_customer_visible_only_after_arrival or
+dynamic_rolling_gate_conservation_assertions_pass` was unavailable in this
+worktree: both failed during setup with `FileNotFoundError` for
+`models/data_bundle/generated_instances/verify_20251113/instance.json`
+(`2 failed, 53 deselected`).  The models fixture junction had been removed and
+isolated outside this task; it was not restored or modified.  This result is
+recorded as an unavailable legacy-fixture check, not as a production
+regression.  The corrected truth tests do not depend on that missing fixture;
+they build their own temporary on-disk bundles.
+
+### Corrected self-check
+
+- [x] Scenarios 3 and 4 now enter real `run_rolling_reoptimization` on temporary on-disk bundles.
+- [x] No solver, evaluator, checker, bundle loader, or lifecycle function is mocked or monkeypatched.
+- [x] All four xfail markers are strict and limited to `AssertionError`.
+- [x] Correct setup/fixture/lifecycle facts are covered by five ordinary passing tests.
+- [x] Cancellation and demand-change are both executed in the same real event batch and have separate observed evidence.
+- [x] Focused normal mode reports exactly four xfails; `--runxfail` reports exactly four failures.
+- [x] No file under `solver/src` is modified, and no long ALNS experiment is run.
