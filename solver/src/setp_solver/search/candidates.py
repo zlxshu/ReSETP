@@ -1632,7 +1632,10 @@ def _rebuild_solution(routes: list[Route], context: EvaluationContext) -> Soluti
         else:
             rebuilt_routes.append(clean_route)
     candidate = Solution(routes=rebuilt_routes, charging_actions=actions)
-    return normalize_solution_vehicle_trips(candidate, context.instance)
+    try:
+        return normalize_solution_vehicle_trips(candidate, context.instance)
+    except ValueError:
+        return None
 
 
 def _unique_vehicle_id(vehicle_id: str, used_ids: dict[str, int], idx: int) -> str:
