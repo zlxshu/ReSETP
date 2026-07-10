@@ -649,12 +649,13 @@ def run_winner_kernel(
     *,
     config: WinnerKernelConfig | None = None,
     initial_solution: Solution | None = None,
+    prices: PriceParameters | dict[str, float] | Any | None = None,
 ) -> dict[str, Any]:
     """Run the winner kernel and return a normalized result dictionary."""
 
     cfg = config or WinnerKernelConfig()
     cfg = WinnerKernelConfig(**{**asdict(cfg), "include_route_elimination": False})
-    return _run_winner_variant(bundle_dir, cfg, initial_solution=initial_solution)
+    return _run_winner_variant(bundle_dir, cfg, initial_solution=initial_solution, prices=prices)
 
 
 def run_winner_kernel_plus_route_elimination(
@@ -757,7 +758,7 @@ def run_e2_alns_throughput(
     *,
     config: WinnerKernelConfig | None = None,
     initial_solution: Solution | None = None,
-    prices: PriceParameters | None = None,
+    prices: PriceParameters | dict[str, float] | Any | None = None,
     route_cost_cache: bool = True,
     repair_structure_cache: bool = True,
     timing_ledger: bool = True,
@@ -787,7 +788,7 @@ def run_e2_alns_carbon(
     *,
     config: WinnerKernelConfig | None = None,
     initial_solution: Solution | None = None,
-    prices: PriceParameters | None = None,
+    prices: PriceParameters | dict[str, float] | Any | None = None,
     carbon_bias_weight: float = 1.0,
     variant_id: str = "alns_e2_carbon",
     route_cost_cache: bool = True,
@@ -880,7 +881,7 @@ def _run_winner_variant(
     config: WinnerKernelConfig,
     *,
     initial_solution: Solution | None,
-    prices: PriceParameters | None = None,
+    prices: PriceParameters | dict[str, float] | Any | None = None,
     variant_flags: dict[str, str] | None = None,
     variant_id: str = "winner_kernel",
 ) -> dict[str, Any]:
@@ -951,7 +952,7 @@ def _run_winner_kernel_loop(
     carbon_profile: list[dict[str, Any]],
     *,
     config: WinnerKernelConfig,
-    prices: PriceParameters | None = None,
+    prices: PriceParameters | dict[str, float] | Any | None = None,
     variant_flags: dict[str, str] | None = None,
 ) -> AlnsRunResult:
     policy = _search_policy_for_instance(instance, require_charging_signal=config.require_charging_signal)

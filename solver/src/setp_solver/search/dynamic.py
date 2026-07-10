@@ -18,7 +18,7 @@ from typing import Any, Callable
 
 import numpy as np
 
-from ..check import DynamicCheckContext, check_solution
+from ..check import ROUTE_STRUCTURE, DynamicCheckContext, Violation, check_solution
 from ..cost import _arc_loads, ev_arc_energy_kwh, evaluate, route_node_schedule
 from ..instance_loader import Instance, Node
 from ..prices import DEFAULT_PRICES, PriceParameters
@@ -282,6 +282,7 @@ def run_rolling_reoptimization(
     policy_fallbacks: list[dict[str, Any]] = []
     pending_deferred_ids: set[str] = set()
     pending_defer_age: dict[str, int] = {}
+    in_progress_vehicle_deadlines: dict[str, float] = {}
 
     for stage_index, batch in enumerate(batches):
         trigger = float(batch["trigger_time"])
@@ -291,6 +292,21 @@ def run_rolling_reoptimization(
             if key not in reserved_charging_keys:
                 reserved_charging_keys.add(key)
                 reserved_charging_actions.append(action)
+        for vehicle_id, deadline in _in_progress_physical_vehicle_deadlines(
+            previous_plan,
+            previous_instance,
+            trigger_time=trigger,
+            prices=prices,
+        ).items():
+            in_progress_vehicle_deadlines[vehicle_id] = max(
+                float(deadline),
+                float(in_progress_vehicle_deadlines.get(vehicle_id, 0.0)),
+            )
+        in_progress_vehicle_deadlines = {
+            vehicle_id: deadline
+            for vehicle_id, deadline in in_progress_vehicle_deadlines.items()
+            if float(deadline) > trigger + 1e-9
+        }
         initial_cost = cumulative_cost
         initial_carbon = cumulative_carbon
         conservation_ok = abs(initial_cost - previous_end_cost) <= 1e-6 and abs(initial_carbon - previous_end_carbon) <= 1e-6
@@ -456,6 +472,10 @@ def run_rolling_reoptimization(
         )
         lifecycle_violation_count = 0
         first_lifecycle_violation = ""
+        current_reserved_physical_vehicle_ids = set(in_progress_vehicle_deadlines) | {
+            physical_vehicle_id(snapshot.route.vehicle_id)
+            for snapshot in locked_route_snapshots.values()
+        }
         stage_plan = _run_stage_plan(
             bundle,
             effective_instance,
@@ -467,13 +487,13 @@ def run_rolling_reoptimization(
             prices=prices,
             initial_plan=stage_initial_plan,
             reserved_charging_actions=reserved_charging_actions,
-            reserved_physical_vehicle_ids={
-                physical_vehicle_id(snapshot.route.vehicle_id)
-                for snapshot in locked_route_snapshots.values()
-            },
+            reserved_physical_vehicle_ids=current_reserved_physical_vehicle_ids,
+            stage_start_time=trigger,
         )
         total_evaluations += stage_plan.evaluations
         if stage_plan.violations:
+            failure = dynamic_stage_failure_payload(int(stage_index), stage_plan.violations)
+            failure["reserved_physical_vehicle_ids"] = sorted(current_reserved_physical_vehicle_ids)
             payload = _halt_payload(
                 "setp-dynamic-rolling.v3",
                 "HALT_E7_STAGE_CHECK",
@@ -489,7 +509,7 @@ def run_rolling_reoptimization(
                 assertions,
                 total_evaluations,
                 started,
-                dynamic_stage_failure_payload(int(stage_index), stage_plan.violations),
+                failure,
             )
             if output_json_path is not None:
                 path = Path(output_json_path)
@@ -578,6 +598,7 @@ def run_rolling_reoptimization(
                 "frozen_routes": len(current_frozen),
                 "stage_route_count": len(stage_solution.routes),
                 "solver_backend": stage_plan.backend,
+                "reserved_physical_vehicle_ids": sorted(current_reserved_physical_vehicle_ids),
                 "stage_ev_route_count": sum(1 for route in stage_solution.routes if str(route.vehicle_type).lower() == "ev"),
                 "stage_charging_action_count": len(stage_solution.charging_actions),
                 "stage_cost": stage_cost,
@@ -681,6 +702,7 @@ def run_rolling_reoptimization(
             require_charging_signal=False,
             carbon_aware_operators=False,
         ),
+        prices=prices,
     )
     total_evaluations += int(static_run["evaluations"])
     dynamic_metrics = evaluate(dynamic_solution, final_instance, bundle.carbon_profile, prices)
@@ -1185,6 +1207,7 @@ def _run_stage_plan(
     initial_plan: Solution | None,
     reserved_charging_actions: list[ChargingAction] | tuple[ChargingAction, ...] = (),
     reserved_physical_vehicle_ids: set[str] | None = None,
+    stage_start_time: float = 0.0,
 ) -> StagePlanResult:
     if not active_ids:
         empty = Solution()
@@ -1196,11 +1219,41 @@ def _run_stage_plan(
             [],
             INDEPENDENT_ALNS_BACKEND,
         )
-    stage_instance = _subinstance_for_customers(instance, active_ids)
+    stage_instance = _instance_with_stage_clock(
+        _subinstance_for_customers(instance, active_ids),
+        stage_start_time,
+    )
+    stage_instance = _instance_with_available_fleet(
+        stage_instance,
+        reserved_physical_vehicle_ids or set(),
+    )
     _write_dynamic_bundle(stage_bundle_dir, stage_instance, bundle.carbon_profile, {"source": "e7_stage_reoptimization"})
-    initial_solution = _filter_initial_plan(initial_plan, stage_instance, active_ids) if initial_plan is not None else None
+    initial_solution = (
+        _filter_initial_plan(initial_plan, stage_instance, active_ids, prices=prices)
+        if initial_plan is not None
+        else None
+    )
     if initial_solution is None:
-        initial_solution = build_initial_solution(stage_instance, bundle.carbon_profile, prices, introduce_ev=False, require_charging_signal=False)
+        try:
+            initial_solution = build_initial_solution(
+                stage_instance,
+                bundle.carbon_profile,
+                prices,
+                introduce_ev=False,
+                require_charging_signal=False,
+            )
+        except ValueError as exc:
+            violations = _diagnose_stage_construction_failure(stage_instance, active_ids, prices)
+            if not violations:
+                violations = [Violation(ROUTE_STRUCTURE, "", "stage_construction", str(exc))]
+            return StagePlanResult(
+                Solution(),
+                stage_instance,
+                0,
+                False,
+                violations,
+                INDEPENDENT_ALNS_BACKEND,
+            )
     run = run_resetp_alns(
         stage_bundle_dir,
         config=WinnerKernelConfig(
@@ -1211,6 +1264,7 @@ def _run_stage_plan(
             carbon_aware_operators=False,
         ),
         initial_solution=initial_solution,
+        prices=prices,
     )
     stage_solution = _remap_reserved_stage_vehicles(
         run["best_solution"],
@@ -1235,6 +1289,65 @@ def _run_stage_plan(
         violations,
         INDEPENDENT_ALNS_BACKEND,
     )
+
+
+def _instance_with_stage_clock(instance: Instance, stage_start_time: float) -> Instance:
+    start = float(stage_start_time)
+    if start <= 0.0:
+        return instance
+    nodes = [
+        replace(node, ready_time=max(float(node.ready_time), start))
+        if node.node_type.lower() == "d"
+        else node
+        for node in instance.nodes
+    ]
+    return Instance(
+        nodes=nodes,
+        distance_matrix=[list(row) for row in instance.distance_matrix],
+        diesel_l_per_meter=instance.diesel_l_per_meter,
+        ev_kwh_per_meter=instance.ev_kwh_per_meter,
+        unit_distance_cost_per_meter=instance.unit_distance_cost_per_meter,
+        num_cv=instance.num_cv,
+        num_ev=instance.num_ev,
+    )
+
+
+def _instance_with_available_fleet(
+    instance: Instance,
+    reserved_physical_vehicle_ids: set[str],
+) -> Instance:
+    reserved_cv = sum(1 for vehicle_id in reserved_physical_vehicle_ids if str(vehicle_id).upper().startswith("CV"))
+    reserved_ev = sum(1 for vehicle_id in reserved_physical_vehicle_ids if str(vehicle_id).upper().startswith("EV"))
+    available_cv = None if instance.num_cv is None else max(0, int(instance.num_cv) - reserved_cv)
+    available_ev = None if instance.num_ev is None else max(0, int(instance.num_ev) - reserved_ev)
+    return Instance(
+        nodes=list(instance.nodes),
+        distance_matrix=[list(row) for row in instance.distance_matrix],
+        diesel_l_per_meter=instance.diesel_l_per_meter,
+        ev_kwh_per_meter=instance.ev_kwh_per_meter,
+        unit_distance_cost_per_meter=instance.unit_distance_cost_per_meter,
+        num_cv=available_cv,
+        num_ev=available_ev,
+    )
+
+
+def _diagnose_stage_construction_failure(
+    instance: Instance,
+    active_ids: set[str],
+    prices: PriceParameters | dict[str, float] | Any,
+) -> list[Violation]:
+    depots = [node.node_id for node in instance.nodes if node.node_type.lower() == "d"]
+    if not depots:
+        return [Violation(ROUTE_STRUCTURE, "", "stage_construction", "stage instance has no depot")]
+    violations: list[Violation] = []
+    for index, customer_id in enumerate(sorted(active_ids), start=1):
+        customer_instance = _subinstance_for_customers(instance, {customer_id})
+        depot_id = depots[0]
+        probe = Solution(
+            routes=[Route(f"CV_DIAG{index}#T1", "cv", depot_id, [depot_id, customer_id, depot_id])]
+        )
+        violations.extend(check_solution(probe, customer_instance, prices))
+    return violations
 
 
 def _subinstance_for_customers(instance: Instance, customer_ids: set[str]) -> Instance:
@@ -1302,6 +1415,11 @@ def _remap_reserved_stage_vehicles(
 
 def _write_dynamic_bundle(path: Path, instance: Instance, carbon_profile: list[dict[str, Any]], metadata: dict[str, Any]) -> None:
     path.mkdir(parents=True, exist_ok=True)
+    effective_metadata = dict(metadata)
+    if instance.num_cv is not None:
+        effective_metadata.setdefault("num_cv", int(instance.num_cv))
+    if instance.num_ev is not None:
+        effective_metadata.setdefault("num_ev", int(instance.num_ev))
     payload = {
         "scenario_id": path.name,
         "seed": 0,
@@ -1309,7 +1427,7 @@ def _write_dynamic_bundle(path: Path, instance: Instance, carbon_profile: list[d
         "distance_unit": "meter",
         "time_unit": "second",
         "demand_unit": "kg",
-        "metadata": metadata,
+        "metadata": effective_metadata,
     }
     (path / "instance.json").write_text(json.dumps(payload, ensure_ascii=False, indent=2, sort_keys=True), encoding="utf-8")
     np.save(path / "distance_matrix.npy", np.asarray(instance.distance_matrix, dtype=float))
@@ -1335,7 +1453,13 @@ def _node_payload(node: Node) -> dict[str, Any]:
     return data
 
 
-def _filter_initial_plan(plan: Solution | None, instance: Instance, active_ids: set[str]) -> Solution | None:
+def _filter_initial_plan(
+    plan: Solution | None,
+    instance: Instance,
+    active_ids: set[str],
+    *,
+    prices: PriceParameters | dict[str, float] | Any = DEFAULT_PRICES,
+) -> Solution | None:
     if plan is None:
         return None
     node_ids = {node.node_id for node in instance.nodes}
@@ -1347,7 +1471,7 @@ def _filter_initial_plan(plan: Solution | None, instance: Instance, active_ids: 
             continue
         seq = [route.home_depot_id, *customers, route.home_depot_id]
         if all(node_id in node_ids for node_id in seq):
-            vehicle_id = f"R{len(routes) + 1}_{route.vehicle_id}"
+            vehicle_id = route.vehicle_id
             vehicle_map[route.vehicle_id] = vehicle_id
             routes.append(Route(vehicle_id, route.vehicle_type, route.home_depot_id, seq))
     if not routes:
@@ -1358,7 +1482,7 @@ def _filter_initial_plan(plan: Solution | None, instance: Instance, active_ids: 
         if action.vehicle_id in vehicle_map and action.station_id in node_ids
     ]
     candidate = Solution(routes=routes, charging_actions=actions)
-    return candidate if not check_solution(candidate, instance) else None
+    return candidate if not check_solution(candidate, instance, prices) else None
 
 
 def _commit_executed_customers(plan: Solution | None, instance: Instance, trigger_time: float, already_served: set[str]) -> set[str]:
@@ -1414,6 +1538,36 @@ def _charging_actions_started_by(plan: Solution | None, trigger_time: float) -> 
         for action in plan.charging_actions
         if float(action.charge_start_second) <= float(trigger_time) + 1e-9
     ]
+
+
+def _in_progress_physical_vehicle_deadlines(
+    plan: Solution | None,
+    instance: Instance,
+    *,
+    trigger_time: float,
+    prices: PriceParameters | dict[str, float] | Any,
+) -> dict[str, float]:
+    if plan is None:
+        return {}
+    deadlines: dict[str, float] = {}
+    for route in plan.routes:
+        try:
+            schedule = route_node_schedule(
+                route,
+                instance,
+                prices,
+                charging_actions=plan.charging_actions,
+            )
+        except Exception:
+            continue
+        if not schedule:
+            continue
+        route_start = float(schedule[0].t_depart)
+        route_end = float(schedule[-1].t_arrive)
+        if route_start <= float(trigger_time) + 1e-9 < route_end - 1e-9:
+            physical_id = physical_vehicle_id(route.vehicle_id)
+            deadlines[physical_id] = max(route_end, deadlines.get(physical_id, 0.0))
+    return deadlines
 
 
 def _charging_action_key(action: ChargingAction) -> tuple[Any, ...]:
@@ -1835,6 +1989,8 @@ def _rebuild_instance_matrix(source: Instance, nodes: list[Node]) -> Instance:
         diesel_l_per_meter=source.diesel_l_per_meter,
         ev_kwh_per_meter=source.ev_kwh_per_meter,
         unit_distance_cost_per_meter=source.unit_distance_cost_per_meter,
+        num_cv=source.num_cv,
+        num_ev=source.num_ev,
     )
 
 

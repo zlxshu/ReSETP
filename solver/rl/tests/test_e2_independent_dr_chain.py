@@ -273,3 +273,47 @@ def test_reused_current_summary_matches_a_fresh_full_recalculation() -> None:
     assert reused["violation_count"] == fresh["violation_count"]
     assert reused["objective"] == pytest.approx(fresh["objective"])
     assert reused["metrics"] == pytest.approx(fresh["metrics"])
+
+
+def test_forced_actions_create_different_routes_and_state_dependent_costs() -> None:
+    from independent_dr_alns.chain import DrAction, IndependentDrSession
+
+    forced_actions = (
+        DrAction("random_customer_removal", "greedy_insert_repair", 0.20, 0.0),
+        DrAction("worst_customer_removal", "regret3_insert_repair", 0.20, 0.0),
+        DrAction("whole_route_removal", "regret2_insert_repair", 0.20, 0.0),
+        DrAction("vehicle_type_swap", "greedy_insert_repair", 0.20, 0.0),
+    )
+    warmup = forced_actions[0]
+
+    def candidates(*, after_warmup: bool) -> list[dict[str, object]]:
+        rows: list[dict[str, object]] = []
+        for action in forced_actions:
+            session = IndependentDrSession(
+                FIXTURE_DIR,
+                seed=17,
+                max_evals=4,
+                carbon_aware_operators=False,
+            )
+            if after_warmup:
+                session.step(warmup)
+            result = session.step(action)
+            rows.append(
+                {
+                    "action": (action.destroy_id, action.repair_id),
+                    "cost": float(result["candidate"]["objective"]),
+                    "hash": str(result["candidate"]["solution_hash"]),
+                }
+            )
+        return rows
+
+    initial = candidates(after_warmup=False)
+    evolved = candidates(after_warmup=True)
+
+    assert len({row["hash"] for row in initial}) == len(forced_actions)
+    assert len({row["hash"] for row in evolved}) == len(forced_actions)
+    assert max(float(row["cost"]) for row in initial) - min(float(row["cost"]) for row in initial) > 10.0
+    assert max(float(row["cost"]) for row in evolved) - min(float(row["cost"]) for row in evolved) > 10.0
+    initial_best = min(initial, key=lambda row: float(row["cost"]))["action"]
+    evolved_best = min(evolved, key=lambda row: float(row["cost"]))["action"]
+    assert initial_best != evolved_best

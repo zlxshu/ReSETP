@@ -19,7 +19,7 @@ from setp_solver.search.dynamic import (
     RollingPolicyDecision,
     run_rolling_reoptimization,
 )
-from setp_solver.solution import ChargingAction, Route, Solution
+from setp_solver.solution import ChargingAction, Route, Solution, physical_vehicle_id
 
 
 @dataclass(frozen=True)
@@ -216,7 +216,6 @@ def test_real_rolling_charger_fixture_reaches_both_stages(
     assert prior_action.station_id == "F1"
     assert prior_action.charge_start_second == pytest.approx(0.0)
     assert prior_action.occupancy_minutes == pytest.approx(30.0)
-    assert prior_action.vehicle_id == "EV2#T1"
     assert prior_action.vehicle_id == prior_route.vehicle_id and prior_route.vehicle_type == "ev"
 
     if evidence.stage_one_output is None:
@@ -229,8 +228,8 @@ def test_real_rolling_charger_fixture_reaches_both_stages(
         assert stage_one_action.station_id == "F1"
         assert stage_one_action.charge_start_second == pytest.approx(900.0)
         assert stage_one_action.occupancy_minutes == pytest.approx(10.0)
-        assert stage_one_action.vehicle_id == "EV1#T1"
         assert stage_one_action.vehicle_id == stage_one_route.vehicle_id and stage_one_route.vehicle_type == "ev"
+        assert stage_one_action.vehicle_id != prior_action.vehicle_id
         full_ledger = _cross_stage_charging_ledger_for_audit(
             evidence.previous_stage_output,
             evidence.stage_one_output,
@@ -269,6 +268,8 @@ def test_dynamic_stage_check_keeps_pre_boundary_charger_occupancy(
         row.get("constraint_type") == "STATION_CAPACITY" and row.get("nodes") == "F1@slot0"
         for row in violations
     )
+    prior_action = charger_rolling_evidence.previous_stage_output.charging_actions[0]
+    assert physical_vehicle_id(prior_action.vehicle_id) in report.get("reserved_physical_vehicle_ids", [])
 
 
 @pytest.fixture(scope="module")
@@ -314,6 +315,9 @@ def test_real_rolling_lifecycle_fixture_executes_cancel_and_change_events(
         }
         previous_customers = _solution_customer_ids(stage_one.previous_plan, stage_one.previous_instance)
         assert previous_customers == {"C_DONE", "C_LOCK", "C_PLANNED_OPEN"}
+        assert next(
+            route.vehicle_id for route in stage_one.previous_plan.routes if "C_LOCK" in route.node_sequence
+        ) == "CV_PREVIOUS"
         assert "C_OPEN" not in previous_customers
         assert stage_one.served_customers == {"C_DONE"}
         assert stage_one.trigger_time == pytest.approx(100.0)
@@ -418,13 +422,13 @@ def test_real_rolling_keeps_mid_arc_position_load_and_battery_on_the_original_ve
     instance = Instance(
         nodes=[
             Node("D0", "d", 0.0, 0.0, due_time=86_400.0, station_chargers=2),
-            Node("C_DONE", "c", 1_000.0, 0.0, demand=10.0, due_time=10_000.0),
-            Node("C_LOCK", "c", 2_000.0, 0.0, demand=20.0, due_time=10_000.0),
+            Node("C_DONE", "c", 100.0, 0.0, demand=10.0, due_time=10_000.0, service_time=50.0),
+            Node("C_LOCK", "c", 200.0, 0.0, demand=20.0, due_time=10_000.0),
         ],
         distance_matrix=[
-            [0.0, 1_000.0, 2_000.0],
-            [1_000.0, 0.0, 1_000.0],
-            [2_000.0, 1_000.0, 0.0],
+            [0.0, 100.0, 200.0],
+            [100.0, 0.0, 100.0],
+            [200.0, 100.0, 0.0],
         ],
         num_cv=2,
         num_ev=2,
@@ -432,13 +436,13 @@ def test_real_rolling_keeps_mid_arc_position_load_and_battery_on_the_original_ve
     event = DynamicEvent(
         event_id="add-midarc",
         event_type="add",
-        t_appear=60.0,
+        t_appear=56.0,
         customer_id="C_NEW",
         old_demand=0.0,
         new_demand=1.0,
         x=0.0,
         y=0.0,
-        new_ready_time=60.0,
+        new_ready_time=56.0,
         new_due_time=10_000.0,
     )
     stage_zero = Solution(
@@ -463,7 +467,8 @@ def test_real_rolling_keeps_mid_arc_position_load_and_battery_on_the_original_ve
         max_runtime_seconds=2.0,
         stage_eval_budget=0,
         stage_max_runtime_seconds=2.0,
-        params=RollingParameters(delta_t_seconds=60.0, q_bar=8, stages=2),
+        params=RollingParameters(delta_t_seconds=56.0, q_bar=8, stages=2),
+        prices=PriceParameters(initial_ev_battery_kwh=80.0, B_battery_kwh=80.0),
         policy_callback=policy,
     )
 
@@ -474,17 +479,119 @@ def test_real_rolling_keeps_mid_arc_position_load_and_battery_on_the_original_ve
     assert state["position_node_id"] == "C_DONE"
     assert state["next_node_id"] == "C_LOCK"
     assert state["arc_progress"] == pytest.approx(0.5)
-    assert state["current_time"] == pytest.approx(60.0)
+    assert state["current_time"] == pytest.approx(56.0)
     assert state["remaining_load_kg"] == pytest.approx(20.0)
     assert 0.0 < state["remaining_battery_kwh"] < 80.0
     locked_routes = [
         row for row in report["dynamic_final_routes"] if "C_LOCK" in row["node_sequence"]
     ]
     assert len(locked_routes) == 1
+    assert snapshot["vehicle_id"] == "EV_PREVIOUS"
     assert locked_routes[0]["vehicle_id"] == snapshot["vehicle_id"]
     assert locked_routes[0]["node_sequence"][:3] == ["D0", "C_DONE", "C_LOCK"]
     stage_one_row = next(row for row in report["stage_rows"] if row["stage"] == 1)
     assert stage_one_row["solver_backend"] == "setp_solver.algorithms.resetp_alns"
+
+
+def test_real_stage_solver_cannot_depart_before_the_dynamic_trigger(tmp_path: Path) -> None:
+    instance = Instance(
+        nodes=[
+            Node("D0", "d", 0.0, 0.0, due_time=10_000.0, station_chargers=2),
+            Node("C_DONE", "c", 0.0, 0.0, demand=1.0, due_time=10_000.0),
+        ],
+        distance_matrix=[[0.0, 0.0], [0.0, 0.0]],
+        num_cv=2,
+        num_ev=0,
+    )
+    event = DynamicEvent(
+        event_id="late-add",
+        event_type="add",
+        t_appear=60.0,
+        customer_id="C_TOO_LATE",
+        old_demand=0.0,
+        new_demand=1.0,
+        x=250.0,
+        y=0.0,
+        new_ready_time=60.0,
+        new_due_time=65.0,
+    )
+    bundle_dir = tmp_path / "clock-runner" / "bundle"
+    _write_truth_bundle(bundle_dir, instance, [event])
+
+    report = run_rolling_reoptimization(
+        bundle_dir,
+        output_json_path=tmp_path / "clock-runner" / "report.json",
+        seed=5,
+        eval_budget=0,
+        max_runtime_seconds=2.0,
+        stage_eval_budget=0,
+        stage_max_runtime_seconds=2.0,
+        params=RollingParameters(delta_t_seconds=60.0, q_bar=8, stages=2),
+    )
+
+    assert report.get("gate") == "HALT_E7_STAGE_CHECK"
+    assert report.get("first_bad_stage") == 1
+    assert any(
+        row.get("constraint_type") == "TIME_WINDOW" and row.get("nodes") == "C_TOO_LATE"
+        for row in report.get("violations", [])
+    )
+
+
+def test_real_stage_solver_cannot_invent_a_second_vehicle_while_the_only_vehicle_is_in_progress(
+    tmp_path: Path,
+) -> None:
+    instance = Instance(
+        nodes=[
+            Node("D0", "d", 0.0, 0.0, due_time=10_000.0, station_chargers=2),
+            Node("C_DONE", "c", 100.0, 0.0, demand=1.0, due_time=10_000.0, service_time=50.0),
+            Node("C_LOCK", "c", 200.0, 0.0, demand=1.0, due_time=10_000.0),
+        ],
+        distance_matrix=[[0.0, 100.0, 200.0], [100.0, 0.0, 100.0], [200.0, 100.0, 0.0]],
+        num_cv=1,
+        num_ev=0,
+    )
+    event = DynamicEvent(
+        event_id="add-with-no-idle-vehicle",
+        event_type="add",
+        t_appear=56.0,
+        customer_id="C_NEW",
+        old_demand=0.0,
+        new_demand=1.0,
+        x=0.0,
+        y=0.0,
+        new_ready_time=56.0,
+        new_due_time=10_000.0,
+    )
+    stage_zero = Solution(
+        routes=[Route("CV1#T1", "cv", "D0", ["D0", "C_DONE", "C_LOCK", "D0"])]
+    )
+
+    def policy(context: RollingPolicyContext) -> RollingPolicyDecision:
+        if context.stage_index == 0:
+            return RollingPolicyDecision(initial_plan=stage_zero, stage_eval_budget=0)
+        return RollingPolicyDecision(stage_eval_budget=0)
+
+    bundle_dir = tmp_path / "one-vehicle" / "bundle"
+    _write_truth_bundle(bundle_dir, instance, [event])
+    report = run_rolling_reoptimization(
+        bundle_dir,
+        output_json_path=tmp_path / "one-vehicle" / "report.json",
+        seed=11,
+        eval_budget=0,
+        max_runtime_seconds=2.0,
+        stage_eval_budget=0,
+        stage_max_runtime_seconds=2.0,
+        params=RollingParameters(delta_t_seconds=56.0, q_bar=8, stages=2),
+        policy_callback=policy,
+    )
+
+    assert report.get("gate") == "HALT_E7_STAGE_CHECK"
+    assert report.get("first_bad_stage") == 1
+    assert report.get("reserved_physical_vehicle_ids") == ["CV1"]
+    assert any(
+        row.get("constraint_type") in {"FLEET_SIZE", "ROUTE_STRUCTURE"}
+        for row in report.get("violations", [])
+    )
 
 
 def _run_charger_rolling_scenario(root: Path) -> ChargerRollingEvidence:
@@ -721,7 +828,11 @@ def _write_truth_bundle(path: Path, instance: Instance, events: list[DynamicEven
         path,
         instance,
         _flat_carbon_profile(),
-        {"source": "dynamic_truth_test", "num_cv": 4, "num_ev": 4},
+        {
+            "source": "dynamic_truth_test",
+            "num_cv": 4 if instance.num_cv is None else int(instance.num_cv),
+            "num_ev": 4 if instance.num_ev is None else int(instance.num_ev),
+        },
     )
     fields = list(asdict(events[0]))
     with (path / "dynamic_events.tsv").open("w", newline="", encoding="utf-8") as handle:
