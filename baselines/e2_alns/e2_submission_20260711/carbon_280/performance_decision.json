@@ -1,0 +1,36 @@
+{
+  "aggregate_benchmark_gain_pct": 6.8456899361832475,
+  "carbon_moved_pairs": 40,
+  "carbon_pair_count": 45,
+  "carbon_positive_reduction_pairs": 40,
+  "carbon_same_route_equal_energy_pairs": 45,
+  "claim_boundaries": {
+    "aggregate_benchmark_lead_over_5pct": true,
+    "all_instances_win_claim": false,
+    "old_coarse_carbon_operators_claim": false,
+    "scenario": "280 kWh modern-distribution main scenario; 80 kWh remains a separate robustness baseline",
+    "uniform_pairwise_5pct_claim": false
+  },
+  "fastest_baseline_mean_runtime_seconds": 127.29998987306737,
+  "matrix_contract_pass": true,
+  "paired_bootstrap_mean_95ci_pct": [
+    0.9815109976446956,
+    4.893671471128481
+  ],
+  "paired_mean_gain_pct": 2.8298321904439536,
+  "paired_median_gain_pct": 0.8420287567442074,
+  "paired_wins_ties_losses": [
+    25,
+    5,
+    15
+  ],
+  "primary_algorithm": "staged_hybrid_carbon_aware",
+  "primary_benchmark_total_cost": 173139.28439123105,
+  "primary_mean_rank": 1.5555555555555556,
+  "primary_mean_runtime_seconds": 102.16965159262197,
+  "runner_up_algorithm": "LNS",
+  "runner_up_benchmark_total_cost": 185862.88092587385,
+  "runner_up_mean_rank": 1.9555555555555555,
+  "schema": "setp-e2-submission-performance-closeout.v1",
+  "verdict": "E2_FULL_BENCHMARK_LEAD_SUPPORTED"
+}

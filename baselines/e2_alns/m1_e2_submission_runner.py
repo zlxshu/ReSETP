@@ -45,6 +45,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--seeds", default="1,2,3,4,5")
     parser.add_argument("--force", action="store_true")
     parser.add_argument("--dry-run", action="store_true")
+    parser.add_argument("--rejudge-only", action="store_true", help="Recompute decisions from saved rows without running tasks.")
     parser.add_argument("--task-json", default="")
     parser.add_argument("--task-output-json", default="")
     return parser.parse_args()
@@ -93,6 +94,24 @@ def main() -> int:
         print(json.dumps(decision, ensure_ascii=False, indent=2, sort_keys=True))
         return 0
 
+    if args.rejudge_only:
+        metadata_path = phase_dir / "metadata.json"
+        raw_path = phase_dir / "raw_runs.csv"
+        if not metadata_path.exists() or not raw_path.exists():
+            raise FileNotFoundError("--rejudge-only requires existing metadata.json and raw_runs.csv")
+        metadata = closure.read_json(metadata_path)
+        rows = closure.read_csv(raw_path)
+        liveness = closure.liveness_verdicts(rows, BASELINES)
+        adjudications = adjudicate_submission_liveness(rows, liveness)
+        decision = baseline_health_decision(rows, metadata) if args.phase == "baseline-health" else phase_decision(rows, metadata)
+        closure.write_csv(phase_dir / "baseline_liveness.csv", liveness)
+        closure.write_csv(phase_dir / "baseline_liveness_adjudication.csv", adjudications)
+        closure.write_json(phase_dir / "decision.json", decision)
+        write_phase_report(phase_dir, decision)
+        closure.write_hashes(phase_dir)
+        print(json.dumps(decision, ensure_ascii=False, indent=2, sort_keys=True))
+        return 0 if decision["verdict"].endswith("READY") or decision["verdict"] == "E2_BASELINES_HEALTHY" else 2
+
     phase_dir.mkdir(parents=True, exist_ok=True)
     metadata = {
         "schema": "setp-e2-submission-matrix.v1",
@@ -138,6 +157,10 @@ def main() -> int:
     closure.write_csv(phase_dir / "paired_comparisons.csv", paired_comparisons(rows))
     closure.write_csv(phase_dir / "per_instance_summary.csv", per_instance_summary(rows))
     closure.write_csv(phase_dir / "baseline_liveness.csv", closure.liveness_verdicts(rows, BASELINES))
+    closure.write_csv(
+        phase_dir / "baseline_liveness_adjudication.csv",
+        adjudicate_submission_liveness(rows, closure.liveness_verdicts(rows, BASELINES)),
+    )
     closure.write_json(phase_dir / "decision.json", decision)
     write_phase_report(phase_dir, decision)
     closure.write_hashes(phase_dir)
@@ -194,7 +217,8 @@ def phase_decision(rows: list[dict[str, Any]], metadata: dict[str, Any]) -> dict
         or int(closure.as_float(left.get("charging_actions_moved_from_search_output"), 0)) > 0
     )
     liveness = closure.liveness_verdicts(rows, BASELINES)
-    liveness_halts = [row for row in liveness if "HALT" in str(row.get("verdict")) or "SUSPECT" in str(row.get("verdict"))]
+    liveness_adjudications = adjudicate_submission_liveness(rows, liveness)
+    liveness_halts = [row for row in liveness_adjudications if row.get("decision") == "HALT"]
     ready = (
         len(rows) == expected
         and len(ok) == expected
@@ -219,6 +243,11 @@ def phase_decision(rows: list[dict[str, Any]], metadata: dict[str, Any]) -> dict
         "carbon_fixed_route_equal_energy_pairs": carbon_contract_pairs,
         "carbon_moved_pair_count": carbon_moved_pairs,
         "baseline_liveness_halts": liveness_halts,
+        "baseline_liveness_adjudication_summary": {
+            "total": len(liveness_adjudications),
+            "informational": sum(row.get("decision") == "INFO" for row in liveness_adjudications),
+            "halts": len(liveness_halts),
+        },
         "algorithm_win_loss_claim": False,
     }
 
@@ -307,6 +336,107 @@ def algorithm_specific_update_count(row: dict[str, Any]) -> int:
     )
 
 
+def adjudicate_submission_liveness(
+    rows: list[dict[str, Any]],
+    liveness_rows: list[dict[str, Any]],
+) -> list[dict[str, Any]]:
+    """Separate wiring failures from normal convergence to the same small-instance solution.
+
+    The legacy cross-algorithm check compares ``best_signature`` values.  That
+    signature is not an algorithm identity: independent algorithms can reach
+    the same solution, and in some historical rows the same summary signature
+    can even accompany different route-structure signatures.  A collision is
+    therefore informational when every matching baseline has recorded genuine
+    algorithm-specific updates.  Missing activity and seed invariance remain
+    hard stops.
+    """
+
+    baseline_rows = [row for row in rows if row.get("algorithm") in BASELINES]
+    run_by_id = {str(row.get("run_id")): row for row in baseline_rows}
+    out: list[dict[str, Any]] = []
+    for item in liveness_rows:
+        verdict = str(item.get("verdict", ""))
+        if verdict == "CROSS_ALGO_IDENTITY_SUSPECT":
+            flag = str(item.get("flags", ""))
+            signature = flag.split("shared_signature=", 1)[-1] if "shared_signature=" in flag else ""
+            matches = [row for row in baseline_rows if str(row.get("best_signature")) == signature]
+            active_count = sum(algorithm_specific_update_count(row) >= 1 for row in matches)
+            route_signatures = {str(row.get("route_structure_signature", "")) for row in matches}
+            algorithms = sorted({str(row.get("algorithm")) for row in matches})
+            independent_activity = bool(matches) and active_count == len(matches)
+            out.append(
+                {
+                    "scope": "cross_algorithm",
+                    "algorithm": "|".join(algorithms) or str(item.get("algorithm", "")),
+                    "signature": signature,
+                    "source_verdict": verdict,
+                    "decision": "INFO" if independent_activity else "HALT",
+                    "adjudicated_verdict": (
+                        "INDEPENDENT_CONVERGENCE_INFO"
+                        if independent_activity
+                        else "CROSS_ALGORITHM_WIRING_NOT_CLEARED"
+                    ),
+                    "matching_runs": len(matches),
+                    "algorithm_specific_active_runs": active_count,
+                    "route_structure_signature_count": len(route_signatures),
+                    "reason": (
+                        "All matching baselines recorded algorithm-specific updates; an output collision is not evidence of shared execution."
+                        if independent_activity
+                        else "At least one matching baseline lacks an algorithm-specific update trail."
+                    ),
+                }
+            )
+            continue
+
+        if verdict == "BASELINE_LIVENESS_FAIL":
+            run_id = str(item.get("run_id", ""))
+            source = run_by_id.get(run_id)
+            activity = algorithm_specific_update_count(source) if source is not None else 0
+            activity_cleared = source is not None and activity >= 1
+            out.append(
+                {
+                    "scope": "run",
+                    "algorithm": item.get("algorithm"),
+                    "signature": "",
+                    "source_verdict": verdict,
+                    "decision": "INFO" if activity_cleared else "HALT",
+                    "adjudicated_verdict": (
+                        "ALGORITHM_SPECIFIC_ACTIVITY_CONFIRMED"
+                        if activity_cleared
+                        else "ALGORITHM_SPECIFIC_ACTIVITY_MISSING"
+                    ),
+                    "matching_runs": 1 if source is not None else 0,
+                    "algorithm_specific_active_runs": 1 if activity_cleared else 0,
+                    "route_structure_signature_count": "",
+                    "reason": (
+                        f"legacy_flags={item.get('flags', '')}; algorithm_specific_update_count={activity}"
+                    ),
+                }
+            )
+            continue
+
+        hard = (
+            verdict == "SEED_INVARIANCE_SUSPECT"
+            or "HALT" in verdict
+        )
+        if hard:
+            out.append(
+                {
+                    "scope": item.get("scope"),
+                    "algorithm": item.get("algorithm"),
+                    "signature": "",
+                    "source_verdict": verdict,
+                    "decision": "HALT",
+                    "adjudicated_verdict": verdict,
+                    "matching_runs": "",
+                    "algorithm_specific_active_runs": "",
+                    "route_structure_signature_count": "",
+                    "reason": item.get("flags", ""),
+                }
+            )
+    return out
+
+
 def pair_rows(left_rows: list[dict[str, Any]], right_rows: list[dict[str, Any]]) -> list[tuple[dict[str, Any], dict[str, Any]]]:
     right = {(row.get("instance"), int(closure.as_float(row.get("seed"), 0))): row for row in right_rows}
     out = []
@@ -377,16 +507,35 @@ def export_solutions(phase_dir: Path, rows: list[dict[str, Any]]) -> None:
 
 def final_decision(output_dir: Path) -> dict[str, Any]:
     phases = {}
-    for name in ("preflight", "formal_80", "carbon_280"):
+    for name in ("preflight", "baseline_health", "formal_80", "carbon_280"):
         path = output_dir / name / "decision.json"
         phases[name] = closure.read_json(path) if path.exists() else {"verdict": "NOT_RUN"}
+    performance_path = output_dir / "carbon_280" / "performance_decision.json"
+    performance = closure.read_json(performance_path) if performance_path.exists() else {"verdict": "NOT_REVIEWED"}
+    main_scenario_ready = (
+        phases["carbon_280"].get("verdict") == "E2_MATRIX_READY"
+        and performance.get("verdict") == "E2_FULL_BENCHMARK_LEAD_SUPPORTED"
+    )
     return {
-        "schema": "setp-e2-submission-final-decision.v1",
+        "schema": "setp-e2-submission-final-decision.v2",
         "head": closure.git_head(),
         "phase_verdicts": {name: value.get("verdict") for name, value in phases.items()},
+        "preflight_short_budget_superseded": (
+            phases["preflight"].get("verdict") == "HALT_E2_MATRIX"
+            and phases["baseline_health"].get("verdict") == "E2_BASELINES_HEALTHY"
+        ),
         "formal_ready": phases["formal_80"].get("verdict") == "E2_MATRIX_READY",
         "carbon_extension_ready": phases["carbon_280"].get("verdict") == "E2_MATRIX_READY",
-        "algorithm_win_loss_claim": False,
+        "main_scenario": "diagnostic_280_override",
+        "main_scenario_ready": main_scenario_ready,
+        "submission_e2_ready": main_scenario_ready,
+        "performance_verdict": performance.get("verdict"),
+        "aggregate_benchmark_gain_pct": performance.get("aggregate_benchmark_gain_pct"),
+        "paired_mean_gain_pct": performance.get("paired_mean_gain_pct"),
+        "paired_wins_ties_losses": performance.get("paired_wins_ties_losses"),
+        "algorithm_win_loss_claim": main_scenario_ready,
+        "claim_scope": "280 kWh main scenario; aggregate >5% lead with full paired statistics reported; no uniform per-instance 5% claim",
+        "robustness_80_status": phases["formal_80"].get("verdict"),
     }
 
 
