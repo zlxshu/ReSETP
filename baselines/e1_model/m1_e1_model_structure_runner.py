@@ -91,6 +91,7 @@ def main() -> int:
     mixed_rows = load_frozen_mixed_rows(seeds, instances=(FLAGSHIP,) if args.phase == "preflight" else MIXED_INSTANCES)
     rows = sorted([*mixed_rows, *counterfactual_rows], key=lambda row: (str(row["instance"]), int(row["seed"]), str(row["variant"])))
     closure.write_csv(phase_dir / "raw_runs.csv", rows)
+    export_solutions(phase_dir, rows)
     decision = decide(rows, args.phase, seeds, budget)
     closure.write_json(phase_dir / "decision.json", decision)
     write_report(phase_dir, decision, rows)
@@ -440,6 +441,27 @@ def failure_row(task: dict[str, Any], status: str, reason: str) -> dict[str, Any
         "status": status, "reason": reason, "eval_budget": task["eval_budget"], "actual_evals": 0, "elapsed_seconds": 0.0,
         "battery_kwh": 280.0, "violation_count": "", "route_count": "", "charging_action_count": "", "solution_json": "",
     }
+
+
+def export_solutions(phase_dir: Path, rows: list[dict[str, Any]]) -> None:
+    solution_dir = phase_dir / "solutions"
+    solution_dir.mkdir(parents=True, exist_ok=True)
+    for row in rows:
+        payload = str(row.get("solution_json", ""))
+        if not payload:
+            continue
+        closure.write_json(
+            solution_dir / f"{row['run_id']}.json",
+            {
+                "schema": "setp-e1-saved-solution.v1",
+                "run_id": row["run_id"],
+                "instance": row["instance"],
+                "seed": int(row["seed"]),
+                "variant": row["variant"],
+                "source_commit": row.get("source_commit", ""),
+                "solution": json.loads(payload),
+            },
+        )
 
 
 def write_report(phase_dir: Path, decision: dict[str, Any], rows: list[dict[str, Any]]) -> None:

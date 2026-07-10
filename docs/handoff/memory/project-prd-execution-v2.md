@@ -112,3 +112,8 @@ E7 动态需求必须保留三交互门槛：动态×协同、动态×公平、�
 - 默认6 workers；任务独立落盘、主进程汇总、支持resume；正常监控30--60分钟一次，异常事件立即汇报。
 - 入口修复：Tier1清单校验由旧23改为当前9；混合入口如实回报碳开关并保存三阶段原始算子计数。62项相关测试通过；另有旧 `scan_all_cv_solution` 超油车上限失败，未纳入正式入口且不得当健康基线。
 - 完整协议见 `docs/handoff/e2_12h_finalization_protocol_20260711.md`。
+## 2026-07-11 E2冻结与E1主结构收口
+
+E2正式证据已用tag `e2-submission-20260711`冻结在commit `0124623e`，并新增`E2_FREEZE.json`记录三项hash锚、正式合同与禁止改写规则。后续E1--E7可以通过新wrapper复用算法，但不得覆盖E2证据；改变算法语义必须视为新身份。
+
+E1 280 kWh结构门在commit `c20dae18`执行。正式目录`baselines/e1_model/e1_submission_20260711_committed/formal/`含20条从冻结E2无改动复用的mixed证据、5条200c CV-only 4000评价搜索和5条EV-only可行性审计。mixed/CV-only全部零违规、成本分项闭合；200c mixed的EV客户/需求/距离份额均值为0.861/0.872/0.822，平均59.8次充电，相对CV-only 4胜1负、平均成本优势0.671%。EV-only五条均为`NOT_FOUND`，原因是直接路线转换时至少一条CV路线没有可行车场充电窗口；不得表述为数学不可行。判决`E1_280_STRUCTURE_SUPPORTED`，E3解锁。

@@ -1,0 +1,27 @@
+{
+  "algorithm": "staged ALNS-LNS hybrid + carbon-aware charging schedule",
+  "claim_rule": "EV-only warm-start failure is NOT_FOUND, not proof of mathematical infeasibility.",
+  "eval_budget": 400,
+  "frozen_e2_commit": "0124623e347cd2a6a5548e07e0af66e16d3b634b",
+  "frozen_e2_tag": "e2-submission-20260711",
+  "head": "c20dae18a3363b6a3f63ae72ddba0c94e4e632bf",
+  "mixed_evidence_source": "baselines/e2_alns/e2_submission_20260711/carbon_280",
+  "phase": "preflight",
+  "protected_paths": [
+    "solver/src/setp_solver/cost.py",
+    "solver/src/setp_solver/check.py",
+    "solver/src/setp_solver/search/evaluation.py",
+    "solver/src/setp_solver/prices.py",
+    "solver/src/setp_solver/search/feasible_repair.py",
+    "solver/src/setp_solver/search/resetp_alns",
+    "solver/src/setp_solver/search/alns_wouda.py",
+    "solver/src/setp_solver/search/winner_operators.py",
+    "docs/paper_submission_final/paper_main.tex"
+  ],
+  "scenario": "280 kWh modern-distribution main scenario",
+  "schema": "setp-e1-model-structure.v1",
+  "seeds": [
+    1
+  ],
+  "workers": 2
+}
