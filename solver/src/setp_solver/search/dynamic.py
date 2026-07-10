@@ -19,10 +19,10 @@ from typing import Any, Callable
 import numpy as np
 
 from ..check import DynamicCheckContext, check_solution
-from ..cost import evaluate, route_node_schedule
+from ..cost import _arc_loads, ev_arc_energy_kwh, evaluate, route_node_schedule
 from ..instance_loader import Instance, Node
 from ..prices import DEFAULT_PRICES, PriceParameters
-from ..solution import ChargingAction, Route, Solution
+from ..solution import ChargingAction, Route, Solution, physical_vehicle_id, route_trip_vehicle_id
 from .alns_wouda import run_alns_wouda
 from .bundle import load_search_bundle
 from .charging import repair_route_charging
@@ -70,6 +70,17 @@ class StagePlanResult:
     evaluations: int
     feasible: bool
     violations: list[Any]
+
+
+@dataclass(frozen=True)
+class LockedRouteSnapshot:
+    """The immutable, already-promised part of one physical vehicle route."""
+
+    route: Route
+    charging_actions: tuple[ChargingAction, ...]
+    locked_customer_ids: tuple[str, ...]
+    covered_customer_ids: tuple[str, ...]
+    state: dict[str, Any]
 
 
 @dataclass(frozen=True)
@@ -261,6 +272,8 @@ def run_rolling_reoptimization(
     reserved_charging_actions: list[ChargingAction] = []
     reserved_charging_keys: set[tuple[Any, ...]] = set()
     committed_node_state: dict[str, Node] = {}
+    locked_node_state: dict[str, Node] = {}
+    locked_route_snapshots: dict[str, LockedRouteSnapshot] = {}
     frozen_sequences: dict[str, list[str]] = {}
     stage_plan_customer_ids: dict[str, list[str]] = {}
     policy_trace: list[dict[str, Any]] = []
@@ -348,6 +361,21 @@ def run_rolling_reoptimization(
             commitment_deadline=next_trigger,
             already_served=served_customers,
         )
+        if committed_not_completed:
+            previous_lookup = {node.node_id: node for node in previous_instance.nodes}
+            for customer_id in committed_not_completed:
+                frozen = previous_lookup.get(customer_id)
+                if frozen is not None:
+                    locked_node_state[customer_id] = frozen
+            for snapshot in _locked_route_snapshots(
+                previous_plan,
+                previous_instance,
+                committed_not_completed,
+                served_customers,
+                trigger_time=trigger,
+                prices=prices,
+            ):
+                locked_route_snapshots[snapshot.route.vehicle_id] = snapshot
         effective_instance = _instance_after_events(
             bundle.instance,
             events,
@@ -418,6 +446,10 @@ def run_rolling_reoptimization(
             prices=prices,
             initial_plan=stage_initial_plan,
             reserved_charging_actions=reserved_charging_actions,
+            reserved_physical_vehicle_ids={
+                physical_vehicle_id(snapshot.route.vehicle_id)
+                for snapshot in locked_route_snapshots.values()
+            },
         )
         total_evaluations += stage_plan.evaluations
         if stage_plan.violations:
@@ -540,74 +572,81 @@ def run_rolling_reoptimization(
         if key not in reserved_charging_keys:
             reserved_charging_keys.add(key)
             reserved_charging_actions.append(action)
-    final_instance = _instance_after_events(bundle.instance, events, final_trigger, served_customers, committed_node_state)
+    frozen_final_nodes = {**committed_node_state, **locked_node_state}
+    locked_customer_ids = set(locked_node_state)
+    final_instance = _instance_after_events(
+        bundle.instance,
+        events,
+        final_trigger,
+        served_customers | locked_customer_ids,
+        frozen_final_nodes,
+    )
     pending_deferred_ids.intersection_update(_legal_unserved_customer_ids(final_instance, served_customers))
     remaining = set(_active_customer_ids(final_instance, served_customers)) | set(pending_deferred_ids)
     final_repair_customer_count = 0
     final_repair_customer_ids: list[str] = []
     final_repair_evaluations = 0
     final_repair_violation_count = 0
-    if remaining:
-        final_repair_customer_count = len(remaining)
-        final_repair_customer_ids = sorted(remaining)
-        final_repair = _run_stage_plan(
-            bundle,
-            final_instance,
-            remaining,
-            work_root / "final_repair",
-            seed=seed + len(batches),
-            stage_eval_budget=stage_eval_budget,
-            stage_max_runtime_seconds=stage_max_runtime_seconds,
-            prices=prices,
-            initial_plan=previous_plan,
-            reserved_charging_actions=reserved_charging_actions,
+    # Finalisation is deliberately not an optimisation stage.  Earlier code
+    # sent every unfinished customer through _run_stage_plan here, which
+    # silently changed promised vehicles and order.  Reuse the last open plan
+    # and immutable route snapshots; an actually unplanned customer is a hard
+    # failure rather than permission to manufacture a new depot route.
+    locked_routes = [snapshot.route for snapshot in locked_route_snapshots.values()]
+    locked_actions = [action for snapshot in locked_route_snapshots.values() for action in snapshot.charging_actions]
+    locked_covered_ids = {
+        customer_id
+        for snapshot in locked_route_snapshots.values()
+        for customer_id in snapshot.covered_customer_ids
+    }
+    residual_committed = _solution_for_customer_subset(
+        Solution(routes=committed_routes, charging_actions=committed_actions),
+        final_instance,
+        bundle.carbon_profile,
+        served_customers - locked_covered_ids,
+        prefix="FINAL_EXEC_",
+        prices=prices,
+    )
+    open_plan = previous_plan or Solution()
+    dynamic_solution = _merge_final_plans(
+        locked_routes,
+        locked_actions,
+        residual_committed,
+        open_plan,
+        final_instance,
+        forbidden_open_customer_ids=locked_customer_ids | served_customers,
+    )
+    planned_final_ids = _solution_customer_ids(dynamic_solution, final_instance)
+    missing_final_ids = remaining - planned_final_ids
+    if missing_final_ids:
+        failure = {
+            "first_bad_stage": "final",
+            "unplanned_customer_ids": sorted(missing_final_ids),
+            "detail": "finalisation does not re-run the solver; customers were left without a valid rolling-stage plan",
+            "policy_trace": policy_trace,
+        }
+        payload = _halt_payload(
+            "setp-dynamic-rolling.v3",
+            "HALT_E7_FINAL_PLAN_INCOMPLETE",
+            bundle_dir,
+            seed,
+            eval_budget,
+            max_runtime_seconds,
+            stage_eval_budget,
+            stage_max_runtime_seconds,
+            settings,
+            events,
+            rows,
+            assertions,
+            total_evaluations,
+            started,
+            failure,
         )
-        total_evaluations += final_repair.evaluations
-        final_repair_evaluations = int(final_repair.evaluations)
-        final_repair_violations = list(final_repair.violations)
-        if not final_repair_violations:
-            final_repair_violations = check_solution(
-                final_repair.solution,
-                _subinstance_for_customers(final_instance, remaining),
-                prices,
-            )
-        final_repair_violation_count = len(final_repair_violations)
-        if final_repair_violations:
-            failure = dynamic_chunk_failure_payload("final_repair", final_repair_violations)
-            failure.update(
-                {
-                    "final_repair_customer_count": int(final_repair_customer_count),
-                    "final_repair_evaluations": int(final_repair_evaluations),
-                    "final_repair_violation_count": int(final_repair_violation_count),
-                    "policy_trace": policy_trace,
-                }
-            )
-            payload = _halt_payload(
-                "setp-dynamic-rolling.v3",
-                "HALT_E7_FINAL_REPAIR_CHECK",
-                bundle_dir,
-                seed,
-                eval_budget,
-                max_runtime_seconds,
-                stage_eval_budget,
-                stage_max_runtime_seconds,
-                settings,
-                events,
-                rows,
-                assertions,
-                total_evaluations,
-                started,
-                failure,
-            )
-            if output_json_path is not None:
-                path = Path(output_json_path)
-                path.parent.mkdir(parents=True, exist_ok=True)
-                path.write_text(json.dumps(payload, ensure_ascii=False, indent=2, sort_keys=True), encoding="utf-8")
-            return payload
-        committed_routes.extend(final_repair.solution.routes)
-        committed_actions.extend(final_repair.solution.charging_actions)
-        pending_deferred_ids.difference_update(_solution_customer_ids(final_repair.solution, final_instance))
-    dynamic_solution = Solution(routes=committed_routes, charging_actions=committed_actions)
+        if output_json_path is not None:
+            path = Path(output_json_path)
+            path.parent.mkdir(parents=True, exist_ok=True)
+            path.write_text(json.dumps(payload, ensure_ascii=False, indent=2, sort_keys=True), encoding="utf-8")
+        return payload
 
     final_bundle_dir = work_root / "full_information_static"
     _write_dynamic_bundle(final_bundle_dir, final_instance, bundle.carbon_profile, {"source": "e7_full_information_static"})
@@ -666,6 +705,28 @@ def run_rolling_reoptimization(
         "final_repair_customer_ids": final_repair_customer_ids,
         "final_repair_evaluations": int(final_repair_evaluations),
         "final_repair_violation_count": int(final_repair_violation_count),
+        "locked_route_snapshots": [
+            {
+                "vehicle_id": snapshot.route.vehicle_id,
+                "vehicle_type": snapshot.route.vehicle_type,
+                "home_depot_id": snapshot.route.home_depot_id,
+                "fixed_customer_order": list(snapshot.locked_customer_ids),
+                "covered_customer_order": list(snapshot.covered_customer_ids),
+                "route_sequence": list(snapshot.route.node_sequence),
+                "state": dict(snapshot.state),
+                "charging_actions": [asdict(action) for action in snapshot.charging_actions],
+            }
+            for snapshot in locked_route_snapshots.values()
+        ],
+        "dynamic_final_routes": [
+            {
+                "vehicle_id": route.vehicle_id,
+                "vehicle_type": route.vehicle_type,
+                "home_depot_id": route.home_depot_id,
+                "node_sequence": list(route.node_sequence),
+            }
+            for route in dynamic_solution.routes
+        ],
         "dynamic_final_control": {
             "scorer": "setp_solver.cost.evaluate",
             "total_cost": float(dynamic_metrics["total_cost"]),
@@ -1094,6 +1155,7 @@ def _run_stage_plan(
     prices: PriceParameters | dict[str, float] | Any,
     initial_plan: Solution | None,
     reserved_charging_actions: list[ChargingAction] | tuple[ChargingAction, ...] = (),
+    reserved_physical_vehicle_ids: set[str] | None = None,
 ) -> StagePlanResult:
     if not active_ids:
         empty = Solution()
@@ -1111,8 +1173,13 @@ def _run_stage_plan(
         max_runtime_seconds=stage_max_runtime_seconds,
         initial_solution=initial_solution,
     )
-    violations = check_solution(
+    stage_solution = _remap_reserved_stage_vehicles(
         run.best_solution,
+        instance,
+        reserved_physical_vehicle_ids or set(),
+    )
+    violations = check_solution(
+        stage_solution,
         stage_instance,
         prices,
         dynamic_context=DynamicCheckContext(
@@ -1120,7 +1187,7 @@ def _run_stage_plan(
         ),
     )
     feasible = bool(run.feasible and not violations)
-    return StagePlanResult(run.best_solution, stage_instance, int(run.evaluations), feasible, violations)
+    return StagePlanResult(stage_solution, stage_instance, int(run.evaluations), feasible, violations)
 
 
 def _subinstance_for_customers(instance: Instance, customer_ids: set[str]) -> Instance:
@@ -1130,6 +1197,60 @@ def _subinstance_for_customers(instance: Instance, customer_ids: set[str]) -> In
         if node.node_type.lower() in {"d", "f"} or (node.node_type.lower() == "c" and node.node_id in customer_ids)
     }
     return _rebuild_instance_matrix(instance, [node for node in instance.nodes if node.node_id in keep_ids])
+
+
+def _remap_reserved_stage_vehicles(
+    solution: Solution,
+    instance: Instance,
+    reserved_physical_vehicle_ids: set[str],
+) -> Solution:
+    """Keep a rolling-stage plan off vehicles whose promised route is frozen."""
+
+    if not reserved_physical_vehicle_ids:
+        return solution
+    used = {
+        physical_vehicle_id(route.vehicle_id)
+        for route in solution.routes
+        if physical_vehicle_id(route.vehicle_id) not in reserved_physical_vehicle_ids
+    } | set(reserved_physical_vehicle_ids)
+    vehicle_map: dict[str, str] = {}
+    routes: list[Route] = []
+    for route in solution.routes:
+        old_physical = physical_vehicle_id(route.vehicle_id)
+        if old_physical not in reserved_physical_vehicle_ids:
+            routes.append(route)
+            continue
+        prefix = "EV" if route.vehicle_type.lower() == "ev" else "CV"
+        declared_limit = instance.num_ev if prefix == "EV" else instance.num_cv
+        limit = int(declared_limit) if declared_limit is not None else max(1, len(solution.routes) + len(reserved_physical_vehicle_ids))
+        replacement = next(
+            (f"{prefix}{index}" for index in range(1, limit + 1) if f"{prefix}{index}" not in used),
+            None,
+        )
+        if replacement is None:
+            # Leave the collision visible to the normal structure/fleet checks;
+            # never invent a vehicle beyond the declared fleet.
+            routes.append(route)
+            continue
+        used.add(replacement)
+        trip_index = 1
+        if "#T" in route.vehicle_id:
+            try:
+                trip_index = int(route.vehicle_id.rsplit("#T", 1)[1])
+            except ValueError:
+                trip_index = 1
+        new_vehicle_id = route_trip_vehicle_id(replacement, trip_index)
+        vehicle_map[route.vehicle_id] = new_vehicle_id
+        routes.append(replace(route, vehicle_id=new_vehicle_id))
+    actions = [
+        replace(action, vehicle_id=vehicle_map.get(action.vehicle_id, action.vehicle_id))
+        for action in solution.charging_actions
+    ]
+    return Solution(
+        routes=routes,
+        charging_actions=actions,
+        cross_site_services=list(solution.cross_site_services),
+    )
 
 
 def _write_dynamic_bundle(path: Path, instance: Instance, carbon_profile: list[dict[str, Any]], metadata: dict[str, Any]) -> None:
@@ -1255,6 +1376,219 @@ def _charging_action_key(action: ChargingAction) -> tuple[Any, ...]:
         round(float(action.charge_start_second), 9),
         round(float(action.occupancy_minutes), 9),
         round(float(action.energy_kwh), 9),
+    )
+
+
+def _locked_route_snapshots(
+    plan: Solution | None,
+    instance: Instance,
+    locked_customer_ids: set[str],
+    served_customer_ids: set[str],
+    *,
+    trigger_time: float,
+    prices: PriceParameters | dict[str, float] | Any,
+) -> list[LockedRouteSnapshot]:
+    """Freeze promised customers without turning finalisation into a new solve."""
+
+    if plan is None or not locked_customer_ids:
+        return []
+    node_lookup = {node.node_id: node for node in instance.nodes}
+    snapshots: list[LockedRouteSnapshot] = []
+    for route in plan.routes:
+        locked_positions = [
+            index
+            for index, node_id in enumerate(route.node_sequence)
+            if node_id in locked_customer_ids
+        ]
+        if not locked_positions:
+            continue
+        last_locked_index = max(locked_positions)
+        keep_customers = locked_customer_ids | served_customer_ids
+        sequence = [
+            node_id
+            for node_id in route.node_sequence[: last_locked_index + 1]
+            if node_lookup[node_id].node_type.lower() != "c" or node_id in keep_customers
+        ]
+        if not sequence or sequence[0] != route.home_depot_id:
+            sequence.insert(0, route.home_depot_id)
+        if sequence[-1] != route.home_depot_id:
+            sequence.append(route.home_depot_id)
+        frozen_route = Route(route.vehicle_id, route.vehicle_type, route.home_depot_id, sequence)
+        schedule = route_node_schedule(route, instance, prices, charging_actions=plan.charging_actions)
+        locked_order = tuple(
+            node_id
+            for node_id in route.node_sequence
+            if node_id in locked_customer_ids
+        )
+        covered_order = tuple(
+            node_id
+            for node_id in sequence
+            if node_lookup[node_id].node_type.lower() == "c"
+        )
+        final_locked_time = max(
+            row.t_depart for row in schedule if row.node_id in locked_customer_ids
+        )
+        actions = tuple(
+            action
+            for action in plan.charging_actions
+            if action.vehicle_id == route.vehicle_id
+            and action.station_id in sequence
+            and float(action.charge_start_second) <= float(final_locked_time) + 1e-9
+        )
+        snapshots.append(
+            LockedRouteSnapshot(
+                route=frozen_route,
+                charging_actions=actions,
+                locked_customer_ids=locked_order,
+                covered_customer_ids=covered_order,
+                state=_vehicle_state_at_time(
+                    route,
+                    instance,
+                    plan.charging_actions,
+                    trigger_time=trigger_time,
+                    prices=prices,
+                ),
+            )
+        )
+    return snapshots
+
+
+def _vehicle_state_at_time(
+    route: Route,
+    instance: Instance,
+    charging_actions: list[ChargingAction],
+    *,
+    trigger_time: float,
+    prices: PriceParameters | dict[str, float] | Any,
+) -> dict[str, Any]:
+    """Return an audit state that distinguishes waiting at a node from travel."""
+
+    schedule = route_node_schedule(route, instance, prices, charging_actions=charging_actions)
+    node_lookup = {node.node_id: node for node in instance.nodes}
+    location: dict[str, Any] = {
+        "location_kind": "node",
+        "position_node_id": route.node_sequence[0],
+        "next_node_id": None,
+        "arc_progress": 0.0,
+    }
+    for index, row in enumerate(schedule):
+        if float(row.t_arrive) - 1e-9 <= trigger_time <= float(row.t_depart) + 1e-9:
+            location.update(position_node_id=row.node_id, next_node_id=None, arc_progress=0.0)
+            break
+        if index + 1 < len(schedule) and float(row.t_depart) < trigger_time < float(schedule[index + 1].t_arrive):
+            duration = float(schedule[index + 1].t_arrive) - float(row.t_depart)
+            progress = (trigger_time - float(row.t_depart)) / duration if duration > 0.0 else 1.0
+            location.update(
+                location_kind="arc",
+                position_node_id=row.node_id,
+                next_node_id=schedule[index + 1].node_id,
+                arc_progress=max(0.0, min(1.0, progress)),
+            )
+            break
+        if trigger_time > float(row.t_depart):
+            location.update(position_node_id=row.node_id, next_node_id=None, arc_progress=0.0)
+
+    remaining_load = sum(
+        float(node_lookup[row.node_id].demand)
+        for row in schedule
+        if node_lookup[row.node_id].node_type.lower() == "c" and float(row.t_start) > trigger_time + 1e-9
+    )
+    remaining_battery = 0.0
+    if route.vehicle_type.lower() == "ev":
+        remaining_battery = _price(prices, "initial_ev_battery_kwh")
+        loads = _arc_loads(route.node_sequence, node_lookup)
+        for index, (from_id, to_id) in enumerate(zip(route.node_sequence, route.node_sequence[1:])):
+            depart = float(schedule[index].t_depart)
+            arrive = float(schedule[index + 1].t_arrive)
+            if trigger_time <= depart:
+                fraction = 0.0
+            elif trigger_time >= arrive or arrive <= depart:
+                fraction = 1.0
+            else:
+                fraction = (trigger_time - depart) / (arrive - depart)
+            remaining_battery -= fraction * ev_arc_energy_kwh(instance.distance(from_id, to_id), loads[index], prices)
+        for action in charging_actions:
+            if action.vehicle_id != route.vehicle_id:
+                continue
+            start = float(action.charge_start_second)
+            end = start + float(action.occupancy_minutes) * 60.0
+            if trigger_time <= start:
+                fraction = 0.0
+            elif trigger_time >= end or end <= start:
+                fraction = 1.0
+            else:
+                fraction = (trigger_time - start) / (end - start)
+            remaining_battery += fraction * float(action.energy_kwh)
+        remaining_battery = min(_price(prices, "B_battery_kwh"), remaining_battery)
+    ongoing = [
+        asdict(action)
+        for action in charging_actions
+        if action.vehicle_id == route.vehicle_id
+        and float(action.charge_start_second) <= trigger_time
+        < float(action.charge_start_second) + float(action.occupancy_minutes) * 60.0
+    ]
+    return {
+        "vehicle_id": route.vehicle_id,
+        "vehicle_type": route.vehicle_type,
+        "home_depot_id": route.home_depot_id,
+        "current_time": float(trigger_time),
+        "remaining_load_kg": float(remaining_load),
+        "remaining_battery_kwh": float(remaining_battery),
+        "ongoing_charging_actions": ongoing,
+        **location,
+    }
+
+
+def _merge_final_plans(
+    locked_routes: list[Route],
+    locked_actions: list[ChargingAction],
+    executed_plan: Solution,
+    open_plan: Solution,
+    instance: Instance,
+    *,
+    forbidden_open_customer_ids: set[str],
+) -> Solution:
+    """Assemble the execution ledger without running or repairing a solver."""
+
+    node_lookup = {node.node_id: node for node in instance.nodes}
+    open_routes: list[Route] = []
+    open_vehicle_ids: set[str] = set()
+    for route in open_plan.routes:
+        sequence = [
+            node_id
+            for node_id in route.node_sequence
+            if node_id in node_lookup
+            and not (
+                node_lookup[node_id].node_type.lower() == "c"
+                and node_id in forbidden_open_customer_ids
+            )
+        ]
+        customer_ids = [node_id for node_id in sequence if node_lookup[node_id].node_type.lower() == "c"]
+        if not customer_ids:
+            continue
+        if sequence[0] != route.home_depot_id:
+            sequence.insert(0, route.home_depot_id)
+        if sequence[-1] != route.home_depot_id:
+            sequence.append(route.home_depot_id)
+        open_routes.append(Route(route.vehicle_id, route.vehicle_type, route.home_depot_id, sequence))
+        open_vehicle_ids.add(route.vehicle_id)
+    open_actions = [
+        action
+        for action in open_plan.charging_actions
+        if action.vehicle_id in open_vehicle_ids
+        and any(action.station_id in route.node_sequence for route in open_routes if route.vehicle_id == action.vehicle_id)
+    ]
+    actions: list[ChargingAction] = []
+    seen_actions: set[tuple[Any, ...]] = set()
+    for action in [*locked_actions, *executed_plan.charging_actions, *open_actions]:
+        key = _charging_action_key(action)
+        if key not in seen_actions:
+            seen_actions.add(key)
+            actions.append(action)
+    return Solution(
+        routes=[*locked_routes, *executed_plan.routes, *open_routes],
+        charging_actions=actions,
+        cross_site_services=[*executed_plan.cross_site_services, *open_plan.cross_site_services],
     )
 
 

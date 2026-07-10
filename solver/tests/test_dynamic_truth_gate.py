@@ -290,11 +290,6 @@ def test_real_rolling_lifecycle_preserves_completed_and_applies_open_events(
             assert lookup["C_PLANNED_OPEN"].demand == pytest.approx(140.0)
 
 
-@pytest.mark.xfail(
-    strict=True,
-    raises=AssertionError,
-    reason="committed-but-not-completed customer still re-enters final repair",
-)
 def test_dynamic_events_distinguish_completed_committed_and_open_customers(
     lifecycle_rolling_evidence: tuple[LifecycleRollingEvidence, LifecycleRollingEvidence],
 ) -> None:
@@ -311,7 +306,49 @@ def test_dynamic_events_distinguish_completed_committed_and_open_customers(
         )
         locked_event_preserved = "C_LOCK" in lookup and lookup["C_LOCK"].demand == pytest.approx(20.0)
         locked_not_replanned = "C_LOCK" not in evidence.report.get("final_repair_customer_ids", [])
-        outcomes.append(bool(explicit_four_states and locked_event_preserved and locked_not_replanned))
+        snapshots = evidence.report.get("locked_route_snapshots", [])
+        locked_snapshot = next(
+            (row for row in snapshots if row.get("fixed_customer_order") == ["C_LOCK"]),
+            None,
+        )
+        locked_source_vehicle = next(
+            route.vehicle_id
+            for route in stage_one.previous_plan.routes
+            if "C_LOCK" in route.node_sequence
+        )
+        state_continues = bool(
+            locked_snapshot
+            and locked_snapshot["vehicle_id"] == locked_source_vehicle
+            and locked_snapshot["covered_customer_order"] == ["C_DONE", "C_LOCK"]
+            and locked_snapshot["state"]["current_time"] == pytest.approx(100.0)
+            and locked_snapshot["state"]["position_node_id"] == "C_LOCK"
+            and locked_snapshot["state"]["remaining_load_kg"] == pytest.approx(60.0)
+        )
+        no_final_solver = (
+            evidence.report.get("final_repair_customer_count") == 0
+            and evidence.report.get("final_repair_evaluations") == 0
+        )
+        locked_final_routes = [
+            row
+            for row in evidence.report.get("dynamic_final_routes", [])
+            if "C_LOCK" in row.get("node_sequence", [])
+        ]
+        final_assignment_unchanged = (
+            len(locked_final_routes) == 1
+            and locked_final_routes[0]["vehicle_id"] == locked_source_vehicle
+            and locked_final_routes[0]["node_sequence"].index("C_DONE")
+            < locked_final_routes[0]["node_sequence"].index("C_LOCK")
+        )
+        outcomes.append(
+            bool(
+                explicit_four_states
+                and locked_event_preserved
+                and locked_not_replanned
+                and state_continues
+                and no_final_solver
+                and final_assignment_unchanged
+            )
+        )
         diagnostics.append(
             f"{evidence.event_type}: served={sorted(stage_one.served_customers)}, "
             f"committed-not-completed={sorted(stage_one.committed_customer_ids)}, "
