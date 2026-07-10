@@ -362,6 +362,8 @@ class M1JointRepackFleetHeadroomTests(unittest.TestCase):
         )
         self.assertEqual(result.evaluations, 1000)
         self.assertEqual(result.best_obj, 5.0)
+        self.assertEqual(result.operator_counts["staged_chain"]["best_phase"], 2)
+        self.assertEqual(len(result.operator_counts["staged_chain"]["phase_operator_counts"]), 3)
 
     def test_staged_hybrid_has_a_distinct_public_identity_and_price_override(self) -> None:
         from setp_solver.algorithms.resetp_alns.kernel.winner import (
@@ -375,7 +377,13 @@ class M1JointRepackFleetHeadroomTests(unittest.TestCase):
 
         result = run_staged_alns_lns_hybrid(
             bundle.bundle_dir,
-            config=WinnerKernelConfig(seed=1, eval_budget=2, max_runtime_seconds=30.0),
+            config=WinnerKernelConfig(
+                seed=1,
+                eval_budget=2,
+                max_runtime_seconds=30.0,
+                carbon_aware_operators=True,
+                carbon_operator_bias=1.0,
+            ),
             initial_solution=start,
             prices=prices,
         )
@@ -384,6 +392,7 @@ class M1JointRepackFleetHeadroomTests(unittest.TestCase):
         self.assertEqual(result["variant"], "staged_alns_lns_hybrid")
         self.assertEqual(result["evaluations"], 2)
         self.assertEqual(result["battery_kwh"], 280.0)
+        self.assertTrue(result["carbon_aware_operators"])
 
     def test_stability_gate_builds_exactly_thirty_frozen_tasks(self) -> None:
         from baselines.e2_alns.m1_staged_hybrid_stability_gate import build_tasks
@@ -400,6 +409,40 @@ class M1JointRepackFleetHeadroomTests(unittest.TestCase):
         self.assertEqual(len(tasks), 30)
         self.assertEqual({task.algorithm for task in tasks}, {"staged ALNS-LNS hybrid", "LNS"})
         self.assertEqual({task.seed for task in tasks}, {1, 2, 3, 4, 5})
+
+    def test_staged_carbon_schedule_has_clean_aware_and_naive_variants(self) -> None:
+        from setp_solver.algorithms.resetp_alns.kernel.winner import (
+            WinnerKernelConfig,
+            run_staged_carbon_aware_hybrid,
+        )
+
+        bundle = load_search_bundle(VERIFY_BUNDLE)
+        start = make_shared_initial_solution(bundle, prices=DEFAULT_PRICES)
+        config = WinnerKernelConfig(seed=1, eval_budget=2, max_runtime_seconds=30.0)
+
+        aware = run_staged_carbon_aware_hybrid(
+            bundle.bundle_dir,
+            config=config,
+            initial_solution=start,
+            prices=DEFAULT_PRICES,
+            charging_strategy="aware",
+        )
+        naive = run_staged_carbon_aware_hybrid(
+            bundle.bundle_dir,
+            config=config,
+            initial_solution=start,
+            prices=DEFAULT_PRICES,
+            charging_strategy="naive",
+        )
+
+        self.assertTrue(aware["carbon_aware_operators"])
+        self.assertFalse(naive["carbon_aware_operators"])
+        self.assertFalse(aware["legacy_carbon_search_operators"])
+        self.assertEqual(aware["evaluations"], naive["evaluations"])
+        self.assertEqual(
+            [(route.vehicle_type, route.node_sequence) for route in aware["best_solution"].routes],
+            [(route.vehicle_type, route.node_sequence) for route in naive["best_solution"].routes],
+        )
 
 if __name__ == "__main__":
     unittest.main()

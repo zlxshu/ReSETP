@@ -243,7 +243,7 @@ def preflight() -> dict[str, Any]:
         "tier_instance_counts": tier_counts,
         "tier_manifest_ok": tier_counts == G5_TIER_EXPECTED_COUNTS,
         "tier1_instance_count": tier_counts["Tier1"],
-        "tier1_manifest_ok": tier_counts["Tier1"] == 23,
+        "tier1_manifest_ok": tier_counts["Tier1"] == G5_TIER_EXPECTED_COUNTS["Tier1"],
         "protected_diff": protected_diff(),
         "scenario_contract": {
             "phase_a_formal": "DEFAULT_PRICES",
@@ -963,8 +963,15 @@ def run_task(task: dict[str, Any]) -> dict[str, Any]:
     history: list[dict[str, Any]] = []
     operator_counts: dict[str, Any] = {}
     flags: dict[str, str] = {}
+    result_meta: dict[str, Any] = {}
     try:
-        if algorithm in {"alns_e2_throughput", "alns_e2_carbon", "alns_e2_carbon_ablation"}:
+        if algorithm in {
+            "alns_e2_throughput",
+            "alns_e2_carbon",
+            "alns_e2_carbon_ablation",
+            "staged_hybrid_carbon_aware",
+            "staged_hybrid_carbon_naive",
+        }:
             result = run_alns_variant(algorithm, bundle_dir, warm, prices, task)
             solution = result["best_solution"]
             best_cost = float(result["best_cost"])
@@ -973,6 +980,7 @@ def run_task(task: dict[str, Any]) -> dict[str, Any]:
             history = normalize_alns_history(list(result.get("history", [])))
             operator_counts = dict(result.get("operator_counts", {}))
             flags = dict(result.get("flags", {}))
+            result_meta = dict(result)
             status = "OK"
             failure_reason = ""
         elif algorithm.startswith("alns_component_") or algorithm == "alns_component_stack" or algorithm == "t3_main_alns":
@@ -1054,15 +1062,29 @@ def run_task(task: dict[str, Any]) -> dict[str, Any]:
         "evals_per_second": safe_ratio(actual_evals, time.perf_counter() - started),
         "best_cost": best_cost,
         "best_signature": solution_signature_hash(solution) if solution is not None else "",
+        "route_structure_signature": hashlib.sha256(
+            json.dumps(
+                sorted(
+                    (route.vehicle_id, route.vehicle_type.lower(), tuple(route.node_sequence))
+                    for route in solution.routes
+                ),
+                ensure_ascii=False,
+                sort_keys=True,
+            ).encode("utf-8")
+        ).hexdigest() if solution is not None else "",
         "feasible": solution is not None and not violations and math.isfinite(best_cost),
         "violation_count": violation_count,
         "route_count": len(solution.routes) if solution is not None else 0,
         "cv_route_count": sum(1 for route in solution.routes if route.vehicle_type.lower() == "cv") if solution is not None else 0,
         "ev_route_count": sum(1 for route in solution.routes if route.vehicle_type.lower() == "ev") if solution is not None else 0,
         "charging_action_count": len(solution.charging_actions) if solution is not None else 0,
+        "charging_strategy": result_meta.get("charging_strategy", ""),
+        "charging_actions_moved_from_search_output": result_meta.get("charging_actions_moved_from_search_output", 0),
+        "legacy_carbon_search_operators": result_meta.get("legacy_carbon_search_operators", ""),
         "E_total": metrics.get("E_total", math.nan),
         "E_cv_direct": metrics.get("E_cv_direct", math.nan),
         "E_ev_indirect": metrics.get("E_ev_indirect", math.nan),
+        "electricity_kwh": metrics.get("electricity_kwh", math.nan),
         "cost_carbon": metrics.get("cost_carbon", math.nan),
         "low_carbon_charging_share": low_carbon_charging_share(solution, bundle.instance, bundle.carbon_profile, prices) if solution is not None else math.nan,
         "native_best_updates": native_best_updates(history, algorithm),
@@ -1090,6 +1112,22 @@ def run_alns_variant(algorithm: str, bundle_dir: Path, warm: Any, prices: Any, t
         return wo.run_e2_alns_carbon(bundle_dir, config=config, initial_solution=warm, prices=prices, carbon_bias_weight=1.0, variant_id=algorithm)
     if algorithm == "alns_e2_carbon_ablation":
         return wo.run_e2_alns_carbon(bundle_dir, config=config, initial_solution=warm, prices=prices, carbon_bias_weight=0.0, variant_id=algorithm)
+    if algorithm == "staged_hybrid_carbon_aware":
+        return wo.run_staged_carbon_aware_hybrid(
+            bundle_dir,
+            config=config,
+            initial_solution=warm,
+            prices=prices,
+            charging_strategy="aware",
+        )
+    if algorithm == "staged_hybrid_carbon_naive":
+        return wo.run_staged_carbon_aware_hybrid(
+            bundle_dir,
+            config=config,
+            initial_solution=warm,
+            prices=prices,
+            charging_strategy="naive",
+        )
     raise ValueError(f"unsupported ALNS variant: {algorithm}")
 
 

@@ -14,9 +14,13 @@ ReSETP = 投《系统工程理论与实践》的绿色车辆路径论文。多�
 
 **总实验管理入口（白话版）：** `docs/handoff/project_experiment_master_plan_20260711.md` 是当前整体实验施工总图，包含论文贡献映射、阶段门、E0--E7逐项方案、统计/复算规则、CPU运行规则、7.31两周冲刺和Not-To-Do；`docs/handoff/project_board_20260711.md` 是实时看板；新实验先复制 `docs/handoff/templates/EXPERIMENT_CARD_TEMPLATE.md` 写任务卡，再启动。
 
-**当前主线：关闭最小正式E2。** 2026-07-11，100c/150c/200c × 5 seeds × staged ALNS-LNS hybrid/LNS 的30次、4000次评价稳定性门已全部完成：30/30 OK、零违规、全部跑满预算；三个规模hybrid相对LNS平均改善6.45%/0.69%/14.08%，合计11/15胜，verdict=`STAGED_HYBRID_STABILITY_SUPPORTED`。这是诊断稳定性门，不是正式T3。hybrid身份从此冻结，不再改算子、不扩九规模/长预算调试；下一步仅做健康基线体检和一次最小正式E2。
+**当前主线：关闭最小正式E2。** 2026-07-11，100c/150c/200c × 5 seeds × staged ALNS-LNS hybrid/LNS 的30次、4000次评价稳定性门已全部完成：30/30 OK、零违规、全部跑满预算；三个规模hybrid相对LNS平均改善6.45%/0.69%/14.08%，合计11/15胜，verdict=`STAGED_HYBRID_STABILITY_SUPPORTED`。这是诊断稳定性门，不是正式T3。路线搜索身份从此冻结，不再 rescue 调参。正式候选在该搜索后增加固定路线碳感知充电调度；旧粗糙碳 destroy/repair 继续关闭。十二小时收口合同、矩阵、止损和监控规则见 `docs/handoff/e2_12h_finalization_protocol_20260711.md`。
 
-以下两项已登记为 `DEFERRED / BLOCKED_BY_E2_ALGORITHM_FOUNDATION`，不是当前施工任务：
+**E2碳机制小门（2026-07-11）：** 复用上述15个hybrid保存解，在路线、车型和总充电量不变条件下，对比立即充电与低碳择时充电。15/15均成功、双方零违规，625次充电实际移动，15/15充电间接排放下降，平均下降约9.87%。因此正式候选命名为 `staged ALNS-LNS hybrid + carbon-aware charging schedule`，消融为 `+ immediate charging ablation`；这是固定路线充电子问题，不是恢复历史 `CARBON_OPS_WEAK` 粗糙算子。
+
+**场景裁决（2026-07-11，用户授权按论文目的/统一性选择）：** 投稿版正面机制主场景采用280 kWh任务内覆盖，理由是有现代中型配送车来源、当前新算法真实形成多EV/多充电并支持择时降碳；后续E1--E7主结果必须沿用同一场景合同。80 kWh不删除，保留为Goeke原始基准和稳健性对照；`prices.py`默认值不改，两种场景不得混表排名。历史中间电池档只作经验库，除非短门暴露280退化，否则不重开电池扫描。
+
+以下两项已登记为后续任务。固定路线充电择时的最小机制证据已因最终E2算法身份要求提前闭合；大规模电池筛选与动态需求低碳交互仍不启动：
 
 - 电池容量、车型结构与充电活跃度复核：以后从已保存解补算 EV/CV 任务份额、充电次数/电量和可移动充电空间；只有证据不足才做有界容量筛选。
 - 动态需求与低碳充电机制验证：以后先固定路线和总充电量验证充电时间能否移入低碳时段，再验证动态需求是否创造该空间。

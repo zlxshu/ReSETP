@@ -47,6 +47,7 @@ from setp_solver.algorithms.resetp_alns.operators.strong_bridge import solution_
 from setp_solver.algorithms.resetp_alns.support.construction import build_initial_solution
 from setp_solver.algorithms.resetp_alns.support.elite_archive import EliteArchive
 from setp_solver.search.evaluation import EvalBudget, model_cost, EvaluationContext, score_candidate, score_reference
+from setp_solver.search.charging import replay_fixed_route_charging
 from setp_solver.algorithms.resetp_alns.support.fleet import UNBOUNDED_FLEET
 from setp_solver.algorithms.resetp_alns.support.fleet_charge_corepair import propose_fleet_charge_corepair
 from setp_solver.algorithms.resetp_alns.support.global_order_repack import propose_global_order_repack
@@ -703,9 +704,70 @@ def run_staged_alns_lns_hybrid(
         "feasible": len(violations) == 0,
         "violation_count": len(violations),
         "battery_kwh": float(getattr(prices, "B_battery_kwh")),
-        "carbon_aware_operators": False,
+        "carbon_aware_operators": bool(cfg.carbon_aware_operators),
         "history": list(run.history),
         "operator_counts": dict(run.operator_counts),
+    }
+
+
+def run_staged_carbon_aware_hybrid(
+    bundle_dir: str | Path,
+    *,
+    config: WinnerKernelConfig | None = None,
+    initial_solution: Solution | None = None,
+    prices: Any = DEFAULT_PRICES,
+    charging_strategy: str = "aware",
+) -> dict[str, Any]:
+    """Run staged hybrid search followed by fixed-route charging rescheduling.
+
+    ``aware`` and ``naive`` keep the route set, vehicle types, and charged
+    energy construction fixed.  They differ only in the feasible charging
+    start selected for each action, which makes this a clean carbon-mechanism
+    ablation rather than a second route-search algorithm.
+    """
+
+    if charging_strategy not in {"aware", "naive"}:
+        raise ValueError(f"unknown charging strategy: {charging_strategy}")
+    result = run_staged_alns_lns_hybrid(
+        bundle_dir,
+        config=config,
+        initial_solution=initial_solution,
+        prices=prices,
+    )
+    bundle = _load_search_bundle(bundle_dir)
+    rescheduled = replay_fixed_route_charging(
+        result["best_solution"],
+        bundle.instance,
+        bundle.carbon_profile,
+        prices,
+        strategy=charging_strategy,
+    )
+    violations = check_solution(rescheduled, bundle.instance, prices)
+    context = EvaluationContext(bundle.instance, bundle.carbon_profile, prices=prices)
+    original_actions = list(result["best_solution"].charging_actions)
+    rescheduled_actions = list(rescheduled.charging_actions)
+    moved_actions = sum(
+        1
+        for left, right in zip(original_actions, rescheduled_actions)
+        if abs(float(left.charge_start_second) - float(right.charge_start_second)) > 1e-9
+    )
+    return {
+        **result,
+        "variant": f"staged_hybrid_carbon_schedule_{charging_strategy}",
+        "algorithm": (
+            "staged ALNS-LNS hybrid + carbon-aware charging schedule"
+            if charging_strategy == "aware"
+            else "staged ALNS-LNS hybrid + immediate charging ablation"
+        ),
+        "best_solution": rescheduled,
+        "best_cost": model_cost(rescheduled, context),
+        "feasible": len(violations) == 0,
+        "violation_count": len(violations),
+        "carbon_aware_operators": charging_strategy == "aware",
+        "legacy_carbon_search_operators": False,
+        "charging_strategy": charging_strategy,
+        "charging_action_count": len(rescheduled_actions),
+        "charging_actions_moved_from_search_output": moved_actions,
     }
 
 
@@ -894,6 +956,8 @@ def write_winner_manifest(output_dir: str | Path) -> Path:
             "run_e2_alns_scan_bridge",
             "run_e2_alns_carbon",
             "run_e2_alns_throughput",
+            "run_staged_alns_lns_hybrid",
+            "run_staged_carbon_aware_hybrid",
             "scan_all_cv_solution",
             "winner_variant_flags",
             "run_e2_alns_final",
@@ -1642,6 +1706,8 @@ def run_staged_chain_alns(
         "budgets": list(budgets),
         "phase_best_objs": [float(run.best_obj) for run in phase_runs],
         "phase_evaluations": [int(run.evaluations) for run in phase_runs],
+        "best_phase": phase_runs.index(best_run) + 1,
+        "phase_operator_counts": [dict(run.operator_counts) for run in phase_runs],
     }
     return replace(
         best_run,

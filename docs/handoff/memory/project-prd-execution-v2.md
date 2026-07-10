@@ -100,3 +100,13 @@ E7 动态需求必须保留三交互门槛：动态×协同、动态×公平、�
 2026-07-10 322客户多种子纠偏：`m1_staged_chain_150c_multiseed_20260710` 补齐 ALNS/LNS seeds1--3 同起点4000配对。ALNS 2胜1负，均值8522.020379对8768.601737，低2.812094%；平均时间低78.079697%。seed1反输10.185173%未复现，seed2/3分别胜5.270602%/12.923540%，故旧“结构性失败”降级为“种子稳定性不足”。verdict=`STAGED_CHAIN_150C_MULTISEED_PARTIAL`；该档仍未稳定过5%，不得升格正式冠军结论。
 
 2026-07-10 正式稳定性入口预检：新增公开 `run_staged_alns_lns_hybrid()`，身份固定为hybrid且不替换旧winner入口；新增可恢复 runner `m1_staged_hybrid_stability_gate.py`，冻结30任务=`100c/150c/200c × seeds1--5 × hybrid/LNS`、4000 eval、900s、280kWh显式诊断覆盖。论文和prices默认仍80kWh；碳算子关闭，其余合同不改。任务矩阵与2-eval落盘烟雾通过，30次尚未启动。
+
+## 2026-07-11 E2十二小时收口与碳调度小门
+
+- 新混合路线搜索身份冻结为 `staged ALNS-LNS hybrid`；不再 rescue 调参，也不静默覆盖旧 `ALNS-Wouda`。
+- 正式候选在路线搜索后执行固定路线碳感知充电调度，消融为立即充电。历史粗糙碳 destroy/repair 继续关闭。
+- 复用280kWh稳定性门15个hybrid保存解：15/15 aware/naive重放成功、总充电量一致、双方零违规，625次充电实际移动，15/15的 `E_ev_indirect` 下降，平均降幅约9.87%。该结果是机制小门，不是正式E4/E5或T3。
+- 正式正面主场景合同：280kWh任务内覆盖，L-main v3九实例 × seeds1--5 × `carbon-aware hybrid/immediate-charge ablation/LNS/GA/PSO/VNS` × 4000 eval，共270项；先跑100/150/200c seed1 × 六算法 × 400 eval的18项小门。80kWh保留Goeke稳健性对照，源码默认不改。
+- 默认6 workers；任务独立落盘、主进程汇总、支持resume；正常监控30--60分钟一次，异常事件立即汇报。
+- 入口修复：Tier1清单校验由旧23改为当前9；混合入口如实回报碳开关并保存三阶段原始算子计数。62项相关测试通过；另有旧 `scan_all_cv_solution` 超油车上限失败，未纳入正式入口且不得当健康基线。
+- 完整协议见 `docs/handoff/e2_12h_finalization_protocol_20260711.md`。
