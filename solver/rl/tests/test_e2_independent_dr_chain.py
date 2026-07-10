@@ -107,3 +107,60 @@ def test_carbon_action_opens_only_after_real_ev_signal_and_reward_tracks_cost() 
     assert carbon_step["after"]["objective"] < carbon_step["before"]["objective"]
     assert carbon_step["reward"] > 0.0
     assert carbon_step["after"]["charging_action_count"] == 2
+
+
+def test_micro_learning_env_keeps_action_identity_and_cost_reward_direction() -> None:
+    from independent_dr_alns.micro_env import IndependentDrMicroEnv
+
+    random_env = IndependentDrMicroEnv(FIXTURE_DIR, seed=1)
+    random_env.reset(seed=1)
+    _, random_reward, random_done, _, random_info = random_env.step(0)
+
+    vehicle_env = IndependentDrMicroEnv(FIXTURE_DIR, seed=1)
+    vehicle_env.reset(seed=1)
+    _, vehicle_reward, vehicle_done, _, vehicle_info = vehicle_env.step(1)
+
+    assert random_done is True and vehicle_done is True
+    assert random_info["requested_action"] == random_info["executed_action"]
+    assert vehicle_info["requested_action"] == vehicle_info["executed_action"]
+    assert random_info["after"]["best_obj"] == pytest.approx(random_info["before"]["best_obj"])
+    assert vehicle_info["after"]["best_obj"] < vehicle_info["before"]["best_obj"]
+    assert random_reward == pytest.approx(0.0)
+    assert vehicle_reward > random_reward
+
+
+def test_context_env_keeps_three_fixed_action_meanings() -> None:
+    from independent_dr_alns.micro_env import CONTEXT_ACTIONS, IndependentDrContextEnv
+
+    env = IndependentDrContextEnv([FIXTURE_DIR], seed=1)
+    assert env.action_space.n == 3
+    assert [action.destroy_id for action in CONTEXT_ACTIONS] == [
+        "worst_customer_removal",
+        "vehicle_type_swap",
+        "shaw_related_removal",
+    ]
+    env.reset(seed=1)
+    _, _, done, _, info = env.step(0)
+    assert done is True
+    assert info["requested_action"] == info["executed_action"] == {
+        "destroy_id": "worst_customer_removal",
+        "repair_id": "regret2_insert_repair",
+        "remove_fraction": 0.10,
+        "threshold_ratio": 0.0,
+    }
+
+
+def test_context_training_reward_can_be_scaled_per_training_instance() -> None:
+    from independent_dr_alns.micro_env import IndependentDrContextEnv
+
+    unscaled = IndependentDrContextEnv([FIXTURE_DIR], seed=1)
+    unscaled.reset(seed=1)
+    _, raw_reward, _, _, _ = unscaled.step(1)
+
+    scaled = IndependentDrContextEnv([FIXTURE_DIR], seed=1, reward_scales={str(FIXTURE_DIR): 2.0})
+    scaled.reset(seed=1)
+    _, reward, _, _, info = scaled.step(1)
+
+    assert info["raw_cost_reward"] == pytest.approx(raw_reward)
+    assert info["training_reward_scale"] == pytest.approx(2.0)
+    assert reward == pytest.approx(raw_reward / 2.0)
