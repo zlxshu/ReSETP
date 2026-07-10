@@ -23,7 +23,7 @@ from ..cost import _arc_loads, ev_arc_energy_kwh, evaluate, route_node_schedule
 from ..instance_loader import Instance, Node
 from ..prices import DEFAULT_PRICES, PriceParameters
 from ..solution import ChargingAction, Route, Solution, physical_vehicle_id, route_trip_vehicle_id
-from .alns_wouda import run_alns_wouda
+from ..algorithms.resetp_alns import WinnerKernelConfig, run_resetp_alns
 from .bundle import load_search_bundle
 from .charging import repair_route_charging
 from .construction import build_initial_solution
@@ -70,6 +70,7 @@ class StagePlanResult:
     evaluations: int
     feasible: bool
     violations: list[Any]
+    backend: str
 
 
 @dataclass(frozen=True)
@@ -122,6 +123,7 @@ class RollingPolicyDecision:
 
 
 RollingPolicyCallback = Callable[[RollingPolicyContext], RollingPolicyDecision | dict[str, Any] | None]
+INDEPENDENT_ALNS_BACKEND = "setp_solver.algorithms.resetp_alns"
 
 
 def myopic_rolling_policy(context: RollingPolicyContext) -> RollingPolicyDecision:
@@ -277,6 +279,7 @@ def run_rolling_reoptimization(
     frozen_sequences: dict[str, list[str]] = {}
     stage_plan_customer_ids: dict[str, list[str]] = {}
     policy_trace: list[dict[str, Any]] = []
+    policy_fallbacks: list[dict[str, Any]] = []
     pending_deferred_ids: set[str] = set()
     pending_defer_age: dict[str, int] = {}
 
@@ -403,23 +406,41 @@ def run_rolling_reoptimization(
             prices=prices,
         )
         mandatory_customer_ids: set[str] = set(defer_guard.mandatory_ids)
-        policy_decision = _policy_decision_for_stage(
-            policy_callback,
-            stage_index=stage_index,
-            trigger=trigger,
-            stage_events=stage_events,
-            events=events,
-            settings=settings,
-            base_instance=bundle.instance,
-            effective_instance=effective_instance,
-            active_ids=active_ids,
-            mandatory_customer_ids=mandatory_customer_ids,
-            pending_customer_ids=pending_deferred_ids,
-            served_customers=served_customers,
-            committed_customer_ids=committed_not_completed,
-            previous_plan=previous_plan,
-            previous_instance=previous_instance,
-        )
+        try:
+            policy_decision = _policy_decision_for_stage(
+                policy_callback,
+                stage_index=stage_index,
+                trigger=trigger,
+                stage_events=stage_events,
+                events=events,
+                settings=settings,
+                base_instance=bundle.instance,
+                effective_instance=effective_instance,
+                active_ids=active_ids,
+                mandatory_customer_ids=mandatory_customer_ids,
+                pending_customer_ids=pending_deferred_ids,
+                served_customers=served_customers,
+                committed_customer_ids=committed_not_completed,
+                previous_plan=previous_plan,
+                previous_instance=previous_instance,
+            )
+        except Exception as exc:
+            if policy_callback is None:
+                raise
+            fallback = {
+                "stage": int(stage_index),
+                "trigger_time": float(trigger),
+                "failed_policy": getattr(policy_callback, "__name__", policy_callback.__class__.__name__),
+                "error_type": type(exc).__name__,
+                "error": str(exc),
+                "fallback": "plan_all_with_independent_alns",
+            }
+            policy_fallbacks.append(fallback)
+            policy_decision = RollingPolicyDecision(
+                plan_now_ids=set(active_ids),
+                mandatory_ids=set(mandatory_customer_ids),
+                metadata={"action": "independent_safe_fallback", **fallback},
+            )
         stage_active_ids = set(active_ids if policy_decision.plan_now_ids is None else policy_decision.plan_now_ids)
         stage_initial_plan = previous_plan if policy_decision.initial_plan is None else policy_decision.initial_plan
         stage_budget = int(stage_eval_budget if policy_decision.stage_eval_budget is None else policy_decision.stage_eval_budget)
@@ -556,6 +577,7 @@ def run_rolling_reoptimization(
                 "stage_eval_budget_used": int(stage_budget),
                 "frozen_routes": len(current_frozen),
                 "stage_route_count": len(stage_solution.routes),
+                "solver_backend": stage_plan.backend,
                 "stage_ev_route_count": sum(1 for route in stage_solution.routes if str(route.vehicle_type).lower() == "ev"),
                 "stage_charging_action_count": len(stage_solution.charging_actions),
                 "stage_cost": stage_cost,
@@ -650,20 +672,23 @@ def run_rolling_reoptimization(
 
     final_bundle_dir = work_root / "full_information_static"
     _write_dynamic_bundle(final_bundle_dir, final_instance, bundle.carbon_profile, {"source": "e7_full_information_static"})
-    static_run = run_alns_wouda(
+    static_run = run_resetp_alns(
         final_bundle_dir,
-        iterations=None,
-        seed=seed,
-        eval_budget=eval_budget,
-        max_runtime_seconds=max_runtime_seconds,
+        config=WinnerKernelConfig(
+            seed=seed,
+            eval_budget=eval_budget,
+            max_runtime_seconds=max_runtime_seconds,
+            require_charging_signal=False,
+            carbon_aware_operators=False,
+        ),
     )
-    total_evaluations += int(static_run.evaluations)
+    total_evaluations += int(static_run["evaluations"])
     dynamic_metrics = evaluate(dynamic_solution, final_instance, bundle.carbon_profile, prices)
-    static_metrics = evaluate(static_run.best_solution, final_instance, bundle.carbon_profile, prices)
+    static_metrics = evaluate(static_run["best_solution"], final_instance, bundle.carbon_profile, prices)
     dynamic_violations = check_solution(dynamic_solution, final_instance, prices)
-    static_violations = check_solution(static_run.best_solution, final_instance, prices)
+    static_violations = check_solution(static_run["best_solution"], final_instance, prices)
     dynamic_feasible = not dynamic_violations
-    static_feasible = bool(static_run.feasible and not static_violations)
+    static_feasible = bool(static_run["feasible"] and not static_violations)
     rows.append(
         {
             "stage": "dynamic_vs_static",
@@ -701,6 +726,10 @@ def run_rolling_reoptimization(
         "assertions": assertions,
         "all_assertions_pass": all(row["conservation_ok"] and row["frozen_paths_ok"] for row in assertions),
         "policy_trace": policy_trace,
+        "policy_fallback_count": len(policy_fallbacks),
+        "policy_fallbacks": policy_fallbacks,
+        "dynamic_solver_backend": INDEPENDENT_ALNS_BACKEND,
+        "static_control_backend": INDEPENDENT_ALNS_BACKEND,
         "final_repair_customer_count": int(final_repair_customer_count),
         "final_repair_customer_ids": final_repair_customer_ids,
         "final_repair_evaluations": int(final_repair_evaluations),
@@ -1159,22 +1188,32 @@ def _run_stage_plan(
 ) -> StagePlanResult:
     if not active_ids:
         empty = Solution()
-        return StagePlanResult(empty, _subinstance_for_customers(instance, active_ids), 0, True, [])
+        return StagePlanResult(
+            empty,
+            _subinstance_for_customers(instance, active_ids),
+            0,
+            True,
+            [],
+            INDEPENDENT_ALNS_BACKEND,
+        )
     stage_instance = _subinstance_for_customers(instance, active_ids)
     _write_dynamic_bundle(stage_bundle_dir, stage_instance, bundle.carbon_profile, {"source": "e7_stage_reoptimization"})
     initial_solution = _filter_initial_plan(initial_plan, stage_instance, active_ids) if initial_plan is not None else None
     if initial_solution is None:
         initial_solution = build_initial_solution(stage_instance, bundle.carbon_profile, prices, introduce_ev=False, require_charging_signal=False)
-    run = run_alns_wouda(
+    run = run_resetp_alns(
         stage_bundle_dir,
-        iterations=None,
-        seed=seed,
-        eval_budget=stage_eval_budget,
-        max_runtime_seconds=stage_max_runtime_seconds,
+        config=WinnerKernelConfig(
+            seed=seed,
+            eval_budget=stage_eval_budget,
+            max_runtime_seconds=stage_max_runtime_seconds,
+            require_charging_signal=False,
+            carbon_aware_operators=False,
+        ),
         initial_solution=initial_solution,
     )
     stage_solution = _remap_reserved_stage_vehicles(
-        run.best_solution,
+        run["best_solution"],
         instance,
         reserved_physical_vehicle_ids or set(),
     )
@@ -1184,10 +1223,18 @@ def _run_stage_plan(
         prices,
         dynamic_context=DynamicCheckContext(
             reserved_charging_actions=tuple(reserved_charging_actions),
+            reserved_physical_vehicle_ids=tuple(sorted(reserved_physical_vehicle_ids or set())),
         ),
     )
-    feasible = bool(run.feasible and not violations)
-    return StagePlanResult(stage_solution, stage_instance, int(run.evaluations), feasible, violations)
+    feasible = bool(run["feasible"] and not violations)
+    return StagePlanResult(
+        stage_solution,
+        stage_instance,
+        int(run["evaluations"]),
+        feasible,
+        violations,
+        INDEPENDENT_ALNS_BACKEND,
+    )
 
 
 def _subinstance_for_customers(instance: Instance, customer_ids: set[str]) -> Instance:

@@ -145,6 +145,58 @@ def test_dynamic_ev_uses_inherited_remaining_battery() -> None:
     assert len(depleted) == 1 and "-1.000000 kWh" in depleted[0].detail
 
 
+def test_dynamic_route_cannot_redeliver_more_than_the_inherited_remaining_load() -> None:
+    instance = _zero_distance_instance(
+        [
+            Node("D0", "d", 0.0, 0.0, due_time=10_000.0),
+            Node("P0", "f", 0.0, 0.0, due_time=10_000.0),
+            Node("C_REMAIN", "c", 0.0, 0.0, demand=10.0, due_time=10_000.0),
+        ]
+    )
+    solution = Solution(routes=[Route("CV1", "cv", "D0", ["P0", "C_REMAIN", "D0"])])
+    context = DynamicCheckContext(
+        vehicle_states={
+            "CV1": DynamicVehicleState(
+                vehicle_id="CV1",
+                position_node_id="P0",
+                current_time=100.0,
+                remaining_load_kg=5.0,
+                remaining_battery_kwh=0.0,
+            )
+        },
+        allow_open_start=True,
+    )
+
+    violations = check_solution(solution, instance, dynamic_context=context)
+
+    assert any(
+        violation.type == "CAPACITY"
+        and violation.location == "C_REMAIN"
+        and "remaining load" in violation.detail
+        for violation in violations
+    )
+
+
+def test_dynamic_stage_cannot_reuse_an_in_progress_physical_vehicle() -> None:
+    instance = _zero_distance_instance(
+        [
+            Node("D0", "d", 0.0, 0.0, due_time=10_000.0),
+            Node("C_NEW", "c", 0.0, 0.0, demand=1.0, due_time=10_000.0),
+        ]
+    )
+    solution = Solution(routes=[Route("CV1#T1", "cv", "D0", ["D0", "C_NEW", "D0"])])
+    context = DynamicCheckContext(reserved_physical_vehicle_ids=("CV1",))
+
+    violations = check_solution(solution, instance, dynamic_context=context)
+
+    assert any(
+        violation.type == "ROUTE_STRUCTURE"
+        and violation.location == "CV1"
+        and "in-progress vehicle" in violation.detail
+        for violation in violations
+    )
+
+
 @pytest.fixture(scope="module")
 def charger_rolling_evidence(tmp_path_factory: pytest.TempPathFactory) -> ChargerRollingEvidence:
     return _run_charger_rolling_scenario(tmp_path_factory.mktemp("dynamic-charger-truth"))
@@ -360,6 +412,79 @@ def test_dynamic_events_distinguish_completed_committed_and_open_customers(
         )
 
     assert all(outcomes), "; ".join(diagnostics)
+
+
+def test_real_rolling_keeps_mid_arc_position_load_and_battery_on_the_original_vehicle(tmp_path: Path) -> None:
+    instance = Instance(
+        nodes=[
+            Node("D0", "d", 0.0, 0.0, due_time=86_400.0, station_chargers=2),
+            Node("C_DONE", "c", 1_000.0, 0.0, demand=10.0, due_time=10_000.0),
+            Node("C_LOCK", "c", 2_000.0, 0.0, demand=20.0, due_time=10_000.0),
+        ],
+        distance_matrix=[
+            [0.0, 1_000.0, 2_000.0],
+            [1_000.0, 0.0, 1_000.0],
+            [2_000.0, 1_000.0, 0.0],
+        ],
+        num_cv=2,
+        num_ev=2,
+    )
+    event = DynamicEvent(
+        event_id="add-midarc",
+        event_type="add",
+        t_appear=60.0,
+        customer_id="C_NEW",
+        old_demand=0.0,
+        new_demand=1.0,
+        x=0.0,
+        y=0.0,
+        new_ready_time=60.0,
+        new_due_time=10_000.0,
+    )
+    stage_zero = Solution(
+        routes=[Route("EV_PREVIOUS", "ev", "D0", ["D0", "C_DONE", "C_LOCK", "D0"])]
+    )
+    stage_one = Solution(
+        routes=[Route("CV_AFTER", "cv", "D0", ["D0", "C_NEW", "D0"])]
+    )
+
+    def policy(context: RollingPolicyContext) -> RollingPolicyDecision:
+        if context.stage_index == 0:
+            return RollingPolicyDecision(initial_plan=stage_zero, stage_eval_budget=0)
+        return RollingPolicyDecision(initial_plan=stage_one, stage_eval_budget=0)
+
+    bundle_dir = tmp_path / "midarc" / "bundle"
+    _write_truth_bundle(bundle_dir, instance, [event])
+    report = run_rolling_reoptimization(
+        bundle_dir,
+        output_json_path=tmp_path / "midarc" / "report.json",
+        seed=3,
+        eval_budget=0,
+        max_runtime_seconds=2.0,
+        stage_eval_budget=0,
+        stage_max_runtime_seconds=2.0,
+        params=RollingParameters(delta_t_seconds=60.0, q_bar=8, stages=2),
+        policy_callback=policy,
+    )
+
+    assert "gate" not in report
+    snapshot = next(row for row in report["locked_route_snapshots"] if row["fixed_customer_order"] == ["C_LOCK"])
+    state = snapshot["state"]
+    assert state["location_kind"] == "arc"
+    assert state["position_node_id"] == "C_DONE"
+    assert state["next_node_id"] == "C_LOCK"
+    assert state["arc_progress"] == pytest.approx(0.5)
+    assert state["current_time"] == pytest.approx(60.0)
+    assert state["remaining_load_kg"] == pytest.approx(20.0)
+    assert 0.0 < state["remaining_battery_kwh"] < 80.0
+    locked_routes = [
+        row for row in report["dynamic_final_routes"] if "C_LOCK" in row["node_sequence"]
+    ]
+    assert len(locked_routes) == 1
+    assert locked_routes[0]["vehicle_id"] == snapshot["vehicle_id"]
+    assert locked_routes[0]["node_sequence"][:3] == ["D0", "C_DONE", "C_LOCK"]
+    stage_one_row = next(row for row in report["stage_rows"] if row["stage"] == 1)
+    assert stage_one_row["solver_backend"] == "setp_solver.algorithms.resetp_alns"
 
 
 def _run_charger_rolling_scenario(root: Path) -> ChargerRollingEvidence:
@@ -697,8 +822,14 @@ def test_every_dynamic_policy_branch_avoids_the_legacy_alns_entrypoint(
 
         policy = model_policy
     elif policy_mode == "exception_fallback":
+        failure_count = 0
+
         def broken_model_policy(_context: RollingPolicyContext) -> RollingPolicyDecision:
-            raise RuntimeError("forced model failure")
+            nonlocal failure_count
+            failure_count += 1
+            if failure_count == 1:
+                raise RuntimeError("forced model failure")
+            return RollingPolicyDecision(metadata={"selector": "recovered_model_probe"})
 
         policy = broken_model_policy
 

@@ -84,6 +84,7 @@ class DynamicCheckContext:
     vehicle_states: dict[str, DynamicVehicleState] = field(default_factory=dict)
     frozen_prefixes: dict[str, tuple[str, ...]] = field(default_factory=dict)
     reserved_charging_actions: tuple[ChargingAction, ...] = ()
+    reserved_physical_vehicle_ids: tuple[str, ...] = ()
     allow_open_start: bool = False
 
 
@@ -111,7 +112,15 @@ def check_solution(
             continue
         dynamic_state = None if dynamic_context is None else dynamic_context.vehicle_states.get(route.vehicle_id)
         violations.extend(_check_route_flow(route, node_lookup, dynamic_context))
-        violations.extend(_check_capacity(route, node_lookup, prices))
+        violations.extend(
+            _check_capacity(
+                route,
+                node_lookup,
+                prices,
+                dynamic_state=dynamic_state,
+                allow_open_start=bool(dynamic_context and dynamic_context.allow_open_start),
+            )
+        )
         violations.extend(
             _check_time_windows(
                 route,
@@ -207,6 +216,18 @@ def _check_dynamic_context(solution: Solution, context: DynamicCheckContext | No
         return []
     routes = {route.vehicle_id: route for route in solution.routes}
     violations: list[Violation] = []
+    reserved = set(context.reserved_physical_vehicle_ids)
+    for route in solution.routes:
+        physical_id = physical_vehicle_id(route.vehicle_id)
+        if physical_id in reserved:
+            violations.append(
+                Violation(
+                    ROUTE_STRUCTURE,
+                    route.vehicle_id,
+                    physical_id,
+                    "in-progress vehicle is unavailable to the new planning stage",
+                )
+            )
     for vehicle_id, prefix in context.frozen_prefixes.items():
         route = routes.get(vehicle_id)
         if route is None:
@@ -355,7 +376,16 @@ def _check_route_flow(route: Route, node_lookup: dict[str, Node], dynamic_contex
     return violations
 
 
-def _check_capacity(route: Route, node_lookup: dict[str, Node], prices: PriceParameters | dict[str, float] | Any) -> list[Violation]:
+def _check_capacity(
+    route: Route,
+    node_lookup: dict[str, Node],
+    prices: PriceParameters | dict[str, float] | Any,
+    *,
+    dynamic_state: DynamicVehicleState | None = None,
+    allow_open_start: bool = False,
+) -> list[Violation]:
+    if allow_open_start and dynamic_state is not None:
+        return _check_inherited_capacity(route, node_lookup, prices, dynamic_state)
     loads = _arc_loads(route.node_sequence, node_lookup)
     violations: list[Violation] = []
     if loads and loads[0] > _price(prices, "Q_capacity"):
@@ -373,6 +403,48 @@ def _check_capacity(route: Route, node_lookup: dict[str, Node], prices: PricePar
         delivered = loads[idx - 1] - loads[idx]
         if abs(delivered - float(node.demand)) > 1e-6:
             violations.append(Violation(CAPACITY, route.vehicle_id, node_id, f"delivered {delivered:.6f}, expected demand {float(node.demand):.6f}"))
+    return violations
+
+
+def _check_inherited_capacity(
+    route: Route,
+    node_lookup: dict[str, Node],
+    prices: PriceParameters | dict[str, float] | Any,
+    dynamic_state: DynamicVehicleState,
+) -> list[Violation]:
+    capacity = _price(prices, "Q_capacity")
+    remaining = float(dynamic_state.remaining_load_kg)
+    violations: list[Violation] = []
+    if remaining < -1e-9:
+        violations.append(Violation(CAPACITY, route.vehicle_id, route.node_sequence[0], f"remaining load is negative: {remaining:.6f}"))
+    if remaining > capacity + 1e-9:
+        violations.append(
+            Violation(
+                CAPACITY,
+                route.vehicle_id,
+                route.node_sequence[0],
+                f"inherited remaining load {remaining:.6f} exceeds Q={capacity:.6f}",
+            )
+        )
+
+    for index, node_id in enumerate(route.node_sequence):
+        node = node_lookup[node_id]
+        if node.node_type.lower() != "c":
+            continue
+        demand = float(node.demand)
+        if demand > remaining + 1e-9:
+            violations.append(
+                Violation(
+                    CAPACITY,
+                    route.vehicle_id,
+                    node_id,
+                    f"customer demand {demand:.6f} exceeds inherited remaining load {remaining:.6f}",
+                )
+            )
+        remaining -= demand
+        if remaining < -1e-9 and index + 1 < len(route.node_sequence):
+            arc = f"{node_id}->{route.node_sequence[index + 1]}"
+            violations.append(Violation(CAPACITY, route.vehicle_id, arc, f"arc load is negative: {remaining:.6f}"))
     return violations
 
 
