@@ -39,13 +39,21 @@ FULL_SEARCH_ACTIONS = tuple(
 )
 
 # The three insertion repairs frequently produce the same complete candidate
-# for a fixed destroy move.  Exposing all 18 combinations gives the learner
-# three labels for one effect and diluted the mid-search signal in the E2
-# action audit.  The six-action control surface keeps the destroy decisions
-# distinct and uses the stable regret-2 repair.  FULL_SEARCH_ACTIONS remains
-# available for diagnostics and can justify restoring a repair choice later.
+# for a fixed destroy move, so repair choice is held at stable regret-2.  The
+# q audit did show material and state-dependent differences at 5/10/20/30%,
+# therefore the real DR surface is six distinct destroy moves by four destroy
+# sizes. FULL_SEARCH_ACTIONS remains available for repair diagnostics.
 SEARCH_ACTIONS = tuple(
-    action for action in FULL_SEARCH_ACTIONS if action.repair_id == "regret2_insert_repair"
+    DrAction(destroy_id, "regret2_insert_repair", remove_fraction, 0.02)
+    for destroy_id in (
+        "random_customer_removal",
+        "worst_customer_removal",
+        "shaw_related_removal",
+        "whole_route_removal",
+        "route_segment_removal",
+        "vehicle_type_swap",
+    )
+    for remove_fraction in (0.05, 0.10, 0.20, 0.30)
 )
 
 

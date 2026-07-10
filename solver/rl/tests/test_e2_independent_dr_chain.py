@@ -174,7 +174,9 @@ def test_multistep_search_reselects_one_exact_action_per_evaluation() -> None:
     vehicle_action = next(
         index
         for index, action in enumerate(SEARCH_ACTIONS)
-        if action.destroy_id == "vehicle_type_swap" and action.repair_id == "regret2_insert_repair"
+        if action.destroy_id == "vehicle_type_swap"
+        and action.repair_id == "regret2_insert_repair"
+        and action.remove_fraction == 0.10
     )
     next_observation, _, done, _, info = env.step(vehicle_action)
 
@@ -194,7 +196,9 @@ def test_multistep_reward_telescopes_to_final_full_evaluator_gain() -> None:
     vehicle_action = next(
         index
         for index, action in enumerate(SEARCH_ACTIONS)
-        if action.destroy_id == "vehicle_type_swap" and action.repair_id == "regret2_insert_repair"
+        if action.destroy_id == "vehicle_type_swap"
+        and action.repair_id == "regret2_insert_repair"
+        and action.remove_fraction == 0.10
     )
     rewards = []
     done = False
@@ -214,7 +218,9 @@ def test_training_curriculum_exposes_mid_search_state_without_changing_action_co
     vehicle_action = next(
         index
         for index, action in enumerate(SEARCH_ACTIONS)
-        if action.destroy_id == "vehicle_type_swap" and action.repair_id == "regret2_insert_repair"
+        if action.destroy_id == "vehicle_type_swap"
+        and action.repair_id == "regret2_insert_repair"
+        and action.remove_fraction == 0.10
     )
     env = IndependentDrSearchEnv(
         [FIXTURE_DIR],
@@ -233,3 +239,21 @@ def test_training_curriculum_exposes_mid_search_state_without_changing_action_co
     _, _, done, _, info = env.step(vehicle_action)
     assert done is False
     assert info["requested_action"] == info["executed_action"]
+
+
+def test_independent_cache_path_preserves_exact_solution_and_cost() -> None:
+    from independent_dr_alns.chain import DrAction, IndependentDrSession
+
+    action = DrAction("worst_customer_removal", "regret2_insert_repair", 0.20, 0.02)
+    cached = IndependentDrSession(FIXTURE_DIR, seed=3, max_evals=3, enable_caches=True)
+    uncached = IndependentDrSession(FIXTURE_DIR, seed=3, max_evals=3, enable_caches=False)
+
+    cached_rows = [cached.step(action) for _ in range(3)]
+    uncached_rows = [uncached.step(action) for _ in range(3)]
+
+    assert [row["after"]["solution_hash"] for row in cached_rows] == [
+        row["after"]["solution_hash"] for row in uncached_rows
+    ]
+    assert [row["after"]["best_obj"] for row in cached_rows] == pytest.approx(
+        [row["after"]["best_obj"] for row in uncached_rows]
+    )

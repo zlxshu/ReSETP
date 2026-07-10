@@ -13,6 +13,7 @@ from setp_solver.algorithms.resetp_alns.kernel.winner import (
     WinnerOperatorAction,
     WinnerOperatorSet,
     apply_winner_action,
+    winner_variant_flags,
 )
 from setp_solver.algorithms.resetp_alns.support.construction import build_initial_solution
 from setp_solver.algorithms.resetp_alns.support.fleet import infer_fleet_limits
@@ -49,6 +50,7 @@ class IndependentDrSession:
         max_evals: int,
         initial_solution: Solution | None = None,
         carbon_aware_operators: bool = True,
+        enable_caches: bool = True,
     ) -> None:
         if int(max_evals) < 1:
             raise ValueError("max_evals must be positive")
@@ -64,6 +66,10 @@ class IndependentDrSession:
         limits = infer_fleet_limits(self.bundle.bundle_dir)
         self.policy = SearchPolicy(require_charging_signal=False, max_cv=limits.cv, max_ev=limits.ev)
         self.operator_set = WinnerOperatorSet.create(carbon_aware=bool(carbon_aware_operators))
+        self.variant_flags = winner_variant_flags(include_route_elimination=False)
+        if enable_caches:
+            self.variant_flags["SETP_ALNS_CRUSH_ROUTE_COST_CACHE"] = "1"
+            self.variant_flags["SETP_ALNS_CRUSH_REPAIR_STRUCTURE_CACHE"] = "1"
         self.destroy_ids = tuple(name for name, _ in self.operator_set.destroy_ops)
         self.repair_ids = tuple(name for name, _ in self.operator_set.repair_ops)
         self.initial_solution = initial_solution or build_initial_solution(
@@ -122,6 +128,7 @@ class IndependentDrSession:
             policy=self.policy,
             current_obj=self.current_obj,
             progress=self._progress(),
+            variant_flags=self.variant_flags,
         )
         candidate = result["candidate_solution"]
         candidate_obj = float(result["candidate_obj"])
@@ -218,4 +225,3 @@ def _plain(value: Any) -> Any:
     if isinstance(value, (list, tuple)):
         return [_plain(item) for item in value]
     return value
-
