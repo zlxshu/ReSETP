@@ -365,6 +365,31 @@ class M1JointRepackFleetHeadroomTests(unittest.TestCase):
         self.assertEqual(result.operator_counts["staged_chain"]["best_phase"], 2)
         self.assertEqual(len(result.operator_counts["staged_chain"]["phase_operator_counts"]), 3)
 
+    def test_staged_chain_forwards_e1_vehicle_policy_to_every_phase(self) -> None:
+        import setp_solver.algorithms.resetp_alns.kernel.winner as winner
+        from setp_solver.algorithms.resetp_alns.kernel.alns_core import AlnsRunResult, SearchPolicy
+
+        bundle = load_search_bundle(VERIFY_BUNDLE)
+        start = make_shared_initial_solution(bundle, prices=DEFAULT_PRICES)
+        policy = SearchPolicy(require_charging_signal=False, max_cv=10, max_ev=0)
+        phase_results = [
+            AlnsRunResult(start, start, 10.0, 9.0, 400, True),
+            AlnsRunResult(start, start, 9.0, 8.0, 200, True),
+            AlnsRunResult(start, start, 8.0, 7.0, 400, True),
+        ]
+
+        with patch.object(winner, "_run_winner_kernel_loop", side_effect=phase_results) as phase_run:
+            winner.run_staged_chain_alns(
+                start,
+                bundle.instance,
+                bundle.carbon_profile,
+                config=winner.WinnerKernelConfig(seed=7, eval_budget=1000, max_runtime_seconds=30.0),
+                prices=DEFAULT_PRICES,
+                policy=policy,
+            )
+
+        self.assertEqual([call.kwargs["policy"] for call in phase_run.call_args_list], [policy, policy, policy])
+
     def test_staged_hybrid_has_a_distinct_public_identity_and_price_override(self) -> None:
         from setp_solver.algorithms.resetp_alns.kernel.winner import (
             WinnerKernelConfig,

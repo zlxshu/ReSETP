@@ -43,13 +43,14 @@ def _apply_strong_alns_destroy_repair(
     rng: random.Random,
     destroy_operator: str,
     repair_operator: str,
+    policy: Any | None = None,
 ) -> _OperatorOutcome:
     removed = _strong_destroy_customer_ids(solution, context, rng, destroy_operator)
     if not removed:
         return _OperatorOutcome(solution, produced=False, feasible=False, changed=False, detail="destroy_selected_no_customers", metadata={"removed_count": 0})
     partial_routes = _routes_without_customers(solution.routes, set(removed), context.instance)
     mode = {"greedy_insert_repair": "greedy", "regret2_insert_repair": "regret2", "regret3_insert_repair": "regret3"}[repair_operator]
-    policy = _bridge_policy_for_context(context)
+    policy = policy or _bridge_policy_for_context(context)
     repaired = repair_removed_customers(Solution(routes=partial_routes, charging_actions=_actions_for_routes(solution, partial_routes)), list(removed), context, policy, mode=mode)
     if repaired is None:
         return _OperatorOutcome(solution, produced=True, feasible=False, changed=False, detail="strong_repair_failed", metadata={"removed_count": len(removed)})

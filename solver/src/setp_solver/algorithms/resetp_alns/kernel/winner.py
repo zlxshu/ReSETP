@@ -512,6 +512,7 @@ def apply_winner_action(
                     _derive_strong_bridge_rng(rng),
                     action.destroy_op_id,
                     action.repair_op_id,
+                    policy=previous_state.policy,
                 )
             bridge_metadata = dict(getattr(bridge_outcome, "metadata", {}) or {})
             bridge_detail = str(getattr(bridge_outcome, "detail", "") or "")
@@ -668,6 +669,7 @@ def run_staged_alns_lns_hybrid(
     config: WinnerKernelConfig | None = None,
     initial_solution: Solution | None = None,
     prices: Any = DEFAULT_PRICES,
+    policy: SearchPolicy | None = None,
 ) -> dict[str, Any]:
     """Run the explicitly named staged ALNS-LNS hybrid under one budget."""
 
@@ -687,6 +689,7 @@ def run_staged_alns_lns_hybrid(
         bundle.carbon_profile,
         config=cfg,
         prices=prices,
+        policy=policy,
     )
     context = EvaluationContext(bundle.instance, bundle.carbon_profile, prices=prices)
     violations = check_solution(run.best_solution, bundle.instance, prices)
@@ -717,6 +720,7 @@ def run_staged_carbon_aware_hybrid(
     initial_solution: Solution | None = None,
     prices: Any = DEFAULT_PRICES,
     charging_strategy: str = "aware",
+    policy: SearchPolicy | None = None,
 ) -> dict[str, Any]:
     """Run staged hybrid search followed by fixed-route charging rescheduling.
 
@@ -733,6 +737,7 @@ def run_staged_carbon_aware_hybrid(
         config=config,
         initial_solution=initial_solution,
         prices=prices,
+        policy=policy,
     )
     return _reschedule_staged_result(result, bundle_dir, prices, charging_strategy)
 
@@ -743,6 +748,7 @@ def run_staged_carbon_schedule_pair(
     config: WinnerKernelConfig | None = None,
     initial_solution: Solution | None = None,
     prices: Any = DEFAULT_PRICES,
+    policy: SearchPolicy | None = None,
 ) -> dict[str, Any]:
     """Run route search once and emit aware plus immediate-charge variants."""
 
@@ -751,6 +757,7 @@ def run_staged_carbon_schedule_pair(
         config=config,
         initial_solution=initial_solution,
         prices=prices,
+        policy=policy,
     )
     aware = _reschedule_staged_result(result, bundle_dir, prices, "aware")
     naive = _reschedule_staged_result(result, bundle_dir, prices, "naive")
@@ -1099,8 +1106,9 @@ def _run_winner_kernel_loop(
     config: WinnerKernelConfig,
     prices: PriceParameters | None = None,
     variant_flags: dict[str, str] | None = None,
+    policy: SearchPolicy | None = None,
 ) -> AlnsRunResult:
-    policy = _search_policy_for_instance(instance, require_charging_signal=config.require_charging_signal)
+    policy = policy or _search_policy_for_instance(instance, require_charging_signal=config.require_charging_signal)
     effective_prices = prices or DEFAULT_PRICES
     context = EvaluationContext(
         instance,
@@ -1682,6 +1690,7 @@ def run_staged_chain_alns(
     config: WinnerKernelConfig,
     prices: Any = DEFAULT_PRICES,
     variant_flags: dict[str, str] | None = None,
+    policy: SearchPolicy | None = None,
 ) -> AlnsRunResult:
     """Run regular, global-repair, then regular ALNS phases under one budget."""
 
@@ -1717,6 +1726,7 @@ def run_staged_chain_alns(
             ),
             prices=prices,
             variant_flags=phase_flags,
+            policy=policy,
         )
         phase_runs.append(phase_run)
         current_initial = phase_run.best_solution
