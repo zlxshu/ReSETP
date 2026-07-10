@@ -205,14 +205,14 @@ def baseline_health_decision(rows: list[dict[str, Any]], metadata: dict[str, Any
     ok = [row for row in rows if row.get("gate_status") == "OK"]
     closed = [row for row in rows if closure.truthy(row.get("eval_closed"))]
     zero_violation = [row for row in rows if int(closure.as_float(row.get("violation_count"), -1)) == 0]
-    native = [row for row in rows if int(closure.as_float(row.get("native_best_updates"), 0)) >= 1]
+    active = [row for row in rows if algorithm_specific_update_count(row) >= 1]
     signatures = {str(row.get("best_signature")) for row in rows}
     ready = (
         len(rows) == expected
         and len(ok) == expected
         and len(closed) == expected
         and len(zero_violation) == expected
-        and len(native) == expected
+        and len(active) == expected
         and len(signatures) == expected
     )
     return {
@@ -225,10 +225,29 @@ def baseline_health_decision(rows: list[dict[str, Any]], metadata: dict[str, Any
         "ok_tasks": len(ok),
         "eval_closed_tasks": len(closed),
         "zero_violation_tasks": len(zero_violation),
-        "native_update_tasks": len(native),
+        "algorithm_specific_active_tasks": len(active),
+        "legacy_native_route_update_tasks": sum(
+            int(closure.as_float(row.get("native_best_updates"), 0)) >= 1 for row in rows
+        ),
         "unique_best_signatures": len(signatures),
         "algorithm_win_loss_claim": False,
     }
+
+
+def algorithm_specific_update_count(row: dict[str, Any]) -> int:
+    recorded = int(closure.as_float(row.get("algorithm_specific_update_count"), 0))
+    if recorded:
+        return recorded
+    try:
+        history = json.loads(str(row.get("history_json", "[]")))
+    except json.JSONDecodeError:
+        return 0
+    return sum(
+        1
+        for item in history[1:]
+        if str(item.get("channel", "")).startswith("native_")
+        or str(item.get("channel", "")) == "flip_operator"
+    )
 
 
 def pair_rows(left_rows: list[dict[str, Any]], right_rows: list[dict[str, Any]]) -> list[tuple[dict[str, Any], dict[str, Any]]]:
@@ -324,7 +343,7 @@ def write_phase_report(phase_dir: Path, decision: dict[str, Any]) -> None:
         (
             f"Carbon pairs: {decision['carbon_pair_count']}; pairs with a recorded charging-time mechanism signal: {decision['carbon_moved_pair_count']}."
             if "carbon_pair_count" in decision
-            else f"Native-update tasks: {decision.get('native_update_tasks', 0)}; unique best signatures: {decision.get('unique_best_signatures', 0)}."
+            else f"Algorithm-specific active tasks: {decision.get('algorithm_specific_active_tasks', 0)}; unique best signatures: {decision.get('unique_best_signatures', 0)}."
         ),
         "",
         "This is experiment evidence, not paper prose. Algorithm win/loss claims remain disabled until the complete matrix is reviewed.",

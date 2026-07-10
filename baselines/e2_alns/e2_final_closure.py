@@ -1088,6 +1088,12 @@ def run_task(task: dict[str, Any]) -> dict[str, Any]:
         "cost_carbon": metrics.get("cost_carbon", math.nan),
         "low_carbon_charging_share": low_carbon_charging_share(solution, bundle.instance, bundle.carbon_profile, prices) if solution is not None else math.nan,
         "native_best_updates": native_best_updates(history, algorithm),
+        "algorithm_specific_update_count": sum(
+            1
+            for item in history[1:]
+            if str(item.get("channel", "")).startswith("native_")
+            or str(item.get("channel", "")) == "flip_operator"
+        ),
         "route_count_unique": route_count_unique(history, solution),
         "liveness_verdict": baseline_liveness_verdict(history, solution, algorithm),
         "liveness_flags": "|".join(baseline_liveness_flags(history, solution, algorithm)),
