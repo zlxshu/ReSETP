@@ -1,0 +1,55 @@
+{
+  "eval_budget": 4000,
+  "evidence_algorithms": [
+    "staged_hybrid_carbon_aware",
+    "staged_hybrid_carbon_naive",
+    "LNS",
+    "GA",
+    "PSO",
+    "VNS"
+  ],
+  "expected_evidence_rows": 270,
+  "expected_tasks": 225,
+  "head": "df89aaca09d0ad6451d4482b2d764ad6ce6ece9c",
+  "instances": [
+    "L-main-threeshift-10c-01",
+    "L-main-threeshift-15c-01",
+    "L-main-threeshift-20c-01",
+    "L-main-threeshift-25c-01",
+    "L-main-threeshift-50c-01",
+    "L-main-threeshift-75c-01",
+    "L-main-threeshift-100c-01",
+    "L-main-threeshift-150c-01",
+    "L-main-threeshift-200c-01"
+  ],
+  "legacy_carbon_search_operators": false,
+  "phase": "carbon-280",
+  "protected_paths": [
+    "solver/src/setp_solver/cost.py",
+    "solver/src/setp_solver/check.py",
+    "solver/src/setp_solver/search/evaluation.py",
+    "solver/src/setp_solver/prices.py",
+    "solver/src/setp_solver/search/feasible_repair.py",
+    "solver/src/setp_solver/search/resetp_alns",
+    "solver/src/setp_solver/search/alns_wouda.py",
+    "solver/src/setp_solver/search/winner_operators.py",
+    "docs/paper_submission_final/paper_main.tex"
+  ],
+  "scenario_type": "diagnostic_280_override",
+  "schema": "setp-e2-submission-matrix.v1",
+  "seeds": [
+    1,
+    2,
+    3,
+    4,
+    5
+  ],
+  "task_algorithms": [
+    "staged_hybrid_carbon_pair",
+    "LNS",
+    "GA",
+    "PSO",
+    "VNS"
+  ],
+  "workers": 6
+}
