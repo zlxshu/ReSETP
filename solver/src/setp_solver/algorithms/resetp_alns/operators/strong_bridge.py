@@ -6,21 +6,21 @@ Baselines continue to use search.candidates; this copy is for ReSETP ALNS only.
 from __future__ import annotations
 
 from dataclasses import dataclass, field, replace
+import hashlib
+import json
 import math
 import random
 from typing import Any
-
-import numpy as np
 
 from setp_solver.check import check_solution
 from setp_solver.instance_loader import Instance
 from setp_solver.solution import ChargingAction, Route, Solution
 from setp_solver.search.evaluation import EvaluationContext
 
-from setp_solver.algorithms.resetp_alns.support.fleet import FleetLimits, infer_fleet_limits
 from setp_solver.algorithms.resetp_alns.operators.feasible_repair import repair_removed_customers
 
 
+@dataclass(frozen=True)
 class _OperatorOutcome:
     solution: Solution
     produced: bool
@@ -29,6 +29,13 @@ class _OperatorOutcome:
     violation_count: int = 0
     detail: str = ""
     metadata: dict[str, Any] = field(default_factory=dict)
+
+
+@dataclass(frozen=True)
+class _ThinPolicy:
+    require_charging_signal: bool = False
+    max_cv: int = 10**9
+    max_ev: int = 10**9
 
 def _apply_strong_alns_destroy_repair(
     solution: Solution,

@@ -5,6 +5,7 @@ from setp_solver.algorithms.resetp_alns.runtime import (
     BalancedAlphaUCB,
     EpsilonDecayAlphaUCB,
     HillClimbing,
+    MinimumCoverageAlphaUCB,
     Outcome,
     RecordToRecordTravel,
     SimulatedAnnealing,

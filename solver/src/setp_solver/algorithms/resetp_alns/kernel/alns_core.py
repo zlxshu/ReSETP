@@ -42,6 +42,7 @@ from setp_solver.algorithms.resetp_alns.runtime import (
     BalancedAlphaUCB,
     EpsilonDecayAlphaUCB,
     HillClimbing,
+    MinimumCoverageAlphaUCB,
     RecordToRecordTravel,
     SoftmaxAlphaUCB,
     ThompsonPairSelector,
@@ -269,6 +270,8 @@ def _make_operator_selector(
     warmup_per_pair: int = 10,
     epsilon: float = 0.10,
     target_iterations: int = 4000,
+    op_coupling: np.ndarray | None = None,
+    protected_destroy_indices: tuple[int, ...] = (),
 ) -> Any:
     normalized = str(selector_kind or "alpha_ucb").strip().lower()
     if balanced and normalized == "alpha_ucb":
@@ -279,6 +282,7 @@ def _make_operator_selector(
             alpha=0.08,
             num_destroy=num_destroy,
             num_repair=num_repair,
+            op_coupling=op_coupling,
             warmup_per_pair=warmup_per_pair,
             epsilon=epsilon,
         )
@@ -288,26 +292,45 @@ def _make_operator_selector(
             alpha=0.08,
             num_destroy=num_destroy,
             num_repair=num_repair,
+            op_coupling=op_coupling,
             warmup_per_pair=warmup_per_pair,
             epsilon_start=0.15,
             epsilon_end=0.02,
             target_iterations=target_iterations,
         )
+    if normalized == "minimum_coverage":
+        return MinimumCoverageAlphaUCB(
+            [20.0, 8.0, 2.0, 0.05],
+            alpha=0.08,
+            num_destroy=num_destroy,
+            num_repair=num_repair,
+            op_coupling=op_coupling,
+            protected_destroy_indices=protected_destroy_indices,
+            warmup_per_pair=1,
+            max_family_gap=50,
+        )
     if normalized == "thompson":
-        return ThompsonPairSelector(num_destroy, num_repair, warmup_per_pair=5)
+        return ThompsonPairSelector(num_destroy, num_repair, op_coupling=op_coupling, warmup_per_pair=5)
     if normalized == "softmax":
         return SoftmaxAlphaUCB(
             [20.0, 8.0, 2.0, 0.05],
             alpha=0.08,
             num_destroy=num_destroy,
             num_repair=num_repair,
+            op_coupling=op_coupling,
             temperature_start=1.0,
             temperature_end=0.1,
             target_iterations=target_iterations,
         )
     if normalized != "alpha_ucb":
         raise ValueError(f"Unsupported selector_kind: {selector_kind}")
-    return AlphaUCB([20.0, 8.0, 2.0, 0.05], alpha=0.08, num_destroy=num_destroy, num_repair=num_repair)
+    return AlphaUCB(
+        [20.0, 8.0, 2.0, 0.05],
+        alpha=0.08,
+        num_destroy=num_destroy,
+        num_repair=num_repair,
+        op_coupling=op_coupling,
+    )
 
 
 def _flag_enabled(name: str) -> bool:

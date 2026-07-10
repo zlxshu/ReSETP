@@ -919,7 +919,7 @@ class FormalRunnerTests(unittest.TestCase):
             result = run_e0_gate(REPO_ROOT, Path(tmp) / "t1_instances.csv")
 
             self.assertEqual(result["gate"], "PASS")
-            self.assertEqual(len(result["rows"]), 2)
+            self.assertEqual(len(result["rows"]), 9)
 
 
 def _first_depot_id(bundle) -> str:

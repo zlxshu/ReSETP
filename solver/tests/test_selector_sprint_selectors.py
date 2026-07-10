@@ -10,12 +10,14 @@ from setp_solver.search.resetp_alns import (
     AlphaUCB,
     BalancedAlphaUCB,
     EpsilonDecayAlphaUCB,
+    MinimumCoverageAlphaUCB,
     SoftmaxAlphaUCB,
     ThompsonPairSelector,
 )
 from setp_solver.search.winner_operators import (
     BALANCED_SELECTOR_FLAG,
     EPS_DECAY_SELECTOR_FLAG,
+    MINIMUM_COVERAGE_SELECTOR_FLAG,
     SOFTMAX_SELECTOR_FLAG,
     STRONG_BRIDGE_BACKEND_FLAG,
     THOMPSON_SELECTOR_FLAG,
@@ -49,6 +51,12 @@ class SelectorSprintSelectorTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "HALT_CONFIG_CONFLICT_SELECTOR_FLAGS"):
             _selector_kind_from_flags(flags)
 
+    def test_minimum_coverage_flag_selects_the_new_diagnostic_scheduler(self) -> None:
+        flags = e2_alns_throughput_flags()
+        flags[MINIMUM_COVERAGE_SELECTOR_FLAG] = "1"
+
+        self.assertEqual(_selector_kind_from_flags(flags), "minimum_coverage")
+
     def test_epsilon_decay_selector_warmup_and_decay_are_deterministic(self) -> None:
         selector = EpsilonDecayAlphaUCB(
             [20.0, 8.0, 2.0, 0.05],
@@ -72,6 +80,32 @@ class SelectorSprintSelectorTests(unittest.TestCase):
         self.assertAlmostEqual(selector.current_epsilon, 0.046)
         self.assertEqual(selector.last_selection_info()["selector_type"], "epsilon_decay")
         self.assertIn(selector.last_selection_info()["selector_phase"], {"warmup", "explore", "exploit"})
+
+    def test_minimum_coverage_skips_duplicate_couplings_and_refreshes_starved_families(self) -> None:
+        coupling = np.array([[True, True], [True, True], [True, False]])
+        selector = MinimumCoverageAlphaUCB(
+            [20.0, 8.0, 2.0, 0.05],
+            alpha=0.08,
+            num_destroy=3,
+            num_repair=2,
+            op_coupling=coupling,
+            protected_destroy_indices=(1, 2),
+            warmup_per_pair=1,
+            max_family_gap=3,
+        )
+        rng = np.random.default_rng(17)
+        picks = []
+        for _ in range(12):
+            pair = selector(rng, None, None)
+            picks.append(pair)
+            selector.update(None, pair[0], pair[1], 3)
+
+        self.assertEqual(picks[:5], [(0, 0), (0, 1), (1, 0), (1, 1), (2, 0)])
+        self.assertNotIn((2, 1), picks)
+        for destroy_idx in (1, 2):
+            selected_at = [idx for idx, pair in enumerate(picks) if pair[0] == destroy_idx]
+            self.assertGreaterEqual(len(selected_at), 2)
+        self.assertEqual(selector.last_selection_info()["selector_type"], "minimum_coverage")
 
     def test_thompson_selector_respects_coupling_and_updates_success_failure(self) -> None:
         coupling = np.array([[True, False], [True, True]])

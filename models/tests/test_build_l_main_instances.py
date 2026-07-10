@@ -188,6 +188,25 @@ def test_audit_emits_ready_decision_and_required_record_surfaces(tmp_path: Path)
         assert (output / name).is_file()
 
 
+def test_audit_output_hashes_exclude_appledouble_sidecars(tmp_path: Path) -> None:
+    _load_lmain_cli()
+    audit = _load_lmain_audit()
+    output = tmp_path / "audit"
+    output.mkdir()
+    (output / "._decision.json").write_bytes(b"appledouble-noise")
+    decision = {
+        "candidate_root": str(tmp_path / "candidate"),
+        "verdict": "HALT_LMAIN_V3_AUDIT",
+        "failure_count": 1,
+        "instances": [],
+    }
+
+    audit._write_outputs(output, decision)
+
+    hashes = json.loads((output / "artifact_hashes.json").read_text(encoding="utf-8"))
+    assert all(not name.startswith("._") for name in hashes)
+
+
 def test_audit_rejects_appledouble_entries_in_manifest(tmp_path: Path) -> None:
     builder = _load_builder()
     cli = _load_lmain_cli()

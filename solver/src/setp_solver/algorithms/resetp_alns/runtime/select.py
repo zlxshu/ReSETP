@@ -261,6 +261,87 @@ class BalancedAlphaUCB(AlphaUCB):
         return self._argmax_pair(selector_type="balanced", selector_phase="exploit")
 
 
+class MinimumCoverageAlphaUCB(AlphaUCB):
+    """AlphaUCB with one legal-pair warmup and a sparse family coverage floor.
+
+    This diagnostic selector is deliberately cheaper than ``BalancedAlphaUCB``:
+    it does not force every pair ten times and has no permanent random epsilon.
+    A coupling matrix can remove semantically duplicate pairs, while selected
+    destroy families are refreshed only after a declared maximum gap.
+    """
+
+    def __init__(
+        self,
+        scores: Sequence[float],
+        alpha: float,
+        num_destroy: int,
+        num_repair: int,
+        op_coupling: np.ndarray | None = None,
+        *,
+        protected_destroy_indices: Sequence[int] = (),
+        warmup_per_pair: int = 1,
+        max_family_gap: int = 50,
+    ) -> None:
+        super().__init__(scores, alpha, num_destroy, num_repair, op_coupling)
+        if warmup_per_pair < 0:
+            raise ValueError("warmup_per_pair must be non-negative.")
+        if max_family_gap < 1:
+            raise ValueError("max_family_gap must be positive.")
+        protected = tuple(dict.fromkeys(int(value) for value in protected_destroy_indices))
+        if any(value < 0 or value >= num_destroy for value in protected):
+            raise ValueError("protected destroy index outside selector shape.")
+        if any(not any(pair[0] == value for pair in self._legal_pairs) for value in protected):
+            raise ValueError("protected destroy index has no legal pair.")
+        self._protected_destroy_indices = protected
+        self._warmup_per_pair = int(warmup_per_pair)
+        self._max_family_gap = int(max_family_gap)
+        self._last_destroy_selection = {value: -self._max_family_gap for value in protected}
+
+    @property
+    def warmup_per_pair(self) -> int:
+        return self._warmup_per_pair
+
+    @property
+    def max_family_gap(self) -> int:
+        return self._max_family_gap
+
+    def __call__(self, rng: object, best: object, curr: object) -> tuple[int, int]:
+        _ = rng, best, curr
+        for d_idx, r_idx in self._legal_pairs:
+            if int(self._times[d_idx, r_idx]) < self._warmup_per_pair:
+                return self._select(d_idx, r_idx, phase="warmup")
+
+        due = [
+            d_idx
+            for d_idx in self._protected_destroy_indices
+            if self._iter - self._last_destroy_selection[d_idx] >= self._max_family_gap
+        ]
+        if due:
+            d_idx = max(due, key=lambda value: (self._iter - self._last_destroy_selection[value], -value))
+            legal_repairs = [r_idx for destroy, r_idx in self._legal_pairs if destroy == d_idx]
+            r_idx = min(legal_repairs, key=lambda value: (int(self._times[d_idx, value]), value))
+            return self._select(d_idx, r_idx, phase="family_floor")
+
+        d_idx, r_idx = self._argmax_pair(selector_type="minimum_coverage", selector_phase="exploit")
+        self._remember_destroy(d_idx)
+        return d_idx, r_idx
+
+    def _select(self, d_idx: int, r_idx: int, *, phase: str) -> tuple[int, int]:
+        self._record_selection(
+            d_idx,
+            r_idx,
+            selector_type="minimum_coverage",
+            selector_phase=phase,
+            selector_value=float(self._values()[d_idx, r_idx]),
+        )
+        self._remember_destroy(d_idx)
+        return d_idx, r_idx
+
+    def _remember_destroy(self, d_idx: int) -> None:
+        if d_idx in self._last_destroy_selection:
+            self._last_destroy_selection[d_idx] = int(self._iter)
+
+
 class EpsilonDecayAlphaUCB(BalancedAlphaUCB):
     """Balanced AlphaUCB with linearly decaying uniform exploration."""
 

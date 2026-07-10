@@ -8,7 +8,7 @@
 ## 0. 一分钟速览
 ReSETP = 投《系统工程理论与实践》的绿色车辆路径论文。多车场、油车(CV)+电车(EV)混合车队、EV 非线性充电（时变碳强度）、时间窗、收益公平、动态需求滚动重规划。
 
-- [M1] 2026-07-10（已批准、未实施的 L-main 重建契约）：正式 E1--E7 仍收敛为九阶三班倒，但 `10..200` 改为**每个 Goeke 子来源的规模标签**，不再强制合并后客户数等于标签。每个正式实例须由三个完整来源子集按 `0h/9h/18h` 合并为 24h，只删超过 24h 的第三班尾部，以保留时变碳强度的全天语义；Goeke 原始来源为单车场，正式生成实例必须保留 `D0` 并生成 `D1`、三班共享该多车场设施布局。当前 size-preserving 9 集保留为历史快照，重建和验收通过前不作为新正式 E2 证据。完整设计：`docs/handoff/e2_lmain_reconstruction_design_20260710.md`。
+- [M1] 2026-07-10（L-main v3 已重建、审计并激活）：正式 E1--E7 为九阶三班倒，`10..200` 是每个 Goeke 子来源的规模标签，实际合并客户数为 `22/34/45/55/114/163/221/322/449`。三个完整来源按 `0h/9h/18h` 合并，只删超过 24h 的第三班尾部；保留 `D0`、生成 `D1`，三班共享多车场设施布局。激活审计 `LMAIN_V3_READY`、九实例 shared initial solution 零违约，formal runner 现在强制核对活动 manifest 与审计 hash；旧未审计目录已归档。设计与激活记录：`docs/handoff/e2_lmain_reconstruction_design_20260710.md`。
 贡献 = 模型 + 机制（碳两层/协同/公平/动态）；算法也必须有创新，且要**打过文献主流算法**（GA-VNS/GA/PSO/ACO/VNS/LNS/GWO/IWD），不只赢 SA（SA 是地板，赢它只算"合格"）。
 主线算法 = ALNS(winner kernel) + DR-ALNS（强化学习指挥 ALNS）。
 
@@ -216,3 +216,9 @@ ReSETP = 投《系统工程理论与实践》的绿色车辆路径论文。多�
 - [M1] 2026-07-09（挂帐 + 中控台）：**E2 性能冲刺（约超第二名 5% / A14 hybrid）挂帐暂停**，不阻塞中控台建设。已提交并推送上一轮底座：`fca004f` → `origin/codex/reporting-pipeline`（L-main 9 阶三班倒正式集 + `algorithms/resetp_alns` 完全独立；实例数据仍在盘上 `models/` gitignore）。新增根目录中控体系：`CONTROL_CONSOLE.py` + `CONTROL_CONSOLE.yaml`（batch/select/range 选实验与图表）+ `PARAMETERS_CONSOLE.yaml`（算法参数/路径/图风格）+ `input/`（按类型）+ `output/`（按实验与类型）+ `console/` 实现 + `.vscode/launch.json` 一键 dry-run/self-check。默认 `dry_run: true`；预检正式 9 算例与保护文件；运行日志写 `output/by_type/logs/`。验收：`--list/--self-check/--dry-run` 均 DONE OK。
 
 - [M1] 2026-07-09（挂帐恢复：E2 A13 full parity 续跑）：用户启动挂帐任务。事实：A13 4000/8000 hard-subset 已 192/192 OK 且 A13 vs LNS 全 tie（policy/formal 两组 gap=0），但 `decision.json` 仍为 `A13_PARITY_SMOKE_SUPPORTED`（`full_gate` 未闭合），`b16000` checkpoint 仅 60/192。已在后台续跑 `lns_policy_kernel_probe.py --budgets 4000,8000,16000 --workers 3` 复用既有 checkpoint，目标 `A13_PARITY_SUPPORTED`（576 rows）后才允许 A14 hybrid；任务卡 `docs/handoff/codex_prompts/20260709_e2_a13_full_parity_resume.md`。不改 cost/check/evaluation。
+
+- [M1] 2026-07-10（独立根因接管第一轮：先查问题、未改搜索语义）：L-main v3 已按 `LMAIN_V3_READY` 激活，formal 入口修复不存在的 200c 名称、E0 23/9 行漂移并加 manifest+audit hash 门。独立化提交 `fca004fad` 暴露三处真实运行错误并已用失败测试锁定后修复：`alns_core` bundle loader 名称错误、独立 strong-bridge 缺 `json/hashlib/_ThinPolicy/dataclass`、DR 入口调用不存在的 `_lazy__lazy_run_candidate`。`pyflakes algorithms/resetp_alns` 当前无 undefined name。根因报告：`docs/handoff/m1_independent_root_cause_20260710.md`。
+
+  新的当前-v3可复现实验没有支持“ALNS 根本造不出车队结构”。`m1_structure_reachability_20260710` 在实际55客户、280kWh、冻结起点下判定 `ALNS_SCHEDULER_OR_MULTI_STEP_BARRIER`：CURRENT_THROUGHPUT 从 CV 起点 90 次得 42 个结构候选/28 个立即改善，从共同一EV起点得 24/24。随后 `m1_scheduler_realization_20260710` 做 20 个同起点同种子400-eval配对，判定 `DEFAULT_SELECTOR_STARVATION_CONFIRMED`：共同一EV起点下默认 AlphaUCB 5/5 零次 vehicle-type swap、dominant pair share 平均0.9964、最终全停1条EV；balanced coverage 5/5 更低成本，平均少178.873473，最终6--8条EV。CV起点 balanced 3胜2负，说明覆盖是必要修复但不是最终算法。旧 selector sprint 同一产物在16000仍输LNS，所以不得把短预算通过包装为长期解决。
+
+  证据口径同步降级：旧所谓 fair SA 给 SA 用 shared-one-EV 起点、winner 却回默认构造，不公平；当前 shared-one-EV 构造还会从8条路线/成本1730.390718变成9条/1811.837477，并非中性换车。仓库未找到“ALNS验证集强3.23%”的原始可追溯行；09y Stage B 全算法逐位返回构造解只证机制存在。A13 full parity 现已实际闭合为576/576、`A13_PARITY_SUPPORTED`，只证LNS kernel等价，不证当前v3性能或独立ALNS创新。下一步不继续旧route patch：先冻结唯一M1入口与公平起点合同，再做动作家族最低覆盖（去掉vehicle swap×三repair重复格）和固定路线车队组成机会图；只有当前v3的4000-eval小中大三规模过门，才允许升8000/16000。若长期仍输LNS，ALNS降级普通求解器或诚实改名hybrid，不制造成功。

@@ -89,6 +89,7 @@ _CRUSH_FLAG_NAMES = (
     "SETP_ALNS_CRUSH_EPS_DECAY_SELECTOR",
     "SETP_ALNS_CRUSH_THOMPSON_SELECTOR",
     "SETP_ALNS_CRUSH_SOFTMAX_SELECTOR",
+    "SETP_ALNS_CRUSH_MINIMUM_COVERAGE_SELECTOR",
     "SETP_ALNS_CRUSH_ROUTE_POOL_RECOMBINATION",
     "SETP_ALNS_CRUSH_RVND_SWAPSTAR",
     "SETP_ALNS_CRUSH_ELITE_ARCHIVE_RESTART",
@@ -102,11 +103,13 @@ BALANCED_SELECTOR_FLAG = "SETP_ALNS_CRUSH_BALANCED_SELECTOR"
 EPS_DECAY_SELECTOR_FLAG = "SETP_ALNS_CRUSH_EPS_DECAY_SELECTOR"
 THOMPSON_SELECTOR_FLAG = "SETP_ALNS_CRUSH_THOMPSON_SELECTOR"
 SOFTMAX_SELECTOR_FLAG = "SETP_ALNS_CRUSH_SOFTMAX_SELECTOR"
+MINIMUM_COVERAGE_SELECTOR_FLAG = "SETP_ALNS_CRUSH_MINIMUM_COVERAGE_SELECTOR"
 SELECTOR_FLAGS = (
     BALANCED_SELECTOR_FLAG,
     EPS_DECAY_SELECTOR_FLAG,
     THOMPSON_SELECTOR_FLAG,
     SOFTMAX_SELECTOR_FLAG,
+    MINIMUM_COVERAGE_SELECTOR_FLAG,
 )
 ROUTE_POOL_RECOMBINATION_FLAG = "SETP_ALNS_CRUSH_ROUTE_POOL_RECOMBINATION"
 RVND_SWAPSTAR_FLAG = "SETP_ALNS_CRUSH_RVND_SWAPSTAR"
@@ -156,6 +159,7 @@ E2_ALNS_COMPONENT_SOURCES = {
     EPS_DECAY_SELECTOR_FLAG: "Diagnostic only: balanced scheduler with decaying epsilon exploration",
     THOMPSON_SELECTOR_FLAG: "Diagnostic only: Thompson-sampling operator pair scheduler",
     SOFTMAX_SELECTOR_FLAG: "Diagnostic only: softmax operator pair scheduler over AlphaUCB values",
+    MINIMUM_COVERAGE_SELECTOR_FLAG: "Diagnostic only: one-pass legal-pair coverage plus sparse structural-family refresh",
     ROUTE_POOL_RECOMBINATION_FLAG: "Diagnostic only: route-pool recombination on stagnation; candidate still uses existing evaluator/checker",
     RVND_SWAPSTAR_FLAG: "Diagnostic only: bounded RVND/SWAP*-lite intensification on stagnation",
     ELITE_ARCHIVE_RESTART_FLAG: "Diagnostic only: diverse elite archive current-restart on stagnation",
@@ -289,6 +293,7 @@ def winner_variant_flags(*, include_route_elimination: bool = False) -> dict[str
         EPS_DECAY_SELECTOR_FLAG: "0",
         THOMPSON_SELECTOR_FLAG: "0",
         SOFTMAX_SELECTOR_FLAG: "0",
+        MINIMUM_COVERAGE_SELECTOR_FLAG: "0",
         ROUTE_POOL_RECOMBINATION_FLAG: "0",
         RVND_SWAPSTAR_FLAG: "0",
         ELITE_ARCHIVE_RESTART_FLAG: "0",
@@ -325,6 +330,7 @@ def e2_alns_variant_flags() -> dict[str, str]:
         EPS_DECAY_SELECTOR_FLAG: "0",
         THOMPSON_SELECTOR_FLAG: "0",
         SOFTMAX_SELECTOR_FLAG: "0",
+        MINIMUM_COVERAGE_SELECTOR_FLAG: "0",
         ROUTE_POOL_RECOMBINATION_FLAG: "0",
         RVND_SWAPSTAR_FLAG: "0",
         ELITE_ARCHIVE_RESTART_FLAG: "0",
@@ -355,6 +361,7 @@ def e2_alns_scan_bridge_flags() -> dict[str, str]:
         EPS_DECAY_SELECTOR_FLAG: "0",
         THOMPSON_SELECTOR_FLAG: "0",
         SOFTMAX_SELECTOR_FLAG: "0",
+        MINIMUM_COVERAGE_SELECTOR_FLAG: "0",
         ROUTE_POOL_RECOMBINATION_FLAG: "0",
         RVND_SWAPSTAR_FLAG: "0",
         ELITE_ARCHIVE_RESTART_FLAG: "0",
@@ -901,7 +908,7 @@ def _run_winner_variant(
             solution = run.best_solution
             evaluations = run.evaluations
         elif config.algorithm == "DR-ALNS":
-            run = _lazy__lazy_run_candidate()()(
+            run = _lazy_run_candidate()(
                 "DR-ALNS",
                 bundle.bundle_dir,
                 seed=config.seed,
@@ -977,12 +984,16 @@ def _run_winner_kernel_loop(
         carbon_aware=config.carbon_aware_operators,
         carbon_bias_weight=config.carbon_operator_bias,
     )
+    selector_kind = _selector_kind_from_flags(flags)
+    selector_coupling, protected_destroy_indices = _minimum_coverage_contract(operator_set, selector_kind)
     selector = _make_operator_selector(
         len(operator_set.destroy_ops),
         len(operator_set.repair_ops),
-        selector_kind=_selector_kind_from_flags(flags),
+        selector_kind=selector_kind,
         balanced=_flag_enabled_from(flags, BALANCED_SELECTOR_FLAG),
         target_iterations=int(config.eval_budget),
+        op_coupling=selector_coupling,
+        protected_destroy_indices=protected_destroy_indices,
     )
     acceptance = _make_winner_acceptance_criterion(current, config=config, flags=flags)
     destroy_counts = {name: [0, 0, 0, 0] for name, _ in operator_set.destroy_ops}
@@ -1469,8 +1480,29 @@ def _selector_kind_from_flags(flags: dict[str, str]) -> str:
         EPS_DECAY_SELECTOR_FLAG: "eps_decay",
         THOMPSON_SELECTOR_FLAG: "thompson",
         SOFTMAX_SELECTOR_FLAG: "softmax",
+        MINIMUM_COVERAGE_SELECTOR_FLAG: "minimum_coverage",
     }
     return mapping[enabled[0]]
+
+
+def _minimum_coverage_contract(
+    operator_set: WinnerOperatorSet,
+    selector_kind: str,
+) -> tuple[np.ndarray | None, tuple[int, ...]]:
+    if selector_kind != "minimum_coverage":
+        return None, ()
+    destroy_names = [name for name, _ in operator_set.destroy_ops]
+    repair_count = len(operator_set.repair_ops)
+    coupling = np.ones((len(destroy_names), repair_count), dtype=bool)
+    vehicle_idx = destroy_names.index("vehicle_type_swap")
+    if repair_count > 1:
+        coupling[vehicle_idx, 1:] = False
+    protected = tuple(
+        destroy_names.index(name)
+        for name in ("whole_route_removal", "route_segment_removal", "vehicle_type_swap")
+        if name in destroy_names
+    )
+    return coupling, protected
 
 
 def structural_component_from_flags(flags: dict[str, str] | None = None) -> str | None:

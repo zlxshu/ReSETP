@@ -1,6 +1,13 @@
-# E2 L-main Reconstruction Design (Approved, Not Yet Implemented)
+# E2 L-main Reconstruction Design and Activation Record
 
 Date: 2026-07-10
+
+Status: **implemented, audited, and activated on 2026-07-10**.  The active
+manifest is `resetp-l-main-main-benchmark.v3.json`; the matching audit verdict
+is `LMAIN_V3_READY` in `baselines/e2_alns/l_main_v3_activation/decision.json`.
+The prior unverified active directory is preserved as
+`L-main_unverified_v3_pre_activation_20260710_74ce9045` and is not formal
+evidence.
 
 ## Decision
 
@@ -55,3 +62,23 @@ The rebuilt benchmark cannot become formal until all of the following pass:
 - `L-main_mixed23_archive_20260709`, vanilla, and standalone multidepot pools remain diagnostic/archive material, not formal E2 score inputs.
 - No protected evaluator files (`cost.py`, `check.py`, `search/evaluation.py`) are changed by this reconstruction.
 - No E2 performance claim is made until the rebuilt set has passed structural, feasibility, and platform-consistency gates.
+
+## Activation result
+
+The generator and audit were run from commit
+`48efe1208d2a5f56d481dd1defff4c143eb09bc0`.  The active v3 family contains
+exactly the nine required instances.  Their natural merged customer counts are
+`22, 34, 45, 55, 114, 163, 221, 322, 449`; reports must use these actual counts
+instead of treating the source-scale labels as customer totals.
+
+The activation audit found zero failures and zero initial-solution violations.
+The active manifest SHA-256 is
+`bf904ef254aeeb1a76cb1308eae7a5caee14a814a15e1087254b024992c5d39c`.
+AppleDouble names are rejected by both generation and audit.  Formal runners
+now stop before execution unless the active manifest and tracked
+`LMAIN_V3_READY` decision match exactly.  E0 was rerun after activation and
+returned `PASS` with all nine actual customer counts.
+
+This activation validates benchmark construction and feasibility only.  It
+does not carry forward any ALNS, SA, LNS, or mixed-fleet performance result
+from the older benchmark pools.

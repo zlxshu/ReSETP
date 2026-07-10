@@ -4,12 +4,15 @@ import builtins
 from pathlib import Path
 import re
 import sys
+from types import SimpleNamespace
 import unittest
 from unittest import mock
 
 import numpy as np
 
 from setp_solver.search.alns_crush import INSTANCE_DIRS
+from setp_solver.search.bundle import load_search_bundle
+from setp_solver.search.candidates import make_shared_initial_solution
 from setp_solver.search.winner_operators import WinnerKernelConfig, run_winner_kernel
 
 
@@ -90,3 +93,22 @@ class ResetpAlnsIndependenceTest(unittest.TestCase):
         self.assertTrue(result["feasible"])
         self.assertEqual(result["violation_count"], 0)
         self.assertGreaterEqual(result["evaluations"], 4)
+
+    def test_dr_entry_calls_the_lazy_candidate_runner_once(self) -> None:
+        from setp_solver.algorithms.resetp_alns.kernel import winner
+
+        bundle_dir = REPO_ROOT / INSTANCE_DIRS["L-main-threeshift-10c-01"]
+        warm = make_shared_initial_solution(load_search_bundle(bundle_dir))
+        calls: list[tuple[str, Path]] = []
+
+        def fake_runner(algorithm: str, selected_bundle: Path, **kwargs: object) -> SimpleNamespace:
+            _ = kwargs
+            calls.append((algorithm, Path(selected_bundle)))
+            return SimpleNamespace(best_solution=warm, evals=4)
+
+        config = WinnerKernelConfig(algorithm="DR-ALNS", seed=1, eval_budget=4, max_runtime_seconds=120.0)
+        with mock.patch.object(winner, "_lazy_run_candidate", return_value=fake_runner):
+            result = run_winner_kernel(bundle_dir, config=config, initial_solution=warm)
+
+        self.assertTrue(result["feasible"])
+        self.assertEqual(calls, [("DR-ALNS", bundle_dir)])

@@ -117,14 +117,24 @@ def _write_outputs(output_root: Path, decision: dict[str, Any]) -> None:
     metadata = {"created_at_utc": datetime.now(timezone.utc).isoformat(), "candidate_root": decision["candidate_root"], "audit": "l-main-v3"}
     _write_json(output_root / "metadata.json", metadata)
     with (output_root / "raw_runs.csv").open("w", encoding="utf-8", newline="") as handle:
-        writer = csv.DictWriter(handle, fieldnames=["instance_id", "source_scale", "merged_customer_count", "carbon_slot_count", "initial_solution_violation_count", "failures"])
+        writer = csv.DictWriter(
+            handle,
+            fieldnames=["instance_id", "source_scale", "merged_customer_count", "carbon_slot_count", "initial_solution_violation_count", "failures"],
+            lineterminator="\n",
+        )
         writer.writeheader()
         for row in decision["instances"]:
             writer.writerow({**row, "failures": "; ".join(row["failures"])})
     _write_json(output_root / "decision.json", decision)
     report = f"# L-main v3 rebuild audit\n\nVerdict: `{decision['verdict']}`.\n\nFailures: {decision['failure_count']}.\n"
     (output_root / "report.md").write_text(report, encoding="utf-8")
-    hashes = {path.name: sha256_file(path) for path in output_root.iterdir() if path.is_file() and path.name != "artifact_hashes.json"}
+    hashes = {
+        path.name: sha256_file(path)
+        for path in output_root.iterdir()
+        if path.is_file()
+        and path.name != "artifact_hashes.json"
+        and not path.name.startswith("._")
+    }
     _write_json(output_root / "artifact_hashes.json", hashes)
 
 

@@ -85,3 +85,6 @@ E7 动态需求必须保留三交互门槛：动态×协同、动态×公平、�
 
 2026-07-09 执行拨正：正式算例改为 L-main v2 **9 阶三班倒 only**；ALNS **完全独立包** `algorithms/resetp_alns`（非半独立）。详见 instance-lineage.md / resetp-alns-independence.md。E2 性能目标（约超第二名 5%）须在新底座上重采。
 
+2026-07-10 Codex 独立根因接管第一轮：L-main v3 九阶三班族已从 commit `48efe1208d2a5f56d481dd1defff4c143eb09bc0` 重建、审计并激活，实际客户数 `22/34/45/55/114/163/221/322/449`，verdict=`LMAIN_V3_READY`；formal runner 加 manifest+audit hash 门并修复不存在的主实例名和 E0 23/9 漂移。独立化 `fca004fad` 遗留三处真实运行断点已由失败测试复现并修复：bundle loader 名称错误、独立 strong-bridge 缺依赖/类型/dataclass、DR lazy runner 拼写和双调用错误。完整根因报告 `docs/handoff/m1_independent_root_cause_20260710.md`。
+
+同日当前-v3机制证据：`m1_structure_reachability_20260710` verdict=`ALNS_SCHEDULER_OR_MULTI_STEP_BARRIER`，否定“ALNS算子完全不能改车队结构”；CURRENT_THROUGHPUT 在55实际客户/280kWh下，CV起点 90 次得42个结构候选（28个立即改善），shared-one-EV起点24个且全部立即改善。`m1_scheduler_realization_20260710` verdict=`DEFAULT_SELECTOR_STARVATION_CONFIRMED`：同起点/同seed/400 eval下，shared-one-EV默认 AlphaUCB 五个种子全部零 vehicle swap、dominant share 平均0.9964、最终固定1条EV；balanced coverage 5/5 更优，平均降178.873473并到6--8条EV。CV起点 balanced 仅3胜2负，且旧hard-subset selector在16000仍未过LNS门，所以 selector starvation 是确定根因但 balanced 不是最终解。旧 fair-SA runner 起点不一致，3.23% claim 未找到原始行，09y Stage B 全平只证构造机制。下一步冻结唯一M1身份与公平起点合同，测试按动作家族的最低覆盖和固定路线车队组成机会图；不再续旧 route patch，不为混合比例改 evaluator/物理合同。
