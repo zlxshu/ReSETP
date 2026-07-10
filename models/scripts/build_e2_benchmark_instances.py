@@ -211,10 +211,80 @@ def _build_threeshift(raw_index: dict[str, RawMeta], output_root: Path, size: in
     metas = [raw_index[base_id] for base_id in child_base_ids]
     plan = _choose_child_counts(size, metas[2])
     instance_id = f"e2-threeshift-{size}c-{donor}"
+    return _build_three_shift_from_child_counts(
+        metas,
+        size,
+        donor,
+        instance_id,
+        output_root / "threeshift" / instance_id,
+        child_counts=plan.child_counts,
+        count_policy={
+            "policy": "historical_target_planning",
+            "target": plan.target,
+            "child_counts": list(plan.child_counts),
+            "predicted_actual": plan.predicted_actual,
+            "predicted_third_shift_kept": plan.predicted_third_shift_kept,
+            "exact_hit": plan.exact_hit,
+        },
+    )
+
+
+def build_full_source_threeshift(
+    raw_index: dict[str, RawMeta],
+    source_scale: int,
+    donor: str,
+    instance_id: str,
+    output_dir: str | Path,
+) -> BuildRow:
+    """Build one formal L-main v3 bundle from three complete Goeke sources.
+
+    The formal path deliberately has no target-count planner: each source
+    contributes its complete customer set, and only third-shift customers whose
+    shifted due time lies beyond 24h are removed.
+    """
+
+    if donor not in DONORS:
+        raise ValueError(f"Unsupported donor {donor!r}; expected one of {DONORS}")
+    child_donors = _rotated_donors(donor)
+    metas = [raw_index[f"E-UK{source_scale}_{item}"] for item in child_donors]
+    child_counts = tuple(meta.customer_count for meta in metas)
+    if child_counts != (int(source_scale),) * 3:
+        raise RuntimeError(
+            f"L-main full-source contract failed for {source_scale}c/{donor}: "
+            f"expected three complete {source_scale}-customer sources, got {child_counts}"
+        )
+    return _build_three_shift_from_child_counts(
+        metas,
+        source_scale,
+        donor,
+        instance_id,
+        Path(output_dir),
+        child_counts=child_counts,
+        count_policy={
+            "policy": "full_source_natural_24h_tail_cut",
+            "source_scale": int(source_scale),
+            "input_customer_counts": list(child_counts),
+            "forbidden": ["target_count_planning", "prefix_truncation"],
+        },
+        formal_v3=True,
+    )
+
+
+def _build_three_shift_from_child_counts(
+    metas: list[RawMeta],
+    size: int,
+    donor: str,
+    instance_id: str,
+    output_dir: Path,
+    *,
+    child_counts: tuple[int, int, int],
+    count_policy: dict[str, Any],
+    formal_v3: bool = False,
+) -> BuildRow:
     child_rows: list[dict[str, Any]] = []
     facility_layout: dict[str, Node] | None = None
 
-    for idx, (meta, child_count, shift_seconds) in enumerate(zip(metas, plan.child_counts, SHIFT_SECONDS, strict=True)):
+    for idx, (meta, child_count, shift_seconds) in enumerate(zip(metas, child_counts, SHIFT_SECONDS, strict=True)):
         config = _base_config(
             f"{instance_id}__shift{idx + 1}_{meta.base_id}_n{child_count}",
             meta,
@@ -240,6 +310,7 @@ def _build_threeshift(raw_index: dict[str, RawMeta], output_root: Path, size: in
                 "scenario_id": config.scenario_id,
                 "n_customers": child_count,
                 "shift_seconds": shift_seconds,
+                "source_fleet": {"num_cv": meta.num_cv, "num_ev": meta.num_ev},
                 "scenario": scenario,
                 "validation": scenario.validation,
             }
@@ -250,10 +321,11 @@ def _build_threeshift(raw_index: dict[str, RawMeta], output_root: Path, size: in
         instance_id,
         child_rows,
         metas[0],
-        plan,
         facility_layout,
+        source_scale=size,
+        count_policy=count_policy,
+        formal_v3=formal_v3,
     )
-    output_dir = output_root / "threeshift" / instance_id
     payload = {
         "e2_category": "threeshift",
         "donor_goeke_id": f"E-UK{size}_{donor}",
@@ -264,8 +336,8 @@ def _build_threeshift(raw_index: dict[str, RawMeta], output_root: Path, size: in
     _write_json(manifest_path, three_shift_manifest)
     _attach_extra_file_to_manifest(output_dir, "three_shift_manifest_json", manifest_path)
     row = _row(instance_id, "threeshift", size, _customer_count(scenario), metas[0], output_dir, scenario)
-    row.three_shift_per_shift_counts = list(plan.child_counts)
-    row.three_shift_child_bases = child_base_ids
+    row.three_shift_per_shift_counts = [int(item["kept_customer_count"]) for item in three_shift_manifest["source_children"]]
+    row.three_shift_child_bases = [meta.base_id for meta in metas]
     return row
 
 
@@ -486,8 +558,11 @@ def _merge_three_shift(
     instance_id: str,
     child_rows: list[dict[str, Any]],
     meta: RawMeta,
-    plan: CountPlan,
     facility_layout: dict[str, Node],
+    *,
+    source_scale: int,
+    count_policy: dict[str, Any],
+    formal_v3: bool,
 ) -> tuple[Scenario, dict[str, Any]]:
     nodes: list[Node] = []
     for node_id in sorted((node_id for node_id in facility_layout if node_id.startswith("D")), key=_natural_key):
@@ -496,12 +571,22 @@ def _merge_three_shift(
     kept_customers: list[dict[str, Any]] = []
     deleted_customers: list[dict[str, Any]] = []
     customer_idx = 1
-    for row in child_rows:
+    child_reports: list[dict[str, Any]] = []
+    for shift_index, row in enumerate(child_rows):
         scenario: Scenario = row["scenario"]
+        input_customer_count = 0
+        kept_count = 0
+        deleted_count = 0
         for customer in [node for node in scenario.nodes if node.node_type.lower() == "c"]:
+            input_customer_count += 1
             shifted_ready = float(customer.ready_time) + float(row["shift_seconds"])
             shifted_due = float(customer.due_time) + float(row["shift_seconds"])
             if shifted_due > THREESHIFT_HORIZON_SECONDS + 1e-9:
+                if shift_index != 2:
+                    raise RuntimeError(
+                        f"{instance_id}: only third-shift tail truncation is allowed; "
+                        f"{row['base_id']} at shift {shift_index + 1} has due={shifted_due}"
+                    )
                 deleted_customers.append(
                     {
                         "source_base_id": row["base_id"],
@@ -513,6 +598,7 @@ def _merge_three_shift(
                         "reason": "shifted_due_time_exceeds_24h",
                     }
                 )
+                deleted_count += 1
                 continue
             new_id = f"C{customer_idx:03d}"
             nodes.append(Node(new_id, "c", customer.x, customer.y, customer.demand, shifted_ready, shifted_due, customer.service_time))
@@ -530,7 +616,29 @@ def _merge_three_shift(
                 }
             )
             customer_idx += 1
+            kept_count += 1
+        child_reports.append(
+            {
+                "source_base_id": row["base_id"],
+                "scenario_id": row["scenario_id"],
+                "shift_seconds": row["shift_seconds"],
+                "input_customer_count": input_customer_count,
+                "kept_customer_count": kept_count,
+                "deleted_customer_count": deleted_count,
+                "validation": row["validation"],
+            }
+        )
 
+    # Spatial/public-station layout is inherited from shift 1.  Depot charger
+    # capacity is a route-count upper bound and must describe the merged bundle,
+    # not one child source, so normalize only that non-spatial capacity field.
+    merged_customer_count = len(kept_customers)
+    nodes = [
+        replace(node, station_capacity=merged_customer_count, station_chargers=merged_customer_count)
+        if node.node_type.lower() == "d"
+        else node
+        for node in nodes
+    ]
     for node_id in sorted((node_id for node_id in facility_layout if node_id.startswith("F")), key=_natural_key):
         nodes.append(replace(facility_layout[node_id], ready_time=0.0, due_time=THREESHIFT_HORIZON_SECONDS, service_time=0.0))
 
@@ -540,7 +648,7 @@ def _merge_three_shift(
         seed=400_000 + len(kept_customers),
         n_depots=2,
         n_stations=sum(1 for node in nodes if node.node_type.lower() == "f"),
-        n_customers=len(kept_customers),
+        n_customers=merged_customer_count,
         num_cv=meta.num_cv,
         num_ev=meta.num_ev,
         coord_mode="three_shift_merge",
@@ -557,28 +665,23 @@ def _merge_three_shift(
     validation = validate_scenario(nodes, matrix, config)
     manifest = {
         "name": instance_id,
-        "build_note": "E2 three-shift merge; customer windows are shifted and only >24h third-shift tail is dropped.",
-        "count_plan": {
-            "target": plan.target,
-            "child_counts": list(plan.child_counts),
-            "predicted_actual": plan.predicted_actual,
-            "predicted_third_shift_kept": plan.predicted_third_shift_kept,
-            "exact_hit": plan.exact_hit,
-        },
-        "source_children": [
-            {
-                "source_base_id": row["base_id"],
-                "scenario_id": row["scenario_id"],
-                "shift_seconds": row["shift_seconds"],
-                "n_customers": row["n_customers"],
-                "validation": row["validation"],
-            }
+        "build_note": "Customer windows are shifted by 0/9/18h; only >24h third-shift tail customers are dropped.",
+        "source_scale": int(source_scale),
+        "merged_customer_count": merged_customer_count,
+        "formal_v3": bool(formal_v3),
+        "count_policy": count_policy,
+        "source_children": child_reports,
+        "facility_layout_source": child_rows[0]["scenario_id"],
+        "facility_layout_policy": "share first-shift physical layout and public-station attributes; normalize merged depot route-upper-bound chargers",
+        "final_fleet_policy": "anchor_first_shift_source",
+        "final_fleet": {"num_cv": meta.num_cv, "num_ev": meta.num_ev},
+        "source_fleets": [
+            {"source_base_id": row["base_id"], **row["source_fleet"]}
             for row in child_rows
         ],
-        "facility_layout_source": child_rows[0]["scenario_id"],
         "deleted_customers": deleted_customers,
         "deleted_customer_count": len(deleted_customers),
-        "kept_customer_count": len(kept_customers),
+        "kept_customer_count": merged_customer_count,
         "total_demand": sum(float(node.demand) for node in nodes if node.node_type.lower() == "c"),
         "return_deadline_seconds": THREESHIFT_HORIZON_SECONDS,
         "validation": validation,
@@ -695,15 +798,15 @@ def _readme_text(manifest: dict[str, Any]) -> str:
         [
             "# E2 Benchmark Instances",
             "",
-            "This directory contains the E2 69-instance benchmark for formal algorithm comparison.",
+            "This directory contains the E2 diagnostic benchmark bundle pool.",
             "",
             "- Categories: vanilla, multidepot, threeshift.",
-            "- Counts: 27 vanilla + 27 multidepot + 15 threeshift = 69 bundles.",
+            "- Counts: 27 vanilla + 27 multidepot + 27 threeshift = 81 bundles.",
             "- Scoring protocol: ReSETP UK cost and two-layer carbon accounting; no external BKS is attached.",
             f"- Gate: {manifest['gate']}.",
             f"- Generator commit: {manifest['generator_code_commit_short']}.",
             "",
-            "Use `e2_benchmark_manifest.json` as the source of truth for bundle paths, donor Goeke ids, fleet metadata, warm-start cost, and validation status.",
+            "Use `e2_benchmark_manifest.json` as the source of truth for diagnostic bundle paths, donor Goeke ids, fleet metadata, warm-start cost, and validation status. The formal main benchmark is the separate L-main v3 manifest.",
             "",
         ]
     )
@@ -758,7 +861,11 @@ def _attach_extra_file_to_manifest(output_dir: Path, key: str, path: Path) -> No
 
 
 def _distance_matrix(nodes: list[Node]) -> np.ndarray:
-    return pairwise_distances(np.asarray([(node.x, node.y) for node in nodes], dtype=float))
+    return _distance_matrix_from_coordinates(np.asarray([(node.x, node.y) for node in nodes], dtype=float))
+
+
+def _distance_matrix_from_coordinates(coordinates: np.ndarray) -> np.ndarray:
+    return pairwise_distances(np.asarray(coordinates, dtype=float))
 
 
 def _customer_count(scenario: Scenario) -> int:
