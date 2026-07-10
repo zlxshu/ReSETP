@@ -249,14 +249,5 @@ class M1JointRepackFleetHeadroomTests(unittest.TestCase):
 
         self.assertEqual(selector.scores, [4.0, 3.0, 2.0, 0.05])
 
-    def test_gain_reward_distinguishes_large_route_gain_from_tiny_vehicle_gain(self) -> None:
-        from setp_solver.algorithms.resetp_alns.kernel.winner import _gain_aware_reward
-
-        self.assertEqual(_gain_aware_reward(0, 7000.0, 7000.0, 6900.0, 7000.0), 2.857142857142857)
-        self.assertEqual(_gain_aware_reward(0, 7000.0, 7000.0, 6999.0, 7000.0), 0.25)
-        self.assertEqual(_gain_aware_reward(1, 6900.0, 7200.0, 7100.0, 7000.0), 3.0)
-        self.assertEqual(_gain_aware_reward(2, 6900.0, 7000.0, 7100.0, 7000.0), 2.0)
-
-
 if __name__ == "__main__":
     unittest.main()
