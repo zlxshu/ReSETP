@@ -15,6 +15,8 @@ metadata:
 
 2026-07-11 M1项目5动态地基闭合：没有合并整个`dr-x86`，只把已经验证的动态实况合同迁回`codex/reporting-pipeline`。正常滚动和静态后见对照统一使用项目内独立`setp_solver.algorithms.resetp_alns`，动态源码对`run_alns_wouda`为零引用；车辆实时位置/在途进度、时间、剩余载重、SOC、未结束充电、物理车辆占用和锁定客户原车原序均进入规划或检查，收尾不再重启求解器重建全部剩余路线。52项动态/检查测试和1项最终违规停机测试通过；修改后重新回放冻结E2 270行仍全部零违规且成本一致。代码`96cbcbf7`，证据`baselines/e7_dynamic/m1_dynamic_truth_gate_20260711/`，verdict=`M1_DYNAMIC_LIVE_STATE_CONTRACT_SUPPORTED`。该判决只关闭正确性地基，不等于动态优化有效；“立即处理对允许合理延迟”的同事件流低碳机制门仍受投稿统一合同阻塞。
 
+2026-07-11 E1--E7投稿合同机器闸门：只读源码确认旧E4入口仍是16000评价、fairness off和碳价×线性配额网格，不能冒充新的精细碳正式消融。新增`solver/src/setp_solver/search/submission_contract.py`与4项测试，要求正式提交合同必须有用户冻结状态、固定客户归属文件和hash、完整模型搜索期公平、binding-aware theta规则，以及碳配额仅作accounting的主张边界。`baselines/contract_audit/submission_contract_candidate_20260711/`基于L-main v3生成九档1425条最近车场归属和推荐合同草案；结构有效但故意拒绝正式开跑，verdict=`BLOCK_SUBMISSION_RUNS_PENDING_USER_CONFIRMATION`。用户确认前继续禁止项目4/5及E4--E7正式搜索。
+
 2026-07-11 用户在保留上述冻结证据的前提下重新打开旧遗留编号1--6、9，要求逐项做一次有界尝试。当前顺序改为：15负恢复/扩大领先→80 kWh→完整碳感知搜索→动态需求低碳→电池容量与车型结构→最后16000评价。只允许阶段串行、批内CPU并行。15负审计为平均落后2.270%、3组超过5%、11组路线更多、9组最佳停在中间强搜索阶段；首候选把3200强搜索拆成两个独立1600盆地并从当前最好解重启，总预算不变。首轮9组×旧/重启/LNS×1600虽27/27满预算零违规，但误用`introduce_ev=False`起点且LNS关闭正式共同预处理，与冻结E2合同不一致，判`RESTART_SHORT_GATE_INVALID_START_CONTRACT`并保留原始证据。runner改为`make_shared_initial_solution`+`common_flip_preprocess=True`后只纠正重跑相同27次；通过后仍必须用未见种子验证。合同见`docs/handoff/e2_legacy_items_1_6_9_execution_plan_20260711.md`，证据目录`baselines/e2_alns/e2_loss_recovery_20260711/`。
 
 2026-07-11 正式起点纠正门完成并判退重启候选：27/27满1600、零违规、出处/hash齐全；重启相对旧staged全部9组平均+0.410%、6个开发负例+0.236%、guard最差0%，但同预算负例转不输LNS为0，150c seed3反而-9.737%，verdict=`RESTART_SHORT_GATE_REJECTED`。阶段分解显示150c连续800强搜索可改善，而拆成两个400后两段均无改善，故停止重启参数路线。下一候选不扩大矩阵，只在同总预算内把中段从“借LNS修复后端”改成“真实LNS策略阶段”，补齐staged ALNS-LNS hybrid的实现身份。

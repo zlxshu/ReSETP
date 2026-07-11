@@ -160,4 +160,6 @@ Claude顾问意见提出了一个需要全项目统一处理、不能在单个�
 
 零搜索合同审计已经完成，证据位于`baselines/contract_audit/e1_e7_submission_contract_20260711/`。E2的270/270保存解在当前检查器下仍零违规且免费跨场成本逐行匹配，所以内部算法比较不作废；最近车场归属补算得到hybrid跨场278次、LNS跨场758次。将论文95英镑跨场费和E3同种子独立收益基准放回200c冻结hybrid后，theta=1为0/5可行；即使跨场费取0也仅1/5可行，证明冻结E2不能事后包装为完整公平模型。E1--E7的电池、跨场费、公平和碳配额开关也确实分叉。当前硬阻塞更新为`BLOCK_FORMAL_E4_E7_PENDING_SUBMISSION_CONTRACT_DECISION`。大白话拍板单统一放在`docs/handoff/e1_e7_submission_contract_decision_20260711.md`；用户确认前不得启动项目4的4000评价门或E4--E7正式搜索。
 
+该人工拍板条件现已增加机器闸门，避免以后误操作。`baselines/contract_audit/submission_contract_candidate_20260711/`已经生成推荐草案、L-main九档1425条客户固定归属和输入hash；`setp_solver.search.submission_contract`会拒绝未冻结草案、归属hash漂移、完整模型公平关闭、非binding公平粗网格或把线性碳配额包装成路线机制。4项合同测试通过。草案当前故意标记`PROPOSED_PENDING_USER_CONFIRMATION`，因此判`BLOCK_SUBMISSION_RUNS_PENDING_USER_CONFIRMATION`。用户确认后只能修改这一份合同的状态/选择并重新hash，不得让项目4、5、E4--E7各自再维护一套参数。
+
 等待投稿合同决定期间，项目5只完成了不耗搜索预算的动态地基迁移和验证，结果见本计划“5：动态需求促进低碳充电”。这不是绕过顺序提前跑E7：没有启动动态正式算例、没有做立即/延迟胜负，也没有修改冻结E2。当前可继续推进的下一动作仍是用户按`docs/handoff/e1_e7_submission_contract_decision_20260711.md`冻结统一投稿合同；在此之前项目4正式4000、项目5机制门及E4--E7正式搜索均暂停。

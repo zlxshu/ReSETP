@@ -1,0 +1,41 @@
+{
+  "algorithm_core_e2": {
+    "eval_budget": 4000,
+    "freeze_tag": "e2-submission-20260711",
+    "reuse_frozen_e2": true,
+    "scope": "core_relaxed_algorithm_comparison"
+  },
+  "contract_id": "resetp-e1-e7-submission-20260711-proposed-v1",
+  "full_model": {
+    "carbon_quota": {
+      "baseline_factor": 0.8,
+      "claim_role": "accounting_only"
+    },
+    "cross_site_fee": {
+      "claim_boundary": "95 GBP remains a high-friction stress case unless a source-backed main value is frozen.",
+      "sensitivity_gbp_per_customer": [
+        0.0,
+        10.0,
+        25.0,
+        50.0,
+        95.0
+      ],
+      "shared_baseline_gbp_per_customer": 0.0
+    },
+    "customer_ownership": {
+      "manifest_path": "baselines/contract_audit/submission_contract_candidate_20260711/customer_owner_manifest.json",
+      "manifest_sha256": "2df6d8a208077661a0c2b8e09d0fc10df043f27906dae6130239e6a981da985f",
+      "rule": "nearest_depot_by_bundle_distance"
+    },
+    "fairness": {
+      "enabled_from_search_start": true,
+      "theta_selection": "calibrate_around_natural_binding_range"
+    },
+    "main_battery_kwh": 280.0,
+    "robustness_battery_kwh": [
+      80.0
+    ]
+  },
+  "schema_version": "resetp.submission-contract.v1",
+  "status": "PROPOSED_PENDING_USER_CONFIRMATION"
+}
