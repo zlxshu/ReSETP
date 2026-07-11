@@ -326,13 +326,15 @@ class M1JointRepackFleetHeadroomTests(unittest.TestCase):
         self.assertTrue(_accept_winner_candidate("random_customer_removal", True, 101.0, 100.0, always_accept, None, None, None, None))
 
     def test_staged_chain_splits_but_never_increases_the_evaluation_budget(self) -> None:
-        from setp_solver.algorithms.resetp_alns.kernel.winner import _staged_chain_budgets
+        from setp_solver.algorithms.resetp_alns.kernel.winner import _staged_chain_budgets, _staged_chain_plan
 
         self.assertEqual(_staged_chain_budgets(4000), (400, 3200, 400))
         self.assertEqual(_staged_chain_budgets(800), (400, 0, 400))
         self.assertEqual(_staged_chain_budgets(401), (400, 0, 1))
         self.assertEqual(_staged_chain_budgets(400), (400, 0, 0))
         self.assertEqual(sum(_staged_chain_budgets(16000)), 16000)
+        self.assertEqual(_staged_chain_plan(4000, 2), ((400, 1600, 1600, 400), frozenset({1, 2})))
+        self.assertEqual(sum(_staged_chain_plan(4000, 2)[0]), 4000)
 
     def test_staged_chain_runs_regular_bridge_regular_under_one_total_budget(self) -> None:
         import setp_solver.algorithms.resetp_alns.kernel.winner as winner
@@ -364,6 +366,39 @@ class M1JointRepackFleetHeadroomTests(unittest.TestCase):
         self.assertEqual(result.best_obj, 5.0)
         self.assertEqual(result.operator_counts["staged_chain"]["best_phase"], 2)
         self.assertEqual(len(result.operator_counts["staged_chain"]["phase_operator_counts"]), 3)
+
+    def test_restarted_staged_chain_splits_only_the_strong_middle_budget(self) -> None:
+        import setp_solver.algorithms.resetp_alns.kernel.winner as winner
+        from setp_solver.algorithms.resetp_alns.kernel.alns_core import AlnsRunResult
+
+        bundle = load_search_bundle(VERIFY_BUNDLE)
+        start = make_shared_initial_solution(bundle, prices=DEFAULT_PRICES)
+        phase_results = [
+            AlnsRunResult(start, start, 10.0, 9.0, 400, True),
+            AlnsRunResult(start, start, 9.0, 7.0, 100, True),
+            AlnsRunResult(start, start, 7.0, 5.0, 100, True),
+            AlnsRunResult(start, start, 5.0, 6.0, 400, True),
+        ]
+
+        with patch.object(winner, "_run_winner_kernel_loop", side_effect=phase_results) as phase_run:
+            result = winner.run_staged_chain_alns(
+                start,
+                bundle.instance,
+                bundle.carbon_profile,
+                config=winner.WinnerKernelConfig(seed=7, eval_budget=1000, max_runtime_seconds=30.0),
+                prices=DEFAULT_PRICES,
+                middle_restarts=2,
+            )
+
+        self.assertEqual([call.kwargs["config"].eval_budget for call in phase_run.call_args_list], [400, 100, 100, 400])
+        self.assertEqual(
+            [call.kwargs["variant_flags"][winner.STRONG_BRIDGE_BACKEND_FLAG] for call in phase_run.call_args_list],
+            ["0", "1", "1", "0"],
+        )
+        self.assertEqual(result.evaluations, 1000)
+        self.assertEqual(result.best_obj, 5.0)
+        self.assertEqual(result.operator_counts["staged_chain"]["middle_restarts"], 2)
+        self.assertEqual(result.operator_counts["staged_chain"]["strong_phase_indexes"], [1, 2])
 
     def test_staged_chain_forwards_e1_vehicle_policy_to_every_phase(self) -> None:
         import setp_solver.algorithms.resetp_alns.kernel.winner as winner
@@ -477,6 +512,18 @@ class M1JointRepackFleetHeadroomTests(unittest.TestCase):
         self.assertEqual(result["evaluations"], 2)
         self.assertEqual(result["battery_kwh"], 280.0)
         self.assertTrue(result["carbon_aware_operators"])
+
+    def test_restarted_staged_hybrid_uses_two_middle_basins_without_overwriting_incumbent(self) -> None:
+        import setp_solver.algorithms.resetp_alns.kernel.winner as winner
+
+        sentinel = {"variant": "restarted_staged_alns_lns_hybrid"}
+        with patch.object(winner, "_run_staged_hybrid_entry", return_value=sentinel) as entry:
+            result = winner.run_restarted_staged_alns_lns_hybrid(VERIFY_BUNDLE)
+
+        self.assertIs(result, sentinel)
+        self.assertEqual(entry.call_args.kwargs["middle_restarts"], 2)
+        self.assertEqual(entry.call_args.kwargs["variant"], "restarted_staged_alns_lns_hybrid")
+        self.assertEqual(entry.call_args.kwargs["algorithm"], "restarted staged ALNS-LNS hybrid")
 
     def test_stability_gate_builds_exactly_thirty_frozen_tasks(self) -> None:
         from baselines.e2_alns.m1_staged_hybrid_stability_gate import build_tasks

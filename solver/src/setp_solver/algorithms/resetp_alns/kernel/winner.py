@@ -680,6 +680,84 @@ def run_staged_alns_lns_hybrid(
 ) -> dict[str, Any]:
     """Run the explicitly named staged ALNS-LNS hybrid under one budget."""
 
+    return _run_staged_hybrid_entry(
+        bundle_dir,
+        config=config,
+        initial_solution=initial_solution,
+        prices=prices,
+        policy=policy,
+        carbon_weight=carbon_weight,
+        carbon_quota_kg=carbon_quota_kg,
+        fairness_enabled=fairness_enabled,
+        independent_profit=independent_profit,
+        fairness_theta=fairness_theta,
+        customer_home_depot=customer_home_depot,
+        middle_restarts=1,
+        variant="staged_alns_lns_hybrid",
+        algorithm="staged ALNS-LNS hybrid",
+    )
+
+
+def run_restarted_staged_alns_lns_hybrid(
+    bundle_dir: str | Path,
+    *,
+    config: WinnerKernelConfig | None = None,
+    initial_solution: Solution | None = None,
+    prices: Any = DEFAULT_PRICES,
+    policy: SearchPolicy | None = None,
+    carbon_weight: float = 1.0,
+    carbon_quota_kg: float = 0.0,
+    fairness_enabled: bool = False,
+    independent_profit: dict[str, float] | None = None,
+    fairness_theta: float | None = None,
+    customer_home_depot: dict[str, str] | None = None,
+) -> dict[str, Any]:
+    """Run a two-basin restart of the strong middle stage under one budget.
+
+    This is an experimental E2 loss-recovery candidate.  The 400-evaluation
+    opening and closing stages are preserved.  The 3200-evaluation strong
+    middle stage is split into two independently seeded basins, with the second
+    basin restarting from the first basin's best solution.  No extra candidate
+    evaluations are introduced.
+    """
+
+    return _run_staged_hybrid_entry(
+        bundle_dir,
+        config=config,
+        initial_solution=initial_solution,
+        prices=prices,
+        policy=policy,
+        carbon_weight=carbon_weight,
+        carbon_quota_kg=carbon_quota_kg,
+        fairness_enabled=fairness_enabled,
+        independent_profit=independent_profit,
+        fairness_theta=fairness_theta,
+        customer_home_depot=customer_home_depot,
+        middle_restarts=2,
+        variant="restarted_staged_alns_lns_hybrid",
+        algorithm="restarted staged ALNS-LNS hybrid",
+    )
+
+
+def _run_staged_hybrid_entry(
+    bundle_dir: str | Path,
+    *,
+    config: WinnerKernelConfig | None,
+    initial_solution: Solution | None,
+    prices: Any,
+    policy: SearchPolicy | None,
+    carbon_weight: float,
+    carbon_quota_kg: float,
+    fairness_enabled: bool,
+    independent_profit: dict[str, float] | None,
+    fairness_theta: float | None,
+    customer_home_depot: dict[str, str] | None,
+    middle_restarts: int,
+    variant: str,
+    algorithm: str,
+) -> dict[str, Any]:
+    """Shared entry contract for the frozen and restart staged hybrids."""
+
     cfg = config or WinnerKernelConfig()
     bundle = _load_search_bundle(bundle_dir)
     warm = initial_solution or build_initial_solution(
@@ -703,6 +781,7 @@ def run_staged_alns_lns_hybrid(
         independent_profit=independent_profit,
         fairness_theta=fairness_theta,
         customer_home_depot=customer_home_depot,
+        middle_restarts=middle_restarts,
     )
     context = EvaluationContext(
         bundle.instance,
@@ -724,8 +803,8 @@ def run_staged_alns_lns_hybrid(
     )
     return {
         "operator_base_id": operator_base_id,
-        "variant": "staged_alns_lns_hybrid",
-        "algorithm": "staged ALNS-LNS hybrid",
+        "variant": variant,
+        "algorithm": algorithm,
         "seed": int(cfg.seed),
         "eval_budget": int(cfg.eval_budget),
         "max_runtime_seconds": float(cfg.max_runtime_seconds),
@@ -1791,6 +1870,32 @@ def _staged_chain_budgets(total_budget: int, interval: int = 400) -> tuple[int, 
     return opening, bridge, closing
 
 
+def _staged_chain_plan(total_budget: int, middle_restarts: int, interval: int = 400) -> tuple[tuple[int, ...], frozenset[int]]:
+    """Return phase budgets and the phase indexes using the strong backend."""
+
+    opening, bridge, closing = _staged_chain_budgets(total_budget, interval)
+    restarts = max(1, int(middle_restarts))
+    if restarts == 1 or bridge <= 1:
+        return (opening, bridge, closing), frozenset({1})
+    base, remainder = divmod(bridge, restarts)
+    middle = tuple(base + (1 if index < remainder else 0) for index in range(restarts))
+    budgets = (opening, *middle, closing)
+    strong_indexes = frozenset(range(1, 1 + restarts))
+    return budgets, strong_indexes
+
+
+def _staged_phase_seed(seed: int, phase_index: int, phase_count: int) -> int:
+    """Derive deterministic phase seeds while preserving the frozen 3-stage path."""
+
+    if phase_index == 0:
+        return int(seed)
+    if phase_count == 3:
+        return int(seed) * (1_000_003 if phase_index == 1 else 9_000_000) + 1
+    if phase_index == phase_count - 1:
+        return int(seed) * 9_000_000 + 1
+    return int(seed) * (1_000_003 + (phase_index - 1) * 1_000_000) + phase_index
+
+
 def run_staged_chain_alns(
     initial_solution: Solution,
     instance: Any,
@@ -1806,10 +1911,11 @@ def run_staged_chain_alns(
     independent_profit: dict[str, float] | None = None,
     fairness_theta: float | None = None,
     customer_home_depot: dict[str, str] | None = None,
+    middle_restarts: int = 1,
 ) -> AlnsRunResult:
     """Run regular, global-repair, then regular ALNS phases under one budget."""
 
-    budgets = _staged_chain_budgets(config.eval_budget)
+    budgets, strong_phase_indexes = _staged_chain_plan(config.eval_budget, middle_restarts)
     flags = dict(variant_flags or e2_alns_throughput_flags())
     for selector_flag in SELECTOR_FLAGS:
         flags[selector_flag] = "0"
@@ -1821,14 +1927,10 @@ def run_staged_chain_alns(
         if phase_budget <= 0:
             continue
         phase_flags = dict(flags)
-        phase_flags[STRONG_BRIDGE_BACKEND_FLAG] = "1" if phase_index == 1 else "0"
+        phase_flags[STRONG_BRIDGE_BACKEND_FLAG] = "1" if phase_index in strong_phase_indexes else "0"
         elapsed = time.perf_counter() - started
         remaining_runtime = max(1e-3, float(config.max_runtime_seconds) - elapsed)
-        phase_seed = (
-            int(config.seed)
-            if phase_index == 0
-            else int(config.seed) * (1_000_003 if phase_index == 1 else 9_000_000) + 1
-        )
+        phase_seed = _staged_phase_seed(int(config.seed), phase_index, len(budgets))
         phase_run = _run_winner_kernel_loop(
             current_initial,
             instance,
@@ -1865,6 +1967,8 @@ def run_staged_chain_alns(
     operator_counts = dict(best_run.operator_counts)
     operator_counts["staged_chain"] = {
         "budgets": list(budgets),
+        "middle_restarts": int(middle_restarts),
+        "strong_phase_indexes": sorted(strong_phase_indexes),
         "phase_best_objs": [float(run.best_obj) for run in phase_runs],
         "phase_evaluations": [int(run.evaluations) for run in phase_runs],
         "best_phase": phase_runs.index(best_run) + 1,

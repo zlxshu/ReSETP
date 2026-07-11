@@ -1,0 +1,23 @@
+{
+  "formal_validation_rule": "after the short gate, use unseen seeds before rerunning the paper seeds; do not claim recovery from development pairs alone",
+  "losses": 15,
+  "losses_best_in_middle_stage": 9,
+  "losses_with_extra_routes": 11,
+  "losses_worse_than_5pct": 3,
+  "mean_loss_pct": -2.2704845547050554,
+  "pair_count": 45,
+  "recovery_hypothesis": "split the 3200-evaluation strong middle stage into two independently seeded 1600-evaluation basins, restart the second basin from the first basin best, and preserve the 400+3200+400 total budget",
+  "short_gate": {
+    "compare": [
+      "existing staged chain",
+      "restart staged chain"
+    ],
+    "development_pairs": "six losses at least 2pct plus three existing wins as anti-regression guards",
+    "promotion_rule": "restart candidate improves mean loss-pair cost, turns at least two losses into wins/ties, and degrades no guard pair by more than 2pct",
+    "stage_a_budget": 1600
+  },
+  "source_is_frozen_e2": true,
+  "ties": 5,
+  "verdict": "E2_LOSS_RECOVERY_GATE_REQUIRED",
+  "wins": 25
+}
