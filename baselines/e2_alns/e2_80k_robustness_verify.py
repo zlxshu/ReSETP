@@ -8,6 +8,7 @@ from collections import Counter, defaultdict
 import json
 import math
 from pathlib import Path
+import shutil
 import statistics
 import sys
 from typing import Any
@@ -61,6 +62,8 @@ def main() -> int:
     decision = decide(metadata, task_rows, rows, verified, failures, paired, scale_summary, mechanism_summary)
     closure.write_json(phase_dir / "decision.json", decision)
     write_report(phase_dir, decision, scale_summary, mechanism_summary)
+    if decision["technical_contract_ok"]:
+        cleanup_transient_files(phase_dir)
     closure.write_hashes(phase_dir)
     print(json.dumps(decision, ensure_ascii=False, indent=2, sort_keys=True))
     return 0 if decision["technical_contract_ok"] else 2
@@ -413,6 +416,7 @@ def decide(
         "schema": "setp-e2-80k-robustness-decision.v1",
         "verdict": verdict,
         "phase": phase,
+        "verification_commit": closure.git_head(),
         "technical_contract_ok": technical_ok,
         "algorithm_stability_supported": algorithm_supported,
         "mechanism_visibility_supported": mechanism_visible,
@@ -528,6 +532,17 @@ def fmt(value: Any) -> str:
     except (TypeError, ValueError):
         return str(value)
     return "NA" if not math.isfinite(number) else f"{number:.3f}"
+
+
+def cleanup_transient_files(phase_dir: Path) -> None:
+    """Keep final hashes free of checkpoints and ExFAT AppleDouble sidecars."""
+
+    shutil.rmtree(phase_dir / "checkpoints", ignore_errors=True)
+    for path in phase_dir.rglob("._*"):
+        if path.is_dir():
+            shutil.rmtree(path, ignore_errors=True)
+        else:
+            path.unlink(missing_ok=True)
 
 
 if __name__ == "__main__":
