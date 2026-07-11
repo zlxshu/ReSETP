@@ -47,6 +47,38 @@ def test_self_created_instance_table_does_not_invent_bks_or_gap() -> None:
     assert all(not forbidden.intersection(row) for row in table)
 
 
+def test_expected_matrix_keys_are_the_exact_810_contract() -> None:
+    expected = runner.expected_matrix_keys()
+    assert len(expected) == 810
+    assert expected == {
+        (instance, algorithm, seed)
+        for instance in runner.INSTANCES
+        for algorithm in runner.ALGORITHMS
+        for seed in runner.SEEDS
+    }
+
+
+def test_instance_ranking_uses_average_rank_for_exact_ties() -> None:
+    rows = _synthetic_rows()
+    for row in rows:
+        if row["algorithm"] in runner.ALGORITHMS[:2]:
+            row["best_cost"] = 1000.0 + runner.INSTANCES.index(str(row["instance"])) * 100.0
+        elif row["algorithm"] == runner.ALGORITHMS[2]:
+            row["best_cost"] = 1010.0 + runner.INSTANCES.index(str(row["instance"])) * 100.0
+    _, algorithm_summary, _ = runner.build_statistics(rows)
+    by_algorithm = {row["algorithm"]: row for row in algorithm_summary}
+    assert by_algorithm[runner.ALGORITHMS[0]]["mean_rank_by_instance_avg"] == 1.5
+    assert by_algorithm[runner.ALGORITHMS[1]]["mean_rank_by_instance_avg"] == 1.5
+    assert by_algorithm[runner.ALGORITHMS[2]]["mean_rank_by_instance_avg"] == 3.0
+    assert by_algorithm[runner.ALGORITHMS[0]]["best_instance_avg_count"] == 9
+    assert by_algorithm[runner.ALGORITHMS[1]]["best_instance_avg_count"] == 9
+    assert by_algorithm[runner.ALGORITHMS[2]]["best_instance_avg_count"] == 0
+
+
+def test_holm_adjust_matches_step_down_monotone_rule() -> None:
+    assert runner.holm_adjust([0.01, 0.04, 0.03]) == [0.03, 0.06, 0.06]
+
+
 def test_task_executes_frozen_code_but_reads_hash_locked_active_data(tmp_path) -> None:
     task = runner.build_task(runner.DEFAULT_EXECUTION_ROOT, tmp_path, runner.INSTANCES[0], "GA", 6, 200)
     assert task["repo_root"] == str(runner.REPO_ROOT)

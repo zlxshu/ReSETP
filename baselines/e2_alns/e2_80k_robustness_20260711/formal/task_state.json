@@ -1,0 +1,27 @@
+{
+  "complete": false,
+  "completed_tasks": 20,
+  "expected_tasks": 24,
+  "failure_count": 3,
+  "failure_sample": [
+    {
+      "failure_reason": "Violation(type='TIME_WINDOW', vehicle_id='EV13#T1', location='C035', detail='late by 1129.042 s (due l=23136.000, start=24265.042)', severity='hard')",
+      "gate_status": "HALT_INFEASIBLE",
+      "run_id": "E2_80K_FORMAL__formal_goeke80__threeshift__L-main-threeshift-200c-01__staged_hybrid_carbon_pair__seed1"
+    },
+    {
+      "failure_reason": "Violation(type='TIME_WINDOW', vehicle_id='EV11#T2', location='C022', detail='late by 779.529 s (due l=21266.000, start=22045.529)', severity='hard'); Violation(type='TIME_WINDOW', vehicle_id='EV11#T2', location='C040', detail='late by 1331.597 s (due l=21831.000, start=23162.597)', severity='hard')",
+      "gate_status": "HALT_INFEASIBLE",
+      "run_id": "E2_80K_FORMAL__formal_goeke80__threeshift__L-main-threeshift-200c-01__staged_hybrid_carbon_pair__seed2"
+    },
+    {
+      "failure_reason": "Violation(type='TIME_WINDOW', vehicle_id='EV1#T2', location='C095', detail='late by 1027.127 s (due l=19959.000, start=20986.127)', severity='hard'); Violation(type='TIME_WINDOW', vehicle_id='EV1#T2', location='C153', detail='late by 344.819 s (due l=23011.000, start=23355.819)', severity='hard'); Violation(type='TIME_WINDOW', vehicle_id='EV5#T2', location='C005', detail='late by 234.189 s (due l=22575.000, start=22809.189)', severity='hard')",
+      "gate_status": "HALT_INFEASIBLE",
+      "run_id": "E2_80K_FORMAL__formal_goeke80__threeshift__L-main-threeshift-200c-01__staged_hybrid_carbon_pair__seed3"
+    }
+  ],
+  "remaining_tasks": 4,
+  "running_or_queued_tasks": 1,
+  "schema": "setp-e2-80k-task-state.v1",
+  "updated_at_epoch": 1783752407.3967218
+}

@@ -380,10 +380,25 @@ def holm_adjust(pvalues: list[float]) -> list[float]:
     return adjusted
 
 
+def expected_matrix_keys() -> set[tuple[str, str, int]]:
+    return {
+        (instance, algorithm, seed)
+        for instance in INSTANCES
+        for algorithm in ALGORITHMS
+        for seed in SEEDS
+    }
+
+
 def build_statistics(rows: list[dict[str, Any]]) -> tuple[list[dict[str, Any]], list[dict[str, Any]], list[dict[str, Any]]]:
+    try:
+        from scipy.stats import rankdata, wilcoxon
+    except Exception as exc:
+        raise RuntimeError("HALT_E2_10SEED_SCIPY_REQUIRED") from exc
+
     by_key = {key(row): row for row in rows}
     summary: list[dict[str, Any]] = []
     ranks: dict[str, list[float]] = {algorithm: [] for algorithm in ALGORITHMS}
+    best_counts: dict[str, int] = {algorithm: 0 for algorithm in ALGORITHMS}
     for instance in INSTANCES:
         instance_rows = [row for row in rows if row["instance"] == instance]
         means: dict[str, float] = {}
@@ -407,9 +422,16 @@ def build_statistics(rows: list[dict[str, Any]]) -> tuple[list[dict[str, Any]], 
                     "avg_runtime_seconds": statistics.fmean(runtimes),
                 }
             )
-        levels = sorted(set(means.values()))
-        for algorithm, value in means.items():
-            ranks[algorithm].append(float(levels.index(value) + 1))
+        instance_algorithms = list(ALGORITHMS)
+        average_ranks = rankdata(
+            [means[algorithm] for algorithm in instance_algorithms],
+            method="average",
+        )
+        best_mean = min(means.values())
+        for algorithm, rank in zip(instance_algorithms, average_ranks):
+            ranks[algorithm].append(float(rank))
+            if math.isclose(means[algorithm], best_mean, rel_tol=0.0, abs_tol=1e-12):
+                best_counts[algorithm] += 1
 
     algorithm_summary = []
     for algorithm in ALGORITHMS:
@@ -421,22 +443,18 @@ def build_statistics(rows: list[dict[str, Any]]) -> tuple[list[dict[str, Any]], 
                 "runs": sum(int(row["independent_runs"]) for row in items),
                 "sum_of_instance_avg_costs": sum(float(row["avg_cost"]) for row in items),
                 "mean_rank_by_instance_avg": statistics.fmean(ranks[algorithm]),
-                "best_instance_avg_count": sum(rank == 1.0 for rank in ranks[algorithm]),
+                "best_instance_avg_count": best_counts[algorithm],
                 "mean_runtime_seconds": statistics.fmean(float(row["avg_runtime_seconds"]) for row in items),
             }
         )
 
     tests = []
     raw_pvalues = []
-    try:
-        from scipy.stats import wilcoxon
-    except Exception:
-        wilcoxon = None
     for baseline in BASELINES:
         primary_costs = [float(by_key[(instance, PRIMARY, seed)]["best_cost"]) for instance in INSTANCES for seed in SEEDS]
         baseline_costs = [float(by_key[(instance, baseline, seed)]["best_cost"]) for instance in INSTANCES for seed in SEEDS]
         gains = [100.0 * (right - left) / right for left, right in zip(primary_costs, baseline_costs)]
-        if wilcoxon is None or all(abs(left - right) <= 1e-12 for left, right in zip(primary_costs, baseline_costs)):
+        if all(abs(left - right) <= 1e-12 for left, right in zip(primary_costs, baseline_costs)):
             statistic, pvalue = math.nan, 1.0
         else:
             result = wilcoxon(primary_costs, baseline_costs, alternative="two-sided", zero_method="wilcox")
@@ -461,12 +479,25 @@ def build_statistics(rows: list[dict[str, Any]]) -> tuple[list[dict[str, Any]], 
     return summary, algorithm_summary, tests
 
 
-def verify_solutions(rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
+def materialize_solutions(rows: list[dict[str, Any]], solution_dir: Path) -> None:
+    solution_dir.mkdir(parents=True, exist_ok=True)
+    for row in rows:
+        payload = json.loads(str(row.get("solution_json", "{}")) or "{}")
+        if not payload:
+            raise RuntimeError(f"HALT_E2_10SEED_EMPTY_SOLUTION: {row.get('run_id')}")
+        closure.write_json(solution_dir / f"{row['run_id']}.json", payload)
+
+
+def verify_solutions(rows: list[dict[str, Any]], *, solution_dir: Path | None = None) -> list[dict[str, Any]]:
     results = []
     bundles = {instance: load_search_bundle(REPO_ROOT / f"models/data_bundle/generated_instances/L-main/{instance}") for instance in INSTANCES}
     prices = closure.prices_for_scenario(SCENARIO)
     for row in rows:
-        payload = json.loads(str(row.get("solution_json", "{}")) or "{}")
+        solution_path = solution_dir / f"{row['run_id']}.json" if solution_dir is not None else None
+        if solution_path is not None:
+            payload = json.loads(solution_path.read_text(encoding="utf-8"))
+        else:
+            payload = json.loads(str(row.get("solution_json", "{}")) or "{}")
         solution = solution_from_dict(payload)
         bundle = bundles[str(row["instance"])]
         violations = check_solution(solution, bundle.instance, prices)
@@ -484,28 +515,66 @@ def verify_solutions(rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
                 "recomputed_cost": recomputed,
                 "absolute_cost_difference": abs(recorded - recomputed),
                 "ok": len(violations) == 0 and abs(recorded - recomputed) <= 1e-6,
+                "solution_file": str(solution_path.relative_to(solution_dir.parent)) if solution_path is not None else "INLINE_RAW_RUN",
+                "solution_sha256": sha256(solution_path) if solution_path is not None else "",
             }
         )
     return results
 
 
+def artifact_inventory_ok(phase_dir: Path, payload: dict[str, Any], expected_solutions: int) -> bool:
+    paths = {str(row.get("path", "")) for row in payload.get("files", [])}
+    required_names = {
+        "metadata.json",
+        "raw_runs.csv",
+        "decision.json",
+        "report.md",
+        "solution_recalculation.csv",
+        "table_algorithm_by_instance.csv",
+        "algorithm_summary.csv",
+        "paired_wilcoxon.csv",
+    }
+    required_paths = {str((phase_dir / name).relative_to(REPO_ROOT)) for name in required_names}
+    solution_prefix = str((phase_dir / "solutions").relative_to(REPO_ROOT)) + "/"
+    solution_paths = [path for path in paths if path.startswith(solution_prefix) and path.endswith(".json")]
+    return required_paths.issubset(paths) and len(solution_paths) == expected_solutions
+
+
 def closeout(output: Path) -> dict[str, Any]:
     phase_dir = output / "formal"
     rows = closure.read_csv(phase_dir / "raw_runs.csv")
-    expected = len(INSTANCES) * len(ALGORITHMS) * len(SEEDS)
+    expected_keys = expected_matrix_keys()
+    expected = len(expected_keys)
+    observed_keys = {key(row) for row in rows}
     matrix_ok = (
         len(rows) == expected
-        and len({key(row) for row in rows}) == expected
+        and observed_keys == expected_keys
         and all(row.get("gate_status") == "OK" for row in rows)
         and all(int(float(row.get("actual_evals", -1))) == EVAL_BUDGET for row in rows)
         and all(int(float(row.get("violation_count", -1))) == 0 for row in rows)
+        and all(str(row.get("execution_commit", "")) == FREEZE_COMMIT for row in rows)
+        and all(str(row.get("row_provenance", "")) for row in rows)
+        and all(str(row.get("solution_json", "")) for row in rows)
+        and all(str(row.get("run_id", "")) for row in rows)
+        and len({str(row.get("run_id", "")) for row in rows}) == expected
     )
     if not matrix_ok:
         decision = {"verdict": "HALT_E2_10SEED_MATRIX_INCOMPLETE", "observed_rows": len(rows), "expected_rows": expected}
         closure.write_json(phase_dir / "decision.json", decision)
         return decision
-    verification = verify_solutions(rows)
-    summary, algorithm_summary, tests = build_statistics(rows)
+    solution_dir = phase_dir / "solutions"
+    try:
+        materialize_solutions(rows, solution_dir)
+        verification = verify_solutions(rows, solution_dir=solution_dir)
+        summary, algorithm_summary, tests = build_statistics(rows)
+    except Exception as exc:
+        decision = {
+            "verdict": "HALT_E2_10SEED_CLOSEOUT_ERROR",
+            "error_type": type(exc).__name__,
+            "error": str(exc),
+        }
+        closure.write_json(phase_dir / "decision.json", decision)
+        return decision
     closure.write_csv(phase_dir / "solution_recalculation.csv", verification)
     closure.write_csv(phase_dir / "table_algorithm_by_instance.csv", summary)
     closure.write_csv(phase_dir / "algorithm_summary.csv", algorithm_summary)
@@ -514,16 +583,20 @@ def closeout(output: Path) -> dict[str, Any]:
     ordered = sorted(algorithm_summary, key=lambda row: (float(row["sum_of_instance_avg_costs"]), float(row["mean_rank_by_instance_avg"])))
     all_recomputed = all(bool(row["ok"]) for row in verification)
     verdict = "E2_10SEED_PRIMARY_LEAD_SUPPORTED" if all_recomputed and ordered[0]["algorithm"] == PRIMARY else "E2_10SEED_COMPLETE_PRIMARY_NOT_FIRST" if all_recomputed else "HALT_E2_10SEED_RECALCULATION"
+    root_metadata = closure.read_json(output / "metadata.json")
     decision = {
         "schema": "resetp.e2-10seed-closeout.v1",
         "verdict": verdict,
         "matrix_rows": len(rows),
+        "unique_matrix_keys": len(observed_keys),
+        "exact_matrix_key_contract": observed_keys == expected_keys,
         "instances": len(INSTANCES),
         "algorithms": len(ALGORITHMS),
         "independent_runs_per_algorithm_instance": len(SEEDS),
         "eval_budget": EVAL_BUDGET,
         "zero_violation_rows": sum(int(float(row.get("violation_count", -1))) == 0 for row in rows),
         "recalculation_ok_rows": sum(bool(row["ok"]) for row in verification),
+        "saved_solution_rows": len(verification),
         "ranking_by_sum_of_instance_averages": [row["algorithm"] for row in ordered],
         "primary_sum_of_instance_avg_costs": primary_summary["sum_of_instance_avg_costs"],
         "primary_mean_rank": primary_summary["mean_rank_by_instance_avg"],
@@ -533,7 +606,29 @@ def closeout(output: Path) -> dict[str, Any]:
         "charging_ablation_in_e2_table": False,
         "execution_commit": FREEZE_COMMIT,
         "harness_commit": execution_head(REPO_ROOT),
+        "wilcoxon_alternative": "two-sided",
+        "wilcoxon_zero_method": "wilcox",
+        "multiple_comparison_correction": "Holm step-down",
+        "instance_tie_rank_method": "average",
+        "contract_id": root_metadata.get("contract_id"),
+        "contract_sha256": root_metadata.get("contract_sha256"),
     }
+    closure.write_json(
+        phase_dir / "metadata.json",
+        {
+            "schema": "resetp.e2-10seed-formal-metadata.v1",
+            "scenario": SCENARIO,
+            "instances": list(INSTANCES),
+            "algorithms": list(ALGORITHMS),
+            "seeds": list(SEEDS),
+            "eval_budget": EVAL_BUDGET,
+            "expected_rows": expected,
+            "execution_commit": FREEZE_COMMIT,
+            "verification_commit": execution_head(REPO_ROOT),
+            "contract_id": root_metadata.get("contract_id"),
+            "contract_sha256": root_metadata.get("contract_sha256"),
+        },
+    )
     closure.write_json(phase_dir / "decision.json", decision)
     report = [
         "# E2十次运行最终收口",
@@ -546,11 +641,14 @@ def closeout(output: Path) -> dict[str, Any]:
         "公开标准算例的BKS、AVG、Gap%补实验留到E2之后，拟使用未经改动的Goeke原始算法。",
     ]
     (phase_dir / "report.md").write_text("\n".join(report) + "\n", encoding="utf-8")
-    solution_dir = phase_dir / "solutions"
-    solution_dir.mkdir(parents=True, exist_ok=True)
-    for row in rows:
-        closure.write_json(solution_dir / f"{row['run_id']}.json", json.loads(str(row["solution_json"])))
-    closure.write_hashes(phase_dir)
+    hash_payload = closure.artifact_hashes(phase_dir)
+    if not artifact_inventory_ok(phase_dir, hash_payload, expected):
+        decision["verdict"] = "HALT_E2_10SEED_ARTIFACT_INVENTORY"
+        closure.write_json(phase_dir / "decision.json", decision)
+        report[2] = f"判决：`{decision['verdict']}`。"
+        (phase_dir / "report.md").write_text("\n".join(report) + "\n", encoding="utf-8")
+        hash_payload = closure.artifact_hashes(phase_dir)
+    closure.write_json(phase_dir / "artifact_hashes.json", hash_payload)
     return decision
 
 
