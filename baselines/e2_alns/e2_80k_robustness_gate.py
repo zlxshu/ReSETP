@@ -35,11 +35,11 @@ from baselines.e2_alns.m1_e2_submission_runner import (
 )
 
 
-FROZEN_COMMIT = "0124623e347cd2a6a5548e07e0af66e16d3b634b"
-FROZEN_TAG = "e2-submission-20260711"
+FROZEN_COMMIT = "40bd28835dff1a4287486e720351e531fc7a38d0"
+FROZEN_TAG = "e2-80k-charging-window-fix-20260711"
 GOLD_PYTHON = "/opt/anaconda3/bin/python3.13"
 DEFAULT_OUTPUT_ROOT = REPO_ROOT / "baselines/e2_alns/e2_80k_robustness_20260711"
-DEFAULT_EXECUTION_ROOT = REPO_ROOT / ".codex/worktrees/e2-frozen-0124623e"
+DEFAULT_EXECUTION_ROOT = REPO_ROOT / ".codex/worktrees/e2-frozen-40bd2883"
 ACTIVE_INSTANCE_ROOT = REPO_ROOT / "models/data_bundle/generated_instances/L-main"
 ACTIVE_INSTANCE_MANIFEST = ACTIVE_INSTANCE_ROOT / "resetp-l-main-main-benchmark.v3.json"
 FORMAL_INSTANCES = tuple(f"L-main-threeshift-{size}c-01" for size in (15, 50, 100, 200))
