@@ -1,0 +1,3 @@
+# E2十次运行representative
+
+判决：`E2_10SEED_REPRESENTATIVE_READY`。大白话：这一关只检查入口、预算、可行性和真实搜索活性，不根据谁赢谁输筛结果。

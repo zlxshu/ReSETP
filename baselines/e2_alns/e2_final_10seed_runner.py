@@ -293,7 +293,20 @@ def phase_decision(rows: list[dict[str, Any]], *, expected: int, eval_budget: in
     okay = [row for row in rows if row.get("gate_status") == "OK"]
     closed = [row for row in rows if int(float(row.get("actual_evals", -1))) == eval_budget]
     zero = [row for row in rows if int(float(row.get("violation_count", -1))) == 0]
-    active = [row for row in rows if int(float(row.get("algorithm_specific_update_count", 0))) >= 1]
+    # A better solution is evidence of useful search, but is not the only
+    # evidence that a baseline actually ran.  A valid algorithm can consume
+    # its whole budget on its own operators yet fail to beat a strong common
+    # warm start.  Treating that outcome as an unwired entrypoint would reject
+    # an honest negative result.  The operator ledger is therefore the second
+    # activity witness; an empty ledger still remains a hard stop.
+    active_updates = [row for row in rows if int(float(row.get("algorithm_specific_update_count", 0))) >= 1]
+    active_evaluations = [row for row in rows if _has_algorithm_specific_operator_activity(row)]
+    active = [
+        row
+        for row in rows
+        if int(float(row.get("algorithm_specific_update_count", 0))) >= 1
+        or _has_algorithm_specific_operator_activity(row)
+    ]
     ready = len(rows) == expected and len(keys) == expected and len(okay) == expected and len(closed) == expected and len(zero) == expected
     if representative:
         ready = ready and len(active) == expected
@@ -308,9 +321,31 @@ def phase_decision(rows: list[dict[str, Any]], *, expected: int, eval_budget: in
         "eval_closed_rows": len(closed),
         "zero_violation_rows": len(zero),
         "algorithm_specific_active_rows": len(active),
+        "algorithm_specific_update_rows": len(active_updates),
+        "algorithm_specific_operator_activity_rows": len(active_evaluations),
         "eval_budget": eval_budget,
         "execution_commit": FREEZE_COMMIT,
     }
+
+
+def _has_algorithm_specific_operator_activity(row: dict[str, Any]) -> bool:
+    """Return whether the row records at least one algorithm-owned operation."""
+    raw = str(row.get("operator_counts_json", "") or "").strip()
+    if not raw:
+        return False
+    try:
+        payload = json.loads(raw)
+    except json.JSONDecodeError:
+        return False
+
+    def has_positive(value: Any) -> bool:
+        if isinstance(value, dict):
+            return any(has_positive(item) for item in value.values())
+        if isinstance(value, (list, tuple)):
+            return any(has_positive(item) for item in value)
+        return isinstance(value, (int, float)) and not isinstance(value, bool) and float(value) > 0.0
+
+    return has_positive(payload)
 
 
 def manifest_rows(reused: list[dict[str, Any]], gate: list[dict[str, Any]]) -> list[dict[str, Any]]:

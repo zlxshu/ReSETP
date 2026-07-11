@@ -51,3 +51,39 @@ def test_task_executes_frozen_code_but_reads_hash_locked_active_data(tmp_path) -
     task = runner.build_task(runner.DEFAULT_EXECUTION_ROOT, tmp_path, runner.INSTANCES[0], "GA", 6, 200)
     assert task["repo_root"] == str(runner.REPO_ROOT)
     assert task["head"] == runner.FREEZE_COMMIT
+
+
+def test_representative_gate_accepts_executed_baseline_that_did_not_beat_warm_start() -> None:
+    rows = [
+        {
+            "instance": runner.INSTANCES[4],
+            "algorithm": "IWD",
+            "seed": 6,
+            "gate_status": "OK",
+            "actual_evals": 4000,
+            "violation_count": 0,
+            "algorithm_specific_update_count": 0,
+            "operator_counts_json": '{"iwd_construct_sa": 3810, "iwd_iteration_best_lns": 190}',
+        }
+    ]
+    decision = runner.phase_decision(rows, expected=1, eval_budget=4000, representative=True)
+    assert decision["verdict"] == "E2_10SEED_REPRESENTATIVE_READY"
+    assert decision["algorithm_specific_update_rows"] == 0
+    assert decision["algorithm_specific_operator_activity_rows"] == 1
+
+
+def test_representative_gate_rejects_row_without_update_or_operator_ledger() -> None:
+    rows = [
+        {
+            "instance": runner.INSTANCES[4],
+            "algorithm": "IWD",
+            "seed": 6,
+            "gate_status": "OK",
+            "actual_evals": 4000,
+            "violation_count": 0,
+            "algorithm_specific_update_count": 0,
+            "operator_counts_json": "{}",
+        }
+    ]
+    decision = runner.phase_decision(rows, expected=1, eval_budget=4000, representative=True)
+    assert decision["verdict"] == "HALT_E2_10SEED_GATE"
