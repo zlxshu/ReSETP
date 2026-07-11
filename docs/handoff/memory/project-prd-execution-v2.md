@@ -127,3 +127,7 @@ E1 280 kWh结构门在commit `c20dae18`执行。正式目录`baselines/e1_model/
 ## 2026-07-11 E3累积消融正式收口
 
 E3新runner绑定staged hybrid、280kWh、200c、seeds1--5、每层4000评价；M0总预算在两个独立车场间平分，并在候选期实时重建跨场服务计费。30/30零违规满预算，hash和保存解完整。最终判决`E3_PARTIAL_MECHANISM_SUPPORT`：固定路线时变碳充电5/5降EV间接排放，平均20.96%，总电量一致；M1对M0成本4胜1平、平均低1.042%，但跨场服务仅seed4出现2个客户；M5 theta=1全部可行，但M4对应解本已全部满足最小收益比>=1，公平绑定0/5。E3不包装六层全强，碳进入E4，公平进入E6。正式证据在`baselines/e3_ablation/e3_submission_20260711/formal/`，解释见`docs/handoff/e3_cumulative_ablation_closeout_20260711.md`。
+
+## 2026-07-11 E2负例恢复比例候选收口
+
+`proportional_true_lns_middle_gate` 27/27满1600评价、零违规，保存解、算子记录、hash和运行提交`7b164f6a`独立验收通过。候选相对staged全部9组平均-0.329026%，6个开发负例平均+0.095425%，负例只转回1组，最差保护样本-3.005064%，判`PROPORTIONAL_TRUE_LNS_MIDDLE_SHORT_GATE_REJECTED`。具体是100c seed2改善+11.712%，但50c seed5、75c seed1和75c seed5分别退化-7.773%/-4.737%/-3.005%，阶段比例改变不具稳定跨规模效果。true-LNS比例路线关闭，不启动57次未见种子4000门。下一步只读已保存staged/LNS/restart/true-LNS解的route-signature互补性；无广泛可行整路块headroom则直接停止E2恢复并转80 kWh。

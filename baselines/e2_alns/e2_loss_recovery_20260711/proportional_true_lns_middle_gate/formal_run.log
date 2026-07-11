@@ -1,0 +1,17 @@
+/Volumes/移动硬盘（512G）/ReSETP/solver/src/setp_solver/algorithms/resetp_alns/runtime/accept.py:149: RuntimeWarning: overflow encountered in exp
+  probability = np.exp((current.objective() - candidate.objective()) / self._temperature)
+/Volumes/移动硬盘（512G）/ReSETP/solver/src/setp_solver/algorithms/resetp_alns/runtime/accept.py:149: RuntimeWarning: overflow encountered in exp
+  probability = np.exp((current.objective() - candidate.objective()) / self._temperature)
+{
+  "candidate_id": "proportional_true_lns_middle",
+  "completed_runs": 27,
+  "development_losses_converted_vs_lns": 1,
+  "eval_budget": 1600,
+  "expected_runs": 27,
+  "mean_all_gain_vs_staged_pct": -0.3290260601897855,
+  "mean_development_gain_vs_staged_pct": 0.09542549152746088,
+  "next_action": "reject proportional_true_lns_middle candidate and inspect the next bounded mechanism",
+  "verdict": "PROPORTIONAL_TRUE_LNS_MIDDLE_SHORT_GATE_REJECTED",
+  "worst_guard_gain_vs_staged_pct": -3.0050643539169117,
+  "zero_violations": true
+}
