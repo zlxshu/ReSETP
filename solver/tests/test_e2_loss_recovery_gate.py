@@ -50,6 +50,10 @@ def test_unseen_seed_gate_matches_the_preregistered_matrix() -> None:
     assert len(tasks) == 57
     assert len(set(tasks)) == 57
 
+    from baselines.e2_alns.e2_loss_recovery_unseen_seed_verify import expected_run_ids
+
+    assert expected_run_ids() == {f"{instance}__seed{seed}__{algorithm}" for instance, seed, algorithm in tasks}
+
 
 def test_unseen_seed_gate_promotes_only_after_contract_and_scientific_checks(tmp_path: Path) -> None:
     from baselines.e2_alns import e2_loss_recovery_unseen_seed_gate as gate
