@@ -86,4 +86,3 @@ def load_submission_contract(
     _require(quota.get("claim_role") == "accounting_only", "linear quota must not be claimed as a route-changing mechanism")
 
     return payload
-

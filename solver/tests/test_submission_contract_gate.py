@@ -90,4 +90,3 @@ def test_nonbinding_fairness_grid_is_rejected(tmp_path: Path) -> None:
     _write_json(path, payload)
     with pytest.raises(SubmissionContractError, match="binding-aware"):
         load_submission_contract(path, repo_root=tmp_path)
-
