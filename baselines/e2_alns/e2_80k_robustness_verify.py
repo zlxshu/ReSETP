@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import argparse
 from collections import Counter, defaultdict
+import hashlib
 import json
 import math
 from pathlib import Path
@@ -34,6 +35,9 @@ FROZEN_COMMIT = "0124623e347cd2a6a5548e07e0af66e16d3b634b"
 DEFAULT_PHASE_DIR = REPO_ROOT / "baselines/e2_alns/e2_80k_robustness_20260711/formal"
 EXPECTED_INSTANCES = tuple(f"L-main-threeshift-{size}c-01" for size in (15, 50, 100, 200))
 EXPECTED_ALGORITHMS = ("staged_hybrid_carbon_aware", "staged_hybrid_carbon_naive", "LNS")
+ACTIVE_INSTANCE_ROOT = REPO_ROOT / "models/data_bundle/generated_instances/L-main"
+ACTIVE_INSTANCE_MANIFEST = ACTIVE_INSTANCE_ROOT / "resetp-l-main-main-benchmark.v3.json"
+ACTIVATION_DECISION = REPO_ROOT / "baselines/e2_alns/l_main_v3_activation/decision.json"
 TOLERANCE = 1e-6
 
 
@@ -50,6 +54,8 @@ def main() -> int:
     metadata = closure.read_json(phase_dir / "metadata.json")
     task_rows = closure.read_csv(phase_dir / "task_runs.csv")
     rows = closure.read_csv(phase_dir / "raw_runs.csv")
+    instance_contract = verify_instance_contract(metadata)
+    closure.write_json(phase_dir / "instance_contract.json", instance_contract)
     verified, failures = verify_rows(phase_dir, rows, str(args.execution_commit))
     closure.write_csv(phase_dir / "verified_runs.csv", verified)
     closure.write_json(phase_dir / "verification_failures.json", failures)
@@ -59,7 +65,17 @@ def main() -> int:
     closure.write_csv(phase_dir / "verified_paired_comparisons.csv", paired)
     closure.write_csv(phase_dir / "verified_per_instance_summary.csv", scale_summary)
     closure.write_csv(phase_dir / "mechanism_summary.csv", mechanism_summary)
-    decision = decide(metadata, task_rows, rows, verified, failures, paired, scale_summary, mechanism_summary)
+    decision = decide(
+        metadata,
+        task_rows,
+        rows,
+        verified,
+        failures,
+        paired,
+        scale_summary,
+        mechanism_summary,
+        instance_contract,
+    )
     closure.write_json(phase_dir / "decision.json", decision)
     write_report(phase_dir, decision, scale_summary, mechanism_summary)
     if decision["technical_contract_ok"]:
@@ -338,6 +354,7 @@ def decide(
     pairs: list[dict[str, Any]],
     scale_summary: list[dict[str, Any]],
     mechanism_summary: list[dict[str, Any]],
+    instance_contract: dict[str, Any],
 ) -> dict[str, Any]:
     phase = str(metadata.get("phase", ""))
     preflight = phase == "preflight"
@@ -350,6 +367,7 @@ def decide(
         metadata.get("scenario_type") == "formal_goeke80"
         and float(metadata.get("battery_kwh", math.nan)) == 80.0
         and metadata.get("frozen_execution_commit") == FROZEN_COMMIT
+        and instance_contract.get("verdict") == "LMAIN_V3_INSTANCE_CONTRACT_OK"
         and len(task_rows) == expected_tasks
         and all(
             str(row.get("gate_status")) == "OK"
@@ -417,6 +435,9 @@ def decide(
         "verdict": verdict,
         "phase": phase,
         "verification_commit": closure.git_head(),
+        "instance_contract_verdict": instance_contract.get("verdict"),
+        "instance_contract_failure_count": instance_contract.get("failure_count"),
+        "instance_manifest_sha256": instance_contract.get("manifest_sha256"),
         "technical_contract_ok": technical_ok,
         "algorithm_stability_supported": algorithm_supported,
         "mechanism_visibility_supported": mechanism_visible,
@@ -521,9 +542,59 @@ def mean_field(rows: list[dict[str, Any]], field: str) -> float:
     return statistics.fmean(values) if values else math.nan
 
 
+def verify_instance_contract(metadata: dict[str, Any]) -> dict[str, Any]:
+    failures: list[str] = []
+    activation = closure.read_json(ACTIVATION_DECISION)
+    manifest = closure.read_json(ACTIVE_INSTANCE_MANIFEST)
+    manifest_sha = sha256_file(ACTIVE_INSTANCE_MANIFEST)
+    if activation.get("verdict") != "LMAIN_V3_READY":
+        failures.append(f"activation verdict={activation.get('verdict')}")
+    if str(activation.get("manifest_sha256", "")) != manifest_sha:
+        failures.append("activation decision manifest hash mismatch")
+    if str(metadata.get("instance_manifest_sha256", "")) != manifest_sha:
+        failures.append("experiment metadata manifest hash mismatch")
+    if manifest.get("activation_requires_verdict") != "LMAIN_V3_READY":
+        failures.append("manifest activation contract mismatch")
+    entries = {str(row.get("instance_id")): row for row in manifest.get("instances", [])}
+    checked_files = 0
+    for instance in metadata.get("instances", []):
+        instance_name = str(instance)
+        entry = entries.get(instance_name)
+        if not entry:
+            failures.append(f"manifest missing instance {instance_name}")
+            continue
+        for filename, expected_hash in dict(entry.get("bundle_file_hashes", {})).items():
+            path = ACTIVE_INSTANCE_ROOT / instance_name / str(filename)
+            observed_hash = sha256_file(path)
+            checked_files += 1
+            if observed_hash != str(expected_hash):
+                failures.append(f"bundle hash mismatch {instance_name}/{filename}")
+    return {
+        "schema": "setp-e2-80k-instance-contract.v1",
+        "verdict": "LMAIN_V3_INSTANCE_CONTRACT_OK" if not failures else "HALT_LMAIN_V3_INSTANCE_CONTRACT",
+        "activation_verdict": activation.get("verdict"),
+        "manifest_sha256": manifest_sha,
+        "metadata_manifest_sha256": metadata.get("instance_manifest_sha256"),
+        "checked_instances": len(metadata.get("instances", [])),
+        "checked_bundle_files": checked_files,
+        "failure_count": len(failures),
+        "failures": failures,
+    }
+
+
 def safe_div(numerator: Any, denominator: Any) -> float:
     value = float(denominator)
     return float(numerator) / value if abs(value) > 1e-12 else 0.0
+
+
+def sha256_file(path: Path) -> str:
+    if not path.is_file():
+        return ""
+    digest = hashlib.sha256()
+    with path.open("rb") as handle:
+        for chunk in iter(lambda: handle.read(1024 * 1024), b""):
+            digest.update(chunk)
+    return digest.hexdigest()
 
 
 def fmt(value: Any) -> str:

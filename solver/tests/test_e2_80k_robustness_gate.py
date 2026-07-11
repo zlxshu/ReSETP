@@ -143,6 +143,11 @@ def test_formal_decision_excludes_structural_15c_from_mechanism_gate() -> None:
         pairs,
         scale_summary,
         mechanism_summary,
+        {
+            "verdict": "LMAIN_V3_INSTANCE_CONTRACT_OK",
+            "failure_count": 0,
+            "manifest_sha256": "manifest",
+        },
     )
 
     assert decision["technical_contract_ok"]
@@ -150,6 +155,21 @@ def test_formal_decision_excludes_structural_15c_from_mechanism_gate() -> None:
     assert decision["mechanism_visibility_supported"]
     assert decision["mechanism_eligible_scale_count"] == 3
     assert decision["fifteen_customer_mechanism_status"] == "STRUCTURAL_NO_EV_AVAILABLE"
+
+
+def test_active_lmain_v3_bundle_hashes_match_activation_contract() -> None:
+    metadata = {
+        "instances": ["L-main-threeshift-50c-01"],
+        "instance_manifest_sha256": gate.sha256_file(gate.ACTIVE_INSTANCE_MANIFEST),
+    }
+
+    result = verify.verify_instance_contract(metadata)
+
+    assert result["verdict"] == "LMAIN_V3_INSTANCE_CONTRACT_OK"
+    assert result["activation_verdict"] == "LMAIN_V3_READY"
+    assert result["checked_instances"] == 1
+    assert result["checked_bundle_files"] >= 9
+    assert result["failure_count"] == 0
 
 
 def write_rows(path: Path, rows: list[dict[str, object]]) -> None:
