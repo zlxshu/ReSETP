@@ -135,3 +135,5 @@ E3新runner绑定staged hybrid、280kWh、200c、seeds1--5、每层4000评价；
 ## 2026-07-11 E2 15负恢复最终收口
 
 整路块审计从staged、LNS、restart、true-LNS和proportional true-LNS的已保存解中提取路线，用set-partitioning+no-good枚举整路组合，新搜索0次。9组45父解零违规；6/6开发负例有可行混合组合，但0/6比当组最好父解便宜>=0.25%，0/6多救回负例，verdict=`ROUTE_BLOCK_HEADROOM_NOT_SUPPORTED`。这证明不同运行有路线多样性，但现有整路块没有可组合的性能headroom；HGS/SREX不解锁、未见种子和论文种子恢复矩阵取消。项目1/2以冻结E2的25胜5平15负、总成本领先LNS 6.845690%收口；当前主线转项目3的80 kWh稳健性镜像门。
+
+关闭后补做HGS-CVRP、PyVRP/SREX、混合车队HGA、多车场绿色VNS与仓库现有SWAP*-lite的源码/文献复核。更强方法理论上仍可能改善个别负例，但需要新的种群、完整SWAP*、route elimination、SREX修复和ReSETP充电/多车场/多趟适配，是新求解器项目。现有SWAP*-lite只原位交换、不减路线数，且通过`score_reference()`绕过`EvalBudget`，不能公平直开。因此E2恢复继续关闭，不宣称绝对无解，但不再为15负投入当前论文周期。
