@@ -11,20 +11,20 @@ from __future__ import annotations
 
 import argparse
 import concurrent.futures
-import csv
 import hashlib
 import json
 import os
 from pathlib import Path
 import subprocess
+import sys
 import time
 from typing import Any
 
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 for _path in (REPO_ROOT / "solver/src", REPO_ROOT / "models/src", REPO_ROOT):
-    if str(_path) not in os.sys.path:
-        os.sys.path.insert(0, str(_path))
+    if str(_path) not in sys.path:
+        sys.path.insert(0, str(_path))
 
 from baselines.e2_alns import e2_final_closure as closure
 from baselines.e2_alns.m1_e2_submission_runner import (
@@ -40,6 +40,8 @@ FROZEN_TAG = "e2-submission-20260711"
 GOLD_PYTHON = "/opt/anaconda3/bin/python3.13"
 DEFAULT_OUTPUT_ROOT = REPO_ROOT / "baselines/e2_alns/e2_80k_robustness_20260711"
 DEFAULT_EXECUTION_ROOT = REPO_ROOT / ".codex/worktrees/e2-frozen-0124623e"
+ACTIVE_INSTANCE_ROOT = REPO_ROOT / "models/data_bundle/generated_instances/L-main"
+ACTIVE_INSTANCE_MANIFEST = ACTIVE_INSTANCE_ROOT / "resetp-l-main-main-benchmark.v3.json"
 FORMAL_INSTANCES = tuple(f"L-main-threeshift-{size}c-01" for size in (15, 50, 100, 200))
 TASK_ALGORITHMS = ("staged_hybrid_carbon_pair", "LNS")
 EVIDENCE_ALGORITHMS = (
@@ -72,6 +74,7 @@ def main() -> int:
     closure.write_json(phase_dir / "execution_identity.json", identity)
     if identity["verdict"] != "FROZEN_E2_EXECUTION_IDENTITY_OK":
         decision = collection_decision([], [], args.phase, 0, 0, identity)
+        closure.write_json(phase_dir / "collection_decision.json", decision)
         closure.write_json(phase_dir / "decision.json", decision)
         write_report(phase_dir, decision)
         closure.write_hashes(phase_dir)
@@ -99,6 +102,8 @@ def main() -> int:
         "frozen_execution_commit": FROZEN_COMMIT,
         "frozen_execution_tag": FROZEN_TAG,
         "execution_root": str(execution_root),
+        "instance_root": str(ACTIVE_INSTANCE_ROOT),
+        "instance_manifest_sha256": sha256_file(ACTIVE_INSTANCE_MANIFEST),
         "orchestrator_commit": closure.git_head(),
         "shared_start": "make_shared_initial_solution(introduce_ev=True)",
         "lns_common_flip_preprocess": True,
@@ -148,6 +153,7 @@ def main() -> int:
         expected_evidence_rows,
         identity,
     )
+    closure.write_json(phase_dir / "collection_decision.json", decision)
     closure.write_json(phase_dir / "decision.json", decision)
     write_report(phase_dir, decision)
     closure.write_hashes(phase_dir)
@@ -163,15 +169,19 @@ def execution_identity(execution_root: Path) -> dict[str, Any]:
         status = ""
     else:
         head = git_output(execution_root, "rev-parse", "HEAD")
-        status = git_output(execution_root, "status", "--porcelain")
+        raw_status = git_output(execution_root, "status", "--porcelain")
+        status_lines = [line for line in raw_status.splitlines() if not apple_double_status(line)]
+        status = "\n".join(status_lines)
         if head != FROZEN_COMMIT:
             problems.append(f"execution HEAD {head} != frozen {FROZEN_COMMIT}")
         if status.strip():
             problems.append("frozen execution worktree is dirty")
         if not (execution_root / "baselines/e2_alns/e2_final_closure.py").is_file():
             problems.append("frozen closure worker missing")
-        if not (execution_root / "models/data_bundle/generated_instances/L-main").is_dir():
-            problems.append("frozen L-main instance root missing")
+        if not ACTIVE_INSTANCE_ROOT.is_dir():
+            problems.append("active audited L-main instance root missing")
+        if not ACTIVE_INSTANCE_MANIFEST.is_file():
+            problems.append("active L-main v3 manifest missing")
     if not Path(GOLD_PYTHON).is_file():
         problems.append(f"gold Python missing: {GOLD_PYTHON}")
     return {
@@ -182,6 +192,8 @@ def execution_identity(execution_root: Path) -> dict[str, Any]:
         "observed_commit": head,
         "worktree_clean": not bool(status.strip()),
         "gold_python": GOLD_PYTHON,
+        "instance_root": str(ACTIVE_INSTANCE_ROOT),
+        "instance_manifest_sha256": sha256_file(ACTIVE_INSTANCE_MANIFEST),
         "problems": problems,
     }
 
@@ -211,6 +223,7 @@ def build_tasks(
                     scenario_type="formal_goeke80",
                 )
                 task["repo_root"] = str(execution_root)
+                task["bundle_dir"] = str(ACTIVE_INSTANCE_ROOT / instance)
                 task["checkpoint_path"] = str(phase_dir / "checkpoints" / f"{task['run_id']}.json")
                 task["head"] = FROZEN_COMMIT
                 task["execution_commit"] = FROZEN_COMMIT
@@ -472,8 +485,25 @@ def git_output(root: Path, *args: str) -> str:
         return f"ERROR:{exc}"
 
 
+def apple_double_status(line: str) -> bool:
+    """Ignore ExFAT AppleDouble sidecars without hiding real source changes."""
+
+    path_text = line[3:].strip() if len(line) >= 4 else line.strip()
+    return any(part.startswith("._") for part in Path(path_text).parts)
+
+
 def sha256_text(value: str) -> str:
     return hashlib.sha256(value.encode("utf-8")).hexdigest()
+
+
+def sha256_file(path: Path) -> str:
+    if not path.is_file():
+        return ""
+    digest = hashlib.sha256()
+    with path.open("rb") as handle:
+        for chunk in iter(lambda: handle.read(1024 * 1024), b""):
+            digest.update(chunk)
+    return digest.hexdigest()
 
 
 def atomic_write_json(path: Path, payload: dict[str, Any]) -> None:

@@ -137,3 +137,7 @@ E3新runner绑定staged hybrid、280kWh、200c、seeds1--5、每层4000评价；
 整路块审计从staged、LNS、restart、true-LNS和proportional true-LNS的已保存解中提取路线，用set-partitioning+no-good枚举整路组合，新搜索0次。9组45父解零违规；6/6开发负例有可行混合组合，但0/6比当组最好父解便宜>=0.25%，0/6多救回负例，verdict=`ROUTE_BLOCK_HEADROOM_NOT_SUPPORTED`。这证明不同运行有路线多样性，但现有整路块没有可组合的性能headroom；HGS/SREX不解锁、未见种子和论文种子恢复矩阵取消。项目1/2以冻结E2的25胜5平15负、总成本领先LNS 6.845690%收口；当前主线转项目3的80 kWh稳健性镜像门。
 
 关闭后补做HGS-CVRP、PyVRP/SREX、混合车队HGA、多车场绿色VNS与仓库现有SWAP*-lite的源码/文献复核。更强方法理论上仍可能改善个别负例，但需要新的种群、完整SWAP*、route elimination、SREX修复和ReSETP充电/多车场/多趟适配，是新求解器项目。现有SWAP*-lite只原位交换、不减路线数，且通过`score_reference()`绕过`EvalBudget`，不能公平直开。因此E2恢复继续关闭，不宣称绝对无解，但不再为15负投入当前论文周期。
+
+用户随后要求不删除更强方法：“种群搜索+完整SWAP*+路线消除+SREX+充电修复”统一登记为后续遇到路线生成瓶颈时的长期备案，不作当前E2第四轮rescue。遗留编号1--6、9只在`docs/handoff/e2_legacy_items_1_6_9_execution_plan_20260711.md`维护统一顺序和解冻条件。
+
+80 kWh项目3已解锁并完成接线短门。新runner从冻结tag `e2-submission-20260711`/commit `0124623e`的独立worktree运行算法，读取激活的L-main v3 manifest，不复用纯CV起点旧脚本或旧ALNS通用入口。50c seed1的pair/LNS各200评价接线门2/2搜索、3/3展开证据行全部满预算零违规，`E2_80K_PREFLIGHT_READY`。正式矩阵固定24搜索任务/36证据行，任务账本与展开表分离，默认2 workers和30分钟低频watchdog；等runner/验收器提交后启动正式门。

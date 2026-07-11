@@ -32,6 +32,10 @@ ReSETP = 投《系统工程理论与实践》的绿色车辆路径论文。多�
 
 **E2 15负开源/论文最终复核（2026-07-11）：** 已核对HGS-CVRP、PyVRP/SREX、混合车队HGA、多车场绿色VNS和本地Zotero相关论文。更强的种群+SWAP*+route elimination理论上可能产生当前解库没有的新路线，但移植到ReSETP需要新的充电物理修复、多车场/多趟适配和严格预算计数，属于新求解器工程。仓库现有`SWAP*-lite`不是完整SWAP*、不直接消除路线，且内部完整解评分未计入`EvalBudget`，不能公平直开。因此判决不变：不为15负重开E2；这不是宣称“绝对无法改善”，而是当前没有短周期、同预算、可写论文的救援方案。
 
+**统一备案与文档口径（2026-07-11）：** “种群搜索+真正SWAP*+路线消除+SREX+充电修复”不删除，统一挂为后续明确遇到路线生成瓶颈时的长期备案，当前不施工。遗留编号1--6、9的唯一调度总表为`docs/handoff/e2_legacy_items_1_6_9_execution_plan_20260711.md`；其他文档只作证据附件和状态摘要，不再分散维护执行顺序。
+
+**80 kWh项目3接线门通过（2026-07-11）：** 不复用旧纯CV起点runner，也不走仍指向旧ALNS的通用正式入口。新专用入口从tag `e2-submission-20260711`/commit `0124623e`的独立worktree调用冻结算法，读取已审计L-main v3，使用共同起点和LNS `common_flip_preprocess=True`。50c×seed1×{pair,LNS}的200评价短门2/2搜索、3/3证据行全部满预算、零违规，verdict=`E2_80K_PREFLIGHT_READY`。正式门为15/50/100/200c×seeds1--3×{pair,LNS}=24搜索任务，展开36证据行，默认2 workers和30分钟低频watchdog；代码提交前不启动正式长跑。
+
 **旧30次稳定性门（历史前置证据）：** 100c/150c/200c × 5 seeds × staged ALNS-LNS hybrid/LNS 的30次、4000次评价稳定性门为30/30 OK、零违规、全部跑满预算；三个规模hybrid相对LNS平均改善6.45%/0.69%/14.08%，合计11/15胜，verdict=`STAGED_HYBRID_STABILITY_SUPPORTED`。该门已被上述九档全量证据覆盖。路线搜索身份从此冻结，不再 rescue 调参。
 
 **E2碳机制小门（2026-07-11）：** 复用上述15个hybrid保存解，在路线、车型和总充电量不变条件下，对比立即充电与低碳择时充电。15/15均成功、双方零违规，625次充电实际移动，15/15充电间接排放下降，平均下降约9.87%。因此正式候选命名为 `staged ALNS-LNS hybrid + carbon-aware charging schedule`，消融为 `+ immediate charging ablation`；这是固定路线充电子问题，不是恢复历史 `CARBON_OPS_WEAK` 粗糙算子。
