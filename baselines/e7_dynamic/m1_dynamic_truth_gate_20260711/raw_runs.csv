@@ -1,0 +1,7 @@
+all_zero_violation_and_cost_match,backend_label_present,check,command,independent_entry_reference_count,internal_comparison_still_valid,legacy_alns_reference_count,ok,output,passed,returncode,rows
+,True,source_entry,,3,,0,True,,,,
+,,pytest,/opt/anaconda3/bin/python3 -m pytest -q solver/tests/test_dynamic_truth_gate.py solver/tests/test_check.py,,,,True,"....................................................                     [100%]
+52 passed in 0.22s",52,0,
+,,pytest,/opt/anaconda3/bin/python3 -m pytest -q solver/tests/test_formal_runner.py::FormalRunnerTests::test_dynamic_report_halts_when_final_dynamic_check_fails,,,,True,".                                                                        [100%]
+1 passed in 0.18s",1,0,
+True,,frozen_e2_replay_after_dynamic_port,,,True,,True,,,0,270
