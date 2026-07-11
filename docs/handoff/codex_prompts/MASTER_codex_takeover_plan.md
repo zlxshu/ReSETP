@@ -2,6 +2,8 @@
 
 > 这是 Claude(M1)交给 Codex 的总纲。**Claude 之后基本不在场,Codex 既思考也执行。** 本文件 = 剩余全部规划(总体+局部) + 预备方案 + 行为铁律。每段对话先读 `docs/handoff/READ_ME_FIRST_FOR_AGENTS.md`，再按其中清单读 `HANDOFF.md` + `docs/handoff/project_prd_execution_map_v2_20260702.md` + `docs/handoff/project_planning_map_20260701.md` + 本文件 + `docs/handoff/memory/MEMORY.md` + 相关 memory 节点，再动手。
 
+> **2026-07-11最新用户决定覆盖本文件的旧参数与旧排期：** 当前先完成E2九算例×九算法×十次×4000评价统一比赛，280 kWh主场景、80 kWh备用、公平off、跨场费0；完成后立即准备E3。自有算例不套BKS/AVG/Gap%，公开标准算例和未经改动Goeke算法留作E2后补实验。客户归属、跨场费用和线性碳配额挂账查文献。唯一拍板单为`docs/handoff/e1_e7_submission_contract_decision_20260711.md`；以下旧80 kWh主线、16000预算等段落只作历史，不得作为当前执行入口。
+
 ## 0. 给 Codex 的行为铁律(每段对话自我约束,务必照做)
 - **先读后做**:每轮先读 `docs/handoff/READ_ME_FIRST_FOR_AGENTS.md` 并执行其强制读取清单；读完前不得改代码、跑实验、下结论。Fable5/Claude 的合理规划可继承，但最终事实以 `HANDOFF.md` 和原始 CSV/JSON/checkpoint 为准。
 - **诚实(最高优先)**:跑不出/没收敛/没赢就诚实 HALT 并如实写,**绝不注水、不混旧数据、不拿弱版/没跑满的结果充数、不把推断冒充实证**。哪个档输、和谁打平,照实报。

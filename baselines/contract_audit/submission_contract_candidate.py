@@ -15,8 +15,11 @@ from setp_solver.profit import infer_customer_home_depots
 from setp_solver.search.bundle import load_search_bundle
 from setp_solver.search.instance_registry import FORMAL_INSTANCE_ORDER, assert_formal_benchmark_ready, iter_formal_bundles
 from setp_solver.search.submission_contract import (
+    E2_LANE,
+    FROZEN_STATUS,
+    FULL_MODEL_LANE,
     OWNER_SCHEMA_VERSION,
-    PROPOSED_STATUS,
+    RESEARCH_PENDING_STATUS,
     SCHEMA_VERSION,
     SubmissionContractError,
     load_submission_contract,
@@ -81,19 +84,49 @@ def main() -> None:
 
     contract = {
         "schema_version": SCHEMA_VERSION,
-        "contract_id": "resetp-e1-e7-submission-20260711-proposed-v1",
-        "status": PROPOSED_STATUS,
+        "contract_id": "resetp-e1-e7-submission-20260711-v2",
         "algorithm_core_e2": {
-            "reuse_frozen_e2": True,
+            "status": FROZEN_STATUS,
+            "reuse_frozen_e2_rows": True,
             "freeze_tag": "e2-submission-20260711",
             "eval_budget": 4000,
-            "scope": "core_relaxed_algorithm_comparison",
+            "independent_runs_per_instance": 10,
+            "seeds": list(range(1, 11)),
+            "algorithms": [
+                "staged_hybrid_carbon_aware",
+                "GA",
+                "PSO",
+                "VNS",
+                "ACO",
+                "GA-VNS",
+                "LNS",
+                "GWO",
+                "IWD",
+            ],
+            "scope": "core_algorithm_benchmark_10seed_extension",
+            "main_battery_kwh": 280.0,
+            "robustness_battery_kwh": [80.0],
+            "formal_instance_order": list(FORMAL_INSTANCE_ORDER),
+            "formal_instance_hashes": bundle_hashes,
+            "fairness_enabled": False,
+            "cross_site_fee_gbp_per_customer": 0.0,
+            "reference_solution_reporting": {
+                "self_instance_bks_gap_table": False,
+                "current_outputs": ["ten_run_mean", "standard_deviation", "best", "runtime", "feasibility", "pairwise_statistics"],
+                "standard_benchmark_status": "deferred_post_e2",
+                "planned_reference_solver": "unmodified_Goeke_algorithm",
+                "planned_standard_outputs": ["BKS", "AVG", "Gap%"],
+                "boundary": "The unmodified Goeke algorithm is not a competitor in the current self-created-instance E2 table.",
+            },
         },
         "full_model": {
+            "status": RESEARCH_PENDING_STATUS,
             "main_battery_kwh": 280.0,
             "robustness_battery_kwh": [80.0],
             "customer_ownership": {
                 "rule": "nearest_depot_by_bundle_distance",
+                "decision_role": "provisional_manifest_not_yet_model_truth",
+                "research_status": "pending_original_model_and_reference_literature_audit",
                 "manifest_path": str(owner_manifest_path.relative_to(root)),
                 "manifest_sha256": sha256(owner_manifest_path),
             },
@@ -101,14 +134,18 @@ def main() -> None:
                 "shared_baseline_gbp_per_customer": 0.0,
                 "sensitivity_gbp_per_customer": [0.0, 10.0, 25.0, 50.0, 95.0],
                 "claim_boundary": "95 GBP remains a high-friction stress case unless a source-backed main value is frozen.",
+                "research_status": "provisional_grid_pending_source_and_scale_audit",
             },
             "fairness": {
-                "enabled_from_search_start": True,
+                "global_default": "off",
+                "enabled_during_search_when_required": True,
+                "required_experiments": ["E6", "E7_fairness_interaction_if_retained"],
                 "theta_selection": "calibrate_around_natural_binding_range",
             },
             "carbon_quota": {
                 "baseline_factor": 0.8,
                 "claim_role": "accounting_only",
+                "research_status": "deferred_reference_model_audit",
             },
         },
     }
@@ -116,22 +153,22 @@ def main() -> None:
     write_json(contract_path, contract)
     proposal_valid = True
     try:
-        load_submission_contract(contract_path, repo_root=root, require_frozen=False)
+        load_submission_contract(contract_path, repo_root=root, require_frozen=True, lane=E2_LANE)
     except SubmissionContractError:
         proposal_valid = False
     formal_gate_blocked = False
     try:
-        load_submission_contract(contract_path, repo_root=root, require_frozen=True)
+        load_submission_contract(contract_path, repo_root=root, require_frozen=True, lane=FULL_MODEL_LANE)
     except SubmissionContractError:
         formal_gate_blocked = True
     decision = {
-        "verdict": "BLOCK_SUBMISSION_RUNS_PENDING_USER_CONFIRMATION",
+        "verdict": "E2_CONTRACT_FROZEN_FULL_MODEL_RESEARCH_PENDING",
         "proposal_structurally_valid": proposal_valid,
         "formal_gate_correctly_blocked": formal_gate_blocked,
         "formal_instance_count": len(FORMAL_INSTANCE_ORDER),
         "customer_owner_row_count": len(rows),
         "zero_search": True,
-        "next_action": "User confirms or edits the proposed contract; only then change status to FROZEN_BY_USER and start formal project 4/5 runs.",
+        "next_action": "Complete the E2 ten-seed all-algorithm matrix, then prepare E3. Keep full-model ownership, cross-site friction, and carbon-quota claims research-pending; defer the unmodified-Goeke public-benchmark BKS/AVG/Gap supplement until after E2.",
     }
     metadata = {
         "schema_version": "resetp.submission-contract-candidate-evidence.v1",
@@ -150,14 +187,15 @@ def main() -> None:
     write_json(output / "metadata.json", metadata)
     write_json(output / "decision.json", decision)
     (output / "raw_runs.csv").write_text(
-        "check,ok\nproposal_structurally_valid,true\nformal_gate_blocks_unconfirmed_contract,true\n",
+        "check,ok\ne2_contract_frozen,true\nfull_model_gate_blocks_pending_research,true\n",
         encoding="utf-8",
     )
     (output / "report.md").write_text(
         "# E1--E7投稿合同机器闸门\n\n"
-        "大白话：推荐合同已经做成机器可读草案，九个L-main算例的每位客户也生成了固定归属表和哈希。"
-        "草案目前故意不能启动正式实验；只有用户确认并冻结后，项目4、项目5及E4--E7的新正式入口才允许读取。\n\n"
-        "这一步没有运行求解器。它解决的是过去不同实验各用一套参数、跑完才发现口径不一致的问题。\n",
+        "大白话：E2算法比赛规则已经按用户决定冻结，可以继续补齐九算法、十次运行。"
+        "客户归属、跨场费用和碳配额建模仍需查文献，所以相关完整模型入口继续被机器拦住。"
+        "BKS、AVG、Gap%格式留到E2后的公开标准算例补实验，拟使用未经改动的Goeke原始算法。\n\n"
+        "这一步没有运行求解器。它把E2已批准的比赛规则与后续尚未定稿的建模问题分开，避免互相卡死或互相污染。\n",
         encoding="utf-8",
     )
     write_json(output / "artifact_hashes.json", artifact_hashes(output))
