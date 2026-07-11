@@ -2,28 +2,35 @@ from __future__ import annotations
 
 import tempfile
 import unittest
+from unittest.mock import patch
 from pathlib import Path
 
 from baselines.e2_alns import e2_final_closure as closure
 from setp_solver.prices import DEFAULT_PRICES
 
 
+G4_DECISION_TEST_INSTANCES = tuple(
+    ("threeshift", "e2-threeshift-100c-01" if index == 0 else f"synthetic-g4-{index:02d}c-01")
+    for index in range(9)
+)
+
+
 class E2FinalClosureTest(unittest.TestCase):
-    def test_tier1_manifest_has_expected_23_minus_01_instances(self) -> None:
+    def test_tier1_manifest_has_expected_nine_lmain_v3_instances(self) -> None:
         manifest = closure.instance_manifest_for_tier("Tier1")
 
-        self.assertEqual(len(manifest), 23)
+        self.assertEqual(len(manifest), 9)
         self.assertTrue(all(str(row["instance"]).endswith("-01") for row in manifest))
-        self.assertEqual({row["category"] for row in manifest}, {"multidepot", "threeshift", "vanilla"})
+        self.assertEqual({row["category"] for row in manifest}, {"threeshift"})
 
     def test_g5_tier_manifests_follow_20260704_scope(self) -> None:
         tier1 = closure.instance_manifest_for_tier("Tier1")
         tier2 = closure.instance_manifest_for_tier("Tier2")
         tier3 = closure.instance_manifest_for_tier("Tier3")
 
-        self.assertEqual(len(tier1), 23)
-        self.assertEqual(len(tier2), 29)
-        self.assertEqual(len(tier3), 69)
+        self.assertEqual(len(tier1), 9)
+        self.assertEqual(len(tier2), 15)
+        self.assertEqual(len(tier3), 27)
         self.assertTrue({instance for _, instance in closure.G4_INSTANCES}.issubset({row["instance"] for row in tier2}))
         self.assertTrue(all(str(row["instance"]).endswith(("-01", "-02", "-03")) for row in tier3))
 
@@ -68,7 +75,7 @@ class E2FinalClosureTest(unittest.TestCase):
 
     def test_g4_direction_rule_passes_with_no_exceptions(self) -> None:
         rows = []
-        for idx, (category, instance) in enumerate(closure.G4_INSTANCES):
+        for idx, (category, instance) in enumerate(G4_DECISION_TEST_INSTANCES):
             for seed in (1, 2, 3):
                 rows.append(
                     {
@@ -95,7 +102,7 @@ class E2FinalClosureTest(unittest.TestCase):
                     }
                 )
 
-        decision = closure.decide_phase_c(rows)
+        decision = self._decide_g4(rows)
 
         self.assertEqual(decision["verdict"], "G4_STABILITY_PASS")
         self.assertEqual(decision["nonnegative_gap_instances"], 6)
@@ -113,7 +120,7 @@ class E2FinalClosureTest(unittest.TestCase):
             }
         ]
 
-        decision = closure.decide_phase_c(rows, liveness_rows)
+        decision = self._decide_g4(rows, liveness_rows)
 
         self.assertEqual(decision["verdict"], "G4_PASS_WITH_EXCEPTIONS")
         self.assertEqual(decision["documented_exception_count"], 1)
@@ -125,7 +132,7 @@ class E2FinalClosureTest(unittest.TestCase):
     def test_g4_decision_halts_when_exception_count_reaches_three(self) -> None:
         rows = self._g4_rows_with_costs([103.0, 103.0, 103.0, 90.0, 90.0, 90.0, 90.0, 90.0, 90.0])
 
-        decision = closure.decide_phase_c(rows)
+        decision = self._decide_g4(rows)
 
         self.assertEqual(decision["verdict"], "HALT_G4_SUSPECT")
         self.assertEqual(decision["documented_exception_count"], 3)
@@ -134,7 +141,7 @@ class E2FinalClosureTest(unittest.TestCase):
     def test_g4_decision_halts_when_majority_rule_fails(self) -> None:
         rows = self._g4_rows_with_costs([98.0, 98.0, 98.0, 98.0, 98.0, 101.0, 101.0, 101.0, 101.0])
 
-        decision = closure.decide_phase_c(rows)
+        decision = self._decide_g4(rows)
 
         self.assertEqual(decision["verdict"], "HALT_G4_SUSPECT")
         self.assertEqual(decision["halt_reason"], "G4_DIRECTION_RULE_FAILED")
@@ -152,7 +159,7 @@ class E2FinalClosureTest(unittest.TestCase):
             }
         ]
 
-        decision = closure.decide_phase_c(rows, liveness_rows)
+        decision = self._decide_g4(rows, liveness_rows)
 
         self.assertEqual(decision["verdict"], "HALT_G4_SUSPECT")
         self.assertEqual(decision["liveness_suspect_count"], 1)
@@ -513,7 +520,7 @@ class E2FinalClosureTest(unittest.TestCase):
     @staticmethod
     def _g4_rows_with_costs(alns_costs_by_instance: list[float]) -> list[dict[str, object]]:
         rows: list[dict[str, object]] = []
-        for alns_cost, (category, instance) in zip(alns_costs_by_instance, closure.G4_INSTANCES):
+        for alns_cost, (category, instance) in zip(alns_costs_by_instance, G4_DECISION_TEST_INSTANCES):
             for seed in (1, 2, 3):
                 rows.append(
                     {
@@ -540,6 +547,18 @@ class E2FinalClosureTest(unittest.TestCase):
                     }
                 )
         return rows
+
+    @staticmethod
+    def _decide_g4(
+        rows: list[dict[str, object]],
+        liveness_rows: list[dict[str, object]] | None = None,
+    ) -> dict[str, object]:
+        # The historical G4 decision rule is defined on nine instances, while
+        # the current collector constant is a retired three-instance slice.
+        # Patch only the test fixture so the rule remains covered without
+        # reactivating that old collector in production.
+        with patch.object(closure, "G4_INSTANCES", G4_DECISION_TEST_INSTANCES):
+            return closure.decide_phase_c(rows, liveness_rows)
 
     def test_artifact_hashes_exclude_appledouble_caches_and_hash_file(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
