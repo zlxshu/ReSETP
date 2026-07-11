@@ -48,6 +48,8 @@
 
 机制可见门与算法门分开。15c的`num_ev=0`，只参加成本比较，标记`STRUCTURAL_NO_EV_AVAILABLE`并排除机制判决。对50/100/200c，至少两个规模的多数种子必须同时满足：EV在客户/需求/距离三项中至少两项达10%，至少2次真实充电，且充电电量大于0。
 
+技术合同也是硬门：每行保存解必须重新计算成本、违规和解签名；L-main v3的`LMAIN_V3_READY`判决、manifest哈希和本轮四个算例的每个核心文件哈希必须一致；冻结提交与当前代码中的价格、成本、检查器、评价预算、解结构、算例加载、可行修复和共同起点代码必须逐文件哈希一致；默认参数必须为80 kWh、3650 kg、25 m/s。aware/naive是同一次路线搜索的两个充电时间方案，必须同路线结构、同总用电、同充电电量；任一不等直接HALT，禁止把换路线收益写成择时降碳。
+
 如果80 kWh下仍有真实EV和充电信号，再扩到九档五种子；如果退化为近全油车，则停止算法排名扩跑，把80 kWh保留为原始物理边界，并明确说明时变碳机制在该容量下缺少作用空间。不得为了让80 kWh好看而改价格、续航公式或车辆上限。
 
 ## 4：完整碳感知搜索
@@ -96,4 +98,4 @@
 
 整路块审计已完成并给出`ROUTE_BLOCK_HEADROOM_NOT_SUPPORTED`：9组45个父解全部零违规，6/6开发负例能拼出可行混合整路解，但0/6比当组最好父解便宜至少0.25%，0/6多救回负例。因此HGS/SREX最小候选不解锁，项目1/2已正式关闭，以冻结E2的25胜5平15负和总成本优势6.845690%作为最终边界。下一步按本计划进入项目3。
 
-项目3已解锁。专用runner为`baselines/e2_alns/e2_80k_robustness_gate.py`，独立验收器为`baselines/e2_alns/e2_80k_robustness_verify.py`，低频watchdog为`baselines/e2_alns/e2_80k_watchdog.py`。50c×seed1×两算法的200评价短门已完成：2/2真实搜索、3/3展开证据行全部满预算、零违规，冻结commit和L-main v3 manifest身份验证通过，verdict=`E2_80K_PREFLIGHT_READY`。正式24任务只能在runner/验收器提交、测试和任务矩阵干跑完成后启动。
+项目3已解锁。专用runner为`baselines/e2_alns/e2_80k_robustness_gate.py`，独立验收器为`baselines/e2_alns/e2_80k_robustness_verify.py`，低频watchdog为`baselines/e2_alns/e2_80k_watchdog.py`。50c×seed1×两算法的200评价短门已完成：2/2真实搜索、3/3展开证据行全部满预算、零违规，冻结commit、L-main v3逐文件hash、8个受保护语义文件、完整默认参数指纹和aware/naive同路线同电量合同均已验证，verdict=`E2_80K_PREFLIGHT_VERIFIED`。正式24任务已在代码、测试和短门证据提交后启动。
