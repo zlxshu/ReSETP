@@ -34,7 +34,7 @@ from setp_solver.search.metaheuristic_baselines import solution_from_dict
 from setp_solver.solution import physical_vehicle_id
 
 
-FROZEN_COMMIT = "0124623e347cd2a6a5548e07e0af66e16d3b634b"
+FROZEN_COMMIT = "40bd28835dff1a4287486e720351e531fc7a38d0"
 DEFAULT_PHASE_DIR = REPO_ROOT / "baselines/e2_alns/e2_80k_robustness_20260711/formal"
 EXPECTED_INSTANCES = tuple(f"L-main-threeshift-{size}c-01" for size in (15, 50, 100, 200))
 EXPECTED_ALGORITHMS = ("staged_hybrid_carbon_aware", "staged_hybrid_carbon_naive", "LNS")
