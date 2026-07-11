@@ -160,6 +160,11 @@ def test_formal_decision_excludes_structural_15c_from_mechanism_gate() -> None:
             "manifest_sha256": "manifest",
         },
         verify.carbon_pair_contract(verified_rows),
+        {
+            "verdict": "FROZEN_PROTECTED_CONTRACT_OK",
+            "failure_count": 0,
+            "default_prices_sha256": "prices",
+        },
     )
 
     assert decision["technical_contract_ok"]
@@ -204,6 +209,21 @@ def test_carbon_pair_contract_rejects_route_or_energy_changes() -> None:
     result = verify.carbon_pair_contract(rows)
     assert result["verdict"] == "HALT_CARBON_PAIR_CONTRACT"
     assert result["fixed_route_equal_energy_pair_count"] == 0
+
+
+def test_protected_semantics_and_goeke80_parameters_match_frozen_commit() -> None:
+    result = verify.verify_protected_contract()
+
+    assert result["verdict"] == "FROZEN_PROTECTED_CONTRACT_OK"
+    assert result["failure_count"] == 0
+    assert result["protected_path_count"] == len(verify.PROTECTED_SEMANTIC_PATHS)
+    assert all(row["match"] for row in result["protected_paths"])
+    assert result["critical_values"] == {
+        "B_battery_kwh": 80.0,
+        "Q_capacity": 3650.0,
+        "v_speed_ms": 25.0,
+    }
+    assert result["gold_runtime"]["numpy"] == "2.3.5"
 
 
 def write_rows(path: Path, rows: list[dict[str, object]]) -> None:

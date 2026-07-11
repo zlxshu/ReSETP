@@ -5,12 +5,14 @@ from __future__ import annotations
 
 import argparse
 from collections import Counter, defaultdict
+from dataclasses import asdict
 import hashlib
 import json
 import math
 from pathlib import Path
 import shutil
 import statistics
+import subprocess
 import sys
 from typing import Any
 
@@ -38,6 +40,16 @@ EXPECTED_ALGORITHMS = ("staged_hybrid_carbon_aware", "staged_hybrid_carbon_naive
 ACTIVE_INSTANCE_ROOT = REPO_ROOT / "models/data_bundle/generated_instances/L-main"
 ACTIVE_INSTANCE_MANIFEST = ACTIVE_INSTANCE_ROOT / "resetp-l-main-main-benchmark.v3.json"
 ACTIVATION_DECISION = REPO_ROOT / "baselines/e2_alns/l_main_v3_activation/decision.json"
+PROTECTED_SEMANTIC_PATHS = (
+    "solver/src/setp_solver/prices.py",
+    "solver/src/setp_solver/cost.py",
+    "solver/src/setp_solver/check.py",
+    "solver/src/setp_solver/search/evaluation.py",
+    "solver/src/setp_solver/solution.py",
+    "solver/src/setp_solver/search/bundle.py",
+    "solver/src/setp_solver/search/feasible_repair.py",
+    "solver/src/setp_solver/search/candidates.py",
+)
 TOLERANCE = 1e-6
 
 
@@ -56,6 +68,8 @@ def main() -> int:
     rows = closure.read_csv(phase_dir / "raw_runs.csv")
     instance_contract = verify_instance_contract(metadata)
     closure.write_json(phase_dir / "instance_contract.json", instance_contract)
+    protected_contract = verify_protected_contract()
+    closure.write_json(phase_dir / "protected_contract.json", protected_contract)
     verified, failures = verify_rows(phase_dir, rows, str(args.execution_commit))
     closure.write_csv(phase_dir / "verified_runs.csv", verified)
     closure.write_json(phase_dir / "verification_failures.json", failures)
@@ -78,6 +92,7 @@ def main() -> int:
         mechanism_summary,
         instance_contract,
         carbon_contract,
+        protected_contract,
     )
     closure.write_json(phase_dir / "decision.json", decision)
     write_report(phase_dir, decision, scale_summary, mechanism_summary)
@@ -424,6 +439,7 @@ def decide(
     mechanism_summary: list[dict[str, Any]],
     instance_contract: dict[str, Any],
     carbon_contract: dict[str, Any],
+    protected_contract: dict[str, Any],
 ) -> dict[str, Any]:
     phase = str(metadata.get("phase", ""))
     preflight = phase == "preflight"
@@ -438,6 +454,7 @@ def decide(
         and metadata.get("frozen_execution_commit") == FROZEN_COMMIT
         and instance_contract.get("verdict") == "LMAIN_V3_INSTANCE_CONTRACT_OK"
         and carbon_contract.get("verdict") == "FIXED_ROUTE_EQUAL_ENERGY_CONTRACT_OK"
+        and protected_contract.get("verdict") == "FROZEN_PROTECTED_CONTRACT_OK"
         and len(task_rows) == expected_tasks
         and all(
             str(row.get("gate_status")) == "OK"
@@ -511,6 +528,9 @@ def decide(
         "carbon_pair_contract_verdict": carbon_contract.get("verdict"),
         "carbon_pair_count": carbon_contract.get("pair_count"),
         "carbon_fixed_route_equal_energy_pair_count": carbon_contract.get("fixed_route_equal_energy_pair_count"),
+        "protected_contract_verdict": protected_contract.get("verdict"),
+        "protected_contract_failure_count": protected_contract.get("failure_count"),
+        "default_prices_sha256": protected_contract.get("default_prices_sha256"),
         "technical_contract_ok": technical_ok,
         "algorithm_stability_supported": algorithm_supported,
         "mechanism_visibility_supported": mechanism_visible,
@@ -650,6 +670,82 @@ def verify_instance_contract(metadata: dict[str, Any]) -> dict[str, Any]:
         "metadata_manifest_sha256": metadata.get("instance_manifest_sha256"),
         "checked_instances": len(metadata.get("instances", [])),
         "checked_bundle_files": checked_files,
+        "failure_count": len(failures),
+        "failures": failures,
+    }
+
+
+def verify_protected_contract() -> dict[str, Any]:
+    failures: list[str] = []
+    path_rows: list[dict[str, Any]] = []
+    for relative in PROTECTED_SEMANTIC_PATHS:
+        current_path = REPO_ROOT / relative
+        current_bytes = current_path.read_bytes() if current_path.is_file() else b""
+        try:
+            frozen_bytes = subprocess.check_output(
+                ["git", "show", f"{FROZEN_COMMIT}:{relative}"],
+                cwd=REPO_ROOT,
+                stderr=subprocess.STDOUT,
+            )
+        except subprocess.CalledProcessError as exc:
+            frozen_bytes = b""
+            failures.append(f"cannot read frozen protected path {relative}: {exc.returncode}")
+        current_hash = hashlib.sha256(current_bytes).hexdigest() if current_bytes else ""
+        frozen_hash = hashlib.sha256(frozen_bytes).hexdigest() if frozen_bytes else ""
+        match = bool(current_hash) and current_hash == frozen_hash
+        if not match:
+            failures.append(f"protected semantic drift {relative}")
+        path_rows.append(
+            {
+                "path": relative,
+                "current_sha256": current_hash,
+                "frozen_sha256": frozen_hash,
+                "match": match,
+            }
+        )
+    prices = asdict(DEFAULT_PRICES)
+    prices_sha = hashlib.sha256(
+        json.dumps(prices, ensure_ascii=False, sort_keys=True, separators=(",", ":")).encode("utf-8")
+    ).hexdigest()
+    critical_values = {
+        "B_battery_kwh": float(DEFAULT_PRICES.B_battery_kwh),
+        "Q_capacity": float(DEFAULT_PRICES.Q_capacity),
+        "v_speed_ms": float(DEFAULT_PRICES.v_speed_ms),
+    }
+    if critical_values != {"B_battery_kwh": 80.0, "Q_capacity": 3650.0, "v_speed_ms": 25.0}:
+        failures.append(f"critical Goeke80 values changed: {critical_values}")
+    runtime: dict[str, Any] = {}
+    try:
+        runtime = json.loads(
+            subprocess.check_output(
+                [
+                    closure.GOLD_PYTHON,
+                    "-c",
+                    (
+                        "import json,sys,numpy;"
+                        "print(json.dumps({'executable':sys.executable,'python':sys.version.split()[0],'numpy':numpy.__version__},sort_keys=True))"
+                    ),
+                ],
+                cwd=REPO_ROOT,
+                text=True,
+            )
+        )
+    except (subprocess.CalledProcessError, FileNotFoundError, json.JSONDecodeError) as exc:
+        failures.append(f"gold runtime unreadable: {exc}")
+    if runtime.get("executable") != closure.GOLD_PYTHON:
+        failures.append(f"gold executable mismatch: {runtime.get('executable')}")
+    if runtime.get("numpy") != closure.GOLD_NUMPY:
+        failures.append(f"gold NumPy mismatch: {runtime.get('numpy')}")
+    return {
+        "schema": "setp-e2-80k-protected-contract.v1",
+        "verdict": "FROZEN_PROTECTED_CONTRACT_OK" if not failures else "HALT_FROZEN_PROTECTED_CONTRACT",
+        "frozen_commit": FROZEN_COMMIT,
+        "protected_path_count": len(path_rows),
+        "protected_paths": path_rows,
+        "critical_values": critical_values,
+        "default_prices": prices,
+        "default_prices_sha256": prices_sha,
+        "gold_runtime": runtime,
         "failure_count": len(failures),
         "failures": failures,
     }
