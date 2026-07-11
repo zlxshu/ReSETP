@@ -118,6 +118,8 @@ def test_formal_decision_excludes_structural_15c_from_mechanism_gate() -> None:
             "instance": gate.FORMAL_INSTANCES[index // 3],
             "seed": index % 3 + 1,
             "aware_gain_pct": 1.0,
+            "aware_cost": 99.0,
+            "lns_cost": 100.0,
         }
         for index in range(12)
     ]
@@ -173,6 +175,8 @@ def test_formal_decision_excludes_structural_15c_from_mechanism_gate() -> None:
     assert decision["mechanism_eligible_scale_count"] == 3
     assert decision["fifteen_customer_mechanism_status"] == "STRUCTURAL_NO_EV_AVAILABLE"
     assert decision["carbon_pair_contract_verdict"] == "FIXED_ROUTE_EQUAL_ENERGY_CONTRACT_OK"
+    assert decision["aggregate_cost_gain_pct"] == 1.0
+    assert decision["paired_mean_bootstrap_95ci_pct"] == [1.0, 1.0]
 
 
 def test_active_lmain_v3_bundle_hashes_match_activation_contract() -> None:
@@ -224,6 +228,14 @@ def test_protected_semantics_and_goeke80_parameters_match_frozen_commit() -> Non
         "v_speed_ms": 25.0,
     }
     assert result["gold_runtime"]["numpy"] == "2.3.5"
+
+
+def test_bootstrap_interval_is_deterministic_and_descriptive_only() -> None:
+    first = verify.bootstrap_mean_ci([-2.0, 1.0, 4.0], resamples=2_000)
+    second = verify.bootstrap_mean_ci([-2.0, 1.0, 4.0], resamples=2_000)
+
+    assert first == second
+    assert first[0] <= 1.0 <= first[1]
 
 
 def write_rows(path: Path, rows: list[dict[str, object]]) -> None:

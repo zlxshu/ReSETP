@@ -10,6 +10,7 @@ import hashlib
 import json
 import math
 from pathlib import Path
+import random
 import shutil
 import statistics
 import subprocess
@@ -478,6 +479,10 @@ def decide(
     wins = sum(value > 1e-9 for value in gains)
     ties = sum(abs(value) <= 1e-9 for value in gains)
     losses = sum(value < -1e-9 for value in gains)
+    ci_low, ci_high = bootstrap_mean_ci(gains)
+    aware_total = sum(float(row.get("aware_cost", 0.0)) for row in pairs)
+    lns_total = sum(float(row.get("lns_cost", 0.0)) for row in pairs)
+    aggregate_gain = 100.0 * safe_div(lns_total - aware_total, lns_total) if pairs else math.nan
     scale_means = [float(row["mean_gain_pct"]) for row in scale_summary if int(row["pairs"]) == 3]
     nonlosing_scales = sum(value >= -1e-9 for value in scale_means)
     worst_scale = min(scale_means) if scale_means else math.nan
@@ -545,6 +550,10 @@ def decide(
         "paired_mean_gain_pct": overall_mean,
         "paired_median_gain_pct": overall_median,
         "paired_wins_ties_losses": [wins, ties, losses],
+        "paired_mean_bootstrap_95ci_pct": [ci_low, ci_high],
+        "aggregate_cost_gain_pct": aggregate_gain,
+        "aggregate_aware_cost": aware_total,
+        "aggregate_lns_cost": lns_total,
         "nonlosing_scale_count": nonlosing_scales,
         "worst_scale_mean_gain_pct": worst_scale,
         "mechanism_signal_scale_count_excluding_15c": signal_scales,
@@ -598,6 +607,11 @@ def write_report(
             f"中位优势{fmt(decision['paired_median_gain_pct'])}% ，"
             f"胜/平/负={decision['paired_wins_ties_losses']}."
         ),
+        (
+            f"配对平均优势bootstrap 95%区间="
+            f"[{fmt(decision['paired_mean_bootstrap_95ci_pct'][0])}, {fmt(decision['paired_mean_bootstrap_95ci_pct'][1])}]%；"
+            f"12组总成本汇总优势={fmt(decision['aggregate_cost_gain_pct'])}%。"
+        ),
         "",
         "## 各规模算法表现",
         "",
@@ -633,6 +647,25 @@ def write_report(
 def mean_field(rows: list[dict[str, Any]], field: str) -> float:
     values = [float(row[field]) for row in rows if row.get(field) not in {"", None}]
     return statistics.fmean(values) if values else math.nan
+
+
+def bootstrap_mean_ci(
+    values: list[float],
+    *,
+    seed: int = 20260711,
+    resamples: int = 10_000,
+) -> tuple[float, float]:
+    if not values:
+        return math.nan, math.nan
+    rng = random.Random(seed)
+    count = len(values)
+    means = sorted(
+        statistics.fmean(values[rng.randrange(count)] for _ in range(count))
+        for _ in range(resamples)
+    )
+    low_index = max(0, int(0.025 * resamples) - 1)
+    high_index = min(resamples - 1, int(0.975 * resamples) - 1)
+    return float(means[low_index]), float(means[high_index])
 
 
 def verify_instance_contract(metadata: dict[str, Any]) -> dict[str, Any]:
