@@ -698,12 +698,13 @@ def run_winner_kernel(
     *,
     config: WinnerKernelConfig | None = None,
     initial_solution: Solution | None = None,
+    prices: PriceParameters | None = None,
 ) -> dict[str, Any]:
     """Run the winner kernel and return a normalized result dictionary."""
 
     cfg = config or WinnerKernelConfig()
     cfg = WinnerKernelConfig(**{**asdict(cfg), "include_route_elimination": False})
-    return _run_winner_variant(bundle_dir, cfg, initial_solution=initial_solution)
+    return _run_winner_variant(bundle_dir, cfg, initial_solution=initial_solution, prices=prices)
 
 
 def run_staged_alns_lns_hybrid(

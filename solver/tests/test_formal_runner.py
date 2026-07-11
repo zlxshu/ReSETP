@@ -818,11 +818,15 @@ class FormalRunnerTests(unittest.TestCase):
         def fake_stage_plan(*args, **kwargs):
             _ = args, kwargs
             bundle = load_search_bundle(FIXTURE_DIR)
-            return StagePlanResult(Solution(), bundle.instance, 0, True, [])
+            return StagePlanResult(Solution(), bundle.instance, 0, True, [], "test-independent-resetp-alns")
 
         with patch.object(dynamic_module, "load_or_generate_dynamic_events", return_value=[]), patch.object(
             dynamic_module, "_run_stage_plan", fake_stage_plan
-        ), patch.object(dynamic_module, "run_alns_wouda", return_value=SimpleNamespace(best_solution=Solution(), feasible=True, evaluations=0)), patch.object(
+        ), patch.object(
+            dynamic_module,
+            "run_resetp_alns",
+            return_value={"best_solution": Solution(), "feasible": True, "evaluations": 0},
+        ), patch.object(
             dynamic_module, "evaluate", return_value={"total_cost": 100.0, "E_total": 10.0}
         ), patch.object(dynamic_module, "_active_customer_ids", return_value=set()), patch.object(dynamic_module, "check_solution", side_effect=[[violation], []]):
             report = run_rolling_reoptimization(FIXTURE_DIR, seed=1, eval_budget=1, stage_eval_budget=1)

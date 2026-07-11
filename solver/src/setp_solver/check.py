@@ -83,6 +83,8 @@ class DynamicCheckContext:
 
     vehicle_states: dict[str, DynamicVehicleState] = field(default_factory=dict)
     frozen_prefixes: dict[str, tuple[str, ...]] = field(default_factory=dict)
+    reserved_charging_actions: tuple[ChargingAction, ...] = ()
+    reserved_physical_vehicle_ids: tuple[str, ...] = ()
     allow_open_start: bool = False
 
 
@@ -103,21 +105,59 @@ def check_solution(
     violations.extend(_check_dynamic_context(solution, dynamic_context))
     violations.extend(_check_customer_service(solution, node_lookup))
     violations.extend(_check_vehicle_count(solution, instance))
-    violations.extend(_check_station_capacity(solution, node_lookup, instance))
+    violations.extend(_check_station_capacity(solution, node_lookup, instance, dynamic_context))
 
     for route in solution.routes:
         if not _route_nodes_valid(route, node_lookup):
             continue
+        dynamic_state = None if dynamic_context is None else dynamic_context.vehicle_states.get(route.vehicle_id)
         violations.extend(_check_route_flow(route, node_lookup, dynamic_context))
-        violations.extend(_check_capacity(route, node_lookup, prices))
-        violations.extend(_check_time_windows(route, instance, node_lookup, solution.charging_actions, prices))
+        violations.extend(
+            _check_capacity(
+                route,
+                node_lookup,
+                prices,
+                dynamic_state=dynamic_state,
+                allow_open_start=bool(dynamic_context and dynamic_context.allow_open_start),
+            )
+        )
+        violations.extend(
+            _check_time_windows(
+                route,
+                instance,
+                node_lookup,
+                solution.charging_actions,
+                prices,
+                dynamic_state=dynamic_state,
+                allow_open_start=bool(dynamic_context and dynamic_context.allow_open_start),
+            )
+        )
         if route.vehicle_type.lower() == "ev":
-            violations.extend(_check_charging_start_and_power(route, instance, node_lookup, solution.charging_actions, prices))
-            violations.extend(_check_battery(route, instance, node_lookup, charging_by_vehicle_node, prices))
+            violations.extend(
+                _check_charging_start_and_power(
+                    route,
+                    instance,
+                    node_lookup,
+                    solution.charging_actions,
+                    prices,
+                    dynamic_state=dynamic_state,
+                    allow_open_start=bool(dynamic_context and dynamic_context.allow_open_start),
+                )
+            )
+            violations.extend(
+                _check_battery(
+                    route,
+                    instance,
+                    node_lookup,
+                    charging_by_vehicle_node,
+                    prices,
+                    dynamic_state=dynamic_state,
+                    allow_open_start=bool(dynamic_context and dynamic_context.allow_open_start),
+                )
+            )
 
     violations.extend(_check_profit_fairness(fairness_context, FAIRNESS_ENABLED if fairness_enabled is None else fairness_enabled))
     return violations
-
 
 def _charging_index(actions: list[ChargingAction]) -> dict[tuple[str, str], list[ChargingAction]]:
     out: dict[tuple[str, str], list[ChargingAction]] = defaultdict(list)
@@ -175,6 +215,18 @@ def _check_dynamic_context(solution: Solution, context: DynamicCheckContext | No
         return []
     routes = {route.vehicle_id: route for route in solution.routes}
     violations: list[Violation] = []
+    reserved = set(context.reserved_physical_vehicle_ids)
+    for route in solution.routes:
+        physical_id = physical_vehicle_id(route.vehicle_id)
+        if physical_id in reserved:
+            violations.append(
+                Violation(
+                    ROUTE_STRUCTURE,
+                    route.vehicle_id,
+                    physical_id,
+                    "in-progress vehicle is unavailable to the new planning stage",
+                )
+            )
     for vehicle_id, prefix in context.frozen_prefixes.items():
         route = routes.get(vehicle_id)
         if route is None:
@@ -246,7 +298,12 @@ def _check_vehicle_count(solution: Solution, instance: Instance) -> list[Violati
     return violations
 
 
-def _check_station_capacity(solution: Solution, node_lookup: dict[str, Node], instance: Instance) -> list[Violation]:
+def _check_station_capacity(
+    solution: Solution,
+    node_lookup: dict[str, Node],
+    instance: Instance,
+    dynamic_context: DynamicCheckContext | None = None,
+) -> list[Violation]:
     """Check paper C_s capacity by station/depot and half-hour slot.
 
     v2026-06-12: Z0b replaces the old public-station uniqueness shortcut with
@@ -257,7 +314,10 @@ def _check_station_capacity(solution: Solution, node_lookup: dict[str, Node], in
 
     customer_count = sum(1 for node in node_lookup.values() if node.node_type.lower() == "c")
     occupied: dict[tuple[str, int], set[str]] = defaultdict(set)
-    for action in solution.charging_actions:
+    actions = [*solution.charging_actions]
+    if dynamic_context is not None:
+        actions.extend(dynamic_context.reserved_charging_actions)
+    for action in actions:
         node = node_lookup.get(action.station_id)
         if node is None or node.node_type.lower() not in {"d", "f"}:
             continue
@@ -315,7 +375,16 @@ def _check_route_flow(route: Route, node_lookup: dict[str, Node], dynamic_contex
     return violations
 
 
-def _check_capacity(route: Route, node_lookup: dict[str, Node], prices: PriceParameters | dict[str, float] | Any) -> list[Violation]:
+def _check_capacity(
+    route: Route,
+    node_lookup: dict[str, Node],
+    prices: PriceParameters | dict[str, float] | Any,
+    *,
+    dynamic_state: DynamicVehicleState | None = None,
+    allow_open_start: bool = False,
+) -> list[Violation]:
+    if allow_open_start and dynamic_state is not None:
+        return _check_inherited_capacity(route, node_lookup, prices, dynamic_state)
     loads = _arc_loads(route.node_sequence, node_lookup)
     violations: list[Violation] = []
     if loads and loads[0] > _price(prices, "Q_capacity"):
@@ -336,26 +405,74 @@ def _check_capacity(route: Route, node_lookup: dict[str, Node], prices: PricePar
     return violations
 
 
+def _check_inherited_capacity(
+    route: Route,
+    node_lookup: dict[str, Node],
+    prices: PriceParameters | dict[str, float] | Any,
+    dynamic_state: DynamicVehicleState,
+) -> list[Violation]:
+    capacity = _price(prices, "Q_capacity")
+    remaining = float(dynamic_state.remaining_load_kg)
+    violations: list[Violation] = []
+    if remaining < -1e-9:
+        violations.append(Violation(CAPACITY, route.vehicle_id, route.node_sequence[0], f"remaining load is negative: {remaining:.6f}"))
+    if remaining > capacity + 1e-9:
+        violations.append(
+            Violation(
+                CAPACITY,
+                route.vehicle_id,
+                route.node_sequence[0],
+                f"inherited remaining load {remaining:.6f} exceeds Q={capacity:.6f}",
+            )
+        )
+
+    for index, node_id in enumerate(route.node_sequence):
+        node = node_lookup[node_id]
+        if node.node_type.lower() != "c":
+            continue
+        demand = float(node.demand)
+        if demand > remaining + 1e-9:
+            violations.append(
+                Violation(
+                    CAPACITY,
+                    route.vehicle_id,
+                    node_id,
+                    f"customer demand {demand:.6f} exceeds inherited remaining load {remaining:.6f}",
+                )
+            )
+        remaining -= demand
+        if remaining < -1e-9 and index + 1 < len(route.node_sequence):
+            arc = f"{node_id}->{route.node_sequence[index + 1]}"
+            violations.append(Violation(CAPACITY, route.vehicle_id, arc, f"arc load is negative: {remaining:.6f}"))
+    return violations
+
+
 def _check_time_windows(
     route: Route,
     instance: Instance,
     node_lookup: dict[str, Node],
     charging_actions: list[ChargingAction],
     prices: PriceParameters | dict[str, float] | Any,
+    *,
+    dynamic_state: DynamicVehicleState | None = None,
+    allow_open_start: bool = False,
 ) -> list[Violation]:
     violations: list[Violation] = []
     # v2026-06-11: TIME_WINDOW consumes the scorer's shared route schedule, including service_time and charging occupancy.
     for row in route_node_schedule(route, instance, prices, charging_actions=charging_actions):
         node = node_lookup[row.node_id]
         due = float(node.due_time)
-        if row.t_start > due + FEASIBILITY_TOL:
-            late = row.t_start - due
+        start = float(row.t_start) + (
+            float(dynamic_state.current_time) if allow_open_start and dynamic_state is not None else 0.0
+        )
+        if start > due + FEASIBILITY_TOL:
+            late = start - due
             violations.append(
                 Violation(
                     TIME_WINDOW,
                     route.vehicle_id,
                     row.node_id,
-                    f"late by {late:.3f} s (due l={due:.3f}, start={row.t_start:.3f})",
+                    f"late by {late:.3f} s (due l={due:.3f}, start={start:.3f})",
                 )
             )
     return violations
@@ -367,6 +484,9 @@ def _check_charging_start_and_power(
     node_lookup: dict[str, Node],
     charging_actions: list[ChargingAction],
     prices: PriceParameters | dict[str, float] | Any,
+    *,
+    dynamic_state: DynamicVehicleState | None = None,
+    allow_open_start: bool = False,
 ) -> list[Violation]:
     violations: list[Violation] = []
     # v2026-06-11: use charging-aware schedule so later stations inherit earlier waiting/occupancy.
@@ -425,7 +545,10 @@ def _check_charging_start_and_power(
         else:
             # v2026-06-11: CHARGING_START enforces paper a_sk^tau cannot precede arrival/ready time.
             station_time = schedule[action.station_id]
-            earliest = max(float(station_time.t_arrive), float(station.ready_time))
+            schedule_offset = (
+                float(dynamic_state.current_time) if allow_open_start and dynamic_state is not None else 0.0
+            )
+            earliest = max(float(station_time.t_arrive) + schedule_offset, float(station.ready_time))
             station_power_kw = getattr(station, "charge_power_kw", None)
             power_symbol = "pi_s"
         charge_start = float(action.charge_start_second)
@@ -483,11 +606,18 @@ def _check_battery(
     node_lookup: dict[str, Node],
     charging_by_vehicle_node: dict[tuple[str, str], list[ChargingAction]],
     prices: PriceParameters | dict[str, float] | Any,
+    *,
+    dynamic_state: DynamicVehicleState | None = None,
+    allow_open_start: bool = False,
 ) -> list[Violation]:
     # v2026-06-12: Q2 aligns EV departure energy with paper line 391:
     # b_departure = bbar + depot charging <= B, rather than implicit full B.
     battery_cap = _price(prices, "B_battery_kwh")
-    battery = _price(prices, "initial_ev_battery_kwh")
+    battery = (
+        float(dynamic_state.remaining_battery_kwh)
+        if allow_open_start and dynamic_state is not None
+        else _price(prices, "initial_ev_battery_kwh")
+    )
     violations: list[Violation] = []
     loads = _arc_loads(route.node_sequence, node_lookup)
     start_node_id = route.node_sequence[0]
