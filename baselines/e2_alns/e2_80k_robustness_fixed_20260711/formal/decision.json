@@ -1,0 +1,58 @@
+{
+  "aggregate_aware_cost": 58577.2569817996,
+  "aggregate_cost_gain_pct": 10.369968640068794,
+  "aggregate_lns_cost": 65354.49792109116,
+  "algorithm_stability_supported": false,
+  "battery_kwh": 80.0,
+  "carbon_fixed_route_equal_energy_pair_count": 12,
+  "carbon_pair_contract_verdict": "FIXED_ROUTE_EQUAL_ENERGY_CONTRACT_OK",
+  "carbon_pair_count": 12,
+  "default_prices_sha256": "7e6db2db0f79f07464729bf3c697a7bc2e7b020b290157715521db52ab3b32e5",
+  "execution_commit": "40bd28835dff1a4287486e720351e531fc7a38d0",
+  "expected_evidence_rows": 36,
+  "expected_search_tasks": 24,
+  "fifteen_customer_mechanism_status": "STRUCTURAL_NO_EV_AVAILABLE",
+  "instance_contract_failure_count": 0,
+  "instance_contract_verdict": "LMAIN_V3_INSTANCE_CONTRACT_OK",
+  "instance_manifest_sha256": "bf904ef254aeeb1a76cb1308eae7a5caee14a814a15e1087254b024992c5d39c",
+  "mechanism_eligible_scale_count": 3,
+  "mechanism_signal_scale_count_excluding_15c": 3,
+  "mechanism_visibility_supported": true,
+  "next_action": "stop expansion and retain 80 kWh as a sensitivity result",
+  "nonlosing_scale_count": 2,
+  "observed_evidence_rows": 36,
+  "observed_search_tasks": 24,
+  "paired_mean_bootstrap_95ci_pct": [
+    0.5929387969830521,
+    9.32832836951559
+  ],
+  "paired_mean_gain_pct": 4.6770036692125085,
+  "paired_median_gain_pct": 1.3548242236651875,
+  "paired_wins_ties_losses": [
+    9,
+    0,
+    3
+  ],
+  "phase": "formal",
+  "preregistered_algorithm_gate": {
+    "at_least_three_of_four_scale_means_nonnegative": false,
+    "no_scale_mean_below_minus_2pct": true,
+    "paired_mean_nonnegative": true,
+    "paired_median_nonnegative": true,
+    "wins_not_less_than_losses": true
+  },
+  "preregistered_mechanism_gate": {
+    "definition": "majority of seeds have >=10% EV share in at least two of customer/demand/distance, >=2 charges, and positive charging energy",
+    "observed_signal_scales_excluding_15c": 3,
+    "required_signal_scales_excluding_15c": 2
+  },
+  "protected_contract_failure_count": 0,
+  "protected_contract_verdict": "FROZEN_PROTECTED_CONTRACT_OK",
+  "schema": "setp-e2-80k-robustness-decision.v1",
+  "technical_contract_ok": true,
+  "verdict": "E2_80K_MECHANISM_VISIBLE_ALGORITHM_NOT_ROBUST",
+  "verification_commit": "7df18692ee581fe03861c094ec77863e2afb2bc6",
+  "verification_failure_count": 0,
+  "verified_evidence_rows": 36,
+  "worst_scale_mean_gain_pct": -0.8158239344317219
+}
