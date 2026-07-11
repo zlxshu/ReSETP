@@ -13,7 +13,7 @@ metadata:
 
 2026-07-11 E2全量最终收口：用户后续授权280 kWh作为投稿正面主场景，覆盖早期Goeke80唯一主场景口径；80 kWh保留独立稳健性。L-main v3九档×seeds1--5×6证据算法×4000评价共270行全部OK、满预算、零违规。正式方案总benchmark成本173139.284391，第二名LNS 185862.880926，总量领先6.845690%；配对25胜5平15负，平均/中位优势2.829832%/0.842029%，bootstrap均值95%区间0.982%--4.894%，平均名次第一且运行最快。碳消融45/45同路线同电量，40组实际移动并降碳。verdict=`E2_FULL_BENCHMARK_LEAD_SUPPORTED`；允许总量>5%主张，禁止每实例/配对均>5%主张。证据 `baselines/e2_alns/e2_submission_20260711/carbon_280/`，说明 `docs/handoff/e2_full_closeout_20260711.md`。E2算法冻结，不再rescue。
 
-2026-07-11 用户在保留上述冻结证据的前提下重新打开旧遗留编号1--6、9，要求逐项做一次有界尝试。当前顺序改为：15负恢复/扩大领先→80 kWh→完整碳感知搜索→动态需求低碳→电池容量与车型结构→最后16000评价。只允许阶段串行、批内CPU并行。15负审计为平均落后2.270%、3组超过5%、11组路线更多、9组最佳停在中间强搜索阶段；首候选把3200强搜索拆成两个独立1600盆地并从当前最好解重启，总预算不变。先跑9组×旧/重启/LNS×1600短门，通过后必须用未见种子验证，禁止拿开发种子直接改写论文。合同见`docs/handoff/e2_legacy_items_1_6_9_execution_plan_20260711.md`，证据目录`baselines/e2_alns/e2_loss_recovery_20260711/`。
+2026-07-11 用户在保留上述冻结证据的前提下重新打开旧遗留编号1--6、9，要求逐项做一次有界尝试。当前顺序改为：15负恢复/扩大领先→80 kWh→完整碳感知搜索→动态需求低碳→电池容量与车型结构→最后16000评价。只允许阶段串行、批内CPU并行。15负审计为平均落后2.270%、3组超过5%、11组路线更多、9组最佳停在中间强搜索阶段；首候选把3200强搜索拆成两个独立1600盆地并从当前最好解重启，总预算不变。首轮9组×旧/重启/LNS×1600虽27/27满预算零违规，但误用`introduce_ev=False`起点且LNS关闭正式共同预处理，与冻结E2合同不一致，判`RESTART_SHORT_GATE_INVALID_START_CONTRACT`并保留原始证据。runner改为`make_shared_initial_solution`+`common_flip_preprocess=True`后只纠正重跑相同27次；通过后仍必须用未见种子验证。合同见`docs/handoff/e2_legacy_items_1_6_9_execution_plan_20260711.md`，证据目录`baselines/e2_alns/e2_loss_recovery_20260711/`。
 
 同日新增强制启动入口 `docs/handoff/READ_ME_FIRST_FOR_AGENTS.md`，并已挂入 `AGENTS.md`、`CLAUDE.md`、`docs/handoff/codex_prompts/MASTER_codex_takeover_plan.md`、`docs/handoff/codex_prompts/README.md`。Codex/Claude 每轮非平凡任务必须先读该入口和其清单，读完前不得动手。
 

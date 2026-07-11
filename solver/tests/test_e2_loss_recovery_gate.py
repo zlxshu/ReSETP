@@ -1,0 +1,23 @@
+from __future__ import annotations
+
+import inspect
+
+
+def test_loss_recovery_gate_uses_the_formal_e2_start_contract() -> None:
+    from baselines.e2_alns import e2_loss_recovery_gate as gate
+
+    source = inspect.getsource(gate._run_task)
+    assert "make_shared_initial_solution(bundle, prices=prices)" in source
+    assert "common_flip_preprocess=True" in source
+    assert "introduce_ev=False" not in source
+
+
+def test_loss_recovery_gate_keeps_a_bounded_nine_pair_matrix() -> None:
+    from baselines.e2_alns import e2_loss_recovery_gate as gate
+
+    pairs = (*gate.DEVELOPMENT_PAIRS, *gate.GUARD_PAIRS)
+    tasks = [(instance, seed, algorithm) for instance, seed in pairs for algorithm in gate.ALGORITHMS]
+    assert len(pairs) == 9
+    assert len(tasks) == 27
+    assert len(set(tasks)) == 27
+    assert set(gate.ALGORITHMS) == {"staged", "restarted", "LNS"}

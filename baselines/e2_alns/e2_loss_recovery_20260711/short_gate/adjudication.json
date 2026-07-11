@@ -1,0 +1,10 @@
+{
+  "adjudication": "RESTART_SHORT_GATE_INVALID_START_CONTRACT",
+  "formal_e2_start": "make_shared_initial_solution with introduce_ev=True and inferred fleet limits",
+  "formal_lns_common_flip_preprocess": true,
+  "observed_gate_start": "build_initial_solution with introduce_ev=False",
+  "observed_gate_lns_common_flip_preprocess": false,
+  "raw_evidence_preserved": true,
+  "rerun_scope": "same 9 pairs x 3 algorithms x 1600 evaluations only",
+  "reason": "The first short gate was internally fair but did not reproduce the formal E2 start contract, so it cannot adjudicate recovery of the frozen 15 losses."
+}

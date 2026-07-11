@@ -28,11 +28,10 @@ from setp_solver.algorithms.resetp_alns.kernel.winner import (
     run_restarted_staged_alns_lns_hybrid,
     run_staged_alns_lns_hybrid,
 )
-from setp_solver.algorithms.resetp_alns.support.construction import build_initial_solution
-from setp_solver.algorithms.resetp_alns.support.fleet import infer_fleet_limits
 from setp_solver.check import check_solution
 from setp_solver.prices import DEFAULT_PRICES
 from setp_solver.search.bundle import load_search_bundle
+from setp_solver.search.candidates import make_shared_initial_solution
 from setp_solver.search.evaluation import EvaluationContext, model_cost
 from setp_solver.search.instance_registry import assert_formal_benchmark_ready, instance_abs_dir
 from setp_solver.search.metaheuristic_baselines import run_metaheuristic_baseline, solution_to_dict
@@ -59,14 +58,7 @@ def _run_task(payload: tuple[str, str, int, int, float, float, str]) -> dict[str
     repo_root = Path(repo_root_text)
     prices = replace(DEFAULT_PRICES, B_battery_kwh=float(battery_kwh))
     bundle = load_search_bundle(instance_abs_dir(repo_root, instance))
-    start = build_initial_solution(
-        bundle.instance,
-        bundle.carbon_profile,
-        prices,
-        fleet_limits=infer_fleet_limits(bundle.bundle_dir),
-        introduce_ev=False,
-        require_charging_signal=False,
-    )
+    start = make_shared_initial_solution(bundle, prices=prices)
     config = WinnerKernelConfig(seed=seed, eval_budget=eval_budget, max_runtime_seconds=runtime)
     started = time.perf_counter()
     operator_counts: dict[str, Any] = {}
@@ -103,7 +95,7 @@ def _run_task(payload: tuple[str, str, int, int, float, float, str]) -> dict[str
             max_runtime_seconds=runtime,
             initial_solution=copy.deepcopy(start),
             prices=prices,
-            common_flip_preprocess=False,
+            common_flip_preprocess=True,
         )
         solution = result.best_solution
         evaluations = int(result.evals)
@@ -244,7 +236,7 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
         for algorithm in ALGORITHMS
     ]
     metadata = {
-        "schema_version": "setp-e2-loss-recovery-short-gate.v1",
+        "schema_version": "setp-e2-loss-recovery-short-gate.v2",
         "candidate": "restarted staged ALNS-LNS hybrid",
         "incumbent": "staged ALNS-LNS hybrid",
         "baseline": "LNS",
@@ -252,6 +244,8 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
         "guard_pairs": [list(pair) for pair in GUARD_PAIRS],
         "eval_budget": int(args.eval_budget),
         "battery_kwh": float(args.battery_kwh),
+        "start_contract": "formal make_shared_initial_solution with EV introduction and inferred fleet limits",
+        "lns_common_flip_preprocess": True,
         "expected_runs": len(tasks),
         "workers": int(args.workers),
         "git_commit": subprocess.run(["git", "rev-parse", "HEAD"], cwd=repo_root, check=True, capture_output=True, text=True).stdout.strip(),
@@ -280,7 +274,7 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--repo-root", default=str(REPO_ROOT))
-    parser.add_argument("--output-dir", default="baselines/e2_alns/e2_loss_recovery_20260711/short_gate")
+    parser.add_argument("--output-dir", default="baselines/e2_alns/e2_loss_recovery_20260711/short_gate_formal_start")
     parser.add_argument("--eval-budget", type=int, default=1600)
     parser.add_argument("--max-runtime-seconds", type=float, default=600.0)
     parser.add_argument("--battery-kwh", type=float, default=280.0)

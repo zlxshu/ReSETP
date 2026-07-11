@@ -72,4 +72,4 @@
 
 ## 当前运行
 
-当前正在执行1、2的第一门：`baselines/e2_alns/e2_loss_recovery_20260711/short_gate/`。任务矩阵为9组×3算法×1600评价，3个CPU worker并行；每30分钟最多检查一次，正常时不汇报。
+1、2的第一轮短门位于`baselines/e2_alns/e2_loss_recovery_20260711/short_gate/`。27/27虽满1600评价、零违规，但使用了纯CV起点且LNS共同预处理设置与正式E2不同，已判为无效合同门并保留原始数据。当前只允许用正式`make_shared_initial_solution`和`common_flip_preprocess=True`纠正重跑同一27次；不得扩大矩阵。
