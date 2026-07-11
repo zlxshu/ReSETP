@@ -336,11 +336,25 @@ def _fixed_charge_latest(
     if node.node_type.lower() == "d":
         latest -= occupancy_sec
     if idx + 1 < len(node_sequence):
-        successor_id = node_sequence[idx + 1]
-        successor = node_lookup[successor_id]
+        # A charging delay propagates through the entire remaining route, not
+        # only to the immediate successor.  Work backwards from every
+        # downstream due time so a green slot cannot make a later customer
+        # infeasible while the next customer still looks feasible.
+        speed = _price(prices, "v_speed_ms")
+        successor_id = node_sequence[-1]
+        latest_successor_start = float(node_lookup[successor_id].due_time)
+        for pos in range(len(node_sequence) - 2, idx, -1):
+            current_id = node_sequence[pos]
+            current = node_lookup[current_id]
+            travel_to_successor = instance.distance(current_id, successor_id) / speed
+            latest_successor_start = min(
+                float(current.due_time),
+                latest_successor_start - float(current.service_time) - travel_to_successor,
+            )
+            successor_id = current_id
         latest = min(
             latest,
-            float(successor.due_time) - occupancy_sec - instance.distance(node_id, successor_id) / _price(prices, "v_speed_ms"),
+            latest_successor_start - occupancy_sec - instance.distance(node_id, successor_id) / speed,
         )
     return latest
 

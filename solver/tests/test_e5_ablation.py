@@ -6,7 +6,12 @@ import unittest
 from setp_solver.check import check_solution
 from setp_solver.instance_loader import Instance, Node
 from setp_solver.prices import PriceParameters
-from setp_solver.search.charging import replay_fixed_route_charging, solve_charging_fixed_route, solve_charging_naive
+from setp_solver.search.charging import (
+    _fixed_charge_latest,
+    replay_fixed_route_charging,
+    solve_charging_fixed_route,
+    solve_charging_naive,
+)
 from setp_solver.search.e5_ablation import run_e5_charging_ablation, run_ev_adoption_diagnostic
 from setp_solver.solution import Route, Solution
 
@@ -37,6 +42,29 @@ def _profile() -> list[dict[str, float]]:
 
 
 class E5ChargingAblationTests(unittest.TestCase):
+    def test_fixed_charge_latest_protects_all_downstream_time_windows(self) -> None:
+        nodes = [
+            Node("F0", "f", 0.0, 0.0, ready_time=0.0, due_time=20_000.0, service_time=0.0, charge_power_kw=60.0),
+            Node("C1", "c", 1_000.0, 0.0, ready_time=0.0, due_time=10_000.0, service_time=100.0),
+            Node("C2", "c", 2_000.0, 0.0, ready_time=0.0, due_time=5_000.0, service_time=0.0),
+        ]
+        instance = Instance(
+            nodes=nodes,
+            distance_matrix=[[0.0, 1_000.0, 2_000.0], [1_000.0, 0.0, 1_000.0], [2_000.0, 1_000.0, 0.0]],
+        )
+        latest = _fixed_charge_latest(
+            0,
+            ["F0", "C1", "C2"],
+            {node.node_id: node for node in nodes},
+            instance,
+            PriceParameters(),
+            occupancy_sec=600.0,
+        )
+
+        # 5000 due - 40 travel C1->C2 - 100 service C1 - 40 travel
+        # F0->C1 - 600 charging = 4220 seconds.
+        self.assertAlmostEqual(latest, 4_220.0)
+
     # v2026-06-12: S0 return-charge ablation must isolate timing, not energy.
     def test_naive_starts_at_return_while_aware_uses_greenest_overnight_slot(self) -> None:
         route = Route("EV1", "ev", "D0", ["D0", "C1", "D0"])

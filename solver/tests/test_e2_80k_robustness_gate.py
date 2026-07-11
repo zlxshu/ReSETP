@@ -25,6 +25,8 @@ def test_manifest_is_exactly_24_search_tasks_and_uses_frozen_identity(tmp_path: 
     assert {task["head"] for task in tasks} == {gate.FROZEN_COMMIT}
     assert {task["eval_budget"] for task in tasks} == {4000}
     assert all(Path(task["bundle_dir"]).is_absolute() for task in tasks)
+    assert [task["instance"] for task in tasks[:6]] == ["L-main-threeshift-200c-01"] * 6
+    assert [task["instance"] for task in tasks[-6:]] == ["L-main-threeshift-15c-01"] * 6
 
 
 def test_resume_contract_counts_search_tasks_not_expanded_evidence_rows() -> None:

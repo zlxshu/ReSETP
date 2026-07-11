@@ -208,7 +208,11 @@ def build_tasks(
 ) -> list[dict[str, Any]]:
     tasks: list[dict[str, Any]] = []
     phase_name = "E2_80K_PREFLIGHT" if phase == "preflight" else "E2_80K_FORMAL"
-    for instance in instances:
+    # Longest-processing-time first keeps both conservative workers occupied
+    # near the tail of a run.  This changes orchestration order only: task
+    # identities, seeds, budgets, starts, and solver behavior stay unchanged.
+    ordered_instances = sorted(instances, key=instance_customer_count, reverse=True)
+    for instance in ordered_instances:
         for seed in seeds:
             for algorithm in TASK_ALGORITHMS:
                 task = closure.make_task(
@@ -230,6 +234,11 @@ def build_tasks(
                 task["orchestrator_commit"] = closure.git_head()
                 tasks.append(task)
     return tasks
+
+
+def instance_customer_count(instance: str) -> int:
+    token = next((part for part in str(instance).split("-") if part.endswith("c") and part[:-1].isdigit()), "0c")
+    return int(token[:-1])
 
 
 def run_tasks(
