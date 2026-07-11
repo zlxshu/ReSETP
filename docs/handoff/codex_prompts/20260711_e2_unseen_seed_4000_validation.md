@@ -1,6 +1,25 @@
 # E2负例恢复：未见种子4000评价验证合同
 
-状态：`PRE-REGISTERED / BLOCKED_BY_PROPORTIONAL_SHORT_GATE`
+状态：`PRE-REGISTERED_AND_IMPLEMENTED / BLOCKED_BY_PROPORTIONAL_SHORT_GATE`
+
+## 已准备的正式入口
+
+短门通过前不得启动。通过后只使用独立的57次入口，不得用原来写死9组样本的短门脚本冒充：
+
+```bash
+PYTHONPATH=solver/src:. python baselines/e2_alns/e2_loss_recovery_unseen_seed_gate.py \
+  --output-dir baselines/e2_alns/e2_loss_recovery_20260711/unseen_seed_4000_gate \
+  --eval-budget 4000 --max-runtime-seconds 1800 --battery-kwh 280 --workers 3
+```
+
+运行结束后必须再用保存解独立验收：
+
+```bash
+PYTHONPATH=solver/src:. python baselines/e2_alns/e2_loss_recovery_unseen_seed_verify.py \
+  --output-dir baselines/e2_alns/e2_loss_recovery_20260711/unseen_seed_4000_gate
+```
+
+验收器必须得到57行且逐解复算成本和违规，同时核对矩阵、4000评价、hash和运行源码。启动前还必须确认当前求解器文件与通过短门的候选一致，不得带入新的未验证修改。
 
 ## 目的
 
