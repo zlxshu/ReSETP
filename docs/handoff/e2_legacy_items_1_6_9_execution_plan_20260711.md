@@ -166,4 +166,6 @@ Claude顾问意见提出了一个需要全项目统一处理、不能在单个�
 
 该人工拍板条件现已增加机器闸门，避免以后误操作。`baselines/contract_audit/submission_contract_candidate_20260711/`已经生成推荐草案、L-main九档1425条客户固定归属和输入hash；`setp_solver.search.submission_contract`会拒绝未冻结草案、归属hash漂移、完整模型公平关闭、非binding公平粗网格或把线性碳配额包装成路线机制。4项合同测试通过。草案当前故意标记`PROPOSED_PENDING_USER_CONFIRMATION`，因此判`BLOCK_SUBMISSION_RUNS_PENDING_USER_CONFIRMATION`。用户确认后只能修改这一份合同的状态/选择并重新hash，不得让项目4、5、E4--E7各自再维护一套参数。
 
+补充文献核对没有发现95英镑/客户是协同配送的通用行业主值；主流研究更常把联合运输成本优化与收益分配/公平前沿分开处理。Soriano等的MDVRP-PF使用成本—公平双目标和epsilon约束，Wang等及Dai和Chen分别使用改进Shapley或多种联盟收益分配机制。该证据支持“0为完全共享机制基线、10/25/50/95为摩擦敏感性”，不支持把95继续写成唯一真实主值。充电调度文献则明确把充电时刻/时长作为决策并与普通充电对照，支持本项目把同路线同电量移充与车型/路线变化分开。来源和大白话解释统一写在`docs/handoff/e1_e7_submission_contract_decision_20260711.md`，不另建分散计划。
+
 等待投稿合同决定期间，项目5只完成了不耗搜索预算的动态地基迁移和验证，结果见本计划“5：动态需求促进低碳充电”。这不是绕过顺序提前跑E7：没有启动动态正式算例、没有做立即/延迟胜负，也没有修改冻结E2。当前可继续推进的下一动作仍是用户按`docs/handoff/e1_e7_submission_contract_decision_20260711.md`冻结统一投稿合同；在此之前项目4正式4000、项目5机制门及E4--E7正式搜索均暂停。
