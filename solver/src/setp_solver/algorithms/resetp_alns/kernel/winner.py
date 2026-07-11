@@ -739,6 +739,121 @@ def run_restarted_staged_alns_lns_hybrid(
     )
 
 
+def run_true_lns_middle_alns_hybrid(
+    bundle_dir: str | Path,
+    *,
+    config: WinnerKernelConfig | None = None,
+    initial_solution: Solution | None = None,
+    prices: Any = DEFAULT_PRICES,
+    carbon_weight: float = 1.0,
+    carbon_quota_kg: float = 0.0,
+    fairness_enabled: bool = False,
+) -> dict[str, Any]:
+    """Run ALNS opening, the formal LNS policy, then ALNS closing.
+
+    The existing staged hybrid only borrowed the LNS destroy/repair backend in
+    its middle stage.  This experimental E2 candidate closes that identity gap
+    by running the formal LNS policy itself in the middle while preserving the
+    same 400 + middle + 400 total evaluation budget.
+    """
+
+    if fairness_enabled or abs(float(carbon_weight) - 1.0) > 1e-12 or abs(float(carbon_quota_kg)) > 1e-12:
+        raise ValueError("true LNS middle candidate currently supports only the E2 default evaluation context")
+    from setp_solver.search.metaheuristic_baselines import run_metaheuristic_baseline
+
+    cfg = config or WinnerKernelConfig()
+    opening_budget, middle_budget, closing_budget = _staged_chain_budgets(cfg.eval_budget)
+    if middle_budget <= 0:
+        raise ValueError("true LNS middle candidate requires more than 800 evaluations")
+    bundle = _load_search_bundle(bundle_dir)
+    warm = initial_solution or build_initial_solution(
+        bundle.instance,
+        bundle.carbon_profile,
+        prices,
+        introduce_ev=False,
+        require_charging_signal=False,
+    )
+    started = time.perf_counter()
+    opening = run_staged_alns_lns_hybrid(
+        bundle_dir,
+        config=replace(cfg, eval_budget=opening_budget),
+        initial_solution=warm,
+        prices=prices,
+    )
+    remaining_runtime = max(1e-3, float(cfg.max_runtime_seconds) - (time.perf_counter() - started))
+    middle_seed = int(cfg.seed) * 1_000_003 + 1
+    middle = run_metaheuristic_baseline(
+        "LNS",
+        bundle_dir,
+        seed=middle_seed,
+        eval_budget=middle_budget,
+        max_runtime_seconds=remaining_runtime,
+        initial_solution=opening["best_solution"],
+        prices=prices,
+        common_flip_preprocess=True,
+    )
+    if middle.best_solution is None or middle.status != "OK" or int(middle.evals) != int(middle_budget):
+        raise RuntimeError(f"true LNS middle stage failed: {middle.status}/{middle.evals}/{middle_budget}")
+    remaining_runtime = max(1e-3, float(cfg.max_runtime_seconds) - (time.perf_counter() - started))
+    closing_seed = int(cfg.seed) * 9_000_000 + 1
+    closing = run_staged_alns_lns_hybrid(
+        bundle_dir,
+        config=replace(
+            cfg,
+            seed=closing_seed,
+            eval_budget=closing_budget,
+            max_runtime_seconds=remaining_runtime,
+        ),
+        initial_solution=middle.best_solution,
+        prices=prices,
+    )
+    candidates = (
+        ("opening_alns", opening["best_solution"]),
+        ("middle_lns", middle.best_solution),
+        ("closing_alns", closing["best_solution"]),
+    )
+    context = EvaluationContext(bundle.instance, bundle.carbon_profile, prices=prices)
+    best_stage, best_solution = min(candidates, key=lambda item: model_cost(item[1], context))
+    violations = check_solution(best_solution, bundle.instance, prices)
+    history: list[dict[str, Any]] = []
+    offset = 0
+    for stage_name, stage_history, evaluations in (
+        ("opening_alns", opening.get("history", []), int(opening["evaluations"])),
+        ("middle_lns", middle.history, int(middle.evals)),
+        ("closing_alns", closing.get("history", []), int(closing["evaluations"])),
+    ):
+        for row in stage_history:
+            history.append({**row, "eval": offset + int(row.get("eval", 0)), "hybrid_stage": stage_name})
+        offset += evaluations
+    total_evaluations = int(opening["evaluations"]) + int(middle.evals) + int(closing["evaluations"])
+    return {
+        "operator_base_id": operator_base_id,
+        "variant": "true_lns_middle_alns_hybrid",
+        "algorithm": "ALNS + true LNS middle + ALNS hybrid",
+        "seed": int(cfg.seed),
+        "eval_budget": int(cfg.eval_budget),
+        "max_runtime_seconds": float(cfg.max_runtime_seconds),
+        "evaluations": total_evaluations,
+        "elapsed_seconds": time.perf_counter() - started,
+        "best_solution": best_solution,
+        "best_cost": model_cost(best_solution, context),
+        "feasible": len(violations) == 0,
+        "violation_count": len(violations),
+        "battery_kwh": float(getattr(prices, "B_battery_kwh")),
+        "carbon_aware_operators": False,
+        "history": history,
+        "operator_counts": {
+            "true_lns_middle": {
+                "budgets": [opening_budget, middle_budget, closing_budget],
+                "best_stage": best_stage,
+                "opening": opening.get("operator_counts", {}),
+                "middle_lns": dict(middle.operator_counts),
+                "closing": closing.get("operator_counts", {}),
+            }
+        },
+    }
+
+
 def _run_staged_hybrid_entry(
     bundle_dir: str | Path,
     *,

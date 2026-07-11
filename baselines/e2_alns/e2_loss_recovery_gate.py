@@ -1,4 +1,4 @@
-"""Equal-budget short gate for the E2 restarted staged-hybrid candidate."""
+"""Equal-budget short gates for bounded E2 loss-recovery candidates."""
 
 from __future__ import annotations
 
@@ -27,6 +27,7 @@ from setp_solver.algorithms.resetp_alns.kernel.winner import (
     WinnerKernelConfig,
     run_restarted_staged_alns_lns_hybrid,
     run_staged_alns_lns_hybrid,
+    run_true_lns_middle_alns_hybrid,
 )
 from setp_solver.check import check_solution
 from setp_solver.prices import DEFAULT_PRICES
@@ -37,7 +38,7 @@ from setp_solver.search.instance_registry import assert_formal_benchmark_ready, 
 from setp_solver.search.metaheuristic_baselines import run_metaheuristic_baseline, solution_to_dict
 
 
-ALGORITHMS = ("staged", "restarted", "LNS")
+CANDIDATE_ALGORITHMS = ("restarted", "true_lns_middle")
 DEVELOPMENT_PAIRS = (
     ("L-main-threeshift-20c-01", 3),
     ("L-main-threeshift-50c-01", 5),
@@ -76,6 +77,18 @@ def _run_task(payload: tuple[str, str, int, int, float, float, str]) -> dict[str
         operator_counts = dict(result.get("operator_counts", {}))
     elif algorithm == "restarted":
         result = run_restarted_staged_alns_lns_hybrid(
+            bundle.bundle_dir,
+            config=config,
+            initial_solution=copy.deepcopy(start),
+            prices=prices,
+        )
+        solution = result["best_solution"]
+        evaluations = int(result["evaluations"])
+        reported_cost = float(result["best_cost"])
+        status = "OK" if result["feasible"] and evaluations == eval_budget else "HALT"
+        operator_counts = dict(result.get("operator_counts", {}))
+    elif algorithm == "true_lns_middle":
+        result = run_true_lns_middle_alns_hybrid(
             bundle.bundle_dir,
             config=config,
             initial_solution=copy.deepcopy(start),
@@ -160,13 +173,14 @@ def _finalize(output_dir: Path, rows: list[dict[str, Any]], metadata: dict[str, 
         _atomic_json(output_dir / "decision.json", decision)
         return decision
     lookup = {(row["instance"], int(row["seed"]), row["algorithm"]): row for row in rows}
+    candidate_id = str(metadata["candidate_id"])
     paired: list[dict[str, Any]] = []
     for instance, seed in (*DEVELOPMENT_PAIRS, *GUARD_PAIRS):
         staged = lookup[(instance, seed, "staged")]
-        restarted = lookup[(instance, seed, "restarted")]
+        candidate = lookup[(instance, seed, candidate_id)]
         lns = lookup[(instance, seed, "LNS")]
         staged_cost = float(staged["cost"])
-        restarted_cost = float(restarted["cost"])
+        candidate_cost = float(candidate["cost"])
         lns_cost = float(lns["cost"])
         paired.append(
             {
@@ -174,26 +188,28 @@ def _finalize(output_dir: Path, rows: list[dict[str, Any]], metadata: dict[str, 
                 "seed": seed,
                 "pair_role": staged["pair_role"],
                 "staged_cost": staged_cost,
-                "restarted_cost": restarted_cost,
+                "candidate_id": candidate_id,
+                "candidate_cost": candidate_cost,
                 "lns_cost": lns_cost,
-                "restart_gain_vs_staged_pct": (staged_cost - restarted_cost) / staged_cost * 100.0,
+                "candidate_gain_vs_staged_pct": (staged_cost - candidate_cost) / staged_cost * 100.0,
                 "staged_gain_vs_lns_pct": (lns_cost - staged_cost) / lns_cost * 100.0,
-                "restart_gain_vs_lns_pct": (lns_cost - restarted_cost) / lns_cost * 100.0,
+                "candidate_gain_vs_lns_pct": (lns_cost - candidate_cost) / lns_cost * 100.0,
             }
         )
     _atomic_csv(output_dir / "paired_comparisons.csv", paired)
     development = [row for row in paired if row["pair_role"] == "development"]
     guards = [row for row in paired if row["pair_role"] == "guard"]
-    mean_dev_gain = statistics.mean(float(row["restart_gain_vs_staged_pct"]) for row in development)
-    mean_all_gain = statistics.mean(float(row["restart_gain_vs_staged_pct"]) for row in paired)
+    mean_dev_gain = statistics.mean(float(row["candidate_gain_vs_staged_pct"]) for row in development)
+    mean_all_gain = statistics.mean(float(row["candidate_gain_vs_staged_pct"]) for row in paired)
     converted = sum(
-        float(row["staged_gain_vs_lns_pct"]) < -1e-9 and float(row["restart_gain_vs_lns_pct"]) >= -1e-9
+        float(row["staged_gain_vs_lns_pct"]) < -1e-9 and float(row["candidate_gain_vs_lns_pct"]) >= -1e-9
         for row in development
     )
-    worst_guard = min(float(row["restart_gain_vs_staged_pct"]) for row in guards)
+    worst_guard = min(float(row["candidate_gain_vs_staged_pct"]) for row in guards)
     promoted = mean_dev_gain > 0.0 and mean_all_gain > 0.0 and converted >= 2 and worst_guard >= -2.0
     decision = {
-        "verdict": "RESTART_SHORT_GATE_PROMOTED" if promoted else "RESTART_SHORT_GATE_REJECTED",
+        "verdict": f"{candidate_id.upper()}_SHORT_GATE_PROMOTED" if promoted else f"{candidate_id.upper()}_SHORT_GATE_REJECTED",
+        "candidate_id": candidate_id,
         "completed_runs": len(rows),
         "expected_runs": expected,
         "eval_budget": metadata["eval_budget"],
@@ -202,11 +218,11 @@ def _finalize(output_dir: Path, rows: list[dict[str, Any]], metadata: dict[str, 
         "mean_all_gain_vs_staged_pct": mean_all_gain,
         "development_losses_converted_vs_lns": converted,
         "worst_guard_gain_vs_staged_pct": worst_guard,
-        "next_action": "unseen-seed 4000-evaluation validation" if promoted else "reject restart candidate and inspect the next bounded mechanism",
+        "next_action": "unseen-seed 4000-evaluation validation" if promoted else f"reject {candidate_id} candidate and inspect the next bounded mechanism",
     }
     _atomic_json(output_dir / "decision.json", decision)
     report = (
-        "# E2 restart loss-recovery short gate\n\n"
+        f"# E2 {candidate_id} loss-recovery short gate\n\n"
         f"Completed {len(rows)}/{expected} equal-budget runs at {metadata['eval_budget']} evaluations. "
         f"Verdict: `{decision['verdict']}`.\n\n"
         f"Mean development-pair gain over the frozen staged structure: {mean_dev_gain:.3f}%. "
@@ -230,14 +246,16 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
     output_dir.mkdir(parents=True, exist_ok=True)
     solution_dir.mkdir(parents=True, exist_ok=True)
     pairs = (*DEVELOPMENT_PAIRS, *GUARD_PAIRS)
+    algorithms = ("staged", str(args.candidate), "LNS")
     tasks = [
         (str(repo_root), instance, seed, int(args.eval_budget), float(args.max_runtime_seconds), float(args.battery_kwh), algorithm)
         for instance, seed in pairs
-        for algorithm in ALGORITHMS
+        for algorithm in algorithms
     ]
     metadata = {
-        "schema_version": "setp-e2-loss-recovery-short-gate.v2",
-        "candidate": "restarted staged ALNS-LNS hybrid",
+        "schema_version": "setp-e2-loss-recovery-short-gate.v3",
+        "candidate_id": str(args.candidate),
+        "candidate": "ALNS + true LNS middle + ALNS hybrid" if args.candidate == "true_lns_middle" else "restarted staged ALNS-LNS hybrid",
         "incumbent": "staged ALNS-LNS hybrid",
         "baseline": "LNS",
         "development_pairs": [list(pair) for pair in DEVELOPMENT_PAIRS],
@@ -274,7 +292,8 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--repo-root", default=str(REPO_ROOT))
-    parser.add_argument("--output-dir", default="baselines/e2_alns/e2_loss_recovery_20260711/short_gate_formal_start")
+    parser.add_argument("--output-dir", default="baselines/e2_alns/e2_loss_recovery_20260711/true_lns_middle_gate")
+    parser.add_argument("--candidate", choices=CANDIDATE_ALGORITHMS, default="true_lns_middle")
     parser.add_argument("--eval-budget", type=int, default=1600)
     parser.add_argument("--max-runtime-seconds", type=float, default=600.0)
     parser.add_argument("--battery-kwh", type=float, default=280.0)

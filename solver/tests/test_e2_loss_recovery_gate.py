@@ -16,8 +16,9 @@ def test_loss_recovery_gate_keeps_a_bounded_nine_pair_matrix() -> None:
     from baselines.e2_alns import e2_loss_recovery_gate as gate
 
     pairs = (*gate.DEVELOPMENT_PAIRS, *gate.GUARD_PAIRS)
-    tasks = [(instance, seed, algorithm) for instance, seed in pairs for algorithm in gate.ALGORITHMS]
+    algorithms = ("staged", "true_lns_middle", "LNS")
+    tasks = [(instance, seed, algorithm) for instance, seed in pairs for algorithm in algorithms]
     assert len(pairs) == 9
     assert len(tasks) == 27
     assert len(set(tasks)) == 27
-    assert set(gate.ALGORITHMS) == {"staged", "restarted", "LNS"}
+    assert set(gate.CANDIDATE_ALGORITHMS) == {"restarted", "true_lns_middle"}
