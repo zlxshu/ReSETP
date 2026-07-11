@@ -101,7 +101,18 @@ def test_formal_decision_excludes_structural_15c_from_mechanism_gate() -> None:
         for index in range(12):
             run_id = f"{algorithm}-{index}"
             raw_rows.append({"run_id": run_id, "algorithm": algorithm})
-            verified_rows.append({"run_id": run_id, "algorithm": algorithm, "verification_status": "OK"})
+            verified_rows.append(
+                {
+                    "run_id": run_id,
+                    "instance": gate.FORMAL_INSTANCES[index // 3],
+                    "seed": index % 3 + 1,
+                    "algorithm": algorithm,
+                    "verification_status": "OK",
+                    "recomputed_route_structure_signature": f"route-{index}",
+                    "electricity_kwh": 10.0,
+                    "charging_energy_kwh_audit": 5.0,
+                }
+            )
     pairs = [
         {
             "instance": gate.FORMAL_INSTANCES[index // 3],
@@ -148,6 +159,7 @@ def test_formal_decision_excludes_structural_15c_from_mechanism_gate() -> None:
             "failure_count": 0,
             "manifest_sha256": "manifest",
         },
+        verify.carbon_pair_contract(verified_rows),
     )
 
     assert decision["technical_contract_ok"]
@@ -155,6 +167,7 @@ def test_formal_decision_excludes_structural_15c_from_mechanism_gate() -> None:
     assert decision["mechanism_visibility_supported"]
     assert decision["mechanism_eligible_scale_count"] == 3
     assert decision["fifteen_customer_mechanism_status"] == "STRUCTURAL_NO_EV_AVAILABLE"
+    assert decision["carbon_pair_contract_verdict"] == "FIXED_ROUTE_EQUAL_ENERGY_CONTRACT_OK"
 
 
 def test_active_lmain_v3_bundle_hashes_match_activation_contract() -> None:
@@ -170,6 +183,27 @@ def test_active_lmain_v3_bundle_hashes_match_activation_contract() -> None:
     assert result["checked_instances"] == 1
     assert result["checked_bundle_files"] >= 9
     assert result["failure_count"] == 0
+
+
+def test_carbon_pair_contract_rejects_route_or_energy_changes() -> None:
+    base = {
+        "instance": "L-main-threeshift-50c-01",
+        "seed": 1,
+        "verification_status": "OK",
+        "recomputed_route_structure_signature": "same-route",
+        "electricity_kwh": 10.0,
+        "charging_energy_kwh_audit": 5.0,
+    }
+    rows = [
+        base | {"algorithm": "staged_hybrid_carbon_aware"},
+        base | {"algorithm": "staged_hybrid_carbon_naive"},
+    ]
+    assert verify.carbon_pair_contract(rows)["verdict"] == "FIXED_ROUTE_EQUAL_ENERGY_CONTRACT_OK"
+
+    rows[1] = rows[1] | {"recomputed_route_structure_signature": "changed-route"}
+    result = verify.carbon_pair_contract(rows)
+    assert result["verdict"] == "HALT_CARBON_PAIR_CONTRACT"
+    assert result["fixed_route_equal_energy_pair_count"] == 0
 
 
 def write_rows(path: Path, rows: list[dict[str, object]]) -> None:

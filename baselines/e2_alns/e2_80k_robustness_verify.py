@@ -62,9 +62,11 @@ def main() -> int:
     paired = performance_pairs(verified)
     scale_summary = performance_scale_summary(paired)
     mechanism_summary = mechanism_scale_summary(verified)
+    carbon_contract = carbon_pair_contract(verified)
     closure.write_csv(phase_dir / "verified_paired_comparisons.csv", paired)
     closure.write_csv(phase_dir / "verified_per_instance_summary.csv", scale_summary)
     closure.write_csv(phase_dir / "mechanism_summary.csv", mechanism_summary)
+    closure.write_json(phase_dir / "carbon_pair_contract.json", carbon_contract)
     decision = decide(
         metadata,
         task_rows,
@@ -75,6 +77,7 @@ def main() -> int:
         scale_summary,
         mechanism_summary,
         instance_contract,
+        carbon_contract,
     )
     closure.write_json(phase_dir / "decision.json", decision)
     write_report(phase_dir, decision, scale_summary, mechanism_summary)
@@ -142,6 +145,7 @@ def verify_rows(
         violations = check_solution(solution, bundle.instance, DEFAULT_PRICES)
         metrics = evaluate(solution, bundle.instance, bundle.carbon_profile, DEFAULT_PRICES)
         signature = solution_signature_hash(solution)
+        route_signature = route_structure_signature(solution)
         if violations:
             row_failures.append(f"recomputed violations={len(violations)}")
         recorded_cost = closure.as_float(row.get("best_cost"), math.nan)
@@ -150,6 +154,8 @@ def verify_rows(
             row_failures.append(f"cost mismatch recorded={recorded_cost} recomputed={recomputed_cost}")
         if str(row.get("best_signature")) != signature:
             row_failures.append("solution signature mismatch")
+        if str(row.get("route_structure_signature")) != route_signature:
+            row_failures.append("route structure signature mismatch")
         composition = composition_metrics(solution, bundle)
         mechanism_signal = (
             sum(
@@ -177,6 +183,8 @@ def verify_rows(
                 "cost_abs_diff": abs(recorded_cost - recomputed_cost),
                 "recorded_signature": row.get("best_signature"),
                 "recomputed_signature": signature,
+                "recorded_route_structure_signature": row.get("route_structure_signature"),
+                "recomputed_route_structure_signature": route_signature,
                 "recomputed_violation_count": len(violations),
                 "solution_file": str(solution_path.relative_to(phase_dir)),
                 "structural_ev_status": (
@@ -345,6 +353,66 @@ def mechanism_scale_summary(rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
     return out
 
 
+def carbon_pair_contract(rows: list[dict[str, Any]]) -> dict[str, Any]:
+    aware = {
+        (str(row["instance"]), int(row["seed"])): row
+        for row in rows
+        if row.get("algorithm") == "staged_hybrid_carbon_aware" and row.get("verification_status") == "OK"
+    }
+    naive = {
+        (str(row["instance"]), int(row["seed"])): row
+        for row in rows
+        if row.get("algorithm") == "staged_hybrid_carbon_naive" and row.get("verification_status") == "OK"
+    }
+    pairs: list[dict[str, Any]] = []
+    for key in sorted(set(aware) & set(naive)):
+        left = aware[key]
+        right = naive[key]
+        same_route = (
+            str(left.get("recomputed_route_structure_signature"))
+            == str(right.get("recomputed_route_structure_signature"))
+        )
+        same_electricity = math.isclose(
+            float(left.get("electricity_kwh", math.nan)),
+            float(right.get("electricity_kwh", math.nan)),
+            rel_tol=0.0,
+            abs_tol=TOLERANCE,
+        )
+        same_charging_energy = math.isclose(
+            float(left.get("charging_energy_kwh_audit", math.nan)),
+            float(right.get("charging_energy_kwh_audit", math.nan)),
+            rel_tol=0.0,
+            abs_tol=TOLERANCE,
+        )
+        pairs.append(
+            {
+                "instance": key[0],
+                "seed": key[1],
+                "same_route_structure": same_route,
+                "same_electricity_kwh": same_electricity,
+                "same_charging_energy_kwh": same_charging_energy,
+                "contract_ok": same_route and same_electricity and same_charging_energy,
+            }
+        )
+    expected_pairs = len(aware)
+    good_pairs = sum(bool(row["contract_ok"]) for row in pairs)
+    ready = (
+        expected_pairs > 0
+        and len(naive) == expected_pairs
+        and len(pairs) == expected_pairs
+        and good_pairs == expected_pairs
+    )
+    return {
+        "schema": "setp-e2-80k-carbon-pair-contract.v1",
+        "verdict": "FIXED_ROUTE_EQUAL_ENERGY_CONTRACT_OK" if ready else "HALT_CARBON_PAIR_CONTRACT",
+        "aware_rows": len(aware),
+        "naive_rows": len(naive),
+        "pair_count": len(pairs),
+        "fixed_route_equal_energy_pair_count": good_pairs,
+        "pairs": pairs,
+    }
+
+
 def decide(
     metadata: dict[str, Any],
     task_rows: list[dict[str, Any]],
@@ -355,6 +423,7 @@ def decide(
     scale_summary: list[dict[str, Any]],
     mechanism_summary: list[dict[str, Any]],
     instance_contract: dict[str, Any],
+    carbon_contract: dict[str, Any],
 ) -> dict[str, Any]:
     phase = str(metadata.get("phase", ""))
     preflight = phase == "preflight"
@@ -368,6 +437,7 @@ def decide(
         and float(metadata.get("battery_kwh", math.nan)) == 80.0
         and metadata.get("frozen_execution_commit") == FROZEN_COMMIT
         and instance_contract.get("verdict") == "LMAIN_V3_INSTANCE_CONTRACT_OK"
+        and carbon_contract.get("verdict") == "FIXED_ROUTE_EQUAL_ENERGY_CONTRACT_OK"
         and len(task_rows) == expected_tasks
         and all(
             str(row.get("gate_status")) == "OK"
@@ -438,6 +508,9 @@ def decide(
         "instance_contract_verdict": instance_contract.get("verdict"),
         "instance_contract_failure_count": instance_contract.get("failure_count"),
         "instance_manifest_sha256": instance_contract.get("manifest_sha256"),
+        "carbon_pair_contract_verdict": carbon_contract.get("verdict"),
+        "carbon_pair_count": carbon_contract.get("pair_count"),
+        "carbon_fixed_route_equal_energy_pair_count": carbon_contract.get("fixed_route_equal_energy_pair_count"),
         "technical_contract_ok": technical_ok,
         "algorithm_stability_supported": algorithm_supported,
         "mechanism_visibility_supported": mechanism_visible,
@@ -595,6 +668,16 @@ def sha256_file(path: Path) -> str:
         for chunk in iter(lambda: handle.read(1024 * 1024), b""):
             digest.update(chunk)
     return digest.hexdigest()
+
+
+def route_structure_signature(solution: Any) -> str:
+    payload = sorted(
+        (route.vehicle_id, route.vehicle_type.lower(), tuple(route.node_sequence))
+        for route in solution.routes
+    )
+    return hashlib.sha256(
+        json.dumps(payload, ensure_ascii=False, sort_keys=True).encode("utf-8")
+    ).hexdigest()
 
 
 def fmt(value: Any) -> str:
