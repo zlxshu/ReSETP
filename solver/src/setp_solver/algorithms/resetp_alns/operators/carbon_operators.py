@@ -13,6 +13,8 @@ from setp_solver.cost import carbon_profile_row_for_slot, charging_slot_breakdow
 from setp_solver.solution import Route, Solution
 from setp_solver.search.evaluation import BIG_M
 from setp_solver.algorithms.resetp_alns.operators.feasible_repair import enumerate_feasible_insertions
+from setp_solver.algorithms.resetp_alns.support.carbon_charging import integrated_charge_carbon_kg
+from setp_solver.algorithms.resetp_alns.support.charging import repair_route_charging
 
 
 def low_carbon_charging_share(solution: Solution, instance: Any, carbon_profile: list[dict[str, Any]], prices: Any) -> float:
@@ -167,6 +169,166 @@ def low_carbon_charging_repair(state: Any, rng: np.random.Generator, **kwargs: A
     )
 
 
+def high_carbon_charge_segment_removal(state: Any, rng: np.random.Generator, **kwargs: Any) -> Any:
+    """Remove customers adjacent to a high-emission charging action.
+
+    Keskin and Catay couple customer removal with neighbouring station visits.
+    Here the same idea is targeted at the action that contributes the most EV
+    charging emissions.  The paired refined repair strips obsolete stations
+    and reconstructs charging from scratch.
+    """
+
+    from setp_solver.algorithms.resetp_alns.kernel.alns_core import (
+        _adaptive_remove_count,
+        _customers_in_solution,
+        _remove_customers,
+        _route_customer_ids,
+    )
+
+    actions = [action for action in state.solution.charging_actions if float(action.energy_kwh) > 1e-9]
+    if not actions:
+        return state
+    ranked = sorted(
+        actions,
+        key=lambda action: (
+            _action_carbon_kg(action, state.context),
+            float(action.energy_kwh),
+            action.vehicle_id,
+            action.station_id,
+        ),
+        reverse=True,
+    )
+    action = ranked[0]
+    route = next((route for route in state.solution.routes if route.vehicle_id == action.vehicle_id), None)
+    if route is None:
+        return state
+    customers = _route_customer_ids(route, state.context.instance)
+    if not customers:
+        return state
+    q = _adaptive_remove_count(
+        len(_customers_in_solution(state.solution, state.context.instance)),
+        rng,
+        progress=float(kwargs.get("progress", 0.0)),
+        remove_count_q=kwargs.get("remove_count_q"),
+    )
+    node_lookup = {node.node_id: node for node in state.context.instance.nodes}
+    sequence = route.node_sequence
+    station_positions = [idx for idx, node_id in enumerate(sequence) if node_id == action.station_id]
+    anchor = station_positions[0] if station_positions else len(sequence) // 2
+    ordered = sorted(
+        (
+            (abs(idx - anchor), idx, node_id)
+            for idx, node_id in enumerate(sequence)
+            if node_lookup.get(node_id) is not None and node_lookup[node_id].node_type.lower() == "c"
+        ),
+        key=lambda item: (item[0], item[1], item[2]),
+    )
+    selected = [node_id for _, _, node_id in ordered[: min(q, len(ordered))]]
+    return _remove_customers(state, selected)
+
+
+def charging_station_reset_destroy(state: Any, rng: np.random.Generator, **kwargs: Any) -> Any:
+    """Strip one high-carbon EV route's station visits before reconstruction."""
+
+    del rng, kwargs
+    actions = [action for action in state.solution.charging_actions if float(action.energy_kwh) > 1e-9]
+    if not actions:
+        return state
+    vehicle_scores: dict[str, float] = {}
+    for action in actions:
+        vehicle_scores[action.vehicle_id] = vehicle_scores.get(action.vehicle_id, 0.0) + _action_carbon_kg(action, state.context)
+    vehicle_id = max(vehicle_scores, key=lambda item: (vehicle_scores[item], item))
+    node_lookup = {node.node_id: node for node in state.context.instance.nodes}
+    routes: list[Route] = []
+    changed = False
+    for route in state.solution.routes:
+        if route.vehicle_id != vehicle_id:
+            routes.append(route)
+            continue
+        sequence = [
+            node_id
+            for node_id in route.node_sequence
+            if node_lookup.get(node_id) is None or node_lookup[node_id].node_type.lower() != "f"
+        ]
+        changed = changed or sequence != route.node_sequence
+        routes.append(replace(route, node_sequence=sequence))
+    if not changed:
+        return state
+    solution = replace(
+        state.solution,
+        routes=routes,
+        charging_actions=[action for action in state.solution.charging_actions if action.vehicle_id != vehicle_id],
+    )
+    return replace(
+        state,
+        solution=solution,
+        objective_value=None,
+        source_solution=state.solution if state.source_solution is None else state.source_solution,
+    )
+
+
+def integrated_carbon_reconstruction_repair(state: Any, rng: np.random.Generator, **kwargs: Any) -> Any:
+    """Repair customers, then rebuild EV stations and timing in common units."""
+
+    del rng
+    from setp_solver.algorithms.resetp_alns.kernel.alns_core import _finalize_candidate_state, _insert_removed
+
+    repaired_state = _insert_removed(state, mode="regret2") if state.removed_customers else state
+    if repaired_state.removed_customers:
+        return _finalize_candidate_state(repaired_state)
+    node_lookup = {node.node_id: node for node in repaired_state.context.instance.nodes}
+    routes: list[Route] = []
+    actions: list[Any] = []
+    carbon_weight = float(kwargs.get("carbon_bias_weight", repaired_state.context.carbon_weight))
+    try:
+        for route in repaired_state.solution.routes:
+            clean = replace(
+                route,
+                node_sequence=[
+                    node_id
+                    for node_id in route.node_sequence
+                    if node_lookup.get(node_id) is None or node_lookup[node_id].node_type.lower() != "f"
+                ],
+            )
+            if clean.vehicle_type.lower() != "ev":
+                routes.append(clean)
+                continue
+            rebuilt, route_actions = repair_route_charging(
+                clean,
+                repaired_state.context.instance,
+                repaired_state.context.carbon_profile,
+                repaired_state.context.prices,
+                strategy="integrated",
+                carbon_weight=carbon_weight,
+            )
+            routes.append(rebuilt)
+            actions.extend(route_actions)
+        candidate = replace(repaired_state.solution, routes=routes, charging_actions=actions)
+        if check_solution(candidate, repaired_state.context.instance, repaired_state.context.prices):
+            raise ValueError("refined carbon reconstruction produced a hard violation")
+        return _finalize_candidate_state(
+            replace(
+                repaired_state,
+                solution=candidate,
+                objective_value=None,
+                removed_customers=(),
+                source_solution=None,
+            )
+        )
+    except (TypeError, ValueError):
+        fallback = state.source_solution or state.solution
+        return _finalize_candidate_state(
+            replace(
+                state,
+                solution=fallback,
+                objective_value=None,
+                removed_customers=(),
+                source_solution=None,
+                allow_new_route_repair=True,
+            )
+        )
+
+
 def _route_carbon_kg(route: Route, solution: Solution, context: Any) -> float:
     actions = [action for action in solution.charging_actions if action.vehicle_id == route.vehicle_id]
     try:
@@ -196,6 +358,19 @@ def _solution_carbon_kg(solution: Solution, context: Any) -> float:
         )
     except Exception:
         return BIG_M
+
+
+def _action_carbon_kg(action: Any, context: Any) -> float:
+    try:
+        return integrated_charge_carbon_kg(
+            float(action.charge_start_second),
+            float(action.occupancy_minutes) * 60.0,
+            float(action.energy_kwh),
+            context.instance,
+            context.carbon_profile,
+        )
+    except Exception:
+        return 0.0
 
 
 def _gamma(row: dict[str, Any]) -> float:

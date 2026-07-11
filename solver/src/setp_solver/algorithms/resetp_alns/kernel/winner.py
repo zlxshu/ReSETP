@@ -41,7 +41,14 @@ from setp_solver.algorithms.resetp_alns.kernel.alns_core import (
     whole_route_removal,
     worst_customer_removal,
 )
-from setp_solver.algorithms.resetp_alns.operators.carbon_operators import carbon_related_removal, low_carbon_charging_repair, worst_carbon_removal
+from setp_solver.algorithms.resetp_alns.operators.carbon_operators import (
+    carbon_related_removal,
+    charging_station_reset_destroy,
+    high_carbon_charge_segment_removal,
+    integrated_carbon_reconstruction_repair,
+    low_carbon_charging_repair,
+    worst_carbon_removal,
+)
 from setp_solver.algorithms.resetp_alns.operators.strong_bridge import _apply_strong_alns_destroy_repair
 from setp_solver.algorithms.resetp_alns.operators.strong_bridge import solution_signature_hash
 from setp_solver.algorithms.resetp_alns.support.construction import build_initial_solution
@@ -192,6 +199,8 @@ class WinnerKernelConfig:
     include_route_elimination: bool = False
     carbon_aware_operators: bool = False
     carbon_operator_bias: float = 0.0
+    refined_carbon_operators: bool = False
+    refined_carbon_weight: float = 1.0
 
 
 @dataclass(frozen=True)
@@ -216,6 +225,8 @@ class WinnerOperatorSet:
     include_route_elimination: bool = False
     carbon_aware: bool = False
     carbon_bias_weight: float = 0.0
+    refined_carbon: bool = False
+    refined_carbon_weight: float = 0.0
 
     @classmethod
     def create(
@@ -224,12 +235,21 @@ class WinnerOperatorSet:
         include_route_elimination: bool = False,
         carbon_aware: bool = False,
         carbon_bias_weight: float = 1.0,
+        refined_carbon: bool = False,
+        refined_carbon_weight: float = 1.0,
     ) -> "WinnerOperatorSet":
         bias = float(carbon_bias_weight) if carbon_aware else 0.0
+        refined_weight = float(refined_carbon_weight) if refined_carbon else 0.0
 
         def _with_carbon_bias(fn: Callable[..., AlnsState]) -> Callable[[AlnsState, np.random.Generator], AlnsState]:
             def _wrapped(state: AlnsState, rng: np.random.Generator, **kwargs: Any) -> AlnsState:
                 return fn(state, rng, carbon_bias_weight=bias, **kwargs)
+
+            return _wrapped
+
+        def _with_refined_carbon_weight(fn: Callable[..., AlnsState]) -> Callable[[AlnsState, np.random.Generator], AlnsState]:
+            def _wrapped(state: AlnsState, rng: np.random.Generator, **kwargs: Any) -> AlnsState:
+                return fn(state, rng, carbon_bias_weight=refined_weight, **kwargs)
 
             return _wrapped
 
@@ -250,6 +270,13 @@ class WinnerOperatorSet:
                     ("carbon_related_removal", _with_carbon_bias(carbon_related_removal)),
                 ]
             )
+        if refined_carbon:
+            destroy_ops.extend(
+                [
+                    ("high_carbon_charge_segment_removal", high_carbon_charge_segment_removal),
+                    ("charging_station_reset_destroy", charging_station_reset_destroy),
+                ]
+            )
         repair_ops: list[tuple[str, Callable[[AlnsState, np.random.Generator], AlnsState]]] = [
             ("greedy_insert_repair", greedy_insert_repair),
             ("regret2_insert_repair", regret2_insert_repair),
@@ -257,7 +284,22 @@ class WinnerOperatorSet:
         ]
         if carbon_aware:
             repair_ops.append(("low_carbon_charging_repair", _with_carbon_bias(low_carbon_charging_repair)))
-        return cls(tuple(destroy_ops), tuple(repair_ops), bool(include_route_elimination), bool(carbon_aware), bias)
+        if refined_carbon:
+            repair_ops.append(
+                (
+                    "integrated_carbon_reconstruction_repair",
+                    _with_refined_carbon_weight(integrated_carbon_reconstruction_repair),
+                )
+            )
+        return cls(
+            destroy_ops=tuple(destroy_ops),
+            repair_ops=tuple(repair_ops),
+            include_route_elimination=bool(include_route_elimination),
+            carbon_aware=bool(carbon_aware),
+            carbon_bias_weight=bias,
+            refined_carbon=bool(refined_carbon),
+            refined_carbon_weight=refined_weight,
+        )
 
     @property
     def action_space_nvec(self) -> tuple[int, int, int, int]:
@@ -973,6 +1015,8 @@ def _run_staged_hybrid_entry(
         "violation_count": len(violations),
         "battery_kwh": float(getattr(prices, "B_battery_kwh")),
         "carbon_aware_operators": bool(cfg.carbon_aware_operators),
+        "refined_carbon_operators": bool(cfg.refined_carbon_operators),
+        "refined_carbon_weight": float(cfg.refined_carbon_weight),
         "history": list(run.history),
         "operator_counts": dict(run.operator_counts),
     }
@@ -1486,6 +1530,8 @@ def _run_winner_kernel_loop(
         include_route_elimination=config.include_route_elimination,
         carbon_aware=config.carbon_aware_operators,
         carbon_bias_weight=config.carbon_operator_bias,
+        refined_carbon=config.refined_carbon_operators,
+        refined_carbon_weight=config.refined_carbon_weight,
     )
     selector_kind = _selector_kind_from_flags(flags)
     selector_coupling, protected_destroy_indices = _minimum_coverage_contract(operator_set, selector_kind)
@@ -2088,10 +2134,20 @@ def run_staged_chain_alns(
     fairness_theta: float | None = None,
     customer_home_depot: dict[str, str] | None = None,
     middle_restarts: int = 1,
+    stage_budget_mode: str = "fixed",
 ) -> AlnsRunResult:
     """Run regular, global-repair, then regular ALNS phases under one budget."""
 
-    budgets, strong_phase_indexes = _staged_chain_plan(config.eval_budget, middle_restarts)
+    if stage_budget_mode == "fixed":
+        budgets, strong_phase_indexes = _staged_chain_plan(config.eval_budget, middle_restarts)
+    elif stage_budget_mode == "proportional":
+        opening, bridge, closing = _proportional_staged_chain_budgets(config.eval_budget)
+        if int(middle_restarts) != 1:
+            raise ValueError("proportional refined-carbon short gate supports one middle stage")
+        budgets = (opening, bridge, closing)
+        strong_phase_indexes = frozenset({1})
+    else:
+        raise ValueError(f"unsupported staged-chain budget mode: {stage_budget_mode}")
     flags = dict(variant_flags or e2_alns_throughput_flags())
     for selector_flag in SELECTOR_FLAGS:
         flags[selector_flag] = "0"
@@ -2220,11 +2276,21 @@ def _minimum_coverage_contract(
 
 def _selector_coupling_contract(operator_set: WinnerOperatorSet) -> np.ndarray:
     destroy_names = [name for name, _ in operator_set.destroy_ops]
-    repair_count = len(operator_set.repair_ops)
+    repair_names = [name for name, _ in operator_set.repair_ops]
+    repair_count = len(repair_names)
     coupling = np.ones((len(destroy_names), repair_count), dtype=bool)
     vehicle_idx = destroy_names.index("vehicle_type_swap")
     if repair_count > 1:
         coupling[vehicle_idx, 1:] = False
+    refined_repair = "integrated_carbon_reconstruction_repair"
+    if refined_repair in repair_names:
+        refined_repair_idx = repair_names.index(refined_repair)
+        for destroy_name in ("high_carbon_charge_segment_removal", "charging_station_reset_destroy"):
+            if destroy_name not in destroy_names:
+                continue
+            destroy_idx = destroy_names.index(destroy_name)
+            coupling[destroy_idx, :] = False
+            coupling[destroy_idx, refined_repair_idx] = True
     return coupling
 
 

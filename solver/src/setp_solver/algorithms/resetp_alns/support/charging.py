@@ -22,6 +22,11 @@ from setp_solver.cost import (
 from setp_solver.instance_loader import Instance, Node
 from setp_solver.prices import DEFAULT_PRICES, PriceParameters
 from setp_solver.solution import ChargingAction, Route, Solution
+from setp_solver.algorithms.resetp_alns.support.carbon_charging import (
+    ChargeOption,
+    select_charge_option,
+    select_integrated_carbon_start,
+)
 
 
 def solve_charging(
@@ -145,8 +150,19 @@ def repair_route_charging(
     instance: Instance,
     gamma_profile: list[dict[str, Any]],
     prices: PriceParameters | dict[str, float] | Any = DEFAULT_PRICES,
+    *,
+    strategy: str = "legacy",
+    carbon_weight: float = 1.0,
 ) -> tuple[Route, list[ChargingAction]]:
-    """Insert station visits and actions sufficient for battery feasibility."""
+    """Insert station visits and actions sufficient for battery feasibility.
+
+    ``legacy`` preserves the frozen E2 behavior.  ``integrated`` is isolated
+    for the item-4 mechanism gate and compares complete charging intervals and
+    station detours in common monetary units.
+    """
+
+    if strategy not in {"legacy", "integrated"}:
+        raise ValueError(f"unknown charging-repair strategy: {strategy}")
 
     if route.vehicle_type.lower() != "ev":
         return route, []
@@ -161,7 +177,16 @@ def repair_route_charging(
     battery = _price(prices, "initial_ev_battery_kwh")
     time_s = float(node_lookup[route.node_sequence[0]].ready_time)
     remaining_customers = [node_id for node_id in original_targets if node_lookup[node_id].node_type.lower() == "c"]
-    depot_action = _depot_precharge_action(route, original_targets, node_lookup, instance, gamma_profile, prices)
+    depot_action = _depot_precharge_action(
+        route,
+        original_targets,
+        node_lookup,
+        instance,
+        gamma_profile,
+        prices,
+        strategy=strategy,
+        carbon_weight=carbon_weight,
+    )
     if depot_action is not None:
         actions.append(depot_action)
         battery += float(depot_action.energy_kwh)
@@ -193,6 +218,7 @@ def repair_route_charging(
                 current,
                 target,
                 coverage_targets,
+                future_targets,
                 remaining_customers,
                 load_kg,
                 battery,
@@ -203,6 +229,8 @@ def repair_route_charging(
                 gamma_profile,
                 prices,
                 route.vehicle_id,
+                strategy=strategy,
+                carbon_weight=carbon_weight,
             )
             if candidate is None:
                 if battery + 1e-9 < needed_direct:
@@ -379,6 +407,9 @@ def _depot_precharge_action(
     instance: Instance,
     gamma_profile: list[dict[str, Any]],
     prices: PriceParameters | dict[str, float] | Any,
+    *,
+    strategy: str = "legacy",
+    carbon_weight: float = 1.0,
 ) -> ChargingAction | None:
     depot_id = route.node_sequence[0]
     depot = node_lookup[depot_id]
@@ -402,7 +433,21 @@ def _depot_precharge_action(
     latest = route_next_day_departure_second(synthetic_route, instance, prices, period_seconds=period) - occupancy_sec
     if latest + 1e-9 < earliest:
         raise ValueError(f"No feasible depot charging window for {route.vehicle_id} at {depot_id}")
-    charge_start, _ = _lowest_gamma_slot_start(earliest, latest, gamma_profile)
+    if strategy == "integrated":
+        charge_start = (
+            float(earliest)
+            if float(carbon_weight) <= 1e-12
+            else select_integrated_carbon_start(
+                earliest,
+                latest,
+                occupancy_sec,
+                energy_needed,
+                instance,
+                gamma_profile,
+            ).start_second
+        )
+    else:
+        charge_start, _ = _lowest_gamma_slot_start(earliest, latest, gamma_profile)
     return ChargingAction(
         vehicle_id=route.vehicle_id,
         station_id=depot_id,
@@ -491,6 +536,7 @@ def _best_station_insert(
     current: str,
     target: str,
     coverage_targets: list[str],
+    future_targets: list[str],
     remaining_customers: list[str],
     load_kg: float,
     battery: float,
@@ -501,8 +547,12 @@ def _best_station_insert(
     gamma_profile: list[dict[str, Any]],
     prices: PriceParameters | dict[str, float] | Any,
     vehicle_id: str,
+    *,
+    strategy: str = "legacy",
+    carbon_weight: float = 1.0,
 ) -> tuple[str, ChargingAction, float, float, float] | None:
     best: tuple[float, float, str, ChargingAction, float, float, float] | None = None
+    refined: list[tuple[ChargeOption, float, float]] = []
     for station in stations:
         to_station = instance.distance(current, station.node_id)
         energy_to_station = ev_arc_energy_kwh(to_station, load_kg, prices)
@@ -536,7 +586,37 @@ def _best_station_insert(
             float(station.due_time),
             float(target_node.due_time) - occupancy_sec - instance.distance(station.node_id, target) / _price(prices, "v_speed_ms"),
         )
+        if strategy == "integrated":
+            latest = min(
+                latest,
+                _latest_charge_start_for_downstream(
+                    station.node_id,
+                    future_targets,
+                    node_lookup,
+                    instance,
+                    prices,
+                    occupancy_sec,
+                ),
+            )
         if latest + 1e-9 < earliest:
+            continue
+        detour = to_station + instance.distance(station.node_id, target) - instance.distance(current, target)
+        if strategy == "integrated":
+            refined.append(
+                (
+                    ChargeOption(
+                        station_id=station.node_id,
+                        node_type=station.node_type,
+                        earliest_start_second=earliest,
+                        latest_start_second=latest,
+                        energy_kwh=energy_needed,
+                        power_kw=float(station.charge_power_kw),
+                        detour_m=detour,
+                    ),
+                    arrive,
+                    battery_at_station + energy_needed,
+                )
+            )
             continue
         charge_start, gamma = _lowest_gamma_slot_start(earliest, latest, gamma_profile)
         depart = charge_start + occupancy_sec
@@ -547,14 +627,66 @@ def _best_station_insert(
             occupancy_minutes=occupancy_sec / 60.0,
             charge_start_second=charge_start,
         )
-        detour = to_station + instance.distance(station.node_id, target) - instance.distance(current, target)
         key = (gamma, detour, station.node_id, action, arrive, depart, battery_at_station + energy_needed)
         if best is None or (key[0], key[1], key[2]) < (best[0], best[1], best[2]):
             best = key
+    if strategy == "integrated":
+        if not refined:
+            return None
+        if not isinstance(prices, PriceParameters):
+            raise TypeError("integrated charging repair currently requires PriceParameters")
+        scored = select_charge_option(
+            [item[0] for item in refined],
+            instance,
+            gamma_profile,
+            prices,
+            carbon_weight=carbon_weight,
+        )
+        option = scored.option
+        _, arrive, battery_after = next(item for item in refined if item[0] == option)
+        depart = scored.timing.start_second + option.occupancy_seconds
+        action = ChargingAction(
+            vehicle_id=vehicle_id,
+            station_id=option.station_id,
+            energy_kwh=option.energy_kwh,
+            occupancy_minutes=option.occupancy_seconds / 60.0,
+            charge_start_second=scored.timing.start_second,
+        )
+        return option.station_id, action, arrive, depart, battery_after
     if best is None:
         return None
     _, _, station_id, action, arrive, depart, battery_after = best
     return station_id, action, arrive, depart, battery_after
+
+
+def _latest_charge_start_for_downstream(
+    station_id: str,
+    future_targets: list[str],
+    node_lookup: dict[str, Node],
+    instance: Instance,
+    prices: PriceParameters | dict[str, float] | Any,
+    occupancy_sec: float,
+) -> float:
+    """Protect every downstream due time after an inserted station."""
+
+    if not future_targets:
+        return float(node_lookup[station_id].due_time) - float(occupancy_sec)
+    speed = _price(prices, "v_speed_ms")
+    successor_id = future_targets[-1]
+    latest_successor_start = float(node_lookup[successor_id].due_time)
+    for current_id in reversed(future_targets[:-1]):
+        current = node_lookup[current_id]
+        travel = instance.distance(current_id, successor_id) / speed
+        latest_successor_start = min(
+            float(current.due_time),
+            latest_successor_start - float(current.service_time) - travel,
+        )
+        successor_id = current_id
+    return (
+        latest_successor_start
+        - float(occupancy_sec)
+        - instance.distance(station_id, successor_id) / speed
+    )
 
 
 def _lowest_gamma_slot_start(earliest: float, latest: float, gamma_profile: list[dict[str, Any]]) -> tuple[float, float]:
