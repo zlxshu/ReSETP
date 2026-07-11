@@ -117,3 +117,7 @@ E7 动态需求必须保留三交互门槛：动态×协同、动态×公平、�
 E2正式证据已用tag `e2-submission-20260711`冻结在commit `0124623e`，并新增`E2_FREEZE.json`记录三项hash锚、正式合同与禁止改写规则。后续E1--E7可以通过新wrapper复用算法，但不得覆盖E2证据；改变算法语义必须视为新身份。
 
 E1 280 kWh结构门在commit `c20dae18`执行。正式目录`baselines/e1_model/e1_submission_20260711_committed/formal/`含20条从冻结E2无改动复用的mixed证据、5条200c CV-only 4000评价搜索和5条EV-only可行性审计。mixed/CV-only全部零违规、成本分项闭合；200c mixed的EV客户/需求/距离份额均值为0.861/0.872/0.822，平均59.8次充电，相对CV-only 4胜1负、平均成本优势0.671%。EV-only五条均为`NOT_FOUND`，原因是直接路线转换时至少一条CV路线没有可行车场充电窗口；不得表述为数学不可行。判决`E1_280_STRUCTURE_SUPPORTED`，E3解锁。
+
+## 2026-07-11 E3累积消融正式收口
+
+E3新runner绑定staged hybrid、280kWh、200c、seeds1--5、每层4000评价；M0总预算在两个独立车场间平分，并在候选期实时重建跨场服务计费。30/30零违规满预算，hash和保存解完整。最终判决`E3_PARTIAL_MECHANISM_SUPPORT`：固定路线时变碳充电5/5降EV间接排放，平均20.96%，总电量一致；M1对M0成本4胜1平、平均低1.042%，但跨场服务仅seed4出现2个客户；M5 theta=1全部可行，但M4对应解本已全部满足最小收益比>=1，公平绑定0/5。E3不包装六层全强，碳进入E4，公平进入E6。正式证据在`baselines/e3_ablation/e3_submission_20260711/formal/`，解释见`docs/handoff/e3_cumulative_ablation_closeout_20260711.md`。

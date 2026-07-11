@@ -18,6 +18,8 @@ ReSETP = 投《系统工程理论与实践》的绿色车辆路径论文。多�
 
 **E2冻结与E1突破（2026-07-11）：** E2已用annotated tag `e2-submission-20260711`固定在commit `0124623e`，冻结锚见`baselines/e2_alns/e2_submission_20260711/E2_FREEZE.json`，后续代码变化不得改写该证据。E1在commit `c20dae18`上完成280 kWh最小正式结构门：复用50/100/150/200c共20条mixed冻结解，新增200c五种子CV-only搜索；25条可行证据均零违规、满4000。200c mixed平均EV客户/需求/距离份额为86.1%/87.2%/82.2%，平均59.8次充电；相对CV-only 4胜1负、平均便宜0.671%。EV-only五次均因直接转换无可行充电窗口而`NOT_FOUND`，这不是全局不可行证明。判决=`E1_280_STRUCTURE_SUPPORTED`，下一主线为E3短门。详见`docs/handoff/e1_280_structure_closeout_20260711.md`。
 
+**E3正式消融收口（2026-07-11）：** 200c × M0--M5 × seeds1--5共30行全部零违规、满4000评价、成本分项闭合，运行commit=`b9a59c46`。最终诚实判决=`E3_PARTIAL_MECHANISM_SUPPORT`：M3同路线同电量的低碳充电5/5降低EV间接排放，平均20.96%，证据强；M1相对M0成本4胜1平、平均低1.04%，但跨场服务只在1/5种子出现2个客户，协同直接证据弱；M5 theta=1五种子均公平可行，但对应M4无公平解原本也5/5满足收益比>=1，公平绑定为0/5，必须由E6另证。详见`docs/handoff/e3_cumulative_ablation_closeout_20260711.md`。下一主线为E4/E5碳价短门；配额不再重复搜索。
+
 **旧30次稳定性门（历史前置证据）：** 100c/150c/200c × 5 seeds × staged ALNS-LNS hybrid/LNS 的30次、4000次评价稳定性门为30/30 OK、零违规、全部跑满预算；三个规模hybrid相对LNS平均改善6.45%/0.69%/14.08%，合计11/15胜，verdict=`STAGED_HYBRID_STABILITY_SUPPORTED`。该门已被上述九档全量证据覆盖。路线搜索身份从此冻结，不再 rescue 调参。
 
 **E2碳机制小门（2026-07-11）：** 复用上述15个hybrid保存解，在路线、车型和总充电量不变条件下，对比立即充电与低碳择时充电。15/15均成功、双方零违规，625次充电实际移动，15/15充电间接排放下降，平均下降约9.87%。因此正式候选命名为 `staged ALNS-LNS hybrid + carbon-aware charging schedule`，消融为 `+ immediate charging ablation`；这是固定路线充电子问题，不是恢复历史 `CARBON_OPS_WEAK` 粗糙算子。

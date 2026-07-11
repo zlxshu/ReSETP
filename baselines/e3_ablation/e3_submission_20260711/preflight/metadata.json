@@ -1,0 +1,34 @@
+{
+  "algorithm": "staged ALNS-LNS hybrid + registered charging schedule",
+  "eval_budget_per_variant": 400,
+  "frozen_e2_commit": "0124623e347cd2a6a5548e07e0af66e16d3b634b",
+  "frozen_e2_tag": "e2-submission-20260711",
+  "head": "b9a59c4604fb7c03fae170f031586ba2a9016e7c",
+  "instance": "L-main-threeshift-200c-01",
+  "m0_budget_rule": "total budget split equally across the two independent depot subproblems",
+  "phase": "preflight",
+  "protected_paths": [
+    "solver/src/setp_solver/cost.py",
+    "solver/src/setp_solver/check.py",
+    "solver/src/setp_solver/search/evaluation.py",
+    "solver/src/setp_solver/prices.py",
+    "solver/src/setp_solver/search/feasible_repair.py",
+    "solver/src/setp_solver/search/resetp_alns",
+    "solver/src/setp_solver/search/alns_wouda.py",
+    "solver/src/setp_solver/search/winner_operators.py",
+    "docs/paper_submission_final/paper_main.tex"
+  ],
+  "scenario": "280 kWh modern-distribution main scenario",
+  "schema": "setp-e3-cumulative-ablation.v1",
+  "seeds": [
+    1
+  ],
+  "variant_contract": {
+    "M0": "independent depots; zero EV grid carbon; no carbon trading; no fairness",
+    "M1": "cooperative routing; zero EV grid carbon; no carbon trading; no fairness",
+    "M2": "M1 plus daily-mean grid carbon accounting; naive charging",
+    "M3": "M2 plus actual 48-slot grid carbon and carbon-aware charging; no carbon trading",
+    "M4": "M3 plus bidirectional carbon trading with CE=0.8*E2 no-quota emissions",
+    "M5": "M4 plus theta=1.0 depot-profit fairness"
+  }
+}

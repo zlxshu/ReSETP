@@ -87,6 +87,7 @@ def main() -> int:
     cooperative_rows = run_tasks(phase_dir, cooperative_tasks, workers=min(len(cooperative_tasks), max(1, int(args.workers))))
     tasks = [*m0_tasks, *cooperative_tasks]
     rows = sorted([*m0_rows, *cooperative_rows], key=lambda row: (int(row["seed"]), str(row["variant"])))
+    rows = enrich_full_model_profit_ratios(rows, phase_dir)
     closure.write_csv(phase_dir / "task_manifest.csv", tasks)
     closure.write_csv(phase_dir / "raw_runs.csv", rows)
     export_solutions(phase_dir, rows)
@@ -341,6 +342,32 @@ def independent_profit_for_solution(solution: Solution, bundle: Any, prices: Any
     return {depot_id: float(row.profit) for depot_id, row in rows.items()}
 
 
+def enrich_full_model_profit_ratios(rows: list[dict[str, Any]], phase_dir: Path) -> list[dict[str, Any]]:
+    """Recompute M4/M5 ratios against the same seed-specific M0 reference."""
+
+    bundle = load_search_bundle(phase_dir / "derived_bundles" / "actual_gamma")
+    owners = infer_customer_home_depots(bundle.instance)
+    prices = replace(DEFAULT_PRICES, B_battery_kwh=280.0)
+    by_key = {(int(row["seed"]), str(row["variant"])): row for row in rows}
+    for seed in sorted({int(row["seed"]) for row in rows}):
+        m0_row = by_key.get((seed, "M0"))
+        if not m0_row or not m0_row.get("solution_json"):
+            continue
+        m0 = solution_from_dict(json.loads(str(m0_row["solution_json"])))
+        quota = e2_quota(seed)
+        baseline = independent_profit_for_solution(m0, bundle, prices, owners, quota)
+        for variant in ("M4", "M5"):
+            row = by_key.get((seed, variant))
+            if not row or not row.get("solution_json"):
+                continue
+            solution = solution_from_dict(json.loads(str(row["solution_json"])))
+            profits = independent_profit_for_solution(solution, bundle, prices, owners, quota)
+            ratios = {depot_id: profits[depot_id] / value for depot_id, value in baseline.items() if abs(value) > 1e-12}
+            row["min_profit_ratio"] = min(ratios.values(), default="")
+            row["profit_ratios_json"] = json.dumps(ratios, ensure_ascii=False, sort_keys=True)
+    return rows
+
+
 def e2_quota(seed: int) -> float:
     rows = closure.read_csv(E2_RAW)
     row = next(item for item in rows if item["instance"] == INSTANCE and item["algorithm"] == "staged_hybrid_carbon_aware" and int(item["seed"]) == seed)
@@ -393,11 +420,17 @@ def decide(rows: list[dict[str, Any]], seeds: list[int], budget: int, phase: str
         if by_key.get((seed, "M3"), {}).get("status") == "OK" and by_key[(seed, "M3")].get("naive_same_route_E_ev_indirect") not in (None, "")
     )
     fairness_signal = sum(float(by_key[(seed, "M5")]["min_profit_ratio"]) >= 1.0 - 1e-9 for seed in seeds if by_key.get((seed, "M5"), {}).get("status") == "OK")
+    fairness_binding = sum(
+        float(by_key[(seed, "M4")]["min_profit_ratio"]) < 1.0 - 1e-9
+        and float(by_key[(seed, "M5")]["min_profit_ratio"]) >= 1.0 - 1e-9
+        for seed in seeds
+        if by_key.get((seed, "M4"), {}).get("status") == "OK" and by_key.get((seed, "M5"), {}).get("status") == "OK"
+    )
     if not contract:
         verdict = "HALT_E3_CONTRACT"
     elif phase == "preflight":
         verdict = "E3_PREFLIGHT_READY"
-    elif cooperation_signal and carbon_signal and fairness_signal == len(seeds):
+    elif cooperation_signal >= math.ceil(len(seeds) / 2) and carbon_signal == len(seeds) and fairness_binding > 0 and fairness_signal == len(seeds):
         verdict = "E3_MECHANISM_SUPPORTED"
     else:
         verdict = "E3_PARTIAL_MECHANISM_SUPPORT"
@@ -406,7 +439,8 @@ def decide(rows: list[dict[str, Any]], seeds: list[int], budget: int, phase: str
         "expected_rows": expected, "ok_rows": len(ok), "all_eval_closed": contract,
         "cooperation_signal_seeds": cooperation_signal, "time_varying_carbon_reduction_seeds": carbon_signal,
         "fairness_feasible_seeds": fairness_signal,
-        "claim_boundary": "M4 quota is a linear accounting constant; quota changes alone are not claimed to alter routes. M0 uses the same total evaluation budget split across depots.",
+        "fairness_binding_seeds": fairness_binding,
+        "claim_boundary": "M4 quota is a linear accounting constant; quota changes alone are not claimed to alter routes. M0 uses the same total evaluation budget split across depots. Fairness feasibility is not counted as a binding effect when the corresponding M4 solution already satisfies theta=1.0.",
     }
 
 
@@ -421,7 +455,7 @@ def export_solutions(phase_dir: Path, rows: list[dict[str, Any]]) -> None:
 def write_report(phase_dir: Path, decision: dict[str, Any]) -> None:
     lines = [
         "# E3 cumulative ablation gate", "", f"Verdict: `{decision['verdict']}`.", "",
-        f"Rows OK: {decision['ok_rows']}/{decision['expected_rows']}; cooperation signal seeds: {decision['cooperation_signal_seeds']}; time-varying carbon reduction seeds: {decision['time_varying_carbon_reduction_seeds']}; fairness-feasible seeds: {decision['fairness_feasible_seeds']}.",
+        f"Rows OK: {decision['ok_rows']}/{decision['expected_rows']}; cooperation signal seeds: {decision['cooperation_signal_seeds']}; time-varying carbon reduction seeds: {decision['time_varying_carbon_reduction_seeds']}; fairness-feasible/binding seeds: {decision['fairness_feasible_seeds']}/{decision['fairness_binding_seeds']}.",
         "", decision["claim_boundary"],
     ]
     (phase_dir / "report.md").write_text("\n".join(lines) + "\n", encoding="utf-8")
