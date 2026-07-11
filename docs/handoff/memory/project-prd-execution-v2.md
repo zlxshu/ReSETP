@@ -131,3 +131,7 @@ E3新runner绑定staged hybrid、280kWh、200c、seeds1--5、每层4000评价；
 ## 2026-07-11 E2负例恢复比例候选收口
 
 `proportional_true_lns_middle_gate` 27/27满1600评价、零违规，保存解、算子记录、hash和运行提交`7b164f6a`独立验收通过。候选相对staged全部9组平均-0.329026%，6个开发负例平均+0.095425%，负例只转回1组，最差保护样本-3.005064%，判`PROPORTIONAL_TRUE_LNS_MIDDLE_SHORT_GATE_REJECTED`。具体是100c seed2改善+11.712%，但50c seed5、75c seed1和75c seed5分别退化-7.773%/-4.737%/-3.005%，阶段比例改变不具稳定跨规模效果。true-LNS比例路线关闭，不启动57次未见种子4000门。下一步只读已保存staged/LNS/restart/true-LNS解的route-signature互补性；无广泛可行整路块headroom则直接停止E2恢复并转80 kWh。
+
+## 2026-07-11 E2 15负恢复最终收口
+
+整路块审计从staged、LNS、restart、true-LNS和proportional true-LNS的已保存解中提取路线，用set-partitioning+no-good枚举整路组合，新搜索0次。9组45父解零违规；6/6开发负例有可行混合组合，但0/6比当组最好父解便宜>=0.25%，0/6多救回负例，verdict=`ROUTE_BLOCK_HEADROOM_NOT_SUPPORTED`。这证明不同运行有路线多样性，但现有整路块没有可组合的性能headroom；HGS/SREX不解锁、未见种子和论文种子恢复矩阵取消。项目1/2以冻结E2的25胜5平15负、总成本领先LNS 6.845690%收口；当前主线转项目3的80 kWh稳健性镜像门。

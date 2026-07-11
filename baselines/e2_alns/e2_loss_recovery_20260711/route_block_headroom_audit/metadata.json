@@ -1,0 +1,70 @@
+{
+  "battery_kwh": 280.0,
+  "diagnostic_only": true,
+  "git_commit": "1afce168e8c2e29ed3e096e95b9d7e31156f8f3b",
+  "max_partitions_per_pair": 50,
+  "milp_time_limit_seconds": 2.0,
+  "new_search_runs": 0,
+  "pairs": [
+    [
+      "L-main-threeshift-20c-01",
+      3
+    ],
+    [
+      "L-main-threeshift-50c-01",
+      5
+    ],
+    [
+      "L-main-threeshift-150c-01",
+      3
+    ],
+    [
+      "L-main-threeshift-100c-01",
+      2
+    ],
+    [
+      "L-main-threeshift-15c-01",
+      2
+    ],
+    [
+      "L-main-threeshift-75c-01",
+      1
+    ],
+    [
+      "L-main-threeshift-100c-01",
+      4
+    ],
+    [
+      "L-main-threeshift-150c-01",
+      4
+    ],
+    [
+      "L-main-threeshift-75c-01",
+      5
+    ]
+  ],
+  "parent_locations": {
+    "LNS": [
+      "true_lns_middle_gate",
+      "LNS"
+    ],
+    "proportional_true_lns_middle": [
+      "proportional_true_lns_middle_gate",
+      "proportional_true_lns_middle"
+    ],
+    "restarted": [
+      "short_gate_formal_start",
+      "restarted"
+    ],
+    "staged": [
+      "true_lns_middle_gate",
+      "staged"
+    ],
+    "true_lns_middle": [
+      "true_lns_middle_gate",
+      "true_lns_middle"
+    ]
+  },
+  "schema_version": "setp-e2-route-block-headroom-audit.v1",
+  "workers": 3
+}
