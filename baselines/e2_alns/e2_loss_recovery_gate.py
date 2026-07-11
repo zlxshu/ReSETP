@@ -25,6 +25,7 @@ for _path in (REPO_ROOT, SOLVER_SRC):
 
 from setp_solver.algorithms.resetp_alns.kernel.winner import (
     WinnerKernelConfig,
+    run_proportional_true_lns_middle_alns_hybrid,
     run_restarted_staged_alns_lns_hybrid,
     run_staged_alns_lns_hybrid,
     run_true_lns_middle_alns_hybrid,
@@ -38,7 +39,7 @@ from setp_solver.search.instance_registry import assert_formal_benchmark_ready, 
 from setp_solver.search.metaheuristic_baselines import run_metaheuristic_baseline, solution_to_dict
 
 
-CANDIDATE_ALGORITHMS = ("restarted", "true_lns_middle")
+CANDIDATE_ALGORITHMS = ("restarted", "true_lns_middle", "proportional_true_lns_middle")
 DEVELOPMENT_PAIRS = (
     ("L-main-threeshift-20c-01", 3),
     ("L-main-threeshift-50c-01", 5),
@@ -89,6 +90,18 @@ def _run_task(payload: tuple[str, str, int, int, float, float, str]) -> dict[str
         operator_counts = dict(result.get("operator_counts", {}))
     elif algorithm == "true_lns_middle":
         result = run_true_lns_middle_alns_hybrid(
+            bundle.bundle_dir,
+            config=config,
+            initial_solution=copy.deepcopy(start),
+            prices=prices,
+        )
+        solution = result["best_solution"]
+        evaluations = int(result["evaluations"])
+        reported_cost = float(result["best_cost"])
+        status = "OK" if result["feasible"] and evaluations == eval_budget else "HALT"
+        operator_counts = dict(result.get("operator_counts", {}))
+    elif algorithm == "proportional_true_lns_middle":
+        result = run_proportional_true_lns_middle_alns_hybrid(
             bundle.bundle_dir,
             config=config,
             initial_solution=copy.deepcopy(start),
@@ -255,7 +268,11 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
     metadata = {
         "schema_version": "setp-e2-loss-recovery-short-gate.v3",
         "candidate_id": str(args.candidate),
-        "candidate": "ALNS + true LNS middle + ALNS hybrid" if args.candidate == "true_lns_middle" else "restarted staged ALNS-LNS hybrid",
+        "candidate": {
+            "restarted": "restarted staged ALNS-LNS hybrid",
+            "true_lns_middle": "ALNS + true LNS middle + ALNS hybrid",
+            "proportional_true_lns_middle": "proportional ALNS + true LNS middle + ALNS hybrid",
+        }[args.candidate],
         "incumbent": "staged ALNS-LNS hybrid",
         "baseline": "LNS",
         "development_pairs": [list(pair) for pair in DEVELOPMENT_PAIRS],

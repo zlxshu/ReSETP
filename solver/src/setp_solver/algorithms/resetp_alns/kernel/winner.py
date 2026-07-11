@@ -748,6 +748,7 @@ def run_true_lns_middle_alns_hybrid(
     carbon_weight: float = 1.0,
     carbon_quota_kg: float = 0.0,
     fairness_enabled: bool = False,
+    _stage_budget_mode: str = "fixed",
 ) -> dict[str, Any]:
     """Run ALNS opening, the formal LNS policy, then ALNS closing.
 
@@ -762,7 +763,18 @@ def run_true_lns_middle_alns_hybrid(
     from setp_solver.search.metaheuristic_baselines import run_metaheuristic_baseline
 
     cfg = config or WinnerKernelConfig()
-    opening_budget, middle_budget, closing_budget = _staged_chain_budgets(cfg.eval_budget)
+    if _stage_budget_mode == "fixed":
+        opening_budget, middle_budget, closing_budget = _staged_chain_budgets(cfg.eval_budget)
+        variant = "true_lns_middle_alns_hybrid"
+        algorithm = "ALNS + true LNS middle + ALNS hybrid"
+        record_key = "true_lns_middle"
+    elif _stage_budget_mode == "proportional":
+        opening_budget, middle_budget, closing_budget = _proportional_staged_chain_budgets(cfg.eval_budget)
+        variant = "proportional_true_lns_middle_alns_hybrid"
+        algorithm = "proportional ALNS + true LNS middle + ALNS hybrid"
+        record_key = "proportional_true_lns_middle"
+    else:
+        raise ValueError(f"unsupported true-LNS-middle stage budget mode: {_stage_budget_mode}")
     if middle_budget <= 0:
         raise ValueError("true LNS middle candidate requires more than 800 evaluations")
     bundle = _load_search_bundle(bundle_dir)
@@ -828,8 +840,8 @@ def run_true_lns_middle_alns_hybrid(
     total_evaluations = int(opening["evaluations"]) + int(middle.evals) + int(closing["evaluations"])
     return {
         "operator_base_id": operator_base_id,
-        "variant": "true_lns_middle_alns_hybrid",
-        "algorithm": "ALNS + true LNS middle + ALNS hybrid",
+        "variant": variant,
+        "algorithm": algorithm,
         "seed": int(cfg.seed),
         "eval_budget": int(cfg.eval_budget),
         "max_runtime_seconds": float(cfg.max_runtime_seconds),
@@ -843,7 +855,7 @@ def run_true_lns_middle_alns_hybrid(
         "carbon_aware_operators": False,
         "history": history,
         "operator_counts": {
-            "true_lns_middle": {
+            record_key: {
                 "budgets": [opening_budget, middle_budget, closing_budget],
                 "best_stage": best_stage,
                 "opening": opening.get("operator_counts", {}),
@@ -852,6 +864,36 @@ def run_true_lns_middle_alns_hybrid(
             }
         },
     }
+
+
+def run_proportional_true_lns_middle_alns_hybrid(
+    bundle_dir: str | Path,
+    *,
+    config: WinnerKernelConfig | None = None,
+    initial_solution: Solution | None = None,
+    prices: Any = DEFAULT_PRICES,
+    carbon_weight: float = 1.0,
+    carbon_quota_kg: float = 0.0,
+    fairness_enabled: bool = False,
+) -> dict[str, Any]:
+    """Run the true-LNS-middle hybrid with the formal 10/80/10 phase ratio.
+
+    At the formal 4000-evaluation budget this is exactly 400/3200/400.  At
+    bounded short-gate budgets the flanks scale down instead of consuming a
+    fixed 800 evaluations, so the proxy preserves the formal algorithm's
+    phase proportions without increasing the total budget.
+    """
+
+    return run_true_lns_middle_alns_hybrid(
+        bundle_dir,
+        config=config,
+        initial_solution=initial_solution,
+        prices=prices,
+        carbon_weight=carbon_weight,
+        carbon_quota_kg=carbon_quota_kg,
+        fairness_enabled=fairness_enabled,
+        _stage_budget_mode="proportional",
+    )
 
 
 def _run_staged_hybrid_entry(
@@ -1983,6 +2025,25 @@ def _staged_chain_budgets(total_budget: int, interval: int = 400) -> tuple[int, 
     closing = min(phase, max(0, total - opening))
     bridge = max(0, total - opening - closing)
     return opening, bridge, closing
+
+
+def _proportional_staged_chain_budgets(
+    total_budget: int,
+    *,
+    flank_fraction: float = 0.10,
+    flank_cap: int = 400,
+) -> tuple[int, int, int]:
+    """Scale short-gate flanks while matching 400/3200/400 at 4000 evals."""
+
+    total = max(0, int(total_budget))
+    if total == 0:
+        return 0, 0, 0
+    flank = max(1, int(round(total * float(flank_fraction))))
+    flank = min(int(flank_cap), flank, max(1, total // 2))
+    opening = min(flank, total)
+    closing = min(flank, max(0, total - opening))
+    middle = max(0, total - opening - closing)
+    return opening, middle, closing
 
 
 def _staged_chain_plan(total_budget: int, middle_restarts: int, interval: int = 400) -> tuple[tuple[int, ...], frozenset[int]]:

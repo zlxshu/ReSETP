@@ -21,7 +21,11 @@ def test_loss_recovery_gate_keeps_a_bounded_nine_pair_matrix() -> None:
     assert len(pairs) == 9
     assert len(tasks) == 27
     assert len(set(tasks)) == 27
-    assert set(gate.CANDIDATE_ALGORITHMS) == {"restarted", "true_lns_middle"}
+    assert set(gate.CANDIDATE_ALGORITHMS) == {
+        "restarted",
+        "true_lns_middle",
+        "proportional_true_lns_middle",
+    }
 
 
 def test_loss_recovery_verifier_accepts_any_registered_short_gate_candidate() -> None:

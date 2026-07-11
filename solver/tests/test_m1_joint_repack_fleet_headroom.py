@@ -568,6 +568,56 @@ class M1JointRepackFleetHeadroomTests(unittest.TestCase):
         self.assertEqual(lns.call_args.kwargs["eval_budget"], 200)
         self.assertTrue(lns.call_args.kwargs["common_flip_preprocess"])
 
+    def test_proportional_true_lns_middle_matches_formal_phase_ratio(self) -> None:
+        import setp_solver.algorithms.resetp_alns.kernel.winner as winner
+        import setp_solver.search.metaheuristic_baselines as baselines
+        from setp_solver.search.evaluation import EvaluationContext, model_cost
+
+        bundle = load_search_bundle(VERIFY_BUNDLE)
+        start = make_shared_initial_solution(bundle, prices=DEFAULT_PRICES)
+        cost = model_cost(start, EvaluationContext(bundle.instance, bundle.carbon_profile, prices=DEFAULT_PRICES))
+
+        def alns_result_for(call_config: winner.WinnerKernelConfig) -> dict[str, object]:
+            return {
+                "best_solution": start,
+                "best_cost": cost,
+                "evaluations": call_config.eval_budget,
+                "history": [],
+                "operator_counts": {},
+            }
+
+        middle_result = baselines.BaselineRunResult(
+            algorithm="LNS",
+            source="test",
+            feasible=True,
+            status="OK",
+            evals=1280,
+            elapsed_seconds=0.0,
+            best_cost=cost,
+            best_penalized_obj=cost,
+            best_solution=start,
+        )
+        with patch.object(
+            winner,
+            "run_staged_alns_lns_hybrid",
+            side_effect=lambda *args, **kwargs: alns_result_for(kwargs["config"]),
+        ) as alns, patch.object(baselines, "run_metaheuristic_baseline", return_value=middle_result) as lns:
+            result = winner.run_proportional_true_lns_middle_alns_hybrid(
+                bundle.bundle_dir,
+                config=winner.WinnerKernelConfig(seed=3, eval_budget=1600, max_runtime_seconds=30.0),
+                initial_solution=start,
+                prices=DEFAULT_PRICES,
+            )
+
+        self.assertEqual(result["evaluations"], 1600)
+        self.assertEqual(
+            result["operator_counts"]["proportional_true_lns_middle"]["budgets"],
+            [160, 1280, 160],
+        )
+        self.assertEqual([call.kwargs["config"].eval_budget for call in alns.call_args_list], [160, 160])
+        self.assertEqual(lns.call_args.kwargs["eval_budget"], 1280)
+        self.assertEqual(winner._proportional_staged_chain_budgets(4000), (400, 3200, 400))
+
     def test_stability_gate_builds_exactly_thirty_frozen_tasks(self) -> None:
         from baselines.e2_alns.m1_staged_hybrid_stability_gate import build_tasks
 
