@@ -1,0 +1,107 @@
+{
+  "critical_values": {
+    "B_battery_kwh": 80.0,
+    "Q_capacity": 3650.0,
+    "v_speed_ms": 25.0
+  },
+  "default_prices": {
+    "A_frontal": 3.912,
+    "B_battery_kwh": 80.0,
+    "D_displace": 5.0,
+    "N_engine": 33.0,
+    "Q_capacity": 3650.0,
+    "alpha_e": 1.317891660328,
+    "c_d": 0.7,
+    "c_km": 0.35,
+    "c_r": 0.01,
+    "carbon_price": 0.05034,
+    "carbon_price_low": 0.04184,
+    "cross_site_cost": 95.0,
+    "depot_charge_power_kw": 22.0,
+    "depot_electricity_price": 0.1853,
+    "diesel_ef": 2.57082,
+    "diesel_price": 1.4331,
+    "electricity_price": 0.82,
+    "eta_diesel": 0.9,
+    "eta_tf": 0.4,
+    "fairness_theta": 1.0,
+    "g0": 9.81,
+    "initial_ev_battery_kwh": 0.0,
+    "k_engine": 0.2,
+    "kappa_heat": 44.0,
+    "m_curb": 6350.0,
+    "m_unit": 1.0,
+    "occupancy_fee": 0.5,
+    "phi_d": 1.184692,
+    "psi_conv": 737.0,
+    "revenue_per_kg": 0.18936,
+    "rho_a": 1.2041,
+    "station_electricity_price": 0.82,
+    "v_speed_ms": 25.0,
+    "varphi_d": 1.112434,
+    "vehicle_fixed_cost": 80.0,
+    "xi_fuel_air": 1.0
+  },
+  "default_prices_sha256": "7e6db2db0f79f07464729bf3c697a7bc2e7b020b290157715521db52ab3b32e5",
+  "failure_count": 0,
+  "failures": [],
+  "frozen_commit": "40bd28835dff1a4287486e720351e531fc7a38d0",
+  "gold_runtime": {
+    "executable": "/opt/anaconda3/bin/python3.13",
+    "numpy": "2.3.5",
+    "python": "3.13.9"
+  },
+  "protected_path_count": 8,
+  "protected_paths": [
+    {
+      "current_sha256": "09c534bb04cf67a368f5f2b4ce7208800bbf8217fc2596a9eb2a2341fb5644a7",
+      "frozen_sha256": "09c534bb04cf67a368f5f2b4ce7208800bbf8217fc2596a9eb2a2341fb5644a7",
+      "match": true,
+      "path": "solver/src/setp_solver/prices.py"
+    },
+    {
+      "current_sha256": "ab9bfb9f8e95a92d599d07bd21de7780a52884fe72d227b58d4e9fe5e55d8a37",
+      "frozen_sha256": "ab9bfb9f8e95a92d599d07bd21de7780a52884fe72d227b58d4e9fe5e55d8a37",
+      "match": true,
+      "path": "solver/src/setp_solver/cost.py"
+    },
+    {
+      "current_sha256": "1e36735429360d22987353519a4dee3a43b58ed9b32e8693fdfbf201dd8a4f81",
+      "frozen_sha256": "1e36735429360d22987353519a4dee3a43b58ed9b32e8693fdfbf201dd8a4f81",
+      "match": true,
+      "path": "solver/src/setp_solver/check.py"
+    },
+    {
+      "current_sha256": "1fae4f76ac6ff0a2caa36e78b3b68740b1fa65738474d9ecf1f4875983e1545d",
+      "frozen_sha256": "1fae4f76ac6ff0a2caa36e78b3b68740b1fa65738474d9ecf1f4875983e1545d",
+      "match": true,
+      "path": "solver/src/setp_solver/search/evaluation.py"
+    },
+    {
+      "current_sha256": "ae17629ad3d2341f584b5dec31e6d6c72384db7609ac87e76ea51910d9e09378",
+      "frozen_sha256": "ae17629ad3d2341f584b5dec31e6d6c72384db7609ac87e76ea51910d9e09378",
+      "match": true,
+      "path": "solver/src/setp_solver/solution.py"
+    },
+    {
+      "current_sha256": "077eea450c7d9052194bdb1599b26992521a32753fdc9a89b96e3f3876c3f693",
+      "frozen_sha256": "077eea450c7d9052194bdb1599b26992521a32753fdc9a89b96e3f3876c3f693",
+      "match": true,
+      "path": "solver/src/setp_solver/search/bundle.py"
+    },
+    {
+      "current_sha256": "0d0a67b1fc28f597ecfaf343830d4046b6d71728196f1f4f6f938209c934f722",
+      "frozen_sha256": "0d0a67b1fc28f597ecfaf343830d4046b6d71728196f1f4f6f938209c934f722",
+      "match": true,
+      "path": "solver/src/setp_solver/search/feasible_repair.py"
+    },
+    {
+      "current_sha256": "1a5e99e05141c9c2ec934a41494d91a1e670ce7e74fd788f24f021d5653d4061",
+      "frozen_sha256": "1a5e99e05141c9c2ec934a41494d91a1e670ce7e74fd788f24f021d5653d4061",
+      "match": true,
+      "path": "solver/src/setp_solver/search/candidates.py"
+    }
+  ],
+  "schema": "setp-e2-80k-protected-contract.v1",
+  "verdict": "FROZEN_PROTECTED_CONTRACT_OK"
+}

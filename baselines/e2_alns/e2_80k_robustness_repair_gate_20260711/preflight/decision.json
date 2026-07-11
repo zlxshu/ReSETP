@@ -1,0 +1,58 @@
+{
+  "aggregate_aware_cost": 13894.903728480227,
+  "aggregate_cost_gain_pct": 0.0,
+  "aggregate_lns_cost": 13894.903728480227,
+  "algorithm_stability_supported": false,
+  "battery_kwh": 80.0,
+  "carbon_fixed_route_equal_energy_pair_count": 1,
+  "carbon_pair_contract_verdict": "FIXED_ROUTE_EQUAL_ENERGY_CONTRACT_OK",
+  "carbon_pair_count": 1,
+  "default_prices_sha256": "7e6db2db0f79f07464729bf3c697a7bc2e7b020b290157715521db52ab3b32e5",
+  "execution_commit": "40bd28835dff1a4287486e720351e531fc7a38d0",
+  "expected_evidence_rows": 3,
+  "expected_search_tasks": 2,
+  "fifteen_customer_mechanism_status": "NOT_IN_PHASE",
+  "instance_contract_failure_count": 0,
+  "instance_contract_verdict": "LMAIN_V3_INSTANCE_CONTRACT_OK",
+  "instance_manifest_sha256": "bf904ef254aeeb1a76cb1308eae7a5caee14a814a15e1087254b024992c5d39c",
+  "mechanism_eligible_scale_count": 0,
+  "mechanism_signal_scale_count_excluding_15c": 0,
+  "mechanism_visibility_supported": false,
+  "next_action": "commit the runner and verifier, then start the preregistered 24-task formal gate",
+  "nonlosing_scale_count": 0,
+  "observed_evidence_rows": 3,
+  "observed_search_tasks": 2,
+  "paired_mean_bootstrap_95ci_pct": [
+    0.0,
+    0.0
+  ],
+  "paired_mean_gain_pct": 0.0,
+  "paired_median_gain_pct": 0.0,
+  "paired_wins_ties_losses": [
+    0,
+    1,
+    0
+  ],
+  "phase": "preflight",
+  "preregistered_algorithm_gate": {
+    "at_least_three_of_four_scale_means_nonnegative": false,
+    "no_scale_mean_below_minus_2pct": false,
+    "paired_mean_nonnegative": true,
+    "paired_median_nonnegative": true,
+    "wins_not_less_than_losses": true
+  },
+  "preregistered_mechanism_gate": {
+    "definition": "majority of seeds have >=10% EV share in at least two of customer/demand/distance, >=2 charges, and positive charging energy",
+    "observed_signal_scales_excluding_15c": 0,
+    "required_signal_scales_excluding_15c": 2
+  },
+  "protected_contract_failure_count": 0,
+  "protected_contract_verdict": "FROZEN_PROTECTED_CONTRACT_OK",
+  "schema": "setp-e2-80k-robustness-decision.v1",
+  "technical_contract_ok": true,
+  "verdict": "E2_80K_PREFLIGHT_VERIFIED",
+  "verification_commit": "971b34ed32b6854cd0ecae2ba92a38fc50f892de",
+  "verification_failure_count": 0,
+  "verified_evidence_rows": 3,
+  "worst_scale_mean_gain_pct": NaN
+}

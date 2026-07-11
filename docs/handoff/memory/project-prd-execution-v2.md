@@ -142,4 +142,4 @@ E3新runner绑定staged hybrid、280kWh、200c、seeds1--5、每层4000评价；
 
 80 kWh项目3已解锁并完成接线短门。新runner从冻结tag `e2-submission-20260711`/commit `0124623e`的独立worktree运行算法，读取激活的L-main v3 manifest，不复用纯CV起点旧脚本或旧ALNS通用入口。50c seed1的pair/LNS各200评价接线门2/2搜索、3/3展开证据行全部满预算零违规，`E2_80K_PREFLIGHT_READY`。正式矩阵固定24搜索任务/36证据行，任务账本与展开表分离，默认2 workers和30分钟低频watchdog；等runner/验收器提交后启动正式门。
 
-80 kWh首轮正式门在20/24时按规则停止：200c staged-hybrid-carbon-pair的seeds1--3都被checker抓到后续客户时间窗违规。根因是`_fixed_charge_latest()`只根据直接successor计算充电最晚时刻，碳择时可以在下一客户不迟到的情况下拖迟更后客户。修复为从路线末端反向传播全部due time。原三个失败保存解在不重新搜索时回放均为零违规；42项定向回归通过。这是正确性修复，不改时间窗、成本、检查器或预算。重跑时不强拉并发，保持2 workers，仅将大任务优先调度以避免尾部单核等待。
+80 kWh首轮正式门在20/24时按规则停止：200c staged-hybrid-carbon-pair的seeds1--3都被checker抓到后续客户时间窗违规。根因是`_fixed_charge_latest()`只根据直接successor计算充电最晚时刻，碳择时可以在下一客户不迟到的情况下拖迟更后客户。修复为从路线末端反向传播全部due time。原三个失败保存解在不重新搜索时回放均为零违规；42项定向回归通过。修复冻结于`40bd2883`，200c seed1的pair/LNS各200评价短门2/2满预算、零违规并独立验收通过。这是正确性修复，不改时间窗、成本、检查器或预算。重跑时不强拉并发，保持2 workers，仅将大任务优先调度以避免尾部单核等待。

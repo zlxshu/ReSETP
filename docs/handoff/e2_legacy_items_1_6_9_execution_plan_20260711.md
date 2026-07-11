@@ -98,4 +98,4 @@
 
 整路块审计已完成并给出`ROUTE_BLOCK_HEADROOM_NOT_SUPPORTED`：9组45个父解全部零违规，6/6开发负例能拼出可行混合整路解，但0/6比当组最好父解便宜至少0.25%，0/6多救回负例。因此HGS/SREX最小候选不解锁，项目1/2已正式关闭，以冻结E2的25胜5平15负和总成本优势6.845690%作为最终边界。下一步按本计划进入项目3。
 
-项目3已解锁。专用runner为`baselines/e2_alns/e2_80k_robustness_gate.py`，独立验收器为`baselines/e2_alns/e2_80k_robustness_verify.py`，低频watchdog为`baselines/e2_alns/e2_80k_watchdog.py`。50c×seed1×两算法的200评价短门已完成：2/2真实搜索、3/3展开证据行全部满预算、零违规，verdict=`E2_80K_PREFLIGHT_VERIFIED`。首轮正式门在20/24时止损：200c hybrid三个seed全部时间窗违规。定位为充电择时的最晚时刻只保护直接后继客户，未保护整条后续路线。修复采用所有后续时间窗的反向传播；三个原失败保存解回放已零违规。下一步是新冻结提交下的200c短门，通过后重建正式证据；不复用旧失败行。运行效率只用“200c优先排队+2 workers”改善尾部利用率，不增加并发度。
+项目3已解锁。专用runner为`baselines/e2_alns/e2_80k_robustness_gate.py`，独立验收器为`baselines/e2_alns/e2_80k_robustness_verify.py`，低频watchdog为`baselines/e2_alns/e2_80k_watchdog.py`。50c×seed1×两算法的200评价短门已完成：2/2真实搜索、3/3展开证据行全部满预算、零违规，verdict=`E2_80K_PREFLIGHT_VERIFIED`。首轮正式门在20/24时止损：200c hybrid三个seed全部时间窗违规。定位为充电择时的最晚时刻只保护直接后继客户，未保护整条后续路线。修复采用所有后续时间窗的反向传播；三个原失败保存解回放已零违规。修复冻结commit=`40bd2883`，200c seed1的pair/LNS各200评价短门又以`E2_80K_PREFLIGHT_VERIFIED`通过。下一步在新目录重建24任务正式证据，不复用旧失败行。运行效率只用“200c优先排队+2 workers”改善尾部利用率，不增加并发度。
