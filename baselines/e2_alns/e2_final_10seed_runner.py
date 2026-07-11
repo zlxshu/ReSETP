@@ -99,6 +99,7 @@ def annotate(row: dict[str, Any], *, provenance: str, source_run_id: str = "") -
     out["phase"] = "E2_FINAL_10SEED"
     out["row_provenance"] = provenance
     out["execution_commit"] = FREEZE_COMMIT
+    out["harness_commit"] = execution_head(REPO_ROOT)
     return out
 
 
@@ -496,6 +497,7 @@ def closeout(output: Path) -> dict[str, Any]:
         "old_alns_included": False,
         "charging_ablation_in_e2_table": False,
         "execution_commit": FREEZE_COMMIT,
+        "harness_commit": execution_head(REPO_ROOT),
     }
     closure.write_json(phase_dir / "decision.json", decision)
     report = [
@@ -540,6 +542,7 @@ def main() -> int:
             "contract_id": contract["contract_id"],
             "contract_sha256": contract_hash,
             "execution_commit": FREEZE_COMMIT,
+            "harness_commit": execution_head(REPO_ROOT),
             "workers_default": 2,
         }
         closure.write_json(output / "decision.json", decision)
@@ -596,7 +599,7 @@ def main() -> int:
         decision["current_checker_recalculation_ok_rows"] = verified_count
         if verified_count != expected:
             decision["verdict"] = "HALT_E2_10SEED_CURRENT_CHECKER_RECALCULATION"
-    decision.update({"workers": args.workers, "contract_id": contract["contract_id"], "contract_sha256": contract_hash})
+    decision.update({"workers": args.workers, "contract_id": contract["contract_id"], "contract_sha256": contract_hash, "harness_commit": execution_head(REPO_ROOT)})
     closure.write_json(phase_dir / "decision.json", decision)
     (phase_dir / "report.md").write_text(
         f"# E2十次运行{args.phase}\n\n判决：`{decision['verdict']}`。大白话：这一关只检查入口、预算、可行性和真实搜索活性，不根据谁赢谁输筛结果。\n",
