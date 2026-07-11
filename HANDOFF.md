@@ -34,7 +34,7 @@ ReSETP = 投《系统工程理论与实践》的绿色车辆路径论文。多�
 
 **统一备案与文档口径（2026-07-11）：** “种群搜索+真正SWAP*+路线消除+SREX+充电修复”不删除，统一挂为后续明确遇到路线生成瓶颈时的长期备案，当前不施工。遗留编号1--6、9的唯一调度总表为`docs/handoff/e2_legacy_items_1_6_9_execution_plan_20260711.md`；其他文档只作证据附件和状态摘要，不再分散维护执行顺序。
 
-**80 kWh项目3接线门通过（2026-07-11）：** 不复用旧纯CV起点runner，也不走仍指向旧ALNS的通用正式入口。新专用入口从tag `e2-submission-20260711`/commit `0124623e`的独立worktree调用冻结算法，读取已审计L-main v3，使用共同起点和LNS `common_flip_preprocess=True`。50c×seed1×{pair,LNS}的200评价短门2/2搜索、3/3证据行全部满预算、零违规，verdict=`E2_80K_PREFLIGHT_READY`。正式门为15/50/100/200c×seeds1--3×{pair,LNS}=24搜索任务，展开36证据行，默认2 workers和30分钟低频watchdog；代码提交前不启动正式长跑。
+**80 kWh项目3接线门通过并已启动正式门（2026-07-11）：** 不复用旧纯CV起点runner，也不走仍指向旧ALNS的通用正式入口。新专用入口从tag `e2-submission-20260711`/commit `0124623e`的独立worktree调用冻结算法，读取已审计L-main v3，使用共同起点和LNS `common_flip_preprocess=True`。50c×seed1×{pair,LNS}的200评价短门2/2搜索、3/3证据行全部满预算、零违规，并经独立复算判`E2_80K_PREFLIGHT_VERIFIED`。runner/验收器已提交并推送，正式15/50/100/200c×seeds1--3×{pair,LNS}=24搜索任务已以2 workers启动，将展开36证据行；本地watchdog每30分钟检查一次，正常时保持静默。
 
 **旧30次稳定性门（历史前置证据）：** 100c/150c/200c × 5 seeds × staged ALNS-LNS hybrid/LNS 的30次、4000次评价稳定性门为30/30 OK、零违规、全部跑满预算；三个规模hybrid相对LNS平均改善6.45%/0.69%/14.08%，合计11/15胜，verdict=`STAGED_HYBRID_STABILITY_SUPPORTED`。该门已被上述九档全量证据覆盖。路线搜索身份从此冻结，不再 rescue 调参。
 
