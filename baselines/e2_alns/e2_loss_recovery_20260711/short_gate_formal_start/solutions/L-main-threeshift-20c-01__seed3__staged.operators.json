@@ -1,0 +1,672 @@
+{
+  "destroy": {
+    "random_customer_removal": [
+      0,
+      0,
+      1,
+      13
+    ],
+    "route_segment_removal": [
+      0,
+      1,
+      164,
+      164
+    ],
+    "shaw_related_removal": [
+      0,
+      0,
+      0,
+      6
+    ],
+    "vehicle_type_swap": [
+      1,
+      0,
+      0,
+      16
+    ],
+    "whole_route_removal": [
+      0,
+      0,
+      1,
+      12
+    ],
+    "worst_customer_removal": [
+      0,
+      0,
+      0,
+      6
+    ]
+  },
+  "repair": {
+    "greedy_insert_repair": [
+      1,
+      1,
+      166,
+      199
+    ],
+    "regret2_insert_repair": [
+      0,
+      0,
+      0,
+      9
+    ],
+    "regret3_insert_repair": [
+      0,
+      0,
+      0,
+      9
+    ]
+  },
+  "scan": {
+    "infeasible": 15,
+    "rebuild_accepts": 0,
+    "rebuild_attempts": 14,
+    "restart_accepts": 0,
+    "restart_attempts": 1
+  },
+  "score_counts": {
+    "candidate": 400,
+    "repair_delta": 8229
+  },
+  "staged_chain": {
+    "best_phase": 3,
+    "budgets": [
+      400,
+      800,
+      400
+    ],
+    "middle_restarts": 1,
+    "phase_best_objs": [
+      1250.0967101443787,
+      1223.0788230552057,
+      1202.478509309506
+    ],
+    "phase_evaluations": [
+      400,
+      800,
+      400
+    ],
+    "phase_operator_counts": [
+      {
+        "destroy": {
+          "random_customer_removal": [
+            27,
+            7,
+            49,
+            194
+          ],
+          "route_segment_removal": [
+            1,
+            0,
+            21,
+            37
+          ],
+          "shaw_related_removal": [
+            2,
+            0,
+            2,
+            16
+          ],
+          "vehicle_type_swap": [
+            5,
+            0,
+            0,
+            23
+          ],
+          "whole_route_removal": [
+            0,
+            0,
+            0,
+            3
+          ],
+          "worst_customer_removal": [
+            0,
+            0,
+            0,
+            3
+          ]
+        },
+        "repair": {
+          "greedy_insert_repair": [
+            7,
+            0,
+            23,
+            70
+          ],
+          "regret2_insert_repair": [
+            28,
+            7,
+            49,
+            201
+          ],
+          "regret3_insert_repair": [
+            0,
+            0,
+            0,
+            5
+          ]
+        },
+        "scan": {
+          "infeasible": 10,
+          "rebuild_accepts": 0,
+          "rebuild_attempts": 9,
+          "restart_accepts": 0,
+          "restart_attempts": 1
+        },
+        "score_counts": {
+          "candidate": 400,
+          "repair_delta": 40213
+        },
+        "structural": {
+          "accepted": 0,
+          "attempts": 0,
+          "best_improved": 0,
+          "rejected": 0
+        },
+        "timing": {
+          "acceptance": {
+            "count": 390.0,
+            "seconds": 0.0014464979467447847
+          },
+          "destroy:random_customer_removal": {
+            "count": 277.0,
+            "seconds": 0.024731289900955744
+          },
+          "destroy:route_segment_removal": {
+            "count": 59.0,
+            "seconds": 0.004510460974415764
+          },
+          "destroy:shaw_related_removal": {
+            "count": 20.0,
+            "seconds": 0.01570216398977209
+          },
+          "destroy:vehicle_type_swap": {
+            "count": 28.0,
+            "seconds": 0.02385899801447522
+          },
+          "destroy:whole_route_removal": {
+            "count": 3.0,
+            "seconds": 0.00017845799447968602
+          },
+          "destroy:worst_customer_removal": {
+            "count": 3.0,
+            "seconds": 0.0002523750008549541
+          },
+          "final_check": {
+            "count": 1.0,
+            "seconds": 0.0005402910028351471
+          },
+          "full_candidate_score": {
+            "count": 390.0,
+            "seconds": 0.22226657689316198
+          },
+          "history_model_cost": {
+            "count": 36.0,
+            "seconds": 0.00482174898206722
+          },
+          "initial_reference_score": {
+            "count": 1.0,
+            "seconds": 0.00033433400676585734
+          },
+          "local_search": {
+            "count": 237.0,
+            "seconds": 0.00029932793404441327
+          },
+          "repair:greedy_insert_repair": {
+            "count": 100.0,
+            "seconds": 0.2252228709839983
+          },
+          "repair:regret2_insert_repair": {
+            "count": 285.0,
+            "seconds": 1.666539547877619
+          },
+          "repair:regret3_insert_repair": {
+            "count": 5.0,
+            "seconds": 0.03021495799475815
+          },
+          "repair_full_check": {
+            "count": 310.0,
+            "seconds": 0.13051491587248165
+          },
+          "route_model_cost": {
+            "count": 6455.0,
+            "seconds": 0.162469851973583
+          },
+          "scan_build": {
+            "count": 10.0,
+            "seconds": 0.0044419979967642576
+          },
+          "scan_score": {
+            "count": 10.0,
+            "seconds": 0.0034685830178204924
+          }
+        }
+      },
+      {
+        "destroy": {
+          "random_customer_removal": [
+            0,
+            0,
+            3,
+            11
+          ],
+          "route_segment_removal": [
+            4,
+            1,
+            116,
+            140
+          ],
+          "shaw_related_removal": [
+            1,
+            1,
+            2,
+            13
+          ],
+          "vehicle_type_swap": [
+            0,
+            1,
+            0,
+            4
+          ],
+          "whole_route_removal": [
+            0,
+            0,
+            0,
+            3
+          ],
+          "worst_customer_removal": [
+            0,
+            3,
+            353,
+            125
+          ]
+        },
+        "repair": {
+          "greedy_insert_repair": [
+            4,
+            4,
+            193,
+            216
+          ],
+          "regret2_insert_repair": [
+            0,
+            0,
+            5,
+            10
+          ],
+          "regret3_insert_repair": [
+            1,
+            2,
+            276,
+            70
+          ]
+        },
+        "scan": {
+          "infeasible": 19,
+          "rebuild_accepts": 0,
+          "rebuild_attempts": 18,
+          "restart_accepts": 0,
+          "restart_attempts": 1
+        },
+        "score_counts": {
+          "candidate": 800,
+          "repair_delta": 49824
+        },
+        "structural": {
+          "accepted": 0,
+          "attempts": 0,
+          "best_improved": 0,
+          "rejected": 0
+        },
+        "timing": {
+          "acceptance": {
+            "count": 781.0,
+            "seconds": 0.0029703728650929406
+          },
+          "destroy:route_segment_removal": {
+            "count": 261.0,
+            "seconds": 0.02076416797353886
+          },
+          "destroy:vehicle_type_swap": {
+            "count": 5.0,
+            "seconds": 0.0043541249906411394
+          },
+          "destroy:whole_route_removal": {
+            "count": 3.0,
+            "seconds": 0.00019524899835232645
+          },
+          "final_check": {
+            "count": 1.0,
+            "seconds": 0.0005633750115521252
+          },
+          "full_candidate_score": {
+            "count": 269.0,
+            "seconds": 0.19794595695566386
+          },
+          "history_model_cost": {
+            "count": 6.0,
+            "seconds": 0.0014330410049296916
+          },
+          "initial_reference_score": {
+            "count": 1.0,
+            "seconds": 0.0007058330083964393
+          },
+          "local_search": {
+            "count": 609.0,
+            "seconds": 0.0007404589268844575
+          },
+          "repair:greedy_insert_repair": {
+            "count": 260.0,
+            "seconds": 0.48570141309755854
+          },
+          "repair:regret2_insert_repair": {
+            "count": 2.0,
+            "seconds": 0.004965000000083819
+          },
+          "repair:regret3_insert_repair": {
+            "count": 7.0,
+            "seconds": 0.016895627006306313
+          },
+          "repair_full_check": {
+            "count": 765.0,
+            "seconds": 0.42474241404852364
+          },
+          "route_model_cost": {
+            "count": 1247.0,
+            "seconds": 0.035545308754080907
+          },
+          "scan_build": {
+            "count": 19.0,
+            "seconds": 0.008424834042671137
+          },
+          "scan_score": {
+            "count": 19.0,
+            "seconds": 0.006528415993670933
+          },
+          "score:strong_bridge_backend": {
+            "count": 512.0,
+            "seconds": 0.3670820821716916
+          },
+          "strong_bridge_backend:random_customer_removal+greedy_insert_repair": {
+            "count": 7.0,
+            "seconds": 0.028002336010104045
+          },
+          "strong_bridge_backend:random_customer_removal+regret2_insert_repair": {
+            "count": 5.0,
+            "seconds": 0.02165841699752491
+          },
+          "strong_bridge_backend:random_customer_removal+regret3_insert_repair": {
+            "count": 2.0,
+            "seconds": 0.009917875984683633
+          },
+          "strong_bridge_backend:shaw_related_removal+greedy_insert_repair": {
+            "count": 1.0,
+            "seconds": 0.0034418750001350418
+          },
+          "strong_bridge_backend:shaw_related_removal+regret2_insert_repair": {
+            "count": 1.0,
+            "seconds": 0.01226104200759437
+          },
+          "strong_bridge_backend:shaw_related_removal+regret3_insert_repair": {
+            "count": 15.0,
+            "seconds": 0.12646400000085123
+          },
+          "strong_bridge_backend:worst_customer_removal+greedy_insert_repair": {
+            "count": 149.0,
+            "seconds": 0.4701084539992735
+          },
+          "strong_bridge_backend:worst_customer_removal+regret2_insert_repair": {
+            "count": 7.0,
+            "seconds": 0.018411667027976364
+          },
+          "strong_bridge_backend:worst_customer_removal+regret3_insert_repair": {
+            "count": 325.0,
+            "seconds": 0.9165700408630073
+          }
+        }
+      },
+      {
+        "destroy": {
+          "random_customer_removal": [
+            0,
+            0,
+            1,
+            13
+          ],
+          "route_segment_removal": [
+            0,
+            1,
+            164,
+            164
+          ],
+          "shaw_related_removal": [
+            0,
+            0,
+            0,
+            6
+          ],
+          "vehicle_type_swap": [
+            1,
+            0,
+            0,
+            16
+          ],
+          "whole_route_removal": [
+            0,
+            0,
+            1,
+            12
+          ],
+          "worst_customer_removal": [
+            0,
+            0,
+            0,
+            6
+          ]
+        },
+        "repair": {
+          "greedy_insert_repair": [
+            1,
+            1,
+            166,
+            199
+          ],
+          "regret2_insert_repair": [
+            0,
+            0,
+            0,
+            9
+          ],
+          "regret3_insert_repair": [
+            0,
+            0,
+            0,
+            9
+          ]
+        },
+        "scan": {
+          "infeasible": 15,
+          "rebuild_accepts": 0,
+          "rebuild_attempts": 14,
+          "restart_accepts": 0,
+          "restart_attempts": 1
+        },
+        "score_counts": {
+          "candidate": 400,
+          "repair_delta": 8229
+        },
+        "structural": {
+          "accepted": 0,
+          "attempts": 0,
+          "best_improved": 0,
+          "rejected": 0
+        },
+        "timing": {
+          "acceptance": {
+            "count": 385.0,
+            "seconds": 0.000961132871452719
+          },
+          "destroy:random_customer_removal": {
+            "count": 14.0,
+            "seconds": 0.0011817489721579477
+          },
+          "destroy:route_segment_removal": {
+            "count": 329.0,
+            "seconds": 0.024879714066628367
+          },
+          "destroy:shaw_related_removal": {
+            "count": 6.0,
+            "seconds": 0.004762208016472869
+          },
+          "destroy:vehicle_type_swap": {
+            "count": 17.0,
+            "seconds": 0.014506417035590857
+          },
+          "destroy:whole_route_removal": {
+            "count": 13.0,
+            "seconds": 0.0008441240206593648
+          },
+          "destroy:worst_customer_removal": {
+            "count": 6.0,
+            "seconds": 0.0005196659913053736
+          },
+          "final_check": {
+            "count": 1.0,
+            "seconds": 0.0005951670027570799
+          },
+          "full_candidate_score": {
+            "count": 385.0,
+            "seconds": 0.26738234200456645
+          },
+          "history_model_cost": {
+            "count": 2.0,
+            "seconds": 0.000356542004738003
+          },
+          "initial_reference_score": {
+            "count": 1.0,
+            "seconds": 0.0007381670002359897
+          },
+          "local_search": {
+            "count": 279.0,
+            "seconds": 0.0003055109264096245
+          },
+          "repair:greedy_insert_repair": {
+            "count": 367.0,
+            "seconds": 0.6937643210112583
+          },
+          "repair:regret2_insert_repair": {
+            "count": 9.0,
+            "seconds": 0.0873082910256926
+          },
+          "repair:regret3_insert_repair": {
+            "count": 9.0,
+            "seconds": 0.03906920900044497
+          },
+          "repair_full_check": {
+            "count": 385.0,
+            "seconds": 0.20153099784511141
+          },
+          "route_model_cost": {
+            "count": 1249.0,
+            "seconds": 0.03525756997987628
+          },
+          "scan_build": {
+            "count": 15.0,
+            "seconds": 0.006587332987692207
+          },
+          "scan_score": {
+            "count": 15.0,
+            "seconds": 0.0051028749730903655
+          }
+        }
+      }
+    ],
+    "strong_phase_indexes": [
+      1
+    ]
+  },
+  "structural": {
+    "accepted": 0,
+    "attempts": 0,
+    "best_improved": 0,
+    "rejected": 0
+  },
+  "timing": {
+    "acceptance": {
+      "count": 385.0,
+      "seconds": 0.000961132871452719
+    },
+    "destroy:random_customer_removal": {
+      "count": 14.0,
+      "seconds": 0.0011817489721579477
+    },
+    "destroy:route_segment_removal": {
+      "count": 329.0,
+      "seconds": 0.024879714066628367
+    },
+    "destroy:shaw_related_removal": {
+      "count": 6.0,
+      "seconds": 0.004762208016472869
+    },
+    "destroy:vehicle_type_swap": {
+      "count": 17.0,
+      "seconds": 0.014506417035590857
+    },
+    "destroy:whole_route_removal": {
+      "count": 13.0,
+      "seconds": 0.0008441240206593648
+    },
+    "destroy:worst_customer_removal": {
+      "count": 6.0,
+      "seconds": 0.0005196659913053736
+    },
+    "final_check": {
+      "count": 1.0,
+      "seconds": 0.0005951670027570799
+    },
+    "full_candidate_score": {
+      "count": 385.0,
+      "seconds": 0.26738234200456645
+    },
+    "history_model_cost": {
+      "count": 2.0,
+      "seconds": 0.000356542004738003
+    },
+    "initial_reference_score": {
+      "count": 1.0,
+      "seconds": 0.0007381670002359897
+    },
+    "local_search": {
+      "count": 279.0,
+      "seconds": 0.0003055109264096245
+    },
+    "repair:greedy_insert_repair": {
+      "count": 367.0,
+      "seconds": 0.6937643210112583
+    },
+    "repair:regret2_insert_repair": {
+      "count": 9.0,
+      "seconds": 0.0873082910256926
+    },
+    "repair:regret3_insert_repair": {
+      "count": 9.0,
+      "seconds": 0.03906920900044497
+    },
+    "repair_full_check": {
+      "count": 385.0,
+      "seconds": 0.20153099784511141
+    },
+    "route_model_cost": {
+      "count": 1249.0,
+      "seconds": 0.03525756997987628
+    },
+    "scan_build": {
+      "count": 15.0,
+      "seconds": 0.006587332987692207
+    },
+    "scan_score": {
+      "count": 15.0,
+      "seconds": 0.0051028749730903655
+    }
+  }
+}

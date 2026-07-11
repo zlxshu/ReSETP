@@ -15,6 +15,8 @@ metadata:
 
 2026-07-11 用户在保留上述冻结证据的前提下重新打开旧遗留编号1--6、9，要求逐项做一次有界尝试。当前顺序改为：15负恢复/扩大领先→80 kWh→完整碳感知搜索→动态需求低碳→电池容量与车型结构→最后16000评价。只允许阶段串行、批内CPU并行。15负审计为平均落后2.270%、3组超过5%、11组路线更多、9组最佳停在中间强搜索阶段；首候选把3200强搜索拆成两个独立1600盆地并从当前最好解重启，总预算不变。首轮9组×旧/重启/LNS×1600虽27/27满预算零违规，但误用`introduce_ev=False`起点且LNS关闭正式共同预处理，与冻结E2合同不一致，判`RESTART_SHORT_GATE_INVALID_START_CONTRACT`并保留原始证据。runner改为`make_shared_initial_solution`+`common_flip_preprocess=True`后只纠正重跑相同27次；通过后仍必须用未见种子验证。合同见`docs/handoff/e2_legacy_items_1_6_9_execution_plan_20260711.md`，证据目录`baselines/e2_alns/e2_loss_recovery_20260711/`。
 
+2026-07-11 正式起点纠正门完成并判退重启候选：27/27满1600、零违规、出处/hash齐全；重启相对旧staged全部9组平均+0.410%、6个开发负例+0.236%、guard最差0%，但同预算负例转不输LNS为0，150c seed3反而-9.737%，verdict=`RESTART_SHORT_GATE_REJECTED`。阶段分解显示150c连续800强搜索可改善，而拆成两个400后两段均无改善，故停止重启参数路线。下一候选不扩大矩阵，只在同总预算内把中段从“借LNS修复后端”改成“真实LNS策略阶段”，补齐staged ALNS-LNS hybrid的实现身份。
+
 同日新增强制启动入口 `docs/handoff/READ_ME_FIRST_FOR_AGENTS.md`，并已挂入 `AGENTS.md`、`CLAUDE.md`、`docs/handoff/codex_prompts/MASTER_codex_takeover_plan.md`、`docs/handoff/codex_prompts/README.md`。Codex/Claude 每轮非平凡任务必须先读该入口和其清单，读完前不得动手。
 
 核心裁决：E2 是关键路径。`5174.345121253789` 同值平台 C1 审计已完成，verdict=`ARTIFICIAL_HOMOGENIZATION`，所以当前 E2-G0 未过门；C1-R2 探针已完成但只到 `PARTIAL_OR_WEAK_SUPPORT`（H2 确认、H1 未确认），所以后续不是扩跑，而是做 C1-R1，把共享车型翻转通道从 baseline 算法成绩中剥离/单独记账，并加 operator provenance gate，同时重新设计解码/表达能力审计后再重审 G0。ALNS 独立化、场景口径合规核对（06-26 拍板的落实，非重新裁决）、基线补全、多实例复核、正式 T3 仍在后面，但 G4/G5 必须继续冻结。
