@@ -49,7 +49,7 @@ def _write_csv(path: Path, rows: list[dict[str, Any]]) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     columns = sorted({key for row in rows for key in row})
     with path.open("w", encoding="utf-8", newline="") as handle:
-        writer = csv.DictWriter(handle, fieldnames=columns)
+        writer = csv.DictWriter(handle, fieldnames=columns, lineterminator="\n")
         writer.writeheader()
         writer.writerows(rows)
 
@@ -264,7 +264,7 @@ def _report(decision: dict[str, Any], paired: list[dict[str, Any]]) -> str:
 def _artifact_hashes(output_dir: Path) -> dict[str, str]:
     result: dict[str, str] = {}
     for path in sorted(output_dir.rglob("*")):
-        if not path.is_file() or path.name == "artifact_hashes.json":
+        if not path.is_file() or path.name == "artifact_hashes.json" or path.name.startswith("._"):
             continue
         result[str(path.relative_to(output_dir))] = hashlib.sha256(path.read_bytes()).hexdigest()
     return result

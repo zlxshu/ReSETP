@@ -1,0 +1,29 @@
+{
+  "arms": {
+    "carbon_aware": 1.0,
+    "earliest_feasible": 0.0
+  },
+  "battery_kwh": 280.0,
+  "carbon_price": 0.05034,
+  "eval_budget": 400,
+  "execution_commit": "6d7167edea4bf950cf34aee80501a22eac058e69",
+  "frozen_surfaces_unchanged": [
+    "cost.py",
+    "check.py",
+    "search/evaluation.py",
+    "prices.py",
+    "L-main v3"
+  ],
+  "instances": [
+    "L-main-threeshift-25c-01",
+    "L-main-threeshift-50c-01"
+  ],
+  "schema_version": "resetp.e2.refined_carbon_short_gate.v1",
+  "seeds": [
+    1,
+    2,
+    3
+  ],
+  "stage_budget_mode": "proportional_10_80_10",
+  "workers": 2
+}
