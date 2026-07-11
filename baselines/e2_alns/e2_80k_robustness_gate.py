@@ -58,6 +58,8 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--execution-root", default=str(DEFAULT_EXECUTION_ROOT))
     parser.add_argument("--workers", type=int, default=2)
     parser.add_argument("--eval-budget", type=int, default=4000)
+    parser.add_argument("--preflight-instance", default="L-main-threeshift-50c-01")
+    parser.add_argument("--preflight-seed", type=int, default=1)
     parser.add_argument("--force", action="store_true")
     parser.add_argument("--dry-run", action="store_true")
     return parser.parse_args()
@@ -81,8 +83,8 @@ def main() -> int:
         print(json.dumps(decision, ensure_ascii=False, indent=2, sort_keys=True))
         return 2
 
-    instances = ("L-main-threeshift-50c-01",) if args.phase == "preflight" else FORMAL_INSTANCES
-    seeds = [1] if args.phase == "preflight" else [1, 2, 3]
+    instances = (str(args.preflight_instance),) if args.phase == "preflight" else FORMAL_INSTANCES
+    seeds = [int(args.preflight_seed)] if args.phase == "preflight" else [1, 2, 3]
     eval_budget = min(200, int(args.eval_budget)) if args.phase == "preflight" else int(args.eval_budget)
     expected_tasks = len(instances) * len(seeds) * len(TASK_ALGORITHMS)
     expected_evidence_rows = len(instances) * len(seeds) * len(EVIDENCE_ALGORITHMS)
