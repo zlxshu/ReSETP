@@ -42,6 +42,11 @@ def _git_blob(repo_root: Path, commit: str, relative_path: str) -> bytes:
     ).stdout
 
 
+def _is_short_gate_decision(verdict: object) -> bool:
+    text = str(verdict or "")
+    return text.endswith("_SHORT_GATE_PROMOTED") or text.endswith("_SHORT_GATE_REJECTED")
+
+
 def verify(output_dir: Path, execution_commit: str) -> dict[str, Any]:
     decision_path = output_dir / "decision.json"
     raw_path = output_dir / "raw_runs.csv"
@@ -82,7 +87,7 @@ def verify(output_dir: Path, execution_commit: str) -> dict[str, Any]:
         and not missing_solutions
         and not missing_operator_counts
         and provenance_ok
-        and str(decision.get("verdict", "")).startswith("RESTART_SHORT_GATE_")
+        and _is_short_gate_decision(decision.get("verdict"))
     )
     launch_head = metadata.get("git_commit")
     metadata.update(

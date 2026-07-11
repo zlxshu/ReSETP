@@ -17,6 +17,8 @@ metadata:
 
 2026-07-11 正式起点纠正门完成并判退重启候选：27/27满1600、零违规、出处/hash齐全；重启相对旧staged全部9组平均+0.410%、6个开发负例+0.236%、guard最差0%，但同预算负例转不输LNS为0，150c seed3反而-9.737%，verdict=`RESTART_SHORT_GATE_REJECTED`。阶段分解显示150c连续800强搜索可改善，而拆成两个400后两段均无改善，故停止重启参数路线。下一候选不扩大矩阵，只在同总预算内把中段从“借LNS修复后端”改成“真实LNS策略阶段”，补齐staged ALNS-LNS hybrid的实现身份。
 
+2026-07-11 true-LNS-middle短门完成：27/27满1600、零违规，验证器确认行数、预算、解、hash和执行提交`5be12db7`。相对旧staged全部9组平均改善1.536%、6个开发负例平均改善2.506%，100c seed2由负转正，50c seed5和150c seed3差距明显缩小；但只转回1个负例，未达预注册2个，guard最差-1.209%，verdict=`TRUE_LNS_MIDDLE_SHORT_GATE_REJECTED`。机制上，1600门使用固定`400+800+400`，LNS核心只占50%，而正式4000身份为`400+3200+400`、核心占80%。下一次唯一有界候选保持总预算和原晋级线不变，只把短门缩放为10%/80%/10%；仍不过则关闭true-LNS路线。
+
 同日新增强制启动入口 `docs/handoff/READ_ME_FIRST_FOR_AGENTS.md`，并已挂入 `AGENTS.md`、`CLAUDE.md`、`docs/handoff/codex_prompts/MASTER_codex_takeover_plan.md`、`docs/handoff/codex_prompts/README.md`。Codex/Claude 每轮非平凡任务必须先读该入口和其清单，读完前不得动手。
 
 核心裁决：E2 是关键路径。`5174.345121253789` 同值平台 C1 审计已完成，verdict=`ARTIFICIAL_HOMOGENIZATION`，所以当前 E2-G0 未过门；C1-R2 探针已完成但只到 `PARTIAL_OR_WEAK_SUPPORT`（H2 确认、H1 未确认），所以后续不是扩跑，而是做 C1-R1，把共享车型翻转通道从 baseline 算法成绩中剥离/单独记账，并加 operator provenance gate，同时重新设计解码/表达能力审计后再重审 G0。ALNS 独立化、场景口径合规核对（06-26 拍板的落实，非重新裁决）、基线补全、多实例复核、正式 T3 仍在后面，但 G4/G5 必须继续冻结。

@@ -22,3 +22,11 @@ def test_loss_recovery_gate_keeps_a_bounded_nine_pair_matrix() -> None:
     assert len(tasks) == 27
     assert len(set(tasks)) == 27
     assert set(gate.CANDIDATE_ALGORITHMS) == {"restarted", "true_lns_middle"}
+
+
+def test_loss_recovery_verifier_accepts_any_registered_short_gate_candidate() -> None:
+    from baselines.e2_alns.e2_loss_recovery_verify import _is_short_gate_decision
+
+    assert _is_short_gate_decision("RESTART_SHORT_GATE_REJECTED")
+    assert _is_short_gate_decision("TRUE_LNS_MIDDLE_SHORT_GATE_PROMOTED")
+    assert not _is_short_gate_decision("HALT_INCOMPLETE")
