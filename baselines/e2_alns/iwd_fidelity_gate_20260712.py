@@ -256,11 +256,13 @@ def write_csv(path: Path, rows: list[dict[str, Any]]) -> None:
 
 
 def hash_artifacts(root: Path) -> dict[str, Any]:
+    root = root.resolve()
+    repo_root = REPO_ROOT.resolve()
     files = []
     for path in sorted(root.rglob("*")):
         if not path.is_file() or path.name in EXCLUDED_HASH_NAMES or path.name.startswith("._") or ".tasks" in path.parts:
             continue
-        files.append({"path": str(path.relative_to(REPO_ROOT)), "sha256": hashlib.sha256(path.read_bytes()).hexdigest()})
+        files.append({"path": str(path.relative_to(repo_root)), "sha256": hashlib.sha256(path.read_bytes()).hexdigest()})
     return {"schema": "resetp.iwd-fidelity-artifacts.v1", "files": files}
 
 
@@ -315,6 +317,7 @@ def evaluate_gate(rows: list[dict[str, Any]]) -> dict[str, Any]:
 
 
 def run_matrix(output_dir: Path, workers: int, parameter_profile: str) -> int:
+    output_dir = output_dir.resolve()
     output_dir.mkdir(parents=True, exist_ok=True)
     tasks_dir = output_dir / ".tasks"
     solutions_dir = output_dir / "solutions"
