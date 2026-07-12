@@ -48,7 +48,7 @@ from setp_solver.search.submission_contract import FULL_MODEL_LANE, load_submiss
 from setp_solver.solution import ChargingAction, CrossSiteService, Route, Solution, physical_vehicle_id
 
 
-DEFAULT_OUT = ROOT / "baselines/e3_ablation/e3_v4_clean_20260713"
+DEFAULT_OUT = ROOT / "baselines/e3_ablation/e3_v5_clean_20260713"
 CONTRACT_DIR = ROOT / "baselines/contract_audit/submission_contract_candidate_20260711"
 CONTRACT_PATH = CONTRACT_DIR / "submission_contract.proposed.json"
 OWNER_ROWS = CONTRACT_DIR / "customer_owner_rows.csv"
@@ -759,7 +759,12 @@ def phase_plans(phase: str, budget: int) -> list[dict[str, Any]]:
     if phase in {"smoke", "preflight", "model_gate", "rehearsal"}:
         seed = 99 if phase == "rehearsal" else 1
         if phase == "preflight":
-            specs = [_spec("200c", "M0", seed, budget), _spec("200c", "M5", seed, budget), _spec("200c", "M5", seed, budget, 95.0)]
+            specs = [
+                _spec("200c", "M0", seed, budget),
+                _spec("200c", "M1", seed, budget),
+                _spec("200c", "M5", seed, budget),
+                _spec("200c", "M5", seed, budget, 95.0),
+            ]
         else:
             specs = [_spec("200c", "M0", seed, budget), _spec("200c", "M1", seed, budget)]
         return [{"seed": seed, "sizes": ["200c"], "specs": specs}]
@@ -778,6 +783,23 @@ def phase_plans(phase: str, budget: int) -> list[dict[str, Any]]:
 
 def default_budget(phase: str) -> int:
     return {"smoke": 8, "preflight": 200, "model_gate": 4000, "rehearsal": 400, "formal70": 4000, "promote100": 4000}[phase]
+
+
+def _cooperation_mobility_row_ok(row: dict[str, Any]) -> bool:
+    if int(row.get("cross_site_attempted_candidates", 0) or 0) <= 0:
+        return False
+    if int(row.get("cross_site_legal_candidates", 0) or 0) > 0:
+        return True
+    if not bool(row.get("fairness_enabled", False)):
+        return False
+    try:
+        evidence = json.loads(str(row.get("fairness_search_active_evidence", "{}")))
+    except json.JSONDecodeError:
+        return False
+    # A fair-search row is allowed to reject every unilateral cross-depot move,
+    # provided the rejection is explicitly attributed to the active fairness
+    # contract. The separate M1 preflight row proves the move itself is legal.
+    return int(evidence.get("rejected_candidates", 0) or 0) > 0
 
 
 def summarize_phase(out: Path, phase: str, plans: list[dict[str, Any]]) -> dict[str, Any]:
@@ -809,11 +831,7 @@ def summarize_phase(out: Path, phase: str, plans: list[dict[str, Any]]) -> dict[
     )
     mobility_required = phase in {"preflight", "model_gate", "rehearsal", "formal70", "promote100"}
     cooperative_rows = [row for row in rows if row["layer"] != "M0"]
-    mobility_ok = (not mobility_required) or all(
-        int(row.get("cross_site_attempted_candidates", 0) or 0) > 0
-        and int(row.get("cross_site_legal_candidates", 0) or 0) > 0
-        for row in cooperative_rows
-    )
+    mobility_ok = (not mobility_required) or all(_cooperation_mobility_row_ok(row) for row in cooperative_rows)
     gate_ok = all_ok and fairness_ok and fee_ok and mobility_ok
     verdict = f"E3_{phase.upper()}_PASS" if gate_ok else f"HALT_E3_{phase.upper()}"
     decision = {

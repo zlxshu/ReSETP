@@ -4,6 +4,7 @@ import json
 
 from baselines.e3_ablation.e3_v3_runner import (
     default_budget,
+    _cooperation_mobility_row_ok,
     phase_plans,
     prices_for,
     score_counts,
@@ -32,6 +33,12 @@ def test_formal_matrix_is_seed_first_and_has_exactly_seventy_rows() -> None:
         assert plan["specs"][0]["size"] == "200c"
         assert sum(spec["size"] == "100c" for spec in plan["specs"]) == 4
         assert sum(spec["fee"] > 0 for spec in plan["specs"]) == 4
+
+
+def test_preflight_separates_plain_cooperation_from_fair_cooperation() -> None:
+    specs = phase_plans("preflight", 200)[0]["specs"]
+    assert [spec["layer"] for spec in specs] == ["M0", "M1", "M5", "M5"]
+    assert [spec["fee"] for spec in specs] == [0.0, 0.0, 0.0, 95.0]
 
 
 def test_promotion_matrix_is_exactly_thirty_rows() -> None:
@@ -170,3 +177,15 @@ def test_preflight_cannot_pass_when_cooperation_never_makes_a_legal_move(tmp_pat
     cooperative["cross_site_legal_candidates"] = 1
     cooperative_path.write_text(json.dumps(cooperative), encoding="utf-8")
     assert summarize_phase(tmp_path, "preflight", plans)["verdict"] == "E3_PREFLIGHT_PASS"
+
+
+def test_fair_cooperation_may_reject_unfair_moves_but_must_record_why() -> None:
+    row = {
+        "cross_site_attempted_candidates": 3,
+        "cross_site_legal_candidates": 0,
+        "fairness_enabled": True,
+        "fairness_search_active_evidence": json.dumps({"rejected_candidates": 3}),
+    }
+    assert _cooperation_mobility_row_ok(row)
+    row["fairness_search_active_evidence"] = json.dumps({"rejected_candidates": 0})
+    assert not _cooperation_mobility_row_ok(row)
