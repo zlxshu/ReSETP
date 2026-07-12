@@ -1,0 +1,19 @@
+{
+  "schema": "setp-e3-multitrip-structure-gate.v2",
+  "purpose": "prove seed-1 solo and shared routing can be physically scheduled before formal E3",
+  "instance": "L-main-threeshift-200c-01",
+  "source_bundle": "models/data_bundle/generated_instances/L-main/L-main-threeshift-200c-01",
+  "asset_caps": {
+    "cv": 14,
+    "ev": 14
+  },
+  "battery_kwh": 280,
+  "depot_charge_power_kw": 22.0,
+  "depot_charge_power_source": "PriceParameters.depot_charge_power_kw",
+  "certificate_scope": "greedy feasibility witness; not a proof of minimum vehicle count or global infeasibility",
+  "formal_recharge_rule": "partial_recharge_decision_within_each_legal_gap",
+  "formal_run_count_started": 0,
+  "model_changed": false,
+  "legacy_e1_e2_rejudged": false,
+  "git_head": "4e2bc0745500ae71d6412eb8af7452ef9ee485c8"
+}
