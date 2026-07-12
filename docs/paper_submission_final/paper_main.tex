@@ -155,8 +155,8 @@ dynamic demand; time-varying grid carbon intensity; profit fairness}
 
 \subsection{问题描述与假设}
 
-% v2026-06-12: extend charging nodes minimally from public stations to stations plus depots; S0 specifies depot overnight charging window.
-本文研究动态城市配送环境下的协同多车场混合车队路径优化问题。配送网络由车场、客户、共享充电站和道路弧段构成，车辆包括燃油车和电动车两类。客户具有需求量、服务时间和硬时间窗；电动车可在配送途中访问共享充电站进行补能，车场配备充电桩并允许电动车在上一班回场后至次日出发前进行车场预充电，充电过程服从相应可充电节点给定的充电函数；充电产生的间接碳排放由充电时段对应的电网碳强度决定。若系统设置碳排放配额，则实际排放与可用配额之间的差额按照碳交易价格计入成本。配送执行过程中可能出现新增订单、订单取消和需求变化，因此本文采用滚动重规划方式处理动态需求。车辆能耗、碳交易、时变碳强度、非线性充电、协同多车场和收益公平等机制分别在后续模型中给出。
+% v2026-07-13: extend the depot window to published-form same-vehicle between-trip partial charging.
+本文研究动态城市配送环境下的协同多车场混合车队路径优化问题。配送网络由车场、客户、共享充电站和道路弧段构成，车辆包括燃油车和电动车两类。客户具有需求量、服务时间和硬时间窗；电动车可在配送途中访问共享充电站进行补能，车场配备充电桩并允许同一辆车在相邻两趟之间的空闲时段以及末趟回场后至下一运营日出发前按需补电，充电过程服从相应可充电节点给定的充电函数；充电产生的间接碳排放由充电时段对应的电网碳强度决定。若系统设置碳排放配额，则实际排放与可用配额之间的差额按照碳交易价格计入成本。配送执行过程中可能出现新增订单、订单取消和需求变化，因此本文采用滚动重规划方式处理动态需求。车辆能耗、碳交易、时变碳强度、非线性充电、协同多车场和收益公平等机制分别在后续模型中给出。
 
 在重规划时刻 $\tau$，系统只优化尚未执行的配送任务。已经服务的客户、已经行驶的弧段、已经消耗的时间、载重、电量、成本和碳排放均不再调整，而是由执行日志转化为当前车辆状态和累计指标。设 $N^\tau$ 为时刻 $\tau$ 的有效待服务客户集合，则动态客户集合按下式更新：
 \begin{equation}
@@ -173,8 +173,8 @@ q_i^{\mathrm{new}}, & i\in N_{\mathrm{new}}^{\tau}.
 \label{eq:demand_update}
 \end{equation}
 
-% v2026-06-12: S0 keep assumption text consistent with the depot overnight charging window.
-为界定研究范围，提出如下假设：1) 每个有效客户由一辆车一次服务；2) 车辆配送过程中不允许超载；3) 客户时间窗为硬时间窗，车辆可提前到达并等待，但服务开始时间不晚于右时间窗；4) 每辆车从滚动阶段继承位置出发，最终返回指定车场；5) 电动车可在共享充电站进行途中非线性部分补能，也可在车场上一班回场后至次日出发前完成预充电，充电站同一时段可用充电桩数量有限；6) 燃油车碳排放来自燃油消耗，电动车碳排放来自充电电量与对应时段电网碳强度；7) 客户可由非原归属车场车辆服务，由此产生的跨车场调拨或结算成本计入目标函数；8) 行驶速度和时段电网碳强度作为外生参数，本文不涉及路径--速度联合优化和电源侧发电组成优化；若实验实际使用电源结构数据，则仅在数据预处理阶段计算时段电网碳强度；9) 碳成本采用限额碳交易口径，阶段可用碳配额记为 $CE^\tau$，其含义不同于历史已执行排放 $\bar E^\tau$；10) 数学模型刻画当前重规划阶段的优化问题，搜索算子、非线性充电构造过程和重规划触发规则在算法章节说明。
+% v2026-07-13: the physical vehicle, trip chain, and partial-recharge semantics are now explicit.
+为界定研究范围，提出如下假设：1) 每个有效客户由一辆车一次服务；2) 车辆配送过程中不允许超载；3) 客户时间窗为硬时间窗，车辆可提前到达并等待，但服务开始时间不晚于右时间窗；4) 每辆实体车固定归属一个车场和一种车型，可连续执行多趟配送，各趟均返回该车场且时间不得重叠；5) 电动车可在共享充电站进行途中非线性部分补能，也可在车场相邻两趟之间以及末趟回场后至下一运营日出发前按需补电，不要求趟间补满，充电站同一时段可用充电桩数量有限；6) 燃油车碳排放来自燃油消耗，电动车碳排放来自充电电量与对应时段电网碳强度；7) 客户可由非原归属车场车辆服务，由此产生的跨车场调拨或结算成本计入目标函数；8) 行驶速度和时段电网碳强度作为外生参数，本文不涉及路径--速度联合优化和电源侧发电组成优化；若实验实际使用电源结构数据，则仅在数据预处理阶段计算时段电网碳强度；9) 碳成本采用限额碳交易口径，阶段可用碳配额记为 $CE^\tau$，其含义不同于历史已执行排放 $\bar E^\tau$；10) 数学模型刻画当前重规划阶段的优化问题，搜索算子、非线性充电构造过程和重规划触发规则在算法章节说明。
 
 \subsection{符号说明}
 
@@ -190,10 +190,11 @@ q_i^{\mathrm{new}}, & i\in N_{\mathrm{new}}^{\tau}.
 \tabletail{\midrule \multicolumn{2}{r@{}}{续下页}\\}
 \tablelasttail{\bottomrule}
 \begin{supertabular}{@{}p{0.20\textwidth}p{0.74\textwidth}@{}}
-$\tau,t$ & 滚动重规划时刻和离散充电时段索引\\
-$i,j,k,d,s$ & 节点、车辆、车场和充电站索引\\
+$\tau,t,w$ & 滚动重规划时刻、离散充电时段和实体车的趟次索引\\
+$i,j,k,d,s$ & 节点、实体车辆、车场和充电站索引\\
 $D,N^\tau,S,\mathcal R$ & 车场集合、时刻 $\tau$ 的有效待服务客户集合、共享充电站集合和可充电节点集合 $\mathcal R=S\cup D$\\
 $K^\tau,K^{g,\tau},K^{e,\tau},K_d^\tau$ & 可用车辆集合、燃油车集合、电动车集合以及车场 $d$ 当前可调用车辆集合\\
+$W_k^\tau$ & 实体车 $k$ 在阶段 $\tau$ 的候选趟次集合，按 $w=1,2,\ldots$ 排序\\
 $m^g,m^e$ & 当前阶段燃油车和电动车可用数量上限\\
 $T$ & 离散充电时段集合\\
 $V_k^\tau,\mathcal{A}_k^\tau$ & 车辆 $k$ 在时刻 $\tau$ 可访问节点集合和可行弧集合\\
@@ -223,9 +224,10 @@ $P_{ijk}^\tau,e_{ijk}^\tau,f_{ijk}^\tau$ & 弧段牵引功率、电动车弧段�
 $\Delta E^\tau,E^\tau,C_{\mathrm{car}}^\tau$ & 当前阶段新增碳排放、滚动累计碳排放和碳交易成本\\
 $C_{\mathrm{car},d}^{\tau}$ & 分摊至车场 $d$ 的碳交易成本\\
 $C_d^\tau,\Pi_d^\tau$ & 当前阶段分摊至车场 $d$ 的运营成本和协同累计收益\\
-$x_{ijk}^\tau,z_k^\tau$ & 弧选择变量和车辆派遣变量\\
+$x_{ijkw}^\tau,z_{kw}^\tau$ & 实体车 $k$ 第 $w$ 趟的弧选择变量和趟次启用变量\\
 $u_{ijk}^\tau,a_{ik}^\tau$ & 弧段载货量和节点开始服务时间；对充电站表示开始充电时间\\
 $b_{ik}^\tau$ & 电动车到达节点 $i$ 时的剩余电量\\
+$a_{kw}^{L,\tau},a_{kw}^{B,\tau},a_{kw}^{\mathrm{ch},\tau}$ & 实体车 $k$ 第 $w$ 趟的离场时刻、回场时刻和该趟回场后的车场充电开始时刻\\
 $g_{skt}^\tau,\Delta_{sk}^{\tau}$ & 电动车在可充电节点 $s$、时段 $t$ 的实际充电占用时长和总充电时长\\
 $y_{skt}^\tau,\chi_{skt}^\tau$ & 电动车在可充电节点 $s$、时段 $t$ 的充电量和充电占用变量\\
 $h_{id}^\tau$ & 客户 $i$ 是否由车场 $d$ 的车辆服务\\
@@ -233,6 +235,9 @@ $h_{id}^\tau$ & 客户 $i$ 是否由车场 $d$ 的车辆服务\\
 }
 
 注：$h_k$（车辆 $k$ 的返回车场）与 $h_{id}^\tau$（客户 $i$ 是否由车场 $d$ 服务）含义不同，前者用于路径返场约束，后者用于收益归属与跨车场成本核算。
+
+% v2026-07-13: concise multi-trip expansion; basic single-trip equations below are retained for readability.
+为避免重复抄写同一组路径约束，以下正文仍以单趟形式给出基本模型；同一辆实体车执行多趟时，路径、载重、时间、电量和充电变量均增加趟次下标 $w$，相应约束对每个已启用的 $(k,w)$ 分别成立，目标函数中的派遣、里程、能源和充电项也对 $(k,w)$ 求和。该写法沿用多趟车辆路径模型的展开方式。实体车辆数只按 $k$ 计数，固定派遣成本仍按实际启用趟次 $(k,w)$ 计费。
 
 
 
@@ -322,10 +327,10 @@ C_{\mathrm{car}}^{\tau}=p^{car}\left(\Delta E^{\tau}-CE^{\tau}\right).
 \label{eq:return}
 \end{equation}
 
-当前阶段启用的各类型车辆数量不得超过可用车队上限：
+当前阶段启用的各类型实体车辆数量不得超过可用车队上限。由于式 \eqref{eq:trip_order} 保证趟次连续启用，只需统计各实体车的第一趟：
 \begin{equation}
-\sum_{k\in K^{g,\tau}}z_k^\tau \le m^g,\qquad
-\sum_{k\in K^{e,\tau}}z_k^\tau \le m^e .
+\sum_{k\in K^{g,\tau}}z_{k1}^\tau \le m^g,\qquad
+\sum_{k\in K^{e,\tau}}z_{k1}^\tau \le m^e .
 \label{eq:fleet_size_cap}
 \end{equation}
 
@@ -364,11 +369,15 @@ h_{id}^{\tau}=\sum_{k\in K_d^\tau}\sum_{j\in V_k^\tau\setminus\{i\}}x_{jik}^{\ta
 
 滚动阶段开始时，车辆后续可配送货量受继承剩余载重能力限制：
 \begin{equation}
-\sum_{j\in V_k^\tau\setminus\{o_k^\tau\}}u_{o_k^\tau jk}^{\tau}\le L_k^\tau z_k^\tau,
+\sum_{j\in V_k^\tau\setminus\{o_k^\tau\}}u_{o_k^\tau jkw}^{\tau}\le
+\begin{cases}
+L_k^\tau z_{k1}^\tau, & w=1,\\
+Q_k z_{kw}^\tau, & w\ge 2,
+\end{cases}
 \qquad k\in K^\tau .
 \label{eq:start_load}
 \end{equation}
-式 \eqref{eq:load_balance}--\eqref{eq:start_load} 保证车辆不超载，并将滚动重规划时车辆的剩余载重状态带入当前阶段。车场和充电站作为零需求节点处理，即对可充电节点 $s\in\mathcal R$ 取 $q_s^\tau=0$，式 \eqref{eq:load_balance} 在 $s$ 处退化为 $\sum_h u_{hsk}^{\tau}=\sum_j u_{sjk}^{\tau}$，故车辆访问这些节点不改变载重；继承起点 $o_k^\tau$ 的出发载重由式 \eqref{eq:start_load} 单独约束。
+式 \eqref{eq:load_balance}--\eqref{eq:start_load} 保证车辆不超载，并将滚动重规划时车辆的剩余载重状态带入第一趟；车辆回场后可为后续趟次重新装货，但仍不得超过容量。车场和充电站作为零需求节点处理，即对可充电节点 $s\in\mathcal R$ 取 $q_s^\tau=0$；继承起点 $o_k^\tau$ 的出发载重由式 \eqref{eq:start_load} 单独约束。
 
 车辆沿弧段行驶时，服务时间、行驶时间和充电占用时间共同决定后继节点开始服务时间：
 \begin{equation}
@@ -396,11 +405,24 @@ a_{o_k^\tau k}^{\tau}=\bar a_k^\tau,
 
 车辆当前阶段工作时间不得超过上限：
 \begin{equation}
-a_{h_kk}^{\tau}-\bar a_k^\tau\le H_k+M(1-z_k^\tau),
-\qquad k\in K^\tau .
+a_{h_kkw}^{\tau}-\bar a_k^\tau\le H_k+M(1-z_{kw}^\tau),
+\qquad k\in K^\tau,\ w\in W_k^\tau .
 \label{eq:duration}
 \end{equation}
-式 \eqref{eq:time_flow}--\eqref{eq:duration} 是经典 VRPTW 时间约束的滚动重规划版本。已执行路段不会再次优化，当前车辆时间通过 $\bar a_k^\tau$ 继承。在所有可选弧段行驶时间为正且服务时间、充电占用时间非负的前提下，式 \eqref{eq:time_flow} 的时间递推使任何被选中的独立子回路都要求开始服务时间沿回路严格递增，从而排除不含继承起点与返场节点的子回路。
+这里 $a_{h_kkw}^{\tau}$ 是实体车 $k$ 第 $w$ 趟的回场时刻；因各趟按时间排序，式 \eqref{eq:duration} 对每个已启用趟次成立，等价于以该车最后一趟回场时刻约束整车全天工作时长，而不是把时长上限逐趟重新计算。式 \eqref{eq:time_flow}--\eqref{eq:duration} 是经典 VRPTW 时间约束的滚动重规划版本。已执行路段不会再次优化，当前车辆时间通过 $\bar a_k^\tau$ 继承。在所有可选弧段行驶时间为正且服务时间、充电占用时间非负的前提下，式 \eqref{eq:time_flow} 的时间递推使任何被选中的独立子回路都要求开始服务时间沿回路严格递增，从而排除不含继承起点与返场节点的子回路。
+
+同一辆实体车的多趟顺序和时间衔接沿用 Zhen 等的多趟约束结构\textsuperscript{\cite{ref:44}}。令 $a_{kw}^{L,\tau}$ 和 $a_{kw}^{B,\tau}$ 分别表示实体车 $k$ 第 $w$ 趟的离场和回场时刻，则
+\begin{equation}
+z_{k,w+1}^{\tau}\le z_{kw}^{\tau},
+\qquad k\in K^\tau,\ w,w+1\in W_k^\tau,
+\label{eq:trip_order}
+\end{equation}
+\begin{equation}
+a_{k,w+1}^{L,\tau}\ge a_{kw}^{B,\tau}-M(1-z_{k,w+1}^{\tau}),
+\qquad k\in K^\tau,\ w,w+1\in W_k^\tau .
+\label{eq:trip_time_link}
+\end{equation}
+式 \eqref{eq:trip_order} 保证只有前一趟启用后才可启用后一趟；式 \eqref{eq:trip_time_link} 保证同一实体车的相邻两趟不重叠。车场装卸服务时间若非零，可与 Zhen 等的写法一致加在式 \eqref{eq:trip_time_link} 右端；本文车场服务时间取 0，因此不另造参数。
 
 % v2026-06-12: allow depot pre-departure charging to lift inherited battery before route departure.
 电动车在当前阶段出发时的电量由执行日志继承电量和车场预充电量共同决定：
@@ -420,6 +442,24 @@ a_{o_k^\tau k}^{\tau,\mathrm{ch}}+\sum_{t\in T}g_{o_k^\tau kt}^{\tau}\le a_{o_k^
 \label{eq:depot_charge_complete}
 \end{equation}
 其中 $a_{o_k^\tau k}^{\tau,\mathrm{ch}}$ 表示车场预充电开始时刻，车场预充电的时段拆分与后续可充电节点的充电区间语义一致。
+
+对于同一电动车相邻两趟之间的补电，令 $a_{kw}^{\mathrm{ch},\tau}$ 表示第 $w$ 趟回场后、本次趟间充电的开始时刻。部分充电的电量上下界与时间占用沿用 Keskin 和 \c{C}atay 的部分充电结构\textsuperscript{\cite{ref:45}}，相邻趟间允许部分或完全补电的运营语义也与已发表的多趟电动车调度研究一致\textsuperscript{\cite{ref:46}}。在本文符号体系下，充电必须完整落在两趟之间的空闲时段：
+\begin{equation}
+a_{kw}^{\mathrm{ch},\tau}\ge a_{kw}^{B,\tau}-M(1-z_{k,w+1}^{\tau}),
+\label{eq:between_trip_charge_start}
+\end{equation}
+\begin{equation}
+a_{kw}^{\mathrm{ch},\tau}+\sum_{t\in T}g_{h_k kwt}^{\tau}
+\le a_{k,w+1}^{L,\tau}+M(1-z_{k,w+1}^{\tau}),
+\label{eq:between_trip_charge_complete}
+\end{equation}
+且后一趟出发电量等于前一趟回场电量与空闲时段实际补入电量之和：
+\begin{align}
+b_{o_k k,w+1}^{\tau} &\ge b_{h_k kw}^{\tau}+\sum_{t\in T}y_{h_k kwt}^{\tau}-M(1-z_{k,w+1}^{\tau}),\\
+b_{o_k k,w+1}^{\tau} &\le b_{h_k kw}^{\tau}+\sum_{t\in T}y_{h_k kwt}^{\tau}+M(1-z_{k,w+1}^{\tau}),
+\label{eq:between_trip_battery}
+\end{align}
+其中 $k\in K^{e,\tau}$ 且 $w,w+1\in W_k^\tau$；式 \eqref{eq:battery_upper_bound} 同时保证补电后不超过 $B_k$。式 \eqref{eq:between_trip_charge_start}--\eqref{eq:between_trip_charge_complete} 没有强制车辆回场后立刻充电，因此允许其等待至碳强度较低的时段再充；式 \eqref{eq:between_trip_battery} 也没有要求补至满电。运营日第一趟仍按式 \eqref{eq:start_battery} 继承电量并安排出发前补电，不引用“满电出发且不失一般性”的结论，因为本文的充电耗时、分时电价和分时碳排放会影响目标值与可行性。
 
 若电动车从节点 $i$ 行驶到节点 $j$，则到达 $j$ 时的电量由到达 $i$ 时电量、在 $i$ 处充电量和弧段耗电共同决定：
 \begin{equation}
@@ -940,6 +980,9 @@ $\theta=1.0$ 表示协同后各车场收益不低于独立运营基准,对应协
 \bibitem{ref:41} Mer UK. Commercial EV chargers[EB/OL]. [2026-06-12]. \url{https://uk.mer.eco/chargers/commercial-ev-chargers/}.
 \bibitem{ref:42} National Pallets. Pallet Delivery UK: pallet prices[EB/OL]. [2026-06-12]. \url{https://www.nationalpallets.co.uk/pallet-delivery/uk}.
 \bibitem{ref:43} Volvo Trucks. Volvo presents electric trucks with longer range[EB/OL]. [2026-06-23]. \url{https://www.volvotrucks.com/en-en/news-stories/press-releases/2023/jun/volvo-presents-electric-trucks-with-longer-range.html}.
+\bibitem{ref:44} Zhen L, Ma C, Wang K, Xiao L, Zhang W. Multi-depot multi-trip vehicle routing problem with time windows and release dates[J]. Transportation Research Part E: Logistics and Transportation Review, 2020, 135: 101866.
+\bibitem{ref:45} Keskin M, \c{C}atay B. Partial recharge strategies for the electric vehicle routing problem with time windows[J]. Transportation Research Part C: Emerging Technologies, 2016, 65: 111--127.
+\bibitem{ref:46} Diefenbach H, Emde S, Glock C H. Multi-depot electric vehicle scheduling in in-plant production logistics considering non-linear charging models[J]. European Journal of Operational Research, 2023, 306(2): 828--848.
 \end{thebibliography}
 
 \end{document}

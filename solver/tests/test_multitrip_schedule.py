@@ -11,9 +11,12 @@ from setp_solver.algorithms.resetp_alns.kernel.alns_core import SearchPolicy
 from setp_solver.algorithms.resetp_alns.operators.feasible_repair import enumerate_feasible_insertions
 from setp_solver.search.evaluation import EvaluationContext
 from setp_solver.search.multitrip_schedule import (
+    CHARGE_MODE_FULL,
+    CHARGE_MODE_ON_DEMAND,
     CHARGE_MODE_PARTIAL,
     CONTRACT_ID,
     build_multitrip_certificate,
+    certificate_charging_actions,
     route_timing,
     validate_multitrip_certificate,
 )
@@ -66,8 +69,8 @@ def test_ev_recharge_time_participates_in_reuse() -> None:
         Route("EV_B", "ev", "D0", ["D0", "C2", "D0"]),
     ]
     prices = PriceParameters(B_battery_kwh=280.0, initial_ev_battery_kwh=280.0)
-    fast = build_multitrip_certificate(routes, _instance(), replace(prices, depot_charge_power_kw=600.0))
-    slow = build_multitrip_certificate(routes, _instance(), replace(prices, depot_charge_power_kw=0.01))
+    fast = build_multitrip_certificate(routes, _instance(), replace(prices, depot_charge_power_kw=600.0), recharge_mode=CHARGE_MODE_FULL)
+    slow = build_multitrip_certificate(routes, _instance(), replace(prices, depot_charge_power_kw=0.01), recharge_mode=CHARGE_MODE_FULL)
     assert fast.vehicle_counts["ev"] == 1
     assert slow.vehicle_counts["ev"] == 2
 
@@ -78,7 +81,7 @@ def test_certificate_reads_depot_power_from_the_shared_price_object() -> None:
         Route("EV_B", "ev", "D0", ["D0", "C2", "D0"]),
     ]
     prices = PriceParameters(B_battery_kwh=280.0, initial_ev_battery_kwh=280.0, depot_charge_power_kw=22.0)
-    certificate = build_multitrip_certificate(routes, _instance(), prices)
+    certificate = build_multitrip_certificate(routes, _instance(), prices, recharge_mode=CHARGE_MODE_FULL)
     assert certificate.depot_charge_power_kw == 22.0
 
 
@@ -106,7 +109,7 @@ def test_partial_mode_keeps_a_continuous_battery_ledger() -> None:
 def test_full_mode_certificate_must_replenish_the_energy_it_used() -> None:
     routes = [Route("EV_A", "ev", "D0", ["D0", "C1", "D0"])]
     prices = PriceParameters(B_battery_kwh=280.0, initial_ev_battery_kwh=280.0, depot_charge_power_kw=22.0)
-    certificate = build_multitrip_certificate(routes, _instance(), prices)
+    certificate = build_multitrip_certificate(routes, _instance(), prices, recharge_mode=CHARGE_MODE_FULL)
     trip = certificate.trips[0]
     tampered = replace(
         certificate,
@@ -115,6 +118,34 @@ def test_full_mode_certificate_must_replenish_the_energy_it_used() -> None:
 
     with pytest.raises(ValueError, match="full recharge does not replenish"):
         validate_multitrip_certificate(tampered, routes, prices)
+
+
+def test_on_demand_mode_charges_only_what_the_next_trip_needs() -> None:
+    routes = [
+        Route("EV_A", "ev", "D0", ["D0", "C1", "D0"]),
+        Route("EV_B", "ev", "D0", ["D0", "C2", "D0"]),
+    ]
+    prices = PriceParameters(B_battery_kwh=280.0, initial_ev_battery_kwh=280.0, depot_charge_power_kw=22.0)
+    certificate = build_multitrip_certificate(routes, _instance(), prices, recharge_mode=CHARGE_MODE_ON_DEMAND)
+    ordered = sorted(certificate.trips, key=lambda trip: trip.trip_index)
+    expected = max(0.0, float(ordered[1].start_battery_kwh) - float(ordered[0].end_battery_kwh))
+    assert float(ordered[0].charge_energy_kwh or 0.0) == pytest.approx(expected)
+
+
+def test_between_trip_charge_is_exported_to_cost_and_carbon_ledger() -> None:
+    routes = [
+        Route("EV_A", "ev", "D0", ["D0", "C1", "D0"]),
+        Route("EV_B", "ev", "D0", ["D0", "C2", "D0"]),
+    ]
+    base = PriceParameters(B_battery_kwh=280.0, initial_ev_battery_kwh=280.0, depot_charge_power_kw=22.0)
+    one_trip_need = route_timing(routes[0], _instance(), base).drive_energy_kwh
+    prices = replace(base, B_battery_kwh=one_trip_need * 1.5, initial_ev_battery_kwh=one_trip_need * 1.5)
+    certificate = build_multitrip_certificate(routes, _instance(), prices, recharge_mode=CHARGE_MODE_ON_DEMAND)
+    actions = certificate_charging_actions(certificate)
+    assert actions
+    assert sum(action.energy_kwh for action in actions) == pytest.approx(
+        sum(float(trip.charge_energy_kwh or 0.0) for trip in certificate.trips)
+    )
 
 
 def test_v1_stops_instead_of_silently_ignoring_public_charging() -> None:

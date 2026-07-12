@@ -1,8 +1,9 @@
 """Versioned physical-vehicle scheduling contract for new E3--E7 evidence.
 
 This module is deliberately additive.  It does not alter the legacy route-level
-checker used by frozen E1/E2 artifacts.  E3_STRICT_MULTITRIP_V1 treats every
-Route as one trip and assigns non-overlapping trips to real vehicles.
+checker used by frozen E1/E2 artifacts. V1 is retained as the historical
+full-recharge audit rule; V2 treats every Route as one trip, assigns
+non-overlapping trips to real vehicles, and carries battery between trips.
 """
 
 from __future__ import annotations
@@ -14,12 +15,14 @@ from typing import Any
 from ..cost import _arc_loads, ev_arc_energy_kwh, _price
 from ..instance_loader import Instance
 from ..prices import DEFAULT_PRICES, PriceParameters
-from ..solution import Route
+from ..solution import ChargingAction, Route
 
 
-CONTRACT_ID = "E3_STRICT_MULTITRIP_V1"
+LEGACY_CONTRACT_ID = "E3_STRICT_MULTITRIP_V1"
+CONTRACT_ID = "E3_STRICT_MULTITRIP_V2"
 CHARGE_MODE_FULL = "full"
 CHARGE_MODE_PARTIAL = "partial"
+CHARGE_MODE_ON_DEMAND = "on_demand"
 _TOL = 1e-6
 
 
@@ -122,20 +125,19 @@ def build_multitrip_certificate(
     instance: Instance,
     prices: PriceParameters | dict[str, float] | Any = DEFAULT_PRICES,
     *,
-    recharge_mode: str = CHARGE_MODE_FULL,
+    recharge_mode: str = CHARGE_MODE_ON_DEMAND,
 ) -> MultiTripCertificate:
     """Build a reproducible physical-vehicle schedule for one fixed route set.
 
     This is a *feasibility witness*, not a proof of the minimum vehicle count.
     It deliberately reads depot charging power from the same ``prices`` object
-    used by the route checker.  ``full`` preserves the approved V1 contract:
-    return, replenish the energy used on that trip, then depart full.  ``partial``
-    is an evidence-only paper-model diagnostic: battery state is carried across
-    trips and only the energy available in the intervening depot window is added.
-    It is not a change to the formal E3 contract unless the user later approves it.
+    used by the route checker. ``on_demand`` is the formal V2 rule: carry the
+    battery across trips and add only the energy needed to make the next trip.
+    ``partial`` remains a backward-compatible spelling for old diagnostic files.
+    ``full`` is retained only for replaying the historical V1 audit rule.
     """
 
-    if recharge_mode not in {CHARGE_MODE_FULL, CHARGE_MODE_PARTIAL}:
+    if recharge_mode not in {CHARGE_MODE_FULL, CHARGE_MODE_PARTIAL, CHARGE_MODE_ON_DEMAND}:
         raise ValueError(f"unknown recharge_mode={recharge_mode!r}")
     depot_charge_power_kw = _price(prices, "depot_charge_power_kw")
     if depot_charge_power_kw <= 0:
@@ -227,23 +229,25 @@ def _schedule_ev_group(
                 departure_battery = battery_kwh
                 charge_energy = 0.0
             else:
-                charge_energy = min(
-                    battery_kwh - state.battery_kwh,
-                    max(0.0, gap_seconds) * depot_charge_power_kw / 3600.0,
-                )
+                charge_energy = max(0.0, timing.drive_energy_kwh - state.battery_kwh)
+                if charge_energy > battery_kwh - state.battery_kwh + _TOL:
+                    continue
+                if charge_energy > max(0.0, gap_seconds) * depot_charge_power_kw / 3600.0 + _TOL:
+                    continue
                 departure_battery = state.battery_kwh + charge_energy
             if departure_battery + _TOL < timing.drive_energy_kwh:
                 continue
             candidates.append((departure_battery, -state.available_second, state, charge_energy))
         if candidates:
             _, _, state, charge_energy = max(candidates, key=lambda item: (item[0], item[1], -item[2].local_id))
-            if recharge_mode == CHARGE_MODE_PARTIAL and state.previous_route_id is not None:
+            if recharge_mode in {CHARGE_MODE_PARTIAL, CHARGE_MODE_ON_DEMAND} and state.previous_route_id is not None:
                 previous = scheduled[state.previous_route_id]
                 charge_seconds = charge_energy / depot_charge_power_kw * 3600.0
+                charge_start = timing.earliest_departure_second - charge_seconds
                 scheduled[state.previous_route_id] = replace(
                     previous,
-                    recharge_end_second=previous.return_second + charge_seconds,
-                    charge_start_second=previous.return_second,
+                    recharge_end_second=charge_start + charge_seconds,
+                    charge_start_second=charge_start if charge_energy > _TOL else None,
                     charge_energy_kwh=charge_energy,
                 )
             state.trip_index += 1
@@ -285,7 +289,7 @@ def validate_multitrip_certificate(
 ) -> None:
     if certificate.contract_id != CONTRACT_ID:
         raise ValueError("unknown multi-trip contract")
-    if certificate.recharge_mode not in {CHARGE_MODE_FULL, CHARGE_MODE_PARTIAL}:
+    if certificate.recharge_mode not in {CHARGE_MODE_FULL, CHARGE_MODE_PARTIAL, CHARGE_MODE_ON_DEMAND}:
         raise ValueError(f"{CONTRACT_ID}: unknown recharge mode")
     expected_power_kw = _price(prices, "depot_charge_power_kw")
     if certificate.depot_charge_power_kw <= _TOL:
@@ -344,7 +348,7 @@ def strict_multitrip_violations(
     instance: Instance,
     prices: PriceParameters | dict[str, float] | Any = DEFAULT_PRICES,
     *,
-    recharge_mode: str = CHARGE_MODE_FULL,
+    recharge_mode: str = CHARGE_MODE_ON_DEMAND,
 ) -> list[str]:
     """Return new-contract failures without changing the legacy checker."""
 
@@ -358,3 +362,35 @@ def strict_multitrip_violations(
     if instance.num_ev is not None and certificate.vehicle_counts["ev"] > int(instance.num_ev):
         failures.append(f"{CONTRACT_ID}: needs {certificate.vehicle_counts['ev']} EV but cap is {instance.num_ev}")
     return failures
+
+
+def certificate_charging_actions(certificate: MultiTripCertificate) -> list[ChargingAction]:
+    """Convert every between-trip V2 charge into the canonical cost/carbon ledger.
+
+    The action is attached to the following trip id because it raises that
+    trip's departure battery.  This helper does not mutate a search solution;
+    the E3 runner must explicitly merge these actions before formal evidence.
+    """
+
+    by_vehicle: dict[str, list[ScheduledTrip]] = {}
+    for trip in certificate.trips:
+        by_vehicle.setdefault(trip.physical_vehicle_id, []).append(trip)
+    actions: list[ChargingAction] = []
+    for trips in by_vehicle.values():
+        ordered = sorted(trips, key=lambda item: item.trip_index)
+        for previous, current in zip(ordered, ordered[1:]):
+            energy = float(previous.charge_energy_kwh or 0.0)
+            if energy <= _TOL:
+                continue
+            if previous.charge_start_second is None:
+                raise ValueError(f"{CONTRACT_ID}: between-trip charge has no start")
+            actions.append(
+                ChargingAction(
+                    vehicle_id=current.route_id,
+                    station_id=current.home_depot_id,
+                    energy_kwh=energy,
+                    occupancy_minutes=energy / certificate.depot_charge_power_kw * 60.0,
+                    charge_start_second=float(previous.charge_start_second),
+                )
+            )
+    return actions
