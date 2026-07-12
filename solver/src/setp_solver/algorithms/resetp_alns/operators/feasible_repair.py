@@ -318,14 +318,19 @@ def _new_route_options(solution: Solution, customer_id: str, context: Evaluation
     depot_id = nearest_depot_id(customer_id, context.instance)
     cv_count = sum(1 for route in solution.routes if route.vehicle_type.lower() == "cv")
     ev_count = sum(1 for route in solution.routes if route.vehicle_type.lower() == "ev")
-    if cv_count < int(getattr(policy, "max_cv", 10**9)):
+    strict_multitrip = _strict_multitrip_enabled()
+    # Legacy E2 paths retain the old route-count guard.  New E3 strict paths
+    # must instead ask whether the extra trip fits the declared *physical*
+    # fleet; a route count is not a vehicle count once multiple trips are legal.
+    if strict_multitrip or cv_count < int(getattr(policy, "max_cv", 10**9)):
         vehicle_id = _next_vehicle_id(solution.routes, "CV")
         route = Route(vehicle_id, "cv", depot_id, [depot_id, customer_id, depot_id])
         record_repair_delta(context)
         if _route_locally_feasible(route, [], context):
             candidate = Solution(routes=[*solution.routes, route], charging_actions=list(solution.charging_actions), cross_site_services=solution.cross_site_services)
-            options.append(InsertionOption(route_model_cost_delta(route, [], context), candidate, None, None, "cv", opened_new_route=True))
-    if ev_count < int(getattr(policy, "max_ev", 10**9)):
+            if _strict_new_route_is_schedulable(candidate, context):
+                options.append(InsertionOption(route_model_cost_delta(route, [], context), candidate, None, None, "cv", opened_new_route=True))
+    if strict_multitrip or ev_count < int(getattr(policy, "max_ev", 10**9)):
         vehicle_id = _next_vehicle_id(solution.routes, "EV")
         route = Route(vehicle_id, "ev", depot_id, [depot_id, customer_id, depot_id])
         repaired_payload = _repair_ev_route_cached(route, context)
@@ -333,8 +338,39 @@ def _new_route_options(solution: Solution, customer_id: str, context: Evaluation
         record_repair_delta(context)
         if repaired is not None and (not bool(getattr(policy, "require_charging_signal", False)) or actions) and _route_locally_feasible(repaired, actions, context):
             candidate = Solution(routes=[*solution.routes, repaired], charging_actions=[*solution.charging_actions, *actions], cross_site_services=solution.cross_site_services)
-            options.append(InsertionOption(route_model_cost_delta(repaired, actions, context), candidate, None, None, "ev", opened_new_route=True))
+            if _strict_new_route_is_schedulable(candidate, context):
+                options.append(InsertionOption(route_model_cost_delta(repaired, actions, context), candidate, None, None, "ev", opened_new_route=True))
     return options
+
+
+def _strict_multitrip_enabled() -> bool:
+    return os.environ.get("SETP_E3_STRICT_MULTITRIP", "0").lower() not in {"0", "false", "no"}
+
+
+def _strict_new_route_is_schedulable(candidate: Solution, context: EvaluationContext) -> bool:
+    """Use the E3 physical-fleet contract instead of route-count headroom."""
+
+    if not _strict_multitrip_enabled():
+        return True
+    context.score_counts["strict_multitrip_new_route_attempts"] = int(
+        context.score_counts.get("strict_multitrip_new_route_attempts", 0)
+    ) + 1
+    from setp_solver.search.multitrip_schedule import strict_multitrip_violations
+
+    violations = strict_multitrip_violations(candidate.routes, context.instance, context.prices)
+    if not violations:
+        context.score_counts["strict_multitrip_new_route_admissible"] = int(
+            context.score_counts.get("strict_multitrip_new_route_admissible", 0)
+        ) + 1
+        return True
+    context.score_counts["strict_multitrip_new_route_rejected"] = int(
+        context.score_counts.get("strict_multitrip_new_route_rejected", 0)
+    ) + 1
+    if any("public-station trips are unsupported" in item for item in violations):
+        context.score_counts["strict_multitrip_public_station_rejected"] = int(
+            context.score_counts.get("strict_multitrip_public_station_rejected", 0)
+        ) + 1
+    return False
 
 
 def _route_locally_feasible(route: Route, actions: list[ChargingAction], context: EvaluationContext) -> bool:

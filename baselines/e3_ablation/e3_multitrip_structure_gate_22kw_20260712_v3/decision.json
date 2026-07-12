@@ -1,0 +1,67 @@
+{
+  "verdict": "STRUCTURE_GATE_22KW_DIAGNOSTIC_COMPLETE",
+  "partial_14_14_witness_passed": true,
+  "full_14_14_witness_passed": false,
+  "structure_gate_cleared": false,
+  "formal_70_authorized": false,
+  "formal_70_started": false,
+  "next_required_gate": "compare the two recharge definitions and source evidence before any formal search",
+  "rows": [
+    {
+      "case": "solo_business",
+      "recharge_mode": "full",
+      "status": "NO_14_14_WITNESS_GREEDY",
+      "route_count": 59,
+      "customer_count": 449,
+      "physical_cv": 14,
+      "physical_ev": 21,
+      "depot_charge_power_kw": 22.0,
+      "charge_energy_kwh": 3656.193279576552,
+      "max_trips_per_vehicle": 3,
+      "wall_seconds": 29.22823654100648,
+      "route_violation_count": 0
+    },
+    {
+      "case": "shared_business",
+      "recharge_mode": "full",
+      "status": "NO_14_14_WITNESS_GREEDY",
+      "route_count": 59,
+      "customer_count": 449,
+      "physical_cv": 14,
+      "physical_ev": 21,
+      "depot_charge_power_kw": 22.0,
+      "charge_energy_kwh": 3656.193279576552,
+      "max_trips_per_vehicle": 3,
+      "wall_seconds": 76.13781374998507,
+      "route_violation_count": 0
+    },
+    {
+      "case": "solo_business",
+      "recharge_mode": "partial",
+      "status": "PASS_14_14_WITNESS",
+      "route_count": 59,
+      "customer_count": 449,
+      "physical_cv": 14,
+      "physical_ev": 14,
+      "depot_charge_power_kw": 22.0,
+      "charge_energy_kwh": 1506.7375792333253,
+      "max_trips_per_vehicle": 3,
+      "wall_seconds": 29.158333375002258,
+      "route_violation_count": 0
+    },
+    {
+      "case": "shared_business",
+      "recharge_mode": "partial",
+      "status": "PASS_14_14_WITNESS",
+      "route_count": 59,
+      "customer_count": 449,
+      "physical_cv": 14,
+      "physical_ev": 14,
+      "depot_charge_power_kw": 22.0,
+      "charge_energy_kwh": 1506.7375792333253,
+      "max_trips_per_vehicle": 3,
+      "wall_seconds": 76.318148499995,
+      "route_violation_count": 0
+    }
+  ]
+}

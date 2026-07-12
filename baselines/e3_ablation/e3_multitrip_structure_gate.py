@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 from dataclasses import asdict, replace
+import argparse
 import csv
 import hashlib
 import json
@@ -23,7 +24,12 @@ from setp_solver.prices import DEFAULT_PRICES
 from setp_solver.profit import infer_customer_home_depots
 from setp_solver.search.bundle import load_search_bundle
 from setp_solver.search.construction import _build_cv_seed_with_retry
-from setp_solver.search.multitrip_schedule import build_multitrip_certificate, route_timing
+from setp_solver.search.multitrip_schedule import (
+    CHARGE_MODE_FULL,
+    CHARGE_MODE_PARTIAL,
+    build_multitrip_certificate,
+    route_timing,
+)
 from setp_solver.solution import Route, Solution
 
 
@@ -39,7 +45,7 @@ def _subinstance(instance: Instance, depots: list[str], customers: list[str]) ->
     return Instance(nodes, matrix)
 
 
-def _short_trips(instance: Instance, *, independent: bool) -> list[Route]:
+def _short_trips(instance: Instance, *, independent: bool, prices: object) -> list[Route]:
     owners = infer_customer_home_depots(instance)
     depots = sorted(node.node_id for node in instance.nodes if node.node_type.lower() == "d")
     customers = [node for node in instance.nodes if node.node_type.lower() == "c"]
@@ -54,7 +60,7 @@ def _short_trips(instance: Instance, *, independent: bool) -> list[Route]:
                 continue
             sub = _subinstance(instance, active_depots, selected)
             seed = _build_cv_seed_with_retry(
-                sub, DEFAULT_PRICES, start_budget=1, max_budget=len(selected), enforce_fleet_count=False
+                sub, prices, start_budget=1, max_budget=len(selected), enforce_fleet_count=False
             )
             # Split each depot's simultaneous trips between the two available
             # asset types, but never hand an EV a trip beyond one full battery.
@@ -71,7 +77,7 @@ def _short_trips(instance: Instance, *, independent: bool) -> list[Route]:
                         timing = route_timing(
                             replace(route, vehicle_type="ev"),
                             instance,
-                            replace(DEFAULT_PRICES, B_battery_kwh=280.0),
+                            prices,
                         )
                     except ValueError:
                         continue
@@ -93,38 +99,59 @@ def _short_trips(instance: Instance, *, independent: bool) -> list[Route]:
     return routes
 
 
-def _run_case(instance: Instance, label: str, independent: bool) -> dict[str, object]:
+def _run_case(
+    instance: Instance,
+    label: str,
+    independent: bool,
+    *,
+    recharge_mode: str,
+    prices: object,
+) -> dict[str, object]:
     started = time.perf_counter()
-    routes = _short_trips(instance, independent=independent)
+    routes = _short_trips(instance, independent=independent, prices=prices)
     # Route-level capacity and customer/time-window checks remain useful, but
     # legacy fleet/battery labels are intentionally excluded from this new
     # full-battery-at-first-departure contract.
     route_violations = [
-        asdict(item) for item in check_solution(Solution(routes=routes), replace(instance, num_cv=None, num_ev=None), DEFAULT_PRICES)
+        asdict(item) for item in check_solution(Solution(routes=routes), replace(instance, num_cv=None, num_ev=None), prices)
         if item.type not in {"BATTERY", "FLEET_COUNT"}
     ]
-    certificate = build_multitrip_certificate(routes, instance, replace(DEFAULT_PRICES, B_battery_kwh=280.0))
+    certificate = build_multitrip_certificate(routes, instance, prices, recharge_mode=recharge_mode)
     counts = certificate.vehicle_counts
-    status = "PASS" if not route_violations and counts["cv"] <= 14 and counts["ev"] <= 14 else "HALT"
+    status = (
+        "PASS_14_14_WITNESS"
+        if not route_violations and counts["cv"] <= 14 and counts["ev"] <= 14
+        else "NO_14_14_WITNESS_GREEDY"
+    )
     payload = {
         "case": label,
+        "recharge_mode": recharge_mode,
         "status": status,
         "route_count": len(routes),
         "customer_count": sum(len(route.node_sequence) - 2 for route in routes),
         "physical_cv": counts["cv"],
         "physical_ev": counts["ev"],
+        "depot_charge_power_kw": certificate.depot_charge_power_kw,
+        "charge_energy_kwh": sum(float(trip.charge_energy_kwh or 0.0) for trip in certificate.trips),
+        "max_trips_per_vehicle": max((trip.trip_index for trip in certificate.trips), default=0),
         "route_violations": route_violations,
         "wall_seconds": time.perf_counter() - started,
         "certificate": certificate.as_dict(),
         "routes": [asdict(route) for route in routes],
     }
-    (OUT / f"{label}_certificate.json").write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
+    (OUT / f"{label}_{recharge_mode}_certificate.json").write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
     return {key: value for key, value in payload.items() if key not in {"certificate", "routes", "route_violations"}} | {
         "route_violation_count": len(route_violations)
     }
 
 
 def main() -> int:
+    global OUT
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--output-dir", default=str(OUT))
+    parser.add_argument("--recharge-mode", choices=(CHARGE_MODE_FULL, CHARGE_MODE_PARTIAL, "both"), default="both")
+    args = parser.parse_args()
+    OUT = Path(args.output_dir).resolve()
     OUT.mkdir(parents=True, exist_ok=True)
     source = closure._resolve_bundle_dir("threeshift", INSTANCE)
     bundle = load_search_bundle(source)
@@ -135,41 +162,53 @@ def main() -> int:
         "source_bundle": str(source.relative_to(ROOT)),
         "asset_caps": {"cv": 14, "ev": 14},
         "battery_kwh": 280,
+        "depot_charge_power_kw": float(DEFAULT_PRICES.depot_charge_power_kw),
+        "depot_charge_power_source": "PriceParameters.depot_charge_power_kw",
+        "certificate_scope": "greedy feasibility witness; not a proof of minimum vehicle count or global infeasibility",
         "formal_run_count_started": 0,
         "model_changed": False,
         "legacy_e1_e2_rejudged": False,
         "git_head": subprocess.check_output(["git", "rev-parse", "HEAD"], cwd=ROOT, text=True).strip(),
     }
     (OUT / "metadata.json").write_text(json.dumps(metadata, ensure_ascii=False, indent=2), encoding="utf-8")
-    rows = [
-        _run_case(bundle.instance, "solo_business", True),
-        _run_case(bundle.instance, "shared_business", False),
-    ]
+    prices = replace(DEFAULT_PRICES, B_battery_kwh=280.0, initial_ev_battery_kwh=280.0)
+    modes = (CHARGE_MODE_FULL, CHARGE_MODE_PARTIAL) if args.recharge_mode == "both" else (args.recharge_mode,)
+    rows = []
+    for recharge_mode in modes:
+        rows.extend([
+            _run_case(bundle.instance, "solo_business", True, recharge_mode=recharge_mode, prices=prices),
+            _run_case(bundle.instance, "shared_business", False, recharge_mode=recharge_mode, prices=prices),
+        ])
     with (OUT / "raw_runs.csv").open("w", newline="", encoding="utf-8") as handle:
-        writer = csv.DictWriter(handle, fieldnames=list(rows[0]))
+        writer = csv.DictWriter(handle, fieldnames=list(rows[0]), lineterminator="\n")
         writer.writeheader(); writer.writerows(rows)
-    passed = all(row["status"] == "PASS" for row in rows)
+    partial_rows = [row for row in rows if row["recharge_mode"] == CHARGE_MODE_PARTIAL]
+    full_rows = [row for row in rows if row["recharge_mode"] == CHARGE_MODE_FULL]
+    partial_witness_passed = bool(partial_rows) and all(row["status"] == "PASS_14_14_WITNESS" for row in partial_rows)
+    full_witness_passed = bool(full_rows) and all(row["status"] == "PASS_14_14_WITNESS" for row in full_rows)
     decision = {
-        "verdict": "STRUCTURE_GATE_PASS" if passed else "HALT_STRUCTURE_GATE",
-        "structure_gate_cleared": passed,
+        "verdict": "STRUCTURE_GATE_22KW_DIAGNOSTIC_COMPLETE",
+        "partial_14_14_witness_passed": partial_witness_passed,
+        "full_14_14_witness_passed": full_witness_passed,
+        "structure_gate_cleared": False,
         "formal_70_authorized": False,
         "formal_70_started": False,
-        "next_required_gate": "small complete search run, then normal-budget time-and-quality run" if passed else "repair structure gate",
+        "next_required_gate": "compare the two recharge definitions and source evidence before any formal search",
         "rows": rows,
     }
     (OUT / "decision.json").write_text(json.dumps(decision, ensure_ascii=False, indent=2), encoding="utf-8")
     report = "# E3 real-vehicle structure gate\n\n" + (
-        "PASS: both solo and shared routing were scheduled within 14 fuel and 14 electric vehicles."
-        if passed else "HALT: at least one required case did not fit the declared physical fleet."
-    ) + "\n\nThe formal 70-run batch was not started.\n"
+        "The partial-recharge witness fits within 14 fuel and 14 electric vehicles."
+        if partial_witness_passed else "The partial-recharge witness did not fit within 14 fuel and 14 electric vehicles."
+    ) + "\n\nA failed full-recharge row means this greedy scheduler did not find a 14/14 witness; it is not a proof that none exists. This is a 22 kW diagnostic. It does not select a formal recharge definition or start the 70-run batch.\n"
     (OUT / "report.md").write_text(report, encoding="utf-8")
     hashes = {}
     for path in sorted(OUT.iterdir()):
-        if path.name != "artifact_hashes.json" and path.is_file():
+        if path.name != "artifact_hashes.json" and not path.name.startswith("._") and path.is_file():
             hashes[path.name] = hashlib.sha256(path.read_bytes()).hexdigest()
     (OUT / "artifact_hashes.json").write_text(json.dumps(hashes, indent=2), encoding="utf-8")
     print(json.dumps(decision, ensure_ascii=False, indent=2))
-    return 0 if passed else 2
+    return 0
 
 
 if __name__ == "__main__":

@@ -1,0 +1,23 @@
+{
+  "schema": "setp-e3-multitrip-structure-gate.v1",
+  "purpose": "prove seed-1 solo and shared routing can be physically scheduled before formal E3",
+  "instance": "L-main-threeshift-200c-01",
+  "source_bundle": "models/data_bundle/generated_instances/L-main/L-main-threeshift-200c-01",
+  "asset_caps": {
+    "cv": 14,
+    "ev": 14
+  },
+  "battery_kwh": 280,
+  "depot_charge_power_kw": 22.0,
+  "depot_charge_power_source": "PriceParameters.depot_charge_power_kw",
+  "certificate_scope": "preliminary greedy diagnostic; superseded before any formal use",
+  "raw_runs_line_ending_normalization": "2026-07-12: CRLF changed to LF only; cell values were not changed and artifact hashes were refreshed.",
+  "status": "SUPERSEDED_PRELIMINARY_ARTIFACT",
+  "superseded_by": "baselines/e3_ablation/e3_multitrip_structure_gate_22kw_20260712_v3/",
+  "supersession_reason": "The first draft used one filename per business case, so the full- and partial-recharge certificates overwrote each other. The replacement keeps both modes separately and states their different meanings.",
+  "do_not_use_for_formal_gate": true,
+  "formal_run_count_started": 0,
+  "model_changed": false,
+  "legacy_e1_e2_rejudged": false,
+  "git_head": "63766ad381e46108cc931c75a3dcccdbc427e632"
+}

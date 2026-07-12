@@ -491,7 +491,15 @@ def _hard_violations(solution: Solution, context: EvaluationContext) -> list[Any
         if os.environ.get("SETP_E3_STRICT_MULTITRIP", "0").lower() not in {"0", "false", "no"}:
             from setp_solver.search.multitrip_schedule import strict_multitrip_violations
 
-            violations.extend(strict_multitrip_violations(solution.routes, context.instance, context.prices))
+            strict_violations = strict_multitrip_violations(solution.routes, context.instance, context.prices)
+            context.score_counts["strict_multitrip_schedule_checks"] = int(
+                context.score_counts.get("strict_multitrip_schedule_checks", 0)
+            ) + 1
+            if any("public-station trips are unsupported" in item for item in strict_violations):
+                context.score_counts["strict_multitrip_public_station_rejected"] = int(
+                    context.score_counts.get("strict_multitrip_public_station_rejected", 0)
+                ) + 1
+            violations.extend(strict_violations)
         return violations
 
 
