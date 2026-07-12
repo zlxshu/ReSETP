@@ -1,0 +1,31 @@
+{
+  "budget": 2,
+  "created_at_epoch": 1783811095.873364,
+  "task": {
+    "algorithm": "staged_hybrid_carbon_pair",
+    "allow_under_eval": false,
+    "bundle_dir": "models/data_bundle/generated_instances/L-main/L-main-threeshift-20c-01",
+    "carbon_tier": "",
+    "category": "threeshift",
+    "checkpoint_path": "/Volumes/移动硬盘（512G）/ReSETP/baselines/e2_alns/e2_16000_preflight_20260712/smoke/checkpoints/L-main-threeshift-20c-01__staged_hybrid_carbon_aware__seed3.json",
+    "components": [],
+    "eval_budget": 2,
+    "eval_closure_required": true,
+    "head": "0124623e347cd2a6a5548e07e0af66e16d3b634b",
+    "instance": "L-main-threeshift-20c-01",
+    "logical_algorithm": "staged_hybrid_carbon_aware",
+    "phase": "E2_16000_PREFLIGHT",
+    "price_override": {
+      "B_battery_kwh": 280.0,
+      "carbon_price": 0.05034
+    },
+    "repo_root": "/Volumes/移动硬盘（512G）/ReSETP",
+    "run_id": "E2_16000_PREFLIGHT__diagnostic_280_override__threeshift__L-main-threeshift-20c-01__staged_hybrid_carbon_pair__seed3",
+    "runtime_cap_seconds": 2700.0,
+    "scenario_type": "diagnostic_280_override",
+    "schema": "setp-e2-final-task.v1",
+    "seed": 3,
+    "selection_role": "wiring_smoke_2eval",
+    "t3_profile": {}
+  }
+}
