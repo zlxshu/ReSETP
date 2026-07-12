@@ -30,7 +30,7 @@ for _path in (REPO_ROOT / "solver/src", REPO_ROOT / "models/src", REPO_ROOT):
 
 from baselines.e2_alns import e2_final_closure as closure
 from setp_solver.algorithms.resetp_alns.kernel.alns_core import SearchPolicy
-from setp_solver.algorithms.resetp_alns.kernel.winner import WinnerKernelConfig, run_staged_carbon_aware_hybrid
+from setp_solver.algorithms.resetp_alns.kernel.winner import WinnerKernelConfig, run_tvci_alns
 from setp_solver.check import check_solution
 from setp_solver.cost import evaluate
 from setp_solver.prices import DEFAULT_PRICES
@@ -77,7 +77,9 @@ def main() -> int:
             "frozen_e2_commit": "0124623e347cd2a6a5548e07e0af66e16d3b634b",
             "frozen_e2_tag": "e2-submission-20260711",
             "scenario": "280 kWh modern-distribution main scenario",
-            "algorithm": "staged ALNS-LNS hybrid + carbon-aware charging schedule",
+            "algorithm": "TVCI-ALNS",
+            "algorithm_name_en": "Time-Varying Carbon-Intensity-Guided ALNS",
+            "algorithm_name_zh": "时变碳强度引导的自适应大邻域搜索",
             "eval_budget": budget,
             "seeds": seeds,
             "workers": min(max(1, int(args.workers)), len(tasks)),
@@ -180,7 +182,7 @@ def run_counterfactual(task: dict[str, Any]) -> dict[str, Any]:
     else:
         return failure_row(task, "HALT_UNKNOWN_VARIANT", variant)
     try:
-        result = run_staged_carbon_aware_hybrid(
+        result = run_tvci_alns(
             bundle.bundle_dir,
             config=WinnerKernelConfig(seed=seed, eval_budget=int(task["eval_budget"]), max_runtime_seconds=float(task["runtime_cap_seconds"])),
             initial_solution=warm,

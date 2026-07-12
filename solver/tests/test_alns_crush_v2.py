@@ -68,6 +68,8 @@ class AlnsCrushV2Tests(unittest.TestCase):
                 "run_staged_alns_lns_hybrid",
                 "run_staged_carbon_aware_hybrid",
                 "run_staged_carbon_schedule_pair",
+                "run_tvci_alns",
+                "run_tvci_carbon_schedule_pair",
                 "scan_all_cv_solution",
                 "winner_variant_flags",
                 "run_e2_alns_final",

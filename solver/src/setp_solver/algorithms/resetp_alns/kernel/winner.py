@@ -62,6 +62,14 @@ from setp_solver.algorithms.resetp_alns.operators.local_search import improve_so
 from setp_solver.algorithms.resetp_alns.support.route_pool import RoutePool
 from setp_solver.algorithms.resetp_alns.runtime import SimulatedAnnealing
 from setp_solver.algorithms.resetp_alns.support.timing import TimingLedger, attach_timing_ledger, timed_section
+from setp_solver.algorithms.resetp_alns.naming import (
+    TVCI_ALNS_DISPLAY_NAME,
+    TVCI_ALNS_ID,
+    TVCI_ALNS_KERNEL_LABEL,
+    TVCI_ALNS_LEGACY_ID,
+    TVCI_ALNS_NAME_EN,
+    TVCI_ALNS_NAME_ZH,
+)
 
 def _load_search_bundle(path):
     from setp_solver.search.bundle import load_search_bundle as _lsb
@@ -1075,6 +1083,60 @@ def run_staged_carbon_aware_hybrid(
     )
 
 
+def _with_tvci_metadata(result: dict[str, Any], *, charging_strategy: str = "aware") -> dict[str, Any]:
+    """Attach the temporary TVCI-ALNS public name without rewriting history.
+
+    The legacy wrapper above remains available to frozen E2 replay code.  New
+    E1--E7 calls use this metadata adapter, so current reports can use one
+    stable name while raw historical identifiers remain unchanged.
+    """
+
+    if charging_strategy not in {"aware", "naive"}:
+        raise ValueError(f"unknown charging strategy: {charging_strategy}")
+    out = dict(result)
+    is_aware = charging_strategy == "aware"
+    out["algorithm"] = TVCI_ALNS_ID if is_aware else f"{TVCI_ALNS_ID}-NAIVE"
+    out["algorithm_id"] = out["algorithm"]
+    out["algorithm_display_name"] = (
+        TVCI_ALNS_DISPLAY_NAME
+        if is_aware
+        else f"{TVCI_ALNS_ID} (immediate-charging ablation)"
+    )
+    out["algorithm_name_en"] = TVCI_ALNS_NAME_EN
+    out["algorithm_name_zh"] = TVCI_ALNS_NAME_ZH
+    out["algorithm_kernel"] = TVCI_ALNS_KERNEL_LABEL
+    out["algorithm_legacy_id"] = (
+        TVCI_ALNS_LEGACY_ID
+        if is_aware
+        else "staged_hybrid_carbon_schedule_naive"
+    )
+    out["algorithm_naming_status"] = "temporary_user_approved_label"
+    out["charging_strategy"] = charging_strategy
+    return out
+
+
+def run_tvci_alns(*args: Any, **kwargs: Any) -> dict[str, Any]:
+    """Run the current method under the temporary public name ``TVCI-ALNS``.
+
+    This is a naming/API layer only: it delegates to the existing staged
+    ALNS--LNS hybrid plus fixed-route charging rescheduling implementation.
+    """
+
+    result = run_staged_carbon_aware_hybrid(*args, **kwargs)
+    return _with_tvci_metadata(result, charging_strategy=str(kwargs.get("charging_strategy", "aware")))
+
+
+def run_tvci_carbon_schedule_pair(*args: Any, **kwargs: Any) -> dict[str, Any]:
+    """Emit TVCI-ALNS and immediate-charging ablation results from one search."""
+
+    result = run_staged_carbon_schedule_pair(*args, **kwargs)
+    aware = _with_tvci_metadata(result, charging_strategy="aware")
+    naive = result.get("charging_ablation_result")
+    if isinstance(naive, dict):
+        aware["charging_ablation_result"] = _with_tvci_metadata(naive, charging_strategy="naive")
+    return aware
+
+
 def run_staged_carbon_schedule_pair(
     bundle_dir: str | Path,
     *,
@@ -1371,6 +1433,8 @@ def write_winner_manifest(output_dir: str | Path) -> Path:
             "run_staged_alns_lns_hybrid",
             "run_staged_carbon_aware_hybrid",
             "run_staged_carbon_schedule_pair",
+            "run_tvci_alns",
+            "run_tvci_carbon_schedule_pair",
             "scan_all_cv_solution",
             "winner_variant_flags",
             "run_e2_alns_final",

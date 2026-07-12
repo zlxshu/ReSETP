@@ -94,8 +94,8 @@
 \Title{兼顾收益公平与时变碳强度的动态协同多车场混合车队路径优化}
 \Author{周雷习书, 干宏程, 邱莹莹}{上海理工大学 管理学院, 上海 200093}
 % v2026-06-13: formal-backfill updates abstract wording from pre-run draft to final W2 experiment wording.
-% v2026-07-03: algorithm list is still being rebuilt under the E2 health gate; avoid a fixed algorithm count in the abstract.
-\Abstract{在动态城市配送中，电网碳强度的时段差异会通过电动汽车充电决策影响油电混合车队协同调度，同时多车场协同还需兼顾车场间收益公平。本文研究考虑动态需求、时变电网碳强度和收益公平的协同多车场混合车队车辆路径问题，构建以系统总运营成本最小化为目标、以车场协同收益公平下界为约束的优化模型，综合刻画共享车辆池、客户跨车场分配、车场间调拨、共享充电站容量、非线性部分充电、电动汽车充电侧间接碳排放和碳配额惩罚等机制。针对新增、取消及需求变化三类动态事件，设计定量--定时联合触发的滚动重规划机制，并在冻结已执行路径的基础上继承车辆位置、时间、载重、电量、充电站占用和已产生碳排放状态。求解部分采用统一解表示、可行性检查、成本评价和断点续算记录组织多类文献主流元启发式算法，并在统一接口与相同预算下进行正式对比。数值实验从算法有效性、静态基准、车型反事实、机制消融、碳强度与碳价敏感性、收益公平阈值敏感性和动态滚动重规划等维度验证模型与算法的有效性。}
+% v2026-07-12: E2 nine-algorithm matrix is sealed; use the TVCI-ALNS public name in the abstract.
+\Abstract{在动态城市配送中，电网碳强度的时段差异会通过电动汽车充电决策影响油电混合车队协同调度，同时多车场协同还需兼顾车场间收益公平。本文研究考虑动态需求、时变电网碳强度和收益公平的协同多车场混合车队车辆路径问题，构建以系统总运营成本最小化为目标、以车场协同收益公平下界为约束的优化模型，综合刻画共享车辆池、客户跨车场分配、车场间调拨、共享充电站容量、非线性部分充电、电动汽车充电侧间接碳排放和碳配额惩罚等机制。针对新增、取消及需求变化三类动态事件，设计定量--定时联合触发的滚动重规划机制，并在冻结已执行路径的基础上继承车辆位置、时间、载重、电量、充电站占用和已产生碳排放状态。求解部分采用统一解表示、可行性检查、成本评价和断点续算记录组织多类文献主流元启发式算法，其中主算法命名为TVCI-ALNS（Time-Varying Carbon-Intensity-Guided ALNS，时变碳强度引导的自适应大邻域搜索），其路径搜索采用分阶段 ALNS--LNS 混合内核，并在固定路线、车型和总充电量后进行充电时刻重调度。数值实验从算法有效性、静态基准、车型反事实、机制消融、碳强度与碳价敏感性、收益公平阈值敏感性和动态滚动重规划等维度验证模型与算法的有效性。}
 \Keywords{协同多车场; 混合车队; 车辆路径问题; 动态需求; 时变电网碳强度; 收益公平}
 \ETitle{Dynamic Collaborative Multi-depot Mixed-fleet Vehicle Routing with Profit Fairness and Time-varying Grid Carbon Intensity}
 \EAuthor{ZHOU Leixishu, GAN Hongcheng, QIU Yingying}{University of Shanghai for Science and Technology, Shanghai 200093, China}
@@ -115,8 +115,11 @@ rolling replanning mechanism is designed, where executed route segments are
 frozen and vehicle locations, times, loads, battery states, charging-station
 occupation and accumulated emissions are inherited. The solution workflow uses
 a unified solution representation, feasibility checker, cost evaluator and
-resumable run ledger to organize eight solution algorithms under the same
-computational budget. Numerical experiments are organized to verify algorithmic
+resumable run ledger to organize nine solution algorithms under the same
+computational budget. The proposed method is named TVCI-ALNS
+(Time-Varying Carbon-Intensity-Guided ALNS),
+with a staged ALNS--LNS search kernel followed by fixed-route charging-time
+rescheduling guided by time-varying carbon intensity. Numerical experiments are organized to verify algorithmic
 performance, static benchmark behavior, vehicle-type counterfactuals, mechanism
 ablations, carbon-intensity and quota sensitivities, profit-fairness threshold
 sensitivity and dynamic replanning continuity.}
@@ -560,7 +563,7 @@ u_{ijk}^{\tau},a_{ik}^{\tau},b_{ik}^{\tau},y_{skt}^{\tau},g_{skt}^{\tau},y_{ikt}
 \subsection{算法定位}
 
 % v2026-07-03: E2 baseline set is being rebuilt; keep the interface claim without freezing a count or final list.
-本文采用统一编码、统一可行性核验和统一成本评价接口组织算法实验，并在统一接口与相同预算下与多类文献主流元启发式算法对比，最终清单以算法对比表为准。主结果不依赖单一算法的内部标签，而以正式数值实验中所有可行解的已观测最优值作为算法对比参照；滚动重规划实验则在同一接口下重复调用阶段求解器。
+本文将主算法命名为TVCI-ALNS，即“时变碳强度引导的自适应大邻域搜索”（Time-Varying Carbon-Intensity-Guided ALNS）。它的路径搜索采用“普通 ALNS--强重组--普通 ALNS”的分阶段内核，并在路线、车型和总充电量固定后，根据时变电网碳强度重调度充电时刻。这里的“引导”特指充电时刻层面的碳强度引导，不声称已经同时改变路线、车型、充电站和充电量。本文采用统一编码、统一可行性核验和统一成本评价接口组织算法实验，并在统一接口与相同预算下与多类文献主流元启发式算法对比，最终清单以算法对比表为准。主结果不依赖单一算法的内部标签，而以正式数值实验中所有可行解的已观测最优值作为算法对比参照；滚动重规划实验则在同一接口下重复调用阶段求解器。
 
 \subsection{输入输出接口}
 
@@ -725,7 +728,7 @@ $\theta=1.0$ 表示协同后各车场收益不低于独立运营基准,对应协
 \subsection{算法有效性验证}
 
 % v2026-07-03: restore F2 wording to include terminal-value distribution in the fixed design template.
-算法有效性实验采用相同算例、相同约束口径、相同评价函数和相同计算预算。由于论文专用算例无公开BKS，表 \ref{tab:formal-algorithms} 中的偏差均以本轮所有可行解中的已观测最优值为参照，不称为BKS gap。收敛过程与终值分布见图 \ref{fig:formal-f2}。
+算法有效性实验采用相同算例、相同约束口径、相同评价函数和相同计算预算；本文主算法在结果表中以TVCI-ALNS标识。由于论文专用算例无公开BKS，表 \ref{tab:formal-algorithms} 中的偏差均以本轮所有可行解中的已观测最优值为参照，不称为BKS gap。收敛过程与终值分布见图 \ref{fig:formal-f2}。
 
 \begin{table}[H]
 \centering

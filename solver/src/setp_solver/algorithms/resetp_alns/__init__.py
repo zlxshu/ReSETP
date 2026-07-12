@@ -14,6 +14,11 @@ __all__ = [
     "run_e2_alns_throughput",
     "run_resetp_alns",
     "run_winner_kernel",
+    "run_tvci_alns",
+    "run_tvci_carbon_schedule_pair",
+    "TVCI_ALNS_ID",
+    "TVCI_ALNS_NAME_EN",
+    "TVCI_ALNS_NAME_ZH",
 ]
 
 

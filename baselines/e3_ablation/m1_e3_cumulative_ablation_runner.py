@@ -22,7 +22,7 @@ for _path in (REPO_ROOT / "solver/src", REPO_ROOT / "models/src", REPO_ROOT):
         sys.path.insert(0, str(_path))
 
 from baselines.e2_alns import e2_final_closure as closure
-from setp_solver.algorithms.resetp_alns.kernel.winner import WinnerKernelConfig, run_staged_alns_lns_hybrid, run_staged_carbon_aware_hybrid, run_staged_carbon_schedule_pair
+from setp_solver.algorithms.resetp_alns.kernel.winner import WinnerKernelConfig, run_staged_alns_lns_hybrid, run_tvci_alns, run_tvci_carbon_schedule_pair
 from setp_solver.check import check_solution
 from setp_solver.cost import evaluate
 from setp_solver.prices import DEFAULT_PRICES
@@ -234,7 +234,7 @@ def run_cooperative(task: dict[str, Any]) -> dict[str, Any]:
     independent_profit = independent_profit_for_solution(initial, bundle, prices, owners, quota) if fairness_enabled else None
     strategy = "naive" if variant in {"M1", "M2"} else "aware"
     try:
-        runner = run_staged_carbon_schedule_pair if variant in {"M3", "M4", "M5"} else run_staged_carbon_aware_hybrid
+        runner = run_tvci_carbon_schedule_pair if variant in {"M3", "M4", "M5"} else run_tvci_alns
         runner_kwargs = {
             "config": WinnerKernelConfig(seed=int(task["seed"]), eval_budget=int(task["eval_budget"]), max_runtime_seconds=float(task["runtime_cap_seconds"])),
             "initial_solution": initial,

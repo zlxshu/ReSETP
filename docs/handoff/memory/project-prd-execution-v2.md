@@ -193,3 +193,7 @@ E2只检验统一预算下的性能，不能以排名替代创新证明。论文
 E2封存后先完成WP0，不启动E3–E7正式搜索。投稿合同已冻结为：280 kWh主场景、80 kWh稳健性对照；客户归最近车场的1425条映射作为合成独立经营基线并锁hash；c_tr=0为完全共享主值，10/25/50/95仅作无现实标定的摩擦敏感性；默认碳配额=0且只作会计项；公平默认关闭，仅E6/E7公平交互臂在搜索阶段启用。`prices.py`默认跨场费已从95改为0并保留旧代理痕迹，TeX参数表同步c_tr主值，四项TeX欠账登记在`docs/handoff/tex_sync_debt_20260712.md`。
 
 WP0机器证据：合同判决`E1_E7_CONTRACT_FROZEN_BY_USER`；E0九个L-main v3算例的registry/manifest/hash/正式入口和共享起点检查全部通过、零违规（`baselines/contract_audit/wp0_e0_check_20260712/`）；3个E2冻结解在280 kWh覆盖下以新默认c_tr=0复算，零违规且成本逐位一致（`baselines/contract_audit/wp0_e2_replay_20260712/`）。本阶段没有启动E3–E7搜索，下一步才是WP0通过后的E3短门。
+
+## 2026-07-12 TVCI-ALNS名称同步
+
+当前创新算法的公开名称暂定为`TVCI-ALNS: Time-Varying Carbon-Intensity-Guided ALNS`，中文为“时变碳强度引导的自适应大邻域搜索”。代码提供新名称的展示/API入口，同时保留`staged_hybrid_carbon_aware`兼容标识以保护已封存E2数据和历史脚本。该名称只统一表达现有组合式方法：分阶段ALNS--LNS路径搜索内核，加上固定路线下按时变碳强度重调度充电时刻；不把它写成全新基础ALNS或路线、车型、充电站、充电时刻的全联合碳搜索。本次同步未启动实验，也未改变模型语义。

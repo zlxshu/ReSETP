@@ -9,6 +9,8 @@ from setp_solver.algorithms.resetp_alns.kernel.winner import (  # noqa: F401
     run_staged_alns_lns_hybrid,
     run_staged_carbon_aware_hybrid,
     run_staged_carbon_schedule_pair,
+    run_tvci_alns,
+    run_tvci_carbon_schedule_pair,
     run_winner_kernel,
     winner_operator_module,
 )
