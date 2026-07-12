@@ -15,7 +15,7 @@ from typing import Any
 from ..cost import _arc_loads, ev_arc_energy_kwh, _price
 from ..instance_loader import Instance
 from ..prices import DEFAULT_PRICES, PriceParameters
-from ..solution import ChargingAction, Route
+from ..solution import ChargingAction, Route, Solution, route_trip_vehicle_id
 
 
 LEGACY_CONTRACT_ID = "E3_STRICT_MULTITRIP_V1"
@@ -126,6 +126,7 @@ def build_multitrip_certificate(
     prices: PriceParameters | dict[str, float] | Any = DEFAULT_PRICES,
     *,
     recharge_mode: str = CHARGE_MODE_ON_DEMAND,
+    initial_departure_battery_by_route: dict[str, float] | None = None,
 ) -> MultiTripCertificate:
     """Build a reproducible physical-vehicle schedule for one fixed route set.
 
@@ -159,6 +160,7 @@ def build_multitrip_certificate(
                 battery_kwh=_price(prices, "B_battery_kwh"),
                 depot_charge_power_kw=depot_charge_power_kw,
                 recharge_mode=recharge_mode,
+                initial_departure_battery_by_route=initial_departure_battery_by_route or {},
             )
         scheduled.extend(group_trips)
         counts[vehicle_type] += group_count
@@ -211,6 +213,7 @@ def _schedule_ev_group(
     battery_kwh: float,
     depot_charge_power_kw: float,
     recharge_mode: str,
+    initial_departure_battery_by_route: dict[str, float],
 ) -> tuple[list[ScheduledTrip], int]:
     """Greedily build one valid EV schedule, retaining the actual battery path."""
 
@@ -254,8 +257,16 @@ def _schedule_ev_group(
             start_battery = battery_kwh if recharge_mode == CHARGE_MODE_FULL else state.battery_kwh + charge_energy
         else:
             next_local_id += 1
-            state = _EVVehicleState(next_local_id, 1, timing.earliest_departure_second, battery_kwh, None)
-            start_battery = battery_kwh
+            start_battery = (
+                battery_kwh
+                if recharge_mode == CHARGE_MODE_FULL
+                else float(initial_departure_battery_by_route.get(timing.route_id, battery_kwh))
+            )
+            if start_battery > battery_kwh + _TOL:
+                raise ValueError(f"{CONTRACT_ID}: route {timing.route_id} starts above battery capacity")
+            if start_battery + _TOL < timing.drive_energy_kwh:
+                raise ValueError(f"{CONTRACT_ID}: route {timing.route_id} has insufficient first-trip departure battery")
+            state = _EVVehicleState(next_local_id, 1, timing.earliest_departure_second, start_battery, None)
         end_battery = start_battery - timing.drive_energy_kwh
         physical_id = f"EV_{depot}_{state.local_id}"
         charge_energy_after = timing.drive_energy_kwh if recharge_mode == CHARGE_MODE_FULL else 0.0
@@ -317,8 +328,11 @@ def validate_multitrip_certificate(
                 elif abs(float(current.start_battery_kwh or 0.0) - (float(previous.end_battery_kwh or 0.0) + float(previous.charge_energy_kwh or 0.0))) > _TOL:
                     raise ValueError(f"{CONTRACT_ID}: {vehicle_id} battery ledger is discontinuous")
         if ordered and ordered[0].vehicle_type == "ev":
-            if abs(float(ordered[0].start_battery_kwh or 0.0) - _price(prices, "B_battery_kwh")) > _TOL:
+            first_start = float(ordered[0].start_battery_kwh or 0.0)
+            if certificate.recharge_mode == CHARGE_MODE_FULL and abs(first_start - _price(prices, "B_battery_kwh")) > _TOL:
                 raise ValueError(f"{CONTRACT_ID}: {vehicle_id} first trip does not depart full")
+            if certificate.recharge_mode != CHARGE_MODE_FULL and not (-_TOL <= first_start <= _price(prices, "B_battery_kwh") + _TOL):
+                raise ValueError(f"{CONTRACT_ID}: {vehicle_id} first-trip departure battery is outside capacity")
         for trip in ordered:
             if trip.vehicle_type != "ev":
                 continue
@@ -394,3 +408,68 @@ def certificate_charging_actions(certificate: MultiTripCertificate) -> list[Char
                 )
             )
     return actions
+
+
+def prepare_multitrip_solution(
+    solution: Solution,
+    instance: Instance,
+    prices: PriceParameters | dict[str, float] | Any = DEFAULT_PRICES,
+) -> tuple[Solution, MultiTripCertificate]:
+    """Attach the V2 physical schedule and its real charging ledger.
+
+    Legacy route ids are replaced by the physical-vehicle/trip ids certified
+    here. First trips keep their existing depot precharge. Later trips replace
+    the legacy route-level precharge with exactly the between-trip energy from
+    the V2 battery chain. Public-station actions are never dropped; V2 stops
+    earlier in ``route_timing`` if such a route is not yet supported.
+    """
+
+    battery_cap = _price(prices, "B_battery_kwh")
+    inherited = _price(prices, "initial_ev_battery_kwh")
+    initial_departure: dict[str, float] = {}
+    for route in solution.routes:
+        if route.vehicle_type.lower() != "ev":
+            continue
+        depot_energy = sum(
+            float(action.energy_kwh)
+            for action in solution.charging_actions
+            if action.vehicle_id == route.vehicle_id and action.station_id == route.home_depot_id
+        )
+        initial_departure[route.vehicle_id] = min(battery_cap, inherited + depot_energy)
+
+    certificate = build_multitrip_certificate(
+        list(solution.routes),
+        instance,
+        prices,
+        recharge_mode=CHARGE_MODE_ON_DEMAND,
+        initial_departure_battery_by_route=initial_departure,
+    )
+    scheduled_by_old_id = {trip.route_id: trip for trip in certificate.trips}
+    id_map = {
+        old_id: route_trip_vehicle_id(trip.physical_vehicle_id, trip.trip_index)
+        for old_id, trip in scheduled_by_old_id.items()
+    }
+    prepared_routes = [replace(route, vehicle_id=id_map[route.vehicle_id]) for route in solution.routes]
+
+    prepared_actions: list[ChargingAction] = []
+    for action in solution.charging_actions:
+        trip = scheduled_by_old_id.get(action.vehicle_id)
+        if trip is None:
+            continue
+        is_origin_depot = action.station_id == trip.home_depot_id
+        if is_origin_depot and trip.trip_index > 1:
+            continue
+        prepared_actions.append(replace(action, vehicle_id=id_map[action.vehicle_id]))
+
+    remapped_trips = tuple(
+        replace(trip, route_id=id_map[trip.route_id])
+        for trip in certificate.trips
+    )
+    remapped_certificate = replace(certificate, trips=remapped_trips)
+    prepared_actions.extend(certificate_charging_actions(remapped_certificate))
+    prepared = Solution(
+        routes=prepared_routes,
+        charging_actions=prepared_actions,
+        cross_site_services=solution.cross_site_services,
+    )
+    return prepared, remapped_certificate
