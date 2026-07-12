@@ -64,18 +64,25 @@ def bundle_rel(instance: str) -> str:
 
 def task_payload(output_dir: Path, arm: str, instance: str, seed: int) -> dict[str, Any]:
     rid = run_id(arm, instance, seed)
+    # The frozen runner requires the same bookkeeping fields as its formal
+    # task factory, even though this is only an isolated diagnostic gate.
+    checkpoint = output_dir / "checkpoints" / f"{rid}.json"
     return {
         "schema": "resetp.iwd-fidelity-task.v1",
         "repo_root": str(REPO_ROOT),
+        "phase": "IWD_FIDELITY_GATE",
+        "category": "threeshift",
         "output_dir": str(output_dir),
         "run_id": rid,
         "arm": arm,
+        "algorithm": "IWD",
         "instance": instance,
         "seed": int(seed),
         "bundle_dir": bundle_rel(instance),
         "eval_budget": EVAL_BUDGET,
         "runtime_cap_seconds": RUNTIME_CAP_SECONDS,
         "scenario_type": "diagnostic_280_override",
+        "checkpoint_path": str(checkpoint),
         "execution_commit": git_head(),
         "source_sha256": source_sha(),
         "old_execution_commit": OLD_COMMIT,
@@ -322,7 +329,7 @@ def run_matrix(output_dir: Path, workers: int) -> int:
         "execution_commit": git_head(),
         "source_sha256": source_sha(),
         "old_execution_commit": OLD_COMMIT,
-        "formula_contract": "Shah-Hosseini-2009 canonical velocity/time/soil + Zhang-2025 savings matrix, with existing shared ReSETP decoder",
+        "formula_contract": "Zhang-2025 transcription of IWD velocity^2/time^2/soil + Shah-Hosseini soil shift, with existing shared ReSETP decoder",
         "formal_e2_untouched": True,
         "pre_registered": True,
     }
@@ -330,15 +337,15 @@ def run_matrix(output_dir: Path, workers: int) -> int:
     write_json(
         output_dir / "formula_contract.json",
         {
-            "transition": "p(j)=f(soil(i,j))/sum f(soil(i,k)); f=SM/(epsilon+g(soil))",
-            "savings": "SM=min_depot(d(depot,i)+d(depot,j)-d(i,j))",
-            "velocity": "vel(t+1)=vel(t)+a_v/(b_v+c_v*soil(i,j))",
+            "transition": "p(j)=f(soil(i,j))/sum f(soil(i,k)); f=1/(epsilon_s+g(soil))",
+            "g_soil": "g(soil(i,j))=soil(i,j)-min(0,min_k soil(i,k))",
+            "velocity": "vel(t+1)=vel(t)+a_v/(b_v+c_v*soil(i,j)^2)",
             "time": "Time=d(i,j)/max(epsilon_v,vel)",
             "local_soil": "soil=(1-rho_local)*soil-rho_local*delta_soil",
-            "delta_soil": "delta_soil=a_s/(b_s+c_s*Time)",
-            "global_soil": "soil=(1-rho_global)*soil+rho_global*2*carried_soil/(n*(n-1))",
-            "parameters": {"soil0": 10000.0, "velocity0": 200.0, "a_s": 1000.0, "b_s": 0.01, "c_s": 1.0, "a_v": 1000.0, "b_v": 0.01, "c_v": 1.0, "rho_local": 0.9, "rho_global": 0.9},
-            "source_notes": "10000/200 and rho=0.9 are canonical Shah-Hosseini values; Zhang 2025 applies the same family and reports a scaled 1000/100 table. This gate records the canonical source choice explicitly.",
+            "delta_soil": "delta_soil=a_s/(b_s+c_s*Time^2)",
+            "global_soil": "soil=(1+rho_global)*soil-rho_global*carried_soil/(N-1) on iteration-best edges",
+            "parameters": {"soil0": 10000.0, "velocity0": 200.0, "a_s": 1000.0, "b_s": 0.01, "c_s": 1.0, "a_v": 1000.0, "b_v": 0.01, "c_v": 1.0, "rho_local": 0.9, "rho_global": 0.9, "epsilon_s": 0.01, "epsilon_v": 0.0001},
+            "source_notes": "This follows the specific Zhang 2025 design transcription recorded in baseline-algorithm-catalog.md and the approved gate prompt; the shared customer-order decoder remains unchanged.",
         },
     )
     write_json(output_dir / "decision.json", {"schema": "resetp.iwd-fidelity-gate-decision.v1", "verdict": "PENDING_PRE_REGISTERED", "formal_e2_untouched": True})

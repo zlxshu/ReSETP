@@ -936,8 +936,9 @@ def _run_iwd(session: _SearchSession) -> BaselineRunResult:
         "c_v": 1.0,
         "rho_local": 0.9,
         "rho_global": 0.9,
-        "epsilon_s": 1e-9,
-        "epsilon_v": 1e-9,
+        # Explicit stabilizers in the Zhang et al. design transcription.
+        "epsilon_s": 0.01,
+        "epsilon_v": 0.0001,
         "iter": 100,
         "lns": "Shaw+greedy insertion on iteration-best",
         "acceptance": "SA-Metropolis",
@@ -947,7 +948,6 @@ def _run_iwd(session: _SearchSession) -> BaselineRunResult:
     }
     customers = _all_customer_ids(session.context.instance)
     soil = {(a, b): float(params["soil0"]) for a in customers for b in customers if a != b}
-    transition_base = _iwd_transition_base(customers, session)
     temperature = -0.05 * abs(session.current.objective) / math.log(0.5)
     iteration = 0
     while session.can_score():
@@ -957,7 +957,7 @@ def _run_iwd(session: _SearchSession) -> BaselineRunResult:
         for drop_idx in range(int(params["drops"])):
             if not session.can_score():
                 break
-            order, carried_soil = _iwd_construct_order(customers, soil, transition_base, session, params)
+            order, carried_soil = _iwd_construct_order(customers, soil, session, params)
             candidate = _order_to_solution(order, session)
             scored = session.score(candidate, operator="iwd_construct_sa")
             if scored is None:
@@ -1672,31 +1672,9 @@ def _gwo_initial_wolves(session: _SearchSession, target_population: int) -> list
     return sorted(wolves, key=lambda item: (item.objective, item.signature))
 
 
-def _iwd_transition_base(customers: list[str], session: _SearchSession) -> dict[tuple[str, str], float]:
-    instance = session.context.instance
-    depots = [depot.node_id for depot in session.depots]
-    base: dict[tuple[str, str], float] = {}
-    for a in customers:
-        for b in customers:
-            if a == b:
-                continue
-            saving = min(
-                float(instance.distance(depot, a))
-                + float(instance.distance(depot, b))
-                - float(instance.distance(a, b))
-                for depot in depots
-            ) if depots else 0.0
-            # The source formula uses the savings matrix directly.  Keep the
-            # numerator positive for the probability calculation when a
-            # triangle-inequality/noise edge has non-positive savings.
-            base[(a, b)] = max(1e-9, float(saving))
-    return base
-
-
 def _iwd_construct_order(
     customers: list[str],
     soil: dict[tuple[str, str], float],
-    transition_base: dict[tuple[str, str], float],
     session: _SearchSession,
     params: dict[str, Any],
 ) -> tuple[list[str], float]:
@@ -1710,22 +1688,22 @@ def _iwd_construct_order(
     carried_soil = 0.0
     while remaining:
         weights = {
-            candidate: _iwd_transition_weight(current, candidate, soil, transition_base, remaining, params)
+            candidate: _iwd_transition_weight(current, candidate, soil, remaining, params)
             for candidate in remaining
         }
         nxt = _weighted_customer_choice(weights, session.rng)
         edge = (current, nxt)
         edge_soil = float(soil.get(edge, params["soil0"]))
         if session.iwd_velocity_mode == "dynamic":
-            # Canonical IWD increases velocity inversely with edge soil.  A
-            # tiny positive floor prevents a negative/zero denominator after
-            # the local soil update while retaining the source direction.
-            denominator = float(params["b_v"]) + float(params["c_v"]) * max(float(params["epsilon_s"]), edge_soil)
+            # The source transcription squares soil here.  That matters: soil
+            # is allowed to become negative after a local update, but the
+            # velocity denominator must remain positive and finite.
+            denominator = float(params["b_v"]) + float(params["c_v"]) * (edge_soil ** 2)
             velocity += float(params["a_v"]) / max(float(params["epsilon_s"]), denominator)
             session.iwd_velocity_update_count += 1
         distance = float(session.context.instance.distance(current, nxt))
         travel_time = distance / max(float(params["epsilon_v"]), velocity)
-        delta_soil = float(params["a_s"]) / (float(params["b_s"]) + float(params["c_s"]) * travel_time)
+        delta_soil = float(params["a_s"]) / (float(params["b_s"]) + float(params["c_s"]) * (travel_time ** 2))
         soil[edge] = (1.0 - float(params["rho_local"])) * edge_soil - float(params["rho_local"]) * delta_soil
         carried_soil += delta_soil
         order.append(nxt)
@@ -1738,16 +1716,17 @@ def _iwd_transition_weight(
     a: str,
     b: str,
     soil: dict[tuple[str, str], float],
-    transition_base: dict[tuple[str, str], float],
     remaining: set[str],
     params: dict[str, Any],
 ) -> float:
     edge_soil = float(soil.get((a, b), params["soil0"]))
     min_soil = min((float(soil.get((a, candidate), params["soil0"])) for candidate in remaining), default=0.0)
-    shifted_soil = edge_soil if min_soil >= 0.0 else edge_soil - min_soil
-    return max(float(params["epsilon_s"]), transition_base.get((a, b), 0.0)) / (
-        float(params["epsilon_s"]) + max(0.0, shifted_soil)
-    )
+    # g(soil)=soil-min(0,min_k soil(i,k)); no savings or other heuristic is
+    # mixed into the IWD probability.  The savings matrix was an earlier
+    # non-IWD adaptation and made the implementation look active while the
+    # actual IWD state was ignored.
+    shifted_soil = edge_soil - min(0.0, min_soil)
+    return 1.0 / (float(params["epsilon_s"]) + max(0.0, shifted_soil))
 
 
 def _iwd_update_global_soil(
@@ -1759,10 +1738,9 @@ def _iwd_update_global_soil(
     if not order or not math.isfinite(carried_soil):
         return
     n = max(2, len(order))
-    deposit = 2.0 * float(carried_soil) / float(n * (n - 1))
     for edge in zip(order, order[1:]):
         if edge in soil:
-            soil[edge] = (1.0 - float(params["rho_global"])) * float(soil[edge]) + float(params["rho_global"]) * deposit
+            soil[edge] = (1.0 + float(params["rho_global"])) * float(soil[edge]) - float(params["rho_global"]) * float(carried_soil) / float(n - 1)
 
 
 def _alns_neighbor(session: _SearchSession, solution: Solution, destroy: str, repair: str) -> _OperatorOutcome:
