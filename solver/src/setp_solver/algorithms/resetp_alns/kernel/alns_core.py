@@ -401,9 +401,12 @@ def _run_adaptive_sa_alns(
                 candidate = replace(candidate, solution=improved_solution, objective_value=None)
         if not candidate.removed_customers:
             from setp_solver.search.e3_multitrip_runtime import prepare_solution
+            from setp_solver.search.multitrip_schedule import drop_multitrip_identity
 
             try:
-                prepared_solution, _ = prepare_solution(candidate.solution, candidate.context)
+                prepared_solution, _ = prepare_solution(
+                    drop_multitrip_identity(candidate.solution), candidate.context
+                )
             except ValueError:
                 prepared_solution = candidate.solution
             if prepared_solution is not candidate.solution:
@@ -664,6 +667,56 @@ def whole_route_removal(state: AlnsState, rng: np.random.Generator, **kwargs: An
     return _remove_customers(state, _route_customer_ids(route, state.context.instance))
 
 
+def cross_depot_boundary_removal(state: AlnsState, rng: np.random.Generator, **kwargs: Any) -> AlnsState:
+    """Remove one customer that is cheapest to hand to another depot."""
+
+    _ = rng, kwargs
+    owners = state.context.customer_home_depot or {}
+    depots = sorted(
+        node.node_id for node in state.context.instance.nodes if node.node_type.lower() == "d"
+    )
+    if len(depots) < 2 or not owners:
+        return state
+    candidates: list[tuple[float, str]] = []
+    for route in state.solution.routes:
+        for customer_id in _route_customer_ids(route, state.context.instance):
+            owner = owners.get(customer_id)
+            alternatives = [depot for depot in depots if depot != owner]
+            if owner is None or not alternatives:
+                continue
+            alternate_distance = min(
+                float(state.context.instance.distance(depot, customer_id)) for depot in alternatives
+            )
+            owner_distance = float(state.context.instance.distance(owner, customer_id))
+            candidates.append((alternate_distance - owner_distance, customer_id))
+    for _, customer_id in sorted(candidates, key=lambda item: (item[0], item[1]))[:24]:
+        destroyed = _remove_customers(state, [customer_id])
+        options = enumerate_feasible_insertions(
+            destroyed.solution,
+            customer_id,
+            state.context,
+            state.policy,
+            max_route_candidates=len(destroyed.solution.routes),
+            max_positions_per_route=2,
+            allow_new_route=False,
+        )
+        owner = owners[customer_id]
+        if not any(
+            option.route_idx is not None
+            and destroyed.solution.routes[option.route_idx].home_depot_id != owner
+            for option in options
+        ):
+            continue
+        state.context.score_counts["cross_depot_boundary_removals"] = int(
+            state.context.score_counts.get("cross_depot_boundary_removals", 0)
+        ) + 1
+        return destroyed
+    state.context.score_counts["cross_depot_boundary_no_feasible_target"] = int(
+        state.context.score_counts.get("cross_depot_boundary_no_feasible_target", 0)
+    ) + 1
+    return state
+
+
 def route_elimination_removal(state: AlnsState, rng: np.random.Generator, **kwargs: Any) -> AlnsState:
     """Remove 1-3 weak routes and force repair into the remaining routes."""
 
@@ -701,6 +754,20 @@ def regret2_insert_repair(state: AlnsState, rng: np.random.Generator, **kwargs: 
 def regret3_insert_repair(state: AlnsState, rng: np.random.Generator, **kwargs: Any) -> AlnsState:
     _ = rng, kwargs
     return _finalize_candidate_state(_insert_removed(state, mode="regret3"))
+
+
+def cross_depot_insert_repair(state: AlnsState, rng: np.random.Generator, **kwargs: Any) -> AlnsState:
+    """Force one feasible alternate-depot insertion, then finish greedily.
+
+    In a one-depot subproblem this reduces to the ordinary greedy repair. The
+    complete candidate still passes the same cost, fairness, battery, and
+    physical-vehicle checks as every other repair.
+    """
+
+    _ = rng, kwargs
+    return _finalize_candidate_state(
+        _insert_removed(replace(state, allow_new_route_repair=False), mode="cross_depot")
+    )
 
 
 def vehicle_type_swap_destroy(state: AlnsState, rng: np.random.Generator, **kwargs: Any) -> AlnsState:
@@ -954,8 +1021,17 @@ def _ranked_insert_positions(route: Route, customer_id: str, instance: Instance)
 
 
 def _finalize_candidate_state(state: AlnsState) -> AlnsState:
-    solution = _normalize_for_policy(state.solution, state.context.instance, state.policy)
-    from setp_solver.search.e3_multitrip_runtime import prepare_and_score_candidate
+    from setp_solver.search.e3_multitrip_runtime import enabled as e3_multitrip_enabled, prepare_and_score_candidate
+
+    # The legacy normalizer assigns trips round-robin before checking time or
+    # battery continuity. Strict E3 has its own exact scheduler, so feeding
+    # those provisional labels into it can reject an otherwise schedulable
+    # route edit. Leave E1/E2 unchanged and let E3 perform the only packing.
+    solution = (
+        state.solution
+        if e3_multitrip_enabled()
+        else _normalize_for_policy(state.solution, state.context.instance, state.policy)
+    )
 
     with timed_section(state.context, "full_candidate_score"):
         solution, objective = prepare_and_score_candidate(solution, state.context)

@@ -2,14 +2,14 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 import os
 from typing import Any
 
 from setp_solver.check import check_solution
 from setp_solver.cost import _arc_loads, ev_arc_energy_kwh, evaluate, route_node_schedule
 from setp_solver.instance_loader import Instance, Node
-from setp_solver.solution import ChargingAction, Route, Solution
+from setp_solver.solution import ChargingAction, CrossSiteService, Route, Solution
 from setp_solver.algorithms.resetp_alns.support.charging import repair_route_charging
 from setp_solver.search.evaluation import BIG_M, EvaluationContext, fairness_context_for_solution, record_repair_delta
 from setp_solver.algorithms.resetp_alns.support.fleet import normalize_solution_vehicle_trips
@@ -127,6 +127,7 @@ def repair_removed_customers(
 ) -> Solution | None:
     pending = list(dict.fromkeys(removed_customers))
     current = partial_solution
+    cross_depot_forced = False
     previous_route_customers: dict[int, list[str]] = {}
     route_proximity_cache: dict[tuple[str, int], float] = {}
     while pending:
@@ -151,11 +152,13 @@ def repair_removed_customers(
                     route_proximity_cache.pop(key, None)
         previous_route_customers = route_customer_cache
         for customer_id in pending:
+            route_limit = len(current.routes) if mode == "cross_depot" and not cross_depot_forced else MAX_ROUTE_CANDIDATES
             options = enumerate_feasible_insertions(
                 current,
                 customer_id,
                 context,
                 policy,
+                max_route_candidates=route_limit,
                 allow_new_route=allow_new_route,
                 route_customer_cache=route_customer_cache,
                 route_proximity_cache=route_proximity_cache,
@@ -163,6 +166,28 @@ def repair_removed_customers(
             if not options:
                 continue
             best = options[0]
+            forced_cross_depot = False
+            if mode == "cross_depot" and not cross_depot_forced:
+                owner = (context.customer_home_depot or {}).get(customer_id)
+                cross_options = [
+                    option
+                    for option in options
+                    if option.route_idx is not None
+                    and owner is not None
+                    and current.routes[option.route_idx].home_depot_id != owner
+                ]
+                if cross_options:
+                    selected = next(
+                        (
+                            option
+                            for option in cross_options
+                            if _strict_complete_option_feasible(option.solution, context)
+                        ),
+                        None,
+                    )
+                    if selected is not None:
+                        best = selected
+                        forced_cross_depot = True
             ordered = [option.score for option in options]
             if mode == "regret3":
                 comparison = ordered[2] if len(ordered) > 2 else ordered[-1]
@@ -172,13 +197,28 @@ def repair_removed_customers(
                 primary = -(comparison - best.score)
             elif mode == "greedy":
                 primary = best.score
+            elif mode == "cross_depot":
+                primary = best.score
             else:
                 raise ValueError(f"unknown feasible repair mode: {mode}")
-            scored.append((primary, best.score, customer_id, best.solution))
+            scored.append((primary, best.score, customer_id, best.solution, forced_cross_depot))
         if not scored:
             return None
-        _, _, customer_id, current = min(scored, key=lambda item: (item[0], item[1], item[2]))
+        _, _, customer_id, current, forced_cross_depot = min(
+            scored, key=lambda item: (item[0], item[1], item[2])
+        )
+        if forced_cross_depot:
+            cross_depot_forced = True
+            context.score_counts["cross_depot_forced_insertions"] = int(
+                context.score_counts.get("cross_depot_forced_insertions", 0)
+            ) + 1
         pending.remove(customer_id)
+    if _strict_multitrip_enabled():
+        # The strict complete-candidate scorer is the single authority for
+        # physical packing, carried battery, and depot caps. The legacy
+        # route-level check assumes zero starting battery and otherwise falls
+        # back to an all-fuel fleet, which destroys valid E3 mixed solutions.
+        return current
     if _is_full_solution_feasible(current, context, policy):
         return _normalize_for_policy(current, context, policy)
     fallback = _all_cv_fallback(current, context, policy)
@@ -443,6 +483,32 @@ def _price(prices: Any, name: str) -> float:
 def _distance(instance: Instance, from_node: str, to_node: str) -> float:
     index = instance.node_index
     return float(instance.distance_matrix[index[from_node]][index[to_node]])
+
+
+def _strict_complete_option_feasible(solution: Solution, context: EvaluationContext) -> bool:
+    if not _strict_multitrip_enabled():
+        return True
+    owners = context.customer_home_depot or {}
+    annotated = replace(
+        solution,
+        cross_site_services=[
+            CrossSiteService(customer_id=node_id, served_by_depot_id=route.home_depot_id)
+            for route in solution.routes
+            for node_id in route.node_sequence[1:-1]
+            if owners.get(node_id) is not None and owners.get(node_id) != route.home_depot_id
+        ],
+    )
+    from setp_solver.search.e3_multitrip_runtime import hard_violations, prepare_solution
+    from setp_solver.search.multitrip_schedule import drop_multitrip_identity
+
+    try:
+        prepared, _ = prepare_solution(drop_multitrip_identity(annotated), context)
+        feasible = not hard_violations(prepared, context)
+    except ValueError:
+        feasible = False
+    key = "cross_depot_lookahead_legal" if feasible else "cross_depot_lookahead_rejected"
+    context.score_counts[key] = int(context.score_counts.get(key, 0)) + 1
+    return feasible
 
 
 def _is_full_solution_feasible(solution: Solution, context: EvaluationContext, policy: Any) -> bool:

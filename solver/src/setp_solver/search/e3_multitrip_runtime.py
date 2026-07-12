@@ -35,6 +35,7 @@ from .evaluation import (
 from .multitrip_schedule import (
     CONTRACT_ID,
     MultiTripCertificate,
+    drop_multitrip_identity,
     prepare_multitrip_solution,
 )
 
@@ -62,7 +63,11 @@ def hard_violations(solution: Solution, context: EvaluationContext) -> list[Any]
             fairness_enabled=context.fairness_enabled,
         )
     cached = context.score_breakdowns.get(id(solution), {})
-    if cached.get("strict_multitrip_ledger") is True and "_violations" in cached:
+    if (
+        cached.get("strict_multitrip_ledger") is True
+        and cached.get("_solution_signature") == _solution_signature(solution)
+        and "_violations" in cached
+    ):
         context.score_counts["strict_multitrip_check_cache_hits"] = int(
             context.score_counts.get("strict_multitrip_check_cache_hits", 0)
         ) + 1
@@ -131,7 +136,10 @@ def prepare_and_score_candidate(solution: Solution, context: EvaluationContext) 
     context.score_counts["candidate"] = int(context.score_counts.get("candidate", 0)) + 1
     if context.budget is not None:
         context.budget.record()
-    return _prepare_and_score(solution, context)
+    # A route edit invalidates the old physical-vehicle labels. Rebuild the
+    # packing for every complete candidate; references/final rechecks remain
+    # idempotent and preserve their certified labels.
+    return _prepare_and_score(drop_multitrip_identity(solution), context)
 
 
 def prepare_and_score_reference(solution: Solution, context: EvaluationContext) -> tuple[Solution, float]:
@@ -178,6 +186,10 @@ def _prepare_and_score(solution: Solution, context: EvaluationContext) -> tuple[
             context.score_counts["cross_site_legal_candidates"] = int(
                 context.score_counts.get("cross_site_legal_candidates", 0)
             ) + 1
+        if cross_site_count > 0:
+            for violation_type in {str(item.type) for item in violations if hasattr(item, "type")}:
+                key = f"cross_site_reject_{violation_type.lower()}"
+                context.score_counts[key] = int(context.score_counts.get(key, 0)) + 1
         for violation_type in {str(item.type) for item in violations if hasattr(item, "type")}:
             key = f"strict_reject_{violation_type.lower()}"
             context.score_counts[key] = int(context.score_counts.get(key, 0)) + 1
@@ -189,6 +201,7 @@ def _prepare_and_score(solution: Solution, context: EvaluationContext) -> tuple[
             "violation_count": len(violations),
             "feasible": not violations,
             "strict_multitrip_ledger": True,
+            "_solution_signature": _solution_signature(prepared),
             "_violations": tuple(violations),
         }
         return prepared, float(objective)
@@ -207,9 +220,33 @@ def _prepare_and_score(solution: Solution, context: EvaluationContext) -> tuple[
             "violation_count": 1,
             "feasible": False,
             "strict_multitrip_ledger": False,
+            "_solution_signature": _solution_signature(solution),
             "reason": str(exc),
         }
         return solution, float(BIG_M)
+
+
+def _solution_signature(solution: Solution) -> tuple[Any, ...]:
+    return (
+        tuple(
+            (route.vehicle_id, route.vehicle_type, route.home_depot_id, tuple(route.node_sequence))
+            for route in solution.routes
+        ),
+        tuple(
+            (
+                action.vehicle_id,
+                action.station_id,
+                float(action.energy_kwh),
+                float(action.occupancy_minutes),
+                float(action.charge_start_second),
+            )
+            for action in solution.charging_actions
+        ),
+        tuple(
+            (service.customer_id, service.served_by_depot_id)
+            for service in solution.cross_site_services
+        ),
+    )
 
 
 def _dynamic_states(

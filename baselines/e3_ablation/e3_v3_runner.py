@@ -48,7 +48,7 @@ from setp_solver.search.submission_contract import FULL_MODEL_LANE, load_submiss
 from setp_solver.solution import ChargingAction, CrossSiteService, Route, Solution, physical_vehicle_id
 
 
-DEFAULT_OUT = ROOT / "baselines/e3_ablation/e3_v3_clean_20260713"
+DEFAULT_OUT = ROOT / "baselines/e3_ablation/e3_v4_clean_20260713"
 CONTRACT_DIR = ROOT / "baselines/contract_audit/submission_contract_candidate_20260711"
 CONTRACT_PATH = CONTRACT_DIR / "submission_contract.proposed.json"
 OWNER_ROWS = CONTRACT_DIR / "customer_owner_rows.csv"
@@ -553,6 +553,28 @@ def _run_cooperative(
         owners=owners,
     )
     search_metrics, search_error = _metric_row(search, bundle, prices)
+    search_fee_error = abs(
+        float(search_metrics["cost_transship"])
+        - len(search.cross_site_services) * float(spec["fee"])
+    )
+    probe_service = next(
+        (
+            CrossSiteService(customer_id=customer_id, served_by_depot_id=depot)
+            for customer_id, owner in sorted(owners.items())
+            for depot in sorted(caps)
+            if depot != owner
+        ),
+        None,
+    )
+    fee_probe_error = 0.0
+    if float(spec["fee"]) > 0.0 and probe_service is not None:
+        probe = replace(independent_solution, cross_site_services=[probe_service])
+        probe_with_fee, _ = _metric_row(probe, bundle, prices)
+        probe_without_fee, _ = _metric_row(probe, bundle, replace(prices, cross_site_cost=0.0))
+        fee_probe_error = abs(
+            (float(probe_with_fee["total_cost"]) - float(probe_without_fee["total_cost"]))
+            - float(spec["fee"])
+        )
     strict_win = float(search_metrics["total_cost"]) < float(baseline_metrics["total_cost"]) - 1e-9
     adopted = search if strict_win else independent_solution
     adopted_source = "cooperative_search" if strict_win else "independent_concat_fallback"
@@ -597,6 +619,10 @@ def _run_cooperative(
     public_hits = int(counts.get("strict_public_station_incompatibility", 0))
     if public_hits:
         violations.append(f"public-station incompatibility encountered {public_hits} times")
+    if search_fee_error > 1e-7:
+        violations.append(f"cross-site fee ledger error {search_fee_error}")
+    if fee_probe_error > 1e-7:
+        violations.append(f"cross-site fee probe error {fee_probe_error}")
     all_violations = [*violations, *adopted_violations]
     row = {
         **spec,
@@ -611,6 +637,10 @@ def _run_cooperative(
         "search_route_structure_signature": route_signature(search),
         "cross_site_customer_count": len(adopted.cross_site_services),
         "search_cross_site_customer_count": len(search.cross_site_services),
+        "search_cost_transship": search_metrics["cost_transship"],
+        "search_cross_site_fee_error": search_fee_error,
+        "fee_override_probe_error": fee_probe_error,
+        "fee_override_verified": fee_probe_error <= 1e-7,
         "cross_site_attempted_candidates": int(counts.get("cross_site_complete_candidates", 0)),
         "cross_site_legal_candidates": int(counts.get("cross_site_legal_candidates", 0)),
         "cross_site_accepted_candidates": int(counts.get("cross_site_accepted_candidates", 0)),
@@ -772,7 +802,20 @@ def summarize_phase(out: Path, phase: str, plans: list[dict[str, Any]]) -> dict[
         for row in rows
         if row["layer"] == "M5"
     )
-    verdict = f"E3_{phase.upper()}_PASS" if all_ok and fairness_ok else f"HALT_E3_{phase.upper()}"
+    fee_ok = all(
+        bool(row.get("fee_override_verified", True))
+        and float(row.get("search_cross_site_fee_error", 0.0) or 0.0) <= 1e-7
+        for row in rows
+    )
+    mobility_required = phase in {"preflight", "model_gate", "rehearsal", "formal70", "promote100"}
+    cooperative_rows = [row for row in rows if row["layer"] != "M0"]
+    mobility_ok = (not mobility_required) or all(
+        int(row.get("cross_site_attempted_candidates", 0) or 0) > 0
+        and int(row.get("cross_site_legal_candidates", 0) or 0) > 0
+        for row in cooperative_rows
+    )
+    gate_ok = all_ok and fairness_ok and fee_ok and mobility_ok
+    verdict = f"E3_{phase.upper()}_PASS" if gate_ok else f"HALT_E3_{phase.upper()}"
     decision = {
         "verdict": verdict,
         "phase": phase,
@@ -780,8 +823,10 @@ def summarize_phase(out: Path, phase: str, plans: list[dict[str, Any]]) -> dict[
         "ok_rows": sum(row["status"] == "OK" for row in rows),
         "all_budget_closed": all_ok,
         "fairness_evidence_complete": fairness_ok,
-        "formal_70_authorized": phase in {"model_gate", "rehearsal"} and all_ok and fairness_ok,
-        "promotion_authorized": phase == "formal70" and all_ok and fairness_ok,
+        "cross_site_fee_wiring_complete": fee_ok,
+        "cooperation_mobility_complete": mobility_ok,
+        "formal_70_authorized": phase in {"model_gate", "rehearsal"} and gate_ok,
+        "promotion_authorized": phase == "formal70" and gate_ok,
     }
     metadata = {
         "schema": "setp.e3.phase.v1",

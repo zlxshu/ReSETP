@@ -29,6 +29,8 @@ from setp_solver.algorithms.resetp_alns.kernel.alns_core import (
     _make_operator_selector,
     _solution_changed,
     _target_iterations,
+    cross_depot_boundary_removal,
+    cross_depot_insert_repair,
     greedy_insert_repair,
     random_customer_removal,
     regret2_insert_repair,
@@ -135,6 +137,7 @@ RVND_SWAPSTAR_FLAG = "SETP_ALNS_CRUSH_RVND_SWAPSTAR"
 ELITE_ARCHIVE_RESTART_FLAG = "SETP_ALNS_CRUSH_ELITE_ARCHIVE_RESTART"
 GLOBAL_ORDER_REPACK_FLAG = "SETP_ALNS_CRUSH_GLOBAL_ORDER_REPACK"
 FLEET_CHARGE_COREPAIR_FLAG = "SETP_ALNS_CRUSH_FLEET_CHARGE_COREPAIR"
+CROSS_DEPOT_FORCE_INTERVAL = 100
 STRUCTURAL_FLAGS = (
     ROUTE_POOL_RECOMBINATION_FLAG,
     RVND_SWAPSTAR_FLAG,
@@ -269,6 +272,8 @@ class WinnerOperatorSet:
             ("route_segment_removal", route_segment_removal),
             ("vehicle_type_swap", vehicle_type_swap_destroy),
         ]
+        if os.environ.get("SETP_E3_STRICT_MULTITRIP", "0").lower() not in {"0", "false", "no"}:
+            destroy_ops.append(("cross_depot_boundary_removal", cross_depot_boundary_removal))
         if include_route_elimination:
             destroy_ops.insert(4, ("route_elimination_removal", route_elimination_removal))
         if carbon_aware:
@@ -290,6 +295,8 @@ class WinnerOperatorSet:
             ("regret2_insert_repair", regret2_insert_repair),
             ("regret3_insert_repair", regret3_insert_repair),
         ]
+        if os.environ.get("SETP_E3_STRICT_MULTITRIP", "0").lower() not in {"0", "false", "no"}:
+            repair_ops.append(("cross_depot_insert_repair", cross_depot_insert_repair))
         if carbon_aware:
             repair_ops.append(("low_carbon_charging_repair", _with_carbon_bias(low_carbon_charging_repair)))
         if refined_carbon:
@@ -1882,7 +1889,14 @@ def _run_winner_kernel_loop(
                     }
                 )
         progress = _chain_phase_progress(selector_kind, moves, target)
-        destroy_idx, repair_idx = selector(rng, best, current)
+        forced_cross_pair = _forced_cross_depot_pair(operator_set, context)
+        if forced_cross_pair is None:
+            destroy_idx, repair_idx = selector(rng, best, current)
+        else:
+            destroy_idx, repair_idx = forced_cross_pair
+            context.score_counts["cross_depot_forced_operator_calls"] = int(
+                context.score_counts.get("cross_depot_forced_operator_calls", 0)
+            ) + 1
         destroy_name = operator_set.destroy_ops[int(destroy_idx)][0]
         repair_name = operator_set.repair_ops[int(repair_idx)][0]
         previous_obj = current.objective()
@@ -2387,6 +2401,12 @@ def _selector_coupling_contract(operator_set: WinnerOperatorSet) -> np.ndarray:
     vehicle_idx = destroy_names.index("vehicle_type_swap")
     if repair_count > 1:
         coupling[vehicle_idx, 1:] = False
+    if "cross_depot_boundary_removal" in destroy_names and "cross_depot_insert_repair" in repair_names:
+        destroy_idx = destroy_names.index("cross_depot_boundary_removal")
+        repair_idx = repair_names.index("cross_depot_insert_repair")
+        coupling[:, repair_idx] = False
+        coupling[destroy_idx, :] = False
+        coupling[destroy_idx, repair_idx] = True
     refined_repair = "integrated_carbon_reconstruction_repair"
     if refined_repair in repair_names:
         refined_repair_idx = repair_names.index(refined_repair)
@@ -2397,6 +2417,39 @@ def _selector_coupling_contract(operator_set: WinnerOperatorSet) -> np.ndarray:
             coupling[destroy_idx, :] = False
             coupling[destroy_idx, refined_repair_idx] = True
     return coupling
+
+
+def _forced_cross_depot_pair(
+    operator_set: WinnerOperatorSet,
+    context: EvaluationContext,
+) -> tuple[int, int] | None:
+    from setp_solver.search.e3_multitrip_runtime import enabled as e3_multitrip_enabled
+
+    if not e3_multitrip_enabled() or not context.customer_home_depot:
+        return None
+    depots = {
+        node.node_id
+        for node in context.instance.nodes
+        if str(node.node_type).lower() == "d"
+    }
+    if len(depots) < 2:
+        return None
+    evaluation_count = int(context.budget.count if context.budget is not None else 0)
+    forced_calls = int(context.score_counts.get("cross_depot_forced_operator_calls", 0))
+    # Other budgeted work (for example the initial scan or a structural rescue)
+    # may consume the exact 0/100/200 evaluation marks before this selector is
+    # reached.  Use a monotone threshold instead of modulo so the diagnostic
+    # move is delayed, never silently skipped.
+    if evaluation_count < forced_calls * CROSS_DEPOT_FORCE_INTERVAL:
+        return None
+    destroy_names = [name for name, _ in operator_set.destroy_ops]
+    repair_names = [name for name, _ in operator_set.repair_ops]
+    if "cross_depot_boundary_removal" not in destroy_names or "cross_depot_insert_repair" not in repair_names:
+        return None
+    return (
+        destroy_names.index("cross_depot_boundary_removal"),
+        repair_names.index("cross_depot_insert_repair"),
+    )
 
 
 def structural_component_from_flags(flags: dict[str, str] | None = None) -> str | None:
@@ -2475,9 +2528,12 @@ def _candidate_change_and_violations(
             )
         if _solution_changed(candidate.solution, improved_solution):
             from setp_solver.search.e3_multitrip_runtime import prepare_and_score_reference, prepare_solution
+            from setp_solver.search.multitrip_schedule import drop_multitrip_identity
 
             try:
-                improved_solution, _ = prepare_solution(improved_solution, candidate.context)
+                improved_solution, _ = prepare_solution(
+                    drop_multitrip_identity(improved_solution), candidate.context
+                )
             except ValueError:
                 pass
             improved_solution, improved_objective = prepare_and_score_reference(improved_solution, candidate.context)
