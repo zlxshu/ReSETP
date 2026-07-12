@@ -123,7 +123,24 @@ def load_submission_contract(
     fairness = dict(model.get("fairness") or {})
     _require(fairness.get("global_default") == "off", "fairness must not be silently enabled in every experiment")
     _require(fairness.get("enabled_during_search_when_required") is True, "fairness experiments must enforce fairness during search")
-    _require("E6" in list(fairness.get("required_experiments") or []), "E6 must remain the primary fairness mechanism experiment")
+    required_fairness = set(fairness.get("required_experiments") or [])
+    disabled_fairness = set(fairness.get("disabled_experiments") or [])
+    _require("E3_full_model" in required_fairness, "E3 full-model rows must enforce fairness during search")
+    _require("E3_friction_axis" in required_fairness, "E3 friction-axis rows must enforce fairness during search")
+    _require(
+        "E4_carbon_price_reoptimization" in required_fairness,
+        "E4 carbon-price reoptimization rows must enforce fairness during search",
+    )
+    _require("E6" in required_fairness, "E6 must remain the primary fairness mechanism experiment")
+    _require("E7_all_arms" in required_fairness, "all E7 arms must enforce fairness during search")
+    _require(
+        "E2_frozen_algorithm_benchmark" in disabled_fairness,
+        "the frozen E2 algorithm benchmark must remain fairness-off",
+    )
+    _require(
+        "E3_mechanism_isolation_layers_0_to_4" in disabled_fairness,
+        "the E3 mechanism-isolation layers must remain fairness-off",
+    )
     _require(fairness.get("theta_selection") == "calibrate_around_natural_binding_range", "fairness theta rule is not binding-aware")
 
     quota = dict(model.get("carbon_quota") or {})

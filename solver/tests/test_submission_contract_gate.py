@@ -88,7 +88,17 @@ def _fixture(tmp_path: Path, *, status: str) -> Path:
                 "fairness": {
                     "global_default": "off",
                     "enabled_during_search_when_required": True,
-                    "required_experiments": ["E6"],
+                    "required_experiments": [
+                        "E3_full_model",
+                        "E3_friction_axis",
+                        "E4_carbon_price_reoptimization",
+                        "E6",
+                        "E7_all_arms",
+                    ],
+                    "disabled_experiments": [
+                        "E2_frozen_algorithm_benchmark",
+                        "E3_mechanism_isolation_layers_0_to_4",
+                    ],
                     "theta_selection": "calibrate_around_natural_binding_range",
                 },
                 "carbon_quota": {"default_quota_kg": 0.0, "baseline_factor": 0.8, "claim_role": "accounting_only"},

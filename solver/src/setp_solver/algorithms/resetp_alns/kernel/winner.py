@@ -1791,6 +1791,10 @@ def _run_winner_kernel_loop(
                 better_current = accepted and candidate_obj < previous_obj - 1e-9
                 if accepted:
                     current = candidate
+                    if current.solution.cross_site_services:
+                        context.score_counts["cross_site_accepted_candidates"] = int(
+                            context.score_counts.get("cross_site_accepted_candidates", 0)
+                        ) + 1
                     structural_counts["accepted"] += 1
                     if route_pool is not None:
                         route_pool.record_solution(current.solution, objective=current.objective())
@@ -1981,6 +1985,10 @@ def _run_winner_kernel_loop(
         outcome_idx = 3
         if accepted:
             current = candidate
+            if current.solution.cross_site_services:
+                context.score_counts["cross_site_accepted_candidates"] = int(
+                    context.score_counts.get("cross_site_accepted_candidates", 0)
+                ) + 1
             if route_pool is not None:
                 route_pool.record_solution(current.solution, objective=current.objective())
             if elite_archive is not None:

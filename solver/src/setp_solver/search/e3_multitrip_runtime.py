@@ -170,6 +170,17 @@ def _prepare_and_score(solution: Solution, context: EvaluationContext) -> tuple[
             )["total_cost"]
         )
         violations = _hard_violations_prepared(prepared, certificate, context)
+        cross_site_count = len(prepared.cross_site_services)
+        context.score_counts["cross_site_complete_candidates"] = int(
+            context.score_counts.get("cross_site_complete_candidates", 0)
+        ) + int(cross_site_count > 0)
+        if cross_site_count > 0 and not violations:
+            context.score_counts["cross_site_legal_candidates"] = int(
+                context.score_counts.get("cross_site_legal_candidates", 0)
+            ) + 1
+        for violation_type in {str(item.type) for item in violations if hasattr(item, "type")}:
+            key = f"strict_reject_{violation_type.lower()}"
+            context.score_counts[key] = int(context.score_counts.get(key, 0)) + 1
         objective = cost + BIG_M * len(violations)
         context.score_breakdowns[id(prepared)] = {
             "raw_cost": cost,
