@@ -175,15 +175,7 @@ def run_alns_wouda(
     )
     best_state = run["best_state"]
     best_obj = best_state.objective()
-    feasible = len(
-        check_solution(
-            best_state.solution,
-            bundle.instance,
-            prices,
-            fairness_context=fairness_context_for_solution(best_state.solution, context),
-            fairness_enabled=fairness_enabled,
-        )
-    ) == 0
+    feasible = len(_hard_violations(best_state.solution, context)) == 0
     destroy_counts = {name: tuple(row) for name, row in run["destroy_counts"].items()}
     repair_counts = {name: tuple(row) for name, row in run["repair_counts"].items()}
     actual_moves = sum(sum(row) for row in destroy_counts.values())
@@ -489,13 +481,18 @@ def _hard_violations(solution: Solution, context: EvaluationContext) -> list[Any
     except ValueError as exc:
         return [exc]
     with timed_section(context, "hard_check"):
-        return check_solution(
+        violations = check_solution(
             solution,
             context.instance,
             context.prices,
             fairness_context=fairness_context_for_solution(solution, context),
             fairness_enabled=context.fairness_enabled,
         )
+        if os.environ.get("SETP_E3_STRICT_MULTITRIP", "0").lower() not in {"0", "false", "no"}:
+            from setp_solver.search.multitrip_schedule import strict_multitrip_violations
+
+            violations.extend(strict_multitrip_violations(solution.routes, context.instance, context.prices))
+        return violations
 
 
 def _normalize_for_policy(solution: Solution, instance: Instance, policy: SearchPolicy) -> Solution:

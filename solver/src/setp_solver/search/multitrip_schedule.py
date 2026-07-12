@@ -176,3 +176,22 @@ def validate_multitrip_certificate(certificate: MultiTripCertificate, routes: li
         for previous, current in zip(ordered, ordered[1:]):
             if current.departure_second + 1e-6 < previous.recharge_end_second:
                 raise ValueError(f"{CONTRACT_ID}: {vehicle_id} has overlap or incomplete recharge")
+
+
+def strict_multitrip_violations(
+    routes: list[Route],
+    instance: Instance,
+    prices: PriceParameters | dict[str, float] | Any = DEFAULT_PRICES,
+) -> list[str]:
+    """Return new-contract failures without changing the legacy checker."""
+
+    try:
+        certificate = build_multitrip_certificate(routes, instance, prices)
+    except ValueError as exc:
+        return [str(exc)]
+    failures: list[str] = []
+    if instance.num_cv is not None and certificate.vehicle_counts["cv"] > int(instance.num_cv):
+        failures.append(f"{CONTRACT_ID}: needs {certificate.vehicle_counts['cv']} CV but cap is {instance.num_cv}")
+    if instance.num_ev is not None and certificate.vehicle_counts["ev"] > int(instance.num_ev):
+        failures.append(f"{CONTRACT_ID}: needs {certificate.vehicle_counts['ev']} EV but cap is {instance.num_ev}")
+    return failures

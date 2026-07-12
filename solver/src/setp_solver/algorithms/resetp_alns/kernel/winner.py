@@ -1002,13 +1002,7 @@ def _run_staged_hybrid_entry(
         fairness_theta=fairness_theta,
         customer_home_depot=customer_home_depot,
     )
-    violations = check_solution(
-        run.best_solution,
-        bundle.instance,
-        prices,
-        fairness_context=fairness_context_for_solution(run.best_solution, context),
-        fairness_enabled=fairness_enabled,
-    )
+    violations = _hard_violations(run.best_solution, context)
     return {
         "operator_base_id": operator_base_id,
         "variant": variant,
@@ -2466,6 +2460,12 @@ def _relaxed_route_candidate_usable(
 
 
 def _hard_violation_count(solution: Solution, context: EvaluationContext) -> int:
+    # E3's new physical-vehicle contract is intentionally outside the frozen
+    # route-level score cache.  When enabled, always run the combined check;
+    # otherwise an EV-type swap can look legal only because the old cache has
+    # no physical schedule field.
+    if os.environ.get("SETP_E3_STRICT_MULTITRIP", "0").lower() not in {"0", "false", "no"}:
+        return len(_hard_violations(solution, context))
     breakdown = context.score_breakdowns.get(id(solution), {})
     if "violation_count" in breakdown:
         return int(breakdown["violation_count"])
