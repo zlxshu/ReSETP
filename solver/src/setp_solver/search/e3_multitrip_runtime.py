@@ -193,6 +193,10 @@ def _prepare_and_score(solution: Solution, context: EvaluationContext) -> tuple[
         }
         return prepared, float(objective)
     except ValueError as exc:
+        if "public-station trips are unsupported" in str(exc):
+            context.score_counts["strict_public_station_incompatibility"] = int(
+                context.score_counts.get("strict_public_station_incompatibility", 0)
+            ) + 1
         context.score_counts["strict_multitrip_prepare_failures"] = int(
             context.score_counts.get("strict_multitrip_prepare_failures", 0)
         ) + 1

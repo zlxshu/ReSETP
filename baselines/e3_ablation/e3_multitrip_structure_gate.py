@@ -156,7 +156,7 @@ def main() -> int:
     source = closure._resolve_bundle_dir("threeshift", INSTANCE)
     bundle = load_search_bundle(source)
     metadata = {
-        "schema": "setp-e3-multitrip-structure-gate.v1",
+        "schema": "setp-e3-multitrip-structure-gate.v2",
         "purpose": "prove seed-1 solo and shared routing can be physically scheduled before formal E3",
         "instance": INSTANCE,
         "source_bundle": str(source.relative_to(ROOT)),
@@ -165,6 +165,7 @@ def main() -> int:
         "depot_charge_power_kw": float(DEFAULT_PRICES.depot_charge_power_kw),
         "depot_charge_power_source": "PriceParameters.depot_charge_power_kw",
         "certificate_scope": "greedy feasibility witness; not a proof of minimum vehicle count or global infeasibility",
+        "formal_recharge_rule": "partial_recharge_decision_within_each_legal_gap",
         "formal_run_count_started": 0,
         "model_changed": False,
         "legacy_e1_e2_rejudged": False,
@@ -186,21 +187,22 @@ def main() -> int:
     full_rows = [row for row in rows if row["recharge_mode"] == CHARGE_MODE_FULL]
     partial_witness_passed = bool(partial_rows) and all(row["status"] == "PASS_14_14_WITNESS" for row in partial_rows)
     full_witness_passed = bool(full_rows) and all(row["status"] == "PASS_14_14_WITNESS" for row in full_rows)
+    structure_gate_cleared = partial_witness_passed
     decision = {
-        "verdict": "STRUCTURE_GATE_22KW_DIAGNOSTIC_COMPLETE",
+        "verdict": "E3_STRICT_STRUCTURE_V2_PASS" if structure_gate_cleared else "HALT_E3_STRICT_STRUCTURE_V2",
         "partial_14_14_witness_passed": partial_witness_passed,
-        "full_14_14_witness_passed": full_witness_passed,
-        "structure_gate_cleared": False,
+        "full_recharge_robustness_witness_passed": full_witness_passed if full_rows else None,
+        "structure_gate_cleared": structure_gate_cleared,
         "formal_70_authorized": False,
         "formal_70_started": False,
-        "next_required_gate": "compare the two recharge definitions and source evidence before any formal search",
+        "next_required_gate": "200_evaluation_wiring_gate" if structure_gate_cleared else "stop_and_report",
         "rows": rows,
     }
     (OUT / "decision.json").write_text(json.dumps(decision, ensure_ascii=False, indent=2), encoding="utf-8")
-    report = "# E3 real-vehicle structure gate\n\n" + (
-        "The partial-recharge witness fits within 14 fuel and 14 electric vehicles."
-        if partial_witness_passed else "The partial-recharge witness did not fit within 14 fuel and 14 electric vehicles."
-    ) + "\n\nA failed full-recharge row means this greedy scheduler did not find a 14/14 witness; it is not a proof that none exists. This is a 22 kW diagnostic. It does not select a formal recharge definition or start the 70-run batch.\n"
+    report = "# E3真实车辆结构门\n\n" + (
+        "通过：按论文已经批准的按需补电规则，独立经营和合作经营都能在14辆油车、14辆电车以内排开。"
+        if partial_witness_passed else "停止：当前构造没有在14辆油车、14辆电车以内排开。"
+    ) + "\n\n这一步只证明物理上排得开，不证明方案省钱，也没有启动正式70次。若另跑每趟补满，它只作额外对照，不决定正式口径。\n"
     (OUT / "report.md").write_text(report, encoding="utf-8")
     hashes = {}
     for path in sorted(OUT.iterdir()):
