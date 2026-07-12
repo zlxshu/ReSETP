@@ -2443,6 +2443,12 @@ def _candidate_change_and_violations(
     annotated = _annotate_cross_site_services(candidate.solution, candidate.context)
     if annotated is not candidate.solution:
         candidate = replace(candidate, solution=annotated, objective_value=None)
+        if not candidate.removed_customers:
+            from setp_solver.search.e3_multitrip_runtime import enabled as e3_multitrip_enabled, prepare_and_score_reference
+
+            if e3_multitrip_enabled():
+                prepared, objective = prepare_and_score_reference(candidate.solution, candidate.context)
+                candidate = replace(candidate, solution=prepared, objective_value=objective)
     changed = _solution_changed(previous_state.solution, candidate.solution)
     hard_violation_count = _hard_violation_count(candidate.solution, candidate.context) if not candidate.removed_customers else 1
     if trace is not None:

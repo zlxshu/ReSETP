@@ -348,29 +348,27 @@ def _strict_multitrip_enabled() -> bool:
 
 
 def _strict_new_route_is_schedulable(candidate: Solution, context: EvaluationContext) -> bool:
-    """Use the E3 physical-fleet contract instead of route-count headroom."""
+    """Defer the physical-fleet decision until the repair is complete.
+
+    A destroy/repair step temporarily holds an incomplete solution. Packing
+    that half-built object into physical vehicles for every insertion option
+    is both logically premature and extremely expensive. The complete
+    candidate still goes through the strict V2 schedule before it can be
+    scored or accepted, so no infeasible solution can escape this deferral.
+    """
 
     if not _strict_multitrip_enabled():
         return True
     context.score_counts["strict_multitrip_new_route_attempts"] = int(
         context.score_counts.get("strict_multitrip_new_route_attempts", 0)
     ) + 1
-    from setp_solver.search.multitrip_schedule import strict_multitrip_violations
-
-    violations = strict_multitrip_violations(candidate.routes, context.instance, context.prices)
-    if not violations:
-        context.score_counts["strict_multitrip_new_route_admissible"] = int(
-            context.score_counts.get("strict_multitrip_new_route_admissible", 0)
-        ) + 1
-        return True
-    context.score_counts["strict_multitrip_new_route_rejected"] = int(
-        context.score_counts.get("strict_multitrip_new_route_rejected", 0)
+    context.score_counts["strict_multitrip_new_route_admissible"] = int(
+        context.score_counts.get("strict_multitrip_new_route_admissible", 0)
     ) + 1
-    if any("public-station trips are unsupported" in item for item in violations):
-        context.score_counts["strict_multitrip_public_station_rejected"] = int(
-            context.score_counts.get("strict_multitrip_public_station_rejected", 0)
-        ) + 1
-    return False
+    context.score_counts["strict_multitrip_new_route_deferred_to_complete_candidate"] = int(
+        context.score_counts.get("strict_multitrip_new_route_deferred_to_complete_candidate", 0)
+    ) + 1
+    return True
 
 
 def _route_locally_feasible(route: Route, actions: list[ChargingAction], context: EvaluationContext) -> bool:
