@@ -4,6 +4,7 @@ import json
 
 from baselines.e3_ablation.e3_v3_runner import (
     _cooperation_mobility_row_ok,
+    _assert_phase_preconditions,
     default_budget,
     fairness_rejection_count,
     phase_plans,
@@ -183,6 +184,9 @@ def test_preflight_cannot_pass_when_cooperation_never_makes_a_legal_move(tmp_pat
     cooperative["cross_site_legal_candidates"] = 1
     cooperative_path.write_text(json.dumps(cooperative), encoding="utf-8")
     assert summarize_phase(tmp_path, "preflight", plans)["verdict"] == "E3_PREFLIGHT_PASS"
+    hashes = json.loads((tmp_path / "preflight" / "artifact_hashes.json").read_text(encoding="utf-8"))
+    assert "runs/independent.json" in hashes
+    assert "runs/cooperative.json" in hashes
 
 
 def test_fair_cooperation_may_reject_unfair_moves_but_must_record_why() -> None:
@@ -195,3 +199,23 @@ def test_fair_cooperation_may_reject_unfair_moves_but_must_record_why() -> None:
     assert _cooperation_mobility_row_ok(row)
     row["fairness_search_active_evidence"] = json.dumps({"rejected_candidates": 0})
     assert not _cooperation_mobility_row_ok(row)
+
+
+def test_formal_phase_requires_every_prior_gate(tmp_path) -> None:
+    for phase in ("preflight", "model_gate", "rehearsal"):
+        phase_dir = tmp_path / phase
+        phase_dir.mkdir()
+        (phase_dir / "decision.json").write_text(
+            json.dumps({"verdict": f"E3_{phase.upper()}_PASS"}),
+            encoding="utf-8",
+        )
+    _assert_phase_preconditions(tmp_path, "formal70")
+    (tmp_path / "rehearsal" / "decision.json").write_text(
+        json.dumps({"verdict": "HALT_E3_REHEARSAL"}), encoding="utf-8"
+    )
+    try:
+        _assert_phase_preconditions(tmp_path, "formal70")
+    except ValueError as exc:
+        assert "did not pass" in str(exc)
+    else:
+        raise AssertionError("formal phase bypassed a failed rehearsal gate")

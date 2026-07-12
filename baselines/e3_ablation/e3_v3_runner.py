@@ -48,7 +48,7 @@ from setp_solver.search.submission_contract import FULL_MODEL_LANE, load_submiss
 from setp_solver.solution import ChargingAction, CrossSiteService, Route, Solution, physical_vehicle_id
 
 
-DEFAULT_OUT = ROOT / "baselines/e3_ablation/e3_v6_clean_20260713"
+DEFAULT_OUT = ROOT / "baselines/e3_ablation/e3_v7_clean_20260713"
 CONTRACT_DIR = ROOT / "baselines/contract_audit/submission_contract_candidate_20260711"
 CONTRACT_PATH = CONTRACT_DIR / "submission_contract.proposed.json"
 OWNER_ROWS = CONTRACT_DIR / "customer_owner_rows.csv"
@@ -464,6 +464,8 @@ def _run_independent(spec: dict[str, Any], manifest: dict[str, Any], out: Path) 
         "cross_site_customer_count": 0,
         "search_score_counts_json": json.dumps(combined_counts, sort_keys=True),
         "strict_search_win": "",
+        "search_better_than_independent": "",
+        "cooperation_story_win": "",
         "adopted_source": "independent_search",
         "search_total_cost": metrics["total_cost"],
         "independent_concat_total_cost": metrics["total_cost"],
@@ -663,6 +665,8 @@ def _run_cooperative(
         "profit_ratios_json": json.dumps(ratios, sort_keys=True),
         "min_profit_ratio": min(ratios.values(), default=""),
         "strict_search_win": strict_win,
+        "search_better_than_independent": strict_win,
+        "cooperation_story_win": bool(strict_win and search.cross_site_services),
         "adopted_source": adopted_source,
         "search_total_cost": search_metrics["total_cost"],
         "independent_concat_total_cost": baseline_metrics["total_cost"],
@@ -811,6 +815,41 @@ def _cooperation_mobility_row_ok(row: dict[str, Any]) -> bool:
     return int(evidence.get("rejected_candidates", 0) or 0) > 0
 
 
+def _assert_phase_preconditions(out: Path, phase: str) -> None:
+    required = {
+        "model_gate": ("preflight",),
+        "rehearsal": ("preflight", "model_gate"),
+        "formal70": ("preflight", "model_gate", "rehearsal"),
+        "promote100": ("formal70",),
+    }.get(phase, ())
+    for prior in required:
+        path = out / prior / "decision.json"
+        if not path.exists():
+            raise ValueError(f"missing required {prior} decision: {path}")
+        decision = read_json(path)
+        if not str(decision.get("verdict", "")).endswith("_PASS"):
+            raise ValueError(f"required {prior} gate did not pass: {decision.get('verdict')}")
+
+
+def _phase_evidence_paths(out: Path, phase_dir: Path, run_ids: list[str]) -> list[Path]:
+    paths = [
+        path
+        for path in phase_dir.rglob("*")
+        if path.is_file() and path.name != "artifact_hashes.json" and not path.name.startswith("._")
+    ]
+    for run_id in run_ids:
+        paths.extend(
+            path
+            for path in (
+                out / "runs" / f"{run_id}.json",
+                out / "certificates" / f"{run_id}.json",
+            )
+            if path.exists()
+        )
+        paths.extend(path for path in (out / "solutions").glob(f"{run_id}__*.json") if path.is_file())
+    return sorted(set(paths))
+
+
 def summarize_phase(out: Path, phase: str, plans: list[dict[str, Any]]) -> dict[str, Any]:
     run_ids = [spec["run_id"] for plan in plans for spec in plan["specs"]]
     rows = [read_json(out / "runs" / f"{run_id}.json") for run_id in run_ids]
@@ -876,9 +915,8 @@ def summarize_phase(out: Path, phase: str, plans: list[dict[str, Any]]) -> dict[
         writer.writeheader()
         writer.writerows(specs)
     hashes = {
-        str(path.relative_to(phase_dir)): sha256(path)
-        for path in sorted(phase_dir.rglob("*"))
-        if path.is_file() and path.name != "artifact_hashes.json" and not path.name.startswith("._")
+        str(path.relative_to(out)): sha256(path)
+        for path in _phase_evidence_paths(out, phase_dir, run_ids)
     }
     write_json(phase_dir / "artifact_hashes.json", hashes)
     return decision
@@ -902,6 +940,7 @@ def main() -> int:
     if args.seed_plan_json:
         run_seed_plan(read_json(Path(args.seed_plan_json)), out)
         return 0
+    _assert_phase_preconditions(out, args.phase)
     budget = int(args.budget) if int(args.budget) > 0 else default_budget(args.phase)
     plans = phase_plans(args.phase, budget)
     sizes = sorted({size for plan in plans for size in plan["sizes"]})
