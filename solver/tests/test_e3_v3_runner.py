@@ -3,8 +3,9 @@ from __future__ import annotations
 import json
 
 from baselines.e3_ablation.e3_v3_runner import (
-    default_budget,
     _cooperation_mobility_row_ok,
+    default_budget,
+    fairness_rejection_count,
     phase_plans,
     prices_for,
     score_counts,
@@ -75,6 +76,11 @@ def test_score_count_aggregation_does_not_double_count_best_phase() -> None:
         }
     }
     assert score_counts(result) == {"candidate": 8, "cross_site_complete_candidates": 3}
+
+
+def test_fairness_rejection_ledger_reads_the_current_precise_key() -> None:
+    assert fairness_rejection_count({"strict_reject_profit_fairness": 73}) == 73
+    assert fairness_rejection_count({"strict_reject_fairness": 2}) == 2
 
 
 def test_cross_depot_repair_forces_one_alternate_depot_when_feasible() -> None:

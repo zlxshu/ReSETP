@@ -48,7 +48,7 @@ from setp_solver.search.submission_contract import FULL_MODEL_LANE, load_submiss
 from setp_solver.solution import ChargingAction, CrossSiteService, Route, Solution, physical_vehicle_id
 
 
-DEFAULT_OUT = ROOT / "baselines/e3_ablation/e3_v5_clean_20260713"
+DEFAULT_OUT = ROOT / "baselines/e3_ablation/e3_v6_clean_20260713"
 CONTRACT_DIR = ROOT / "baselines/contract_audit/submission_contract_candidate_20260711"
 CONTRACT_PATH = CONTRACT_DIR / "submission_contract.proposed.json"
 OWNER_ROWS = CONTRACT_DIR / "customer_owner_rows.csv"
@@ -296,6 +296,15 @@ def score_counts(result: dict[str, Any]) -> dict[str, int]:
     phase_counts = staged.get("phase_operator_counts") if isinstance(staged, dict) else None
     _aggregate_named_counts(phase_counts if isinstance(phase_counts, list) else operator_counts, output)
     return output
+
+
+def fairness_rejection_count(counts: dict[str, int]) -> int:
+    """Read both the current precise key and the retired compatibility key."""
+
+    return int(
+        counts.get("strict_reject_profit_fairness", 0)
+        + counts.get("strict_reject_fairness", 0)
+    )
 
 
 def prices_for(layer: str, fee: float) -> Any:
@@ -648,7 +657,7 @@ def _run_cooperative(
         "fairness_enabled": bool(settings["fairness_enabled"]),
         "fairness_search_active_evidence": json.dumps({
             "enabled": bool(settings["fairness_enabled"]),
-            "rejected_candidates": int(counts.get("strict_reject_fairness", 0)),
+            "rejected_candidates": fairness_rejection_count(counts),
             "final_profit_ratios": ratios,
         }, sort_keys=True),
         "profit_ratios_json": json.dumps(ratios, sort_keys=True),
