@@ -19,7 +19,6 @@ from setp_solver.search.submission_contract import (
     FROZEN_STATUS,
     FULL_MODEL_LANE,
     OWNER_SCHEMA_VERSION,
-    RESEARCH_PENDING_STATUS,
     SCHEMA_VERSION,
     SubmissionContractError,
     load_submission_contract,
@@ -120,21 +119,22 @@ def main() -> None:
             },
         },
         "full_model": {
-            "status": RESEARCH_PENDING_STATUS,
+            "status": FROZEN_STATUS,
             "main_battery_kwh": 280.0,
             "robustness_battery_kwh": [80.0],
             "customer_ownership": {
                 "rule": "nearest_depot_by_bundle_distance",
-                "decision_role": "provisional_manifest_not_yet_model_truth",
-                "research_status": "pending_original_model_and_reference_literature_audit",
+                "decision_role": "synthetic_independent_operations_baseline",
+                "research_status": "user_approved_for_e3_e7_contract",
                 "manifest_path": str(owner_manifest_path.relative_to(root)),
                 "manifest_sha256": sha256(owner_manifest_path),
             },
             "cross_site_fee": {
                 "shared_baseline_gbp_per_customer": 0.0,
                 "sensitivity_gbp_per_customer": [0.0, 10.0, 25.0, 50.0, 95.0],
-                "claim_boundary": "95 GBP remains a high-friction stress case unless a source-backed main value is frozen.",
-                "research_status": "provisional_grid_pending_source_and_scale_audit",
+                "unit": "GBP_per_customer_service",
+                "claim_boundary": "0 is the fully shared main baseline; nonzero values are uncalibrated proxy friction sensitivities only, with 95 as a historical stress point.",
+                "research_status": "user_approved_proxy_sensitivity_only",
             },
             "fairness": {
                 "global_default": "off",
@@ -143,9 +143,10 @@ def main() -> None:
                 "theta_selection": "calibrate_around_natural_binding_range",
             },
             "carbon_quota": {
+                "default_quota_kg": 0.0,
                 "baseline_factor": 0.8,
                 "claim_role": "accounting_only",
-                "research_status": "deferred_reference_model_audit",
+                "research_status": "user_approved_full_accounting_default",
             },
         },
     }
@@ -162,13 +163,14 @@ def main() -> None:
     except SubmissionContractError:
         formal_gate_blocked = True
     decision = {
-        "verdict": "E2_CONTRACT_FROZEN_FULL_MODEL_RESEARCH_PENDING",
+        "verdict": "E1_E7_CONTRACT_FROZEN_BY_USER",
         "proposal_structurally_valid": proposal_valid,
         "formal_gate_correctly_blocked": formal_gate_blocked,
+        "full_model_gate_passes": not formal_gate_blocked,
         "formal_instance_count": len(FORMAL_INSTANCE_ORDER),
         "customer_owner_row_count": len(rows),
         "zero_search": True,
-        "next_action": "Complete the E2 ten-seed all-algorithm matrix, then prepare E3. Keep full-model ownership, cross-site friction, and carbon-quota claims research-pending; defer the unmodified-Goeke public-benchmark BKS/AVG/Gap supplement until after E2.",
+        "next_action": "Run only the WP0 E0 wiring check and the approved E3 short gate next; do not start E3-E7 formal search in this WP0 task. Keep unmodified-Goeke public-benchmark BKS/AVG/Gap% deferred until after the self-created-instance E2 table.",
     }
     metadata = {
         "schema_version": "resetp.submission-contract-candidate-evidence.v1",
@@ -187,20 +189,19 @@ def main() -> None:
     write_json(output / "metadata.json", metadata)
     write_json(output / "decision.json", decision)
     (output / "raw_runs.csv").write_text(
-        "check,ok\ne2_contract_frozen,true\nfull_model_gate_blocks_pending_research,true\n",
+        "check,ok\ne2_contract_frozen,true\nfull_model_gate_passes,true\n",
         encoding="utf-8",
     )
     (output / "report.md").write_text(
         "# E1--E7投稿合同机器闸门\n\n"
-        "大白话：E2算法比赛规则已经按用户决定冻结，可以继续补齐九算法、十次运行。"
-        "客户归属、跨场费用和碳配额建模仍需查文献，所以相关完整模型入口继续被机器拦住。"
-        "BKS、AVG、Gap%格式留到E2后的公开标准算例补实验，拟使用未经改动的Goeke原始算法。\n\n"
-        "这一步没有运行求解器。它把E2已批准的比赛规则与后续尚未定稿的建模问题分开，避免互相卡死或互相污染。\n",
+        "大白话：E2算法比赛规则和E3-E7完整模型投稿口径已经按用户拍板冻结。"
+        "主场景是280 kWh，最近车场映射是合成独立经营基线，跨场费0是主值，非零档位只是无现实标定的摩擦代理，公平只在E6/E7交互臂从搜索阶段启用，配额默认0且只作会计项。"
+        "这一步没有运行E3-E7求解器；它只把后续实验的开关固定下来。BKS、AVG、Gap%仍留到E2后的公开Goeke标准算例补实验。\n\n",
         encoding="utf-8",
     )
     write_json(output / "artifact_hashes.json", artifact_hashes(output))
     print(json.dumps(decision, ensure_ascii=False, sort_keys=True))
-    if not proposal_valid or not formal_gate_blocked:
+    if not proposal_valid or formal_gate_blocked:
         raise SystemExit(1)
 
 

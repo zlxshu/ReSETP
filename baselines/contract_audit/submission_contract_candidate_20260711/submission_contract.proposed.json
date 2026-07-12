@@ -127,11 +127,12 @@
     "carbon_quota": {
       "baseline_factor": 0.8,
       "claim_role": "accounting_only",
-      "research_status": "deferred_reference_model_audit"
+      "default_quota_kg": 0.0,
+      "research_status": "user_approved_full_accounting_default"
     },
     "cross_site_fee": {
-      "claim_boundary": "95 GBP remains a high-friction stress case unless a source-backed main value is frozen.",
-      "research_status": "provisional_grid_pending_source_and_scale_audit",
+      "claim_boundary": "0 is the fully shared main baseline; nonzero values are uncalibrated proxy friction sensitivities only, with 95 as a historical stress point.",
+      "research_status": "user_approved_proxy_sensitivity_only",
       "sensitivity_gbp_per_customer": [
         0.0,
         10.0,
@@ -139,13 +140,14 @@
         50.0,
         95.0
       ],
-      "shared_baseline_gbp_per_customer": 0.0
+      "shared_baseline_gbp_per_customer": 0.0,
+      "unit": "GBP_per_customer_service"
     },
     "customer_ownership": {
-      "decision_role": "provisional_manifest_not_yet_model_truth",
+      "decision_role": "synthetic_independent_operations_baseline",
       "manifest_path": "baselines/contract_audit/submission_contract_candidate_20260711/customer_owner_manifest.json",
       "manifest_sha256": "2df6d8a208077661a0c2b8e09d0fc10df043f27906dae6130239e6a981da985f",
-      "research_status": "pending_original_model_and_reference_literature_audit",
+      "research_status": "user_approved_for_e3_e7_contract",
       "rule": "nearest_depot_by_bundle_distance"
     },
     "fairness": {
@@ -161,7 +163,7 @@
     "robustness_battery_kwh": [
       80.0
     ],
-    "status": "RESEARCH_PENDING"
+    "status": "FROZEN_BY_USER"
   },
   "schema_version": "resetp.submission-contract.v1"
 }

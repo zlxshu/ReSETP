@@ -91,7 +91,7 @@ def _fixture(tmp_path: Path, *, status: str) -> Path:
                     "required_experiments": ["E6"],
                     "theta_selection": "calibrate_around_natural_binding_range",
                 },
-                "carbon_quota": {"baseline_factor": 0.8, "claim_role": "accounting_only"},
+                "carbon_quota": {"default_quota_kg": 0.0, "baseline_factor": 0.8, "claim_role": "accounting_only"},
             },
         },
     )

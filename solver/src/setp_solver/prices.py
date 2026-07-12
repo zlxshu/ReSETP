@@ -59,7 +59,9 @@ carbon_price_low = 0.04184  # £/kgCO2e, 敏感性低值, 折合 £41.84/tCO2e, 
 diesel_ef = 2.57082  # kgCO2e/L, 英国 2025 温室气体转换因子, 零售柴油(含约 3% 生物柴油混合)真值。参考文献: 英国环境食品与乡村事务部, 能源安全与净零部. 2025 government greenhouse gas conversion factors for company reporting[DB/OL]. (2025)[2026-06-11]. https://www.gov.uk/government/publications/greenhouse-gas-reporting-conversion-factors-2025.
 vehicle_fixed_cost = 80.0  # £/班次, 中型柴油货车单班次启用成本代理值, 英国货车日租代理。参考文献: 代理值说明, 研究情景参数, 需在论文中明确标为 proxy.
 occupancy_fee = 0.50  # £/min, 公共充电桩超时占用费代理值, 英国快充网络。参考文献: 代理值说明, 研究情景参数, 需在论文中明确标为 proxy.
-cross_site_cost = 95.0  # £/次, 跨车场调拨或结算成本代理值, 英国商用货车跨点配送最低收费代理。参考文献: 代理值说明, 研究情景参数, 需在论文中明确标为 proxy.
+# 主值=完全共享基线；95 为历史上无来源的高摩擦代理，只保留在 0/10/25/50/95 敏感性轴。
+# 相关协同文献更常见成本共担/利润分配或按实际跨场往返收费；本项目不把 95 当现实标定值。
+cross_site_cost = 0.0  # £/客户服务, c_tr 主值；非零档位仅作无现实标定的摩擦敏感性代理。
 # v2026-06-12: V0 profit-fairness revenue proxy. National Pallets lists a
 # 250 kg UK quarter-pallet shipment at £47.34 exc VAT, so rho=47.34/250.
 revenue_per_kg = 0.18936  # £/kg, public UK pallet-delivery revenue proxy. https://www.nationalpallets.co.uk/pallet-delivery/uk

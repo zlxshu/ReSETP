@@ -661,7 +661,8 @@ $p^{car}_{\text{low}}$ & 碳交易价格(敏感性低值) & 0.04184 & £/kgCO$_2
 $c^{fix}$ & 车辆启用固定成本 & 80 & £/班次\\
 $c^{km}$ & 非能源里程成本 & 0.35 & £/km\\
 $c^{occ}$ & 充电桩占用成本 & 0.50 & £/min\\
-$c^{tr}$ & 跨车场服务成本 & 95 & £/次\\
+$c^{tr}$ & 跨车场服务成本（主值） & 0 & £/客户\\
+\multicolumn{4}{l}{\footnotesize 非零值仅用于摩擦敏感性分析：0/10/25/50/95 £/客户；均为无现实标定的代理值。}\\
 % v2026-06-12: V0 add revenue proxy needed by eq:profit.
 $\rho$ & 单位配送收入系数 & 0.18936 & £/kg\\
 % v2026-06-12: V0 expose the default individual-rationality fairness threshold.

@@ -127,6 +127,7 @@ def load_submission_contract(
     _require(fairness.get("theta_selection") == "calibrate_around_natural_binding_range", "fairness theta rule is not binding-aware")
 
     quota = dict(model.get("carbon_quota") or {})
+    _require(float(quota.get("default_quota_kg", -1.0)) == 0.0, "default carbon quota must be zero")
     _require(float(quota.get("baseline_factor", 0.0)) > 0.0, "carbon quota baseline factor must be positive")
     _require(quota.get("claim_role") == "accounting_only", "linear quota must not be claimed as a route-changing mechanism")
 
