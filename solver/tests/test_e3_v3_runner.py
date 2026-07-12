@@ -12,6 +12,7 @@ from baselines.e3_ablation.e3_v3_runner import (
     prices_for,
     score_counts,
     summarize_phase,
+    task_fingerprint,
 )
 from setp_solver.algorithms.resetp_alns.kernel.alns_core import SearchPolicy
 from setp_solver.algorithms.resetp_alns.kernel.winner import (
@@ -251,3 +252,12 @@ def test_frozen_asset_manifest_rejects_file_drift(tmp_path, monkeypatch) -> None
         assert "asset changed" in str(exc)
     else:
         raise AssertionError("changed frozen asset was accepted")
+
+
+def test_task_fingerprint_ignores_evidence_only_git_commits(monkeypatch) -> None:
+    manifest = {"schema": "setp.e3.assets.v2", "asset_hashes": {"x": "y"}}
+    spec = {"run_id": "same-run", "layer": "M1", "budget": 2}
+    monkeypatch.setattr("baselines.e3_ablation.e3_v3_runner.closure.git_head", lambda: "commit-a")
+    first = task_fingerprint(spec, manifest)
+    monkeypatch.setattr("baselines.e3_ablation.e3_v3_runner.closure.git_head", lambda: "commit-b")
+    assert task_fingerprint(spec, manifest) == first

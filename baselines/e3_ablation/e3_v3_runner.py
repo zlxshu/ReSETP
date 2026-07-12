@@ -48,7 +48,7 @@ from setp_solver.search.submission_contract import FULL_MODEL_LANE, load_submiss
 from setp_solver.solution import ChargingAction, CrossSiteService, Route, Solution, physical_vehicle_id
 
 
-DEFAULT_OUT = ROOT / "baselines/e3_ablation/e3_v8_clean_20260713"
+DEFAULT_OUT = ROOT / "baselines/e3_ablation/e3_v9_clean_20260713"
 CONTRACT_DIR = ROOT / "baselines/contract_audit/submission_contract_candidate_20260711"
 CONTRACT_PATH = CONTRACT_DIR / "submission_contract.proposed.json"
 OWNER_ROWS = CONTRACT_DIR / "customer_owner_rows.csv"
@@ -731,7 +731,6 @@ def task_fingerprint(spec: dict[str, Any], manifest: dict[str, Any]) -> str:
     source_hashes = {path: sha256(ROOT / path) for path in EXECUTION_SOURCE_PATHS}
     payload = {
         "spec": spec,
-        "source_commit": closure.git_head(),
         "source_hashes": source_hashes,
         "contract_sha256": sha256(CONTRACT_PATH),
         "asset_manifest_sha256": hashlib.sha256(
