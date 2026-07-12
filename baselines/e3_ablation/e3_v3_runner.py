@@ -54,7 +54,7 @@ from setp_solver.search.submission_contract import FULL_MODEL_LANE, load_submiss
 from setp_solver.solution import ChargingAction, CrossSiteService, Route, Solution, physical_vehicle_id
 
 
-DEFAULT_OUT = ROOT / "baselines/e3_ablation/e3_v10_clean_20260713"
+DEFAULT_OUT = ROOT / "baselines/e3_ablation/e3_v11_clean_20260713"
 CONTRACT_DIR = ROOT / "baselines/contract_audit/submission_contract_candidate_20260711"
 CONTRACT_PATH = CONTRACT_DIR / "submission_contract.proposed.json"
 OWNER_ROWS = CONTRACT_DIR / "customer_owner_rows.csv"
@@ -607,11 +607,14 @@ def _initial_for_cooperation(
     owners: dict[str, str],
     fairness_enabled: bool,
     independent_profit: dict[str, float] | None,
+    independent_solution: Solution | None = None,
 ) -> tuple[Solution, str]:
     candidates = [
         (solution_from_dict(read_json(ROOT / manifest["shared_start"])), "shared_short_constructor"),
         (solution_from_dict(read_json(ROOT / manifest["independent_start"])), "owner_short_constructor_fallback"),
     ]
+    if fairness_enabled and independent_solution is not None:
+        candidates.append((independent_solution, "independent_fairness_feasibility_seed"))
     for solution, label in candidates:
         solution = annotate_cross_site(solution, owners)
         _, _, violations = _prepared_checked(
@@ -652,6 +655,7 @@ def _run_cooperative(
         owners,
         bool(settings["fairness_enabled"]),
         independent_profit if settings["fairness_enabled"] else None,
+        independent_solution,
     )
     runner = run_tvci_carbon_schedule_pair if settings["paired_charging"] else run_tvci_alns
     kwargs: dict[str, Any] = {
