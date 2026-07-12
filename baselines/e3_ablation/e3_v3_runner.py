@@ -9,6 +9,7 @@ from contextlib import contextmanager
 import csv
 from dataclasses import asdict, replace
 import hashlib
+import itertools
 import json
 import os
 from pathlib import Path
@@ -43,12 +44,17 @@ from setp_solver.search.e3_multitrip_runtime import hard_violations, prepare_sol
 from setp_solver.search.evaluation import EvaluationContext
 from setp_solver.search.fairness import _subinstance_for_depot, _write_subbundle
 from setp_solver.search.formal_runner import _derive_carbon_profile
-from setp_solver.search.multitrip_schedule import CONTRACT_ID, MultiTripCertificate
+from setp_solver.search.multitrip_schedule import (
+    CONTRACT_ID,
+    MultiTripCertificate,
+    build_multitrip_certificate,
+    route_timing,
+)
 from setp_solver.search.submission_contract import FULL_MODEL_LANE, load_submission_contract
 from setp_solver.solution import ChargingAction, CrossSiteService, Route, Solution, physical_vehicle_id
 
 
-DEFAULT_OUT = ROOT / "baselines/e3_ablation/e3_v9_clean_20260713"
+DEFAULT_OUT = ROOT / "baselines/e3_ablation/e3_v10_clean_20260713"
 CONTRACT_DIR = ROOT / "baselines/contract_audit/submission_contract_candidate_20260711"
 CONTRACT_PATH = CONTRACT_DIR / "submission_contract.proposed.json"
 OWNER_ROWS = CONTRACT_DIR / "customer_owner_rows.csv"
@@ -170,6 +176,84 @@ def _structure_routes(size: str, instance: Instance, prices: Any) -> tuple[list[
     )
 
 
+def _depot_type_candidates(
+    routes: list[Route], instance: Instance, prices: Any, max_cv: int, max_ev: int
+) -> dict[tuple[int, int], list[Route]]:
+    groups: dict[int, list[int]] = {0: [], 1: [], 2: []}
+    for index, route in enumerate(routes):
+        shift = min(2, int(route_timing(route, instance, prices).earliest_departure_second // 28_800))
+        groups[shift].append(index)
+    candidates: dict[tuple[int, int], list[Route]] = {}
+    for cv_per_main_shift in range(min(max_cv, *(len(groups[s]) for s in (0, 1))) + 1):
+        for cv0 in itertools.combinations(groups[0], cv_per_main_shift):
+            for cv1 in itertools.combinations(groups[1], cv_per_main_shift):
+                for mask in range(1 << len(groups[2])):
+                    cv_indices = set(cv0) | set(cv1) | {
+                        index for bit, index in enumerate(groups[2]) if mask >> bit & 1
+                    }
+                    assigned = [
+                        replace(
+                            route,
+                            vehicle_type="cv" if index in cv_indices else "ev",
+                            vehicle_id=("CV" if index in cv_indices else "EV")
+                            + f"_asset_{route.home_depot_id}_{index + 1}",
+                        )
+                        for index, route in enumerate(routes)
+                    ]
+                    try:
+                        certificate = build_multitrip_certificate(assigned, instance, prices)
+                    except ValueError:
+                        continue
+                    key = (certificate.vehicle_counts["cv"], certificate.vehicle_counts["ev"])
+                    if key[0] <= max_cv and key[1] <= max_ev:
+                        candidates.setdefault(key, assigned)
+    return candidates
+
+
+def _assign_types_within_assets(
+    routes: list[Route], instance: Instance, prices: Any, caps: dict[str, dict[str, int]] | None = None
+) -> list[Route]:
+    depots = sorted({route.home_depot_id for route in routes})
+    global_cv = int(instance.num_cv or 14)
+    global_ev = int(instance.num_ev or 14)
+    try:
+        current = build_multitrip_certificate(routes, instance, prices)
+        current_by_depot = _depot_counts(current)
+        global_ok = current.vehicle_counts["cv"] <= global_cv and current.vehicle_counts["ev"] <= global_ev
+        local_ok = caps is None or all(
+            current_by_depot.get(depot, {}).get(kind, 0) <= int(caps[depot][kind])
+            for depot in depots
+            for kind in ("cv", "ev")
+        )
+        if global_ok and local_ok:
+            return routes
+    except ValueError:
+        pass
+    by_depot = {depot: [route for route in routes if route.home_depot_id == depot] for depot in depots}
+    choices = {
+        depot: _depot_type_candidates(
+            by_depot[depot],
+            instance,
+            prices,
+            int(caps[depot]["cv"]) if caps else global_cv,
+            int(caps[depot]["ev"]) if caps else global_ev,
+        )
+        for depot in depots
+    }
+    combinations = itertools.product(*(sorted(choices[depot]) for depot in depots))
+    for counts in combinations:
+        if sum(item[0] for item in counts) > global_cv or sum(item[1] for item in counts) > global_ev:
+            continue
+        selected = {
+            original.vehicle_id: assigned
+            for depot, key in zip(depots, counts)
+            for original, assigned in zip(by_depot[depot], choices[depot][key])
+        }
+        ordered = [selected[route.vehicle_id] for route in routes]
+        return ordered
+    raise ValueError("HALT_ASSET_ASSIGNMENT: no legal global CV/EV type allocation")
+
+
 def _depot_counts(certificate: MultiTripCertificate) -> dict[str, dict[str, int]]:
     seen: dict[tuple[str, str], set[str]] = {}
     for trip in certificate.trips:
@@ -242,13 +326,19 @@ def prepare_assets(out: Path, size: str) -> dict[str, Any]:
         raise ValueError(f"frozen owner map drifted for {instance_name}")
     prices = replace(DEFAULT_PRICES, B_battery_kwh=280.0, initial_ev_battery_kwh=280.0)
     independent_routes, shared_routes = _structure_routes(size, source.instance, prices)
+    independent_routes = _assign_types_within_assets(independent_routes, source.instance, prices)
     with strict_mode():
         context = EvaluationContext(source.instance, source.carbon_profile, prices=prices)
         independent, independent_certificate = prepare_solution(Solution(routes=independent_routes), context)
-        shared, shared_certificate = prepare_solution(Solution(routes=shared_routes), context)
-    if independent_certificate is None or shared_certificate is None:
-        raise ValueError("strict preparation did not emit certificates")
+    if independent_certificate is None:
+        raise ValueError("strict independent preparation did not emit a certificate")
     base_caps = _depot_counts(independent_certificate)
+    shared_routes = _assign_types_within_assets(shared_routes, source.instance, prices, base_caps)
+    with strict_mode(base_caps):
+        context = EvaluationContext(source.instance, source.carbon_profile, prices=prices)
+        shared, shared_certificate = prepare_solution(Solution(routes=shared_routes), context)
+    if shared_certificate is None:
+        raise ValueError("strict shared preparation did not emit a certificate")
     if independent_certificate.vehicle_counts["cv"] > 14 or independent_certificate.vehicle_counts["ev"] > 14:
         raise ValueError("independent structural start exceeds 14/14")
     if shared_certificate.vehicle_counts["cv"] > 14 or shared_certificate.vehicle_counts["ev"] > 14:
