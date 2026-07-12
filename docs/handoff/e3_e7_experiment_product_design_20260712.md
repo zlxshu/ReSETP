@@ -349,6 +349,8 @@
 
 **前置及其验证**：骨架 0b 提交号存在；冻结合同文本含新公平条款且 hash 一致；E0 复核记录在 `baselines/contract_audit/wp0_e0_check_20260712/`。三者任缺即停。
 
+> **2026-07-12 强制覆盖（高于本骨架以下所有旧 runner 步骤）**：用户已批准真实实体车多趟语义和“合法 M0 实际用车数”资产口径后，固定路线审计发现旧 M0 五个 seed 在总 14 EV 下均不能合法排班，反而各需 50--55 EV。详见 `docs/handoff/e3_formal_multitrip_feasibility_audit_20260712.md`。因此，本骨架中“复制旧 runner”“M0--M5 逐字一致”“200 评价短门”和后续 70 次矩阵**一律暂停**，不得以 `#T` 标签或 7/7 假设绕过。只有用户另行授权正式多趟路线构造重建，并通过该文档定义的结构可行性门、得到合法的 14/14 M0 后，才能改写本骨架并重启 E3。
+
 **产物目录**：`baselines/e3_ablation/e3_v2_<开工日期YYYYMMDD>/`，下设 `preflight/`、`formal/`、`audits/`。并发安全规则照第 2 节：每 worker 只写 `.tasks/<run_id>.json`、`solutions/<run_id>.json`、`logs/<run_id>.log`，全部结束后单一汇总器生成 `raw_runs.csv` 与统计；禁止多进程写同一 CSV。断点续跑必须支持。
 
 **任务一（runner 改造 + 200 评价接线短门）**：

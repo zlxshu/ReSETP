@@ -133,3 +133,11 @@ E3 的产物应是：可复算的 70 行探路数据（通过后自动扩至 100
 - Soriano, A., Gansterer, M., & Hartl, R. F. (2023). *The multi-depot vehicle routing problem with profit fairness*. International Journal of Production Economics, 255, 108669. https://doi.org/10.1016/j.ijpe.2022.108669
 - Wang, Y., et al. (2023). *Collaborative multidepot electric vehicle routing problem with time windows and shared charging stations*. Expert Systems with Applications, 219, 119654. https://doi.org/10.1016/j.eswa.2023.119654
 - Schmidt, C. E., Silva, A. C. L., Darvish, M., & Coelho, L. C. (2023). *Time-dependent fleet size and mix multi-depot vehicle routing problem*. International Journal of Production Economics, 255, 108653. https://doi.org/10.1016/j.ijpe.2022.108653
+
+## 2026-07-12 追加：D1/D2 已批准后的固定路线可行性审计
+
+用户已批准 D1-A/D1-B（正式多趟语义，以两阶段排程作最小实现）和 D2（各参与方上限从合法独立方案实际用车数冻结，不暗设 7/7）。随后对旧 M0 五个 200c 保存解做了固定路线的真实车队排程审计，结果见 `docs/handoff/e3_formal_multitrip_feasibility_audit_20260712.md`。
+
+核心结果：旧 M0 每个 seed 在真实 280 kWh、多车场、满电出发/返场补电的连续趟语义下，需要 `50--55 EV`，而原始全局上限只有 14 EV；五个 seed 的精确最小趟链覆盖均为 Optimal。故 D1-B 不是“加一个排程检查就能放行”的小路径：旧路线集合不能被合法化，M0 的 D2 资产数也不能从它冻结。
+
+这不等于正式重建的 E3 在 14 EV 下必然无解；它只证明旧路线生成方式把跨班客户串成了长路线，必须先重建真正的多趟路线构造，才能检验 14 EV 是否可行。直到用户在该审计的 A/B/C 方向中作出新的重大决定前：第 6 节 70--100 矩阵和第 7 节实施顺序均不得启动；E6/E7 也不得复用旧 M0 独立收益。
