@@ -86,7 +86,13 @@ class AlnsState:
     allow_new_route_repair: bool = True
 
     def objective(self) -> float:
-        return score_reference(self.solution, self.context) if self.objective_value is None else float(self.objective_value)
+        if self.objective_value is not None:
+            return float(self.objective_value)
+        from setp_solver.search.e3_multitrip_runtime import enabled as e3_multitrip_enabled
+
+        if e3_multitrip_enabled():
+            raise RuntimeError("strict E3 state reached objective() before its prepared solution was stored")
+        return float(score_reference(self.solution, self.context))
 
 
 @dataclass(frozen=True)
@@ -163,7 +169,9 @@ def run_alns_wouda(
         customer_home_depot=customer_home_depot,
         repair_delta_mode="exact" if eval_budget is None else "fast",
     )
-    initial_obj = score_reference(initial, context)
+    from setp_solver.search.e3_multitrip_runtime import prepare_and_score_reference
+
+    initial, initial_obj = prepare_and_score_reference(initial, context)
     initial_state = AlnsState(initial, context, objective_value=initial_obj, policy=search_policy)
 
     run = _run_adaptive_sa_alns(
@@ -391,6 +399,18 @@ def _run_adaptive_sa_alns(
             improved_solution = improve_solution_locally(candidate.solution, candidate.context)
             if _solution_changed(candidate.solution, improved_solution):
                 candidate = replace(candidate, solution=improved_solution, objective_value=None)
+        if not candidate.removed_customers:
+            from setp_solver.search.e3_multitrip_runtime import prepare_solution
+
+            try:
+                prepared_solution, _ = prepare_solution(candidate.solution, candidate.context)
+            except ValueError:
+                prepared_solution = candidate.solution
+            if prepared_solution is not candidate.solution:
+                from setp_solver.search.e3_multitrip_runtime import prepare_and_score_reference
+
+                prepared_solution, prepared_objective = prepare_and_score_reference(prepared_solution, candidate.context)
+                candidate = replace(candidate, solution=prepared_solution, objective_value=prepared_objective)
         if destroy_name == "route_elimination_removal" and (
             len(candidate.solution.routes) >= len(current.solution.routes) or candidate.objective() >= previous_obj - 1e-9
         ):
@@ -476,6 +496,14 @@ def _adaptive_remove_count(
 
 
 def _hard_violations(solution: Solution, context: EvaluationContext) -> list[Any]:
+    if os.environ.get("SETP_E3_STRICT_MULTITRIP", "0").lower() not in {"0", "false", "no"}:
+        from setp_solver.search.e3_multitrip_runtime import hard_violations
+
+        with timed_section(context, "hard_check"):
+            context.score_counts["strict_multitrip_schedule_checks"] = int(
+                context.score_counts.get("strict_multitrip_schedule_checks", 0)
+            ) + 1
+            return hard_violations(solution, context)
     try:
         solution = normalize_solution_vehicle_trips(solution, context.instance)
     except ValueError as exc:
@@ -927,8 +955,10 @@ def _ranked_insert_positions(route: Route, customer_id: str, instance: Instance)
 
 def _finalize_candidate_state(state: AlnsState) -> AlnsState:
     solution = _normalize_for_policy(state.solution, state.context.instance, state.policy)
+    from setp_solver.search.e3_multitrip_runtime import prepare_and_score_candidate
+
     with timed_section(state.context, "full_candidate_score"):
-        objective = score_candidate(solution, state.context)
+        solution, objective = prepare_and_score_candidate(solution, state.context)
     return replace(state, solution=solution, objective_value=objective, removed_customers=state.removed_customers)
 
 

@@ -570,8 +570,10 @@ def apply_winner_action(
             bridge_feasible = bool(getattr(bridge_outcome, "feasible", False))
             bridge_changed = bool(getattr(bridge_outcome, "changed", False))
             annotated_bridge = _annotate_cross_site_services(bridge_outcome.solution, context)
+            from setp_solver.search.e3_multitrip_runtime import prepare_and_score_candidate
+
             with timed_section(context, "score:strong_bridge_backend"):
-                bridge_obj = float(score_candidate(annotated_bridge, context, label="candidate"))
+                annotated_bridge, bridge_obj = prepare_and_score_candidate(annotated_bridge, context)
             candidate = replace(
                 previous_state,
                 solution=annotated_bridge,
@@ -811,6 +813,10 @@ def run_true_lns_middle_alns_hybrid(
 
     if fairness_enabled or abs(float(carbon_weight) - 1.0) > 1e-12 or abs(float(carbon_quota_kg)) > 1e-12:
         raise ValueError("true LNS middle candidate currently supports only the E2 default evaluation context")
+    from setp_solver.search.e3_multitrip_runtime import enabled as e3_multitrip_enabled
+
+    if e3_multitrip_enabled():
+        raise ValueError("true-LNS-middle entry is not part of the strict E3 execution contract")
     from setp_solver.search.metaheuristic_baselines import run_metaheuristic_baseline
 
     cfg = config or WinnerKernelConfig()
@@ -1205,13 +1211,31 @@ def _reschedule_staged_result(
         fairness_theta=fairness_theta,
         customer_home_depot=customer_home_depot,
     )
-    violations = check_solution(
-        rescheduled,
-        bundle.instance,
-        prices,
-        fairness_context=fairness_context_for_solution(rescheduled, context),
-        fairness_enabled=fairness_enabled,
-    )
+    from setp_solver.search.e3_multitrip_runtime import enabled as e3_multitrip_enabled, hard_violations as e3_hard_violations, prepare_solution
+
+    if e3_multitrip_enabled():
+        from setp_solver.search.multitrip_schedule import drop_multitrip_identity, reschedule_between_trip_charging
+
+        rescheduled = drop_multitrip_identity(rescheduled)
+        rescheduled, certificate = prepare_solution(rescheduled, context)
+        assert certificate is not None
+        rescheduled = reschedule_between_trip_charging(
+            rescheduled,
+            certificate,
+            bundle.instance,
+            bundle.carbon_profile,
+            strategy=charging_strategy,
+        )
+        rescheduled, _ = prepare_solution(rescheduled, context)
+        violations = e3_hard_violations(rescheduled, context)
+    else:
+        violations = check_solution(
+            rescheduled,
+            bundle.instance,
+            prices,
+            fairness_context=fairness_context_for_solution(rescheduled, context),
+            fairness_enabled=fairness_enabled,
+        )
     original_actions = list(result["best_solution"].charging_actions)
     rescheduled_actions = list(rescheduled.charging_actions)
     moved_actions = sum(
@@ -1510,7 +1534,9 @@ def _run_winner_variant(
         else:
             raise ValueError(f"Unsupported winner kernel algorithm: {config.algorithm}")
     context = EvaluationContext(bundle.instance, bundle.carbon_profile, prices=effective_prices)
-    violations = check_solution(solution, bundle.instance, effective_prices)
+    from setp_solver.search.e3_multitrip_runtime import hard_violations as e3_hard_violations
+
+    violations = e3_hard_violations(solution, context)
     return {
         "operator_base_id": operator_base_id,
         "variant": variant_id,
@@ -1576,8 +1602,10 @@ def _run_winner_kernel_loop(
     structural_component = structural_component_from_flags(flags)
     ledger: TimingLedger | None = attach_timing_ledger(context) if _flag_enabled_from(flags, "SETP_ALNS_CRUSH_TIMING_LEDGER") else None
     initial_solution = _annotate_cross_site_services(initial_solution, context)
+    from setp_solver.search.e3_multitrip_runtime import prepare_and_score_reference
+
     with timed_section(context, "initial_reference_score"):
-        initial_obj = score_reference(initial_solution, context)
+        initial_solution, initial_obj = prepare_and_score_reference(initial_solution, context)
     current = best = AlnsState(initial_solution, context, objective_value=initial_obj, policy=policy)
     route_pool = RoutePool(max_routes=512) if structural_component == "route_pool" else None
     elite_archive = EliteArchive(max_size=16, diversity_min=0.10) if structural_component == "elite_archive" else None
@@ -1750,8 +1778,10 @@ def _run_winner_kernel_loop(
             candidate_obj = math.inf
             if proposal is not None:
                 proposal = _annotate_cross_site_services(proposal, context)
+                from setp_solver.search.e3_multitrip_runtime import prepare_and_score_candidate
+
                 with timed_section(context, structural_operator):
-                    candidate_obj = float(score_candidate(proposal, context, label="candidate"))
+                    proposal, candidate_obj = prepare_and_score_candidate(proposal, context)
                 candidate = AlnsState(proposal, context, objective_value=candidate_obj, policy=policy)
                 hard_violation_count = _hard_violation_count(candidate.solution, candidate.context)
                 changed = _solution_changed(current.solution, candidate.solution)
@@ -1883,9 +1913,11 @@ def _run_winner_kernel_loop(
             with timed_section(context, "rvnd_swapstar"):
                 rvnd_result = rvnd_swapstar_intensify(candidate.solution, context, max_moves=4)
             if rvnd_result.solution is not None and _solution_changed(candidate.solution, rvnd_result.solution):
-                rvnd_obj = float(score_candidate(rvnd_result.solution, context, label="candidate"))
+                from setp_solver.search.e3_multitrip_runtime import prepare_and_score_candidate
+
+                rvnd_solution, rvnd_obj = prepare_and_score_candidate(rvnd_result.solution, context)
                 if rvnd_obj < candidate_obj - 1e-9:
-                    candidate = replace(candidate, solution=rvnd_result.solution, objective_value=rvnd_obj)
+                    candidate = replace(candidate, solution=rvnd_solution, objective_value=rvnd_obj)
                     candidate_obj = rvnd_obj
                     result["candidate_state"] = candidate
                     result["candidate_obj"] = candidate_obj
@@ -2000,8 +2032,14 @@ def _run_winner_kernel_loop(
             acceptance = _make_winner_acceptance_criterion(current, config=acceptance_config, flags=flags)
     destroy_counts_out = {name: tuple(row) for name, row in destroy_counts.items()}
     repair_counts_out = {name: tuple(row) for name, row in repair_counts.items()}
+    from setp_solver.search.e3_multitrip_runtime import prepare_and_score_reference
+
+    prepared_best, prepared_best_obj = prepare_and_score_reference(best.solution, context)
+    best = replace(best, solution=prepared_best, objective_value=prepared_best_obj)
     with timed_section(context, "final_check"):
-        feasible = len(check_solution(best.solution, instance, effective_prices)) == 0
+        from setp_solver.search.e3_multitrip_runtime import hard_violations as e3_hard_violations
+
+        feasible = len(e3_hard_violations(best.solution, context)) == 0
     actual_moves = sum(sum(row) for row in destroy_counts_out.values())
     timing_snapshot = ledger.snapshot() if ledger is not None else {}
     operator_counts_out = {
@@ -2422,7 +2460,14 @@ def _candidate_change_and_violations(
                 }
             )
         if _solution_changed(candidate.solution, improved_solution):
-            candidate = replace(candidate, solution=improved_solution, objective_value=None)
+            from setp_solver.search.e3_multitrip_runtime import prepare_and_score_reference, prepare_solution
+
+            try:
+                improved_solution, _ = prepare_solution(improved_solution, candidate.context)
+            except ValueError:
+                pass
+            improved_solution, improved_objective = prepare_and_score_reference(improved_solution, candidate.context)
+            candidate = replace(candidate, solution=improved_solution, objective_value=improved_objective)
             changed = _solution_changed(previous_state.solution, candidate.solution)
             hard_violation_count = _hard_violation_count(candidate.solution, candidate.context)
     return candidate, changed, hard_violation_count
@@ -2546,7 +2591,9 @@ def _scan_restart_state(
         solution = scan_all_cv_solution(state.context.instance, offset=offset, prices=state.context.prices)
         solution = _annotate_cross_site_services(solution, state.context)
     with timed_section(state.context, "scan_score"):
-        objective = float(score_candidate(solution, state.context, label="candidate"))
+        from setp_solver.search.e3_multitrip_runtime import prepare_and_score_candidate
+
+        solution, objective = prepare_and_score_candidate(solution, state.context)
     breakdown = state.context.score_breakdowns.get(id(solution), {})
     if int(breakdown.get("violation_count", 0)) != 0:
         counter["infeasible"] += 1

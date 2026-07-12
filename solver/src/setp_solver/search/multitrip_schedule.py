@@ -12,10 +12,10 @@ from dataclasses import asdict, dataclass, replace
 import heapq
 from typing import Any
 
-from ..cost import _arc_loads, ev_arc_energy_kwh, _price
+from ..cost import _arc_loads, carbon_profile_row_for_slot, charging_slot_breakdown, ev_arc_energy_kwh, route_next_day_departure_second, _price
 from ..instance_loader import Instance
 from ..prices import DEFAULT_PRICES, PriceParameters
-from ..solution import ChargingAction, Route, Solution, route_trip_vehicle_id
+from ..solution import ChargingAction, Route, Solution, physical_vehicle_id, route_trip_vehicle_id
 
 
 LEGACY_CONTRACT_ID = "E3_STRICT_MULTITRIP_V1"
@@ -89,18 +89,28 @@ def route_timing(
         raise ValueError(f"{CONTRACT_ID}: public-station trips are unsupported by the V1 structural gate")
 
     origin = nodes[route.home_depot_id]
-    # A trip has no departure field in the frozen Route schema.  Start it as
-    # late as needed to remove avoidable depot waiting, while retaining the
-    # same customer order.  This is one legal schedule, not an optimization
-    # over every possible departure time.
+    # A trip has no departure field in the frozen Route schema. Compute the
+    # latest feasible origin service time by the standard backward time-window
+    # recursion, then replay forward. The former "remove all waiting" shortcut
+    # could push an early-due customer past its deadline on mixed-shift routes.
     elapsed = float(origin.service_time)
     departure_candidates = [float(origin.ready_time) + float(origin.service_time)]
     for from_id, to_id in zip(route.node_sequence, route.node_sequence[1:]):
         elapsed += instance.distance(from_id, to_id) / _price(prices, "v_speed_ms")
-        node = nodes[to_id]
-        departure_candidates.append(float(node.ready_time) - elapsed)
-        elapsed += float(node.service_time)
-    depart = max(departure_candidates)
+        departure_candidates.append(float(nodes[to_id].ready_time) - elapsed)
+        elapsed += float(nodes[to_id].service_time)
+    preferred_departure = max(departure_candidates)
+
+    latest_start = float(nodes[route.node_sequence[-1]].due_time)
+    for index in range(len(route.node_sequence) - 2, -1, -1):
+        node = nodes[route.node_sequence[index]]
+        next_id = route.node_sequence[index + 1]
+        travel = instance.distance(route.node_sequence[index], next_id) / _price(prices, "v_speed_ms")
+        latest_start = min(float(node.due_time), latest_start - float(node.service_time) - travel)
+    if latest_start < float(origin.ready_time) - _TOL:
+        raise ValueError(f"{CONTRACT_ID}: route {route.vehicle_id} has no feasible departure time")
+    latest_departure = latest_start + float(origin.service_time)
+    depart = min(preferred_departure, latest_departure)
     earliest_departure = depart
     loads = _arc_loads(route.node_sequence, nodes)
     energy = 0.0
@@ -232,11 +242,10 @@ def _schedule_ev_group(
                 departure_battery = battery_kwh
                 charge_energy = 0.0
             else:
-                charge_energy = max(0.0, timing.drive_energy_kwh - state.battery_kwh)
-                if charge_energy > battery_kwh - state.battery_kwh + _TOL:
-                    continue
-                if charge_energy > max(0.0, gap_seconds) * depot_charge_power_kw / 3600.0 + _TOL:
-                    continue
+                charge_energy = min(
+                    battery_kwh - state.battery_kwh,
+                    max(0.0, gap_seconds) * depot_charge_power_kw / 3600.0,
+                )
                 departure_battery = state.battery_kwh + charge_energy
             if departure_battery + _TOL < timing.drive_energy_kwh:
                 continue
@@ -290,7 +299,60 @@ def _schedule_ev_group(
         state.previous_route_id = timing.route_id
         if state not in states:
             states.append(state)
-    return list(scheduled.values()), next_local_id
+    result = list(scheduled.values())
+    if recharge_mode in {CHARGE_MODE_PARTIAL, CHARGE_MODE_ON_DEMAND}:
+        result = _minimize_ev_chain_charging(result, battery_kwh, depot_charge_power_kw)
+    return result, next_local_id
+
+
+def _minimize_ev_chain_charging(
+    trips: list[ScheduledTrip],
+    battery_kwh: float,
+    depot_charge_power_kw: float,
+) -> list[ScheduledTrip]:
+    """Remove surplus energy after max-charge feasibility packing.
+
+    Backward recursion computes the least departure battery needed at every
+    trip while retaining enough room to survive any later short charging gap.
+    Total charged energy then equals driving energy plus the final residual.
+    """
+
+    by_vehicle: dict[str, list[ScheduledTrip]] = {}
+    for trip in trips:
+        by_vehicle.setdefault(trip.physical_vehicle_id, []).append(trip)
+    updated: dict[str, ScheduledTrip] = {}
+    for chain in by_vehicle.values():
+        ordered = sorted(chain, key=lambda item: item.trip_index)
+        energies = [float(trip.start_battery_kwh or 0.0) - float(trip.end_battery_kwh or 0.0) for trip in ordered]
+        required = [0.0] * len(ordered)
+        required[-1] = energies[-1]
+        for index in range(len(ordered) - 2, -1, -1):
+            gap_capacity = max(0.0, ordered[index + 1].departure_second - ordered[index].return_second) * depot_charge_power_kw / 3600.0
+            required[index] = energies[index] + max(0.0, required[index + 1] - gap_capacity)
+            if required[index] > battery_kwh + _TOL:
+                raise ValueError(f"{CONTRACT_ID}: packed EV chain cannot be supported by partial charging")
+        departure = required[0]
+        for index, trip in enumerate(ordered):
+            end_battery = departure - energies[index]
+            charge_energy = 0.0
+            charge_start = None
+            recharge_end = trip.return_second
+            if index < len(ordered) - 1:
+                charge_energy = max(0.0, required[index + 1] - end_battery)
+                duration = charge_energy / depot_charge_power_kw * 3600.0
+                charge_start = ordered[index + 1].departure_second - duration if charge_energy > _TOL else None
+                recharge_end = charge_start + duration if charge_start is not None else trip.return_second
+            updated[trip.route_id] = replace(
+                trip,
+                start_battery_kwh=departure,
+                end_battery_kwh=end_battery,
+                charge_energy_kwh=charge_energy if charge_energy > _TOL else None,
+                charge_start_second=charge_start,
+                recharge_end_second=recharge_end,
+            )
+            if index < len(ordered) - 1:
+                departure = end_battery + charge_energy
+    return [updated[trip.route_id] for trip in trips]
 
 
 def validate_multitrip_certificate(
@@ -424,9 +486,23 @@ def prepare_multitrip_solution(
     earlier in ``route_timing`` if such a route is not yet supported.
     """
 
+    already_prepared = bool(solution.routes) and all(
+        "#T" in route.vehicle_id and physical_vehicle_id(route.vehicle_id).startswith(("CV_", "EV_"))
+        for route in solution.routes
+    )
+    if already_prepared:
+        certificate = _certificate_from_prepared_solution(solution, instance, prices)
+    else:
+        certificate = None
+
     battery_cap = _price(prices, "B_battery_kwh")
     inherited = _price(prices, "initial_ev_battery_kwh")
     initial_departure: dict[str, float] = {}
+    route_energy = {
+        route.vehicle_id: route_timing(route, instance, prices).drive_energy_kwh
+        for route in solution.routes
+        if route.vehicle_type.lower() == "ev"
+    }
     for route in solution.routes:
         if route.vehicle_type.lower() != "ev":
             continue
@@ -435,15 +511,20 @@ def prepare_multitrip_solution(
             for action in solution.charging_actions
             if action.vehicle_id == route.vehicle_id and action.station_id == route.home_depot_id
         )
-        initial_departure[route.vehicle_id] = min(battery_cap, inherited + depot_energy)
+        initial_departure[route.vehicle_id] = min(
+            battery_cap,
+            inherited + depot_energy if already_prepared and depot_energy > _TOL else battery_cap,
+        )
 
-    certificate = build_multitrip_certificate(
-        list(solution.routes),
-        instance,
-        prices,
-        recharge_mode=CHARGE_MODE_ON_DEMAND,
-        initial_departure_battery_by_route=initial_departure,
-    )
+    if certificate is None:
+        certificate = build_multitrip_certificate(
+            list(solution.routes),
+            instance,
+            prices,
+            recharge_mode=CHARGE_MODE_ON_DEMAND,
+            initial_departure_battery_by_route=initial_departure,
+        )
+        certificate = _reuse_existing_between_trip_times(certificate, solution, prices)
     scheduled_by_old_id = {trip.route_id: trip for trip in certificate.trips}
     id_map = {
         old_id: route_trip_vehicle_id(trip.physical_vehicle_id, trip.trip_index)
@@ -452,6 +533,8 @@ def prepare_multitrip_solution(
     prepared_routes = [replace(route, vehicle_id=id_map[route.vehicle_id]) for route in solution.routes]
 
     prepared_actions: list[ChargingAction] = []
+    original_routes = {route.vehicle_id: route for route in solution.routes}
+    first_trip_depot_action: dict[str, ChargingAction] = {}
     for action in solution.charging_actions:
         trip = scheduled_by_old_id.get(action.vehicle_id)
         if trip is None:
@@ -459,7 +542,41 @@ def prepare_multitrip_solution(
         is_origin_depot = action.station_id == trip.home_depot_id
         if is_origin_depot and trip.trip_index > 1:
             continue
+        if is_origin_depot and trip.trip_index == 1:
+            first_trip_depot_action[trip.route_id] = action
+            continue
         prepared_actions.append(replace(action, vehicle_id=id_map[action.vehicle_id]))
+
+    for trip in certificate.trips:
+        if trip.vehicle_type != "ev" or trip.trip_index != 1:
+            continue
+        energy = max(0.0, float(trip.start_battery_kwh or 0.0) - inherited)
+        if energy <= _TOL:
+            continue
+        duration = energy / certificate.depot_charge_power_kw * 3600.0
+        latest_completion = route_next_day_departure_second(original_routes[trip.route_id], instance, prices)
+        old_action = first_trip_depot_action.get(trip.route_id)
+        old_start = float(old_action.charge_start_second) if old_action is not None else None
+        old_end = old_start + duration if old_start is not None else None
+        start = (
+            old_start
+            if old_start is not None
+            and old_start >= float(trip.return_second) - _TOL
+            and old_end is not None
+            and old_end <= latest_completion + _TOL
+            else max(float(trip.return_second), latest_completion - duration)
+        )
+        if start + duration > latest_completion + _TOL:
+            raise ValueError(f"{CONTRACT_ID}: first-trip depot precharge has no overnight window")
+        prepared_actions.append(
+            ChargingAction(
+                vehicle_id=id_map[trip.route_id],
+                station_id=trip.home_depot_id,
+                energy_kwh=energy,
+                occupancy_minutes=duration / 60.0,
+                charge_start_second=start,
+            )
+        )
 
     remapped_trips = tuple(
         replace(trip, route_id=id_map[trip.route_id])
@@ -467,9 +584,256 @@ def prepare_multitrip_solution(
     )
     remapped_certificate = replace(certificate, trips=remapped_trips)
     prepared_actions.extend(certificate_charging_actions(remapped_certificate))
+    prepared_actions.sort(
+        key=lambda action: (
+            action.vehicle_id,
+            action.station_id,
+            float(action.charge_start_second),
+            float(action.energy_kwh),
+        )
+    )
     prepared = Solution(
         routes=prepared_routes,
         charging_actions=prepared_actions,
         cross_site_services=solution.cross_site_services,
     )
     return prepared, remapped_certificate
+
+
+def _certificate_from_prepared_solution(
+    solution: Solution,
+    instance: Instance,
+    prices: PriceParameters | dict[str, float] | Any,
+) -> MultiTripCertificate:
+    power = _price(prices, "depot_charge_power_kw")
+    battery_cap = _price(prices, "B_battery_kwh")
+    inherited = _price(prices, "initial_ev_battery_kwh")
+    timings = {route.vehicle_id: route_timing(route, instance, prices) for route in solution.routes}
+    routes = {route.vehicle_id: route for route in solution.routes}
+    actions: dict[str, list[ChargingAction]] = {}
+    for action in solution.charging_actions:
+        actions.setdefault(action.vehicle_id, []).append(action)
+    by_vehicle: dict[str, list[Route]] = {}
+    for route in solution.routes:
+        by_vehicle.setdefault(physical_vehicle_id(route.vehicle_id), []).append(route)
+    scheduled: list[ScheduledTrip] = []
+    counts = {"cv": 0, "ev": 0}
+    for physical_id, chain_routes in sorted(by_vehicle.items()):
+        ordered = sorted(chain_routes, key=lambda route: int(route.vehicle_id.rsplit("#T", 1)[1]))
+        vehicle_type = ordered[0].vehicle_type.lower()
+        counts[vehicle_type] += 1
+        previous_end: float | None = None
+        chain: list[ScheduledTrip] = []
+        for position, route in enumerate(ordered):
+            trip_index = int(route.vehicle_id.rsplit("#T", 1)[1])
+            timing = timings[route.vehicle_id]
+            depot_actions = [action for action in actions.get(route.vehicle_id, []) if action.station_id == route.home_depot_id]
+            depot_energy = sum(float(action.energy_kwh) for action in depot_actions)
+            if vehicle_type == "ev":
+                start_battery = inherited + depot_energy if position == 0 else float(previous_end or 0.0) + depot_energy
+                if start_battery > battery_cap + _TOL or start_battery + _TOL < timing.drive_energy_kwh:
+                    raise ValueError(f"{CONTRACT_ID}: prepared route {route.vehicle_id} has a broken battery ledger")
+                end_battery = start_battery - timing.drive_energy_kwh
+            else:
+                start_battery = end_battery = None
+            chain.append(
+                ScheduledTrip(
+                    route.vehicle_id,
+                    physical_id,
+                    trip_index,
+                    vehicle_type,
+                    route.home_depot_id,
+                    timing.earliest_departure_second,
+                    timing.return_second,
+                    timing.return_second,
+                    start_battery,
+                    end_battery,
+                )
+            )
+            if position > 0 and vehicle_type == "ev" and depot_energy > _TOL:
+                if len(depot_actions) != 1:
+                    raise ValueError(f"{CONTRACT_ID}: prepared route {route.vehicle_id} must have one depot gap action")
+                action = depot_actions[0]
+                duration = float(action.occupancy_minutes) * 60.0
+                previous = chain[-2]
+                chain[-2] = replace(
+                    previous,
+                    charge_start_second=float(action.charge_start_second),
+                    charge_energy_kwh=depot_energy,
+                    recharge_end_second=float(action.charge_start_second) + duration,
+                )
+            previous_end = end_battery
+        scheduled.extend(chain)
+    certificate = MultiTripCertificate(
+        CONTRACT_ID,
+        "PASS",
+        counts,
+        tuple(scheduled),
+        CHARGE_MODE_ON_DEMAND,
+        power,
+    )
+    validate_multitrip_certificate(certificate, list(routes.values()), prices)
+    return certificate
+
+
+def _reuse_existing_between_trip_times(
+    certificate: MultiTripCertificate,
+    solution: Solution,
+    prices: PriceParameters | dict[str, float] | Any,
+) -> MultiTripCertificate:
+    """Keep an already-valid aware/naive gap placement on repeated scoring."""
+
+    actions_by_route: dict[str, list[ChargingAction]] = {}
+    for action in solution.charging_actions:
+        actions_by_route.setdefault(action.vehicle_id, []).append(action)
+    by_vehicle: dict[str, list[ScheduledTrip]] = {}
+    for trip in certificate.trips:
+        by_vehicle.setdefault(trip.physical_vehicle_id, []).append(trip)
+    replacements: dict[str, ScheduledTrip] = {}
+    for trips in by_vehicle.values():
+        ordered = sorted(trips, key=lambda item: item.trip_index)
+        for previous, current in zip(ordered, ordered[1:]):
+            expected = float(previous.charge_energy_kwh or 0.0)
+            if expected <= _TOL:
+                continue
+            depot_actions = [
+                action
+                for action in actions_by_route.get(current.route_id, [])
+                if action.station_id == current.home_depot_id
+            ]
+            if len(depot_actions) != 1:
+                continue
+            action = depot_actions[0]
+            if abs(float(action.energy_kwh) - expected) > _TOL:
+                continue
+            duration = float(action.occupancy_minutes) * 60.0
+            start = float(action.charge_start_second)
+            end = start + duration
+            if start < previous.return_second - _TOL or end > current.departure_second + _TOL:
+                continue
+            replacements[previous.route_id] = replace(
+                previous,
+                charge_start_second=start,
+                recharge_end_second=end,
+            )
+    if not replacements:
+        return certificate
+    updated = replace(
+        certificate,
+        trips=tuple(replacements.get(trip.route_id, trip) for trip in certificate.trips),
+    )
+    validate_multitrip_certificate(updated, list(solution.routes), prices)
+    return updated
+
+
+def reschedule_between_trip_charging(
+    solution: Solution,
+    certificate: MultiTripCertificate,
+    instance: Instance,
+    carbon_profile: list[dict[str, Any]],
+    *,
+    strategy: str,
+) -> Solution:
+    """Move fixed between-trip energy within its legal gap without new search."""
+
+    if strategy not in {"aware", "naive"}:
+        raise ValueError(f"unknown between-trip charging strategy {strategy!r}")
+    by_vehicle: dict[str, list[ScheduledTrip]] = {}
+    for trip in certificate.trips:
+        by_vehicle.setdefault(trip.physical_vehicle_id, []).append(trip)
+    selected_starts: dict[str, float] = {}
+    routes = {route.vehicle_id: route for route in solution.routes}
+    for trips in by_vehicle.values():
+        ordered = sorted(trips, key=lambda item: item.trip_index)
+        first = ordered[0]
+        if first.vehicle_type == "ev":
+            first_actions = [
+                action
+                for action in solution.charging_actions
+                if action.vehicle_id == first.route_id and action.station_id == first.home_depot_id
+            ]
+            if len(first_actions) == 1 and float(first_actions[0].energy_kwh) > _TOL:
+                action = first_actions[0]
+                energy = float(action.energy_kwh)
+                duration = float(action.occupancy_minutes) * 60.0
+                earliest = float(first.return_second)
+                latest = route_next_day_departure_second(routes[first.route_id], instance) - duration
+                selected_starts[first.route_id] = (
+                    earliest
+                    if strategy == "naive"
+                    else _lowest_carbon_gap_start(earliest, latest, duration, energy, instance, carbon_profile)
+                )
+        for previous, current in zip(ordered, ordered[1:]):
+            energy = float(previous.charge_energy_kwh or 0.0)
+            if energy <= _TOL:
+                continue
+            duration = energy / certificate.depot_charge_power_kw * 3600.0
+            earliest = float(previous.return_second)
+            latest = float(current.departure_second) - duration
+            if latest < earliest - _TOL:
+                raise ValueError(f"{CONTRACT_ID}: no legal gap for {current.route_id}")
+            selected_starts[current.route_id] = (
+                earliest
+                if strategy == "naive"
+                else _lowest_carbon_gap_start(earliest, latest, duration, energy, instance, carbon_profile)
+            )
+    actions: list[ChargingAction] = []
+    for action in solution.charging_actions:
+        if action.vehicle_id in selected_starts and action.station_id in {
+            trip.home_depot_id for trip in certificate.trips if trip.route_id == action.vehicle_id
+        }:
+            actions.append(replace(action, charge_start_second=selected_starts[action.vehicle_id]))
+        else:
+            actions.append(action)
+    return replace(solution, charging_actions=actions)
+
+
+def drop_multitrip_identity(solution: Solution) -> Solution:
+    """Give fixed routes neutral ids before rebuilding a charging schedule."""
+
+    id_map = {
+        route.vehicle_id: f"{'EV' if route.vehicle_type.lower() == 'ev' else 'CV'}_REPLAY_{index}"
+        for index, route in enumerate(solution.routes, start=1)
+    }
+    return replace(
+        solution,
+        routes=[replace(route, vehicle_id=id_map[route.vehicle_id]) for route in solution.routes],
+        charging_actions=[replace(action, vehicle_id=id_map.get(action.vehicle_id, action.vehicle_id)) for action in solution.charging_actions],
+    )
+
+
+def _lowest_carbon_gap_start(
+    earliest: float,
+    latest: float,
+    duration: float,
+    energy: float,
+    instance: Instance,
+    carbon_profile: list[dict[str, Any]],
+) -> float:
+    if not carbon_profile or latest <= earliest + _TOL:
+        return earliest
+    candidates = {earliest, latest}
+    slot_seconds = 1800.0
+    first_slot = int(earliest // slot_seconds) - 1
+    last_slot = int((latest + duration) // slot_seconds) + 1
+    for slot_index in range(first_slot, last_slot + 1):
+        boundary = slot_index * slot_seconds
+        for candidate in (boundary, boundary - duration):
+            if earliest - _TOL <= candidate <= latest + _TOL:
+                candidates.add(min(latest, max(earliest, candidate)))
+
+    def emissions(start: float) -> float:
+        total = 0.0
+        for slot in charging_slot_breakdown(
+            start,
+            duration,
+            energy,
+            instance,
+            n_slots=len(carbon_profile),
+            cyclic=True,
+        ):
+            row = carbon_profile_row_for_slot(carbon_profile, slot.slot_index)
+            total += slot.y_skt_kwh * float(row["actual_gco2_per_kwh"])
+        return total
+
+    return min(candidates, key=lambda start: (emissions(start), start))

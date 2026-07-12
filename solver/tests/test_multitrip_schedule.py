@@ -10,6 +10,7 @@ from setp_solver.prices import PriceParameters
 from setp_solver.algorithms.resetp_alns.kernel.alns_core import SearchPolicy
 from setp_solver.algorithms.resetp_alns.operators.feasible_repair import enumerate_feasible_insertions
 from setp_solver.search.evaluation import EvaluationContext
+from setp_solver.search.e3_multitrip_runtime import hard_violations as e3_hard_violations, prepare_and_score_reference
 from setp_solver.search.multitrip_schedule import (
     CHARGE_MODE_FULL,
     CHARGE_MODE_ON_DEMAND,
@@ -17,10 +18,12 @@ from setp_solver.search.multitrip_schedule import (
     CONTRACT_ID,
     build_multitrip_certificate,
     certificate_charging_actions,
+    prepare_multitrip_solution,
+    reschedule_between_trip_charging,
     route_timing,
     validate_multitrip_certificate,
 )
-from setp_solver.solution import Route, Solution
+from setp_solver.solution import ChargingAction, Route, Solution
 
 
 def _instance() -> Instance:
@@ -146,6 +149,87 @@ def test_between_trip_charge_is_exported_to_cost_and_carbon_ledger() -> None:
     assert sum(action.energy_kwh for action in actions) == pytest.approx(
         sum(float(trip.charge_energy_kwh or 0.0) for trip in certificate.trips)
     )
+
+
+def _two_trip_solution_and_prices() -> tuple[Solution, PriceParameters]:
+    routes = [
+        Route("EV_A", "ev", "D0", ["D0", "C1", "D0"]),
+        Route("EV_B", "ev", "D0", ["D0", "C2", "D0"]),
+    ]
+    base = PriceParameters(B_battery_kwh=280.0, initial_ev_battery_kwh=0.0, depot_charge_power_kw=22.0)
+    need = route_timing(routes[0], _instance(), base).drive_energy_kwh
+    prices = replace(base, B_battery_kwh=need * 1.5)
+    actions = [
+        ChargingAction(route.vehicle_id, "D0", need * 1.5, need * 1.5 / 22.0 * 60.0, 10_000.0)
+        for route in routes
+    ]
+    return Solution(routes=routes, charging_actions=actions), prices
+
+
+def test_prepare_multitrip_solution_replaces_route_level_recharge_with_gap_ledger() -> None:
+    solution, prices = _two_trip_solution_and_prices()
+    prepared, certificate = prepare_multitrip_solution(solution, _instance(), prices)
+    ordered = sorted(certificate.trips, key=lambda trip: trip.trip_index)
+    assert len({trip.physical_vehicle_id for trip in ordered}) == 1
+    assert len(prepared.charging_actions) == 2
+    assert prepared.charging_actions[1].energy_kwh == pytest.approx(
+        float(ordered[1].start_battery_kwh) - float(ordered[0].end_battery_kwh)
+    )
+
+
+def test_prepare_multitrip_solution_is_idempotent() -> None:
+    solution, prices = _two_trip_solution_and_prices()
+    first, _ = prepare_multitrip_solution(solution, _instance(), prices)
+    second, _ = prepare_multitrip_solution(first, _instance(), prices)
+    assert second == first
+
+
+def test_prepare_multitrip_solution_accounts_first_trip_precharge_from_zero() -> None:
+    base_solution, prices = _two_trip_solution_and_prices()
+    solution = replace(base_solution, charging_actions=[])
+    prepared, certificate = prepare_multitrip_solution(solution, _instance(), prices)
+    drive = sum(route_timing(route, _instance(), prices).drive_energy_kwh for route in solution.routes)
+    last_by_vehicle = {}
+    for trip in certificate.trips:
+        previous = last_by_vehicle.get(trip.physical_vehicle_id)
+        if previous is None or trip.trip_index > previous.trip_index:
+            last_by_vehicle[trip.physical_vehicle_id] = trip
+    residual = sum(float(trip.end_battery_kwh or 0.0) for trip in last_by_vehicle.values())
+    assert sum(action.energy_kwh for action in prepared.charging_actions) == pytest.approx(drive + residual)
+    assert any(trip.trip_index == 1 for trip in certificate.trips)
+
+
+def test_between_trip_aware_replay_moves_only_within_the_legal_gap() -> None:
+    solution, prices = _two_trip_solution_and_prices()
+    prepared, certificate = prepare_multitrip_solution(solution, _instance(), prices)
+    profile = [
+        {"slot_index": i, "horizon_second_start": i * 1800.0, "actual_gco2_per_kwh": 300.0 if i == 0 else 50.0}
+        for i in range(48)
+    ]
+    naive = reschedule_between_trip_charging(prepared, certificate, _instance(), profile, strategy="naive")
+    aware = reschedule_between_trip_charging(prepared, certificate, _instance(), profile, strategy="aware")
+    naive_gap = [action for action in naive.charging_actions if "#T2" in action.vehicle_id][0]
+    aware_gap = [action for action in aware.charging_actions if "#T2" in action.vehicle_id][0]
+    previous = min(certificate.trips, key=lambda trip: trip.trip_index)
+    current = max(certificate.trips, key=lambda trip: trip.trip_index)
+    assert naive_gap.charge_start_second == pytest.approx(previous.return_second)
+    assert previous.return_second <= aware_gap.charge_start_second
+    assert aware_gap.charge_start_second + aware_gap.occupancy_minutes * 60.0 <= current.departure_second + 1e-6
+
+
+def test_e3_runtime_carries_previous_trip_battery_without_changing_legacy_checker(monkeypatch: pytest.MonkeyPatch) -> None:
+    solution, prices = _two_trip_solution_and_prices()
+    source = _instance()
+    instance = Instance(source.nodes[:4], [row[:4] for row in source.distance_matrix[:4]], num_cv=14, num_ev=14)
+    profile = [
+        {"slot_index": i, "horizon_second_start": i * 1800.0, "actual_gco2_per_kwh": 100.0}
+        for i in range(48)
+    ]
+    context = EvaluationContext(instance, profile, prices=prices)
+    monkeypatch.setenv("SETP_E3_STRICT_MULTITRIP", "1")
+    prepared, objective = prepare_and_score_reference(solution, context)
+    assert objective < 1_000_000_000.0
+    assert e3_hard_violations(prepared, context) == []
 
 
 def test_v1_stops_instead_of_silently_ignoring_public_charging() -> None:
