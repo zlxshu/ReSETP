@@ -109,6 +109,10 @@ class BaselineRunResult:
     flip_best_updates: int = 0
     common_best_updates: int = 0
     route_count_unique: int = 0
+    candidate_signature_unique: int = 0
+    candidate_evaluation_count: int = 0
+    candidate_feasible_count: int = 0
+    iwd_velocity_update_count: int = 0
     liveness_verdict: str = ""
     liveness_flags: list[str] = field(default_factory=list)
 
@@ -175,6 +179,11 @@ class _SearchSession:
         self.decode_cache: dict[tuple[tuple[str, ...], tuple[tuple[str, float], ...], float], Solution] = {}
         self.reference_objective_cache: dict[str, float] = {}
         self.candidate_route_counts: set[int] = set()
+        self.candidate_signature_set: set[str] = set()
+        self.candidate_evaluation_count = 0
+        self.candidate_feasible_count = 0
+        self.iwd_velocity_update_count = 0
+        self.iwd_velocity_mode = "dynamic"
         self.common_preprocess_cost: float | None = None
         self.common_preprocess_attempts = 0
         self.common_preprocess_accepted_flips = 0
@@ -257,6 +266,10 @@ class _SearchSession:
             signature=solution_signature_hash(solution),
             violation_count=violation_count,
         )
+        self.candidate_evaluation_count += 1
+        self.candidate_signature_set.add(scored.signature)
+        if feasible:
+            self.candidate_feasible_count += 1
         if feasible and objective < self.best.objective - 1e-9:
             before_best_cost = self.best.cost
             self.best = scored
@@ -441,6 +454,10 @@ class _SearchSession:
             flip_best_updates=int(channel_stats["flip_best_updates"]),
             common_best_updates=int(channel_stats["common_best_updates"]),
             route_count_unique=route_count_unique,
+            candidate_signature_unique=len(self.candidate_signature_set),
+            candidate_evaluation_count=int(self.candidate_evaluation_count),
+            candidate_feasible_count=int(self.candidate_feasible_count),
+            iwd_velocity_update_count=int(self.iwd_velocity_update_count),
             liveness_verdict=liveness_verdict,
             liveness_flags=liveness_flags,
         )
@@ -486,6 +503,7 @@ def run_metaheuristic_baseline(
     initial_solution: Solution | None = None,
     prices: PriceParameters | None = None,
     common_flip_preprocess: bool = False,
+    iwd_velocity_mode: str = "dynamic",
 ) -> BaselineRunResult:
     """Run one formal metaheuristic baseline under the common referee."""
 
@@ -503,6 +521,9 @@ def run_metaheuristic_baseline(
         prices=effective_prices,
         common_flip_preprocess=bool(common_flip_preprocess),
     )
+    if str(iwd_velocity_mode) not in {"dynamic", "fixed"}:
+        raise ValueError("iwd_velocity_mode must be 'dynamic' or 'fixed'")
+    session.iwd_velocity_mode = str(iwd_velocity_mode)
     runner = {
         "GA": _run_ga,
         "PSO": _run_pso,
@@ -553,6 +574,10 @@ def baseline_result_to_dict(result: BaselineRunResult, *, include_solution: bool
         "flip_best_updates": result.flip_best_updates,
         "common_best_updates": result.common_best_updates,
         "route_count_unique": result.route_count_unique,
+        "candidate_signature_unique": result.candidate_signature_unique,
+        "candidate_evaluation_count": result.candidate_evaluation_count,
+        "candidate_feasible_count": result.candidate_feasible_count,
+        "iwd_velocity_update_count": result.iwd_velocity_update_count,
         "liveness_verdict": result.liveness_verdict,
         "liveness_flags": result.liveness_flags,
     }
@@ -894,20 +919,45 @@ def _run_gwo(session: _SearchSession) -> BaselineRunResult:
 
 
 def _run_iwd(session: _SearchSession) -> BaselineRunResult:
-    params = {"drops": 20, "soil0": 1000.0, "velocity0": 100.0, "iter": 100, "lns": "Shaw+min-increment on iteration-best", "acceptance": "SA-Metropolis"}
+    # The implementation follows the explicit equations in the IWD family
+    # source: Shah-Hosseini (2009), as used by Zhang et al. (2025) for
+    # MDHFVRPTW.  The Zhang paper's application table does not print rho, so
+    # the canonical 0.9 local/global value from Shah-Hosseini is recorded here
+    # rather than silently inventing a new setting.
+    params = {
+        "drops": 20,
+        "soil0": 10000.0,
+        "velocity0": 200.0,
+        "a_s": 1000.0,
+        "b_s": 0.01,
+        "c_s": 1.0,
+        "a_v": 1000.0,
+        "b_v": 0.01,
+        "c_v": 1.0,
+        "rho_local": 0.9,
+        "rho_global": 0.9,
+        "epsilon_s": 1e-9,
+        "epsilon_v": 1e-9,
+        "iter": 100,
+        "lns": "Shaw+greedy insertion on iteration-best",
+        "acceptance": "SA-Metropolis",
+        "velocity_mode": session.iwd_velocity_mode,
+        "source_formula": "Shah-Hosseini-2009 / Zhang-2025-IIWD",
+        "source_initialization": "Shah-Hosseini-2009 canonical InitSoil=10000, InitVel=200",
+    }
     customers = _all_customer_ids(session.context.instance)
     soil = {(a, b): float(params["soil0"]) for a in customers for b in customers if a != b}
     transition_base = _iwd_transition_base(customers, session)
-    velocity = {idx: float(params["velocity0"]) for idx in range(int(params["drops"]))}
     temperature = -0.05 * abs(session.current.objective) / math.log(0.5)
     iteration = 0
     while session.can_score():
         iteration += 1
         best_this_iter: _ScoredSolution | None = None
+        best_this_iter_carried_soil = 0.0
         for drop_idx in range(int(params["drops"])):
             if not session.can_score():
                 break
-            order = _iwd_construct_order(customers, soil, transition_base, session)
+            order, carried_soil = _iwd_construct_order(customers, soil, transition_base, session, params)
             candidate = _order_to_solution(order, session)
             scored = session.score(candidate, operator="iwd_construct_sa")
             if scored is None:
@@ -915,8 +965,7 @@ def _run_iwd(session: _SearchSession) -> BaselineRunResult:
             session.accept_metropolis(scored, temperature)
             if scored.feasible and (best_this_iter is None or scored.objective < best_this_iter.objective):
                 best_this_iter = scored
-            velocity[drop_idx] = velocity[drop_idx] + 1.0 / max(1.0, abs(scored.objective))
-            _iwd_update_local_soil(order, soil, scored.objective)
+                best_this_iter_carried_soil = carried_soil
         if best_this_iter is not None:
             outcome = _alns_neighbor(session, best_this_iter.solution, "shaw_related_removal", "greedy_insert_repair") if session.can_score() else _OperatorOutcome(best_this_iter.solution, produced=False, feasible=False, changed=False)
             if outcome.produced and outcome.feasible:
@@ -924,7 +973,12 @@ def _run_iwd(session: _SearchSession) -> BaselineRunResult:
                 session.accept_metropolis(polished, temperature)
                 if polished is not None and polished.feasible and polished.objective < best_this_iter.objective:
                     best_this_iter = polished
-            _iwd_update_global_soil(_solution_order(best_this_iter.solution, session.context.instance), soil, best_this_iter.objective)
+            _iwd_update_global_soil(
+                _solution_order(best_this_iter.solution, session.context.instance),
+                soil,
+                best_this_iter_carried_soil,
+                params,
+            )
         temperature *= 0.95
         if iteration >= int(params["iter"]):
             iteration = 0
@@ -1626,51 +1680,89 @@ def _iwd_transition_base(customers: list[str], session: _SearchSession) -> dict[
         for b in customers:
             if a == b:
                 continue
-            saving = max(1e-9, min(float(instance.distance(depot, a)) + float(instance.distance(depot, b)) for depot in depots) - float(instance.distance(a, b)))
-            base[(a, b)] = 1.0 + saving / 10_000.0
+            saving = min(
+                float(instance.distance(depot, a))
+                + float(instance.distance(depot, b))
+                - float(instance.distance(a, b))
+                for depot in depots
+            ) if depots else 0.0
+            # The source formula uses the savings matrix directly.  Keep the
+            # numerator positive for the probability calculation when a
+            # triangle-inequality/noise edge has non-positive savings.
+            base[(a, b)] = max(1e-9, float(saving))
     return base
 
 
-def _iwd_construct_order(customers: list[str], soil: dict[tuple[str, str], float], transition_base: dict[tuple[str, str], float], session: _SearchSession) -> list[str]:
+def _iwd_construct_order(
+    customers: list[str],
+    soil: dict[tuple[str, str], float],
+    transition_base: dict[tuple[str, str], float],
+    session: _SearchSession,
+    params: dict[str, Any],
+) -> tuple[list[str], float]:
     remaining = set(customers)
     if not remaining:
-        return []
+        return [], 0.0
     current = session.rng.choice(sorted(remaining))
     order = [current]
     remaining.remove(current)
+    velocity = float(params["velocity0"])
+    carried_soil = 0.0
     while remaining:
         weights = {
-            candidate: _iwd_transition_weight(current, candidate, soil, transition_base)
+            candidate: _iwd_transition_weight(current, candidate, soil, transition_base, remaining, params)
             for candidate in remaining
         }
         nxt = _weighted_customer_choice(weights, session.rng)
+        edge = (current, nxt)
+        edge_soil = float(soil.get(edge, params["soil0"]))
+        if session.iwd_velocity_mode == "dynamic":
+            # Canonical IWD increases velocity inversely with edge soil.  A
+            # tiny positive floor prevents a negative/zero denominator after
+            # the local soil update while retaining the source direction.
+            denominator = float(params["b_v"]) + float(params["c_v"]) * max(float(params["epsilon_s"]), edge_soil)
+            velocity += float(params["a_v"]) / max(float(params["epsilon_s"]), denominator)
+            session.iwd_velocity_update_count += 1
+        distance = float(session.context.instance.distance(current, nxt))
+        travel_time = distance / max(float(params["epsilon_v"]), velocity)
+        delta_soil = float(params["a_s"]) / (float(params["b_s"]) + float(params["c_s"]) * travel_time)
+        soil[edge] = (1.0 - float(params["rho_local"])) * edge_soil - float(params["rho_local"]) * delta_soil
+        carried_soil += delta_soil
         order.append(nxt)
         remaining.remove(nxt)
         current = nxt
-    return order
+    return order, carried_soil
 
 
-def _iwd_transition_weight(a: str, b: str, soil: dict[tuple[str, str], float], transition_base: dict[tuple[str, str], float]) -> float:
-    edge_soil = max(1e-9, soil.get((a, b), 1000.0))
-    return (1.0 / edge_soil) * transition_base.get((a, b), 1.0)
+def _iwd_transition_weight(
+    a: str,
+    b: str,
+    soil: dict[tuple[str, str], float],
+    transition_base: dict[tuple[str, str], float],
+    remaining: set[str],
+    params: dict[str, Any],
+) -> float:
+    edge_soil = float(soil.get((a, b), params["soil0"]))
+    min_soil = min((float(soil.get((a, candidate), params["soil0"])) for candidate in remaining), default=0.0)
+    shifted_soil = edge_soil if min_soil >= 0.0 else edge_soil - min_soil
+    return max(float(params["epsilon_s"]), transition_base.get((a, b), 0.0)) / (
+        float(params["epsilon_s"]) + max(0.0, shifted_soil)
+    )
 
 
-def _iwd_update_local_soil(order: list[str], soil: dict[tuple[str, str], float], objective: float) -> None:
-    if not math.isfinite(objective):
+def _iwd_update_global_soil(
+    order: list[str],
+    soil: dict[tuple[str, str], float],
+    carried_soil: float,
+    params: dict[str, Any],
+) -> None:
+    if not order or not math.isfinite(carried_soil):
         return
-    delta = 1.0 / max(1.0, abs(objective))
+    n = max(2, len(order))
+    deposit = 2.0 * float(carried_soil) / float(n * (n - 1))
     for edge in zip(order, order[1:]):
         if edge in soil:
-            soil[edge] = max(1e-9, soil[edge] * 0.99 - delta)
-
-
-def _iwd_update_global_soil(order: list[str], soil: dict[tuple[str, str], float], objective: float) -> None:
-    if not math.isfinite(objective):
-        return
-    delta = 10.0 / max(1.0, abs(objective))
-    for edge in zip(order, order[1:]):
-        if edge in soil:
-            soil[edge] = max(1e-9, soil[edge] - delta)
+            soil[edge] = (1.0 - float(params["rho_global"])) * float(soil[edge]) + float(params["rho_global"]) * deposit
 
 
 def _alns_neighbor(session: _SearchSession, solution: Solution, destroy: str, repair: str) -> _OperatorOutcome:
