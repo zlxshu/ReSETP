@@ -8,6 +8,7 @@
 - [ALNS crush root cause](alns-crush-root-cause.md) — PPO/DR lane 全程日志; winner kernel £4878 健康 + venv 漂移教训; 2026-06-19 离线体检①=HALT_COLLECTION_COST + 监督探针破局设计; user纠正真目标=DR-ALNS真训练+创新干过GA-VNS/GA/PSO(非碾SA)
 - [Algorithm pivot: CA-ALNS](algorithm-pivot-ca-alns.md) — 历史快照(2026-06-14/15); 注: 其"目标=碾压SA"口径已纠正(见 project-plan-overview 真目标=DR-ALNS真训练+创新, 干过GA-VNS/GA/PSO); rerun all experiments; carbon numbers change
 - [Baseline algorithm catalog](baseline-algorithm-catalog.md) — Zotero整理: 各论文主流算法+item key+复刻来源+推荐基线集; keystone=周鲜成2021综述(在目标期刊); ALNS/DR-ALNS要赢过这些(GA/PSO/SA/TS/ACO/VNS/GA-VNS+混合)
+- [IWD fidelity closeout](../iwd_fidelity_closeout_20260712.md) — IWD按文献公式修复并完成一次来源参数救援短门；两轮均未过P3/P4/P5，降级为失活/简化适配基线，不重跑90行，不改E2封存810行。
 - [Deferred instance robustness](deferred-instance-robustness.md) — later task: re-run carbon stress on three-shift 100/150/200c instances (150/200 not generated yet)
 
 - [Instance lineage](instance-lineage.md) — formal L-main v2 = 9 threeshift ladders only; mixed23/100-01 ARCHIVE_ONLY
@@ -43,3 +44,5 @@
 - [M1/E2收口配套 2026-07-12] F2收敛曲线和九算法参数附录已生成；formal目录819个AppleDouble元数据已清除并记录。2评价接线小测通过后，8项16000代表预检已启动，独立于810行主表，使用冻结执行提交和6 workers；异常只停最小任务并断点续跑。
 - [M1/E2长预算预检收口 2026-07-12] 8项16000评价代表预检全部通过：8/8精确16000、零违规、解/hash齐全；hybrid总成本19933.954245低于LNS 22784.898943，3个旧4000负例全部改善，200c seed4强胜样本保持19.7043%优势，判决`E2_16000_PREFLIGHT_SUPPORTED`。这是补充稳健性证据，不改810行主表，E2线至此封存，下一步转E3。
 - [M1/WP0 2026-07-12] E2封存后完成投稿合同冻结和E0地基复核：合同判决=`E1_E7_CONTRACT_FROZEN_BY_USER`，主场景280、c_tr=0、配额0会计项、最近车场映射冻结、公平仅E6/E7搜索臂启用；E0九个L-main v3共享起点全部零违规；3个E2冻结解在280覆盖下用新默认c_tr=0复算成本逐位一致。产物见`baselines/contract_audit/wp0_e0_check_20260712/`、`wp0_e2_replay_20260712/`和`docs/handoff/tex_sync_debt_20260712.md`。本WP0不启动E3–E7正式搜索。
+- [M1/E2-IWD忠实度收口] 2026-07-12：按批准的IWD公式完成源码修复和唯一允许的来源参数救援。正式文献参数短门与`zhang_scaled`救援均为18/18行、800/800评价、零违规、解/hash齐全；两轮均P1/P2通过但P3/P4/P5未通过，判决=`IWD_FIDELITY_GATE_FAIL`。IWD降级为失活/简化适配基线，不重跑90行，不改E2封存810行；论文不得再写“九个基线都健康”，IWD须单独标注或后续按原文独立复刻。证据见`docs/handoff/iwd_fidelity_closeout_20260712.md`及两套gate目录。
+- [M1/提示词骨架入册] 2026-07-12：应用户纠正（骨架进文档、Codex照单开工、不现场设计），总设计新增第16节=8个冷启动自包含提示词骨架按执行顺序：0 WP0（已执行存档）→0b合同公平条款修订（必做：WP0冻结的合同仍是旧"公平仅E6/E7"条款，须按第15节第2条改为系统方案实验全启用）→1 E3机制阶梯（主梯30+缩减梯20+摩擦轴20+四项零搜索审计）→2 E2b四臂消融→3 E4/E5碳批次→4 E6绑定聚焦→5 E7四臂动态→6表图统一生成→7写作欠账。【待填】参数（E6的r0网格、E7阶段预算）由上一批产出定。终局拍板=第15节（桩数A不设卡、公平范围A、E4数据源改M5解、E7公平基准C逐阶段因果重算、措辞写作五项）。

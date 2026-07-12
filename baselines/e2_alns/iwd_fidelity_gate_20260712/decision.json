@@ -1,0 +1,23 @@
+{
+  "counts": {
+    "dynamic_fixed_differences": 3,
+    "repaired_100c_beats": 0,
+    "repaired_25c_beats": 3,
+    "repaired_legacy_wins": 3
+  },
+  "criteria": {
+    "P1_all_18_zero_violation_exact_800": true,
+    "P2_repaired_25c_beats_start_at_least_2_of_3": true,
+    "P3_repaired_100c_beats_start_at_least_2_of_3": false,
+    "P4_dynamic_vs_fixed_velocity_differs_on_all_6_pairs": false,
+    "P5_repaired_beats_frozen_legacy_on_at_least_5_of_6": false
+  },
+  "execution_commit": "f1ef68751ddc7b0d6f3a75e787b7ef11a29c44d4",
+  "expected_rows": 18,
+  "formal_e2_untouched": true,
+  "observed_rows": 18,
+  "old_execution_commit": "0124623e347cd2a6a5548e07e0af66e16d3b634b",
+  "schema": "resetp.iwd-fidelity-gate-decision.v1",
+  "source_sha256": "20d5dc1fdc07c00382f4f7634582df903db271e978b51b344415abf0e1f32fef",
+  "verdict": "IWD_FIDELITY_GATE_FAIL"
+}

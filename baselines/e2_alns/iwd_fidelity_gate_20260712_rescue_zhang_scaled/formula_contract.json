@@ -1,0 +1,24 @@
+{
+  "delta_soil": "delta_soil=a_s/(b_s+c_s*Time^2)",
+  "g_soil": "g(soil(i,j))=soil(i,j)-min(0,min_k soil(i,k))",
+  "global_soil": "soil=(1+rho_global)*soil-rho_global*carried_soil/(N-1) on iteration-best edges",
+  "local_soil": "soil=(1-rho_local)*soil-rho_local*delta_soil",
+  "parameters": {
+    "a_s": 1000.0,
+    "a_v": 1000.0,
+    "b_s": 0.01,
+    "b_v": 0.01,
+    "c_s": 1.0,
+    "c_v": 1.0,
+    "epsilon_s": 0.01,
+    "epsilon_v": 0.0001,
+    "rho_global": 0.9,
+    "rho_local": 0.9,
+    "soil0": 1000.0,
+    "velocity0": 100.0
+  },
+  "source_notes": "This follows the specific Zhang 2025 design transcription recorded in baseline-algorithm-catalog.md and the approved gate prompt; the shared customer-order decoder remains unchanged. The zhang_scaled profile is the one allowed source-aligned rescue round.",
+  "time": "Time=d(i,j)/max(epsilon_v,vel)",
+  "transition": "p(j)=f(soil(i,j))/sum f(soil(i,k)); f=1/(epsilon_s+g(soil))",
+  "velocity": "vel(t+1)=vel(t)+a_v/(b_v+c_v*soil(i,j)^2)"
+}
