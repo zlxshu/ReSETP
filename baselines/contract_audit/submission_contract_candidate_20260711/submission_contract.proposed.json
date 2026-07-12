@@ -151,6 +151,10 @@
       "rule": "nearest_depot_by_bundle_distance"
     },
     "fairness": {
+      "disabled_experiments": [
+        "E2_frozen_algorithm_benchmark",
+        "E3_mechanism_isolation_layers_0_to_4"
+      ],
       "enabled_during_search_when_required": true,
       "global_default": "off",
       "required_experiments": [
@@ -159,10 +163,6 @@
         "E4_carbon_price_reoptimization",
         "E6",
         "E7_all_arms"
-      ],
-      "disabled_experiments": [
-        "E2_frozen_algorithm_benchmark",
-        "E3_mechanism_isolation_layers_0_to_4"
       ],
       "theta_selection": "calibrate_around_natural_binding_range"
     },
