@@ -62,7 +62,7 @@ def bundle_rel(instance: str) -> str:
     return f"models/data_bundle/generated_instances/L-main/{instance}"
 
 
-def task_payload(output_dir: Path, arm: str, instance: str, seed: int) -> dict[str, Any]:
+def task_payload(output_dir: Path, arm: str, instance: str, seed: int, parameter_profile: str) -> dict[str, Any]:
     rid = run_id(arm, instance, seed)
     # The frozen runner requires the same bookkeeping fields as its formal
     # task factory, even though this is only an isolated diagnostic gate.
@@ -82,6 +82,7 @@ def task_payload(output_dir: Path, arm: str, instance: str, seed: int) -> dict[s
         "eval_budget": EVAL_BUDGET,
         "runtime_cap_seconds": RUNTIME_CAP_SECONDS,
         "scenario_type": "diagnostic_280_override",
+        "parameter_profile": parameter_profile,
         "checkpoint_path": str(checkpoint),
         "execution_commit": git_head(),
         "source_sha256": source_sha(),
@@ -129,6 +130,11 @@ def run_current(task: dict[str, Any]) -> dict[str, Any]:
     bundle = load_search_bundle(bundle_dir)
     warm = make_shared_initial_solution(bundle, prices=prices)
     mode = "fixed" if task["arm"] == "velocity_fixed" else "dynamic"
+    parameter_profile = str(task.get("parameter_profile", "canonical"))
+    if parameter_profile != "canonical":
+        os.environ["SETP_IWD_PARAM_PROFILE"] = parameter_profile
+    else:
+        os.environ.pop("SETP_IWD_PARAM_PROFILE", None)
     result = run_metaheuristic_baseline(
         "IWD",
         bundle_dir,
@@ -185,6 +191,7 @@ def run_current(task: dict[str, Any]) -> dict[str, Any]:
         "execution_commit": task["execution_commit"],
         "source_sha256": task["source_sha256"],
         "old_execution_commit": task["old_execution_commit"],
+        "parameter_profile": parameter_profile,
     }
     return row
 
@@ -307,7 +314,7 @@ def evaluate_gate(rows: list[dict[str, Any]]) -> dict[str, Any]:
     }
 
 
-def run_matrix(output_dir: Path, workers: int) -> int:
+def run_matrix(output_dir: Path, workers: int, parameter_profile: str) -> int:
     output_dir.mkdir(parents=True, exist_ok=True)
     tasks_dir = output_dir / ".tasks"
     solutions_dir = output_dir / "solutions"
@@ -329,11 +336,15 @@ def run_matrix(output_dir: Path, workers: int) -> int:
         "execution_commit": git_head(),
         "source_sha256": source_sha(),
         "old_execution_commit": OLD_COMMIT,
+        "parameter_profile": parameter_profile,
         "formula_contract": "Zhang-2025 transcription of IWD velocity^2/time^2/soil + Shah-Hosseini soil shift, with existing shared ReSETP decoder",
         "formal_e2_untouched": True,
         "pre_registered": True,
     }
     write_json(output_dir / "metadata.json", metadata)
+    formula_parameters = {"soil0": 10000.0, "velocity0": 200.0, "a_s": 1000.0, "b_s": 0.01, "c_s": 1.0, "a_v": 1000.0, "b_v": 0.01, "c_v": 1.0, "rho_local": 0.9, "rho_global": 0.9, "epsilon_s": 0.01, "epsilon_v": 0.0001}
+    if parameter_profile == "zhang_scaled":
+        formula_parameters.update({"soil0": 1000.0, "velocity0": 100.0})
     write_json(
         output_dir / "formula_contract.json",
         {
@@ -344,13 +355,13 @@ def run_matrix(output_dir: Path, workers: int) -> int:
             "local_soil": "soil=(1-rho_local)*soil-rho_local*delta_soil",
             "delta_soil": "delta_soil=a_s/(b_s+c_s*Time^2)",
             "global_soil": "soil=(1+rho_global)*soil-rho_global*carried_soil/(N-1) on iteration-best edges",
-            "parameters": {"soil0": 10000.0, "velocity0": 200.0, "a_s": 1000.0, "b_s": 0.01, "c_s": 1.0, "a_v": 1000.0, "b_v": 0.01, "c_v": 1.0, "rho_local": 0.9, "rho_global": 0.9, "epsilon_s": 0.01, "epsilon_v": 0.0001},
-            "source_notes": "This follows the specific Zhang 2025 design transcription recorded in baseline-algorithm-catalog.md and the approved gate prompt; the shared customer-order decoder remains unchanged.",
+            "parameters": formula_parameters,
+            "source_notes": "This follows the specific Zhang 2025 design transcription recorded in baseline-algorithm-catalog.md and the approved gate prompt; the shared customer-order decoder remains unchanged. The zhang_scaled profile is the one allowed source-aligned rescue round.",
         },
     )
     write_json(output_dir / "decision.json", {"schema": "resetp.iwd-fidelity-gate-decision.v1", "verdict": "PENDING_PRE_REGISTERED", "formal_e2_untouched": True})
 
-    tasks = [task_payload(output_dir, arm, instance, seed) for arm in ARMS for instance in INSTANCES for seed in SEEDS]
+    tasks = [task_payload(output_dir, arm, instance, seed, parameter_profile) for arm in ARMS for instance in INSTANCES for seed in SEEDS]
     rows: list[dict[str, Any]] = []
 
     def execute(task: dict[str, Any]) -> dict[str, Any]:
@@ -360,6 +371,10 @@ def run_matrix(output_dir: Path, workers: int) -> int:
         env = os.environ.copy()
         env["PYTHONHASHSEED"] = "0"
         env["PYTHONPATH"] = "solver/src:models/src:."
+        if task["parameter_profile"] == "canonical":
+            env.pop("SETP_IWD_PARAM_PROFILE", None)
+        else:
+            env["SETP_IWD_PARAM_PROFILE"] = str(task["parameter_profile"])
         completed = subprocess.run(
             [GOLD_PYTHON, str(Path(__file__).resolve()), "--task-json", str(task_path), "--task-output-json", str(row_path)],
             cwd=REPO_ROOT,
@@ -415,6 +430,7 @@ def run_matrix(output_dir: Path, workers: int) -> int:
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--workers", type=int, default=3)
+    parser.add_argument("--parameter-profile", choices=("canonical", "zhang_scaled"), default="canonical")
     parser.add_argument("--output-dir", type=Path, default=OUTPUT_DIR)
     parser.add_argument("--task-json", type=Path, default=None)
     parser.add_argument("--task-output-json", type=Path, default=None)
@@ -422,7 +438,7 @@ def main() -> int:
     if args.task_json and args.task_output_json:
         worker_main(args.task_json, args.task_output_json)
         return 0
-    return run_matrix(args.output_dir, args.workers)
+    return run_matrix(args.output_dir, args.workers, args.parameter_profile)
 
 
 if __name__ == "__main__":

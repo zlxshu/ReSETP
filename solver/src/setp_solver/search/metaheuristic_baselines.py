@@ -946,6 +946,16 @@ def _run_iwd(session: _SearchSession) -> BaselineRunResult:
         "source_formula": "Shah-Hosseini-2009 / Zhang-2025-IIWD",
         "source_initialization": "Shah-Hosseini-2009 canonical InitSoil=10000, InitVel=200",
     }
+    # One and only one source-aligned sensitivity profile is available for
+    # the pre-registered rescue round.  The default used by formal E2 remains
+    # canonical; the scaled profile mirrors the Zhang application table.
+    parameter_profile = os.environ.get("SETP_IWD_PARAM_PROFILE", "canonical")
+    if parameter_profile == "zhang_scaled":
+        params.update({"soil0": 1000.0, "velocity0": 100.0})
+        params["source_initialization"] = "Zhang-2025 application InitSoil=1000, InitVel=100"
+    elif parameter_profile != "canonical":
+        raise ValueError(f"unknown SETP_IWD_PARAM_PROFILE={parameter_profile!r}")
+    params["parameter_profile"] = parameter_profile
     customers = _all_customer_ids(session.context.instance)
     soil = {(a, b): float(params["soil0"]) for a in customers for b in customers if a != b}
     temperature = -0.05 * abs(session.current.objective) / math.log(0.5)
