@@ -48,7 +48,7 @@ from setp_solver.search.submission_contract import FULL_MODEL_LANE, load_submiss
 from setp_solver.solution import ChargingAction, CrossSiteService, Route, Solution, physical_vehicle_id
 
 
-DEFAULT_OUT = ROOT / "baselines/e3_ablation/e3_v7_clean_20260713"
+DEFAULT_OUT = ROOT / "baselines/e3_ablation/e3_v8_clean_20260713"
 CONTRACT_DIR = ROOT / "baselines/contract_audit/submission_contract_candidate_20260711"
 CONTRACT_PATH = CONTRACT_DIR / "submission_contract.proposed.json"
 OWNER_ROWS = CONTRACT_DIR / "customer_owner_rows.csv"
@@ -203,10 +203,38 @@ def strict_mode(caps: dict[str, dict[str, int]] | None = None) -> Iterable[None]
             os.environ["SETP_E3_DEPOT_ASSET_CAPS_JSON"] = old_caps
 
 
+def _load_frozen_asset_manifest(manifest_path: Path, size: str) -> dict[str, Any] | None:
+    if not manifest_path.exists():
+        return None
+    manifest = read_json(manifest_path)
+    expected = {
+        "schema": "setp.e3.assets.v2",
+        "size": size,
+        "instance": INSTANCE_NAMES[size],
+        "contract_sha256": sha256(CONTRACT_PATH),
+        "owner_rows_sha256": sha256(OWNER_ROWS),
+        "strict_contract_id": CONTRACT_ID,
+    }
+    for key, value in expected.items():
+        if manifest.get(key) != value:
+            raise ValueError(f"frozen asset manifest drifted at {key}: {manifest.get(key)!r} != {value!r}")
+    hashes = manifest.get("asset_hashes", {})
+    if not isinstance(hashes, dict) or not hashes:
+        raise ValueError("frozen asset manifest has no file hashes")
+    for relative_path, expected_hash in hashes.items():
+        path = ROOT / relative_path
+        if not path.exists() or sha256(path) != expected_hash:
+            raise ValueError(f"frozen E3 asset changed: {relative_path}")
+    return manifest
+
+
 def prepare_assets(out: Path, size: str) -> dict[str, Any]:
     instance_name = INSTANCE_NAMES[size]
     target = out / "assets" / size
     manifest_path = target / "asset_manifest.json"
+    frozen = _load_frozen_asset_manifest(manifest_path, size)
+    if frozen is not None:
+        return frozen
     source_dir = closure._resolve_bundle_dir("threeshift", instance_name)
     source = load_search_bundle(source_dir)
     owners = owner_map(instance_name)
@@ -245,7 +273,7 @@ def prepare_assets(out: Path, size: str) -> dict[str, Any]:
         write_json(path / "instance.json", payload)
         subbundles[depot] = str(path.relative_to(ROOT))
     manifest = {
-        "schema": "setp.e3.assets.v1",
+        "schema": "setp.e3.assets.v2",
         "size": size,
         "instance": instance_name,
         "source_bundle": str(source_dir.relative_to(ROOT)),
@@ -259,6 +287,11 @@ def prepare_assets(out: Path, size: str) -> dict[str, Any]:
         "shared_start": str((target / "shared_start.json").relative_to(ROOT)),
         "strict_contract_id": CONTRACT_ID,
         "source_commit": closure.git_head(),
+    }
+    manifest["asset_hashes"] = {
+        str(path.relative_to(ROOT)): sha256(path)
+        for path in sorted(target.rglob("*"))
+        if path.is_file() and path != manifest_path and not path.name.startswith("._")
     }
     write_json(manifest_path, manifest)
     return manifest

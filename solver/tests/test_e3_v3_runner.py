@@ -7,6 +7,7 @@ from baselines.e3_ablation.e3_v3_runner import (
     _assert_phase_preconditions,
     default_budget,
     fairness_rejection_count,
+    _load_frozen_asset_manifest,
     phase_plans,
     prices_for,
     score_counts,
@@ -219,3 +220,34 @@ def test_formal_phase_requires_every_prior_gate(tmp_path) -> None:
         assert "did not pass" in str(exc)
     else:
         raise AssertionError("formal phase bypassed a failed rehearsal gate")
+
+
+def test_frozen_asset_manifest_rejects_file_drift(tmp_path, monkeypatch) -> None:
+    from baselines.e3_ablation import e3_v3_runner as runner
+
+    asset = tmp_path / "asset.json"
+    asset.write_text("stable\n", encoding="utf-8")
+    monkeypatch.setattr(runner, "ROOT", tmp_path)
+    monkeypatch.setattr(runner, "CONTRACT_PATH", tmp_path / "contract.json")
+    monkeypatch.setattr(runner, "OWNER_ROWS", tmp_path / "owners.csv")
+    runner.CONTRACT_PATH.write_text("{}\n", encoding="utf-8")
+    runner.OWNER_ROWS.write_text("owner\n", encoding="utf-8")
+    manifest = {
+        "schema": "setp.e3.assets.v2",
+        "size": "200c",
+        "instance": runner.INSTANCE_NAMES["200c"],
+        "contract_sha256": runner.sha256(runner.CONTRACT_PATH),
+        "owner_rows_sha256": runner.sha256(runner.OWNER_ROWS),
+        "strict_contract_id": runner.CONTRACT_ID,
+        "asset_hashes": {"asset.json": runner.sha256(asset)},
+    }
+    manifest_path = tmp_path / "asset_manifest.json"
+    manifest_path.write_text(json.dumps(manifest), encoding="utf-8")
+    assert _load_frozen_asset_manifest(manifest_path, "200c") == manifest
+    asset.write_text("changed\n", encoding="utf-8")
+    try:
+        _load_frozen_asset_manifest(manifest_path, "200c")
+    except ValueError as exc:
+        assert "asset changed" in str(exc)
+    else:
+        raise AssertionError("changed frozen asset was accepted")
