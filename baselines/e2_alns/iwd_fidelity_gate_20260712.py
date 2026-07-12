@@ -365,8 +365,11 @@ def run_matrix(output_dir: Path, workers: int, parameter_profile: str) -> int:
     rows: list[dict[str, Any]] = []
 
     def execute(task: dict[str, Any]) -> dict[str, Any]:
-        task_path = tasks_dir / f"{task['run_id']}.json"
-        row_path = tasks_dir / f"{task['run_id']}.row.json"
+        # The legacy worker runs from its frozen checkout.  Use absolute
+        # paths so a custom rescue output directory cannot be interpreted
+        # relative to that checkout.
+        task_path = (tasks_dir / f"{task['run_id']}.json").resolve()
+        row_path = (tasks_dir / f"{task['run_id']}.row.json").resolve()
         write_json(task_path, task)
         env = os.environ.copy()
         env["PYTHONHASHSEED"] = "0"
