@@ -138,6 +138,13 @@ metadata:
 - **封面篇不覆盖**: F6公平前沿(→Soriano IF3WEZZJ Fig6)、F5碳热力图(→表7改造或另找)、F4充电(→Shi2025)、F5b碳价压力(→Qiu2024)、T9动态滚动(NEEDS_REFERENCE_SHELL)、T8公平表(→Soriano)。这些范本待读(Shi2025/Qiu2024/碳交易多中心篇key未搜)。
 - **壳提取格式样板(T3←表5)**: 壳ID/类型/列结构/行结构/可本地化项/禁止改动项/ReSETP数据源。每张图表按此格式产出。
 
+**🎨 全文图表仿制纪律（2026-07-14，用户明确要求，长期有效）**:
+- 全文先选一篇与目标期刊和研究主题最接近的论文作为主母版，字号、字体、线宽、颜色、标记、图幅、图例和留白均从其 PDF 实测后统一复刻，禁止凭感觉“学术化美化”。
+- 若主母版没有某类图，才允许为该图另找一篇真正同型的论文；该图必须整体采用第二母版的完整视觉系统，禁止从多篇论文分别借颜色、线型、图例或标记后拼装。
+- 每次启用第二母版，必须记录文献、图号、为何主母版不适用、采用的实测参数，并在论文中引用。目标期刊的强制字体、图题和矢量格式规范优先于母版。
+- 图表全部由代码从封存数据生成，正文嵌入矢量 PDF；禁止生成式图片、手工描图和像素级事后修改。
+- E2—E3 当前主母版=陈婉茹等（2023，《系统工程理论与实践》）；E3 客户责任结构图因陈文没有同型图，唯一例外完整采用 Soriano 等（2023）Fig. 3。实测合同见 `docs/paper_submission_final/e2_e3_preview_20260714/SETP_VISUAL_CONTRACT.md`。
+
 **🅰️ PPO线最新(2026-06-17, 详见 [[alns-crush-root-cause]] PPO V3段)**: per-step PPO已判WEAK(策略塌缩固定动作, 100-01 ppo£6086>>alpha£4878>random_full£4781; random_full是winner算子空间强随机非弱基线)。已转block-level DR-ALNS controller(block_ppo, action[7,4,5,4,4]=destroy/repair/q/threshold/exploration, block128, 125 RL steps/episode)。
 
 **Claude把关V3(2026-06-17, user要求控制Codex"试试水"工作)**:
