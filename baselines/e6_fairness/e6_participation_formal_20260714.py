@@ -783,6 +783,8 @@ def dominance_closed_rows(
         (independent, unrestricted, no_loss), key=lambda row: float(row["total_cost"])
     )
     no_loss_candidates = [independent]
+    if bool(unrestricted["both_depots_no_worse"]):
+        no_loss_candidates.append(unrestricted)
     if bool(no_loss["both_depots_no_worse"]):
         no_loss_candidates.append(no_loss)
     no_loss_adopted = min(no_loss_candidates, key=lambda row: float(row["total_cost"]))
@@ -919,7 +921,7 @@ def build_contract() -> tuple[list[dict[str, Any]], str]:
         "cooperative_arms": {label: {"fairness_enabled": enabled, "theta": THETA if enabled else None} for label, enabled in ARMS},
         "common_start_rule": "each cooperative arm starts byte-identically from the concatenation of the two independently optimized depot solutions",
         "common_neighborhood_rule": "both cooperative arms enable the same reciprocal cross-depot exchange neighborhood; only the no-loss arm activates the profit constraint",
-        "dominance_closure": "reported best-known unrestricted cost is the minimum among all already-computed unrestricted-feasible solutions; reported no-loss cost is the minimum among the independent start and no-loss search result",
+        "dominance_closure": "reported best-known unrestricted cost is the minimum among all already-computed unrestricted-feasible solutions; reported no-loss cost is the minimum among every already-computed solution whose two depot profit ratios are at least one",
         "asset_rule": "independent subproblems use the condition-invariant per-depot caps frozen in the E3 common fleet envelope; cooperative arms use the same envelope's global CV/EV totals without depot-level locks",
         "fairness_metric": "each depot profit divided by its profit in the paired independently optimized solution",
         "revenue_rule": "customer revenue is credited to the serving depot; operating costs are charged to the route home depot",

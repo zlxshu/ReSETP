@@ -74,3 +74,11 @@ def test_dominance_closure_respects_nested_feasible_sets() -> None:
     )
     assert unrestricted_adopted["arm"] == "no_loss"
     assert no_loss_adopted["arm"] == "no_loss"
+
+    unrestricted["both_depots_no_worse"] = True
+    unrestricted["total_cost"] = 85.0
+    unrestricted_adopted, no_loss_adopted = dominance_closed_rows(
+        independent, unrestricted, no_loss
+    )
+    assert unrestricted_adopted["arm"] == "unrestricted"
+    assert no_loss_adopted["arm"] == "unrestricted"
