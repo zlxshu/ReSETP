@@ -55,7 +55,7 @@ from setp_solver.algorithms.resetp_alns.operators.strong_bridge import _apply_st
 from setp_solver.algorithms.resetp_alns.operators.strong_bridge import solution_signature_hash
 from setp_solver.algorithms.resetp_alns.support.construction import build_initial_solution
 from setp_solver.algorithms.resetp_alns.support.elite_archive import EliteArchive
-from setp_solver.search.evaluation import EvalBudget, model_cost, EvaluationContext, fairness_context_for_solution, score_candidate, score_reference
+from setp_solver.search.evaluation import EvalBudget, model_cost, EvaluationContext, cross_depot_violations, fairness_context_for_solution, score_candidate, score_reference
 from setp_solver.search.charging import replay_fixed_route_charging
 from setp_solver.algorithms.resetp_alns.support.fleet import UNBOUNDED_FLEET
 from setp_solver.algorithms.resetp_alns.support.fleet_charge_corepair import propose_fleet_charge_corepair
@@ -244,6 +244,7 @@ class WinnerOperatorSet:
         cls,
         *,
         include_route_elimination: bool = False,
+        allow_cross_depot: bool = True,
         carbon_aware: bool = False,
         carbon_bias_weight: float = 1.0,
         refined_carbon: bool = False,
@@ -272,7 +273,7 @@ class WinnerOperatorSet:
             ("route_segment_removal", route_segment_removal),
             ("vehicle_type_swap", vehicle_type_swap_destroy),
         ]
-        if os.environ.get("SETP_E3_STRICT_MULTITRIP", "0").lower() not in {"0", "false", "no"}:
+        if allow_cross_depot and os.environ.get("SETP_E3_STRICT_MULTITRIP", "0").lower() not in {"0", "false", "no"}:
             destroy_ops.append(("cross_depot_boundary_removal", cross_depot_boundary_removal))
         if include_route_elimination:
             destroy_ops.insert(4, ("route_elimination_removal", route_elimination_removal))
@@ -295,7 +296,7 @@ class WinnerOperatorSet:
             ("regret2_insert_repair", regret2_insert_repair),
             ("regret3_insert_repair", regret3_insert_repair),
         ]
-        if os.environ.get("SETP_E3_STRICT_MULTITRIP", "0").lower() not in {"0", "false", "no"}:
+        if allow_cross_depot and os.environ.get("SETP_E3_STRICT_MULTITRIP", "0").lower() not in {"0", "false", "no"}:
             repair_ops.append(("cross_depot_insert_repair", cross_depot_insert_repair))
         if carbon_aware:
             repair_ops.append(("low_carbon_charging_repair", _with_carbon_bias(low_carbon_charging_repair)))
@@ -980,6 +981,10 @@ def _run_staged_hybrid_entry(
     """Shared entry contract for the frozen and restart staged hybrids."""
 
     cfg = config or WinnerKernelConfig()
+    effective_policy = policy or _search_policy_for_instance(
+        _load_search_bundle(bundle_dir).instance,
+        require_charging_signal=cfg.require_charging_signal,
+    )
     bundle = _load_search_bundle(bundle_dir)
     warm = initial_solution or build_initial_solution(
         bundle.instance,
@@ -995,7 +1000,7 @@ def _run_staged_hybrid_entry(
         bundle.carbon_profile,
         config=cfg,
         prices=prices,
-        policy=policy,
+        policy=effective_policy,
         carbon_weight=carbon_weight,
         carbon_quota_kg=carbon_quota_kg,
         fairness_enabled=fairness_enabled,
@@ -1014,6 +1019,7 @@ def _run_staged_hybrid_entry(
         independent_profit=independent_profit,
         fairness_theta=fairness_theta,
         customer_home_depot=customer_home_depot,
+        allow_cross_depot=effective_policy.allow_cross_depot,
     )
     violations = _hard_violations(run.best_solution, context)
     return {
@@ -1087,6 +1093,7 @@ def run_staged_carbon_aware_hybrid(
         independent_profit=independent_profit,
         fairness_theta=fairness_theta,
         customer_home_depot=customer_home_depot,
+        allow_cross_depot=policy.allow_cross_depot if policy is not None else True,
     )
 
 
@@ -1180,6 +1187,7 @@ def run_staged_carbon_schedule_pair(
         "independent_profit": independent_profit,
         "fairness_theta": fairness_theta,
         "customer_home_depot": customer_home_depot,
+        "allow_cross_depot": policy.allow_cross_depot if policy is not None else True,
     }
     aware = _reschedule_staged_result(result, bundle_dir, prices, "aware", **replay_kwargs)
     naive = _reschedule_staged_result(result, bundle_dir, prices, "naive", **replay_kwargs)
@@ -1198,6 +1206,7 @@ def _reschedule_staged_result(
     independent_profit: dict[str, float] | None = None,
     fairness_theta: float | None = None,
     customer_home_depot: dict[str, str] | None = None,
+    allow_cross_depot: bool = True,
 ) -> dict[str, Any]:
     bundle = _load_search_bundle(bundle_dir)
     rescheduled = replay_fixed_route_charging(
@@ -1217,6 +1226,7 @@ def _reschedule_staged_result(
         independent_profit=independent_profit,
         fairness_theta=fairness_theta,
         customer_home_depot=customer_home_depot,
+        allow_cross_depot=allow_cross_depot,
     )
     from setp_solver.search.e3_multitrip_runtime import enabled as e3_multitrip_enabled, hard_violations as e3_hard_violations, prepare_solution
 
@@ -1234,7 +1244,7 @@ def _reschedule_staged_result(
             strategy=charging_strategy,
         )
         rescheduled, _ = prepare_solution(rescheduled, context)
-        violations = e3_hard_violations(rescheduled, context)
+        violations = [*e3_hard_violations(rescheduled, context), *cross_depot_violations(rescheduled, context)]
     else:
         violations = check_solution(
             rescheduled,
@@ -1243,6 +1253,7 @@ def _reschedule_staged_result(
             fairness_context=fairness_context_for_solution(rescheduled, context),
             fairness_enabled=fairness_enabled,
         )
+        violations.extend(cross_depot_violations(rescheduled, context))
     original_actions = list(result["best_solution"].charging_actions)
     rescheduled_actions = list(rescheduled.charging_actions)
     moved_actions = sum(
@@ -1598,6 +1609,7 @@ def _run_winner_kernel_loop(
         independent_profit=independent_profit,
         fairness_theta=fairness_theta,
         customer_home_depot=customer_home_depot,
+        allow_cross_depot=policy.allow_cross_depot,
     )
     flags = variant_flags or winner_variant_flags(include_route_elimination=config.include_route_elimination)
     object.__setattr__(
@@ -1622,6 +1634,7 @@ def _run_winner_kernel_loop(
         elite_archive.maybe_add(current.solution, objective=current.objective())
     operator_set = WinnerOperatorSet.create(
         include_route_elimination=config.include_route_elimination,
+        allow_cross_depot=policy.allow_cross_depot,
         carbon_aware=config.carbon_aware_operators,
         carbon_bias_weight=config.carbon_operator_bias,
         refined_carbon=config.refined_carbon_operators,

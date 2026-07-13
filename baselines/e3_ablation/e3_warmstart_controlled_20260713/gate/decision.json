@@ -1,0 +1,38 @@
+{
+  "contract_closed": true,
+  "next_step": "单种子门通过后才允许跑十种子；十种子未过理想门则先审轨迹",
+  "ok_rows": 2,
+  "phase": "gate",
+  "row_count": 2,
+  "schema": "setp.e3.warm.decision.v1",
+  "source_hashes": {
+    "baselines/e3_ablation/e3_v3_runner.py": "27190fd68cf7b3d446aed07aa734067c7dcb732971790b26891906d1bd8d7b30",
+    "baselines/e3_ablation/e3_warmstart_controlled_20260713.py": "9dbedcd2b69f3dbca085150caf101ef64c85166a30b609bc41c36eab5ac71df3",
+    "solver/src/setp_solver/algorithms/resetp_alns/kernel/alns_core.py": "1594ac4a54638f117ac8c4a24f7e7ed9754f555eedd47e56663d91829c21a1c7",
+    "solver/src/setp_solver/algorithms/resetp_alns/kernel/winner.py": "7b8c737410c9c4f0c7f349bf77df2a0aa09816b51e1d010a5e780fab4104035a",
+    "solver/src/setp_solver/algorithms/resetp_alns/operators/feasible_repair.py": "9e120244cf394c941cb371333ab978a5918c1c6f3f106ef1ac549a6df10c69f4",
+    "solver/src/setp_solver/search/e3_multitrip_runtime.py": "ba244edfe3530384eefdec5827f8031425a59b185e74921f858d5568d1c72de4",
+    "solver/src/setp_solver/search/evaluation.py": "c7215263c39d1d5a1429b41ca8ac40d950dbdf2bdc288337e56fbe9733406fc3",
+    "solver/src/setp_solver/search/multitrip_schedule.py": "def3873fe9414a4948fb60b45f49bfe5e06e9edab7edfed82da78bc7ba28d137"
+  },
+  "story_verdict": "单种子完整预算门只判断正式合同和跨场动作是否能工作，不代表十种子统计结论。",
+  "summary": {
+    "differences": [
+      -174.48235635151832
+    ],
+    "fairness_all": true,
+    "ideal_cost_gate": false,
+    "mean_cost_difference_a_minus_b": -174.48235635151832,
+    "mean_saving_pct": -1.3434035934923196,
+    "median_saving_pct": -1.3434035934923196,
+    "paired_n": 1,
+    "saving_pct_by_seed": [
+      -1.3434035934923196
+    ],
+    "sd_saving_pct_population": 0.0,
+    "sign_test_one_sided_p": 1.0,
+    "strict_wins": 0,
+    "wilcoxon_one_sided_p": 1.0
+  },
+  "verdict": "E3_WARM_GATE_PASS"
+}

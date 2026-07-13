@@ -64,6 +64,13 @@ def enumerate_feasible_insertions(
         cached_customers,
         route_proximity_cache,
     )
+    if not context.allow_cross_depot and context.customer_home_depot:
+        owner = context.customer_home_depot.get(customer_id)
+        route_items = [
+            (route_idx, route)
+            for route_idx, route in route_items
+            if owner is None or route.home_depot_id == owner
+        ]
     ev_route_candidates = 0
     for route_idx, route in route_items:
         if route.vehicle_type.lower() == "ev":
@@ -355,7 +362,8 @@ def _solution_with_route_customers(
 
 def _new_route_options(solution: Solution, customer_id: str, context: EvaluationContext, policy: Any) -> list[InsertionOption]:
     options: list[InsertionOption] = []
-    depot_id = nearest_depot_id(customer_id, context.instance)
+    owner = (context.customer_home_depot or {}).get(customer_id)
+    depot_id = owner if (not context.allow_cross_depot and owner is not None) else nearest_depot_id(customer_id, context.instance)
     cv_count = sum(1 for route in solution.routes if route.vehicle_type.lower() == "cv")
     ev_count = sum(1 for route in solution.routes if route.vehicle_type.lower() == "ev")
     strict_multitrip = _strict_multitrip_enabled()

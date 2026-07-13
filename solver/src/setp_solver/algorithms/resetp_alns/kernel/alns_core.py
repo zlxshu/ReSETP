@@ -26,7 +26,7 @@ from setp_solver.prices import DEFAULT_PRICES
 from setp_solver.solution import Route, Solution
 from setp_solver.algorithms.resetp_alns.support.charging import repair_route_charging
 from setp_solver.algorithms.resetp_alns.support.construction import build_initial_solution
-from setp_solver.search.evaluation import BIG_M, EvalBudget, EvaluationContext, fairness_context_for_solution, record_repair_delta, score_candidate, score_reference
+from setp_solver.search.evaluation import BIG_M, EvalBudget, EvaluationContext, cross_depot_violations, fairness_context_for_solution, record_repair_delta, score_candidate, score_reference
 from setp_solver.algorithms.resetp_alns.operators.feasible_repair import (
     enumerate_feasible_insertions,
     nearest_depot_id,
@@ -73,6 +73,9 @@ class SearchPolicy:
     require_charging_signal: bool = False
     max_cv: int = UNBOUNDED_FLEET
     max_ev: int = UNBOUNDED_FLEET
+    # Historical paths keep the permissive default.  E3's controlled A arm
+    # sets this false to lock every customer to its frozen home depot.
+    allow_cross_depot: bool = True
 
 
 @dataclass(frozen=True)
@@ -167,6 +170,7 @@ def run_alns_wouda(
         independent_profit=independent_profit,
         fairness_theta=fairness_theta,
         customer_home_depot=customer_home_depot,
+        allow_cross_depot=search_policy.allow_cross_depot,
         repair_delta_mode="exact" if eval_budget is None else "fast",
     )
     from setp_solver.search.e3_multitrip_runtime import prepare_and_score_reference
@@ -506,7 +510,7 @@ def _hard_violations(solution: Solution, context: EvaluationContext) -> list[Any
             context.score_counts["strict_multitrip_schedule_checks"] = int(
                 context.score_counts.get("strict_multitrip_schedule_checks", 0)
             ) + 1
-            return hard_violations(solution, context)
+            return [*hard_violations(solution, context), *cross_depot_violations(solution, context)]
     try:
         solution = normalize_solution_vehicle_trips(solution, context.instance)
     except ValueError as exc:
@@ -531,6 +535,7 @@ def _hard_violations(solution: Solution, context: EvaluationContext) -> list[Any
                     context.score_counts.get("strict_multitrip_public_station_rejected", 0)
                 ) + 1
             violations.extend(strict_violations)
+        violations.extend(cross_depot_violations(solution, context))
         return violations
 
 

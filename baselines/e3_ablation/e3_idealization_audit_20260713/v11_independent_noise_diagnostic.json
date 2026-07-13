@@ -1,0 +1,23 @@
+{
+  "schema": "setp.e3.v11.independent_noise_diagnostic.v1",
+  "source": "baselines/e3_ablation/e3_v11_clean_20260713/final100/raw_runs.csv",
+  "filter": "size=200c, layer=M0, fee=0.0, seeds=1..10",
+  "costs_by_seed": {
+    "1": 13043.77064212981,
+    "2": 12679.338250885108,
+    "3": 13041.950361355444,
+    "4": 13035.879146621706,
+    "5": 12993.35701091625,
+    "6": 13042.219226359937,
+    "7": 12765.11039801617,
+    "8": 13023.603509359104,
+    "9": 12714.718031013665,
+    "10": 12962.304271218405
+  },
+  "mean_cost": 12930.22508478756,
+  "sample_std_cost": 148.87175594326587,
+  "range_cost": 364.43239124470165,
+  "sample_std_pct_of_mean": 1.1513469793995608,
+  "range_pct_of_mean": 2.8184535756725317,
+  "interpretation": "search-seed variability diagnostic, not a claim that p=0.348 has a single proven cause"
+}

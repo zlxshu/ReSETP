@@ -57,6 +57,7 @@ class EvaluationContext:
     independent_profit: dict[str, float] | None = None
     fairness_theta: float | None = None
     customer_home_depot: dict[str, str] | None = None
+    allow_cross_depot: bool = True
     repair_delta_mode: str = "fast"
     score_counts: dict[str, int] = field(default_factory=dict)
     score_breakdowns: dict[int, dict[str, Any]] = field(default_factory=dict)
@@ -108,6 +109,7 @@ def _penalized_obj(solution: Solution, context: EvaluationContext, *, record_bud
         fairness_context=fairness_context,
         fairness_enabled=context.fairness_enabled,
     )
+    violations.extend(cross_depot_violations(solution, context))
     penalty = BIG_M * len(violations)
     objective = float(cost) + penalty
     context.score_breakdowns[id(solution)] = {
@@ -118,6 +120,27 @@ def _penalized_obj(solution: Solution, context: EvaluationContext, *, record_bud
         "feasible": len(violations) == 0,
     }
     return objective
+
+
+def cross_depot_violations(solution: Solution, context: EvaluationContext) -> list[str]:
+    """Return owner-lock violations for the controlled E3 arm.
+
+    The default remains permissive so sealed historical paths are unchanged.
+    """
+
+    if context.allow_cross_depot or not context.customer_home_depot:
+        return []
+    node_lookup = {node.node_id: node for node in context.instance.nodes}
+    violations: list[str] = []
+    for route in solution.routes:
+        for node_id in route.node_sequence[1:-1]:
+            node = node_lookup.get(node_id)
+            if node is None or str(node.node_type).lower() != "c":
+                continue
+            owner = context.customer_home_depot.get(node_id)
+            if owner is not None and owner != route.home_depot_id:
+                violations.append(f"cross_depot_forbidden:{node_id}:{route.home_depot_id}:{owner}")
+    return violations
 
 
 def model_cost(solution: Solution, context: EvaluationContext) -> float:
