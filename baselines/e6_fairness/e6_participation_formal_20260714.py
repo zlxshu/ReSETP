@@ -94,6 +94,46 @@ def write_csv(path: Path, rows: list[dict[str, Any]], fallback_fields: Iterable[
         writer.writerows(rows)
 
 
+def archive_prior_contract(new_contract_sha256: str) -> None:
+    metadata_path = OUT / "metadata.json"
+    if not metadata_path.exists():
+        return
+    prior = read_json(metadata_path)
+    old_contract = str(prior.get("contract_sha256", ""))
+    if not old_contract or old_contract == new_contract_sha256:
+        return
+    target = OUT / "superseded" / old_contract[:12]
+    target.mkdir(parents=True, exist_ok=True)
+    for name in (
+        "metadata.json",
+        "task_manifest.csv",
+        "raw_runs.csv",
+        "paired_results.csv",
+        "network_summary.csv",
+        "decision.json",
+        "report.md",
+        "artifact_hashes.json",
+    ):
+        source = OUT / name
+        if source.exists():
+            shutil.copyfile(source, target / name)
+    pair_target = target / "pairs"
+    pair_target.mkdir(parents=True, exist_ok=True)
+    pair_sources = (OUT / "pairs").glob("*.json") if (OUT / "pairs").exists() else ()
+    for source in pair_sources:
+        if not source.name.startswith("._"):
+            shutil.copyfile(source, pair_target / source.name)
+    write_json(
+        target / "superseded_reason.json",
+        {
+            "old_contract_sha256": old_contract,
+            "new_contract_sha256": new_contract_sha256,
+            "status": "SUPERSEDED_BEFORE_FORMAL_EXPANSION",
+            "reason": "The first 114-customer probe exposed an arm-specific reciprocal neighborhood and missing feasible-set dominance closure. Both are mechanical comparison defects; no result-direction rule changed.",
+        },
+    )
+
+
 def solution_payload(solution: Solution) -> dict[str, Any]:
     return legacy.solution_to_dict(solution)
 
@@ -531,6 +571,7 @@ def _run_cooperative_arm(
                 max_cv=int(bundle.instance.num_cv or 0),
                 max_ev=int(bundle.instance.num_ev or 0),
                 allow_cross_depot=True,
+                reciprocal_cross_depot=True,
             ),
             carbon_weight=0.0,
             fairness_enabled=fairness_enabled,
@@ -727,6 +768,27 @@ def exact_two_sided_sign_p(positive: int, negative: int) -> float:
     return min(1.0, 2.0 * tail)
 
 
+def dominance_closed_rows(
+    independent: dict[str, Any], unrestricted: dict[str, Any], no_loss: dict[str, Any]
+) -> tuple[dict[str, Any], dict[str, Any]]:
+    """Adopt the best observed solution in each nested feasible set.
+
+    The no-loss feasible set is a subset of unrestricted cooperation, and the
+    independent start is feasible for both.  Pooling already-computed feasible
+    solutions enforces this mathematical nesting without adding search budget.
+    Raw search rows remain unchanged for audit.
+    """
+
+    unrestricted_adopted = min(
+        (independent, unrestricted, no_loss), key=lambda row: float(row["total_cost"])
+    )
+    no_loss_candidates = [independent]
+    if bool(no_loss["both_depots_no_worse"]):
+        no_loss_candidates.append(no_loss)
+    no_loss_adopted = min(no_loss_candidates, key=lambda row: float(row["total_cost"]))
+    return unrestricted_adopted, no_loss_adopted
+
+
 def aggregate(specs: list[dict[str, Any]], contract_sha256: str) -> dict[str, Any]:
     pairs: list[dict[str, Any]] = []
     for spec in specs:
@@ -745,6 +807,7 @@ def aggregate(specs: list[dict[str, Any]], contract_sha256: str) -> dict[str, An
         base = indexed["independent"]
         off = indexed["unrestricted"]
         fair = indexed["no_loss"]
+        off_adopted, fair_adopted = dominance_closed_rows(base, off, fair)
         paired_rows.append(
             {
                 "spec_id": pair["spec_id"],
@@ -752,17 +815,21 @@ def aggregate(specs: list[dict[str, Any]], contract_sha256: str) -> dict[str, An
                 "condition": base["condition"],
                 "seed": int(base["seed"]),
                 "independent_total_cost": float(base["total_cost"]),
-                "unrestricted_total_cost": float(off["total_cost"]),
-                "no_loss_total_cost": float(fair["total_cost"]),
-                "unrestricted_saving_vs_independent_pct": (float(base["total_cost"]) - float(off["total_cost"])) / float(base["total_cost"]) * 100.0,
-                "no_loss_saving_vs_independent_pct": (float(base["total_cost"]) - float(fair["total_cost"])) / float(base["total_cost"]) * 100.0,
-                "participation_cost_pct_points": (float(fair["total_cost"]) - float(off["total_cost"])) / float(base["total_cost"]) * 100.0,
-                "unrestricted_minimum_profit_ratio": float(off["minimum_profit_ratio"]),
-                "no_loss_minimum_profit_ratio": float(fair["minimum_profit_ratio"]),
-                "unrestricted_both_depots_no_worse": bool(off["both_depots_no_worse"]),
-                "no_loss_both_depots_no_worse": bool(fair["both_depots_no_worse"]),
-                "unrestricted_cross_site_customer_count": int(off["cross_site_customer_count"]),
-                "no_loss_cross_site_customer_count": int(fair["cross_site_customer_count"]),
+                "unrestricted_search_total_cost": float(off["total_cost"]),
+                "no_loss_search_total_cost": float(fair["total_cost"]),
+                "unrestricted_adopted_source": str(off_adopted["arm"]),
+                "no_loss_adopted_source": str(fair_adopted["arm"]),
+                "unrestricted_total_cost": float(off_adopted["total_cost"]),
+                "no_loss_total_cost": float(fair_adopted["total_cost"]),
+                "unrestricted_saving_vs_independent_pct": (float(base["total_cost"]) - float(off_adopted["total_cost"])) / float(base["total_cost"]) * 100.0,
+                "no_loss_saving_vs_independent_pct": (float(base["total_cost"]) - float(fair_adopted["total_cost"])) / float(base["total_cost"]) * 100.0,
+                "participation_cost_pct_points": (float(fair_adopted["total_cost"]) - float(off_adopted["total_cost"])) / float(base["total_cost"]) * 100.0,
+                "unrestricted_minimum_profit_ratio": float(off_adopted["minimum_profit_ratio"]),
+                "no_loss_minimum_profit_ratio": float(fair_adopted["minimum_profit_ratio"]),
+                "unrestricted_both_depots_no_worse": bool(off_adopted["both_depots_no_worse"]),
+                "no_loss_both_depots_no_worse": bool(fair_adopted["both_depots_no_worse"]),
+                "unrestricted_cross_site_customer_count": int(off_adopted["cross_site_customer_count"]),
+                "no_loss_cross_site_customer_count": int(fair_adopted["cross_site_customer_count"]),
             }
         )
     write_csv(OUT / "paired_results.csv", paired_rows, ("spec_id",))
@@ -785,6 +852,7 @@ def aggregate(specs: list[dict[str, Any]], contract_sha256: str) -> dict[str, An
         "formal_complete": formal_complete,
         "result_direction_used_as_execution_gate": False,
         "claim_guard": "A fixed-budget search that does not find a solution above theta is not a mathematical infeasibility proof.",
+        "dominance_closure_pass": all(float(row["participation_cost_pct_points"]) >= -1e-9 for row in paired_rows),
     }
     if formal_complete:
         network_rows: list[dict[str, Any]] = []
@@ -850,6 +918,8 @@ def build_contract() -> tuple[list[dict[str, Any]], str]:
         "cooperative_budget_per_arm": COOPERATIVE_BUDGET,
         "cooperative_arms": {label: {"fairness_enabled": enabled, "theta": THETA if enabled else None} for label, enabled in ARMS},
         "common_start_rule": "each cooperative arm starts byte-identically from the concatenation of the two independently optimized depot solutions",
+        "common_neighborhood_rule": "both cooperative arms enable the same reciprocal cross-depot exchange neighborhood; only the no-loss arm activates the profit constraint",
+        "dominance_closure": "reported best-known unrestricted cost is the minimum among all already-computed unrestricted-feasible solutions; reported no-loss cost is the minimum among the independent start and no-loss search result",
         "asset_rule": "independent subproblems use the condition-invariant per-depot caps frozen in the E3 common fleet envelope; cooperative arms use the same envelope's global CV/EV totals without depot-level locks",
         "fairness_metric": "each depot profit divided by its profit in the paired independently optimized solution",
         "revenue_rule": "customer revenue is credited to the serving depot; operating costs are charged to the route home depot",
@@ -868,6 +938,7 @@ def build_contract() -> tuple[list[dict[str, Any]], str]:
     }
     contract_sha256 = canonical_hash(metadata)
     metadata["contract_sha256"] = contract_sha256
+    archive_prior_contract(contract_sha256)
     write_json(OUT / "metadata.json", metadata)
     preflight_index = {
         (row["instance"], row["condition"]): row

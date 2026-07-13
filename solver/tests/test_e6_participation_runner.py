@@ -4,6 +4,7 @@ from setp_solver.solution import ChargingAction, Route, Solution
 
 from baselines.e6_fairness.e6_participation_formal_20260714 import (
     depot_caps,
+    dominance_closed_rows,
     extract_depot_start,
     merge_depot_solutions,
 )
@@ -62,3 +63,14 @@ def test_frozen_114_customer_caps_are_condition_invariant_and_close() -> None:
     }
     assert sum(row["cv"] for row in geographic.values()) == 5
     assert sum(row["ev"] for row in geographic.values()) == 5
+
+
+def test_dominance_closure_respects_nested_feasible_sets() -> None:
+    independent = {"arm": "independent", "total_cost": 100.0, "both_depots_no_worse": True}
+    unrestricted = {"arm": "unrestricted", "total_cost": 95.0, "both_depots_no_worse": False}
+    no_loss = {"arm": "no_loss", "total_cost": 90.0, "both_depots_no_worse": True}
+    unrestricted_adopted, no_loss_adopted = dominance_closed_rows(
+        independent, unrestricted, no_loss
+    )
+    assert unrestricted_adopted["arm"] == "no_loss"
+    assert no_loss_adopted["arm"] == "no_loss"

@@ -135,9 +135,9 @@ def repair_removed_customers(
     pending = list(dict.fromkeys(removed_customers))
     current = partial_solution
     cross_depot_forced = False
-    reciprocal_fairness_mode = bool(
+    reciprocal_cross_depot_mode = bool(
         mode == "cross_depot"
-        and context.fairness_enabled
+        and bool(getattr(policy, "reciprocal_cross_depot", False))
         and len({(context.customer_home_depot or {}).get(customer_id) for customer_id in pending}) >= 2
     )
     reciprocal_owners_forced: set[str] = set()
@@ -169,8 +169,8 @@ def repair_removed_customers(
             needs_cross_depot = bool(
                 mode == "cross_depot"
                 and (
-                    (reciprocal_fairness_mode and owner not in reciprocal_owners_forced)
-                    or (not reciprocal_fairness_mode and not cross_depot_forced)
+                    (reciprocal_cross_depot_mode and owner not in reciprocal_owners_forced)
+                    or (not reciprocal_cross_depot_mode and not cross_depot_forced)
                 )
             )
             route_limit = len(current.routes) if needs_cross_depot else MAX_ROUTE_CANDIDATES
@@ -205,7 +205,7 @@ def repair_removed_customers(
                     # scorer before it can be accepted.
                     selected = (
                         cross_options[0]
-                        if reciprocal_fairness_mode
+                        if reciprocal_cross_depot_mode
                         else next(
                             (
                                 option
@@ -240,7 +240,7 @@ def repair_removed_customers(
         if forced_cross_depot:
             cross_depot_forced = True
             owner = (context.customer_home_depot or {}).get(customer_id)
-            if reciprocal_fairness_mode and owner is not None:
+            if reciprocal_cross_depot_mode and owner is not None:
                 reciprocal_owners_forced.add(owner)
             context.score_counts["cross_depot_forced_insertions"] = int(
                 context.score_counts.get("cross_depot_forced_insertions", 0)

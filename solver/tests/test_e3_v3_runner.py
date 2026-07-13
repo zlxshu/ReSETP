@@ -123,7 +123,7 @@ def test_cross_depot_repair_forces_one_alternate_depot_when_feasible() -> None:
     assert context.score_counts["cross_depot_forced_insertions"] == 1
 
 
-def test_fairness_cross_depot_neighborhood_builds_reciprocal_exchange() -> None:
+def test_cross_depot_neighborhood_builds_reciprocal_exchange_when_opted_in() -> None:
     nodes = [
         Node("D0", "d", 0, 0, due_time=100_000),
         Node("D1", "d", 10, 0, due_time=100_000),
@@ -149,7 +149,7 @@ def test_fairness_cross_depot_neighborhood_builds_reciprocal_exchange() -> None:
         fairness_theta=1.0,
         customer_home_depot=owners,
     )
-    state = AlnsState(source, context, policy=SearchPolicy())
+    state = AlnsState(source, context, policy=SearchPolicy(reciprocal_cross_depot=True))
     destroyed = cross_depot_boundary_removal(state, np.random.default_rng(7))
     assert len(destroyed.removed_customers) == 2
     assert {owners[customer_id] for customer_id in destroyed.removed_customers} == {"D0", "D1"}
@@ -157,7 +157,7 @@ def test_fairness_cross_depot_neighborhood_builds_reciprocal_exchange() -> None:
         destroyed.solution,
         list(destroyed.removed_customers),
         context,
-        SearchPolicy(),
+        SearchPolicy(reciprocal_cross_depot=True),
         mode="cross_depot",
         allow_new_route=False,
     )
@@ -168,7 +168,7 @@ def test_fairness_cross_depot_neighborhood_builds_reciprocal_exchange() -> None:
             route.home_depot_id != owner and customer_id in route.node_sequence
             for route in repaired.routes
         )
-    assert context.score_counts["fairness_reciprocal_pair_removals"] == 1
+    assert context.score_counts["reciprocal_cross_depot_pair_removals"] == 1
     assert context.score_counts["cross_depot_forced_insertions"] == 2
 
 

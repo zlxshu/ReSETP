@@ -76,6 +76,10 @@ class SearchPolicy:
     # Historical paths keep the permissive default.  E3's controlled A arm
     # sets this false to lock every customer to its frozen home depot.
     allow_cross_depot: bool = True
+    # E6 opt-in only.  Both fairness-on and fairness-off arms receive the same
+    # reciprocal cross-depot neighborhood; the default keeps sealed E2/E3
+    # search paths byte-for-byte unchanged.
+    reciprocal_cross_depot: bool = False
 
 
 @dataclass(frozen=True)
@@ -675,13 +679,10 @@ def whole_route_removal(state: AlnsState, rng: np.random.Generator, **kwargs: An
 def cross_depot_boundary_removal(state: AlnsState, rng: np.random.Generator, **kwargs: Any) -> AlnsState:
     """Remove boundary customers that are promising for another depot.
 
-    With profit fairness enabled, a one-way handover usually transfers revenue
-    away from one depot before the reverse compensation can be proposed.  The
-    hard fairness check then rejects the intermediate complete candidate.  In
-    that opt-in context only, remove one home-served customer from each depot
-    in the same destroy move.  The paired repair can therefore propose a
-    reciprocal exchange that is checked as one complete solution.  Historical
-    fairness-off E2/E3 paths retain the original one-customer behavior.
+    E6 can opt into a reciprocal move that removes one home-served customer
+    from each depot at once.  This lets the repair propose a balanced exchange
+    as one complete candidate.  Both E6 arms use the same neighborhood, while
+    historical E2/E3 paths retain the original one-customer behavior.
     """
 
     _ = kwargs
@@ -691,7 +692,7 @@ def cross_depot_boundary_removal(state: AlnsState, rng: np.random.Generator, **k
     )
     if len(depots) < 2 or not owners:
         return state
-    if state.context.fairness_enabled and len(depots) == 2:
+    if state.policy.reciprocal_cross_depot and len(depots) == 2:
         node_lookup = {node.node_id: node for node in state.context.instance.nodes}
         by_owner: dict[str, list[tuple[float, str, float]]] = {depot: [] for depot in depots}
         for route in state.solution.routes:
@@ -727,8 +728,8 @@ def cross_depot_boundary_removal(state: AlnsState, rng: np.random.Generator, **k
             selected = shortlist[int(rng.integers(0, len(shortlist)))]
             destroyed = _remove_customers(state, [selected[2], selected[3]])
             if _solution_changed(state.solution, destroyed.solution):
-                state.context.score_counts["fairness_reciprocal_pair_removals"] = int(
-                    state.context.score_counts.get("fairness_reciprocal_pair_removals", 0)
+                state.context.score_counts["reciprocal_cross_depot_pair_removals"] = int(
+                    state.context.score_counts.get("reciprocal_cross_depot_pair_removals", 0)
                 ) + 1
                 return destroyed
     candidates: list[tuple[float, str]] = []
