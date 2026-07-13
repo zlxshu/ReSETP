@@ -1,0 +1,49 @@
+{
+  "aggregation_rules": {
+    "e3_collaboration": "use sealed paired saving percentages; average three search seeds inside each network; average nine networks equally",
+    "e3_direct_geographic_organization": "average three search seeds inside each network and condition first; compute relative reduction; average nine network reductions equally",
+    "e4": "use sealed formal aggregates; search seeds first averaged inside network-condition-arm-day cells"
+  },
+  "exhibit_contract": {
+    "figure_e3_1": "input ownership structure only",
+    "figure_e3_2": "residual collaboration cost effect only",
+    "figure_e4_1": "timing mechanism only",
+    "table_e3_1": "direct operating effect of geographic organization only",
+    "table_e4_1": "charging versus total operational emission effect only"
+  },
+  "figure_e4_1_selection": {
+    "charge_power_kw": 22.0,
+    "mean_total_energy_kwh": 1590.7791345706528,
+    "median_actual_range_gco2_per_kwh": 103.5,
+    "per_seed_energy_kwh": {
+      "forecast_timed": [
+        1757.1813558658137,
+        1681.0220582965444,
+        1334.1339895496
+      ],
+      "immediate": [
+        1757.1813558658137,
+        1681.0220582965444,
+        1334.1339895496
+      ]
+    },
+    "selected_day_actual_range_gco2_per_kwh": 105.0,
+    "selected_operating_day": "2025-11-10",
+    "selection_rule": "closest operating-day actual carbon-intensity range to the median of all 28 operating days; tie by earliest date"
+  },
+  "generator": "baselines/paper_story/build_e3_e4_paper_story_20260713.py",
+  "generator_sha256": "912cdc9ad225d3e8124ff0d04b7d1e332f268249016af87bdcf42a2527d95522",
+  "input_hashes": {
+    "carbon_source.csv": "da2534f9852d5be4d0ab795af63eb52018b65137db4d002f0107f79ddea0a026",
+    "e3_paired_results.csv": "2d00c5adb7a8c1f4f421d361beebfeecfc4d86ed6a94f7e019ecc90abad405c0",
+    "e3_raw_runs.csv": "869c3c9bc8d7a67b84fe4112924106b45222c9cbd0d79301c6ee3a0422cd620b",
+    "e4_action_runs.csv": "892b85309c7c638355f31065639f75d16b538b58979106c15b5a3bafc4fe8dbf",
+    "e4_aggregate_summary.csv": "e93224922bf21ceb3027612a3f71813e1fceafbd1a99657599264dcbf65e5b06",
+    "e4_day_summary.csv": "631bb4038e34b8732630a8ba448461ce367dc0d566c8e4ee939be9d65b0a829b",
+    "story_contract.md": "d1a035a2bc839f6b42bdb56d8199f83a0dd93de0461109be90298a7fa15252d9"
+  },
+  "purpose": "reader-facing E3/E4 story and exhibits",
+  "route_search_evaluations": 0,
+  "sealed_inputs_unchanged": true,
+  "status": "PASS"
+}
