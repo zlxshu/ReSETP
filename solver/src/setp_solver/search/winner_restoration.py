@@ -612,7 +612,7 @@ def _solution_from_dict(payload: dict[str, Any]) -> Solution:
             for row in payload.get("routes", [])
         ],
         charging_actions=[
-            ChargingAction(str(row["vehicle_id"]), str(row["station_id"]), float(row["energy_kwh"]), float(row["occupancy_minutes"]), float(row["charge_start_second"]))
+            ChargingAction(str(row["vehicle_id"]), str(row["station_id"]), float(row["energy_kwh"]), float(row["occupancy_minutes"]), float(row["charge_start_second"]), int(row.get("charge_day_offset", 0)))
             for row in payload.get("charging_actions", [])
         ],
         cross_site_services=[

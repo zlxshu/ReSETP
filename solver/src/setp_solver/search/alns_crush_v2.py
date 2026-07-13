@@ -614,7 +614,7 @@ def _solution_to_dict(solution: Solution) -> dict[str, Any]:
 def _solution_from_dict(payload: dict[str, Any]) -> Solution:
     return Solution(
         routes=[Route(str(row["vehicle_id"]), str(row["vehicle_type"]), str(row["home_depot_id"]), [str(node) for node in row["node_sequence"]]) for row in payload.get("routes", [])],
-        charging_actions=[ChargingAction(str(row["vehicle_id"]), str(row["station_id"]), float(row["energy_kwh"]), float(row["occupancy_minutes"]), float(row["charge_start_second"])) for row in payload.get("charging_actions", [])],
+        charging_actions=[ChargingAction(str(row["vehicle_id"]), str(row["station_id"]), float(row["energy_kwh"]), float(row["occupancy_minutes"]), float(row["charge_start_second"]), int(row.get("charge_day_offset", 0))) for row in payload.get("charging_actions", [])],
         cross_site_services=[CrossSiteService(str(row["customer_id"]), str(row["served_by_depot_id"])) for row in payload.get("cross_site_services", [])],
     )
 

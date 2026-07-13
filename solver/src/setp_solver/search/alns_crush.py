@@ -999,6 +999,7 @@ def _solution_from_dict(payload: dict[str, Any]) -> Solution:
                 energy_kwh=float(row["energy_kwh"]),
                 occupancy_minutes=float(row["occupancy_minutes"]),
                 charge_start_second=float(row["charge_start_second"]),
+                charge_day_offset=int(row.get("charge_day_offset", 0)),
             )
             for row in payload.get("charging_actions", [])
         ],
