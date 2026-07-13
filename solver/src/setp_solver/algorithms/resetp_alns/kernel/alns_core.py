@@ -673,15 +673,64 @@ def whole_route_removal(state: AlnsState, rng: np.random.Generator, **kwargs: An
 
 
 def cross_depot_boundary_removal(state: AlnsState, rng: np.random.Generator, **kwargs: Any) -> AlnsState:
-    """Remove one customer that is cheapest to hand to another depot."""
+    """Remove boundary customers that are promising for another depot.
 
-    _ = rng, kwargs
+    With profit fairness enabled, a one-way handover usually transfers revenue
+    away from one depot before the reverse compensation can be proposed.  The
+    hard fairness check then rejects the intermediate complete candidate.  In
+    that opt-in context only, remove one home-served customer from each depot
+    in the same destroy move.  The paired repair can therefore propose a
+    reciprocal exchange that is checked as one complete solution.  Historical
+    fairness-off E2/E3 paths retain the original one-customer behavior.
+    """
+
+    _ = kwargs
     owners = state.context.customer_home_depot or {}
     depots = sorted(
         node.node_id for node in state.context.instance.nodes if node.node_type.lower() == "d"
     )
     if len(depots) < 2 or not owners:
         return state
+    if state.context.fairness_enabled and len(depots) == 2:
+        node_lookup = {node.node_id: node for node in state.context.instance.nodes}
+        by_owner: dict[str, list[tuple[float, str, float]]] = {depot: [] for depot in depots}
+        for route in state.solution.routes:
+            for customer_id in _route_customer_ids(route, state.context.instance):
+                owner = owners.get(customer_id)
+                # A reciprocal exchange needs one customer currently served by
+                # each original depot.  Customers already served cross-site are
+                # left to the ordinary multi-customer neighborhoods.
+                if owner is None or route.home_depot_id != owner or owner not in by_owner:
+                    continue
+                alternate = depots[1] if owner == depots[0] else depots[0]
+                handover_delta = float(state.context.instance.distance(alternate, customer_id)) - float(
+                    state.context.instance.distance(owner, customer_id)
+                )
+                demand = float(getattr(node_lookup.get(customer_id), "demand", 0.0))
+                by_owner[owner].append((handover_delta, customer_id, demand))
+        if all(by_owner[depot] for depot in depots):
+            left = sorted(by_owner[depots[0]], key=lambda item: (item[0], item[1]))[:12]
+            right = sorted(by_owner[depots[1]], key=lambda item: (item[0], item[1]))[:12]
+            pairs = sorted(
+                (
+                    abs(left_item[2] - right_item[2]),
+                    left_item[0] + right_item[0],
+                    left_item[1],
+                    right_item[1],
+                )
+                for left_item in left
+                for right_item in right
+            )
+            # Explore a small, deterministic-with-seed set of the most
+            # revenue-balanced boundary pairs instead of repeating one pair.
+            shortlist = pairs[: min(12, len(pairs))]
+            selected = shortlist[int(rng.integers(0, len(shortlist)))]
+            destroyed = _remove_customers(state, [selected[2], selected[3]])
+            if _solution_changed(state.solution, destroyed.solution):
+                state.context.score_counts["fairness_reciprocal_pair_removals"] = int(
+                    state.context.score_counts.get("fairness_reciprocal_pair_removals", 0)
+                ) + 1
+                return destroyed
     candidates: list[tuple[float, str]] = []
     for route in state.solution.routes:
         for customer_id in _route_customer_ids(route, state.context.instance):

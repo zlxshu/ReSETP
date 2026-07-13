@@ -135,6 +135,12 @@ def repair_removed_customers(
     pending = list(dict.fromkeys(removed_customers))
     current = partial_solution
     cross_depot_forced = False
+    reciprocal_fairness_mode = bool(
+        mode == "cross_depot"
+        and context.fairness_enabled
+        and len({(context.customer_home_depot or {}).get(customer_id) for customer_id in pending}) >= 2
+    )
+    reciprocal_owners_forced: set[str] = set()
     previous_route_customers: dict[int, list[str]] = {}
     route_proximity_cache: dict[tuple[str, int], float] = {}
     while pending:
@@ -159,7 +165,15 @@ def repair_removed_customers(
                     route_proximity_cache.pop(key, None)
         previous_route_customers = route_customer_cache
         for customer_id in pending:
-            route_limit = len(current.routes) if mode == "cross_depot" and not cross_depot_forced else MAX_ROUTE_CANDIDATES
+            owner = (context.customer_home_depot or {}).get(customer_id)
+            needs_cross_depot = bool(
+                mode == "cross_depot"
+                and (
+                    (reciprocal_fairness_mode and owner not in reciprocal_owners_forced)
+                    or (not reciprocal_fairness_mode and not cross_depot_forced)
+                )
+            )
+            route_limit = len(current.routes) if needs_cross_depot else MAX_ROUTE_CANDIDATES
             options = enumerate_feasible_insertions(
                 current,
                 customer_id,
@@ -174,8 +188,7 @@ def repair_removed_customers(
                 continue
             best = options[0]
             forced_cross_depot = False
-            if mode == "cross_depot" and not cross_depot_forced:
-                owner = (context.customer_home_depot or {}).get(customer_id)
+            if needs_cross_depot:
                 cross_options = [
                     option
                     for option in options
@@ -184,13 +197,23 @@ def repair_removed_customers(
                     and current.routes[option.route_idx].home_depot_id != owner
                 ]
                 if cross_options:
-                    selected = next(
-                        (
-                            option
-                            for option in cross_options
-                            if _strict_complete_option_feasible(option.solution, context)
-                        ),
-                        None,
+                    # In reciprocal mode the first insertion is intentionally
+                    # only a partial exchange.  Checking the hard fairness rule
+                    # before the counter-handover would reproduce the one-way
+                    # deadlock this operator is meant to avoid.  The complete
+                    # two-way candidate is still checked by the common strict
+                    # scorer before it can be accepted.
+                    selected = (
+                        cross_options[0]
+                        if reciprocal_fairness_mode
+                        else next(
+                            (
+                                option
+                                for option in cross_options
+                                if _strict_complete_option_feasible(option.solution, context)
+                            ),
+                            None,
+                        )
                     )
                     if selected is not None:
                         best = selected
@@ -216,6 +239,9 @@ def repair_removed_customers(
         )
         if forced_cross_depot:
             cross_depot_forced = True
+            owner = (context.customer_home_depot or {}).get(customer_id)
+            if reciprocal_fairness_mode and owner is not None:
+                reciprocal_owners_forced.add(owner)
             context.score_counts["cross_depot_forced_insertions"] = int(
                 context.score_counts.get("cross_depot_forced_insertions", 0)
             ) + 1

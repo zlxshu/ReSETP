@@ -2,6 +2,8 @@ from __future__ import annotations
 
 import json
 
+import numpy as np
+
 from baselines.e3_ablation.e3_v3_runner import (
     _cooperation_mobility_row_ok,
     _assert_phase_preconditions,
@@ -14,7 +16,11 @@ from baselines.e3_ablation.e3_v3_runner import (
     summarize_phase,
     task_fingerprint,
 )
-from setp_solver.algorithms.resetp_alns.kernel.alns_core import SearchPolicy
+from setp_solver.algorithms.resetp_alns.kernel.alns_core import (
+    AlnsState,
+    SearchPolicy,
+    cross_depot_boundary_removal,
+)
 from setp_solver.algorithms.resetp_alns.kernel.winner import (
     WinnerOperatorSet,
     _forced_cross_depot_pair,
@@ -115,6 +121,55 @@ def test_cross_depot_repair_forces_one_alternate_depot_when_feasible() -> None:
     assert repaired is not None
     assert any(route.home_depot_id == "D1" and "C3" in route.node_sequence for route in repaired.routes)
     assert context.score_counts["cross_depot_forced_insertions"] == 1
+
+
+def test_fairness_cross_depot_neighborhood_builds_reciprocal_exchange() -> None:
+    nodes = [
+        Node("D0", "d", 0, 0, due_time=100_000),
+        Node("D1", "d", 10, 0, due_time=100_000),
+        Node("C0a", "c", 1, 0, demand=1000, due_time=100_000),
+        Node("C0b", "c", 2, 0, demand=1000, due_time=100_000),
+        Node("C1a", "c", 9, 0, demand=1000, due_time=100_000),
+        Node("C1b", "c", 8, 0, demand=1000, due_time=100_000),
+    ]
+    matrix = [[0.0 if i == j else 1_000.0 for j in range(len(nodes))] for i in range(len(nodes))]
+    instance = Instance(nodes, matrix)
+    owners = {"C0a": "D0", "C0b": "D0", "C1a": "D1", "C1b": "D1"}
+    source = Solution(
+        routes=[
+            Route("CV0", "cv", "D0", ["D0", "C0a", "C0b", "D0"]),
+            Route("CV1", "cv", "D1", ["D1", "C1a", "C1b", "D1"]),
+        ]
+    )
+    context = EvaluationContext(
+        instance,
+        [],
+        fairness_enabled=True,
+        independent_profit={"D0": 1.0, "D1": 1.0},
+        fairness_theta=1.0,
+        customer_home_depot=owners,
+    )
+    state = AlnsState(source, context, policy=SearchPolicy())
+    destroyed = cross_depot_boundary_removal(state, np.random.default_rng(7))
+    assert len(destroyed.removed_customers) == 2
+    assert {owners[customer_id] for customer_id in destroyed.removed_customers} == {"D0", "D1"}
+    repaired = repair_removed_customers(
+        destroyed.solution,
+        list(destroyed.removed_customers),
+        context,
+        SearchPolicy(),
+        mode="cross_depot",
+        allow_new_route=False,
+    )
+    assert repaired is not None
+    for customer_id in destroyed.removed_customers:
+        owner = owners[customer_id]
+        assert any(
+            route.home_depot_id != owner and customer_id in route.node_sequence
+            for route in repaired.routes
+        )
+    assert context.score_counts["fairness_reciprocal_pair_removals"] == 1
+    assert context.score_counts["cross_depot_forced_insertions"] == 2
 
 
 def test_cross_depot_operator_is_isolated_to_strict_e3(monkeypatch) -> None:
