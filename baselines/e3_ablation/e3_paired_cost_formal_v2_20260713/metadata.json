@@ -1,0 +1,47 @@
+{
+  "arm_budget": 4000,
+  "arms": {
+    "ownership_fixed": false,
+    "reassignment_allowed": true
+  },
+  "carbon_price": 0.0,
+  "carbon_weight": 0.0,
+  "charging_strategy": "immediate feasible",
+  "conditions": [
+    "geographic",
+    "mixed"
+  ],
+  "contract_sha256": "174d2715baf1d820f09a02c2ebeacc669c6e3c0a5c4998d208ebf91505212992",
+  "cross_site_fee": 0.0,
+  "fairness_enabled": false,
+  "fleet_envelope_decision_sha256": "1247d626a01b439c53c513512ff8674054a8be0245b491396c898f4460b975f8",
+  "fleet_role": "common ample-fleet cap fixed before cooperation search; not a minimum-fleet estimate",
+  "instances": [
+    "L-main-threeshift-10c-01",
+    "L-main-threeshift-15c-01",
+    "L-main-threeshift-20c-01",
+    "L-main-threeshift-25c-01",
+    "L-main-threeshift-50c-01",
+    "L-main-threeshift-75c-01",
+    "L-main-threeshift-100c-01",
+    "L-main-threeshift-150c-01",
+    "L-main-threeshift-200c-01"
+  ],
+  "ownership_decision_sha256": "99d014b0894e4221582bdbdcfadb55365855be9b36bdd1e7795929e6ccdb228f",
+  "schema": "setp.e3.paired_cost_formal.v2",
+  "seeds": [
+    1,
+    2,
+    3
+  ],
+  "source_commit": "9c2e90a96fa82e17c9a25def199f9d9bebda0f9f",
+  "source_hashes": {
+    "baselines/e3_ablation/e3_paired_cost_formal_20260713.py": "9dc65e388e48e48a9265a76f9d3a9ed35f9b25dc66da03cc5dd8c551653f350d",
+    "baselines/e3_ablation/e3_v3_runner.py": "27190fd68cf7b3d446aed07aa734067c7dcb732971790b26891906d1bd8d7b30",
+    "solver/src/setp_solver/algorithms/resetp_alns/kernel/winner.py": "7b8c737410c9c4f0c7f349bf77df2a0aa09816b51e1d010a5e780fab4104035a",
+    "solver/src/setp_solver/cost.py": "d8bfee1844c8f8e89bac1233a3cd862d7ac7d088039f97751b8274756c41dee4",
+    "solver/src/setp_solver/search/e3_multitrip_runtime.py": "ecbe21559e56f71e3ed9681bcac188b1d68f082eff5f4794a9c49d2aa762ad6a",
+    "solver/src/setp_solver/search/multitrip_schedule.py": "4cfff971281a3ae075451a530852fbde6d2b5e7eac56a3524469944c43a92517"
+  },
+  "statistical_unit": "base network; three seeds are averaged within each network-condition"
+}

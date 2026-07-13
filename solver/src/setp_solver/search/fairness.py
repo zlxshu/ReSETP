@@ -169,6 +169,7 @@ def build_concatenated_independent_seed(
                     energy_kwh=action.energy_kwh,
                     occupancy_minutes=action.occupancy_minutes,
                     charge_start_second=action.charge_start_second,
+                    charge_day_offset=action.charge_day_offset,
                 )
             )
     seed = Solution(routes=routes, charging_actions=actions, cross_site_services=[])
@@ -501,6 +502,7 @@ def _solution_to_dict(solution: Solution) -> dict[str, Any]:
                 "energy_kwh": float(action.energy_kwh),
                 "occupancy_minutes": float(action.occupancy_minutes),
                 "charge_start_second": float(action.charge_start_second),
+                "charge_day_offset": int(action.charge_day_offset),
             }
             for action in solution.charging_actions
         ],
@@ -525,6 +527,7 @@ def _solution_from_dict(payload: dict[str, Any]) -> Solution:
                 energy_kwh=float(row["energy_kwh"]),
                 occupancy_minutes=float(row["occupancy_minutes"]),
                 charge_start_second=float(row["charge_start_second"]),
+                charge_day_offset=int(row.get("charge_day_offset", 0)),
             )
             for row in payload.get("charging_actions", [])
         ],

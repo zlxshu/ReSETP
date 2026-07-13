@@ -1,0 +1,114 @@
+{
+  "charging_actions": [
+    {
+      "charge_day_offset": -1,
+      "charge_start_second": 0.0,
+      "energy_kwh": 256.4371314357994,
+      "occupancy_minutes": 699.3739948249075,
+      "station_id": "D0",
+      "vehicle_id": "EV_D0_1#T1"
+    },
+    {
+      "charge_day_offset": 0,
+      "charge_start_second": 10648.386921634608,
+      "energy_kwh": 49.64718239454717,
+      "occupancy_minutes": 135.4014065305832,
+      "station_id": "D0",
+      "vehicle_id": "EV_D0_1#T2"
+    },
+    {
+      "charge_day_offset": -1,
+      "charge_start_second": 0.0,
+      "energy_kwh": 277.5180010719466,
+      "occupancy_minutes": 756.8672756507635,
+      "station_id": "D1",
+      "vehicle_id": "EV_D1_1#T1"
+    },
+    {
+      "charge_day_offset": 0,
+      "charge_start_second": 9030.253151110617,
+      "energy_kwh": 28.050312710247937,
+      "occupancy_minutes": 76.50085284613074,
+      "station_id": "D1",
+      "vehicle_id": "EV_D1_1#T2"
+    },
+    {
+      "charge_day_offset": 0,
+      "charge_start_second": 45254.87619495451,
+      "energy_kwh": 55.791336912528294,
+      "occupancy_minutes": 152.1581915796226,
+      "station_id": "D1",
+      "vehicle_id": "EV_D1_1#T3"
+    }
+  ],
+  "cross_site_services": [],
+  "routes": [
+    {
+      "home_depot_id": "D0",
+      "node_sequence": [
+        "D0",
+        "C002",
+        "C004",
+        "C015",
+        "C012",
+        "C017",
+        "C014",
+        "D0"
+      ],
+      "vehicle_id": "EV_D0_1#T2",
+      "vehicle_type": "ev"
+    },
+    {
+      "home_depot_id": "D1",
+      "node_sequence": [
+        "D1",
+        "C010",
+        "C001",
+        "C005",
+        "C018",
+        "C013",
+        "C016",
+        "C019",
+        "D1"
+      ],
+      "vehicle_id": "EV_D1_1#T2",
+      "vehicle_type": "ev"
+    },
+    {
+      "home_depot_id": "D0",
+      "node_sequence": [
+        "D0",
+        "C008",
+        "C003",
+        "D0"
+      ],
+      "vehicle_id": "EV_D0_1#T1",
+      "vehicle_type": "ev"
+    },
+    {
+      "home_depot_id": "D1",
+      "node_sequence": [
+        "D1",
+        "C007",
+        "C006",
+        "C009",
+        "D1"
+      ],
+      "vehicle_id": "EV_D1_1#T1",
+      "vehicle_type": "ev"
+    },
+    {
+      "home_depot_id": "D1",
+      "node_sequence": [
+        "D1",
+        "C020",
+        "C011",
+        "C021",
+        "C022",
+        "D1"
+      ],
+      "vehicle_id": "EV_D1_1#T3",
+      "vehicle_type": "ev"
+    }
+  ]
+}

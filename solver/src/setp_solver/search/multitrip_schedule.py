@@ -12,7 +12,7 @@ from dataclasses import asdict, dataclass, replace
 import heapq
 from typing import Any
 
-from ..cost import _arc_loads, carbon_profile_row_for_slot, charging_slot_breakdown, ev_arc_energy_kwh, route_next_day_departure_second, _price
+from ..cost import _arc_loads, carbon_profile_row_for_slot, charging_slot_breakdown, ev_arc_energy_kwh, _price
 from ..instance_loader import Instance
 from ..prices import DEFAULT_PRICES, PriceParameters
 from ..solution import ChargingAction, Route, Solution, physical_vehicle_id, route_trip_vehicle_id
@@ -23,6 +23,8 @@ CONTRACT_ID = "E3_STRICT_MULTITRIP_V2"
 CHARGE_MODE_FULL = "full"
 CHARGE_MODE_PARTIAL = "partial"
 CHARGE_MODE_ON_DEMAND = "on_demand"
+STATIC_FIRST_TRIP_CHARGE_DAY_OFFSET = -1
+STATIC_PREHORIZON_SECONDS = 86_400.0
 _TOL = 1e-6
 
 
@@ -60,6 +62,7 @@ class MultiTripCertificate:
     trips: tuple[ScheduledTrip, ...]
     recharge_mode: str
     depot_charge_power_kw: float
+    first_trip_charge_day_offset: int = STATIC_FIRST_TRIP_CHARGE_DAY_OFFSET
 
     def as_dict(self) -> dict[str, Any]:
         return asdict(self)
@@ -533,7 +536,6 @@ def prepare_multitrip_solution(
     prepared_routes = [replace(route, vehicle_id=id_map[route.vehicle_id]) for route in solution.routes]
 
     prepared_actions: list[ChargingAction] = []
-    original_routes = {route.vehicle_id: route for route in solution.routes}
     first_trip_depot_action: dict[str, ChargingAction] = {}
     for action in solution.charging_actions:
         trip = scheduled_by_old_id.get(action.vehicle_id)
@@ -554,20 +556,21 @@ def prepare_multitrip_solution(
         if energy <= _TOL:
             continue
         duration = energy / certificate.depot_charge_power_kw * 3600.0
-        latest_completion = route_next_day_departure_second(original_routes[trip.route_id], instance, prices)
+        latest_start = STATIC_PREHORIZON_SECONDS - duration
+        if latest_start < -_TOL:
+            raise ValueError(f"{CONTRACT_ID}: first-trip depot precharge exceeds the pre-horizon day")
         old_action = first_trip_depot_action.get(trip.route_id)
-        old_start = float(old_action.charge_start_second) if old_action is not None else None
-        old_end = old_start + duration if old_start is not None else None
+        old_start = (
+            float(old_action.charge_start_second) % STATIC_PREHORIZON_SECONDS
+            if old_action is not None and float(old_action.charge_start_second) >= 0.0
+            else None
+        )
         start = (
             old_start
             if old_start is not None
-            and old_start >= float(trip.return_second) - _TOL
-            and old_end is not None
-            and old_end <= latest_completion + _TOL
-            else max(float(trip.return_second), latest_completion - duration)
+            and old_start <= latest_start + _TOL
+            else latest_start
         )
-        if start + duration > latest_completion + _TOL:
-            raise ValueError(f"{CONTRACT_ID}: first-trip depot precharge has no overnight window")
         prepared_actions.append(
             ChargingAction(
                 vehicle_id=id_map[trip.route_id],
@@ -575,6 +578,7 @@ def prepare_multitrip_solution(
                 energy_kwh=energy,
                 occupancy_minutes=duration / 60.0,
                 charge_start_second=start,
+                charge_day_offset=STATIC_FIRST_TRIP_CHARGE_DAY_OFFSET,
             )
         )
 
@@ -742,7 +746,6 @@ def reschedule_between_trip_charging(
     for trip in certificate.trips:
         by_vehicle.setdefault(trip.physical_vehicle_id, []).append(trip)
     selected_starts: dict[str, float] = {}
-    routes = {route.vehicle_id: route for route in solution.routes}
     for trips in by_vehicle.values():
         ordered = sorted(trips, key=lambda item: item.trip_index)
         first = ordered[0]
@@ -756,8 +759,10 @@ def reschedule_between_trip_charging(
                 action = first_actions[0]
                 energy = float(action.energy_kwh)
                 duration = float(action.occupancy_minutes) * 60.0
-                earliest = float(first.return_second)
-                latest = route_next_day_departure_second(routes[first.route_id], instance) - duration
+                earliest = 0.0
+                latest = STATIC_PREHORIZON_SECONDS - duration
+                if latest < earliest - _TOL:
+                    raise ValueError(f"{CONTRACT_ID}: first-trip depot precharge exceeds the pre-horizon day")
                 selected_starts[first.route_id] = (
                     earliest
                     if strategy == "naive"

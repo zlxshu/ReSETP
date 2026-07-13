@@ -38,6 +38,7 @@ class ChargingAction:
     energy_kwh: float
     occupancy_minutes: float
     charge_start_second: float
+    charge_day_offset: int = 0
 
 
 @dataclass(frozen=True)

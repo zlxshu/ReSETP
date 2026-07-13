@@ -95,13 +95,16 @@ def _hard_violations_prepared(
         fairness_enabled=context.fairness_enabled,
         dynamic_context=DynamicCheckContext(vehicle_states=dynamic_states, allow_open_start=True),
     )
-    later_trip_ids = {trip.route_id for trip in certificate.trips if trip.trip_index > 1}
+    # T1 now carries an explicit day -1 marker understood by the shared
+    # checker. T2+ actions are certified between trips, so only those later
+    # actions need the historical post-route rule suppressed here.
+    certified_between_trip_charge_ids = {trip.route_id for trip in certificate.trips if trip.trip_index > 1}
     violations = [
         item
         for item in violations
         if not (
             item.type == CHARGING_START
-            and item.vehicle_id in later_trip_ids
+            and item.vehicle_id in certified_between_trip_charge_ids
             and "depot charging starts before return" in item.detail
         )
     ]
@@ -239,6 +242,7 @@ def _solution_signature(solution: Solution) -> tuple[Any, ...]:
                 float(action.energy_kwh),
                 float(action.occupancy_minutes),
                 float(action.charge_start_second),
+                int(action.charge_day_offset),
             )
             for action in solution.charging_actions
         ),

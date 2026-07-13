@@ -212,6 +212,10 @@ def route_node_schedule(
     v2026-06-11: For charging stations, ``t_start`` is paper ``a_sk^tau``
     (charge_start_second) and ``t_depart`` is charge start plus occupancy,
     matching paper_main.tex lines 428-438 and time-flow line 359.
+
+    A depot action with a negative ``charge_day_offset`` belongs to a day
+    before this static route horizon. It supplies departure energy but cannot
+    delay the current-day origin departure.
     """
 
     if not route.node_sequence:
@@ -233,7 +237,8 @@ def route_node_schedule(
         first_actions = [
             action
             for action in first_actions
-            if not is_overnight_depot_charge(action, route, instance, prices)
+            if int(action.charge_day_offset) >= 0
+            and not is_overnight_depot_charge(action, route, instance, prices)
         ]
     if first_actions:
         first_depart = max(
@@ -407,10 +412,12 @@ def is_overnight_depot_charge(
     instance: Instance,
     prices: PriceParameters | dict[str, float] | Any = DEFAULT_PRICES,
 ) -> bool:
-    """Return True when a depot action starts after the same-day route return."""
+    """Return True for a pre-horizon action or one after same-day return."""
 
     if not route.node_sequence or action.station_id != route.node_sequence[0]:
         return False
+    if int(action.charge_day_offset) < 0:
+        return True
     return float(action.charge_start_second) >= route_return_arrival_without_charging(route, instance, prices) - 1e-9
 
 

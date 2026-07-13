@@ -16,6 +16,8 @@ from setp_solver.search.multitrip_schedule import (
     CHARGE_MODE_ON_DEMAND,
     CHARGE_MODE_PARTIAL,
     CONTRACT_ID,
+    STATIC_FIRST_TRIP_CHARGE_DAY_OFFSET,
+    STATIC_PREHORIZON_SECONDS,
     build_multitrip_certificate,
     certificate_charging_actions,
     prepare_multitrip_solution,
@@ -197,6 +199,37 @@ def test_prepare_multitrip_solution_accounts_first_trip_precharge_from_zero() ->
     residual = sum(float(trip.end_battery_kwh or 0.0) for trip in last_by_vehicle.values())
     assert sum(action.energy_kwh for action in prepared.charging_actions) == pytest.approx(drive + residual)
     assert any(trip.trip_index == 1 for trip in certificate.trips)
+    assert certificate.first_trip_charge_day_offset == STATIC_FIRST_TRIP_CHARGE_DAY_OFFSET
+    first = min(certificate.trips, key=lambda trip: trip.trip_index)
+    first_action = next(action for action in prepared.charging_actions if action.vehicle_id == first.route_id)
+    absolute_end = (
+        first_action.charge_start_second
+        + certificate.first_trip_charge_day_offset * STATIC_PREHORIZON_SECONDS
+        + first_action.occupancy_minutes * 60.0
+    )
+    assert 0.0 <= first_action.charge_start_second < STATIC_PREHORIZON_SECONDS
+    assert absolute_end <= first.departure_second + 1e-6
+
+
+def test_first_trip_aware_replay_uses_only_the_pre_horizon_day(monkeypatch: pytest.MonkeyPatch) -> None:
+    solution, prices = _two_trip_solution_and_prices()
+    prepared, certificate = prepare_multitrip_solution(solution, _instance(), prices)
+    profile = [
+        {"slot_index": i, "horizon_second_start": i * 1800.0, "actual_gco2_per_kwh": 300.0 if i < 4 else 50.0}
+        for i in range(48)
+    ]
+    naive = reschedule_between_trip_charging(prepared, certificate, _instance(), profile, strategy="naive")
+    aware = reschedule_between_trip_charging(prepared, certificate, _instance(), profile, strategy="aware")
+    naive_first = next(action for action in naive.charging_actions if "#T1" in action.vehicle_id)
+    aware_first = next(action for action in aware.charging_actions if "#T1" in action.vehicle_id)
+    assert naive_first.charge_start_second == pytest.approx(0.0)
+    assert aware_first.charge_start_second > naive_first.charge_start_second
+    assert aware_first.charge_start_second + aware_first.occupancy_minutes * 60.0 <= STATIC_PREHORIZON_SECONDS + 1e-6
+    source = _instance()
+    instance = Instance(source.nodes[:4], [row[:4] for row in source.distance_matrix[:4]], num_cv=14, num_ev=14)
+    context = EvaluationContext(instance, profile, prices=prices)
+    monkeypatch.setenv("SETP_E3_STRICT_MULTITRIP", "1")
+    assert e3_hard_violations(aware, context) == []
 
 
 def test_between_trip_aware_replay_moves_only_within_the_legal_gap() -> None:

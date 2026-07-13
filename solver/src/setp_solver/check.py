@@ -313,7 +313,7 @@ def _check_station_capacity(
     """
 
     customer_count = sum(1 for node in node_lookup.values() if node.node_type.lower() == "c")
-    occupied: dict[tuple[str, int], set[str]] = defaultdict(set)
+    occupied: dict[tuple[str, int, int], set[str]] = defaultdict(set)
     actions = [*solution.charging_actions]
     if dynamic_context is not None:
         actions.extend(dynamic_context.reserved_charging_actions)
@@ -329,19 +329,21 @@ def _check_station_capacity(
             n_slots=48,
             cyclic=True,
         ):
-            occupied[(action.station_id, slot.slot_index)].add(action.vehicle_id)
+            occupied[(action.station_id, int(action.charge_day_offset), slot.slot_index)].add(action.vehicle_id)
 
     violations: list[Violation] = []
-    for (station_id, slot_index), vehicle_ids in sorted(occupied.items()):
+    for (station_id, day_offset, slot_index), vehicle_ids in sorted(occupied.items()):
         station = node_lookup[station_id]
         capacity = _station_chargers(station, customer_count)
         if len(vehicle_ids) > capacity:
+            location = f"{station_id}@slot{slot_index}" if day_offset == 0 else f"{station_id}@day{day_offset}:slot{slot_index}"
+            day_detail = "" if day_offset == 0 else f", day={day_offset}"
             violations.append(
                 Violation(
                     STATION_CAPACITY,
                     ",".join(sorted(vehicle_ids)),
-                    f"{station_id}@slot{slot_index}",
-                    f"occupied vehicles={len(vehicle_ids)} exceeds C_s={capacity} at {station_id}, slot={slot_index}",
+                    location,
+                    f"occupied vehicles={len(vehicle_ids)} exceeds C_s={capacity} at {station_id}{day_detail}, slot={slot_index}",
                 )
             )
     return violations
@@ -517,29 +519,51 @@ def _check_charging_start_and_power(
                     )
                 )
                 continue
-            completion = charge_start + occupancy_sec
-            earliest = route_return_arrival_without_charging(route, instance, prices)
-            departure_deadline = route_next_day_departure_second(route, instance, prices)
-            if charge_start < earliest - FEASIBILITY_TOL:
-                early = earliest - charge_start
-                violations.append(
-                    Violation(
-                        CHARGING_START,
-                        route.vehicle_id,
-                        action.station_id,
-                        f"depot charging starts before return by {early:.3f} s (return={earliest:.3f}, start={charge_start:.3f})",
+            day_offset = int(action.charge_day_offset)
+            if day_offset < 0:
+                absolute_completion = charge_start + day_offset * 86_400.0 + occupancy_sec
+                if charge_start < -FEASIBILITY_TOL or charge_start >= 86_400.0 + FEASIBILITY_TOL:
+                    violations.append(
+                        Violation(
+                            CHARGING_START,
+                            route.vehicle_id,
+                            action.station_id,
+                            f"pre-horizon depot charge clock={charge_start:.3f} is outside one representative day",
+                        )
                     )
-                )
-            if completion > departure_deadline + FEASIBILITY_TOL:
-                late = completion - departure_deadline
-                violations.append(
-                    Violation(
-                        CHARGING_START,
-                        route.vehicle_id,
-                        action.station_id,
-                        f"depot charging completion={completion:.3f} misses departure deadline={departure_deadline:.3f} by {late:.3f} s",
+                if absolute_completion > FEASIBILITY_TOL:
+                    violations.append(
+                        Violation(
+                            CHARGING_START,
+                            route.vehicle_id,
+                            action.station_id,
+                            f"pre-horizon depot charge ends after day 0 by {absolute_completion:.3f} s",
+                        )
                     )
-                )
+            else:
+                completion = charge_start + occupancy_sec
+                earliest = route_return_arrival_without_charging(route, instance, prices)
+                departure_deadline = route_next_day_departure_second(route, instance, prices)
+                if charge_start < earliest - FEASIBILITY_TOL:
+                    early = earliest - charge_start
+                    violations.append(
+                        Violation(
+                            CHARGING_START,
+                            route.vehicle_id,
+                            action.station_id,
+                            f"depot charging starts before return by {early:.3f} s (return={earliest:.3f}, start={charge_start:.3f})",
+                        )
+                    )
+                if completion > departure_deadline + FEASIBILITY_TOL:
+                    late = completion - departure_deadline
+                    violations.append(
+                        Violation(
+                            CHARGING_START,
+                            route.vehicle_id,
+                            action.station_id,
+                            f"depot charging completion={completion:.3f} misses departure deadline={departure_deadline:.3f} by {late:.3f} s",
+                        )
+                    )
             station_power_kw = _price(prices, "depot_charge_power_kw")
             power_symbol = "pi_d"
         else:
