@@ -1,0 +1,69 @@
+{
+  "execution_code_commit": "67d98df89b2cd50e7850a1b7c2b300440f9e94a8",
+  "evidence_record_commit": "9978517db025d47aa454c49a9cf38b424b4fc6d3",
+  "source_hashes": {
+    "metadata.json": "e10f40bf5f348808fcd4d6dd91eb31e0ba2527695b540d6cde6d4ba0b340c772",
+    "aggregate_summary.csv": "e93224922bf21ceb3027612a3f71813e1fceafbd1a99657599264dcbf65e5b06",
+    "day_summary.csv": "631bb4038e34b8732630a8ba448461ce367dc0d566c8e4ee939be9d65b0a829b",
+    "action_runs.csv": "892b85309c7c638355f31065639f75d16b538b58979106c15b5a3bafc4fe8dbf",
+    "carbon_csv": "da2534f9852d5be4d0ab795af63eb52018b65137db4d002f0107f79ddea0a026"
+  },
+  "figure": {
+    "selection_rule": "actual carbon-intensity range closest to the 28-day median; earliest date breaks ties",
+    "selected_operating_day": "2025-11-10",
+    "selected_day_actual_range_gco2_per_kwh": 105.0,
+    "median_actual_range_gco2_per_kwh": 103.5,
+    "depot_power_kw": 22.0,
+    "mean_total_energy_kwh": 1590.7791345706528,
+    "per_seed_energy_kwh": {
+      "immediate": [
+        1757.1813558658139,
+        1681.0220582965444,
+        1334.1339895496
+      ],
+      "forecast_timed": [
+        1757.1813558658139,
+        1681.0220582965444,
+        1334.1339895496
+      ]
+    }
+  },
+  "main_table": [
+    {
+      "condition": "geographic",
+      "arm": "ownership_fixed",
+      "charging_reduction_pct": 4.664166559544253,
+      "total_reduction_pct": 0.5184829704467561,
+      "networks_improved": 9,
+      "days_improved": 18,
+      "pre_day_share_pct": 98.94101893551448
+    },
+    {
+      "condition": "geographic",
+      "arm": "reassignment_allowed",
+      "charging_reduction_pct": 4.87666867834168,
+      "total_reduction_pct": 0.5232816116456492,
+      "networks_improved": 9,
+      "days_improved": 19,
+      "pre_day_share_pct": 99.363097142587
+    },
+    {
+      "condition": "mixed",
+      "arm": "ownership_fixed",
+      "charging_reduction_pct": 3.887798459404608,
+      "total_reduction_pct": 0.3515333533847117,
+      "networks_improved": 9,
+      "days_improved": 20,
+      "pre_day_share_pct": 95.45723276412008
+    },
+    {
+      "condition": "mixed",
+      "arm": "reassignment_allowed",
+      "charging_reduction_pct": 4.106883727926292,
+      "total_reduction_pct": 0.4762081436433464,
+      "networks_improved": 9,
+      "days_improved": 19,
+      "pre_day_share_pct": 99.70997359523342
+    }
+  ]
+}
