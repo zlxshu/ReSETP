@@ -1,0 +1,27 @@
+{
+  "contract_sha256": "480e7faf841ee70d2900b42e937a73b737d737db5e54f9587a10c931138c14f4",
+  "paper_metric_definition": "100 * (cost with both-depots-no-worse participation requirement - unrestricted cooperative cost) / unrestricted cooperative cost; three seeds are averaged within each network and nine networks receive equal weight",
+  "conditions": {
+    "geographic": {
+      "mean_participation_premium_vs_unrestricted_pct": 2.0614059129573934,
+      "mean_saving_with_participation_vs_independent_pct": 2.6131346070516295,
+      "network_count": 9,
+      "networks_with_positive_participation_premium": 6,
+      "networks_with_positive_saving": 8,
+      "participation_premium_sign_test_p_two_sided": 0.03125,
+      "saving_sign_test_p_two_sided": 0.0078125
+    },
+    "mixed": {
+      "mean_participation_premium_vs_unrestricted_pct": 2.140731361001941,
+      "mean_saving_with_participation_vs_independent_pct": 16.58973959883013,
+      "network_count": 9,
+      "networks_with_positive_participation_premium": 8,
+      "networks_with_positive_saving": 9,
+      "participation_premium_sign_test_p_two_sided": 0.0078125,
+      "saving_sign_test_p_two_sided": 0.00390625
+    }
+  },
+  "max_network_metric_recomputation_error": 1.199040866595169e-14,
+  "network_condition_rows": 18,
+  "seeds_per_network_condition": 3
+}
