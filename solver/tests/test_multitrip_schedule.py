@@ -232,6 +232,77 @@ def test_first_trip_aware_replay_uses_only_the_pre_horizon_day(monkeypatch: pyte
     assert e3_hard_violations(aware, context) == []
 
 
+def test_calendar_aware_replay_uses_previous_day_forecast_for_first_trip() -> None:
+    solution, prices = _two_trip_solution_and_prices()
+    prepared, certificate = prepare_multitrip_solution(solution, _instance(), prices)
+    operating_day = [
+        {
+            "slot_index": i,
+            "horizon_second_start": i * 1800.0,
+            "actual_gco2_per_kwh": 10.0 if i == 2 else 300.0,
+            "forecast_gco2_per_kwh": 10.0 if i == 2 else 300.0,
+        }
+        for i in range(48)
+    ]
+    previous_day = [
+        {
+            "slot_index": i,
+            "horizon_second_start": i * 1800.0,
+            "actual_gco2_per_kwh": 10.0 if i == 3 else 300.0,
+            "forecast_gco2_per_kwh": 10.0 if i == 30 else 300.0,
+        }
+        for i in range(48)
+    ]
+
+    forecast_timed = reschedule_between_trip_charging(
+        prepared,
+        certificate,
+        _instance(),
+        operating_day,
+        strategy="aware",
+        carbon_profiles_by_day_offset={-1: previous_day, 0: operating_day},
+        intensity_field="forecast_gco2_per_kwh",
+    )
+    actual_oracle = reschedule_between_trip_charging(
+        prepared,
+        certificate,
+        _instance(),
+        operating_day,
+        strategy="aware",
+        carbon_profiles_by_day_offset={-1: previous_day, 0: operating_day},
+        intensity_field="actual_gco2_per_kwh",
+    )
+    forecast_first = next(action for action in forecast_timed.charging_actions if "#T1" in action.vehicle_id)
+    oracle_first = next(action for action in actual_oracle.charging_actions if "#T1" in action.vehicle_id)
+    assert forecast_first.charge_start_second > 12 * 3600.0
+    assert oracle_first.charge_start_second < 4 * 3600.0
+    assert forecast_first.charge_start_second != pytest.approx(oracle_first.charge_start_second)
+
+
+def test_calendar_aware_replay_rejects_missing_previous_day_profile() -> None:
+    solution, prices = _two_trip_solution_and_prices()
+    prepared, certificate = prepare_multitrip_solution(solution, _instance(), prices)
+    profile = [
+        {
+            "slot_index": i,
+            "horizon_second_start": i * 1800.0,
+            "actual_gco2_per_kwh": 100.0,
+            "forecast_gco2_per_kwh": 100.0,
+        }
+        for i in range(48)
+    ]
+    with pytest.raises(ValueError, match="charge_day_offset=-1"):
+        reschedule_between_trip_charging(
+            prepared,
+            certificate,
+            _instance(),
+            profile,
+            strategy="aware",
+            carbon_profiles_by_day_offset={0: profile},
+            intensity_field="forecast_gco2_per_kwh",
+        )
+
+
 def test_between_trip_aware_replay_moves_only_within_the_legal_gap() -> None:
     solution, prices = _two_trip_solution_and_prices()
     prepared, certificate = prepare_multitrip_solution(solution, _instance(), prices)

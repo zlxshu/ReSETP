@@ -8,6 +8,7 @@ non-overlapping trips to real vehicles, and carries battery between trips.
 
 from __future__ import annotations
 
+from collections.abc import Mapping
 from dataclasses import asdict, dataclass, replace
 import heapq
 from typing import Any
@@ -737,11 +738,31 @@ def reschedule_between_trip_charging(
     carbon_profile: list[dict[str, Any]],
     *,
     strategy: str,
+    carbon_profiles_by_day_offset: Mapping[int, list[dict[str, Any]]] | None = None,
+    intensity_field: str = "actual_gco2_per_kwh",
 ) -> Solution:
-    """Move fixed between-trip energy within its legal gap without new search."""
+    """Move fixed charging energy within its legal gap without new route search.
+
+    Historical callers pass one repeated daily profile and therefore retain the
+    sealed behaviour.  Calendar-aware replays can instead provide one profile
+    per ``charge_day_offset`` (for example ``-1`` for the preceding night and
+    ``0`` for the operating day) and choose whether timing decisions use the
+    forecast or actual carbon-intensity field.  Cost evaluation remains a
+    separate concern, so a forecast-timed solution can still be settled against
+    actual carbon intensity.
+    """
 
     if strategy not in {"aware", "naive"}:
         raise ValueError(f"unknown between-trip charging strategy {strategy!r}")
+
+    def profile_for(day_offset: int) -> list[dict[str, Any]]:
+        if carbon_profiles_by_day_offset is None:
+            return carbon_profile
+        try:
+            return carbon_profiles_by_day_offset[int(day_offset)]
+        except KeyError as exc:
+            raise ValueError(f"missing carbon profile for charge_day_offset={day_offset}") from exc
+
     by_vehicle: dict[str, list[ScheduledTrip]] = {}
     for trip in certificate.trips:
         by_vehicle.setdefault(trip.physical_vehicle_id, []).append(trip)
@@ -766,7 +787,15 @@ def reschedule_between_trip_charging(
                 selected_starts[first.route_id] = (
                     earliest
                     if strategy == "naive"
-                    else _lowest_carbon_gap_start(earliest, latest, duration, energy, instance, carbon_profile)
+                    else _lowest_carbon_gap_start(
+                        earliest,
+                        latest,
+                        duration,
+                        energy,
+                        instance,
+                        profile_for(int(action.charge_day_offset)),
+                        intensity_field=intensity_field,
+                    )
                 )
         for previous, current in zip(ordered, ordered[1:]):
             energy = float(previous.charge_energy_kwh or 0.0)
@@ -780,7 +809,15 @@ def reschedule_between_trip_charging(
             selected_starts[current.route_id] = (
                 earliest
                 if strategy == "naive"
-                else _lowest_carbon_gap_start(earliest, latest, duration, energy, instance, carbon_profile)
+                else _lowest_carbon_gap_start(
+                    earliest,
+                    latest,
+                    duration,
+                    energy,
+                    instance,
+                    profile_for(0),
+                    intensity_field=intensity_field,
+                )
             )
     actions: list[ChargingAction] = []
     for action in solution.charging_actions:
@@ -814,6 +851,8 @@ def _lowest_carbon_gap_start(
     energy: float,
     instance: Instance,
     carbon_profile: list[dict[str, Any]],
+    *,
+    intensity_field: str = "actual_gco2_per_kwh",
 ) -> float:
     if not carbon_profile or latest <= earliest + _TOL:
         return earliest
@@ -838,7 +877,9 @@ def _lowest_carbon_gap_start(
             cyclic=True,
         ):
             row = carbon_profile_row_for_slot(carbon_profile, slot.slot_index)
-            total += slot.y_skt_kwh * float(row["actual_gco2_per_kwh"])
+            if intensity_field not in row:
+                raise ValueError(f"carbon profile is missing timing field {intensity_field!r}")
+            total += slot.y_skt_kwh * float(row[intensity_field])
         return total
 
     return min(candidates, key=lambda start: (emissions(start), start))
