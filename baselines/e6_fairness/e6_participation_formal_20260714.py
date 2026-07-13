@@ -53,6 +53,7 @@ from setp_solver.solution import ChargingAction, Route, Solution
 
 
 E3 = ROOT / "baselines/e3_ablation/e3_paired_cost_formal_v2_20260713"
+FLEET_ENVELOPE = ROOT / "baselines/e3_ablation/e3_common_fleet_envelope_design_v3_20260713/fleet_envelopes.csv"
 OUT = ROOT / "baselines/e6_fairness/e6_participation_formal_20260714"
 PROBE_INSTANCE = "L-main-threeshift-50c-01"
 CONDITIONS = ("geographic", "mixed")
@@ -102,9 +103,19 @@ def solution_copy(solution: Solution) -> Solution:
 
 
 def depot_caps(instance: str, condition: str) -> dict[str, dict[str, int]]:
-    meta_path = E3 / "assets" / instance / f"{condition}__common_start_meta.json"
-    raw = read_json(meta_path).get("depot_vehicle_counts_json")
-    parsed = json.loads(raw) if isinstance(raw, str) else raw
+    """Return the condition-invariant depot assets frozen before E3 search.
+
+    The common-start certificate also records how many vehicles that particular
+    start happens to use.  Those counts are an outcome, not an asset limit, and
+    therefore must not be substituted for the frozen envelope here.
+    """
+
+    _ = condition
+    with FLEET_ENVELOPE.open(newline="", encoding="utf-8") as handle:
+        row = next((item for item in csv.DictReader(handle) if item["instance"] == instance), None)
+    if row is None:
+        raise ValueError(f"no frozen fleet envelope for {instance}")
+    parsed = json.loads(row["common_depot_caps_json"])
     if not isinstance(parsed, dict) or len(parsed) != 2:
         raise ValueError(f"invalid depot asset caps for {instance}/{condition}: {parsed!r}")
     result = {
@@ -155,6 +166,10 @@ def prepare_assets() -> list[dict[str, Any]]:
         for condition in CONDITIONS:
             owners, owner_path = load_owners(instance, condition)
             caps = depot_caps(instance, condition)
+            if sum(values["cv"] for values in caps.values()) != int(full.instance.num_cv or -1):
+                raise ValueError(f"frozen depot CV caps do not close to global cap for {instance}")
+            if sum(values["ev"] for values in caps.values()) != int(full.instance.num_ev or -1):
+                raise ValueError(f"frozen depot EV caps do not close to global cap for {instance}")
             start_path = E3 / "assets" / instance / f"{condition}__common_start.json"
             start = common_start(instance, condition)
             served = {
@@ -186,6 +201,7 @@ def prepare_assets() -> list[dict[str, Any]]:
                     }
                 )
                 write_json(target / "instance.json", payload)
+                subbundle = load_search_bundle(target)
                 local_start = extract_depot_start(start, depot_id)
                 local_customers = {
                     node_id
@@ -196,6 +212,31 @@ def prepare_assets() -> list[dict[str, Any]]:
                 expected = {customer for customer, owner in owners.items() if owner == depot_id}
                 if local_customers != expected:
                     raise ValueError(f"subproblem start coverage drifted for {instance}/{condition}/{depot_id}")
+                sub_depots = {
+                    node.node_id for node in subbundle.instance.nodes if node.node_type.lower() == "d"
+                }
+                sub_customers = {
+                    node.node_id for node in subbundle.instance.nodes if node.node_type.lower() == "c"
+                }
+                full_stations = {
+                    node.node_id for node in full.instance.nodes if node.node_type.lower() == "f"
+                }
+                sub_stations = {
+                    node.node_id for node in subbundle.instance.nodes if node.node_type.lower() == "f"
+                }
+                if sub_depots != {depot_id} or sub_customers != expected or sub_stations != full_stations:
+                    raise ValueError(f"subbundle node set drifted for {instance}/{condition}/{depot_id}")
+                kept_ids = sorted(sub_depots | sub_customers | sub_stations)
+                distance_error = max(
+                    (
+                        abs(float(subbundle.instance.distance(left, right)) - float(full.instance.distance(left, right)))
+                        for left in kept_ids
+                        for right in kept_ids
+                    ),
+                    default=0.0,
+                )
+                if distance_error > 1e-9:
+                    raise ValueError(f"subbundle distance matrix drifted by {distance_error}")
                 rows.append(
                     {
                         "instance": instance,
@@ -204,12 +245,15 @@ def prepare_assets() -> list[dict[str, Any]]:
                         "customer_count": len(expected),
                         "cap_cv": local_caps["cv"],
                         "cap_ev": local_caps["ev"],
+                        "global_cap_cv": int(full.instance.num_cv or 0),
+                        "global_cap_ev": int(full.instance.num_ev or 0),
                         "ownership_sha256": sha256(owner_path),
                         "common_start_sha256": sha256(start_path),
                         "common_start_canonical_sha256": canonical_hash(solution_payload(start)),
                         "subbundle_instance_sha256": sha256(target / "instance.json"),
                         "subbundle_matrix_sha256": sha256(target / "distance_matrix.npy"),
                         "subbundle_carbon_sha256": sha256(target / "carbon_profile.csv"),
+                        "distance_matrix_max_abs_error": distance_error,
                         "status": "PASS",
                     }
                 )
@@ -247,7 +291,7 @@ def _validate_solution(
     bundle: Any,
     prices: Any,
     owners: dict[str, str],
-    caps: dict[str, dict[str, int]],
+    caps: dict[str, dict[str, int]] | None,
     *,
     allow_cross: bool,
     fairness_enabled: bool,
@@ -373,22 +417,39 @@ def _run_independent_depot(
     local_caps: dict[str, int],
     owners: dict[str, str],
     prices: Any,
-) -> tuple[Solution, Any, dict[str, Any], dict[str, int], float]:
+) -> tuple[Solution, Any, dict[str, Any], float, dict[str, int], int, int, float]:
     bundle_dir = _subbundle_dir(instance, condition, depot_id)
     bundle = load_search_bundle(bundle_dir)
     start = extract_depot_start(common_start(instance, condition), depot_id)
     subowners = {customer: depot_id for customer, owner in owners.items() if owner == depot_id}
+    start_prepared, _, start_violations, _, start_closure_error = _validate_solution(
+        start,
+        bundle,
+        prices,
+        subowners,
+        {depot_id: local_caps},
+        allow_cross=False,
+        fairness_enabled=False,
+        independent_profit=None,
+    )
+    if start_violations or start_closure_error > 1e-6:
+        raise ValueError(
+            f"independent start failed for {instance}/{condition}/{depot_id}: "
+            f"violations={start_violations}, closure={start_closure_error}"
+        )
     started = time.perf_counter()
+    depot_order = sorted(set(owners.values()))
+    sub_seed = seed * 100 + depot_order.index(depot_id)
     with legacy.strict_mode({depot_id: local_caps}):
         result = run_tvci_alns(
             bundle_dir,
             config=WinnerKernelConfig(
-                seed=seed * 100 + (0 if depot_id == sorted(set(owners.values()))[0] else 1),
+                seed=sub_seed,
                 eval_budget=INDEPENDENT_BUDGET_PER_DEPOT,
                 max_runtime_seconds=max(600.0, INDEPENDENT_BUDGET_PER_DEPOT * 0.5),
                 require_charging_signal=False,
             ),
-            initial_solution=start,
+            initial_solution=start_prepared,
             prices=prices,
             charging_strategy="naive",
             policy=SearchPolicy(
@@ -417,7 +478,21 @@ def _run_independent_depot(
             f"independent search failed for {instance}/{condition}/seed{seed}/{depot_id}: "
             f"evals={result.get('evaluations')}, violations={violations}, closure={closure_error}"
         )
-    return prepared, certificate, metrics, legacy.score_counts(result), time.perf_counter() - started
+    _, sub_profit, _, allocated_cost = _profit_report(prepared, bundle, prices, subowners)
+    if set(sub_profit) != {depot_id}:
+        raise ValueError(f"independent subproblem profit has unexpected depots: {sub_profit}")
+    if abs(float(metrics["total_cost"]) - allocated_cost) > 1e-6:
+        raise ValueError(f"independent subproblem profit allocation does not close for {depot_id}")
+    return (
+        prepared,
+        certificate,
+        metrics,
+        float(sub_profit[depot_id]),
+        legacy.score_counts(result),
+        int(result.get("evaluations", -1)),
+        sub_seed,
+        time.perf_counter() - started,
+    )
 
 
 def _run_cooperative_arm(
@@ -436,7 +511,10 @@ def _run_cooperative_arm(
     bundle_dir = E3 / "assets" / instance / "bundle"
     bundle = load_search_bundle(bundle_dir)
     started = time.perf_counter()
-    with legacy.strict_mode(caps):
+    # Cooperation may reassign both customers and physical vehicles across
+    # depots.  It keeps the full bundle's global CV/EV envelope but does not
+    # inherit the independent arm's per-depot caps.
+    with legacy.strict_mode():
         result = run_tvci_alns(
             bundle_dir,
             config=WinnerKernelConfig(
@@ -466,7 +544,7 @@ def _run_cooperative_arm(
         bundle,
         prices,
         owners,
-        caps,
+        None,
         allow_cross=True,
         fairness_enabled=fairness_enabled,
         independent_profit=independent_profit if fairness_enabled else None,
@@ -511,14 +589,18 @@ def run_spec(spec: dict[str, Any], contract_sha256: str) -> dict[str, Any]:
         prices = legacy.prices_for("M1", 0.0)
         depot_solutions: dict[str, Solution] = {}
         depot_elapsed = 0.0
+        depot_evaluations = 0
         depot_counts: dict[str, int] = {}
+        subproblem_profit: dict[str, float] = {}
         sub_rows: list[dict[str, Any]] = []
         for depot_id, local_caps in sorted(caps.items()):
-            solution, certificate, metrics, counts, elapsed = _run_independent_depot(
+            solution, certificate, metrics, profit, counts, evaluations, sub_seed, elapsed = _run_independent_depot(
                 instance, condition, seed, depot_id, local_caps, owners, prices
             )
             depot_solutions[depot_id] = solution
             depot_elapsed += elapsed
+            depot_evaluations += evaluations
+            subproblem_profit[depot_id] = profit
             for name, count in counts.items():
                 depot_counts[name] = depot_counts.get(name, 0) + int(count)
             sub_run_id = f"{instance}__{condition}__seed{seed}__independent_{depot_id}"
@@ -526,8 +608,9 @@ def run_spec(spec: dict[str, Any], contract_sha256: str) -> dict[str, Any]:
             sub_rows.append(
                 {
                     "depot_id": depot_id,
+                    "search_seed": sub_seed,
                     "budget": INDEPENDENT_BUDGET_PER_DEPOT,
-                    "evaluations": INDEPENDENT_BUDGET_PER_DEPOT,
+                    "evaluations": evaluations,
                     "elapsed_seconds": elapsed,
                     "solution_path": str(sub_solution_path.relative_to(ROOT)),
                     "solution_sha256": sha256(sub_solution_path),
@@ -555,6 +638,16 @@ def run_spec(spec: dict[str, Any], contract_sha256: str) -> dict[str, Any]:
             raise ValueError(f"independent profit must be positive: {independent_profit}")
         if abs(float(merged_metrics["total_cost"]) - allocated_cost) > 1e-6:
             raise ValueError("merged independent profit allocation does not close to system cost")
+        sub_cost_sum = sum(float(row["total_cost"]) for row in sub_rows)
+        sub_cost_merge_error = abs(float(merged_metrics["total_cost"]) - sub_cost_sum)
+        sub_profit_merge_error = max(
+            abs(float(independent_profit[depot]) - float(subproblem_profit[depot]))
+            for depot in independent_profit
+        )
+        if sub_cost_merge_error > 1e-6:
+            raise ValueError(f"independent subproblem costs do not close after merge: {sub_cost_merge_error}")
+        if sub_profit_merge_error > 1e-6:
+            raise ValueError(f"independent subproblem profits do not close after merge: {sub_profit_merge_error}")
         merged_hash = canonical_hash(solution_payload(merged))
         independent_row = _base_row(
             run_id=f"{instance}__{condition}__seed{seed}__independent",
@@ -563,7 +656,7 @@ def run_spec(spec: dict[str, Any], contract_sha256: str) -> dict[str, Any]:
             seed=seed,
             arm="independent",
             budget=INDEPENDENT_BUDGET_PER_DEPOT * len(caps),
-            evaluations=INDEPENDENT_BUDGET_PER_DEPOT * len(caps),
+            evaluations=depot_evaluations,
             elapsed_seconds=depot_elapsed,
             solution=merged,
             certificate=merged_certificate,
@@ -608,6 +701,8 @@ def run_spec(spec: dict[str, Any], contract_sha256: str) -> dict[str, Any]:
             "pair_status": pair_status,
             "depot_caps": caps,
             "independent_profit": independent_profit,
+            "subproblem_cost_merge_error": sub_cost_merge_error,
+            "subproblem_profit_merge_error": sub_profit_merge_error,
             "subproblem_rows": sub_rows,
             "rows": rows,
         }
@@ -751,10 +846,11 @@ def build_contract() -> tuple[list[dict[str, Any]], str]:
         "probe_instance": PROBE_INSTANCE,
         "independent_budget_per_depot": INDEPENDENT_BUDGET_PER_DEPOT,
         "independent_total_budget": 2 * INDEPENDENT_BUDGET_PER_DEPOT,
+        "independent_seed_rule": "outer seed multiplied by 100 plus the sorted depot index; the derived seed is recorded in every subproblem row",
         "cooperative_budget_per_arm": COOPERATIVE_BUDGET,
         "cooperative_arms": {label: {"fairness_enabled": enabled, "theta": THETA if enabled else None} for label, enabled in ARMS},
         "common_start_rule": "each cooperative arm starts byte-identically from the concatenation of the two independently optimized depot solutions",
-        "asset_rule": "per-depot CV/EV caps are inherited from the sealed E3 ownership-fixed common start for the same network and portfolio condition",
+        "asset_rule": "independent subproblems use the condition-invariant per-depot caps frozen in the E3 common fleet envelope; cooperative arms use the same envelope's global CV/EV totals without depot-level locks",
         "fairness_metric": "each depot profit divided by its profit in the paired independently optimized solution",
         "revenue_rule": "customer revenue is credited to the serving depot; operating costs are charged to the route home depot",
         "cross_site_fee": 0.0,
@@ -765,6 +861,7 @@ def build_contract() -> tuple[list[dict[str, Any]], str]:
         "claim_guard": "failure to find a solution is not a proof of mathematical infeasibility",
         "upstream_e3_metadata_sha256": sha256(E3 / "metadata.json"),
         "upstream_e3_decision_sha256": sha256(E3 / "decision.json"),
+        "fleet_envelope_sha256": sha256(FLEET_ENVELOPE),
         "asset_preflight_sha256": sha256(OUT / "asset_preflight.csv"),
         "source_commit": subprocess.run(["git", "rev-parse", "HEAD"], cwd=ROOT, text=True, capture_output=True, check=True).stdout.strip(),
         "source_hashes": {str(path.relative_to(ROOT)): sha256(path) for path in source_paths},

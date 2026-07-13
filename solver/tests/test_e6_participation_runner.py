@@ -3,6 +3,7 @@ from __future__ import annotations
 from setp_solver.solution import ChargingAction, Route, Solution
 
 from baselines.e6_fairness.e6_participation_formal_20260714 import (
+    depot_caps,
     extract_depot_start,
     merge_depot_solutions,
 )
@@ -50,3 +51,14 @@ def test_merge_rejects_duplicate_trip_identifiers() -> None:
         assert "duplicate" in str(exc)
     else:
         raise AssertionError("duplicate trip identifiers must be rejected")
+
+
+def test_frozen_114_customer_caps_are_condition_invariant_and_close() -> None:
+    geographic = depot_caps("L-main-threeshift-50c-01", "geographic")
+    mixed = depot_caps("L-main-threeshift-50c-01", "mixed")
+    assert geographic == mixed == {
+        "D0": {"cv": 3, "ev": 3},
+        "D1": {"cv": 2, "ev": 2},
+    }
+    assert sum(row["cv"] for row in geographic.values()) == 5
+    assert sum(row["ev"] for row in geographic.values()) == 5
