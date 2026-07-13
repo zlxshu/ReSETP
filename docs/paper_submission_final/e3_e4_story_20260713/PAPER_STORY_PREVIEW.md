@@ -6,7 +6,7 @@
 
 ### 4.2.1 客户归属的地理组织
 
-正式算例继承 Goeke 与 Schneider 的英国城市坐标，并在项目中合并为三班配送任务、增加第二车场和重新计算坐标间欧氏距离。九张网络的空间跨度约为 169–248 公里，因此本文将其界定为“基于英国真实城市坐标构造的区域/城际配送场景”，而不解释成真实道路轨迹、真实企业订单或城市末端配送[[1]](https://doi.org/10.1016/j.ejor.2015.01.049)。
+正式算例继承 Goeke 与 Schneider 的混合车队算例；该算例又建立在污染路径基准上，原始论文明确说明其节点代表英国城市[[1]](https://doi.org/10.1016/j.ejor.2015.01.049)[[7]](https://doi.org/10.1016/j.trb.2011.02.004)。本项目随后合并三班配送任务、增加第二车场并重新计算坐标间欧氏距离。从原始坐标逐网络复算的最大点间距离约为 169–248 公里，因此本文将其界定为“基于英国城市坐标构造的区域/城际配送场景”，而不解释成真实道路轨迹、真实企业订单或城市末端配送。
 
 为分离客户责任的空间组织，本文在每张网络上保留完全相同的客户坐标、需求和时间窗，只改变客户由哪一家车场负责。图 1 左侧按客户与车场的地理关系划分责任；右侧在配送班次和需求档内保持两家车场的客户数量基本一致，但让客户责任在空间上交错。后者是一次锁死的合成强对照，可以表示历史业务关系与当前地理位置不一致的极端情形，但不是真实企业客户账本。该并列类别地图沿用 Soriano 等 Fig. 3 的展示思路[[2]](https://doi.org/10.1016/j.ijpe.2022.108669)。
 
@@ -155,3 +155,5 @@ Cheng 等在真实充电站数据上报告过 3.81% 的平均充电排放改善�
 [5] National Energy System Operator. (2025). National Carbon Intensity Forecast Methodology. https://www.neso.energy/data-portal/national-carbon-intensity-forecast/national_carbon_intensity_forecast_methodology
 
 [6] Cheng, K.-W., Bian, Y., Shi, Y., & Chen, Y. (2022). Carbon-Aware EV Charging. *IEEE Electrical Power and Energy Conference*. https://arxiv.org/abs/2209.12373
+
+[7] Bektaş, T., & Laporte, G. (2011). The Pollution-Routing Problem. *Transportation Research Part B: Methodological*, 45(8), 1232–1250. https://doi.org/10.1016/j.trb.2011.02.004

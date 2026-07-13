@@ -4,7 +4,7 @@
 
 ## 一、当前能站住的论文故事
 
-本文研究的不是“合作必然省多少”或“换个时辰充电必然大幅减排”，而是：在基于英国真实城市坐标构造的区域/城际多车场配送中，客户责任如何组织、车场是否允许重新分工、以及固定可执行路线后怎样安排充电时间，分别还能带来多少成本与碳收益；后续再检验这些收益能否被合作方接受，并在订单变化后保留下来。
+本文研究的不是“合作必然省多少”或“换个时辰充电必然大幅减排”，而是：在基于英国城市坐标构造的区域/城际多车场配送中，客户责任如何组织、车场是否允许重新分工、以及固定可执行路线后怎样安排充电时间，分别还能带来多少成本与碳收益；后续再检验这些收益能否被合作方接受，并在订单变化后保留下来。
 
 截至当前，证据支持一条有先后但不强行冒充因果链的结果叙事：
 
@@ -100,7 +100,7 @@
 
 ## 六、数据与算例边界
 
-配送场景继承 Goeke 与 Schneider 的英国真实城市坐标，但项目又合并三班任务、增加第二车场并以坐标欧氏距离重算；九张正式网络直径约 169–248 公里，模型速度为 90 公里/小时。因此正文统一称“基于英国真实城市坐标构造的区域/城际配送场景”，不称“英国真实道路运营”“真实企业订单”或“城市末端配送”[[5]](https://doi.org/10.1016/j.ejor.2015.01.049)。
+配送场景继承 Goeke 与 Schneider 的混合车队算例；该算例建立在污染路径基准上，原始论文明确说明节点代表英国城市[[5]](https://doi.org/10.1016/j.ejor.2015.01.049)[[7]](https://doi.org/10.1016/j.trb.2011.02.004)。项目又合并三班任务、增加第二车场并以坐标欧氏距离重算；九张正式网络直径约 169–248 公里，模型速度为 90 公里/小时。因此正文统一称“基于英国城市坐标构造的区域/城际配送场景”，不称“英国真实道路运营”“真实企业订单”或“城市末端配送”。
 
 碳强度采用英国国家能源系统运营商的全国半小时预测与实际估计；由于算例没有唯一电网分区身份，不把地区平均冒充具体地区。预测值用于作出充电决定，实际估计值用于结算排放[[6]](https://www.neso.energy/data-portal/national-carbon-intensity-forecast/national_carbon_intensity_forecast_methodology)。
 
@@ -117,3 +117,5 @@
 [5] Goeke, D., & Schneider, M. (2015). Routing a mixed fleet of electric and conventional vehicles. *European Journal of Operational Research*, 245(1), 81–99. https://doi.org/10.1016/j.ejor.2015.01.049
 
 [6] National Energy System Operator. (2025). National Carbon Intensity Forecast Methodology. https://www.neso.energy/data-portal/national-carbon-intensity-forecast/national_carbon_intensity_forecast_methodology
+
+[7] Bektaş, T., & Laporte, G. (2011). The Pollution-Routing Problem. *Transportation Research Part B: Methodological*, 45(8), 1232–1250. https://doi.org/10.1016/j.trb.2011.02.004
