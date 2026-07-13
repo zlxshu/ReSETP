@@ -1,0 +1,60 @@
+{
+  "status": "PASS_INDEPENDENT_RECALC_AND_HASH_AUDIT",
+  "verified_on": "2026-07-13",
+  "appledouble_event": {
+    "classification": "HASH_CONTAMINATED_APPLEDOUBLE",
+    "detected_after_run": true,
+    "sidecar_files_removed_before_staging": true,
+    "remaining_sidecar_count": 0,
+    "scientific_artifacts_modified_by_cleanup": false
+  },
+  "artifact_hash_audit": {
+    "manifest": "artifact_hashes.json",
+    "mismatch_count_after_cleanup": 0
+  },
+  "independent_recalculation": {
+    "method": "standard-library CSV reader; recomputed pooled numerators and denominators from cell_summary.csv, then recomputed network/day directions and cross-arm differences",
+    "raw_row_count": 9072,
+    "all_routes_services_energy_unchanged": true,
+    "all_hard_and_clock_violation_counts_zero": true,
+    "headline_rows": [
+      {
+        "ownership_structure": "geographic",
+        "operating_mode": "ownership_fixed",
+        "charging_reduction_pct": 4.664166559544253,
+        "total_operational_reduction_pct": 0.5184829704467561,
+        "networks_improved": 9,
+        "operating_days_improved": 18,
+        "pre_day_share_of_saving_pct": 98.94101893551448
+      },
+      {
+        "ownership_structure": "geographic",
+        "operating_mode": "reassignment_allowed",
+        "charging_reduction_pct": 4.87666867834168,
+        "total_operational_reduction_pct": 0.5232816116456492,
+        "networks_improved": 9,
+        "operating_days_improved": 19,
+        "pre_day_share_of_saving_pct": 99.363097142587
+      },
+      {
+        "ownership_structure": "mixed",
+        "operating_mode": "ownership_fixed",
+        "charging_reduction_pct": 3.887798459404608,
+        "total_operational_reduction_pct": 0.35153335338471176,
+        "networks_improved": 9,
+        "operating_days_improved": 20,
+        "pre_day_share_of_saving_pct": 95.45723276412008
+      },
+      {
+        "ownership_structure": "mixed",
+        "operating_mode": "reassignment_allowed",
+        "charging_reduction_pct": 4.106883727926292,
+        "total_operational_reduction_pct": 0.4762081436433464,
+        "networks_improved": 9,
+        "operating_days_improved": 19,
+        "pre_day_share_of_saving_pct": 99.70997359523342
+      }
+    ],
+    "all_recomputed_values_match_saved_summaries": true
+  }
+}
