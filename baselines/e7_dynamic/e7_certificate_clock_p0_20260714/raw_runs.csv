@@ -1,0 +1,20 @@
+check_id,category,subject_id,boundary,event_second,epsilon_seconds,expected,observed,passed,search_evaluations,detail
+p0_ledger_build,ledger,L-main-threeshift-50c-01__geographic__seed1__no_loss,invariant,,1e-09,PASS,PASS,True,0,The sealed solution and certificate produced one immutable execution ledger.
+p0_customer_count,input,L-main-threeshift-50c-01,invariant,,1e-09,114,114,True,0,Formal P0 uses the actual 114-customer network (internally named 50c).
+route_before_departure,route_boundary,CV_D0_1#T2,before_departure,48000.49735258121,1e-09,not_started,not_started,True,0,"State comes from the certified departure/return clock, not a shifted static schedule."
+route_at_departure,route_boundary,CV_D0_1#T2,at_departure,48000.497352582206,1e-09,in_progress,in_progress,True,0,"State comes from the certified departure/return clock, not a shifted static schedule."
+route_before_return,route_boundary,CV_D0_1#T2,before_return,73735.09131552037,1e-09,in_progress,in_progress,True,0,"State comes from the certified departure/return clock, not a shifted static schedule."
+route_at_return,route_boundary,CV_D0_1#T2,at_return,73735.09131552138,1e-09,completed,completed,True,0,"State comes from the certified departure/return clock, not a shifted static schedule."
+first_charge_before_start,ev_first_trip_pre_horizon_charge,EV_D0_1#T1,before_start,-86400.000000001,1e-09,not_charging,not_charging,True,0,Absolute charge time includes charge_day_offset=-1.
+first_charge_at_start,ev_first_trip_pre_horizon_charge,EV_D0_1#T1,at_start,-86400.0,1e-09,charging,charging,True,0,Absolute charge time includes charge_day_offset=-1.
+first_charge_before_end,ev_first_trip_pre_horizon_charge,EV_D0_1#T1,before_end,-65590.08724510598,1e-09,charging,charging,True,0,Absolute charge time includes charge_day_offset=-1.
+first_charge_at_end,ev_first_trip_pre_horizon_charge,EV_D0_1#T1,at_end,-65590.08724510498,1e-09,charge_complete,charge_complete,True,0,Absolute charge time includes charge_day_offset=-1.
+first_charge_previous_day,ev_first_trip_pre_horizon_charge,EV_D0_1#T1,invariant,,1e-09,True,True,True,0,The first-trip energy is charged entirely on the preceding day.
+first_charge_before_departure,ev_first_trip_pre_horizon_charge,EV_D0_1#T1,invariant,,1e-09,True,True,True,0,Pre-horizon charging completes before the certified first-trip departure.
+gap_charge_before_start,ev_between_trip_charge,EV_D0_3#T2,before_start,42702.671938066494,1e-09,not_charging,not_charging,True,0,At the exact charge end the vehicle is no longer marked as charging.
+gap_charge_at_start,ev_between_trip_charge,EV_D0_3#T2,at_start,42702.67193806749,1e-09,charging,charging,True,0,At the exact charge end the vehicle is no longer marked as charging.
+gap_charge_before_end,ev_between_trip_charge,EV_D0_3#T2,before_end,52564.77335575806,1e-09,charging,charging,True,0,At the exact charge end the vehicle is no longer marked as charging.
+gap_charge_at_end,ev_between_trip_charge,EV_D0_3#T2,at_end,52564.773355759055,1e-09,charge_complete,charge_complete,True,0,At the exact charge end the vehicle is no longer marked as charging.
+gap_charge_certificate_end,ev_between_trip_charge,EV_D0_3#T2,invariant,,1e-09,True,True,True,0,The saved charging action ends at the certificate recharge boundary.
+gap_charge_before_next_departure,ev_between_trip_charge,EV_D0_3#T2,invariant,,1e-09,True,True,True,0,The next trip cannot depart before its between-trip charge completes.
+gap_charge_action_identity,ev_between_trip_charge,EV_D0_3#T2,invariant,,1e-09,True,True,True,0,The charge remains attached to the following stable trip identifier.
