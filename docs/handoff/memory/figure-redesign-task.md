@@ -159,3 +159,5 @@ metadata:
 - **gate实测(seed1-4 partial)**: official=alpha_ucb_env每seed完全相等(5055/4779/4791/4872)锚复现✓; **棋盘好=block化没弄坏搜索**: random_block(4761-4814)≈random_full(4788), seed3 random_block£4761<official£4779; alpha_ucb_block略逊(seed2/3差£100+,因q被固定0.16而random_block q分散)。gate大概率PASS。
 - **冷静预判(关键)**: random_block已太强(接近/偶超winner kernel)→和per-step同困境,DR学习增益空间仍薄。block化修了"信用分配"工程问题, 但没解决"强随机基线→PPO难超"的根本问题。
 - **下一步控制**: 等gate全表(seed5-10)确认→PASS后只训小pilot(72000步,勿百万步)→判据ppo_block能否稳定≤random_block/alpha_ucb_block→**仍输则诚实止损**(DR=future work/可学习替代, 算法主贡献押winner kernel碾压SA8.8%+机制创新), 绝不因"block化对了/gate过了"包装成"DR成功"。
+
+**2026-07-14正文复核补丁**：表2的摩擦代理值说明已移出数据行，保留为表后口径说明；未完成实验统一使用正文占位，不用旧试跑填图表。附录置于参考文献之前，且必须在 `\appendix` 前 `\clearpage`，否则模板会把结论所在页一并重置为罗马页码。IWD在221客户收敛图中的水平线来自封存旧简化实现10/10次未改善共同起点，是失活证据而非稳定收敛；图中可为完整披露保留IWD，但强统计不得纳入IWD，算法优势计数不得借它扩张。

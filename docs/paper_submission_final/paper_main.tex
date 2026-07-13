@@ -93,7 +93,7 @@
 \TitleMark{周雷习书等: 兼顾收益公平与时变碳强度的动态协同多车场混合车队路径优化}
 \Title{兼顾收益公平与时变碳强度的动态协同多车场混合车队路径优化}
 \Author{周雷习书, 干宏程, 邱莹莹}{上海理工大学 管理学院, 上海 200093}
-\Abstract{针对由英国城市坐标构造的区域—城际多车场配送，研究动态需求、时变电网碳强度和收益公平共同作用下的油电混合车队路径优化问题。构建严格实体车多趟衔接模型，提出时变碳强度引导的自适应大邻域搜索算法TVCI-ALNS。九张网络、九种算法各独立运行10次的结果表明，TVCI-ALNS平均名次为1.72；以网络为统计单位并校正多重比较后，显著优于其中6种算法。保持客户坐标、需求和时间窗不变，将客户责任由空间交错调整为地理聚集后，总成本、路程、燃油车直接排放和电动车用电量平均下降25.00\%、35.48\%、41.73\%和23.87\%。在此基础上允许跨车场重新分工，地理聚集和空间交错情形的平均增量节省分别为4.16\%和19.83\%。结果表明，按地理关系组织客户可先取得大部分成本与能源收益，进一步协同的价值主要来自修复尚未理顺的客户责任。}
+\Abstract{针对由英国城市坐标构造的区域—城际多车场配送，研究动态需求、时变电网碳强度和收益公平共同作用下的油电混合车队路径优化问题。构建严格实体车多趟衔接模型，提出时变碳强度引导的自适应大邻域搜索算法TVCI-ALNS。九张网络、九种算法各独立运行10次的结果表明，TVCI-ALNS平均名次为1.72；以网络为统计单位并校正多重比较后，显著优于5种通过实现核查的对照算法。保持客户坐标、需求和时间窗不变，将客户责任由空间交错调整为地理聚集后，总成本、路程、燃油车直接排放和电动车用电量平均下降25.00\%、35.48\%、41.73\%和23.87\%。在此基础上允许跨车场重新分工，地理聚集和空间交错情形的平均增量节省分别为4.16\%和19.83\%。结果表明，按地理关系组织客户可先取得大部分成本与能源收益，进一步协同的价值主要来自修复尚未理顺的客户责任。}
 \Keywords{协同多车场; 混合车队; 车辆路径问题; 动态需求; 时变电网碳强度; 收益公平}
 \ETitle{Dynamic Collaborative Multi-depot Mixed-fleet Vehicle Routing with Profit Fairness and Time-varying Grid Carbon Intensity}
 \EAuthor{ZHOU Leixishu, GAN Hongcheng, QIU Yingying}{University of Shanghai for Science and Technology, Shanghai 200093, China}
@@ -103,7 +103,7 @@ dynamic demand, time-varying grid carbon intensity and profit fairness. A strict
 physical-vehicle multi-trip model and a time-varying carbon-intensity-guided
 adaptive large neighbourhood search algorithm (TVCI-ALNS) are developed. On nine
 networks, nine algorithms are independently run ten times. TVCI-ALNS achieves an
-average rank of 1.72 and significantly outperforms six competitors when networks
+average rank of 1.72 and significantly outperforms five implementation-validated competitors when networks
 are treated as the statistical units and multiple comparisons are adjusted.
 Without changing customer locations, demands or time windows, reorganizing
 customer responsibility from spatial intermixing to geographic concentration
@@ -693,7 +693,6 @@ $c^{fix}$ & 车辆启用固定成本 & 80 & £/班次\\
 $c^{km}$ & 非能源里程成本 & 0.35 & £/km\\
 $c^{occ}$ & 充电桩占用成本 & 0.50 & £/min\\
 $c^{tr}$ & 跨车场服务成本（主值） & 0 & £/客户\\
-\multicolumn{4}{l}{\footnotesize 非零值仅用于摩擦敏感性分析：0/10/25/50/95 £/客户；均为无现实标定的代理值。}\\
 % v2026-06-12: V0 add revenue proxy needed by eq:profit.
 $\rho$ & 单位配送收入系数 & 0.18936 & £/kg\\
 % v2026-06-12: V0 expose the default individual-rationality fairness threshold.
@@ -720,8 +719,8 @@ $CE$ & 碳配额默认值(实验设定) & $0.8E^{base}$ & kgCO$_2$e\\
 碳交易主值取自UK ETS 2025年二级市场均价\textsuperscript{\cite{ref:38}},
 敏感性低值为UK ETS 2025年度民事处罚碳价(官方真值)\textsuperscript{\cite{ref:34}};
 柴油碳排放因子取自英国2025年温室气体转换因子(零售柴油,含生物柴油混合)\textsuperscript{\cite{ref:31}}。
-车辆启用固定成本、非能源里程成本、充电桩占用成本与跨车场服务成本均为
-英国商用货车公开可核实代理值,非官方统一价格。
+车辆启用固定成本、非能源里程成本和充电桩占用成本均为英国商用货车公开可核实代理值,非官方统一价格。
+跨车场服务成本主值取0；10、25、50和95 £/客户仅用于摩擦敏感性分析，均为未经现实标定的情景代理值。
 电动车安全电量下限取 0,与算例基准文献\textsuperscript{\cite{ref:27}}一致,即允许电量降至 0 而不设额外安全裕度。
 % v2026-06-11: clarify that rated charging power is an experimental upper bound, not an energy/occupancy equality.
 实验中共享充电站额定充电功率上限统一取$\pi_s=60$ kW,用于式 \eqref{eq:charge_power} 约束分时段充电量;
@@ -761,9 +760,10 @@ E2和E3均使用表 \ref{tab:e2e3-instances} 所列9张网络，避免算法比�
 \label{tab:e2-summary}
 \setptabsetup
 \input{generated_tables/e2_algorithm_summary.tex}
+\tabnote[0.88\linewidth]{注: IWD为封存批次中的简化适配结果, 后续按原始速度、时间与土壤机制修复后仍未通过预注册有效性检查, 因而仅作描述性辅助对照, 不进入强算法结论。}
 \end{table}
 
-考虑到同一网络上的10次运行并不构成10张独立网络，本文先对每张网络内的重复运行取平均，再以9张网络为单位进行检验。Friedman检验表明9种算法的总体差异显著（$\chi^2=58.728$，$p<0.001$）。随后将TVCI-ALNS与其余8种算法分别进行双侧精确Wilcoxon符号秩检验，并采用Holm方法校正多重比较，结果见表 \ref{tab:e2-tests}。TVCI-ALNS相对GA、PSO、VNS、ACO、GWO和IWD的差异显著；相对GA-VNS和LNS虽有4.95\%和2.48\%的平均降幅，但校正后未达到显著水平。因此，本文只作“总体竞争力较强且显著优于6种对照算法”的结论，不作“全面优于所有算法”的表述。
+考虑到同一网络上的10次运行并不构成10张独立网络，本文先对每张网络内的重复运行取平均，再以9张网络为单位进行检验。IWD未通过后续实现有效性检查，故只保留在描述性总表和收敛图中，不纳入强推断。对TVCI-ALNS及其余7种通过实现核查的算法进行Friedman检验，总体差异显著（$p<0.001$）。随后将TVCI-ALNS与7种对照算法分别进行双侧精确Wilcoxon符号秩检验，并采用Holm方法校正多重比较，结果见表 \ref{tab:e2-tests}。TVCI-ALNS相对GA、PSO、VNS、ACO和GWO的差异显著；相对GA-VNS和LNS虽有4.95\%和2.48\%的平均降幅，但校正后未达到显著水平。因此，本文只作“总体竞争力较强且显著优于5种通过实现核查的对照算法”的结论，不作“全面优于所有算法”的表述。
 
 \begin{table}[H]
 \centering
@@ -771,10 +771,10 @@ E2和E3均使用表 \ref{tab:e2e3-instances} 所列9张网络，避免算法比�
 \label{tab:e2-tests}
 \setptabsetup
 \input{generated_tables/e2_pairwise_tests.tex}
-\tabnote[0.88\linewidth]{注: 样本为9张网络; $W$为Wilcoxon符号秩统计量; $p_{\rm Holm}$为Holm校正后的双侧概率值; 黑体表示$p_{\rm Holm}<0.05$.}
+\tabnote[0.88\linewidth]{注: 样本为9张网络; $W$为Wilcoxon符号秩统计量; $p_{\rm Holm}$为对7项有效对照进行Holm校正后的双侧概率值; 黑体表示$p_{\rm Holm}<0.05$.}
 \end{table}
 
-为观察相同评价预算下的搜索过程，参照文献\textsuperscript{\cite{ref:48}}的多算法收敛曲线形式，选取221客户网络，绘制9种算法10次运行的中位收敛轨迹，如图 \ref{fig:e2-convergence} 所示。各算法均从同一初始解和相同4000次评价预算出发；TVCI-ALNS在搜索前段较快降低成本，并在后段继续找到改进解。该图仅用于展示一张代表性网络上的搜索过程，算法总体判断仍以表 \ref{tab:e2-summary} 和表 \ref{tab:e2-tests} 的9张网络结果为准。
+为观察相同评价预算下的搜索过程，参照文献\textsuperscript{\cite{ref:48}}的多算法收敛曲线形式，选取221客户网络，绘制9种算法10次运行的中位收敛轨迹，如图 \ref{fig:e2-convergence} 所示。各算法均从同一初始解和相同4000次评价预算出发；TVCI-ALNS在搜索前段较快降低成本，并在后段继续找到改进解。IWD的中位轨迹为水平线，是因为封存简化适配在该网络的10次运行中均未改进共同起点，不能解释为算法已经稳定收敛。该图仅用于展示一张代表性网络上的搜索过程，算法总体判断仍以表 \ref{tab:e2-summary} 和表 \ref{tab:e2-tests} 的9张网络结果为准。
 
 \begin{figure}[H]
 \centering
@@ -782,6 +782,10 @@ E2和E3均使用表 \ref{tab:e2e3-instances} 所列9张网络，避免算法比�
 \caption{九种算法在221客户网络上的收敛过程}
 \label{fig:e2-convergence}
 \end{figure}
+
+\subsection{算法组件作用分析}
+
+\noindent\textbf{待补内容：}本节将采用与算法比较相同的9张网络和成对预算，分别关闭分阶段重组、严格多趟可行性处理和碳感知充电调度，比较各组件对解质量、计算时间和可行解比例的影响。正式数据尚未完成，当前版本不引用历史试跑结果，也不预设哪个组件必须产生正向效果。
 
 \subsection{客户空间组织与协同成本}
 
@@ -941,6 +945,18 @@ E2和E3均使用表 \ref{tab:e2e3-instances} 所列9张网络，避免算法比�
 \tabnote[0.88\linewidth]{注: 正值表示该项成本下降对总节省的贡献, 负值表示该项成本增加; 各分项之和等于总成本节省.}
 \end{table}
 
+\subsection{充电时机与碳排放}
+
+\noindent\textbf{待补内容：}本节将在9张网络和多个完整电网日上固定路径、车辆和充电量，仅比较即时充电与合法低碳择时充电，报告充电负荷迁移、充电侧间接排放及混合车队运营总排放的变化。实验将分别复算各自经营与协同经营方案，不预设协同一定扩大充电择时空间。
+
+\subsection{收益公平与合作可接受性}
+
+\noindent\textbf{待补内容：}本节将以各车场独立运营收益为基准，考察公平要求提高时双方收益、系统成本和可行边界的变化，用于区分“总体创造价值”与“各方愿意接受”两个问题。正式公平实验尚未完成，旧试跑结果不进入本稿。
+
+\subsection{动态需求下的滚动重规划}
+
+\noindent\textbf{待补内容：}本节将考察订单新增、取消和需求变化发生后，已执行路径冻结、车辆位置、时间、载重、电量和累计成本能否被正确继承，并比较静态方案的成本、低碳和公平收益在动态环境中的保留程度。正式动态实验尚未完成，当前仅保留章节位置与数据要求。
+
 \subsection{管理启示}
 
 对具有区域—城际运输尺度的多车场企业，合作前先按地理关系整理客户责任，可能比直接引入复杂的共享机制更容易取得稳定收益。若历史客户关系与地理边界交错，跨场协同可以进一步显著降低里程、油耗和用电；若客户责任已经较为聚集，企业则不宜把合作收益预设为固定比例，应先评估剩余的跨区绕行。本文没有观察到稳定的车辆减少，因此协同方案的管理价值应主要按实际里程和能源变化评价，而不应预先写成缩减车队。排班空档缩短可以与成本、里程和能耗下降共同解释为车辆衔接更紧凑，但空档变化本身不能单独证明调度效率，也不能据此推断充电择时空间必然增加。
@@ -951,11 +967,44 @@ E2和E3均使用表 \ref{tab:e2e3-instances} 所列9张网络，避免算法比�
 
 \section{结论}
 
-本文构建了考虑油电混合车队、严格实体车多趟衔接、客户跨场服务、时变电网碳强度、收益公平与动态需求的协同多车场路径模型，并提出TVCI-ALNS求解算法。9张区域—城际配送网络上的算法比较表明，TVCI-ALNS平均名次为1.72，以网络为统计单位并校正多重比较后，显著优于6种对照算法，但相对遗传—变邻域算法和大邻域搜索的差异尚不显著。
+本文构建了考虑油电混合车队、严格实体车多趟衔接、客户跨场服务、时变电网碳强度、收益公平与动态需求的协同多车场路径模型，并提出TVCI-ALNS求解算法。9张区域—城际配送网络上的算法比较表明，TVCI-ALNS平均名次为1.72，以网络为统计单位并校正多重比较后，显著优于5种通过实现核查的对照算法，但相对遗传—变邻域算法和大邻域搜索的差异尚不显著。
 
 客户责任实验表明，空间组织和跨场协同是前后衔接而非彼此替代的两类手段。将空间交错的客户责任调整为地理聚集，可使总成本、路程、燃油车直接排放和电动车用电量分别平均下降25.00\%、35.48\%、41.73\%和23.87\%；在此基础上开放跨场重新分工，地理聚集情形的平均增量节省为4.16\%，空间交错情形为19.83\%。协同节省主要来自里程费、燃油费和电费下降，未观察到稳定的车辆减少。由此可见，客户责任越偏离地理服务边界，跨场协同的增量价值越大；客户责任已经按地理关系组织后，较小的剩余协同节省恰是前置空间组织有效的表现。
 
 本文仍存在一定局限。空间交错客户责任为控制其他因素后构造的合成情形，尚缺少企业历史客户归属数据；电动车能耗尚未显式刻画速度波动、坡度和天气；充电时机、公平分配与动态扰动的机制效应仍需在相同网络和严格排班口径下完成独立检验。
+
+\clearpage
+\appendix
+\section{逐网络补充结果}
+
+表 \ref{tab:appendix-e2a} 和表 \ref{tab:appendix-e2b} 给出算法比较中各方法在9张网络上的10次运行平均成本。受版面宽度限制，9种算法分两表列示；TVCI-ALNS在两表中重复，便于直接比较。IWD仍为简化适配的描述性结果，不进入正文强推断。
+
+\begin{table}[H]
+\centering
+\caption{各网络算法平均成本（第一组）}
+\label{tab:appendix-e2a}
+\setptabsetup
+\input{generated_tables/e2_network_costs_a.tex}
+\end{table}
+
+\begin{table}[H]
+\centering
+\caption{各网络算法平均成本（第二组）}
+\label{tab:appendix-e2b}
+\setptabsetup
+\input{generated_tables/e2_network_costs_b.tex}
+\tabnote[0.92\linewidth]{注: IWD为封存简化适配结果, 仅供描述性核对。}
+\end{table}
+
+表 \ref{tab:appendix-e3} 给出客户空间组织实验在各网络上的协同成本节省。正值表示允许跨车场重新分工后的成本低于责任固定情形，负值表示在给定搜索预算下未获得改进。
+
+\begin{table}[H]
+\centering
+\caption{各网络的协同成本节省}
+\label{tab:appendix-e3}
+\setptabsetup
+\input{generated_tables/e3_network_results.tex}
+\end{table}
 
 \begin{thebibliography}{99}
 \bibitem{ref:1} 习近平. 在第七十五届联合国大会一般性辩论上的讲话[EB/OL]. [2020-09-22]. https://www.gov.cn/gongbao/content/2020/content\_5549875.htm.
@@ -1008,36 +1057,5 @@ E2和E3均使用表 \ref{tab:e2e3-instances} 所列9张网络，避免算法比�
 \bibitem{ref:48} 陈雨蝶, 干宏程, 程亮, 等. 双碳背景下复杂冷链物流模型及求解算法[J/OL]. 系统工程理论与实践. DOI: 10.12011/SETP2024-2027. Chen Y D, Gan H C, Cheng L, et al. Complex cold-chain logistics model and solution algorithm under the dual-carbon background[J/OL]. Systems Engineering --- Theory \& Practice. DOI: 10.12011/SETP2024-2027.
 \bibitem{ref:49} Fern\'andez E, Roca-Riu M, Speranza M G. The shared customer collaboration vehicle routing problem[J]. European Journal of Operational Research, 2018, 265(3): 1078--1093.
 \end{thebibliography}
-
-\appendix
-\section{逐网络补充结果}
-
-表 \ref{tab:appendix-e2a} 和表 \ref{tab:appendix-e2b} 给出E2中各算法在9张网络上的10次运行平均成本。受版面宽度限制，9种算法分两表列示；TVCI-ALNS在两表中重复，便于直接比较。
-
-\begin{table}[H]
-\centering
-\caption{各网络算法平均成本（第一组）}
-\label{tab:appendix-e2a}
-\setptabsetup
-\input{generated_tables/e2_network_costs_a.tex}
-\end{table}
-
-\begin{table}[H]
-\centering
-\caption{各网络算法平均成本（第二组）}
-\label{tab:appendix-e2b}
-\setptabsetup
-\input{generated_tables/e2_network_costs_b.tex}
-\end{table}
-
-表 \ref{tab:appendix-e3} 给出E3在各网络上的协同成本节省。正值表示允许跨车场重新分工后的成本低于责任固定情形，负值表示在给定搜索预算下未获得改进。
-
-\begin{table}[H]
-\centering
-\caption{各网络的协同成本节省}
-\label{tab:appendix-e3}
-\setptabsetup
-\input{generated_tables/e3_network_results.tex}
-\end{table}
 
 \end{document}

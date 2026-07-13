@@ -72,13 +72,18 @@ def write_tex(name: str, lines: list[str]) -> None:
 
 
 def network_level_tests() -> pd.DataFrame:
-    """Use the nine base networks, not the repeated seeds, as test units."""
+    """Use nine networks and only implementation-validated baselines."""
     detail = pd.read_csv(E2 / "table_algorithm_by_instance.csv")
     pivot = detail.pivot(index="instance", columns="algorithm", values="avg_cost")
     primary = "staged_hybrid_carbon_aware"
     rows: list[dict[str, float | str]] = []
     raw_p: list[float] = []
-    for baseline in ["GA", "PSO", "VNS", "ACO", "GA-VNS", "LNS", "GWO", "IWD"]:
+    # The sealed IWD rows come from the legacy simplified adaptation.  A later
+    # formula-faithful repair failed its pre-registered fidelity gate and was
+    # therefore not allowed to overwrite the formal matrix.  Keep IWD in the
+    # descriptive table and convergence figure, but do not count it in the
+    # confirmatory family or in the paper's strong algorithm claim.
+    for baseline in ["GA", "PSO", "VNS", "ACO", "GA-VNS", "LNS", "GWO"]:
         gain = (pivot[baseline] - pivot[primary]) / pivot[baseline] * 100.0
         nonzero = gain[np.abs(gain) > 1e-12]
         result = wilcoxon(nonzero, alternative="two-sided", method="exact")
@@ -173,13 +178,16 @@ def write_e2_tables() -> None:
         lines += [r"\bottomrule", r"\end{tabular*}"]
         write_tex(name, lines)
 
-    matrix = detail.pivot(index="instance", columns="algorithm", values="avg_cost")
+    matrix = detail[detail.algorithm != "IWD"].pivot(
+        index="instance", columns="algorithm", values="avg_cost"
+    )
     stat, p_value = friedmanchisquare(*(matrix[column] for column in matrix.columns))
     audit = OUT / "audit"
     audit.mkdir(parents=True, exist_ok=True)
     (audit / "e2_friedman_test.json").write_text(
         json.dumps({"statistic": float(stat), "p_value": float(p_value),
-                    "networks": 9, "algorithms": 9}, indent=2) + "\n",
+                    "networks": 9, "algorithms": 8,
+                    "excluded_from_inference": ["IWD"]}, indent=2) + "\n",
         encoding="utf-8")
 
 
