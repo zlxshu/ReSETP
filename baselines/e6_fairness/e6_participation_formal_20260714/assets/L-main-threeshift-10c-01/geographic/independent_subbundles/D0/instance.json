@@ -1,0 +1,142 @@
+{
+  "demand_unit": "kg",
+  "distance_unit": "meter",
+  "metadata": {
+    "build_note": "v2026-06-12: V1 independent-depot Pi_d0 subbundle.",
+    "independent_depot_id": "D0",
+    "num_cv": 1,
+    "num_ev": 1,
+    "ownership_condition": "geographic",
+    "ownership_sha256": "6a763f89d6874d377eb90928a7823f670854bc600dfe7849598c1393c267594f",
+    "source_bundle_dir": "/Volumes/移动硬盘（512G）/ReSETP/baselines/e3_ablation/e3_paired_cost_formal_v2_20260713/assets/L-main-threeshift-10c-01/bundle",
+    "source_common_start_sha256": "bd790d5bcdab9fdd8581362d3fb6070089850efcdef8744190bdf5776db188bf"
+  },
+  "nodes": [
+    {
+      "demand": 0.0,
+      "due_time": 86400.0,
+      "node_id": "D0",
+      "node_type": "d",
+      "ready_time": 0.0,
+      "service_time": 0.0,
+      "station_chargers": 22,
+      "x": -37756.96,
+      "y": -21011.9
+    },
+    {
+      "demand": 721.0,
+      "due_time": 22139.0,
+      "node_id": "C001",
+      "node_type": "c",
+      "ready_time": 2171.0,
+      "service_time": 1442.0,
+      "station_chargers": null,
+      "x": -30010.0,
+      "y": 16126.38
+    },
+    {
+      "demand": 814.0,
+      "due_time": 21053.0,
+      "node_id": "C002",
+      "node_type": "c",
+      "ready_time": 644.0,
+      "service_time": 1628.0,
+      "station_chargers": null,
+      "x": -13592.58,
+      "y": -32598.8
+    },
+    {
+      "demand": 167.0,
+      "due_time": 21697.0,
+      "node_id": "C005",
+      "node_type": "c",
+      "ready_time": 2338.0,
+      "service_time": 334.0,
+      "station_chargers": null,
+      "x": -25094.3,
+      "y": -26094.99
+    },
+    {
+      "demand": 763.0,
+      "due_time": 24335.0,
+      "node_id": "C008",
+      "node_type": "c",
+      "ready_time": 3485.0,
+      "service_time": 1526.0,
+      "station_chargers": null,
+      "x": -47205.34,
+      "y": 2810.06
+    },
+    {
+      "demand": 411.0,
+      "due_time": 54424.0,
+      "node_id": "C012",
+      "node_type": "c",
+      "ready_time": 35015.0,
+      "service_time": 822.0,
+      "station_chargers": null,
+      "x": -3501.04,
+      "y": -46604.83
+    },
+    {
+      "demand": 582.0,
+      "due_time": 54346.0,
+      "node_id": "C014",
+      "node_type": "c",
+      "ready_time": 33273.0,
+      "service_time": 1164.0,
+      "station_chargers": null,
+      "x": -98018.37,
+      "y": 15481.4
+    },
+    {
+      "demand": 687.0,
+      "due_time": 53693.0,
+      "node_id": "C017",
+      "node_type": "c",
+      "ready_time": 34037.0,
+      "service_time": 1374.0,
+      "station_chargers": null,
+      "x": -20436.68,
+      "y": -28366.87
+    },
+    {
+      "demand": 210.0,
+      "due_time": 55992.0,
+      "node_id": "C018",
+      "node_type": "c",
+      "ready_time": 35598.0,
+      "service_time": 420.0,
+      "station_chargers": null,
+      "x": -54063.89,
+      "y": 14843.81
+    },
+    {
+      "charge_power_kw": 60.0,
+      "demand": 0.0,
+      "due_time": 86400.0,
+      "node_id": "F1",
+      "node_type": "f",
+      "ready_time": 0.0,
+      "service_time": 0.0,
+      "station_chargers": 1,
+      "x": -37756.96,
+      "y": -21011.9
+    },
+    {
+      "charge_power_kw": 60.0,
+      "demand": 0.0,
+      "due_time": 86400.0,
+      "node_id": "F2",
+      "node_type": "f",
+      "ready_time": 0.0,
+      "service_time": 0.0,
+      "station_chargers": 1,
+      "x": -47205.34,
+      "y": 2810.06
+    }
+  ],
+  "scenario_id": "bundle__independent_D0",
+  "seed": 0,
+  "time_unit": "second"
+}

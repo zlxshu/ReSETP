@@ -1,0 +1,55 @@
+{
+  "contract_id": "E3_STRICT_MULTITRIP_V2",
+  "depot_charge_power_kw": 22.0,
+  "first_trip_charge_day_offset": -1,
+  "recharge_mode": "on_demand",
+  "status": "PASS",
+  "trips": [
+    {
+      "charge_energy_kwh": null,
+      "charge_start_second": null,
+      "departure_second": 10463.327447927682,
+      "end_battery_kwh": null,
+      "home_depot_id": "D1",
+      "physical_vehicle_id": "CV_D1_1",
+      "recharge_end_second": 67767.13314988017,
+      "return_second": 67767.13314988017,
+      "route_id": "CV_D1_1#T1",
+      "start_battery_kwh": null,
+      "trip_index": 1,
+      "vehicle_type": "cv"
+    },
+    {
+      "charge_energy_kwh": 58.78626640316578,
+      "charge_start_second": 9791.224844195232,
+      "departure_second": 4351.462521352344,
+      "end_battery_kwh": 83.59251344394286,
+      "home_depot_id": "D1",
+      "physical_vehicle_id": "EV_D1_1",
+      "recharge_end_second": 19410.795710167815,
+      "return_second": 9791.224844195232,
+      "route_id": "EV_D1_1#T1",
+      "start_battery_kwh": 119.7471257619941,
+      "trip_index": 1,
+      "vehicle_type": "ev"
+    },
+    {
+      "charge_energy_kwh": null,
+      "charge_start_second": null,
+      "departure_second": 19410.795710167815,
+      "end_battery_kwh": 2.842170943040401e-14,
+      "home_depot_id": "D1",
+      "physical_vehicle_id": "EV_D1_1",
+      "recharge_end_second": 42585.404882037015,
+      "return_second": 42585.404882037015,
+      "route_id": "EV_D1_1#T2",
+      "start_battery_kwh": 142.37877984710866,
+      "trip_index": 2,
+      "vehicle_type": "ev"
+    }
+  ],
+  "vehicle_counts": {
+    "cv": 1,
+    "ev": 1
+  }
+}
