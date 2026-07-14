@@ -1,0 +1,280 @@
+{
+  "created_at": "2026-07-14T12:17:40+00:00",
+  "current_status": {
+    "checked_at": "2026-07-14T12:17:40+00:00",
+    "checkpoint_inventory": [],
+    "csv_summaries": [],
+    "files": {
+      "/Volumes/移动硬盘（512G）/ReSETP/baselines/e7_dynamic/e7_v2_20260714/formal_shared_start_400_route_fix/artifact_hashes.json": {
+        "exists": false,
+        "path": "/Volumes/移动硬盘（512G）/ReSETP/baselines/e7_dynamic/e7_v2_20260714/formal_shared_start_400_route_fix/artifact_hashes.json"
+      },
+      "/Volumes/移动硬盘（512G）/ReSETP/baselines/e7_dynamic/e7_v2_20260714/formal_shared_start_400_route_fix/decision.json": {
+        "exists": false,
+        "path": "/Volumes/移动硬盘（512G）/ReSETP/baselines/e7_dynamic/e7_v2_20260714/formal_shared_start_400_route_fix/decision.json"
+      },
+      "/Volumes/移动硬盘（512G）/ReSETP/baselines/e7_dynamic/e7_v2_20260714/formal_shared_start_400_route_fix/raw_runs.csv": {
+        "exists": false,
+        "path": "/Volumes/移动硬盘（512G）/ReSETP/baselines/e7_dynamic/e7_v2_20260714/formal_shared_start_400_route_fix/raw_runs.csv"
+      },
+      "/Volumes/移动硬盘（512G）/ReSETP/baselines/e7_dynamic/e7_v2_20260714/monitor_runs/formal_shared_start_400_route_fix/experiment.stdout.log": {
+        "age_seconds": 4371.442395925522,
+        "exists": true,
+        "mtime": 1784027089.08,
+        "path": "/Volumes/移动硬盘（512G）/ReSETP/baselines/e7_dynamic/e7_v2_20260714/monitor_runs/formal_shared_start_400_route_fix/experiment.stdout.log",
+        "size": 0
+      }
+    },
+    "findings": [
+      {
+        "code": "PROGRESS_STALLED",
+        "details": {},
+        "message": "no progress update for 3612s",
+        "severity": "critical"
+      }
+    ],
+    "log_paths": [
+      "/Volumes/移动硬盘（512G）/ReSETP/baselines/e7_dynamic/e7_v2_20260714/monitor_runs/formal_shared_start_400_route_fix/experiment.stdout.log"
+    ],
+    "name": "e7-formal-shared-start-400-route-fix-adaptive",
+    "pause_action": "SIGSTOP",
+    "paused": true,
+    "process": {
+      "alive": true,
+      "cpu_percent": 300.0,
+      "members": [
+        {
+          "command": "python -m baselines.e7_dynamic.e7_formal_dynamic_value_20260714 --output baselines/e7_dynamic/e7_v2_20260714/formal_shared_start_400_route_fix --streams 1 2 3 4 5 --evaluations 400 --all-stages --workers 6",
+          "cpu_percent": 0.0,
+          "elapsed": "01:12:51",
+          "pgid": 27907,
+          "pid": 27907,
+          "ppid": 1,
+          "rss_kb": 1504,
+          "state": "Ss"
+        },
+        {
+          "command": "/opt/anaconda3/bin/python -c from multiprocessing.resource_tracker import main;main(8)",
+          "cpu_percent": 0.0,
+          "elapsed": "01:12:51",
+          "pgid": 27907,
+          "pid": 27987,
+          "ppid": 27907,
+          "rss_kb": 432,
+          "state": "S"
+        },
+        {
+          "command": "/opt/anaconda3/bin/python -c from multiprocessing.spawn import spawn_main; spawn_main(tracker_fd=9, pipe_handle=17) --multiprocessing-fork",
+          "cpu_percent": 0.0,
+          "elapsed": "01:12:51",
+          "pgid": 27907,
+          "pid": 27988,
+          "ppid": 27907,
+          "rss_kb": 3120,
+          "state": "S"
+        },
+        {
+          "command": "/opt/anaconda3/bin/python -c from multiprocessing.spawn import spawn_main; spawn_main(tracker_fd=9, pipe_handle=19) --multiprocessing-fork",
+          "cpu_percent": 0.0,
+          "elapsed": "01:12:51",
+          "pgid": 27907,
+          "pid": 27989,
+          "ppid": 27907,
+          "rss_kb": 416,
+          "state": "S"
+        },
+        {
+          "command": "/opt/anaconda3/bin/python -c from multiprocessing.spawn import spawn_main; spawn_main(tracker_fd=9, pipe_handle=21) --multiprocessing-fork",
+          "cpu_percent": 100.0,
+          "elapsed": "01:12:51",
+          "pgid": 27907,
+          "pid": 27990,
+          "ppid": 27907,
+          "rss_kb": 9696,
+          "state": "R"
+        },
+        {
+          "command": "/opt/anaconda3/bin/python -c from multiprocessing.spawn import spawn_main; spawn_main(tracker_fd=9, pipe_handle=23) --multiprocessing-fork",
+          "cpu_percent": 100.0,
+          "elapsed": "01:12:51",
+          "pgid": 27907,
+          "pid": 27991,
+          "ppid": 27907,
+          "rss_kb": 18448,
+          "state": "R"
+        },
+        {
+          "command": "/opt/anaconda3/bin/python -c from multiprocessing.spawn import spawn_main; spawn_main(tracker_fd=9, pipe_handle=25) --multiprocessing-fork",
+          "cpu_percent": 0.0,
+          "elapsed": "01:12:51",
+          "pgid": 27907,
+          "pid": 27992,
+          "ppid": 27907,
+          "rss_kb": 416,
+          "state": "S"
+        },
+        {
+          "command": "/opt/anaconda3/bin/python -c from multiprocessing.spawn import spawn_main; spawn_main(tracker_fd=9, pipe_handle=27) --multiprocessing-fork",
+          "cpu_percent": 100.0,
+          "elapsed": "01:12:51",
+          "pgid": 27907,
+          "pid": 27993,
+          "ppid": 27907,
+          "rss_kb": 9968,
+          "state": "R"
+        }
+      ],
+      "pgid": 27907,
+      "root_pid": 27907,
+      "rss_mb": 42.96875
+    },
+    "protected_files": {
+      "/Volumes/移动硬盘（512G）/ReSETP/baselines/e6_fairness/e6_participation_formal_20260714/certificates/L-main-threeshift-100c-01__geographic__seed1__independent.json": {
+        "age_seconds": 57880.26619195938,
+        "exists": true,
+        "kind": "core_data",
+        "mtime": 1783973580.27,
+        "path": "/Volumes/移动硬盘（512G）/ReSETP/baselines/e6_fairness/e6_participation_formal_20260714/certificates/L-main-threeshift-100c-01__geographic__seed1__independent.json",
+        "sha256": "97e019daafc6e0f8e6d7642db7fce674a3dd15a2627ac6f08332f2bef80d01be",
+        "size": 15624
+      },
+      "/Volumes/移动硬盘（512G）/ReSETP/baselines/e6_fairness/e6_participation_formal_20260714/solutions/L-main-threeshift-100c-01__geographic__seed1__independent.json": {
+        "age_seconds": 57880.27593708038,
+        "exists": true,
+        "kind": "core_data",
+        "mtime": 1783973580.26,
+        "path": "/Volumes/移动硬盘（512G）/ReSETP/baselines/e6_fairness/e6_participation_formal_20260714/solutions/L-main-threeshift-100c-01__geographic__seed1__independent.json",
+        "sha256": "47884212a50d96e09b335f2ceb4f72a7314f52c9852c95f8cc0a5eb2a5e505a6",
+        "size": 14016
+      },
+      "/Volumes/移动硬盘（512G）/ReSETP/baselines/e7_dynamic/e7_formal_dynamic_value_20260714.py": {
+        "age_seconds": 6028.682445049286,
+        "exists": true,
+        "kind": "experiment_contract",
+        "mtime": 1784025431.84,
+        "path": "/Volumes/移动硬盘（512G）/ReSETP/baselines/e7_dynamic/e7_formal_dynamic_value_20260714.py",
+        "sha256": "f8a86d3a114e7432090807c75e64b61d6e54eceee629f6ac0dc866e80054e72c",
+        "size": 67695
+      },
+      "/Volumes/移动硬盘（512G）/ReSETP/baselines/e7_dynamic/e7_v2_20260714/event_streams/stream_seed1.events.json": {
+        "age_seconds": 17537.566461086273,
+        "exists": true,
+        "kind": "core_data",
+        "mtime": 1784013922.97,
+        "path": "/Volumes/移动硬盘（512G）/ReSETP/baselines/e7_dynamic/e7_v2_20260714/event_streams/stream_seed1.events.json",
+        "sha256": "ae08f81e5b8efd93b6c2d95abc405623ae355926c4c23fd31681c0fa8824d6a9",
+        "size": 39159
+      },
+      "/Volumes/移动硬盘（512G）/ReSETP/baselines/e7_dynamic/e7_v2_20260714/event_streams/stream_seed2.events.json": {
+        "age_seconds": 17537.536880016327,
+        "exists": true,
+        "kind": "core_data",
+        "mtime": 1784013923.0,
+        "path": "/Volumes/移动硬盘（512G）/ReSETP/baselines/e7_dynamic/e7_v2_20260714/event_streams/stream_seed2.events.json",
+        "sha256": "53c96b92df0f7a6d06c8b8a0450b6e6fdc5e692b57a5a852e929b675d62b8c67",
+        "size": 39152
+      },
+      "/Volumes/移动硬盘（512G）/ReSETP/baselines/e7_dynamic/e7_v2_20260714/event_streams/stream_seed3.events.json": {
+        "age_seconds": 17537.507291078568,
+        "exists": true,
+        "kind": "core_data",
+        "mtime": 1784013923.03,
+        "path": "/Volumes/移动硬盘（512G）/ReSETP/baselines/e7_dynamic/e7_v2_20260714/event_streams/stream_seed3.events.json",
+        "sha256": "4b12a0ecbe422562a58e6df0bf5111022035e107e2682d24103118a4dace9980",
+        "size": 39145
+      },
+      "/Volumes/移动硬盘（512G）/ReSETP/baselines/e7_dynamic/e7_v2_20260714/event_streams/stream_seed4.events.json": {
+        "age_seconds": 17537.487701177597,
+        "exists": true,
+        "kind": "core_data",
+        "mtime": 1784013923.05,
+        "path": "/Volumes/移动硬盘（512G）/ReSETP/baselines/e7_dynamic/e7_v2_20260714/event_streams/stream_seed4.events.json",
+        "sha256": "b1ea854fe37d07411de97bea8e32a8c16d0828eae33e2d9a44a2cfafdf3c0350",
+        "size": 39158
+      },
+      "/Volumes/移动硬盘（512G）/ReSETP/baselines/e7_dynamic/e7_v2_20260714/event_streams/stream_seed5.events.json": {
+        "age_seconds": 17537.46810889244,
+        "exists": true,
+        "kind": "core_data",
+        "mtime": 1784013923.07,
+        "path": "/Volumes/移动硬盘（512G）/ReSETP/baselines/e7_dynamic/e7_v2_20260714/event_streams/stream_seed5.events.json",
+        "sha256": "cfb5da999e4c52edc18282174d0479643d5a56900c7215681fa8bcd736922303",
+        "size": 39144
+      },
+      "/Volumes/移动硬盘（512G）/ReSETP/solver/src/setp_solver/check.py": {
+        "age_seconds": 27315.258887052536,
+        "exists": true,
+        "kind": "evaluator",
+        "mtime": 1784004145.28,
+        "path": "/Volumes/移动硬盘（512G）/ReSETP/solver/src/setp_solver/check.py",
+        "sha256": "53f5cc27d3ac72bdd2bbec113eb8af11ad18a82490502f800941140495e8e142",
+        "size": 31710
+      },
+      "/Volumes/移动硬盘（512G）/ReSETP/solver/src/setp_solver/cost.py": {
+        "age_seconds": 98830.47854113579,
+        "exists": true,
+        "kind": "cost_function",
+        "mtime": 1783932630.06,
+        "path": "/Volumes/移动硬盘（512G）/ReSETP/solver/src/setp_solver/cost.py",
+        "sha256": "d8bfee1844c8f8e89bac1233a3cd862d7ac7d088039f97751b8274756c41dee4",
+        "size": 24115
+      },
+      "/Volumes/移动硬盘（512G）/ReSETP/solver/src/setp_solver/search/dynamic_multitrip_schedule.py": {
+        "age_seconds": 27096.945357084274,
+        "exists": true,
+        "kind": "dynamic_scheduler",
+        "mtime": 1784004363.59,
+        "path": "/Volumes/移动硬盘（512G）/ReSETP/solver/src/setp_solver/search/dynamic_multitrip_schedule.py",
+        "sha256": "a8fdd73b9ba527059b0b869093da2b8e98ced7b9f554641bc33970239c772b13",
+        "size": 46233
+      },
+      "/Volumes/移动硬盘（512G）/ReSETP/solver/src/setp_solver/search/evaluation.py": {
+        "age_seconds": 27315.23925089836,
+        "exists": true,
+        "kind": "evaluator",
+        "mtime": 1784004145.3,
+        "path": "/Volumes/移动硬盘（512G）/ReSETP/solver/src/setp_solver/search/evaluation.py",
+        "sha256": "c7215263c39d1d5a1429b41ca8ac40d950dbdf2bdc288337e56fbe9733406fc3",
+        "size": 7609
+      }
+    },
+    "runtime_seconds": 3612.295700073242,
+    "scene_path": "/Volumes/移动硬盘（512G）/ReSETP/baselines/e7_dynamic/e7_v2_20260714/monitor_runs/formal_shared_start_400_route_fix_adaptive/scenes/20260714-201740-anomaly",
+    "schema_version": 1,
+    "state": "ANOMALY",
+    "system": {
+      "free_memory_mb": 193.75,
+      "load_average_15m": 5.88720703125,
+      "load_average_1m": 7.4443359375,
+      "load_average_5m": 6.09375,
+      "logical_cpus": 8,
+      "memory_pressure_free_percent": 38.0,
+      "swapouts": 5644674
+    }
+  },
+  "experiment": {
+    "allowed_ai_actions": [
+      "continue",
+      "pause_for_read_only_diagnosis",
+      "keep_paused_and_preserve_scene",
+      "recommend_safe_stop",
+      "recommend_checkpoint_restart",
+      "escalate_research_contract_change_to_user"
+    ],
+    "expected_contract": {},
+    "forbidden_ai_actions": [
+      "change_model_or_research_question",
+      "change_evaluator_or_cost_function",
+      "change_experiment_contract_or_core_data",
+      "change_primary_config_or_paper_conclusion",
+      "resume_paused_job_without_explicit_human_command"
+    ],
+    "name": "e7-formal-shared-start-400-route-fix-adaptive",
+    "objective": "在不重启正式实验的前提下，监控五条冻结订单流的两种经营方式比较。"
+  },
+  "minimal_log_tails": {
+    "/Volumes/移动硬盘（512G）/ReSETP/baselines/e7_dynamic/e7_v2_20260714/monitor_runs/formal_shared_start_400_route_fix/experiment.stdout.log": []
+  },
+  "reason": "ANOMALY",
+  "schema_version": 1
+}

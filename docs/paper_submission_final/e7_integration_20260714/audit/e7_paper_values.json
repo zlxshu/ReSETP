@@ -1,0 +1,64 @@
+{
+  "emissions": {
+    "all_pairs_had_different_realised_workload": true,
+    "higher_fuel_emission_intensity_stream_count": 5,
+    "higher_total_emission_intensity_stream_count": 5,
+    "interpretation": "descriptive realised emissions per served kilogram; not a same-workload causal effect and not evidence that E7 used online forecast-aware charging",
+    "lower_electricity_intensity_stream_count": 5,
+    "maximum_absolute_emissions_closure_error": 6.252776074688882e-13,
+    "maximum_total_emission_intensity_change_percent": 27.589578734305114,
+    "mean_electricity_intensity_change_percent": -6.722812921147968,
+    "mean_fuel_emission_intensity_change_percent": 18.127609356040427,
+    "mean_total_emission_intensity_change_percent": 15.293605750784783,
+    "median_total_emission_intensity_change_percent": 17.297843380485165,
+    "minimum_total_emission_intensity_change_percent": 3.237962753653757,
+    "status": "PASS",
+    "stream_count": 5,
+    "verdict": "E7_DYNAMIC_EMISSION_INTENSITY_AUDIT_PASS"
+  },
+  "evidence": {
+    "emissions": {
+      "artifact_count": 6,
+      "manifest_sha256": "3200fd055c94d59b6e991dcb60c4c39e869c35c1d461db31c0899a5917ada5e2",
+      "path": "baselines/e7_dynamic/e7_dynamic_emission_intensity_formal_20260714"
+    },
+    "participation": {
+      "artifact_count": 7,
+      "manifest_sha256": "59cec82100e2248d9bc20a0b5c40eeb9459c5a2abc2407fd4cd14d6e858de23c",
+      "path": "baselines/e7_dynamic/e7_ex_post_participation_formal_20260714"
+    },
+    "value": {
+      "artifact_count": 16,
+      "manifest_sha256": "1ecd1c2759cd992fa8b74420a3d5983c3f1cc0c5076c8375eeeb7e418c88728e",
+      "path": "baselines/e7_dynamic/e7_full_day_value_audit_formal_20260714"
+    }
+  },
+  "participation": {
+    "all_independent_profits_positive": true,
+    "both_depots_no_worse_stream_count": 2,
+    "commercial_assumption": "customer revenue follows the depot that actually served the customer",
+    "depot_comparison_count": 10,
+    "interpretation": "ex-post realised participation check; participation was not enforced during the E7 search",
+    "maximum_absolute_cost_closure_error": 1.8189894035458565e-12,
+    "minimum_profit_ratio": 0.8554301524715249,
+    "minimum_profit_ratio_depot": "D0",
+    "minimum_profit_ratio_stream": 1,
+    "participation_failed_stream_count": 3,
+    "status": "PASS",
+    "stream_count": 5,
+    "verdict": "E7_EX_POST_PARTICIPATION_AUDIT_PASS"
+  },
+  "value": {
+    "all_pairs_had_different_realized_workload": true,
+    "maximum_net_benefit_change_percent": "2.627251541499377450821620507",
+    "mean_net_benefit_change_gbp": "118.52699937516447257792",
+    "mean_net_benefit_change_percent": "1.117775993918489192814948134",
+    "median_net_benefit_change_gbp": "58.4062849047458974328",
+    "median_net_benefit_change_percent": "0.5596755454228787589192106475",
+    "minimum_net_benefit_change_percent": "-0.4065938240221788946458884595",
+    "negative_stream_count": 1,
+    "paired_stream_count": 5,
+    "positive_stream_count": 4,
+    "zero_stream_count": 0
+  }
+}

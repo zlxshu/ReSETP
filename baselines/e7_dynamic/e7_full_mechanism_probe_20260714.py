@@ -45,13 +45,13 @@ from setp_solver.search.multitrip_schedule import (
 from setp_solver.solution import ChargingAction, Route, Solution
 
 
-OUT = ROOT / "baselines/e7_dynamic/e7_full_mechanism_probe_v2_20260714"
-CONTRACT_ID = "E7_FULL_MECHANISM_PROBE_V2_IMMEDIATE_CLOCK_CHECK"
+OUT = ROOT / "baselines/e7_dynamic/e7_full_mechanism_gate_v3_20260714"
+CONTRACT_ID = "E7_FULL_MECHANISM_GATE_V3_EQUAL_COMPUTE_CARBON_SETTLEMENT"
 OPERATING_DAY = date(2025, 11, 13)
 STREAM_SEED = 1
 MAX_STAGES = 2
 DEFAULT_EVALUATIONS = 8
-ARMS = ("full", "no_cooperation", "carbon_blind")
+ARMS = ("full", "no_cooperation", "carbon_blind", "no_participation")
 TOL = 1e-6
 SOURCE_FILES = (
     Path(__file__).resolve(),
@@ -121,6 +121,73 @@ def energy_hash(solution: Solution) -> str:
     )
 
 
+def _merge_execution_plan(
+    committed_routes: Mapping[str, Route],
+    committed_actions: Mapping[tuple[Any, ...], ChargingAction],
+    future: Solution,
+) -> Solution:
+    routes = dict(committed_routes)
+    for route in future.routes:
+        previous = routes.get(route.vehicle_id)
+        if previous is not None and previous != route:
+            raise RuntimeError(f"executed route {route.vehicle_id} was rewritten")
+        routes[route.vehicle_id] = route
+    actions = dict(committed_actions)
+    for action in future.charging_actions:
+        key = base.action_key(action)
+        previous = actions.get(key)
+        if previous is not None and previous != action:
+            raise RuntimeError(f"executed charging action {key} was rewritten")
+        actions[key] = action
+    route_ids = set(routes)
+    detached = [action.vehicle_id for action in actions.values() if action.vehicle_id not in route_ids]
+    if detached:
+        raise RuntimeError(f"charging ledger contains detached routes: {sorted(detached)}")
+    action_route_ids = [action.vehicle_id for action in actions.values()]
+    if len(action_route_ids) != len(set(action_route_ids)):
+        raise RuntimeError("charging ledger contains more than one action for one trip")
+    return Solution(
+        routes=[routes[key] for key in sorted(routes)],
+        charging_actions=[actions[key] for key in sorted(actions, key=str)],
+    )
+
+
+def _profit_closure(
+    solution: Solution,
+    instance: Any,
+    sources: Mapping[str, Any],
+    owners: Mapping[str, str],
+) -> dict[str, Any]:
+    rows = calculate_depot_profits(
+        solution,
+        instance,
+        sources["bundle"].carbon_profile,
+        sources["prices"],
+        customer_home_depot=dict(owners),
+        carbon_quota_kg=0.0,
+    )
+    parts = base.evaluate_parts(
+        solution.routes,
+        solution.charging_actions,
+        instance,
+        sources,
+    )
+    total_revenue = sum(float(row.revenue) for row in rows.values())
+    total_profit = sum(float(row.profit) for row in rows.values())
+    expected_profit = total_revenue - float(parts["total_cost"])
+    if abs(total_profit - expected_profit) > 1e-6:
+        raise RuntimeError(
+            "depot profit ledger did not close with system revenue and cost"
+        )
+    return {
+        "total_revenue": total_revenue,
+        "total_cost": float(parts["total_cost"]),
+        "total_profit": total_profit,
+        "depot_profit": {key: float(row.profit) for key, row in rows.items()},
+        "direct_emissions_kg": float(parts["E_cv_direct"]),
+    }
+
+
 def _profiles() -> dict[int, list[dict[str, Any]]]:
     return e4.profiles_for_operating_day(e4.load_national_rows(), OPERATING_DAY)
 
@@ -137,6 +204,55 @@ def _sources_for_day() -> tuple[dict[str, Any], dict[int, list[dict[str, Any]]]]
     return sources, profiles
 
 
+def _charging_emissions_kg(
+    solution: Solution,
+    instance: Any,
+    profiles: Mapping[int, list[dict[str, Any]]],
+    field: str,
+) -> float:
+    return sum(
+        e4.action_emissions_kg(action, instance, dict(profiles), field)
+        for action in solution.charging_actions
+    )
+
+
+def _timing_comparison(
+    immediate: Solution,
+    aware: Solution,
+    instance: Any,
+    profiles: Mapping[int, list[dict[str, Any]]],
+) -> dict[str, float]:
+    if route_hash(immediate) != route_hash(aware):
+        raise RuntimeError("charging comparison changed routes")
+    if energy_hash(immediate) != energy_hash(aware):
+        raise RuntimeError("charging comparison changed charging energy")
+    values = {
+        "immediate_predicted_charging_emissions_kg": _charging_emissions_kg(
+            immediate, instance, profiles, "forecast_gco2_per_kwh"
+        ),
+        "aware_predicted_charging_emissions_kg": _charging_emissions_kg(
+            aware, instance, profiles, "forecast_gco2_per_kwh"
+        ),
+        "immediate_actual_charging_emissions_kg": _charging_emissions_kg(
+            immediate, instance, profiles, "actual_gco2_per_kwh"
+        ),
+        "aware_actual_charging_emissions_kg": _charging_emissions_kg(
+            aware, instance, profiles, "actual_gco2_per_kwh"
+        ),
+    }
+    values["predicted_charging_saving_kg"] = (
+        values["immediate_predicted_charging_emissions_kg"]
+        - values["aware_predicted_charging_emissions_kg"]
+    )
+    values["actual_charging_saving_kg"] = (
+        values["immediate_actual_charging_emissions_kg"]
+        - values["aware_actual_charging_emissions_kg"]
+    )
+    if values["predicted_charging_saving_kg"] < -TOL:
+        raise RuntimeError("forecast-timed charging increased predicted emissions")
+    return values
+
+
 def _initial_plan(
     arm: str,
     sources: Mapping[str, Any],
@@ -145,15 +261,31 @@ def _initial_plan(
     strategy = "naive" if arm == "carbon_blind" else "aware"
     original_solution = sources["solution"]
     original_certificate = sources["certificate"]
-    timed = reschedule_between_trip_charging(
+    immediate = reschedule_between_trip_charging(
         original_solution,
         original_certificate,
         sources["bundle"].instance,
         profiles[0],
-        strategy=strategy,
+        strategy="naive",
         carbon_profiles_by_day_offset=profiles,
         intensity_field="forecast_gco2_per_kwh",
     )
+    aware = reschedule_between_trip_charging(
+        original_solution,
+        original_certificate,
+        sources["bundle"].instance,
+        profiles[0],
+        strategy="aware",
+        carbon_profiles_by_day_offset=profiles,
+        intensity_field="forecast_gco2_per_kwh",
+    )
+    timing_comparison = _timing_comparison(
+        immediate,
+        aware,
+        sources["bundle"].instance,
+        profiles,
+    )
+    timed = immediate if strategy == "naive" else aware
     synced_solution, synced_certificate = prepare_multitrip_solution(
         timed,
         sources["bundle"].instance,
@@ -181,6 +313,7 @@ def _initial_plan(
         "moved_action_count": moved,
         "route_sha256": route_hash(synced_solution),
         "energy_sha256": energy_hash(synced_solution),
+        **timing_comparison,
     }
 
 
@@ -272,6 +405,59 @@ def _same_state_no_cooperation(
     return result
 
 
+def _dynamic_timing_pair(
+    solution: Solution,
+    certificate: Any,
+    construction: Any,
+    sources: Mapping[str, Any],
+    profiles: Mapping[int, list[dict[str, Any]]],
+    cut: Any,
+    *,
+    trigger: float,
+) -> dict[str, Any]:
+    immediate_solution, immediate_certificate, immediate_stats = (
+        reschedule_dynamic_charging(
+            solution,
+            certificate,
+            construction.effective_instance,
+            profiles[0],
+            sources["prices"],
+            asset_states=cut.asset_states,
+            stage_start_second=trigger,
+            locked_charging_actions=cut.locked_charging_actions,
+            strategy="naive",
+            intensity_field="forecast_gco2_per_kwh",
+        )
+    )
+    aware_solution, aware_certificate, aware_stats = reschedule_dynamic_charging(
+        solution,
+        certificate,
+        construction.effective_instance,
+        profiles[0],
+        sources["prices"],
+        asset_states=cut.asset_states,
+        stage_start_second=trigger,
+        locked_charging_actions=cut.locked_charging_actions,
+        strategy="aware",
+        intensity_field="forecast_gco2_per_kwh",
+    )
+    comparison = _timing_comparison(
+        immediate_solution,
+        aware_solution,
+        construction.effective_instance,
+        {0: profiles[0]},
+    )
+    return {
+        "immediate_solution": immediate_solution,
+        "immediate_certificate": immediate_certificate,
+        "immediate_stats": immediate_stats,
+        "aware_solution": aware_solution,
+        "aware_certificate": aware_certificate,
+        "aware_stats": aware_stats,
+        "comparison": comparison,
+    }
+
+
 def _controlled_stage(
     arm: str,
     construction: Any,
@@ -280,7 +466,6 @@ def _controlled_stage(
     cut: Any,
     owners: dict[str, str],
     committed_customers: set[str],
-    committed_profit: Mapping[str, float],
     *,
     trigger: float,
     seed: int,
@@ -293,7 +478,7 @@ def _controlled_stage(
         owners,
         committed_customers,
         trigger=trigger,
-        seed=seed,
+        seed=seed * 10 + 1,
         evaluations=evaluations,
     )
     baseline_future_profit = _profit_values(
@@ -302,124 +487,171 @@ def _controlled_stage(
         sources,
         owners,
     )
-    selected = baseline
-    if arm != "no_cooperation":
-        cooperative_start = replace(
-            construction,
-            solution=baseline["search_structure"],
+    if any(value <= TOL for value in baseline_future_profit.values()):
+        raise RuntimeError(
+            "same-state no-cooperation baseline has non-positive depot profit"
+        )
+    second_start = replace(construction, solution=baseline["search_structure"])
+    second_start_sha256 = canonical_sha256(
+        base.solution_to_dict(baseline["search_structure"])
+    )
+
+    def no_cross_gate(solution: Solution, _certificate: Any, _cost: float) -> bool:
+        return not base._cross_site_ids_for_routes(
+            solution.routes,
+            construction.effective_instance,
+            owners,
         )
 
-        def participation_gate(
-            solution: Solution,
-            _certificate: Any,
-            _cost: float,
-        ) -> bool:
-            candidate = _profit_values(
-                solution,
-                construction.effective_instance,
-                sources,
-                owners,
-            )
-            return all(
-                candidate.get(depot, -math.inf) >= value - TOL
-                for depot, value in baseline_future_profit.items()
-            )
+    def participation_gate(
+        solution: Solution,
+        _certificate: Any,
+        _cost: float,
+    ) -> bool:
+        candidate = _profit_values(
+            solution,
+            construction.effective_instance,
+            sources,
+            owners,
+        )
+        return all(
+            candidate.get(depot, -math.inf) >= value - TOL
+            for depot, value in baseline_future_profit.items()
+        )
 
+    if arm == "no_cooperation":
         selected = base.search_stage(
-            cooperative_start,
+            second_start,
             sources,
             cut,
             owners,
             committed_customers,
             trigger=trigger,
-            seed=seed,
+            seed=seed * 10 + 2,
+            evaluations=evaluations,
+            allow_cross_depot=False,
+            candidate_best_gate=no_cross_gate,
+        )
+    else:
+        selected = base.search_stage(
+            second_start,
+            sources,
+            cut,
+            owners,
+            committed_customers,
+            trigger=trigger,
+            seed=seed * 10 + 2,
             evaluations=evaluations,
             allow_cross_depot=True,
-            candidate_best_gate=participation_gate,
+            candidate_best_gate=(
+                None if arm == "no_participation" else participation_gate
+            ),
         )
-        selected_profit = _profit_values(
-            selected["solution"],
-            construction.effective_instance,
-            sources,
-            owners,
-        )
-        if selected["future_cost"] > baseline["future_cost"] + TOL:
-            raise RuntimeError("cooperation lost the same-state cost fallback")
-        if any(
-            selected_profit.get(depot, -math.inf) < value - TOL
-            for depot, value in baseline_future_profit.items()
-        ):
-            raise RuntimeError("cooperation violated the same-state participation floor")
+    if selected["future_cost"] > baseline["future_cost"] + TOL:
+        raise RuntimeError("second search lost the same-state cost fallback")
 
-    before_route = route_hash(selected["solution"])
-    before_energy = energy_hash(selected["solution"])
     strategy = "naive" if arm == "carbon_blind" else "aware"
-    timed_solution, timed_certificate, timing = reschedule_dynamic_charging(
+    baseline_timing = _dynamic_timing_pair(
+        baseline["solution"],
+        baseline["certificate"],
+        construction,
+        sources,
+        profiles,
+        cut,
+        trigger=trigger,
+    )
+    selected_timing = _dynamic_timing_pair(
         selected["solution"],
         selected["certificate"],
-        construction.effective_instance,
-        profiles[0],
-        sources["prices"],
-        asset_states=cut.asset_states,
-        stage_start_second=trigger,
-        locked_charging_actions=cut.locked_charging_actions,
-        strategy=strategy,
-        intensity_field="forecast_gco2_per_kwh",
+        construction,
+        sources,
+        profiles,
+        cut,
+        trigger=trigger,
     )
-    if route_hash(timed_solution) != before_route or energy_hash(timed_solution) != before_energy:
-        raise RuntimeError("dynamic carbon timing changed routes or energy")
+    timed_solution = selected_timing[f"{strategy}_solution"]
+    timed_certificate = selected_timing[f"{strategy}_certificate"]
+    timing = selected_timing[f"{strategy}_stats"]
+    baseline_timed_solution = baseline_timing[f"{strategy}_solution"]
+    baseline_cost = float(
+        base.evaluate_parts(
+            baseline_timed_solution.routes,
+            baseline_timed_solution.charging_actions,
+            construction.effective_instance,
+            sources,
+        )["total_cost"]
+    )
+    selected_cost = float(
+        base.evaluate_parts(
+            timed_solution.routes,
+            timed_solution.charging_actions,
+            construction.effective_instance,
+            sources,
+        )["total_cost"]
+    )
+    baseline_timed_profit = _profit_values(
+        baseline_timed_solution,
+        construction.effective_instance,
+        sources,
+        owners,
+    )
     selected_future_profit = _profit_values(
         timed_solution,
         construction.effective_instance,
         sources,
         owners,
     )
-    full_baseline_profit = {
-        depot: float(committed_profit.get(depot, 0.0)) + value
-        for depot, value in baseline_future_profit.items()
-    }
-    full_selected_profit = {
-        depot: float(committed_profit.get(depot, 0.0))
-        + selected_future_profit.get(depot, 0.0)
-        for depot in baseline_future_profit
+    margins = {
+        depot: selected_future_profit.get(depot, -math.inf) - value
+        for depot, value in baseline_timed_profit.items()
     }
     ratios = {
-        depot: (
-            full_selected_profit[depot] / full_baseline_profit[depot]
-            if full_baseline_profit[depot] > TOL
-            else math.nan
-        )
-        for depot in full_baseline_profit
+        depot: selected_future_profit[depot] / value
+        for depot, value in baseline_timed_profit.items()
     }
+    if arm in {"full", "carbon_blind"} and any(
+        value < -TOL for value in margins.values()
+    ):
+        raise RuntimeError("released solution violated the same-state participation floor")
     return {
         **selected,
         "solution": timed_solution,
         "certificate": timed_certificate,
+        "future_cost": selected_cost,
         "timing": timing,
+        "timing_comparison": selected_timing["comparison"],
         "charging_strategy": strategy,
-        "same_state_baseline_cost": float(baseline["future_cost"]),
-        "same_state_baseline_profit": baseline_future_profit,
+        "same_state_baseline_cost": baseline_cost,
+        "same_state_baseline_profit": baseline_timed_profit,
         "selected_future_profit": selected_future_profit,
-        "full_baseline_profit": full_baseline_profit,
-        "full_selected_profit": full_selected_profit,
+        "profit_margins": margins,
         "profit_ratios": ratios,
-        "minimum_profit_ratio": min(
-            (value for value in ratios.values() if math.isfinite(value)),
-            default=math.nan,
-        ),
+        "minimum_profit_margin": min(margins.values()),
+        "minimum_profit_ratio": min(ratios.values()),
         "same_state_cost_saving_pct": 100.0
-        * (float(baseline["future_cost"]) - float(selected["future_cost"]))
-        / max(float(baseline["future_cost"]), TOL),
+        * (baseline_cost - selected_cost)
+        / max(baseline_cost, TOL),
         "shadow_evaluations": int(baseline["evaluations"]),
+        "shadow_search_seed": int(baseline["search_seed"]),
+        "main_search_seed": int(selected["search_seed"]),
+        "second_start_sha256": second_start_sha256,
+        "baseline_output_sha256": canonical_sha256(
+            base.solution_to_dict(baseline["search_structure"])
+        ),
     }
 
 
-def run_probe_arm(arm: str, *, evaluations: int) -> dict[str, Any]:
+def run_probe_arm(
+    arm: str,
+    *,
+    evaluations: int,
+    max_stages: int,
+) -> dict[str, Any]:
     if arm not in ARMS:
         raise ValueError(f"unknown arm {arm}")
     sources, profiles = _sources_for_day()
     events, owners, event_path, owner_path = base.load_stream(STREAM_SEED)
-    batches = base._validated_trigger_batches(STREAM_SEED, events)[:MAX_STAGES]
+    batches = base._validated_trigger_batches(STREAM_SEED, events)[:max_stages]
     current_solution, current_certificate, initial_timing = _initial_plan(
         arm, sources, profiles
     )
@@ -428,14 +660,10 @@ def run_probe_arm(arm: str, *, evaluations: int) -> dict[str, Any]:
     inherited_locked_actions: Sequence[ChargingAction] = ()
     previous_stage_start = None
     committed_customers: set[str] = set()
-    booked_route_ids: set[str] = set()
-    booked_action_keys: set[tuple[Any, ...]] = set()
-    committed_profit = {
-        node.node_id: 0.0
-        for node in current_instance.nodes
-        if node.node_type.lower() == "d"
-    }
+    committed_routes: dict[str, Route] = {}
+    committed_actions: dict[tuple[Any, ...], ChargingAction] = {}
     rows: list[dict[str, Any]] = []
+    final_running: dict[str, Any] | None = None
 
     for stage_index, batch in enumerate(batches, start=1):
         started = time.perf_counter()
@@ -462,26 +690,13 @@ def run_probe_arm(arm: str, *, evaluations: int) -> dict[str, Any]:
         locked_ids = [*cut.completed_route_ids, *cut.in_progress_route_ids]
         locked_routes = base.gate._cut_routes(current_solution, locked_ids)
         new_routes = [
-            route for route in locked_routes if route.vehicle_id not in booked_route_ids
+            route for route in locked_routes if route.vehicle_id not in committed_routes
         ]
         for route in new_routes:
             committed_customers.update(base.p2.route_customers(route, current_instance))
-        booked_route_ids.update(route.vehicle_id for route in new_routes)
-        new_actions = [
-            action
-            for action in cut.locked_charging_actions
-            if base.action_key(action) not in booked_action_keys
-        ]
-        booked_action_keys.update(base.action_key(action) for action in new_actions)
-        if new_routes or new_actions:
-            committed_profit = _add_committed_profit(
-                committed_profit,
-                new_routes,
-                new_actions,
-                current_instance,
-                sources,
-                owners,
-            )
+            committed_routes[route.vehicle_id] = route
+        for action in cut.locked_charging_actions:
+            committed_actions.setdefault(base.action_key(action), action)
 
         construction = base.gate.build_open_stage(
             base.gate._cut_routes(current_solution, cut.editable_route_ids),
@@ -503,7 +718,6 @@ def run_probe_arm(arm: str, *, evaluations: int) -> dict[str, Any]:
             cut,
             owners,
             committed_customers,
-            committed_profit,
             trigger=trigger,
             seed=STREAM_SEED * 1000 + stage_index,
             evaluations=evaluations,
@@ -526,6 +740,33 @@ def run_probe_arm(arm: str, *, evaluations: int) -> dict[str, Any]:
             raise RuntimeError("customer accounting did not close")
         if committed_customers & set(future_customers):
             raise RuntimeError("a committed customer was planned twice")
+        running_solution = _merge_execution_plan(
+            committed_routes,
+            committed_actions,
+            result["solution"],
+        )
+        final_running = _profit_closure(
+            running_solution,
+            construction.effective_instance,
+            sources,
+            owners,
+        )
+        final_running["predicted_charging_emissions_kg"] = _charging_emissions_kg(
+            running_solution,
+            construction.effective_instance,
+            profiles,
+            "forecast_gco2_per_kwh",
+        )
+        final_running["actual_charging_emissions_kg"] = _charging_emissions_kg(
+            running_solution,
+            construction.effective_instance,
+            profiles,
+            "actual_gco2_per_kwh",
+        )
+        final_running["total_actual_emissions_kg"] = (
+            final_running["direct_emissions_kg"]
+            + final_running["actual_charging_emissions_kg"]
+        )
         rows.append(
             {
                 "arm": arm,
@@ -535,8 +776,23 @@ def run_probe_arm(arm: str, *, evaluations: int) -> dict[str, Any]:
                 "main_evaluations": int(result["evaluations"]),
                 "shadow_evaluations": int(result["shadow_evaluations"]),
                 "future_cost": float(result["future_cost"]),
+                "running_total_cost": float(final_running["total_cost"]),
+                "running_total_profit": float(final_running["total_profit"]),
+                "running_total_actual_emissions_kg": float(
+                    final_running["total_actual_emissions_kg"]
+                ),
+                "running_actual_charging_emissions_kg": float(
+                    final_running["actual_charging_emissions_kg"]
+                ),
+                "running_predicted_charging_emissions_kg": float(
+                    final_running["predicted_charging_emissions_kg"]
+                ),
+                "running_depot_profit_json": json.dumps(
+                    final_running["depot_profit"], sort_keys=True
+                ),
                 "same_state_baseline_cost": float(result["same_state_baseline_cost"]),
                 "same_state_cost_saving_pct": float(result["same_state_cost_saving_pct"]),
+                "minimum_profit_margin": float(result["minimum_profit_margin"]),
                 "minimum_profit_ratio": float(result["minimum_profit_ratio"]),
                 "participation_gate_rejections": int(
                     result["best_gate_rejection_count"]
@@ -550,6 +806,9 @@ def run_probe_arm(arm: str, *, evaluations: int) -> dict[str, Any]:
                 ),
                 "moved_charge_actions": int(result["timing"]["moved_action_count"]),
                 "moved_charge_kwh": float(result["timing"]["moved_energy_kwh"]),
+                "feasible_cross_candidate_count": int(
+                    result["feasible_cross_candidate_count"]
+                ),
                 "cross_site_customer_count": len(
                     base._cross_site_ids_for_routes(
                         result["solution"].routes,
@@ -566,15 +825,23 @@ def run_probe_arm(arm: str, *, evaluations: int) -> dict[str, Any]:
                 "certificate_sha256": canonical_sha256(
                     result["certificate"].as_dict()
                 ),
-                "full_baseline_profit_json": json.dumps(
-                    result["full_baseline_profit"], sort_keys=True
+                "same_state_baseline_profit_json": json.dumps(
+                    result["same_state_baseline_profit"], sort_keys=True
                 ),
-                "full_selected_profit_json": json.dumps(
-                    result["full_selected_profit"], sort_keys=True
+                "selected_future_profit_json": json.dumps(
+                    result["selected_future_profit"], sort_keys=True
+                ),
+                "profit_margins_json": json.dumps(
+                    result["profit_margins"], sort_keys=True
                 ),
                 "profit_ratios_json": json.dumps(
                     result["profit_ratios"], sort_keys=True
                 ),
+                "shadow_search_seed": int(result["shadow_search_seed"]),
+                "main_search_seed": int(result["main_search_seed"]),
+                "second_start_sha256": result["second_start_sha256"],
+                "baseline_output_sha256": result["baseline_output_sha256"],
+                **result["timing_comparison"],
                 "elapsed_seconds": time.perf_counter() - started,
             }
         )
@@ -595,6 +862,7 @@ def run_probe_arm(arm: str, *, evaluations: int) -> dict[str, Any]:
         "owner_sha256": sha256(owner_path),
         "final_solution": base.solution_to_dict(current_solution),
         "final_certificate": current_certificate.as_dict(),
+        "final_running": final_running,
     }
 
 
@@ -609,14 +877,28 @@ def _artifact_hashes() -> dict[str, str]:
 
 
 def main() -> int:
+    global OUT
     parser = argparse.ArgumentParser()
     parser.add_argument("--evaluations", type=int, default=DEFAULT_EVALUATIONS)
+    parser.add_argument("--max-stages", type=int, default=MAX_STAGES)
+    parser.add_argument("--output", type=Path, default=OUT)
+    parser.add_argument("--require-observable", action="store_true")
     args = parser.parse_args()
     if args.evaluations <= 0:
         raise ValueError("evaluations must be positive")
+    if args.max_stages <= 0:
+        raise ValueError("max stages must be positive")
+    OUT = args.output if args.output.is_absolute() else ROOT / args.output
     OUT.mkdir(parents=True, exist_ok=True)
     started = time.perf_counter()
-    payloads = [run_probe_arm(arm, evaluations=args.evaluations) for arm in ARMS]
+    payloads = [
+        run_probe_arm(
+            arm,
+            evaluations=args.evaluations,
+            max_stages=args.max_stages,
+        )
+        for arm in ARMS
+    ]
     rows = [row for payload in payloads for row in payload["rows"]]
     write_csv(OUT / "raw_runs.csv", rows)
     write_json(OUT / "sessions.json", payloads)
@@ -627,19 +909,40 @@ def main() -> int:
         if path.name in {"cost.py", "check.py", "evaluation.py"}
     }
     failures: list[str] = []
-    if len(rows) != len(ARMS) * MAX_STAGES:
+    if len(rows) != len(ARMS) * args.max_stages:
         failures.append("row count did not close")
     if any(int(row["main_evaluations"]) != args.evaluations for row in rows):
         failures.append("main search budget did not close")
     if any(int(row["shadow_evaluations"]) != args.evaluations for row in rows):
         failures.append("same-state comparison budget did not close")
+    if any(
+        int(row["shadow_search_seed"]) == int(row["main_search_seed"])
+        for row in rows
+    ):
+        failures.append("the two search calls reused one call identity")
+    if any(
+        row["second_start_sha256"] != row["baseline_output_sha256"]
+        for row in rows
+    ):
+        failures.append("the second search did not start from the first output")
     if any(not bool(row["customer_accounting_pass"]) for row in rows):
         failures.append("customer accounting failed")
     cooperative_rows = [row for row in rows if row["arm"] != "no_cooperation"]
+    participation_rows = [
+        row for row in rows if row["arm"] in {"full", "carbon_blind"}
+    ]
     if any(float(row["same_state_cost_saving_pct"]) < -TOL for row in cooperative_rows):
         failures.append("cooperation lost its same-state fallback")
-    if any(float(row["minimum_profit_ratio"]) < 1.0 - TOL for row in cooperative_rows):
+    if any(
+        float(row["minimum_profit_margin"]) < -TOL
+        for row in participation_rows
+    ):
         failures.append("participation floor failed")
+    if any(
+        float(row["predicted_charging_saving_kg"]) < -TOL
+        for row in rows
+    ):
+        failures.append("forecast-timed charging increased predicted emissions")
     aware_rows = [row for row in rows if row["charging_strategy"] == "aware"]
     if sum(int(row["moved_charge_actions"]) for row in aware_rows) <= 0:
         failures.append("forecast timing moved no dynamic charging action")
@@ -650,9 +953,24 @@ def main() -> int:
         for row in carbon_blind_rows
     ):
         failures.append("carbon-blind arm did not keep immediate charging")
-    verdict = "E7_FULL_MECHANISM_PROBE_PASS" if not failures else "HALT_E7_FULL_MECHANISM_PROBE"
+    if any(
+        int(row["cross_site_customer_count"]) != 0
+        for row in rows
+        if row["arm"] == "no_cooperation"
+    ):
+        failures.append("no-cooperation arm crossed depots")
+    if args.require_observable and sum(
+        int(row["feasible_cross_candidate_count"])
+        for row in cooperative_rows
+    ) <= 0:
+        failures.append("no feasible cross-depot candidate was observed")
+    verdict = (
+        "E7_FULL_MECHANISM_GATE_PASS"
+        if not failures
+        else "HALT_E7_FULL_MECHANISM_GATE"
+    )
     metadata = {
-        "schema": "setp.e7.full_mechanism_probe.v2",
+        "schema": "setp.e7.full_mechanism_gate.v3",
         "contract_id": CONTRACT_ID,
         "source_commit": git_head(),
         "operating_day": OPERATING_DAY.isoformat(),
@@ -661,7 +979,7 @@ def main() -> int:
             "the date was not selected from this probe's result."
         ),
         "stream_seed": STREAM_SEED,
-        "stages": MAX_STAGES,
+        "stages": args.max_stages,
         "evaluations_per_search": args.evaluations,
         "arms": list(ARMS),
         "elapsed_seconds": time.perf_counter() - started,
@@ -670,8 +988,9 @@ def main() -> int:
             str(path.relative_to(ROOT)): sha256(path) for path in SOURCE_FILES
         },
         "scientific_boundary": (
-            "This probe checks mechanism wiring only. Direction is not an expansion gate, "
-            "except that cooperation must retain the same-state no-cooperation fallback."
+            "This gate checks equal compute, state continuity, participation, and paired "
+            "charging settlement. Result direction is not an expansion gate, except that "
+            "cooperation retains the same-state no-cooperation fallback."
         ),
     }
     decision = {
@@ -689,8 +1008,24 @@ def main() -> int:
             "minimum_cooperative_profit_ratio": min(
                 float(row["minimum_profit_ratio"]) for row in cooperative_rows
             ),
+            "minimum_participation_profit_margin": min(
+                float(row["minimum_profit_margin"])
+                for row in participation_rows
+            ),
             "aware_moved_action_count": sum(
                 int(row["moved_charge_actions"]) for row in aware_rows
+            ),
+            "feasible_cross_candidate_count": sum(
+                int(row["feasible_cross_candidate_count"])
+                for row in cooperative_rows
+            ),
+            "predicted_charging_saving_kg": sum(
+                float(row["predicted_charging_saving_kg"])
+                for row in aware_rows
+            ),
+            "actual_charging_saving_kg": sum(
+                float(row["actual_charging_saving_kg"])
+                for row in aware_rows
             ),
         },
         "formal_expansion_allowed": not failures,
@@ -698,15 +1033,15 @@ def main() -> int:
     write_json(OUT / "metadata.json", metadata)
     write_json(OUT / "decision.json", decision)
     report = [
-        "# E7三机制最小探针",
+        "# E7完整机制运行门",
         "",
         f"判定：`{verdict}`。",
         "",
-        "本探针只运行第1条订单流的前2次调整。每次调整先在同一车辆状态和同一订单集合上计算一份从此各自经营的保底续排，再允许跨场调整；正式输出不得比保底方案更贵，也不得让任一车场收益低于保底方案。低碳组按预测碳强度移动尚未开始的充电，碳盲组有空即充。",
+        f"本次运行使用第1条订单流的前{args.max_stages}次调整。四组在每次调整中均完成两轮、每轮{args.evaluations}次方案比较。第一轮形成从当前状态继续各自经营的保底方案，第二轮仅切换被检验的规则。低碳组按预测碳强度安排充电，并用实际碳强度结算。",
         "",
-        f"共得到 {len(rows)} 行阶段结果；低碳安排移动 {decision['mechanical_checks']['aware_moved_action_count']} 个充电动作；合作方案相对同状态保底的最小节省为 {decision['mechanical_checks']['minimum_cooperative_same_state_saving_pct']:.6f}%；双方收益比最低值为 {decision['mechanical_checks']['minimum_cooperative_profit_ratio']:.6f}。",
+        f"共得到{len(rows)}行阶段结果；观察到{decision['mechanical_checks']['feasible_cross_candidate_count']}个可执行的跨场候选；按预测安排相对有空即充的预测排放减少{decision['mechanical_checks']['predicted_charging_saving_kg']:.6f} kg，按实际碳强度结算的差值为{decision['mechanical_checks']['actual_charging_saving_kg']:.6f} kg。",
         "",
-        "这不是正式动态结论。只有探针机械通过后，才允许扩到五条订单流和四种正式对照。",
+        "本结果只用于决定运行链条是否具备正式扩展条件，不作为论文中的机制效应数字。",
     ]
     if failures:
         report.extend(["", "失败项：" + "；".join(failures)])

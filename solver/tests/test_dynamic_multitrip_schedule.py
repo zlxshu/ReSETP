@@ -8,6 +8,7 @@ from pathlib import Path
 import pytest
 
 from setp_solver.instance_loader import Instance, Node
+from setp_solver.cost import evaluate
 from setp_solver.prices import DEFAULT_PRICES
 from setp_solver.search.bundle import load_search_bundle
 from setp_solver.search.dynamic_multitrip_schedule import (
@@ -202,6 +203,37 @@ def test_dynamic_carbon_timing_stays_after_stage_start_and_survives_next_cut() -
     aware_starts = {action.vehicle_id: action.charge_start_second for action in aware_solution.charging_actions}
     assert any(aware_starts[route_id] > naive_starts[route_id] for route_id in aware_starts)
 
+    naive_emissions = evaluate(
+        naive_solution,
+        instance,
+        profile,
+        prices,
+        carbon_quota_kg=float("inf"),
+    )["E_ev_indirect"]
+    aware_emissions = evaluate(
+        aware_solution,
+        instance,
+        profile,
+        prices,
+        carbon_quota_kg=float("inf"),
+    )["E_ev_indirect"]
+    assert aware_emissions <= naive_emissions + 1e-12
+
+    aware_action_by_route = {
+        action.vehicle_id: action for action in aware_solution.charging_actions
+    }
+    ordered = sorted(aware_certificate.trips, key=lambda trip: trip.trip_index)
+    for previous, current in zip(ordered, ordered[1:]):
+        action = aware_action_by_route.get(current.route_id)
+        if action is None:
+            continue
+        assert previous.charge_start_second == pytest.approx(
+            action.charge_start_second
+        )
+        assert previous.recharge_end_second == pytest.approx(
+            action.charge_start_second + action.occupancy_minutes * 60.0
+        )
+
     first_shifted_route = next(
         route_id for route_id in aware_starts if aware_starts[route_id] > naive_starts[route_id]
     )
@@ -225,6 +257,32 @@ def test_dynamic_carbon_timing_stays_after_stage_start_and_survives_next_cut() -
         trigger_second=trigger,
     )
     assert len(naive_cut.locked_charging_actions) > len(aware_cut.locked_charging_actions)
+
+    last_charge_end = max(
+        action.charge_start_second + action.occupancy_minutes * 60.0
+        for action in aware_solution.charging_actions
+    )
+    final_cut = cut_dynamic_certificate_at_trigger(
+        aware_solution,
+        aware_certificate,
+        instance,
+        prices,
+        inherited_asset_states={state.physical_vehicle_id: state},
+        previous_stage_start_second=1_000.0,
+        trigger_second=last_charge_end + 1.0,
+    )
+    started_trip_energy = sum(
+        float(trip.start_battery_kwh or 0.0)
+        - float(trip.end_battery_kwh or 0.0)
+        for trip in aware_certificate.trips
+        if trip.departure_second <= last_charge_end + 1.0
+    )
+    locked_charge_energy = sum(
+        action.energy_kwh for action in final_cut.locked_charging_actions
+    )
+    assert final_cut.asset_states[state.physical_vehicle_id].remaining_battery_kwh == pytest.approx(
+        state.remaining_battery_kwh + locked_charge_energy - started_trip_energy
+    )
 
 
 def test_added_order_is_rejected_when_sole_in_progress_asset_returns_too_late() -> None:

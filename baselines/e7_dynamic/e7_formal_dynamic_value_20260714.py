@@ -830,6 +830,7 @@ def search_stage(
     best_certificate = current_certificate
     best_cost = current_cost
     changed_count = feasible_count = accepted_count = exact_check_count = 0
+    feasible_cross_candidate_count = 0
     best_gate_rejection_count = 0
     dynamic_rejections: Counter[str] = Counter()
     for iteration in range(1, evaluations + 1):
@@ -928,6 +929,12 @@ def search_stage(
                     owners,
                 )
                 feasible_count += 1
+                if _cross_site_ids_for_routes(
+                    candidate_prepared.routes,
+                    construction.effective_instance,
+                    owners,
+                ):
+                    feasible_cross_candidate_count += 1
                 eligible_for_best = (
                     True
                     if candidate_best_gate is None
@@ -983,6 +990,7 @@ def search_stage(
         "type_trials": type_trials,
         "changed_count": changed_count,
         "feasible_count": feasible_count,
+        "feasible_cross_candidate_count": feasible_cross_candidate_count,
         "accepted_count": accepted_count,
         "best_gate_rejection_count": best_gate_rejection_count,
         "exact_check_count": exact_check_count,
