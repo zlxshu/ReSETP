@@ -1,0 +1,74 @@
+{
+  "ai": {
+    "enabled": false,
+    "timeout_seconds": 180
+  },
+  "checkpoint_paths": [],
+  "completion_files": [
+    "/Volumes/移动硬盘（512G）/ReSETP/baselines/e7_dynamic/e7_full_mechanism_two_condition_gate_50_v1_20260714/artifact_hashes.json"
+  ],
+  "config_path": "/Volumes/移动硬盘（512G）/ReSETP/baselines/e7_dynamic/monitor_configs/e7_two_condition_gate_50_v1.json",
+  "forbidden_command_substrings": [
+    "--debug"
+  ],
+  "logs": [],
+  "low_cpu_consecutive_checks": 4,
+  "max_rss_mb": 14000,
+  "max_runtime_seconds": 3600,
+  "milestones": [],
+  "min_cpu_percent_when_active": 1,
+  "min_system_free_memory_mb": 256,
+  "min_system_memory_free_percent": 5,
+  "name": "e7-two-condition-gate-50-v1",
+  "objective": "以两类冻结客户责任、同一订单流和每轮50次评价检查动态协同、充电与参与条件是否可观测",
+  "pause_on_anomaly": true,
+  "poll_seconds": 30,
+  "progress_files": [],
+  "protected_files": [
+    {
+      "kind": "experiment_contract",
+      "path": "/Volumes/移动硬盘（512G）/ReSETP/baselines/e7_dynamic/e7_full_mechanism_probe_20260714.py"
+    },
+    {
+      "kind": "dynamic_scheduler",
+      "path": "/Volumes/移动硬盘（512G）/ReSETP/baselines/e7_dynamic/e7_formal_dynamic_value_20260714.py"
+    },
+    {
+      "kind": "dynamic_scheduler",
+      "path": "/Volumes/移动硬盘（512G）/ReSETP/solver/src/setp_solver/search/dynamic_multitrip_schedule.py"
+    },
+    {
+      "kind": "cost_function",
+      "path": "/Volumes/移动硬盘（512G）/ReSETP/solver/src/setp_solver/cost.py"
+    },
+    {
+      "kind": "evaluator",
+      "path": "/Volumes/移动硬盘（512G）/ReSETP/solver/src/setp_solver/check.py"
+    },
+    {
+      "kind": "evaluator",
+      "path": "/Volumes/移动硬盘（512G）/ReSETP/solver/src/setp_solver/search/evaluation.py"
+    },
+    {
+      "kind": "core_data",
+      "path": "/Volumes/移动硬盘（512G）/ReSETP/baselines/e7_dynamic/e7_responsibility_scenario_design_20260714/artifact_hashes.json"
+    }
+  ],
+  "required_command_substrings": [
+    "e7_full_mechanism_probe_20260714.py",
+    "--evaluations",
+    "50",
+    "--workers",
+    "8",
+    "--conditions",
+    "geographic,historical_mixed"
+  ],
+  "result_files": [
+    "/Volumes/移动硬盘（512G）/ReSETP/baselines/e7_dynamic/e7_full_mechanism_two_condition_gate_50_v1_20260714/raw_runs.csv",
+    "/Volumes/移动硬盘（512G）/ReSETP/baselines/e7_dynamic/e7_full_mechanism_two_condition_gate_50_v1_20260714/decision.json",
+    "/Volumes/移动硬盘（512G）/ReSETP/baselines/e7_dynamic/e7_full_mechanism_two_condition_gate_50_v1_20260714/sessions.json"
+  ],
+  "schema_version": 1,
+  "stale_seconds": 900,
+  "workdir": "/Volumes/移动硬盘（512G）/ReSETP"
+}

@@ -1,0 +1,99 @@
+{
+  "command": [
+    "/usr/bin/env",
+    "PYTHONPATH=solver/src:models/src:.",
+    "PYTHONHASHSEED=0",
+    "/opt/anaconda3/bin/python3.13",
+    "baselines/e7_dynamic/e7_full_mechanism_probe_20260714.py",
+    "--evaluations",
+    "50",
+    "--max-stages",
+    "2",
+    "--workers",
+    "8",
+    "--conditions",
+    "geographic,historical_mixed",
+    "--require-observable",
+    "--output",
+    "baselines/e7_dynamic/e7_full_mechanism_two_condition_gate_50_v1_20260714"
+  ],
+  "events_emitted": [],
+  "last_event_state": "COMPLETED",
+  "log_initial_sizes": {
+    "/Volumes/移动硬盘（512G）/ReSETP/.experiment.monitor/e7_two_condition_gate_50_v1/experiment.stdout": 0
+  },
+  "low_cpu_checks": 0,
+  "mode": "start",
+  "monitor_config_sha256": "8bae91628e2bd6de3c2e67d9a7ba3239c567ddf4078739d7d0634de25bb402cb",
+  "paused": false,
+  "pgid": 29228,
+  "pid": 29228,
+  "protected_hashes": {
+    "/Volumes/移动硬盘（512G）/ReSETP/baselines/e7_dynamic/e7_formal_dynamic_value_20260714.py": {
+      "age_seconds": 1875.988692998886,
+      "exists": true,
+      "kind": "dynamic_scheduler",
+      "mtime": 1784043865.78,
+      "path": "/Volumes/移动硬盘（512G）/ReSETP/baselines/e7_dynamic/e7_formal_dynamic_value_20260714.py",
+      "sha256": "ba54248d25be33f9c0f7106892dafaf250515e50034ea5315bf464b2f7e78daf",
+      "size": 68749
+    },
+    "/Volumes/移动硬盘（512G）/ReSETP/baselines/e7_dynamic/e7_full_mechanism_probe_20260714.py": {
+      "age_seconds": 490.49798703193665,
+      "exists": true,
+      "kind": "experiment_contract",
+      "mtime": 1784045251.27,
+      "path": "/Volumes/移动硬盘（512G）/ReSETP/baselines/e7_dynamic/e7_full_mechanism_probe_20260714.py",
+      "sha256": "0e0da34abd2700d0cee2e99bc570241712b17216d8c92a5a04147a3775b789ae",
+      "size": 44220
+    },
+    "/Volumes/移动硬盘（512G）/ReSETP/baselines/e7_dynamic/e7_responsibility_scenario_design_20260714/artifact_hashes.json": {
+      "age_seconds": 574.8704679012299,
+      "exists": true,
+      "kind": "core_data",
+      "mtime": 1784045166.9,
+      "path": "/Volumes/移动硬盘（512G）/ReSETP/baselines/e7_dynamic/e7_responsibility_scenario_design_20260714/artifact_hashes.json",
+      "sha256": "efa353eaba74a6ed0ac814ea164c5fbeda3c2f18a0014e088d4af7dc29984c86",
+      "size": 2442
+    },
+    "/Volumes/移动硬盘（512G）/ReSETP/solver/src/setp_solver/check.py": {
+      "age_seconds": 41596.48984193802,
+      "exists": true,
+      "kind": "evaluator",
+      "mtime": 1784004145.28,
+      "path": "/Volumes/移动硬盘（512G）/ReSETP/solver/src/setp_solver/check.py",
+      "sha256": "53f5cc27d3ac72bdd2bbec113eb8af11ad18a82490502f800941140495e8e142",
+      "size": 31710
+    },
+    "/Volumes/移动硬盘（512G）/ReSETP/solver/src/setp_solver/cost.py": {
+      "age_seconds": 113111.70940804482,
+      "exists": true,
+      "kind": "cost_function",
+      "mtime": 1783932630.06,
+      "path": "/Volumes/移动硬盘（512G）/ReSETP/solver/src/setp_solver/cost.py",
+      "sha256": "d8bfee1844c8f8e89bac1233a3cd862d7ac7d088039f97751b8274756c41dee4",
+      "size": 24115
+    },
+    "/Volumes/移动硬盘（512G）/ReSETP/solver/src/setp_solver/search/dynamic_multitrip_schedule.py": {
+      "age_seconds": 2671.9788150787354,
+      "exists": true,
+      "kind": "dynamic_scheduler",
+      "mtime": 1784043069.79,
+      "path": "/Volumes/移动硬盘（512G）/ReSETP/solver/src/setp_solver/search/dynamic_multitrip_schedule.py",
+      "sha256": "2ff795d370943cd8ac08c087539a151b26c155b735b83498052fd16c544829c6",
+      "size": 52499
+    },
+    "/Volumes/移动硬盘（512G）/ReSETP/solver/src/setp_solver/search/evaluation.py": {
+      "age_seconds": 41596.47025895119,
+      "exists": true,
+      "kind": "evaluator",
+      "mtime": 1784004145.3,
+      "path": "/Volumes/移动硬盘（512G）/ReSETP/solver/src/setp_solver/search/evaluation.py",
+      "sha256": "c7215263c39d1d5a1429b41ca8ac40d950dbdf2bdc288337e56fbe9733406fc3",
+      "size": 7609
+    }
+  },
+  "started_at": "2026-07-14T16:15:41+00:00",
+  "started_at_epoch": 1784045741.7679071,
+  "stdout_path": "/Volumes/移动硬盘（512G）/ReSETP/.experiment.monitor/e7_two_condition_gate_50_v1/experiment.stdout"
+}

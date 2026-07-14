@@ -53,6 +53,7 @@ STREAM_SEED = 1
 MAX_STAGES = 2
 DEFAULT_EVALUATIONS = 8
 ARMS = ("full", "no_cooperation", "carbon_blind", "no_participation")
+FULL_DAY_EXECUTION_SCHEMA = "setp.e7.full_day_execution.v1"
 CONDITIONS = ("geographic", "historical_mixed")
 RESPONSIBILITY_ROOT = (
     ROOT / "baselines/e7_dynamic/e7_responsibility_scenario_design_20260714"
@@ -187,6 +188,45 @@ def _profit_closure(
         "total_profit": total_profit,
         "depot_profit": {key: float(row.profit) for key, row in rows.items()},
         "direct_emissions_kg": float(parts["E_cv_direct"]),
+    }
+
+
+def _full_day_execution_summary(
+    solution: Solution,
+    instance: Any,
+    owners: Mapping[str, str],
+) -> dict[str, Any]:
+    """Close the full-day workload and cross-depot service ledger."""
+
+    nodes = {node.node_id: node for node in instance.nodes}
+    completed: list[str] = []
+    cross_site: list[str] = []
+    for route in solution.routes:
+        for customer_id in base.p2.route_customers(route, instance):
+            if customer_id not in owners:
+                raise RuntimeError(
+                    f"full-day customer has no responsibility owner: {customer_id}"
+                )
+            completed.append(customer_id)
+            if owners[customer_id] != route.home_depot_id:
+                cross_site.append(customer_id)
+    if len(completed) != len(set(completed)):
+        raise RuntimeError("full-day execution serves a customer more than once")
+    if len(cross_site) != len(set(cross_site)):
+        raise RuntimeError("full-day cross-depot ledger contains duplicates")
+    missing = sorted(customer_id for customer_id in completed if customer_id not in nodes)
+    if missing:
+        raise RuntimeError(f"full-day execution contains unknown customers: {missing}")
+    completed_ids = sorted(completed)
+    cross_site_ids = sorted(cross_site)
+    return {
+        "schema": FULL_DAY_EXECUTION_SCHEMA,
+        "completed_customer_ids": completed_ids,
+        "completed_customer_count": len(completed_ids),
+        "completed_demand": sum(float(nodes[item].demand) for item in completed_ids),
+        "cross_site_customer_ids": cross_site_ids,
+        "cross_site_customer_count": len(cross_site_ids),
+        "solution_sha256": canonical_sha256(base.solution_to_dict(solution)),
     }
 
 
@@ -743,6 +783,7 @@ def run_probe_arm(
     committed_actions: dict[tuple[Any, ...], ChargingAction] = {}
     rows: list[dict[str, Any]] = []
     final_running: dict[str, Any] | None = None
+    final_execution_solution: Solution | None = None
 
     for stage_index, batch in enumerate(batches, start=1):
         started = time.perf_counter()
@@ -830,6 +871,7 @@ def run_probe_arm(
             sources,
             owners,
         )
+        final_execution_solution = running_solution
         final_running["predicted_charging_emissions_kg"] = _charging_emissions_kg(
             running_solution,
             construction.effective_instance,
@@ -932,6 +974,13 @@ def run_probe_arm(
         current_certificate = result["certificate"]
         current_instance = construction.effective_instance
 
+    if final_running is None or final_execution_solution is None:
+        raise RuntimeError("dynamic arm completed no rolling stage")
+    full_day_execution = _full_day_execution_summary(
+        final_execution_solution,
+        current_instance,
+        owners,
+    )
     return {
         "arm": arm,
         "responsibility_condition": condition,
@@ -947,6 +996,7 @@ def run_probe_arm(
         "final_solution": base.solution_to_dict(current_solution),
         "final_certificate": current_certificate.as_dict(),
         "final_running": final_running,
+        "full_day_execution": full_day_execution,
     }
 
 

@@ -3,6 +3,7 @@ from __future__ import annotations
 import pytest
 
 from baselines.e7_dynamic import e7_full_mechanism_probe_20260714 as gate
+from setp_solver.instance_loader import Instance, Node
 from setp_solver.solution import ChargingAction, Route, Solution
 
 
@@ -61,3 +62,53 @@ def test_execution_ledger_keeps_two_distinct_charges_before_one_trip() -> None:
     )
 
     assert merged.charging_actions == [first, second]
+
+
+def test_full_day_execution_summary_closes_workload_and_cross_depot_service() -> None:
+    instance = Instance(
+        nodes=[
+            Node("D0", "d", 0.0, 0.0),
+            Node("D1", "d", 10.0, 0.0),
+            Node("C0", "c", 1.0, 0.0, demand=2.5),
+            Node("C1", "c", 9.0, 0.0, demand=3.5),
+        ],
+        distance_matrix=[[0.0] * 4 for _ in range(4)],
+    )
+    solution = Solution(
+        routes=[
+            Route("CV0#T1", "cv", "D0", ["D0", "C0", "D0"]),
+            Route("CV1#T1", "cv", "D0", ["D0", "C1", "D0"]),
+        ]
+    )
+
+    result = gate._full_day_execution_summary(
+        solution,
+        instance,
+        {"C0": "D0", "C1": "D1"},
+    )
+
+    assert result["schema"] == gate.FULL_DAY_EXECUTION_SCHEMA
+    assert result["completed_customer_ids"] == ["C0", "C1"]
+    assert result["completed_customer_count"] == 2
+    assert result["completed_demand"] == pytest.approx(6.0)
+    assert result["cross_site_customer_ids"] == ["C1"]
+    assert result["cross_site_customer_count"] == 1
+
+
+def test_full_day_execution_summary_rejects_duplicate_service() -> None:
+    instance = Instance(
+        nodes=[
+            Node("D0", "d", 0.0, 0.0),
+            Node("C0", "c", 1.0, 0.0, demand=2.5),
+        ],
+        distance_matrix=[[0.0] * 2 for _ in range(2)],
+    )
+    duplicated = Solution(
+        routes=[
+            Route("CV0#T1", "cv", "D0", ["D0", "C0", "D0"]),
+            Route("CV1#T1", "cv", "D0", ["D0", "C0", "D0"]),
+        ]
+    )
+
+    with pytest.raises(RuntimeError, match="more than once"):
+        gate._full_day_execution_summary(duplicated, instance, {"C0": "D0"})
