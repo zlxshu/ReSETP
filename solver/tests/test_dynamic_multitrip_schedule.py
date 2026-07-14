@@ -126,6 +126,77 @@ def test_exact_asset_scheduler_reuses_inherited_id_and_trip_sequence() -> None:
     assert ordered[1].departure_second >= ordered[0].return_second
 
 
+def test_added_order_is_rejected_when_sole_in_progress_asset_returns_too_late() -> None:
+    instance = Instance(
+        nodes=[
+            Node("D0", "d", 0.0, 0.0, ready_time=0.0, due_time=20_000.0),
+            Node(
+                "N_NEW",
+                "c",
+                1.0,
+                0.0,
+                demand=1.0,
+                ready_time=0.0,
+                due_time=4_000.0,
+            ),
+        ],
+        distance_matrix=[[0.0, 1_000.0], [1_000.0, 0.0]],
+        num_cv=1,
+        num_ev=0,
+    )
+    added_trip = Solution(
+        routes=[Route("S1_ADD_E1", "cv", "D0", ["D0", "N_NEW", "D0"])]
+    )
+    certified_return = 5_000.0
+    state = DynamicAssetState("CV_D0_1", "cv", "D0", certified_return, 0.0, 2)
+
+    with pytest.raises(ValueError, match="no inherited asset can serve open route"):
+        prepare_dynamic_multitrip_solution(
+            added_trip,
+            instance,
+            DEFAULT_PRICES,
+            asset_states={state.physical_vehicle_id: state},
+            stage_start_second=1_000.0,
+        )
+
+
+def test_added_order_waits_for_sole_in_progress_asset_to_return_to_depot() -> None:
+    instance = Instance(
+        nodes=[
+            Node("D0", "d", 0.0, 0.0, ready_time=0.0, due_time=20_000.0),
+            Node(
+                "N_NEW",
+                "c",
+                1.0,
+                0.0,
+                demand=1.0,
+                ready_time=5_500.0,
+                due_time=8_000.0,
+            ),
+        ],
+        distance_matrix=[[0.0, 1_000.0], [1_000.0, 0.0]],
+        num_cv=1,
+        num_ev=0,
+    )
+    added_trip = Solution(
+        routes=[Route("S1_ADD_E1", "cv", "D0", ["D0", "N_NEW", "D0"])]
+    )
+    certified_return = 5_000.0
+    state = DynamicAssetState("CV_D0_1", "cv", "D0", certified_return, 0.0, 2)
+
+    prepared, certificate = prepare_dynamic_multitrip_solution(
+        added_trip,
+        instance,
+        DEFAULT_PRICES,
+        asset_states={state.physical_vehicle_id: state},
+        stage_start_second=1_000.0,
+    )
+
+    assert {physical_vehicle_id(route.vehicle_id) for route in prepared.routes} == {"CV_D0_1"}
+    assert len(certificate.trips) == 1
+    assert certificate.trips[0].departure_second >= certified_return
+
+
 def test_frozen_221_customer_cut_and_one_event_continuation_use_only_10_plus_10_assets() -> None:
     solution, certificate, bundle, prices = _formal_221_customer_case()
     trigger = 30_000.0
