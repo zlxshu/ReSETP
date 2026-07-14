@@ -245,6 +245,7 @@ class WinnerOperatorSet:
         *,
         include_route_elimination: bool = False,
         allow_cross_depot: bool = True,
+        enable_cross_depot_operator: bool = True,
         carbon_aware: bool = False,
         carbon_bias_weight: float = 1.0,
         refined_carbon: bool = False,
@@ -273,7 +274,11 @@ class WinnerOperatorSet:
             ("route_segment_removal", route_segment_removal),
             ("vehicle_type_swap", vehicle_type_swap_destroy),
         ]
-        if allow_cross_depot and os.environ.get("SETP_E3_STRICT_MULTITRIP", "0").lower() not in {"0", "false", "no"}:
+        if (
+            allow_cross_depot
+            and enable_cross_depot_operator
+            and os.environ.get("SETP_E3_STRICT_MULTITRIP", "0").lower() not in {"0", "false", "no"}
+        ):
             destroy_ops.append(("cross_depot_boundary_removal", cross_depot_boundary_removal))
         if include_route_elimination:
             destroy_ops.insert(4, ("route_elimination_removal", route_elimination_removal))
@@ -296,7 +301,11 @@ class WinnerOperatorSet:
             ("regret2_insert_repair", regret2_insert_repair),
             ("regret3_insert_repair", regret3_insert_repair),
         ]
-        if allow_cross_depot and os.environ.get("SETP_E3_STRICT_MULTITRIP", "0").lower() not in {"0", "false", "no"}:
+        if (
+            allow_cross_depot
+            and enable_cross_depot_operator
+            and os.environ.get("SETP_E3_STRICT_MULTITRIP", "0").lower() not in {"0", "false", "no"}
+        ):
             repair_ops.append(("cross_depot_insert_repair", cross_depot_insert_repair))
         if carbon_aware:
             repair_ops.append(("low_carbon_charging_repair", _with_carbon_bias(low_carbon_charging_repair)))
@@ -738,6 +747,7 @@ def run_staged_alns_lns_hybrid(
     independent_profit: dict[str, float] | None = None,
     fairness_theta: float | None = None,
     customer_home_depot: dict[str, str] | None = None,
+    enable_staged_search: bool = True,
 ) -> dict[str, Any]:
     """Run the explicitly named staged ALNS-LNS hybrid under one budget."""
 
@@ -756,6 +766,7 @@ def run_staged_alns_lns_hybrid(
         middle_restarts=1,
         variant="staged_alns_lns_hybrid",
         algorithm="staged ALNS-LNS hybrid",
+        enable_staged_search=enable_staged_search,
     )
 
 
@@ -977,6 +988,7 @@ def _run_staged_hybrid_entry(
     middle_restarts: int,
     variant: str,
     algorithm: str,
+    enable_staged_search: bool = True,
 ) -> dict[str, Any]:
     """Shared entry contract for the frozen and restart staged hybrids."""
 
@@ -1008,6 +1020,7 @@ def _run_staged_hybrid_entry(
         fairness_theta=fairness_theta,
         customer_home_depot=customer_home_depot,
         middle_restarts=middle_restarts,
+        enable_staged_search=enable_staged_search,
     )
     context = EvaluationContext(
         bundle.instance,
@@ -1635,6 +1648,7 @@ def _run_winner_kernel_loop(
     operator_set = WinnerOperatorSet.create(
         include_route_elimination=config.include_route_elimination,
         allow_cross_depot=policy.allow_cross_depot,
+        enable_cross_depot_operator=policy.enable_cross_depot_operator,
         carbon_aware=config.carbon_aware_operators,
         carbon_bias_weight=config.carbon_operator_bias,
         refined_carbon=config.refined_carbon_operators,
@@ -2267,10 +2281,14 @@ def run_staged_chain_alns(
     customer_home_depot: dict[str, str] | None = None,
     middle_restarts: int = 1,
     stage_budget_mode: str = "fixed",
+    enable_staged_search: bool = True,
 ) -> AlnsRunResult:
     """Run regular, global-repair, then regular ALNS phases under one budget."""
 
-    if stage_budget_mode == "fixed":
+    if not enable_staged_search:
+        budgets = (int(config.eval_budget),)
+        strong_phase_indexes = frozenset()
+    elif stage_budget_mode == "fixed":
         budgets, strong_phase_indexes = _staged_chain_plan(config.eval_budget, middle_restarts)
     elif stage_budget_mode == "proportional":
         opening, bridge, closing = _proportional_staged_chain_budgets(config.eval_budget)
@@ -2330,6 +2348,7 @@ def run_staged_chain_alns(
         eval_offset += int(phase_run.evaluations)
     operator_counts = dict(best_run.operator_counts)
     operator_counts["staged_chain"] = {
+        "enable_staged_search": bool(enable_staged_search),
         "budgets": list(budgets),
         "middle_restarts": int(middle_restarts),
         "strong_phase_indexes": sorted(strong_phase_indexes),

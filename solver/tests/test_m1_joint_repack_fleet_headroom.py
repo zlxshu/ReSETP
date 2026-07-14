@@ -367,6 +367,32 @@ class M1JointRepackFleetHeadroomTests(unittest.TestCase):
         self.assertEqual(result.operator_counts["staged_chain"]["best_phase"], 2)
         self.assertEqual(len(result.operator_counts["staged_chain"]["phase_operator_counts"]), 3)
 
+    def test_continuous_switch_keeps_one_full_budget_phase_and_no_strong_bridge(self) -> None:
+        import setp_solver.algorithms.resetp_alns.kernel.winner as winner
+        from setp_solver.algorithms.resetp_alns.kernel.alns_core import AlnsRunResult
+
+        bundle = load_search_bundle(VERIFY_BUNDLE)
+        start = make_shared_initial_solution(bundle, prices=DEFAULT_PRICES)
+        phase_result = AlnsRunResult(start, start, 10.0, 8.0, 1000, True)
+
+        with patch.object(winner, "_run_winner_kernel_loop", return_value=phase_result) as phase_run:
+            result = winner.run_staged_chain_alns(
+                start,
+                bundle.instance,
+                bundle.carbon_profile,
+                config=winner.WinnerKernelConfig(seed=7, eval_budget=1000, max_runtime_seconds=30.0),
+                prices=DEFAULT_PRICES,
+                enable_staged_search=False,
+            )
+
+        self.assertEqual(phase_run.call_count, 1)
+        self.assertEqual(phase_run.call_args.kwargs["config"].eval_budget, 1000)
+        self.assertEqual(phase_run.call_args.kwargs["variant_flags"][winner.STRONG_BRIDGE_BACKEND_FLAG], "0")
+        self.assertEqual(result.evaluations, 1000)
+        self.assertFalse(result.operator_counts["staged_chain"]["enable_staged_search"])
+        self.assertEqual(result.operator_counts["staged_chain"]["budgets"], [1000])
+        self.assertEqual(result.operator_counts["staged_chain"]["strong_phase_indexes"], [])
+
     def test_restarted_staged_chain_splits_only_the_strong_middle_budget(self) -> None:
         import setp_solver.algorithms.resetp_alns.kernel.winner as winner
         from setp_solver.algorithms.resetp_alns.kernel.alns_core import AlnsRunResult

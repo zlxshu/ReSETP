@@ -76,6 +76,12 @@ class SearchPolicy:
     # Historical paths keep the permissive default.  E3's controlled A arm
     # sets this false to lock every customer to its frozen home depot.
     allow_cross_depot: bool = True
+    # E2b opt-out only.  This switch controls whether the dedicated
+    # cross-depot destroy/repair pair is registered; it does not narrow the
+    # cooperative feasible set and it does not disable strict multitrip
+    # preparation/checking.  The default preserves the search behavior of all
+    # existing E2--E7 entry paths.
+    enable_cross_depot_operator: bool = True
     # E6 opt-in only.  Both fairness-on and fairness-off arms receive the same
     # reciprocal cross-depot neighborhood; the default keeps sealed E2/E3
     # search paths byte-for-byte unchanged.

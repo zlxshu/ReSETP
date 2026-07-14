@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import os
 
 import numpy as np
 
@@ -179,6 +180,13 @@ def test_cross_depot_operator_is_isolated_to_strict_e3(monkeypatch) -> None:
     monkeypatch.setenv("SETP_E3_STRICT_MULTITRIP", "1")
     assert "cross_depot_insert_repair" in {name for name, _ in WinnerOperatorSet.create().repair_ops}
     assert "cross_depot_boundary_removal" in {name for name, _ in WinnerOperatorSet.create().destroy_ops}
+    disabled = WinnerOperatorSet.create(
+        allow_cross_depot=True,
+        enable_cross_depot_operator=False,
+    )
+    assert "cross_depot_insert_repair" not in {name for name, _ in disabled.repair_ops}
+    assert "cross_depot_boundary_removal" not in {name for name, _ in disabled.destroy_ops}
+    assert os.environ["SETP_E3_STRICT_MULTITRIP"] == "1"
     operators = WinnerOperatorSet.create()
     coupling = _selector_coupling_contract(operators)
     destroy_names = [name for name, _ in operators.destroy_ops]
