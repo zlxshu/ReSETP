@@ -46,8 +46,8 @@ from setp_solver.search.multitrip_schedule import (
 from setp_solver.solution import ChargingAction, Route, Solution
 
 
-OUT = ROOT / "baselines/e7_dynamic/e7_full_mechanism_gate_v5_20260715"
-CONTRACT_ID = "E7_FULL_MECHANISM_GATE_V5_EXISTING_RECIPROCAL_NEIGHBORHOOD"
+OUT = ROOT / "baselines/e7_dynamic/e7_full_mechanism_gate_v6_20260715"
+CONTRACT_ID = "E7_FULL_MECHANISM_GATE_V6_PROVENANCE_CLOSED"
 OPERATING_DAY = date(2025, 11, 13)
 STREAM_SEED = 1
 MAX_STAGES = 2
@@ -62,6 +62,11 @@ TOL = 1e-6
 SOURCE_FILES = (
     Path(__file__).resolve(),
     Path(base.__file__).resolve(),
+    Path(base.gate.__file__).resolve(),
+    Path(base.p2.__file__).resolve(),
+    ROOT / "solver/src/setp_solver/algorithms/resetp_alns/kernel/alns_core.py",
+    ROOT / "solver/src/setp_solver/algorithms/resetp_alns/kernel/winner.py",
+    ROOT / "solver/src/setp_solver/algorithms/resetp_alns/operators/feasible_repair.py",
     ROOT / "solver/src/setp_solver/search/dynamic_multitrip_schedule.py",
     ROOT / "solver/src/setp_solver/search/multitrip_schedule.py",
     ROOT / "solver/src/setp_solver/profit.py",
@@ -1327,7 +1332,7 @@ def main() -> int:
         else "HALT_E7_FULL_MECHANISM_GATE"
     )
     metadata = {
-        "schema": "setp.e7.full_mechanism_gate.v5",
+        "schema": "setp.e7.full_mechanism_gate.v6",
         "contract_id": CONTRACT_ID,
         "base_dynamic_contract_id": base.CONTRACT_ID,
         "source_commit": git_head(),
