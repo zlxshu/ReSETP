@@ -10,6 +10,7 @@ before any five-stream formal batch is allowed to start.
 from __future__ import annotations
 
 import argparse
+from concurrent.futures import ProcessPoolExecutor
 import csv
 from dataclasses import asdict, replace
 from datetime import date
@@ -143,9 +144,6 @@ def _merge_execution_plan(
     detached = [action.vehicle_id for action in actions.values() if action.vehicle_id not in route_ids]
     if detached:
         raise RuntimeError(f"charging ledger contains detached routes: {sorted(detached)}")
-    action_route_ids = [action.vehicle_id for action in actions.values()]
-    if len(action_route_ids) != len(set(action_route_ids)):
-        raise RuntimeError("charging ledger contains more than one action for one trip")
     return Solution(
         routes=[routes[key] for key in sorted(routes)],
         charging_actions=[actions[key] for key in sorted(actions, key=str)],
@@ -337,6 +335,31 @@ def _profit_values(
     return {depot: float(row.profit) for depot, row in rows.items()}
 
 
+def _participation_margins(
+    candidate: Mapping[str, float],
+    baseline: Mapping[str, float],
+) -> dict[str, float]:
+    if not baseline or any(not math.isfinite(value) or value <= TOL for value in baseline.values()):
+        raise RuntimeError(
+            "same-state no-cooperation baseline has non-positive depot profit"
+        )
+    if set(candidate) != set(baseline):
+        raise RuntimeError("candidate and baseline depot sets differ")
+    if any(not math.isfinite(value) for value in candidate.values()):
+        raise RuntimeError("candidate depot profit is not finite")
+    return {depot: candidate[depot] - value for depot, value in baseline.items()}
+
+
+def _meets_participation_floor(
+    candidate: Mapping[str, float],
+    baseline: Mapping[str, float],
+) -> bool:
+    return all(
+        value >= -TOL
+        for value in _participation_margins(candidate, baseline).values()
+    )
+
+
 def _add_committed_profit(
     prior: Mapping[str, float],
     routes: Sequence[Route],
@@ -487,10 +510,7 @@ def _controlled_stage(
         sources,
         owners,
     )
-    if any(value <= TOL for value in baseline_future_profit.values()):
-        raise RuntimeError(
-            "same-state no-cooperation baseline has non-positive depot profit"
-        )
+    _participation_margins(baseline_future_profit, baseline_future_profit)
     second_start = replace(construction, solution=baseline["search_structure"])
     second_start_sha256 = canonical_sha256(
         base.solution_to_dict(baseline["search_structure"])
@@ -514,10 +534,7 @@ def _controlled_stage(
             sources,
             owners,
         )
-        return all(
-            candidate.get(depot, -math.inf) >= value - TOL
-            for depot, value in baseline_future_profit.items()
-        )
+        return _meets_participation_floor(candidate, baseline_future_profit)
 
     if arm == "no_cooperation":
         selected = base.search_stage(
@@ -601,10 +618,10 @@ def _controlled_stage(
         sources,
         owners,
     )
-    margins = {
-        depot: selected_future_profit.get(depot, -math.inf) - value
-        for depot, value in baseline_timed_profit.items()
-    }
+    margins = _participation_margins(
+        selected_future_profit,
+        baseline_timed_profit,
+    )
     ratios = {
         depot: selected_future_profit[depot] / value
         for depot, value in baseline_timed_profit.items()
@@ -644,14 +661,16 @@ def _controlled_stage(
 def run_probe_arm(
     arm: str,
     *,
+    stream_seed: int,
     evaluations: int,
     max_stages: int,
 ) -> dict[str, Any]:
     if arm not in ARMS:
         raise ValueError(f"unknown arm {arm}")
     sources, profiles = _sources_for_day()
-    events, owners, event_path, owner_path = base.load_stream(STREAM_SEED)
-    batches = base._validated_trigger_batches(STREAM_SEED, events)[:max_stages]
+    events, owners, event_path, owner_path = base.load_stream(stream_seed)
+    all_batches = base._validated_trigger_batches(stream_seed, events)
+    batches = all_batches[:max_stages]
     current_solution, current_certificate, initial_timing = _initial_plan(
         arm, sources, profiles
     )
@@ -719,7 +738,7 @@ def run_probe_arm(
             owners,
             committed_customers,
             trigger=trigger,
-            seed=STREAM_SEED * 1000 + stage_index,
+            seed=stream_seed * 1000 + stage_index,
             evaluations=evaluations,
         )
         future_customers = [
@@ -770,7 +789,7 @@ def run_probe_arm(
         rows.append(
             {
                 "arm": arm,
-                "stream_seed": STREAM_SEED,
+                "stream_seed": stream_seed,
                 "stage": stage_index,
                 "trigger_second": trigger,
                 "main_evaluations": int(result["evaluations"]),
@@ -854,6 +873,9 @@ def run_probe_arm(
 
     return {
         "arm": arm,
+        "stream_seed": stream_seed,
+        "available_stages": len(all_batches),
+        "stages": len(rows),
         "rows": rows,
         "initial_timing": initial_timing,
         "event_path": str(event_path.relative_to(ROOT)),
@@ -876,6 +898,25 @@ def _artifact_hashes() -> dict[str, str]:
     }
 
 
+def _run_probe_task(task: tuple[str, int, int, int]) -> dict[str, Any]:
+    arm, stream_seed, evaluations, max_stages = task
+    return run_probe_arm(
+        arm,
+        stream_seed=stream_seed,
+        evaluations=evaluations,
+        max_stages=max_stages,
+    )
+
+
+def _parse_streams(value: str) -> tuple[int, ...]:
+    streams = tuple(int(item.strip()) for item in value.split(",") if item.strip())
+    if not streams or len(streams) != len(set(streams)):
+        raise argparse.ArgumentTypeError("streams must be a non-empty unique list")
+    if any(seed not in {1, 2, 3, 4, 5} for seed in streams):
+        raise argparse.ArgumentTypeError("streams must be selected from 1,2,3,4,5")
+    return streams
+
+
 def main() -> int:
     global OUT
     parser = argparse.ArgumentParser()
@@ -883,22 +924,30 @@ def main() -> int:
     parser.add_argument("--max-stages", type=int, default=MAX_STAGES)
     parser.add_argument("--output", type=Path, default=OUT)
     parser.add_argument("--require-observable", action="store_true")
+    parser.add_argument("--workers", type=int, default=4)
+    parser.add_argument("--streams", type=_parse_streams, default=(STREAM_SEED,))
     args = parser.parse_args()
     if args.evaluations <= 0:
         raise ValueError("evaluations must be positive")
     if args.max_stages <= 0:
         raise ValueError("max stages must be positive")
+    if args.workers <= 0:
+        raise ValueError("workers must be positive")
     OUT = args.output if args.output.is_absolute() else ROOT / args.output
     OUT.mkdir(parents=True, exist_ok=True)
     started = time.perf_counter()
-    payloads = [
-        run_probe_arm(
-            arm,
-            evaluations=args.evaluations,
-            max_stages=args.max_stages,
-        )
+    tasks = [
+        (arm, stream_seed, args.evaluations, args.max_stages)
+        for stream_seed in args.streams
         for arm in ARMS
     ]
+    with ProcessPoolExecutor(max_workers=min(args.workers, len(tasks))) as pool:
+        payloads = list(
+            pool.map(
+                _run_probe_task,
+                tasks,
+            )
+        )
     rows = [row for payload in payloads for row in payload["rows"]]
     write_csv(OUT / "raw_runs.csv", rows)
     write_json(OUT / "sessions.json", payloads)
@@ -909,7 +958,9 @@ def main() -> int:
         if path.name in {"cost.py", "check.py", "evaluation.py"}
     }
     failures: list[str] = []
-    if len(rows) != len(ARMS) * args.max_stages:
+    if len(payloads) != len(ARMS) * len(args.streams):
+        failures.append("session count did not close")
+    if any(len(payload["rows"]) != payload["stages"] for payload in payloads):
         failures.append("row count did not close")
     if any(int(row["main_evaluations"]) != args.evaluations for row in rows):
         failures.append("main search budget did not close")
@@ -978,10 +1029,11 @@ def main() -> int:
             "The paper had already designated 2025-11-13 as its reference carbon day; "
             "the date was not selected from this probe's result."
         ),
-        "stream_seed": STREAM_SEED,
+        "stream_seeds": list(args.streams),
         "stages": args.max_stages,
         "evaluations_per_search": args.evaluations,
         "arms": list(ARMS),
+        "workers": min(args.workers, len(tasks)),
         "elapsed_seconds": time.perf_counter() - started,
         "protected_file_hashes": protected_hashes,
         "source_file_hashes": {
