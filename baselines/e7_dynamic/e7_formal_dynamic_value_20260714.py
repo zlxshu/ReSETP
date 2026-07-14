@@ -30,6 +30,7 @@ from setp_solver.algorithms.resetp_alns.kernel.winner import (
 from setp_solver.cost import evaluate
 from setp_solver.search.bundle import load_search_bundle
 from setp_solver.search.dynamic import DynamicEvent, RollingParameters, _build_trigger_batches
+from setp_solver.search import dynamic_multitrip_schedule as dynamic_schedule
 from setp_solver.search.dynamic_multitrip_schedule import (
     cut_certificate_at_trigger,
     cut_dynamic_certificate_at_trigger,
@@ -418,6 +419,218 @@ def event_insertion_candidate(
     )
 
 
+def _project_asset_chain(
+    routes: Sequence[Route],
+    asset_state: Any,
+    instance: Any,
+    prices: Any,
+    stage_start_second: float,
+) -> tuple[float, float] | None:
+    """Project one proposed route chain on one inherited vehicle.
+
+    This is a construction check only.  It does not score a complete solution
+    and it does not replace the exact inherited-fleet check performed once the
+    complete candidate has been built.
+    """
+
+    working = dynamic_schedule._WorkingAsset(
+        state=asset_state,
+        available_second=float(asset_state.available_second),
+        battery_kwh=float(asset_state.remaining_battery_kwh),
+        next_trip_index=int(asset_state.next_trip_index),
+    )
+    power = float(prices.depot_charge_power_kw)
+    battery_cap = float(prices.B_battery_kwh)
+    minimum_slack = math.inf
+    for route in routes:
+        try:
+            profile = dynamic_schedule._route_profile(route, instance, prices)
+        except ValueError:
+            return None
+        candidates = dynamic_schedule._dynamic_assignment_candidates(
+            profile,
+            {asset_state.physical_vehicle_id: working},
+            instance,
+            prices,
+            float(stage_start_second),
+            power,
+            battery_cap,
+        )
+        if not candidates:
+            return None
+        returned, departure, _ = candidates[0]
+        minimum_slack = min(
+            minimum_slack,
+            float(profile.latest_departure_second) - float(departure),
+        )
+        working.available_second = float(returned)
+        working.next_trip_index += 1
+        if route.vehicle_type.lower() == "ev":
+            departure_battery = max(
+                float(working.battery_kwh),
+                float(profile.drive_energy_kwh),
+            )
+            working.battery_kwh = departure_battery - float(profile.drive_energy_kwh)
+    return minimum_slack, float(working.available_second)
+
+
+def asset_aware_future_repack_candidate(
+    construction: gate.StageConstruction,
+    owners: Mapping[str, str],
+    prices: Any,
+    *,
+    asset_states: Mapping[str, Any],
+    stage_start_second: float,
+    allow_cross_depot: bool,
+) -> Solution | None:
+    """Deterministically rebuild current future work around inherited vehicles.
+
+    Only customers present in the current open fragment are used.  The function
+    has no event-stream input and therefore cannot inspect a later trigger.
+    """
+
+    instance = construction.effective_instance
+    node_by_id = {node.node_id: node for node in instance.nodes}
+    customers = sorted(
+        {
+            customer_id
+            for route in construction.solution.routes
+            for customer_id in p2.route_customers(route, instance)
+        },
+        key=lambda customer_id: (
+            float(node_by_id[customer_id].due_time),
+            float(node_by_id[customer_id].ready_time),
+            -float(node_by_id[customer_id].demand),
+            customer_id,
+        ),
+    )
+    if not customers:
+        return None
+    ordered_assets = sorted(asset_states.items())
+    if not ordered_assets:
+        return None
+    asset_rank = {asset_id: index for index, (asset_id, _) in enumerate(ordered_assets)}
+    chains: dict[str, list[Route]] = {asset_id: [] for asset_id, _ in ordered_assets}
+
+    for customer_id in customers:
+        owner = owners.get(customer_id)
+        if owner is None:
+            return None
+        options: list[
+            tuple[tuple[float, float, int, float, str, int, int], str, list[Route]]
+        ] = []
+        for asset_id, state in ordered_assets:
+            if not allow_cross_depot and state.home_depot_id != owner:
+                continue
+            current_chain = chains[asset_id]
+            placements: list[tuple[int, int, Route, float, int]] = []
+            for route_index, route in enumerate(current_chain):
+                for insert_at in range(1, len(route.node_sequence)):
+                    sequence = list(route.node_sequence)
+                    sequence.insert(insert_at, customer_id)
+                    candidate_route = replace(route, node_sequence=sequence)
+                    if (
+                        gate._route_load(candidate_route, instance)
+                        > float(prices.Q_capacity) + 1e-6
+                    ):
+                        continue
+                    try:
+                        gate.route_timing(candidate_route, instance, prices)
+                    except ValueError:
+                        continue
+                    placements.append(
+                        (
+                            route_index,
+                            insert_at,
+                            candidate_route,
+                            gate._incremental_distance(
+                                route,
+                                insert_at,
+                                customer_id,
+                                instance,
+                            ),
+                            0,
+                        )
+                    )
+            new_route = Route(
+                vehicle_id=(
+                    f"AWARE_{asset_rank[asset_id] + 1:02d}_"
+                    f"{len(current_chain) + 1:03d}"
+                ),
+                vehicle_type=state.vehicle_type,
+                home_depot_id=state.home_depot_id,
+                node_sequence=[state.home_depot_id, customer_id, state.home_depot_id],
+            )
+            try:
+                gate.route_timing(new_route, instance, prices)
+            except ValueError:
+                pass
+            else:
+                new_distance = (
+                    instance.distance(state.home_depot_id, customer_id)
+                    + instance.distance(customer_id, state.home_depot_id)
+                )
+                placements.append(
+                    (len(current_chain), 1, new_route, float(new_distance), 1)
+                )
+
+            for route_index, insert_at, candidate_route, extra_distance, new_trip in placements:
+                proposed = list(current_chain)
+                if new_trip:
+                    proposed.append(candidate_route)
+                else:
+                    proposed[route_index] = candidate_route
+                projection = _project_asset_chain(
+                    proposed,
+                    state,
+                    instance,
+                    prices,
+                    stage_start_second,
+                )
+                if projection is None:
+                    continue
+                minimum_slack, finish_second = projection
+                rank = (
+                    -float(minimum_slack),
+                    float(extra_distance),
+                    int(new_trip),
+                    float(finish_second),
+                    asset_id,
+                    int(route_index),
+                    int(insert_at),
+                )
+                options.append((rank, asset_id, proposed))
+        if not options:
+            return None
+        _, selected_asset_id, selected_chain = min(options, key=lambda item: item[0])
+        chains[selected_asset_id] = selected_chain
+
+    routes = [route for asset_id, _ in ordered_assets for route in chains[asset_id]]
+    return Solution(
+        routes=routes,
+        charging_actions=[],
+        cross_site_services=p2.annotate_cross_site(routes, instance, owners),
+    )
+
+
+def _evaluate_specialist_candidate_once(
+    context: EvaluationContext,
+    candidate_solution: Solution | None,
+    exact_evaluator: Callable[[Solution], tuple[Solution, Any, float]],
+) -> tuple[tuple[Solution, Any, float] | None, ValueError | None]:
+    """Count and exactly check one complete specialist candidate at most once."""
+
+    assert context.budget is not None
+    context.budget.record()
+    context.score_counts["candidate"] = int(context.score_counts.get("candidate", 0)) + 1
+    if candidate_solution is None:
+        return None, None
+    try:
+        return exact_evaluator(candidate_solution), None
+    except ValueError as exc:
+        return None, exc
+
+
 def future_repack_candidate(
     construction: gate.StageConstruction,
     owners: Mapping[str, str],
@@ -584,9 +797,11 @@ def search_stage(
     best_prepared = current_prepared
     best_certificate = current_certificate
     best_cost = current_cost
-    changed_count = feasible_count = accepted_count = 0
+    changed_count = feasible_count = accepted_count = exact_check_count = 0
     dynamic_rejections: Counter[str] = Counter()
     for iteration in range(1, evaluations + 1):
+        specialist_result = None
+        specialist_error = None
         pair_index = int(rng.choice(len(pairs), p=weights / weights.sum()))
         destroy_id, repair_id = pairs[pair_index]
         local_repair_limit = min(400, max(50, evaluations // 2))
@@ -597,7 +812,16 @@ def search_stage(
             iteration <= local_repair_limit or not initial_feasible
         )
         if specialist_used:
-            if not initial_feasible and iteration <= local_repair_limit and iteration % 2 == 0:
+            if not initial_feasible and iteration == 1:
+                candidate_solution = asset_aware_future_repack_candidate(
+                    construction,
+                    owners,
+                    sources["prices"],
+                    asset_states=cut.asset_states,
+                    stage_start_second=trigger,
+                    allow_cross_depot=allow_cross_depot,
+                )
+            elif not initial_feasible and iteration <= local_repair_limit and iteration % 2 == 0:
                 candidate_solution = future_repack_candidate(
                     construction,
                     owners,
@@ -615,10 +839,20 @@ def search_stage(
                     allow_cross_depot=allow_cross_depot,
                     rng=rng,
                 )
-            assert context.budget is not None
-            context.budget.record()
-            context.score_counts["candidate"] = int(context.score_counts.get("candidate", 0)) + 1
+            specialist_result, specialist_error = _evaluate_specialist_candidate_once(
+                context,
+                candidate_solution,
+                lambda candidate: exact_candidate(
+                    candidate,
+                    construction,
+                    sources,
+                    cut,
+                    trigger,
+                ),
+            )
             changed = candidate_solution is not None
+            if changed:
+                exact_check_count += 1
         else:
             outcome = apply_winner_action(
                 current,
@@ -640,13 +874,21 @@ def search_stage(
         if changed and candidate_solution is not None:
             changed_count += 1
             try:
-                candidate_prepared, candidate_certificate, candidate_cost = exact_candidate(
-                    candidate_solution,
-                    construction,
-                    sources,
-                    cut,
-                    trigger,
-                )
+                if specialist_used:
+                    if specialist_error is not None:
+                        raise specialist_error
+                    if specialist_result is None:
+                        raise RuntimeError("counted specialist candidate was not evaluated")
+                    candidate_prepared, candidate_certificate, candidate_cost = specialist_result
+                else:
+                    exact_check_count += 1
+                    candidate_prepared, candidate_certificate, candidate_cost = exact_candidate(
+                        candidate_solution,
+                        construction,
+                        sources,
+                        cut,
+                        trigger,
+                    )
                 feasible_count += 1
                 improves_current = candidate_cost <= current_cost
                 temperature = max(1.0, (best_cost if math.isfinite(best_cost) else 1000.0) * 0.01)
@@ -691,6 +933,7 @@ def search_stage(
         "changed_count": changed_count,
         "feasible_count": feasible_count,
         "accepted_count": accepted_count,
+        "exact_check_count": exact_check_count,
         "dynamic_rejections": dict(dynamic_rejections),
         "evaluations": evaluations,
         "elapsed_seconds": time.perf_counter() - started,
@@ -844,7 +1087,9 @@ def run_session(
                 "running_total_cost": committed.get("total_cost", 0.0) + result["future_cost"],
                 "cross_site_customer_count": len(result["solution"].cross_site_services),
                 "initial_continuation_feasible": result["initial_feasible"],
+                "initial_type_trial_count": result["type_trials"],
                 "changed_candidate_count": result["changed_count"],
+                "search_exact_check_count": result["exact_check_count"],
                 "executable_candidate_count": result["feasible_count"],
                 "accepted_candidate_count": result["accepted_count"],
                 "evaluations": result["evaluations"],

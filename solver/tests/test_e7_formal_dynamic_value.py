@@ -2,12 +2,171 @@ from __future__ import annotations
 
 import argparse
 import csv
+from dataclasses import replace
 import json
 import sys
+from types import SimpleNamespace
 
 import pytest
 
 from baselines.e7_dynamic import e7_formal_dynamic_value_20260714 as formal
+from setp_solver.instance_loader import Instance, Node
+from setp_solver.search.dynamic_multitrip_schedule import DynamicAssetState
+from setp_solver.search.evaluation import EvalBudget
+from setp_solver.solution import Route, Solution
+
+
+def _asset_aware_fixture() -> tuple[
+    formal.gate.StageConstruction,
+    dict[str, str],
+    object,
+    dict[str, DynamicAssetState],
+]:
+    nodes = [
+        Node("D0", "d", 0.0, 0.0, due_time=30_000.0),
+        Node("D1", "d", 10.0, 0.0, due_time=30_000.0),
+        Node("C0", "c", 1.0, 0.0, demand=10.0, due_time=20_000.0),
+        Node("C1", "c", 9.0, 0.0, demand=10.0, due_time=20_000.0),
+    ]
+    distances = [
+        [0.0, 10_000.0, 1_000.0, 9_000.0],
+        [10_000.0, 0.0, 9_000.0, 1_000.0],
+        [1_000.0, 9_000.0, 0.0, 8_000.0],
+        [9_000.0, 1_000.0, 8_000.0, 0.0],
+    ]
+    instance = Instance(nodes=nodes, distance_matrix=distances, num_cv=2, num_ev=0)
+    construction = formal.gate.StageConstruction(
+        solution=Solution(
+            routes=[
+                Route("old-0", "cv", "D1", ["D1", "C0", "D1"]),
+                Route("old-1", "cv", "D0", ["D0", "C1", "D0"]),
+            ]
+        ),
+        effective_instance=instance,
+        applied_event_ids=(),
+        ignored_locked_event_ids=(),
+        feasibility_check_count=0,
+    )
+    owners = {"C0": "D0", "C1": "D1"}
+    prices = replace(
+        formal.legacy.prices_for("M1", 0.0),
+        Q_capacity=100.0,
+        B_battery_kwh=280.0,
+        initial_ev_battery_kwh=280.0,
+    )
+    states = {
+        "CV_D0_1": DynamicAssetState("CV_D0_1", "cv", "D0", 0.0, 0.0, 1),
+        "CV_D1_1": DynamicAssetState("CV_D1_1", "cv", "D1", 0.0, 0.0, 1),
+    }
+    return construction, owners, prices, states
+
+
+def test_asset_aware_repack_is_deterministic() -> None:
+    construction, owners, prices, states = _asset_aware_fixture()
+    first = formal.asset_aware_future_repack_candidate(
+        construction,
+        owners,
+        prices,
+        asset_states=states,
+        stage_start_second=1_000.0,
+        allow_cross_depot=False,
+    )
+    second = formal.asset_aware_future_repack_candidate(
+        construction,
+        owners,
+        prices,
+        asset_states=states,
+        stage_start_second=1_000.0,
+        allow_cross_depot=False,
+    )
+    assert first == second
+
+
+def test_asset_aware_repack_independent_stays_home() -> None:
+    construction, owners, prices, states = _asset_aware_fixture()
+    first = formal.asset_aware_future_repack_candidate(
+        construction,
+        owners,
+        prices,
+        asset_states=states,
+        stage_start_second=1_000.0,
+        allow_cross_depot=False,
+    )
+    assert first is not None
+    for route in first.routes:
+        for customer_id in formal.p2.route_customers(route, construction.effective_instance):
+            assert route.home_depot_id == owners[customer_id]
+    assert first.cross_site_services == []
+
+
+def test_asset_aware_repack_preserves_customers_and_route_feasibility() -> None:
+    construction, owners, prices, states = _asset_aware_fixture()
+    candidate = formal.asset_aware_future_repack_candidate(
+        construction,
+        owners,
+        prices,
+        asset_states=states,
+        stage_start_second=1_000.0,
+        allow_cross_depot=False,
+    )
+    assert candidate is not None
+    customers = [
+        customer_id
+        for route in candidate.routes
+        for customer_id in formal.p2.route_customers(route, construction.effective_instance)
+    ]
+    assert sorted(customers) == ["C0", "C1"]
+    assert len(customers) == len(set(customers))
+    for route in candidate.routes:
+        assert formal.gate._route_load(route, construction.effective_instance) <= prices.Q_capacity
+        formal.gate.route_timing(route, construction.effective_instance, prices)
+
+
+def test_specialist_complete_candidate_has_one_budget_record_and_one_exact_check() -> None:
+    context = SimpleNamespace(
+        budget=EvalBudget(limit=1, target=1),
+        score_counts={},
+    )
+    candidate = Solution(routes=[])
+    calls: list[Solution] = []
+
+    def exact_evaluator(solution: Solution) -> tuple[Solution, object, float]:
+        calls.append(solution)
+        return solution, object(), 1.0
+
+    result, error = formal._evaluate_specialist_candidate_once(
+        context,
+        candidate,
+        exact_evaluator,
+    )
+    assert error is None
+    assert result is not None
+    assert context.budget.count == 1
+    assert context.score_counts == {"candidate": 1}
+    assert calls == [candidate]
+
+
+def test_missing_specialist_candidate_still_counts_budget_without_exact_check() -> None:
+    context = SimpleNamespace(
+        budget=EvalBudget(limit=1, target=1),
+        score_counts={},
+    )
+    calls: list[Solution] = []
+
+    def exact_evaluator(solution: Solution) -> tuple[Solution, object, float]:
+        calls.append(solution)
+        return solution, object(), 1.0
+
+    result, error = formal._evaluate_specialist_candidate_once(
+        context,
+        None,
+        exact_evaluator,
+    )
+    assert result is None
+    assert error is None
+    assert context.budget.count == 1
+    assert context.score_counts == {"candidate": 1}
+    assert calls == []
 
 
 def test_frozen_stream_and_batched_trigger_contract() -> None:
