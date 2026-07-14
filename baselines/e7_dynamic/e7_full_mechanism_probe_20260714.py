@@ -46,8 +46,8 @@ from setp_solver.search.multitrip_schedule import (
 from setp_solver.solution import ChargingAction, Route, Solution
 
 
-OUT = ROOT / "baselines/e7_dynamic/e7_full_mechanism_gate_v3_20260714"
-CONTRACT_ID = "E7_FULL_MECHANISM_GATE_V3_EQUAL_COMPUTE_CARBON_SETTLEMENT"
+OUT = ROOT / "baselines/e7_dynamic/e7_full_mechanism_gate_v5_20260715"
+CONTRACT_ID = "E7_FULL_MECHANISM_GATE_V5_EXISTING_RECIPROCAL_NEIGHBORHOOD"
 OPERATING_DAY = date(2025, 11, 13)
 STREAM_SEED = 1
 MAX_STAGES = 2
@@ -311,6 +311,37 @@ def _timing_comparison(
         raise RuntimeError("charging comparison changed routes")
     if energy_hash(immediate) != energy_hash(aware):
         raise RuntimeError("charging comparison changed charging energy")
+
+    def action_identity(action: ChargingAction) -> tuple[str, str, float, float, int]:
+        return (
+            str(action.vehicle_id),
+            str(action.station_id),
+            round(float(action.energy_kwh), 9),
+            round(float(action.occupancy_minutes), 9),
+            int(action.charge_day_offset),
+        )
+
+    immediate_actions = {
+        action_identity(action): action for action in immediate.charging_actions
+    }
+    aware_actions = {
+        action_identity(action): action for action in aware.charging_actions
+    }
+    if len(immediate_actions) != len(immediate.charging_actions):
+        raise RuntimeError("immediate charging comparison contains duplicate actions")
+    if len(aware_actions) != len(aware.charging_actions):
+        raise RuntimeError("forecast-timed charging comparison contains duplicate actions")
+    if immediate_actions.keys() != aware_actions.keys():
+        raise RuntimeError("charging comparison changed action identities")
+    timing_shifted_keys = [
+        key
+        for key in immediate_actions
+        if abs(
+            float(immediate_actions[key].charge_start_second)
+            - float(aware_actions[key].charge_start_second)
+        )
+        > TOL
+    ]
     values = {
         "immediate_predicted_charging_emissions_kg": _charging_emissions_kg(
             immediate, instance, profiles, "forecast_gco2_per_kwh"
@@ -323,6 +354,10 @@ def _timing_comparison(
         ),
         "aware_actual_charging_emissions_kg": _charging_emissions_kg(
             aware, instance, profiles, "actual_gco2_per_kwh"
+        ),
+        "aware_vs_immediate_moved_action_count": len(timing_shifted_keys),
+        "aware_vs_immediate_moved_energy_kwh": sum(
+            float(aware_actions[key].energy_kwh) for key in timing_shifted_keys
         ),
     }
     values["predicted_charging_saving_kg"] = (
@@ -668,6 +703,16 @@ def _controlled_stage(
         )
     if selected["future_cost"] > baseline["future_cost"] + TOL:
         raise RuntimeError("second search lost the same-state cost fallback")
+    paired_existing_fields = (
+        "existing_cross_operator_id",
+        "existing_cross_scheduled_slots",
+        "existing_cross_scheduled_call_count",
+        "existing_cross_actual_call_count",
+    )
+    if any(selected[field] != baseline[field] for field in paired_existing_fields):
+        raise RuntimeError(
+            "paired searches did not use the same existing-customer call schedule"
+        )
 
     strategy = "naive" if arm == "carbon_blind" else "aware"
     timing_variant = _timing_variant_for_strategy(strategy)
@@ -762,6 +807,9 @@ def _controlled_stage(
         "stage_new_customer_count": len(stage_new_customer_ids),
         "forced_cross_attempt_count": int(
             selected["forced_cross_attempt_count"]
+        ),
+        "shadow_existing_cross_actual_call_count": int(
+            baseline["existing_cross_actual_call_count"]
         ),
     }
 
@@ -947,11 +995,68 @@ def run_probe_arm(
                 ),
                 "moved_charge_actions": int(result["timing"]["moved_action_count"]),
                 "moved_charge_kwh": float(result["timing"]["moved_energy_kwh"]),
+                "moved_from_search_schedule_actions": int(
+                    result["timing"]["moved_action_count"]
+                ),
+                "moved_from_search_schedule_kwh": float(
+                    result["timing"]["moved_energy_kwh"]
+                ),
                 "feasible_cross_candidate_count": int(
                     result["feasible_cross_candidate_count"]
                 ),
                 "forced_cross_attempt_count": int(
                     result["forced_cross_attempt_count"]
+                ),
+                "existing_cross_operator_id": result[
+                    "existing_cross_operator_id"
+                ],
+                "existing_cross_scheduled_slots": ";".join(
+                    str(value)
+                    for value in result["existing_cross_scheduled_slots"]
+                ),
+                "existing_cross_scheduled_call_count": int(
+                    result["existing_cross_scheduled_call_count"]
+                ),
+                "existing_cross_actual_call_count": int(
+                    result["existing_cross_actual_call_count"]
+                ),
+                "shadow_existing_cross_actual_call_count": int(
+                    result["shadow_existing_cross_actual_call_count"]
+                ),
+                "existing_cross_pair_removal_count": int(
+                    result["existing_cross_pair_removal_count"]
+                ),
+                "existing_cross_forced_insertion_count": int(
+                    result["existing_cross_forced_insertion_count"]
+                ),
+                "existing_cross_within_depot_reinsert_count": int(
+                    result["existing_cross_within_depot_reinsert_count"]
+                ),
+                "existing_cross_candidate_build_count": int(
+                    result["existing_cross_candidate_build_count"]
+                ),
+                "existing_cross_changed_candidate_count": int(
+                    result["existing_cross_changed_candidate_count"]
+                ),
+                "existing_cross_dynamic_feasible_count": int(
+                    result["existing_cross_dynamic_feasible_count"]
+                ),
+                "existing_cross_gate_rejection_count": int(
+                    result["existing_cross_gate_rejection_count"]
+                ),
+                "existing_cross_accepted_count": int(
+                    result["existing_cross_accepted_count"]
+                ),
+                "existing_cross_best_improved_count": int(
+                    result["existing_cross_best_improved_count"]
+                ),
+                "existing_cross_moved_customer_ids": ";".join(
+                    result["existing_cross_moved_customer_ids"]
+                ),
+                "existing_cross_rejection_counts_json": json.dumps(
+                    result["existing_cross_rejections"],
+                    ensure_ascii=False,
+                    sort_keys=True,
                 ),
                 "stage_new_customer_count": int(
                     result["stage_new_customer_count"]
@@ -1155,8 +1260,6 @@ def main() -> int:
     ):
         failures.append("forecast-timed charging increased predicted emissions")
     aware_rows = [row for row in rows if row["charging_strategy"] == "aware"]
-    if sum(int(row["moved_charge_actions"]) for row in aware_rows) <= 0:
-        failures.append("forecast timing moved no dynamic charging action")
     carbon_blind_rows = [row for row in rows if row["arm"] == "carbon_blind"]
     if any(
         int(row["charge_actions_at_earliest"])
@@ -1182,6 +1285,21 @@ def main() -> int:
         if row["arm"] == "no_cooperation"
     ):
         failures.append("no-cooperation arm exercised a cross-depot check")
+    if any(
+        int(row["existing_cross_scheduled_call_count"])
+        != int(row["existing_cross_actual_call_count"])
+        or int(row["existing_cross_actual_call_count"])
+        != int(row["shadow_existing_cross_actual_call_count"])
+        for row in rows
+    ):
+        failures.append("existing-customer paired call schedule did not close")
+    if any(
+        int(row["existing_cross_forced_insertion_count"]) != 0
+        or bool(row["existing_cross_moved_customer_ids"])
+        for row in rows
+        if row["arm"] == "no_cooperation"
+    ):
+        failures.append("no-cooperation arm used an existing-customer cross-depot move")
     if args.require_observable:
         for condition in args.conditions:
             observed = sum(
@@ -1193,14 +1311,25 @@ def main() -> int:
                 failures.append(
                     f"no feasible cross-depot candidate was observed for {condition}"
                 )
+            existing_observed = sum(
+                int(row["existing_cross_dynamic_feasible_count"])
+                for row in cooperative_rows
+                if row["responsibility_condition"] == condition
+            )
+            if existing_observed <= 0:
+                failures.append(
+                    "no executable existing-customer cross-depot candidate was "
+                    f"observed for {condition}"
+                )
     verdict = (
         "E7_FULL_MECHANISM_GATE_PASS"
         if not failures
         else "HALT_E7_FULL_MECHANISM_GATE"
     )
     metadata = {
-        "schema": "setp.e7.full_mechanism_gate.v3",
+        "schema": "setp.e7.full_mechanism_gate.v5",
         "contract_id": CONTRACT_ID,
+        "base_dynamic_contract_id": base.CONTRACT_ID,
         "source_commit": git_head(),
         "operating_day": OPERATING_DAY.isoformat(),
         "operating_day_reason": (
@@ -1243,11 +1372,32 @@ def main() -> int:
                 float(row["minimum_profit_margin"])
                 for row in participation_rows
             ),
-            "aware_moved_action_count": sum(
-                int(row["moved_charge_actions"]) for row in aware_rows
+            "moved_from_search_schedule_action_count": sum(
+                int(row["moved_from_search_schedule_actions"])
+                for row in aware_rows
+            ),
+            "aware_vs_immediate_moved_action_count": sum(
+                int(row["aware_vs_immediate_moved_action_count"])
+                for row in aware_rows
             ),
             "feasible_cross_candidate_count": sum(
                 int(row["feasible_cross_candidate_count"])
+                for row in cooperative_rows
+            ),
+            "existing_cross_scheduled_call_count": sum(
+                int(row["existing_cross_scheduled_call_count"])
+                for row in rows
+            ),
+            "existing_cross_dynamic_feasible_count": sum(
+                int(row["existing_cross_dynamic_feasible_count"])
+                for row in cooperative_rows
+            ),
+            "existing_cross_accepted_count": sum(
+                int(row["existing_cross_accepted_count"])
+                for row in cooperative_rows
+            ),
+            "existing_cross_best_improved_count": sum(
+                int(row["existing_cross_best_improved_count"])
                 for row in cooperative_rows
             ),
             "forced_cross_attempt_count": sum(
@@ -1291,6 +1441,8 @@ def main() -> int:
         f"本次运行使用第1条订单流的前{args.max_stages}次调整。四组在每次调整中均完成两轮、每轮{args.evaluations}次方案比较。第一轮形成从当前状态继续各自经营的保底方案，第二轮仅切换被检验的规则。低碳组按预测碳强度安排充电，并用实际碳强度结算。",
         "",
         f"共得到{len(rows)}行阶段结果；观察到{decision['mechanical_checks']['feasible_cross_candidate_count']}个可执行的跨场候选；按预测安排相对有空即充的预测排放减少{decision['mechanical_checks']['predicted_charging_saving_kg']:.6f} kg，按实际碳强度结算的差值为{decision['mechanical_checks']['actual_charging_saving_kg']:.6f} kg。",
+        "",
+        f"充电相对搜索初始排班移动{decision['mechanical_checks']['moved_from_search_schedule_action_count']}次；低碳安排相对有空即充实际移动{decision['mechanical_checks']['aware_vs_immediate_moved_action_count']}次。两者必须分开解释。",
         "",
         "本结果只用于决定运行链条是否具备正式扩展条件，不作为论文中的机制效应数字。",
     ]

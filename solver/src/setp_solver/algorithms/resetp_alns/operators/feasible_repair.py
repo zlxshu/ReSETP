@@ -131,6 +131,7 @@ def repair_removed_customers(
     *,
     mode: str,
     allow_new_route: bool = True,
+    defer_complete_check: bool = False,
 ) -> Solution | None:
     pending = list(dict.fromkeys(removed_customers))
     current = partial_solution
@@ -246,11 +247,13 @@ def repair_removed_customers(
                 context.score_counts.get("cross_depot_forced_insertions", 0)
             ) + 1
         pending.remove(customer_id)
-    if _strict_multitrip_enabled():
+    if defer_complete_check or _strict_multitrip_enabled():
         # The strict complete-candidate scorer is the single authority for
         # physical packing, carried battery, and depot caps. The legacy
         # route-level check assumes zero starting battery and otherwise falls
         # back to an all-fuel fleet, which destroys valid E3 mixed solutions.
+        # E7 uses the explicit flag because its complete candidate must instead
+        # be checked by the dynamic scheduler with inherited asset state.
         return current
     if _is_full_solution_feasible(current, context, policy):
         return _normalize_for_policy(current, context, policy)

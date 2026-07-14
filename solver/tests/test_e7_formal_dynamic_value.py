@@ -62,6 +62,46 @@ def _asset_aware_fixture() -> tuple[
     return construction, owners, prices, states
 
 
+def _reciprocal_existing_fixture() -> tuple[
+    formal.gate.StageConstruction,
+    dict[str, str],
+    object,
+]:
+    nodes = [
+        Node("D0", "d", 0.0, 0.0, due_time=30_000.0),
+        Node("D1", "d", 10.0, 0.0, due_time=30_000.0),
+        Node("C0a", "c", 2.0, 0.0, demand=10.0, due_time=20_000.0),
+        Node("C0b", "c", 4.0, 0.0, demand=10.0, due_time=20_000.0),
+        Node("C1a", "c", 6.0, 0.0, demand=10.0, due_time=20_000.0),
+        Node("C1b", "c", 8.0, 0.0, demand=10.0, due_time=20_000.0),
+    ]
+    distances = [
+        [abs(float(left.x) - float(right.x)) * 1_000.0 for right in nodes]
+        for left in nodes
+    ]
+    instance = Instance(nodes=nodes, distance_matrix=distances, num_cv=2, num_ev=0)
+    construction = formal.gate.StageConstruction(
+        solution=Solution(
+            routes=[
+                Route("CV_D0_1", "cv", "D0", ["D0", "C0a", "C0b", "D0"]),
+                Route("CV_D1_1", "cv", "D1", ["D1", "C1a", "C1b", "D1"]),
+            ]
+        ),
+        effective_instance=instance,
+        applied_event_ids=(),
+        ignored_locked_event_ids=(),
+        feasibility_check_count=0,
+    )
+    owners = {"C0a": "D0", "C0b": "D0", "C1a": "D1", "C1b": "D1"}
+    prices = replace(
+        formal.legacy.prices_for("M1", 0.0),
+        Q_capacity=100.0,
+        B_battery_kwh=280.0,
+        initial_ev_battery_kwh=280.0,
+    )
+    return construction, owners, prices
+
+
 def test_asset_aware_repack_is_deterministic() -> None:
     construction, owners, prices, states = _asset_aware_fixture()
     first = formal.asset_aware_future_repack_candidate(
@@ -168,6 +208,208 @@ def test_missing_specialist_candidate_still_counts_budget_without_exact_check() 
     assert context.budget.count == 1
     assert context.score_counts == {"candidate": 1}
     assert calls == []
+
+
+def test_existing_customer_cross_schedule_preserves_new_order_priority() -> None:
+    assert formal.existing_customer_cross_slots(50, 0) == (1,)
+    assert formal.existing_customer_cross_slots(50, 2) == (5,)
+    assert formal.existing_customer_cross_slots(250, 6) == (7, 107, 207)
+
+
+def test_existing_customer_pair_excludes_new_orders_and_reuses_both_arms() -> None:
+    construction, owners, prices = _reciprocal_existing_fixture()
+    cooperative, cooperative_evidence = formal.existing_customer_reciprocal_candidate(
+        construction.solution,
+        construction.effective_instance,
+        owners,
+        prices,
+        [],
+        stage_new_customer_ids=("C0b",),
+        allow_cross_depot=True,
+        rng=np.random.default_rng(17),
+    )
+    independent, independent_evidence = formal.existing_customer_reciprocal_candidate(
+        construction.solution,
+        construction.effective_instance,
+        owners,
+        prices,
+        [],
+        stage_new_customer_ids=("C0b",),
+        allow_cross_depot=False,
+        rng=np.random.default_rng(17),
+    )
+
+    assert cooperative is not None
+    assert independent is not None
+    assert cooperative_evidence["removed_customer_ids"] == independent_evidence[
+        "removed_customer_ids"
+    ]
+    assert "C0b" not in cooperative_evidence["removed_customer_ids"]
+    assert cooperative_evidence["forced_insertion_count"] == 2
+    assert cooperative_evidence["candidate_changed"] is True
+    assert independent_evidence["within_depot_reinserted"] is True
+    assert independent_evidence["candidate_changed"] is True
+
+    cooperative_cross = formal._cross_site_ids_for_routes(
+        cooperative.routes,
+        construction.effective_instance,
+        owners,
+    )
+    assert set(cooperative_cross) == set(cooperative_evidence["removed_customer_ids"])
+    assert formal._cross_site_ids_for_routes(
+        independent.routes,
+        construction.effective_instance,
+        owners,
+    ) == []
+    for candidate in (cooperative, independent):
+        customers = [
+            customer_id
+            for route in candidate.routes
+            for customer_id in formal.p2.route_customers(
+                route,
+                construction.effective_instance,
+            )
+        ]
+        assert sorted(customers) == sorted(owners)
+        assert len(customers) == len(set(customers))
+
+
+@pytest.mark.parametrize("allow_cross_depot", [False, True])
+def test_existing_customer_candidate_uses_common_dynamic_check_and_gate(
+    monkeypatch,
+    allow_cross_depot: bool,
+) -> None:
+    construction, owners, prices = _reciprocal_existing_fixture()
+    certificate = SimpleNamespace(status="PASS")
+    monkeypatch.setattr(
+        formal.gate,
+        "prepare_stage_with_singleton_type_choices",
+        lambda *args, **kwargs: (construction.solution, certificate, 0),
+    )
+    monkeypatch.setattr(
+        formal,
+        "evaluate_parts",
+        lambda *args, **kwargs: {"total_cost": 100.0},
+    )
+    exact_calls: list[Solution] = []
+    gate_calls: list[Solution] = []
+
+    def exact(candidate: Solution, *args: object) -> tuple[Solution, object, float]:
+        exact_calls.append(candidate)
+        return candidate, certificate, 90.0
+
+    def candidate_gate(candidate: Solution, *_args: object) -> bool:
+        gate_calls.append(candidate)
+        return True
+
+    monkeypatch.setattr(formal, "exact_candidate", exact)
+    result = formal.search_stage(
+        construction,
+        {"prices": prices, "bundle": SimpleNamespace(carbon_profile=[])},
+        SimpleNamespace(asset_states={}, locked_charging_actions=()),
+        owners,
+        set(),
+        trigger=0.0,
+        seed=19,
+        evaluations=1,
+        allow_cross_depot=allow_cross_depot,
+        stage_new_customer_ids=(),
+        candidate_best_gate=candidate_gate,
+    )
+
+    assert len(exact_calls) == 1
+    assert len(gate_calls) == 1
+    assert result["evaluations"] == 1
+    assert result["existing_cross_scheduled_slots"] == [1]
+    assert result["existing_cross_actual_call_count"] == 1
+    assert result["existing_cross_candidate_build_count"] == 1
+    assert result["existing_cross_changed_candidate_count"] == 1
+    assert result["existing_cross_dynamic_feasible_count"] == 1
+    assert result["existing_cross_best_improved_count"] == 1
+    if allow_cross_depot:
+        assert result["existing_cross_forced_insertion_count"] == 2
+        assert result["existing_cross_within_depot_reinsert_count"] == 0
+        assert len(result["existing_cross_moved_customer_ids"]) == 2
+    else:
+        assert result["existing_cross_forced_insertion_count"] == 0
+        assert result["existing_cross_within_depot_reinsert_count"] == 1
+        assert result["existing_cross_moved_customer_ids"] == []
+
+
+def test_existing_customer_candidate_cannot_become_best_when_gate_rejects(
+    monkeypatch,
+) -> None:
+    construction, owners, prices = _reciprocal_existing_fixture()
+    certificate = SimpleNamespace(status="PASS")
+    monkeypatch.setattr(
+        formal.gate,
+        "prepare_stage_with_singleton_type_choices",
+        lambda *args, **kwargs: (construction.solution, certificate, 0),
+    )
+    monkeypatch.setattr(
+        formal,
+        "evaluate_parts",
+        lambda *args, **kwargs: {"total_cost": 100.0},
+    )
+    monkeypatch.setattr(
+        formal,
+        "exact_candidate",
+        lambda candidate, *args: (candidate, certificate, 90.0),
+    )
+    result = formal.search_stage(
+        construction,
+        {"prices": prices, "bundle": SimpleNamespace(carbon_profile=[])},
+        SimpleNamespace(asset_states={}, locked_charging_actions=()),
+        owners,
+        set(),
+        trigger=0.0,
+        seed=23,
+        evaluations=1,
+        allow_cross_depot=True,
+        stage_new_customer_ids=(),
+        candidate_best_gate=lambda *_args: False,
+    )
+
+    assert result["future_cost"] == 100.0
+    assert result["existing_cross_gate_rejection_count"] == 1
+    assert result["existing_cross_best_improved_count"] == 0
+
+
+def test_existing_customer_candidate_keeps_dynamic_rejection(monkeypatch) -> None:
+    construction, owners, prices = _reciprocal_existing_fixture()
+    certificate = SimpleNamespace(status="PASS")
+    monkeypatch.setattr(
+        formal.gate,
+        "prepare_stage_with_singleton_type_choices",
+        lambda *args, **kwargs: (construction.solution, certificate, 0),
+    )
+    monkeypatch.setattr(
+        formal,
+        "evaluate_parts",
+        lambda *args, **kwargs: {"total_cost": 100.0},
+    )
+
+    def reject(*_args: object) -> tuple[Solution, object, float]:
+        raise ValueError("inherited battery conflict")
+
+    monkeypatch.setattr(formal, "exact_candidate", reject)
+    result = formal.search_stage(
+        construction,
+        {"prices": prices, "bundle": SimpleNamespace(carbon_profile=[])},
+        SimpleNamespace(asset_states={}, locked_charging_actions=()),
+        owners,
+        set(),
+        trigger=0.0,
+        seed=29,
+        evaluations=1,
+        allow_cross_depot=True,
+        stage_new_customer_ids=(),
+    )
+
+    assert result["future_cost"] == 100.0
+    assert result["existing_cross_dynamic_feasible_count"] == 0
+    assert result["existing_cross_rejections"] == {"inherited battery conflict": 1}
+    assert result["dynamic_rejections"] == {"inherited battery conflict": 1}
 
 
 def test_event_insertion_splits_shared_source_into_unique_singletons() -> None:
@@ -466,6 +708,41 @@ def test_paired_contract_rejects_different_start_hashes() -> None:
     assert formal.paired_contract_matches(cooperative, independent, stages, stages)
     independent["initial_solution_sha256"] = "different"
     assert not formal.paired_contract_matches(cooperative, independent, stages, stages)
+
+
+def test_paired_contract_rejects_different_existing_customer_call_schedules() -> None:
+    session = {
+        "initial_solution_sha256": "same-solution",
+        "initial_certificate_sha256": "same-certificate",
+        "event_sha256": "same-events",
+        "owner_sha256": "same-owners",
+    }
+    cooperative_stages = [
+        {
+            "stage": 1,
+            "stage_search_seed": 1001,
+            "evaluations": 50,
+            "operator_pairs": "a+b",
+            "existing_cross_operator_id": formal.EXISTING_CROSS_OPERATOR_ID,
+            "existing_cross_scheduled_slots": "5",
+            "existing_cross_scheduled_call_count": 1,
+            "existing_cross_actual_call_count": 1,
+        }
+    ]
+    independent_stages = [dict(cooperative_stages[0])]
+    assert formal.paired_contract_matches(
+        session,
+        session,
+        cooperative_stages,
+        independent_stages,
+    )
+    independent_stages[0]["existing_cross_scheduled_slots"] = "6"
+    assert not formal.paired_contract_matches(
+        session,
+        session,
+        cooperative_stages,
+        independent_stages,
+    )
 
 
 def test_stage_evidence_round_trip_contains_asset_and_customer_hashes() -> None:

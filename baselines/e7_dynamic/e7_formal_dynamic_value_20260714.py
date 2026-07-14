@@ -21,11 +21,19 @@ import numpy as np
 from baselines.e3_ablation import e3_v3_runner as legacy
 from baselines.e7_dynamic import e7_dynamic_continuous_trigger_gate_20260714 as gate
 from baselines.e7_dynamic import e7_p2_single_event_probe_20260714 as p2
-from setp_solver.algorithms.resetp_alns.kernel.alns_core import SearchPolicy
+from setp_solver.algorithms.resetp_alns.kernel.alns_core import (
+    AlnsState,
+    SearchPolicy,
+    cross_depot_boundary_removal,
+)
 from setp_solver.algorithms.resetp_alns.kernel.winner import (
     WinnerOperatorAction,
     WinnerOperatorSet,
     apply_winner_action,
+)
+from setp_solver.algorithms.resetp_alns.operators.feasible_repair import (
+    enumerate_feasible_insertions,
+    repair_removed_customers,
 )
 from setp_solver.cost import evaluate
 from setp_solver.search.bundle import load_search_bundle
@@ -57,8 +65,10 @@ DONOR_BUNDLE = (
 )
 DEFAULT_OUTPUT = ROOT / "baselines/e7_dynamic/e7_v2_20260714/preflight/paired_two_stage"
 INSTANCE_SHA256 = "59696be304ad9f3c484820439e1cbdb027945e20ad7ecbdb8542dfde7e0d6225"
-CONTRACT_ID = "E7_PAIRED_DYNAMIC_VALUE_V4_UNIQUE_EVENT_ROUTE_IDS"
+CONTRACT_ID = "E7_PAIRED_DYNAMIC_VALUE_V5_EXISTING_RECIPROCAL_NEIGHBORHOOD"
 ROLLING_PARAMETERS = RollingParameters()
+EXISTING_CROSS_OPERATOR_ID = "reciprocal_boundary_reinsert_v1"
+EXISTING_CROSS_INTERVAL = 100
 
 
 def sha256(path: Path) -> str:
@@ -323,6 +333,163 @@ def common_operator_pairs() -> tuple[tuple[str, str], ...]:
         for destroy_id, _ in operators.destroy_ops
         for repair_id, _ in operators.repair_ops
     )
+
+
+def existing_customer_cross_slots(
+    evaluations: int,
+    stage_new_customer_count: int,
+) -> tuple[int, ...]:
+    """Return the frozen reciprocal-neighbourhood calls for one E7 stage."""
+
+    if evaluations <= 0:
+        return ()
+    first = 1 if stage_new_customer_count <= 0 else max(4, stage_new_customer_count) + 1
+    if first > evaluations:
+        return ()
+    return tuple(range(first, evaluations + 1, EXISTING_CROSS_INTERVAL))
+
+
+def _within_depot_changed_reinsert(
+    partial_solution: Solution,
+    removed_customers: Sequence[str],
+    source_solution: Solution,
+    context: EvaluationContext,
+    policy: SearchPolicy,
+) -> Solution | None:
+    """Reinsert the selected pair at their home depots with a real route change."""
+
+    source_hash = canonical_sha256(solution_to_dict(source_solution))
+    ordered = tuple(removed_customers)
+    for pending in (ordered, tuple(reversed(ordered))):
+        first, *remaining = pending
+        options = enumerate_feasible_insertions(
+            partial_solution,
+            first,
+            context,
+            policy,
+            max_route_candidates=max(1, len(partial_solution.routes)),
+            max_positions_per_route=2,
+            allow_new_route=False,
+        )
+        for option in options:
+            repaired = repair_removed_customers(
+                option.solution,
+                list(remaining),
+                context,
+                policy,
+                mode="regret2",
+                allow_new_route=False,
+                defer_complete_check=True,
+            )
+            if repaired is None:
+                continue
+            if canonical_sha256(solution_to_dict(repaired)) != source_hash:
+                return repaired
+    return None
+
+
+def existing_customer_reciprocal_candidate(
+    base_solution: Solution,
+    instance: Any,
+    owners: Mapping[str, str],
+    prices: Any,
+    carbon_profile: Sequence[Mapping[str, Any]],
+    *,
+    stage_new_customer_ids: Sequence[str],
+    allow_cross_depot: bool,
+    rng: np.random.Generator,
+) -> tuple[Solution | None, dict[str, Any]]:
+    """Build one route-only reciprocal candidate from not-yet-departed customers.
+
+    This function deliberately performs no complete-solution scoring.  The
+    caller must submit any returned candidate to ``exact_candidate`` so current
+    vehicle availability, carried battery, and locked charging remain the only
+    dynamic feasibility authority.
+    """
+
+    excluded = set(stage_new_customer_ids)
+    existing_owners = {
+        customer_id: depot_id
+        for customer_id, depot_id in owners.items()
+        if customer_id not in excluded
+    }
+    operator_context = EvaluationContext(
+        instance,
+        list(carbon_profile),
+        prices=prices,
+        customer_home_depot=existing_owners,
+        allow_cross_depot=allow_cross_depot,
+        repair_delta_mode="fast",
+    )
+    policy = SearchPolicy(
+        require_charging_signal=False,
+        allow_cross_depot=allow_cross_depot,
+        reciprocal_cross_depot=True,
+    )
+    source = AlnsState(base_solution, operator_context, policy=policy)
+    destroyed = cross_depot_boundary_removal(source, rng)
+    removed = tuple(destroyed.removed_customers)
+    removed_owners = {
+        existing_owners.get(customer_id)
+        for customer_id in removed
+        if existing_owners.get(customer_id) is not None
+    }
+    evidence: dict[str, Any] = {
+        "operator_id": EXISTING_CROSS_OPERATOR_ID,
+        "removed_customer_ids": list(removed),
+        "reciprocal_pair_removal_count": int(
+            operator_context.score_counts.get(
+                "reciprocal_cross_depot_pair_removals",
+                0,
+            )
+        ),
+        "forced_insertion_count": 0,
+        "within_depot_reinserted": False,
+        "candidate_built": False,
+        "candidate_changed": False,
+    }
+    # The E7 treatment is a complete two-way exchange.  Do not fall through to
+    # the legacy one-customer move if one side has no eligible existing customer.
+    if len(removed) != 2 or len(removed_owners) != 2:
+        return None, evidence
+    if allow_cross_depot:
+        repaired = repair_removed_customers(
+            destroyed.solution,
+            list(removed),
+            operator_context,
+            policy,
+            mode="cross_depot",
+            allow_new_route=False,
+            defer_complete_check=True,
+        )
+    else:
+        repaired = _within_depot_changed_reinsert(
+            destroyed.solution,
+            removed,
+            base_solution,
+            operator_context,
+            policy,
+        )
+        evidence["within_depot_reinserted"] = repaired is not None
+    evidence["forced_insertion_count"] = int(
+        operator_context.score_counts.get("cross_depot_forced_insertions", 0)
+    )
+    if repaired is None:
+        return None, evidence
+    candidate = replace(
+        repaired,
+        charging_actions=[],
+        cross_site_services=p2.annotate_cross_site(
+            repaired.routes,
+            instance,
+            owners,
+        ),
+    )
+    evidence["candidate_built"] = True
+    evidence["candidate_changed"] = canonical_sha256(
+        solution_to_dict(candidate)
+    ) != canonical_sha256(solution_to_dict(base_solution))
+    return candidate, evidence
 
 
 def event_insertion_candidate(
@@ -882,16 +1049,95 @@ def search_stage(
             f"{missing_stage_customers}"
         )
     has_isolated_event = bool(active_stage_new_customer_ids)
+    existing_cross_slots = existing_customer_cross_slots(
+        evaluations,
+        len(active_stage_new_customer_ids),
+    )
+    existing_cross_slot_set = set(existing_cross_slots)
+    existing_cross_actual_call_count = 0
+    existing_cross_pair_removal_count = 0
+    existing_cross_forced_insertion_count = 0
+    existing_cross_within_depot_reinsert_count = 0
+    existing_cross_candidate_build_count = 0
+    existing_cross_changed_candidate_count = 0
+    existing_cross_dynamic_feasible_count = 0
+    existing_cross_gate_rejection_count = 0
+    existing_cross_accepted_count = 0
+    existing_cross_best_improved_count = 0
+    existing_cross_moved_customer_ids: set[str] = set()
+    existing_cross_rejections: Counter[str] = Counter()
     for iteration in range(1, evaluations + 1):
         specialist_result = None
         specialist_error = None
+        existing_cross_evidence: dict[str, Any] = {}
+        existing_cross_removed_ids: set[str] = set()
         pair_index = int(rng.choice(len(pairs), p=weights / weights.sum()))
         destroy_id, repair_id = pairs[pair_index]
         local_repair_limit = min(400, max(50, evaluations // 2))
-        specialist_used = has_isolated_event and (
+        existing_cross_used = iteration in existing_cross_slot_set
+        event_specialist_used = has_isolated_event and (
             iteration <= local_repair_limit or not initial_feasible
         )
-        if specialist_used:
+        specialist_used = existing_cross_used or event_specialist_used
+        if existing_cross_used:
+            existing_cross_actual_call_count += 1
+            candidate_solution, existing_cross_evidence = (
+                existing_customer_reciprocal_candidate(
+                    current,
+                    search_instance,
+                    owners,
+                    sources["prices"],
+                    sources["bundle"].carbon_profile,
+                    stage_new_customer_ids=active_stage_new_customer_ids,
+                    allow_cross_depot=allow_cross_depot,
+                    rng=rng,
+                )
+            )
+            existing_cross_removed_ids = set(
+                existing_cross_evidence.get("removed_customer_ids", [])
+            )
+            existing_cross_pair_removal_count += int(
+                existing_cross_evidence.get("reciprocal_pair_removal_count", 0)
+            )
+            existing_cross_forced_insertion_count += int(
+                existing_cross_evidence.get("forced_insertion_count", 0)
+            )
+            existing_cross_within_depot_reinsert_count += int(
+                bool(existing_cross_evidence.get("within_depot_reinserted", False))
+            )
+            existing_cross_candidate_build_count += int(candidate_solution is not None)
+            existing_cross_changed_candidate_count += int(
+                bool(existing_cross_evidence.get("candidate_changed", False))
+            )
+            specialist_result, specialist_error = _evaluate_specialist_candidate_once(
+                context,
+                candidate_solution,
+                lambda candidate: exact_candidate(
+                    candidate,
+                    construction,
+                    sources,
+                    cut,
+                    trigger,
+                ),
+            )
+            changed = bool(existing_cross_evidence.get("candidate_changed", False))
+            if candidate_solution is not None:
+                exact_check_count += 1
+            if specialist_result is not None:
+                existing_cross_dynamic_feasible_count += 1
+                existing_cross_moved_customer_ids.update(
+                    set(
+                        _cross_site_ids_for_routes(
+                            specialist_result[0].routes,
+                            construction.effective_instance,
+                            owners,
+                        )
+                    )
+                    & existing_cross_removed_ids
+                )
+            elif specialist_error is not None:
+                existing_cross_rejections[str(specialist_error)] += 1
+        elif event_specialist_used:
             forced_cross_event = (
                 allow_cross_depot
                 and bool(active_stage_new_customer_ids)
@@ -1018,6 +1264,8 @@ def search_stage(
                 )
                 if not eligible_for_best:
                     best_gate_rejection_count += 1
+                    if existing_cross_used:
+                        existing_cross_gate_rejection_count += 1
                 improves_current = candidate_cost <= current_cost
                 temperature = max(1.0, (best_cost if math.isfinite(best_cost) else 1000.0) * 0.01)
                 temperature *= 0.98 ** (iteration - 1)
@@ -1031,12 +1279,16 @@ def search_stage(
                     current_certificate = candidate_certificate
                     current_cost = candidate_cost
                     accepted_count += 1
+                    if existing_cross_used:
+                        existing_cross_accepted_count += 1
                 if eligible_for_best and candidate_cost < best_cost - 1e-9:
                     best_structure = candidate_structure
                     best_prepared = candidate_prepared
                     best_certificate = candidate_certificate
                     best_cost = candidate_cost
                     improved_best = True
+                    if existing_cross_used:
+                        existing_cross_best_improved_count += 1
             except ValueError as exc:
                 dynamic_rejections[str(exc)] += 1
         reward = 5.0 if improved_best else 2.0 if accepted and improves_current else 1.0 if accepted else 0.1
@@ -1044,6 +1296,8 @@ def search_stage(
             weights[pair_index] = 0.8 * weights[pair_index] + 0.2 * reward
     if context.budget is None or context.budget.count != evaluations:
         raise RuntimeError("stage evaluation count did not close")
+    if existing_cross_actual_call_count != len(existing_cross_slots):
+        raise RuntimeError("existing-customer reciprocal call schedule did not close")
     if best_prepared is None or best_certificate is None or not math.isfinite(best_cost):
         raise RuntimeError(
             "stage search found no executable continuation "
@@ -1064,6 +1318,23 @@ def search_stage(
         "forced_cross_attempt_count": forced_cross_attempt_count,
         "accepted_count": accepted_count,
         "best_gate_rejection_count": best_gate_rejection_count,
+        "existing_cross_operator_id": EXISTING_CROSS_OPERATOR_ID,
+        "existing_cross_scheduled_slots": list(existing_cross_slots),
+        "existing_cross_scheduled_call_count": len(existing_cross_slots),
+        "existing_cross_actual_call_count": existing_cross_actual_call_count,
+        "existing_cross_pair_removal_count": existing_cross_pair_removal_count,
+        "existing_cross_forced_insertion_count": existing_cross_forced_insertion_count,
+        "existing_cross_within_depot_reinsert_count": (
+            existing_cross_within_depot_reinsert_count
+        ),
+        "existing_cross_candidate_build_count": existing_cross_candidate_build_count,
+        "existing_cross_changed_candidate_count": existing_cross_changed_candidate_count,
+        "existing_cross_dynamic_feasible_count": existing_cross_dynamic_feasible_count,
+        "existing_cross_gate_rejection_count": existing_cross_gate_rejection_count,
+        "existing_cross_accepted_count": existing_cross_accepted_count,
+        "existing_cross_best_improved_count": existing_cross_best_improved_count,
+        "existing_cross_moved_customer_ids": sorted(existing_cross_moved_customer_ids),
+        "existing_cross_rejections": dict(existing_cross_rejections),
         "exact_check_count": exact_check_count,
         "dynamic_rejections": dict(dynamic_rejections),
         "evaluations": evaluations,
@@ -1379,7 +1650,59 @@ def run_session(
                 "changed_candidate_count": result["changed_count"],
                 "search_exact_check_count": result["exact_check_count"],
                 "executable_candidate_count": result["feasible_count"],
+                "feasible_cross_candidate_count": result[
+                    "feasible_cross_candidate_count"
+                ],
+                "forced_new_customer_cross_attempt_count": result[
+                    "forced_cross_attempt_count"
+                ],
                 "accepted_candidate_count": result["accepted_count"],
+                "best_gate_rejection_count": result["best_gate_rejection_count"],
+                "existing_cross_operator_id": result["existing_cross_operator_id"],
+                "existing_cross_scheduled_slots": ";".join(
+                    str(value) for value in result["existing_cross_scheduled_slots"]
+                ),
+                "existing_cross_scheduled_call_count": result[
+                    "existing_cross_scheduled_call_count"
+                ],
+                "existing_cross_actual_call_count": result[
+                    "existing_cross_actual_call_count"
+                ],
+                "existing_cross_pair_removal_count": result[
+                    "existing_cross_pair_removal_count"
+                ],
+                "existing_cross_forced_insertion_count": result[
+                    "existing_cross_forced_insertion_count"
+                ],
+                "existing_cross_within_depot_reinsert_count": result[
+                    "existing_cross_within_depot_reinsert_count"
+                ],
+                "existing_cross_candidate_build_count": result[
+                    "existing_cross_candidate_build_count"
+                ],
+                "existing_cross_changed_candidate_count": result[
+                    "existing_cross_changed_candidate_count"
+                ],
+                "existing_cross_dynamic_feasible_count": result[
+                    "existing_cross_dynamic_feasible_count"
+                ],
+                "existing_cross_gate_rejection_count": result[
+                    "existing_cross_gate_rejection_count"
+                ],
+                "existing_cross_accepted_count": result[
+                    "existing_cross_accepted_count"
+                ],
+                "existing_cross_best_improved_count": result[
+                    "existing_cross_best_improved_count"
+                ],
+                "existing_cross_moved_customer_ids": ";".join(
+                    result["existing_cross_moved_customer_ids"]
+                ),
+                "existing_cross_rejection_counts_json": json.dumps(
+                    result["existing_cross_rejections"],
+                    ensure_ascii=False,
+                    sort_keys=True,
+                ),
                 "search_rejection_counts_json": json.dumps(
                     result["dynamic_rejections"],
                     ensure_ascii=False,
@@ -1495,11 +1818,29 @@ def paired_contract_matches(
         and cooperative["event_sha256"] == independent["event_sha256"]
         and cooperative["owner_sha256"] == independent["owner_sha256"]
         and [
-            (row["stage"], row["stage_search_seed"], row["evaluations"], row["operator_pairs"])
+            (
+                row["stage"],
+                row["stage_search_seed"],
+                row["evaluations"],
+                row["operator_pairs"],
+                row.get("existing_cross_operator_id", EXISTING_CROSS_OPERATOR_ID),
+                row.get("existing_cross_scheduled_slots", ""),
+                row.get("existing_cross_scheduled_call_count", 0),
+                row.get("existing_cross_actual_call_count", 0),
+            )
             for row in cooperative_stages
         ]
         == [
-            (row["stage"], row["stage_search_seed"], row["evaluations"], row["operator_pairs"])
+            (
+                row["stage"],
+                row["stage_search_seed"],
+                row["evaluations"],
+                row["operator_pairs"],
+                row.get("existing_cross_operator_id", EXISTING_CROSS_OPERATOR_ID),
+                row.get("existing_cross_scheduled_slots", ""),
+                row.get("existing_cross_scheduled_call_count", 0),
+                row.get("existing_cross_actual_call_count", 0),
+            )
             for row in independent_stages
         ]
     )
@@ -1593,7 +1934,7 @@ def write_artifacts(
                         len(cooperative_stages), len(independent_stages)
                     ),
                     "error_type": "PairedContractMismatch",
-                    "error": "shared start, frozen inputs, stage seeds, budgets, or operator menus differ",
+                    "error": "shared start, frozen inputs, stage seeds, budgets, operator menus, or fixed call schedules differ",
                 }
             )
             continue
@@ -1656,6 +1997,14 @@ def write_artifacts(
         "source_commit": run_start_commit,
         "shared_initial_plan": True,
         "treatment_difference": "cross-depot service permission only",
+        "existing_customer_neighborhood": {
+            "operator_id": EXISTING_CROSS_OPERATOR_ID,
+            "interval_evaluations": EXISTING_CROSS_INTERVAL,
+            "cooperative_action": "reciprocal cross-depot reinsert",
+            "independent_action": "changed within-depot reinsert",
+            "stage_new_customers_excluded": True,
+            "complete_candidate_checker": "dynamic inherited-asset scheduler",
+        },
         "result_direction_used_to_continue": False,
         "failure_count": len(recorded_failures),
         "interpretation_limit": (

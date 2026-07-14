@@ -33,6 +33,37 @@ def test_charging_strategy_uses_the_matching_timing_variant() -> None:
         gate._timing_variant_for_strategy("other")
 
 
+def test_timing_comparison_counts_only_aware_vs_immediate_shift(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(gate, "route_hash", lambda _solution: "same-route")
+    monkeypatch.setattr(gate, "energy_hash", lambda _solution: "same-energy")
+    monkeypatch.setattr(gate, "_charging_emissions_kg", lambda *_args: 0.0)
+    immediate = Solution(
+        charging_actions=[
+            ChargingAction("EV0#T2", "D0", 10.0, 30.0, 1_000.0)
+        ]
+    )
+    aware_same = Solution(
+        charging_actions=[
+            ChargingAction("EV0#T2", "D0", 10.0, 30.0, 1_000.0)
+        ]
+    )
+    aware_shifted = Solution(
+        charging_actions=[
+            ChargingAction("EV0#T2", "D0", 10.0, 30.0, 1_300.0)
+        ]
+    )
+
+    same = gate._timing_comparison(immediate, aware_same, object(), {})
+    shifted = gate._timing_comparison(immediate, aware_shifted, object(), {})
+
+    assert same["aware_vs_immediate_moved_action_count"] == 0
+    assert same["aware_vs_immediate_moved_energy_kwh"] == pytest.approx(0.0)
+    assert shifted["aware_vs_immediate_moved_action_count"] == 1
+    assert shifted["aware_vs_immediate_moved_energy_kwh"] == pytest.approx(10.0)
+
+
 def test_execution_ledger_keeps_charge_locked_before_its_route() -> None:
     route = Route("EV_D0_1#T2", "ev", "D0", ["D0", "C1", "D0"])
     action = ChargingAction("EV_D0_1#T2", "D0", 10.0, 30.0, 1_000.0)
