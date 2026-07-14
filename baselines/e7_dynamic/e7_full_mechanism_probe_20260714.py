@@ -482,6 +482,7 @@ def _same_state_no_cooperation(
     trigger: float,
     seed: int,
     evaluations: int,
+    stage_new_customer_ids: Sequence[str],
 ) -> dict[str, Any]:
     owner_fixed = base.asset_aware_future_repack_candidate(
         construction,
@@ -512,6 +513,7 @@ def _same_state_no_cooperation(
         seed=seed,
         evaluations=evaluations,
         allow_cross_depot=False,
+        stage_new_customer_ids=stage_new_customer_ids,
         candidate_best_gate=no_cross_gate,
     )
     if base._cross_site_ids_for_routes(
@@ -588,7 +590,9 @@ def _controlled_stage(
     trigger: float,
     seed: int,
     evaluations: int,
+    stage_new_customer_ids: Sequence[str],
 ) -> dict[str, Any]:
+    stage_new_customer_ids = tuple(stage_new_customer_ids)
     baseline = _same_state_no_cooperation(
         construction,
         sources,
@@ -598,6 +602,7 @@ def _controlled_stage(
         trigger=trigger,
         seed=seed * 10 + 1,
         evaluations=evaluations,
+        stage_new_customer_ids=stage_new_customer_ids,
     )
     baseline_future_profit = _profit_values(
         baseline["solution"],
@@ -642,6 +647,7 @@ def _controlled_stage(
             seed=seed * 10 + 2,
             evaluations=evaluations,
             allow_cross_depot=False,
+            stage_new_customer_ids=stage_new_customer_ids,
             candidate_best_gate=no_cross_gate,
         )
     else:
@@ -655,6 +661,7 @@ def _controlled_stage(
             seed=seed * 10 + 2,
             evaluations=evaluations,
             allow_cross_depot=True,
+            stage_new_customer_ids=stage_new_customer_ids,
             candidate_best_gate=(
                 None if arm == "no_participation" else participation_gate
             ),
@@ -751,6 +758,11 @@ def _controlled_stage(
         "baseline_output_sha256": canonical_sha256(
             base.solution_to_dict(baseline["search_structure"])
         ),
+        "stage_new_customer_ids": list(stage_new_customer_ids),
+        "stage_new_customer_count": len(stage_new_customer_ids),
+        "forced_cross_attempt_count": int(
+            selected["forced_cross_attempt_count"]
+        ),
     }
 
 
@@ -841,6 +853,13 @@ def run_probe_arm(
             trigger=trigger,
             seed=stream_seed * 1000 + stage_index,
             evaluations=evaluations,
+            stage_new_customer_ids=tuple(
+                sorted(
+                    event.customer_id
+                    for event in batch["events"]
+                    if event.event_type.lower() == "add"
+                )
+            ),
         )
         future_customers = [
             customer_id
@@ -930,6 +949,16 @@ def run_probe_arm(
                 "moved_charge_kwh": float(result["timing"]["moved_energy_kwh"]),
                 "feasible_cross_candidate_count": int(
                     result["feasible_cross_candidate_count"]
+                ),
+                "forced_cross_attempt_count": int(
+                    result["forced_cross_attempt_count"]
+                ),
+                "stage_new_customer_count": int(
+                    result["stage_new_customer_count"]
+                ),
+                "stage_new_customer_ids_json": json.dumps(
+                    result["stage_new_customer_ids"],
+                    ensure_ascii=False,
                 ),
                 "cross_site_customer_count": len(
                     base._cross_site_ids_for_routes(

@@ -332,21 +332,33 @@ def event_insertion_candidate(
     base_solution: Solution,
     preserve_event_types: bool,
     *,
+    stage_new_customer_ids: Sequence[str] | None = None,
     allow_cross_depot: bool,
     rng: np.random.Generator,
+    force_cross_depot: bool = False,
+    deterministic_choice_index: int | None = None,
 ) -> Solution | None:
     """Reinsert the current event customers into existing open routes."""
 
-    event_routes = [
-        route for route in construction.solution.routes if "_ADD_" in route.vehicle_id
-    ]
-    pending = [
-        customer_id
-        for route in event_routes
-        for customer_id in p2.route_customers(route, construction.effective_instance)
-    ]
+    if stage_new_customer_ids is None:
+        event_routes = [
+            route
+            for route in construction.solution.routes
+            if "_ADD_" in route.vehicle_id
+        ]
+        pending = [
+            customer_id
+            for route in event_routes
+            for customer_id in p2.route_customers(
+                route, construction.effective_instance
+            )
+        ]
+    else:
+        pending = list(stage_new_customer_ids)
     if not pending:
         return None
+    if len(pending) != len(set(pending)):
+        raise RuntimeError("stage new-customer identities are not unique")
     route_ids = [route.vehicle_id for route in base_solution.routes]
     if len(set(route_ids)) != len(route_ids):
         raise RuntimeError("dynamic search base route ids are not unique")
@@ -368,6 +380,8 @@ def event_insertion_candidate(
         options: list[tuple[float, int, int, Route]] = []
         for route_index, route in enumerate(routes):
             if not allow_cross_depot and route.home_depot_id != owners[customer_id]:
+                continue
+            if force_cross_depot and route.home_depot_id == owners[customer_id]:
                 continue
             for insert_at in range(1, len(route.node_sequence)):
                 sequence = list(route.node_sequence)
@@ -399,7 +413,11 @@ def event_insertion_candidate(
                         candidate,
                     )
                 )
-        if not options or rng.random() < 0.5:
+        if force_cross_depot and not options:
+            return None
+        if not options or (
+            deterministic_choice_index is None and rng.random() < 0.5
+        ):
             source = event_route_by_customer[customer_id]
             used_route_ids = {route.vehicle_id for route in routes}
             singleton_id = f"DYN_EVENT_{customer_id}"
@@ -422,9 +440,11 @@ def event_insertion_candidate(
             continue
         options.sort(key=lambda item: (item[0], item[1], item[2]))
         choice_pool = options[: min(20, len(options))]
-        _, selected_index, _, selected = choice_pool[
-            int(rng.integers(0, len(choice_pool)))
-        ]
+        if deterministic_choice_index is None:
+            choice = int(rng.integers(0, len(choice_pool)))
+        else:
+            choice = int(deterministic_choice_index) % len(choice_pool)
+        _, selected_index, _, selected = choice_pool[choice]
         routes[selected_index] = selected
     if not preserve_event_types and routes:
         flip_count = min(len(routes), 1 + int(rng.integers(0, 8)))
@@ -760,6 +780,7 @@ def search_stage(
     seed: int,
     evaluations: int,
     allow_cross_depot: bool,
+    stage_new_customer_ids: Sequence[str] | None = None,
     candidate_best_gate: Callable[[Solution, Any, float], bool] | None = None,
 ) -> dict[str, Any]:
     started = time.perf_counter()
@@ -833,20 +854,68 @@ def search_stage(
     feasible_cross_candidate_count = 0
     best_gate_rejection_count = 0
     dynamic_rejections: Counter[str] = Counter()
+    forced_cross_attempt_count = 0
+    if stage_new_customer_ids is None:
+        active_stage_new_customer_ids = tuple(
+            customer_id
+            for route in construction.solution.routes
+            if "_ADD_" in route.vehicle_id
+            for customer_id in p2.route_customers(
+                route, construction.effective_instance
+            )
+        )
+    else:
+        active_stage_new_customer_ids = tuple(stage_new_customer_ids)
+    if len(active_stage_new_customer_ids) != len(set(active_stage_new_customer_ids)):
+        raise RuntimeError("stage new-customer identities are not unique")
+    planned_customers = {
+        customer_id
+        for route in construction.solution.routes
+        for customer_id in p2.route_customers(route, construction.effective_instance)
+    }
+    missing_stage_customers = sorted(
+        set(active_stage_new_customer_ids) - planned_customers
+    )
+    if missing_stage_customers:
+        raise RuntimeError(
+            "stage new-customer identities are absent from the search start: "
+            f"{missing_stage_customers}"
+        )
+    has_isolated_event = bool(active_stage_new_customer_ids)
     for iteration in range(1, evaluations + 1):
         specialist_result = None
         specialist_error = None
         pair_index = int(rng.choice(len(pairs), p=weights / weights.sum()))
         destroy_id, repair_id = pairs[pair_index]
         local_repair_limit = min(400, max(50, evaluations // 2))
-        has_isolated_event = any(
-            "_ADD_" in route.vehicle_id for route in construction.solution.routes
-        )
         specialist_used = has_isolated_event and (
             iteration <= local_repair_limit or not initial_feasible
         )
         if specialist_used:
-            if not initial_feasible and iteration == 1:
+            forced_cross_event = (
+                allow_cross_depot
+                and bool(active_stage_new_customer_ids)
+                and iteration <= min(evaluations, max(4, len(active_stage_new_customer_ids)))
+            )
+            if forced_cross_event:
+                selected_customer = active_stage_new_customer_ids[
+                    (iteration - 1) % len(active_stage_new_customer_ids)
+                ]
+                selected_rank = (iteration - 1) // len(active_stage_new_customer_ids)
+                candidate_solution = event_insertion_candidate(
+                    construction,
+                    owners,
+                    sources["prices"],
+                    current,
+                    True,
+                    stage_new_customer_ids=(selected_customer,),
+                    allow_cross_depot=True,
+                    rng=rng,
+                    force_cross_depot=True,
+                    deterministic_choice_index=selected_rank,
+                )
+                forced_cross_attempt_count += 1
+            elif not initial_feasible and iteration == 1:
                 candidate_solution = asset_aware_future_repack_candidate(
                     construction,
                     owners,
@@ -870,6 +939,7 @@ def search_stage(
                     sources["prices"],
                     current,
                     initial_feasible,
+                    stage_new_customer_ids=active_stage_new_customer_ids,
                     allow_cross_depot=allow_cross_depot,
                     rng=rng,
                 )
@@ -991,6 +1061,7 @@ def search_stage(
         "changed_count": changed_count,
         "feasible_count": feasible_count,
         "feasible_cross_candidate_count": feasible_cross_candidate_count,
+        "forced_cross_attempt_count": forced_cross_attempt_count,
         "accepted_count": accepted_count,
         "best_gate_rejection_count": best_gate_rejection_count,
         "exact_check_count": exact_check_count,

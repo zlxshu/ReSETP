@@ -213,6 +213,80 @@ def test_event_insertion_splits_shared_source_into_unique_singletons() -> None:
     assert len(customers) == len(set(customers))
 
 
+def test_event_insertion_uses_explicit_customer_identity_after_route_renaming() -> None:
+    construction, owners, prices, _ = _asset_aware_fixture()
+    renamed = replace(
+        construction,
+        solution=Solution(
+            routes=[
+                Route("DYN_OPEN_001", "cv", "D1", ["D1", "C0", "D1"]),
+                Route("DYN_OPEN_002", "cv", "D0", ["D0", "C1", "D0"]),
+            ]
+        ),
+    )
+
+    candidate = formal.event_insertion_candidate(
+        renamed,
+        owners,
+        prices,
+        renamed.solution,
+        True,
+        stage_new_customer_ids=("C0",),
+        allow_cross_depot=True,
+        rng=np.random.default_rng(11),
+    )
+
+    assert candidate is not None
+    customers = [
+        customer_id
+        for route in candidate.routes
+        for customer_id in formal.p2.route_customers(
+            route,
+            renamed.effective_instance,
+        )
+    ]
+    assert sorted(customers) == ["C0", "C1"]
+    assert len(customers) == len(set(customers))
+
+
+def test_forced_event_insertion_moves_selected_customer_to_other_depot() -> None:
+    construction, owners, prices, _ = _asset_aware_fixture()
+    owner_fixed = replace(
+        construction,
+        solution=Solution(
+            routes=[
+                Route("DYN_OPEN_001", "cv", "D0", ["D0", "C0", "D0"]),
+                Route("DYN_OPEN_002", "cv", "D1", ["D1", "C1", "D1"]),
+            ]
+        ),
+    )
+
+    candidate = formal.event_insertion_candidate(
+        owner_fixed,
+        owners,
+        prices,
+        owner_fixed.solution,
+        True,
+        stage_new_customer_ids=("C0",),
+        allow_cross_depot=True,
+        rng=np.random.default_rng(5),
+        force_cross_depot=True,
+        deterministic_choice_index=0,
+    )
+
+    assert candidate is not None
+    serving_routes = [
+            route
+            for route in candidate.routes
+            if "C0" in formal.p2.route_customers(
+                route,
+                owner_fixed.effective_instance,
+            )
+    ]
+    assert len(serving_routes) == 1
+    assert serving_routes[0].home_depot_id == "D1"
+
+
 def test_event_insertion_updates_only_the_selected_route() -> None:
     class FixedRng:
         @staticmethod
