@@ -1,0 +1,32 @@
+{
+  "arms": [
+    "cooperative",
+    "independent"
+  ],
+  "audit_commit": "224719a29a64d92a4a707fb11547f75bdb4ae7d3",
+  "audit_source": {
+    "baselines/e7_dynamic/audit_e7_full_day_value_20260714.py": {
+      "commit": "224719a29a64d92a4a707fb11547f75bdb4ae7d3",
+      "sha256": "b5c967bad1239bb452b9bd9d110e108cb9736477701a458029910c9a178e31c4"
+    },
+    "baselines/e7_dynamic/validate_e7_records_independent_20260714.py": {
+      "commit": "224719a29a64d92a4a707fb11547f75bdb4ae7d3",
+      "sha256": "948931a75db449df8f08a5bd11f9e1827094e1595c67ebc745f4edb4a6b20c5b"
+    }
+  },
+  "comparison_rule": "compare cost only for identical full-day workloads; otherwise compare full-day operating net benefit (revenue minus cost)",
+  "contract_id": "E7_FULL_DAY_VALUE_AUDIT_V1",
+  "created_at_utc": "2026-07-14T14:34:04.486795+00:00",
+  "result_direction_used_to_continue": false,
+  "revenue_per_kg": "0.18936",
+  "scope": "formal_read_only_audit",
+  "source_run": "baselines/e7_dynamic/e7_v2_20260714/formal_shared_start_400_route_fix",
+  "source_run_commit": "33bb1553b90dc6024fd87cee778308a9de5250ea",
+  "streams": [
+    1,
+    2,
+    3,
+    4,
+    5
+  ]
+}
