@@ -1170,6 +1170,18 @@ def main() -> int:
         if row["arm"] == "no_cooperation"
     ):
         failures.append("no-cooperation arm crossed depots")
+    if any(
+        int(row["stage_new_customer_count"]) > 0
+        and int(row["forced_cross_attempt_count"]) <= 0
+        for row in cooperative_rows
+    ):
+        failures.append("a cooperative stage did not exercise the fixed cross-depot check")
+    if any(
+        int(row["forced_cross_attempt_count"]) != 0
+        for row in rows
+        if row["arm"] == "no_cooperation"
+    ):
+        failures.append("no-cooperation arm exercised a cross-depot check")
     if args.require_observable:
         for condition in args.conditions:
             observed = sum(
@@ -1238,6 +1250,10 @@ def main() -> int:
                 int(row["feasible_cross_candidate_count"])
                 for row in cooperative_rows
             ),
+            "forced_cross_attempt_count": sum(
+                int(row["forced_cross_attempt_count"])
+                for row in cooperative_rows
+            ),
             "predicted_charging_saving_kg": sum(
                 float(row["predicted_charging_saving_kg"])
                 for row in aware_rows
@@ -1245,6 +1261,14 @@ def main() -> int:
             "feasible_cross_candidate_count_by_condition": {
                 condition: sum(
                     int(row["feasible_cross_candidate_count"])
+                    for row in cooperative_rows
+                    if row["responsibility_condition"] == condition
+                )
+                for condition in args.conditions
+            },
+            "forced_cross_attempt_count_by_condition": {
+                condition: sum(
+                    int(row["forced_cross_attempt_count"])
                     for row in cooperative_rows
                     if row["responsibility_condition"] == condition
                 )
