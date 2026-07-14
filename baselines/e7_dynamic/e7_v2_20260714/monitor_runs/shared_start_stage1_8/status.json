@@ -1,0 +1,128 @@
+{
+  "ai_diagnosis": {
+    "invoked": false,
+    "reason": "disabled"
+  },
+  "checked_at": "2026-07-14T10:08:04+00:00",
+  "checkpoint_inventory": [],
+  "csv_summaries": [],
+  "files": {
+    "/Volumes/移动硬盘（512G）/ReSETP/baselines/e7_dynamic/e7_v2_20260714/monitor_runs/shared_start_stage1_8/stdout.log": {
+      "age_seconds": 0.26082301139831543,
+      "exists": true,
+      "mtime": 1784023683.88,
+      "path": "/Volumes/移动硬盘（512G）/ReSETP/baselines/e7_dynamic/e7_v2_20260714/monitor_runs/shared_start_stage1_8/stdout.log",
+      "size": 0
+    },
+    "/Volumes/移动硬盘（512G）/ReSETP/baselines/e7_dynamic/e7_v2_20260714/preflight/shared_start_stage1_8/artifact_hashes.json": {
+      "exists": false,
+      "path": "/Volumes/移动硬盘（512G）/ReSETP/baselines/e7_dynamic/e7_v2_20260714/preflight/shared_start_stage1_8/artifact_hashes.json"
+    },
+    "/Volumes/移动硬盘（512G）/ReSETP/baselines/e7_dynamic/e7_v2_20260714/preflight/shared_start_stage1_8/decision.json": {
+      "exists": false,
+      "path": "/Volumes/移动硬盘（512G）/ReSETP/baselines/e7_dynamic/e7_v2_20260714/preflight/shared_start_stage1_8/decision.json"
+    },
+    "/Volumes/移动硬盘（512G）/ReSETP/baselines/e7_dynamic/e7_v2_20260714/preflight/shared_start_stage1_8/raw_runs.csv": {
+      "exists": false,
+      "path": "/Volumes/移动硬盘（512G）/ReSETP/baselines/e7_dynamic/e7_v2_20260714/preflight/shared_start_stage1_8/raw_runs.csv"
+    }
+  },
+  "findings": [
+    {
+      "code": "SYSTEM_MEMORY_LOW",
+      "details": {},
+      "message": "free memory 101.3 MB below 256.0 MB",
+      "severity": "critical"
+    }
+  ],
+  "name": "e7-shared-start-stage1-8",
+  "pause_action": "SIGSTOP",
+  "paused": true,
+  "process": {
+    "alive": true,
+    "cpu_percent": 13.4,
+    "members": [
+      {
+        "command": "python -m baselines.e7_dynamic.e7_formal_dynamic_value_20260714 --output baselines/e7_dynamic/e7_v2_20260714/preflight/shared_start_stage1_8 --streams 1 --evaluations 8 --max-stages 1 --workers 2",
+        "cpu_percent": 13.4,
+        "elapsed": "00:01",
+        "pgid": 53723,
+        "pid": 53723,
+        "ppid": 1,
+        "rss_kb": 23072,
+        "state": "Ss"
+      }
+    ],
+    "pgid": 53723,
+    "root_pid": 53723,
+    "rss_mb": 22.53125
+  },
+  "protected_files": {
+    "/Volumes/移动硬盘（512G）/ReSETP/baselines/e6_fairness/e6_participation_formal_20260714/solutions/L-main-threeshift-100c-01__geographic__seed1__independent.json": {
+      "age_seconds": 50103.88261508942,
+      "exists": true,
+      "kind": "core_data",
+      "mtime": 1783973580.26,
+      "path": "/Volumes/移动硬盘（512G）/ReSETP/baselines/e6_fairness/e6_participation_formal_20260714/solutions/L-main-threeshift-100c-01__geographic__seed1__independent.json",
+      "sha256": "47884212a50d96e09b335f2ceb4f72a7314f52c9852c95f8cc0a5eb2a5e505a6",
+      "size": 14016
+    },
+    "/Volumes/移动硬盘（512G）/ReSETP/baselines/e7_dynamic/e7_formal_dynamic_value_20260714.py": {
+      "age_seconds": 88.88238406181335,
+      "exists": true,
+      "kind": "experiment_contract",
+      "mtime": 1784023595.26,
+      "path": "/Volumes/移动硬盘（512G）/ReSETP/baselines/e7_dynamic/e7_formal_dynamic_value_20260714.py",
+      "sha256": "5d4e61963f57b6b3bd0431cc1f21937e43f9e79f98ef5b3faa5191784b28053c",
+      "size": 66782
+    },
+    "/Volumes/移动硬盘（512G）/ReSETP/baselines/e7_dynamic/e7_v2_20260714/event_streams/stream_seed1.events.json": {
+      "age_seconds": 9761.172534942627,
+      "exists": true,
+      "kind": "core_data",
+      "mtime": 1784013922.97,
+      "path": "/Volumes/移动硬盘（512G）/ReSETP/baselines/e7_dynamic/e7_v2_20260714/event_streams/stream_seed1.events.json",
+      "sha256": "ae08f81e5b8efd93b6c2d95abc405623ae355926c4c23fd31681c0fa8824d6a9",
+      "size": 39159
+    },
+    "/Volumes/移动硬盘（512G）/ReSETP/solver/src/setp_solver/check.py": {
+      "age_seconds": 19538.862730026245,
+      "exists": true,
+      "kind": "evaluator",
+      "mtime": 1784004145.28,
+      "path": "/Volumes/移动硬盘（512G）/ReSETP/solver/src/setp_solver/check.py",
+      "sha256": "53f5cc27d3ac72bdd2bbec113eb8af11ad18a82490502f800941140495e8e142",
+      "size": 31710
+    },
+    "/Volumes/移动硬盘（512G）/ReSETP/solver/src/setp_solver/cost.py": {
+      "age_seconds": 91054.08267712593,
+      "exists": true,
+      "kind": "cost_function",
+      "mtime": 1783932630.06,
+      "path": "/Volumes/移动硬盘（512G）/ReSETP/solver/src/setp_solver/cost.py",
+      "sha256": "d8bfee1844c8f8e89bac1233a3cd862d7ac7d088039f97751b8274756c41dee4",
+      "size": 24115
+    },
+    "/Volumes/移动硬盘（512G）/ReSETP/solver/src/setp_solver/search/evaluation.py": {
+      "age_seconds": 19538.844736099243,
+      "exists": true,
+      "kind": "evaluator",
+      "mtime": 1784004145.3,
+      "path": "/Volumes/移动硬盘（512G）/ReSETP/solver/src/setp_solver/search/evaluation.py",
+      "sha256": "c7215263c39d1d5a1429b41ca8ac40d950dbdf2bdc288337e56fbe9733406fc3",
+      "size": 7609
+    }
+  },
+  "runtime_seconds": 0.1043400764465332,
+  "scene_path": "/Volumes/移动硬盘（512G）/ReSETP/baselines/e7_dynamic/e7_v2_20260714/monitor_runs/shared_start_stage1_8/scenes/20260714-180804-anomaly",
+  "schema_version": 1,
+  "state": "ANOMALY",
+  "system": {
+    "free_memory_mb": 101.34375,
+    "load_average_15m": 2.82666015625,
+    "load_average_1m": 2.7099609375,
+    "load_average_5m": 2.46875,
+    "logical_cpus": 8,
+    "swapouts": 5443378
+  }
+}
