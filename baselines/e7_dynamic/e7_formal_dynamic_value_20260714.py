@@ -48,6 +48,7 @@ BUNDLE_DIR = (
 )
 E6_ROOT = ROOT / "baselines/e6_fairness/e6_participation_formal_20260714"
 EVENT_ROOT = ROOT / "baselines/e7_dynamic/e7_v2_20260714/event_streams"
+EVENT_INDEX_PATH = EVENT_ROOT / "raw_runs.csv"
 DONOR_BUNDLE = (
     ROOT
     / "baselines/e3_ablation/e3_paired_cost_formal_v2_20260713/assets"
@@ -55,7 +56,8 @@ DONOR_BUNDLE = (
 )
 DEFAULT_OUTPUT = ROOT / "baselines/e7_dynamic/e7_v2_20260714/preflight/paired_two_stage"
 INSTANCE_SHA256 = "59696be304ad9f3c484820439e1cbdb027945e20ad7ecbdb8542dfde7e0d6225"
-CONTRACT_ID = "E7_PAIRED_DYNAMIC_VALUE_V1"
+CONTRACT_ID = "E7_PAIRED_DYNAMIC_VALUE_V2_BATCHED"
+ROLLING_PARAMETERS = RollingParameters()
 
 
 def sha256(path: Path) -> str:
@@ -132,7 +134,92 @@ def load_stream(seed: int) -> tuple[list[DynamicEvent], dict[str, str], Path, Pa
             )
     with owner_path.open(newline="", encoding="utf-8") as handle:
         owners = {row["customer_id"]: row["owner_depot_id"] for row in csv.DictReader(handle)}
+    _validate_frozen_trigger_times(seed, events)
     return events, owners, event_path, owner_path
+
+
+def _validated_trigger_batches(
+    seed: int,
+    events: Sequence[DynamicEvent],
+) -> list[dict[str, Any]]:
+    batches = [
+        batch
+        for batch in _build_trigger_batches(list(events), ROLLING_PARAMETERS)
+        if batch["events"]
+    ]
+    expected = _frozen_trigger_times(seed)
+    observed = {
+        str(event.event_id): float(batch["trigger_time"])
+        for batch in batches
+        for event in batch["events"]
+    }
+    if set(observed) != set(expected):
+        raise RuntimeError(
+            f"stream {seed} trigger contract event IDs differ: "
+            f"missing={sorted(set(expected) - set(observed))}, "
+            f"extra={sorted(set(observed) - set(expected))}"
+        )
+    mismatches = {
+        event_id: (observed[event_id], expected[event_id])
+        for event_id in expected
+        if observed[event_id] != expected[event_id]
+    }
+    if mismatches:
+        raise RuntimeError(f"stream {seed} frozen trigger times differ: {mismatches}")
+    return batches
+
+
+def _frozen_trigger_times(seed: int) -> dict[str, float]:
+    expected: dict[str, float] = {}
+    with EVENT_INDEX_PATH.open(newline="", encoding="utf-8") as handle:
+        for row in csv.DictReader(handle):
+            if int(row["seed"]) != seed:
+                continue
+            event_id = str(row["event_id"])
+            trigger = float(row["trigger_second"])
+            previous = expected.get(event_id)
+            if previous is not None and previous != trigger:
+                raise RuntimeError(
+                    f"stream {seed} event {event_id} has conflicting frozen trigger times"
+                )
+            expected[event_id] = trigger
+    if not expected:
+        raise RuntimeError(f"stream {seed} has no rows in frozen trigger index")
+    return expected
+
+
+def _validate_frozen_trigger_times(seed: int, events: Sequence[DynamicEvent]) -> None:
+    _validated_trigger_batches(seed, events)
+
+
+def _validate_stage_application(
+    construction: gate.StageConstruction,
+    stage_events: Sequence[DynamicEvent],
+) -> tuple[list[str], list[str], list[str], list[str]]:
+    event_ids = [str(event.event_id) for event in stage_events]
+    event_types = [str(event.event_type) for event in stage_events]
+    applied = [str(event_id) for event_id in construction.applied_event_ids]
+    ignored = [str(event_id) for event_id in construction.ignored_locked_event_ids]
+    if ignored:
+        raise RuntimeError(f"locked events must not be ignored: {ignored}")
+    if applied != event_ids:
+        raise RuntimeError(
+            f"applied event IDs differ from the trigger batch: expected={event_ids}, applied={applied}"
+        )
+    return event_ids, event_types, applied, ignored
+
+
+def _stage_timing(
+    elapsed_seconds: float,
+    trigger_second: float,
+    next_trigger_second: float | None,
+) -> tuple[float | None, bool | None]:
+    if next_trigger_second is None:
+        return None, None
+    available = float(next_trigger_second) - float(trigger_second)
+    if available < 0.0:
+        raise RuntimeError("next dynamic trigger precedes the current trigger")
+    return available, float(elapsed_seconds) <= available
 
 
 def action_key(action: ChargingAction) -> tuple[Any, ...]:
@@ -609,26 +696,27 @@ def run_session(
     *,
     evaluations: int,
     max_stages: int | None,
-    trigger_mode: str = "event",
+    trigger_mode: str = "batched",
     stage_callback: Callable[[Mapping[str, Any]], None] | None = None,
 ) -> dict[str, Any]:
     sources = load_arm(arm)
     events, owners, event_path, owner_path = load_stream(stream_seed)
     if trigger_mode == "event":
-        batches = [
-            {"trigger_time": float(event.t_appear), "events": [event]}
+        all_batches = [
+            {
+                "trigger_time": float(event.t_appear),
+                "trigger_reason": "event",
+                "events": [event],
+            }
             for event in sorted(events, key=lambda item: (float(item.t_appear), str(item.event_id)))
         ]
     elif trigger_mode == "batched":
-        batches = [
-            batch
-            for batch in _build_trigger_batches(events, RollingParameters())
-            if batch["events"]
-        ]
+        all_batches = _validated_trigger_batches(stream_seed, events)
     else:
         raise ValueError(f"unknown trigger mode {trigger_mode}")
+    batches = all_batches
     if max_stages is not None:
-        batches = batches[:max_stages]
+        batches = all_batches[:max_stages]
     current_solution = sources["solution"]
     current_certificate = sources["certificate"]
     current_instance = sources["bundle"].instance
@@ -641,7 +729,13 @@ def run_session(
     committed = {}
     stage_rows: list[dict[str, Any]] = []
     for stage_index, batch in enumerate(batches, start=1):
+        stage_started = time.perf_counter()
         trigger = float(batch["trigger_time"])
+        next_trigger = (
+            float(all_batches[stage_index]["trigger_time"])
+            if stage_index < len(all_batches)
+            else None
+        )
         if stage_index == 1:
             cut = cut_certificate_at_trigger(
                 current_solution,
@@ -687,6 +781,9 @@ def run_session(
             stage_index=stage_index,
             isolate_changed_customers=True,
         )
+        event_ids, event_types, applied_event_ids, ignored_locked_event_ids = (
+            _validate_stage_application(construction, batch["events"])
+        )
         result = search_stage(
             construction,
             sources,
@@ -716,13 +813,24 @@ def run_session(
             raise RuntimeError("customer accounting did not close")
         if arm == "independent" and result["solution"].cross_site_services:
             raise RuntimeError("independent arm served a customer from the other depot")
+        elapsed_seconds = time.perf_counter() - stage_started
+        available_compute_seconds, completed_before_next_trigger = _stage_timing(
+            elapsed_seconds, trigger, next_trigger
+        )
         stage_rows.append(
             {
                 "arm": arm,
                 "stream_seed": stream_seed,
                 "stage": stage_index,
                 "trigger_second": trigger,
+                "trigger_reason": batch["trigger_reason"],
+                "event_ids": ";".join(event_ids),
+                "event_types": ";".join(event_types),
+                "applied_event_ids": ";".join(applied_event_ids),
+                "ignored_locked_event_ids": ";".join(ignored_locked_event_ids),
                 "event_count": len(batch["events"]),
+                "next_trigger_second": next_trigger,
+                "available_compute_seconds": available_compute_seconds,
                 "committed_route_count": len(booked_route_ids),
                 "future_route_count": len(result["solution"].routes),
                 "future_cost": result["future_cost"],
@@ -733,12 +841,18 @@ def run_session(
                 "executable_candidate_count": result["feasible_count"],
                 "accepted_candidate_count": result["accepted_count"],
                 "evaluations": result["evaluations"],
-                "elapsed_seconds": result["elapsed_seconds"],
+                "elapsed_seconds": elapsed_seconds,
+                "completed_before_next_trigger": completed_before_next_trigger,
                 "customer_accounting_pass": True,
             }
         )
         if stage_callback is not None:
             stage_callback(dict(stage_rows[-1]))
+        if completed_before_next_trigger is False:
+            raise RuntimeError(
+                f"stage {stage_index} did not finish before the next trigger: "
+                f"elapsed={elapsed_seconds}, available={available_compute_seconds}"
+            )
         inherited_states = cut.asset_states
         inherited_locked_actions = cut.locked_charging_actions
         previous_stage_start = trigger
@@ -847,10 +961,22 @@ def write_artifacts(
             }
         )
     write_csv(output / "paired_summary.csv", pairs)
-    passed = not failures and len(summary_rows) == 2 * len(args.streams) and all(
-        row["customer_accounting_pass"] for row in summary_rows
+    timing_pass = all(
+        row.get("completed_before_next_trigger") is True
+        for row in stage_rows
+        if row.get("next_trigger_second") not in (None, "")
     )
-    formal_scope = args.all_stages and set(args.streams) == {1, 2, 3, 4, 5}
+    passed = (
+        not failures
+        and len(summary_rows) == 2 * len(args.streams)
+        and all(row["customer_accounting_pass"] for row in summary_rows)
+        and timing_pass
+    )
+    formal_scope = (
+        args.all_stages
+        and set(args.streams) == {1, 2, 3, 4, 5}
+        and args.trigger_mode == "batched"
+    )
     verdict = (
         "E7_PAIRED_FORMAL_PASS"
         if passed and formal_scope
@@ -869,6 +995,9 @@ def write_artifacts(
         "evaluations_per_stage": args.evaluations,
         "maximum_stages": None if args.all_stages else args.max_stages,
         "trigger_mode": args.trigger_mode,
+        "q_bar": ROLLING_PARAMETERS.q_bar,
+        "delta_t": ROLLING_PARAMETERS.delta_t_seconds,
+        "delta_t_seconds": ROLLING_PARAMETERS.delta_t_seconds,
         "workers": args.workers,
         "source_commit": source_commit(),
         "result_direction_used_to_continue": False,
@@ -887,6 +1016,7 @@ def write_artifacts(
         "paired_stream_count": len(pairs),
         "failure_count": len(failures),
         "zero_customer_loss": all(row["customer_accounting_pass"] for row in summary_rows),
+        "all_stages_completed_before_next_trigger": timing_pass,
         "boundary": metadata["interpretation_limit"],
     }
     write_json(output / "decision.json", decision)
@@ -898,12 +1028,16 @@ def write_artifacts(
                 f"判决：`{verdict}`。",
                 "",
                 f"本轮运行订单流 {args.streams} 的"
-                f"{'全部变化' if args.all_stages else f'前 {args.max_stages} 次变化'}，"
-                f"每次变化各比较 {args.evaluations} 个方案。合作经营与各自经营使用相同订单流和相同次数。",
+                f"{'全部调整批次' if args.all_stages else f'前 {args.max_stages} 批事件'}，"
+                f"每次调整各比较 {args.evaluations} 个方案。合作经营与各自经营使用相同订单流和相同次数。",
                 "",
                 "已发车安排不撤回，车辆可用时刻、电量和已开始充电均向后继承；"
-                "每次变化后，已执行与待执行客户合计恰好覆盖当时有效订单。",
-                "本轮只决定能否进入完整五条订单流，不形成论文结论。",
+                "每批事件调整后，已执行与待执行客户合计恰好覆盖当时有效订单。",
+                (
+                    "本轮覆盖五条冻结订单流的全部调整批次，机械检查通过后方可作为正式动态证据。"
+                    if formal_scope
+                    else "本轮只决定能否进入完整五条订单流，不形成论文结论。"
+                ),
                 *( ["", f"中途停止 {len(failures)} 组，原因见 failures.csv；停止前已经完成的阶段保留在 raw_runs.csv。"] if failures else [] ),
             ]
         )
@@ -934,8 +1068,8 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--evaluations", type=int, default=100)
     parser.add_argument("--max-stages", type=int, default=2)
     parser.add_argument("--all-stages", action="store_true")
-    parser.add_argument("--trigger-mode", choices=("event", "batched"), default="event")
-    parser.add_argument("--workers", type=int, choices=(1, 2), default=1)
+    parser.add_argument("--trigger-mode", choices=("event", "batched"), default="batched")
+    parser.add_argument("--workers", type=int, choices=tuple(range(1, 9)), default=2)
     return parser.parse_args()
 
 
