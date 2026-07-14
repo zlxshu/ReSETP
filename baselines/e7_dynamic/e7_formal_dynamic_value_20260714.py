@@ -760,6 +760,7 @@ def search_stage(
     seed: int,
     evaluations: int,
     allow_cross_depot: bool,
+    candidate_best_gate: Callable[[Solution, Any, float], bool] | None = None,
 ) -> dict[str, Any]:
     started = time.perf_counter()
     current = construction.solution
@@ -829,6 +830,7 @@ def search_stage(
     best_certificate = current_certificate
     best_cost = current_cost
     changed_count = feasible_count = accepted_count = exact_check_count = 0
+    best_gate_rejection_count = 0
     dynamic_rejections: Counter[str] = Counter()
     for iteration in range(1, evaluations + 1):
         specialist_result = None
@@ -926,6 +928,19 @@ def search_stage(
                     owners,
                 )
                 feasible_count += 1
+                eligible_for_best = (
+                    True
+                    if candidate_best_gate is None
+                    else bool(
+                        candidate_best_gate(
+                            candidate_prepared,
+                            candidate_certificate,
+                            candidate_cost,
+                        )
+                    )
+                )
+                if not eligible_for_best:
+                    best_gate_rejection_count += 1
                 improves_current = candidate_cost <= current_cost
                 temperature = max(1.0, (best_cost if math.isfinite(best_cost) else 1000.0) * 0.01)
                 temperature *= 0.98 ** (iteration - 1)
@@ -939,7 +954,7 @@ def search_stage(
                     current_certificate = candidate_certificate
                     current_cost = candidate_cost
                     accepted_count += 1
-                if candidate_cost < best_cost - 1e-9:
+                if eligible_for_best and candidate_cost < best_cost - 1e-9:
                     best_structure = candidate_structure
                     best_prepared = candidate_prepared
                     best_certificate = candidate_certificate
@@ -969,6 +984,7 @@ def search_stage(
         "changed_count": changed_count,
         "feasible_count": feasible_count,
         "accepted_count": accepted_count,
+        "best_gate_rejection_count": best_gate_rejection_count,
         "exact_check_count": exact_check_count,
         "dynamic_rejections": dict(dynamic_rejections),
         "evaluations": evaluations,

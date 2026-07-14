@@ -41,6 +41,7 @@ from .multitrip_schedule import (
     CHARGE_MODE_ON_DEMAND,
     MultiTripCertificate,
     ScheduledTrip,
+    _lowest_carbon_gap_start,
 )
 
 
@@ -514,6 +515,160 @@ def prepare_dynamic_multitrip_solution(
     if result is None:
         raise ValueError(f"{DYNAMIC_CONTRACT_ID}: {last_failure}")
     return result
+
+
+def reschedule_dynamic_charging(
+    solution: Solution,
+    certificate: MultiTripCertificate,
+    instance: Instance,
+    carbon_profile: list[dict[str, Any]],
+    prices: PriceParameters | dict[str, float] | Any = DEFAULT_PRICES,
+    *,
+    asset_states: Mapping[str, DynamicAssetState],
+    stage_start_second: float,
+    locked_charging_actions: Sequence[ChargingAction] = (),
+    strategy: str,
+    intensity_field: str = "forecast_gco2_per_kwh",
+) -> tuple[Solution, MultiTripCertificate, dict[str, float | int]]:
+    """Move not-yet-started dynamic depot charging inside its legal gaps.
+
+    The static timing helper cannot be used after a rolling-horizon cut because
+    its first open trip is not necessarily the first trip of the operating day.
+    Here the first legal charging instant is the later of the stage trigger and
+    the inherited physical vehicle release.  Route, vehicle, customer, energy,
+    and departure decisions remain fixed; only charging start times move.
+
+    The returned certificate is updated together with the solution so that the
+    next dynamic cut reads the same charging clock that was actually released.
+    """
+
+    if strategy not in {"aware", "naive"}:
+        raise ValueError(f"unknown dynamic charging strategy {strategy!r}")
+    stage_start = float(stage_start_second)
+    validate_dynamic_multitrip_certificate(
+        solution,
+        certificate,
+        instance,
+        prices,
+        asset_states=asset_states,
+        stage_start_second=stage_start,
+        locked_charging_actions=locked_charging_actions,
+    )
+
+    normalized_states = _validate_asset_states(
+        asset_states,
+        _price(prices, "B_battery_kwh"),
+    )
+    actions_by_route: dict[str, list[ChargingAction]] = {}
+    for action in solution.charging_actions:
+        actions_by_route.setdefault(action.vehicle_id, []).append(action)
+    if any(len(actions) > 1 for actions in actions_by_route.values()):
+        raise ValueError(f"{DYNAMIC_CONTRACT_ID}: one trip has multiple depot charges")
+
+    replacement_actions: dict[str, ChargingAction] = {}
+    replacement_trips: dict[str, ScheduledTrip] = {}
+    moved_action_count = 0
+    moved_energy_kwh = 0.0
+    eligible_action_count = 0
+    eligible_energy_kwh = 0.0
+    actions_at_earliest_count = 0
+    maximum_shift_seconds = 0.0
+
+    by_asset: dict[str, list[ScheduledTrip]] = {}
+    for trip in certificate.trips:
+        by_asset.setdefault(trip.physical_vehicle_id, []).append(trip)
+    for asset_id, chain in sorted(by_asset.items()):
+        state = normalized_states[asset_id]
+        ordered = sorted(chain, key=lambda item: item.trip_index)
+        boundary = max(stage_start, float(state.available_second))
+        for position, trip in enumerate(ordered):
+            actions = actions_by_route.get(trip.route_id, [])
+            if actions:
+                action = actions[0]
+                if int(action.charge_day_offset) != 0:
+                    raise ValueError(
+                        f"{DYNAMIC_CONTRACT_ID}: dynamic charge uses a day offset"
+                    )
+                duration = float(action.occupancy_minutes) * 60.0
+                earliest = boundary
+                latest = float(trip.departure_second) - duration
+                if latest < earliest - _TOL:
+                    raise ValueError(
+                        f"{DYNAMIC_CONTRACT_ID}: no legal dynamic charging gap for {trip.route_id}"
+                    )
+                selected = (
+                    earliest
+                    if strategy == "naive"
+                    else _lowest_carbon_gap_start(
+                        earliest,
+                        latest,
+                        duration,
+                        float(action.energy_kwh),
+                        instance,
+                        carbon_profile,
+                        intensity_field=intensity_field,
+                    )
+                )
+                replacement_actions[trip.route_id] = replace(
+                    action,
+                    charge_start_second=float(selected),
+                )
+                eligible_action_count += 1
+                eligible_energy_kwh += float(action.energy_kwh)
+                if abs(float(selected) - float(earliest)) <= _TOL:
+                    actions_at_earliest_count += 1
+                shift = abs(float(selected) - float(action.charge_start_second))
+                if shift > _TOL:
+                    moved_action_count += 1
+                    moved_energy_kwh += float(action.energy_kwh)
+                    maximum_shift_seconds = max(maximum_shift_seconds, shift)
+                if position > 0:
+                    previous = replacement_trips.get(
+                        ordered[position - 1].route_id,
+                        ordered[position - 1],
+                    )
+                    replacement_trips[previous.route_id] = replace(
+                        previous,
+                        charge_start_second=float(selected),
+                        recharge_end_second=float(selected) + duration,
+                    )
+            boundary = float(trip.return_second)
+
+    timed_solution = replace(
+        solution,
+        charging_actions=[
+            replacement_actions.get(action.vehicle_id, action)
+            for action in solution.charging_actions
+        ],
+    )
+    timed_certificate = replace(
+        certificate,
+        trips=tuple(
+            replacement_trips.get(trip.route_id, trip)
+            for trip in certificate.trips
+        ),
+    )
+    validate_dynamic_multitrip_certificate(
+        timed_solution,
+        timed_certificate,
+        instance,
+        prices,
+        asset_states=asset_states,
+        stage_start_second=stage_start,
+        locked_charging_actions=locked_charging_actions,
+    )
+    return (
+        timed_solution,
+        timed_certificate,
+        {
+            "eligible_action_count": eligible_action_count,
+            "eligible_energy_kwh": eligible_energy_kwh,
+            "actions_at_earliest_count": actions_at_earliest_count,
+            "moved_action_count": moved_action_count,
+            "moved_energy_kwh": moved_energy_kwh,
+            "maximum_shift_seconds": maximum_shift_seconds,
+        },
+    )
 
 
 def _dynamic_assignment_candidates(

@@ -16,6 +16,7 @@ from setp_solver.search.dynamic_multitrip_schedule import (
     cut_certificate_at_trigger,
     cut_dynamic_certificate_at_trigger,
     prepare_dynamic_multitrip_solution,
+    reschedule_dynamic_charging,
 )
 from setp_solver.search.metaheuristic_baselines import solution_from_dict
 from setp_solver.search.multitrip_schedule import MultiTripCertificate, ScheduledTrip
@@ -124,6 +125,106 @@ def test_exact_asset_scheduler_reuses_inherited_id_and_trip_sequence() -> None:
     assert all(action.charge_start_second >= 100.0 for action in prepared.charging_actions)
     ordered = sorted(certificate.trips, key=lambda trip: trip.trip_index)
     assert ordered[1].departure_second >= ordered[0].return_second
+
+
+def test_dynamic_carbon_timing_stays_after_stage_start_and_survives_next_cut() -> None:
+    nodes = [
+        Node("D0", "d", 0.0, 0.0, ready_time=0.0, due_time=30_000.0),
+        Node("C1", "c", 1.0, 0.0, demand=1.0, ready_time=6_000.0, due_time=7_000.0),
+        Node("C2", "c", 2.0, 0.0, demand=1.0, ready_time=14_000.0, due_time=15_000.0),
+    ]
+    instance = Instance(
+        nodes=nodes,
+        distance_matrix=[
+            [0.0, 1_000.0, 1_000.0],
+            [1_000.0, 0.0, 1_000.0],
+            [1_000.0, 1_000.0, 0.0],
+        ],
+        num_cv=0,
+        num_ev=1,
+    )
+    prices = replace(
+        DEFAULT_PRICES,
+        B_battery_kwh=20.0,
+        initial_ev_battery_kwh=0.0,
+        depot_charge_power_kw=22.0,
+    )
+    state = DynamicAssetState("EV_D0_7", "ev", "D0", 1_000.0, 0.0, 3)
+    source = Solution(
+        routes=[
+            Route("open-a", "ev", "D0", ["D0", "C1", "D0"]),
+            Route("open-b", "ev", "D0", ["D0", "C2", "D0"]),
+        ]
+    )
+    prepared, certificate = prepare_dynamic_multitrip_solution(
+        source,
+        instance,
+        prices,
+        asset_states={state.physical_vehicle_id: state},
+        stage_start_second=1_000.0,
+    )
+    assert prepared.charging_actions
+    profile = [
+        {
+            "time_index": index,
+            "horizon_second_start": float(index * 1_800),
+            "actual_gco2_per_kwh": 800.0 if index < 3 else 50.0,
+            "forecast_gco2_per_kwh": 800.0 if index < 3 else 50.0,
+        }
+        for index in range(48)
+    ]
+
+    naive_solution, naive_certificate, _ = reschedule_dynamic_charging(
+        prepared,
+        certificate,
+        instance,
+        profile,
+        prices,
+        asset_states={state.physical_vehicle_id: state},
+        stage_start_second=1_000.0,
+        strategy="naive",
+    )
+    aware_solution, aware_certificate, stats = reschedule_dynamic_charging(
+        prepared,
+        certificate,
+        instance,
+        profile,
+        prices,
+        asset_states={state.physical_vehicle_id: state},
+        stage_start_second=1_000.0,
+        strategy="aware",
+    )
+
+    assert all(action.charge_day_offset == 0 for action in aware_solution.charging_actions)
+    assert all(action.charge_start_second >= 1_000.0 for action in aware_solution.charging_actions)
+    assert stats["moved_action_count"] >= 1
+    naive_starts = {action.vehicle_id: action.charge_start_second for action in naive_solution.charging_actions}
+    aware_starts = {action.vehicle_id: action.charge_start_second for action in aware_solution.charging_actions}
+    assert any(aware_starts[route_id] > naive_starts[route_id] for route_id in aware_starts)
+
+    first_shifted_route = next(
+        route_id for route_id in aware_starts if aware_starts[route_id] > naive_starts[route_id]
+    )
+    trigger = (aware_starts[first_shifted_route] + naive_starts[first_shifted_route]) / 2.0
+    naive_cut = cut_dynamic_certificate_at_trigger(
+        naive_solution,
+        naive_certificate,
+        instance,
+        prices,
+        inherited_asset_states={state.physical_vehicle_id: state},
+        previous_stage_start_second=1_000.0,
+        trigger_second=trigger,
+    )
+    aware_cut = cut_dynamic_certificate_at_trigger(
+        aware_solution,
+        aware_certificate,
+        instance,
+        prices,
+        inherited_asset_states={state.physical_vehicle_id: state},
+        previous_stage_start_second=1_000.0,
+        trigger_second=trigger,
+    )
+    assert len(naive_cut.locked_charging_actions) > len(aware_cut.locked_charging_actions)
 
 
 def test_added_order_is_rejected_when_sole_in_progress_asset_returns_too_late() -> None:
