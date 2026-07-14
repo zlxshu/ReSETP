@@ -227,6 +227,91 @@ def test_cli_defaults_to_batched_and_accepts_eight_workers(monkeypatch) -> None:
     assert args.workers == 8
 
 
+def test_both_arms_load_the_same_frozen_independent_start() -> None:
+    cooperative = formal.load_arm("cooperative")
+    independent = formal.load_arm("independent")
+    assert cooperative["case"] == independent["case"]
+    assert cooperative["case"].endswith("__independent")
+    assert formal.sha256(cooperative["solution_path"]) == formal.sha256(
+        independent["solution_path"]
+    )
+    assert formal.sha256(cooperative["certificate_path"]) == formal.sha256(
+        independent["certificate_path"]
+    )
+    assert cooperative["solution"].cross_site_services == []
+
+
+def test_common_operator_menu_does_not_change_with_strict_environment(monkeypatch) -> None:
+    baseline = formal.common_operator_pairs()
+    monkeypatch.setenv("SETP_E3_STRICT_MULTITRIP", "1")
+    assert formal.common_operator_pairs() == baseline
+    assert len(baseline) == 18
+
+
+def test_paired_contract_rejects_different_start_hashes() -> None:
+    cooperative = {
+        "initial_solution_sha256": "same-solution",
+        "initial_certificate_sha256": "same-certificate",
+        "event_sha256": "same-events",
+        "owner_sha256": "same-owners",
+    }
+    independent = dict(cooperative)
+    stages = [
+        {
+            "stage": 1,
+            "stage_search_seed": 1001,
+            "evaluations": 8,
+            "operator_pairs": "a+b",
+        }
+    ]
+    assert formal.paired_contract_matches(cooperative, independent, stages, stages)
+    independent["initial_solution_sha256"] = "different"
+    assert not formal.paired_contract_matches(cooperative, independent, stages, stages)
+
+
+def test_stage_evidence_round_trip_contains_asset_and_customer_hashes() -> None:
+    construction, owners, _, states = _asset_aware_fixture()
+    solution = construction.solution
+    certificate = SimpleNamespace(
+        as_dict=lambda: {
+            "status": "PASS",
+            "vehicle_counts": {"cv": 2, "ev": 0},
+            "trips": [],
+        }
+    )
+    cut = SimpleNamespace(
+        asset_states=states,
+        completed_route_ids=("old-0",),
+        in_progress_route_ids=(),
+        editable_route_ids=("old-1",),
+        locked_charging_actions=(),
+    )
+    payload = formal._stage_evidence_payload(
+        arm="independent",
+        stream_seed=1,
+        stage_index=1,
+        trigger=1000.0,
+        cut=cut,
+        locked_routes=solution.routes[:1],
+        committed_customers={"C0"},
+        future_customers=["C1"],
+        active_customers={"C0", "C1"},
+        solution=solution,
+        certificate=certificate,
+        cost_parts={"total_cost": 1.0, "E_total": 2.0},
+        dynamic_added_customer_ids=set(),
+        dynamic_added_cross_site_ids=set(),
+    )
+    encoded = json.dumps(payload, ensure_ascii=False, sort_keys=True)
+    restored = json.loads(encoded)
+    assert len(restored["asset_states"]) == 2
+    assert restored["active_customer_ids"] == ["C0", "C1"]
+    assert restored["certificate_status"] == "PASS"
+    assert restored["asset_states_sha256"] == formal.canonical_sha256(
+        restored["asset_states"]
+    )
+
+
 def test_failed_run_keeps_completed_stages_and_a_halt_record(tmp_path, monkeypatch) -> None:
     monkeypatch.setattr(formal, "ROOT", tmp_path)
     monkeypatch.setattr(formal, "source_commit", lambda: "test-commit")
@@ -260,6 +345,7 @@ def test_failed_run_keeps_completed_stages_and_a_halt_record(tmp_path, monkeypat
         args,
         failures=[failure],
         partial_stage_rows=[stage],
+        run_start_commit="test-commit",
     )
 
     decision = json.loads((tmp_path / "decision.json").read_text(encoding="utf-8"))

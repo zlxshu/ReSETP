@@ -7,7 +7,7 @@ import argparse
 from concurrent.futures import ProcessPoolExecutor
 from collections import Counter
 import csv
-from dataclasses import replace
+from dataclasses import asdict, replace
 import hashlib
 import json
 import math
@@ -37,7 +37,7 @@ from setp_solver.search.dynamic_multitrip_schedule import (
     prepare_dynamic_multitrip_solution,
 )
 from setp_solver.search.evaluation import EvalBudget, EvaluationContext
-from setp_solver.search.metaheuristic_baselines import solution_from_dict
+from setp_solver.search.metaheuristic_baselines import solution_from_dict, solution_to_dict
 from setp_solver.solution import ChargingAction, Route, Solution
 
 
@@ -57,7 +57,7 @@ DONOR_BUNDLE = (
 )
 DEFAULT_OUTPUT = ROOT / "baselines/e7_dynamic/e7_v2_20260714/preflight/paired_two_stage"
 INSTANCE_SHA256 = "59696be304ad9f3c484820439e1cbdb027945e20ad7ecbdb8542dfde7e0d6225"
-CONTRACT_ID = "E7_PAIRED_DYNAMIC_VALUE_V2_BATCHED"
+CONTRACT_ID = "E7_PAIRED_DYNAMIC_VALUE_V3_SHARED_START"
 ROLLING_PARAMETERS = RollingParameters()
 
 
@@ -69,6 +69,16 @@ def sha256(path: Path) -> str:
     return digest.hexdigest()
 
 
+def canonical_sha256(payload: Any) -> str:
+    encoded = json.dumps(
+        payload,
+        ensure_ascii=False,
+        sort_keys=True,
+        separators=(",", ":"),
+    ).encode("utf-8")
+    return hashlib.sha256(encoded).hexdigest()
+
+
 def source_commit() -> str:
     return subprocess.check_output(
         ["git", "rev-parse", "HEAD"],
@@ -78,8 +88,9 @@ def source_commit() -> str:
 
 
 def arm_case(arm: str) -> str:
-    suffix = "no_loss" if arm == "cooperative" else "independent"
-    return f"L-main-threeshift-100c-01__geographic__seed1__{suffix}"
+    if arm not in {"cooperative", "independent"}:
+        raise ValueError(f"unknown arm {arm}")
+    return "L-main-threeshift-100c-01__geographic__seed1__independent"
 
 
 def load_arm(arm: str) -> dict[str, Any]:
@@ -300,6 +311,18 @@ def exact_candidate(
         )["total_cost"]
     )
     return prepared, certificate, cost
+
+
+def common_operator_pairs() -> tuple[tuple[str, str], ...]:
+    operators = WinnerOperatorSet.create(
+        include_route_elimination=False,
+        allow_cross_depot=False,
+    )
+    return tuple(
+        (destroy_id, repair_id)
+        for destroy_id, _ in operators.destroy_ops
+        for repair_id, _ in operators.repair_ops
+    )
 
 
 def event_insertion_candidate(
@@ -784,13 +807,12 @@ def search_stage(
     )
     operators = WinnerOperatorSet.create(
         include_route_elimination=False,
-        allow_cross_depot=allow_cross_depot,
+        # Both arms must use the same operator menu.  The treatment is carried
+        # only by EvaluationContext/SearchPolicy and the dynamic specialist
+        # insertion rules below.
+        allow_cross_depot=False,
     )
-    pairs = [
-        (destroy_id, repair_id)
-        for destroy_id, _ in operators.destroy_ops
-        for repair_id, _ in operators.repair_ops
-    ]
+    pairs = list(common_operator_pairs())
     weights = np.ones(len(pairs), dtype=float)
     rng = np.random.default_rng(seed)
     best_structure = current
@@ -937,6 +959,84 @@ def search_stage(
         "dynamic_rejections": dict(dynamic_rejections),
         "evaluations": evaluations,
         "elapsed_seconds": time.perf_counter() - started,
+        "operator_pairs": [f"{destroy_id}+{repair_id}" for destroy_id, repair_id in pairs],
+        "search_seed": seed,
+    }
+
+
+def _cross_site_ids_for_routes(
+    routes: Sequence[Route],
+    instance: Any,
+    owners: Mapping[str, str],
+) -> list[str]:
+    return sorted(
+        customer_id
+        for route in routes
+        for customer_id in p2.route_customers(route, instance)
+        if owners.get(customer_id) != route.home_depot_id
+    )
+
+
+def _stage_evidence_payload(
+    *,
+    arm: str,
+    stream_seed: int,
+    stage_index: int,
+    trigger: float,
+    cut: Any,
+    locked_routes: Sequence[Route],
+    committed_customers: set[str],
+    future_customers: Sequence[str],
+    active_customers: set[str],
+    solution: Solution,
+    certificate: Any,
+    cost_parts: Mapping[str, Any],
+    dynamic_added_customer_ids: set[str],
+    dynamic_added_cross_site_ids: set[str],
+) -> dict[str, Any]:
+    asset_states = {
+        asset_id: asdict(state) for asset_id, state in sorted(cut.asset_states.items())
+    }
+    locked_route_payload = [asdict(route) for route in locked_routes]
+    locked_action_payload = [asdict(action) for action in cut.locked_charging_actions]
+    solution_payload = solution_to_dict(solution)
+    certificate_payload = certificate.as_dict()
+    committed_ids = sorted(committed_customers)
+    future_ids = sorted(future_customers)
+    active_ids = sorted(active_customers)
+    return {
+        "arm": arm,
+        "stream_seed": stream_seed,
+        "stage": stage_index,
+        "trigger_second": trigger,
+        "asset_states": asset_states,
+        "asset_states_sha256": canonical_sha256(asset_states),
+        "completed_route_ids": list(cut.completed_route_ids),
+        "in_progress_route_ids": list(cut.in_progress_route_ids),
+        "editable_route_ids": list(cut.editable_route_ids),
+        "locked_routes": locked_route_payload,
+        "locked_routes_sha256": canonical_sha256(locked_route_payload),
+        "locked_charging_actions": locked_action_payload,
+        "locked_charging_actions_sha256": canonical_sha256(locked_action_payload),
+        "active_customer_ids": active_ids,
+        "active_customer_ids_sha256": canonical_sha256(active_ids),
+        "committed_customer_ids": committed_ids,
+        "committed_customer_ids_sha256": canonical_sha256(committed_ids),
+        "future_customer_ids": future_ids,
+        "future_customer_ids_sha256": canonical_sha256(future_ids),
+        "dynamic_added_customer_ids": sorted(dynamic_added_customer_ids),
+        "dynamic_added_cross_site_customer_ids": sorted(dynamic_added_cross_site_ids),
+        "solution": solution_payload,
+        "solution_sha256": canonical_sha256(solution_payload),
+        "certificate": certificate_payload,
+        "certificate_sha256": canonical_sha256(certificate_payload),
+        "certificate_status": certificate_payload.get("status"),
+        "certificate_vehicle_counts": certificate_payload.get("vehicle_counts"),
+        "cost_breakdown": {
+            key: value
+            for key, value in cost_parts.items()
+            if isinstance(value, (int, float)) and math.isfinite(float(value))
+        },
     }
 
 
@@ -970,6 +1070,12 @@ def run_session(
     current_solution = sources["solution"]
     current_certificate = sources["certificate"]
     current_instance = sources["bundle"].instance
+    initial_parts = evaluate_parts(
+        current_solution.routes,
+        current_solution.charging_actions,
+        current_instance,
+        sources,
+    )
     inherited_states = None
     inherited_locked_actions: Sequence[ChargingAction] = ()
     previous_stage_start = None
@@ -977,7 +1083,10 @@ def run_session(
     booked_route_ids: set[str] = set()
     booked_action_keys: set[tuple[Any, ...]] = set()
     committed = {}
+    dynamic_added_customer_ids: set[str] = set()
+    committed_dynamic_added_cross_site_ids: set[str] = set()
     stage_rows: list[dict[str, Any]] = []
+    stage_evidence: list[dict[str, Any]] = []
     for stage_index, batch in enumerate(batches, start=1):
         stage_started = time.perf_counter()
         trigger = float(batch["trigger_time"])
@@ -1012,6 +1121,10 @@ def run_session(
         booked_route_ids.update(route.vehicle_id for route in new_routes)
         for route in new_routes:
             committed_customers.update(p2.route_customers(route, current_instance))
+        committed_dynamic_added_cross_site_ids.update(
+            set(_cross_site_ids_for_routes(new_routes, current_instance, owners))
+            & dynamic_added_customer_ids
+        )
         new_actions = [
             action
             for action in cut.locked_charging_actions
@@ -1033,6 +1146,12 @@ def run_session(
         )
         event_ids, event_types, applied_event_ids, ignored_locked_event_ids = (
             _validate_stage_application(construction, batch["events"])
+        )
+        applied_set = set(applied_event_ids)
+        dynamic_added_customer_ids.update(
+            str(event.customer_id)
+            for event in batch["events"]
+            if str(event.event_id) in applied_set and str(event.event_type).lower() == "add"
         )
         result = search_stage(
             construction,
@@ -1063,6 +1182,42 @@ def run_session(
             raise RuntimeError("customer accounting did not close")
         if arm == "independent" and result["solution"].cross_site_services:
             raise RuntimeError("independent arm served a customer from the other depot")
+        future_cross_site_ids = set(
+            _cross_site_ids_for_routes(
+                result["solution"].routes,
+                construction.effective_instance,
+                owners,
+            )
+        )
+        stage_dynamic_added_cross_site_ids = (
+            committed_dynamic_added_cross_site_ids
+            | (future_cross_site_ids & dynamic_added_customer_ids)
+        )
+        future_parts = evaluate_parts(
+            result["solution"].routes,
+            result["solution"].charging_actions,
+            construction.effective_instance,
+            sources,
+        )
+        running_parts = dict(committed)
+        add_breakdown(running_parts, future_parts)
+        evidence = _stage_evidence_payload(
+            arm=arm,
+            stream_seed=stream_seed,
+            stage_index=stage_index,
+            trigger=trigger,
+            cut=cut,
+            locked_routes=locked_routes,
+            committed_customers=committed_customers,
+            future_customers=future_customers,
+            active_customers=active_customers,
+            solution=result["solution"],
+            certificate=result["certificate"],
+            cost_parts=running_parts,
+            dynamic_added_customer_ids=dynamic_added_customer_ids,
+            dynamic_added_cross_site_ids=stage_dynamic_added_cross_site_ids,
+        )
+        stage_evidence.append(evidence)
         elapsed_seconds = time.perf_counter() - stage_started
         available_compute_seconds, completed_before_next_trigger = _stage_timing(
             elapsed_seconds, trigger, next_trigger
@@ -1086,6 +1241,30 @@ def run_session(
                 "future_cost": result["future_cost"],
                 "running_total_cost": committed.get("total_cost", 0.0) + result["future_cost"],
                 "cross_site_customer_count": len(result["solution"].cross_site_services),
+                "dynamic_added_customer_count": len(dynamic_added_customer_ids),
+                "dynamic_added_cross_site_customer_count": len(
+                    stage_dynamic_added_cross_site_ids
+                ),
+                "dynamic_added_cross_site_customer_ids": ";".join(
+                    sorted(stage_dynamic_added_cross_site_ids)
+                ),
+                "active_customer_count": len(active_customers),
+                "committed_customer_count": len(committed_customers),
+                "future_customer_count": len(future_customers),
+                "asset_state_count": len(cut.asset_states),
+                "asset_states_sha256": evidence["asset_states_sha256"],
+                "locked_routes_sha256": evidence["locked_routes_sha256"],
+                "locked_charging_actions_sha256": evidence[
+                    "locked_charging_actions_sha256"
+                ],
+                "active_customer_ids_sha256": evidence["active_customer_ids_sha256"],
+                "committed_customer_ids_sha256": evidence[
+                    "committed_customer_ids_sha256"
+                ],
+                "future_customer_ids_sha256": evidence["future_customer_ids_sha256"],
+                "stage_solution_sha256": evidence["solution_sha256"],
+                "stage_certificate_sha256": evidence["certificate_sha256"],
+                "stage_certificate_status": evidence["certificate_status"],
                 "initial_continuation_feasible": result["initial_feasible"],
                 "initial_type_trial_count": result["type_trials"],
                 "changed_candidate_count": result["changed_count"],
@@ -1093,6 +1272,8 @@ def run_session(
                 "executable_candidate_count": result["feasible_count"],
                 "accepted_candidate_count": result["accepted_count"],
                 "evaluations": result["evaluations"],
+                "stage_search_seed": result["search_seed"],
+                "operator_pairs": ";".join(result["operator_pairs"]),
                 "elapsed_seconds": elapsed_seconds,
                 "completed_before_next_trigger": completed_before_next_trigger,
                 "customer_accounting_pass": True,
@@ -1125,6 +1306,10 @@ def run_session(
     )
     final = dict(committed)
     add_breakdown(final, remaining)
+    final_dynamic_added_cross_site_ids = committed_dynamic_added_cross_site_ids | (
+        set(_cross_site_ids_for_routes(current_solution.routes, current_instance, owners))
+        & dynamic_added_customer_ids
+    )
     return {
         "arm": arm,
         "stream_seed": stream_seed,
@@ -1134,6 +1319,12 @@ def run_session(
         "final_total_cost": final.get("total_cost", 0.0),
         "final_total_emissions": final.get("E_total", 0.0),
         "final_cross_site_customer_count": len(current_solution.cross_site_services),
+        "final_dynamic_added_cross_site_customer_count": len(
+            final_dynamic_added_cross_site_ids
+        ),
+        "final_dynamic_added_cross_site_customer_ids": ";".join(
+            sorted(final_dynamic_added_cross_site_ids)
+        ),
         "customer_accounting_pass": True,
         "event_path": str(event_path.relative_to(ROOT)),
         "event_sha256": sha256(event_path),
@@ -1143,7 +1334,15 @@ def run_session(
         "initial_solution_sha256": sha256(sources["solution_path"]),
         "initial_certificate_path": str(sources["certificate_path"].relative_to(ROOT)),
         "initial_certificate_sha256": sha256(sources["certificate_path"]),
+        "initial_total_cost": float(initial_parts["total_cost"]),
+        "initial_total_emissions": float(initial_parts["E_total"]),
+        "initial_route_count": len(sources["solution"].routes),
+        "initial_charging_action_count": len(sources["solution"].charging_actions),
+        "initial_cross_site_customer_count": len(sources["solution"].cross_site_services),
         "stage_rows": stage_rows,
+        "stage_evidence": stage_evidence,
+        "final_solution": solution_to_dict(current_solution),
+        "final_certificate": current_certificate.as_dict(),
         "trigger_mode": trigger_mode,
     }
 
@@ -1168,6 +1367,30 @@ def write_csv(
         writer.writerows(rows)
 
 
+def paired_contract_matches(
+    cooperative: Mapping[str, Any],
+    independent: Mapping[str, Any],
+    cooperative_stages: Sequence[Mapping[str, Any]],
+    independent_stages: Sequence[Mapping[str, Any]],
+) -> bool:
+    return (
+        cooperative["initial_solution_sha256"]
+        == independent["initial_solution_sha256"]
+        and cooperative["initial_certificate_sha256"]
+        == independent["initial_certificate_sha256"]
+        and cooperative["event_sha256"] == independent["event_sha256"]
+        and cooperative["owner_sha256"] == independent["owner_sha256"]
+        and [
+            (row["stage"], row["stage_search_seed"], row["evaluations"], row["operator_pairs"])
+            for row in cooperative_stages
+        ]
+        == [
+            (row["stage"], row["stage_search_seed"], row["evaluations"], row["operator_pairs"])
+            for row in independent_stages
+        ]
+    )
+
+
 def write_artifacts(
     output: Path,
     sessions: list[dict[str, Any]],
@@ -1175,6 +1398,7 @@ def write_artifacts(
     *,
     failures: Sequence[Mapping[str, Any]] = (),
     partial_stage_rows: Sequence[Mapping[str, Any]] = (),
+    run_start_commit: str,
 ) -> None:
     output.mkdir(parents=True, exist_ok=True)
     for old in output.iterdir():
@@ -1184,20 +1408,80 @@ def write_artifacts(
         *[row for session in sessions for row in session["stage_rows"]],
         *partial_stage_rows,
     ]
-    summary_rows = [
-        {key: value for key, value in session.items() if key != "stage_rows"}
-        for session in sessions
-    ]
+    solution_dir = output / "solutions"
+    certificate_dir = output / "certificates"
+    evidence_dir = output / "stage_evidence"
+    for directory in (solution_dir, certificate_dir, evidence_dir):
+        directory.mkdir(parents=True, exist_ok=True)
+        for old in directory.iterdir():
+            if old.is_file():
+                old.unlink()
+    summary_rows = []
+    for session in sessions:
+        stem = f"stream{session['stream_seed']}__{session['arm']}"
+        solution_path = solution_dir / f"{stem}.json"
+        certificate_path = certificate_dir / f"{stem}.json"
+        evidence_path = evidence_dir / f"{stem}.json"
+        write_json(solution_path, session["final_solution"])
+        write_json(certificate_path, session["final_certificate"])
+        write_json(evidence_path, session["stage_evidence"])
+        excluded = {"stage_rows", "stage_evidence", "final_solution", "final_certificate"}
+        row = {key: value for key, value in session.items() if key not in excluded}
+        row.update(
+            {
+                "final_solution_path": str(solution_path.relative_to(ROOT)),
+                "final_solution_sha256": sha256(solution_path),
+                "final_certificate_path": str(certificate_path.relative_to(ROOT)),
+                "final_certificate_sha256": sha256(certificate_path),
+                "stage_evidence_path": str(evidence_path.relative_to(ROOT)),
+                "stage_evidence_sha256": sha256(evidence_path),
+            }
+        )
+        summary_rows.append(row)
     write_csv(output / "raw_runs.csv", stage_rows)
     write_csv(output / "session_summary.csv", summary_rows)
-    if failures:
-        write_csv(output / "failures.csv", failures)
+    recorded_failures = [dict(row) for row in failures]
     pairs: list[dict[str, Any]] = []
     by_seed = {(row["stream_seed"], row["arm"]): row for row in summary_rows}
     for seed in sorted({row["stream_seed"] for row in summary_rows}):
         cooperative = by_seed.get((seed, "cooperative"))
         independent = by_seed.get((seed, "independent"))
         if not cooperative or not independent:
+            continue
+        cooperative_stages = sorted(
+            (
+                row
+                for row in stage_rows
+                if row["stream_seed"] == seed and row["arm"] == "cooperative"
+            ),
+            key=lambda row: row["stage"],
+        )
+        independent_stages = sorted(
+            (
+                row
+                for row in stage_rows
+                if row["stream_seed"] == seed and row["arm"] == "independent"
+            ),
+            key=lambda row: row["stage"],
+        )
+        paired_contract = paired_contract_matches(
+            cooperative,
+            independent,
+            cooperative_stages,
+            independent_stages,
+        )
+        if not paired_contract:
+            recorded_failures.append(
+                {
+                    "stream_seed": seed,
+                    "arm": "paired_contract",
+                    "completed_stage_count": min(
+                        len(cooperative_stages), len(independent_stages)
+                    ),
+                    "error_type": "PairedContractMismatch",
+                    "error": "shared start, frozen inputs, stage seeds, budgets, or operator menus differ",
+                }
+            )
             continue
         saving = 100.0 * (
             independent["final_total_cost"] - cooperative["final_total_cost"]
@@ -1213,13 +1497,15 @@ def write_artifacts(
             }
         )
     write_csv(output / "paired_summary.csv", pairs)
+    if recorded_failures:
+        write_csv(output / "failures.csv", recorded_failures)
     timing_pass = all(
         row.get("completed_before_next_trigger") is True
         for row in stage_rows
         if row.get("next_trigger_second") not in (None, "")
     )
     passed = (
-        not failures
+        not recorded_failures
         and len(summary_rows) == 2 * len(args.streams)
         and all(row["customer_accounting_pass"] for row in summary_rows)
         and timing_pass
@@ -1251,9 +1537,13 @@ def write_artifacts(
         "delta_t": ROLLING_PARAMETERS.delta_t_seconds,
         "delta_t_seconds": ROLLING_PARAMETERS.delta_t_seconds,
         "workers": args.workers,
-        "source_commit": source_commit(),
+        "run_start_commit": run_start_commit,
+        "artifact_write_commit": source_commit(),
+        "source_commit": run_start_commit,
+        "shared_initial_plan": True,
+        "treatment_difference": "cross-depot service permission only",
         "result_direction_used_to_continue": False,
-        "failure_count": len(failures),
+        "failure_count": len(recorded_failures),
         "interpretation_limit": (
             "Formal conclusions use all frozen stages of all five streams."
             if formal_scope
@@ -1266,7 +1556,7 @@ def write_artifacts(
         "passed": passed,
         "session_count": len(summary_rows),
         "paired_stream_count": len(pairs),
-        "failure_count": len(failures),
+        "failure_count": len(recorded_failures),
         "zero_customer_loss": all(row["customer_accounting_pass"] for row in summary_rows),
         "applied_event_count": sum(
             len([value for value in str(row.get("applied_event_ids", "")).split(";") if value])
@@ -1298,7 +1588,7 @@ def write_artifacts(
                     if formal_scope
                     else "本轮只决定能否进入完整五条订单流，不形成论文结论。"
                 ),
-                *( ["", f"中途停止 {len(failures)} 组，原因见 failures.csv；停止前已经完成的阶段保留在 raw_runs.csv。"] if failures else [] ),
+                *( ["", f"中途停止 {len(recorded_failures)} 组，原因见 failures.csv；停止前已经完成的阶段保留在 raw_runs.csv。"] if recorded_failures else [] ),
             ]
         )
         + "\n",
@@ -1310,7 +1600,7 @@ def write_artifacts(
             "sha256": sha256(path),
             "bytes": path.stat().st_size,
         }
-        for path in sorted(output.iterdir())
+        for path in sorted(output.rglob("*"))
         if path.is_file()
         and path.name != "artifact_hashes.json"
         and not path.name.startswith("._")
@@ -1362,6 +1652,7 @@ def run_session_captured(task: tuple[str, int, int, int | None, str]) -> dict[st
 
 def main() -> None:
     args = parse_args()
+    run_start_commit = source_commit()
     tasks = [
         (
             arm,
@@ -1387,6 +1678,7 @@ def main() -> None:
         args,
         failures=failures,
         partial_stage_rows=partial_rows,
+        run_start_commit=run_start_commit,
     )
 
 
