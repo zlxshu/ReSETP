@@ -31,17 +31,22 @@ def test_frozen_stream_and_batched_trigger_contract() -> None:
         assert observed == formal._frozen_trigger_times(seed)
 
 
-def test_stage_application_rejects_ignored_or_mismatched_events() -> None:
+def test_stage_application_partitions_applied_and_locked_events() -> None:
     events = formal.load_stream(1)[0][:2]
     valid = formal.gate.StageConstruction(None, None, tuple(event.event_id for event in events), (), 0)
     assert formal._validate_stage_application(valid, events)[0] == [event.event_id for event in events]
 
-    ignored = formal.gate.StageConstruction(None, None, (), (events[0].event_id,), 0)
-    with pytest.raises(RuntimeError, match="must not be ignored"):
-        formal._validate_stage_application(ignored, events)
+    cancellable = next(event for event in formal.load_stream(1)[0] if event.event_type == "cancel")
+    locked = formal.gate.StageConstruction(None, None, (), (cancellable.event_id,), 0)
+    assert formal._validate_stage_application(locked, [cancellable])[3] == [cancellable.event_id]
+
+    added = next(event for event in formal.load_stream(1)[0] if event.event_type == "add")
+    invalid_locked = formal.gate.StageConstruction(None, None, (), (added.event_id,), 0)
+    with pytest.raises(RuntimeError, match="must never be ignored"):
+        formal._validate_stage_application(invalid_locked, [added])
 
     mismatched = formal.gate.StageConstruction(None, None, (events[0].event_id,), (), 0)
-    with pytest.raises(RuntimeError, match="differ from the trigger batch"):
+    with pytest.raises(RuntimeError, match="do not partition"):
         formal._validate_stage_application(mismatched, events)
 
 

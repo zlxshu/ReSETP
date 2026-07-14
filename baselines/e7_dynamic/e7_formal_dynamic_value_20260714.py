@@ -200,12 +200,19 @@ def _validate_stage_application(
     event_types = [str(event.event_type) for event in stage_events]
     applied = [str(event_id) for event_id in construction.applied_event_ids]
     ignored = [str(event_id) for event_id in construction.ignored_locked_event_ids]
-    if ignored:
-        raise RuntimeError(f"locked events must not be ignored: {ignored}")
-    if applied != event_ids:
+    if len(applied) != len(set(applied)) or len(ignored) != len(set(ignored)):
+        raise RuntimeError("dynamic event application contains duplicate event IDs")
+    if set(applied) & set(ignored):
+        raise RuntimeError("a dynamic event cannot be both applied and locked")
+    if set(applied) | set(ignored) != set(event_ids):
         raise RuntimeError(
-            f"applied event IDs differ from the trigger batch: expected={event_ids}, applied={applied}"
+            "applied and locked event IDs do not partition the trigger batch: "
+            f"expected={event_ids}, applied={applied}, locked={ignored}"
         )
+    type_by_id = {str(event.event_id): str(event.event_type).lower() for event in stage_events}
+    invalid_locked = [event_id for event_id in ignored if type_by_id[event_id] == "add"]
+    if invalid_locked:
+        raise RuntimeError(f"new orders must never be ignored as locked: {invalid_locked}")
     return event_ids, event_types, applied, ignored
 
 
@@ -1016,6 +1023,14 @@ def write_artifacts(
         "paired_stream_count": len(pairs),
         "failure_count": len(failures),
         "zero_customer_loss": all(row["customer_accounting_pass"] for row in summary_rows),
+        "applied_event_count": sum(
+            len([value for value in str(row.get("applied_event_ids", "")).split(";") if value])
+            for row in stage_rows
+        ),
+        "locked_late_event_count": sum(
+            len([value for value in str(row.get("ignored_locked_event_ids", "")).split(";") if value])
+            for row in stage_rows
+        ),
         "all_stages_completed_before_next_trigger": timing_pass,
         "boundary": metadata["interpretation_limit"],
     }
