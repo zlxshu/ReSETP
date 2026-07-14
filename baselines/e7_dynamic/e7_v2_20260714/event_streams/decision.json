@@ -1,4 +1,6 @@
 {
+  "all_add_service_times_present_positive_and_donor_exact": true,
+  "all_adds_directly_actionable_with_exact_service_time": true,
   "all_donor_fields_exact": true,
   "all_existing_events_modifiable_in_both_fixed_seed1_plans": true,
   "all_owner_rules_verified": true,
@@ -8,6 +10,7 @@
     "cancel": 11,
     "demand_change": 22
   },
+  "event_identity_sha256_excluding_v3_fields": "cb81442db4225fa5f38562372a019afac1f481fa195f6256069681b821b8d391",
   "events_per_stream": 55,
   "formal_fleet": {
     "cv": 10,
@@ -18,8 +21,8 @@
   "passed": true,
   "search_evaluations": 0,
   "stream_count": 5,
-  "supersedes_decision_sha256": "ad186d8e08b17a10bf4da1bc4b9ae644893e0dd9eaf1f6b995d678f016897867",
-  "supersession_reason": "V1 treated not-yet-served as modifiable even after the customer's whole trip had departed",
+  "supersedes_decision_sha256": "bf60dbd789b15b9905aab30eecbd347036d1d60ddc6821d1d281d3dab4eb0ce2",
+  "supersession_reason": "V2 omitted the selected donor's service time and therefore changed runtime semantics",
   "total_events": 275,
   "verdict": "E7_EVENT_STREAMS_FROZEN"
 }

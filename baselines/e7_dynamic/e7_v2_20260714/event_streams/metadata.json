@@ -5,17 +5,19 @@
   "base_ownership_sha256": "224661a81d2e79b34a649b124596af0764894bea836f05327e1ce99dd66d2202",
   "certificate_clock_source": "solver/src/setp_solver/search/certificate_execution.py",
   "certificate_clock_source_sha256": "ddb0521b2cfa01a49e348193f9edafa2d55cbff58d54efb61a6782973cdea281",
-  "contract_id": "E7_EVENT_STREAM_FREEZE_V2_DEPARTURE_LOCK",
+  "contract_id": "E7_EVENT_STREAM_FREEZE_V3_SERVICE_TIME",
   "donor_bundle": "baselines/e3_ablation/e3_paired_cost_formal_v2_20260713/assets/L-main-threeshift-200c-01/bundle",
   "donor_instance_sha256": "da46075892a067cab200f5fce6ac785861475456a06d26eefa4a2c92e6db64d9",
-  "donor_rule": "exact coordinate, demand, ready time, and due time inherited from an unused customer in the frozen E3 200c sister bundle; no field is clamped",
+  "donor_rule": "exact coordinate, demand, ready time, due time, and service time inherited from an unused customer in the frozen E3 200c sister bundle; no field is clamped",
   "dynamic_schema_source": "solver/src/setp_solver/search/dynamic.py",
-  "dynamic_schema_source_sha256": "0e31f56738f355cce74aaa0c97051d85257816f86ffaa58e17331a2960c6d5ad",
+  "dynamic_schema_source_sha256": "301f5c2984e43506a8880ed735dbaae60f994b45b3c39771203c7791f66ac9e5",
   "event_counts": {
     "add": 22,
     "cancel": 11,
     "demand_change": 22
   },
+  "event_identity_sha256_excluding_v3_fields": "cb81442db4225fa5f38562372a019afac1f481fa195f6256069681b821b8d391",
+  "event_identity_sha256_expected": "cb81442db4225fa5f38562372a019afac1f481fa195f6256069681b821b8d391",
   "event_type_order_rule": "the exact 22/11/22 label multiset is shuffled once per seed before time sorting",
   "events_per_stream": 55,
   "existing_target_assignment_order": "after labels and appearance times are drawn once, assign existing targets from latest trigger to earliest trigger so early events cannot consume the scarce late-trigger reversible trips",
@@ -33,8 +35,8 @@
   "formal_num_ev": 10,
   "generation_date": "2026-07-14",
   "generator_script": "baselines/e7_dynamic/generate_e7_event_streams_20260714.py",
-  "generator_script_sha256": "c6bbf2a8186eadd44501eef723693d9ede16193f87a300080848a0533511bb73",
-  "git_head_before_event_stream_commit": "a8f1abef89c42df22cf670002600f734ecac45d8",
+  "generator_script_sha256": "798e56053c45d6d0b84c31722019e205c989fca4a95adb5aab0e10518b3cc92b",
+  "git_head_before_event_stream_commit": "e8f46f423d8c28ea94fe8234ff043106a13278f0",
   "new_customer_owner_rule": "nearest D0/D1 by Euclidean squared distance; depot id breaks an exact tie",
   "no_post_result_selection": true,
   "not_a_dynamic_result": true,
@@ -139,7 +141,7 @@
     "q_bar": 8,
     "stages": 4
   },
-  "runtime_add_service_time_note": "DynamicEvent has no service-time field. The current runtime assigns the formal 221-customer mean service time to added nodes; the requested coordinate/demand/window fields are inherited exactly.",
+  "runtime_add_service_time_note": "V3 stores each selected donor's exact service time. Runtime uses it when present; old event formats remain readable and fall back to the formal-instance customer mean.",
   "search_evaluations": 0,
   "seeds": [
     1,
@@ -150,9 +152,9 @@
   ],
   "status": "FROZEN",
   "supersedes": {
-    "contract_id": "E7_EVENT_STREAM_FREEZE_V1",
-    "decision_sha256": "ad186d8e08b17a10bf4da1bc4b9ae644893e0dd9eaf1f6b995d678f016897867",
-    "metadata_sha256": "5210f4970d11893a4dd98552ef9ccb73eb2764d6680352798c943bc0bba11077",
-    "reason": "the old target gate used customer service start rather than the earlier, irreversible whole-trip departure boundary"
+    "contract_id": "E7_EVENT_STREAM_FREEZE_V2_DEPARTURE_LOCK",
+    "decision_sha256": "bf60dbd789b15b9905aab30eecbd347036d1d60ddc6821d1d281d3dab4eb0ce2",
+    "metadata_sha256": "87646a9da4b2a0d30391e60b33fa4703a46ebccdc55f46b4c1eb355fd9d6440b",
+    "reason": "V2 omitted donor service time and runtime silently substituted the base-customer mean"
   }
 }

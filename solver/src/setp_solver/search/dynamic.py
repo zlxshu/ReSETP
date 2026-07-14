@@ -49,6 +49,8 @@ class DynamicEvent:
     time_window_source: str = "existing_customer"
     donor_instance_id: str = ""
     donor_customer_id: str = ""
+    new_service_time: float | None = None
+    service_time_source: str = "existing_customer"
     source: str = "synthetic_overlay"
     seed: int = 0
 
@@ -204,10 +206,16 @@ def generate_dynamic_events(
                 demand_source = "donor_inherited"
                 time_window_source = "donor_inherited"
                 donor_customer_id = donor.node_id
+                new_service_time = float(donor.service_time)
+                service_time_source = "donor_inherited"
             elif event_type == "cancel":
                 new = 0.0
+                new_service_time = None
+                service_time_source = "existing_customer"
             else:
                 new = old * rng.uniform(0.85, 1.15)
+                new_service_time = None
+                service_time_source = "existing_customer"
             events.append(
                 DynamicEvent(
                     event_id=str(len(events) + 1),
@@ -226,6 +234,8 @@ def generate_dynamic_events(
                     demand_source=demand_source,
                     time_window_source=time_window_source,
                     donor_customer_id=donor_customer_id,
+                    new_service_time=new_service_time,
+                    service_time_source=service_time_source,
                     source="synthetic_overlay",
                     seed=int(seed),
                 )
@@ -970,6 +980,14 @@ def _read_dynamic_events(path: Path) -> list[DynamicEvent]:
                 time_window_source=str(row.get("time_window_source", "existing_customer") or "existing_customer"),
                 donor_instance_id=str(row.get("donor_instance_id", "") or ""),
                 donor_customer_id=str(row.get("donor_customer_id", "") or ""),
+                new_service_time=(
+                    float(row["new_service_time"])
+                    if row.get("new_service_time") not in {None, ""}
+                    else None
+                ),
+                service_time_source=str(
+                    row.get("service_time_source", "existing_customer") or "existing_customer"
+                ),
                 source=str(row.get("source", "synthetic_overlay") or "synthetic_overlay"),
                 seed=int(float(row.get("seed", 0) or 0)),
             )
@@ -1040,6 +1058,11 @@ def _instance_after_events(
             continue
         event_type = event.event_type.lower()
         if event_type == "add":
+            event_service_time = (
+                float(event.new_service_time)
+                if event.new_service_time is not None and float(event.new_service_time) > 0.0
+                else _default_customer_service_time(instance)
+            )
             nodes_by_id[event.customer_id] = Node(
                 node_id=event.customer_id,
                 node_type="c",
@@ -1048,7 +1071,7 @@ def _instance_after_events(
                 demand=float(event.new_demand),
                 ready_time=float(event.new_ready_time),
                 due_time=float(event.new_due_time),
-                service_time=_default_customer_service_time(instance),
+                service_time=event_service_time,
             )
             removed.discard(event.customer_id)
         elif event_type == "cancel":

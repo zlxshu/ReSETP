@@ -53,10 +53,13 @@ COUNTS = {"add": 22, "cancel": 11, "demand_change": 22}
 PARAMS = RollingParameters()
 HORIZON_SECONDS = PARAMS.delta_t_seconds * PARAMS.stages
 ACTION_MARGIN_SECONDS = 60.0
-CONTRACT_ID = "E7_EVENT_STREAM_FREEZE_V2_DEPARTURE_LOCK"
+CONTRACT_ID = "E7_EVENT_STREAM_FREEZE_V3_SERVICE_TIME"
+EVENT_IDENTITY_SHA256 = "cb81442db4225fa5f38562372a019afac1f481fa195f6256069681b821b8d391"
 FORMAL_REFERENCE_LABELS = ("no_loss_seed1", "independent_seed1")
 SUPERSEDED_DECISION_SHA256 = "ad186d8e08b17a10bf4da1bc4b9ae644893e0dd9eaf1f6b995d678f016897867"
 SUPERSEDED_METADATA_SHA256 = "5210f4970d11893a4dd98552ef9ccb73eb2764d6680352798c943bc0bba11077"
+SUPERSEDED_V2_DECISION_SHA256 = "bf60dbd789b15b9905aab30eecbd347036d1d60ddc6821d1d281d3dab4eb0ce2"
+SUPERSEDED_V2_METADATA_SHA256 = "87646a9da4b2a0d30391e60b33fa4703a46ebccdc55f46b4c1eb355fd9d6440b"
 
 
 def sha256(path: Path) -> str:
@@ -75,10 +78,22 @@ def write_json(path: Path, payload: Any) -> None:
     )
 
 
-def write_csv(path: Path, rows: list[dict[str, Any]], fieldnames: list[str], *, delimiter: str = ",") -> None:
+def write_csv(
+    path: Path,
+    rows: list[dict[str, Any]],
+    fieldnames: list[str],
+    *,
+    delimiter: str = ",",
+    lineterminator: str = "\r\n",
+) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     with path.open("w", newline="", encoding="utf-8") as handle:
-        writer = csv.DictWriter(handle, fieldnames=fieldnames, delimiter=delimiter)
+        writer = csv.DictWriter(
+            handle,
+            fieldnames=fieldnames,
+            delimiter=delimiter,
+            lineterminator=lineterminator,
+        )
         writer.writeheader()
         writer.writerows(rows)
 
@@ -324,15 +339,23 @@ def generate_stream(
                 time_window_source="frozen_sister_bundle_exact",
                 donor_instance_id=DONOR_SCENARIO_ID,
                 donor_customer_id=str(donor.node_id),
+                new_service_time=float(donor.service_time),
+                service_time_source="frozen_sister_bundle_exact",
                 source="frozen_e3_sister_bundle_overlay",
                 seed=seed,
             )
             min_service = ""
             margin = ""
-            actionable = True
+            donor_service = float(donor.service_time)
+            actionable = donor_is_directly_actionable(
+                donor,
+                trigger,
+                depots,
+                prices,
+                donor_service,
+            )
             donor_exact = True
             old_customer_owner = ""
-            donor_service = float(donor.service_time)
         else:
             customer_id = existing_target_by_event_id[event_id]
             node = base_customers[customer_id]
@@ -355,6 +378,7 @@ def generate_stream(
                 demand_source="frozen_base_customer",
                 time_window_source="frozen_base_customer",
                 source="frozen_e3_base_overlay",
+                service_time_source="existing_customer",
                 seed=seed,
             )
             min_departure_value = min(
@@ -393,6 +417,8 @@ def generate_stream(
                 "donor_instance_id": event.donor_instance_id,
                 "donor_customer_id": event.donor_customer_id,
                 "donor_service_time": donor_service,
+                "new_service_time": event.new_service_time if event.event_type == "add" else "",
+                "service_time_source": event.service_time_source,
                 "minimum_formal_trip_departure_second": min_service,
                 "minimum_uncommitted_margin_seconds": margin,
                 "modifiable_in_both_fixed_seed1_plans": actionable,
@@ -443,6 +469,7 @@ def verify_stream(
                 and event.new_demand == float(donor.demand)
                 and event.new_ready_time == float(donor.ready_time)
                 and event.new_due_time == float(donor.due_time)
+                and event.new_service_time == float(donor.service_time)
             )
             if not exact:
                 raise RuntimeError(f"seed {seed} donor inheritance drifted for {event.customer_id}")
@@ -487,8 +514,8 @@ def write_stream(seed: int, events: list[DynamicEvent], owners: dict[str, str]) 
     tsv_path = OUTPUT_ROOT / f"{stem}.dynamic_events.tsv"
     owner_path = OUTPUT_ROOT / f"{stem}.owners.csv"
     write_json(json_path, event_rows)
-    write_csv(csv_path, event_rows, event_fields)
-    write_csv(tsv_path, event_rows, event_fields, delimiter="\t")
+    write_csv(csv_path, event_rows, event_fields, lineterminator="\n")
+    write_csv(tsv_path, event_rows, event_fields, delimiter="\t", lineterminator="\n")
     owner_rows = [
         {"customer_id": customer_id, "owner_depot_id": owners[customer_id]}
         for customer_id in sorted(owners)
@@ -506,6 +533,19 @@ def write_stream(seed: int, events: list[DynamicEvent], owners: dict[str, str]) 
         "owners_csv": str(owner_path.relative_to(ROOT)),
         "owners_csv_sha256": sha256(owner_path),
     }
+
+
+def event_identity_sha256(streams: list[list[DynamicEvent]]) -> str:
+    """Hash the original V2 event identity while excluding V3-only fields."""
+
+    excluded = {"new_service_time", "service_time_source"}
+    rows = [
+        {key: value for key, value in asdict(event).items() if key not in excluded}
+        for events in streams
+        for event in events
+    ]
+    payload = json.dumps(rows, ensure_ascii=False, sort_keys=True, separators=(",", ":"))
+    return hashlib.sha256(payload.encode("utf-8")).hexdigest()
 
 
 def git_head() -> str:
@@ -574,6 +614,7 @@ def main() -> None:
     all_audit_rows: list[dict[str, Any]] = []
     summaries: list[dict[str, Any]] = []
     stream_files: list[dict[str, Any]] = []
+    generated_streams: list[list[DynamicEvent]] = []
     for seed in SEEDS:
         events, stream_owners, audit_rows = generate_stream(
             seed,
@@ -593,17 +634,26 @@ def main() -> None:
             prices,
         )
         stream_files.append(write_stream(seed, events, stream_owners))
+        generated_streams.append(events)
         summaries.append(summary)
         all_audit_rows.extend(audit_rows)
 
     audit_fields = list(all_audit_rows[0])
-    write_csv(OUTPUT_ROOT / "raw_runs.csv", all_audit_rows, audit_fields)
+    write_csv(OUTPUT_ROOT / "raw_runs.csv", all_audit_rows, audit_fields, lineterminator="\n")
     write_csv(OUTPUT_ROOT / "stream_summary.csv", summaries, list(summaries[0]))
+    identity_sha256 = event_identity_sha256(generated_streams)
+    if identity_sha256 != EVENT_IDENTITY_SHA256:
+        raise RuntimeError(
+            f"event identity drifted: {identity_sha256}, expected {EVENT_IDENTITY_SHA256}"
+        )
     write_json(
         OUTPUT_ROOT / "manifest.json",
         {
             "contract_id": CONTRACT_ID,
             "schema_source": "setp_solver.search.dynamic.DynamicEvent",
+            "event_identity_sha256_excluding_v3_fields": identity_sha256,
+            "supersedes_contract_id": "E7_EVENT_STREAM_FREEZE_V2_DEPARTURE_LOCK",
+            "supersession_reason": "V2 omitted donor service time",
             "streams": stream_files,
         },
     )
@@ -612,12 +662,11 @@ def main() -> None:
         "contract_id": CONTRACT_ID,
         "status": "FROZEN",
         "supersedes": {
-            "contract_id": "E7_EVENT_STREAM_FREEZE_V1",
-            "decision_sha256": SUPERSEDED_DECISION_SHA256,
-            "metadata_sha256": SUPERSEDED_METADATA_SHA256,
+            "contract_id": "E7_EVENT_STREAM_FREEZE_V2_DEPARTURE_LOCK",
+            "decision_sha256": SUPERSEDED_V2_DECISION_SHA256,
+            "metadata_sha256": SUPERSEDED_V2_METADATA_SHA256,
             "reason": (
-                "the old target gate used customer service start rather than the earlier, "
-                "irreversible whole-trip departure boundary"
+                "V2 omitted donor service time and runtime silently substituted the base-customer mean"
             ),
         },
         "generation_date": "2026-07-14",
@@ -649,9 +698,11 @@ def main() -> None:
         "donor_bundle": str(DONOR_BUNDLE.relative_to(ROOT)),
         "donor_instance_sha256": sha256(DONOR_BUNDLE / "instance.json"),
         "donor_rule": (
-            "exact coordinate, demand, ready time, and due time inherited from an unused customer "
+            "exact coordinate, demand, ready time, due time, and service time inherited from an unused customer "
             "in the frozen E3 200c sister bundle; no field is clamped"
         ),
+        "event_identity_sha256_excluding_v3_fields": identity_sha256,
+        "event_identity_sha256_expected": EVENT_IDENTITY_SHA256,
         "base_ownership_map": str(GEOGRAPHIC_OWNERS.relative_to(ROOT)),
         "base_ownership_sha256": sha256(GEOGRAPHIC_OWNERS),
         "new_customer_owner_rule": "nearest D0/D1 by Euclidean squared distance; depot id breaks an exact tie",
@@ -687,8 +738,8 @@ def main() -> None:
         ),
         "reference_plans": reference_sources,
         "runtime_add_service_time_note": (
-            "DynamicEvent has no service-time field. The current runtime assigns the formal 221-customer "
-            "mean service time to added nodes; the requested coordinate/demand/window fields are inherited exactly."
+            "V3 stores each selected donor's exact service time. Runtime uses it when present; old event "
+            "formats remain readable and fall back to the formal-instance customer mean."
         ),
         "no_post_result_selection": True,
         "not_a_dynamic_result": True,
@@ -719,6 +770,18 @@ def main() -> None:
             for row in all_audit_rows
             if row["event_type"] == "add"
         ),
+        "all_add_service_times_present_positive_and_donor_exact": all(
+            float(row["new_service_time"]) > 0.0
+            and float(row["new_service_time"]) == float(row["donor_service_time"])
+            for row in all_audit_rows
+            if row["event_type"] == "add"
+        ),
+        "all_adds_directly_actionable_with_exact_service_time": all(
+            row["modifiable_in_both_fixed_seed1_plans"] is True
+            for row in all_audit_rows
+            if row["event_type"] == "add"
+        ),
+        "event_identity_sha256_excluding_v3_fields": identity_sha256,
         "all_owner_rules_verified": all(row["owner_rule_verified"] is True for row in all_audit_rows),
         "minimum_existing_event_uncommitted_margin_seconds": min(
             float(row["minimum_uncommitted_margin_seconds"])
@@ -731,9 +794,9 @@ def main() -> None:
             "This verdict freezes exogenous inputs only. It does not establish rolling feasibility, "
             "cost, carbon, cooperation, or fairness effects."
         ),
-        "supersedes_decision_sha256": SUPERSEDED_DECISION_SHA256,
+        "supersedes_decision_sha256": SUPERSEDED_V2_DECISION_SHA256,
         "supersession_reason": (
-            "V1 treated not-yet-served as modifiable even after the customer's whole trip had departed"
+            "V2 omitted the selected donor's service time and therefore changed runtime semantics"
         ),
     }
     write_json(OUTPUT_ROOT / "decision.json", decision)
@@ -754,8 +817,8 @@ def main() -> None:
         "",
         "## 机械检查",
         "",
-        "本版撤销并取代旧事件流。旧版只检查客户尚未开始服务，却漏掉了“整趟车已经出发、"
-        "运营承诺已经不可撤回”的更早边界，因此不能用于正式动态实验。",
+        "本版撤销并取代 V2 的服务时长口径。V2 的事件身份和整趟发车检查没有改变，"
+        "但新增订单运行时误用了原算例客户的平均停留时长。V3 为同一批已选订单补回捐赠客户原值。",
         "",
         f"275 个事件全部通过。取消和需求变化共 165 个事件，在对应重规划触发时点，"
         "其完整车次在固定的 seed1 合作起点和 seed1 各自经营起点中都尚未出发。"
@@ -767,8 +830,10 @@ def main() -> None:
         "不再充当正式筛选条件。客户目标在时间标签固定后按触发时刻从晚到早一次抽取，"
         "避免早期事件误占晚期仅有的可撤回车次。",
         "",
-        "110 个新增事件的坐标、需求和时间窗逐字继承自同一 E3 封存体系的 200c 姐妹算例，"
+        "110 个新增事件的坐标、需求、时间窗和服务时长逐字继承自同一 E3 封存体系的 200c 姐妹算例，"
         "没有截断或人工改窗。新客户归属按到 D0/D1 的欧氏距离就近确定，若精确同距则按车场编号。",
+        f"排除 V3 新增字段后，275 个事件的身份指纹仍为 `{identity_sha256}`，"
+        "说明本次没有重抽事件、客户、出现时刻或归属。",
         "",
         "## 边界",
         "",

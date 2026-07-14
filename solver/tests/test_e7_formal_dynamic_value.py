@@ -15,7 +15,7 @@ def test_frozen_stream_is_read_once_and_sorted_into_single_event_responses() -> 
     assert events == ordered
     assert len({event.event_id for event in events}) == len(events)
     assert len(owners) == 243
-    assert formal.sha256(event_path) == "f4cddda26adc7cc15b323d4ec5f3b5e261da5f1e3d15f053a40d52cd9e7c4eef"
+    assert formal.sha256(event_path) == "ae08f81e5b8efd93b6c2d95abc405623ae355926c4c23fd31681c0fa8824d6a9"
     assert formal.sha256(owner_path) == "66a6b7211192e69725d6fa76a3c747e8a855744570f9389229ca24fa804eebe1"
 
 

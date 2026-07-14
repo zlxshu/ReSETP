@@ -48,6 +48,11 @@ BUNDLE_DIR = (
 )
 E6_ROOT = ROOT / "baselines/e6_fairness/e6_participation_formal_20260714"
 EVENT_ROOT = ROOT / "baselines/e7_dynamic/e7_v2_20260714/event_streams"
+DONOR_BUNDLE = (
+    ROOT
+    / "baselines/e3_ablation/e3_paired_cost_formal_v2_20260713/assets"
+    / "L-main-threeshift-200c-01/bundle"
+)
 DEFAULT_OUTPUT = ROOT / "baselines/e7_dynamic/e7_v2_20260714/preflight/paired_two_stage"
 INSTANCE_SHA256 = "59696be304ad9f3c484820439e1cbdb027945e20ad7ecbdb8542dfde7e0d6225"
 CONTRACT_ID = "E7_PAIRED_DYNAMIC_VALUE_V1"
@@ -106,6 +111,25 @@ def load_stream(seed: int) -> tuple[list[DynamicEvent], dict[str, str], Path, Pa
         DynamicEvent(**row)
         for row in json.loads(event_path.read_text(encoding="utf-8"))
     ]
+    donor_bundle = load_search_bundle(DONOR_BUNDLE)
+    donors = {
+        node.node_id: node
+        for node in donor_bundle.instance.nodes
+        if node.node_type.lower() == "c"
+    }
+    for event in events:
+        if event.event_type != "add":
+            continue
+        if event.new_service_time is None or float(event.new_service_time) <= 0.0:
+            raise RuntimeError(
+                f"formal E7 add event {event.event_id} lacks a positive donor service time"
+            )
+        donor = donors.get(event.donor_customer_id)
+        if donor is None or float(event.new_service_time) != float(donor.service_time):
+            raise RuntimeError(
+                f"formal E7 add event {event.event_id} service time does not match donor "
+                f"{event.donor_customer_id}"
+            )
     with owner_path.open(newline="", encoding="utf-8") as handle:
         owners = {row["customer_id"]: row["owner_depot_id"] for row in csv.DictReader(handle)}
     return events, owners, event_path, owner_path
