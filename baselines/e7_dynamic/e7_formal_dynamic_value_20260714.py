@@ -57,7 +57,7 @@ DONOR_BUNDLE = (
 )
 DEFAULT_OUTPUT = ROOT / "baselines/e7_dynamic/e7_v2_20260714/preflight/paired_two_stage"
 INSTANCE_SHA256 = "59696be304ad9f3c484820439e1cbdb027945e20ad7ecbdb8542dfde7e0d6225"
-CONTRACT_ID = "E7_PAIRED_DYNAMIC_VALUE_V3_SHARED_START"
+CONTRACT_ID = "E7_PAIRED_DYNAMIC_VALUE_V4_UNIQUE_EVENT_ROUTE_IDS"
 ROLLING_PARAMETERS = RollingParameters()
 
 
@@ -347,6 +347,9 @@ def event_insertion_candidate(
     ]
     if not pending:
         return None
+    route_ids = [route.vehicle_id for route in base_solution.routes]
+    if len(set(route_ids)) != len(route_ids):
+        raise RuntimeError("dynamic search base route ids are not unique")
     event_route_by_customer = {}
     routes = []
     pending_set = set(pending)
@@ -362,8 +365,8 @@ def event_insertion_candidate(
         return None
     pending = [pending[index] for index in rng.permutation(len(pending))]
     for customer_id in pending:
-        options: list[tuple[float, str, int, Route]] = []
-        for route in routes:
+        options: list[tuple[float, int, int, Route]] = []
+        for route_index, route in enumerate(routes):
             if not allow_cross_depot and route.home_depot_id != owners[customer_id]:
                 continue
             for insert_at in range(1, len(route.node_sequence)):
@@ -391,16 +394,23 @@ def event_insertion_candidate(
                             customer_id,
                             construction.effective_instance,
                         ),
-                        route.vehicle_id,
+                        route_index,
                         insert_at,
                         candidate,
                     )
                 )
         if not options or rng.random() < 0.5:
             source = event_route_by_customer[customer_id]
+            used_route_ids = {route.vehicle_id for route in routes}
+            singleton_id = f"DYN_EVENT_{customer_id}"
+            suffix = 1
+            while singleton_id in used_route_ids:
+                suffix += 1
+                singleton_id = f"DYN_EVENT_{customer_id}_{suffix}"
             routes.append(
                 replace(
                     source,
+                    vehicle_id=singleton_id,
                     node_sequence=[source.home_depot_id, customer_id, source.home_depot_id],
                     vehicle_type=(
                         source.vehicle_type
@@ -412,11 +422,10 @@ def event_insertion_candidate(
             continue
         options.sort(key=lambda item: (item[0], item[1], item[2]))
         choice_pool = options[: min(20, len(options))]
-        selected = choice_pool[int(rng.integers(0, len(choice_pool)))][3]
-        routes = [
-            selected if route.vehicle_id == selected.vehicle_id else route
-            for route in routes
+        _, selected_index, _, selected = choice_pool[
+            int(rng.integers(0, len(choice_pool)))
         ]
+        routes[selected_index] = selected
     if not preserve_event_types and routes:
         flip_count = min(len(routes), 1 + int(rng.integers(0, 8)))
         flip_indexes = set(int(value) for value in rng.choice(len(routes), size=flip_count, replace=False))
@@ -911,6 +920,11 @@ def search_stage(
                         cut,
                         trigger,
                     )
+                candidate_structure = normalized_search_solution(
+                    candidate_prepared,
+                    construction.effective_instance,
+                    owners,
+                )
                 feasible_count += 1
                 improves_current = candidate_cost <= current_cost
                 temperature = max(1.0, (best_cost if math.isfinite(best_cost) else 1000.0) * 0.01)
@@ -920,13 +934,13 @@ def search_stage(
                     rng.random() < math.exp(-delta / max(temperature, 1e-9))
                 )
                 if accepted:
-                    current = candidate_solution
+                    current = candidate_structure
                     current_prepared = candidate_prepared
                     current_certificate = candidate_certificate
                     current_cost = candidate_cost
                     accepted_count += 1
                 if candidate_cost < best_cost - 1e-9:
-                    best_structure = candidate_solution
+                    best_structure = candidate_structure
                     best_prepared = candidate_prepared
                     best_certificate = candidate_certificate
                     best_cost = candidate_cost
@@ -1271,6 +1285,11 @@ def run_session(
                 "search_exact_check_count": result["exact_check_count"],
                 "executable_candidate_count": result["feasible_count"],
                 "accepted_candidate_count": result["accepted_count"],
+                "search_rejection_counts_json": json.dumps(
+                    result["dynamic_rejections"],
+                    ensure_ascii=False,
+                    sort_keys=True,
+                ),
                 "evaluations": result["evaluations"],
                 "stage_search_seed": result["search_seed"],
                 "operator_pairs": ";".join(result["operator_pairs"]),

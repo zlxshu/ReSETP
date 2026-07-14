@@ -7,6 +7,7 @@ import json
 import sys
 from types import SimpleNamespace
 
+import numpy as np
 import pytest
 
 from baselines.e7_dynamic import e7_formal_dynamic_value_20260714 as formal
@@ -167,6 +168,130 @@ def test_missing_specialist_candidate_still_counts_budget_without_exact_check() 
     assert context.budget.count == 1
     assert context.score_counts == {"candidate": 1}
     assert calls == []
+
+
+def test_event_insertion_splits_shared_source_into_unique_singletons() -> None:
+    construction, _, prices, _ = _asset_aware_fixture()
+    prices = replace(prices, Q_capacity=15.0)
+    event_construction = formal.gate.StageConstruction(
+        solution=Solution(
+            routes=[
+                Route("EVENT_ADD_1", "cv", "D0", ["D0", "C0", "D0"]),
+                Route("EVENT_ADD_2", "cv", "D0", ["D0", "C1", "D0"]),
+            ]
+        ),
+        effective_instance=construction.effective_instance,
+        applied_event_ids=(),
+        ignored_locked_event_ids=(),
+        feasibility_check_count=0,
+    )
+    base = Solution(
+        routes=[Route("DYN_OPEN_001", "cv", "D0", ["D0", "C0", "C1", "D0"])]
+    )
+
+    candidate = formal.event_insertion_candidate(
+        event_construction,
+        {"C0": "D0", "C1": "D0"},
+        prices,
+        base,
+        True,
+        allow_cross_depot=False,
+        rng=np.random.default_rng(7),
+    )
+
+    assert candidate is not None
+    assert len({route.vehicle_id for route in candidate.routes}) == len(candidate.routes)
+    customers = [
+        customer_id
+        for route in candidate.routes
+        for customer_id in formal.p2.route_customers(
+            route,
+            event_construction.effective_instance,
+        )
+    ]
+    assert sorted(customers) == ["C0", "C1"]
+    assert len(customers) == len(set(customers))
+
+
+def test_event_insertion_updates_only_the_selected_route() -> None:
+    class FixedRng:
+        @staticmethod
+        def permutation(size: int) -> np.ndarray:
+            return np.arange(size)
+
+        @staticmethod
+        def random() -> float:
+            return 0.9
+
+        @staticmethod
+        def integers(_low: int, _high: int | None = None) -> int:
+            return 0
+
+    construction, _, prices, _ = _asset_aware_fixture()
+    prices = replace(prices, Q_capacity=25.0)
+    event_construction = formal.gate.StageConstruction(
+        solution=Solution(
+            routes=[
+                Route("EVENT_ADD_1", "cv", "D0", ["D0", "C0", "D0"]),
+                Route("EVENT_ADD_2", "cv", "D0", ["D0", "C1", "D0"]),
+            ]
+        ),
+        effective_instance=construction.effective_instance,
+        applied_event_ids=(),
+        ignored_locked_event_ids=(),
+        feasibility_check_count=0,
+    )
+    base = Solution(
+        routes=[Route("DYN_OPEN_001", "cv", "D0", ["D0", "C0", "C1", "D0"])]
+    )
+
+    candidate = formal.event_insertion_candidate(
+        event_construction,
+        {"C0": "D0", "C1": "D0"},
+        prices,
+        base,
+        True,
+        allow_cross_depot=False,
+        rng=FixedRng(),
+    )
+
+    assert candidate is not None
+    assert len(candidate.routes) == 1
+    assert len({route.vehicle_id for route in candidate.routes}) == 1
+    customers = [
+        customer_id
+        for route in candidate.routes
+        for customer_id in formal.p2.route_customers(
+            route,
+            event_construction.effective_instance,
+        )
+    ]
+    assert sorted(customers) == ["C0", "C1"]
+    assert len(customers) == len(set(customers))
+
+
+def test_prepared_solution_becomes_clean_next_search_structure() -> None:
+    construction, owners, _, _ = _asset_aware_fixture()
+    prepared = Solution(
+        routes=[
+            Route("CV_D0_1#T3", "cv", "D0", ["D0", "C0", "D0"]),
+            Route("CV_D1_1#T2", "cv", "D1", ["D1", "C1", "D1"]),
+        ],
+        charging_actions=[formal.ChargingAction("EV_D0_1#T2", "D0", 10.0, 30.0, 100.0)],
+    )
+
+    normalized = formal.normalized_search_solution(
+        prepared,
+        construction.effective_instance,
+        owners,
+    )
+
+    assert [route.vehicle_id for route in normalized.routes] == [
+        "DYN_OPEN_001",
+        "DYN_OPEN_002",
+    ]
+    assert normalized.charging_actions == []
+    assert len({route.vehicle_id for route in normalized.routes}) == len(normalized.routes)
 
 
 def test_frozen_stream_and_batched_trigger_contract() -> None:
