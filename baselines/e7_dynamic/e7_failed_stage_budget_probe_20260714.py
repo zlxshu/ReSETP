@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Check whether the four frozen E7 stops are caused by the 400-evaluation budget."""
+"""Replay the four frozen E7 stop positions under an explicit stage budget."""
 
 from __future__ import annotations
 
@@ -94,7 +94,7 @@ def main() -> None:
     formal.write_json(
         output / "metadata.json",
         {
-            "contract_id": "E7_FAILED_STAGE_BUDGET_PROBE_V1",
+            "contract_id": "E7_FAILED_STAGE_REPLAY_V2_SERVICE_TIME",
             "scope": "preflight_only",
             "source_commit": formal.source_commit(),
             "evaluations_per_stage": args.evaluations,
@@ -103,10 +103,17 @@ def main() -> None:
                 {"arm": arm, "stream_seed": seed, "target_stage": stage}
                 for arm, seed, stage in TASKS
             ],
-            "interpretation_limit": "This probe only tests whether 800 evaluations can reach the four previously failed stages.",
+            "interpretation_limit": (
+                "This replay only tests whether the selected stage budget and current frozen event contract "
+                "can reach the four previously failed positions."
+            ),
         },
     )
-    verdict = "E7_800_BUDGET_PROBE_PASS" if passed else "HALT_E7_800_BUDGET_PROBE"
+    verdict = (
+        f"E7_{args.evaluations}_FAILED_STAGE_REPLAY_PASS"
+        if passed
+        else f"HALT_E7_{args.evaluations}_FAILED_STAGE_REPLAY"
+    )
     formal.write_json(
         output / "decision.json",
         {
@@ -120,11 +127,11 @@ def main() -> None:
     (output / "report.md").write_text(
         "\n".join(
             [
-                "# E7停止位置的计算量检查",
+                "# E7停止位置回放",
                 "",
                 f"判决：`{verdict}`。",
                 "",
-                "只重跑400次正式批中停止的四个位置，每阶段提高到800次；订单流、车辆、时间、电量和客户归属均不变。",
+                f"只回放旧正式批中停止的四个位置，每阶段{args.evaluations}次；订单身份、车辆、时间、电量和客户归属均不变。",
                 f"{sum(row['status'] == 'PASS' for row in rows)}/{len(rows)}个位置走到原停止阶段。该结果只决定是否值得用800次重跑完整五流，不形成论文结论。",
             ]
         )
