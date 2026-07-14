@@ -132,7 +132,7 @@ def main() -> None:
                 f"判决：`{verdict}`。",
                 "",
                 f"只回放旧正式批中停止的四个位置，每阶段{args.evaluations}次；订单身份、车辆、时间、电量和客户归属均不变。",
-                f"{sum(row['status'] == 'PASS' for row in rows)}/{len(rows)}个位置走到原停止阶段。该结果只决定是否值得用800次重跑完整五流，不形成论文结论。",
+                f"{sum(row['status'] == 'PASS' for row in rows)}/{len(rows)}个位置走到原停止阶段。该结果仅记录逐事件高频响应诊断，不决定正式双触发实验的预算，也不形成论文结论。",
             ]
         )
         + "\n",
