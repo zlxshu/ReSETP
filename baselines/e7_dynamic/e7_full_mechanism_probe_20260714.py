@@ -53,6 +53,10 @@ STREAM_SEED = 1
 MAX_STAGES = 2
 DEFAULT_EVALUATIONS = 8
 ARMS = ("full", "no_cooperation", "carbon_blind", "no_participation")
+CONDITIONS = ("geographic", "historical_mixed")
+RESPONSIBILITY_ROOT = (
+    ROOT / "baselines/e7_dynamic/e7_responsibility_scenario_design_20260714"
+)
 TOL = 1e-6
 SOURCE_FILES = (
     Path(__file__).resolve(),
@@ -190,8 +194,27 @@ def _profiles() -> dict[int, list[dict[str, Any]]]:
     return e4.profiles_for_operating_day(e4.load_national_rows(), OPERATING_DAY)
 
 
-def _sources_for_day() -> tuple[dict[str, Any], dict[int, list[dict[str, Any]]]]:
+def _sources_for_day(
+    condition: str,
+) -> tuple[dict[str, Any], dict[int, list[dict[str, Any]]]]:
+    if condition not in CONDITIONS:
+        raise ValueError(f"unknown responsibility condition {condition}")
     sources = dict(base.load_arm("cooperative"))
+    case_condition = "mixed" if condition == "historical_mixed" else "geographic"
+    case = f"L-main-threeshift-100c-01__{case_condition}__seed1__independent"
+    solution_path = base.E6_ROOT / "solutions" / f"{case}.json"
+    certificate_path = base.E6_ROOT / "certificates" / f"{case}.json"
+    sources.update(
+        {
+            "case": case,
+            "solution": base.solution_from_dict(
+                json.loads(solution_path.read_text(encoding="utf-8"))
+            ),
+            "certificate": base.p2.load_certificate(certificate_path),
+            "solution_path": solution_path,
+            "certificate_path": certificate_path,
+        }
+    )
     profiles = _profiles()
     bundle = sources["bundle"]
     sources["bundle"] = SearchBundle(
@@ -200,6 +223,30 @@ def _sources_for_day() -> tuple[dict[str, Any], dict[int, list[dict[str, Any]]]]
         profiles[0],
     )
     return sources, profiles
+
+
+def _stream_for_condition(
+    stream_seed: int,
+    condition: str,
+) -> tuple[list[Any], dict[str, str], Path, Path]:
+    events, _nearest_owners, event_path, _nearest_path = base.load_stream(stream_seed)
+    owner_path = (
+        RESPONSIBILITY_ROOT
+        / "ownership_maps"
+        / f"stream_seed{stream_seed}__{condition}.csv"
+    )
+    if not owner_path.is_file():
+        raise FileNotFoundError(
+            f"frozen E7 responsibility map is missing: {owner_path}"
+        )
+    with owner_path.open(newline="", encoding="utf-8") as handle:
+        owners = {
+            str(row["customer_id"]): str(row["owner_depot_id"])
+            for row in csv.DictReader(handle)
+        }
+    if len(owners) != len({*owners}) or set(owners.values()) - {"D0", "D1"}:
+        raise RuntimeError(f"invalid responsibility map {owner_path}")
+    return events, owners, event_path, owner_path
 
 
 def _charging_emissions_kg(
@@ -358,6 +405,14 @@ def _meets_participation_floor(
         value >= -TOL
         for value in _participation_margins(candidate, baseline).values()
     )
+
+
+def _timing_variant_for_strategy(strategy: str) -> str:
+    if strategy == "naive":
+        return "immediate"
+    if strategy == "aware":
+        return "aware"
+    raise ValueError(f"unknown charging strategy {strategy}")
 
 
 def _add_committed_profit(
@@ -568,6 +623,7 @@ def _controlled_stage(
         raise RuntimeError("second search lost the same-state cost fallback")
 
     strategy = "naive" if arm == "carbon_blind" else "aware"
+    timing_variant = _timing_variant_for_strategy(strategy)
     baseline_timing = _dynamic_timing_pair(
         baseline["solution"],
         baseline["certificate"],
@@ -586,10 +642,10 @@ def _controlled_stage(
         cut,
         trigger=trigger,
     )
-    timed_solution = selected_timing[f"{strategy}_solution"]
-    timed_certificate = selected_timing[f"{strategy}_certificate"]
-    timing = selected_timing[f"{strategy}_stats"]
-    baseline_timed_solution = baseline_timing[f"{strategy}_solution"]
+    timed_solution = selected_timing[f"{timing_variant}_solution"]
+    timed_certificate = selected_timing[f"{timing_variant}_certificate"]
+    timing = selected_timing[f"{timing_variant}_stats"]
+    baseline_timed_solution = baseline_timing[f"{timing_variant}_solution"]
     baseline_cost = float(
         base.evaluate_parts(
             baseline_timed_solution.routes,
@@ -661,14 +717,18 @@ def _controlled_stage(
 def run_probe_arm(
     arm: str,
     *,
+    condition: str,
     stream_seed: int,
     evaluations: int,
     max_stages: int,
 ) -> dict[str, Any]:
     if arm not in ARMS:
         raise ValueError(f"unknown arm {arm}")
-    sources, profiles = _sources_for_day()
-    events, owners, event_path, owner_path = base.load_stream(stream_seed)
+    sources, profiles = _sources_for_day(condition)
+    events, owners, event_path, owner_path = _stream_for_condition(
+        stream_seed,
+        condition,
+    )
     all_batches = base._validated_trigger_batches(stream_seed, events)
     batches = all_batches[:max_stages]
     current_solution, current_certificate, initial_timing = _initial_plan(
@@ -789,6 +849,7 @@ def run_probe_arm(
         rows.append(
             {
                 "arm": arm,
+                "responsibility_condition": condition,
                 "stream_seed": stream_seed,
                 "stage": stage_index,
                 "trigger_second": trigger,
@@ -873,6 +934,7 @@ def run_probe_arm(
 
     return {
         "arm": arm,
+        "responsibility_condition": condition,
         "stream_seed": stream_seed,
         "available_stages": len(all_batches),
         "stages": len(rows),
@@ -898,10 +960,11 @@ def _artifact_hashes() -> dict[str, str]:
     }
 
 
-def _run_probe_task(task: tuple[str, int, int, int]) -> dict[str, Any]:
-    arm, stream_seed, evaluations, max_stages = task
+def _run_probe_task(task: tuple[str, str, int, int, int]) -> dict[str, Any]:
+    condition, arm, stream_seed, evaluations, max_stages = task
     return run_probe_arm(
         arm,
+        condition=condition,
         stream_seed=stream_seed,
         evaluations=evaluations,
         max_stages=max_stages,
@@ -917,6 +980,18 @@ def _parse_streams(value: str) -> tuple[int, ...]:
     return streams
 
 
+def _parse_conditions(value: str) -> tuple[str, ...]:
+    conditions = tuple(item.strip() for item in value.split(",") if item.strip())
+    if not conditions or len(conditions) != len(set(conditions)):
+        raise argparse.ArgumentTypeError("conditions must be a non-empty unique list")
+    unknown = set(conditions) - set(CONDITIONS)
+    if unknown:
+        raise argparse.ArgumentTypeError(
+            f"unknown responsibility conditions: {sorted(unknown)}"
+        )
+    return conditions
+
+
 def main() -> int:
     global OUT
     parser = argparse.ArgumentParser()
@@ -926,6 +1001,11 @@ def main() -> int:
     parser.add_argument("--require-observable", action="store_true")
     parser.add_argument("--workers", type=int, default=4)
     parser.add_argument("--streams", type=_parse_streams, default=(STREAM_SEED,))
+    parser.add_argument(
+        "--conditions",
+        type=_parse_conditions,
+        default=("geographic",),
+    )
     args = parser.parse_args()
     if args.evaluations <= 0:
         raise ValueError("evaluations must be positive")
@@ -937,7 +1017,8 @@ def main() -> int:
     OUT.mkdir(parents=True, exist_ok=True)
     started = time.perf_counter()
     tasks = [
-        (arm, stream_seed, args.evaluations, args.max_stages)
+        (condition, arm, stream_seed, args.evaluations, args.max_stages)
+        for condition in args.conditions
         for stream_seed in args.streams
         for arm in ARMS
     ]
@@ -958,7 +1039,7 @@ def main() -> int:
         if path.name in {"cost.py", "check.py", "evaluation.py"}
     }
     failures: list[str] = []
-    if len(payloads) != len(ARMS) * len(args.streams):
+    if len(payloads) != len(ARMS) * len(args.streams) * len(args.conditions):
         failures.append("session count did not close")
     if any(len(payload["rows"]) != payload["stages"] for payload in payloads):
         failures.append("row count did not close")
@@ -1010,11 +1091,17 @@ def main() -> int:
         if row["arm"] == "no_cooperation"
     ):
         failures.append("no-cooperation arm crossed depots")
-    if args.require_observable and sum(
-        int(row["feasible_cross_candidate_count"])
-        for row in cooperative_rows
-    ) <= 0:
-        failures.append("no feasible cross-depot candidate was observed")
+    if args.require_observable:
+        for condition in args.conditions:
+            observed = sum(
+                int(row["feasible_cross_candidate_count"])
+                for row in cooperative_rows
+                if row["responsibility_condition"] == condition
+            )
+            if observed <= 0:
+                failures.append(
+                    f"no feasible cross-depot candidate was observed for {condition}"
+                )
     verdict = (
         "E7_FULL_MECHANISM_GATE_PASS"
         if not failures
@@ -1030,6 +1117,7 @@ def main() -> int:
             "the date was not selected from this probe's result."
         ),
         "stream_seeds": list(args.streams),
+        "responsibility_conditions": list(args.conditions),
         "stages": args.max_stages,
         "evaluations_per_search": args.evaluations,
         "arms": list(ARMS),
@@ -1075,6 +1163,14 @@ def main() -> int:
                 float(row["predicted_charging_saving_kg"])
                 for row in aware_rows
             ),
+            "feasible_cross_candidate_count_by_condition": {
+                condition: sum(
+                    int(row["feasible_cross_candidate_count"])
+                    for row in cooperative_rows
+                    if row["responsibility_condition"] == condition
+                )
+                for condition in args.conditions
+            },
             "actual_charging_saving_kg": sum(
                 float(row["actual_charging_saving_kg"])
                 for row in aware_rows

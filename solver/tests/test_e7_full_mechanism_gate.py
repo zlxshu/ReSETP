@@ -25,6 +25,13 @@ def test_participation_floor_stops_on_nonpositive_baseline() -> None:
         )
 
 
+def test_charging_strategy_uses_the_matching_timing_variant() -> None:
+    assert gate._timing_variant_for_strategy("naive") == "immediate"
+    assert gate._timing_variant_for_strategy("aware") == "aware"
+    with pytest.raises(ValueError, match="unknown charging strategy"):
+        gate._timing_variant_for_strategy("other")
+
+
 def test_execution_ledger_keeps_charge_locked_before_its_route() -> None:
     route = Route("EV_D0_1#T2", "ev", "D0", ["D0", "C1", "D0"])
     action = ChargingAction("EV_D0_1#T2", "D0", 10.0, 30.0, 1_000.0)
