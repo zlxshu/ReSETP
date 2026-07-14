@@ -1,0 +1,31 @@
+{
+  "contract_id": "E7_BATCHED_ASSET_AWARE_REPAIR_KNOWN_STOPS_V1",
+  "interpretation_limit": "Only the three previously observed batched stop positions are tested.",
+  "result_direction_used_to_continue": false,
+  "scope": "preflight_only",
+  "source_commit": "43aa892459aa5274c9d64b58f6f87aaa7c77014d",
+  "tasks": [
+    {
+      "arm": "cooperative",
+      "evaluations_per_stage": 400,
+      "stream_seed": 1,
+      "target_stage": 4,
+      "trigger_mode": "batched"
+    },
+    {
+      "arm": "independent",
+      "evaluations_per_stage": 800,
+      "stream_seed": 1,
+      "target_stage": 2,
+      "trigger_mode": "batched"
+    },
+    {
+      "arm": "cooperative",
+      "evaluations_per_stage": 800,
+      "stream_seed": 1,
+      "target_stage": 7,
+      "trigger_mode": "batched"
+    }
+  ],
+  "workers": 3
+}
