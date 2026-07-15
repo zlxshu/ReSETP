@@ -593,22 +593,36 @@ def _same_state_no_cooperation(
     evaluations: int,
     stage_new_customer_ids: Sequence[str],
 ) -> dict[str, Any]:
-    failure_diagnostics: dict[str, Any] = {}
-    owner_fixed = base.asset_aware_future_repack_candidate(
-        construction,
+    existing_cross_ids = base._cross_site_ids_for_routes(
+        construction.solution.routes,
+        construction.effective_instance,
         owners,
-        sources["prices"],
-        asset_states=cut.asset_states,
-        stage_start_second=trigger,
-        allow_cross_depot=False,
-        failure_diagnostics=failure_diagnostics,
     )
-    if owner_fixed is None:
-        raise RuntimeError(
-            "could not build the same-state no-cooperation start: "
-            + json.dumps(failure_diagnostics, ensure_ascii=False, sort_keys=True)
+    if existing_cross_ids:
+        failure_diagnostics: dict[str, Any] = {}
+        owner_fixed = base.asset_aware_future_repack_candidate(
+            construction,
+            owners,
+            sources["prices"],
+            asset_states=cut.asset_states,
+            stage_start_second=trigger,
+            allow_cross_depot=False,
+            failure_diagnostics=failure_diagnostics,
         )
-    controlled = replace(construction, solution=owner_fixed)
+        if owner_fixed is None:
+            raise RuntimeError(
+                "could not build the same-state no-cooperation start: "
+                + json.dumps(failure_diagnostics, ensure_ascii=False, sort_keys=True)
+            )
+        controlled = replace(construction, solution=owner_fixed)
+        baseline_start_source = "owner_fixed_asset_repack"
+    else:
+        # The dynamic stage builder has already preserved the inherited asset
+        # state and inserted the current events.  Discarding this cross-free
+        # structure and rebuilding every open customer from scratch can create
+        # a false infeasibility before search begins.
+        controlled = construction
+        baseline_start_source = "existing_cross_free_open_stage"
 
     def no_cross_gate(solution: Solution, _certificate: Any, _cost: float) -> bool:
         return not base._cross_site_ids_for_routes(
@@ -636,6 +650,7 @@ def _same_state_no_cooperation(
         owners,
     ):
         raise RuntimeError("same-state no-cooperation plan crossed depots")
+    result["same_state_baseline_start_source"] = baseline_start_source
     return result
 
 
@@ -919,6 +934,9 @@ def _controlled_stage(
         / max(baseline_cost, TOL),
         "shadow_evaluations": int(baseline["evaluations"]),
         "shadow_search_seed": int(baseline["search_seed"]),
+        "same_state_baseline_start_source": baseline[
+            "same_state_baseline_start_source"
+        ],
         "main_search_seed": int(selected["search_seed"]),
         "second_start_sha256": second_start_sha256,
         "baseline_output_sha256": canonical_sha256(
@@ -1118,6 +1136,9 @@ def run_probe_arm(
                     final_running["depot_profit"], sort_keys=True
                 ),
                 "same_state_baseline_cost": float(result["same_state_baseline_cost"]),
+                "same_state_baseline_start_source": result[
+                    "same_state_baseline_start_source"
+                ],
                 "same_state_cost_saving_pct": float(result["same_state_cost_saving_pct"]),
                 "minimum_profit_margin": float(result["minimum_profit_margin"]),
                 "minimum_profit_ratio": float(result["minimum_profit_ratio"]),
