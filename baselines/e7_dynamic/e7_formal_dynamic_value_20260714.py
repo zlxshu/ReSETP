@@ -68,6 +68,23 @@ INSTANCE_SHA256 = "59696be304ad9f3c484820439e1cbdb027945e20ad7ecbdb8542dfde7e0d6
 CONTRACT_ID = "E7_PAIRED_DYNAMIC_VALUE_V5_EXISTING_RECIPROCAL_NEIGHBORHOOD"
 ROLLING_PARAMETERS = RollingParameters()
 EXISTING_CROSS_OPERATOR_ID = "reciprocal_boundary_reinsert_v1"
+
+
+class NoExecutableContinuation(RuntimeError):
+    """A scientifically reportable dynamic arm failure after a closed budget."""
+
+    def __init__(
+        self,
+        message: str,
+        *,
+        stage: int | None = None,
+        trigger_second: float | None = None,
+        completed_stage_count: int = 0,
+    ) -> None:
+        super().__init__(message)
+        self.stage = stage
+        self.trigger_second = trigger_second
+        self.completed_stage_count = completed_stage_count
 EXISTING_CROSS_INTERVAL = 100
 
 
@@ -1353,7 +1370,7 @@ def search_stage(
     if existing_cross_actual_call_count != len(existing_cross_slots):
         raise RuntimeError("existing-customer reciprocal call schedule did not close")
     if best_prepared is None or best_certificate is None or not math.isfinite(best_cost):
-        raise RuntimeError(
+        raise NoExecutableContinuation(
             "stage search found no executable continuation "
             f"(initial_feasible={initial_feasible}, changed={changed_count}, "
             f"executable={feasible_count}, accepted={accepted_count}, "

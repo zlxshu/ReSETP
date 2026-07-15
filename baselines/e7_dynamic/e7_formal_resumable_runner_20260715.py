@@ -300,6 +300,33 @@ def _run_task(task: Mapping[str, Any]) -> dict[str, Any]:
             max_stages=int(task["max_stages"]),
             network=str(task["network"]),
         )
+    except probe.base.NoExecutableContinuation as exc:
+        events, _, event_path, owner_path = probe._stream_for_condition(
+            int(task["stream"]),
+            str(task["condition"]),
+            str(task["network"]),
+        )
+        batches = probe._validated_multinetwork_trigger_batches(
+            str(task["network"]), int(task["stream"]), events
+        )
+        return {
+            "execution_status": "HALT_NO_EXECUTABLE_CONTINUATION",
+            "network": task["network"],
+            "arm": task["arm"],
+            "responsibility_condition": task["condition"],
+            "stream_seed": task["stream"],
+            "available_stages": len(batches),
+            "stages": int(exc.completed_stage_count),
+            "rows": [],
+            "failed_stage": exc.stage,
+            "failed_trigger_second": exc.trigger_second,
+            "failure_error": str(exc),
+            "evaluations": int(task["evaluations"]),
+            "event_path": str(event_path.relative_to(ROOT)),
+            "event_sha256": sha256(event_path),
+            "owner_path": str(owner_path.relative_to(ROOT)),
+            "owner_sha256": sha256(owner_path),
+        }
     except Exception as exc:
         raise RuntimeError(f"{task['task_id']}: {exc}") from exc
 
@@ -317,6 +344,17 @@ def validate_task_payload(
     for key, expected in identity.items():
         if payload.get(key) != expected:
             failures.append(f"{task['task_id']}: payload {key} differs")
+    execution_status = payload.get("execution_status")
+    if execution_status == "HALT_NO_EXECUTABLE_CONTINUATION":
+        if not payload.get("failure_error"):
+            failures.append(f"{task['task_id']}: controlled arm failure has no error")
+        if int(payload.get("failed_stage", 0)) <= 0:
+            failures.append(f"{task['task_id']}: controlled arm failure has no stage")
+        if int(payload.get("evaluations", -1)) != int(task["evaluations"]):
+            failures.append(f"{task['task_id']}: controlled arm failure budget differs")
+        return failures
+    if execution_status != "PASS":
+        failures.append(f"{task['task_id']}: unknown execution status")
     rows = payload.get("rows")
     if not isinstance(rows, list):
         return [*failures, f"{task['task_id']}: rows are missing"]
@@ -578,25 +616,28 @@ def validate_complete_matrix(
         )
         by_network_condition_stream.setdefault(key, []).append(payload)
     for key, group in by_network_condition_stream.items():
+        successful = [
+            payload for payload in group if payload.get("execution_status") == "PASS"
+        ]
         route_hashes = {
             str(payload.get("initial_timing", {}).get("route_sha256"))
-            for payload in group
+            for payload in successful
         }
         energy_hashes = {
             str(payload.get("initial_timing", {}).get("energy_sha256"))
-            for payload in group
+            for payload in successful
         }
         event_hashes = {str(payload.get("event_sha256")) for payload in group}
         owner_hashes = {str(payload.get("owner_sha256")) for payload in group}
         stage_counts = {
             (int(payload.get("available_stages", -1)), int(payload.get("stages", -1)))
-            for payload in group
+            for payload in successful
         }
-        if len(route_hashes) != 1 or len(energy_hashes) != 1:
+        if successful and (len(route_hashes) != 1 or len(energy_hashes) != 1):
             failures.append(f"{key}: arms did not share route and energy starts")
         if len(event_hashes) != 1 or len(owner_hashes) != 1:
             failures.append(f"{key}: arms did not share frozen inputs")
-        if len(stage_counts) != 1:
+        if successful and len(stage_counts) != 1:
             failures.append(f"{key}: arms completed different stage counts")
     for network in NETWORKS:
       for stream in STREAMS:
@@ -624,6 +665,7 @@ def build_session_summaries(
         depot_profit = {str(key): float(value) for key, value in final["depot_profit"].items()}
         rows.append(
             {
+                "execution_status": "PASS",
                 "network": payload["network"],
                 "responsibility_condition": payload["responsibility_condition"],
                 "stream_seed": int(payload["stream_seed"]),
@@ -688,10 +730,7 @@ def build_group_summaries(
       for condition in CONDITIONS:
         for arm in ARMS:
             rows = groups.get((network, condition, arm), [])
-            if len(rows) != len(STREAMS):
-                raise TaskCheckpointError(
-                    f"group {(network, condition, arm)} does not contain all streams"
-                )
+            executable_count = len(rows)
             profits = [float(row["full_day_net_profit"]) for row in rows]
             emissions = [
                 float(row["full_day_actual_total_emissions_kg"]) for row in rows
@@ -707,18 +746,22 @@ def build_group_summaries(
                     "network": network,
                     "responsibility_condition": condition,
                     "arm": arm,
-                    "stream_count": len(rows),
-                    "full_day_net_profit_mean": sum(profits) / len(profits),
-                    "full_day_net_profit_min": min(profits),
-                    "full_day_net_profit_max": max(profits),
-                    "full_day_actual_total_emissions_kg_mean": sum(emissions)
-                    / len(emissions),
-                    "full_day_actual_total_emissions_kg_min": min(emissions),
-                    "full_day_actual_total_emissions_kg_max": max(emissions),
-                    "minimum_stage_bilateral_profit_ratio": min(ratios),
+                    "expected_stream_count": len(STREAMS),
+                    "executable_stream_count": executable_count,
+                    "failed_stream_count": len(STREAMS) - executable_count,
+                    "full_day_net_profit_mean": sum(profits) / len(profits) if profits else "",
+                    "full_day_net_profit_min": min(profits) if profits else "",
+                    "full_day_net_profit_max": max(profits) if profits else "",
+                    "full_day_actual_total_emissions_kg_mean": (
+                        sum(emissions) / len(emissions) if emissions else ""
+                    ),
+                    "full_day_actual_total_emissions_kg_min": min(emissions) if emissions else "",
+                    "full_day_actual_total_emissions_kg_max": max(emissions) if emissions else "",
+                    "minimum_stage_bilateral_profit_ratio": min(ratios) if ratios else "",
                     "full_day_cross_site_customer_count_sum": sum(cross),
-                    "full_day_cross_site_customer_count_mean": sum(cross)
-                    / len(cross),
+                    "full_day_cross_site_customer_count_mean": (
+                        sum(cross) / len(cross) if cross else ""
+                    ),
                     "feasible_cross_candidate_count_sum": sum(
                         int(row["feasible_cross_candidate_count"]) for row in rows
                     ),
@@ -743,6 +786,11 @@ def build_policy_comparisons(
     for network in NETWORKS:
       for condition in CONDITIONS:
         for stream in STREAMS:
+            required_keys = [
+                (network, condition, stream, arm) for arm in ARMS
+            ]
+            if any(key not in indexed for key in required_keys):
+                continue
             full = indexed[(network, condition, stream, "full")]
             independent = indexed[(network, condition, stream, "no_cooperation")]
             simple = indexed[(network, condition, stream, "simple_insertion")]
@@ -775,6 +823,7 @@ def build_policy_comparisons(
                 for depot in depot_ids
             }
             rows = {
+                "policy_comparison_status": "PASS_ALL_FOUR_ARMS_EXECUTABLE",
                 "network": network,
                 "responsibility_condition": condition,
                 "stream_seed": stream,
@@ -869,23 +918,21 @@ def build_comparison_summaries(
             if row["network"] == network
             if row["responsibility_condition"] == condition
         ]
-        if len(rows) != len(STREAMS):
-            raise TaskCheckpointError(
-                f"paired comparison for {(network, condition)} does not contain all streams"
-            )
         summary: dict[str, Any] = {
             "network": network,
             "responsibility_condition": condition,
-            "stream_count": len(rows),
+            "expected_stream_count": len(STREAMS),
+            "paired_complete_stream_count": len(rows),
+            "paired_incomplete_stream_count": len(STREAMS) - len(rows),
             "full_day_participation_floor_met_count": sum(
                 bool(row["full_day_participation_floor_met"]) for row in rows
             ),
         }
         for field in numeric_fields:
             values = [float(row[field]) for row in rows]
-            summary[f"{field}_mean"] = sum(values) / len(values)
-            summary[f"{field}_min"] = min(values)
-            summary[f"{field}_max"] = max(values)
+            summary[f"{field}_mean"] = sum(values) / len(values) if values else ""
+            summary[f"{field}_min"] = min(values) if values else ""
+            summary[f"{field}_max"] = max(values) if values else ""
         result.append(summary)
     return result
 
@@ -934,13 +981,25 @@ def write_final_evidence(
     elapsed_seconds: float,
 ) -> dict[str, Any]:
     failures = validate_complete_matrix(payloads, evaluations)
-    stage_rows = [row for payload in payloads for row in payload["rows"]]
-    session_rows = build_session_summaries(payloads)
+    successful_payloads = [
+        payload for payload in payloads if payload.get("execution_status") == "PASS"
+    ]
+    halted_payloads = [
+        payload
+        for payload in payloads
+        if payload.get("execution_status") == "HALT_NO_EXECUTABLE_CONTINUATION"
+    ]
+    stage_rows = [row for payload in successful_payloads for row in payload["rows"]]
+    session_rows = build_session_summaries(successful_payloads)
     group_rows = build_group_summaries(session_rows)
     policy_comparisons = build_policy_comparisons(session_rows)
     comparison_summaries = build_comparison_summaries(policy_comparisons)
     verdict = (
-        "E7_FORMAL_EVIDENCE_COMPLETE"
+        (
+            "E7_FORMAL_EVIDENCE_COMPLETE_WITH_ARM_FAILURES"
+            if halted_payloads
+            else "E7_FORMAL_EVIDENCE_COMPLETE"
+        )
         if not failures
         else "HALT_E7_FORMAL_EVIDENCE"
     )
@@ -956,6 +1015,8 @@ def write_final_evidence(
         "workers": workers,
         "evaluations_per_search_call": evaluations,
         "task_count": len(payloads),
+        "executable_task_count": len(successful_payloads),
+        "no_executable_continuation_task_count": len(halted_payloads),
         "stage_row_count": len(stage_rows),
         "networks": list(NETWORKS),
         "conditions": list(CONDITIONS),
@@ -1008,10 +1069,41 @@ def write_final_evidence(
         "paired_comparison_file": "paired_policy_comparisons.csv",
         "scientific_interpretation_status": "PENDING_INDEPENDENT_AUDIT",
         "result_direction_used_for_inclusion": False,
+        "controlled_arm_failures": [
+            {
+                "network": payload["network"],
+                "responsibility_condition": payload["responsibility_condition"],
+                "stream_seed": payload["stream_seed"],
+                "arm": payload["arm"],
+                "failed_stage": payload["failed_stage"],
+                "failed_trigger_second": payload["failed_trigger_second"],
+                "failure_error": payload["failure_error"],
+            }
+            for payload in halted_payloads
+        ],
     }
     atomic_write_csv(output / "raw_runs.csv", stage_rows)
     atomic_write_json(output / "sessions.json", list(payloads))
     atomic_write_csv(output / "session_summary.csv", session_rows)
+    if halted_payloads:
+        atomic_write_csv(
+            output / "task_failures.csv",
+            [
+                {
+                    "network": payload["network"],
+                    "responsibility_condition": payload["responsibility_condition"],
+                    "stream_seed": payload["stream_seed"],
+                    "arm": payload["arm"],
+                    "completed_stage_count": payload["stages"],
+                    "available_stage_count": payload["available_stages"],
+                    "failed_stage": payload["failed_stage"],
+                    "failed_trigger_second": payload["failed_trigger_second"],
+                    "evaluations": payload["evaluations"],
+                    "failure_error": payload["failure_error"],
+                }
+                for payload in halted_payloads
+            ],
+        )
     atomic_write_csv(output / "summary_by_condition_arm.csv", group_rows)
     atomic_write_csv(output / "paired_policy_comparisons.csv", policy_comparisons)
     atomic_write_csv(
@@ -1024,9 +1116,9 @@ def write_final_evidence(
         "",
         f"运行状态：`{verdict}`。",
         "",
-        f"三个网络、两种客户责任情形、五条冻结订单流和四组方案共{len(payloads)}个任务。除顺序插单基线仅保留一次可行性核验外，每个阶段先形成同状态、禁跨场的继续经营方案，再用相同次数比较被检验方案；全部任务均原样进入汇总，不按结果方向筛选。",
+        f"三个网络、两种客户责任情形、五条冻结订单流和四组方案共{len(payloads)}个任务，其中{len(successful_payloads)}个完成全日执行，{len(halted_payloads)}个在封闭评价预算后仍无可执行延续。除顺序插单基线仅保留一次可行性核验外，每个阶段先形成同状态、禁止新增跨场的继续经营方案，再用相同次数比较被检验方案；全部任务及失败均原样进入汇总，不按结果方向筛选。",
         "",
-        "`session_summary.csv`逐网络、逐订单流报告全日经营净收益、总排放、阶段内最低双方收益比、完成客户与货量以及全日累计跨场客户数；`summary_by_condition_arm.csv`按网络、责任情形和方案汇总五条订单流。`paired_policy_comparisons.csv`逐网络、逐情形、逐订单流给出完整方案相对禁止合作、顺序插单和不设参与底线方案的差值。低碳充电与有空即充的28日同路线零搜索核算另由独立证据包报告。",
+        "`session_summary.csv`只对完成全日执行的任务报告经营净收益、总排放、阶段内最低双方收益比、完成客户与货量以及累计跨场客户数；`task_failures.csv`单列无可执行延续的任务和阶段；`summary_by_condition_arm.csv`同时报告可执行流数。`paired_policy_comparisons.csv`只在同一网络、情形和订单流的四臂都完成全日执行时计算差值。低碳充电与有空即充的28日同路线零搜索核算另由独立证据包报告。",
         "",
         "相邻阶段的未来计划重叠，阶段充电差值不累加为全日减排。动态取消可能使最终完成工作量和收入不同，因此经济比较使用经营净收益，并同时保留收入、成本、完成客户数和完成货量。全日双方参与情况直接把完整方案与同情形、同订单流的禁止合作方案逐场比较，不以阶段内同状态保底替代。",
         "",

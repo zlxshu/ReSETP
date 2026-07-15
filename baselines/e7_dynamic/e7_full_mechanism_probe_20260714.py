@@ -611,11 +611,7 @@ def _same_state_no_cooperation(
     if owner_fixed is not None:
         controlled = replace(construction, solution=owner_fixed)
         baseline_start_source = "owner_fixed_asset_repack"
-    elif existing_cross_ids:
-        raise RuntimeError(
-            "could not build the same-state no-cooperation start: "
-            + json.dumps(failure_diagnostics, ensure_ascii=False, sort_keys=True)
-        )
+        allowed_inherited_cross_ids: set[str] = set()
     else:
         if failure_diagnostics.get("reason") not in {
             "greedy_customer_has_no_asset_placement",
@@ -630,14 +626,22 @@ def _same_state_no_cooperation(
         # structure and rebuilding every open customer from scratch can create
         # a false infeasibility before search begins.
         controlled = construction
-        baseline_start_source = "existing_cross_free_open_stage"
+        allowed_inherited_cross_ids = set(existing_cross_ids)
+        baseline_start_source = (
+            "existing_open_stage_with_frozen_cross"
+            if allowed_inherited_cross_ids
+            else "existing_cross_free_open_stage"
+        )
 
     def no_cross_gate(solution: Solution, _certificate: Any, _cost: float) -> bool:
-        return not base._cross_site_ids_for_routes(
-            solution.routes,
-            construction.effective_instance,
-            owners,
+        observed = set(
+            base._cross_site_ids_for_routes(
+                solution.routes,
+                construction.effective_instance,
+                owners,
+            )
         )
+        return observed.issubset(allowed_inherited_cross_ids)
 
     result = base.search_stage(
         controlled,
@@ -648,18 +652,24 @@ def _same_state_no_cooperation(
         trigger=trigger,
         seed=seed,
         evaluations=evaluations,
-        allow_cross_depot=False,
+        allow_cross_depot=bool(allowed_inherited_cross_ids),
         stage_new_customer_ids=stage_new_customer_ids,
         candidate_best_gate=no_cross_gate,
     )
-    if base._cross_site_ids_for_routes(
-        result["solution"].routes,
-        construction.effective_instance,
-        owners,
-    ):
-        raise RuntimeError("same-state no-cooperation plan crossed depots")
+    released_cross_ids = set(
+        base._cross_site_ids_for_routes(
+            result["solution"].routes,
+            construction.effective_instance,
+            owners,
+        )
+    )
+    if not released_cross_ids.issubset(allowed_inherited_cross_ids):
+        raise RuntimeError("same-state baseline introduced a new cross-depot customer")
     result["same_state_baseline_start_source"] = baseline_start_source
     result["same_state_baseline_start_construction"] = controlled
+    result["same_state_baseline_allowed_cross_ids"] = sorted(
+        allowed_inherited_cross_ids
+    )
     return result
 
 
@@ -929,6 +939,9 @@ def _controlled_stage(
         "same_state_baseline_start_source": baseline[
             "same_state_baseline_start_source"
         ],
+        "same_state_baseline_allowed_cross_ids": baseline[
+            "same_state_baseline_allowed_cross_ids"
+        ],
         "main_search_seed": int(selected["search_seed"]),
         "second_start_sha256": second_start_sha256,
         "baseline_output_sha256": canonical_sha256(
@@ -1035,26 +1048,34 @@ def run_probe_arm(
             sources,
             owners,
         )
-        result = _controlled_stage(
-            arm,
-            construction,
-            sources,
-            profiles,
-            cut,
-            owners,
-            committed_customers,
-            committed_profit,
-            trigger=trigger,
-            seed=stream_seed * 1000 + stage_index,
-            evaluations=evaluations,
-            stage_new_customer_ids=tuple(
-                sorted(
-                    event.customer_id
-                    for event in batch["events"]
-                    if event.event_type.lower() == "add"
-                )
-            ),
-        )
+        try:
+            result = _controlled_stage(
+                arm,
+                construction,
+                sources,
+                profiles,
+                cut,
+                owners,
+                committed_customers,
+                committed_profit,
+                trigger=trigger,
+                seed=stream_seed * 1000 + stage_index,
+                evaluations=evaluations,
+                stage_new_customer_ids=tuple(
+                    sorted(
+                        event.customer_id
+                        for event in batch["events"]
+                        if event.event_type.lower() == "add"
+                    )
+                ),
+            )
+        except base.NoExecutableContinuation as exc:
+            raise base.NoExecutableContinuation(
+                str(exc),
+                stage=stage_index,
+                trigger_second=trigger,
+                completed_stage_count=len(rows),
+            ) from exc
         future_customers = [
             customer_id
             for route in result["solution"].routes
@@ -1131,6 +1152,9 @@ def run_probe_arm(
                 "same_state_baseline_start_source": result[
                     "same_state_baseline_start_source"
                 ],
+                "same_state_baseline_allowed_cross_count": len(
+                    result["same_state_baseline_allowed_cross_ids"]
+                ),
                 "same_state_cost_saving_pct": float(result["same_state_cost_saving_pct"]),
                 "minimum_profit_margin": float(result["minimum_profit_margin"]),
                 "minimum_profit_ratio": float(result["minimum_profit_ratio"]),
@@ -1270,6 +1294,7 @@ def run_probe_arm(
         owners,
     )
     return {
+        "execution_status": "PASS",
         "arm": arm,
         "network": network,
         "responsibility_condition": condition,

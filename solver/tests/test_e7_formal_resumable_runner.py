@@ -50,6 +50,7 @@ def _payload(condition: str, stream: int, arm: str, evaluations: int = 4, networ
             }
         )
     return {
+        "execution_status": "PASS",
         "network": network,
         "arm": arm,
         "responsibility_condition": condition,
@@ -180,7 +181,9 @@ def test_formal_summaries_keep_all_streams_and_use_final_running_ledgers() -> No
         and row["network"] == "N114"
         and row["arm"] == "full"
     )
-    assert geographic_full["stream_count"] == 5
+    assert geographic_full["expected_stream_count"] == 5
+    assert geographic_full["executable_stream_count"] == 5
+    assert geographic_full["failed_stream_count"] == 0
     assert geographic_full["full_day_net_profit_mean"] == pytest.approx(100.0)
     assert geographic_full["full_day_actual_total_emissions_kg_mean"] == pytest.approx(
         53.0
@@ -243,3 +246,49 @@ def test_predicted_emissions_worsening_stops_one_task() -> None:
     failures = runner.validate_task_payload(task, payload)
 
     assert any("predicted charging emissions worsened" in item for item in failures)
+
+
+def test_controlled_no_continuation_is_retained_as_a_matrix_outcome(tmp_path) -> None:
+    payloads = _matrix()
+    halted = next(
+        row
+        for row in payloads
+        if row["network"] == "N114"
+        and row["responsibility_condition"] == "historical_mixed"
+        and row["stream_seed"] == 1
+        and row["arm"] == "no_participation"
+    )
+    halted.update(
+        {
+            "execution_status": "HALT_NO_EXECUTABLE_CONTINUATION",
+            "rows": [],
+            "stages": 1,
+            "failed_stage": 2,
+            "failed_trigger_second": 43_200.0,
+            "failure_error": "closed budget found no executable continuation",
+            "evaluations": 4,
+        }
+    )
+    task = _task("historical_mixed", 1, "no_participation", network="N114")
+    assert runner.validate_task_payload(task, halted) == []
+    assert runner.validate_complete_matrix(payloads, 4) == []
+
+    contract = {
+        "contract_sha256": "controlled-failure-contract",
+        "source_commit_at_start": "test-commit",
+        "physical_rules": {},
+        "input_file_hashes": {},
+        "source_file_hashes": {},
+    }
+    decision = runner.write_final_evidence(
+        tmp_path,
+        contract,
+        payloads,
+        evaluations=4,
+        workers=6,
+        started_at_utc="2026-07-15T00:00:00+00:00",
+        elapsed_seconds=1.0,
+    )
+    assert decision["verdict"] == "E7_FORMAL_EVIDENCE_COMPLETE_WITH_ARM_FAILURES"
+    assert len(decision["controlled_arm_failures"]) == 1
+    assert (tmp_path / "task_failures.csv").is_file()

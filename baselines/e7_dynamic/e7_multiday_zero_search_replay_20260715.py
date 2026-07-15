@@ -88,24 +88,42 @@ def pct(delta: float, baseline: float) -> float:
     return 100.0 * delta / baseline if abs(baseline) > TOL else 0.0
 
 
-def completed_tasks() -> list[tuple[Path, dict[str, Any]]]:
+def completed_tasks() -> tuple[
+    list[tuple[Path, dict[str, Any]]], list[dict[str, Any]]
+]:
     paths = sorted(
         path for path in (FORMAL / ".tasks").glob("*.json") if not path.name.startswith("._")
     )
     if len(paths) != 120:
         raise RuntimeError(f"expected 120 formal E7 checkpoints, found {len(paths)}")
     rows: list[tuple[Path, dict[str, Any]]] = []
+    failures: list[dict[str, Any]] = []
     for path in paths:
         wrapper = json.loads(path.read_text(encoding="utf-8"))
         if wrapper.get("status") != "completed":
             raise RuntimeError(f"incomplete formal task: {path.name}")
         payload = wrapper["payload"]
+        if payload.get("execution_status") == "HALT_NO_EXECUTABLE_CONTINUATION":
+            failures.append(
+                {
+                    "task_id": wrapper["task"]["task_id"],
+                    "network": payload["network"],
+                    "condition": payload["responsibility_condition"],
+                    "stream": payload["stream_seed"],
+                    "arm": payload["arm"],
+                    "failed_stage": payload["failed_stage"],
+                    "failure_error": payload["failure_error"],
+                }
+            )
+            continue
+        if payload.get("execution_status") != "PASS":
+            raise RuntimeError(f"unknown formal task status: {path.name}")
         if "full_day_solution" not in payload or "full_day_instance_nodes" not in payload:
             raise RuntimeError(f"formal task lacks zero-search replay payload: {path.name}")
         if canonical_sha256(payload) != wrapper["payload_sha256"]:
             raise RuntimeError(f"formal task payload hash mismatch: {path.name}")
         rows.append((path, wrapper))
-    return rows
+    return rows, failures
 
 
 def charging_kwh(solution: Any) -> float:
@@ -126,7 +144,8 @@ def main() -> int:
     raw_rows: list[dict[str, Any]] = []
     task_inventory: list[dict[str, Any]] = []
 
-    for task_path, wrapper in completed_tasks():
+    replay_tasks, formal_failures = completed_tasks()
+    for task_path, wrapper in replay_tasks:
         task = wrapper["task"]
         payload = wrapper["payload"]
         network = str(task["network"])
@@ -217,7 +236,7 @@ def main() -> int:
             }
         )
 
-    expected_rows = 120 * len(OPERATING_DAYS)
+    expected_rows = len(replay_tasks) * len(OPERATING_DAYS)
     if len(raw_rows) != expected_rows:
         raise RuntimeError(f"expected {expected_rows} paired day rows, found {len(raw_rows)}")
     groups: dict[tuple[str, str, str], list[dict[str, Any]]] = defaultdict(list)
@@ -259,6 +278,8 @@ def main() -> int:
         "formal_artifact_hashes_sha256": sha256(FORMAL / "artifact_hashes.json"),
         "operating_days": [day.isoformat() for day in OPERATING_DAYS],
         "task_count": 120,
+        "replayed_full_day_task_count": len(replay_tasks),
+        "excluded_no_continuation_task_count": len(formal_failures),
         "paired_day_row_count": len(raw_rows),
         "route_search_evaluations": 0,
         "changed_dimension": "charging_start_time_only",
@@ -270,6 +291,9 @@ def main() -> int:
     decision = {
         "status": "PASS_E7_28DAY_ZERO_SEARCH_CHARGING_REPLAY",
         "task_count": 120,
+        "replayed_full_day_task_count": len(replay_tasks),
+        "excluded_no_continuation_task_count": len(formal_failures),
+        "excluded_formal_tasks": formal_failures,
         "operating_day_count": len(OPERATING_DAYS),
         "paired_day_row_count": len(raw_rows),
         "route_hash_failures": sum(not row["route_hash_preserved"] for row in raw_rows),
@@ -280,7 +304,7 @@ def main() -> int:
     report = (
         "# E7动态排班的28日零搜索充电重排\n\n"
         "状态：`PASS_E7_28DAY_ZERO_SEARCH_CHARGING_REPLAY`。对三张网络、两类客户责任、"
-        "五条冻结序列和四个机制臂的120份全日执行方案，逐一重放28个电网日，共形成"
+        f"五条冻结序列和四个机制臂中完成全日执行的{len(replay_tasks)}份方案，逐一重放28个电网日，共形成"
         f" {len(raw_rows)} 组配对结果。\n\n"
         "后处理不调用路径搜索，只在同一多趟充电可行窗口内比较有空即充与按预测碳强度择时。"
         "每组的路径哈希和充电电量哈希均保持不变；减排按实际碳强度结算。\n"
