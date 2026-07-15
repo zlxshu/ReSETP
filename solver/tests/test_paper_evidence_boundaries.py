@@ -41,6 +41,35 @@ def test_story_audit_requires_complete_replay_invariant_counts() -> None:
     ]
 
 
+def test_story_audit_requires_all_five_experiment_record_surfaces(tmp_path) -> None:
+    for name in audit.REQUIRED_EXPERIMENT_SURFACES:
+        (tmp_path / name).write_text("{}\n", encoding="utf-8")
+    assert audit.required_surface_failures(tmp_path) == []
+
+    (tmp_path / "raw_runs.csv").unlink()
+    assert audit.required_surface_failures(tmp_path) == [
+        f"{tmp_path}: required experiment surface missing raw_runs.csv"
+    ]
+
+
+def test_story_audit_requires_final_marker_on_every_record_surface(
+    tmp_path, monkeypatch
+) -> None:
+    paths = [tmp_path / name for name in ("HANDOFF.md", "MEMORY.md", "dynamic.md", "prd.md")]
+    for path in paths:
+        path.write_text(f"{audit.FINAL_RECORD_MARKER}\n", encoding="utf-8")
+    monkeypatch.setattr(audit, "HANDOFF", paths[0])
+    monkeypatch.setattr(audit, "PROJECT_MEMORY", paths[1])
+    monkeypatch.setattr(audit, "DYNAMIC_MEMORY", paths[2])
+    monkeypatch.setattr(audit, "PRD_MEMORY", paths[3])
+    assert audit.final_record_failures() == []
+
+    paths[2].write_text("pending\n", encoding="utf-8")
+    assert audit.final_record_failures() == [
+        f"final record marker missing from {paths[2]}: {audit.FINAL_RECORD_MARKER}"
+    ]
+
+
 def test_legacy_manifest_allows_only_declared_historical_exceptions(
     tmp_path, monkeypatch
 ) -> None:

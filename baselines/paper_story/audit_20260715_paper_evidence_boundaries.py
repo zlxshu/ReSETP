@@ -31,6 +31,12 @@ PAPER_FLS = PAPER_DIR / "paper_main.fls"
 QUALITY_GATES = (
     ROOT / "docs/handoff/resetp_research_experiment_writing_quality_gates_20260715.md"
 )
+COMPLETION_MATRIX = ROOT / "docs/handoff/resetp_goal_completion_matrix_20260716.md"
+HANDOFF = ROOT / "HANDOFF.md"
+PROJECT_MEMORY = ROOT / "docs/handoff/memory/MEMORY.md"
+DYNAMIC_MEMORY = ROOT / "docs/handoff/memory/dynamic-demand-integration.md"
+PRD_MEMORY = ROOT / "docs/handoff/memory/project-prd-execution-v2.md"
+FINAL_RECORD_MARKER = "E7正式结果终验"
 TABLES = ROOT / "docs/paper_submission_final/generated_tables"
 E1 = ROOT / "baselines/e1_model/e1_submission_20260711_committed/formal"
 E1_SEAL_COMMIT = "28c91128855e50c5e6e6ebcafa6cfeb089ecddf5"
@@ -69,6 +75,13 @@ E7_REPLAY_INVARIANT_COUNTS = {
     "emissions_recalculation_failure_count": 0,
     "route_search_evaluations": 0,
 }
+REQUIRED_EXPERIMENT_SURFACES = (
+    "metadata.json",
+    "raw_runs.csv",
+    "decision.json",
+    "artifact_hashes.json",
+    "report.md",
+)
 
 
 def sha256(path: Path) -> str:
@@ -116,6 +129,29 @@ def verify_manifest(root: Path) -> list[str]:
         for relative, expected in manifest.items()
         if (root / relative).is_file() and sha256(root / relative) != expected
     )
+    return failures
+
+
+def required_surface_failures(root: Path) -> list[str]:
+    """Require the five user-facing experiment record surfaces, not only a manifest."""
+    label = display_path(root)
+    return [
+        f"{label}: required experiment surface missing {name}"
+        for name in REQUIRED_EXPERIMENT_SURFACES
+        if not (root / name).is_file()
+    ]
+
+
+def final_record_failures() -> list[str]:
+    failures: list[str] = []
+    for path in (HANDOFF, PROJECT_MEMORY, DYNAMIC_MEMORY, PRD_MEMORY):
+        if not path.is_file():
+            failures.append(f"final record surface missing: {display_path(path)}")
+            continue
+        if FINAL_RECORD_MARKER not in path.read_text(encoding="utf-8"):
+            failures.append(
+                f"final record marker missing from {display_path(path)}: {FINAL_RECORD_MARKER}"
+            )
     return failures
 
 
@@ -410,6 +446,7 @@ def audit(*, allow_pending_e7: bool) -> dict[str, Any]:
     failures: list[str] = []
     text = TEX.read_text(encoding="utf-8")
     quality_text = QUALITY_GATES.read_text(encoding="utf-8")
+    completion_text = COMPLETION_MATRIX.read_text(encoding="utf-8")
     paper_build_failures, paper_build_info, paper_build_warnings = verify_paper_build()
     failures.extend(paper_build_failures)
 
@@ -472,8 +509,17 @@ def audit(*, allow_pending_e7: bool) -> dict[str, Any]:
         "不把“算法必须显著最好”设为论文成立条件",
     ):
         require(quality_text, fragment, failures, "ReSETP research-writing quality gate")
+    for fragment in (
+        "要求—证据矩阵",
+        "E7小中大三网络×两责任×五流×四臂",
+        "hooks事件后的唯一收口顺序",
+        "不得把预检结果替代正式结果",
+        "只有全部命令各自成功且矩阵所有项均已证明",
+    ):
+        require(completion_text, fragment, failures, "ReSETP goal-completion matrix")
 
     for evidence in (E2B, E3, E6):
+        failures.extend(required_surface_failures(evidence))
         failures.extend(verify_manifest(evidence))
 
     e1 = read_json(E1 / "decision.json")
@@ -662,7 +708,9 @@ def audit(*, allow_pending_e7: bool) -> dict[str, Any]:
             failures.append("E7 manuscript exhibit exists before all E7 decisions are sealed")
     else:
         for evidence in (E7_FORMAL, E7_REPLAY, E7_REPLAY_INVARIANTS, E7_AUDIT):
+            failures.extend(required_surface_failures(evidence))
             failures.extend(verify_manifest(evidence))
+        failures.extend(final_record_failures())
         formal = read_json(E7_FORMAL / "decision.json")
         replay = read_json(E7_REPLAY / "decision.json")
         replay_invariants = read_json(E7_REPLAY_INVARIANTS / "decision.json")
@@ -758,6 +806,12 @@ def audit(*, allow_pending_e7: bool) -> dict[str, Any]:
         "e3_manifest_and_claims": not any("E3" in row or "e3_ablation" in row for row in failures),
         "e6_manifest_and_claims": not any("E6" in row or "e6_fairness" in row for row in failures),
         "e7_ready": e7_ready,
+        "required_experiment_surfaces": not any(
+            "required experiment surface missing" in row for row in failures
+        ),
+        "final_records_updated": e7_ready and not any(
+            "final record" in row for row in failures
+        ),
         "pending_e7_allowed": allow_pending_e7,
         "manuscript_path": str(TEX.relative_to(ROOT)),
     }
