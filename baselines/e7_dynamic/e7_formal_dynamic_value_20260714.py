@@ -984,6 +984,11 @@ def search_stage(
     except RuntimeError:
         pass
 
+    initial_structure = current if initial_feasible else None
+    initial_prepared = current_prepared
+    initial_certificate = current_certificate
+    initial_cost = current_cost
+
     search_instance = p2.future_only_instance(
         construction.effective_instance,
         committed_customers,
@@ -1306,6 +1311,10 @@ def search_stage(
             f"top_rejections={dynamic_rejections.most_common(3)})"
         )
     return {
+        "initial_solution": initial_prepared,
+        "initial_certificate": initial_certificate,
+        "initial_search_structure": initial_structure,
+        "initial_cost": initial_cost,
         "solution": best_prepared,
         "certificate": best_certificate,
         "search_structure": best_structure,

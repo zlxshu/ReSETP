@@ -59,7 +59,7 @@ RESPONSIBILITY_ROOT = (
     ROOT / "baselines/e7_dynamic/e7_responsibility_scenario_design_20260714"
 )
 MULTINETWORK_EVENT_ROOT = (
-    ROOT / "baselines/e7_dynamic/e7_multinetwork_event_streams_20260715"
+    ROOT / "baselines/e7_dynamic/e7_multinetwork_event_streams_v3_20260715"
 )
 NETWORKS = {
     "N114": "L-main-threeshift-50c-01",
@@ -144,6 +144,7 @@ def _merge_execution_plan(
     committed_routes: Mapping[str, Route],
     committed_actions: Mapping[tuple[Any, ...], ChargingAction],
     future: Solution,
+    detached_route_sources: Mapping[str, Route] | None = None,
 ) -> Solution:
     routes = dict(committed_routes)
     for route in future.routes:
@@ -158,6 +159,21 @@ def _merge_execution_plan(
         if previous is not None and previous != action:
             raise RuntimeError(f"executed charging action {key} was rewritten")
         actions[key] = action
+    route_ids = set(routes)
+    detached = [action.vehicle_id for action in actions.values() if action.vehicle_id not in route_ids]
+    source_routes = dict(detached_route_sources or {})
+    for route_id in detached:
+        source = source_routes.get(route_id)
+        if source is None:
+            continue
+        # Charging that has already happened remains a sunk action even if a
+        # later cancellation removes the associated future trip.  A depot-only
+        # placeholder keeps the action in the full-day cost/emissions ledger
+        # without reintroducing canceled customer service.
+        routes[route_id] = replace(
+            source,
+            node_sequence=[source.home_depot_id, source.home_depot_id],
+        )
     route_ids = set(routes)
     detached = [action.vehicle_id for action in actions.values() if action.vehicle_id not in route_ids]
     if detached:
@@ -679,6 +695,7 @@ def _controlled_stage(
     cut: Any,
     owners: dict[str, str],
     committed_customers: set[str],
+    committed_profit: Mapping[str, float],
     *,
     trigger: float,
     seed: int,
@@ -702,6 +719,7 @@ def _controlled_stage(
         construction.effective_instance,
         sources,
         owners,
+        prior_profit=committed_profit,
     )
     _participation_margins(baseline_future_profit, baseline_future_profit)
     second_start = replace(construction, solution=baseline["search_structure"])
@@ -726,27 +744,44 @@ def _controlled_stage(
             construction.effective_instance,
             sources,
             owners,
+            prior_profit=committed_profit,
         )
         return _meets_participation_floor(candidate, baseline_future_profit)
 
     if arm == "simple_insertion":
-        # ``build_open_stage`` has already applied the trigger batch in stable
-        # event order and constructed feasible singleton/greedy insertions.
-        # One validation evaluation is retained for accounting, while the
-        # always-false best gate prevents an ALNS candidate from replacing that
-        # construction baseline.
-        selected = base.search_stage(
-            construction,
-            sources,
-            cut,
-            owners,
-            committed_customers,
-            trigger=trigger,
-            seed=seed * 10 + 2,
-            evaluations=1,
-            allow_cross_depot=False,
-            stage_new_customer_ids=stage_new_customer_ids,
-            candidate_best_gate=lambda _solution, _certificate, _cost: False,
+        # The owner-local repack is prepared before the ALNS loop.  Releasing
+        # that initial feasible construction gives a deterministic sequential
+        # insertion/repack baseline; the later search is used only to construct
+        # the common no-cooperation comparator and cannot alter this arm.
+        if not baseline.get("initial_feasible") or baseline.get("initial_solution") is None:
+            raise RuntimeError("sequential insertion baseline is not executable")
+        selected = dict(baseline)
+        selected.update(
+            {
+                "solution": baseline["initial_solution"],
+                "certificate": baseline["initial_certificate"],
+                "search_structure": baseline["initial_search_structure"],
+                "future_cost": float(baseline["initial_cost"]),
+                "evaluations": 1,
+                "search_seed": seed * 10 + 2,
+                "feasible_cross_candidate_count": 0,
+                "forced_cross_attempt_count": 0,
+                "best_gate_rejection_count": 0,
+                "existing_cross_scheduled_slots": [],
+                "existing_cross_scheduled_call_count": 0,
+                "existing_cross_actual_call_count": 0,
+                "existing_cross_pair_removal_count": 0,
+                "existing_cross_forced_insertion_count": 0,
+                "existing_cross_within_depot_reinsert_count": 0,
+                "existing_cross_candidate_build_count": 0,
+                "existing_cross_changed_candidate_count": 0,
+                "existing_cross_dynamic_feasible_count": 0,
+                "existing_cross_gate_rejection_count": 0,
+                "existing_cross_accepted_count": 0,
+                "existing_cross_best_improved_count": 0,
+                "existing_cross_moved_customer_ids": [],
+                "existing_cross_rejections": {},
+            }
         )
     elif arm == "no_cooperation":
         selected = base.search_stage(
@@ -838,12 +873,14 @@ def _controlled_stage(
         construction.effective_instance,
         sources,
         owners,
+        prior_profit=committed_profit,
     )
     selected_future_profit = _profit_values(
         timed_solution,
         construction.effective_instance,
         sources,
         owners,
+        prior_profit=committed_profit,
     )
     margins = _participation_margins(
         selected_future_profit,
@@ -971,6 +1008,15 @@ def run_probe_arm(
             isolate_changed_customers=True,
         )
         base._validate_stage_application(construction, batch["events"])
+        committed_profit = _profit_values(
+            Solution(
+                routes=list(committed_routes.values()),
+                charging_actions=list(committed_actions.values()),
+            ),
+            current_instance,
+            sources,
+            owners,
+        )
         result = _controlled_stage(
             arm,
             construction,
@@ -979,6 +1025,7 @@ def run_probe_arm(
             cut,
             owners,
             committed_customers,
+            committed_profit,
             trigger=trigger,
             seed=stream_seed * 1000 + stage_index,
             evaluations=evaluations,
@@ -1012,6 +1059,7 @@ def run_probe_arm(
             committed_routes,
             committed_actions,
             result["solution"],
+            {route.vehicle_id: route for route in current_solution.routes},
         )
         final_running = _profit_closure(
             running_solution,

@@ -34,7 +34,7 @@ from setp_solver.search.certificate_execution import build_certificate_execution
 from setp_solver.search.metaheuristic_baselines import solution_from_dict
 
 
-OUT = ROOT / "baselines/e7_dynamic/e7_multinetwork_event_streams_20260715"
+OUT = ROOT / "baselines/e7_dynamic/e7_multinetwork_event_streams_v3_20260715"
 OLD_N221 = ROOT / "baselines/e7_dynamic/e7_v2_20260714/event_streams"
 OLD_N221_RESPONSIBILITY = (
     ROOT / "baselines/e7_dynamic/e7_responsibility_scenario_design_20260714/ownership_maps"
@@ -51,7 +51,7 @@ NETWORKS = {
 }
 CONDITIONS = ("geographic", "historical_mixed")
 SEEDS = (1, 2, 3, 4, 5)
-CONTRACT_ID = "E7_MULTINETWORK_EVENT_STREAM_FREEZE_V1_RESULT_BLIND"
+CONTRACT_ID = "E7_MULTINETWORK_EVENT_STREAM_FREEZE_V3_CONSERVATIVE_ADDS"
 
 
 def sha256(path: Path) -> str:
@@ -220,6 +220,21 @@ class _FixedWindowRandom(random.Random):
             return super().uniform(0.05 * gen.HORIZON_SECONDS, 0.75 * gen.HORIZON_SECONDS)
         return super().uniform(a, b)
 
+    def choice(self, seq: Any) -> Any:
+        if seq and hasattr(seq[0], "demand"):
+            # Added orders use the smallest directly actionable frozen donor.
+            # This conservative, result-blind rule avoids making collaboration
+            # look necessary merely by injecting an oversized order.
+            return min(
+                seq,
+                key=lambda node: (
+                    float(node.demand),
+                    float(node.due_time),
+                    str(node.node_id),
+                ),
+            )
+        return super().choice(seq)
+
 
 def generate_network(network: str, instance_id: str, donor_id: str) -> tuple[list[dict[str, Any]], list[dict[str, Any]], list[dict[str, Any]]]:
     network_dir = OUT / network
@@ -230,9 +245,9 @@ def generate_network(network: str, instance_id: str, donor_id: str) -> tuple[lis
     base_customers = [node for node in base_bundle.instance.nodes if node.node_type.lower() == "c"]
     n = len(base_customers)
     counts = {
-        "add": max(1, round(0.04 * n)),
-        "cancel": max(1, round(0.02 * n)),
-        "demand_change": max(1, round(0.04 * n)),
+        "add": max(1, round(0.01 * n)),
+        "cancel": max(1, round(0.01 * n)),
+        "demand_change": max(1, round(0.02 * n)),
     }
     departures, sources = reference_departures(instance_id, base_bundle.instance, prices)
     # E7 starts from the sealed independent plan in each responsibility
@@ -317,9 +332,10 @@ def main() -> int:
         "networks": NETWORKS,
         "conditions": list(CONDITIONS),
         "seeds": list(SEEDS),
-        "event_proportions": {"add": 0.04, "cancel": 0.02, "demand_change": 0.04},
+        "event_proportions": {"add": 0.01, "cancel": 0.01, "demand_change": 0.02},
         "event_appearance_window_fraction": [0.05, 0.75],
-        "old_n221_policy": "retained as superseded evidence; not used by the multi-network contract",
+        "added_order_donor_rule": "smallest-demand directly actionable frozen sister-bundle donor; conservative against the cooperation treatment",
+        "supersedes": "V1 had excessive churn; V2 retained randomly sized added orders that could make the N114 no-cooperation comparator structurally infeasible",
         "starting_plan_sources": source_rows,
         "search_evaluations": 0,
         "evidence_boundary": "Event streams were frozen before any multi-network dynamic search result existed.",
