@@ -22,6 +22,8 @@ FIGURES = MAIN / "generated_figures"
 E2B = ROOT / "baselines/e2_alns/e2b_component_ablation_formal_20260715"
 E3 = ROOT / "baselines/e3_ablation/e3_medium_paired_cost_formal_20260715"
 E6 = ROOT / "baselines/e6_fairness/e6_profit_guarantee_frontier_20260715"
+E7_AUDIT = ROOT / "baselines/e7_dynamic/e7_multinetwork_independent_audit_20260715"
+E7_REPLAY = ROOT / "baselines/e7_dynamic/e7_multiday_zero_search_replay_20260715"
 
 
 def write_table(name: str, lines: list[str]) -> None:
@@ -167,11 +169,92 @@ def build_e6() -> None:
     plt.close(fig)
 
 
+def build_e7() -> None:
+    decision = json.loads((E7_AUDIT / "decision.json").read_text(encoding="utf-8"))
+    if decision.get("verdict") != "PASS_E7_MULTINETWORK_FORMAL_AND_REPLAY_INDEPENDENT_AUDIT":
+        raise RuntimeError("E7 independent audit is not complete")
+    paired = pd.read_csv(E7_AUDIT / "paired_summary.csv")
+    replay = pd.read_csv(E7_REPLAY / "summary.csv")
+    if len(paired) != 6 or len(replay) != 6:
+        raise RuntimeError("E7 manuscript summaries must each contain six cells")
+    networks = {"N114": "50客户", "N221": "100客户", "N322": "150客户"}
+    conditions = {"geographic": "地理聚集", "historical_mixed": "空间交错"}
+
+    lines = [
+        r"\begin{tabular*}{0.98\linewidth}{@{\extracolsep{\fill}}llrrrrr@{}}",
+        r"\toprule",
+        r"网络 & 客户责任 & 四种可执行 & 配对/参与 & 完整-禁合作 & 完整-无底线 & 完整-顺序插单 \\",
+        r"\midrule",
+    ]
+    for row in paired.itertuples(index=False):
+        complete = int(row.paired_complete_stream_count)
+        executable = "/".join(
+            str(int(value))
+            for value in (
+                row.full_executable_stream_count,
+                row.no_cooperation_executable_stream_count,
+                row.no_participation_executable_stream_count,
+                row.simple_insertion_executable_stream_count,
+            )
+        )
+        lines.append(
+            f"{networks[row.network]} & {conditions[row.condition]} & {executable} & "
+            f"{complete}/5;{int(row.full_day_participation_floor_met_count)}/{complete} & "
+            f"{float(row.full_minus_no_cooperation_net_profit_mean):+.1f} & "
+            f"{float(row.full_minus_no_participation_net_profit_mean):+.1f} & "
+            f"{float(row.full_minus_simple_insertion_net_profit_mean):+.1f} "
+            + r"\\"
+        )
+    lines += [r"\bottomrule", r"\end{tabular*}"]
+    write_table("e7_dynamic_policy_comparison.tex", lines)
+
+    lines = [
+        r"\begin{tabular*}{0.94\linewidth}{@{\extracolsep{\fill}}llrrrrr@{}}",
+        r"\toprule",
+        r"网络 & 客户责任 & 跨场流 & 超时阶段 & 完整/禁合作 & 完整/无底线 & 完整/顺序插单 \\",
+        r"\midrule",
+    ]
+    for row in paired.itertuples(index=False):
+        lines.append(
+            f"{networks[row.network]} & {conditions[row.condition]} & "
+            f"{int(row.full_streams_with_cross_site_service)}/{int(row.full_executable_stream_count)} & "
+            f"{int(row.full_stage_deadline_miss_count)}/{int(row.full_deadline_comparable_stage_count)} & "
+            f"{row.full_vs_no_cooperation_better_worse_tied} & "
+            f"{row.full_vs_no_participation_better_worse_tied} & "
+            f"{row.full_vs_simple_insertion_better_worse_tied} " + r"\\"
+        )
+    lines += [r"\bottomrule", r"\end{tabular*}"]
+    write_table("e7_dynamic_mechanism_diagnostics.tex", lines)
+
+    lines = [
+        r"\begin{tabular*}{0.92\linewidth}{@{\extracolsep{\fill}}llrrrr@{}}",
+        r"\toprule",
+        r"网络 & 客户责任 & 充电排放降幅/\% & 总运营排放降幅/\% & 改善/变差/持平 & 配对数 \\",
+        r"\midrule",
+    ]
+    for row in replay.itertuples(index=False):
+        lines.append(
+            f"{networks[row.network]} & {conditions[row.condition]} & "
+            f"{float(row.pooled_charging_reduction_pct):.2f} & "
+            f"{float(row.pooled_total_operational_reduction_pct):.2f} & "
+            f"{int(row.improved)}/{int(row.worsened)}/{int(row.tied)} & "
+            f"{int(row.stream_day_count)} " + r"\\"
+        )
+    lines += [r"\bottomrule", r"\end{tabular*}"]
+    write_table("e7_dynamic_charging_replay.tex", lines)
+
+
 def main() -> int:
     build_e2b()
     build_e3()
     build_e6()
-    print("built E2b/E3/E6 manuscript exhibits")
+    if (E7_AUDIT / "decision.json").is_file() and (
+        E7_REPLAY / "decision.json"
+    ).is_file():
+        build_e7()
+        print("built E2b/E3/E6/E7 manuscript exhibits")
+    else:
+        print("built E2b/E3/E6 manuscript exhibits; E7 evidence not sealed yet")
     return 0
 
 

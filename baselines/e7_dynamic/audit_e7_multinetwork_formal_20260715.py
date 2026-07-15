@@ -58,11 +58,22 @@ def write_json(path: Path, value: Any) -> None:
 
 def verify_manifest(root: Path) -> tuple[int, list[str]]:
     manifest = json.loads((root / "artifact_hashes.json").read_text(encoding="utf-8"))
-    bad = []
+    observed = {
+        str(path.relative_to(root))
+        for path in root.rglob("*")
+        if path.is_file()
+        and path.name != "artifact_hashes.json"
+        and not path.name.startswith("._")
+        and ".tasks" not in path.parts
+    }
+    bad = [f"unlisted:{relative}" for relative in sorted(observed - set(manifest))]
+    bad.extend(
+        f"missing:{relative}" for relative in sorted(set(manifest) - observed)
+    )
     for relative, expected in manifest.items():
         path = root / relative
-        if not path.is_file() or sha256(path) != expected:
-            bad.append(relative)
+        if path.is_file() and sha256(path) != expected:
+            bad.append(f"hash:{relative}")
     return len(manifest), bad
 
 
@@ -70,10 +81,24 @@ def mean(rows: list[dict[str, Any]], field: str) -> float:
     return statistics.fmean(float(row[field]) for row in rows) if rows else 0.0
 
 
+def better_worse_tied(rows: list[dict[str, Any]], field: str) -> str:
+    values = [float(row[field]) for row in rows]
+    return "/".join(
+        str(count)
+        for count in (
+            sum(value > TOL for value in values),
+            sum(value < -TOL for value in values),
+            sum(abs(value) <= TOL for value in values),
+        )
+    )
+
+
 def main() -> int:
     OUT.mkdir(parents=True, exist_ok=True)
     formal_hash_count, formal_hash_failures = verify_manifest(FORMAL)
     replay_hash_count, replay_hash_failures = verify_manifest(REPLAY)
+    formal_decision = json.loads((FORMAL / "decision.json").read_text(encoding="utf-8"))
+    replay_decision = json.loads((REPLAY / "decision.json").read_text(encoding="utf-8"))
     sessions = json.loads((FORMAL / "sessions.json").read_text(encoding="utf-8"))
     task_rows: list[dict[str, Any]] = []
     payloads: dict[tuple[str, str, int, str], dict[str, Any]] = {}
@@ -85,6 +110,8 @@ def main() -> int:
             str(payload["arm"]),
         )
         payloads[key] = payload
+        stages = list(payload.get("rows", []))
+        deadline_pairs = list(zip(stages, stages[1:]))
         task_rows.append(
             {
                 "network": key[0],
@@ -95,6 +122,17 @@ def main() -> int:
                 "completed_stage_count": int(payload.get("stages", 0)),
                 "charging_window_count": int(
                     payload.get("full_day_execution", {}).get("charging_window_count", 0)
+                ),
+                "deadline_comparable_stage_count": len(deadline_pairs),
+                "stage_deadline_miss_count": sum(
+                    float(current["elapsed_seconds"])
+                    > float(following["trigger_second"])
+                    - float(current["trigger_second"])
+                    + TOL
+                    for current, following in deadline_pairs
+                ),
+                "maximum_stage_elapsed_seconds": max(
+                    (float(stage["elapsed_seconds"]) for stage in stages), default=0.0
                 ),
             }
         )
@@ -141,10 +179,40 @@ def main() -> int:
                     )
                     - float(no_coop["full_day_execution"]["completed_demand"]),
                     "full_minus_no_participation_net_profit": full_profit - no_part_profit,
+                    "full_minus_no_participation_revenue": float(
+                        full["final_running"]["total_revenue"]
+                    )
+                    - float(no_part["final_running"]["total_revenue"]),
                     "full_minus_no_participation_system_cost": float(
                         full["final_running"]["total_cost"]
                     )
                     - float(no_part["final_running"]["total_cost"]),
+                    "full_minus_no_participation_completed_customer_count": int(
+                        full["full_day_execution"]["completed_customer_count"]
+                    )
+                    - int(no_part["full_day_execution"]["completed_customer_count"]),
+                    "full_minus_no_participation_completed_demand": float(
+                        full["full_day_execution"]["completed_demand"]
+                    )
+                    - float(no_part["full_day_execution"]["completed_demand"]),
+                    "full_minus_simple_insertion_net_profit": full_profit
+                    - float(simple["final_running"]["total_profit"]),
+                    "full_minus_simple_insertion_revenue": float(
+                        full["final_running"]["total_revenue"]
+                    )
+                    - float(simple["final_running"]["total_revenue"]),
+                    "full_minus_simple_insertion_cost": float(
+                        full["final_running"]["total_cost"]
+                    )
+                    - float(simple["final_running"]["total_cost"]),
+                    "full_minus_simple_insertion_completed_customer_count": int(
+                        full["full_day_execution"]["completed_customer_count"]
+                    )
+                    - int(simple["full_day_execution"]["completed_customer_count"]),
+                    "full_minus_simple_insertion_completed_demand": float(
+                        full["full_day_execution"]["completed_demand"]
+                    )
+                    - float(simple["full_day_execution"]["completed_demand"]),
                     "simple_insertion_minus_full_actual_total_emissions_kg": float(
                         simple["final_running"]["total_actual_emissions_kg"]
                     )
@@ -164,7 +232,15 @@ def main() -> int:
                     "full_minus_no_cooperation_completed_customer_count": "",
                     "full_minus_no_cooperation_completed_demand": "",
                     "full_minus_no_participation_net_profit": "",
+                    "full_minus_no_participation_revenue": "",
                     "full_minus_no_participation_system_cost": "",
+                    "full_minus_no_participation_completed_customer_count": "",
+                    "full_minus_no_participation_completed_demand": "",
+                    "full_minus_simple_insertion_net_profit": "",
+                    "full_minus_simple_insertion_revenue": "",
+                    "full_minus_simple_insertion_cost": "",
+                    "full_minus_simple_insertion_completed_customer_count": "",
+                    "full_minus_simple_insertion_completed_demand": "",
                     "simple_insertion_minus_full_actual_total_emissions_kg": "",
                     "full_day_participation_floor_met": "",
                 }
@@ -177,17 +253,77 @@ def main() -> int:
         groups[(row["network"], row["condition"])].append(row)
     for (network, condition), rows in sorted(groups.items()):
         complete = [row for row in rows if row["all_four_arms_executable"]]
+        full_group = [
+            payloads[(network, condition, int(row["stream"]), "full")]
+            for row in rows
+            if payloads[(network, condition, int(row["stream"]), "full")][
+                "execution_status"
+            ]
+            == "PASS"
+        ]
+        full_deadline_pairs = [
+            (current, following)
+            for payload in full_group
+            for current, following in zip(payload["rows"], payload["rows"][1:])
+        ]
+        arm_executable_counts = {
+            arm: sum(
+                payloads[(network, condition, int(row["stream"]), arm)][
+                    "execution_status"
+                ]
+                == "PASS"
+                for row in rows
+            )
+            for arm in ARMS
+        }
         paired_summary.append(
             {
                 "network": network,
                 "condition": condition,
                 "expected_stream_count": len(rows),
+                "full_executable_stream_count": arm_executable_counts["full"],
+                "no_cooperation_executable_stream_count": arm_executable_counts[
+                    "no_cooperation"
+                ],
+                "no_participation_executable_stream_count": arm_executable_counts[
+                    "no_participation"
+                ],
+                "simple_insertion_executable_stream_count": arm_executable_counts[
+                    "simple_insertion"
+                ],
+                "full_streams_with_cross_site_service": sum(
+                    int(payload["full_day_execution"]["cross_site_customer_count"]) > 0
+                    for payload in full_group
+                ),
+                "full_cross_site_customer_count_sum": sum(
+                    int(payload["full_day_execution"]["cross_site_customer_count"])
+                    for payload in full_group
+                ),
+                "full_deadline_comparable_stage_count": len(full_deadline_pairs),
+                "full_stage_deadline_miss_count": sum(
+                    float(current["elapsed_seconds"])
+                    > float(following["trigger_second"])
+                    - float(current["trigger_second"])
+                    + TOL
+                    for current, following in full_deadline_pairs
+                ),
+                "full_maximum_stage_elapsed_seconds": max(
+                    (
+                        float(stage["elapsed_seconds"])
+                        for payload in full_group
+                        for stage in payload["rows"]
+                    ),
+                    default=0.0,
+                ),
                 "paired_complete_stream_count": len(complete),
                 "paired_incomplete_stream_count": len(rows) - len(complete),
                 "full_day_participation_floor_met_count": sum(
                     bool(row["full_day_participation_floor_met"]) for row in complete
                 ),
                 "full_minus_no_cooperation_net_profit_mean": mean(
+                    complete, "full_minus_no_cooperation_net_profit"
+                ),
+                "full_vs_no_cooperation_better_worse_tied": better_worse_tied(
                     complete, "full_minus_no_cooperation_net_profit"
                 ),
                 "full_minus_no_cooperation_revenue_mean": mean(
@@ -205,8 +341,38 @@ def main() -> int:
                 "full_minus_no_participation_net_profit_mean": mean(
                     complete, "full_minus_no_participation_net_profit"
                 ),
+                "full_vs_no_participation_better_worse_tied": better_worse_tied(
+                    complete, "full_minus_no_participation_net_profit"
+                ),
+                "full_minus_no_participation_revenue_mean": mean(
+                    complete, "full_minus_no_participation_revenue"
+                ),
                 "full_minus_no_participation_system_cost_mean": mean(
                     complete, "full_minus_no_participation_system_cost"
+                ),
+                "full_minus_no_participation_completed_customer_count_mean": mean(
+                    complete, "full_minus_no_participation_completed_customer_count"
+                ),
+                "full_minus_no_participation_completed_demand_mean": mean(
+                    complete, "full_minus_no_participation_completed_demand"
+                ),
+                "full_minus_simple_insertion_net_profit_mean": mean(
+                    complete, "full_minus_simple_insertion_net_profit"
+                ),
+                "full_vs_simple_insertion_better_worse_tied": better_worse_tied(
+                    complete, "full_minus_simple_insertion_net_profit"
+                ),
+                "full_minus_simple_insertion_revenue_mean": mean(
+                    complete, "full_minus_simple_insertion_revenue"
+                ),
+                "full_minus_simple_insertion_cost_mean": mean(
+                    complete, "full_minus_simple_insertion_cost"
+                ),
+                "full_minus_simple_insertion_completed_customer_count_mean": mean(
+                    complete, "full_minus_simple_insertion_completed_customer_count"
+                ),
+                "full_minus_simple_insertion_completed_demand_mean": mean(
+                    complete, "full_minus_simple_insertion_completed_demand"
                 ),
                 "simple_insertion_minus_full_actual_total_emissions_kg_mean": mean(
                     complete, "simple_insertion_minus_full_actual_total_emissions_kg"
@@ -221,6 +387,8 @@ def main() -> int:
         for index, row in enumerate(replay_rows, start=2)
         if row["route_hash_preserved"] != "True"
         or row["energy_hash_preserved"] != "True"
+        or int(row["station_capacity_violation_count"]) != 0
+        or int(row["previous_trigger_window_violation_count"]) != 0
     ]
     full_payloads = [
         payload
@@ -239,6 +407,14 @@ def main() -> int:
         for stage in payload["rows"]
     )
     checks = {
+        "formal_decision_complete": formal_decision.get("verdict")
+        in {
+            "E7_FORMAL_EVIDENCE_COMPLETE",
+            "E7_FORMAL_EVIDENCE_COMPLETE_WITH_ARM_FAILURES",
+        }
+        and not formal_decision.get("failures"),
+        "replay_decision_pass": replay_decision.get("status")
+        == "PASS_E7_28DAY_ZERO_SEARCH_CHARGING_REPLAY",
         "formal_artifact_hashes_pass": not formal_hash_failures,
         "replay_artifact_hashes_pass": not replay_hash_failures,
         "formal_session_count_120": len(sessions) == 120,
@@ -246,7 +422,12 @@ def main() -> int:
         "full_stage_participation_floor_pass": stage_floor_failures == 0,
         "no_cooperation_cross_service_zero": no_cooperation_cross_failures == 0,
         "replay_row_count_840": len(replay_rows) == 30 * 28,
+        "six_cells_with_five_streams": len(paired_summary) == 6
+        and all(int(row["expected_stream_count"]) == 5 for row in paired_summary),
         "replay_route_and_energy_hashes_pass": not replay_failures,
+        "replay_charger_capacity_and_trigger_windows_pass": not replay_failures
+        and int(replay_decision.get("station_capacity_failures", -1)) == 0
+        and int(replay_decision.get("previous_trigger_window_failures", -1)) == 0,
     }
     if not all(checks.values()):
         raise RuntimeError(f"independent E7 audit failed: {checks}")
@@ -283,7 +464,7 @@ def main() -> int:
         "# E7三网络正式矩阵与28日复算独立审计\n\n"
         "判决：`PASS_E7_MULTINETWORK_FORMAL_AND_REPLAY_INDEPENDENT_AUDIT`。"
         "审计重新读取已封存并列入哈希清单的120份最终会话载荷，只在四臂均可执行的网络—责任—订单流单元计算成对差；"
-        "同时复核完整机制30份全日方案在28日电网日形成的840行零搜索充电重放。"
+        "同时复核完整机制30份全日方案在28日电网日形成的840行零搜索充电重放，包括路线、充电量、充电站并发容量和相邻触发状态边界。"
         "程序报告的受控不可执行臂仍留在任务状态表，不进入四臂成对均值。\n",
         encoding="utf-8",
     )
