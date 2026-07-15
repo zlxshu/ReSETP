@@ -1,0 +1,69 @@
+{
+  "contract_id": "E3_STRICT_MULTITRIP_V2",
+  "depot_charge_power_kw": 22.0,
+  "first_trip_charge_day_offset": -1,
+  "recharge_mode": "on_demand",
+  "status": "PASS",
+  "trips": [
+    {
+      "charge_energy_kwh": null,
+      "charge_start_second": null,
+      "departure_second": 9328.997753082493,
+      "end_battery_kwh": null,
+      "home_depot_id": "D1",
+      "physical_vehicle_id": "CV_D1_1",
+      "recharge_end_second": 41745.297204990806,
+      "return_second": 41745.297204990806,
+      "route_id": "CV_D1_1#T1",
+      "start_battery_kwh": null,
+      "trip_index": 1,
+      "vehicle_type": "cv"
+    },
+    {
+      "charge_energy_kwh": 60.69566552835363,
+      "charge_start_second": 8840.453317920827,
+      "departure_second": 2459.9086574428597,
+      "end_battery_kwh": 160.9007813033392,
+      "home_depot_id": "D0",
+      "physical_vehicle_id": "EV_D0_1",
+      "recharge_end_second": 18772.4713134696,
+      "return_second": 8840.453317920827,
+      "route_id": "EV_D0_1#T1",
+      "start_battery_kwh": 214.4664272951348,
+      "trip_index": 1,
+      "vehicle_type": "ev"
+    },
+    {
+      "charge_energy_kwh": null,
+      "charge_start_second": null,
+      "departure_second": 18772.471313469603,
+      "end_battery_kwh": 0.0,
+      "home_depot_id": "D0",
+      "physical_vehicle_id": "EV_D0_1",
+      "recharge_end_second": 45865.083094612244,
+      "return_second": 45865.083094612244,
+      "route_id": "EV_D0_1#T2",
+      "start_battery_kwh": 221.59644683169282,
+      "trip_index": 2,
+      "vehicle_type": "ev"
+    },
+    {
+      "charge_energy_kwh": null,
+      "charge_start_second": null,
+      "departure_second": 47592.89724008374,
+      "end_battery_kwh": 0.0,
+      "home_depot_id": "D1",
+      "physical_vehicle_id": "EV_D1_1",
+      "recharge_end_second": 71395.99667730027,
+      "return_second": 71395.99667730027,
+      "route_id": "EV_D1_1#T1",
+      "start_battery_kwh": 189.24942630126606,
+      "trip_index": 1,
+      "vehicle_type": "ev"
+    }
+  ],
+  "vehicle_counts": {
+    "cv": 1,
+    "ev": 2
+  }
+}
