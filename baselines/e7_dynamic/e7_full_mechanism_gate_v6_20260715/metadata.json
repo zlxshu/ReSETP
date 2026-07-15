@@ -1,0 +1,46 @@
+{
+  "arms": [
+    "full",
+    "no_cooperation",
+    "carbon_blind",
+    "no_participation"
+  ],
+  "base_dynamic_contract_id": "E7_PAIRED_DYNAMIC_VALUE_V5_EXISTING_RECIPROCAL_NEIGHBORHOOD",
+  "contract_id": "E7_FULL_MECHANISM_GATE_V6_PROVENANCE_CLOSED",
+  "elapsed_seconds": 1777.6011494160011,
+  "evaluations_per_search": 50,
+  "operating_day": "2025-11-13",
+  "operating_day_reason": "The paper had already designated 2025-11-13 as its reference carbon day; the date was not selected from this probe's result.",
+  "protected_file_hashes": {
+    "solver/src/setp_solver/check.py": "53f5cc27d3ac72bdd2bbec113eb8af11ad18a82490502f800941140495e8e142",
+    "solver/src/setp_solver/cost.py": "d8bfee1844c8f8e89bac1233a3cd862d7ac7d088039f97751b8274756c41dee4",
+    "solver/src/setp_solver/search/evaluation.py": "c7215263c39d1d5a1429b41ca8ac40d950dbdf2bdc288337e56fbe9733406fc3"
+  },
+  "responsibility_conditions": [
+    "geographic",
+    "historical_mixed"
+  ],
+  "schema": "setp.e7.full_mechanism_gate.v6",
+  "scientific_boundary": "This gate checks equal compute, state continuity, participation, and paired charging settlement. Result direction is not an expansion gate, except that cooperation retains the same-state no-cooperation fallback.",
+  "source_commit": "bafcd1148358c336a1324c4d96a9d08539b56986",
+  "source_file_hashes": {
+    "baselines/e7_dynamic/e7_dynamic_continuous_trigger_gate_20260714.py": "7b774a7567cc67ffb0849ea10ea33f7ab21c6eeec17f86d8dd9a79e7f5145b0f",
+    "baselines/e7_dynamic/e7_formal_dynamic_value_20260714.py": "71826dcda7027399aefba01cb942e7aa80bb5e9afd95bf6872aaabfce3e39bf2",
+    "baselines/e7_dynamic/e7_full_mechanism_probe_20260714.py": "0c2f33518ae7314caecac2abd15d0a333fd40a34a5984f4c1213103d0d66ed55",
+    "baselines/e7_dynamic/e7_p2_single_event_probe_20260714.py": "c606bf5e9886fe6f24bef7399b139cb87dec28bee9e6adf6e2b127017c5aebc8",
+    "solver/src/setp_solver/algorithms/resetp_alns/kernel/alns_core.py": "23704471495016a59ed63c0f0bb24840528a9736c495ee24ccb0a4be27dc96bb",
+    "solver/src/setp_solver/algorithms/resetp_alns/kernel/winner.py": "0eb31fd5c90aaf923db4edd511f4cb102487887f6b213740db9c93e8ec02101b",
+    "solver/src/setp_solver/algorithms/resetp_alns/operators/feasible_repair.py": "21a50ca7340bec698e33151956e0d5c50ed73f8e502833bbe30d40942a411da1",
+    "solver/src/setp_solver/check.py": "53f5cc27d3ac72bdd2bbec113eb8af11ad18a82490502f800941140495e8e142",
+    "solver/src/setp_solver/cost.py": "d8bfee1844c8f8e89bac1233a3cd862d7ac7d088039f97751b8274756c41dee4",
+    "solver/src/setp_solver/profit.py": "bbf709b51c00980e3376f45ec5287ef668adc1993d3d2c09ac0ab3b39f97fe34",
+    "solver/src/setp_solver/search/dynamic_multitrip_schedule.py": "2ff795d370943cd8ac08c087539a151b26c155b735b83498052fd16c544829c6",
+    "solver/src/setp_solver/search/evaluation.py": "c7215263c39d1d5a1429b41ca8ac40d950dbdf2bdc288337e56fbe9733406fc3",
+    "solver/src/setp_solver/search/multitrip_schedule.py": "a1033870de0d319e01837e00aa19f8a42ef03faa0be4189e6317f1a20cfeb9ab"
+  },
+  "stages": 2,
+  "stream_seeds": [
+    1
+  ],
+  "workers": 8
+}
