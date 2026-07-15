@@ -651,6 +651,7 @@ def _same_state_no_cooperation(
     ):
         raise RuntimeError("same-state no-cooperation plan crossed depots")
     result["same_state_baseline_start_source"] = baseline_start_source
+    result["same_state_baseline_start_construction"] = controlled
     return result
 
 
@@ -769,39 +770,22 @@ def _controlled_stage(
         return _meets_participation_floor(candidate, baseline_future_profit)
 
     if arm == "simple_insertion":
-        # The owner-local repack is prepared before the ALNS loop.  Releasing
-        # that initial feasible construction gives a deterministic sequential
-        # insertion/repack baseline; the later search is used only to construct
-        # the common no-cooperation comparator and cannot alter this arm.
-        if not baseline.get("initial_feasible") or baseline.get("initial_solution") is None:
-            raise RuntimeError("sequential insertion baseline is not executable")
-        selected = dict(baseline)
-        selected.update(
-            {
-                "solution": baseline["initial_solution"],
-                "certificate": baseline["initial_certificate"],
-                "search_structure": baseline["initial_search_structure"],
-                "future_cost": float(baseline["initial_cost"]),
-                "evaluations": 1,
-                "search_seed": seed * 10 + 2,
-                "feasible_cross_candidate_count": 0,
-                "forced_cross_attempt_count": 0,
-                "best_gate_rejection_count": 0,
-                "existing_cross_scheduled_slots": [],
-                "existing_cross_scheduled_call_count": 0,
-                "existing_cross_actual_call_count": 0,
-                "existing_cross_pair_removal_count": 0,
-                "existing_cross_forced_insertion_count": 0,
-                "existing_cross_within_depot_reinsert_count": 0,
-                "existing_cross_candidate_build_count": 0,
-                "existing_cross_changed_candidate_count": 0,
-                "existing_cross_dynamic_feasible_count": 0,
-                "existing_cross_gate_rejection_count": 0,
-                "existing_cross_accepted_count": 0,
-                "existing_cross_best_improved_count": 0,
-                "existing_cross_moved_customer_ids": [],
-                "existing_cross_rejections": {},
-            }
+        # A dynamic open-stage structure may require one exact insertion/repair
+        # evaluation before it becomes an executable physical-vehicle plan.
+        # Run exactly that one evaluation from the pre-search baseline start;
+        # never release the shadow search's multi-evaluation endpoint.
+        selected = base.search_stage(
+            baseline["same_state_baseline_start_construction"],
+            sources,
+            cut,
+            owners,
+            committed_customers,
+            trigger=trigger,
+            seed=seed * 10 + 2,
+            evaluations=1,
+            allow_cross_depot=False,
+            stage_new_customer_ids=stage_new_customer_ids,
+            candidate_best_gate=no_cross_gate,
         )
     elif arm == "no_cooperation":
         selected = base.search_stage(

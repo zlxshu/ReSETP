@@ -291,14 +291,17 @@ def _task_path(output: Path, task: Mapping[str, Any]) -> Path:
 
 
 def _run_task(task: Mapping[str, Any]) -> dict[str, Any]:
-    return probe.run_probe_arm(
-        str(task["arm"]),
-        condition=str(task["condition"]),
-        stream_seed=int(task["stream"]),
-        evaluations=int(task["evaluations"]),
-        max_stages=int(task["max_stages"]),
-        network=str(task["network"]),
-    )
+    try:
+        return probe.run_probe_arm(
+            str(task["arm"]),
+            condition=str(task["condition"]),
+            stream_seed=int(task["stream"]),
+            evaluations=int(task["evaluations"]),
+            max_stages=int(task["max_stages"]),
+            network=str(task["network"]),
+        )
+    except Exception as exc:
+        raise RuntimeError(f"{task['task_id']}: {exc}") from exc
 
 
 def validate_task_payload(
