@@ -1,0 +1,151 @@
+{
+  "conditions": [
+    "geographic",
+    "historical_mixed"
+  ],
+  "contract_id": "E7_MULTINETWORK_EVENT_STREAM_FREEZE_V1_RESULT_BLIND",
+  "event_appearance_window_fraction": [
+    0.05,
+    0.75
+  ],
+  "event_proportions": {
+    "add": 0.04,
+    "cancel": 0.02,
+    "demand_change": 0.04
+  },
+  "evidence_boundary": "Event streams were frozen before any multi-network dynamic search result existed.",
+  "networks": {
+    "N114": {
+      "donor": "L-main-threeshift-75c-01",
+      "instance": "L-main-threeshift-50c-01"
+    },
+    "N221": {
+      "donor": "L-main-threeshift-200c-01",
+      "instance": "L-main-threeshift-100c-01"
+    },
+    "N322": {
+      "donor": "L-main-threeshift-200c-01",
+      "instance": "L-main-threeshift-150c-01"
+    }
+  },
+  "old_n221_policy": "retained as superseded evidence; not used by the multi-network contract",
+  "search_evaluations": 0,
+  "seeds": [
+    1,
+    2,
+    3,
+    4,
+    5
+  ],
+  "source_commit": "54e68e94e5e345284e387bd272ed7ca7348143ab",
+  "starting_plan_sources": [
+    {
+      "arm": "no_loss",
+      "certificate_path": "baselines/e6_fairness/e6_participation_formal_20260714/certificates/L-main-threeshift-50c-01__geographic__seed1__no_loss.json",
+      "certificate_sha256": "97e7ab880c7cd885c602949444e05d8cace97221027dde447600e97c60cdd80d",
+      "condition": "geographic",
+      "network": "N114",
+      "solution_path": "baselines/e6_fairness/e6_participation_formal_20260714/solutions/L-main-threeshift-50c-01__geographic__seed1__no_loss.json",
+      "solution_sha256": "c0b6fbdb8da749ac8fbaede983ae977e5370128024149c75a1169159593a8a94"
+    },
+    {
+      "arm": "independent",
+      "certificate_path": "baselines/e6_fairness/e6_participation_formal_20260714/certificates/L-main-threeshift-50c-01__geographic__seed1__independent.json",
+      "certificate_sha256": "0208e8c99e01da677402b523329c7221c4e0eb5693dd93c049a26ef02c7f93b3",
+      "condition": "geographic",
+      "network": "N114",
+      "solution_path": "baselines/e6_fairness/e6_participation_formal_20260714/solutions/L-main-threeshift-50c-01__geographic__seed1__independent.json",
+      "solution_sha256": "7633f11542b40b83e73a266972165a60d1cd622f4fbfb1dd62aefeeff793fc3b"
+    },
+    {
+      "arm": "no_loss",
+      "certificate_path": "baselines/e6_fairness/e6_participation_formal_20260714/certificates/L-main-threeshift-50c-01__mixed__seed1__no_loss.json",
+      "certificate_sha256": "c9dfa344c86fba90c9db3ccc31ce371a939833d7b2fe41df9e0ed65e2c40eb3c",
+      "condition": "historical_mixed",
+      "network": "N114",
+      "solution_path": "baselines/e6_fairness/e6_participation_formal_20260714/solutions/L-main-threeshift-50c-01__mixed__seed1__no_loss.json",
+      "solution_sha256": "23e831b01dd18ad9935572cf514c8b319bdcfbd3ca422633135b36b80cfe5399"
+    },
+    {
+      "arm": "independent",
+      "certificate_path": "baselines/e6_fairness/e6_participation_formal_20260714/certificates/L-main-threeshift-50c-01__mixed__seed1__independent.json",
+      "certificate_sha256": "6674b9a332286bd59f525fbc4d23f49e6236c78600ba485efe9e56700b23d17c",
+      "condition": "historical_mixed",
+      "network": "N114",
+      "solution_path": "baselines/e6_fairness/e6_participation_formal_20260714/solutions/L-main-threeshift-50c-01__mixed__seed1__independent.json",
+      "solution_sha256": "6be9746d4668715ba614293a51db62d2d465de2a4c3e024a8ab8de7453a1ddaa"
+    },
+    {
+      "arm": "no_loss",
+      "certificate_path": "baselines/e6_fairness/e6_participation_formal_20260714/certificates/L-main-threeshift-100c-01__geographic__seed1__no_loss.json",
+      "certificate_sha256": "7127dada4e9942a303155429fb42f83cc6c6952a344d4c8a5d9c4727f5e919d0",
+      "condition": "geographic",
+      "network": "N221",
+      "solution_path": "baselines/e6_fairness/e6_participation_formal_20260714/solutions/L-main-threeshift-100c-01__geographic__seed1__no_loss.json",
+      "solution_sha256": "eff30569aea5953b8b9b52707e6f15bb7c1f44f3b17f3bea7bda334e389e62af"
+    },
+    {
+      "arm": "independent",
+      "certificate_path": "baselines/e6_fairness/e6_participation_formal_20260714/certificates/L-main-threeshift-100c-01__geographic__seed1__independent.json",
+      "certificate_sha256": "97e019daafc6e0f8e6d7642db7fce674a3dd15a2627ac6f08332f2bef80d01be",
+      "condition": "geographic",
+      "network": "N221",
+      "solution_path": "baselines/e6_fairness/e6_participation_formal_20260714/solutions/L-main-threeshift-100c-01__geographic__seed1__independent.json",
+      "solution_sha256": "47884212a50d96e09b335f2ceb4f72a7314f52c9852c95f8cc0a5eb2a5e505a6"
+    },
+    {
+      "arm": "no_loss",
+      "certificate_path": "baselines/e6_fairness/e6_participation_formal_20260714/certificates/L-main-threeshift-100c-01__mixed__seed1__no_loss.json",
+      "certificate_sha256": "e09bbf14c40faf1661f89baa6bb38f1c7226363d563c2a9aed8639d8b9d98113",
+      "condition": "historical_mixed",
+      "network": "N221",
+      "solution_path": "baselines/e6_fairness/e6_participation_formal_20260714/solutions/L-main-threeshift-100c-01__mixed__seed1__no_loss.json",
+      "solution_sha256": "a9e4aa9aeb9cb57f129bf5b9ea69286a5cbafcb636c6c56b37a2b8cecf56ac25"
+    },
+    {
+      "arm": "independent",
+      "certificate_path": "baselines/e6_fairness/e6_participation_formal_20260714/certificates/L-main-threeshift-100c-01__mixed__seed1__independent.json",
+      "certificate_sha256": "b8344aa47a179ee8dda9347590ae9313712fbc97e1b4ff90d206a031356f3ae0",
+      "condition": "historical_mixed",
+      "network": "N221",
+      "solution_path": "baselines/e6_fairness/e6_participation_formal_20260714/solutions/L-main-threeshift-100c-01__mixed__seed1__independent.json",
+      "solution_sha256": "f4f214045af9c42b9b303a7133dd75a0c72c726c4785d3f356fde28b8eb69445"
+    },
+    {
+      "arm": "no_loss",
+      "certificate_path": "baselines/e6_fairness/e6_participation_formal_20260714/certificates/L-main-threeshift-150c-01__geographic__seed1__no_loss.json",
+      "certificate_sha256": "4db3b4955acd691c3561712b35517459f482d5035f9a3dce3277b8a175361fc5",
+      "condition": "geographic",
+      "network": "N322",
+      "solution_path": "baselines/e6_fairness/e6_participation_formal_20260714/solutions/L-main-threeshift-150c-01__geographic__seed1__no_loss.json",
+      "solution_sha256": "36cefb4c03f7a834567f9b0f67347fb7a0264f126c583fe5678e7c18a30bc2b3"
+    },
+    {
+      "arm": "independent",
+      "certificate_path": "baselines/e6_fairness/e6_participation_formal_20260714/certificates/L-main-threeshift-150c-01__geographic__seed1__independent.json",
+      "certificate_sha256": "d78ab316b4360ff38bb0c286672b3f1d5b09ca0c1d6f47454a7a00f2fe0e38ae",
+      "condition": "geographic",
+      "network": "N322",
+      "solution_path": "baselines/e6_fairness/e6_participation_formal_20260714/solutions/L-main-threeshift-150c-01__geographic__seed1__independent.json",
+      "solution_sha256": "3e8ecf2d1afc3aadfb94730d283becbe69dd326b3eeabf75f82a8d7f4b8dfe1f"
+    },
+    {
+      "arm": "no_loss",
+      "certificate_path": "baselines/e6_fairness/e6_participation_formal_20260714/certificates/L-main-threeshift-150c-01__mixed__seed1__no_loss.json",
+      "certificate_sha256": "d53c9d5a684805d26d8d312f7d84248bf4d96072ca454ce298166da9ae7a7ded",
+      "condition": "historical_mixed",
+      "network": "N322",
+      "solution_path": "baselines/e6_fairness/e6_participation_formal_20260714/solutions/L-main-threeshift-150c-01__mixed__seed1__no_loss.json",
+      "solution_sha256": "e7f7b95e5fa47f3192f189dde994a6c63839fa09c2f112b2a4f8b8b7d6ff2f12"
+    },
+    {
+      "arm": "independent",
+      "certificate_path": "baselines/e6_fairness/e6_participation_formal_20260714/certificates/L-main-threeshift-150c-01__mixed__seed1__independent.json",
+      "certificate_sha256": "abee7b6104bdc1ef223e26fdfa38463d1cf42704707aae9a44e4558575394087",
+      "condition": "historical_mixed",
+      "network": "N322",
+      "solution_path": "baselines/e6_fairness/e6_participation_formal_20260714/solutions/L-main-threeshift-150c-01__mixed__seed1__independent.json",
+      "solution_sha256": "ebc3c0cb6f666f098bd74ec3ebb7441b82f2410922f270462baaa736c6491512"
+    }
+  ]
+}
