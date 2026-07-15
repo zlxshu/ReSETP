@@ -953,6 +953,9 @@ def run_probe_arm(
         arm, sources, profiles
     )
     current_instance = sources["bundle"].instance
+    route_history = {
+        route.vehicle_id: route for route in current_solution.routes
+    }
     inherited_states = None
     inherited_locked_actions: Sequence[ChargingAction] = ()
     previous_stage_start = None
@@ -1059,7 +1062,7 @@ def run_probe_arm(
             committed_routes,
             committed_actions,
             result["solution"],
-            {route.vehicle_id: route for route in current_solution.routes},
+            route_history,
         )
         final_running = _profit_closure(
             running_solution,
@@ -1235,6 +1238,9 @@ def run_probe_arm(
         inherited_locked_actions = cut.locked_charging_actions
         previous_stage_start = trigger
         current_solution = result["solution"]
+        route_history.update(
+            {route.vehicle_id: route for route in current_solution.routes}
+        )
         current_certificate = result["certificate"]
         current_instance = construction.effective_instance
 
