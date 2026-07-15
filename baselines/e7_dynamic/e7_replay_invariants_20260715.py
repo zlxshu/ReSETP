@@ -20,6 +20,15 @@ def charging_window_boundary_violations(
     """Return violations of the frozen rolling-state charging boundaries."""
 
     violations: list[str] = []
+    try:
+        triggers = [float(value) for value in trigger_seconds]
+    except (TypeError, ValueError):
+        return ["trigger_seconds: invalid value"]
+    if not all(isfinite(value) for value in triggers):
+        return ["trigger_seconds: non-finite value"]
+    if any(right <= left + TOL for left, right in zip(triggers, triggers[1:])):
+        return ["trigger_seconds: not strictly increasing"]
+
     for index, witness in enumerate(witnesses):
         prefix = f"witness[{index}]"
         try:
@@ -46,24 +55,47 @@ def charging_window_boundary_violations(
             violations.append(f"{prefix}: observed action outside charging window")
 
         if lock_state == "completed_before_trigger":
-            if capture_stage < 1 or capture_stage > len(trigger_seconds):
+            if capture_stage < 1 or capture_stage > len(triggers):
                 violations.append(f"{prefix}: capture stage has no trigger")
                 continue
             absolute_earliest = earliest + day_offset * DAY_SECONDS
             absolute_latest_end = latest + duration + day_offset * DAY_SECONDS
-            current_trigger = float(trigger_seconds[capture_stage - 1])
+            absolute_observed = observed + day_offset * DAY_SECONDS
+            current_trigger = triggers[capture_stage - 1]
             if absolute_latest_end > current_trigger + TOL:
                 violations.append(f"{prefix}: charging window ends after current trigger")
+            if absolute_observed + duration > current_trigger + TOL:
+                violations.append(f"{prefix}: observed action ends after current trigger")
             if capture_stage > 1:
-                previous_trigger = float(trigger_seconds[capture_stage - 2])
+                previous_trigger = triggers[capture_stage - 2]
                 if absolute_earliest < previous_trigger - TOL:
                     violations.append(
                         f"{prefix}: charging window crosses previous trigger"
                     )
+                if absolute_observed < previous_trigger - TOL:
+                    violations.append(
+                        f"{prefix}: observed action starts before previous trigger"
+                    )
         elif lock_state == "in_progress_at_trigger_fixed":
             if abs(earliest - observed) > TOL or abs(latest - observed) > TOL:
                 violations.append(f"{prefix}: in-progress action is not fixed")
-        elif lock_state != "future_after_final_stage":
+            if capture_stage < 1 or capture_stage > len(triggers):
+                violations.append(f"{prefix}: capture stage has no trigger")
+                continue
+            current_trigger = triggers[capture_stage - 1]
+            absolute_observed = observed + day_offset * DAY_SECONDS
+            if absolute_observed >= current_trigger - TOL:
+                violations.append(f"{prefix}: in-progress action has not started")
+            if absolute_observed + duration <= current_trigger + TOL:
+                violations.append(f"{prefix}: in-progress action already completed")
+        elif lock_state == "future_after_final_stage":
+            if capture_stage != len(triggers):
+                violations.append(f"{prefix}: future action is not from final stage")
+            elif triggers:
+                absolute_observed = observed + day_offset * DAY_SECONDS
+                if absolute_observed < triggers[-1] - TOL:
+                    violations.append(f"{prefix}: future action starts before final trigger")
+        else:
             violations.append(f"{prefix}: unknown lock state {lock_state}")
     return violations
 

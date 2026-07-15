@@ -16,8 +16,12 @@ from typing import Any
 ROOT = Path(__file__).resolve().parents[2]
 FORMAL = ROOT / "baselines/e7_dynamic/e7_multinetwork_formal_20260715"
 REPLAY = ROOT / "baselines/e7_dynamic/e7_multiday_zero_search_replay_20260715"
+REPLAY_INVARIANTS = ROOT / "baselines/e7_dynamic/e7_replay_invariants_audit_20260715"
 OUT = ROOT / "baselines/e7_dynamic/e7_multinetwork_independent_audit_20260715"
 ARMS = ("full", "no_cooperation", "no_participation", "simple_insertion")
+NETWORKS = ("N114", "N221", "N322")
+CONDITIONS = ("geographic", "historical_mixed")
+STREAMS = (1, 2, 3, 4, 5)
 TOL = 1e-6
 
 
@@ -93,13 +97,85 @@ def better_worse_tied(rows: list[dict[str, Any]], field: str) -> str:
     )
 
 
+def replay_coverage_checks(rows: list[dict[str, str]]) -> dict[str, bool]:
+    """Verify the 30 frozen full-arm tasks each cover 28 distinct grid days."""
+
+    row_keys = [
+        (
+            row["network"],
+            row["condition"],
+            int(row["stream"]),
+            row["arm"],
+            row["operating_day"],
+        )
+        for row in rows
+    ]
+    task_days: dict[tuple[str, str, int, str], set[str]] = defaultdict(set)
+    for network, condition, stream, arm, day in row_keys:
+        task_days[(network, condition, stream, arm)].add(day)
+    expected_tasks = {
+        (network, condition, stream, "full")
+        for network in NETWORKS
+        for condition in CONDITIONS
+        for stream in STREAMS
+    }
+    day_sets = {frozenset(days) for days in task_days.values()}
+    return {
+        "replay_unique_row_keys_840": len(row_keys) == 840
+        and len(set(row_keys)) == 840,
+        "replay_full_arm_only": all(key[3] == "full" for key in task_days),
+        "replay_exact_30_task_matrix": set(task_days) == expected_tasks,
+        "replay_30_tasks_each_28_distinct_days": len(task_days) == 30
+        and all(len(days) == 28 for days in task_days.values()),
+        "replay_all_tasks_share_same_28_days": len(day_sets) == 1
+        and bool(day_sets)
+        and len(next(iter(day_sets))) == 28,
+    }
+
+
+def formal_task_matrix_failures(sessions: list[dict[str, Any]]) -> list[str]:
+    keys = [
+        (
+            str(payload.get("network")),
+            str(payload.get("responsibility_condition")),
+            int(payload.get("stream_seed", -1)),
+            str(payload.get("arm")),
+        )
+        for payload in sessions
+    ]
+    expected = {
+        (network, condition, stream, arm)
+        for network in NETWORKS
+        for condition in CONDITIONS
+        for stream in STREAMS
+        for arm in ARMS
+    }
+    failures: list[str] = []
+    if len(keys) != len(set(keys)):
+        failures.append("formal sessions contain duplicate task identities")
+    missing = sorted(expected - set(keys))
+    extra = sorted(set(keys) - expected)
+    if missing:
+        failures.append(f"formal sessions missing tasks: {missing}")
+    if extra:
+        failures.append(f"formal sessions contain unexpected tasks: {extra}")
+    return failures
+
+
 def main() -> int:
     OUT.mkdir(parents=True, exist_ok=True)
     formal_hash_count, formal_hash_failures = verify_manifest(FORMAL)
     replay_hash_count, replay_hash_failures = verify_manifest(REPLAY)
+    invariant_hash_count, invariant_hash_failures = verify_manifest(REPLAY_INVARIANTS)
     formal_decision = json.loads((FORMAL / "decision.json").read_text(encoding="utf-8"))
     replay_decision = json.loads((REPLAY / "decision.json").read_text(encoding="utf-8"))
+    invariant_decision = json.loads(
+        (REPLAY_INVARIANTS / "decision.json").read_text(encoding="utf-8")
+    )
     sessions = json.loads((FORMAL / "sessions.json").read_text(encoding="utf-8"))
+    matrix_failures = formal_task_matrix_failures(sessions)
+    if matrix_failures:
+        raise RuntimeError(f"formal task matrix is not exact: {matrix_failures}")
     task_rows: list[dict[str, Any]] = []
     payloads: dict[tuple[str, str, int, str], dict[str, Any]] = {}
     for payload in sessions:
@@ -120,6 +196,8 @@ def main() -> int:
                 "arm": key[3],
                 "execution_status": payload["execution_status"],
                 "completed_stage_count": int(payload.get("stages", 0)),
+                "failed_stage": payload.get("failed_stage", ""),
+                "failure_error": payload.get("failure_error", ""),
                 "charging_window_count": int(
                     payload.get("full_day_execution", {}).get("charging_window_count", 0)
                 ),
@@ -382,13 +460,13 @@ def main() -> int:
 
     replay_rows = read_csv(REPLAY / "raw_runs.csv")
     replay_summary = read_csv(REPLAY / "summary.csv")
+    invariant_rows = read_csv(REPLAY_INVARIANTS / "raw_runs.csv")
+    coverage_checks = replay_coverage_checks(replay_rows)
     replay_failures = [
         index
         for index, row in enumerate(replay_rows, start=2)
         if row["route_hash_preserved"] != "True"
         or row["energy_hash_preserved"] != "True"
-        or int(row["station_capacity_violation_count"]) != 0
-        or int(row["previous_trigger_window_violation_count"]) != 0
     ]
     full_payloads = [
         payload
@@ -406,6 +484,37 @@ def main() -> int:
         if key[3] == "no_cooperation" and payload["execution_status"] == "PASS"
         for stage in payload["rows"]
     )
+    economic_closure_failures: list[str] = []
+    for row in pair_rows:
+        if not row["all_four_arms_executable"]:
+            continue
+        for label, profit_field, revenue_field, cost_field in (
+            (
+                "no_cooperation",
+                "full_minus_no_cooperation_net_profit",
+                "full_minus_no_cooperation_revenue",
+                "full_minus_no_cooperation_cost",
+            ),
+            (
+                "no_participation",
+                "full_minus_no_participation_net_profit",
+                "full_minus_no_participation_revenue",
+                "full_minus_no_participation_system_cost",
+            ),
+            (
+                "simple_insertion",
+                "full_minus_simple_insertion_net_profit",
+                "full_minus_simple_insertion_revenue",
+                "full_minus_simple_insertion_cost",
+            ),
+        ):
+            residual = float(row[profit_field]) - (
+                float(row[revenue_field]) - float(row[cost_field])
+            )
+            if abs(residual) > TOL:
+                economic_closure_failures.append(
+                    f"{row['network']}/{row['condition']}/{row['stream']}/{label}"
+                )
     checks = {
         "formal_decision_complete": formal_decision.get("verdict")
         in {
@@ -415,19 +524,34 @@ def main() -> int:
         and not formal_decision.get("failures"),
         "replay_decision_pass": replay_decision.get("status")
         == "PASS_E7_28DAY_ZERO_SEARCH_CHARGING_REPLAY",
+        "replay_invariants_decision_pass": invariant_decision.get("status")
+        == "PASS_E7_REPLAY_INVARIANTS_AUDIT",
         "formal_artifact_hashes_pass": not formal_hash_failures,
         "replay_artifact_hashes_pass": not replay_hash_failures,
+        "replay_invariants_artifact_hashes_pass": not invariant_hash_failures,
         "formal_session_count_120": len(sessions) == 120,
         "full_mechanism_task_count_30": len(full_payloads) == 30,
         "full_stage_participation_floor_pass": stage_floor_failures == 0,
         "no_cooperation_cross_service_zero": no_cooperation_cross_failures == 0,
+        "paired_economic_decomposition_closes": not economic_closure_failures,
         "replay_row_count_840": len(replay_rows) == 30 * 28,
+        **coverage_checks,
+        "replay_summary_has_six_140_row_cells": len(replay_summary) == 6
+        and all(int(row["stream_day_count"]) == 5 * 28 for row in replay_summary),
+        "replay_route_search_evaluations_zero": int(
+            replay_decision.get("route_search_evaluations", -1)
+        )
+        == 0,
         "six_cells_with_five_streams": len(paired_summary) == 6
         and all(int(row["expected_stream_count"]) == 5 for row in paired_summary),
         "replay_route_and_energy_hashes_pass": not replay_failures,
-        "replay_charger_capacity_and_trigger_windows_pass": not replay_failures
-        and int(replay_decision.get("station_capacity_failures", -1)) == 0
-        and int(replay_decision.get("previous_trigger_window_failures", -1)) == 0,
+        "replay_invariant_row_count_840": len(invariant_rows) == 30 * 28,
+        "replay_charger_capacity_and_trigger_windows_pass": int(
+            invariant_decision.get("station_capacity_violation_count", -1)
+        )
+        == 0
+        and int(invariant_decision.get("window_violation_count", -1)) == 0
+        and int(invariant_decision.get("route_search_evaluations", -1)) == 0,
     }
     if not all(checks.values()):
         raise RuntimeError(f"independent E7 audit failed: {checks}")
@@ -441,10 +565,15 @@ def main() -> int:
         "created_at_utc": datetime.now(timezone.utc).isoformat(),
         "formal_root": str(FORMAL.relative_to(ROOT)),
         "replay_root": str(REPLAY.relative_to(ROOT)),
+        "replay_invariants_root": str(REPLAY_INVARIANTS.relative_to(ROOT)),
         "formal_artifact_hash_count": formal_hash_count,
         "replay_artifact_hash_count": replay_hash_count,
+        "replay_invariants_artifact_hash_count": invariant_hash_count,
         "formal_decision_sha256": sha256(FORMAL / "decision.json"),
         "replay_decision_sha256": sha256(REPLAY / "decision.json"),
+        "replay_invariants_decision_sha256": sha256(
+            REPLAY_INVARIANTS / "decision.json"
+        ),
         "audit_source_sha256": sha256(Path(__file__).resolve()),
     }
     write_json(OUT / "metadata.json", metadata)
@@ -455,9 +584,15 @@ def main() -> int:
             "checks": checks,
             "formal_hash_failures": formal_hash_failures,
             "replay_hash_failures": replay_hash_failures,
+            "replay_invariant_hash_failures": invariant_hash_failures,
             "replay_row_failures": replay_failures,
             "stage_floor_failure_count": stage_floor_failures,
             "no_cooperation_cross_failure_count": no_cooperation_cross_failures,
+            "economic_closure_failures": economic_closure_failures,
+            "controlled_arm_failure_count": sum(
+                payload["execution_status"] == "HALT_NO_EXECUTABLE_CONTINUATION"
+                for payload in sessions
+            ),
         },
     )
     (OUT / "report.md").write_text(

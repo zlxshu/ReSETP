@@ -93,7 +93,7 @@
 \TitleMark{周雷习书等: 兼顾收益公平与时变碳强度的动态协同多车场混合车队路径优化}
 \Title{兼顾收益公平与时变碳强度的动态协同多车场混合车队路径优化}
 \Author{周雷习书, 干宏程, 邱莹莹}{上海理工大学 管理学院, 上海 200093}
-\Abstract{针对由英国城市坐标构造的区域—城际多车场配送，研究动态需求、时变电网碳强度和收益参与条件共同作用下的油电混合车队路径优化问题。构建严格实体车多趟衔接模型，提出时变碳强度引导的自适应大邻域搜索算法TVCI-ALNS。九张网络、九种算法各独立运行10次的结果表明，TVCI-ALNS平均名次为1.72；以网络为统计单位并校正多重比较后，显著优于5种通过实现核查的对照算法。保持客户坐标、需求和时间窗不变，将客户责任由空间交错调整为地理聚集后，总成本、路程、燃油车直接排放和电动车用电量平均下降25.00\%、35.48\%、41.73\%和23.87\%；进一步允许跨车场重新分工，两种客户责任下的平均增量节省分别为4.16\%和19.83\%。固定路径、车辆与充电量后，按预测电网碳强度安排充电使充电环节排放下降3.89\%--4.88\%，油电混合车队运营总排放下降0.35\%--0.52\%。将收益要求从无约束逐步推进到两个车场均不低于各自经营时，地理聚集和空间交错情形的平均系统成本分别增加1.90\%和0.39\%。动态部分在三张网络、两类客户责任和五条预先固定的订单变化序列上比较四种机制，并对完整机制的全日方案进行28日电网数据零路径搜索重放。现有结果表明，按地理关系组织客户会改变合作前的成本与能源基线，进一步协同主要用于修复尚未理顺的客户责任；充电择时是固定配送任务后的补充减排步骤；经营收益、充电侧排放和双方参与结果需分别检验。}
+\Abstract{针对由英国城市坐标构造的区域—城际多车场配送，研究动态需求、时变电网碳强度和收益参与条件共同作用下的油电混合车队路径优化问题。构建严格实体车多趟衔接模型，提出时变碳强度引导的自适应大邻域搜索算法TVCI-ALNS。九张网络、九种算法各独立运行10次的结果表明，TVCI-ALNS平均名次为1.72；以网络为统计单位并校正多重比较后，显著优于5种通过实现核查的对照算法。保持客户坐标、需求和时间窗不变，将客户责任由空间交错调整为地理聚集后，总成本、路程、燃油车直接排放和电动车用电量平均下降25.00\%、35.48\%、41.73\%和23.87\%；进一步允许跨车场重新分工，两种客户责任下的平均增量节省分别为4.16\%和19.83\%。固定路径、车辆与充电量后，按预测电网碳强度安排充电使充电环节排放下降3.89\%--4.88\%，油电混合车队运营总排放下降0.35\%--0.52\%。将收益要求从无约束逐步推进到两个车场均不低于各自经营时，地理聚集和空间交错情形的平均系统成本分别增加1.90\%和0.39\%。\IfFileExists{generated_tables/e7_dynamic_abstract_zh.tex}{\input{generated_tables/e7_dynamic_abstract_zh.tex}}{动态部分在三张网络、两类客户责任和五条预先固定的订单变化序列上比较四种机制，并对完整机制的全日方案进行28日电网数据零路径搜索重放。}现有结果表明，按地理关系组织客户会改变合作前的成本与能源基线，进一步协同主要用于修复尚未理顺的客户责任；充电择时是固定配送任务后的补充减排步骤；经营收益、充电侧排放和双方参与结果需分别检验。}
 \Keywords{协同多车场; 混合车队; 车辆路径问题; 动态需求; 时变电网碳强度; 收益公平}
 \ETitle{Dynamic Collaborative Multi-depot Mixed-fleet Vehicle Routing with Profit Fairness and Time-varying Grid Carbon Intensity}
 \EAuthor{ZHOU Leixishu, GAN Hongcheng, QIU Yingying}{University of Shanghai for Science and Technology, Shanghai 200093, China}
@@ -113,19 +113,18 @@ Allowing further cross-depot reassignment yields additional average cost savings
 of 4.16\% under geographic concentration and 19.83\% under spatial intermixing.
 With routes, vehicles and charging energy fixed, forecast-based charging timing
 reduces charging emissions by 3.89\%--4.88\%, but total mixed-fleet operational
-emissions by 0.35\%--0.52\%. The results show that geographic organization
+emissions by 0.35\%--0.52\%. As the profit requirement is tightened from an
+unrestricted starting point to a floor that leaves neither depot worse off than
+stand-alone operation, average system cost increases by 1.90\% under geographic
+concentration and 0.39\% under spatial intermixing. \IfFileExists{generated_tables/e7_dynamic_abstract_en.tex}{\input{generated_tables/e7_dynamic_abstract_en.tex}}{The dynamic experiment compares four mechanisms on three networks, two customer-responsibility conditions and five
+prespecified order-event streams, followed by a zero-route-search replay over 28 days
+of grid data for the complete mechanism.} The results show that geographic organization
 changes the pre-cooperation cost and energy baseline, while further collaboration
-mainly repairs customer responsibilities that remain spatially misaligned.
-	As the profit requirement is tightened from an unrestricted starting point to
-	a floor that leaves neither depot worse off than stand-alone operation, average
-	system cost increases by 1.90\% under geographic concentration and 0.39\%
-	under spatial intermixing. Charging timing provides an additional emissions reduction without
-	changing delivery tasks, while the participation floor jointly tests system
-	savings and the willingness of both depots to participate. The dynamic experiment
-	compares four mechanisms on three networks, two customer-responsibility conditions
-	and five prespecified order-event streams, followed by a zero-route-search replay over
-	28 days of grid data for the complete mechanism. Hence operating value, charging
-	emissions and participation should be assessed separately under dynamic disturbances.}
+mainly repairs customer responsibilities that remain spatially misaligned. Charging
+timing provides an additional emissions reduction without changing delivery tasks,
+whereas participation requirements trade part of the observed system saving for the
+willingness of both depots to participate. Hence operating value, charging emissions
+and participation should be assessed separately under dynamic disturbances.}
 \EKeywords{collaborative multi-depot; mixed fleet; vehicle routing problem;
 dynamic demand; time-varying grid carbon intensity; profit fairness}
 \begin{document}
@@ -138,9 +137,9 @@ dynamic demand; time-varying grid carbon intensity; profit fairness}
 
 \section{引言}
 
-2020年9月22日，中国提出二氧化碳排放力争2030年前达峰、2060年前实现碳中和\textsuperscript{\cite{ref:1}}。在``双碳''目标和能源结构转型背景下，交通运输领域减排约束持续加强\textsuperscript{\cite{ref:2}}。全球能源相关二氧化碳排放压力仍受到持续关注\textsuperscript{\cite{ref:3}}。城市配送是交通运输的重要末端环节，既需要满足订单时效，也需要在车辆使用、能源消耗和碳排放之间取得平衡。
+区域—城际配送的困难并不只是寻找一组低成本路线。订单持续新增、取消或改变需求时，企业既不能撤回已经发车和已经完成的任务，又要在多个车场之间重新安排客户、车辆与充电；系统方案即使降低总成本，也可能使某一车场不愿继续合作；电动车即使没有尾气排放，其充电时刻仍会改变电力侧间接排放。因此，实际决策需要同时回答三个相互关联但不能合并的问题：后续任务能否继续执行，合作能否创造并保留经营收益，以及固定配送任务后的充电排放还能降低多少。
 
-从车型结构看，燃油车补能便利、续航稳定，但运行过程直接碳排放较高；电动汽车运行成本较低、行驶阶段无尾气排放，但其减排效果受充电时段电网碳强度和充电设施可用性影响\textsuperscript{\cite{ref:4}}。已有国际混合车队路径研究考虑了不同补能方式、车辆容量和时间窗约束\textsuperscript{\cite{ref:5}}。国内电动车与燃油车混合车队研究进一步讨论了车型配置与路径优化问题\textsuperscript{\cite{ref:6}}。但多数研究仍以静态需求为前提，对动态订单扰动下的电动车充电时刻和间接碳排放关注不足。
+2020年9月22日，中国提出二氧化碳排放力争2030年前达峰、2060年前实现碳中和\textsuperscript{\cite{ref:1}}。在``双碳''目标和能源结构转型背景下，交通运输领域减排约束持续加强\textsuperscript{\cite{ref:2}}，全球能源相关二氧化碳排放压力仍受到持续关注\textsuperscript{\cite{ref:3}}。从车型结构看，燃油车补能便利、续航稳定，但运行过程直接碳排放较高；电动汽车运行成本较低、行驶阶段无尾气排放，但其减排效果受充电时段电网碳强度和充电设施可用性影响\textsuperscript{\cite{ref:4}}。已有国际混合车队路径研究考虑了不同补能方式、车辆容量和时间窗约束\textsuperscript{\cite{ref:5}}。国内电动车与燃油车混合车队研究进一步讨论了车型配置与路径优化问题\textsuperscript{\cite{ref:6}}。但多数研究仍以静态需求为前提，对动态订单扰动下的电动车充电时刻和间接碳排放关注不足。
 
 从组织方式看，多车场协同能够通过客户共享、车辆共享和车场间调拨降低系统成本，但也可能使个别车场收益被削弱。协同多车场电动车路径研究为客户跨场服务和共享充电站建模提供了基础\textsuperscript{\cite{ref:7}}。收益公平研究说明多车场协同时需关注各参与方相对各自经营的利润变化\textsuperscript{\cite{ref:8}}。Shi等\textsuperscript{\cite{ref:9}}将协同运输计划与改进Shapley收益分配相结合；Agussurja等\textsuperscript{\cite{ref:10}}则研究如何以最小补贴实现稳定且公平的利润分配。与事后分钱不同，本文将“合作后任一车场收益不低于各自经营”直接纳入路径决策，用于度量不依赖转移支付的最低参与条件。跨车场路径研究揭示了车场间路径连接对多车场VRP结构的影响\textsuperscript{\cite{ref:11}}。容量受限充电站研究为共享充电设施约束提供了建模依据\textsuperscript{\cite{ref:12}}。充电桩排队与时间窗研究说明充电设施容量会影响电动车路径可行性\textsuperscript{\cite{ref:13}}。但现有研究较少同时刻画共享车辆池、共享充电站容量、碳配额惩罚和车场收益公平之间的联动关系。
 
@@ -148,7 +147,7 @@ dynamic demand; time-varying grid carbon intensity; profit fairness}
 
 综上，现有研究仍存在以下不足：一是混合车队路径优化多以静态需求为前提，较少考虑订单新增、取消和需求变化下的状态继承；二是电动汽车充电侧间接碳排多作为结果统计，较少在固定配送任务的可行充电窗口内核对时变电网碳强度的实际作用；三是多车场协同研究多关注系统成本下降，对客户责任结构和各车场参与条件如何改变合作价值关注不足。基于此，本文围绕一个运营问题展开：订单持续变化时，多车场企业如何在不撤回已执行任务的前提下调整油电混合车队排班，并分别核对合作经营收益、充电侧排放和双方参与结果。
 
-本文的主要工作为：1) 构建考虑动态需求、时变电网碳强度和收益参与条件的协同多车场混合车队路径模型，在同一核算框架中连接客户责任、跨场服务、实体车多趟衔接和共享充电设施；2) 提出分阶段ALNS--LNS路径搜索与固定排班充电重调度相衔接的TVCI-ALNS，并通过四种机制对照分别核对阶段结构、跨场重组和充电择时的作用，不把组合算法名称本身当作创新证据；3) 设计面向新增、取消和需求变化的滚动重规划机制，在不撤回已执行任务的前提下继承车辆位置、时间、载重、电量以及已经发生的成本、排放和收益；4) 在多张区域—城际网络上依次检验客户责任偏离、跨场协同、五档收益保障和动态扰动，并在同一路径、车辆和电量下用多日电网数据单独核对充电择时效果，从而把系统经营收益、充电侧减排和双方参与结果分开报告。
+本文的主要工作为：1) 构建考虑动态需求、时变电网碳强度和收益参与条件的协同多车场混合车队路径模型，在同一核算框架中连接客户责任、跨场服务、实体车多趟衔接、共享充电设施和滚动状态继承；2) 提出分阶段ALNS--LNS路径搜索与固定排班充电重调度相衔接的TVCI-ALNS，并设计不撤回已执行任务的滚动重规划机制，通过同预算算法比较和组件对照分别核对搜索结构、跨场重组与充电择时的实际作用，不把组合名称本身当作创新证据；3) 在多张区域—城际网络上依次检验客户责任偏离、跨场协同、五档收益保障和动态扰动，并在同一路径、车辆和电量下用多日电网数据单独核对充电择时效果，从而识别经营收益、充电侧减排、双方参与和动态可执行性之间的联系及边界。
 
 % ============================================================
 % SECTION 2: 问题描述及模型建立
@@ -970,9 +969,44 @@ E2和E3均使用表 \ref{tab:e2e3-instances} 所列9张网络，避免算法比�
 
 前述实验分别考察合作创造的系统收益、固定排班下的充电择时和静态参与要求。订单进入执行阶段后，已经发车和已经完成的任务不能撤回，后续安排还受到实体车位置、可用时刻、载重、电量以及既有跨场承诺的共同约束，三类结果不能合并成一个指标。为考察这一问题，本文在运行前按规模选取50、100和150客户三张网络，不根据结果方向更换算例；在地理聚集与空间交错两类责任条件下各固定5条订单变化序列。每条序列在搜索前按统一规则生成约4\%的订单扰动，其中新增、取消和需求变化约占原客户数的1\%、1\%和2\%，事件出现在运营时域的5\%--75\%之间；新增订单只取两类责任标签一致且相应车场可直接响应的预先选定供体。累计事件达到触发量或间隔达到3 h时滚动重规划。
 
+本文同时记录每个重规划阶段的墙钟计算时间，并将其与该阶段结束至下一次事件触发之间的可用时间逐一比较。只有当阶段计算时间不超过下一触发间隔时，才把该阶段记为满足实时响应条件；若存在超时，则相应结果仅解释为批量滚动决策支持，并报告超时阶段数和最大计算时间，不因最终方案可行而将其改称实时求解。
+
 机制比较设置四种运行方式：完整机制同时允许跨场调整、施加双方不吃亏的阶段参与底线并按预测碳强度安排充电；禁止合作方式关闭新的跨场服务；不设参与底线方式保留协同但关闭收益约束；顺序插单方式每阶段只执行一次禁跨场插入与完整可行性核验。除顺序插单外，其余三种方式在同一阶段起点上进行搜索，每次搜索均比较50个完整方案；顺序插单只进行一次确定性插入和完整可行性核验，作为低计算量基线而非同预算元启发式比较。已经形成的跨场承诺在后续阶段作为状态保留，同状态基线只禁止新增跨场，不假设能够撤回历史决策。若某种运行方式在既定评价预算内找不到可执行延续，该单元按失败进入可执行率，不为凑齐数值而删除订单流或扩大预算。
 
 不同机制可能形成不同发车时刻，取消或需求变化到达时，实际完成客户和货量因而可能不同。经济比较采用服务收入减去全日成本的经营净收益，并同时报告收入、成本、完成客户数和完成货量；只有同一网络、责任条件和订单流的四种运行方式均完成全日执行时才计算成对差。动态充电排放另在完整全日方案上进行28日电网数据的零路径搜索重放：固定路径、车辆、客户服务和充电电量，只比较有空即充与按预测碳强度择时，并用实际碳强度结算。为保持各次事件触发时的车辆状态，触发前已经完成的充电只能在原合法窗口内移动，既不得越过前一触发状态，也须在当前触发前完成；触发时正在进行的充电保持原时刻；若前一趟已不在当前证书中，则不把可充电起点向历史方向外推。
+
+\IfFileExists{generated_tables/e7_dynamic_policy_comparison.tex}{
+\input{generated_tables/e7_dynamic_interpretation.tex}
+
+\begin{table}[H]
+\centering
+\caption{完整动态机制相对三类对照的全日经济结果分解}
+\label{tab:e7-dynamic-economics}
+\setptabsetup
+\scriptsize
+\input{generated_tables/e7_dynamic_policy_comparison.tex}
+\tabnote[0.97\linewidth]{注: 各差值均为完整机制减去相应对照，仅对四种机制均完成全日执行的同网络--责任--订单流单元取平均。净收益和收入为正表示完整机制更高，成本为正表示完整机制成本更高；客户和需求差用于识别净收益变化是否来自服务工作量差异。}
+\end{table}
+
+\begin{table}[H]
+\centering
+\caption{动态机制的可执行性、跨场服务和计算时限诊断}
+\label{tab:e7-dynamic-diagnostics}
+\setptabsetup
+\scriptsize
+\input{generated_tables/e7_dynamic_mechanism_diagnostics.tex}
+\tabnote[0.98\linewidth]{注: 四臂可执行依次为完整机制/禁合作/无参与底线/顺序插单；配对/参与表示四臂完整配对数/完整机制满足全日参与底线数；跨场流表示出现跨场服务的完整机制订单流数/完整机制可执行流数；超时阶段按阶段墙钟时间超过下一触发间隔计数；后三列为完整机制净收益相对对照的改善/变差/持平数。}
+\end{table}
+
+\begin{table}[H]
+\centering
+\caption{固定完整机制全日排班的28日电网数据零搜索充电重放}
+\label{tab:e7-dynamic-charging-replay}
+\setptabsetup
+\input{generated_tables/e7_dynamic_charging_replay.tex}
+\tabnote[0.95\linewidth]{注: 每个网络--责任单元含5条订单流与28个电网日，共140组配对；路径、车辆、服务客户和充电电量保持不变，按预测碳强度择时并以实际碳强度结算。}
+\end{table}
+}{}
 
 \subsection{管理启示}
 
@@ -997,6 +1031,8 @@ E2和E3均使用表 \ref{tab:e2e3-instances} 所列9张网络，避免算法比�
 收益参与条件实验表明，从不限制单方收益逐步推进到双方均不低于各自经营时，地理聚集和空间交错情形的平均系统成本分别增加1.90\%和0.39\%，最低收益比分别由0.979和1.047提高到1.005和1.081。相邻档位可由同一已观测方案满足，且空间交错情形的无约束方案平均已越过双方参与底线。这说明，参与要求的代价取决于客户责任结构和固定预算内可获得的候选方案，不能预设为固定比例或严格递增曲线。
 
 动态订单实验在50、100和150客户三张网络、两类客户责任及各5条运行前固定序列上比较完整机制、禁止合作、不设参与底线和顺序插单四种机制。实验不撤回已经执行的任务，并把既定评价预算内找不到可执行延续的运行方式保留为可执行率结果；经济结果采用全日经营净收益，充电排放则在固定完整机制全日配送方案后另行进行28日电网数据零路径搜索重放。该设计避免把服务量变化、充电择时和参与条件压成一个表面上统一的优劣指标。
+
+\IfFileExists{generated_tables/e7_dynamic_conclusion.tex}{\input{generated_tables/e7_dynamic_conclusion.tex}}{}
 
 本文仍存在一定局限。空间交错客户责任为控制其他因素后构造的合成情形，尚缺少企业历史客户归属数据；电动车能耗尚未显式刻画速度波动、坡度和天气；充电时机实验采用国家级电网碳强度，尚未反映区域节点差异；五档收益保障仍是单期参与下界，未涉及长期公平、谈判规则和转移支付。动态实验只覆盖三张合成网络和每种责任下5条约4\%扰动序列，28日重放也固定配送路径、车辆、服务客户和充电电量，因此仅用于识别本实验边界内的机制差异，不外推为长期随机到达或联合路径—充电优化的一般规律。
 

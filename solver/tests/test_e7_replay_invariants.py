@@ -49,6 +49,55 @@ def test_in_progress_action_must_remain_fixed() -> None:
     ]
 
 
+def test_in_progress_action_must_span_capture_trigger() -> None:
+    completed = _witness(
+        capture_stage=1,
+        lock_state="in_progress_at_trigger_fixed",
+        observed_start_second=600.0,
+        earliest_start_second=600.0,
+        latest_start_second=600.0,
+        occupancy_minutes=5.0,
+    )
+    assert invariants.charging_window_boundary_violations(
+        [completed], [1_000.0]
+    ) == ["witness[0]: in-progress action already completed"]
+
+    not_started = _witness(
+        capture_stage=1,
+        lock_state="in_progress_at_trigger_fixed",
+        observed_start_second=1_100.0,
+        earliest_start_second=1_100.0,
+        latest_start_second=1_100.0,
+    )
+    assert invariants.charging_window_boundary_violations(
+        [not_started], [1_000.0]
+    ) == ["witness[0]: in-progress action has not started"]
+
+
+def test_future_action_must_follow_last_trigger() -> None:
+    witness = _witness(
+        capture_stage=2,
+        lock_state="future_after_final_stage",
+        observed_start_second=2_300.0,
+        earliest_start_second=2_200.0,
+        latest_start_second=2_500.0,
+    )
+    assert invariants.charging_window_boundary_violations(
+        [witness], [1_000.0, 2_000.0]
+    ) == []
+    witness["observed_start_second"] = 1_900.0
+    witness["earliest_start_second"] = 1_800.0
+    assert invariants.charging_window_boundary_violations(
+        [witness], [1_000.0, 2_000.0]
+    ) == ["witness[0]: future action starts before final trigger"]
+
+
+def test_trigger_sequence_must_be_strictly_increasing() -> None:
+    assert invariants.charging_window_boundary_violations(
+        [_witness()], [2_200.0, 2_200.0]
+    ) == ["trigger_seconds: not strictly increasing"]
+
+
 def test_station_capacity_wrapper_uses_shared_checker(monkeypatch) -> None:
     calls = []
 
