@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Resumable formal runner for the two-condition E7 experiment.
+"""Resumable formal runner for the three-network, two-condition E7 experiment.
 
 The scientific work remains in ``run_probe_arm``.  This module only freezes a
 contract, runs the full condition-by-stream-by-arm matrix, checkpoints each
@@ -33,12 +33,13 @@ for item in (ROOT / "solver/src", ROOT / "models/src", ROOT):
 from baselines.e7_dynamic import e7_full_mechanism_probe_20260714 as probe
 
 
-OUT = ROOT / "baselines/e7_dynamic/e7_full_mechanism_formal_20260715"
-CONTRACT_ID = "E7_FULL_MECHANISM_FORMAL_V1_TWO_RESPONSIBILITY_CONDITIONS"
+OUT = ROOT / "baselines/e7_dynamic/e7_multinetwork_formal_20260715"
+CONTRACT_ID = "E7_MULTINETWORK_FORMAL_V1_THREE_NETWORKS_TWO_CONDITIONS"
 TASK_SCHEMA = "setp.e7.formal.task.v1"
 RUN_SCHEMA = "setp.e7.formal.run.v1"
 STREAMS = (1, 2, 3, 4, 5)
 CONDITIONS = tuple(probe.CONDITIONS)
+NETWORKS = tuple(probe.NETWORKS)
 ARMS = tuple(probe.ARMS)
 DEFAULT_WORKERS = 6
 ALL_STAGES_SENTINEL = 10_000
@@ -167,15 +168,17 @@ def build_contract(evaluations: int) -> dict[str, Any]:
     }
     input_hashes: dict[str, str] = {}
     condition_inputs: dict[str, Any] = {}
-    for condition in CONDITIONS:
-        sources, profiles = probe._sources_for_day(condition)
+    for network in NETWORKS:
+      for condition in CONDITIONS:
+        sources, profiles = probe._sources_for_day(condition, network)
         input_hashes[str(sources["solution_path"].relative_to(ROOT))] = sha256(
             sources["solution_path"]
         )
         input_hashes[str(sources["certificate_path"].relative_to(ROOT))] = sha256(
             sources["certificate_path"]
         )
-        condition_inputs[condition] = {
+        condition_inputs[f"{network}__{condition}"] = {
+            "network": network,
             "case": sources["case"],
             "instance_sha256": canonical_sha256(
                 _serializable(sources["bundle"].instance)
@@ -185,7 +188,7 @@ def build_contract(evaluations: int) -> dict[str, Any]:
         }
         for stream in STREAMS:
             _events, _owners, event_path, owner_path = probe._stream_for_condition(
-                stream, condition
+                stream, condition, network
             )
             input_hashes[str(event_path.relative_to(ROOT))] = sha256(event_path)
             input_hashes[str(owner_path.relative_to(ROOT))] = sha256(owner_path)
@@ -195,6 +198,7 @@ def build_contract(evaluations: int) -> dict[str, Any]:
         "schema": RUN_SCHEMA,
         "contract_id": CONTRACT_ID,
         "conditions": list(CONDITIONS),
+        "networks": list(NETWORKS),
         "streams": list(STREAMS),
         "arms": list(ARMS),
         "evaluations_per_search_call": int(evaluations),
@@ -260,20 +264,22 @@ def ensure_contract(
     return stored
 
 
-def task_id(condition: str, stream: int, arm: str) -> str:
-    return f"{condition}__stream{stream}__{arm}"
+def task_id(network: str, condition: str, stream: int, arm: str) -> str:
+    return f"{network}__{condition}__stream{stream}__{arm}"
 
 
 def _expected_tasks(evaluations: int) -> list[dict[str, Any]]:
     return [
         {
-            "task_id": task_id(condition, stream, arm),
+            "task_id": task_id(network, condition, stream, arm),
+            "network": network,
             "condition": condition,
             "stream": stream,
             "arm": arm,
             "evaluations": evaluations,
             "max_stages": ALL_STAGES_SENTINEL,
         }
+        for network in NETWORKS
         for condition in CONDITIONS
         for stream in STREAMS
         for arm in ARMS
@@ -291,6 +297,7 @@ def _run_task(task: Mapping[str, Any]) -> dict[str, Any]:
         stream_seed=int(task["stream"]),
         evaluations=int(task["evaluations"]),
         max_stages=int(task["max_stages"]),
+        network=str(task["network"]),
     )
 
 
@@ -299,6 +306,7 @@ def validate_task_payload(
 ) -> list[str]:
     failures: list[str] = []
     identity = {
+        "network": task["network"],
         "arm": task["arm"],
         "responsibility_condition": task["condition"],
         "stream_seed": task["stream"],
@@ -329,15 +337,16 @@ def validate_task_payload(
             failures.append(f"{prefix}: condition differs")
         if int(row.get("stream_seed", -1)) != int(task["stream"]):
             failures.append(f"{prefix}: stream differs")
-        if int(row.get("main_evaluations", -1)) != evaluations:
+        expected_main = 1 if task["arm"] == "simple_insertion" else evaluations
+        if int(row.get("main_evaluations", -1)) != expected_main:
             failures.append(f"{prefix}: main budget differs")
         if int(row.get("shadow_evaluations", -1)) != evaluations:
             failures.append(f"{prefix}: comparison budget differs")
-        if int(row.get("main_search_seed", -1)) == int(
+        if task["arm"] != "simple_insertion" and int(row.get("main_search_seed", -1)) == int(
             row.get("shadow_search_seed", -1)
         ):
             failures.append(f"{prefix}: search call identities are not distinct")
-        if row.get("second_start_sha256") != row.get("baseline_output_sha256"):
+        if task["arm"] != "simple_insertion" and row.get("second_start_sha256") != row.get("baseline_output_sha256"):
             failures.append(f"{prefix}: paired searches did not share one start")
         if row.get("customer_accounting_pass") is not True:
             failures.append(f"{prefix}: customer accounting failed")
@@ -347,7 +356,7 @@ def validate_task_payload(
             row.get("cross_site_customer_count", -1)
         ) != 0:
             failures.append(f"{prefix}: no-cooperation arm crossed depots")
-        if task["arm"] in {"full", "carbon_blind"} and float(
+        if task["arm"] == "full" and float(
             row.get("minimum_profit_margin", -math.inf)
         ) < -TOL:
             failures.append(f"{prefix}: participation floor failed")
@@ -516,13 +525,15 @@ def validate_complete_matrix(
 ) -> list[str]:
     failures: list[str] = []
     expected = {
-        (condition, stream, arm)
+        (network, condition, stream, arm)
+        for network in NETWORKS
         for condition in CONDITIONS
         for stream in STREAMS
         for arm in ARMS
     }
     observed = {
         (
+            str(payload.get("network")),
             str(payload.get("responsibility_condition")),
             int(payload.get("stream_seed", -1)),
             str(payload.get("arm")),
@@ -531,14 +542,16 @@ def validate_complete_matrix(
     }
     if observed != expected or len(payloads) != len(expected):
         failures.append("condition-by-stream-by-arm matrix is incomplete")
-    by_condition_stream: dict[tuple[str, int], list[Mapping[str, Any]]] = {}
+    by_network_condition_stream: dict[tuple[str, str, int], list[Mapping[str, Any]]] = {}
     for payload in payloads:
         task = {
             "task_id": task_id(
+                str(payload.get("network")),
                 str(payload.get("responsibility_condition")),
                 int(payload.get("stream_seed", -1)),
                 str(payload.get("arm")),
             ),
+            "network": payload.get("network"),
             "condition": payload.get("responsibility_condition"),
             "stream": payload.get("stream_seed"),
             "arm": payload.get("arm"),
@@ -546,11 +559,12 @@ def validate_complete_matrix(
         }
         failures.extend(validate_task_payload(task, payload))
         key = (
+            str(payload.get("network")),
             str(payload.get("responsibility_condition")),
             int(payload.get("stream_seed", -1)),
         )
-        by_condition_stream.setdefault(key, []).append(payload)
-    for key, group in by_condition_stream.items():
+        by_network_condition_stream.setdefault(key, []).append(payload)
+    for key, group in by_network_condition_stream.items():
         route_hashes = {
             str(payload.get("initial_timing", {}).get("route_sha256"))
             for payload in group
@@ -571,14 +585,18 @@ def validate_complete_matrix(
             failures.append(f"{key}: arms did not share frozen inputs")
         if len(stage_counts) != 1:
             failures.append(f"{key}: arms completed different stage counts")
-    for stream in STREAMS:
+    for network in NETWORKS:
+      for stream in STREAMS:
         event_hashes = {
             str(payload.get("event_sha256"))
             for payload in payloads
+            if payload.get("network") == network
             if int(payload.get("stream_seed", -1)) == stream
         }
         if len(event_hashes) != 1:
-            failures.append(f"stream {stream}: conditions did not share one event stream")
+            failures.append(
+                f"{network} stream {stream}: conditions did not share one event stream"
+            )
     return sorted(set(failures))
 
 
@@ -593,6 +611,7 @@ def build_session_summaries(
         depot_profit = {str(key): float(value) for key, value in final["depot_profit"].items()}
         rows.append(
             {
+                "network": payload["network"],
                 "responsibility_condition": payload["responsibility_condition"],
                 "stream_seed": int(payload["stream_seed"]),
                 "arm": payload["arm"],
@@ -626,11 +645,13 @@ def build_session_summaries(
                 ),
             }
         )
+    network_order = {value: index for index, value in enumerate(NETWORKS)}
     order = {value: index for index, value in enumerate(CONDITIONS)}
     arm_order = {value: index for index, value in enumerate(ARMS)}
     return sorted(
         rows,
         key=lambda row: (
+            network_order[str(row["network"])],
             order[str(row["responsibility_condition"])],
             int(row["stream_seed"]),
             arm_order[str(row["arm"])],
@@ -641,17 +662,22 @@ def build_session_summaries(
 def build_group_summaries(
     session_rows: Sequence[Mapping[str, Any]],
 ) -> list[dict[str, Any]]:
-    groups: dict[tuple[str, str], list[Mapping[str, Any]]] = {}
+    groups: dict[tuple[str, str, str], list[Mapping[str, Any]]] = {}
     for row in session_rows:
-        key = (str(row["responsibility_condition"]), str(row["arm"]))
+        key = (
+            str(row["network"]),
+            str(row["responsibility_condition"]),
+            str(row["arm"]),
+        )
         groups.setdefault(key, []).append(row)
     summaries: list[dict[str, Any]] = []
-    for condition in CONDITIONS:
+    for network in NETWORKS:
+      for condition in CONDITIONS:
         for arm in ARMS:
-            rows = groups.get((condition, arm), [])
+            rows = groups.get((network, condition, arm), [])
             if len(rows) != len(STREAMS):
                 raise TaskCheckpointError(
-                    f"group {(condition, arm)} does not contain all streams"
+                    f"group {(network, condition, arm)} does not contain all streams"
                 )
             profits = [float(row["full_day_net_profit"]) for row in rows]
             emissions = [
@@ -665,6 +691,7 @@ def build_group_summaries(
             ]
             summaries.append(
                 {
+                    "network": network,
                     "responsibility_condition": condition,
                     "arm": arm,
                     "stream_count": len(rows),
@@ -692,6 +719,7 @@ def build_policy_comparisons(
 ) -> list[dict[str, Any]]:
     indexed = {
         (
+            str(row["network"]),
             str(row["responsibility_condition"]),
             int(row["stream_seed"]),
             str(row["arm"]),
@@ -699,12 +727,13 @@ def build_policy_comparisons(
         for row in session_rows
     }
     comparisons: list[dict[str, Any]] = []
-    for condition in CONDITIONS:
+    for network in NETWORKS:
+      for condition in CONDITIONS:
         for stream in STREAMS:
-            full = indexed[(condition, stream, "full")]
-            independent = indexed[(condition, stream, "no_cooperation")]
-            blind = indexed[(condition, stream, "carbon_blind")]
-            unconstrained = indexed[(condition, stream, "no_participation")]
+            full = indexed[(network, condition, stream, "full")]
+            independent = indexed[(network, condition, stream, "no_cooperation")]
+            simple = indexed[(network, condition, stream, "simple_insertion")]
+            unconstrained = indexed[(network, condition, stream, "no_participation")]
             full_depots = json.loads(str(full["full_day_depot_profit_json"]))
             independent_depots = json.loads(
                 str(independent["full_day_depot_profit_json"])
@@ -733,6 +762,7 @@ def build_policy_comparisons(
                 for depot in depot_ids
             }
             rows = {
+                "network": network,
                 "responsibility_condition": condition,
                 "stream_seed": stream,
                 "full_minus_no_cooperation_net_profit": float(
@@ -760,22 +790,22 @@ def build_policy_comparisons(
                 "full_day_participation_floor_met": all(
                     value >= -TOL for value in participation_margins.values()
                 ),
-                "carbon_blind_minus_full_actual_total_emissions_kg": float(
-                    blind["full_day_actual_total_emissions_kg"]
+                "simple_insertion_minus_full_actual_total_emissions_kg": float(
+                    simple["full_day_actual_total_emissions_kg"]
                 )
                 - float(full["full_day_actual_total_emissions_kg"]),
-                "carbon_blind_minus_full_predicted_total_emissions_kg": float(
-                    blind["full_day_predicted_total_emissions_kg"]
+                "simple_insertion_minus_full_predicted_total_emissions_kg": float(
+                    simple["full_day_predicted_total_emissions_kg"]
                 )
                 - float(full["full_day_predicted_total_emissions_kg"]),
-                "full_minus_carbon_blind_completed_customer_count": int(
+                "full_minus_simple_insertion_completed_customer_count": int(
                     full["full_day_completed_customer_count"]
                 )
-                - int(blind["full_day_completed_customer_count"]),
-                "full_minus_carbon_blind_completed_demand": float(
+                - int(simple["full_day_completed_customer_count"]),
+                "full_minus_simple_insertion_completed_demand": float(
                     full["full_day_completed_demand"]
                 )
-                - float(blind["full_day_completed_demand"]),
+                - float(simple["full_day_completed_demand"]),
                 "full_minus_no_participation_system_cost": float(
                     full["full_day_total_cost"]
                 )
@@ -812,23 +842,26 @@ def build_comparison_summaries(
 ) -> list[dict[str, Any]]:
     numeric_fields = (
         "full_minus_no_cooperation_net_profit",
-        "carbon_blind_minus_full_actual_total_emissions_kg",
-        "carbon_blind_minus_full_predicted_total_emissions_kg",
+        "simple_insertion_minus_full_actual_total_emissions_kg",
+        "simple_insertion_minus_full_predicted_total_emissions_kg",
         "full_minus_no_participation_system_cost",
         "full_minus_no_participation_net_profit",
     )
     result: list[dict[str, Any]] = []
-    for condition in CONDITIONS:
+    for network in NETWORKS:
+      for condition in CONDITIONS:
         rows = [
             row
             for row in comparisons
+            if row["network"] == network
             if row["responsibility_condition"] == condition
         ]
         if len(rows) != len(STREAMS):
             raise TaskCheckpointError(
-                f"paired comparison for {condition} does not contain all streams"
+                f"paired comparison for {(network, condition)} does not contain all streams"
             )
         summary: dict[str, Any] = {
+            "network": network,
             "responsibility_condition": condition,
             "stream_count": len(rows),
             "full_day_participation_floor_met_count": sum(
@@ -911,6 +944,7 @@ def write_final_evidence(
         "evaluations_per_search_call": evaluations,
         "task_count": len(payloads),
         "stage_row_count": len(stage_rows),
+        "networks": list(NETWORKS),
         "conditions": list(CONDITIONS),
         "streams": list(STREAMS),
         "arms": list(ARMS),
@@ -930,21 +964,21 @@ def write_final_evidence(
         "verdict": verdict,
         "failures": failures,
         "mechanical_checks": {
-            "expected_task_count": len(CONDITIONS) * len(STREAMS) * len(ARMS),
+            "expected_task_count": len(NETWORKS) * len(CONDITIONS) * len(STREAMS) * len(ARMS),
             "observed_task_count": len(payloads),
             "all_conditions_complete": {
                 condition: sum(
                     payload["responsibility_condition"] == condition
                     for payload in payloads
                 )
-                == len(STREAMS) * len(ARMS)
+                == len(NETWORKS) * len(STREAMS) * len(ARMS)
                 for condition in CONDITIONS
             },
             "all_streams_complete": {
                 str(stream): sum(
                     int(payload["stream_seed"]) == stream for payload in payloads
                 )
-                == len(CONDITIONS) * len(ARMS)
+                == len(NETWORKS) * len(CONDITIONS) * len(ARMS)
                 for stream in STREAMS
             },
             "equal_budget_and_shared_start_pass": not any(
@@ -977,9 +1011,9 @@ def write_final_evidence(
         "",
         f"运行状态：`{verdict}`。",
         "",
-        f"两种客户责任情形、五条冻结订单流和四组方案共{len(payloads)}个任务。每个阶段先形成同状态、禁跨场的继续经营方案，再用相同次数比较被检验方案；全部任务均原样进入汇总，不按结果方向筛选。",
+        f"三个网络、两种客户责任情形、五条冻结订单流和四组方案共{len(payloads)}个任务。除顺序插单基线仅保留一次可行性核验外，每个阶段先形成同状态、禁跨场的继续经营方案，再用相同次数比较被检验方案；全部任务均原样进入汇总，不按结果方向筛选。",
         "",
-        "`session_summary.csv`逐订单流报告全日经营净收益、按预测和实际碳强度结算的总排放、阶段内最低双方收益比、完成客户与货量以及全日累计跨场客户数；`summary_by_condition_arm.csv`按客户责任情形和方案汇总五条订单流。`paired_policy_comparisons.csv`逐情形、逐订单流给出完整方案相对禁止合作的全日净收益差、相对有空即充的预测与实际总排放差，以及相对不设参与底线方案的系统成本和两场收益差。",
+        "`session_summary.csv`逐网络、逐订单流报告全日经营净收益、总排放、阶段内最低双方收益比、完成客户与货量以及全日累计跨场客户数；`summary_by_condition_arm.csv`按网络、责任情形和方案汇总五条订单流。`paired_policy_comparisons.csv`逐网络、逐情形、逐订单流给出完整方案相对禁止合作、顺序插单和不设参与底线方案的差值。低碳充电与有空即充的28日同路线零搜索核算另由独立证据包报告。",
         "",
         "相邻阶段的未来计划重叠，阶段充电差值不累加为全日减排。动态取消可能使最终完成工作量和收入不同，因此经济比较使用经营净收益，并同时保留收入、成本、完成客户数和完成货量。全日双方参与情况直接把完整方案与同情形、同订单流的禁止合作方案逐场比较，不以阶段内同状态保底替代。",
         "",

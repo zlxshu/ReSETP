@@ -52,12 +52,20 @@ OPERATING_DAY = date(2025, 11, 13)
 STREAM_SEED = 1
 MAX_STAGES = 2
 DEFAULT_EVALUATIONS = 8
-ARMS = ("full", "no_cooperation", "carbon_blind", "no_participation")
+ARMS = ("full", "no_cooperation", "no_participation", "simple_insertion")
 FULL_DAY_EXECUTION_SCHEMA = "setp.e7.full_day_execution.v1"
 CONDITIONS = ("geographic", "historical_mixed")
 RESPONSIBILITY_ROOT = (
     ROOT / "baselines/e7_dynamic/e7_responsibility_scenario_design_20260714"
 )
+MULTINETWORK_EVENT_ROOT = (
+    ROOT / "baselines/e7_dynamic/e7_multinetwork_event_streams_20260715"
+)
+NETWORKS = {
+    "N114": "L-main-threeshift-50c-01",
+    "N221": "L-main-threeshift-100c-01",
+    "N322": "L-main-threeshift-150c-01",
+}
 TOL = 1e-6
 SOURCE_FILES = (
     Path(__file__).resolve(),
@@ -241,25 +249,36 @@ def _profiles() -> dict[int, list[dict[str, Any]]]:
 
 def _sources_for_day(
     condition: str,
+    network: str = "N221",
 ) -> tuple[dict[str, Any], dict[int, list[dict[str, Any]]]]:
     if condition not in CONDITIONS:
         raise ValueError(f"unknown responsibility condition {condition}")
-    sources = dict(base.load_arm("cooperative"))
+    if network not in NETWORKS:
+        raise ValueError(f"unknown E7 network {network}")
+    instance_id = NETWORKS[network]
+    bundle_dir = (
+        ROOT
+        / "baselines/e3_ablation/e3_paired_cost_formal_v2_20260713/assets"
+        / instance_id
+        / "bundle"
+    )
+    bundle = base.load_search_bundle(bundle_dir)
     case_condition = "mixed" if condition == "historical_mixed" else "geographic"
-    case = f"L-main-threeshift-100c-01__{case_condition}__seed1__independent"
+    case = f"{instance_id}__{case_condition}__seed1__independent"
     solution_path = base.E6_ROOT / "solutions" / f"{case}.json"
     certificate_path = base.E6_ROOT / "certificates" / f"{case}.json"
-    sources.update(
-        {
-            "case": case,
-            "solution": base.solution_from_dict(
-                json.loads(solution_path.read_text(encoding="utf-8"))
-            ),
-            "certificate": base.p2.load_certificate(certificate_path),
-            "solution_path": solution_path,
-            "certificate_path": certificate_path,
-        }
-    )
+    sources = {
+        "case": case,
+        "bundle": bundle,
+        "prices": base.legacy.prices_for("M1", 0.0),
+        "solution": base.solution_from_dict(
+            json.loads(solution_path.read_text(encoding="utf-8"))
+        ),
+        "certificate": base.p2.load_certificate(certificate_path),
+        "solution_path": solution_path,
+        "certificate_path": certificate_path,
+        "instance_path": bundle_dir / "instance.json",
+    }
     profiles = _profiles()
     bundle = sources["bundle"]
     sources["bundle"] = SearchBundle(
@@ -273,12 +292,17 @@ def _sources_for_day(
 def _stream_for_condition(
     stream_seed: int,
     condition: str,
+    network: str = "N221",
 ) -> tuple[list[Any], dict[str, str], Path, Path]:
-    events, _nearest_owners, event_path, _nearest_path = base.load_stream(stream_seed)
-    owner_path = (
-        RESPONSIBILITY_ROOT
-        / "ownership_maps"
-        / f"stream_seed{stream_seed}__{condition}.csv"
+    if network not in NETWORKS:
+        raise ValueError(f"unknown E7 network {network}")
+    event_path = MULTINETWORK_EVENT_ROOT / network / f"stream_seed{stream_seed}.events.json"
+    events = [
+        base.DynamicEvent(**row)
+        for row in json.loads(event_path.read_text(encoding="utf-8"))
+    ]
+    owner_path = MULTINETWORK_EVENT_ROOT / network / (
+        f"stream_seed{stream_seed}__{condition}.owners.csv"
     )
     if not owner_path.is_file():
         raise FileNotFoundError(
@@ -292,6 +316,35 @@ def _stream_for_condition(
     if len(owners) != len({*owners}) or set(owners.values()) - {"D0", "D1"}:
         raise RuntimeError(f"invalid responsibility map {owner_path}")
     return events, owners, event_path, owner_path
+
+
+def _validated_multinetwork_trigger_batches(
+    network: str,
+    stream_seed: int,
+    events: Sequence[Any],
+) -> list[dict[str, Any]]:
+    batches = [
+        batch
+        for batch in base._build_trigger_batches(list(events), base.ROLLING_PARAMETERS)
+        if batch["events"]
+    ]
+    observed = {
+        str(event.event_id): float(batch["trigger_time"])
+        for batch in batches
+        for event in batch["events"]
+    }
+    expected: dict[str, float] = {}
+    with (MULTINETWORK_EVENT_ROOT / "raw_runs.csv").open(
+        newline="", encoding="utf-8"
+    ) as handle:
+        for row in csv.DictReader(handle):
+            if row["network"] == network and int(row["seed"]) == stream_seed:
+                expected[str(row["event_id"])] = float(row["trigger_second"])
+    if observed != expected:
+        raise RuntimeError(
+            f"{network} stream {stream_seed} trigger contract differs"
+        )
+    return batches
 
 
 def _charging_emissions_kg(
@@ -383,7 +436,7 @@ def _initial_plan(
     sources: Mapping[str, Any],
     profiles: Mapping[int, list[dict[str, Any]]],
 ) -> tuple[Solution, Any, dict[str, Any]]:
-    strategy = "naive" if arm == "carbon_blind" else "aware"
+    strategy = "aware"
     original_solution = sources["solution"]
     original_certificate = sources["certificate"]
     immediate = reschedule_between_trip_charging(
@@ -676,7 +729,26 @@ def _controlled_stage(
         )
         return _meets_participation_floor(candidate, baseline_future_profit)
 
-    if arm == "no_cooperation":
+    if arm == "simple_insertion":
+        # ``build_open_stage`` has already applied the trigger batch in stable
+        # event order and constructed feasible singleton/greedy insertions.
+        # One validation evaluation is retained for accounting, while the
+        # always-false best gate prevents an ALNS candidate from replacing that
+        # construction baseline.
+        selected = base.search_stage(
+            construction,
+            sources,
+            cut,
+            owners,
+            committed_customers,
+            trigger=trigger,
+            seed=seed * 10 + 2,
+            evaluations=1,
+            allow_cross_depot=False,
+            stage_new_customer_ids=stage_new_customer_ids,
+            candidate_best_gate=lambda _solution, _certificate, _cost: False,
+        )
+    elif arm == "no_cooperation":
         selected = base.search_stage(
             second_start,
             sources,
@@ -706,7 +778,7 @@ def _controlled_stage(
                 None if arm == "no_participation" else participation_gate
             ),
         )
-    if selected["future_cost"] > baseline["future_cost"] + TOL:
+    if arm != "simple_insertion" and selected["future_cost"] > baseline["future_cost"] + TOL:
         raise RuntimeError("second search lost the same-state cost fallback")
     paired_existing_fields = (
         "existing_cross_operator_id",
@@ -714,12 +786,14 @@ def _controlled_stage(
         "existing_cross_scheduled_call_count",
         "existing_cross_actual_call_count",
     )
-    if any(selected[field] != baseline[field] for field in paired_existing_fields):
+    if arm != "simple_insertion" and any(
+        selected[field] != baseline[field] for field in paired_existing_fields
+    ):
         raise RuntimeError(
             "paired searches did not use the same existing-customer call schedule"
         )
 
-    strategy = "naive" if arm == "carbon_blind" else "aware"
+    strategy = "aware"
     timing_variant = _timing_variant_for_strategy(strategy)
     baseline_timing = _dynamic_timing_pair(
         baseline["solution"],
@@ -779,7 +853,7 @@ def _controlled_stage(
         depot: selected_future_profit[depot] / value
         for depot, value in baseline_timed_profit.items()
     }
-    if arm in {"full", "carbon_blind"} and any(
+    if arm == "full" and any(
         value < -TOL for value in margins.values()
     ):
         raise RuntimeError("released solution violated the same-state participation floor")
@@ -826,15 +900,17 @@ def run_probe_arm(
     stream_seed: int,
     evaluations: int,
     max_stages: int,
+    network: str = "N221",
 ) -> dict[str, Any]:
     if arm not in ARMS:
         raise ValueError(f"unknown arm {arm}")
-    sources, profiles = _sources_for_day(condition)
+    sources, profiles = _sources_for_day(condition, network)
     events, owners, event_path, owner_path = _stream_for_condition(
         stream_seed,
         condition,
+        network,
     )
-    all_batches = base._validated_trigger_batches(stream_seed, events)
+    all_batches = _validated_multinetwork_trigger_batches(network, stream_seed, events)
     batches = all_batches[:max_stages]
     current_solution, current_certificate, initial_timing = _initial_plan(
         arm, sources, profiles
@@ -963,6 +1039,7 @@ def run_probe_arm(
         rows.append(
             {
                 "arm": arm,
+                "network": network,
                 "responsibility_condition": condition,
                 "stream_seed": stream_seed,
                 "stage": stage_index,
@@ -1122,6 +1199,7 @@ def run_probe_arm(
     )
     return {
         "arm": arm,
+        "network": network,
         "responsibility_condition": condition,
         "stream_seed": stream_seed,
         "available_stages": len(all_batches),

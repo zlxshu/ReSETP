@@ -8,9 +8,10 @@ import pytest
 from baselines.e7_dynamic import e7_formal_resumable_runner_20260715 as runner
 
 
-def _task(condition: str, stream: int, arm: str, evaluations: int = 4):
+def _task(condition: str, stream: int, arm: str, evaluations: int = 4, network: str = "N114"):
     return {
-        "task_id": runner.task_id(condition, stream, arm),
+        "task_id": runner.task_id(network, condition, stream, arm),
+        "network": network,
         "condition": condition,
         "stream": stream,
         "arm": arm,
@@ -19,16 +20,17 @@ def _task(condition: str, stream: int, arm: str, evaluations: int = 4):
     }
 
 
-def _payload(condition: str, stream: int, arm: str, evaluations: int = 4):
+def _payload(condition: str, stream: int, arm: str, evaluations: int = 4, network: str = "N114"):
     rows = []
     for stage in (1, 2):
         rows.append(
             {
                 "arm": arm,
+                "network": network,
                 "responsibility_condition": condition,
                 "stream_seed": stream,
                 "stage": stage,
-                "main_evaluations": evaluations,
+                "main_evaluations": 1 if arm == "simple_insertion" else evaluations,
                 "shadow_evaluations": evaluations,
                 "main_search_seed": stream * 100 + stage * 2,
                 "shadow_search_seed": stream * 100 + stage * 2 - 1,
@@ -43,6 +45,7 @@ def _payload(condition: str, stream: int, arm: str, evaluations: int = 4):
             }
         )
     return {
+        "network": network,
         "arm": arm,
         "responsibility_condition": condition,
         "stream_seed": stream,
@@ -50,12 +53,12 @@ def _payload(condition: str, stream: int, arm: str, evaluations: int = 4):
         "stages": 2,
         "rows": rows,
         "initial_timing": {
-            "route_sha256": f"routes-{condition}-{stream}",
-            "energy_sha256": f"energy-{condition}-{stream}",
+            "route_sha256": f"routes-{network}-{condition}-{stream}",
+            "energy_sha256": f"energy-{network}-{condition}-{stream}",
             "predicted_charging_saving_kg": 0.1,
         },
-        "event_sha256": f"event-{stream}",
-        "owner_sha256": f"owner-{condition}-{stream}",
+        "event_sha256": f"event-{network}-{stream}",
+        "owner_sha256": f"owner-{network}-{condition}-{stream}",
         "final_running": {
             "total_revenue": 200.0 + stream,
             "total_cost": 100.0 + stream,
@@ -74,14 +77,15 @@ def _payload(condition: str, stream: int, arm: str, evaluations: int = 4):
             if arm == "no_cooperation"
             else ["C2"],
             "cross_site_customer_count": 0 if arm == "no_cooperation" else 1,
-            "solution_sha256": f"full-day-{condition}-{stream}-{arm}",
+            "solution_sha256": f"full-day-{network}-{condition}-{stream}-{arm}",
         },
     }
 
 
 def _matrix(evaluations: int = 4):
     return [
-        _payload(condition, stream, arm, evaluations)
+        _payload(condition, stream, arm, evaluations, network)
+        for network in runner.NETWORKS
         for condition in runner.CONDITIONS
         for stream in runner.STREAMS
         for arm in runner.ARMS
@@ -160,12 +164,13 @@ def test_formal_summaries_keep_all_streams_and_use_final_running_ledgers() -> No
     sessions = runner.build_session_summaries(_matrix())
     groups = runner.build_group_summaries(sessions)
 
-    assert len(sessions) == 40
-    assert len(groups) == 8
+    assert len(sessions) == 120
+    assert len(groups) == 24
     geographic_full = next(
         row
         for row in groups
         if row["responsibility_condition"] == "geographic"
+        and row["network"] == "N114"
         and row["arm"] == "full"
     )
     assert geographic_full["stream_count"] == 5
@@ -180,15 +185,16 @@ def test_policy_comparisons_are_paired_within_condition_and_stream() -> None:
     sessions = runner.build_session_summaries(_matrix())
     comparisons = runner.build_policy_comparisons(sessions)
 
-    assert len(comparisons) == 10
+    assert len(comparisons) == 30
     row = next(
         item
         for item in comparisons
         if item["responsibility_condition"] == "historical_mixed"
+        and item["network"] == "N114"
         and item["stream_seed"] == 3
     )
     assert row["full_minus_no_cooperation_net_profit"] == pytest.approx(0.0)
-    assert row["carbon_blind_minus_full_actual_total_emissions_kg"] == pytest.approx(
+    assert row["simple_insertion_minus_full_actual_total_emissions_kg"] == pytest.approx(
         0.0
     )
     assert row["full_day_participation_floor_met"] is True
