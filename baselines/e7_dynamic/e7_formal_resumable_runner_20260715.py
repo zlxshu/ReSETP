@@ -427,6 +427,9 @@ def validate_task_payload(
         "cross_site_customer_ids",
         "cross_site_customer_count",
         "solution_sha256",
+        "charging_window_schema",
+        "charging_window_count",
+        "charging_windows_sha256",
     }
     if not isinstance(execution, Mapping) or not required_execution.issubset(execution):
         failures.append(
@@ -454,6 +457,7 @@ def validate_task_payload(
             failures.append(f"{task['task_id']}: completed demand is invalid")
     full_day_solution = payload.get("full_day_solution")
     full_day_nodes = payload.get("full_day_instance_nodes")
+    charging_windows = payload.get("full_day_charging_windows")
     if not isinstance(full_day_solution, Mapping):
         failures.append(f"{task['task_id']}: full-day replay solution is missing")
     elif isinstance(execution, Mapping) and execution.get("solution_sha256") != canonical_sha256(
@@ -462,6 +466,41 @@ def validate_task_payload(
         failures.append(f"{task['task_id']}: full-day replay solution hash differs")
     if not isinstance(full_day_nodes, list) or not full_day_nodes:
         failures.append(f"{task['task_id']}: full-day replay node set is missing")
+    if not isinstance(charging_windows, list):
+        failures.append(f"{task['task_id']}: charging-window witnesses are missing")
+    else:
+        if isinstance(execution, Mapping):
+            if int(execution.get("charging_window_count", -1)) != len(charging_windows):
+                failures.append(f"{task['task_id']}: charging-window count differs")
+            if execution.get("charging_windows_sha256") != canonical_sha256(
+                charging_windows
+            ):
+                failures.append(f"{task['task_id']}: charging-window hash differs")
+        for index, witness in enumerate(charging_windows):
+            prefix = f"{task['task_id']}/charging-window-{index}"
+            required = {
+                "vehicle_id",
+                "station_id",
+                "energy_kwh",
+                "occupancy_minutes",
+                "charge_day_offset",
+                "observed_start_second",
+                "earliest_start_second",
+                "latest_start_second",
+                "lock_state",
+            }
+            if not isinstance(witness, Mapping) or not required.issubset(witness):
+                failures.append(f"{prefix}: witness is incomplete")
+                continue
+            earliest = float(witness["earliest_start_second"])
+            observed = float(witness["observed_start_second"])
+            latest = float(witness["latest_start_second"])
+            if earliest > observed + TOL or observed > latest + TOL:
+                failures.append(f"{prefix}: observed start is outside the window")
+            if float(witness["energy_kwh"]) < -TOL or float(
+                witness["occupancy_minutes"]
+            ) < -TOL:
+                failures.append(f"{prefix}: charging quantity is invalid")
     return failures
 
 

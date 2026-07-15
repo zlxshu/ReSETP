@@ -84,9 +84,13 @@ def _payload(condition: str, stream: int, arm: str, evaluations: int = 4, networ
             else ["C2"],
             "cross_site_customer_count": 0 if arm == "no_cooperation" else 1,
             "solution_sha256": runner.canonical_sha256(full_day_solution),
+            "charging_window_schema": "setp.e7.full_day_charging_windows.v1",
+            "charging_window_count": 0,
+            "charging_windows_sha256": runner.canonical_sha256([]),
         },
         "full_day_solution": full_day_solution,
         "full_day_instance_nodes": [{"node_id": "D0", "node_type": "d"}],
+        "full_day_charging_windows": [],
     }
 
 

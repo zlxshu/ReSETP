@@ -11,7 +11,7 @@ forecast-aware schedules.
 from __future__ import annotations
 
 from collections import defaultdict
-from dataclasses import asdict
+from dataclasses import asdict, replace
 from datetime import datetime, timezone
 from pathlib import Path
 import csv
@@ -30,11 +30,9 @@ for item in (ROOT / "solver/src", ROOT / "models/src", ROOT):
 from baselines.e4_e5 import e4_multiday_forecast_probe_20260713 as e4
 from baselines.e7_dynamic import e7_full_mechanism_probe_20260714 as full
 from setp_solver.instance_loader import Node
-from setp_solver.search.multitrip_schedule import (
-    prepare_multitrip_solution,
-    reschedule_between_trip_charging,
-    validate_multitrip_certificate,
-)
+from setp_solver.search.dynamic import _rebuild_instance_matrix
+from setp_solver.search.multitrip_schedule import _lowest_carbon_gap_start
+from setp_solver.solution import ChargingAction
 
 
 FORMAL = ROOT / "baselines/e7_dynamic/e7_multinetwork_formal_20260715"
@@ -118,16 +116,30 @@ def completed_tasks() -> tuple[
             continue
         if payload.get("execution_status") != "PASS":
             raise RuntimeError(f"unknown formal task status: {path.name}")
-        if "full_day_solution" not in payload or "full_day_instance_nodes" not in payload:
+        if (
+            "full_day_solution" not in payload
+            or "full_day_instance_nodes" not in payload
+            or "full_day_charging_windows" not in payload
+        ):
             raise RuntimeError(f"formal task lacks zero-search replay payload: {path.name}")
         if canonical_sha256(payload) != wrapper["payload_sha256"]:
             raise RuntimeError(f"formal task payload hash mismatch: {path.name}")
-        rows.append((path, wrapper))
+        if payload.get("arm") == "full":
+            rows.append((path, wrapper))
+    if len(rows) != 30:
+        raise RuntimeError(f"expected 30 executable full-mechanism tasks, found {len(rows)}")
     return rows, failures
 
 
-def charging_kwh(solution: Any) -> float:
-    return sum(float(action.energy_kwh) for action in solution.charging_actions)
+def action_from_witness(witness: dict[str, Any], start: float) -> ChargingAction:
+    return ChargingAction(
+        vehicle_id=str(witness["vehicle_id"]),
+        station_id=str(witness["station_id"]),
+        energy_kwh=float(witness["energy_kwh"]),
+        occupancy_minutes=float(witness["occupancy_minutes"]),
+        charge_start_second=float(start),
+        charge_day_offset=int(witness["charge_day_offset"]),
+    )
 
 
 def main() -> int:
@@ -155,53 +167,64 @@ def main() -> int:
         sources, _ = full._sources_for_day(condition, network)
         _, owners, _, _ = full._stream_for_condition(stream, condition, network)
         nodes = [Node(**row) for row in payload["full_day_instance_nodes"]]
-        instance = full.base.gate._rebuild_instance_matrix(sources["bundle"].instance, nodes)
+        instance = _rebuild_instance_matrix(sources["bundle"].instance, nodes)
         source_solution = full.base.solution_from_dict(payload["full_day_solution"])
-        prepared, certificate = prepare_multitrip_solution(
-            source_solution,
-            instance,
-            sources["prices"],
-        )
-        validate_multitrip_certificate(certificate, list(prepared.routes), sources["prices"])
         source_route_hash = full.route_hash(source_solution)
         source_energy_hash = full.energy_hash(source_solution)
-        if full.route_hash(prepared) != source_route_hash:
-            raise RuntimeError(f"preparation changed routes: {task['task_id']}")
-        if full.energy_hash(prepared) != source_energy_hash:
-            raise RuntimeError(f"preparation changed charging energy: {task['task_id']}")
-        ledger = full._profit_closure(prepared, instance, sources, owners)
+        witnesses = list(payload["full_day_charging_windows"])
+        if full.canonical_sha256(witnesses) != payload["full_day_execution"][
+            "charging_windows_sha256"
+        ]:
+            raise RuntimeError(f"charging-window hash mismatch: {task['task_id']}")
+        ledger = full._profit_closure(source_solution, instance, sources, owners)
         direct = float(ledger["direct_emissions_kg"])
         demand = float(payload["full_day_execution"]["completed_demand"])
 
         for day in OPERATING_DAYS:
             day_key = day.isoformat()
             profiles = profiles_by_day[day_key]
-            immediate = reschedule_between_trip_charging(
-                prepared,
-                certificate,
-                instance,
-                profiles[0],
-                strategy="naive",
-                carbon_profiles_by_day_offset=profiles,
-                intensity_field="forecast_gco2_per_kwh",
-            )
-            aware = reschedule_between_trip_charging(
-                prepared,
-                certificate,
-                instance,
-                profiles[0],
-                strategy="aware",
-                carbon_profiles_by_day_offset=profiles,
-                intensity_field="forecast_gco2_per_kwh",
-            )
-            comparison = full._timing_comparison(immediate, aware, instance, profiles)
+            immediate_actions: list[ChargingAction] = []
+            aware_actions: list[ChargingAction] = []
+            shifted = 0
+            for witness in witnesses:
+                earliest = float(witness["earliest_start_second"])
+                latest = float(witness["latest_start_second"])
+                duration = float(witness["occupancy_minutes"]) * 60.0
+                energy = float(witness["energy_kwh"])
+                day_offset = int(witness["charge_day_offset"])
+                aware_start = _lowest_carbon_gap_start(
+                    earliest,
+                    latest,
+                    duration,
+                    energy,
+                    instance,
+                    profiles[day_offset],
+                    intensity_field="forecast_gco2_per_kwh",
+                )
+                immediate_actions.append(action_from_witness(witness, earliest))
+                aware_actions.append(action_from_witness(witness, aware_start))
+                shifted += abs(aware_start - earliest) > TOL
+            immediate = replace(source_solution, charging_actions=immediate_actions)
+            aware = replace(source_solution, charging_actions=aware_actions)
             for variant in (immediate, aware):
                 if full.route_hash(variant) != source_route_hash:
                     raise RuntimeError(f"zero-search replay changed routes: {task['task_id']}")
                 if full.energy_hash(variant) != source_energy_hash:
                     raise RuntimeError(f"zero-search replay changed energy: {task['task_id']}")
-            immediate_actual = float(comparison["immediate_actual_charging_emissions_kg"])
-            aware_actual = float(comparison["aware_actual_charging_emissions_kg"])
+            immediate_predicted = full._charging_emissions_kg(
+                immediate, instance, profiles, "forecast_gco2_per_kwh"
+            )
+            aware_predicted = full._charging_emissions_kg(
+                aware, instance, profiles, "forecast_gco2_per_kwh"
+            )
+            if aware_predicted > immediate_predicted + TOL:
+                raise RuntimeError(f"forecast timing worsened prediction: {task['task_id']}")
+            immediate_actual = full._charging_emissions_kg(
+                immediate, instance, profiles, "actual_gco2_per_kwh"
+            )
+            aware_actual = full._charging_emissions_kg(
+                aware, instance, profiles, "actual_gco2_per_kwh"
+            )
             saving = immediate_actual - aware_actual
             raw_rows.append(
                 {
@@ -212,7 +235,7 @@ def main() -> int:
                     "operating_day": day_key,
                     "route_sha256": source_route_hash,
                     "energy_sha256": source_energy_hash,
-                    "charging_kwh": charging_kwh(prepared),
+                    "charging_kwh": sum(float(row["energy_kwh"]) for row in witnesses),
                     "completed_demand": demand,
                     "direct_emissions_kg": direct,
                     "immediate_actual_charging_emissions_kg": immediate_actual,
@@ -220,7 +243,7 @@ def main() -> int:
                     "actual_charging_saving_kg": saving,
                     "charging_reduction_pct": pct(saving, immediate_actual),
                     "total_operational_reduction_pct": pct(saving, direct + immediate_actual),
-                    "timing_shifted_action_count": int(comparison["timing_shifted_action_count"]),
+                    "timing_shifted_action_count": shifted,
                     "route_hash_preserved": True,
                     "energy_hash_preserved": True,
                 }
@@ -233,6 +256,8 @@ def main() -> int:
                 "route_sha256": source_route_hash,
                 "energy_sha256": source_energy_hash,
                 "node_count": len(nodes),
+                "charging_window_count": len(witnesses),
+                "charging_windows_sha256": full.canonical_sha256(witnesses),
             }
         )
 
@@ -277,7 +302,7 @@ def main() -> int:
         "formal_decision_sha256": sha256(FORMAL / "decision.json"),
         "formal_artifact_hashes_sha256": sha256(FORMAL / "artifact_hashes.json"),
         "operating_days": [day.isoformat() for day in OPERATING_DAYS],
-        "task_count": 120,
+        "formal_task_count": 120,
         "replayed_full_day_task_count": len(replay_tasks),
         "excluded_no_continuation_task_count": len(formal_failures),
         "paired_day_row_count": len(raw_rows),
@@ -290,7 +315,7 @@ def main() -> int:
     write_json(OUT / "metadata.json", metadata)
     decision = {
         "status": "PASS_E7_28DAY_ZERO_SEARCH_CHARGING_REPLAY",
-        "task_count": 120,
+        "formal_task_count": 120,
         "replayed_full_day_task_count": len(replay_tasks),
         "excluded_no_continuation_task_count": len(formal_failures),
         "excluded_formal_tasks": formal_failures,
@@ -303,8 +328,8 @@ def main() -> int:
     write_json(OUT / "decision.json", decision)
     report = (
         "# E7动态排班的28日零搜索充电重排\n\n"
-        "状态：`PASS_E7_28DAY_ZERO_SEARCH_CHARGING_REPLAY`。对三张网络、两类客户责任、"
-        f"五条冻结序列和四个机制臂中完成全日执行的{len(replay_tasks)}份方案，逐一重放28个电网日，共形成"
+        "状态：`PASS_E7_28DAY_ZERO_SEARCH_CHARGING_REPLAY`。对三张网络、两类客户责任和"
+        f"五条冻结序列中完整机制完成全日执行的{len(replay_tasks)}份方案，逐一重放28个电网日，共形成"
         f" {len(raw_rows)} 组配对结果。\n\n"
         "后处理不调用路径搜索，只在同一多趟充电可行窗口内比较有空即充与按预测碳强度择时。"
         "每组的路径哈希和充电电量哈希均保持不变；减排按实际碳强度结算。\n"

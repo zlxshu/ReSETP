@@ -54,6 +54,7 @@ MAX_STAGES = 2
 DEFAULT_EVALUATIONS = 8
 ARMS = ("full", "no_cooperation", "no_participation", "simple_insertion")
 FULL_DAY_EXECUTION_SCHEMA = "setp.e7.full_day_execution.v2"
+CHARGING_WINDOW_SCHEMA = "setp.e7.full_day_charging_windows.v1"
 CONDITIONS = ("geographic", "historical_mixed")
 RESPONSIBILITY_ROOT = (
     ROOT / "baselines/e7_dynamic/e7_responsibility_scenario_design_20260714"
@@ -256,6 +257,99 @@ def _full_day_execution_summary(
         "cross_site_customer_ids": cross_site_ids,
         "cross_site_customer_count": len(cross_site_ids),
         "solution_sha256": canonical_sha256(base.solution_to_dict(solution)),
+    }
+
+
+def _charging_window_witness(
+    action: ChargingAction,
+    certificate: Any,
+    *,
+    capture_stage: int,
+    trigger_second: float | None,
+) -> dict[str, Any]:
+    """Freeze one conservative legal timing window without rebuilding routes.
+
+    A rolling plan may charge the same future trip in more than one stage.  A
+    final merged solution therefore cannot be converted back into one static
+    multi-trip certificate.  We instead retain the certificate that was live
+    when each charging action became irreversible.  Completed actions may move
+    only inside their original gap and still finish before the trigger;
+    in-progress actions are fixed because moving them would change the battery
+    state observed at that trigger.  For an inherited trip whose predecessor is
+    outside the current certificate, the observed start is a conservative lower
+    bound rather than an invented earlier release time.
+    """
+
+    trips = list(certificate.trips)
+    current = next((trip for trip in trips if trip.route_id == action.vehicle_id), None)
+    if current is None:
+        raise RuntimeError(
+            f"charging action lacks contemporaneous trip witness: {action.vehicle_id}"
+        )
+    duration = float(action.occupancy_minutes) * 60.0
+    original = float(action.charge_start_second)
+    day_offset = int(action.charge_day_offset)
+    if day_offset == -1 and int(current.trip_index) == 1:
+        earliest = 0.0
+        latest = 86400.0 - duration
+        window_source = "pre_horizon_first_trip"
+    else:
+        previous = max(
+            (
+                trip
+                for trip in trips
+                if trip.physical_vehicle_id == current.physical_vehicle_id
+                and int(trip.trip_index) < int(current.trip_index)
+            ),
+            key=lambda trip: int(trip.trip_index),
+            default=None,
+        )
+        earliest = (
+            float(previous.return_second) if previous is not None else original
+        )
+        latest = float(current.departure_second) - duration
+        window_source = (
+            "certificate_predecessor"
+            if previous is not None
+            else "inherited_start_conservative"
+        )
+
+    lock_state = "future_after_final_stage"
+    if trigger_second is not None:
+        absolute_original = original + day_offset * 86400.0
+        absolute_end = absolute_original + duration
+        if absolute_end <= float(trigger_second) + TOL:
+            trigger_local = float(trigger_second) - day_offset * 86400.0
+            latest = min(latest, trigger_local - duration)
+            lock_state = "completed_before_trigger"
+        elif absolute_original < float(trigger_second) - TOL:
+            earliest = original
+            latest = original
+            lock_state = "in_progress_at_trigger_fixed"
+        else:
+            raise RuntimeError(
+                f"unstarted charging action was marked locked: {action.vehicle_id}"
+            )
+    if earliest > original + TOL or latest < original - TOL or latest < earliest - TOL:
+        raise RuntimeError(
+            f"charging witness excludes observed action {action.vehicle_id}: "
+            f"window=({earliest}, {latest}), observed={original}"
+        )
+    return {
+        "schema": CHARGING_WINDOW_SCHEMA,
+        "capture_stage": int(capture_stage),
+        "lock_state": lock_state,
+        "window_source": window_source,
+        "vehicle_id": action.vehicle_id,
+        "physical_vehicle_id": current.physical_vehicle_id,
+        "trip_index": int(current.trip_index),
+        "station_id": action.station_id,
+        "energy_kwh": float(action.energy_kwh),
+        "occupancy_minutes": float(action.occupancy_minutes),
+        "charge_day_offset": day_offset,
+        "observed_start_second": original,
+        "earliest_start_second": float(earliest),
+        "latest_start_second": float(latest),
     }
 
 
@@ -990,6 +1084,7 @@ def run_probe_arm(
     committed_customers: set[str] = set()
     committed_routes: dict[str, Route] = {}
     committed_actions: dict[tuple[Any, ...], ChargingAction] = {}
+    charging_windows: dict[tuple[Any, ...], dict[str, Any]] = {}
     rows: list[dict[str, Any]] = []
     final_running: dict[str, Any] | None = None
     final_execution_solution: Solution | None = None
@@ -1025,6 +1120,14 @@ def run_probe_arm(
             committed_customers.update(base.p2.route_customers(route, current_instance))
             committed_routes[route.vehicle_id] = route
         for action in cut.locked_charging_actions:
+            key = base.action_key(action)
+            if key not in charging_windows:
+                charging_windows[key] = _charging_window_witness(
+                    action,
+                    current_certificate,
+                    capture_stage=stage_index,
+                    trigger_second=trigger,
+                )
             committed_actions.setdefault(base.action_key(action), action)
 
         construction = base.gate.build_open_stage(
@@ -1293,6 +1396,28 @@ def run_probe_arm(
         current_instance,
         owners,
     )
+    for action in final_execution_solution.charging_actions:
+        key = base.action_key(action)
+        if key not in charging_windows:
+            charging_windows[key] = _charging_window_witness(
+                action,
+                current_certificate,
+                capture_stage=len(rows),
+                trigger_second=None,
+            )
+    full_day_action_keys = {
+        base.action_key(action) for action in final_execution_solution.charging_actions
+    }
+    if set(charging_windows) != full_day_action_keys:
+        raise RuntimeError("full-day charging-window ledger does not match actions")
+    charging_window_rows = [
+        charging_windows[key] for key in sorted(charging_windows, key=str)
+    ]
+    full_day_execution["charging_window_schema"] = CHARGING_WINDOW_SCHEMA
+    full_day_execution["charging_window_count"] = len(charging_window_rows)
+    full_day_execution["charging_windows_sha256"] = canonical_sha256(
+        charging_window_rows
+    )
     return {
         "execution_status": "PASS",
         "arm": arm,
@@ -1313,6 +1438,7 @@ def run_probe_arm(
         "full_day_execution": full_day_execution,
         "full_day_solution": base.solution_to_dict(final_execution_solution),
         "full_day_instance_nodes": [asdict(node) for node in current_instance.nodes],
+        "full_day_charging_windows": charging_window_rows,
     }
 
 
