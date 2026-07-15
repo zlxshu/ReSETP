@@ -44,7 +44,7 @@ ARMS = tuple(probe.ARMS)
 DEFAULT_WORKERS = 6
 ALL_STAGES_SENTINEL = 10_000
 TOL = 1e-6
-REQUIRED_PROBE_CAPABILITY = "setp.e7.full_day_execution.v1"
+REQUIRED_PROBE_CAPABILITY = "setp.e7.full_day_execution.v2"
 
 
 class FormalRunError(RuntimeError):
@@ -411,6 +411,16 @@ def validate_task_payload(
         completed_demand = float(execution["completed_demand"])
         if not math.isfinite(completed_demand) or completed_demand < -TOL:
             failures.append(f"{task['task_id']}: completed demand is invalid")
+    full_day_solution = payload.get("full_day_solution")
+    full_day_nodes = payload.get("full_day_instance_nodes")
+    if not isinstance(full_day_solution, Mapping):
+        failures.append(f"{task['task_id']}: full-day replay solution is missing")
+    elif isinstance(execution, Mapping) and execution.get("solution_sha256") != canonical_sha256(
+        full_day_solution
+    ):
+        failures.append(f"{task['task_id']}: full-day replay solution hash differs")
+    if not isinstance(full_day_nodes, list) or not full_day_nodes:
+        failures.append(f"{task['task_id']}: full-day replay node set is missing")
     return failures
 
 

@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
 """Freeze result-blind E7 event streams for N114, N221, and N322.
 
-N221 is copied byte-for-byte from the already sealed 2026-07-14 stream set.
-N114 and N322 use the same generator and event proportions before any dynamic
-search is run.  Existing-customer events must remain editable in both frozen
-responsibility-condition starting plans.  Added orders inherit all physical
-fields from a frozen sister bundle; ownership is assigned independently for
-the geographic and historical-mixed responsibility conditions.
+All networks use the same event proportions before any dynamic search result
+is inspected. Existing-customer events remain editable in both frozen starting
+plans. Added orders inherit physical fields from a frozen sister bundle and
+are restricted to donors whose geographic and historical-mixed owners agree
+with the directly actionable depot. This preserves both responsibility
+conditions as valid no-cooperation comparators.
 """
 
 from __future__ import annotations
@@ -34,7 +34,7 @@ from setp_solver.search.certificate_execution import build_certificate_execution
 from setp_solver.search.metaheuristic_baselines import solution_from_dict
 
 
-OUT = ROOT / "baselines/e7_dynamic/e7_multinetwork_event_streams_v3_20260715"
+OUT = ROOT / "baselines/e7_dynamic/e7_multinetwork_event_streams_v4_20260715"
 OLD_N221 = ROOT / "baselines/e7_dynamic/e7_v2_20260714/event_streams"
 OLD_N221_RESPONSIBILITY = (
     ROOT / "baselines/e7_dynamic/e7_responsibility_scenario_design_20260714/ownership_maps"
@@ -51,7 +51,7 @@ NETWORKS = {
 }
 CONDITIONS = ("geographic", "historical_mixed")
 SEEDS = (1, 2, 3, 4, 5)
-CONTRACT_ID = "E7_MULTINETWORK_EVENT_STREAM_FREEZE_V3_CONSERVATIVE_ADDS"
+CONTRACT_ID = "E7_MULTINETWORK_EVENT_STREAM_FREEZE_V4_BILATERAL_OWNER_SAFE_ADDS"
 
 
 def sha256(path: Path) -> str:
@@ -263,18 +263,47 @@ def generate_network(network: str, instance_id: str, donor_id: str) -> tuple[lis
     ):
         raise RuntimeError(f"unexpected E7 starting-plan labels: {labels}")
     geographic = read_owner_map(instance_id, "geographic")
+    donor_geographic = read_owner_map(donor_id, "geographic")
+    donor_historical = read_owner_map(donor_id, "historical_mixed")
+    depots = sorted(
+        (node for node in base_bundle.instance.nodes if node.node_type.lower() == "d"),
+        key=lambda node: node.node_id,
+    )
 
     old_counts = gen.COUNTS
     old_labels = gen.FORMAL_REFERENCE_LABELS
     old_donor_id = gen.DONOR_SCENARIO_ID
     old_output = gen.OUTPUT_ROOT
     old_random = gen.random.Random
+    old_donor_actionable = gen.donor_is_directly_actionable
+
+    def bilateral_owner_safe_actionable(
+        donor: Any,
+        trigger_second: float,
+        _depots: list[Any],
+        current_prices: Any,
+        service: float,
+    ) -> bool:
+        nearest = gen.nearest_owner(donor, depots)
+        if donor_geographic.get(str(donor.node_id)) != nearest:
+            return False
+        if donor_historical.get(str(donor.node_id)) != nearest:
+            return False
+        owner_depot = next(depot for depot in depots if depot.node_id == nearest)
+        return old_donor_actionable(
+            donor,
+            trigger_second,
+            [owner_depot],
+            current_prices,
+            service,
+        )
     try:
         gen.COUNTS = counts
         gen.FORMAL_REFERENCE_LABELS = labels
         gen.DONOR_SCENARIO_ID = donor_id
         gen.OUTPUT_ROOT = network_dir
         gen.random.Random = _FixedWindowRandom
+        gen.donor_is_directly_actionable = bilateral_owner_safe_actionable
         stream_rows: list[dict[str, Any]] = []
         owner_rows: list[dict[str, Any]] = []
         for seed in SEEDS:
@@ -303,6 +332,7 @@ def generate_network(network: str, instance_id: str, donor_id: str) -> tuple[lis
         gen.DONOR_SCENARIO_ID = old_donor_id
         gen.OUTPUT_ROOT = old_output
         gen.random.Random = old_random
+        gen.donor_is_directly_actionable = old_donor_actionable
     return stream_rows, owner_rows, sources
 
 
@@ -334,8 +364,8 @@ def main() -> int:
         "seeds": list(SEEDS),
         "event_proportions": {"add": 0.01, "cancel": 0.01, "demand_change": 0.02},
         "event_appearance_window_fraction": [0.05, 0.75],
-        "added_order_donor_rule": "smallest-demand directly actionable frozen sister-bundle donor; conservative against the cooperation treatment",
-        "supersedes": "V1 had excessive churn; V2 retained randomly sized added orders that could make the N114 no-cooperation comparator structurally infeasible",
+        "added_order_donor_rule": "smallest-demand frozen sister-bundle donor whose geographic and historical-mixed owners agree with the directly actionable depot",
+        "supersedes": "V3 checked added-order actionability for the geographic owner only; N322 historical_mixed stream5 assigned N_S5_003 to D1 although only its geographic D0 owner was directly actionable at the first trigger",
         "starting_plan_sources": source_rows,
         "search_evaluations": 0,
         "evidence_boundary": "Event streams were frozen before any multi-network dynamic search result existed.",
@@ -354,10 +384,11 @@ def main() -> int:
     report = (
         "# E7 multi-network event-stream freeze\n\n"
         "Status: `PASS_E7_MULTINETWORK_STREAM_FREEZE`.\n\n"
-        "N221 reuses the sealed five physical streams without modification. N114 and N322 "
-        "use the same result-blind event proportions and require existing-order events to "
+        "All three networks use the same result-blind event proportions and require existing-order events to "
         "remain editable in both frozen responsibility-condition starting plans. No route "
-        "search was executed while constructing or selecting these streams.\n"
+        "search was executed while constructing or selecting these streams. Added orders "
+        "are restricted to donors whose two responsibility labels agree with the depot that "
+        "can serve the order directly at its trigger.\n"
     )
     (OUT / "report.md").write_text(report, encoding="utf-8")
     hashes = {

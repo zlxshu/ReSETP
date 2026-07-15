@@ -53,13 +53,13 @@ STREAM_SEED = 1
 MAX_STAGES = 2
 DEFAULT_EVALUATIONS = 8
 ARMS = ("full", "no_cooperation", "no_participation", "simple_insertion")
-FULL_DAY_EXECUTION_SCHEMA = "setp.e7.full_day_execution.v1"
+FULL_DAY_EXECUTION_SCHEMA = "setp.e7.full_day_execution.v2"
 CONDITIONS = ("geographic", "historical_mixed")
 RESPONSIBILITY_ROOT = (
     ROOT / "baselines/e7_dynamic/e7_responsibility_scenario_design_20260714"
 )
 MULTINETWORK_EVENT_ROOT = (
-    ROOT / "baselines/e7_dynamic/e7_multinetwork_event_streams_v3_20260715"
+    ROOT / "baselines/e7_dynamic/e7_multinetwork_event_streams_v4_20260715"
 )
 NETWORKS = {
     "N114": "L-main-threeshift-50c-01",
@@ -593,6 +593,7 @@ def _same_state_no_cooperation(
     evaluations: int,
     stage_new_customer_ids: Sequence[str],
 ) -> dict[str, Any]:
+    failure_diagnostics: dict[str, Any] = {}
     owner_fixed = base.asset_aware_future_repack_candidate(
         construction,
         owners,
@@ -600,9 +601,13 @@ def _same_state_no_cooperation(
         asset_states=cut.asset_states,
         stage_start_second=trigger,
         allow_cross_depot=False,
+        failure_diagnostics=failure_diagnostics,
     )
     if owner_fixed is None:
-        raise RuntimeError("could not build the same-state no-cooperation start")
+        raise RuntimeError(
+            "could not build the same-state no-cooperation start: "
+            + json.dumps(failure_diagnostics, ensure_ascii=False, sort_keys=True)
+        )
     controlled = replace(construction, solution=owner_fixed)
 
     def no_cross_gate(solution: Solution, _certificate: Any, _cost: float) -> bool:
@@ -1268,6 +1273,8 @@ def run_probe_arm(
         "final_certificate": current_certificate.as_dict(),
         "final_running": final_running,
         "full_day_execution": full_day_execution,
+        "full_day_solution": base.solution_to_dict(final_execution_solution),
+        "full_day_instance_nodes": [asdict(node) for node in current_instance.nodes],
     }
 
 

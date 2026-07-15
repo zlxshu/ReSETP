@@ -22,6 +22,11 @@ def _task(condition: str, stream: int, arm: str, evaluations: int = 4, network: 
 
 def _payload(condition: str, stream: int, arm: str, evaluations: int = 4, network: str = "N114"):
     rows = []
+    full_day_solution = {
+        "routes": [],
+        "charging_actions": [],
+        "cross_site_services": [],
+    }
     for stage in (1, 2):
         rows.append(
             {
@@ -77,8 +82,10 @@ def _payload(condition: str, stream: int, arm: str, evaluations: int = 4, networ
             if arm == "no_cooperation"
             else ["C2"],
             "cross_site_customer_count": 0 if arm == "no_cooperation" else 1,
-            "solution_sha256": f"full-day-{network}-{condition}-{stream}-{arm}",
+            "solution_sha256": runner.canonical_sha256(full_day_solution),
         },
+        "full_day_solution": full_day_solution,
+        "full_day_instance_nodes": [{"node_id": "D0", "node_type": "d"}],
     }
 
 

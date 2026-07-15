@@ -701,6 +701,7 @@ def asset_aware_future_repack_candidate(
     asset_states: Mapping[str, Any],
     stage_start_second: float,
     allow_cross_depot: bool,
+    failure_diagnostics: dict[str, Any] | None = None,
 ) -> Solution | None:
     """Deterministically rebuild current future work around inherited vehicles.
 
@@ -724,9 +725,13 @@ def asset_aware_future_repack_candidate(
         ),
     )
     if not customers:
+        if failure_diagnostics is not None:
+            failure_diagnostics.update({"reason": "no_open_customers"})
         return None
     ordered_assets = sorted(asset_states.items())
     if not ordered_assets:
+        if failure_diagnostics is not None:
+            failure_diagnostics.update({"reason": "no_inherited_assets"})
         return None
     asset_rank = {asset_id: index for index, (asset_id, _) in enumerate(ordered_assets)}
     chains: dict[str, list[Route]] = {asset_id: [] for asset_id, _ in ordered_assets}
@@ -734,6 +739,13 @@ def asset_aware_future_repack_candidate(
     for customer_id in customers:
         owner = owners.get(customer_id)
         if owner is None:
+            if failure_diagnostics is not None:
+                failure_diagnostics.update(
+                    {
+                        "reason": "missing_customer_owner",
+                        "customer_id": customer_id,
+                    }
+                )
             return None
         options: list[
             tuple[tuple[float, float, int, float, str, int, int], str, list[Route]]
@@ -820,6 +832,43 @@ def asset_aware_future_repack_candidate(
                 )
                 options.append((rank, asset_id, proposed))
         if not options:
+            if failure_diagnostics is not None:
+                eligible_assets = [
+                    asset_id
+                    for asset_id, state in ordered_assets
+                    if allow_cross_depot or state.home_depot_id == owner
+                ]
+                failure_diagnostics.update(
+                    {
+                        "reason": "greedy_customer_has_no_asset_placement",
+                        "customer_id": customer_id,
+                        "customer_owner": owner,
+                        "stage_start_second": float(stage_start_second),
+                        "allow_cross_depot": bool(allow_cross_depot),
+                        "processed_customer_count": sum(
+                            len(
+                                {
+                                    item
+                                    for route in chain
+                                    for item in p2.route_customers(route, instance)
+                                }
+                            )
+                            for chain in chains.values()
+                        ),
+                        "total_customer_count": len(customers),
+                        "eligible_asset_ids": eligible_assets,
+                        "chain_route_counts": {
+                            asset_id: len(chains[asset_id]) for asset_id in eligible_assets
+                        },
+                        "chain_customer_counts": {
+                            asset_id: sum(
+                                len(p2.route_customers(route, instance))
+                                for route in chains[asset_id]
+                            )
+                            for asset_id in eligible_assets
+                        },
+                    }
+                )
             return None
         _, selected_asset_id, selected_chain = min(options, key=lambda item: item[0])
         chains[selected_asset_id] = selected_chain

@@ -1,0 +1,23 @@
+{
+  "verdict": "HALT_E7_V3_BILATERAL_OWNER_ACTIONABILITY",
+  "expected_task_count": 120,
+  "completed_checkpoint_count": 112,
+  "known_failing_task": "N322__historical_mixed__stream5__full",
+  "missing_tasks": [
+    "N322__historical_mixed__stream2__full",
+    "N322__historical_mixed__stream2__no_cooperation",
+    "N322__historical_mixed__stream2__no_participation",
+    "N322__historical_mixed__stream2__simple_insertion",
+    "N322__historical_mixed__stream5__full",
+    "N322__historical_mixed__stream5__no_cooperation",
+    "N322__historical_mixed__stream5__no_participation",
+    "N322__historical_mixed__stream5__simple_insertion"
+  ],
+  "independent_recheck": {
+    "N322__historical_mixed__stream2__full": "PASS",
+    "N322__historical_mixed__stream5__full": "HALT"
+  },
+  "root_cause": "V3 checked direct actionability for the geographic owner but assigned added-order ownership independently under historical_mixed; N_S5_003 was actionable from D0 and assigned to D1, whose inherited assets could not serve it at the first trigger.",
+  "superseded_by": "E7_MULTINETWORK_EVENT_STREAM_FREEZE_V4_BILATERAL_OWNER_SAFE_ADDS",
+  "result_direction_used_for_decision": false
+}
