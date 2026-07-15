@@ -161,6 +161,17 @@ def test_task_checkpoint_is_atomic_hash_checked_and_resumable(tmp_path) -> None:
         runner._load_task_checkpoint(path, "contract", task)
 
 
+def test_final_artifact_manifest_excludes_internal_resume_checkpoints(tmp_path) -> None:
+    (tmp_path / ".tasks").mkdir()
+    (tmp_path / ".tasks" / "one.json").write_text("checkpoint", encoding="utf-8")
+    (tmp_path / "sessions.json").write_text("[]", encoding="utf-8")
+
+    manifest = runner._artifact_hashes(tmp_path)
+
+    assert "sessions.json" in manifest
+    assert not any(path.startswith(".tasks/") for path in manifest)
+
+
 def test_complete_matrix_checks_all_conditions_equal_budget_and_shared_starts() -> None:
     payloads = _matrix()
 
@@ -170,6 +181,31 @@ def test_complete_matrix_checks_all_conditions_equal_budget_and_shared_starts() 
     changed[1]["initial_timing"]["route_sha256"] = "different"
     failures = runner.validate_complete_matrix(changed, 4)
     assert any("share route and energy starts" in failure for failure in failures)
+
+
+def test_task_validation_rejects_charging_start_outside_frozen_window() -> None:
+    task = _task("geographic", 1, "full")
+    payload = _payload("geographic", 1, "full")
+    witness = {
+        "vehicle_id": "EV_D0_1#T2",
+        "station_id": "D0",
+        "energy_kwh": 10.0,
+        "occupancy_minutes": 20.0,
+        "charge_day_offset": 0,
+        "observed_start_second": 900.0,
+        "earliest_start_second": 1_000.0,
+        "latest_start_second": 2_000.0,
+        "lock_state": "completed_before_trigger",
+    }
+    payload["full_day_charging_windows"] = [witness]
+    payload["full_day_execution"]["charging_window_count"] = 1
+    payload["full_day_execution"]["charging_windows_sha256"] = (
+        runner.canonical_sha256([witness])
+    )
+
+    failures = runner.validate_task_payload(task, payload)
+
+    assert any("outside the window" in failure for failure in failures)
 
 
 def test_formal_summaries_keep_all_streams_and_use_final_running_ledgers() -> None:

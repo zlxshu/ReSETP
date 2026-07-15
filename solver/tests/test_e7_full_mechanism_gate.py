@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from types import SimpleNamespace
+
 import pytest
 
 from baselines.e7_dynamic import e7_full_mechanism_probe_20260714 as gate
@@ -93,6 +95,43 @@ def test_execution_ledger_keeps_two_distinct_charges_before_one_trip() -> None:
     )
 
     assert merged.charging_actions == [first, second]
+
+
+def test_charging_window_witness_preserves_trigger_state() -> None:
+    certificate = SimpleNamespace(
+        trips=(
+            SimpleNamespace(
+                route_id="EV_D0_1#T1",
+                physical_vehicle_id="EV_D0_1",
+                trip_index=1,
+                return_second=1_000.0,
+                departure_second=0.0,
+            ),
+            SimpleNamespace(
+                route_id="EV_D0_1#T2",
+                physical_vehicle_id="EV_D0_1",
+                trip_index=2,
+                return_second=4_000.0,
+                departure_second=3_000.0,
+            ),
+        )
+    )
+    completed = ChargingAction("EV_D0_1#T2", "D0", 10.0, 10.0, 1_200.0)
+    in_progress = ChargingAction("EV_D0_1#T2", "D0", 10.0, 10.0, 1_700.0)
+
+    completed_witness = gate._charging_window_witness(
+        completed, certificate, capture_stage=1, trigger_second=2_000.0
+    )
+    in_progress_witness = gate._charging_window_witness(
+        in_progress, certificate, capture_stage=1, trigger_second=2_000.0
+    )
+
+    assert completed_witness["earliest_start_second"] == pytest.approx(1_000.0)
+    assert completed_witness["latest_start_second"] == pytest.approx(1_400.0)
+    assert completed_witness["lock_state"] == "completed_before_trigger"
+    assert in_progress_witness["earliest_start_second"] == pytest.approx(1_700.0)
+    assert in_progress_witness["latest_start_second"] == pytest.approx(1_700.0)
+    assert in_progress_witness["lock_state"] == "in_progress_at_trigger_fixed"
 
 
 def test_full_day_execution_summary_closes_workload_and_cross_depot_service() -> None:

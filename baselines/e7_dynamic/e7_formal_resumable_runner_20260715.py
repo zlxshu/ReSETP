@@ -984,6 +984,7 @@ def _artifact_hashes(output: Path) -> dict[str, str]:
         and path.name != "artifact_hashes.json"
         and not path.name.startswith("._")
         and ".tmp-" not in path.name
+        and ".tasks" not in path.parts
     }
 
 

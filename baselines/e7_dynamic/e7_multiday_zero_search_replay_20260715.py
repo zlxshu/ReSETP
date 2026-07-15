@@ -87,24 +87,22 @@ def pct(delta: float, baseline: float) -> float:
 
 
 def completed_tasks() -> tuple[
-    list[tuple[Path, dict[str, Any]]], list[dict[str, Any]]
+    list[tuple[str, dict[str, Any]]], list[dict[str, Any]]
 ]:
-    paths = sorted(
-        path for path in (FORMAL / ".tasks").glob("*.json") if not path.name.startswith("._")
-    )
-    if len(paths) != 120:
-        raise RuntimeError(f"expected 120 formal E7 checkpoints, found {len(paths)}")
-    rows: list[tuple[Path, dict[str, Any]]] = []
+    sessions = json.loads((FORMAL / "sessions.json").read_text(encoding="utf-8"))
+    if len(sessions) != 120:
+        raise RuntimeError(f"expected 120 sealed E7 sessions, found {len(sessions)}")
+    rows: list[tuple[str, dict[str, Any]]] = []
     failures: list[dict[str, Any]] = []
-    for path in paths:
-        wrapper = json.loads(path.read_text(encoding="utf-8"))
-        if wrapper.get("status") != "completed":
-            raise RuntimeError(f"incomplete formal task: {path.name}")
-        payload = wrapper["payload"]
+    for payload in sessions:
+        task_id = (
+            f"{payload['network']}__{payload['responsibility_condition']}__"
+            f"stream{payload['stream_seed']}__{payload['arm']}"
+        )
         if payload.get("execution_status") == "HALT_NO_EXECUTABLE_CONTINUATION":
             failures.append(
                 {
-                    "task_id": wrapper["task"]["task_id"],
+                    "task_id": task_id,
                     "network": payload["network"],
                     "condition": payload["responsibility_condition"],
                     "stream": payload["stream_seed"],
@@ -115,17 +113,15 @@ def completed_tasks() -> tuple[
             )
             continue
         if payload.get("execution_status") != "PASS":
-            raise RuntimeError(f"unknown formal task status: {path.name}")
+            raise RuntimeError(f"unknown formal task status: {task_id}")
         if (
             "full_day_solution" not in payload
             or "full_day_instance_nodes" not in payload
             or "full_day_charging_windows" not in payload
         ):
-            raise RuntimeError(f"formal task lacks zero-search replay payload: {path.name}")
-        if canonical_sha256(payload) != wrapper["payload_sha256"]:
-            raise RuntimeError(f"formal task payload hash mismatch: {path.name}")
+            raise RuntimeError(f"formal task lacks zero-search replay payload: {task_id}")
         if payload.get("arm") == "full":
-            rows.append((path, wrapper))
+            rows.append((task_id, payload))
     if len(rows) != 30:
         raise RuntimeError(f"expected 30 executable full-mechanism tasks, found {len(rows)}")
     return rows, failures
@@ -157,13 +153,12 @@ def main() -> int:
     task_inventory: list[dict[str, Any]] = []
 
     replay_tasks, formal_failures = completed_tasks()
-    for task_path, wrapper in replay_tasks:
-        task = wrapper["task"]
-        payload = wrapper["payload"]
-        network = str(task["network"])
-        condition = str(task["condition"])
-        stream = int(task["stream"])
-        arm = str(task["arm"])
+    sessions_sha256 = sha256(FORMAL / "sessions.json")
+    for task_id, payload in replay_tasks:
+        network = str(payload["network"])
+        condition = str(payload["responsibility_condition"])
+        stream = int(payload["stream_seed"])
+        arm = str(payload["arm"])
         sources, _ = full._sources_for_day(condition, network)
         _, owners, _, _ = full._stream_for_condition(stream, condition, network)
         nodes = [Node(**row) for row in payload["full_day_instance_nodes"]]
@@ -175,7 +170,7 @@ def main() -> int:
         if full.canonical_sha256(witnesses) != payload["full_day_execution"][
             "charging_windows_sha256"
         ]:
-            raise RuntimeError(f"charging-window hash mismatch: {task['task_id']}")
+            raise RuntimeError(f"charging-window hash mismatch: {task_id}")
         ledger = full._profit_closure(source_solution, instance, sources, owners)
         direct = float(ledger["direct_emissions_kg"])
         demand = float(payload["full_day_execution"]["completed_demand"])
@@ -208,9 +203,9 @@ def main() -> int:
             aware = replace(source_solution, charging_actions=aware_actions)
             for variant in (immediate, aware):
                 if full.route_hash(variant) != source_route_hash:
-                    raise RuntimeError(f"zero-search replay changed routes: {task['task_id']}")
+                    raise RuntimeError(f"zero-search replay changed routes: {task_id}")
                 if full.energy_hash(variant) != source_energy_hash:
-                    raise RuntimeError(f"zero-search replay changed energy: {task['task_id']}")
+                    raise RuntimeError(f"zero-search replay changed energy: {task_id}")
             immediate_predicted = full._charging_emissions_kg(
                 immediate, instance, profiles, "forecast_gco2_per_kwh"
             )
@@ -218,7 +213,7 @@ def main() -> int:
                 aware, instance, profiles, "forecast_gco2_per_kwh"
             )
             if aware_predicted > immediate_predicted + TOL:
-                raise RuntimeError(f"forecast timing worsened prediction: {task['task_id']}")
+                raise RuntimeError(f"forecast timing worsened prediction: {task_id}")
             immediate_actual = full._charging_emissions_kg(
                 immediate, instance, profiles, "actual_gco2_per_kwh"
             )
@@ -250,9 +245,10 @@ def main() -> int:
             )
         task_inventory.append(
             {
-                "task_id": task["task_id"],
-                "checkpoint_path": str(task_path.relative_to(ROOT)),
-                "checkpoint_sha256": sha256(task_path),
+                "task_id": task_id,
+                "sessions_path": str((FORMAL / "sessions.json").relative_to(ROOT)),
+                "sessions_sha256": sessions_sha256,
+                "payload_sha256": canonical_sha256(payload),
                 "route_sha256": source_route_hash,
                 "energy_sha256": source_energy_hash,
                 "node_count": len(nodes),
