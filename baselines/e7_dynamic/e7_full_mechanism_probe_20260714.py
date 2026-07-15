@@ -598,25 +598,33 @@ def _same_state_no_cooperation(
         construction.effective_instance,
         owners,
     )
-    if existing_cross_ids:
-        failure_diagnostics: dict[str, Any] = {}
-        owner_fixed = base.asset_aware_future_repack_candidate(
-            construction,
-            owners,
-            sources["prices"],
-            asset_states=cut.asset_states,
-            stage_start_second=trigger,
-            allow_cross_depot=False,
-            failure_diagnostics=failure_diagnostics,
-        )
-        if owner_fixed is None:
-            raise RuntimeError(
-                "could not build the same-state no-cooperation start: "
-                + json.dumps(failure_diagnostics, ensure_ascii=False, sort_keys=True)
-            )
+    failure_diagnostics: dict[str, Any] = {}
+    owner_fixed = base.asset_aware_future_repack_candidate(
+        construction,
+        owners,
+        sources["prices"],
+        asset_states=cut.asset_states,
+        stage_start_second=trigger,
+        allow_cross_depot=False,
+        failure_diagnostics=failure_diagnostics,
+    )
+    if owner_fixed is not None:
         controlled = replace(construction, solution=owner_fixed)
         baseline_start_source = "owner_fixed_asset_repack"
+    elif existing_cross_ids:
+        raise RuntimeError(
+            "could not build the same-state no-cooperation start: "
+            + json.dumps(failure_diagnostics, ensure_ascii=False, sort_keys=True)
+        )
     else:
+        if failure_diagnostics.get("reason") not in {
+            "greedy_customer_has_no_asset_placement",
+            "no_open_customers",
+        }:
+            raise RuntimeError(
+                "could not audit the same-state no-cooperation repack: "
+                + json.dumps(failure_diagnostics, ensure_ascii=False, sort_keys=True)
+            )
         # The dynamic stage builder has already preserved the inherited asset
         # state and inserted the current events.  Discarding this cross-free
         # structure and rebuilding every open customer from scratch can create
