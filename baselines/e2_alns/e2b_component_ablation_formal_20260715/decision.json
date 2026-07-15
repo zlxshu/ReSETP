@@ -1,0 +1,112 @@
+{
+  "arm_summary": {
+    "A_continuous": {
+      "mean_E_cv_direct": 1348.240258363728,
+      "mean_E_ev_indirect": 110.64607138831602,
+      "mean_E_total": 1458.8863297520438,
+      "mean_cost_carbon": 0.0,
+      "mean_cost_elec": 314.0672974732739,
+      "mean_cost_fix": 2192.0,
+      "mean_cost_fuel": 751.5746393217178,
+      "mean_cost_km": 1843.393269310238,
+      "mean_cost_occ": 0.0,
+      "mean_cost_transship": 0.0,
+      "mean_electricity_kwh": 1694.912560568127,
+      "mean_total_cost": 5101.03520610523,
+      "row_count": 45,
+      "search_eval_total": 180000,
+      "valid_count": 45
+    },
+    "B_staged": {
+      "mean_E_cv_direct": 1407.3267314932066,
+      "mean_E_ev_indirect": 107.24766172621614,
+      "mean_E_total": 1514.5743932194227,
+      "mean_cost_carbon": 0.0,
+      "mean_cost_elec": 308.5414907502704,
+      "mean_cost_fix": 2216.8888888888887,
+      "mean_cost_fuel": 784.5123108202498,
+      "mean_cost_km": 1868.2588632579823,
+      "mean_cost_occ": 0.0,
+      "mean_cost_transship": 0.0,
+      "mean_electricity_kwh": 1665.091693201675,
+      "mean_total_cost": 5178.201553717391,
+      "row_count": 45,
+      "search_eval_total": 180000,
+      "valid_count": 45
+    },
+    "C_staged_cross": {
+      "mean_E_cv_direct": 1309.1806705023519,
+      "mean_E_ev_indirect": 95.40893338395914,
+      "mean_E_total": 1404.5896038863111,
+      "mean_cost_carbon": 0.0,
+      "mean_cost_elec": 275.3634366673065,
+      "mean_cost_fix": 2172.4444444444443,
+      "mean_cost_fuel": 729.8009269015026,
+      "mean_cost_km": 1707.9122030301019,
+      "mean_cost_occ": 0.0,
+      "mean_cost_transship": 0.0,
+      "mean_electricity_kwh": 1486.0412124517352,
+      "mean_total_cost": 4885.521011043355,
+      "row_count": 45,
+      "search_eval_total": 180000,
+      "valid_count": 45
+    },
+    "D_full": {
+      "mean_E_cv_direct": 1309.1806705023519,
+      "mean_E_ev_indirect": 94.64100814418673,
+      "mean_E_total": 1403.8216786465387,
+      "mean_cost_carbon": 0.0,
+      "mean_cost_elec": 275.3634366673065,
+      "mean_cost_fix": 2172.4444444444443,
+      "mean_cost_fuel": 729.8009269015026,
+      "mean_cost_km": 1707.9122030301019,
+      "mean_cost_occ": 0.0,
+      "mean_cost_transship": 0.0,
+      "mean_electricity_kwh": 1486.0412124517352,
+      "mean_total_cost": 4885.521011043355,
+      "row_count": 45,
+      "search_eval_total": 0,
+      "valid_count": 45
+    }
+  },
+  "claim_boundary": "The complete default matrix may support component-effect analysis; subset runs check wiring only. No arm is selected or discarded by performance in this runner.",
+  "contract_failure_count": 0,
+  "d_carbon_nonincreasing_unit_count": 45,
+  "d_moved_charging_unit_count": 39,
+  "d_strict_carbon_improvement_unit_count": 39,
+  "expected_comparison_units": 45,
+  "expected_evidence_rows": 180,
+  "expected_search_rows": 135,
+  "failure_count": 0,
+  "failures": [],
+  "formal_contract_complete": true,
+  "formal_inference_allowed": true,
+  "formal_request_shape_complete": true,
+  "observed_comparison_units": 45,
+  "observed_evidence_rows": 180,
+  "paired_summary": {
+    "B_minus_A_total_cost": {
+      "mean_delta": 77.16634761216142,
+      "pair_count": 45,
+      "right_better": 17,
+      "right_worse": 25,
+      "ties": 3
+    },
+    "C_minus_B_total_cost": {
+      "mean_delta": -292.6805426740358,
+      "pair_count": 45,
+      "right_better": 27,
+      "right_worse": 14,
+      "ties": 4
+    },
+    "D_minus_C_ev_indirect": {
+      "mean_delta": -0.7679252397724312,
+      "pair_count": 45,
+      "right_better": 39,
+      "right_worse": 0,
+      "ties": 6
+    }
+  },
+  "verdict": "E2B_FORMAL_EVIDENCE_READY",
+  "worker_failure_count": 0
+}

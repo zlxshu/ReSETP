@@ -1,0 +1,245 @@
+{
+  "component_commit": "0652cc2be941c2cccfe2ab0182c03655d751ba75",
+  "condition": "mixed",
+  "cross_depot_feasible_domain_in_all_search_arms": true,
+  "effective_workers": 6,
+  "elapsed_seconds": 2461.0978585409975,
+  "eval_budget_per_search": 4000,
+  "execution_commit": "6413b68c05370ada680598de2097de74a8615eb0",
+  "formal_contract_complete": true,
+  "formal_request_shape_complete": true,
+  "fourth_group": "D_full reuses C routes, vehicles, charging-action identity, and total energy; zero route search; charging time only",
+  "input_data_fingerprints": {
+    "L-main-threeshift-100c-01": {
+      "files": {
+        "baselines/e3_ablation/e3_ownership_class_design_v4_20260713/artifact_hashes.json": "a322aebd76f8c4b29eed225aabb45735bf3189a667cfc30fc619c2934ef0ecbe",
+        "baselines/e3_ablation/e3_ownership_class_design_v4_20260713/decision.json": "99d014b0894e4221582bdbdcfadb55365855be9b36bdd1e7795929e6ccdb228f",
+        "baselines/e3_ablation/e3_ownership_class_design_v4_20260713/metadata.json": "4230d77a3bc98d70bba05a55007cdfb1e224d757fb6ad9890e481a30f76a4ea7",
+        "baselines/e3_ablation/e3_ownership_class_design_v4_20260713/ownership_maps/L-main-threeshift-100c-01__mixed.csv": "c2028d75bb370121c2616e70ead87c1b7765b278bc6b5b723b07196682177edc",
+        "baselines/e3_ablation/e3_paired_cost_formal_v2_20260713/artifact_hashes.json": "464fb5aae38a71a9e2e13bb2cfd02e6b40e4e03e6390e61a9f7e1172d1b60680",
+        "baselines/e3_ablation/e3_paired_cost_formal_v2_20260713/assets/L-main-threeshift-100c-01/bundle/carbon_profile.csv": "f552d7b082593582369ab0dfd938983eeadd38a76a0b0a3e79d3410c00421433",
+        "baselines/e3_ablation/e3_paired_cost_formal_v2_20260713/assets/L-main-threeshift-100c-01/bundle/distance_matrix.npy": "9bfef62b9fa84448649ffaa74826acd4d1ff9beccf17f69441fe42f3d0ccc484",
+        "baselines/e3_ablation/e3_paired_cost_formal_v2_20260713/assets/L-main-threeshift-100c-01/bundle/instance.json": "59696be304ad9f3c484820439e1cbdb027945e20ad7ecbdb8542dfde7e0d6225",
+        "baselines/e3_ablation/e3_paired_cost_formal_v2_20260713/assets/L-main-threeshift-100c-01/bundle/scenario_manifest.json": "22ba1a6e3e41ec743126e2c1c98ff108f80ce0e409ebf5429bf27bc86955e46d",
+        "baselines/e3_ablation/e3_paired_cost_formal_v2_20260713/assets/L-main-threeshift-100c-01/mixed__common_start.json": "c6df4dc07b4521ccd61cbd45e6eaef5e6a75969cfecc438ce960ab753fc1dcf3",
+        "baselines/e3_ablation/e3_paired_cost_formal_v2_20260713/assets/L-main-threeshift-100c-01/mixed__common_start_meta.json": "119aeff1267928e3be104569039f5ae87f24d28219c63605e402c9c398619b2e",
+        "baselines/e3_ablation/e3_paired_cost_formal_v2_20260713/decision.json": "7418e3c0125d46adaa5a031a19a769dbe0ba67b7261c5ee352ee8106d3fb0e49",
+        "baselines/e3_ablation/e3_paired_cost_formal_v2_20260713/metadata.json": "75a23a4229735be4c7739a0ac1ca504a0667bedffad93731dd644e402f118937"
+      },
+      "sha256": "149b632034830379a06cddeaf127e61bdecffff87ec9332d36704fede023c629"
+    },
+    "L-main-threeshift-10c-01": {
+      "files": {
+        "baselines/e3_ablation/e3_ownership_class_design_v4_20260713/artifact_hashes.json": "a322aebd76f8c4b29eed225aabb45735bf3189a667cfc30fc619c2934ef0ecbe",
+        "baselines/e3_ablation/e3_ownership_class_design_v4_20260713/decision.json": "99d014b0894e4221582bdbdcfadb55365855be9b36bdd1e7795929e6ccdb228f",
+        "baselines/e3_ablation/e3_ownership_class_design_v4_20260713/metadata.json": "4230d77a3bc98d70bba05a55007cdfb1e224d757fb6ad9890e481a30f76a4ea7",
+        "baselines/e3_ablation/e3_ownership_class_design_v4_20260713/ownership_maps/L-main-threeshift-10c-01__mixed.csv": "6839a2a879e610b4a958140bb8753bdee40d4c3c42463f25b07800e633b8d733",
+        "baselines/e3_ablation/e3_paired_cost_formal_v2_20260713/artifact_hashes.json": "464fb5aae38a71a9e2e13bb2cfd02e6b40e4e03e6390e61a9f7e1172d1b60680",
+        "baselines/e3_ablation/e3_paired_cost_formal_v2_20260713/assets/L-main-threeshift-10c-01/bundle/carbon_profile.csv": "f552d7b082593582369ab0dfd938983eeadd38a76a0b0a3e79d3410c00421433",
+        "baselines/e3_ablation/e3_paired_cost_formal_v2_20260713/assets/L-main-threeshift-10c-01/bundle/distance_matrix.npy": "c44b1a5dc0ef1c75ebe2c1975cc2402eae804e56cafd90f9f14495c4f87813e0",
+        "baselines/e3_ablation/e3_paired_cost_formal_v2_20260713/assets/L-main-threeshift-10c-01/bundle/instance.json": "cc0a1effc420cfab61e16ddd7ce4f9c7b7c9dfeeec4f36cf9a03835571f1d19f",
+        "baselines/e3_ablation/e3_paired_cost_formal_v2_20260713/assets/L-main-threeshift-10c-01/bundle/scenario_manifest.json": "dac51a67ce440ccae3914c5d226f9ddf0426023ecf6df791ed9b9d6b409f3143",
+        "baselines/e3_ablation/e3_paired_cost_formal_v2_20260713/assets/L-main-threeshift-10c-01/mixed__common_start.json": "f97ea8bb46c7532bdf054b99b0765cd74e89b3f006f15bc0de9e20375fb596a4",
+        "baselines/e3_ablation/e3_paired_cost_formal_v2_20260713/assets/L-main-threeshift-10c-01/mixed__common_start_meta.json": "31542d1b1959efdff8e7bf9feb6aa3b637efaea4e9a9c2a6aae94130eb9eb6ef",
+        "baselines/e3_ablation/e3_paired_cost_formal_v2_20260713/decision.json": "7418e3c0125d46adaa5a031a19a769dbe0ba67b7261c5ee352ee8106d3fb0e49",
+        "baselines/e3_ablation/e3_paired_cost_formal_v2_20260713/metadata.json": "75a23a4229735be4c7739a0ac1ca504a0667bedffad93731dd644e402f118937"
+      },
+      "sha256": "ea8b91e917bbfb16798a4ac1403ae4c315ff8978e95d2f1bd1f61104e3610bbf"
+    },
+    "L-main-threeshift-150c-01": {
+      "files": {
+        "baselines/e3_ablation/e3_ownership_class_design_v4_20260713/artifact_hashes.json": "a322aebd76f8c4b29eed225aabb45735bf3189a667cfc30fc619c2934ef0ecbe",
+        "baselines/e3_ablation/e3_ownership_class_design_v4_20260713/decision.json": "99d014b0894e4221582bdbdcfadb55365855be9b36bdd1e7795929e6ccdb228f",
+        "baselines/e3_ablation/e3_ownership_class_design_v4_20260713/metadata.json": "4230d77a3bc98d70bba05a55007cdfb1e224d757fb6ad9890e481a30f76a4ea7",
+        "baselines/e3_ablation/e3_ownership_class_design_v4_20260713/ownership_maps/L-main-threeshift-150c-01__mixed.csv": "55dccbeaddf6f18ff4d50d774e7839393b7c22361155e0769905e441abfb7543",
+        "baselines/e3_ablation/e3_paired_cost_formal_v2_20260713/artifact_hashes.json": "464fb5aae38a71a9e2e13bb2cfd02e6b40e4e03e6390e61a9f7e1172d1b60680",
+        "baselines/e3_ablation/e3_paired_cost_formal_v2_20260713/assets/L-main-threeshift-150c-01/bundle/carbon_profile.csv": "f552d7b082593582369ab0dfd938983eeadd38a76a0b0a3e79d3410c00421433",
+        "baselines/e3_ablation/e3_paired_cost_formal_v2_20260713/assets/L-main-threeshift-150c-01/bundle/distance_matrix.npy": "f97f10ffc977123481dcbb5c98ce0c0651186d3c537da6f58842026af5512ee3",
+        "baselines/e3_ablation/e3_paired_cost_formal_v2_20260713/assets/L-main-threeshift-150c-01/bundle/instance.json": "87fb4fa4beb79c02a0612ccb66a4fc714be4863b61f8bc579f58404541e3a8b6",
+        "baselines/e3_ablation/e3_paired_cost_formal_v2_20260713/assets/L-main-threeshift-150c-01/bundle/scenario_manifest.json": "3b2736a4afb8d26ba6b6905a8735eb45e268a1b49abf7c24d7ba4eb365913ceb",
+        "baselines/e3_ablation/e3_paired_cost_formal_v2_20260713/assets/L-main-threeshift-150c-01/mixed__common_start.json": "ce571afe0c6551f1519dd53dcf3edf3fc7432046954d20daa7c4d178ee049444",
+        "baselines/e3_ablation/e3_paired_cost_formal_v2_20260713/assets/L-main-threeshift-150c-01/mixed__common_start_meta.json": "e10595feb159c82f825d82bb77a8c343328ace9039feef8077ac3ca66e6d49e2",
+        "baselines/e3_ablation/e3_paired_cost_formal_v2_20260713/decision.json": "7418e3c0125d46adaa5a031a19a769dbe0ba67b7261c5ee352ee8106d3fb0e49",
+        "baselines/e3_ablation/e3_paired_cost_formal_v2_20260713/metadata.json": "75a23a4229735be4c7739a0ac1ca504a0667bedffad93731dd644e402f118937"
+      },
+      "sha256": "52ac3d6d01185988d6f354ae679a8816e62edac4c0140d931a7c7955ffd2c18c"
+    },
+    "L-main-threeshift-15c-01": {
+      "files": {
+        "baselines/e3_ablation/e3_ownership_class_design_v4_20260713/artifact_hashes.json": "a322aebd76f8c4b29eed225aabb45735bf3189a667cfc30fc619c2934ef0ecbe",
+        "baselines/e3_ablation/e3_ownership_class_design_v4_20260713/decision.json": "99d014b0894e4221582bdbdcfadb55365855be9b36bdd1e7795929e6ccdb228f",
+        "baselines/e3_ablation/e3_ownership_class_design_v4_20260713/metadata.json": "4230d77a3bc98d70bba05a55007cdfb1e224d757fb6ad9890e481a30f76a4ea7",
+        "baselines/e3_ablation/e3_ownership_class_design_v4_20260713/ownership_maps/L-main-threeshift-15c-01__mixed.csv": "5c07418916a5d06b5a19c0bf477a598895b4da207fb31eaacc2c2d26c5a4142e",
+        "baselines/e3_ablation/e3_paired_cost_formal_v2_20260713/artifact_hashes.json": "464fb5aae38a71a9e2e13bb2cfd02e6b40e4e03e6390e61a9f7e1172d1b60680",
+        "baselines/e3_ablation/e3_paired_cost_formal_v2_20260713/assets/L-main-threeshift-15c-01/bundle/carbon_profile.csv": "f552d7b082593582369ab0dfd938983eeadd38a76a0b0a3e79d3410c00421433",
+        "baselines/e3_ablation/e3_paired_cost_formal_v2_20260713/assets/L-main-threeshift-15c-01/bundle/distance_matrix.npy": "eb6e5b8d5b3a04d89228e82606f05b748fa1a08df62635ba9efa52df5b08ffe3",
+        "baselines/e3_ablation/e3_paired_cost_formal_v2_20260713/assets/L-main-threeshift-15c-01/bundle/instance.json": "1e9ea774640b4e63cd5a241adad08f83ab843ba289800f5334128eb74feada2f",
+        "baselines/e3_ablation/e3_paired_cost_formal_v2_20260713/assets/L-main-threeshift-15c-01/bundle/scenario_manifest.json": "af6150475a37982ce95445eea8990075bd5e71147dbaaaa8f267e7ff14c1b025",
+        "baselines/e3_ablation/e3_paired_cost_formal_v2_20260713/assets/L-main-threeshift-15c-01/mixed__common_start.json": "d6a67b21a7fa01b2f005fbd481cf06dc1f26509c7bd2a20d2b7b1fee5aabb4d9",
+        "baselines/e3_ablation/e3_paired_cost_formal_v2_20260713/assets/L-main-threeshift-15c-01/mixed__common_start_meta.json": "8292b9346fba80bf77baa63d4ffec2347280d11458ab1024fa58d51441c5a707",
+        "baselines/e3_ablation/e3_paired_cost_formal_v2_20260713/decision.json": "7418e3c0125d46adaa5a031a19a769dbe0ba67b7261c5ee352ee8106d3fb0e49",
+        "baselines/e3_ablation/e3_paired_cost_formal_v2_20260713/metadata.json": "75a23a4229735be4c7739a0ac1ca504a0667bedffad93731dd644e402f118937"
+      },
+      "sha256": "73ee40974a02047fc2fecd8f3dcc25349fe061907dde7a6d379dc318ce1bb57f"
+    },
+    "L-main-threeshift-200c-01": {
+      "files": {
+        "baselines/e3_ablation/e3_ownership_class_design_v4_20260713/artifact_hashes.json": "a322aebd76f8c4b29eed225aabb45735bf3189a667cfc30fc619c2934ef0ecbe",
+        "baselines/e3_ablation/e3_ownership_class_design_v4_20260713/decision.json": "99d014b0894e4221582bdbdcfadb55365855be9b36bdd1e7795929e6ccdb228f",
+        "baselines/e3_ablation/e3_ownership_class_design_v4_20260713/metadata.json": "4230d77a3bc98d70bba05a55007cdfb1e224d757fb6ad9890e481a30f76a4ea7",
+        "baselines/e3_ablation/e3_ownership_class_design_v4_20260713/ownership_maps/L-main-threeshift-200c-01__mixed.csv": "c41bf36015fb401da6ea90e8ea808b2b2fb3d155e6024f8f699928bc562e2ba7",
+        "baselines/e3_ablation/e3_paired_cost_formal_v2_20260713/artifact_hashes.json": "464fb5aae38a71a9e2e13bb2cfd02e6b40e4e03e6390e61a9f7e1172d1b60680",
+        "baselines/e3_ablation/e3_paired_cost_formal_v2_20260713/assets/L-main-threeshift-200c-01/bundle/carbon_profile.csv": "f552d7b082593582369ab0dfd938983eeadd38a76a0b0a3e79d3410c00421433",
+        "baselines/e3_ablation/e3_paired_cost_formal_v2_20260713/assets/L-main-threeshift-200c-01/bundle/distance_matrix.npy": "c640838be8502a608099d6a359accfc9908e47ba45f0825b0fe260f4afb9fb1b",
+        "baselines/e3_ablation/e3_paired_cost_formal_v2_20260713/assets/L-main-threeshift-200c-01/bundle/instance.json": "da46075892a067cab200f5fce6ac785861475456a06d26eefa4a2c92e6db64d9",
+        "baselines/e3_ablation/e3_paired_cost_formal_v2_20260713/assets/L-main-threeshift-200c-01/bundle/scenario_manifest.json": "49755f3f6ff57165251ca39456ae49681119e136690d9eec02c8fbe506f89585",
+        "baselines/e3_ablation/e3_paired_cost_formal_v2_20260713/assets/L-main-threeshift-200c-01/mixed__common_start.json": "8e05fcc8b85aaf6761750d87c91f6d62ab68e8e2c895a39a5132e5ddf0d1a6c1",
+        "baselines/e3_ablation/e3_paired_cost_formal_v2_20260713/assets/L-main-threeshift-200c-01/mixed__common_start_meta.json": "c5b355c86534c7882f9810edb2a20a11672d056d680acbadd67b8664134da7e7",
+        "baselines/e3_ablation/e3_paired_cost_formal_v2_20260713/decision.json": "7418e3c0125d46adaa5a031a19a769dbe0ba67b7261c5ee352ee8106d3fb0e49",
+        "baselines/e3_ablation/e3_paired_cost_formal_v2_20260713/metadata.json": "75a23a4229735be4c7739a0ac1ca504a0667bedffad93731dd644e402f118937"
+      },
+      "sha256": "bc5a13b0bc8c3a6a54d21a4f0c63d2bd4ddaaa0201a604bbbe80dd4d26a48255"
+    },
+    "L-main-threeshift-20c-01": {
+      "files": {
+        "baselines/e3_ablation/e3_ownership_class_design_v4_20260713/artifact_hashes.json": "a322aebd76f8c4b29eed225aabb45735bf3189a667cfc30fc619c2934ef0ecbe",
+        "baselines/e3_ablation/e3_ownership_class_design_v4_20260713/decision.json": "99d014b0894e4221582bdbdcfadb55365855be9b36bdd1e7795929e6ccdb228f",
+        "baselines/e3_ablation/e3_ownership_class_design_v4_20260713/metadata.json": "4230d77a3bc98d70bba05a55007cdfb1e224d757fb6ad9890e481a30f76a4ea7",
+        "baselines/e3_ablation/e3_ownership_class_design_v4_20260713/ownership_maps/L-main-threeshift-20c-01__mixed.csv": "f3c0716178ff26c267f521c2ebc2624539d1fd058454e7f218b1127bffc07002",
+        "baselines/e3_ablation/e3_paired_cost_formal_v2_20260713/artifact_hashes.json": "464fb5aae38a71a9e2e13bb2cfd02e6b40e4e03e6390e61a9f7e1172d1b60680",
+        "baselines/e3_ablation/e3_paired_cost_formal_v2_20260713/assets/L-main-threeshift-20c-01/bundle/carbon_profile.csv": "f552d7b082593582369ab0dfd938983eeadd38a76a0b0a3e79d3410c00421433",
+        "baselines/e3_ablation/e3_paired_cost_formal_v2_20260713/assets/L-main-threeshift-20c-01/bundle/distance_matrix.npy": "774d59cbb592eccdf87e2ad3a43205c64c5eee0e927a41b0337543bf334c3ae2",
+        "baselines/e3_ablation/e3_paired_cost_formal_v2_20260713/assets/L-main-threeshift-20c-01/bundle/instance.json": "38bf072bf6e315227acc9c2197ee3916612ed19380246896df66e4ddbdefbab3",
+        "baselines/e3_ablation/e3_paired_cost_formal_v2_20260713/assets/L-main-threeshift-20c-01/bundle/scenario_manifest.json": "1a523e0716ac8fb7c4e44fc6ed459970e4029ed90f6d6b8577f3500e0a3e25a8",
+        "baselines/e3_ablation/e3_paired_cost_formal_v2_20260713/assets/L-main-threeshift-20c-01/mixed__common_start.json": "c6dba61627448fc1722189a166875b0a83e0e630c8fdb612b19d84f42ecf1118",
+        "baselines/e3_ablation/e3_paired_cost_formal_v2_20260713/assets/L-main-threeshift-20c-01/mixed__common_start_meta.json": "c2600a036bc20342e89540f791eadfcfd9ad613297e10df065cf5fa46c1b4037",
+        "baselines/e3_ablation/e3_paired_cost_formal_v2_20260713/decision.json": "7418e3c0125d46adaa5a031a19a769dbe0ba67b7261c5ee352ee8106d3fb0e49",
+        "baselines/e3_ablation/e3_paired_cost_formal_v2_20260713/metadata.json": "75a23a4229735be4c7739a0ac1ca504a0667bedffad93731dd644e402f118937"
+      },
+      "sha256": "aeb0d6a70b6a6cb63ecec6df48bf30d22cf5644fa6ad4380e66b9bb60d59b17b"
+    },
+    "L-main-threeshift-25c-01": {
+      "files": {
+        "baselines/e3_ablation/e3_ownership_class_design_v4_20260713/artifact_hashes.json": "a322aebd76f8c4b29eed225aabb45735bf3189a667cfc30fc619c2934ef0ecbe",
+        "baselines/e3_ablation/e3_ownership_class_design_v4_20260713/decision.json": "99d014b0894e4221582bdbdcfadb55365855be9b36bdd1e7795929e6ccdb228f",
+        "baselines/e3_ablation/e3_ownership_class_design_v4_20260713/metadata.json": "4230d77a3bc98d70bba05a55007cdfb1e224d757fb6ad9890e481a30f76a4ea7",
+        "baselines/e3_ablation/e3_ownership_class_design_v4_20260713/ownership_maps/L-main-threeshift-25c-01__mixed.csv": "fd6a1430820f0959fd1f7f5d3652187960fcda116aa3ab7d01fcd5be8701d280",
+        "baselines/e3_ablation/e3_paired_cost_formal_v2_20260713/artifact_hashes.json": "464fb5aae38a71a9e2e13bb2cfd02e6b40e4e03e6390e61a9f7e1172d1b60680",
+        "baselines/e3_ablation/e3_paired_cost_formal_v2_20260713/assets/L-main-threeshift-25c-01/bundle/carbon_profile.csv": "f552d7b082593582369ab0dfd938983eeadd38a76a0b0a3e79d3410c00421433",
+        "baselines/e3_ablation/e3_paired_cost_formal_v2_20260713/assets/L-main-threeshift-25c-01/bundle/distance_matrix.npy": "6cddba0f1220f8317bd6a8d03318cde5bd5772f2fc96c1a39a37526cdff79a3d",
+        "baselines/e3_ablation/e3_paired_cost_formal_v2_20260713/assets/L-main-threeshift-25c-01/bundle/instance.json": "1bad3f3436f7a7da3ee2a3a83e0a1d77ea5669f23d5a51aab3787d3577a8de30",
+        "baselines/e3_ablation/e3_paired_cost_formal_v2_20260713/assets/L-main-threeshift-25c-01/bundle/scenario_manifest.json": "f541efeaf8b4712c14f8a1dbee9e240ba990a517e7bd64d92995e193bd69782e",
+        "baselines/e3_ablation/e3_paired_cost_formal_v2_20260713/assets/L-main-threeshift-25c-01/mixed__common_start.json": "3d3e2d4bd18c9887c21581cfa5ac1d7b72b5e5037f140a943e7b533d11c1c5aa",
+        "baselines/e3_ablation/e3_paired_cost_formal_v2_20260713/assets/L-main-threeshift-25c-01/mixed__common_start_meta.json": "56b4f5da1038698030784300467b4a8ffb75c147beb878b2736a3b3f061cab32",
+        "baselines/e3_ablation/e3_paired_cost_formal_v2_20260713/decision.json": "7418e3c0125d46adaa5a031a19a769dbe0ba67b7261c5ee352ee8106d3fb0e49",
+        "baselines/e3_ablation/e3_paired_cost_formal_v2_20260713/metadata.json": "75a23a4229735be4c7739a0ac1ca504a0667bedffad93731dd644e402f118937"
+      },
+      "sha256": "f889fd7ed595ff8fff0dc791be21ad2acb7eb10acf70b48e3ef3900a2e2c36cc"
+    },
+    "L-main-threeshift-50c-01": {
+      "files": {
+        "baselines/e3_ablation/e3_ownership_class_design_v4_20260713/artifact_hashes.json": "a322aebd76f8c4b29eed225aabb45735bf3189a667cfc30fc619c2934ef0ecbe",
+        "baselines/e3_ablation/e3_ownership_class_design_v4_20260713/decision.json": "99d014b0894e4221582bdbdcfadb55365855be9b36bdd1e7795929e6ccdb228f",
+        "baselines/e3_ablation/e3_ownership_class_design_v4_20260713/metadata.json": "4230d77a3bc98d70bba05a55007cdfb1e224d757fb6ad9890e481a30f76a4ea7",
+        "baselines/e3_ablation/e3_ownership_class_design_v4_20260713/ownership_maps/L-main-threeshift-50c-01__mixed.csv": "d15449a19f1a46ac21c97ce70fd04ee8d7eef61a1a991d4e34ee722829eb7b02",
+        "baselines/e3_ablation/e3_paired_cost_formal_v2_20260713/artifact_hashes.json": "464fb5aae38a71a9e2e13bb2cfd02e6b40e4e03e6390e61a9f7e1172d1b60680",
+        "baselines/e3_ablation/e3_paired_cost_formal_v2_20260713/assets/L-main-threeshift-50c-01/bundle/carbon_profile.csv": "f552d7b082593582369ab0dfd938983eeadd38a76a0b0a3e79d3410c00421433",
+        "baselines/e3_ablation/e3_paired_cost_formal_v2_20260713/assets/L-main-threeshift-50c-01/bundle/distance_matrix.npy": "75d794dd22b2f9e10ed26ded86e539bae5dcf25b0f910fe74dce8d671daebf09",
+        "baselines/e3_ablation/e3_paired_cost_formal_v2_20260713/assets/L-main-threeshift-50c-01/bundle/instance.json": "c731202cca9535c5126b0e8fcc0cc50853d129de08676e7358df94cbc40e2c05",
+        "baselines/e3_ablation/e3_paired_cost_formal_v2_20260713/assets/L-main-threeshift-50c-01/bundle/scenario_manifest.json": "6b070022989ab57728111e0f657985d6277de1adf1de922eebcbc32ae16e1825",
+        "baselines/e3_ablation/e3_paired_cost_formal_v2_20260713/assets/L-main-threeshift-50c-01/mixed__common_start.json": "4ce30e28816835e58fcd04438a3c7ff3ff217983b694aed209f4a13113d97bd3",
+        "baselines/e3_ablation/e3_paired_cost_formal_v2_20260713/assets/L-main-threeshift-50c-01/mixed__common_start_meta.json": "423c5a671d9fd764ce1a9ae17986dddd59871de1feafe6beda59165a95edf9f7",
+        "baselines/e3_ablation/e3_paired_cost_formal_v2_20260713/decision.json": "7418e3c0125d46adaa5a031a19a769dbe0ba67b7261c5ee352ee8106d3fb0e49",
+        "baselines/e3_ablation/e3_paired_cost_formal_v2_20260713/metadata.json": "75a23a4229735be4c7739a0ac1ca504a0667bedffad93731dd644e402f118937"
+      },
+      "sha256": "3daabcc81b7d063c7dc610b9e885be613d3cfe7dd940fec236b8c14d52c1e892"
+    },
+    "L-main-threeshift-75c-01": {
+      "files": {
+        "baselines/e3_ablation/e3_ownership_class_design_v4_20260713/artifact_hashes.json": "a322aebd76f8c4b29eed225aabb45735bf3189a667cfc30fc619c2934ef0ecbe",
+        "baselines/e3_ablation/e3_ownership_class_design_v4_20260713/decision.json": "99d014b0894e4221582bdbdcfadb55365855be9b36bdd1e7795929e6ccdb228f",
+        "baselines/e3_ablation/e3_ownership_class_design_v4_20260713/metadata.json": "4230d77a3bc98d70bba05a55007cdfb1e224d757fb6ad9890e481a30f76a4ea7",
+        "baselines/e3_ablation/e3_ownership_class_design_v4_20260713/ownership_maps/L-main-threeshift-75c-01__mixed.csv": "85fc0ecea0cf52193c70864683578c54a2f2b66bc39f0bf3dc9fed924c899509",
+        "baselines/e3_ablation/e3_paired_cost_formal_v2_20260713/artifact_hashes.json": "464fb5aae38a71a9e2e13bb2cfd02e6b40e4e03e6390e61a9f7e1172d1b60680",
+        "baselines/e3_ablation/e3_paired_cost_formal_v2_20260713/assets/L-main-threeshift-75c-01/bundle/carbon_profile.csv": "f552d7b082593582369ab0dfd938983eeadd38a76a0b0a3e79d3410c00421433",
+        "baselines/e3_ablation/e3_paired_cost_formal_v2_20260713/assets/L-main-threeshift-75c-01/bundle/distance_matrix.npy": "9060151ab8790dcf632a71ea895133733cccc93b145a46da0cadaceed5792680",
+        "baselines/e3_ablation/e3_paired_cost_formal_v2_20260713/assets/L-main-threeshift-75c-01/bundle/instance.json": "06b643bf1207ce28c777da20419368e370a95b5adecc3435bcc4fe38e1f648be",
+        "baselines/e3_ablation/e3_paired_cost_formal_v2_20260713/assets/L-main-threeshift-75c-01/bundle/scenario_manifest.json": "b9d0f53cfbd31e0154ab6c2130b9dd504d67f4edf84bb83a97bdf0c2f3bc3719",
+        "baselines/e3_ablation/e3_paired_cost_formal_v2_20260713/assets/L-main-threeshift-75c-01/mixed__common_start.json": "2880469d2f7f62de3c537fb37487717b05ef05e5ce45d888217dadb426fa04ba",
+        "baselines/e3_ablation/e3_paired_cost_formal_v2_20260713/assets/L-main-threeshift-75c-01/mixed__common_start_meta.json": "7a8a8fac62713b12dd7eb79e303a109a5ef63ab9ccd80c1cce66e041ec0a1098",
+        "baselines/e3_ablation/e3_paired_cost_formal_v2_20260713/decision.json": "7418e3c0125d46adaa5a031a19a769dbe0ba67b7261c5ee352ee8106d3fb0e49",
+        "baselines/e3_ablation/e3_paired_cost_formal_v2_20260713/metadata.json": "75a23a4229735be4c7739a0ac1ca504a0667bedffad93731dd644e402f118937"
+      },
+      "sha256": "73da402c396649695225480073f53b7b266d919155cfe56f00c96fc2623ebb4e"
+    }
+  },
+  "instances": [
+    "L-main-threeshift-10c-01",
+    "L-main-threeshift-15c-01",
+    "L-main-threeshift-20c-01",
+    "L-main-threeshift-25c-01",
+    "L-main-threeshift-50c-01",
+    "L-main-threeshift-75c-01",
+    "L-main-threeshift-100c-01",
+    "L-main-threeshift-150c-01",
+    "L-main-threeshift-200c-01"
+  ],
+  "planned_evidence_row_count": 180,
+  "planned_search_task_count": 135,
+  "purpose": "additive four-arm component evidence; no performance-based filtering",
+  "python_executable": "/opt/anaconda3/bin/python3.13",
+  "python_hash_seed": "0",
+  "python_version": "3.13.9 | packaged by Anaconda, Inc. | (main, Oct 21 2025, 19:11:29) [Clang 20.1.8 ]",
+  "requested_workers": 6,
+  "schema": "resetp.e2b.component-ablation-formal.v1",
+  "search_groups": [
+    {
+      "enable_cross_depot_operator": false,
+      "enable_staged_search": false,
+      "group_id": "A_continuous",
+      "label": "continuous ALNS",
+      "reciprocal_cross_depot": false
+    },
+    {
+      "enable_cross_depot_operator": false,
+      "enable_staged_search": true,
+      "group_id": "B_staged",
+      "label": "400/middle/400 staged ALNS",
+      "reciprocal_cross_depot": false
+    },
+    {
+      "enable_cross_depot_operator": true,
+      "enable_staged_search": true,
+      "group_id": "C_staged_cross",
+      "label": "staged ALNS plus dedicated cross-depot adjustment",
+      "reciprocal_cross_depot": true
+    }
+  ],
+  "seeds": [
+    1,
+    2,
+    3,
+    4,
+    5
+  ],
+  "source_file_hashes": {
+    "baselines/e2_alns/e2b_component_ablation_formal_20260715.py": "eeeb57f96f2d4903cebaae91e2e12a46c4ae8dcbd4ca53d1a4dab0818d44eb80",
+    "baselines/e2_alns/e2b_component_ablation_probe_20260715.py": "17e59c2cf4707271bdde467cfd3be3f41a19ccc7478514f7878eacc6a7791afb",
+    "baselines/e3_ablation/e3_v3_runner.py": "27190fd68cf7b3d446aed07aa734067c7dcb732971790b26891906d1bd8d7b30",
+    "solver/src/setp_solver/algorithms/resetp_alns/kernel/alns_core.py": "23704471495016a59ed63c0f0bb24840528a9736c495ee24ccb0a4be27dc96bb",
+    "solver/src/setp_solver/algorithms/resetp_alns/kernel/winner.py": "0eb31fd5c90aaf923db4edd511f4cb102487887f6b213740db9c93e8ec02101b",
+    "solver/src/setp_solver/algorithms/resetp_alns/operators/feasible_repair.py": "21a50ca7340bec698e33151956e0d5c50ed73f8e502833bbe30d40942a411da1",
+    "solver/src/setp_solver/check.py": "53f5cc27d3ac72bdd2bbec113eb8af11ad18a82490502f800941140495e8e142",
+    "solver/src/setp_solver/cost.py": "d8bfee1844c8f8e89bac1233a3cd862d7ac7d088039f97751b8274756c41dee4",
+    "solver/src/setp_solver/prices.py": "d6ad8d59ea555c0f91e98196a8ed3d704c62f1fef3ce4b5bd519ef218a911d3d",
+    "solver/src/setp_solver/search/bundle.py": "077eea450c7d9052194bdb1599b26992521a32753fdc9a89b96e3f3876c3f693",
+    "solver/src/setp_solver/search/e3_multitrip_runtime.py": "ecbe21559e56f71e3ed9681bcac188b1d68f082eff5f4794a9c49d2aa762ad6a",
+    "solver/src/setp_solver/search/evaluation.py": "c7215263c39d1d5a1429b41ca8ac40d950dbdf2bdc288337e56fbe9733406fc3",
+    "solver/src/setp_solver/search/multitrip_schedule.py": "a1033870de0d319e01837e00aa19f8a42ef03faa0be4189e6317f1a20cfeb9ab",
+    "solver/src/setp_solver/solution.py": "5324b89af38962e80127c041154106e34cde34be49506c2c044509fe2346dfbb"
+  },
+  "source_files_unchanged_during_run": true,
+  "source_fingerprint_after_run_sha256": "23f389382422ce6af2c23f6d691d5c2baabf17c3c7e336558ca50ba4de542f74",
+  "source_fingerprint_sha256": "23f389382422ce6af2c23f6d691d5c2baabf17c3c7e336558ca50ba4de542f74",
+  "strict_multitrip_in_all_search_arms": true
+}

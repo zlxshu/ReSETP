@@ -1,0 +1,231 @@
+{
+  "charging_actions": [
+    {
+      "charge_day_offset": -1,
+      "charge_start_second": 0.0,
+      "energy_kwh": 128.81924799118352,
+      "occupancy_minutes": 351.3252217941369,
+      "station_id": "D0",
+      "vehicle_id": "EV_D0_1#T1"
+    },
+    {
+      "charge_day_offset": -1,
+      "charge_start_second": 0.0,
+      "energy_kwh": 164.52081941901739,
+      "occupancy_minutes": 448.69314387004744,
+      "station_id": "D0",
+      "vehicle_id": "EV_D0_2#T1"
+    },
+    {
+      "charge_day_offset": 0,
+      "charge_start_second": 40617.30696034736,
+      "energy_kwh": 49.11533030648516,
+      "occupancy_minutes": 133.95090083586862,
+      "station_id": "D0",
+      "vehicle_id": "EV_D0_2#T2"
+    }
+  ],
+  "cross_site_services": [
+    {
+      "customer_id": "C006",
+      "served_by_depot_id": "D0"
+    },
+    {
+      "customer_id": "C001",
+      "served_by_depot_id": "D0"
+    },
+    {
+      "customer_id": "C004",
+      "served_by_depot_id": "D0"
+    },
+    {
+      "customer_id": "C002",
+      "served_by_depot_id": "D0"
+    },
+    {
+      "customer_id": "C010",
+      "served_by_depot_id": "D1"
+    },
+    {
+      "customer_id": "C031",
+      "served_by_depot_id": "D1"
+    },
+    {
+      "customer_id": "C022",
+      "served_by_depot_id": "D1"
+    },
+    {
+      "customer_id": "C030",
+      "served_by_depot_id": "D1"
+    },
+    {
+      "customer_id": "C044",
+      "served_by_depot_id": "D1"
+    },
+    {
+      "customer_id": "C041",
+      "served_by_depot_id": "D1"
+    },
+    {
+      "customer_id": "C043",
+      "served_by_depot_id": "D1"
+    },
+    {
+      "customer_id": "C014",
+      "served_by_depot_id": "D1"
+    },
+    {
+      "customer_id": "C012",
+      "served_by_depot_id": "D1"
+    },
+    {
+      "customer_id": "C028",
+      "served_by_depot_id": "D1"
+    },
+    {
+      "customer_id": "C035",
+      "served_by_depot_id": "D1"
+    },
+    {
+      "customer_id": "C037",
+      "served_by_depot_id": "D1"
+    },
+    {
+      "customer_id": "C007",
+      "served_by_depot_id": "D0"
+    },
+    {
+      "customer_id": "C033",
+      "served_by_depot_id": "D0"
+    },
+    {
+      "customer_id": "C021",
+      "served_by_depot_id": "D0"
+    },
+    {
+      "customer_id": "C018",
+      "served_by_depot_id": "D0"
+    },
+    {
+      "customer_id": "C027",
+      "served_by_depot_id": "D0"
+    },
+    {
+      "customer_id": "C025",
+      "served_by_depot_id": "D0"
+    },
+    {
+      "customer_id": "C023",
+      "served_by_depot_id": "D0"
+    },
+    {
+      "customer_id": "C024",
+      "served_by_depot_id": "D0"
+    },
+    {
+      "customer_id": "C039",
+      "served_by_depot_id": "D0"
+    }
+  ],
+  "routes": [
+    {
+      "home_depot_id": "D0",
+      "node_sequence": [
+        "D0",
+        "C008",
+        "C006",
+        "C001",
+        "C017",
+        "C004",
+        "C002",
+        "C011",
+        "C040",
+        "C036",
+        "C038",
+        "D0"
+      ],
+      "vehicle_id": "CV_D0_1#T1",
+      "vehicle_type": "cv"
+    },
+    {
+      "home_depot_id": "D1",
+      "node_sequence": [
+        "D1",
+        "C015",
+        "C010",
+        "C003",
+        "C031",
+        "C022",
+        "C030",
+        "C044",
+        "C041",
+        "C043",
+        "D1"
+      ],
+      "vehicle_id": "CV_D1_2#T1",
+      "vehicle_type": "cv"
+    },
+    {
+      "home_depot_id": "D1",
+      "node_sequence": [
+        "D1",
+        "C009",
+        "C016",
+        "C014",
+        "C012",
+        "C028",
+        "C035",
+        "C037",
+        "C042",
+        "D1"
+      ],
+      "vehicle_id": "CV_D1_1#T1",
+      "vehicle_type": "cv"
+    },
+    {
+      "home_depot_id": "D0",
+      "node_sequence": [
+        "D0",
+        "C013",
+        "C005",
+        "C007",
+        "C019",
+        "C033",
+        "C021",
+        "C034",
+        "D0"
+      ],
+      "vehicle_id": "EV_D0_1#T1",
+      "vehicle_type": "ev"
+    },
+    {
+      "home_depot_id": "D0",
+      "node_sequence": [
+        "D0",
+        "C018",
+        "C020",
+        "C027",
+        "C029",
+        "C025",
+        "D0"
+      ],
+      "vehicle_id": "EV_D0_2#T1",
+      "vehicle_type": "ev"
+    },
+    {
+      "home_depot_id": "D0",
+      "node_sequence": [
+        "D0",
+        "C023",
+        "C032",
+        "C026",
+        "C024",
+        "C039",
+        "C045",
+        "D0"
+      ],
+      "vehicle_id": "EV_D0_2#T2",
+      "vehicle_type": "ev"
+    }
+  ]
+}
