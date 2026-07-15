@@ -1424,3 +1424,183 @@ def aggregate(
         )
     write_json(out / "decision.json", decision)
     return decision
+
+
+def report_text(decision: dict[str, Any]) -> str:
+    """Render the human-readable boundary without strengthening the evidence."""
+
+    status = decision["status"]
+    lines = [
+        "# E3 中等责任偏离正式增量实验",
+        "",
+        f"状态：`{status}`。完成 {decision['completed_pairs']}/{decision['expected_pairs']} 个配对，"
+        f"即 {decision['completed_search_runs']}/{decision['expected_search_runs']} 次搜索。",
+        "",
+        "本批只增加跑前冻结的中等客户责任图。固定责任与开放合作两组使用同一起点、"
+        "同一随机种子、同一 4000 次完整方案评价预算；开放合作组同时保存原始搜索结果和"
+        "不劣于固定责任结果的合法保底选择，两种口径分开报告。",
+        "",
+        "旧地理责任与空间交错责任端点没有被覆盖。正式三点趋势只有在 108 份旧方案的"
+        "当前代码回放和两个端点的确定性复现均通过、且全部中等档配对完成后才允许形成。",
+        "结果方向不参与是否继续运行或是否保留记录的判断。",
+    ]
+    if decision.get("trend_inference_allowed"):
+        lines.extend(
+            [
+                "",
+                f"中等档九网络原始搜索平均节省 {decision['medium_raw_search_network_mean_saving_pct']:.6f}%，"
+                f"采用合法保底后的平均节省 {decision['medium_selected_network_mean_saving_pct']:.6f}%。",
+                "三档是否单调、斜率方向和符号检验详见 `trend_summary.csv` 与 `decision.json`；"
+                "正文不得只摘取更好看的保底或原始口径。",
+            ]
+        )
+    return "\n".join(lines) + "\n"
+
+
+def artifact_hashes(out: Path) -> dict[str, str]:
+    return {
+        str(path.relative_to(out)): sha256(path)
+        for path in sorted(out.rglob("*"))
+        if path.is_file()
+        and path.name != "artifact_hashes.json"
+        and not path.name.startswith("._")
+        and ".tmp" not in path.name
+        and "__pycache__" not in path.parts
+        and ".pytest_cache" not in path.parts
+    }
+
+
+def parse_csv_strings(value: str) -> list[str]:
+    return [item.strip() for item in value.split(",") if item.strip()]
+
+
+def parse_csv_ints(value: str) -> list[int]:
+    try:
+        return [int(item) for item in parse_csv_strings(value)]
+    except ValueError as exc:
+        raise argparse.ArgumentTypeError(str(exc)) from exc
+
+
+def main() -> int:
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument(
+        "--stage",
+        choices=("prepare", "compatibility", "run", "aggregate", "all"),
+        default="prepare",
+    )
+    parser.add_argument("--instances", default=",".join(FORMAL_INSTANCE_ORDER))
+    parser.add_argument("--seeds", default=",".join(str(seed) for seed in FORMAL_SEEDS))
+    parser.add_argument("--eval-budget", type=int, default=FORMAL_EVAL_BUDGET)
+    parser.add_argument("--workers", type=int, default=6)
+    parser.add_argument("--output", type=Path, default=FORMAL_OUT)
+    parser.add_argument(
+        "--probe",
+        action="store_true",
+        help="allow a bounded non-formal subset; it must use a separate output directory",
+    )
+    args = parser.parse_args()
+
+    instances = parse_csv_strings(args.instances)
+    seeds = parse_csv_ints(args.seeds)
+    if not instances or len(instances) != len(set(instances)):
+        parser.error("--instances must be a non-empty list without duplicates")
+    unknown = set(instances) - set(FORMAL_INSTANCE_ORDER)
+    if unknown:
+        parser.error(f"unknown formal instances: {sorted(unknown)}")
+    if not seeds or any(seed <= 0 for seed in seeds) or len(seeds) != len(set(seeds)):
+        parser.error("--seeds must be unique positive integers")
+    if not 1 <= args.workers <= 8:
+        parser.error("--workers must be between 1 and 8")
+    if args.eval_budget <= 0:
+        parser.error("--eval-budget must be positive")
+
+    mode = "probe" if args.probe else "formal"
+    if mode == "formal":
+        if instances != list(FORMAL_INSTANCE_ORDER) or seeds != list(FORMAL_SEEDS):
+            parser.error("formal mode requires all nine frozen networks and seeds 1,2,3")
+        if args.eval_budget != FORMAL_EVAL_BUDGET:
+            parser.error("formal mode requires exactly 4000 evaluations per arm")
+        if args.output.resolve() != FORMAL_OUT.resolve():
+            parser.error("formal mode must use the frozen formal output directory")
+    elif args.output.resolve() == FORMAL_OUT.resolve():
+        parser.error("a probe must use a separate --output directory")
+
+    contract = build_contract(
+        mode=mode,
+        eval_budget=args.eval_budget,
+        instances=instances,
+        seeds=seeds,
+    )
+    ensure_metadata(args.output, contract)
+    starts = prepare_medium_starts(instances, args.output)
+    specs = build_pair_specs(instances, seeds, starts, contract["contract_sha256"])
+    write_task_manifest(args.output, specs, args.eval_budget)
+
+    compatibility = None
+    endpoint = None
+    compatibility_path = args.output / "compatibility" / "old_solution_replay_decision.json"
+    if compatibility_path.is_file():
+        compatibility = read_json(compatibility_path)
+    endpoint = load_endpoint_reproduction_decision(args.output)
+
+    if args.stage in {"compatibility", "all"}:
+        if mode == "formal":
+            compatibility = replay_old_endpoint_solutions(args.output)
+            if compatibility.get("status") != "PASS":
+                raise RuntimeError("old endpoint solution replay failed; formal search is blocked")
+            endpoint = run_endpoint_reproduction_probes(args.output, args.eval_budget)
+            if endpoint.get("status") != "PASS":
+                raise RuntimeError("old endpoint deterministic reproduction failed; formal search is blocked")
+
+    if args.stage in {"run", "all"}:
+        if mode == "formal" and (
+            (compatibility or {}).get("status") != "PASS"
+            or (endpoint or {}).get("status") != "PASS"
+        ):
+            raise RuntimeError("formal compatibility gates must pass before the middle batch")
+        sources_fingerprint = contract["source_fingerprint_sha256"]
+        with ProcessPoolExecutor(max_workers=min(args.workers, len(specs))) as pool:
+            futures = {
+                pool.submit(
+                    run_pair,
+                    spec,
+                    out_text=str(args.output),
+                    eval_budget=args.eval_budget,
+                    source_fingerprint_sha256=sources_fingerprint,
+                ): spec
+                for spec in specs
+            }
+            for future in as_completed(futures):
+                payload = future.result()
+                print(
+                    json.dumps(
+                        {
+                            "pair_id": payload.get("pair_id"),
+                            "pair_status": payload.get("pair_status"),
+                            "reason": payload.get("reason", ""),
+                        },
+                        ensure_ascii=False,
+                    ),
+                    flush=True,
+                )
+
+    decision = aggregate(
+        out=args.output,
+        specs=specs,
+        eval_budget=args.eval_budget,
+        mode=mode,
+        compatibility_replay=compatibility,
+        endpoint_reproduction=endpoint,
+    )
+    (args.output / "report.md").write_text(report_text(decision), encoding="utf-8")
+    write_json(args.output / "artifact_hashes.json", artifact_hashes(args.output))
+    print(json.dumps(decision, ensure_ascii=False, indent=2, sort_keys=True))
+
+    if args.stage in {"prepare", "aggregate", "compatibility"}:
+        return 0
+    expected = "FORMAL_COMPLETE" if mode == "formal" else "PROBE_COMPLETE"
+    return 0 if decision["status"] == expected else 2
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())
