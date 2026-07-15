@@ -1,0 +1,46 @@
+{
+  "controlled_arm_failures": [
+    {
+      "arm": "no_participation",
+      "failed_stage": 2,
+      "failed_trigger_second": 21600.0,
+      "failure_error": "stage search found no executable continuation (initial_feasible=False, changed=2, executable=0, accepted=0, top_rejections=[('E7_DYNAMIC_MULTITRIP_V1: no inherited asset can serve open route S2_OPEN_002', 1), ('E7_DYNAMIC_MULTITRIP_V1: no inherited asset can serve open route S2_OPEN_007', 1)])",
+      "network": "N114",
+      "responsibility_condition": "historical_mixed",
+      "stream_seed": 1
+    },
+    {
+      "arm": "no_participation",
+      "failed_stage": 2,
+      "failed_trigger_second": 21600.0,
+      "failure_error": "stage search found no executable continuation (initial_feasible=False, changed=2, executable=0, accepted=0, top_rejections=[('E7_DYNAMIC_MULTITRIP_V1: no inherited asset can serve open route S2_OPEN_002', 1), ('E7_DYNAMIC_MULTITRIP_V1: no inherited asset can serve open route S2_OPEN_007', 1)])",
+      "network": "N114",
+      "responsibility_condition": "historical_mixed",
+      "stream_seed": 3
+    }
+  ],
+  "failures": [],
+  "mechanical_checks": {
+    "all_conditions_complete": {
+      "geographic": true,
+      "historical_mixed": true
+    },
+    "all_streams_complete": {
+      "1": true,
+      "2": true,
+      "3": true,
+      "4": true,
+      "5": true
+    },
+    "customer_accounting_pass": true,
+    "equal_budget_and_shared_start_pass": true,
+    "expected_task_count": 120,
+    "observed_task_count": 120,
+    "predicted_charging_nonworsening_pass": true
+  },
+  "paired_comparison_file": "paired_policy_comparisons.csv",
+  "result_direction_used_for_inclusion": false,
+  "scientific_interpretation_status": "PENDING_INDEPENDENT_AUDIT",
+  "summary_file": "summary_by_condition_arm.csv",
+  "verdict": "E7_FORMAL_EVIDENCE_COMPLETE_WITH_ARM_FAILURES"
+}
