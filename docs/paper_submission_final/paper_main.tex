@@ -20,10 +20,10 @@
 \fi
 \IfFontExistsTF{Songti SC}{\newcommand{\setpFangSongFont}{Songti SC}}{\newcommand{\setpFangSongFont}{FangSong}}
 \ifsetpLocalNotoHei
-\setCJKmainfont[BoldFont=NotoSansCJKsc-Regular.otf,BoldFeatures={Path=/Users/zhouleixishu/Library/Fonts/}]{\setpSongFont}
+\setCJKmainfont{\setpSongFont}
 \setCJKsansfont[Path=/Users/zhouleixishu/Library/Fonts/]{NotoSansCJKsc-Regular.otf}
 \setCJKmonofont{\setpSongFont}
-\setCJKfamilyfont{zhsong}[BoldFont=NotoSansCJKsc-Regular.otf,BoldFeatures={Path=/Users/zhouleixishu/Library/Fonts/}]{\setpSongFont}
+\setCJKfamilyfont{zhsong}{\setpSongFont}
 \setCJKfamilyfont{zhhei}[Path=/Users/zhouleixishu/Library/Fonts/]{NotoSansCJKsc-Regular.otf}
 \setCJKfamilyfont{zhfs}{\setpFangSongFont}
 \else
@@ -110,10 +110,12 @@
 \Author{周雷习书, 干宏程, 邱莹莹}{上海理工大学 管理学院, 上海 200093}
 \newif\ifETwoPublicReady
 \ETwoPublicReadyfalse
-\IfFileExists{generated_tables/e2_cvrplib_benchmark.tex}{%
-\IfFileExists{generated_tables/e2_cvrplib_interpretation.tex}{%
-\IfFileExists{generated_tables/e2_cvrplib_paper_evidence_manifest.json}{\ETwoPublicReadytrue}{}%
+\IfFileExists{generated_tables/e2_solomon_benchmark.tex}{%
+\IfFileExists{generated_tables/e2_solomon_class_summary.tex}{%
+\IfFileExists{generated_tables/e2_solomon_interpretation.tex}{%
+\IfFileExists{generated_tables/e2_solomon_paper_evidence_manifest.json}{\ETwoPublicReadytrue}{}%
 }{}% interpretation
+}{}% class summary
 }{}% benchmark table
 \newif\ifESevenReady
 \ESevenReadyfalse
@@ -664,20 +666,29 @@ $CE$ & $0$ kgCO$_2$e & & \\
 \subsection{算法有效性分析}
 
 \ifETwoPublicReady
-\subsubsection{CVRP标准算例实验}
+\subsubsection{Solomon标准算例实验}
 
-为区分基础路径搜索能力与完整模型求解能力，本文另选取CVRPLIB X算例集中官网标记为已知最优的6个容量约束车辆路径算例，按小、中和大规模各取2个。实验关闭多车场、车型、充电和碳机制，仅保留TVCI-ALNS的基础路径搜索内核；每个算例使用1--10号预先固定种子，每次上限为4000次完整方案评价。
+为区分基础路径搜索能力与完整模型求解能力，本文选取Solomon的56个100客户带时间窗车辆路径算例，按C1、C2、R1、R2、RC1和RC2六类进行测试。评价口径与SINTEF公开解一致：先最小化车辆数，再在车辆数相同的前提下最小化双精度欧氏距离，总距离保留2位小数。每个算例使用1--10号预先固定种子独立运行，共计560次。表中CPU表示单次运行的进程CPU时间，RT表示实测墙钟时间，Runs表示独立运行次数；运行环境、线程数与停止条件同时披露，不将不同硬件上的原始用时直接解释为算法优劣。
 
 \begin{table}[H]
 \centering
-\caption{CVRPLIB公开最优算例上的基础路径搜索结果}
-\label{tab:e2-cvrplib}
+\caption{Solomon标准算例上的路径搜索结果}
+\label{tab:e2-solomon}
 \setptabsetup
-\input{generated_tables/e2_cvrplib_benchmark.tex}
-\tabnote[0.96\linewidth]{注: BKS为CVRPLIB官网标记Opt=yes的公开最优值; Gap按$(z-z^*)/z^*\times100\%$计算; 失败包括超时、欠评价、不可行或独立复算不一致。}
+\input{generated_tables/e2_solomon_benchmark.tex}
+\tabnote[0.96\linewidth]{注: BKS采用SINTEF公开的车辆数与总距离二元值; 先比较车辆数，仅当车辆数等于BKS时计算距离Gap; 超时、不可行或独立复算不一致均原样计入。}
 \end{table}
 
-\input{generated_tables/e2_cvrplib_interpretation.tex}
+\begin{table}[H]
+\centering
+\caption{Solomon标准算例的分类统计}
+\label{tab:e2-solomon-class}
+\setptabsetup
+\input{generated_tables/e2_solomon_class_summary.tex}
+\tabnote[0.96\linewidth]{注: 分类统计按C1、C2、R1、R2、RC1和RC2六类算例汇总; CPU为进程CPU时间，RT为墙钟时间，Runs为独立运行次数。}
+\end{table}
+
+\input{generated_tables/e2_solomon_interpretation.tex}
 \fi
 
 \ifETwoPublicReady\subsubsection{本文模型实验}\fi

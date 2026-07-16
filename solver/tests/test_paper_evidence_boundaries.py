@@ -125,21 +125,38 @@ def test_story_audit_title_contract_matches_current_tex() -> None:
 def test_pending_paper_has_a_hard_e2_public_benchmark_hook() -> None:
     text = audit.TEX.read_text(encoding="utf-8")
     preamble, _ = text.split(r"\begin{document}", maxsplit=1)
-    for filename in audit.E2_PUBLIC_EXHIBITS[:2]:
+    for filename in audit.E2_PUBLIC_EXHIBITS:
+        assert rf"\IfFileExists{{generated_tables/{filename}}}" in preamble
+    assert preamble.count(r"\IfFileExists{generated_tables/e2_solomon_") == len(
+        audit.E2_PUBLIC_EXHIBITS
+    )
+    for filename in audit.E2_PUBLIC_GENERATED_EXHIBITS:
         assert f"generated_tables/{filename}" in text
     assert r"\newif\ifETwoPublicReady" in preamble
     assert r"\ETwoPublicReadyfalse" in preamble
-    assert "generated_tables/e2_cvrplib_paper_evidence_manifest.json" in preamble
+    assert "generated_tables/e2_solomon_paper_evidence_manifest.json" in preamble
     assert r"\ifETwoPublicReady" in text
     assert "阶段稿提示" not in text
     if not all(
         (audit.E2_PUBLIC / filename).is_file()
-        for filename in audit.e2_public_builder.REQUIRED_SOURCE_FILES
+        for filename in audit.E2_PUBLIC_REQUIRED_SOURCE_FILES
     ):
         assert not any(
             (audit.TABLES / filename).is_file()
             for filename in audit.E2_PUBLIC_EXHIBITS
         )
+
+
+def test_solomon_main_table_uses_sintef_hierarchical_metrics() -> None:
+    text = audit.TEX.read_text(encoding="utf-8")
+    start = text.index(r"\subsubsection{Solomon标准算例实验}")
+    end = text.index(r"\ifETwoPublicReady\subsubsection{本文模型实验}", start)
+    section = text[start:end]
+    for required in audit.E2_SOLOMON_MAIN_TABLE_REQUIRED_TERMS:
+        assert required in section
+    for forbidden in audit.E2_SOLOMON_MAIN_TABLE_FORBIDDEN_TERMS:
+        assert forbidden not in section
+    assert "generated_tables/e2_solomon_class_summary.tex" in section
 
 
 def test_paper_uses_one_atomic_e7_exhibit_gate() -> None:
@@ -222,7 +239,7 @@ def test_paper_uses_the_designated_model_and_algorithm_chapter_hierarchy() -> No
         r"\subsubsection{比较方案与统计口径}",
         r"\subsubsection{模型与实现检验}",
         r"\subsection{算法有效性分析}",
-        r"\subsubsection{CVRP标准算例实验}",
+        r"\subsubsection{Solomon标准算例实验}",
         r"\subsubsection{本文模型实验}",
         r"\subsubsection{算法组件作用分析}",
         r"\subsection{各机制分析}",

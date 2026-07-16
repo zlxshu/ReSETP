@@ -1,0 +1,1031 @@
+{
+  "metadata": {
+    "distance_reporting": "round total to two decimals",
+    "distance_rule": "double_precision_euclidean",
+    "distance_unit": "Solomon abstract distance unit",
+    "num_cv": 25,
+    "num_ev": 0,
+    "objective": [
+      "minimize_vehicle_count",
+      "then_minimize_total_distance"
+    ],
+    "scoring_contract": "SINTEF hierarchical Solomon benchmark",
+    "source_family": "Solomon 100-customer VRPTW",
+    "source_instance": "R205",
+    "time_unit": "Solomon abstract time unit",
+    "vehicle_capacity": 1000
+  },
+  "nodes": [
+    {
+      "demand": 0,
+      "due_time": 1000,
+      "node_id": "D0",
+      "node_type": "d",
+      "ready_time": 0,
+      "service_time": 0,
+      "x": 35,
+      "y": 35
+    },
+    {
+      "demand": 10,
+      "due_time": 898,
+      "node_id": "C1",
+      "node_type": "c",
+      "ready_time": 658,
+      "service_time": 10,
+      "x": 41,
+      "y": 49
+    },
+    {
+      "demand": 7,
+      "due_time": 333,
+      "node_id": "C2",
+      "node_type": "c",
+      "ready_time": 93,
+      "service_time": 10,
+      "x": 35,
+      "y": 17
+    },
+    {
+      "demand": 13,
+      "due_time": 676,
+      "node_id": "C3",
+      "node_type": "c",
+      "ready_time": 436,
+      "service_time": 10,
+      "x": 55,
+      "y": 45
+    },
+    {
+      "demand": 19,
+      "due_time": 860,
+      "node_id": "C4",
+      "node_type": "c",
+      "ready_time": 620,
+      "service_time": 10,
+      "x": 55,
+      "y": 20
+    },
+    {
+      "demand": 26,
+      "due_time": 260,
+      "node_id": "C5",
+      "node_type": "c",
+      "ready_time": 20,
+      "service_time": 10,
+      "x": 15,
+      "y": 30
+    },
+    {
+      "demand": 3,
+      "due_time": 585,
+      "node_id": "C6",
+      "node_type": "c",
+      "ready_time": 345,
+      "service_time": 10,
+      "x": 25,
+      "y": 30
+    },
+    {
+      "demand": 5,
+      "due_time": 491,
+      "node_id": "C7",
+      "node_type": "c",
+      "ready_time": 251,
+      "service_time": 10,
+      "x": 20,
+      "y": 50
+    },
+    {
+      "demand": 9,
+      "due_time": 563,
+      "node_id": "C8",
+      "node_type": "c",
+      "ready_time": 323,
+      "service_time": 10,
+      "x": 10,
+      "y": 43
+    },
+    {
+      "demand": 16,
+      "due_time": 569,
+      "node_id": "C9",
+      "node_type": "c",
+      "ready_time": 329,
+      "service_time": 10,
+      "x": 55,
+      "y": 60
+    },
+    {
+      "demand": 16,
+      "due_time": 725,
+      "node_id": "C10",
+      "node_type": "c",
+      "ready_time": 485,
+      "service_time": 10,
+      "x": 30,
+      "y": 60
+    },
+    {
+      "demand": 12,
+      "due_time": 386,
+      "node_id": "C11",
+      "node_type": "c",
+      "ready_time": 146,
+      "service_time": 10,
+      "x": 20,
+      "y": 65
+    },
+    {
+      "demand": 19,
+      "due_time": 407,
+      "node_id": "C12",
+      "node_type": "c",
+      "ready_time": 167,
+      "service_time": 10,
+      "x": 50,
+      "y": 35
+    },
+    {
+      "demand": 23,
+      "due_time": 879,
+      "node_id": "C13",
+      "node_type": "c",
+      "ready_time": 639,
+      "service_time": 10,
+      "x": 30,
+      "y": 25
+    },
+    {
+      "demand": 20,
+      "due_time": 272,
+      "node_id": "C14",
+      "node_type": "c",
+      "ready_time": 32,
+      "service_time": 10,
+      "x": 15,
+      "y": 10
+    },
+    {
+      "demand": 8,
+      "due_time": 358,
+      "node_id": "C15",
+      "node_type": "c",
+      "ready_time": 118,
+      "service_time": 10,
+      "x": 30,
+      "y": 5
+    },
+    {
+      "demand": 19,
+      "due_time": 443,
+      "node_id": "C16",
+      "node_type": "c",
+      "ready_time": 203,
+      "service_time": 10,
+      "x": 10,
+      "y": 20
+    },
+    {
+      "demand": 2,
+      "due_time": 922,
+      "node_id": "C17",
+      "node_type": "c",
+      "ready_time": 682,
+      "service_time": 10,
+      "x": 5,
+      "y": 30
+    },
+    {
+      "demand": 12,
+      "due_time": 526,
+      "node_id": "C18",
+      "node_type": "c",
+      "ready_time": 286,
+      "service_time": 10,
+      "x": 20,
+      "y": 40
+    },
+    {
+      "demand": 17,
+      "due_time": 444,
+      "node_id": "C19",
+      "node_type": "c",
+      "ready_time": 204,
+      "service_time": 10,
+      "x": 15,
+      "y": 60
+    },
+    {
+      "demand": 9,
+      "due_time": 744,
+      "node_id": "C20",
+      "node_type": "c",
+      "ready_time": 504,
+      "service_time": 10,
+      "x": 45,
+      "y": 65
+    },
+    {
+      "demand": 11,
+      "due_time": 393,
+      "node_id": "C21",
+      "node_type": "c",
+      "ready_time": 153,
+      "service_time": 10,
+      "x": 45,
+      "y": 20
+    },
+    {
+      "demand": 18,
+      "due_time": 572,
+      "node_id": "C22",
+      "node_type": "c",
+      "ready_time": 332,
+      "service_time": 10,
+      "x": 45,
+      "y": 10
+    },
+    {
+      "demand": 29,
+      "due_time": 386,
+      "node_id": "C23",
+      "node_type": "c",
+      "ready_time": 146,
+      "service_time": 10,
+      "x": 55,
+      "y": 5
+    },
+    {
+      "demand": 3,
+      "due_time": 896,
+      "node_id": "C24",
+      "node_type": "c",
+      "ready_time": 656,
+      "service_time": 10,
+      "x": 65,
+      "y": 35
+    },
+    {
+      "demand": 6,
+      "due_time": 956,
+      "node_id": "C25",
+      "node_type": "c",
+      "ready_time": 716,
+      "service_time": 10,
+      "x": 65,
+      "y": 20
+    },
+    {
+      "demand": 17,
+      "due_time": 748,
+      "node_id": "C26",
+      "node_type": "c",
+      "ready_time": 508,
+      "service_time": 10,
+      "x": 45,
+      "y": 30
+    },
+    {
+      "demand": 16,
+      "due_time": 300,
+      "node_id": "C27",
+      "node_type": "c",
+      "ready_time": 60,
+      "service_time": 10,
+      "x": 35,
+      "y": 40
+    },
+    {
+      "demand": 16,
+      "due_time": 305,
+      "node_id": "C28",
+      "node_type": "c",
+      "ready_time": 65,
+      "service_time": 10,
+      "x": 41,
+      "y": 37
+    },
+    {
+      "demand": 9,
+      "due_time": 372,
+      "node_id": "C29",
+      "node_type": "c",
+      "ready_time": 132,
+      "service_time": 10,
+      "x": 64,
+      "y": 42
+    },
+    {
+      "demand": 21,
+      "due_time": 427,
+      "node_id": "C30",
+      "node_type": "c",
+      "ready_time": 187,
+      "service_time": 10,
+      "x": 40,
+      "y": 60
+    },
+    {
+      "demand": 27,
+      "due_time": 334,
+      "node_id": "C31",
+      "node_type": "c",
+      "ready_time": 94,
+      "service_time": 10,
+      "x": 31,
+      "y": 52
+    },
+    {
+      "demand": 23,
+      "due_time": 839,
+      "node_id": "C32",
+      "node_type": "c",
+      "ready_time": 599,
+      "service_time": 10,
+      "x": 35,
+      "y": 69
+    },
+    {
+      "demand": 11,
+      "due_time": 264,
+      "node_id": "C33",
+      "node_type": "c",
+      "ready_time": 24,
+      "service_time": 10,
+      "x": 53,
+      "y": 52
+    },
+    {
+      "demand": 14,
+      "due_time": 692,
+      "node_id": "C34",
+      "node_type": "c",
+      "ready_time": 452,
+      "service_time": 10,
+      "x": 65,
+      "y": 55
+    },
+    {
+      "demand": 8,
+      "due_time": 870,
+      "node_id": "C35",
+      "node_type": "c",
+      "ready_time": 630,
+      "service_time": 10,
+      "x": 63,
+      "y": 65
+    },
+    {
+      "demand": 5,
+      "due_time": 281,
+      "node_id": "C36",
+      "node_type": "c",
+      "ready_time": 41,
+      "service_time": 10,
+      "x": 2,
+      "y": 60
+    },
+    {
+      "demand": 8,
+      "due_time": 770,
+      "node_id": "C37",
+      "node_type": "c",
+      "ready_time": 530,
+      "service_time": 10,
+      "x": 20,
+      "y": 20
+    },
+    {
+      "demand": 16,
+      "due_time": 474,
+      "node_id": "C38",
+      "node_type": "c",
+      "ready_time": 234,
+      "service_time": 10,
+      "x": 5,
+      "y": 5
+    },
+    {
+      "demand": 31,
+      "due_time": 273,
+      "node_id": "C39",
+      "node_type": "c",
+      "ready_time": 33,
+      "service_time": 10,
+      "x": 60,
+      "y": 12
+    },
+    {
+      "demand": 9,
+      "due_time": 519,
+      "node_id": "C40",
+      "node_type": "c",
+      "ready_time": 279,
+      "service_time": 10,
+      "x": 40,
+      "y": 25
+    },
+    {
+      "demand": 5,
+      "due_time": 574,
+      "node_id": "C41",
+      "node_type": "c",
+      "ready_time": 334,
+      "service_time": 10,
+      "x": 42,
+      "y": 7
+    },
+    {
+      "demand": 5,
+      "due_time": 265,
+      "node_id": "C42",
+      "node_type": "c",
+      "ready_time": 25,
+      "service_time": 10,
+      "x": 24,
+      "y": 12
+    },
+    {
+      "demand": 7,
+      "due_time": 783,
+      "node_id": "C43",
+      "node_type": "c",
+      "ready_time": 543,
+      "service_time": 10,
+      "x": 23,
+      "y": 3
+    },
+    {
+      "demand": 18,
+      "due_time": 407,
+      "node_id": "C44",
+      "node_type": "c",
+      "ready_time": 167,
+      "service_time": 10,
+      "x": 11,
+      "y": 14
+    },
+    {
+      "demand": 16,
+      "due_time": 269,
+      "node_id": "C45",
+      "node_type": "c",
+      "ready_time": 29,
+      "service_time": 10,
+      "x": 6,
+      "y": 38
+    },
+    {
+      "demand": 1,
+      "due_time": 692,
+      "node_id": "C46",
+      "node_type": "c",
+      "ready_time": 452,
+      "service_time": 10,
+      "x": 2,
+      "y": 48
+    },
+    {
+      "demand": 27,
+      "due_time": 288,
+      "node_id": "C47",
+      "node_type": "c",
+      "ready_time": 48,
+      "service_time": 10,
+      "x": 8,
+      "y": 56
+    },
+    {
+      "demand": 36,
+      "due_time": 960,
+      "node_id": "C48",
+      "node_type": "c",
+      "ready_time": 720,
+      "service_time": 10,
+      "x": 13,
+      "y": 52
+    },
+    {
+      "demand": 30,
+      "due_time": 641,
+      "node_id": "C49",
+      "node_type": "c",
+      "ready_time": 401,
+      "service_time": 10,
+      "x": 6,
+      "y": 68
+    },
+    {
+      "demand": 13,
+      "due_time": 715,
+      "node_id": "C50",
+      "node_type": "c",
+      "ready_time": 475,
+      "service_time": 10,
+      "x": 47,
+      "y": 47
+    },
+    {
+      "demand": 10,
+      "due_time": 521,
+      "node_id": "C51",
+      "node_type": "c",
+      "ready_time": 281,
+      "service_time": 10,
+      "x": 49,
+      "y": 58
+    },
+    {
+      "demand": 9,
+      "due_time": 357,
+      "node_id": "C52",
+      "node_type": "c",
+      "ready_time": 117,
+      "service_time": 10,
+      "x": 27,
+      "y": 43
+    },
+    {
+      "demand": 14,
+      "due_time": 572,
+      "node_id": "C53",
+      "node_type": "c",
+      "ready_time": 332,
+      "service_time": 10,
+      "x": 37,
+      "y": 31
+    },
+    {
+      "demand": 18,
+      "due_time": 808,
+      "node_id": "C54",
+      "node_type": "c",
+      "ready_time": 568,
+      "service_time": 10,
+      "x": 57,
+      "y": 29
+    },
+    {
+      "demand": 2,
+      "due_time": 800,
+      "node_id": "C55",
+      "node_type": "c",
+      "ready_time": 560,
+      "service_time": 10,
+      "x": 63,
+      "y": 23
+    },
+    {
+      "demand": 6,
+      "due_time": 759,
+      "node_id": "C56",
+      "node_type": "c",
+      "ready_time": 519,
+      "service_time": 10,
+      "x": 53,
+      "y": 12
+    },
+    {
+      "demand": 7,
+      "due_time": 596,
+      "node_id": "C57",
+      "node_type": "c",
+      "ready_time": 356,
+      "service_time": 10,
+      "x": 32,
+      "y": 12
+    },
+    {
+      "demand": 18,
+      "due_time": 980,
+      "node_id": "C58",
+      "node_type": "c",
+      "ready_time": 740,
+      "service_time": 10,
+      "x": 36,
+      "y": 26
+    },
+    {
+      "demand": 28,
+      "due_time": 257,
+      "node_id": "C59",
+      "node_type": "c",
+      "ready_time": 17,
+      "service_time": 10,
+      "x": 21,
+      "y": 24
+    },
+    {
+      "demand": 3,
+      "due_time": 912,
+      "node_id": "C60",
+      "node_type": "c",
+      "ready_time": 672,
+      "service_time": 10,
+      "x": 17,
+      "y": 34
+    },
+    {
+      "demand": 13,
+      "due_time": 454,
+      "node_id": "C61",
+      "node_type": "c",
+      "ready_time": 214,
+      "service_time": 10,
+      "x": 12,
+      "y": 24
+    },
+    {
+      "demand": 19,
+      "due_time": 353,
+      "node_id": "C62",
+      "node_type": "c",
+      "ready_time": 113,
+      "service_time": 10,
+      "x": 24,
+      "y": 58
+    },
+    {
+      "demand": 10,
+      "due_time": 274,
+      "node_id": "C63",
+      "node_type": "c",
+      "ready_time": 34,
+      "service_time": 10,
+      "x": 27,
+      "y": 69
+    },
+    {
+      "demand": 9,
+      "due_time": 394,
+      "node_id": "C64",
+      "node_type": "c",
+      "ready_time": 154,
+      "service_time": 10,
+      "x": 15,
+      "y": 77
+    },
+    {
+      "demand": 20,
+      "due_time": 289,
+      "node_id": "C65",
+      "node_type": "c",
+      "ready_time": 49,
+      "service_time": 10,
+      "x": 62,
+      "y": 77
+    },
+    {
+      "demand": 25,
+      "due_time": 763,
+      "node_id": "C66",
+      "node_type": "c",
+      "ready_time": 523,
+      "service_time": 10,
+      "x": 49,
+      "y": 73
+    },
+    {
+      "demand": 25,
+      "due_time": 468,
+      "node_id": "C67",
+      "node_type": "c",
+      "ready_time": 228,
+      "service_time": 10,
+      "x": 67,
+      "y": 5
+    },
+    {
+      "demand": 36,
+      "due_time": 815,
+      "node_id": "C68",
+      "node_type": "c",
+      "ready_time": 575,
+      "service_time": 10,
+      "x": 56,
+      "y": 39
+    },
+    {
+      "demand": 6,
+      "due_time": 348,
+      "node_id": "C69",
+      "node_type": "c",
+      "ready_time": 108,
+      "service_time": 10,
+      "x": 37,
+      "y": 47
+    },
+    {
+      "demand": 5,
+      "due_time": 968,
+      "node_id": "C70",
+      "node_type": "c",
+      "ready_time": 728,
+      "service_time": 10,
+      "x": 37,
+      "y": 56
+    },
+    {
+      "demand": 15,
+      "due_time": 438,
+      "node_id": "C71",
+      "node_type": "c",
+      "ready_time": 198,
+      "service_time": 10,
+      "x": 57,
+      "y": 68
+    },
+    {
+      "demand": 25,
+      "due_time": 262,
+      "node_id": "C72",
+      "node_type": "c",
+      "ready_time": 22,
+      "service_time": 10,
+      "x": 47,
+      "y": 16
+    },
+    {
+      "demand": 9,
+      "due_time": 474,
+      "node_id": "C73",
+      "node_type": "c",
+      "ready_time": 234,
+      "service_time": 10,
+      "x": 44,
+      "y": 17
+    },
+    {
+      "demand": 8,
+      "due_time": 862,
+      "node_id": "C74",
+      "node_type": "c",
+      "ready_time": 622,
+      "service_time": 10,
+      "x": 46,
+      "y": 13
+    },
+    {
+      "demand": 18,
+      "due_time": 411,
+      "node_id": "C75",
+      "node_type": "c",
+      "ready_time": 171,
+      "service_time": 10,
+      "x": 49,
+      "y": 11
+    },
+    {
+      "demand": 13,
+      "due_time": 452,
+      "node_id": "C76",
+      "node_type": "c",
+      "ready_time": 212,
+      "service_time": 10,
+      "x": 49,
+      "y": 42
+    },
+    {
+      "demand": 14,
+      "due_time": 970,
+      "node_id": "C77",
+      "node_type": "c",
+      "ready_time": 730,
+      "service_time": 10,
+      "x": 53,
+      "y": 43
+    },
+    {
+      "demand": 3,
+      "due_time": 562,
+      "node_id": "C78",
+      "node_type": "c",
+      "ready_time": 322,
+      "service_time": 10,
+      "x": 61,
+      "y": 52
+    },
+    {
+      "demand": 23,
+      "due_time": 547,
+      "node_id": "C79",
+      "node_type": "c",
+      "ready_time": 307,
+      "service_time": 10,
+      "x": 57,
+      "y": 48
+    },
+    {
+      "demand": 6,
+      "due_time": 968,
+      "node_id": "C80",
+      "node_type": "c",
+      "ready_time": 728,
+      "service_time": 10,
+      "x": 56,
+      "y": 37
+    },
+    {
+      "demand": 26,
+      "due_time": 554,
+      "node_id": "C81",
+      "node_type": "c",
+      "ready_time": 314,
+      "service_time": 10,
+      "x": 55,
+      "y": 54
+    },
+    {
+      "demand": 16,
+      "due_time": 346,
+      "node_id": "C82",
+      "node_type": "c",
+      "ready_time": 106,
+      "service_time": 10,
+      "x": 15,
+      "y": 47
+    },
+    {
+      "demand": 11,
+      "due_time": 293,
+      "node_id": "C83",
+      "node_type": "c",
+      "ready_time": 53,
+      "service_time": 10,
+      "x": 14,
+      "y": 37
+    },
+    {
+      "demand": 7,
+      "due_time": 594,
+      "node_id": "C84",
+      "node_type": "c",
+      "ready_time": 354,
+      "service_time": 10,
+      "x": 11,
+      "y": 31
+    },
+    {
+      "demand": 41,
+      "due_time": 539,
+      "node_id": "C85",
+      "node_type": "c",
+      "ready_time": 299,
+      "service_time": 10,
+      "x": 16,
+      "y": 22
+    },
+    {
+      "demand": 35,
+      "due_time": 547,
+      "node_id": "C86",
+      "node_type": "c",
+      "ready_time": 307,
+      "service_time": 10,
+      "x": 4,
+      "y": 18
+    },
+    {
+      "demand": 26,
+      "due_time": 554,
+      "node_id": "C87",
+      "node_type": "c",
+      "ready_time": 314,
+      "service_time": 10,
+      "x": 28,
+      "y": 18
+    },
+    {
+      "demand": 9,
+      "due_time": 454,
+      "node_id": "C88",
+      "node_type": "c",
+      "ready_time": 214,
+      "service_time": 10,
+      "x": 26,
+      "y": 52
+    },
+    {
+      "demand": 15,
+      "due_time": 958,
+      "node_id": "C89",
+      "node_type": "c",
+      "ready_time": 718,
+      "service_time": 10,
+      "x": 26,
+      "y": 35
+    },
+    {
+      "demand": 3,
+      "due_time": 560,
+      "node_id": "C90",
+      "node_type": "c",
+      "ready_time": 320,
+      "service_time": 10,
+      "x": 31,
+      "y": 67
+    },
+    {
+      "demand": 1,
+      "due_time": 923,
+      "node_id": "C91",
+      "node_type": "c",
+      "ready_time": 683,
+      "service_time": 10,
+      "x": 15,
+      "y": 19
+    },
+    {
+      "demand": 2,
+      "due_time": 258,
+      "node_id": "C92",
+      "node_type": "c",
+      "ready_time": 18,
+      "service_time": 10,
+      "x": 22,
+      "y": 22
+    },
+    {
+      "demand": 22,
+      "due_time": 969,
+      "node_id": "C93",
+      "node_type": "c",
+      "ready_time": 729,
+      "service_time": 10,
+      "x": 18,
+      "y": 24
+    },
+    {
+      "demand": 27,
+      "due_time": 590,
+      "node_id": "C94",
+      "node_type": "c",
+      "ready_time": 350,
+      "service_time": 10,
+      "x": 26,
+      "y": 27
+    },
+    {
+      "demand": 20,
+      "due_time": 282,
+      "node_id": "C95",
+      "node_type": "c",
+      "ready_time": 42,
+      "service_time": 10,
+      "x": 25,
+      "y": 24
+    },
+    {
+      "demand": 11,
+      "due_time": 769,
+      "node_id": "C96",
+      "node_type": "c",
+      "ready_time": 529,
+      "service_time": 10,
+      "x": 22,
+      "y": 27
+    },
+    {
+      "demand": 12,
+      "due_time": 763,
+      "node_id": "C97",
+      "node_type": "c",
+      "ready_time": 523,
+      "service_time": 10,
+      "x": 25,
+      "y": 21
+    },
+    {
+      "demand": 10,
+      "due_time": 365,
+      "node_id": "C98",
+      "node_type": "c",
+      "ready_time": 125,
+      "service_time": 10,
+      "x": 19,
+      "y": 21
+    },
+    {
+      "demand": 9,
+      "due_time": 503,
+      "node_id": "C99",
+      "node_type": "c",
+      "ready_time": 263,
+      "service_time": 10,
+      "x": 20,
+      "y": 26
+    },
+    {
+      "demand": 17,
+      "due_time": 965,
+      "node_id": "C100",
+      "node_type": "c",
+      "ready_time": 725,
+      "service_time": 10,
+      "x": 18,
+      "y": 18
+    }
+  ],
+  "schema_version": "resetp.solomon-sintef-vrptw.v1"
+}

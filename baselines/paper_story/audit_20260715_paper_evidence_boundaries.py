@@ -22,9 +22,6 @@ ROOT = Path(__file__).resolve().parents[2]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 from baselines.paper_story import build_20260715_formal_evidence as evidence_builder  # noqa: E402
-from baselines.paper_story import (  # noqa: E402
-    build_e2_cvrplib_paper_evidence_20260716 as e2_public_builder,
-)
 
 TEX = ROOT / "docs/paper_submission_final/paper_main.tex"
 PAPER_DIR = TEX.parent
@@ -51,11 +48,39 @@ E2_LEGACY_UNLISTED = {
     "baselines/e2_alns/e2_final_10seed_20260711/formal/baseline_parameter_appendix.md",
 }
 E2B = ROOT / "baselines/e2_alns/e2b_component_ablation_formal_20260715"
-E2_PUBLIC = ROOT / "baselines/e2_alns/cvrplib_optimal_search_formal_20260716"
+E2_PUBLIC = ROOT / "baselines/e2_alns/e2_solomon_sintef_formal_20260717"
+E2_PUBLIC_REQUIRED_SOURCE_FILES = (
+    "metadata.json",
+    "raw_runs.csv",
+    "decision.json",
+    "artifact_hashes.json",
+    "report.md",
+)
+E2_PUBLIC_GENERATED_EXHIBITS = (
+    "e2_solomon_benchmark.tex",
+    "e2_solomon_class_summary.tex",
+    "e2_solomon_interpretation.tex",
+)
+E2_PUBLIC_MANIFEST = "e2_solomon_paper_evidence_manifest.json"
 E2_PUBLIC_EXHIBITS = (
-    e2_public_builder.TABLE_NAME,
-    e2_public_builder.INTERPRETATION_NAME,
-    e2_public_builder.PROVENANCE_NAME,
+    *E2_PUBLIC_GENERATED_EXHIBITS,
+    E2_PUBLIC_MANIFEST,
+)
+E2_SOLOMON_MAIN_TABLE_FORBIDDEN_TERMS = (
+    "DIMACS",
+    "PassMark",
+    "截断至1位小数",
+    "CPU标准化墙钟时间",
+)
+E2_SOLOMON_MAIN_TABLE_REQUIRED_TERMS = (
+    "SINTEF公开解",
+    "先最小化车辆数",
+    "双精度欧氏距离",
+    "总距离保留2位小数",
+    "共计560次",
+    "进程CPU时间",
+    "RT表示实测墙钟时间",
+    "Runs表示独立运行次数",
 )
 E3 = ROOT / "baselines/e3_ablation/e3_medium_paired_cost_formal_20260715"
 E4 = ROOT / "baselines/e4_e5/e4_forecast_timing_formal_20260713"
@@ -1045,6 +1070,24 @@ def audit(*, allow_pending_e7: bool) -> dict[str, Any]:
             failures.append(
                 f"manuscript uses forbidden path glyph or homophone: {forbidden}"
             )
+    solomon_heading = r"\subsubsection{Solomon标准算例实验}"
+    solomon_following_heading = r"\ifETwoPublicReady\subsubsection{本文模型实验}"
+    solomon_start = text.find(solomon_heading)
+    solomon_end = text.find(solomon_following_heading, solomon_start)
+    if solomon_start < 0 or solomon_end < 0:
+        failures.append("manuscript Solomon benchmark section boundary is missing")
+    else:
+        solomon_section = text[solomon_start:solomon_end]
+        for forbidden in E2_SOLOMON_MAIN_TABLE_FORBIDDEN_TERMS:
+            if forbidden in solomon_section:
+                failures.append(
+                    f"manuscript Solomon main table uses forbidden metric term: {forbidden}"
+                )
+        for required in E2_SOLOMON_MAIN_TABLE_REQUIRED_TERMS:
+            if required not in solomon_section:
+                failures.append(
+                    f"manuscript Solomon main table misses required metric term: {required}"
+                )
     quality_text = QUALITY_GATES.read_text(encoding="utf-8")
     completion_text = COMPLETION_MATRIX.read_text(encoding="utf-8")
     paper_build_failures, paper_build_info, paper_build_warnings = verify_paper_build()
@@ -1394,7 +1437,19 @@ def audit(*, allow_pending_e7: bool) -> dict[str, Any]:
         "E6 non-strict frontier boundary",
     )
 
-    for filename in E2_PUBLIC_EXHIBITS[:2]:
+    e2_preamble = text.split(r"\begin{document}", maxsplit=1)[0]
+    for filename in E2_PUBLIC_EXHIBITS:
+        require(
+            e2_preamble,
+            rf"\IfFileExists{{generated_tables/{filename}}}",
+            failures,
+            f"atomic E2 public benchmark input {filename}",
+        )
+    if e2_preamble.count(r"\IfFileExists{generated_tables/e2_solomon_") != len(
+        E2_PUBLIC_EXHIBITS
+    ):
+        failures.append("atomic E2 public benchmark gate is not exact")
+    for filename in E2_PUBLIC_GENERATED_EXHIBITS:
         require(
             text,
             f"generated_tables/{filename}",
@@ -1409,7 +1464,7 @@ def audit(*, allow_pending_e7: bool) -> dict[str, Any]:
     )
     e2_public_ready = all(
         (E2_PUBLIC / filename).is_file()
-        for filename in e2_public_builder.REQUIRED_SOURCE_FILES
+        for filename in E2_PUBLIC_REQUIRED_SOURCE_FILES
     )
     if not e2_public_ready:
         if not allow_pending_e7:
@@ -1419,56 +1474,29 @@ def audit(*, allow_pending_e7: bool) -> dict[str, Any]:
                 "E2 public benchmark manuscript exhibit exists before formal evidence is sealed"
             )
     else:
-        try:
-            e2_public_rows, e2_public_contracts = e2_public_builder.load_and_validate(
-                E2_PUBLIC
+        missing_exhibits = [
+            filename for filename in E2_PUBLIC_EXHIBITS if not (TABLES / filename).is_file()
+        ]
+        if missing_exhibits:
+            failures.append(
+                "sealed E2 Solomon benchmark exhibits missing: " + ", ".join(missing_exhibits)
             )
-            e2_public_summaries = [
-                e2_public_builder.summarize_instance(instance, e2_public_rows)
-                for instance in e2_public_builder.runner.FORMAL_INSTANCES
-            ]
-            expected_e2_table = e2_public_builder.render_table(e2_public_summaries)
-            expected_e2_interpretation = e2_public_builder.render_interpretation(
-                e2_public_rows, e2_public_summaries
-            )
-        except (OSError, ValueError, e2_public_builder.E2PaperEvidenceError) as exc:
-            failures.append(f"E2 public benchmark evidence validation failed: {exc}")
         else:
-            expected_exhibits = {
-                e2_public_builder.TABLE_NAME: expected_e2_table,
-                e2_public_builder.INTERPRETATION_NAME: expected_e2_interpretation,
-            }
-            for filename, expected in expected_exhibits.items():
-                path = TABLES / filename
-                if not path.is_file():
-                    failures.append(f"sealed E2 public benchmark exhibit missing: {filename}")
-                elif path.read_text(encoding="utf-8") != expected:
+            provenance = read_json(TABLES / E2_PUBLIC_MANIFEST)
+            for filename in E2_PUBLIC_REQUIRED_SOURCE_FILES:
+                if provenance.get("source_hashes", {}).get(filename) != sha256(
+                    E2_PUBLIC / filename
+                ):
                     failures.append(
-                        f"sealed E2 public benchmark exhibit is stale or altered: {filename}"
+                        f"E2 Solomon benchmark provenance source hash differs: {filename}"
                     )
-            provenance_path = TABLES / e2_public_builder.PROVENANCE_NAME
-            if not provenance_path.is_file():
-                failures.append("E2 public benchmark provenance manifest is missing")
-            else:
-                provenance = read_json(provenance_path)
-                if provenance.get("source_contract_sha256") != e2_public_contracts[
-                    "metadata"
-                ].get("contract_sha256"):
-                    failures.append("E2 public benchmark provenance contract differs")
-                for filename in e2_public_builder.REQUIRED_SOURCE_FILES:
-                    if provenance.get("source_hashes", {}).get(filename) != sha256(
-                        E2_PUBLIC / filename
-                    ):
-                        failures.append(
-                            f"E2 public benchmark provenance source hash differs: {filename}"
-                        )
-                for filename in expected_exhibits:
-                    if provenance.get("generated_hashes", {}).get(filename) != sha256(
-                        TABLES / filename
-                    ):
-                        failures.append(
-                            f"E2 public benchmark provenance exhibit hash differs: {filename}"
-                        )
+            for filename in E2_PUBLIC_GENERATED_EXHIBITS:
+                if provenance.get("generated_hashes", {}).get(filename) != sha256(
+                    TABLES / filename
+                ):
+                    failures.append(
+                        f"E2 Solomon benchmark provenance exhibit hash differs: {filename}"
+                    )
 
     for filename in E7_EXHIBITS:
         require(

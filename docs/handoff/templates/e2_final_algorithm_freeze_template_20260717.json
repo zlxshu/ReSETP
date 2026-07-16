@@ -1,0 +1,53 @@
+{
+  "schema_version": "resetp.e2.final-algorithm-freeze.v1",
+  "algorithm_version": "REPLACE_AFTER_G0_G2_PASS",
+  "entry_point": "run_solomon_path_core",
+  "entry_signature_sha256": "REPLACE_SHA256_OF_INSPECT_SIGNATURE",
+  "git_commit": "REPLACE_WITH_COMMIT_CONTAINING_THE_FROZEN_ALGORITHM",
+  "objective": [
+    "minimize_vehicle_count",
+    "then_minimize_double_precision_total_distance"
+  ],
+  "solomon_test_results_seen": false,
+  "development_data": {
+    "homberger_200_instances": [
+      "C1_2_1",
+      "C1_2_8",
+      "C2_2_1",
+      "C2_2_8",
+      "R1_2_1",
+      "R1_2_8",
+      "R2_2_1",
+      "R2_2_8",
+      "RC1_2_1",
+      "RC1_2_8",
+      "RC2_2_1",
+      "RC2_2_8"
+    ],
+    "solomon_instances_used_for_tuning": []
+  },
+  "parameters": {
+    "eval_budget": "REPLACE",
+    "max_runtime_seconds": "REPLACE",
+    "all_algorithm_parameters": "REPLACE_WITH_FROZEN_MAPPING"
+  },
+  "source_hashes": {
+    "solver/src/setp_solver/algorithms/resetp_alns/kernel/winner.py": "REPLACE_SHA256",
+    "REPLACE_WITH_EXACT_COMPLETE_SOURCE_CLOSURE_FROM_runner.required_freeze_sources": "REPLACE_SHA256"
+  },
+  "test_evidence": {
+    "g0_decision_sha256": "REPLACE_SHA256",
+    "g1_decision_sha256": "REPLACE_SHA256",
+    "g2_decision_sha256": "REPLACE_SHA256",
+    "test_command": "REPLACE",
+    "test_verdict": "REPLACE"
+  },
+  "environment": {
+    "python": "/opt/anaconda3/bin/python3.13",
+    "numpy": "2.3.5",
+    "pythonhashseed": "0"
+  },
+  "freeze_created_at_utc": "REPLACE",
+  "created_by": "REPLACE",
+  "authorization_boundary": "This template does not authorize a formal run. Copy it to baselines/e2_alns/final_algorithm_freeze/algorithm_freeze.json only after G0-G2 pass, E7 closeout is complete, every placeholder is replaced, the exact source-key set equals run_solomon_sintef_formal_20260717.required_freeze_sources(), the entry signature is frozen, and all hashes are independently verified."
+}

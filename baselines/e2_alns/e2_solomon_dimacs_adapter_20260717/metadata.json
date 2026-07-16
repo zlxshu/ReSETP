@@ -1,0 +1,27 @@
+{
+  "audit": "Solomon DIMACS VRPTW zero-search adapter gate",
+  "created_at_utc": "2026-07-16T16:48:26.513066+00:00",
+  "search_performed": false,
+  "zip_path": "/Volumes/移动硬盘（512G）/VRP/算例/solomon-100.zip",
+  "zip_sha256": "8a0a72cbe6b7f8f9988ace4ebde0378ec34943acaaac47f2c408915e41887747",
+  "controller_path": "/private/tmp/VRPTWController",
+  "controller_commit": "87de6d63eca1c8d4b5862c7a850fdc5a40595fe1",
+  "controller_gen_script_sha256": "1f8d46d7c8ef76768c1bb544d378ea21e3502987971771d43bff41db2d4b5b3e",
+  "rules": {
+    "objective": "total route distance only",
+    "time_windows": "hard",
+    "vehicle_count": "upper bound, not lexicographic objective",
+    "distance": "Euclidean truncated to one decimal place",
+    "cpu_baseline_passmark_single_thread": 2000,
+    "standardized_time_limit_s": 1800
+  },
+  "expected_instances": 56,
+  "class_counts": {
+    "C1": 9,
+    "C2": 8,
+    "R1": 12,
+    "R2": 11,
+    "RC1": 8,
+    "RC2": 8
+  }
+}

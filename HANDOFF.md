@@ -1,5 +1,19 @@
 # ReSETP — 项目总交接文档（HANDOFF）
 
+> **2026-07-17 Homberger 200客户开发集零搜索来源门：** 算法换代合同指定的12例已从SINTEF官方200客户压缩包冻结，压缩包SHA-256=`79092cc...4571`，格式说明快照SHA-256=`e4c08998...12df`。`audit_homberger_200_source_gate_20260717.py`逐例核对0--200节点、200客户、车辆上限50、六类容量、需求、服务时间和时间窗，12/12通过，判定=`PASS_HOMBERGER_200_ZERO_SEARCH_SOURCE_GATE`；4项定向测试、Ruff、py_compile和离线重放通过，原始表哈希一致，AppleDouble为0。权威五记录面在`baselines/e2_alns/e2_homberger_200_source_gate_20260717_v2/`。冻结材料不含BKS数值或详细解路线，搜索评价次数为0；该门不授权E7收口前启动开发搜索。首次无版本目录仅因最终manifest写入后出现AppleDouble而降级保留，不作为权威门。
+
+> **2026-07-17 Solomon CPU与并行公平合同：** 当前机器为Apple M1、4性能核+4能效核、8 GB、macOS 15.7.5；冻结2026-07-17查询的PassMark单线程分数3674，DIMACS基准2000，标准化时间系数1.837。首次预检因`python3`软链接与解析后的`python3.13`路径不一致按合同失败，现场保留；修正真实路径后v2通过。按用户“安全协调下吃满CPU”的要求，最终v3合同规定匹配墙钟时间比较只并行4个单线程solver，避免CPU争用扭曲算法快慢；按完整评价预算的批次和非定时审计可并行8项，使用4个能效核，但该饱和批次耗时只作描述。v3判定=`PASS_SOLOMON_CPU_CONTRACT`，仍未授权正式搜索。
+
+> **2026-07-17 Solomon通用bundle门通过：** 新增`build_solomon_dimacs_bundles_20260717.py`，把56个冻结算例转换为ReSETP正式bundle，并用项目通用`load_search_bundle`逐项回读。56/56的节点编号、坐标、需求、时间窗、服务时间、CV车辆上限、EV=0及101×101截断距离矩阵完全一致，判定=`PASS_SOLOMON_DIMACS_BUNDLE_GATE`；4项定向回归通过，搜索评价次数仍为0。输出位于`baselines/e2_alns/solomon_dimacs_formal_bundles_20260717/`。该门不授权E7期间修改共享内核或启动正式算法搜索。
+
+> **2026-07-17 主稿公开基准入口改为Solomon原子门：** 清除主TeX中潜伏的CVRPLIB条件分支，改为`e2_solomon_benchmark.tex`、`e2_solomon_interpretation.tex`和`e2_solomon_paper_evidence_manifest.json`三件套齐备才显示“Solomon标准算例实验”。故事审计同步改为未来Solomon正式五记录面与展品哈希门；旧CVRPLIB生成器仍保留为历史/回退工具，但不能再触发正文。重新编译得到22页A4 PDF，39项论文/E2定向测试通过，pending-E7故事审计PASS；当前TeX/PDF SHA-256=`646b0da5...c2e9`/`f425e97e...5981`。本轮没有修改公式、符号、已封存实验数字或E7保护源。
+
+> **2026-07-17 最终ALNS换代结果合同：** 新增`docs/handoff/e2_alns_upgrade_outcome_contract_20260717.md`，把算法优化限定为三个可证伪候选：时间窗兼容的连续客户串移除/插入、预算可计数的真正SWAP*或route elimination、多样性触发的路线池/精英重启。Solomon 56例全部是禁调参最终测试；12个Homberger 200客户实例只作开发。G0计数与可行性、G1单组件短门、G2组合消融、G3测试前冻结、G4 Solomon 56例×10种子外部测试依次执行。主表只优先现代强基线；结果不领先时必须降级主张。E7结束前该合同不授权修改`winner.py`或启动搜索。
+
+> **2026-07-17 Solomon主基准、BKS/CPU合同及零搜索适配门：** 用户决定E2公开算法能力验证以Solomon为主、CVRPLIB为回退。新合同`docs/handoff/e2_solomon_primary_benchmark_contract_20260717.md`规定完整使用56个100客户VRPTW算例，采用DIMACS硬时间窗、车辆数上限、总距离和1位小数截断口径；本地`solomon-100.zip` SHA-256=`8a0a72cb...7747`。零搜索脚本`baselines/e2_alns/audit_solomon_dimacs_adapter_20260717.py`已逐项核对本地包与官方控制器提交`87de6d63...95fe1`：56/56字节一致、六类数量正确、节点结构通过、56个参考值均带已证明最优标志，判定=`PASS_SOLOMON_DIMACS_ZERO_SEARCH_ADAPTER_GATE`，搜索评价次数为0。论文表中的BKS只作检索线索，必须核对算例版本、目标、舍入、最优标志和可行性后使用。正式表同时记录CPU型号、物理/逻辑核、worker、单线程分数、原始及标准化时间；外部PyVRP/HGS按CPU标准化墙钟时间比较，内部ALNS/LNS及消融按相同完整评价预算比较。Solomon 56例全部冻结为测试集，算法改进只在非Solomon开发集完成；E7结束前不动共享内核、不启动正式搜索。
+
+> **2026-07-17 主稿原子证据门、字体与审计复核：** E2公开标准算例正文现要求表、解释和证据manifest三件套同时存在，避免半套结果进入PDF；故事审计同步改为“数值试验”章节并取消内部pending提示的读者可见要求。MiKTeX/XeLaTeX改为优先加载本机Noto Sans CJK SC文件，成功生成22页A4 PDF；43项定向测试通过，数学审计27/0/1、两层模型门7/7、六图视觉合同和故事审计均通过（仍pending E7）。本轮没有修改公式、符号、实验数字或E7保护源。
+
 > **2026-07-16 主稿显性模仿痕迹与章节层级纠正：** 撤销算法章中“陈雨蝶等如何设计—本文如何采用”的拼接式过渡，参考文献仅回到引言同类研究综述；流程图源由`algorithm_flow_chen_order.tex`改为中性`algorithm_flow.tex`。正文层级按陈雨蝶原文实测目录收回：第2章为“2.1问题描述—2.2目标函数—2.3车辆能耗与充电排放函数—2.4模型建立”，符号表置于2.1；第3章仅设“3.1算法流程—3.2算法步骤”，充电择时和滚动重规划并入步骤5、6；第4章改为“数值试验—4.1实验设计和最终解分析—4.2算法有效性分析”，公开结果形成后自动出现“CVRP标准算例实验”，其后为“本文模型实验”。E2/E7缺证据时不再在PDF中显示“阶段稿/不得投稿”等内部提示，而由原子文件门和审计阻断；未形成可追溯路线级展品前不伪造4.1.2最终解分析。当前21页A4 PDF提取文本中简体“径”61处、繁体“徑”0处，正文中“陈雨蝶/母版/模板/阶段稿/不得投稿”均为0；15项论文边界回归和20项E2 runner回归通过。TeX/PDF/log SHA-256=`ad3c760e...2816`/`56a55589...e03b`/`13147945...e13d`。
 
 > **2026-07-16 E2公开BKS后续启用门固化：** 新增`docs/handoff/e2_cvrplib_post_e7_activation_checklist_20260716.md`，明确只有E7释放共享内核后才能重放E2指标补丁；补丁前后哈希、输出目录空门、119项源码合同重算、定向测试、非沙箱hooks正式命令和一次算法换代判据均已写死。runner现于任何搜索前解析`winner.py`返回字段，冻结版缺少三项真实计数时立即`FormalRunError`，不会浪费一次搜索或伪造计数；20项定向回归通过。本轮没有应用补丁或启动E2搜索。
