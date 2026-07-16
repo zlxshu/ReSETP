@@ -8,19 +8,32 @@
 % 中文标题和黑体标签只允许使用可完整嵌入的简体中文黑体。
 % 未安装获准字体时直接停止编译，禁止静默回退到地区字形或无
 % ToUnicode 映射的系统字体。
+\newif\ifsetpLocalNotoHei
 \IfFileExists{/Users/zhouleixishu/Library/Fonts/NotoSansCJKsc-Regular.otf}{%
-  \newcommand{\setpHeiFont}{/Users/zhouleixishu/Library/Fonts/NotoSansCJKsc-Regular.otf}}{%
+  \setpLocalNotoHeitrue}{%
+  \setpLocalNotoHeifalse}
+\ifsetpLocalNotoHei\else
 \IfFontExistsTF{SimHei}{\newcommand{\setpHeiFont}{SimHei}}{%
   \IfFontExistsTF{Noto Sans CJK SC}{\newcommand{\setpHeiFont}{Noto Sans CJK SC}}{%
     \PackageError{ReSETP}{No approved Simplified Chinese Heiti font found}{Install SimHei or Noto Sans CJK SC before compiling}%
-    \newcommand{\setpHeiFont}{Noto Sans CJK SC}}}}
+    \newcommand{\setpHeiFont}{Noto Sans CJK SC}}}
+\fi
 \IfFontExistsTF{Songti SC}{\newcommand{\setpFangSongFont}{Songti SC}}{\newcommand{\setpFangSongFont}{FangSong}}
+\ifsetpLocalNotoHei
+\setCJKmainfont[BoldFont=NotoSansCJKsc-Regular.otf,BoldFeatures={Path=/Users/zhouleixishu/Library/Fonts/}]{\setpSongFont}
+\setCJKsansfont[Path=/Users/zhouleixishu/Library/Fonts/]{NotoSansCJKsc-Regular.otf}
+\setCJKmonofont{\setpSongFont}
+\setCJKfamilyfont{zhsong}[BoldFont=NotoSansCJKsc-Regular.otf,BoldFeatures={Path=/Users/zhouleixishu/Library/Fonts/}]{\setpSongFont}
+\setCJKfamilyfont{zhhei}[Path=/Users/zhouleixishu/Library/Fonts/]{NotoSansCJKsc-Regular.otf}
+\setCJKfamilyfont{zhfs}{\setpFangSongFont}
+\else
 \setCJKmainfont[BoldFont=\setpHeiFont]{\setpSongFont}
 \setCJKsansfont{\setpHeiFont}
 \setCJKmonofont{\setpSongFont}
 \setCJKfamilyfont{zhsong}[BoldFont=\setpHeiFont]{\setpSongFont}
 \setCJKfamilyfont{zhhei}{\setpHeiFont}
 \setCJKfamilyfont{zhfs}{\setpFangSongFont}
+\fi
 \providecommand{\songti}{}
 \providecommand{\heiti}{}
 \providecommand{\fangsong}{}
