@@ -139,10 +139,10 @@ def test_e7_tables_keep_economic_decomposition_and_diagnostics(tmp_path, monkeyp
     abstract_en = (tables / "e7_dynamic_abstract_en.tex").read_text(encoding="utf-8")
     assert economics.count("禁合作 & +10.0 & +15.0 & +5.0 & +1.00 & +20.0") == 6
     assert economics.count("无参与底线 & -2.0 & +0.0 & +2.0 & +0.00 & +0.0") == 6
-    assert economics.count("顺序插单 & +8.0 & +8.0 & +0.0 & +0.50 & +10.0") == 6
+    assert economics.count("顺序插入基线 & +8.0 & +8.0 & +0.0 & +0.50 & +10.0") == 6
     assert "5/5/4/5 & 4/4 & 3/5 & 1/10 & 3/1/0 & 2/2/0 & 4/0/0" in diagnostics
     assert "4.00 & 0.50 & 100/30/10 & 140" in charging
-    assert "120个任务，形成24/30个四臂完整配对" in interpretation
+    assert "120个任务，其中24/30个订单流的四种机制均可执行" in interpretation
     assert "6个受控不可执行单元" in interpretation
     assert "50客户—地理聚集—流5—无参与底线" in interpretation
     assert "6个阶段超过下一触发间隔" in interpretation
@@ -152,11 +152,14 @@ def test_e7_tables_keep_economic_decomposition_and_diagnostics(tmp_path, monkeyp
     assert "最不利单元是50客户—地理聚集—流4（-2.0）" in interpretation
     assert "840组配对，改善/变差/持平为600/180/60" in interpretation
     assert "路径—充电联合优化的证据" in interpretation
-    assert "动态正式矩阵形成24/30个四臂完整配对" in conclusion
+    assert "动态实验中，24/30个订单流的四种机制均可执行" in conclusion
     assert "不能压缩成单一优化目标" in conclusion
-    assert "动态正式矩阵形成24/30个四臂完整配对" in abstract_zh
-    assert "+2.5（18/6/0）、-2.0（0/24/0）、+8.0（24/0/0）" in abstract_zh
-    assert "完整机制有6个阶段超过下一触发间隔" in abstract_zh
-    assert "The formal dynamic matrix yields 24/30 complete four-arm pairs" in abstract_en
-    assert "+2.5 (18/6/0) versus no cooperation" in abstract_en
+    assert "动态实验的30条事件流中，24条在四种机制下均可执行" in abstract_zh
+    assert "依次为+£2.5、-£2.0、+£8.0" in abstract_zh
+    assert "6个重规划阶段的求解时间超过下一事件间隔" in abstract_zh
+    assert "充电排放下降4.00\\%" in abstract_zh
+    assert "4.00\\%--4.00\\%" not in abstract_zh
+    assert 200 <= len(abstract_zh.replace(r"\%", "%").strip()) <= 300
+    assert "all four mechanisms are executable for 24 of 30 event streams" in abstract_en
+    assert "changes mean full-day net profit by +£2.5, -£2.0, +£8.0" in abstract_en
     assert "batch rolling decision support rather than real-time optimization" in abstract_en

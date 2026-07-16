@@ -17,13 +17,18 @@ import hashlib
 import json
 import os
 import shutil
+import sys
 from typing import Any
+
+ROOT = Path(__file__).resolve().parents[2]
+for item in (ROOT, ROOT / "solver/src", ROOT / "models/src"):
+    if str(item) not in sys.path:
+        sys.path.insert(0, str(item))
 
 from baselines.e7_dynamic import e7_multiday_zero_search_replay_20260715 as replay
 from baselines.e7_dynamic import e7_replay_invariants_20260715 as invariants
 
 
-ROOT = Path(__file__).resolve().parents[2]
 FORMAL = ROOT / "baselines/e7_dynamic/e7_multinetwork_formal_20260715"
 REPLAY = ROOT / "baselines/e7_dynamic/e7_multiday_zero_search_replay_20260715"
 OUT = ROOT / "baselines/e7_dynamic/e7_replay_invariants_audit_20260715"

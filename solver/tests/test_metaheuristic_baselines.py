@@ -23,7 +23,8 @@ from setp_solver.search.metaheuristic_baselines import BASELINE_ALGORITHMS, run_
 
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
-INSTANCE = REPO_ROOT / INSTANCE_DIRS["L-main-vanilla-10c"]
+CURRENT_INSTANCE = "L-main-threeshift-10c-01"
+INSTANCE = REPO_ROOT / INSTANCE_DIRS[CURRENT_INSTANCE]
 SYSTEM_PYTHON = os.environ.get("SETP_WORKER_PYTHON", "/opt/anaconda3/bin/python3.13")
 SYSTEM_NUMPY = "2.3.5"
 
@@ -118,7 +119,7 @@ class MetaheuristicBaselineTest(unittest.TestCase):
                 profile = run_profile(
                     REPO_ROOT,
                     out / "profile",
-                    instance="L-main-vanilla-10c",
+                    instance=CURRENT_INSTANCE,
                     seed=1,
                     eval_budget=2,
                     max_runtime_seconds=120.0,
@@ -131,7 +132,7 @@ class MetaheuristicBaselineTest(unittest.TestCase):
                 run = run_all(
                     REPO_ROOT,
                     out / "formal",
-                    instances=["L-main-vanilla-10c"],
+                    instances=[CURRENT_INSTANCE],
                     seeds=[1],
                     eval_budget=2,
                     max_runtime_seconds=120.0,

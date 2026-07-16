@@ -3,6 +3,8 @@ from __future__ import annotations
 import hashlib
 import json
 
+import pytest
+
 from baselines.e7_dynamic import audit_e7_multinetwork_formal_20260715 as audit
 
 
@@ -75,3 +77,12 @@ def test_formal_matrix_requires_exact_120_unique_tasks() -> None:
     failures = audit.formal_task_matrix_failures(sessions)
     assert failures[0] == "formal sessions contain duplicate task identities"
     assert failures[1].startswith("formal sessions missing tasks:")
+
+
+def test_independent_audit_refuses_to_overwrite_existing_evidence(
+    tmp_path, monkeypatch
+) -> None:
+    (tmp_path / "partial.txt").write_text("preserve failure evidence\n", encoding="utf-8")
+    monkeypatch.setattr(audit, "OUT", tmp_path)
+    with pytest.raises(RuntimeError, match="refusing to overwrite"):
+        audit.main()

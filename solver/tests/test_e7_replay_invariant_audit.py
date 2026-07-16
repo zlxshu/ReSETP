@@ -2,6 +2,10 @@ from __future__ import annotations
 
 import hashlib
 import json
+from pathlib import Path
+import os
+import subprocess
+import sys
 
 from baselines.e7_dynamic import audit_e7_replay_invariants_20260715 as audit
 
@@ -34,3 +38,28 @@ def test_invariant_manifest_requires_exact_inventory_and_hashes(tmp_path) -> Non
 
     (tmp_path / "unexpected.txt").write_text("extra\n", encoding="utf-8")
     assert audit.verify_manifest(tmp_path) == ["unlisted:unexpected.txt"]
+
+
+def test_invariant_audit_loads_from_outside_repository_without_pythonpath(
+    tmp_path,
+) -> None:
+    script = Path(audit.__file__).resolve()
+    env = dict(os.environ)
+    env.pop("PYTHONPATH", None)
+    result = subprocess.run(
+        [
+            sys.executable,
+            "-I",
+            "-c",
+            (
+                "import runpy; "
+                f"runpy.run_path({str(script)!r}, run_name='e7_invariant_import_probe')"
+            ),
+        ],
+        cwd=tmp_path,
+        env=env,
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    assert result.returncode == 0, result.stderr

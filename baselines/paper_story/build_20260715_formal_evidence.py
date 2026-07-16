@@ -31,7 +31,7 @@ E7_ARM_LABELS = {
     "full": "完整机制",
     "no_cooperation": "禁合作",
     "no_participation": "无参与底线",
-    "simple_insertion": "顺序插单",
+    "simple_insertion": "顺序插入基线",
 }
 E7_COMPARISONS = (
     (
@@ -51,7 +51,7 @@ E7_COMPARISONS = (
         "full_minus_no_participation_completed_demand",
     ),
     (
-        "顺序插单",
+        "顺序插入基线",
         "full_minus_simple_insertion_net_profit",
         "full_minus_simple_insertion_revenue",
         "full_minus_simple_insertion_cost",
@@ -141,7 +141,7 @@ def render_e7_interpretation(
         )
         failure_text = (
             f"其中{controlled}个受控不可执行单元为{identities}；这些单元保留在"
-            "可执行率中，不进入四臂成对均值。"
+            "可执行率中，不进入四种机制的成对均值。"
         )
     else:
         failure_text = "120个正式任务全部完成，未观察到受控不可执行单元。"
@@ -164,7 +164,7 @@ def render_e7_interpretation(
     full_executable = int(paired_summary["full_executable_stream_count"].sum())
     floor_met = int(paired_summary["full_day_participation_floor_met_count"].sum())
     opening = (
-        f"正式矩阵包含120个任务，形成{len(complete)}/30个四臂完整配对；完整机制在"
+        f"正式矩阵包含120个任务，其中{len(complete)}/30个订单流的四种机制均可执行；完整机制在"
         f"{cross_site}/{full_executable}条可执行订单流中实际发生跨场服务，并在"
         f"{floor_met}/{len(complete)}个完整配对中满足全日参与底线。{failure_text}"
         f"{timing_text}"
@@ -210,7 +210,7 @@ def render_e7_interpretation(
     charge_min = replay.loc[replay["pooled_charging_reduction_pct"].idxmin()]
     charge_max = replay.loc[replay["pooled_charging_reduction_pct"].idxmax()]
     replay_text = (
-        f"28日电网数据零搜索重放形成{replay_count}组配对，改善/变差/持平为"
+        f"28个电网日的充电择时复算形成{replay_count}组配对，改善/变差/持平为"
         f"{improved}/{worsened}/{tied}。六个网络—责任单元的充电排放降幅介于"
         f"{replay['pooled_charging_reduction_pct'].min():.2f}\\%和"
         f"{replay['pooled_charging_reduction_pct'].max():.2f}\\%之间，最低出现在"
@@ -253,10 +253,10 @@ def render_e7_conclusion(
         else "全部可比较阶段均满足实时响应条件"
     )
     return (
-        f"动态正式矩阵形成{len(complete)}/30个四臂完整配对，"
+        f"动态实验中，{len(complete)}/30个订单流的四种机制均可执行，"
         + "，".join(direction_parts)
         + f"；保留{controlled}个受控不可执行单元，{timing}。"
-        f"固定配送方案的28日电网日零搜索重放显示，六个单元的充电排放降幅为"
+        f"固定配送方案在28个电网日的充电择时复算显示，六个单元的充电排放降幅为"
         f"{replay['pooled_charging_reduction_pct'].min():.2f}\\%--"
         f"{replay['pooled_charging_reduction_pct'].max():.2f}\\%。"
         "这些结果共同说明动态协同的收益、参与保障、可执行性、计算时限和充电减排"
@@ -278,30 +278,21 @@ def render_e7_abstracts(
         raise RuntimeError("E7 abstract complete-pair counts disagree")
     comparison_zh: list[str] = []
     comparison_en: list[str] = []
-    en_labels = {
-        "禁合作": "no cooperation",
-        "无参与底线": "no participation floor",
-        "顺序插单": "sequential insertion",
-    }
     for label, profit, *_ in E7_COMPARISONS:
         complete[profit] = pd.to_numeric(complete[profit], errors="raise")
-        better, worse, tied = e7_sign_counts(complete[profit])
-        comparison_zh.append(
-            f"{complete[profit].mean():+.1f}（{better}/{worse}/{tied}）"
-        )
-        comparison_en.append(
-            f"{complete[profit].mean():+.1f} ({better}/{worse}/{tied}) versus "
-            f"{en_labels[label]}"
-        )
+        mean_profit = float(complete[profit].mean())
+        signed_currency = f"{'+' if mean_profit >= 0 else '-'}£{abs(mean_profit):.1f}"
+        comparison_zh.append(signed_currency)
+        comparison_en.append(signed_currency)
     controlled = int(decision.get("controlled_arm_failure_count", -1))
     if controlled < 0:
         raise RuntimeError("E7 abstract lacks the controlled-failure count")
     misses = int(paired_summary["full_stage_deadline_miss_count"].sum())
     comparable = int(paired_summary["full_deadline_comparable_stage_count"].sum())
     timing_zh = (
-        f"完整机制有{misses}个阶段超过下一触发间隔，故仅支持批量滚动决策解释"
+        f"{misses}个重规划阶段的求解时间超过下一事件间隔，故仅适用于批量滚动决策"
         if misses
-        else f"完整机制的{comparable}个可比较阶段均满足实时响应条件"
+        else f"全部{comparable}个可比较阶段的求解时间均不超过下一事件间隔，满足实时响应条件"
     )
     timing_en = (
         f"{misses} complete-mechanism stages exceed the next-trigger interval, so the results support batch rolling decision support rather than real-time optimization"
@@ -317,20 +308,40 @@ def render_e7_abstracts(
         raise RuntimeError("E7 abstract does not summarize exactly 840 replay pairs")
     low = float(replay["pooled_charging_reduction_pct"].min())
     high = float(replay["pooled_charging_reduction_pct"].max())
+    low_text = f"{low:.2f}"
+    high_text = f"{high:.2f}"
+    reduction_zh = (
+        f"{low_text}\\%" if low_text == high_text else f"{low_text}\\%--{high_text}\\%"
+    )
+    reduction_en = reduction_zh
     zh = (
-        f"动态正式矩阵形成{len(complete)}/30个四臂完整配对；完整机制相对禁合作、"
-        f"无参与底线和顺序插单的全日净收益差均值及改善/变差/持平数分别为"
-        f"{'、'.join(comparison_zh)}，并保留{controlled}个受控不可执行单元；"
-        f"{timing_zh}。28日电网日零路径搜索重放显示，六个网络—责任单元的"
-        f"充电排放降幅为{low:.2f}\\%--{high:.2f}\\%。"
+        "研究动态订单下多车场混合车队的跨场协同、成员参与和分时充电，建立可行配送趟—"
+        "实体车两层模型，设计含跨场重组算子的自适应大邻域搜索及基于碳强度预测的固定排班充电重调度。"
+        "9个网络实验表明，"
+        "预测择时使充电排放下降3.89\\%--4.88\\%，但运营总排放仅下降0.35\\%--0.52\\%；"
+        f"动态实验的30条事件流中，{len(complete)}条在四种机制下均可执行；完整机制相对"
+        "禁合作、无参与底线和顺序插入基线的净收益差均值依次为"
+        f"{'、'.join(comparison_zh)}；{timing_zh}。固定排班经28个电网日复算，充电排放下降"
+        f"{reduction_zh}。结果表明，充电减排受配送与动态执行制约。"
     )
     en = (
-        f"The formal dynamic matrix yields {len(complete)}/30 complete four-arm pairs. "
-        "Mean full-day net-profit differences (better/worse/tied) for the complete mechanism are "
-        f"{'; '.join(comparison_en)}, while {controlled} controlled non-executable task units are retained; "
-        f"{timing_en}. A zero-route-search replay over 28 grid days gives charging-emission reductions "
-        f"of {low:.2f}\\%--{high:.2f}\\% across the six network--responsibility cells."
+        "This paper studies cross-depot cooperation, member participation, and charging under time-varying "
+        "grid carbon intensity for dynamic multi-depot mixed fleets. A two-layer model links feasible delivery "
+        "trips to physical-vehicle schedules and is solved by an adaptive large neighborhood search with cross-depot operators, followed "
+        "by charging rescheduling on fixed schedules using grid carbon-intensity forecasts. Across nine static networks, forecast-based timing reduces "
+        "charging emissions by 3.89\\%--4.88\\% but total operational emissions by only 0.35\\%--0.52\\%; "
+        f"In the dynamic experiment, all four mechanisms are executable for {len(complete)} of 30 event streams. "
+        "Relative to no cooperation, no participation floor, and sequential insertion, the complete mechanism "
+        f"changes mean full-day net profit by {', '.join(comparison_en)}, respectively. "
+        f"{timing_en.capitalize()}. Charging-timing recalculation on fixed schedules over 28 grid days reduces "
+        f"charging emissions by {reduction_en}. The results show that charging abatement is constrained by both "
+        "delivery structure and dynamic execution."
     )
+    visible_zh_length = len(zh.replace("\\%", "%").strip())
+    if not 200 <= visible_zh_length <= 300:
+        raise RuntimeError(
+            f"final Chinese abstract length {visible_zh_length} is outside the 200--300 character target"
+        )
     return zh + "\n", en + "\n"
 
 
@@ -452,16 +463,27 @@ def build_e6() -> None:
     for condition in ("geographic", "mixed"):
         block = summary[summary["condition"] == condition]
         ax.plot(
-            block["alpha"],
+            block["minimum_profit_ratio"],
             block["cost_increment_pct"],
             linewidth=0.8,
             markersize=3.2,
             label=labels[condition],
             **styles[condition],
         )
-    ax.set_xlabel("从无约束方案向双方参与底线推进的比例")
+    ax.axvline(1.0, color="#555555", linestyle=":", linewidth=0.7)
+    ax.set_xlabel("最低车场收益比")
     ax.set_ylabel("系统成本增幅/%")
-    ax.set_xticks([0.0, 0.25, 0.5, 0.75, 1.0])
+    ax.set_xticks([0.98, 1.00, 1.02, 1.04, 1.06, 1.08])
+    ax.annotate(
+        "双方均不劣",
+        xy=(1.008, 1.35),
+        xytext=(0.986, 1.35),
+        arrowprops=dict(arrowstyle="->", color="#555555", linewidth=0.6),
+        fontsize=6.5,
+        ha="left",
+        va="center",
+        color="#333333",
+    )
     ax.legend(frameon=False)
     ax.tick_params(direction="out", length=2, width=0.5)
     for spine in ax.spines.values():
@@ -503,7 +525,7 @@ def build_e7() -> None:
             "full_minus_no_participation_completed_demand_mean",
         ),
         (
-            "顺序插单",
+            "顺序插入基线",
             "full_minus_simple_insertion_net_profit_mean",
             "full_minus_simple_insertion_revenue_mean",
             "full_minus_simple_insertion_cost_mean",
@@ -537,7 +559,7 @@ def build_e7() -> None:
     lines = [
         r"\begin{tabular*}{0.99\linewidth}{@{\extracolsep{\fill}}llrrrrrrr@{}}",
         r"\toprule",
-        r"网络 & 客户责任 & 四臂可执行 & 配对/参与 & 跨场流 & 超时阶段 & 完整/禁合作 & 完整/无底线 & 完整/顺序插单 \\",
+        r"网络 & 客户责任 & 四种机制可执行 & 配对/参与 & 跨场流 & 超时阶段 & 完整/禁合作 & 完整/无底线 & 完整/顺序插入 \\",
         r"\midrule",
     ]
     for row in paired.itertuples(index=False):

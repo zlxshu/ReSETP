@@ -49,7 +49,23 @@ E2_LEGACY_UNLISTED = {
 }
 E2B = ROOT / "baselines/e2_alns/e2b_component_ablation_formal_20260715"
 E3 = ROOT / "baselines/e3_ablation/e3_medium_paired_cost_formal_20260715"
+E4 = ROOT / "baselines/e4_e5/e4_forecast_timing_formal_20260713"
 E6 = ROOT / "baselines/e6_fairness/e6_profit_guarantee_frontier_20260715"
+EXPECTED_STATIC_INSTANCES = (
+    "L-main-threeshift-10c-01",
+    "L-main-threeshift-15c-01",
+    "L-main-threeshift-20c-01",
+    "L-main-threeshift-25c-01",
+    "L-main-threeshift-50c-01",
+    "L-main-threeshift-75c-01",
+    "L-main-threeshift-100c-01",
+    "L-main-threeshift-150c-01",
+    "L-main-threeshift-200c-01",
+)
+EXPECTED_STATIC_SEEDS = (1, 2, 3)
+EXPECTED_E2B_SEEDS = (1, 2, 3, 4, 5)
+EXPECTED_E4_DAYS = tuple(f"2025-11-{day:02d}" for day in range(2, 30))
+EXPECTED_E6_ALPHAS = (0.0, 0.25, 0.5, 0.75, 1.0)
 E7_FORMAL = ROOT / "baselines/e7_dynamic/e7_multinetwork_formal_20260715"
 E7_REPLAY = ROOT / "baselines/e7_dynamic/e7_multiday_zero_search_replay_20260715"
 E7_REPLAY_INVARIANTS = (
@@ -75,6 +91,13 @@ E7_REPLAY_INVARIANT_COUNTS = {
     "emissions_recalculation_failure_count": 0,
     "route_search_evaluations": 0,
 }
+E7_REQUIRED_INDEPENDENT_CHECKS = (
+    "external_monitor_pause_timing_uncontaminated",
+    "replay_invariants_decision_pass",
+    "replay_invariants_artifact_hashes_pass",
+    "replay_invariant_row_count_840",
+    "replay_charger_capacity_and_trigger_windows_pass",
+)
 REQUIRED_EXPERIMENT_SURFACES = (
     "metadata.json",
     "raw_runs.csv",
@@ -140,6 +163,545 @@ def required_surface_failures(root: Path) -> list[str]:
         for name in REQUIRED_EXPERIMENT_SURFACES
         if not (root / name).is_file()
     ]
+
+
+def global_hash_manifest_failures(path: Path, *, expected_count: int) -> list[str]:
+    """Verify a historical manifest whose paths span several repository roots."""
+    failures: list[str] = []
+    try:
+        manifest = read_json(path)
+        rows = manifest["files"]
+    except (FileNotFoundError, KeyError, TypeError, ValueError) as exc:
+        return [f"E4 global manifest could not be read: {exc}"]
+    if not isinstance(rows, list) or len(rows) != expected_count:
+        return [f"E4 global manifest does not contain exactly {expected_count} files"]
+    observed: set[str] = set()
+    for index, row in enumerate(rows):
+        if not isinstance(row, dict):
+            failures.append(f"E4 global manifest row {index} is not an object")
+            continue
+        relative = str(row.get("path", ""))
+        expected = str(row.get("sha256", ""))
+        if relative in observed:
+            failures.append(f"E4 global manifest contains duplicate path {relative}")
+            continue
+        observed.add(relative)
+        candidate = (ROOT / relative).resolve()
+        try:
+            candidate.relative_to(ROOT.resolve())
+        except ValueError:
+            failures.append(f"E4 global manifest path escapes repository: {relative}")
+            continue
+        if not candidate.is_file():
+            failures.append(f"E4 global manifest path is missing: {relative}")
+        elif sha256(candidate) != expected:
+            failures.append(f"E4 global manifest hash drift: {relative}")
+    for required in (
+        "baselines/e4_e5/e4_forecast_timing_formal_20260713/metadata.json",
+        "baselines/e4_e5/e4_forecast_timing_formal_20260713/raw_runs.csv",
+        "baselines/e4_e5/e4_forecast_timing_formal_20260713/decision.json",
+        "baselines/e4_e5/e4_forecast_timing_formal_20260713/report.md",
+        "baselines/e4_e5/e4_forecast_timing_formal_20260713/verification.json",
+    ):
+        if required not in observed:
+            failures.append(f"E4 global manifest omits required evidence {required}")
+    return failures
+
+
+def e2b_identity_failures(root: Path) -> list[str]:
+    """Recompute the exact 45-unit/180-row component-ablation design."""
+    failures: list[str] = []
+    try:
+        decision = read_json(root / "decision.json")
+        raw = pd.read_csv(root / "raw_runs.csv")
+        manifest = pd.read_csv(root / "task_manifest.csv")
+    except (FileNotFoundError, KeyError, ValueError, pd.errors.ParserError) as exc:
+        return [f"E2b identity audit could not read formal evidence: {exc}"]
+
+    expected_units = {
+        (instance, "mixed", seed)
+        for instance in EXPECTED_STATIC_INSTANCES
+        for seed in EXPECTED_E2B_SEEDS
+    }
+    search_arms = ("A_continuous", "B_staged", "C_staged_cross")
+    all_arms = (*search_arms, "D_full")
+    expected_raw = {(*unit, arm) for unit in expected_units for arm in all_arms}
+    expected_manifest = {(*unit, arm) for unit in expected_units for arm in search_arms}
+    try:
+        def identities(frame: pd.DataFrame) -> set[tuple[str, str, int, str]]:
+            return {
+                (
+                    str(row.instance),
+                    str(row.condition),
+                    int(row.seed),
+                    str(row.group_id),
+                )
+                for row in frame.itertuples(index=False)
+            }
+
+        if len(raw) != 180 or identities(raw) != expected_raw:
+            failures.append("E2b raw_runs does not contain the exact 9 x 5 x 4 design")
+        if len(manifest) != 135 or identities(manifest) != expected_manifest:
+            failures.append("E2b task_manifest does not contain the exact 9 x 5 x 3 search design")
+        if not (raw["valid"].eq(True).all() and raw["violation_count"].eq(0).all()):  # noqa: E712
+            failures.append("E2b formal rows contain a validity or feasibility failure")
+
+        searched = raw["group_id"].isin(search_arms)
+        replayed = raw["group_id"].eq("D_full")
+        if not (
+            raw.loc[searched, "configured_search_budget"].eq(4000).all()
+            and raw.loc[searched, "actual_search_evals"].eq(4000).all()
+            and raw.loc[searched, "search_performed"].eq(True).all()  # noqa: E712
+            and raw.loc[replayed, "configured_search_budget"].eq(0).all()
+            and raw.loc[replayed, "actual_search_evals"].eq(0).all()
+            and raw.loc[replayed, "search_performed"].eq(False).all()  # noqa: E712
+            and raw.loc[replayed, "source_search_evals"].eq(4000).all()
+        ):
+            failures.append("E2b search and charging-replay budgets differ from the frozen contract")
+
+        raw_indexed = raw.set_index(["instance", "condition", "seed", "group_id"])
+        comparisons = {
+            "B_minus_A_total_cost": ("A_continuous", "B_staged", "total_cost"),
+            "C_minus_B_total_cost": ("B_staged", "C_staged_cross", "total_cost"),
+            "D_minus_C_ev_indirect": ("C_staged_cross", "D_full", "E_ev_indirect"),
+        }
+        tolerance = 1e-6
+        for name, (left_arm, right_arm, metric) in comparisons.items():
+            deltas: list[float] = []
+            for unit in sorted(expected_units):
+                left = float(raw_indexed.loc[(*unit, left_arm), metric])
+                right = float(raw_indexed.loc[(*unit, right_arm), metric])
+                deltas.append(right - left)
+            observed = decision["paired_summary"][name]
+            expected_summary = {
+                "pair_count": len(deltas),
+                "right_better": sum(value < -tolerance for value in deltas),
+                "ties": sum(abs(value) <= tolerance for value in deltas),
+                "right_worse": sum(value > tolerance for value in deltas),
+            }
+            if any(int(observed[key]) != value for key, value in expected_summary.items()):
+                failures.append(f"E2b paired summary counts do not recompute for {name}")
+            if abs(float(observed["mean_delta"]) - statistics.fmean(deltas)) > 1e-9:
+                failures.append(f"E2b paired mean does not recompute for {name}")
+
+        c = raw.loc[raw["group_id"].eq("C_staged_cross")].set_index(
+            ["instance", "condition", "seed"]
+        )
+        d = raw.loc[raw["group_id"].eq("D_full")].set_index(
+            ["instance", "condition", "seed"]
+        )
+        for field in ("route_signature", "route_vehicle_sha256", "electricity_kwh"):
+            if not c[field].equals(d[field]):
+                failures.append(f"E2b D replay changes frozen C field {field}")
+        if bool((d["E_ev_indirect"] > c["E_ev_indirect"] + 1e-6).any()):
+            failures.append("E2b D replay increases EV indirect emissions in a paired unit")
+    except (AttributeError, KeyError, TypeError, ValueError) as exc:
+        failures.append(f"E2b identity audit schema failure: {exc}")
+    return failures
+
+
+def e3_identity_failures(root: Path) -> list[str]:
+    """Recompute the exact 27-pair/54-run E3 design from CSV identities."""
+    failures: list[str] = []
+    try:
+        decision = read_json(root / "decision.json")
+        paired = pd.read_csv(root / "paired_results.csv")
+        raw = pd.read_csv(root / "raw_runs.csv")
+        manifest = pd.read_csv(root / "task_manifest.csv")
+        trend = pd.read_csv(root / "trend_summary.csv")
+    except (FileNotFoundError, KeyError, ValueError, pd.errors.ParserError) as exc:
+        return [f"E3 identity audit could not read formal evidence: {exc}"]
+
+    expected_pairs = {
+        (instance, "medium", seed)
+        for instance in EXPECTED_STATIC_INSTANCES
+        for seed in EXPECTED_STATIC_SEEDS
+    }
+    try:
+        observed_pairs = {
+            (str(row.instance), str(row.condition), int(row.seed))
+            for row in paired.itertuples(index=False)
+        }
+        if len(paired) != 27 or observed_pairs != expected_pairs:
+            failures.append("E3 paired_results does not contain the exact 9-network x 3-seed design")
+        if paired["pair_id"].nunique() != 27:
+            failures.append("E3 paired_results pair_id values are not unique")
+
+        expected_tasks = {
+            (*pair, arm)
+            for pair in expected_pairs
+            for arm in ("ownership_fixed", "reassignment_allowed")
+        }
+        observed_raw = {
+            (str(row.instance), str(row.condition), int(row.seed), str(row.arm))
+            for row in raw.itertuples(index=False)
+        }
+        observed_manifest = {
+            (str(row.instance), str(row.condition), int(row.seed), str(row.arm))
+            for row in manifest.itertuples(index=False)
+        }
+        if len(raw) != 54 or observed_raw != expected_tasks:
+            failures.append("E3 raw_runs does not contain exactly two arms for every formal pair")
+        if len(manifest) != 54 or observed_manifest != expected_tasks:
+            failures.append("E3 task_manifest identity set differs from the formal 54-run design")
+        if not (raw["status"].eq("PASS").all() and raw["evaluations"].eq(4000).all()):
+            failures.append("E3 formal runs are not all PASS at the frozen 4000-evaluation budget")
+        if not (raw["violation_count"].eq(0).all() and raw["coverage_ok"].eq(True).all()):  # noqa: E712
+            failures.append("E3 formal runs contain a feasibility or customer-coverage failure")
+        contract = str(decision.get("contract_sha256", ""))
+        if set(raw["contract_sha256"].astype(str)) != {contract} or set(
+            manifest["contract_sha256"].astype(str)
+        ) != {contract}:
+            failures.append("E3 raw runs or task manifest drift from the frozen contract")
+        raw_formula = 100.0 * (
+            paired["raw_fixed_total_cost"] - paired["raw_open_total_cost"]
+        ) / paired["raw_fixed_total_cost"]
+        selected_formula = 100.0 * (
+            paired["selected_fixed_total_cost"] - paired["selected_open_total_cost"]
+        ) / paired["selected_fixed_total_cost"]
+        if float((raw_formula - paired["raw_search_saving_pct"]).abs().max()) > 1e-9:
+            failures.append("E3 raw paired savings do not recompute from paired costs")
+        if float((selected_formula - paired["selected_saving_pct"]).abs().max()) > 1e-9:
+            failures.append("E3 selected paired savings do not recompute from paired costs")
+        if len(trend) != 9 or set(trend["instance"].astype(str)) != set(
+            EXPECTED_STATIC_INSTANCES
+        ):
+            failures.append("E3 trend_summary does not contain exactly the nine frozen networks")
+    except (AttributeError, KeyError, TypeError, ValueError) as exc:
+        failures.append(f"E3 identity audit schema failure: {exc}")
+    return failures
+
+
+def e4_identity_failures(root: Path) -> list[str]:
+    """Recompute the fixed-schedule, 28-grid-day charging-timing evidence."""
+    failures: list[str] = []
+    try:
+        decision = read_json(root / "decision.json")
+        verification = read_json(root / "verification.json")
+        raw = pd.read_csv(root / "raw_runs.csv")
+        actions = pd.read_csv(root / "action_runs.csv")
+        paired = pd.read_csv(root / "paired_by_seed_day.csv")
+        cell = pd.read_csv(root / "cell_summary.csv")
+        network = pd.read_csv(root / "network_summary.csv")
+        day = pd.read_csv(root / "day_summary.csv")
+        aggregate = pd.read_csv(root / "aggregate_summary.csv")
+        interaction = pd.read_csv(root / "interaction_overall.csv")
+    except (FileNotFoundError, KeyError, ValueError, pd.errors.ParserError) as exc:
+        return [f"E4 identity audit could not read formal evidence: {exc}"]
+
+    conditions = ("geographic", "mixed")
+    arms = ("ownership_fixed", "reassignment_allowed")
+    rules = ("immediate", "forecast_timed", "actual_oracle")
+    base_keys = ["instance", "condition", "arm", "seed", "operating_day"]
+    action_keys = [*base_keys, "timing_rule"]
+    expected_pairs = {
+        (instance, condition, arm, seed, operating_day)
+        for instance in EXPECTED_STATIC_INSTANCES
+        for condition in conditions
+        for arm in arms
+        for seed in EXPECTED_STATIC_SEEDS
+        for operating_day in EXPECTED_E4_DAYS
+    }
+    expected_raw = {(*pair, rule) for pair in expected_pairs for rule in rules}
+    expected_cells = {
+        (instance, condition, arm, operating_day)
+        for instance in EXPECTED_STATIC_INSTANCES
+        for condition in conditions
+        for arm in arms
+        for operating_day in EXPECTED_E4_DAYS
+    }
+    try:
+        raw_ids = {
+            (
+                str(row.instance),
+                str(row.condition),
+                str(row.arm),
+                int(row.seed),
+                str(row.operating_day),
+                str(row.timing_rule),
+            )
+            for row in raw.itertuples(index=False)
+        }
+        paired_ids = {
+            (
+                str(row.instance),
+                str(row.condition),
+                str(row.arm),
+                int(row.seed),
+                str(row.operating_day),
+            )
+            for row in paired.itertuples(index=False)
+        }
+        cell_ids = {
+            (str(row.instance), str(row.condition), str(row.arm), str(row.operating_day))
+            for row in cell.itertuples(index=False)
+        }
+        if len(raw) != 9072 or raw_ids != expected_raw:
+            failures.append("E4 raw_runs does not contain the exact 9 x 2 x 2 x 3 x 28 x 3 design")
+        if len(paired) != 3024 or paired_ids != expected_pairs:
+            failures.append("E4 paired_by_seed_day does not contain the exact 3024 paired units")
+        if len(cell) != 1008 or cell_ids != expected_cells:
+            failures.append("E4 cell_summary does not contain the exact 1008 seed-averaged cells")
+        if len(network) != 36 or len(day) != 112 or len(aggregate) != 4:
+            failures.append("E4 network/day/aggregate summary dimensions differ from 36/112/4")
+        if len(actions) != 132300:
+            failures.append("E4 charging-action ledger does not contain exactly 132300 rows")
+        if not (
+            raw["route_unchanged"].eq(True).all()  # noqa: E712
+            and raw["service_unchanged"].eq(True).all()  # noqa: E712
+            and raw["energy_unchanged"].eq(True).all()  # noqa: E712
+            and raw["hard_violation_count"].eq(0).all()
+            and raw["clock_violation_count"].eq(0).all()
+        ):
+            failures.append("E4 fixed-route/service/energy or feasibility contract fails")
+
+        grouped = raw.groupby(base_keys, sort=False)
+        for field in (
+            "route_fingerprint",
+            "service_fingerprint",
+            "energy_fingerprint",
+            "charging_kwh",
+            "direct_fuel_emissions_kg",
+        ):
+            if int(grouped[field].nunique().max()) != 1:
+                failures.append(f"E4 timing rules change frozen paired field {field}")
+
+        action_sums = actions.groupby(action_keys, as_index=False).agg(
+            action_kwh=("energy_kwh", "sum"),
+            action_actual=("actual_emissions_kg", "sum"),
+            action_forecast=("forecast_emissions_kg", "sum"),
+        )
+        joined_actions = raw.merge(
+            action_sums, on=action_keys, how="outer", validate="one_to_one", indicator=True
+        )
+        if len(joined_actions) != 9072 or not joined_actions["_merge"].eq("both").all():
+            failures.append("E4 action ledger does not map one-to-one onto raw timing rows")
+        for action_field, raw_field in (
+            ("action_kwh", "charging_kwh"),
+            ("action_actual", "actual_charging_emissions_kg"),
+            ("action_forecast", "forecast_charging_emissions_kg"),
+        ):
+            if float((joined_actions[action_field] - joined_actions[raw_field]).abs().max()) > 1e-9:
+                failures.append(f"E4 action ledger does not sum to raw field {raw_field}")
+
+        indexed = {
+            rule: raw.loc[raw["timing_rule"].eq(rule)].set_index(base_keys).sort_index()
+            for rule in rules
+        }
+        paired_indexed = paired.set_index(base_keys).sort_index()
+        immediate = indexed["immediate"]
+        forecast = indexed["forecast_timed"]
+        oracle = indexed["actual_oracle"]
+        formulas = {
+            "realized_saving_kg": immediate["actual_charging_emissions_kg"]
+            - forecast["actual_charging_emissions_kg"],
+            "realized_saving_pct": 100.0
+            * (
+                immediate["actual_charging_emissions_kg"]
+                - forecast["actual_charging_emissions_kg"]
+            )
+            / immediate["actual_charging_emissions_kg"],
+            "total_operational_reduction_pct": 100.0
+            * (
+                immediate["actual_charging_emissions_kg"]
+                - forecast["actual_charging_emissions_kg"]
+            )
+            / (
+                immediate["actual_charging_emissions_kg"]
+                + immediate["direct_fuel_emissions_kg"]
+            ),
+            "oracle_potential_kg": immediate["actual_charging_emissions_kg"]
+            - oracle["actual_charging_emissions_kg"],
+            "oracle_potential_pct": 100.0
+            * (
+                immediate["actual_charging_emissions_kg"]
+                - oracle["actual_charging_emissions_kg"]
+            )
+            / immediate["actual_charging_emissions_kg"],
+            "predicted_saving_kg": immediate["forecast_charging_emissions_kg"]
+            - forecast["forecast_charging_emissions_kg"],
+        }
+        for field, recomputed in formulas.items():
+            if float((paired_indexed[field] - recomputed).abs().max()) > 1e-9:
+                failures.append(f"E4 paired formula does not recompute for {field}")
+        if bool(
+            (
+                forecast["forecast_charging_emissions_kg"]
+                > immediate["forecast_charging_emissions_kg"] + 1e-9
+            ).any()
+        ):
+            failures.append("E4 forecast-timed rule increases its forecast objective")
+        if bool(
+            (
+                oracle["actual_charging_emissions_kg"]
+                > forecast["actual_charging_emissions_kg"] + 1e-9
+            ).any()
+        ):
+            failures.append("E4 actual-oracle row is not an actual-emissions lower bound")
+
+        recomputed_cell = (
+            paired.groupby(["instance", "condition", "arm", "operating_day"], as_index=False)
+            .agg(
+                mean_immediate_actual_charging_kg=("immediate_actual_charging_kg", "mean"),
+                mean_realized_saving_kg=("realized_saving_kg", "mean"),
+                mean_direct_fuel_emissions_kg=("direct_fuel_emissions_kg", "mean"),
+                mean_pre_day_realized_saving_kg=("pre_day_realized_saving_kg", "mean"),
+            )
+        )
+        saved_cell = cell.set_index(["instance", "condition", "arm", "operating_day"]).sort_index()
+        recomputed_cell = recomputed_cell.set_index(
+            ["instance", "condition", "arm", "operating_day"]
+        ).sort_index()
+        for field in (
+            "mean_immediate_actual_charging_kg",
+            "mean_realized_saving_kg",
+            "mean_direct_fuel_emissions_kg",
+            "mean_pre_day_realized_saving_kg",
+        ):
+            if float((saved_cell[field] - recomputed_cell[field]).abs().max()) > 1e-9:
+                failures.append(f"E4 seed-averaged cell does not recompute for {field}")
+
+        aggregate_indexed = aggregate.set_index(["condition", "arm"])
+        for condition in conditions:
+            for arm in arms:
+                block = recomputed_cell.xs((condition, arm), level=("condition", "arm"))
+                immediate_sum = float(block["mean_immediate_actual_charging_kg"].sum())
+                saving_sum = float(block["mean_realized_saving_kg"].sum())
+                direct_sum = float(block["mean_direct_fuel_emissions_kg"].sum())
+                pre_day_sum = float(block["mean_pre_day_realized_saving_kg"].sum())
+                network_savings = block.groupby(level="instance")["mean_realized_saving_kg"].sum()
+                day_savings = block.groupby(level="operating_day")["mean_realized_saving_kg"].sum()
+                expected_summary = {
+                    "pooled_charging_reduction_pct": 100.0 * saving_sum / immediate_sum,
+                    "pooled_total_operational_reduction_pct": 100.0
+                    * saving_sum
+                    / (immediate_sum + direct_sum),
+                    "networks_improved": int((network_savings > 1e-6).sum()),
+                    "days_improved": int((day_savings > 1e-6).sum()),
+                    "days_worsened": int((day_savings < -1e-6).sum()),
+                    "pre_day_share_of_positive_total_saving_pct": 100.0
+                    * pre_day_sum
+                    / saving_sum,
+                }
+                saved = aggregate_indexed.loc[(condition, arm)]
+                for field, value in expected_summary.items():
+                    if abs(float(saved[field]) - value) > 1e-9:
+                        failures.append(
+                            f"E4 aggregate summary does not recompute for {condition}/{arm}/{field}"
+                        )
+
+        reductions = aggregate["pooled_charging_reduction_pct"]
+        total_reductions = aggregate["pooled_total_operational_reduction_pct"]
+        if not (
+            abs(float(reductions.min()) - 3.887798459404608) <= 1e-9
+            and abs(float(reductions.max()) - 4.87666867834168) <= 1e-9
+            and abs(float(total_reductions.min()) - 0.35153335338471176) <= 1e-9
+            and abs(float(total_reductions.max()) - 0.5232816116456492) <= 1e-9
+            and aggregate["networks_improved"].eq(9).all()
+            and int(aggregate["days_improved"].min()) == 18
+            and int(aggregate["days_improved"].max()) == 20
+            and aggregate["days_worsened"].gt(0).all()
+        ):
+            failures.append("E4 headline range or network/day direction boundary differs")
+
+        if len(interaction) != 2:
+            failures.append("E4 interaction_overall does not contain two responsibility conditions")
+        else:
+            expected_interaction = {
+                "geographic": (0.2505030076388159, 6, 3, 17, 11),
+                "mixed": (0.5144170602516939, 9, 0, 16, 12),
+            }
+            for row in interaction.itertuples(index=False):
+                mean_delta, network_positive, network_negative, day_positive, day_negative = (
+                    expected_interaction[str(row.condition)]
+                )
+                if not (
+                    abs(float(row.network_mean_difference_percentage_points) - mean_delta) <= 1e-9
+                    and int(row.network_positive) == network_positive
+                    and int(row.network_negative) == network_negative
+                    and int(row.day_positive) == day_positive
+                    and int(row.day_negative) == day_negative
+                ):
+                    failures.append(f"E4 collaboration interaction differs for {row.condition}")
+
+        if decision.get("verdict") != "PASS_E4_FORECAST_TIMING_FORMAL" or not decision.get(
+            "all_mechanical_checks_pass"
+        ):
+            failures.append("E4 formal decision is not mechanically complete")
+        if verification.get("status") != "PASS_INDEPENDENT_RECALC_AND_HASH_AUDIT":
+            failures.append("E4 independent verification status differs")
+    except (AttributeError, KeyError, TypeError, ValueError, pd.errors.MergeError) as exc:
+        failures.append(f"E4 identity audit schema failure: {exc}")
+    return failures
+
+
+def e6_identity_failures(root: Path) -> list[str]:
+    """Recompute the exact 54-spec x 5-level E6 frontier design."""
+    failures: list[str] = []
+    try:
+        decision = read_json(root / "decision.json")
+        raw = pd.read_csv(root / "raw_runs.csv")
+        selected = pd.read_csv(root / "selected_frontier.csv")
+        manifest = pd.read_csv(root / "task_manifest.csv")
+    except (FileNotFoundError, KeyError, ValueError, pd.errors.ParserError) as exc:
+        return [f"E6 identity audit could not read formal evidence: {exc}"]
+
+    expected = {
+        (instance, condition, seed, alpha)
+        for instance in EXPECTED_STATIC_INSTANCES
+        for condition in ("geographic", "mixed")
+        for seed in EXPECTED_STATIC_SEEDS
+        for alpha in EXPECTED_E6_ALPHAS
+    }
+    try:
+        def identities(frame: pd.DataFrame) -> set[tuple[str, str, int, float]]:
+            return {
+                (str(row.instance), str(row.condition), int(row.seed), float(row.alpha))
+                for row in frame.itertuples(index=False)
+            }
+
+        for name, frame in (
+            ("raw_runs", raw),
+            ("selected_frontier", selected),
+            ("task_manifest", manifest),
+        ):
+            if len(frame) != 270 or identities(frame) != expected:
+                failures.append(f"E6 {name} does not contain the exact 9 x 2 x 3 x 5 design")
+        if not (raw["status"].eq("PASS").all() and raw["planned_budget"].eq(4000).all()):
+            failures.append("E6 formal rows are not all PASS under the frozen budget contract")
+        if not (raw["violation_count"].eq(0).all() and raw["fairness_satisfied"].eq(True).all()):  # noqa: E712
+            failures.append("E6 formal rows contain a feasibility or participation failure")
+        search = raw["executed_search"].eq(True)  # noqa: E712
+        reused = raw["reused_from_alpha0"].eq(True)  # noqa: E712
+        if int(search.sum()) != 174 or int(reused.sum()) != 96 or bool((search == reused).any()):
+            failures.append("E6 search/reuse partition differs from 174 executed and 96 reused rows")
+        if not (raw.loc[search, "evaluations"].eq(4000).all() and raw.loc[reused, "evaluations"].eq(0).all()):
+            failures.append("E6 evaluation counts do not match the search/reuse partition")
+        contract = str(decision.get("contract_sha256", ""))
+        if set(raw["contract_sha256"].astype(str)) != {contract} or set(
+            manifest["contract_sha256"].astype(str)
+        ) != {contract}:
+            failures.append("E6 raw runs or task manifest drift from the frozen contract")
+        if bool(
+            (
+                selected["selected_minimum_profit_ratio"]
+                + 1e-10
+                < selected["displayed_theta"]
+            ).any()
+        ):
+            failures.append("E6 selected frontier contains a row below its participation threshold")
+        for _spec_id, group in selected.groupby("spec_id", sort=False):
+            alpha0 = group.loc[group["alpha"].eq(0.0), "selected_total_cost"]
+            if len(alpha0) != 1:
+                failures.append("E6 frontier spec does not contain exactly one alpha=0 baseline")
+                continue
+            recomputed = 100.0 * (group["selected_total_cost"] / float(alpha0.iloc[0]) - 1.0)
+            if float((recomputed - group["cost_increment_pct"]).abs().max()) > 1e-9:
+                failures.append("E6 cost increments do not recompute from the alpha=0 baseline")
+                break
+    except (AttributeError, KeyError, TypeError, ValueError) as exc:
+        failures.append(f"E6 identity audit schema failure: {exc}")
+    return failures
 
 
 def final_record_failures() -> list[str]:
@@ -343,7 +905,9 @@ def verify_paper_build() -> tuple[list[str], dict[str, Any], list[str]]:
         page_match = re.search(r"(?m)^Pages:\s+(\d+)", pdfinfo.stdout)
         page_count = int(page_match.group(1)) if page_match else 0
         info["page_count"] = page_count
-        if page_count < 20:
+        # Closest SETP mother papers in the local evidence set span 16--24 A4
+        # pages, so page count is a gross truncation guard, not a target length.
+        if page_count < 15:
             failures.append(f"paper PDF unexpectedly short: {page_count} pages")
         if "Page size:       595.28 x 841.89 pts (A4)" not in pdfinfo.stdout:
             failures.append("paper PDF is not the expected A4 page size")
@@ -354,12 +918,13 @@ def verify_paper_build() -> tuple[list[str], dict[str, Any], list[str]]:
     else:
         extracted_compact = re.sub(r"\s+", "", extraction.stdout)
         for fragment in (
-            "兼顾收益公平与时变碳强度的动态协同多车场混合车队路径优化",
+            "多车场动态协同配送与时变碳强度充电调度",
             "TVCI-ALNS",
-            "本文研究区域—城际配送场景下的动态协同多车场混合车队路径优化问题",
+            "对区域—城际配送企业而言，使用电动车并不等于实现低碳配送",
             "结果并未呈现“每增加一个组件都改善成本”的整齐阶梯",
-            "五档实验覆盖9张网络、2类责任和3个种子",
-            "本文同时记录每个重规划阶段的墙钟计算时间",
+            "五档实验覆盖9个网络、2类责任和3个种子",
+            "本文同时记录每个重规划阶段的实际计算时间（wall-clock time）",
+            "时变电网碳强度能够识别固定排班中的充电减排机会",
             "本文仍存在一定局限",
         ):
             if re.sub(r"\s+", "", fragment) not in extracted_compact:
@@ -468,7 +1033,7 @@ def audit(*, allow_pending_e7: bool) -> dict[str, Any]:
     )
     if forbidden_appendix:
         failures.append("manuscript contains an appendix despite the no-appendix contract")
-    expected_sections = ["引言", "问题描述及模型建立", "求解算法框架", "实验设计", "结论"]
+    expected_sections = ["引言", "问题描述及模型建立", "求解算法", "数值实验", "结论"]
     observed_sections = re.findall(r"(?m)^\\section\{([^}]+)\}", text)
     if observed_sections != expected_sections:
         failures.append(
@@ -477,30 +1042,65 @@ def audit(*, allow_pending_e7: bool) -> dict[str, Any]:
 
     require(
         text,
-        "区域—城际配送的困难并不只是寻找一组低成本路线",
+        "对区域—城际配送企业而言，使用电动车并不等于实现低碳配送",
         failures,
         "problem-first introduction",
     )
     require(
         text,
-        r"\Title{兼顾收益公平与时变碳强度的动态协同多车场混合车队路径优化}",
+        r"\Title{多车场动态协同配送与时变碳强度充电调度}",
         failures,
         "unified Chinese title",
     )
     require(
         text,
-        r"\ETitle{Dynamic Collaborative Multi-depot Mixed-fleet Vehicle Routing with Profit Fairness and Time-varying Grid Carbon Intensity}",
+        r"\ETitle{Dynamic Collaborative Multi-depot Delivery with Time-varying Carbon-aware Charging}",
         failures,
         "unified English title",
     )
     require(
         text,
-        "本文围绕一个运营问题展开：订单持续变化时",
+        "跨场降本、成员参与和低碳充电三者相互牵制",
         failures,
         "single operating problem",
     )
-    contribution = text.split("本文的主要工作为：", 1)[-1].split("\n", 1)[0]
-    if "；4)" in contribution:
+    require(
+        text,
+        "结果揭示了客户空间组织、跨场协同、成员参与和低碳充电之间的作用边界",
+        failures,
+        "abstract claim stays within sealed evidence",
+    )
+    if re.search(r"张[^，。；\n]{0,6}网络", text):
+        failures.append("manuscript still uses 张 as the network quantifier")
+    if "Cheng A J, Tarroja B, Shaffer B, Samuelsen S" in text or "ref:24" in text:
+        failures.append("manuscript restored the invalid EPSR 208:107847 carbon-aware charging citation")
+    for fragment in (
+        "A branch-and-price algorithm for electric vehicle routing problem with time windows and mixed fleet",
+        "Multi-depot mixed fleet routing and speed optimization under a carbon trading mechanism",
+        "Electric truck route planning considering multiple charging pile queues and time windows",
+        "A periodic optimization model and solution for capacitated vehicle routing problem with dynamic requests",
+        "Multi-vehicle dynamic vehicle routing optimization in green logistics distribution",
+        "Improved ant colony optimization algorithm for solving vehicle routing problem with soft time windows",
+        "Research on vehicle routing problem considering truck-UAV cooperative distribution mode",
+        "Multi-constraint vehicle routing problem with variable fleets",
+    ):
+        require(
+            text,
+            fragment,
+            failures,
+            "official English form for a Chinese journal reference",
+        )
+    require(
+        text,
+        "DOI: 10.1016/j.trd.2024.104383",
+        failures,
+        "verified orderly-charging reference metadata",
+    )
+    contribution_match = re.search(r"针对上述不足，本文.*?主要工作如下：(.*?)\n", text)
+    contribution = contribution_match.group(1) if contribution_match else ""
+    if not contribution or not all(marker in contribution for marker in ("1)", "2)", "3)")):
+        failures.append("manuscript contribution paragraph could not be parsed as three items")
+    if "；4)" in contribution or "4)" in contribution:
         failures.append("manuscript contribution paragraph still contains four competing items")
     for fragment in (
         "重要运营问题 → 可被结果否定的主张 → 必要模型与算法 → 有解释力的对照证据 → 适用边界",
@@ -518,9 +1118,24 @@ def audit(*, allow_pending_e7: bool) -> dict[str, Any]:
     ):
         require(completion_text, fragment, failures, "ReSETP goal-completion matrix")
 
-    for evidence in (E2B, E3, E6):
+    for evidence in (E2B, E3, E4, E6):
         failures.extend(required_surface_failures(evidence))
+    for evidence in (E2B, E3, E6):
         failures.extend(verify_manifest(evidence))
+    failures.extend(e2b_identity_failures(E2B))
+    failures.extend(e3_identity_failures(E3))
+    failures.extend(global_hash_manifest_failures(E4 / "artifact_hashes.json", expected_count=262))
+    failures.extend(e4_identity_failures(E4))
+    failures.extend(e6_identity_failures(E6))
+
+    for fragment in (
+        "充电环节排放下降3.888\\%--4.877\\%",
+        "运营总排放下降0.352\\%--0.523\\%",
+        "按电网日仅有18--20日改善",
+        "各情境95.46\\%--99.71\\%的净减排来自前一日首趟充电窗口",
+        "现有证据不支持“协同稳定放大充电择时收益”的一般结论",
+    ):
+        require(text, fragment, failures, "E4 time-varying carbon evidence boundary")
 
     e1 = read_json(E1 / "decision.json")
     if (
@@ -550,16 +1165,69 @@ def audit(*, allow_pending_e7: bool) -> dict[str, Any]:
     )
     require(
         text,
-        "显著优于5种通过实现核查的对照算法",
+        "现有证据支持其总体竞争力和相对5种对照的优势，尚不足以说明其全面优于所有算法",
         failures,
         "E2 restrained comparison claim",
     )
     require(
         text,
-        "IWD为本研究的简化适配结果",
+        "自适应大邻域搜索（adaptive large neighborhood search，ALNS）",
         failures,
-        "E2 IWD implementation boundary",
+        "ALNS definition at first manuscript use",
     )
+    require(
+        text,
+        "时变碳强度（time-varying carbon intensity，TVCI）",
+        failures,
+        "TVCI definition at first manuscript use",
+    )
+    require(
+        text,
+        "下述参数均在算法比较前确定",
+        failures,
+        "adapted-comparator parameter provenance boundary",
+    )
+    require(
+        text,
+        "GA取Narayanan等文中的遗传算法对照",
+        failures,
+        "GA comparator source role",
+    )
+    require(
+        text,
+        "GA-VNS为GA与VNS的组合基线，不对应某篇文献的完整代码实现",
+        failures,
+        "adapted-comparator provenance boundary",
+    )
+    require(
+        text,
+        "共同评价器统一核算成本、实体车排班、时间窗、载重、电量和充电约束",
+        failures,
+        "shared comparator evaluation contract",
+    )
+    require(
+        text,
+        "种群规模不同会使实际完成的代数不同，比较预算仍按完整方案评价次数控制",
+        failures,
+        "population-method budget comparability boundary",
+    )
+    require(
+        text,
+        "程序中一条路线对象对应一配送趟，故固定费按路线条数计取",
+        failures,
+        "trip-dispatch fixed-cost implementation semantics",
+    )
+    require(
+        text,
+        "表 \\ref{tab:e2-summary} 给出8种通过实现核查的算法总体性能",
+        failures,
+        "E2 manuscript valid-comparator boundary",
+    )
+    if "IWD" in text:
+        failures.append(
+            "E2 manuscript must exclude IWD after its implementation-validity gate failed; "
+            "the sealed nine-algorithm evidence remains unchanged"
+        )
 
     e2b = read_json(E2B / "decision.json")
     if e2b.get("verdict") != "E2B_FORMAL_EVIDENCE_READY" or not e2b.get(
@@ -571,7 +1239,7 @@ def audit(*, allow_pending_e7: bool) -> dict[str, Any]:
     dc = e2b["paired_summary"]["D_minus_C_ev_indirect"]
     require(
         text,
-        f"B相对A平均成本增加{float(ba['mean_delta']):.2f}",
+        f"B相对A平均成本增加£{float(ba['mean_delta']):.2f}",
         failures,
         "negative staged-search result",
     )
@@ -583,7 +1251,7 @@ def audit(*, allow_pending_e7: bool) -> dict[str, Any]:
     )
     require(
         text,
-        f"C相对B平均降低{abs(float(cb['mean_delta'])):.2f}",
+        f"C相对B平均成本降低£{abs(float(cb['mean_delta'])):.2f}",
         failures,
         "cross-depot operator result",
     )
@@ -601,7 +1269,7 @@ def audit(*, allow_pending_e7: bool) -> dict[str, Any]:
     )
     require(
         text,
-        "不把单独的分阶段设置写成普遍有效的性能增强",
+        "单独分阶段本身不构成普遍的性能增强",
         failures,
         "E2b claim boundary",
     )
@@ -623,13 +1291,13 @@ def audit(*, allow_pending_e7: bool) -> dict[str, Any]:
     )
     require(
         text,
-        f"只有{e3['raw_strictly_monotone_networks']}/9张网络严格逐档增加",
+        f"只有{e3['raw_strictly_monotone_networks']}/9个网络严格逐档增加",
         failures,
         "E3 non-monotonic boundary",
     )
     require(
         text,
-        "不支持把它写成每张网络都严格单调",
+        "不支持把它写成每个网络都严格单调",
         failures,
         "E3 interpretation boundary",
     )
@@ -684,7 +1352,7 @@ def audit(*, allow_pending_e7: bool) -> dict[str, Any]:
         )
     require(
         text,
-        "只有当阶段计算时间不超过下一触发间隔时",
+        "阶段计算时间不超过下一触发间隔时，记为满足实时响应条件",
         failures,
         "dynamic response-time criterion",
     )
@@ -693,6 +1361,12 @@ def audit(*, allow_pending_e7: bool) -> dict[str, Any]:
         "批量滚动决策支持",
         failures,
         "non-realtime terminology boundary",
+    )
+    require(
+        text,
+        "选取N114、N221和N322三个网络，分别由50、100和150客户的基础算例按三班时域展开",
+        failures,
+        "dynamic network label and expanded customer-count boundary",
     )
 
     e7_ready = all(
@@ -729,12 +1403,7 @@ def audit(*, allow_pending_e7: bool) -> dict[str, Any]:
         ):
             failures.append("E7 independent audit decision does not pass")
         independent_checks = independent.get("checks", {})
-        for field in (
-            "replay_invariants_decision_pass",
-            "replay_invariants_artifact_hashes_pass",
-            "replay_invariant_row_count_840",
-            "replay_charger_capacity_and_trigger_windows_pass",
-        ):
+        for field in E7_REQUIRED_INDEPENDENT_CHECKS:
             if independent_checks.get(field) is not True:
                 failures.append(f"E7 independent audit did not enforce {field}")
         for filename in E7_EXHIBITS:
@@ -804,6 +1473,7 @@ def audit(*, allow_pending_e7: bool) -> dict[str, Any]:
         "paper_build_warnings": paper_build_warnings,
         "e2b_manifest_and_claims": not any("E2b" in row or "e2_alns" in row for row in failures),
         "e3_manifest_and_claims": not any("E3" in row or "e3_ablation" in row for row in failures),
+        "e4_manifest_and_claims": not any("E4" in row or "e4_e5" in row for row in failures),
         "e6_manifest_and_claims": not any("E6" in row or "e6_fairness" in row for row in failures),
         "e7_ready": e7_ready,
         "required_experiment_surfaces": not any(

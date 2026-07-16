@@ -41,6 +41,12 @@ def test_story_audit_requires_complete_replay_invariant_counts() -> None:
     ]
 
 
+def test_story_audit_requires_external_pause_timing_gate() -> None:
+    assert "external_monitor_pause_timing_uncontaminated" in (
+        audit.E7_REQUIRED_INDEPENDENT_CHECKS
+    )
+
+
 def test_story_audit_requires_all_five_experiment_record_surfaces(tmp_path) -> None:
     for name in audit.REQUIRED_EXPERIMENT_SURFACES:
         (tmp_path / name).write_text("{}\n", encoding="utf-8")
@@ -107,3 +113,13 @@ def test_current_paper_build_is_current_and_searchable() -> None:
     assert info["page_count"] >= 20
     assert info["input_file_count"] >= 10
     assert isinstance(warnings, list)
+
+
+def test_current_e2b_e3_e4_and_e6_identity_matrices_are_exact() -> None:
+    assert audit.e2b_identity_failures(audit.E2B) == []
+    assert audit.e3_identity_failures(audit.E3) == []
+    assert audit.global_hash_manifest_failures(
+        audit.E4 / "artifact_hashes.json", expected_count=262
+    ) == []
+    assert audit.e4_identity_failures(audit.E4) == []
+    assert audit.e6_identity_failures(audit.E6) == []

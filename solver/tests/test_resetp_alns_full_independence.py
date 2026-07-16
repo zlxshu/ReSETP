@@ -13,7 +13,14 @@ SEARCH = REPO / "solver/src/setp_solver/search"
 
 
 def _py_files(root: Path) -> list[Path]:
-    return [p for p in root.rglob("*.py") if p.is_file() and "__pycache__" not in p.parts]
+    # macOS may leave AppleDouble sidecars such as ``._winner.py`` beside
+    # source files on the external volume.  They are binary metadata, not
+    # Python sources, and must not enter a UTF-8 source audit.
+    return [
+        p
+        for p in root.rglob("*.py")
+        if p.is_file() and "__pycache__" not in p.parts and not p.name.startswith("._")
+    ]
 
 
 def test_package_exists_and_has_kernel():

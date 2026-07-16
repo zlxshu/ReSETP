@@ -161,6 +161,81 @@ def test_task_checkpoint_is_atomic_hash_checked_and_resumable(tmp_path) -> None:
         runner._load_task_checkpoint(path, "contract", task)
 
 
+def test_generic_task_error_preserves_valid_checkpoint_and_resume_runs_only_missing(
+    tmp_path, monkeypatch
+) -> None:
+    tasks = [
+        _task("geographic", 1, "full"),
+        _task("geographic", 1, "no_cooperation"),
+    ]
+    payloads = {
+        task["task_id"]: _payload(
+            task["condition"],
+            task["stream"],
+            task["arm"],
+            task["evaluations"],
+            task["network"],
+        )
+        for task in tasks
+    }
+
+    class ImmediateFuture:
+        def __init__(self, function, task):
+            self.function = function
+            self.task = task
+
+        def result(self):
+            return self.function(self.task)
+
+        def cancel(self):
+            return False
+
+    class ImmediatePool:
+        def __init__(self, *, max_workers):
+            self.max_workers = max_workers
+
+        def submit(self, function, task):
+            return ImmediateFuture(function, task)
+
+        def shutdown(self, *, wait, cancel_futures=False):
+            return None
+
+    monkeypatch.setattr(runner, "_expected_tasks", lambda evaluations: tasks)
+    monkeypatch.setattr(runner, "ProcessPoolExecutor", ImmediatePool)
+    monkeypatch.setattr(runner, "as_completed", lambda futures: list(futures))
+
+    first_calls: list[str] = []
+
+    def fail_second(task):
+        first_calls.append(task["task_id"])
+        if task["arm"] == "no_cooperation":
+            raise RuntimeError("external pause contaminated stage timing")
+        return payloads[task["task_id"]]
+
+    monkeypatch.setattr(runner, "_run_task", fail_second)
+    contract = {"contract_sha256": "same-frozen-contract"}
+    with pytest.raises(RuntimeError, match="external pause"):
+        runner.run_or_resume_tasks(tmp_path, contract, evaluations=4, workers=2)
+
+    assert first_calls == [task["task_id"] for task in tasks]
+    assert runner._task_path(tmp_path, tasks[0]).is_file()
+    assert not runner._task_path(tmp_path, tasks[1]).exists()
+
+    resumed_calls: list[str] = []
+
+    def finish_missing(task):
+        resumed_calls.append(task["task_id"])
+        return payloads[task["task_id"]]
+
+    monkeypatch.setattr(runner, "_run_task", finish_missing)
+    result = runner.run_or_resume_tasks(
+        tmp_path, contract, evaluations=4, workers=2
+    )
+
+    assert resumed_calls == [tasks[1]["task_id"]]
+    assert result == [payloads[task["task_id"]] for task in tasks]
+
+
 def test_final_artifact_manifest_excludes_internal_resume_checkpoints(tmp_path) -> None:
     (tmp_path / ".tasks").mkdir()
     (tmp_path / ".tasks" / "one.json").write_text("checkpoint", encoding="utf-8")

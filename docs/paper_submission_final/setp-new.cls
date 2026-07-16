@@ -198,7 +198,7 @@
     \begingroup
       \centering%
       % -- 中文标题排版
-      {\bfseries\zihao{3}\setp@title\par}%
+      {\heiti\zihao{3}\setp@title\par}%
       \vskip .8\baselineskip%
       {\fangsong\zihao{4}\linespread{1.23}\selectfont \setp@author\par}%
       \vskip .3\baselineskip%

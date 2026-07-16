@@ -80,9 +80,9 @@ def network_level_tests() -> pd.DataFrame:
     raw_p: list[float] = []
     # The sealed IWD rows come from the legacy simplified adaptation.  A later
     # formula-faithful repair failed its pre-registered fidelity gate and was
-    # therefore not allowed to overwrite the formal matrix.  Keep IWD in the
-    # descriptive table and convergence figure, but do not count it in the
-    # confirmatory family or in the paper's strong algorithm claim.
+    # therefore not allowed to overwrite the formal matrix.  The sealed rows
+    # remain untouched, but IWD is excluded from submission tables and from the
+    # confirmatory family because it is not an implementation-valid comparator.
     for baseline in ["GA", "PSO", "VNS", "ACO", "GA-VNS", "LNS", "GWO"]:
         gain = (pivot[baseline] - pivot[primary]) / pivot[baseline] * 100.0
         nonzero = gain[np.abs(gain) > 1e-12]
@@ -115,7 +115,7 @@ def write_e2_tables_legacy() -> None:
     for row in df.itertuples(index=False):
         gain = "---" if row.algorithm == "staged_hybrid_carbon_aware" else f"{pair.loc[row.algorithm, 'mean_gain_pct']:.2f}"
         lines.append(f"{NAMES[row.algorithm]} & {row.sum_of_instance_avg_costs:,.1f} & "
-                     f"{row.mean_rank_by_instance_avg:.2f} & {int(row.best_instance_avg_count)} & "
+                     f"{mean_rank.loc[row.algorithm]:.2f} & {int(best_count.loc[row.algorithm])} & "
                      f"{row.mean_runtime_seconds:.1f} & {gain} \\\\")
     lines += [r"\bottomrule", r"\end{tabular}"]
     (TAB / "e2_algorithm_summary.tex").write_text("\n".join(lines) + "\n", encoding="utf-8")
@@ -134,17 +134,29 @@ def write_e2_tables_legacy() -> None:
 
 
 def write_e2_tables() -> None:
-    df = pd.read_csv(E2 / "algorithm_summary.csv").sort_values("mean_rank_by_instance_avg")
+    df = pd.read_csv(E2 / "algorithm_summary.csv")
+    df = df[df.algorithm != "IWD"].sort_values("mean_rank_by_instance_avg")
     detail = pd.read_csv(E2 / "table_algorithm_by_instance.csv")
+    detail = detail[detail.algorithm != "IWD"].copy()
     best_by_network = detail.groupby("instance")["avg_cost"].transform("min")
     detail["relative_gap_pct"] = (detail["avg_cost"] / best_by_network - 1.0) * 100.0
+    detail["cost_cv_pct"] = 100.0 * detail["std_cost"] / detail["avg_cost"]
+    detail["valid_rank"] = detail.groupby("instance")["avg_cost"].rank(method="average")
     mean_gap = detail.groupby("algorithm")["relative_gap_pct"].mean()
-    lines = [r"\begin{tabular*}{0.84\linewidth}{@{\extracolsep{\fill}}lrrrr@{}}", r"\toprule",
-             r"算法 & 平均相对偏差/\% & 平均名次 & 最优网络数 & 平均耗时/s \\",
+    mean_cv = detail.groupby("algorithm")["cost_cv_pct"].mean()
+    mean_rank = detail.groupby("algorithm")["valid_rank"].mean()
+    best_count = (
+        detail.assign(is_best=detail["valid_rank"].eq(1.0))
+        .groupby("algorithm")["is_best"]
+        .sum()
+    )
+    lines = [r"\begin{tabular*}{0.92\linewidth}{@{\extracolsep{\fill}}lrrrrr@{}}", r"\toprule",
+             r"算法 & 平均相对偏差/\% & 变异系数/\% & 平均名次 & 最优网络数 & 平均耗时/s \\",
              r"\midrule"]
     for row in df.itertuples(index=False):
         lines.append(f"{NAMES[row.algorithm]} & {mean_gap.loc[row.algorithm]:.2f} & "
-                     f"{row.mean_rank_by_instance_avg:.2f} & {int(row.best_instance_avg_count)} & "
+                     f"{mean_cv.loc[row.algorithm]:.2f} & {row.mean_rank_by_instance_avg:.2f} & "
+                     f"{int(row.best_instance_avg_count)} & "
                      f"{row.mean_runtime_seconds:.1f}" + r" \\")
     lines += [r"\bottomrule", r"\end{tabular*}"]
     write_tex("e2_algorithm_summary.tex", lines)
@@ -167,10 +179,11 @@ def write_e2_tables() -> None:
     pivot = detail.pivot(index="customer_count", columns="algorithm", values="avg_cost").sort_index()
     table_parts = [
         ("e2_network_costs_a.tex", ["staged_hybrid_carbon_aware", "GA", "PSO", "VNS", "ACO"]),
-        ("e2_network_costs_b.tex", ["staged_hybrid_carbon_aware", "GA-VNS", "LNS", "GWO", "IWD"]),
+        ("e2_network_costs_b.tex", ["staged_hybrid_carbon_aware", "GA-VNS", "LNS", "GWO"]),
     ]
     for name, algorithms in table_parts:
-        lines = [r"\begin{tabular*}{0.92\linewidth}{@{\extracolsep{\fill}}lrrrrr@{}}", r"\toprule",
+        numeric_columns = "r" * len(algorithms)
+        lines = [rf"\begin{{tabular*}}{{0.92\linewidth}}{{@{{\extracolsep{{\fill}}}}l{numeric_columns}@{{}}}}", r"\toprule",
                  "客户数 & " + " & ".join(NAMES[a] for a in algorithms) + r" \\", r"\midrule"]
         for customer_count, row in pivot.iterrows():
             lines.append(f"{int(customer_count)} & " +
@@ -178,9 +191,7 @@ def write_e2_tables() -> None:
         lines += [r"\bottomrule", r"\end{tabular*}"]
         write_tex(name, lines)
 
-    matrix = detail[detail.algorithm != "IWD"].pivot(
-        index="instance", columns="algorithm", values="avg_cost"
-    )
+    matrix = detail.pivot(index="instance", columns="algorithm", values="avg_cost")
     stat, p_value = friedmanchisquare(*(matrix[column] for column in matrix.columns))
     audit = OUT / "audit"
     audit.mkdir(parents=True, exist_ok=True)
@@ -195,26 +206,22 @@ def plot_convergence() -> None:
     df = pd.read_csv(E2_CURVES)
     part = df[df.instance == "L-main-threeshift-100c-01"]
     fig, ax = plt.subplots(figsize=(5.15, 3.00))
-    # Chen et al. (2025), Fig. 4 supplies the overall grammar: thin curves,
-    # no grid and a compact in-figure legend.  Nine algorithms require sparse
-    # markers in addition to colour and line style so grayscale print remains
-    # readable.
+    # Chen et al. (2025), Fig. 4 supplies the overall grammar: a small set of
+    # thin curves, no grid and a compact in-figure legend.  Keep only the four
+    # competitive algorithms in the figure; submission tables include all
+    # eight implementation-valid algorithms, while sealed IWD rows stay only
+    # in the repository evidence.
     styles = [
-        ("staged_hybrid_carbon_aware", "TVCI-ALNS", "#D7191C", "-", None),
-        ("LNS", "LNS", "#1A9641", "--", None),
-        ("GA-VNS", "GA-VNS", "#762A83", "-.", None),
-        ("VNS", "VNS", "#2166AC", ":", None),
-        ("GA", "GA", "#E08214", "-", "o"),
-        ("GWO", "GWO", "#4D4D4D", "--", "s"),
-        ("ACO", "ACO", "#8C510A", "-.", "^"),
-        ("PSO", "PSO", "#018571", ":", "D"),
-        ("IWD", "IWD", "#C51B7D", "--", "v"),
+        ("staged_hybrid_carbon_aware", "TVCI-ALNS", "#111111", "-", "o"),
+        ("LNS", "LNS", "#4D4D4D", "--", "s"),
+        ("GA-VNS", "GA-VNS", "#777777", "-.", "^"),
+        ("VNS", "VNS", "#999999", ":", "D"),
     ]
     for algorithm, label, color, linestyle, marker in styles:
         curve = part[part.algorithm == algorithm].sort_values("eval")
         ax.plot(curve["eval"], curve["median_best_cost"], color=color,
                 linestyle=linestyle, linewidth=0.62, drawstyle="steps-post",
-                marker=marker, markevery=8, markersize=1.8,
+                marker=marker, markevery=8, markersize=2.0,
                 markerfacecolor="white", markeredgewidth=0.42, label=label)
     ax.set_xlabel("评价次数")
     ax.set_ylabel("最好成本/£")
@@ -224,7 +231,7 @@ def plot_convergence() -> None:
     ax.set_xlim(0, 4400)
     ax.set_ylim(5200, 8600)
     ax.set_xticks([0, 1000, 2000, 3000, 4000])
-    legend = ax.legend(loc="upper right", ncol=3, frameon=True, fancybox=False,
+    legend = ax.legend(loc="upper right", ncol=2, frameon=True, fancybox=False,
                        edgecolor="#777777", framealpha=1.0, borderpad=0.18,
                        columnspacing=0.62, handletextpad=0.28,
                        handlelength=1.70, fontsize=5.8)
@@ -260,14 +267,14 @@ def plot_structure() -> None:
                                     ["地理聚集", "空间交错"], strict=True):
         owners = load_owners(condition)
         for owner, marker, color, name in [
-            ("D0", "+", "#FF9999", "车场 A"), ("D1", "x", "#99CC99", "车场 B")
+            ("D0", "+", "#222222", "车场 A"), ("D1", "x", "#777777", "车场 B")
         ]:
             selected = [nodes[c] for c, d in owners.items() if d == owner]
             ax.scatter([n["x"] for n in selected], [n["y"] for n in selected], s=12,
                        marker=marker, color=color, linewidths=0.55,
                        label=f"{name}  {len(selected)}")
         for depot, marker, color in zip(sorted(depots, key=lambda x: x["node_id"]),
-                                        ["+", "x"], ["#D7191C", "#1A9622"], strict=True):
+                                        ["+", "x"], ["#111111", "#777777"], strict=True):
             ax.scatter(depot["x"], depot["y"], s=70, marker=marker, color=color,
                        linewidths=1.05, zorder=5)
         ax.set_aspect("equal", adjustable="box")

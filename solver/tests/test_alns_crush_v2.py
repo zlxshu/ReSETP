@@ -185,7 +185,11 @@ class AlnsCrushV2Tests(unittest.TestCase):
 
     def test_scan_construction_returns_zero_violation_all_cv_solution(self) -> None:
         root = Path(__file__).resolve().parents[2]
-        bundle = load_search_bundle(root / "models/data_bundle/generated_instances/e2_benchmark/vanilla/e2-vanilla-10c-01")
+        # The generated E2 bundles now carry hard physical CV/EV caps.  The
+        # deterministic scan may create multiple CV trips on a 10-customer
+        # instance, so use the uncapped verification fixture for this unit
+        # test's construction/feasibility contract.
+        bundle = load_search_bundle(root / "models/data_bundle/generated_instances/verify_20251113")
 
         solution = scan_all_cv_solution(bundle.instance, offset=0)
 

@@ -182,23 +182,33 @@ def build_figure(days: list[str]) -> dict[str, object]:
     ])
     immediate, forecast, load_meta = selected_loads(selected_day)
     x = np.arange(96) * 0.5 - 23.75
+    immediate_emissions = immediate * profile[:, 0] / 1000.0
+    forecast_emissions = forecast * profile[:, 0] / 1000.0
 
-    # The visual grammar follows Cheng et al. (2022), Fig. 6 as a whole:
-    # thin curves, white field, no grid, compact in-panel legends, and restrained colour.
+    # The three-row grammar follows Cheng et al. (2022), Fig. 6: carbon
+    # intensity, realised charging emissions and charging load are aligned on
+    # the same time axis.  Solid/dashed encodings remain distinct in grayscale.
     fig, axes = plt.subplots(
-        2, 1, figsize=(5.15, 3.08), sharex=True,
-        gridspec_kw={"height_ratios": [1.0, 1.05], "hspace": 0.13},
+        3, 1, figsize=(5.15, 3.92), sharex=True,
+        gridspec_kw={"height_ratios": [0.92, 1.0, 1.0], "hspace": 0.13},
     )
-    top, bottom = axes
-    top.plot(x, profile[:, 0], color="#F0802B", linewidth=0.70, label="实际碳强度")
+    top, middle, bottom = axes
+    top.plot(x, profile[:, 0], color="#111111", linewidth=0.72, label="实际碳强度")
     top.plot(x, profile[:, 1], color="#676767", linewidth=0.62,
              linestyle=(0, (3.2, 2.0)), label="预测碳强度")
     # Keep the unit outside mathtext so Chinese fallback stays intact in the PDF.
     top.set_ylabel("碳强度/(g CO2·kWh-1)")
 
-    bottom.step(x, immediate, where="mid", color="#9B63C5", linewidth=0.67,
+    middle.step(x, immediate_emissions, where="mid", color="#111111", linewidth=0.70,
                 label="有空即充")
-    bottom.step(x, forecast, where="mid", color="#68A9CF", linewidth=0.72,
+    middle.step(x, forecast_emissions, where="mid", color="#707070", linewidth=0.72,
+                linestyle=(0, (3.2, 2.0)), label="按预测择时")
+    middle.set_ylabel("充电排放/kg CO2")
+
+    bottom.step(x, immediate, where="mid", color="#111111", linewidth=0.70,
+                label="有空即充")
+    bottom.step(x, forecast, where="mid", color="#707070", linewidth=0.72,
+                linestyle=(0, (3.2, 2.0)),
                 label="按预测择时")
     bottom.set_ylabel("每半小时充电量/kWh")
     bottom.set_xlabel("相对运营日零点的时间/h")
@@ -216,11 +226,14 @@ def build_figure(days: list[str]) -> dict[str, object]:
                 transform=ax.get_xaxis_transform(), color="#666666")
         ax.text(0.8, 0.955, "运营日", ha="left", va="top",
                 transform=ax.get_xaxis_transform(), color="#666666")
-    top.set_ylim(0, max(profile[:, 0].max(), profile[:, 1].max()) * 1.18)
+    top_min = min(profile[:, 0].min(), profile[:, 1].min())
+    top_max = max(profile[:, 0].max(), profile[:, 1].max())
+    top.set_ylim(max(0, top_min * 0.80), top_max * 1.10)
+    middle.set_ylim(0, max(immediate_emissions.max(), forecast_emissions.max()) * 1.22)
     bottom.set_ylim(0, max(immediate.max(), forecast.max()) * 1.22)
     bottom.set_xlim(-24, 24)
     bottom.set_xticks(np.arange(-24, 25, 6))
-    fig.subplots_adjust(left=0.13, right=0.985, top=0.985, bottom=0.16)
+    fig.subplots_adjust(left=0.13, right=0.985, top=0.985, bottom=0.13)
     save_figure(fig, "e4_carbon_intensity_charging")
     return {
         "selection_rule": "actual carbon-intensity range closest to the 28-day median; earliest date breaks ties",
@@ -285,11 +298,60 @@ def build_day_table() -> None:
         write_both(f"e4_day_consistency_{suffix}.tex", "\n".join(lines) + "\n")
 
 
+def build_day_figure() -> None:
+    day = pd.read_csv(E4 / "day_summary.csv")
+    dates = sorted(day.operating_day.unique())
+    positions = np.arange(len(dates))
+    figure, axes = plt.subplots(2, 1, figsize=(5.15, 2.78), sharex=True, sharey=True)
+    styles = {
+        "ownership_fixed": dict(color="#222222", marker="o", linestyle="-"),
+        "reassignment_allowed": dict(color="#777777", marker="s", linestyle=(0, (3.2, 2.0))),
+    }
+    short_labels = {"ownership_fixed": "责任固定", "reassignment_allowed": "跨场重分工"}
+    condition_titles = {"geographic": "地理聚集", "mixed": "空间交错"}
+    for axis, condition in zip(axes, ("geographic", "mixed")):
+        for arm in ("ownership_fixed", "reassignment_allowed"):
+            block = (
+                day[(day.condition == condition) & (day.arm == arm)]
+                .set_index("operating_day")
+                .loc[dates]
+            )
+            axis.plot(
+                positions,
+                block.pooled_charging_reduction_pct,
+                linewidth=0.70,
+                markersize=2.5,
+                markeredgewidth=0.45,
+                label=short_labels[arm],
+                **styles[arm],
+            )
+        axis.axhline(0, color="#555555", linewidth=0.48)
+        axis.text(0.012, 0.90, condition_titles[condition], transform=axis.transAxes,
+                  ha="left", va="top")
+        axis.spines["top"].set_visible(False)
+        axis.spines["right"].set_visible(False)
+        axis.spines["left"].set_linewidth(0.468)
+        axis.spines["bottom"].set_linewidth(0.468)
+        axis.tick_params(width=0.468, length=2.0, pad=1.5)
+    axes[0].legend(loc="upper right", ncol=2, frameon=False, handlelength=2.4,
+                   columnspacing=0.9, handletextpad=0.4, borderaxespad=0.35)
+    axes[0].set_ylabel("充电排放降幅/%")
+    axes[1].set_ylabel("充电排放降幅/%")
+    axes[1].set_xlabel("运营日")
+    tick_positions = [0, 4, 8, 12, 16, 20, 24, len(dates) - 1]
+    axes[1].set_xticks(tick_positions)
+    axes[1].set_xticklabels([dates[index][5:] for index in tick_positions])
+    axes[1].set_xlim(-0.4, len(dates) - 0.6)
+    figure.subplots_adjust(left=0.12, right=0.985, top=0.985, bottom=0.18, hspace=0.12)
+    save_figure(figure, "e4_day_heterogeneity")
+
+
 def main() -> None:
     configure()
     metadata = json.loads((E4 / "metadata.json").read_text(encoding="utf-8"))
     figure_meta = build_figure(metadata["operating_days"])
     table_rows = build_main_table()
+    build_day_figure()
     build_day_table()
     AUDIT.mkdir(parents=True, exist_ok=True)
     audit = {

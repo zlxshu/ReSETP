@@ -10,10 +10,16 @@ import csv
 import hashlib
 import json
 import statistics
+import sys
 from typing import Any
 
 
 ROOT = Path(__file__).resolve().parents[2]
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
+from baselines.e7_dynamic import audit_e7_external_pause_timing_20260716 as pause_audit
+
+
 FORMAL = ROOT / "baselines/e7_dynamic/e7_multinetwork_formal_20260715"
 REPLAY = ROOT / "baselines/e7_dynamic/e7_multiday_zero_search_replay_20260715"
 REPLAY_INVARIANTS = ROOT / "baselines/e7_dynamic/e7_replay_invariants_audit_20260715"
@@ -163,6 +169,8 @@ def formal_task_matrix_failures(sessions: list[dict[str, Any]]) -> list[str]:
 
 
 def main() -> int:
+    if OUT.exists() and any(OUT.iterdir()):
+        raise RuntimeError(f"refusing to overwrite existing independent evidence: {OUT}")
     OUT.mkdir(parents=True, exist_ok=True)
     formal_hash_count, formal_hash_failures = verify_manifest(FORMAL)
     replay_hash_count, replay_hash_failures = verify_manifest(REPLAY)
@@ -173,6 +181,10 @@ def main() -> int:
         (REPLAY_INVARIANTS / "decision.json").read_text(encoding="utf-8")
     )
     sessions = json.loads((FORMAL / "sessions.json").read_text(encoding="utf-8"))
+    pause_incident = json.loads(pause_audit.INCIDENT.read_text(encoding="utf-8"))
+    pause_contamination = pause_audit.contaminated_stages(
+        sessions, float(pause_incident["pause_duration_seconds"])
+    )
     matrix_failures = formal_task_matrix_failures(sessions)
     if matrix_failures:
         raise RuntimeError(f"formal task matrix is not exact: {matrix_failures}")
@@ -531,6 +543,7 @@ def main() -> int:
         "replay_invariants_artifact_hashes_pass": not invariant_hash_failures,
         "formal_session_count_120": len(sessions) == 120,
         "full_mechanism_task_count_30": len(full_payloads) == 30,
+        "external_monitor_pause_timing_uncontaminated": not pause_contamination,
         "full_stage_participation_floor_pass": stage_floor_failures == 0,
         "no_cooperation_cross_service_zero": no_cooperation_cross_failures == 0,
         "paired_economic_decomposition_closes": not economic_closure_failures,
@@ -574,6 +587,7 @@ def main() -> int:
         "replay_invariants_decision_sha256": sha256(
             REPLAY_INVARIANTS / "decision.json"
         ),
+        "external_pause_incident_sha256": sha256(pause_audit.INCIDENT),
         "audit_source_sha256": sha256(Path(__file__).resolve()),
     }
     write_json(OUT / "metadata.json", metadata)
@@ -589,6 +603,8 @@ def main() -> int:
             "stage_floor_failure_count": stage_floor_failures,
             "no_cooperation_cross_failure_count": no_cooperation_cross_failures,
             "economic_closure_failures": economic_closure_failures,
+            "external_pause_timing_contamination_count": len(pause_contamination),
+            "external_pause_timing_contamination": pause_contamination,
             "controlled_arm_failure_count": sum(
                 payload["execution_status"] == "HALT_NO_EXECUTABLE_CONTINUATION"
                 for payload in sessions

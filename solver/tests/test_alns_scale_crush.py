@@ -120,7 +120,9 @@ class AlnsScaleCrushTests(unittest.TestCase):
 
     def test_v2_default_instances_do_not_expand_when_scale_registered(self) -> None:
         self.assertEqual(tuple(V2_INSTANCE_DIRS), ALNS_DEFAULT_INSTANCE_ORDER)
-        self.assertEqual(len(V2_INSTANCE_DIRS), 23)
+        # The active formal registry is the nine L-main three-shift bundles;
+        # the former 23-instance diagnostic scale list is archival.
+        self.assertEqual(len(V2_INSTANCE_DIRS), 9)
 
 
 if __name__ == "__main__":
