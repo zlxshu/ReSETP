@@ -205,41 +205,46 @@ def write_e2_tables() -> None:
 def plot_convergence() -> None:
     df = pd.read_csv(E2_CURVES)
     part = df[df.instance == "L-main-threeshift-100c-01"]
-    fig, ax = plt.subplots(figsize=(5.15, 3.00))
+    # Chen et al. (2025), Fig. 4 uses a compact, near-square plot below the
+    # comparison table.  With only four paper-facing algorithms, retaining the
+    # former nine-algorithm landscape canvas leaves most of the panel empty.
+    # 陈雨蝶等图4采用近方形收敛面板。仅保留四种直接竞争算法后，
+    # 压缩横向空白，同时保持期刊最终尺寸下的图内字号。
+    fig, ax = plt.subplots(figsize=(3.20, 3.40))
     # Chen et al. (2025), Fig. 4 supplies the overall grammar: a small set of
     # thin curves, no grid and a compact in-figure legend.  Keep only the four
     # competitive algorithms in the figure; submission tables include all
     # eight implementation-valid algorithms, while sealed IWD rows stay only
     # in the repository evidence.
     styles = [
-        ("staged_hybrid_carbon_aware", "TVCI-ALNS", "#111111", "-", "o"),
-        ("LNS", "LNS", "#4D4D4D", "--", "s"),
-        ("GA-VNS", "GA-VNS", "#777777", "-.", "^"),
-        ("VNS", "VNS", "#999999", ":", "D"),
+        # Colour and line style are both encoded: the colour presentation is
+        # readable on screen, while the line styles remain distinct in grey.
+        ("staged_hybrid_carbon_aware", "TVCI-ALNS", "#D62728", "-."),
+        ("LNS", "LNS", "#2CA02C", "--"),
+        ("GA-VNS", "GA-VNS", "#9467BD", "-"),
+        ("VNS", "VNS", "#1F77B4", ":"),
     ]
-    for algorithm, label, color, linestyle, marker in styles:
+    for algorithm, label, color, linestyle in styles:
         curve = part[part.algorithm == algorithm].sort_values("eval")
         ax.plot(curve["eval"], curve["median_best_cost"], color=color,
                 linestyle=linestyle, linewidth=0.62, drawstyle="steps-post",
-                marker=marker, markevery=8, markersize=2.0,
-                markerfacecolor="white", markeredgewidth=0.42, label=label)
-    ax.set_xlabel("评价次数")
-    ax.set_ylabel("最好成本/£")
-    # The formal budget ends at 4000 evaluations.  Extending the visible axis
-    # slightly past the data creates an honest blank band at the upper-right,
-    # so the in-figure legend does not cover any trajectory.
-    ax.set_xlim(0, 4400)
-    ax.set_ylim(5200, 8600)
+                label=label)
+    ax.set_xlabel("评价次数", fontsize=7.7)
+    ax.set_ylabel("最好成本/£", fontsize=7.7)
+    # The plot reports a 4000-evaluation experiment and therefore ends at the
+    # actual budget.  The upper limit keeps a small honest margin above the
+    # common initial value without manufacturing a large legend-only region.
+    ax.set_xlim(0, 4000)
+    ax.set_ylim(5200, 7600)
     ax.set_xticks([0, 1000, 2000, 3000, 4000])
-    legend = ax.legend(loc="upper right", ncol=2, frameon=True, fancybox=False,
+    legend = ax.legend(loc="upper right", ncol=1, frameon=True, fancybox=False,
                        edgecolor="#777777", framealpha=1.0, borderpad=0.18,
-                       columnspacing=0.62, handletextpad=0.28,
-                       handlelength=1.70, fontsize=5.8)
+                       handletextpad=0.35, handlelength=1.85, fontsize=7.7)
     legend.get_frame().set_linewidth(0.35)
-    ax.tick_params(direction="out", length=2.0, width=0.468)
+    ax.tick_params(direction="out", length=2.0, width=0.468, labelsize=7.7)
     for spine in ax.spines.values():
         spine.set_linewidth(0.468)
-    fig.subplots_adjust(left=0.12, right=0.985, bottom=0.17, top=0.975)
+    fig.subplots_adjust(left=0.14, right=0.985, bottom=0.18, top=0.975)
     save(fig, "e2_convergence")
 
 
@@ -267,14 +272,14 @@ def plot_structure() -> None:
                                     ["地理聚集", "空间交错"], strict=True):
         owners = load_owners(condition)
         for owner, marker, color, name in [
-            ("D0", "+", "#222222", "车场 A"), ("D1", "x", "#777777", "车场 B")
+            ("D0", "+", "#1F77B4", "车场 A"), ("D1", "x", "#D55E00", "车场 B")
         ]:
             selected = [nodes[c] for c, d in owners.items() if d == owner]
             ax.scatter([n["x"] for n in selected], [n["y"] for n in selected], s=12,
                        marker=marker, color=color, linewidths=0.55,
                        label=f"{name}  {len(selected)}")
         for depot, marker, color in zip(sorted(depots, key=lambda x: x["node_id"]),
-                                        ["+", "x"], ["#111111", "#777777"], strict=True):
+                                        ["+", "x"], ["#125A8A", "#9C4300"], strict=True):
             ax.scatter(depot["x"], depot["y"], s=70, marker=marker, color=color,
                        linewidths=1.05, zorder=5)
         ax.set_aspect("equal", adjustable="box")
@@ -298,10 +303,10 @@ def plot_e3_effect() -> None:
     x = np.arange(len(df))
     width = 0.34
     fig, ax = plt.subplots(figsize=(3.65, 2.30))
-    ax.bar(x - width / 2, df.geographic_mean_saving_pct, width=width, color="white",
-           edgecolor="#262626", linewidth=0.35, hatch="////", label="地理聚集")
-    ax.bar(x + width / 2, df.mixed_mean_saving_pct, width=width, color="#BFBFBF",
-           edgecolor="#262626", linewidth=0.35, hatch="....", label="空间交错")
+    ax.bar(x - width / 2, df.geographic_mean_saving_pct, width=width, color="#A6CEE3",
+           edgecolor="#1F77B4", linewidth=0.45, hatch="////", label="地理聚集")
+    ax.bar(x + width / 2, df.mixed_mean_saving_pct, width=width, color="#FDBF6F",
+           edgecolor="#D55E00", linewidth=0.45, hatch="....", label="空间交错")
     ax.axhline(0, color="black", linewidth=0.45)
     ax.set_xticks(x, [str(int(value)) for value in df.customer_count])
     ax.set_xlabel("客户数")

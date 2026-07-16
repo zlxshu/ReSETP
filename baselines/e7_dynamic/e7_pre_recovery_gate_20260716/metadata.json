@@ -1,0 +1,160 @@
+{
+  "checks": [
+    {
+      "check": "protected_hash::baselines/e7_dynamic/e7_formal_dynamic_value_20260714.py",
+      "detail": "579b7f3e8c2d34d102bae8a64ae007571fdc41383a4113e6e447a4b1c542d80f",
+      "passed": true
+    },
+    {
+      "check": "protected_hash::baselines/e7_dynamic/e7_formal_resumable_runner_20260715.py",
+      "detail": "cebfc355a07d51cc5f98f3f4a41f606383c23031d9254dc1b94445e751b01a15",
+      "passed": true
+    },
+    {
+      "check": "protected_hash::baselines/e7_dynamic/e7_full_mechanism_probe_20260714.py",
+      "detail": "0212c344024f95c9d13f7226f7b9ac7cfaab11f9e4244577d8191d37b5a629ed",
+      "passed": true
+    },
+    {
+      "check": "protected_hash::baselines/e7_dynamic/e7_multiday_zero_search_replay_20260715.py",
+      "detail": "33b92d4c160c51f87bbd188a81b1c8086167faac0e4eb60ef506c083c2413dac",
+      "passed": true
+    },
+    {
+      "check": "protected_hash::baselines/e7_dynamic/e7_multinetwork_event_streams_v4_20260715/artifact_hashes.json",
+      "detail": "a1c9bb2b39e66e5a545780f0323611cbd6dce6743d596b2beffb94b215b9e00e",
+      "passed": true
+    },
+    {
+      "check": "protected_hash::baselines/e7_dynamic/e7_multinetwork_event_streams_v4_20260715/metadata.json",
+      "detail": "dbc1099bf69a2bb84137de0d0aac7add8762eef16edbc4f0b35d128f01adc210",
+      "passed": true
+    },
+    {
+      "check": "protected_hash::baselines/e7_dynamic/e7_multinetwork_event_streams_v4_20260715/responsibility_maps.csv",
+      "detail": "6c17f0b1fcfcdf4bae6fb33399826afa94043b2886d478f75de9696022324c16",
+      "passed": true
+    },
+    {
+      "check": "stored_contract_hash",
+      "detail": "stored=bffdc512b8b39fe5c11bb80b63204a39f2a529d7810741354c401644cc3be16f; recomputed=bffdc512b8b39fe5c11bb80b63204a39f2a529d7810741354c401644cc3be16f",
+      "passed": true
+    },
+    {
+      "check": "evaluations",
+      "detail": "50",
+      "passed": true
+    },
+    {
+      "check": "matrix_size",
+      "detail": "120",
+      "passed": true
+    },
+    {
+      "check": "all_contract_sources",
+      "detail": "match",
+      "passed": true
+    },
+    {
+      "check": "all_contract_inputs",
+      "detail": "match",
+      "passed": true
+    },
+    {
+      "check": "monitor_command_contract",
+      "detail": "['--evaluations', '--workers', '50', '6', 'e7_formal_resumable_runner_20260715.py', 'e7_multinetwork_formal_20260715']",
+      "passed": true
+    },
+    {
+      "check": "monitor_output_directory",
+      "detail": "['/Volumes/移动硬盘（512G）/ReSETP/baselines/e7_dynamic/e7_multinetwork_formal_20260715/.tasks']",
+      "passed": true
+    },
+    {
+      "check": "checkpoint_unexpected_files",
+      "detail": "[]",
+      "passed": true
+    },
+    {
+      "check": "checkpoint_valid_count",
+      "detail": "102",
+      "passed": true
+    },
+    {
+      "check": "checkpoint_missing_count",
+      "detail": "18",
+      "passed": true
+    },
+    {
+      "check": "checkpoint_invalid_count",
+      "detail": "0",
+      "passed": true
+    },
+    {
+      "check": "no_false_completion_files",
+      "detail": "[]",
+      "passed": true
+    },
+    {
+      "check": "direct_patch_resume_preserves_contract",
+      "detail": "parent=bffdc512b8b39fe5c11bb80b63204a39f2a529d7810741354c401644cc3be16f; patched=b703492d88d5a4db69f4302c709767871a8743ddef853e7be1d8b4ca956c0721; shadow=8b2de29659a1460020f3be4ad50cf34baa0b4badc340fbe31ceb98b6c288959f",
+      "passed": false
+    }
+  ],
+  "derived_patched_contract_sha256": "b703492d88d5a4db69f4302c709767871a8743ddef853e7be1d8b4ca956c0721",
+  "expected_contract_sha256": "bffdc512b8b39fe5c11bb80b63204a39f2a529d7810741354c401644cc3be16f",
+  "expected_evaluations": 50,
+  "expected_missing": 18,
+  "expected_present": 102,
+  "expected_task_count": 120,
+  "expected_workers": 6,
+  "formal_output": "baselines/e7_dynamic/e7_multinetwork_formal_20260715",
+  "monitor_config": "baselines/e7_dynamic/monitor_configs/e7_multinetwork_formal_50_v2.json",
+  "protected_files": [
+    {
+      "actual_sha256": "579b7f3e8c2d34d102bae8a64ae007571fdc41383a4113e6e447a4b1c542d80f",
+      "expected_sha256": "579b7f3e8c2d34d102bae8a64ae007571fdc41383a4113e6e447a4b1c542d80f",
+      "passed": true,
+      "path": "baselines/e7_dynamic/e7_formal_dynamic_value_20260714.py"
+    },
+    {
+      "actual_sha256": "cebfc355a07d51cc5f98f3f4a41f606383c23031d9254dc1b94445e751b01a15",
+      "expected_sha256": "cebfc355a07d51cc5f98f3f4a41f606383c23031d9254dc1b94445e751b01a15",
+      "passed": true,
+      "path": "baselines/e7_dynamic/e7_formal_resumable_runner_20260715.py"
+    },
+    {
+      "actual_sha256": "0212c344024f95c9d13f7226f7b9ac7cfaab11f9e4244577d8191d37b5a629ed",
+      "expected_sha256": "0212c344024f95c9d13f7226f7b9ac7cfaab11f9e4244577d8191d37b5a629ed",
+      "passed": true,
+      "path": "baselines/e7_dynamic/e7_full_mechanism_probe_20260714.py"
+    },
+    {
+      "actual_sha256": "33b92d4c160c51f87bbd188a81b1c8086167faac0e4eb60ef506c083c2413dac",
+      "expected_sha256": "33b92d4c160c51f87bbd188a81b1c8086167faac0e4eb60ef506c083c2413dac",
+      "passed": true,
+      "path": "baselines/e7_dynamic/e7_multiday_zero_search_replay_20260715.py"
+    },
+    {
+      "actual_sha256": "a1c9bb2b39e66e5a545780f0323611cbd6dce6743d596b2beffb94b215b9e00e",
+      "expected_sha256": "a1c9bb2b39e66e5a545780f0323611cbd6dce6743d596b2beffb94b215b9e00e",
+      "passed": true,
+      "path": "baselines/e7_dynamic/e7_multinetwork_event_streams_v4_20260715/artifact_hashes.json"
+    },
+    {
+      "actual_sha256": "dbc1099bf69a2bb84137de0d0aac7add8762eef16edbc4f0b35d128f01adc210",
+      "expected_sha256": "dbc1099bf69a2bb84137de0d0aac7add8762eef16edbc4f0b35d128f01adc210",
+      "passed": true,
+      "path": "baselines/e7_dynamic/e7_multinetwork_event_streams_v4_20260715/metadata.json"
+    },
+    {
+      "actual_sha256": "6c17f0b1fcfcdf4bae6fb33399826afa94043b2886d478f75de9696022324c16",
+      "expected_sha256": "6c17f0b1fcfcdf4bae6fb33399826afa94043b2886d478f75de9696022324c16",
+      "passed": true,
+      "path": "baselines/e7_dynamic/e7_multinetwork_event_streams_v4_20260715/responsibility_maps.csv"
+    }
+  ],
+  "read_only": true,
+  "schema": "setp.e7.pre_recovery_gate.v1",
+  "shadow_scheduler_sha256": "8b2de29659a1460020f3be4ad50cf34baa0b4badc340fbe31ceb98b6c288959f"
+}

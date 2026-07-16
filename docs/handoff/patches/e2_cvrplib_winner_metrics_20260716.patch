@@ -1,0 +1,34 @@
+# E2 CVRPLIB winner metrics patch
+# Base winner.py SHA-256: 0eb31fd5c90aaf923db4edd511f4cb102487887f6b213740db9c93e8ec02101b
+# Patched winner.py SHA-256: 0e49a7fc7b94e4ec6db30935accb185d4cb17b47cbef9fc42c77450a1068e61d
+# Apply only after every E7 run bound to the base hash has completed and released the shared kernel.
+
+diff --git a/solver/src/setp_solver/algorithms/resetp_alns/kernel/winner.py b/solver/src/setp_solver/algorithms/resetp_alns/kernel/winner.py
+index 6bde6a9d..3aca7dac 100644
+--- a/solver/src/setp_solver/algorithms/resetp_alns/kernel/winner.py
++++ b/solver/src/setp_solver/algorithms/resetp_alns/kernel/winner.py
+@@ -37,7 +37,6 @@ from setp_solver.algorithms.resetp_alns.kernel.alns_core import (
+     regret3_insert_repair,
+     route_elimination_removal,
+     route_segment_removal,
+-    run_alns_wouda,
+     shaw_related_removal,
+     vehicle_type_swap_destroy,
+     whole_route_removal,
+@@ -55,7 +54,7 @@ from setp_solver.algorithms.resetp_alns.operators.strong_bridge import _apply_st
+ from setp_solver.algorithms.resetp_alns.operators.strong_bridge import solution_signature_hash
+ from setp_solver.algorithms.resetp_alns.support.construction import build_initial_solution
+ from setp_solver.algorithms.resetp_alns.support.elite_archive import EliteArchive
+-from setp_solver.search.evaluation import EvalBudget, model_cost, EvaluationContext, cross_depot_violations, fairness_context_for_solution, score_candidate, score_reference
++from setp_solver.search.evaluation import EvalBudget, model_cost, EvaluationContext, cross_depot_violations, fairness_context_for_solution
+ from setp_solver.search.charging import replay_fixed_route_charging
+ from setp_solver.algorithms.resetp_alns.support.fleet import UNBOUNDED_FLEET
+ from setp_solver.algorithms.resetp_alns.support.fleet_charge_corepair import propose_fleet_charge_corepair
+@@ -1054,4 +1053,7 @@ def _run_staged_hybrid_entry(
+         "refined_carbon_weight": float(cfg.refined_carbon_weight),
+         "history": list(run.history),
+         "operator_counts": dict(run.operator_counts),
++        "candidate_scores": int(run.candidate_scores),
++        "repair_scores": int(run.repair_scores),
++        "repair_delta_count": int(run.repair_delta_count),
+     }

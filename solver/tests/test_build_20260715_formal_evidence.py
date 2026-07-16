@@ -154,12 +154,11 @@ def test_e7_tables_keep_economic_decomposition_and_diagnostics(tmp_path, monkeyp
     assert "路径—充电联合优化的证据" in interpretation
     assert "动态实验中，24/30个订单流的四种机制均可执行" in conclusion
     assert "不能压缩成单一优化目标" in conclusion
-    assert "动态实验的30条事件流中，24条在四种机制下均可执行" in abstract_zh
-    assert "依次为+£2.5、-£2.0、+£8.0" in abstract_zh
-    assert "6个重规划阶段的求解时间超过下一事件间隔" in abstract_zh
-    assert "充电排放下降4.00\\%" in abstract_zh
-    assert "4.00\\%--4.00\\%" not in abstract_zh
+    assert "建立可行配送趟—实体车排班两层路径优化模型" in abstract_zh
+    assert "通过公开算例、区域配送网络、连续电网日和动态事件流检验模型与算法" in abstract_zh
+    assert "充电择时是路径与车型减排的补充" in abstract_zh
+    assert not any(char.isdigit() for char in abstract_zh)
     assert 200 <= len(abstract_zh.replace(r"\%", "%").strip()) <= 300
-    assert "all four mechanisms are executable for 24 of 30 event streams" in abstract_en
-    assert "changes mean full-day net profit by +£2.5, -£2.0, +£8.0" in abstract_en
-    assert "batch rolling decision support rather than real-time optimization" in abstract_en
+    assert "A two-layer routing model is established" in abstract_en
+    assert "Public instances, regional delivery networks" in abstract_en
+    assert "charging timing complements route- and fleet-based abatement" in abstract_en

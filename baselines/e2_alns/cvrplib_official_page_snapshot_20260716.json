@@ -1,0 +1,18 @@
+{
+  "schema_version": "resetp.e2.cvrplib-official-page-snapshot.v1",
+  "source_url": "https://galgos.inf.puc-rio.br/cvrplib/en/instances",
+  "captured_at_utc": "2026-07-16T09:00:00Z",
+  "capture_method": "direct HTTPS download of the official CVRPLIB All Instances page",
+  "downloaded_html_sha256": "ae7237e46be9d3dce9936c309dd3d55278b7d997003e0d76f9207280ae2281ef",
+  "table_columns": ["Instance", "|C|", "|K|", "Q", "UB", "Opt"],
+  "instances": {
+    "X-n101-k25": {"customers": 100, "vehicles_label": 25, "capacity": 206, "upper_bound": 27591, "opt": "yes", "official_instance_id": 158},
+    "X-n120-k6": {"customers": 119, "vehicles_label": 6, "capacity": 21, "upper_bound": 13332, "opt": "yes", "official_instance_id": 162},
+    "X-n200-k36": {"customers": 199, "vehicles_label": 36, "capacity": 402, "upper_bound": 58578, "opt": "yes"},
+    "X-n214-k11": {"customers": 213, "vehicles_label": 11, "capacity": 944, "upper_bound": 10856, "opt": "yes"},
+    "X-n313-k71": {"customers": 312, "vehicles_label": 71, "capacity": 248, "upper_bound": 94043, "opt": "yes"},
+    "X-n322-k28": {"customers": 321, "vehicles_label": 28, "capacity": 868, "upper_bound": 29834, "opt": "yes"}
+  },
+  "evidence_note": "Each selected row was present in the official Set X table with the listed UB and an Opt badge of yes. The complete downloaded HTML remained in temporary capture storage; this structured excerpt and the full-page SHA-256 freeze the selected official rows without exposing solution routes to search workers."
+}
+

@@ -322,7 +322,7 @@ def _charging_window_witness(
             trigger_local = float(trigger_second) - day_offset * 86400.0
             latest = min(latest, trigger_local - duration)
             lock_state = "completed_before_trigger"
-        elif absolute_original < float(trigger_second) - TOL:
+        elif absolute_original <= float(trigger_second) + TOL:
             earliest = original
             latest = original
             lock_state = "in_progress_at_trigger_fixed"

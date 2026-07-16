@@ -1,0 +1,61 @@
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[
+  >=Latex,
+  line/.style={draw,->,line width=0.45pt},
+  proc/.style={rectangle,draw,line width=0.45pt,minimum width=3.55cm,minimum height=0.58cm,align=center,font=\small,inner sep=2pt},
+  decision/.style={diamond,draw,line width=0.45pt,aspect=2.15,minimum width=2.85cm,minimum height=0.72cm,align=center,font=\small,inner sep=1pt},
+  terminal/.style={ellipse,draw,line width=0.45pt,minimum width=1.55cm,minimum height=0.58cm,align=center,font=\small},
+  note/.style={font=\fontsize{8pt}{9pt}\selectfont,inner sep=1pt},
+  node distance=4.0mm and 13mm
+]
+\node[terminal] (start) {开始};
+\node[proc,below=of start] (state) {继承冻结前缀与车辆状态};
+\node[proc,below=of state] (initial) {构造初始方案};
+\node[proc,below=of initial] (destroy) {破坏--修复与跨场重组};
+\node[proc,below=of destroy] (certificate) {实体车多趟排班};
+\node[decision,below=5mm of certificate] (feasible) {候选可行？};
+\node[proc,right=18mm of feasible] (reject) {拒绝并更新算子得分};
+\node[proc,below=5mm of feasible] (accept) {退火接受并更新最好解};
+\node[decision,below=5mm of accept] (budget) {总体评价预算用尽？};
+\node[proc,right=18mm of budget] (continue) {继续搜索};
+\node[proc,below=5mm of budget] (fixed) {固定路线、车辆、客户与充电量};
+\node[proc,below=of fixed] (enumerate) {生成分段边界候选起点};
+\node[proc,below=of enumerate] (forecast) {按预测碳强度积分择时};
+\node[proc,below=of forecast] (actual) {按实际碳强度复算排放};
+\node[decision,below=5mm of actual] (event) {发生动态事件？};
+\node[proc,right=18mm of event] (update) {更新客户集与车辆真实状态};
+\node[terminal,below=5mm of event] (end) {结束};
+
+\draw[line] (start) -- (state);
+\draw[line] (state) -- (initial);
+\draw[line] (initial) -- (destroy);
+\draw[line] (destroy) -- (certificate);
+\draw[line] (certificate) -- (feasible);
+\draw[line] (feasible) -- node[note,above]{否} (reject);
+\draw[line] (reject.north) |- (destroy.east);
+\draw[line] (feasible) -- node[note,right]{是} (accept);
+\draw[line] (accept) -- (budget);
+\draw[line] (budget) -- node[note,above]{否} (continue);
+\draw[line] (continue.north) |- (destroy.east);
+\draw[line] (budget) -- node[note,right]{是} (fixed);
+\draw[line] (fixed) -- (enumerate);
+\draw[line] (enumerate) -- (forecast);
+\draw[line] (forecast) -- (actual);
+\draw[line] (actual) -- (event);
+\draw[line] (event) -- node[note,above]{是} (update);
+\draw[line] (update.east) -- ++(7mm,0) |- (state.east);
+\draw[line] (event) -- node[note,right]{否} (end);
+
+\begin{pgfonlayer}{background}
+\node[draw,dashed,line width=0.45pt,fit=(initial)(destroy)(certificate)(feasible)(reject)(accept)(budget)(continue),inner sep=4mm] (searchbox) {};
+\node[draw,dash pattern=on 4pt off 2pt on 1pt off 2pt,line width=0.45pt,fit=(fixed)(enumerate)(forecast)(actual),inner sep=4mm] (chargebox) {};
+\node[draw,dash pattern=on 4pt off 2pt on 1pt off 2pt,line width=0.45pt,fit=(event)(update),inner sep=4mm] (eventbox) {};
+\end{pgfonlayer}
+\node[font=\small,rotate=90] at ([xshift=-5mm]searchbox.west) {路径搜索阶段};
+\node[font=\small,rotate=90] at ([xshift=-5mm]chargebox.west) {充电调度阶段};
+\node[font=\small,rotate=90] at ([xshift=5mm]eventbox.east) {动态事件处理};
+\end{tikzpicture}
+\caption{ALNS与充电择时的整体求解流程}
+\label{fig:algorithm-flow}
+\end{figure}

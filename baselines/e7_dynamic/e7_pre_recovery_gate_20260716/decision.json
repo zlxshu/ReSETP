@@ -1,0 +1,10 @@
+{
+  "direct_patch_resume_safe": false,
+  "invalid_checkpoints": 0,
+  "missing_checkpoints": 18,
+  "present_valid_checkpoints": 102,
+  "recovery_design_requirement": "Do not patch and invoke the original runner directly.  An explicitly authorized parent-child recovery contract must preserve the 102 parent checkpoints unchanged, bind the 18 new checkpoints to the patched child contract, and assemble both lineages without rewriting either set.",
+  "scene_failures": [],
+  "scene_valid": true,
+  "verdict": "PASS_SCENE__HALT_DIRECT_PATCH_RESUME_CONTRACT_MISMATCH"
+}

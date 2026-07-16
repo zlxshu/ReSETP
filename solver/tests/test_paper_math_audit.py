@@ -48,3 +48,21 @@ def test_current_manuscript_closes_carbon_and_participation_semantics() -> None:
     }
     assert required <= rows.keys()
     assert all(rows[name]["status"] == "PASS" for name in required)
+
+
+def test_pending_manuscript_cannot_look_like_completed_e7_evidence(
+    tmp_path: Path, monkeypatch
+) -> None:
+    tex = audit.PAPER.read_text(encoding="utf-8")
+    pending_paper = tmp_path / "paper_main.tex"
+    pending_paper.write_text(tex, encoding="utf-8")
+    monkeypatch.setattr(audit, "PAPER", pending_paper)
+
+    abstract = audit.active_abstract(tex)
+    assert "动态事件流检验模型与算法" not in abstract
+    assert "滚动重规划结果表明" not in abstract
+    assert "阶段稿提示" not in tex
+    assert "E7动态正式证据尚未接入" not in tex
+    assert r"\newif\ifESevenReady" in tex
+    assert r"\ifESevenReady" in tex
+    assert r"\input{generated_tables/e7_dynamic_policy_comparison.tex}" in tex

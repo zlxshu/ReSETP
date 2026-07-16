@@ -1,0 +1,55 @@
+{
+  "decision": "PASS_THREE_INSTANCE_SEMANTIC_ADAPTER_GATE",
+  "semantic_adapter_ready": true,
+  "formal_180x10_authorized": false,
+  "reason": "The independent adapter produced feasible single-trip mixed-fleet schedules on all three probe instances and recomputed distance, capacity, time-window, battery and full-recharge semantics from the raw files. This is a semantic gate only. The unmodified Goeke Java ALNS is unavailable and a formal 180x10 distance-only ReSETP runner has not yet been frozen, so no BKS or formal Gap% claim is authorized.",
+  "checks": {
+    "three_instances_present": true,
+    "published_raw_fleet_identity": true,
+    "all_customers_served_once": true,
+    "capacity_time_battery_and_full_recharge_semantics": true,
+    "distance_recomputed_from_raw_asymmetric_matrix": true,
+    "published_values_treated_as_comparison_values_not_bks": true,
+    "original_java_alns_reproduced": false,
+    "formal_180x10_contract_frozen": false
+  },
+  "instance_summaries": [
+    {
+      "instance": "E-UK10_01",
+      "customers": 10,
+      "total_vehicles": 2,
+      "cv_vehicles": 1,
+      "ev_vehicles": 1,
+      "adapter_distance_km": 408.13,
+      "published_comparison_km": 408.13,
+      "relative_difference_percent": 0.0,
+      "customer_service_exact": true,
+      "all_route_semantics_pass": true
+    },
+    {
+      "instance": "E-UK15_01",
+      "customers": 15,
+      "total_vehicles": 2,
+      "cv_vehicles": 2,
+      "ev_vehicles": 0,
+      "adapter_distance_km": 709.005,
+      "published_comparison_km": 709.01,
+      "relative_difference_percent": -0.0007052086712451802,
+      "customer_service_exact": true,
+      "all_route_semantics_pass": true
+    },
+    {
+      "instance": "E-UK20_01",
+      "customers": 20,
+      "total_vehicles": 3,
+      "cv_vehicles": 2,
+      "ev_vehicles": 1,
+      "adapter_distance_km": 847.9,
+      "published_comparison_km": 785.47,
+      "relative_difference_percent": 7.948107502514411,
+      "customer_service_exact": true,
+      "all_route_semantics_pass": true
+    }
+  ],
+  "next_action": "Freeze a separate distance-only, single-depot, single-trip ALNS runner using this evaluator; then run a small reproducibility gate before deciding whether the 180 instances x 10 seeds cost is justified."
+}

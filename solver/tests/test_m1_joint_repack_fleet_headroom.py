@@ -536,6 +536,8 @@ class M1JointRepackFleetHeadroomTests(unittest.TestCase):
         self.assertEqual(result["algorithm"], "staged ALNS-LNS hybrid")
         self.assertEqual(result["variant"], "staged_alns_lns_hybrid")
         self.assertEqual(result["evaluations"], 2)
+        self.assertEqual(result["candidate_scores"], 2)
+        self.assertGreaterEqual(result["repair_delta_count"], 0)
         self.assertEqual(result["battery_kwh"], 280.0)
         self.assertTrue(result["carbon_aware_operators"])
 

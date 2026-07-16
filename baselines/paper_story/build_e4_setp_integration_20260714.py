@@ -55,11 +55,14 @@ def configure() -> None:
         font_manager.fontManager.addfont(songti_regular)
     plt.rcParams.update({
         "font.family": ["Times New Roman", "Songti SC"],
-        "font.size": 6.62,
-        "axes.labelsize": 6.62,
-        "xtick.labelsize": 6.62,
-        "ytick.labelsize": 6.62,
-        "legend.fontsize": 6.1,
+        # The two manuscript panels are enlarged by roughly 1.13--1.15 at
+        # inclusion.  A 7.1 pt source size therefore lands at the journal's
+        # required 8 pt final figure text instead of the former 6.9--7.6 pt.
+        "font.size": 7.2,
+        "axes.labelsize": 7.2,
+        "xtick.labelsize": 7.2,
+        "ytick.labelsize": 7.2,
+        "legend.fontsize": 7.2,
         "axes.unicode_minus": False,
         "figure.facecolor": "white",
         "axes.facecolor": "white",
@@ -193,21 +196,21 @@ def build_figure(days: list[str]) -> dict[str, object]:
         gridspec_kw={"height_ratios": [0.92, 1.0, 1.0], "hspace": 0.13},
     )
     top, middle, bottom = axes
-    top.plot(x, profile[:, 0], color="#111111", linewidth=0.72, label="实际碳强度")
-    top.plot(x, profile[:, 1], color="#676767", linewidth=0.62,
+    top.plot(x, profile[:, 0], color="#1F77B4", linewidth=0.72, label="实际碳强度")
+    top.plot(x, profile[:, 1], color="#D55E00", linewidth=0.62,
              linestyle=(0, (3.2, 2.0)), label="预测碳强度")
     # Keep the unit outside mathtext so Chinese fallback stays intact in the PDF.
-    top.set_ylabel("碳强度/(g CO2·kWh-1)")
+    top.set_ylabel("碳强度/(g CO₂e/kWh)")
 
-    middle.step(x, immediate_emissions, where="mid", color="#111111", linewidth=0.70,
+    middle.step(x, immediate_emissions, where="mid", color="#1F77B4", linewidth=0.70,
                 label="有空即充")
-    middle.step(x, forecast_emissions, where="mid", color="#707070", linewidth=0.72,
+    middle.step(x, forecast_emissions, where="mid", color="#D55E00", linewidth=0.72,
                 linestyle=(0, (3.2, 2.0)), label="按预测择时")
-    middle.set_ylabel("充电排放/kg CO2")
+    middle.set_ylabel("充电排放/kg CO₂e")
 
-    bottom.step(x, immediate, where="mid", color="#111111", linewidth=0.70,
+    bottom.step(x, immediate, where="mid", color="#1F77B4", linewidth=0.70,
                 label="有空即充")
-    bottom.step(x, forecast, where="mid", color="#707070", linewidth=0.72,
+    bottom.step(x, forecast, where="mid", color="#D55E00", linewidth=0.72,
                 linestyle=(0, (3.2, 2.0)),
                 label="按预测择时")
     bottom.set_ylabel("每半小时充电量/kWh")
@@ -304,8 +307,8 @@ def build_day_figure() -> None:
     positions = np.arange(len(dates))
     figure, axes = plt.subplots(2, 1, figsize=(5.15, 2.78), sharex=True, sharey=True)
     styles = {
-        "ownership_fixed": dict(color="#222222", marker="o", linestyle="-"),
-        "reassignment_allowed": dict(color="#777777", marker="s", linestyle=(0, (3.2, 2.0))),
+        "ownership_fixed": dict(color="#1F77B4", marker="o", linestyle="-"),
+        "reassignment_allowed": dict(color="#D55E00", marker="s", linestyle=(0, (3.2, 2.0))),
     }
     short_labels = {"ownership_fixed": "责任固定", "reassignment_allowed": "跨场重分工"}
     condition_titles = {"geographic": "地理聚集", "mixed": "空间交错"}

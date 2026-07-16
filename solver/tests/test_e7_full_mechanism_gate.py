@@ -134,6 +134,41 @@ def test_charging_window_witness_preserves_trigger_state() -> None:
     assert in_progress_witness["lock_state"] == "in_progress_at_trigger_fixed"
 
 
+def test_charging_window_witness_treats_exact_trigger_start_as_locked() -> None:
+    """The cut contract freezes a charge whose start is at the trigger."""
+
+    certificate = SimpleNamespace(
+        trips=(
+            SimpleNamespace(
+                route_id="EV_D0_1#T1",
+                physical_vehicle_id="EV_D0_1",
+                trip_index=1,
+                return_second=1_000.0,
+                departure_second=0.0,
+            ),
+            SimpleNamespace(
+                route_id="EV_D0_1#T2",
+                physical_vehicle_id="EV_D0_1",
+                trip_index=2,
+                return_second=4_000.0,
+                departure_second=3_000.0,
+            ),
+        )
+    )
+    action = ChargingAction("EV_D0_1#T2", "D0", 10.0, 10.0, 2_000.0)
+
+    witness = gate._charging_window_witness(
+        action,
+        certificate,
+        capture_stage=2,
+        trigger_second=2_000.0,
+    )
+
+    assert witness["earliest_start_second"] == pytest.approx(2_000.0)
+    assert witness["latest_start_second"] == pytest.approx(2_000.0)
+    assert witness["lock_state"] == "in_progress_at_trigger_fixed"
+
+
 def test_full_day_execution_summary_closes_workload_and_cross_depot_service() -> None:
     instance = Instance(
         nodes=[

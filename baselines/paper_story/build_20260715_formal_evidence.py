@@ -7,12 +7,15 @@ import csv
 import json
 from pathlib import Path
 import sys
+import tempfile
 
 import matplotlib
 
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
+from matplotlib import font_manager
 import pandas as pd
+from fontTools.ttLib import TTCollection
 
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -315,27 +318,21 @@ def render_e7_abstracts(
     )
     reduction_en = reduction_zh
     zh = (
-        "研究动态订单下多车场混合车队的跨场协同、成员参与和分时充电，建立可行配送趟—"
-        "实体车两层模型，设计含跨场重组算子的自适应大邻域搜索及基于碳强度预测的固定排班充电重调度。"
-        "9个网络实验表明，"
-        "预测择时使充电排放下降3.89\\%--4.88\\%，但运营总排放仅下降0.35\\%--0.52\\%；"
-        f"动态实验的30条事件流中，{len(complete)}条在四种机制下均可执行；完整机制相对"
-        "禁合作、无参与底线和顺序插入基线的净收益差均值依次为"
-        f"{'、'.join(comparison_zh)}；{timing_zh}。固定排班经28个电网日复算，充电排放下降"
-        f"{reduction_zh}。结果表明，充电减排受配送与动态执行制约。"
+        "在“双碳”目标和配送集约化要求下，多车场混合车队既要通过跨场协同降低路径成本，又需依据时变电网碳强度安排电动车充电，并保证各车场愿意参与；动态订单进一步增加了方案执行难度。"
+        "针对上述问题，建立可行配送趟—实体车排班两层路径优化模型，以运营成本和碳结算成本之和最小为目标，刻画多趟衔接、连续充电、成员参与和滚动状态继承。"
+        "设计含跨场重组算子的自适应大邻域搜索，并在固定排班内进行碳感知充电重调度。"
+        "通过公开算例、区域配送网络、连续电网日和动态事件流检验模型与算法。"
+        "结果表明，充电择时是路径与车型减排的补充，协同价值受客户空间组织和参与条件共同约束；滚动重规划还需同时满足状态可继承性和计算时限。"
     )
     en = (
-        "This paper studies cross-depot cooperation, member participation, and charging under time-varying "
-        "grid carbon intensity for dynamic multi-depot mixed fleets. A two-layer model links feasible delivery "
-        "trips to physical-vehicle schedules and is solved by an adaptive large neighborhood search with cross-depot operators, followed "
-        "by charging rescheduling on fixed schedules using grid carbon-intensity forecasts. Across nine static networks, forecast-based timing reduces "
-        "charging emissions by 3.89\\%--4.88\\% but total operational emissions by only 0.35\\%--0.52\\%; "
-        f"In the dynamic experiment, all four mechanisms are executable for {len(complete)} of 30 event streams. "
-        "Relative to no cooperation, no participation floor, and sequential insertion, the complete mechanism "
-        f"changes mean full-day net profit by {', '.join(comparison_en)}, respectively. "
-        f"{timing_en.capitalize()}. Charging-timing recalculation on fixed schedules over 28 grid days reduces "
-        f"charging emissions by {reduction_en}. The results show that charging abatement is constrained by both "
-        "delivery structure and dynamic execution."
+        "Under carbon-peaking, carbon-neutrality, and delivery-consolidation requirements, a multi-depot mixed fleet must coordinate routes across depots, "
+        "schedule electric-vehicle charging according to time-varying grid carbon intensity, and maintain depot participation, while dynamic orders further complicate execution. "
+        "A two-layer routing model is established to link feasible delivery trips with physical-vehicle schedules. The model minimizes operating and carbon-settlement costs "
+        "and represents multi-trip connections, continuous charging, participation constraints, and rolling state inheritance. An adaptive large neighborhood search with "
+        "cross-depot operators is designed, followed by carbon-aware charging rescheduling within each fixed vehicle schedule. Public instances, regional delivery networks, "
+        "consecutive grid days, and dynamic event streams are used to examine the model and algorithm. The results show that charging timing complements route- and fleet-based "
+        "abatement, collaborative value is jointly constrained by customer organization and participation conditions, and rolling replanning must satisfy both state inheritance "
+        "and computational time limits."
     )
     visible_zh_length = len(zh.replace("\\%", "%").strip())
     if not 200 <= visible_zh_length <= 300:
@@ -354,22 +351,20 @@ def build_e2b() -> None:
         "A_continuous": "连续搜索",
         "B_staged": "分阶段搜索",
         "C_staged_cross": "分阶段+专用跨场算子",
-        "D_full": "完整方案（再做充电择时）",
     }
     lines = [
-        r"\begin{tabular*}{0.92\linewidth}{@{\extracolsep{\fill}}lrrrr@{}}",
+        r"\begin{tabular*}{0.84\linewidth}{@{\extracolsep{\fill}}lrrr@{}}",
         r"\toprule",
-        r"方案 & 平均总成本 & 相对前档变化 & 电动车间接排放/kg & 可行单元 \\",
+        r"方案 & 平均总成本 & 相对前档变化 & 可行单元 \\",
         r"\midrule",
     ]
     previous_cost: float | None = None
-    for arm in ("A_continuous", "B_staged", "C_staged_cross", "D_full"):
+    for arm in ("A_continuous", "B_staged", "C_staged_cross"):
         row = summary[arm]
         cost = float(row["mean_total_cost"])
         delta = "---" if previous_cost is None else f"{100.0 * (cost - previous_cost) / previous_cost:+.2f}\\%"
         lines.append(
             f"{labels[arm]} & {cost:.1f} & {delta} & "
-            f"{float(row['mean_E_ev_indirect']):.2f} & "
             f"{int(row['valid_count'])}/{int(row['row_count'])} " + r"\\"
         )
         previous_cost = cost
@@ -447,6 +442,15 @@ def build_e6() -> None:
     write_table("e6_profit_guarantee_frontier.tex", lines)
 
     FIGURES.mkdir(parents=True, exist_ok=True)
+    # Matplotlib otherwise selects the Black face from Apple's Songti TTC.
+    # Extract and register the regular face so this figure matches every other
+    # SETP figure in font family and weight.
+    songti_ttc = Path("/System/Library/Fonts/Supplemental/Songti.ttc")
+    songti_regular = Path(tempfile.gettempdir()) / "resetp-songti-sc-regular.ttf"
+    if songti_ttc.exists() and not songti_regular.exists():
+        TTCollection(songti_ttc).fonts[6].save(songti_regular)
+    if songti_regular.exists():
+        font_manager.fontManager.addfont(songti_regular)
     plt.rcParams.update(
         {
             "font.family": ["Times New Roman", "Songti SC"],
@@ -457,8 +461,8 @@ def build_e6() -> None:
     )
     fig, ax = plt.subplots(figsize=(3.65, 2.25))
     styles = {
-        "geographic": dict(color="#222222", marker="o", linestyle="-"),
-        "mixed": dict(color="#777777", marker="s", linestyle="--"),
+        "geographic": dict(color="#1F77B4", marker="o", linestyle="-"),
+        "mixed": dict(color="#D55E00", marker="s", linestyle="--"),
     }
     for condition in ("geographic", "mixed"):
         block = summary[summary["condition"] == condition]

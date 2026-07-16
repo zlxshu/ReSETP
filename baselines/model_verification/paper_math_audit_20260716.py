@@ -11,6 +11,7 @@ from __future__ import annotations
 import csv
 import hashlib
 import json
+import math
 from pathlib import Path
 import re
 import sys
@@ -24,6 +25,8 @@ OUT = ROOT / "baselines/model_verification/paper_math_audit_20260716"
 sys.path.insert(0, str(ROOT / "solver/src"))
 
 from setp_solver.cost import ev_arc_energy_kwh  # noqa: E402
+from setp_solver.algorithms.resetp_alns.runtime.select import AlphaUCB  # noqa: E402
+from setp_solver.algorithms.resetp_alns.support.carbon_charging import charge_start_candidates  # noqa: E402
 from setp_solver.prices import DEFAULT_PRICES  # noqa: E402
 
 
@@ -312,8 +315,8 @@ def audit_notation_and_cost_semantics(tex: str) -> list[dict[str, str]]:
         for token in (
             r"\widehat\gamma_t,\gamma_t",
             r"\widehat E_{kp}",
-            "搜索和充电择时只使用",
-            "结果分析使用 $\\gamma_t$ 复算",
+            "搜索使用预测碳强度 $\\widehat\\gamma_t$",
+            "结果分析按实际碳强度 $\\gamma_t$ 复算",
         )
     )
     station_capacity_continuous = (
@@ -326,7 +329,8 @@ def audit_notation_and_cost_semantics(tex: str) -> list[dict[str, str]]:
         r"CE^\tau=CE_d^\tau=0" in tex
         and "$CE$ & $0$ kgCO" in tex
         and "0.8E" not in tex
-        and "不研究配额分配" in tex
+        and "只平移系统目标值" in tex
+        and "聚焦碳价形成的边际激励" in tex
     )
     participation_semantics_exact = (
         r"\theta_d=0" in tex
@@ -369,8 +373,8 @@ def audit_notation_and_cost_semantics(tex: str) -> list[dict[str, str]]:
         record(
             "正式碳信用合同与证据一致",
             "PASS" if formal_credit_zero else "FAIL",
-            "模型保留固定信用记账，但正式实验明确CE=CE_d=0且不研究配额分配。" if formal_credit_zero else "论文仍可能把非零配额或配额松紧写成正式证据。",
-            "正式参数和结果统一使用CE=0；配额松紧只能作为未检验扩展，不得写成发现。",
+            "模型保留固定信用记账；实验取CE=CE_d=0，并明确固定信用只平移系统目标值。" if formal_credit_zero else "论文仍可能把非零配额或配额松紧写成已有证据。",
+            "参数和结果统一使用CE=0；配额松紧只能作为未检验扩展，不得写成发现。",
         ),
         record(
             "参与底线关闭语义准确",
@@ -387,6 +391,154 @@ def audit_notation_and_cost_semantics(tex: str) -> list[dict[str, str]]:
     ]
 
 
+def audit_core_symbol_registry(tex: str) -> list[dict[str, str]]:
+    label = r"\label{tab:symbols}"
+    label_at = tex.index(label)
+    table_start = tex.rfind(r"\begin{table}", 0, label_at)
+    table_end = tex.index(r"\end{table}", label_at)
+    symbol_table = tex[table_start:table_end]
+    required_tokens = (
+        r"D,N^\tau",
+        r"K^\tau,K_d^\tau",
+        r"S,T,H",
+        r"q_i,Q",
+        r"B^{\min},B",
+        r"d_{ij},v_{ij}^\tau,u_{ijr}^\tau",
+        r"P_{ijr}^\tau,e_{ijr}^\tau,f_{ijr}^\tau",
+        r"\alpha_k^e,\beta_{0k}^g",
+        r"\beta_{1k}^g,\lambda^g",
+        r"\Omega_k^\tau,\mathcal Q_{kp}",
+        r"A_{ikp},z_{kp}^\tau",
+        r"\widehat\gamma_t,\gamma_t",
+        r"\Pi_d^{0,\tau},\theta_d,M",
+    )
+    missing = [token for token in required_tokens if token not in symbol_table]
+    return [
+        record(
+            "核心集合物理量与模式变量进入主符号表",
+            "PASS" if not missing else "FAIL",
+            (
+                "车场、客户、车辆、充电站、电网时段、运营时域、容量、电量、能耗系数和模式变量均可从主符号表直接查得。"
+                if not missing
+                else f"主符号表缺少核心记号：{missing}。"
+            ),
+            "把跨公式反复使用的集合、边界和物理系数列入主符号表；只在单段使用的中间量可在首次出现处定义。",
+        )
+    ]
+
+
+def audit_foundation_and_algorithm_equations(tex: str) -> list[dict[str, str]]:
+    equation_labels = re.findall(r"\\label\{(eq:[^{}]+)\}", tex)
+    equation_budget_ok = 25 <= len(equation_labels) <= 35 and len(equation_labels) == len(set(equation_labels))
+    required_trip_labels = {
+        "eq:trip-depot-flow",
+        "eq:trip-flow-balance",
+        "eq:trip-load",
+        "eq:trip-time",
+        "eq:trip-energy",
+        "eq:intertrip-link",
+        "eq:mode-statistics",
+        "eq:mode-cost-components",
+    }
+    trip_labels_ok = required_trip_labels.issubset(equation_labels)
+    trip_depot = section(tex, "eq:trip-depot-flow").replace(" ", "")
+    trip_load = section(tex, "eq:trip-load").replace(" ", "")
+    trip_time = section(tex, "eq:trip-time").replace(" ", "")
+    trip_energy = section(tex, "eq:trip-energy").replace(" ", "")
+    intertrip = section(tex, "eq:intertrip-link").replace(" ", "")
+    propagation_ok = all(
+        (
+            "x_{id_r^+r}" in trip_depot,
+            "x_{d_r^-jr}" in trip_depot,
+            "L_{d_r^+r}" in trip_load,
+            "q_ia_{ir}" in trip_load,
+            "1-x_{ijr}" in trip_load,
+            "L_{jr}-L_{ir}+q_j" in trip_load,
+            "1-x_{ijr}" in trip_time,
+            "t_{ij}^\\tau" in trip_time,
+            "1-x_{ijr}" in trip_energy,
+            "e_{ijr}^\\tau" in trip_energy,
+            "3600Y_h^D" in intertrip,
+            "\\pi_{d(k)}" in intertrip,
+        )
+    )
+    no_bare_spacing_commands = re.search(r"(?<!\\)qquad", tex) is None
+
+    selector = AlphaUCB([4.0, 3.0, 2.0, 0.05], 0.08, 2, 2)
+    selector.update(None, 0, 0, 0)
+    implementation_ucb = float(selector._values()[0, 0])
+    closed_ucb = 4.0 + math.sqrt(0.08 * math.log(2.0) / 2.0)
+    ucb_eq = section(tex, "eq:ucb-selection")
+    ucb_update = section(tex, "eq:ucb-update")
+    ucb_ok = (
+        abs(implementation_ucb - closed_ucb) < 1e-12
+        and r"\alpha\ln(1+n)" in ucb_eq
+        and r"1+n_{hg}(n)" in ucb_eq
+        and r"\sigma_o" in ucb_update
+        and "$4,3,2,0.05$" in tex
+    )
+
+    initial_obj = 1000.0
+    initial_temp = -0.05 * initial_obj / math.log(0.5)
+    five_pct_acceptance = math.exp((initial_obj - 1.05 * initial_obj) / initial_temp)
+    sa_eq = section(tex, "eq:sa-acceptance")
+    sa_ok = (
+        abs(five_pct_acceptance - 0.5) < 1e-12
+        and r"F(S)-F(S')" in sa_eq
+        and r"T_{n+1}" in sa_eq
+        and r"\mu=0.95" in sa_eq
+        and r"0.05F(S_0)" in sa_eq
+    )
+
+    candidates = charge_start_candidates(300.0, 2700.0, 900.0)
+    charge_eq = section(tex, "eq:charging-candidates")
+    charge_ok = (
+        candidates == (300.0, 900.0, 1800.0, 2700.0)
+        and r"\mathcal B" in charge_eq
+        and r"b-\Delta_q" in charge_eq
+        and r"\overline a_q-\Delta_q" in charge_eq
+        and r"\arg\min" in charge_eq
+    )
+    return [
+        record(
+            "编号公式数量处于集中可读区间",
+            "PASS" if equation_budget_ok else "FAIL",
+            f"当前正文有{len(equation_labels)}个唯一编号公式；目标区间为25至35。",
+            "删除重复恒等式或补齐必要基础约束，但不得以凑数量代替模型闭合。",
+        ),
+        record(
+            "可行趟的流量载重时间电量与趟间衔接显式闭合",
+            "PASS" if trip_labels_ok and propagation_ok else "FAIL",
+            "正文已给出源汇流、客户流守恒、载重、时间、电量、趟间补电和模式成本七组基础式。",
+            "保证每组传播式在x_ijr=1时退化为等式，并保留源汇副本与趟间连续性。",
+        ),
+        record(
+            "公式间距命令未作为普通文字印出",
+            "PASS" if no_bare_spacing_commands else "FAIL",
+            "全文不存在漏写反斜杠的qquad裸词。" if no_bare_spacing_commands else "正文仍存在会被直接印出的qquad裸词。",
+            "把裸qquad改为LaTeX命令\\qquad，并重新渲染对应页面。",
+        ),
+        record(
+            "UCB选择和得分更新与运行时代码一致",
+            "PASS" if ucb_ok else "FAIL",
+            f"一次BEST更新后的实现UCB值={implementation_ucb:.12f}，闭式复算={closed_ucb:.12f}。",
+            "正文须使用alpha=0.08、分母1+n_hg和得分4/3/2/0.05，不得套用另一版ALNS权重公式。",
+        ),
+        record(
+            "模拟退火初温和降温与正式算法一致",
+            "PASS" if sa_ok else "FAIL",
+            f"F0=1000时T0={initial_temp:.12f}，接受5%劣解的闭式概率={five_pct_acceptance:.12f}。",
+            "保持T0=-0.05F0/ln(0.5)、指数降温mu=0.95和当前解差值接受准则。",
+        ),
+        record(
+            "分段碳强度充电候选点与实现一致",
+            "PASS" if charge_ok else "FAIL",
+            f"窗口[300,2700]、时长900 s的实现候选点为{candidates}。",
+            "候选集必须包含窗口端点、分段边界和边界减持续时间，并与合法开始区间取交集。",
+        ),
+    ]
+
+
 def main() -> None:
     tex = PAPER.read_text(encoding="utf-8")
     rows = (
@@ -395,10 +547,16 @@ def main() -> None:
         + audit_multitrip_and_state(tex)
         + audit_structural_counterexamples(tex)
         + audit_notation_and_cost_semantics(tex)
+        + audit_core_symbol_registry(tex)
+        + audit_foundation_and_algorithm_equations(tex)
     )
     OUT.mkdir(parents=True, exist_ok=True)
     with (OUT / "raw_runs.csv").open("w", encoding="utf-8", newline="") as handle:
-        writer = csv.DictWriter(handle, fieldnames=list(rows[0]))
+        writer = csv.DictWriter(
+            handle,
+            fieldnames=list(rows[0]),
+            lineterminator="\n",
+        )
         writer.writeheader()
         writer.writerows(rows)
     passed = sum(row["status"] == "PASS" for row in rows)

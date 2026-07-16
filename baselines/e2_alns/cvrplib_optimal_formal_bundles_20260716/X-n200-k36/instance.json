@@ -1,0 +1,2012 @@
+{
+  "schema_version": "resetp.cvrplib-distance-only.v1",
+  "metadata": {
+    "source_instance": "X-n200-k36",
+    "source_url": "https://galgos.inf.puc-rio.br/cvrplib/en/instances",
+    "num_ev": 0,
+    "distance_rule": "floor(Euclidean+0.5)",
+    "objective": "total_distance_only"
+  },
+  "nodes": [
+    {
+      "node_id": "D0",
+      "node_type": "d",
+      "x": 957.0,
+      "y": 135.0,
+      "demand": 0.0,
+      "ready_time": 0.0,
+      "due_time": 1000000000000.0,
+      "service_time": 0.0
+    },
+    {
+      "node_id": "C1",
+      "node_type": "c",
+      "x": 149.0,
+      "y": 141.0,
+      "demand": 83.0,
+      "ready_time": 0.0,
+      "due_time": 1000000000000.0,
+      "service_time": 0.0
+    },
+    {
+      "node_id": "C2",
+      "node_type": "c",
+      "x": 1.0,
+      "y": 96.0,
+      "demand": 52.0,
+      "ready_time": 0.0,
+      "due_time": 1000000000000.0,
+      "service_time": 0.0
+    },
+    {
+      "node_id": "C3",
+      "node_type": "c",
+      "x": 228.0,
+      "y": 268.0,
+      "demand": 73.0,
+      "ready_time": 0.0,
+      "due_time": 1000000000000.0,
+      "service_time": 0.0
+    },
+    {
+      "node_id": "C4",
+      "node_type": "c",
+      "x": 781.0,
+      "y": 529.0,
+      "demand": 70.0,
+      "ready_time": 0.0,
+      "due_time": 1000000000000.0,
+      "service_time": 0.0
+    },
+    {
+      "node_id": "C5",
+      "node_type": "c",
+      "x": 867.0,
+      "y": 797.0,
+      "demand": 86.0,
+      "ready_time": 0.0,
+      "due_time": 1000000000000.0,
+      "service_time": 0.0
+    },
+    {
+      "node_id": "C6",
+      "node_type": "c",
+      "x": 109.0,
+      "y": 53.0,
+      "demand": 51.0,
+      "ready_time": 0.0,
+      "due_time": 1000000000000.0,
+      "service_time": 0.0
+    },
+    {
+      "node_id": "C7",
+      "node_type": "c",
+      "x": 13.0,
+      "y": 449.0,
+      "demand": 74.0,
+      "ready_time": 0.0,
+      "due_time": 1000000000000.0,
+      "service_time": 0.0
+    },
+    {
+      "node_id": "C8",
+      "node_type": "c",
+      "x": 133.0,
+      "y": 293.0,
+      "demand": 84.0,
+      "ready_time": 0.0,
+      "due_time": 1000000000000.0,
+      "service_time": 0.0
+    },
+    {
+      "node_id": "C9",
+      "node_type": "c",
+      "x": 259.0,
+      "y": 172.0,
+      "demand": 52.0,
+      "ready_time": 0.0,
+      "due_time": 1000000000000.0,
+      "service_time": 0.0
+    },
+    {
+      "node_id": "C10",
+      "node_type": "c",
+      "x": 908.0,
+      "y": 678.0,
+      "demand": 93.0,
+      "ready_time": 0.0,
+      "due_time": 1000000000000.0,
+      "service_time": 0.0
+    },
+    {
+      "node_id": "C11",
+      "node_type": "c",
+      "x": 930.0,
+      "y": 867.0,
+      "demand": 91.0,
+      "ready_time": 0.0,
+      "due_time": 1000000000000.0,
+      "service_time": 0.0
+    },
+    {
+      "node_id": "C12",
+      "node_type": "c",
+      "x": 903.0,
+      "y": 766.0,
+      "demand": 89.0,
+      "ready_time": 0.0,
+      "due_time": 1000000000000.0,
+      "service_time": 0.0
+    },
+    {
+      "node_id": "C13",
+      "node_type": "c",
+      "x": 143.0,
+      "y": 263.0,
+      "demand": 64.0,
+      "ready_time": 0.0,
+      "due_time": 1000000000000.0,
+      "service_time": 0.0
+    },
+    {
+      "node_id": "C14",
+      "node_type": "c",
+      "x": 735.0,
+      "y": 501.0,
+      "demand": 75.0,
+      "ready_time": 0.0,
+      "due_time": 1000000000000.0,
+      "service_time": 0.0
+    },
+    {
+      "node_id": "C15",
+      "node_type": "c",
+      "x": 259.0,
+      "y": 253.0,
+      "demand": 64.0,
+      "ready_time": 0.0,
+      "due_time": 1000000000000.0,
+      "service_time": 0.0
+    },
+    {
+      "node_id": "C16",
+      "node_type": "c",
+      "x": 59.0,
+      "y": 62.0,
+      "demand": 61.0,
+      "ready_time": 0.0,
+      "due_time": 1000000000000.0,
+      "service_time": 0.0
+    },
+    {
+      "node_id": "C17",
+      "node_type": "c",
+      "x": 737.0,
+      "y": 464.0,
+      "demand": 2.0,
+      "ready_time": 0.0,
+      "due_time": 1000000000000.0,
+      "service_time": 0.0
+    },
+    {
+      "node_id": "C18",
+      "node_type": "c",
+      "x": 925.0,
+      "y": 587.0,
+      "demand": 86.0,
+      "ready_time": 0.0,
+      "due_time": 1000000000000.0,
+      "service_time": 0.0
+    },
+    {
+      "node_id": "C19",
+      "node_type": "c",
+      "x": 16.0,
+      "y": 404.0,
+      "demand": 95.0,
+      "ready_time": 0.0,
+      "due_time": 1000000000000.0,
+      "service_time": 0.0
+    },
+    {
+      "node_id": "C20",
+      "node_type": "c",
+      "x": 893.0,
+      "y": 720.0,
+      "demand": 100.0,
+      "ready_time": 0.0,
+      "due_time": 1000000000000.0,
+      "service_time": 0.0
+    },
+    {
+      "node_id": "C21",
+      "node_type": "c",
+      "x": 131.0,
+      "y": 188.0,
+      "demand": 73.0,
+      "ready_time": 0.0,
+      "due_time": 1000000000000.0,
+      "service_time": 0.0
+    },
+    {
+      "node_id": "C22",
+      "node_type": "c",
+      "x": 226.0,
+      "y": 228.0,
+      "demand": 61.0,
+      "ready_time": 0.0,
+      "due_time": 1000000000000.0,
+      "service_time": 0.0
+    },
+    {
+      "node_id": "C23",
+      "node_type": "c",
+      "x": 285.0,
+      "y": 68.0,
+      "demand": 83.0,
+      "ready_time": 0.0,
+      "due_time": 1000000000000.0,
+      "service_time": 0.0
+    },
+    {
+      "node_id": "C24",
+      "node_type": "c",
+      "x": 113.0,
+      "y": 323.0,
+      "demand": 60.0,
+      "ready_time": 0.0,
+      "due_time": 1000000000000.0,
+      "service_time": 0.0
+    },
+    {
+      "node_id": "C25",
+      "node_type": "c",
+      "x": 67.0,
+      "y": 307.0,
+      "demand": 85.0,
+      "ready_time": 0.0,
+      "due_time": 1000000000000.0,
+      "service_time": 0.0
+    },
+    {
+      "node_id": "C26",
+      "node_type": "c",
+      "x": 797.0,
+      "y": 381.0,
+      "demand": 48.0,
+      "ready_time": 0.0,
+      "due_time": 1000000000000.0,
+      "service_time": 0.0
+    },
+    {
+      "node_id": "C27",
+      "node_type": "c",
+      "x": 804.0,
+      "y": 573.0,
+      "demand": 66.0,
+      "ready_time": 0.0,
+      "due_time": 1000000000000.0,
+      "service_time": 0.0
+    },
+    {
+      "node_id": "C28",
+      "node_type": "c",
+      "x": 892.0,
+      "y": 838.0,
+      "demand": 70.0,
+      "ready_time": 0.0,
+      "due_time": 1000000000000.0,
+      "service_time": 0.0
+    },
+    {
+      "node_id": "C29",
+      "node_type": "c",
+      "x": 307.0,
+      "y": 141.0,
+      "demand": 91.0,
+      "ready_time": 0.0,
+      "due_time": 1000000000000.0,
+      "service_time": 0.0
+    },
+    {
+      "node_id": "C30",
+      "node_type": "c",
+      "x": 40.0,
+      "y": 347.0,
+      "demand": 54.0,
+      "ready_time": 0.0,
+      "due_time": 1000000000000.0,
+      "service_time": 0.0
+    },
+    {
+      "node_id": "C31",
+      "node_type": "c",
+      "x": 933.0,
+      "y": 708.0,
+      "demand": 55.0,
+      "ready_time": 0.0,
+      "due_time": 1000000000000.0,
+      "service_time": 0.0
+    },
+    {
+      "node_id": "C32",
+      "node_type": "c",
+      "x": 906.0,
+      "y": 725.0,
+      "demand": 64.0,
+      "ready_time": 0.0,
+      "due_time": 1000000000000.0,
+      "service_time": 0.0
+    },
+    {
+      "node_id": "C33",
+      "node_type": "c",
+      "x": 242.0,
+      "y": 231.0,
+      "demand": 56.0,
+      "ready_time": 0.0,
+      "due_time": 1000000000000.0,
+      "service_time": 0.0
+    },
+    {
+      "node_id": "C34",
+      "node_type": "c",
+      "x": 310.0,
+      "y": 255.0,
+      "demand": 62.0,
+      "ready_time": 0.0,
+      "due_time": 1000000000000.0,
+      "service_time": 0.0
+    },
+    {
+      "node_id": "C35",
+      "node_type": "c",
+      "x": 183.0,
+      "y": 308.0,
+      "demand": 89.0,
+      "ready_time": 0.0,
+      "due_time": 1000000000000.0,
+      "service_time": 0.0
+    },
+    {
+      "node_id": "C36",
+      "node_type": "c",
+      "x": 57.0,
+      "y": 153.0,
+      "demand": 100.0,
+      "ready_time": 0.0,
+      "due_time": 1000000000000.0,
+      "service_time": 0.0
+    },
+    {
+      "node_id": "C37",
+      "node_type": "c",
+      "x": 122.0,
+      "y": 254.0,
+      "demand": 96.0,
+      "ready_time": 0.0,
+      "due_time": 1000000000000.0,
+      "service_time": 0.0
+    },
+    {
+      "node_id": "C38",
+      "node_type": "c",
+      "x": 1.0,
+      "y": 437.0,
+      "demand": 67.0,
+      "ready_time": 0.0,
+      "due_time": 1000000000000.0,
+      "service_time": 0.0
+    },
+    {
+      "node_id": "C39",
+      "node_type": "c",
+      "x": 83.0,
+      "y": 548.0,
+      "demand": 21.0,
+      "ready_time": 0.0,
+      "due_time": 1000000000000.0,
+      "service_time": 0.0
+    },
+    {
+      "node_id": "C40",
+      "node_type": "c",
+      "x": 872.0,
+      "y": 427.0,
+      "demand": 15.0,
+      "ready_time": 0.0,
+      "due_time": 1000000000000.0,
+      "service_time": 0.0
+    },
+    {
+      "node_id": "C41",
+      "node_type": "c",
+      "x": 118.0,
+      "y": 317.0,
+      "demand": 55.0,
+      "ready_time": 0.0,
+      "due_time": 1000000000000.0,
+      "service_time": 0.0
+    },
+    {
+      "node_id": "C42",
+      "node_type": "c",
+      "x": 100.0,
+      "y": 402.0,
+      "demand": 58.0,
+      "ready_time": 0.0,
+      "due_time": 1000000000000.0,
+      "service_time": 0.0
+    },
+    {
+      "node_id": "C43",
+      "node_type": "c",
+      "x": 54.0,
+      "y": 335.0,
+      "demand": 84.0,
+      "ready_time": 0.0,
+      "due_time": 1000000000000.0,
+      "service_time": 0.0
+    },
+    {
+      "node_id": "C44",
+      "node_type": "c",
+      "x": 180.0,
+      "y": 118.0,
+      "demand": 85.0,
+      "ready_time": 0.0,
+      "due_time": 1000000000000.0,
+      "service_time": 0.0
+    },
+    {
+      "node_id": "C45",
+      "node_type": "c",
+      "x": 875.0,
+      "y": 774.0,
+      "demand": 91.0,
+      "ready_time": 0.0,
+      "due_time": 1000000000000.0,
+      "service_time": 0.0
+    },
+    {
+      "node_id": "C46",
+      "node_type": "c",
+      "x": 792.0,
+      "y": 774.0,
+      "demand": 55.0,
+      "ready_time": 0.0,
+      "due_time": 1000000000000.0,
+      "service_time": 0.0
+    },
+    {
+      "node_id": "C47",
+      "node_type": "c",
+      "x": 92.0,
+      "y": 166.0,
+      "demand": 79.0,
+      "ready_time": 0.0,
+      "due_time": 1000000000000.0,
+      "service_time": 0.0
+    },
+    {
+      "node_id": "C48",
+      "node_type": "c",
+      "x": 890.0,
+      "y": 821.0,
+      "demand": 79.0,
+      "ready_time": 0.0,
+      "due_time": 1000000000000.0,
+      "service_time": 0.0
+    },
+    {
+      "node_id": "C49",
+      "node_type": "c",
+      "x": 184.0,
+      "y": 6.0,
+      "demand": 82.0,
+      "ready_time": 0.0,
+      "due_time": 1000000000000.0,
+      "service_time": 0.0
+    },
+    {
+      "node_id": "C50",
+      "node_type": "c",
+      "x": 189.0,
+      "y": 299.0,
+      "demand": 91.0,
+      "ready_time": 0.0,
+      "due_time": 1000000000000.0,
+      "service_time": 0.0
+    },
+    {
+      "node_id": "C51",
+      "node_type": "c",
+      "x": 230.0,
+      "y": 234.0,
+      "demand": 89.0,
+      "ready_time": 0.0,
+      "due_time": 1000000000000.0,
+      "service_time": 0.0
+    },
+    {
+      "node_id": "C52",
+      "node_type": "c",
+      "x": 61.0,
+      "y": 728.0,
+      "demand": 22.0,
+      "ready_time": 0.0,
+      "due_time": 1000000000000.0,
+      "service_time": 0.0
+    },
+    {
+      "node_id": "C53",
+      "node_type": "c",
+      "x": 147.0,
+      "y": 501.0,
+      "demand": 31.0,
+      "ready_time": 0.0,
+      "due_time": 1000000000000.0,
+      "service_time": 0.0
+    },
+    {
+      "node_id": "C54",
+      "node_type": "c",
+      "x": 180.0,
+      "y": 371.0,
+      "demand": 85.0,
+      "ready_time": 0.0,
+      "due_time": 1000000000000.0,
+      "service_time": 0.0
+    },
+    {
+      "node_id": "C55",
+      "node_type": "c",
+      "x": 756.0,
+      "y": 455.0,
+      "demand": 22.0,
+      "ready_time": 0.0,
+      "due_time": 1000000000000.0,
+      "service_time": 0.0
+    },
+    {
+      "node_id": "C56",
+      "node_type": "c",
+      "x": 121.0,
+      "y": 248.0,
+      "demand": 72.0,
+      "ready_time": 0.0,
+      "due_time": 1000000000000.0,
+      "service_time": 0.0
+    },
+    {
+      "node_id": "C57",
+      "node_type": "c",
+      "x": 747.0,
+      "y": 756.0,
+      "demand": 59.0,
+      "ready_time": 0.0,
+      "due_time": 1000000000000.0,
+      "service_time": 0.0
+    },
+    {
+      "node_id": "C58",
+      "node_type": "c",
+      "x": 890.0,
+      "y": 825.0,
+      "demand": 95.0,
+      "ready_time": 0.0,
+      "due_time": 1000000000000.0,
+      "service_time": 0.0
+    },
+    {
+      "node_id": "C59",
+      "node_type": "c",
+      "x": 275.0,
+      "y": 63.0,
+      "demand": 99.0,
+      "ready_time": 0.0,
+      "due_time": 1000000000000.0,
+      "service_time": 0.0
+    },
+    {
+      "node_id": "C60",
+      "node_type": "c",
+      "x": 67.0,
+      "y": 131.0,
+      "demand": 98.0,
+      "ready_time": 0.0,
+      "due_time": 1000000000000.0,
+      "service_time": 0.0
+    },
+    {
+      "node_id": "C61",
+      "node_type": "c",
+      "x": 96.0,
+      "y": 15.0,
+      "demand": 54.0,
+      "ready_time": 0.0,
+      "due_time": 1000000000000.0,
+      "service_time": 0.0
+    },
+    {
+      "node_id": "C62",
+      "node_type": "c",
+      "x": 709.0,
+      "y": 611.0,
+      "demand": 96.0,
+      "ready_time": 0.0,
+      "due_time": 1000000000000.0,
+      "service_time": 0.0
+    },
+    {
+      "node_id": "C63",
+      "node_type": "c",
+      "x": 893.0,
+      "y": 822.0,
+      "demand": 69.0,
+      "ready_time": 0.0,
+      "due_time": 1000000000000.0,
+      "service_time": 0.0
+    },
+    {
+      "node_id": "C64",
+      "node_type": "c",
+      "x": 121.0,
+      "y": 170.0,
+      "demand": 97.0,
+      "ready_time": 0.0,
+      "due_time": 1000000000000.0,
+      "service_time": 0.0
+    },
+    {
+      "node_id": "C65",
+      "node_type": "c",
+      "x": 770.0,
+      "y": 580.0,
+      "demand": 67.0,
+      "ready_time": 0.0,
+      "due_time": 1000000000000.0,
+      "service_time": 0.0
+    },
+    {
+      "node_id": "C66",
+      "node_type": "c",
+      "x": 122.0,
+      "y": 320.0,
+      "demand": 80.0,
+      "ready_time": 0.0,
+      "due_time": 1000000000000.0,
+      "service_time": 0.0
+    },
+    {
+      "node_id": "C67",
+      "node_type": "c",
+      "x": 695.0,
+      "y": 626.0,
+      "demand": 65.0,
+      "ready_time": 0.0,
+      "due_time": 1000000000000.0,
+      "service_time": 0.0
+    },
+    {
+      "node_id": "C68",
+      "node_type": "c",
+      "x": 712.0,
+      "y": 670.0,
+      "demand": 86.0,
+      "ready_time": 0.0,
+      "due_time": 1000000000000.0,
+      "service_time": 0.0
+    },
+    {
+      "node_id": "C69",
+      "node_type": "c",
+      "x": 101.0,
+      "y": 98.0,
+      "demand": 90.0,
+      "ready_time": 0.0,
+      "due_time": 1000000000000.0,
+      "service_time": 0.0
+    },
+    {
+      "node_id": "C70",
+      "node_type": "c",
+      "x": 824.0,
+      "y": 813.0,
+      "demand": 72.0,
+      "ready_time": 0.0,
+      "due_time": 1000000000000.0,
+      "service_time": 0.0
+    },
+    {
+      "node_id": "C71",
+      "node_type": "c",
+      "x": 256.0,
+      "y": 265.0,
+      "demand": 69.0,
+      "ready_time": 0.0,
+      "due_time": 1000000000000.0,
+      "service_time": 0.0
+    },
+    {
+      "node_id": "C72",
+      "node_type": "c",
+      "x": 726.0,
+      "y": 553.0,
+      "demand": 80.0,
+      "ready_time": 0.0,
+      "due_time": 1000000000000.0,
+      "service_time": 0.0
+    },
+    {
+      "node_id": "C73",
+      "node_type": "c",
+      "x": 248.0,
+      "y": 359.0,
+      "demand": 72.0,
+      "ready_time": 0.0,
+      "due_time": 1000000000000.0,
+      "service_time": 0.0
+    },
+    {
+      "node_id": "C74",
+      "node_type": "c",
+      "x": 864.0,
+      "y": 742.0,
+      "demand": 62.0,
+      "ready_time": 0.0,
+      "due_time": 1000000000000.0,
+      "service_time": 0.0
+    },
+    {
+      "node_id": "C75",
+      "node_type": "c",
+      "x": 149.0,
+      "y": 74.0,
+      "demand": 78.0,
+      "ready_time": 0.0,
+      "due_time": 1000000000000.0,
+      "service_time": 0.0
+    },
+    {
+      "node_id": "C76",
+      "node_type": "c",
+      "x": 872.0,
+      "y": 329.0,
+      "demand": 24.0,
+      "ready_time": 0.0,
+      "due_time": 1000000000000.0,
+      "service_time": 0.0
+    },
+    {
+      "node_id": "C77",
+      "node_type": "c",
+      "x": 847.0,
+      "y": 817.0,
+      "demand": 88.0,
+      "ready_time": 0.0,
+      "due_time": 1000000000000.0,
+      "service_time": 0.0
+    },
+    {
+      "node_id": "C78",
+      "node_type": "c",
+      "x": 864.0,
+      "y": 575.0,
+      "demand": 70.0,
+      "ready_time": 0.0,
+      "due_time": 1000000000000.0,
+      "service_time": 0.0
+    },
+    {
+      "node_id": "C79",
+      "node_type": "c",
+      "x": 976.0,
+      "y": 818.0,
+      "demand": 71.0,
+      "ready_time": 0.0,
+      "due_time": 1000000000000.0,
+      "service_time": 0.0
+    },
+    {
+      "node_id": "C80",
+      "node_type": "c",
+      "x": 193.0,
+      "y": 126.0,
+      "demand": 76.0,
+      "ready_time": 0.0,
+      "due_time": 1000000000000.0,
+      "service_time": 0.0
+    },
+    {
+      "node_id": "C81",
+      "node_type": "c",
+      "x": 79.0,
+      "y": 88.0,
+      "demand": 93.0,
+      "ready_time": 0.0,
+      "due_time": 1000000000000.0,
+      "service_time": 0.0
+    },
+    {
+      "node_id": "C82",
+      "node_type": "c",
+      "x": 97.0,
+      "y": 403.0,
+      "demand": 64.0,
+      "ready_time": 0.0,
+      "due_time": 1000000000000.0,
+      "service_time": 0.0
+    },
+    {
+      "node_id": "C83",
+      "node_type": "c",
+      "x": 284.0,
+      "y": 424.0,
+      "demand": 80.0,
+      "ready_time": 0.0,
+      "due_time": 1000000000000.0,
+      "service_time": 0.0
+    },
+    {
+      "node_id": "C84",
+      "node_type": "c",
+      "x": 907.0,
+      "y": 842.0,
+      "demand": 91.0,
+      "ready_time": 0.0,
+      "due_time": 1000000000000.0,
+      "service_time": 0.0
+    },
+    {
+      "node_id": "C85",
+      "node_type": "c",
+      "x": 808.0,
+      "y": 590.0,
+      "demand": 75.0,
+      "ready_time": 0.0,
+      "due_time": 1000000000000.0,
+      "service_time": 0.0
+    },
+    {
+      "node_id": "C86",
+      "node_type": "c",
+      "x": 146.0,
+      "y": 120.0,
+      "demand": 81.0,
+      "ready_time": 0.0,
+      "due_time": 1000000000000.0,
+      "service_time": 0.0
+    },
+    {
+      "node_id": "C87",
+      "node_type": "c",
+      "x": 66.0,
+      "y": 480.0,
+      "demand": 79.0,
+      "ready_time": 0.0,
+      "due_time": 1000000000000.0,
+      "service_time": 0.0
+    },
+    {
+      "node_id": "C88",
+      "node_type": "c",
+      "x": 824.0,
+      "y": 634.0,
+      "demand": 71.0,
+      "ready_time": 0.0,
+      "due_time": 1000000000000.0,
+      "service_time": 0.0
+    },
+    {
+      "node_id": "C89",
+      "node_type": "c",
+      "x": 9.0,
+      "y": 421.0,
+      "demand": 51.0,
+      "ready_time": 0.0,
+      "due_time": 1000000000000.0,
+      "service_time": 0.0
+    },
+    {
+      "node_id": "C90",
+      "node_type": "c",
+      "x": 152.0,
+      "y": 157.0,
+      "demand": 65.0,
+      "ready_time": 0.0,
+      "due_time": 1000000000000.0,
+      "service_time": 0.0
+    },
+    {
+      "node_id": "C91",
+      "node_type": "c",
+      "x": 318.0,
+      "y": 223.0,
+      "demand": 68.0,
+      "ready_time": 0.0,
+      "due_time": 1000000000000.0,
+      "service_time": 0.0
+    },
+    {
+      "node_id": "C92",
+      "node_type": "c",
+      "x": 853.0,
+      "y": 307.0,
+      "demand": 39.0,
+      "ready_time": 0.0,
+      "due_time": 1000000000000.0,
+      "service_time": 0.0
+    },
+    {
+      "node_id": "C93",
+      "node_type": "c",
+      "x": 184.0,
+      "y": 277.0,
+      "demand": 69.0,
+      "ready_time": 0.0,
+      "due_time": 1000000000000.0,
+      "service_time": 0.0
+    },
+    {
+      "node_id": "C94",
+      "node_type": "c",
+      "x": 268.0,
+      "y": 379.0,
+      "demand": 55.0,
+      "ready_time": 0.0,
+      "due_time": 1000000000000.0,
+      "service_time": 0.0
+    },
+    {
+      "node_id": "C95",
+      "node_type": "c",
+      "x": 183.0,
+      "y": 236.0,
+      "demand": 100.0,
+      "ready_time": 0.0,
+      "due_time": 1000000000000.0,
+      "service_time": 0.0
+    },
+    {
+      "node_id": "C96",
+      "node_type": "c",
+      "x": 93.0,
+      "y": 217.0,
+      "demand": 98.0,
+      "ready_time": 0.0,
+      "due_time": 1000000000000.0,
+      "service_time": 0.0
+    },
+    {
+      "node_id": "C97",
+      "node_type": "c",
+      "x": 207.0,
+      "y": 439.0,
+      "demand": 87.0,
+      "ready_time": 0.0,
+      "due_time": 1000000000000.0,
+      "service_time": 0.0
+    },
+    {
+      "node_id": "C98",
+      "node_type": "c",
+      "x": 280.0,
+      "y": 417.0,
+      "demand": 55.0,
+      "ready_time": 0.0,
+      "due_time": 1000000000000.0,
+      "service_time": 0.0
+    },
+    {
+      "node_id": "C99",
+      "node_type": "c",
+      "x": 80.0,
+      "y": 110.0,
+      "demand": 79.0,
+      "ready_time": 0.0,
+      "due_time": 1000000000000.0,
+      "service_time": 0.0
+    },
+    {
+      "node_id": "C100",
+      "node_type": "c",
+      "x": 20.0,
+      "y": 67.0,
+      "demand": 68.0,
+      "ready_time": 0.0,
+      "due_time": 1000000000000.0,
+      "service_time": 0.0
+    },
+    {
+      "node_id": "C101",
+      "node_type": "c",
+      "x": 142.0,
+      "y": 384.0,
+      "demand": 99.0,
+      "ready_time": 0.0,
+      "due_time": 1000000000000.0,
+      "service_time": 0.0
+    },
+    {
+      "node_id": "C102",
+      "node_type": "c",
+      "x": 165.0,
+      "y": 63.0,
+      "demand": 52.0,
+      "ready_time": 0.0,
+      "due_time": 1000000000000.0,
+      "service_time": 0.0
+    },
+    {
+      "node_id": "C103",
+      "node_type": "c",
+      "x": 62.0,
+      "y": 410.0,
+      "demand": 99.0,
+      "ready_time": 0.0,
+      "due_time": 1000000000000.0,
+      "service_time": 0.0
+    },
+    {
+      "node_id": "C104",
+      "node_type": "c",
+      "x": 176.0,
+      "y": 261.0,
+      "demand": 85.0,
+      "ready_time": 0.0,
+      "due_time": 1000000000000.0,
+      "service_time": 0.0
+    },
+    {
+      "node_id": "C105",
+      "node_type": "c",
+      "x": 223.0,
+      "y": 301.0,
+      "demand": 77.0,
+      "ready_time": 0.0,
+      "due_time": 1000000000000.0,
+      "service_time": 0.0
+    },
+    {
+      "node_id": "C106",
+      "node_type": "c",
+      "x": 830.0,
+      "y": 608.0,
+      "demand": 51.0,
+      "ready_time": 0.0,
+      "due_time": 1000000000000.0,
+      "service_time": 0.0
+    },
+    {
+      "node_id": "C107",
+      "node_type": "c",
+      "x": 7.0,
+      "y": 164.0,
+      "demand": 55.0,
+      "ready_time": 0.0,
+      "due_time": 1000000000000.0,
+      "service_time": 0.0
+    },
+    {
+      "node_id": "C108",
+      "node_type": "c",
+      "x": 188.0,
+      "y": 108.0,
+      "demand": 54.0,
+      "ready_time": 0.0,
+      "due_time": 1000000000000.0,
+      "service_time": 0.0
+    },
+    {
+      "node_id": "C109",
+      "node_type": "c",
+      "x": 770.0,
+      "y": 537.0,
+      "demand": 70.0,
+      "ready_time": 0.0,
+      "due_time": 1000000000000.0,
+      "service_time": 0.0
+    },
+    {
+      "node_id": "C110",
+      "node_type": "c",
+      "x": 168.0,
+      "y": 99.0,
+      "demand": 88.0,
+      "ready_time": 0.0,
+      "due_time": 1000000000000.0,
+      "service_time": 0.0
+    },
+    {
+      "node_id": "C111",
+      "node_type": "c",
+      "x": 641.0,
+      "y": 321.0,
+      "demand": 9.0,
+      "ready_time": 0.0,
+      "due_time": 1000000000000.0,
+      "service_time": 0.0
+    },
+    {
+      "node_id": "C112",
+      "node_type": "c",
+      "x": 174.0,
+      "y": 165.0,
+      "demand": 91.0,
+      "ready_time": 0.0,
+      "due_time": 1000000000000.0,
+      "service_time": 0.0
+    },
+    {
+      "node_id": "C113",
+      "node_type": "c",
+      "x": 886.0,
+      "y": 816.0,
+      "demand": 65.0,
+      "ready_time": 0.0,
+      "due_time": 1000000000000.0,
+      "service_time": 0.0
+    },
+    {
+      "node_id": "C114",
+      "node_type": "c",
+      "x": 53.0,
+      "y": 303.0,
+      "demand": 67.0,
+      "ready_time": 0.0,
+      "due_time": 1000000000000.0,
+      "service_time": 0.0
+    },
+    {
+      "node_id": "C115",
+      "node_type": "c",
+      "x": 216.0,
+      "y": 377.0,
+      "demand": 93.0,
+      "ready_time": 0.0,
+      "due_time": 1000000000000.0,
+      "service_time": 0.0
+    },
+    {
+      "node_id": "C116",
+      "node_type": "c",
+      "x": 214.0,
+      "y": 261.0,
+      "demand": 70.0,
+      "ready_time": 0.0,
+      "due_time": 1000000000000.0,
+      "service_time": 0.0
+    },
+    {
+      "node_id": "C117",
+      "node_type": "c",
+      "x": 104.0,
+      "y": 44.0,
+      "demand": 73.0,
+      "ready_time": 0.0,
+      "due_time": 1000000000000.0,
+      "service_time": 0.0
+    },
+    {
+      "node_id": "C118",
+      "node_type": "c",
+      "x": 393.0,
+      "y": 114.0,
+      "demand": 98.0,
+      "ready_time": 0.0,
+      "due_time": 1000000000000.0,
+      "service_time": 0.0
+    },
+    {
+      "node_id": "C119",
+      "node_type": "c",
+      "x": 222.0,
+      "y": 51.0,
+      "demand": 64.0,
+      "ready_time": 0.0,
+      "due_time": 1000000000000.0,
+      "service_time": 0.0
+    },
+    {
+      "node_id": "C120",
+      "node_type": "c",
+      "x": 261.0,
+      "y": 355.0,
+      "demand": 68.0,
+      "ready_time": 0.0,
+      "due_time": 1000000000000.0,
+      "service_time": 0.0
+    },
+    {
+      "node_id": "C121",
+      "node_type": "c",
+      "x": 894.0,
+      "y": 577.0,
+      "demand": 100.0,
+      "ready_time": 0.0,
+      "due_time": 1000000000000.0,
+      "service_time": 0.0
+    },
+    {
+      "node_id": "C122",
+      "node_type": "c",
+      "x": 35.0,
+      "y": 285.0,
+      "demand": 66.0,
+      "ready_time": 0.0,
+      "due_time": 1000000000000.0,
+      "service_time": 0.0
+    },
+    {
+      "node_id": "C123",
+      "node_type": "c",
+      "x": 93.0,
+      "y": 509.0,
+      "demand": 8.0,
+      "ready_time": 0.0,
+      "due_time": 1000000000000.0,
+      "service_time": 0.0
+    },
+    {
+      "node_id": "C124",
+      "node_type": "c",
+      "x": 127.0,
+      "y": 150.0,
+      "demand": 98.0,
+      "ready_time": 0.0,
+      "due_time": 1000000000000.0,
+      "service_time": 0.0
+    },
+    {
+      "node_id": "C125",
+      "node_type": "c",
+      "x": 873.0,
+      "y": 468.0,
+      "demand": 15.0,
+      "ready_time": 0.0,
+      "due_time": 1000000000000.0,
+      "service_time": 0.0
+    },
+    {
+      "node_id": "C126",
+      "node_type": "c",
+      "x": 60.0,
+      "y": 105.0,
+      "demand": 71.0,
+      "ready_time": 0.0,
+      "due_time": 1000000000000.0,
+      "service_time": 0.0
+    },
+    {
+      "node_id": "C127",
+      "node_type": "c",
+      "x": 133.0,
+      "y": 232.0,
+      "demand": 92.0,
+      "ready_time": 0.0,
+      "due_time": 1000000000000.0,
+      "service_time": 0.0
+    },
+    {
+      "node_id": "C128",
+      "node_type": "c",
+      "x": 147.0,
+      "y": 252.0,
+      "demand": 72.0,
+      "ready_time": 0.0,
+      "due_time": 1000000000000.0,
+      "service_time": 0.0
+    },
+    {
+      "node_id": "C129",
+      "node_type": "c",
+      "x": 778.0,
+      "y": 547.0,
+      "demand": 76.0,
+      "ready_time": 0.0,
+      "due_time": 1000000000000.0,
+      "service_time": 0.0
+    },
+    {
+      "node_id": "C130",
+      "node_type": "c",
+      "x": 227.0,
+      "y": 403.0,
+      "demand": 76.0,
+      "ready_time": 0.0,
+      "due_time": 1000000000000.0,
+      "service_time": 0.0
+    },
+    {
+      "node_id": "C131",
+      "node_type": "c",
+      "x": 46.0,
+      "y": 419.0,
+      "demand": 93.0,
+      "ready_time": 0.0,
+      "due_time": 1000000000000.0,
+      "service_time": 0.0
+    },
+    {
+      "node_id": "C132",
+      "node_type": "c",
+      "x": 82.0,
+      "y": 381.0,
+      "demand": 97.0,
+      "ready_time": 0.0,
+      "due_time": 1000000000000.0,
+      "service_time": 0.0
+    },
+    {
+      "node_id": "C133",
+      "node_type": "c",
+      "x": 83.0,
+      "y": 80.0,
+      "demand": 79.0,
+      "ready_time": 0.0,
+      "due_time": 1000000000000.0,
+      "service_time": 0.0
+    },
+    {
+      "node_id": "C134",
+      "node_type": "c",
+      "x": 43.0,
+      "y": 466.0,
+      "demand": 99.0,
+      "ready_time": 0.0,
+      "due_time": 1000000000000.0,
+      "service_time": 0.0
+    },
+    {
+      "node_id": "C135",
+      "node_type": "c",
+      "x": 246.0,
+      "y": 330.0,
+      "demand": 58.0,
+      "ready_time": 0.0,
+      "due_time": 1000000000000.0,
+      "service_time": 0.0
+    },
+    {
+      "node_id": "C136",
+      "node_type": "c",
+      "x": 337.0,
+      "y": 216.0,
+      "demand": 84.0,
+      "ready_time": 0.0,
+      "due_time": 1000000000000.0,
+      "service_time": 0.0
+    },
+    {
+      "node_id": "C137",
+      "node_type": "c",
+      "x": 83.0,
+      "y": 205.0,
+      "demand": 82.0,
+      "ready_time": 0.0,
+      "due_time": 1000000000000.0,
+      "service_time": 0.0
+    },
+    {
+      "node_id": "C138",
+      "node_type": "c",
+      "x": 9.0,
+      "y": 55.0,
+      "demand": 86.0,
+      "ready_time": 0.0,
+      "due_time": 1000000000000.0,
+      "service_time": 0.0
+    },
+    {
+      "node_id": "C139",
+      "node_type": "c",
+      "x": 127.0,
+      "y": 123.0,
+      "demand": 77.0,
+      "ready_time": 0.0,
+      "due_time": 1000000000000.0,
+      "service_time": 0.0
+    },
+    {
+      "node_id": "C140",
+      "node_type": "c",
+      "x": 121.0,
+      "y": 449.0,
+      "demand": 75.0,
+      "ready_time": 0.0,
+      "due_time": 1000000000000.0,
+      "service_time": 0.0
+    },
+    {
+      "node_id": "C141",
+      "node_type": "c",
+      "x": 72.0,
+      "y": 189.0,
+      "demand": 59.0,
+      "ready_time": 0.0,
+      "due_time": 1000000000000.0,
+      "service_time": 0.0
+    },
+    {
+      "node_id": "C142",
+      "node_type": "c",
+      "x": 771.0,
+      "y": 491.0,
+      "demand": 24.0,
+      "ready_time": 0.0,
+      "due_time": 1000000000000.0,
+      "service_time": 0.0
+    },
+    {
+      "node_id": "C143",
+      "node_type": "c",
+      "x": 73.0,
+      "y": 201.0,
+      "demand": 69.0,
+      "ready_time": 0.0,
+      "due_time": 1000000000000.0,
+      "service_time": 0.0
+    },
+    {
+      "node_id": "C144",
+      "node_type": "c",
+      "x": 181.0,
+      "y": 188.0,
+      "demand": 95.0,
+      "ready_time": 0.0,
+      "due_time": 1000000000000.0,
+      "service_time": 0.0
+    },
+    {
+      "node_id": "C145",
+      "node_type": "c",
+      "x": 727.0,
+      "y": 549.0,
+      "demand": 83.0,
+      "ready_time": 0.0,
+      "due_time": 1000000000000.0,
+      "service_time": 0.0
+    },
+    {
+      "node_id": "C146",
+      "node_type": "c",
+      "x": 26.0,
+      "y": 332.0,
+      "demand": 53.0,
+      "ready_time": 0.0,
+      "due_time": 1000000000000.0,
+      "service_time": 0.0
+    },
+    {
+      "node_id": "C147",
+      "node_type": "c",
+      "x": 221.0,
+      "y": 419.0,
+      "demand": 56.0,
+      "ready_time": 0.0,
+      "due_time": 1000000000000.0,
+      "service_time": 0.0
+    },
+    {
+      "node_id": "C148",
+      "node_type": "c",
+      "x": 17.0,
+      "y": 212.0,
+      "demand": 57.0,
+      "ready_time": 0.0,
+      "due_time": 1000000000000.0,
+      "service_time": 0.0
+    },
+    {
+      "node_id": "C149",
+      "node_type": "c",
+      "x": 59.0,
+      "y": 359.0,
+      "demand": 67.0,
+      "ready_time": 0.0,
+      "due_time": 1000000000000.0,
+      "service_time": 0.0
+    },
+    {
+      "node_id": "C150",
+      "node_type": "c",
+      "x": 798.0,
+      "y": 525.0,
+      "demand": 62.0,
+      "ready_time": 0.0,
+      "due_time": 1000000000000.0,
+      "service_time": 0.0
+    },
+    {
+      "node_id": "C151",
+      "node_type": "c",
+      "x": 714.0,
+      "y": 613.0,
+      "demand": 62.0,
+      "ready_time": 0.0,
+      "due_time": 1000000000000.0,
+      "service_time": 0.0
+    },
+    {
+      "node_id": "C152",
+      "node_type": "c",
+      "x": 91.0,
+      "y": 419.0,
+      "demand": 91.0,
+      "ready_time": 0.0,
+      "due_time": 1000000000000.0,
+      "service_time": 0.0
+    },
+    {
+      "node_id": "C153",
+      "node_type": "c",
+      "x": 229.0,
+      "y": 353.0,
+      "demand": 60.0,
+      "ready_time": 0.0,
+      "due_time": 1000000000000.0,
+      "service_time": 0.0
+    },
+    {
+      "node_id": "C154",
+      "node_type": "c",
+      "x": 875.0,
+      "y": 568.0,
+      "demand": 71.0,
+      "ready_time": 0.0,
+      "due_time": 1000000000000.0,
+      "service_time": 0.0
+    },
+    {
+      "node_id": "C155",
+      "node_type": "c",
+      "x": 241.0,
+      "y": 285.0,
+      "demand": 68.0,
+      "ready_time": 0.0,
+      "due_time": 1000000000000.0,
+      "service_time": 0.0
+    },
+    {
+      "node_id": "C156",
+      "node_type": "c",
+      "x": 236.0,
+      "y": 368.0,
+      "demand": 84.0,
+      "ready_time": 0.0,
+      "due_time": 1000000000000.0,
+      "service_time": 0.0
+    },
+    {
+      "node_id": "C157",
+      "node_type": "c",
+      "x": 45.0,
+      "y": 86.0,
+      "demand": 64.0,
+      "ready_time": 0.0,
+      "due_time": 1000000000000.0,
+      "service_time": 0.0
+    },
+    {
+      "node_id": "C158",
+      "node_type": "c",
+      "x": 446.0,
+      "y": 310.0,
+      "demand": 71.0,
+      "ready_time": 0.0,
+      "due_time": 1000000000000.0,
+      "service_time": 0.0
+    },
+    {
+      "node_id": "C159",
+      "node_type": "c",
+      "x": 128.0,
+      "y": 366.0,
+      "demand": 82.0,
+      "ready_time": 0.0,
+      "due_time": 1000000000000.0,
+      "service_time": 0.0
+    },
+    {
+      "node_id": "C160",
+      "node_type": "c",
+      "x": 163.0,
+      "y": 168.0,
+      "demand": 59.0,
+      "ready_time": 0.0,
+      "due_time": 1000000000000.0,
+      "service_time": 0.0
+    },
+    {
+      "node_id": "C161",
+      "node_type": "c",
+      "x": 322.0,
+      "y": 272.0,
+      "demand": 72.0,
+      "ready_time": 0.0,
+      "due_time": 1000000000000.0,
+      "service_time": 0.0
+    },
+    {
+      "node_id": "C162",
+      "node_type": "c",
+      "x": 958.0,
+      "y": 864.0,
+      "demand": 95.0,
+      "ready_time": 0.0,
+      "due_time": 1000000000000.0,
+      "service_time": 0.0
+    },
+    {
+      "node_id": "C163",
+      "node_type": "c",
+      "x": 754.0,
+      "y": 814.0,
+      "demand": 63.0,
+      "ready_time": 0.0,
+      "due_time": 1000000000000.0,
+      "service_time": 0.0
+    },
+    {
+      "node_id": "C164",
+      "node_type": "c",
+      "x": 136.0,
+      "y": 184.0,
+      "demand": 94.0,
+      "ready_time": 0.0,
+      "due_time": 1000000000000.0,
+      "service_time": 0.0
+    },
+    {
+      "node_id": "C165",
+      "node_type": "c",
+      "x": 111.0,
+      "y": 119.0,
+      "demand": 92.0,
+      "ready_time": 0.0,
+      "due_time": 1000000000000.0,
+      "service_time": 0.0
+    },
+    {
+      "node_id": "C166",
+      "node_type": "c",
+      "x": 120.0,
+      "y": 300.0,
+      "demand": 98.0,
+      "ready_time": 0.0,
+      "due_time": 1000000000000.0,
+      "service_time": 0.0
+    },
+    {
+      "node_id": "C167",
+      "node_type": "c",
+      "x": 686.0,
+      "y": 372.0,
+      "demand": 14.0,
+      "ready_time": 0.0,
+      "due_time": 1000000000000.0,
+      "service_time": 0.0
+    },
+    {
+      "node_id": "C168",
+      "node_type": "c",
+      "x": 32.0,
+      "y": 68.0,
+      "demand": 85.0,
+      "ready_time": 0.0,
+      "due_time": 1000000000000.0,
+      "service_time": 0.0
+    },
+    {
+      "node_id": "C169",
+      "node_type": "c",
+      "x": 224.0,
+      "y": 70.0,
+      "demand": 52.0,
+      "ready_time": 0.0,
+      "due_time": 1000000000000.0,
+      "service_time": 0.0
+    },
+    {
+      "node_id": "C170",
+      "node_type": "c",
+      "x": 113.0,
+      "y": 76.0,
+      "demand": 85.0,
+      "ready_time": 0.0,
+      "due_time": 1000000000000.0,
+      "service_time": 0.0
+    },
+    {
+      "node_id": "C171",
+      "node_type": "c",
+      "x": 228.0,
+      "y": 73.0,
+      "demand": 96.0,
+      "ready_time": 0.0,
+      "due_time": 1000000000000.0,
+      "service_time": 0.0
+    },
+    {
+      "node_id": "C172",
+      "node_type": "c",
+      "x": 216.0,
+      "y": 34.0,
+      "demand": 62.0,
+      "ready_time": 0.0,
+      "due_time": 1000000000000.0,
+      "service_time": 0.0
+    },
+    {
+      "node_id": "C173",
+      "node_type": "c",
+      "x": 218.0,
+      "y": 360.0,
+      "demand": 76.0,
+      "ready_time": 0.0,
+      "due_time": 1000000000000.0,
+      "service_time": 0.0
+    },
+    {
+      "node_id": "C174",
+      "node_type": "c",
+      "x": 157.0,
+      "y": 167.0,
+      "demand": 72.0,
+      "ready_time": 0.0,
+      "due_time": 1000000000000.0,
+      "service_time": 0.0
+    },
+    {
+      "node_id": "C175",
+      "node_type": "c",
+      "x": 58.0,
+      "y": 242.0,
+      "demand": 94.0,
+      "ready_time": 0.0,
+      "due_time": 1000000000000.0,
+      "service_time": 0.0
+    },
+    {
+      "node_id": "C176",
+      "node_type": "c",
+      "x": 84.0,
+      "y": 263.0,
+      "demand": 52.0,
+      "ready_time": 0.0,
+      "due_time": 1000000000000.0,
+      "service_time": 0.0
+    },
+    {
+      "node_id": "C177",
+      "node_type": "c",
+      "x": 330.0,
+      "y": 253.0,
+      "demand": 51.0,
+      "ready_time": 0.0,
+      "due_time": 1000000000000.0,
+      "service_time": 0.0
+    },
+    {
+      "node_id": "C178",
+      "node_type": "c",
+      "x": 903.0,
+      "y": 822.0,
+      "demand": 54.0,
+      "ready_time": 0.0,
+      "due_time": 1000000000000.0,
+      "service_time": 0.0
+    },
+    {
+      "node_id": "C179",
+      "node_type": "c",
+      "x": 900.0,
+      "y": 858.0,
+      "demand": 96.0,
+      "ready_time": 0.0,
+      "due_time": 1000000000000.0,
+      "service_time": 0.0
+    },
+    {
+      "node_id": "C180",
+      "node_type": "c",
+      "x": 270.0,
+      "y": 381.0,
+      "demand": 96.0,
+      "ready_time": 0.0,
+      "due_time": 1000000000000.0,
+      "service_time": 0.0
+    },
+    {
+      "node_id": "C181",
+      "node_type": "c",
+      "x": 15.0,
+      "y": 37.0,
+      "demand": 82.0,
+      "ready_time": 0.0,
+      "due_time": 1000000000000.0,
+      "service_time": 0.0
+    },
+    {
+      "node_id": "C182",
+      "node_type": "c",
+      "x": 79.0,
+      "y": 523.0,
+      "demand": 10.0,
+      "ready_time": 0.0,
+      "due_time": 1000000000000.0,
+      "service_time": 0.0
+    },
+    {
+      "node_id": "C183",
+      "node_type": "c",
+      "x": 207.0,
+      "y": 329.0,
+      "demand": 54.0,
+      "ready_time": 0.0,
+      "due_time": 1000000000000.0,
+      "service_time": 0.0
+    },
+    {
+      "node_id": "C184",
+      "node_type": "c",
+      "x": 130.0,
+      "y": 274.0,
+      "demand": 82.0,
+      "ready_time": 0.0,
+      "due_time": 1000000000000.0,
+      "service_time": 0.0
+    },
+    {
+      "node_id": "C185",
+      "node_type": "c",
+      "x": 870.0,
+      "y": 860.0,
+      "demand": 58.0,
+      "ready_time": 0.0,
+      "due_time": 1000000000000.0,
+      "service_time": 0.0
+    },
+    {
+      "node_id": "C186",
+      "node_type": "c",
+      "x": 791.0,
+      "y": 305.0,
+      "demand": 28.0,
+      "ready_time": 0.0,
+      "due_time": 1000000000000.0,
+      "service_time": 0.0
+    },
+    {
+      "node_id": "C187",
+      "node_type": "c",
+      "x": 13.0,
+      "y": 535.0,
+      "demand": 37.0,
+      "ready_time": 0.0,
+      "due_time": 1000000000000.0,
+      "service_time": 0.0
+    },
+    {
+      "node_id": "C188",
+      "node_type": "c",
+      "x": 800.0,
+      "y": 823.0,
+      "demand": 90.0,
+      "ready_time": 0.0,
+      "due_time": 1000000000000.0,
+      "service_time": 0.0
+    },
+    {
+      "node_id": "C189",
+      "node_type": "c",
+      "x": 224.0,
+      "y": 244.0,
+      "demand": 91.0,
+      "ready_time": 0.0,
+      "due_time": 1000000000000.0,
+      "service_time": 0.0
+    },
+    {
+      "node_id": "C190",
+      "node_type": "c",
+      "x": 580.0,
+      "y": 504.0,
+      "demand": 95.0,
+      "ready_time": 0.0,
+      "due_time": 1000000000000.0,
+      "service_time": 0.0
+    },
+    {
+      "node_id": "C191",
+      "node_type": "c",
+      "x": 88.0,
+      "y": 389.0,
+      "demand": 89.0,
+      "ready_time": 0.0,
+      "due_time": 1000000000000.0,
+      "service_time": 0.0
+    },
+    {
+      "node_id": "C192",
+      "node_type": "c",
+      "x": 3.0,
+      "y": 172.0,
+      "demand": 88.0,
+      "ready_time": 0.0,
+      "due_time": 1000000000000.0,
+      "service_time": 0.0
+    },
+    {
+      "node_id": "C193",
+      "node_type": "c",
+      "x": 62.0,
+      "y": 499.0,
+      "demand": 100.0,
+      "ready_time": 0.0,
+      "due_time": 1000000000000.0,
+      "service_time": 0.0
+    },
+    {
+      "node_id": "C194",
+      "node_type": "c",
+      "x": 791.0,
+      "y": 692.0,
+      "demand": 87.0,
+      "ready_time": 0.0,
+      "due_time": 1000000000000.0,
+      "service_time": 0.0
+    },
+    {
+      "node_id": "C195",
+      "node_type": "c",
+      "x": 186.0,
+      "y": 373.0,
+      "demand": 66.0,
+      "ready_time": 0.0,
+      "due_time": 1000000000000.0,
+      "service_time": 0.0
+    },
+    {
+      "node_id": "C196",
+      "node_type": "c",
+      "x": 300.0,
+      "y": 26.0,
+      "demand": 88.0,
+      "ready_time": 0.0,
+      "due_time": 1000000000000.0,
+      "service_time": 0.0
+    },
+    {
+      "node_id": "C197",
+      "node_type": "c",
+      "x": 52.0,
+      "y": 204.0,
+      "demand": 74.0,
+      "ready_time": 0.0,
+      "due_time": 1000000000000.0,
+      "service_time": 0.0
+    },
+    {
+      "node_id": "C198",
+      "node_type": "c",
+      "x": 163.0,
+      "y": 305.0,
+      "demand": 70.0,
+      "ready_time": 0.0,
+      "due_time": 1000000000000.0,
+      "service_time": 0.0
+    },
+    {
+      "node_id": "C199",
+      "node_type": "c",
+      "x": 135.0,
+      "y": 270.0,
+      "demand": 80.0,
+      "ready_time": 0.0,
+      "due_time": 1000000000000.0,
+      "service_time": 0.0
+    }
+  ]
+}

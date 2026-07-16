@@ -1,0 +1,22 @@
+{
+  "decision": "HALT_DIRECT_BKS_CLAIM_ADAPTER_REQUIRED",
+  "direct_public_comparison_ready": false,
+  "reason": "The public instances and all 180 Table 11 comparison values are present and identity-checked, but Table 11 reports the best of ten ALNS runs under distance minimization, not proven BKS. The current ReSETP experiment minimizes a seven-part operating cost and permits physical vehicles to perform multiple trips with a different charging scheduler. A dedicated frozen single-depot, single-trip, 80 kWh, distance-only adapter must pass an independent evaluator before any Gap% against Table 11 is reported.",
+  "checks": {
+    "published_table11_complete": true,
+    "local_instance_set_complete": true,
+    "published_vehicle_columns_match_raw_total_ev_and_derived_cv": true,
+    "local_files_match_official_archive": true,
+    "published_values_are_bks": false,
+    "original_goeke_java_source_locally_available": false,
+    "current_resetp_objective_matches_distance_only": false,
+    "current_resetp_single_trip_contract_matches": false,
+    "current_resetp_charging_contract_matches": false
+  },
+  "reference_row_count": 180,
+  "raw_instance_count": 180,
+  "missing_instances": [],
+  "fleet_identity_failure_count": 0,
+  "official_archive_match_count": 180,
+  "recommended_scope": "Build and validate the adapter on E-UK10_01, E-UK15_01 and E-UK20_01 first; only after exact route-distance, fleet, time-window, battery and full-recharge semantics agree should a formal 9 sizes x 20 instances x 10 runs benchmark be scheduled."
+}

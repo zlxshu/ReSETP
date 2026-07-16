@@ -21,7 +21,10 @@ import pandas as pd
 ROOT = Path(__file__).resolve().parents[2]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
-from baselines.paper_story import build_20260715_formal_evidence as evidence_builder
+from baselines.paper_story import build_20260715_formal_evidence as evidence_builder  # noqa: E402
+from baselines.paper_story import (  # noqa: E402
+    build_e2_cvrplib_paper_evidence_20260716 as e2_public_builder,
+)
 
 TEX = ROOT / "docs/paper_submission_final/paper_main.tex"
 PAPER_DIR = TEX.parent
@@ -48,9 +51,16 @@ E2_LEGACY_UNLISTED = {
     "baselines/e2_alns/e2_final_10seed_20260711/formal/baseline_parameter_appendix.md",
 }
 E2B = ROOT / "baselines/e2_alns/e2b_component_ablation_formal_20260715"
+E2_PUBLIC = ROOT / "baselines/e2_alns/cvrplib_optimal_search_formal_20260716"
+E2_PUBLIC_EXHIBITS = (
+    e2_public_builder.TABLE_NAME,
+    e2_public_builder.INTERPRETATION_NAME,
+    e2_public_builder.PROVENANCE_NAME,
+)
 E3 = ROOT / "baselines/e3_ablation/e3_medium_paired_cost_formal_20260715"
 E4 = ROOT / "baselines/e4_e5/e4_forecast_timing_formal_20260713"
 E6 = ROOT / "baselines/e6_fairness/e6_profit_guarantee_frontier_20260715"
+PUBLIC_ADAPTER = ROOT / "baselines/e2_alns/goeke_public_benchmark_adapter_gate_20260716"
 EXPECTED_STATIC_INSTANCES = (
     "L-main-threeshift-10c-01",
     "L-main-threeshift-15c-01",
@@ -97,6 +107,11 @@ E7_REQUIRED_INDEPENDENT_CHECKS = (
     "replay_invariants_artifact_hashes_pass",
     "replay_invariant_row_count_840",
     "replay_charger_capacity_and_trigger_windows_pass",
+)
+CURRENT_TITLE_ZH = "时变碳强度下多车场协同路径优化模型及算法"
+FORBIDDEN_PATH_GLYPHS = ("路经", "路劲", "路徑", "路迳", "路逕")
+CURRENT_TITLE_EN = (
+    "Model and Algorithm for Multi-depot Routing under Time-varying Carbon Intensity"
 )
 REQUIRED_EXPERIMENT_SURFACES = (
     "metadata.json",
@@ -859,7 +874,13 @@ def verify_paper_build() -> tuple[list[str], dict[str, Any], list[str]]:
     for label, pattern in fatal_patterns.items():
         if re.search(pattern, log_text, flags=re.IGNORECASE | re.MULTILINE):
             failures.append(f"paper compile log contains {label}")
-    if "Output written on paper_main.xdv" not in log_text:
+    if not any(
+        marker in log_text
+        for marker in (
+            "Output written on paper_main.xdv",
+            "Output written on paper_main.pdf",
+        )
+    ):
         failures.append("paper compile log lacks successful XeLaTeX output marker")
 
     pdf_mtime = PAPER_PDF.stat().st_mtime_ns
@@ -917,16 +938,25 @@ def verify_paper_build() -> tuple[list[str], dict[str, Any], list[str]]:
         failures.append("pdftotext could not extract the compiled manuscript")
     else:
         extracted_compact = re.sub(r"\s+", "", extraction.stdout)
-        for fragment in (
-            "多车场动态协同配送与时变碳强度充电调度",
+        for forbidden in FORBIDDEN_PATH_GLYPHS:
+            if forbidden in extracted_compact:
+                failures.append(
+                    f"compiled PDF uses forbidden path glyph or homophone: {forbidden}"
+                )
+        required_fragments = [
+            CURRENT_TITLE_ZH,
             "TVCI-ALNS",
-            "对区域—城际配送企业而言，使用电动车并不等于实现低碳配送",
-            "结果并未呈现“每增加一个组件都改善成本”的整齐阶梯",
+            "对区域—城际配送企业而言，使用电动车并不必然实现低碳配送",
+            "组件累加并未带来单调的成本改善",
             "五档实验覆盖9个网络、2类责任和3个种子",
-            "本文同时记录每个重规划阶段的实际计算时间（wall-clock time）",
-            "时变电网碳强度能够识别固定排班中的充电减排机会",
-            "本文仍存在一定局限",
-        ):
+            "依据预测电网碳强度安排充电",
+            "本文核算运营直接排放和购入电力间接排放",
+        ]
+        if all((TABLES / filename).is_file() for filename in E7_EXHIBITS):
+            required_fragments.append(
+                "本文同时记录每个重规划阶段的实际计算时间（wall-clock time）"
+            )
+        for fragment in required_fragments:
             if re.sub(r"\s+", "", fragment) not in extracted_compact:
                 failures.append(f"compiled PDF text missing: {fragment}")
 
@@ -1010,6 +1040,11 @@ def e6_endpoint_summary() -> dict[tuple[str, float], tuple[float, float]]:
 def audit(*, allow_pending_e7: bool) -> dict[str, Any]:
     failures: list[str] = []
     text = TEX.read_text(encoding="utf-8")
+    for forbidden in FORBIDDEN_PATH_GLYPHS:
+        if forbidden in text:
+            failures.append(
+                f"manuscript uses forbidden path glyph or homophone: {forbidden}"
+            )
     quality_text = QUALITY_GATES.read_text(encoding="utf-8")
     completion_text = COMPLETION_MATRIX.read_text(encoding="utf-8")
     paper_build_failures, paper_build_info, paper_build_warnings = verify_paper_build()
@@ -1033,7 +1068,10 @@ def audit(*, allow_pending_e7: bool) -> dict[str, Any]:
     )
     if forbidden_appendix:
         failures.append("manuscript contains an appendix despite the no-appendix contract")
-    expected_sections = ["引言", "问题描述及模型建立", "求解算法", "数值实验", "结论"]
+    # The two closest SETP mother papers use the concise reader-facing labels
+    # “问题与模型/模型建立” and “算法设计”.  The invariant is the five-part
+    # sequence, not the older draft's verbose wording.
+    expected_sections = ["引言", "模型建立", "算法设计", "数值试验", "结论"]
     observed_sections = re.findall(r"(?m)^\\section\{([^}]+)\}", text)
     if observed_sections != expected_sections:
         failures.append(
@@ -1042,19 +1080,19 @@ def audit(*, allow_pending_e7: bool) -> dict[str, Any]:
 
     require(
         text,
-        "对区域—城际配送企业而言，使用电动车并不等于实现低碳配送",
+        "对区域—城际配送企业而言，使用电动车并不必然实现低碳配送",
         failures,
         "problem-first introduction",
     )
     require(
         text,
-        r"\Title{多车场动态协同配送与时变碳强度充电调度}",
+        rf"\Title{{{CURRENT_TITLE_ZH}}}",
         failures,
         "unified Chinese title",
     )
     require(
         text,
-        r"\ETitle{Dynamic Collaborative Multi-depot Delivery with Time-varying Carbon-aware Charging}",
+        rf"\ETitle{{{CURRENT_TITLE_EN}}}",
         failures,
         "unified English title",
     )
@@ -1066,7 +1104,7 @@ def audit(*, allow_pending_e7: bool) -> dict[str, Any]:
     )
     require(
         text,
-        "结果揭示了客户空间组织、跨场协同、成员参与和低碳充电之间的作用边界",
+        "结果表明，充电择时是路径与车型减排的补充",
         failures,
         "abstract claim stays within sealed evidence",
     )
@@ -1118,9 +1156,9 @@ def audit(*, allow_pending_e7: bool) -> dict[str, Any]:
     ):
         require(completion_text, fragment, failures, "ReSETP goal-completion matrix")
 
-    for evidence in (E2B, E3, E4, E6):
+    for evidence in (E2B, E3, E4, E6, PUBLIC_ADAPTER):
         failures.extend(required_surface_failures(evidence))
-    for evidence in (E2B, E3, E6):
+    for evidence in (E2B, E3, E6, PUBLIC_ADAPTER):
         failures.extend(verify_manifest(evidence))
     failures.extend(e2b_identity_failures(E2B))
     failures.extend(e3_identity_failures(E3))
@@ -1195,13 +1233,13 @@ def audit(*, allow_pending_e7: bool) -> dict[str, Any]:
     )
     require(
         text,
-        "GA-VNS为GA与VNS的组合基线，不对应某篇文献的完整代码实现",
+        "GA-VNS在该解码框架下组合GA的全局搜索与VNS局部改进",
         failures,
         "adapted-comparator provenance boundary",
     )
     require(
         text,
-        "共同评价器统一核算成本、实体车排班、时间窗、载重、电量和充电约束",
+        "统一评价函数核算成本，并检查实体车排班、时间窗、载重、电量和充电约束",
         failures,
         "shared comparator evaluation contract",
     )
@@ -1211,9 +1249,22 @@ def audit(*, allow_pending_e7: bool) -> dict[str, Any]:
         failures,
         "population-method budget comparability boundary",
     )
+    public_adapter = read_json(PUBLIC_ADAPTER / "decision.json")
+    if (
+        public_adapter.get("decision") != "PASS_THREE_INSTANCE_SEMANTIC_ADAPTER_GATE"
+        or not public_adapter.get("semantic_adapter_ready")
+        or public_adapter.get("formal_180x10_authorized") is not False
+    ):
+        failures.append("public Goeke three-instance semantic adapter gate differs from the accepted boundary")
+    for fragment in (
+        "E-UK10\\_01和E-UK15\\_01的复算距离分别为408.130 km和709.005 km",
+        "E-UK20\\_01得到847.900 km的可行方案，高于原文10次ALNS最好值785.47 km",
+        "原文比较值仅作复算参照，不作为最优值",
+    ):
+        require(text, fragment, failures, "public benchmark semantic-adapter boundary")
     require(
         text,
-        "程序中一条路线对象对应一配送趟，故固定费按路线条数计取",
+        "每条路径对应一个配送趟，固定费按配送趟数计取",
         failures,
         "trip-dispatch fixed-cost implementation semantics",
     )
@@ -1269,7 +1320,7 @@ def audit(*, allow_pending_e7: bool) -> dict[str, Any]:
     )
     require(
         text,
-        "单独分阶段本身不构成普遍的性能增强",
+        "分阶段搜索本身未形成稳定增益",
         failures,
         "E2b claim boundary",
     )
@@ -1342,6 +1393,82 @@ def audit(*, allow_pending_e7: bool) -> dict[str, Any]:
         failures,
         "E6 non-strict frontier boundary",
     )
+
+    for filename in E2_PUBLIC_EXHIBITS[:2]:
+        require(
+            text,
+            f"generated_tables/{filename}",
+            failures,
+            f"E2 public benchmark hook {filename}",
+        )
+    require(
+        text,
+        r"\newif\ifETwoPublicReady",
+        failures,
+        "atomic E2 public benchmark gate",
+    )
+    e2_public_ready = all(
+        (E2_PUBLIC / filename).is_file()
+        for filename in e2_public_builder.REQUIRED_SOURCE_FILES
+    )
+    if not e2_public_ready:
+        if not allow_pending_e7:
+            failures.append("E2 public BKS formal evidence is not sealed")
+        if any((TABLES / filename).is_file() for filename in E2_PUBLIC_EXHIBITS):
+            failures.append(
+                "E2 public benchmark manuscript exhibit exists before formal evidence is sealed"
+            )
+    else:
+        try:
+            e2_public_rows, e2_public_contracts = e2_public_builder.load_and_validate(
+                E2_PUBLIC
+            )
+            e2_public_summaries = [
+                e2_public_builder.summarize_instance(instance, e2_public_rows)
+                for instance in e2_public_builder.runner.FORMAL_INSTANCES
+            ]
+            expected_e2_table = e2_public_builder.render_table(e2_public_summaries)
+            expected_e2_interpretation = e2_public_builder.render_interpretation(
+                e2_public_rows, e2_public_summaries
+            )
+        except (OSError, ValueError, e2_public_builder.E2PaperEvidenceError) as exc:
+            failures.append(f"E2 public benchmark evidence validation failed: {exc}")
+        else:
+            expected_exhibits = {
+                e2_public_builder.TABLE_NAME: expected_e2_table,
+                e2_public_builder.INTERPRETATION_NAME: expected_e2_interpretation,
+            }
+            for filename, expected in expected_exhibits.items():
+                path = TABLES / filename
+                if not path.is_file():
+                    failures.append(f"sealed E2 public benchmark exhibit missing: {filename}")
+                elif path.read_text(encoding="utf-8") != expected:
+                    failures.append(
+                        f"sealed E2 public benchmark exhibit is stale or altered: {filename}"
+                    )
+            provenance_path = TABLES / e2_public_builder.PROVENANCE_NAME
+            if not provenance_path.is_file():
+                failures.append("E2 public benchmark provenance manifest is missing")
+            else:
+                provenance = read_json(provenance_path)
+                if provenance.get("source_contract_sha256") != e2_public_contracts[
+                    "metadata"
+                ].get("contract_sha256"):
+                    failures.append("E2 public benchmark provenance contract differs")
+                for filename in e2_public_builder.REQUIRED_SOURCE_FILES:
+                    if provenance.get("source_hashes", {}).get(filename) != sha256(
+                        E2_PUBLIC / filename
+                    ):
+                        failures.append(
+                            f"E2 public benchmark provenance source hash differs: {filename}"
+                        )
+                for filename in expected_exhibits:
+                    if provenance.get("generated_hashes", {}).get(filename) != sha256(
+                        TABLES / filename
+                    ):
+                        failures.append(
+                            f"E2 public benchmark provenance exhibit hash differs: {filename}"
+                        )
 
     for filename in E7_EXHIBITS:
         require(
@@ -1471,6 +1598,7 @@ def audit(*, allow_pending_e7: bool) -> dict[str, Any]:
         "paper_build_current_and_content_extractable": not paper_build_failures,
         "paper_build_info": paper_build_info,
         "paper_build_warnings": paper_build_warnings,
+        "e2_public_bks_ready": e2_public_ready,
         "e2b_manifest_and_claims": not any("E2b" in row or "e2_alns" in row for row in failures),
         "e3_manifest_and_claims": not any("E3" in row or "e3_ablation" in row for row in failures),
         "e4_manifest_and_claims": not any("E4" in row or "e4_e5" in row for row in failures),
