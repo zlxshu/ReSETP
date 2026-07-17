@@ -1,0 +1,85 @@
+{
+  "schema_version": "resetp.algorithm_exploration.decision.v1",
+  "theme": "fleet_charging",
+  "authorization": "EA-001",
+  "decision": "EXPLORATION_ONLY_AWAITING_USER_APPROVAL",
+  "decided_at": "2026-07-18T02:30:00+08:00",
+  "formal_search_allowed": false,
+  "isolated_prototype_allowed_under_EA001": true,
+  "formal_solver_modified": false,
+  "winner_modified": false,
+  "e7_modified": false,
+  "model_or_unit_change_applied": false,
+  "search_evaluations": 0,
+  "research_cycles": {
+    "cycle1": "COMPLETED_BROAD_LANDSCAPE",
+    "cycle2": "COMPLETED_PRIMARY_SOURCE_CODE_LICENSE_AND_PROBE_VERIFICATION"
+  },
+  "minimum_candidate_count_required": 4,
+  "candidate_count_delivered": 5,
+  "open_source_or_literature_candidate_count": 4,
+  "self_designed_candidate_count": 1,
+  "function_probes": [
+    {
+      "candidate_id": "FC-C02",
+      "status": "PROBE_COMPLETED",
+      "result": "frvcpy publication example reproduced on Python 3.13.9; duration=7.338904; charging station 48 inserted.",
+      "performance_claim_allowed": false
+    },
+    {
+      "candidate_id": "FC-C03",
+      "status": "PROBE_COMPLETED",
+      "result": "PyVRP 0.13.4 heterogeneous micro instance returned feasible cost 50 and selected vehicle type index 1.",
+      "performance_claim_allowed": false
+    }
+  ],
+  "recommended_exploration_sequence_under_EA001": [
+    {
+      "rank": 1,
+      "candidate_id": "FC-C02",
+      "exploration_scope": "建立独立的非线性固定路线充电预言机适配原型",
+      "reason": "开源、许可证清楚、机制直接补上NL→NL充电评价缺口，且可在不接正式solver的情况下独立核验。"
+    },
+    {
+      "rank": 2,
+      "candidate_id": "FC-C05",
+      "exploration_scope": "建立VMR-NL独立小例原型",
+      "reason": "它把车型、插入位置、SOC和补能计划放进同一个修复决策，最贴合论文机制，但新颖性和吞吐仍需证伪。"
+    },
+    {
+      "rank": 3,
+      "candidate_id": "FC-C01",
+      "exploration_scope": "独立重实现Resize与RelocateAndResize",
+      "reason": "文献算子最直接地补足车型—路线同步变化，可与FC-C02组合。"
+    },
+    {
+      "rank": 4,
+      "candidate_id": "FC-C04",
+      "exploration_scope": "clean-room实现route-type scan与ReplacePath",
+      "reason": "概念最完整，但无源码、快速路线评价并非精确且后续集合划分成本高。"
+    },
+    {
+      "rank": 5,
+      "candidate_id": "FC-C03",
+      "exploration_scope": "保留为工程参照和外部强基线",
+      "reason": "性能工程成熟，但不含SOC/充电，不建议先嵌入正式内核。"
+    }
+  ],
+  "hard_gates_before_any_formal_use": [
+    "E7 clean rerun and protected-kernel release",
+    "ALNS G0 complete-solution budget closure",
+    "user approval recorded with a new candidate-specific approval ID",
+    "approved China physical and unit contracts only",
+    "budget 0/1/2/5 regression",
+    "independent feasibility and nonlinear SOC replay",
+    "fixed development set only; no Solomon final-test tuning",
+    "component ablation before combined mechanism claim"
+  ],
+  "unresolved_questions": [
+    "Whether ReSETP should use frvcpy source directly under Apache-2.0 or clean-room reimplement the Froger label algorithm.",
+    "Whether the fixed-route oracle objective should minimize time only or the approved ReSETP CNY-plus-carbon objective; this is a modeling decision requiring user approval.",
+    "Whether VMR-NL is sufficiently novel relative to Wang et al. route-type scan and prior vehicle-aware regret methods.",
+    "Whether route-pool set partitioning is affordable under the future complete-evaluation and wall-clock contract.",
+    "How nonlinear charging curves and initial/inter-trip SOC will be represented in the approved China physical contract."
+  ]
+}

@@ -1,0 +1,37 @@
+{
+  "schema_version": "1.0",
+  "decision": "EXPLORATION_ONLY_AWAITING_USER_APPROVAL",
+  "governance_authorization": "EA-001",
+  "formal_search_allowed": false,
+  "isolated_prototype_allowed_under_EA001": true,
+  "merge_into_formal_alns_allowed": false,
+  "modify_formal_e7_allowed": false,
+  "performance_claim_allowed": false,
+  "e7_intermediate_results_read": false,
+  "e7_protected_files_modified": false,
+  "winner_modified": false,
+  "formal_solver_modified": false,
+  "event_stream_modified": false,
+  "model_or_unit_conversion_introduced": false,
+  "candidate_count": 6,
+  "external_literature_or_open_source_candidate_count": 5,
+  "self_designed_candidate_count": 1,
+  "two_cycle_research_completed": true,
+  "license_audit_completed": true,
+  "limitations": [
+    "G0 complete-evaluation accounting is not closed, so no ReSETP performance comparison is authorized.",
+    "No official source code was verified for the 2018 dynamic ALNS, 2024 multi-depot dynamic ALNS, route-stability pBiALNS or online ejection-chain papers.",
+    "RoutingBlocks has MIT text in source headers but no root repository LICENSE file.",
+    "PyVRP warm start is not hard route freezing.",
+    "dvrpsim is a simulator and state interface, not a routing algorithm.",
+    "OR-Tools partial route locking does not by itself implement the complete ReSETP energy, charging, fairness and carbon semantics."
+  ],
+  "user_approval_required_for": [
+    "any dependency linked into or distributed with the formal repository",
+    "any change to objective, acceptance, stability metric or budget accounting",
+    "any mechanism ablation or formal experiment arm",
+    "any merge into the formal ALNS or E7 runner"
+  ],
+  "recommended_exploration_scope_under_EA001": "Run only four isolated micro-probes first: current-state pseudo-depot round-trip, OR-Tools frozen-prefix preservation, bounded regret-ejection activity and accounting, and independent route-stability metric recomputation. Formal integration remains approval-gated.",
+  "created_at": "2026-07-18T02:40:31+08:00"
+}

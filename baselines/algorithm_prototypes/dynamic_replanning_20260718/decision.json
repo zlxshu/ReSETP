@@ -1,0 +1,45 @@
+{
+  "all_budget_counts_exact": true,
+  "authorization": "EA-001",
+  "decision": "PASS_FUNCTION_ACTIVITY_ACCOUNTING_ONLY",
+  "explicit_non_claims": [
+    "No runtime, solution-quality, feasibility-rate, or algorithm superiority claim.",
+    "Synthetic complete evaluations are not formal ReSETP evaluations.",
+    "OR-Tools is an isolated external semantic comparison, not an approved dependency.",
+    "No candidate is approved for formal integration by this probe."
+  ],
+  "formal_e7_change_allowed": false,
+  "formal_search_allowed": false,
+  "functional_or_activity_failure_count": 0,
+  "merge_into_formal_alns_allowed": false,
+  "performance_claim_allowed": false,
+  "probe_results": {
+    "bounded_regret_ejection_budgets": {
+      "0": {
+        "bounded_depth_two_active": false,
+        "budget_closed": true,
+        "complete_evaluations": 0
+      },
+      "1": {
+        "bounded_depth_two_active": false,
+        "budget_closed": true,
+        "complete_evaluations": 1
+      },
+      "2": {
+        "bounded_depth_two_active": true,
+        "budget_closed": true,
+        "complete_evaluations": 2
+      },
+      "5": {
+        "bounded_depth_two_active": true,
+        "budget_closed": true,
+        "complete_evaluations": 5
+      }
+    },
+    "independent_route_stability_recalculation": "PASS_INDEPENDENT_STABILITY_RECALC",
+    "ortools_external_lock_comparison": "PASS_EXTERNAL_LOCK_COMPARISON",
+    "own_hard_frozen_prefix": "PASS_OWN_PREFIX_LOCK",
+    "state_pseudo_depot_round_trip": "PASS_STATE_ROUND_TRIP"
+  },
+  "schema_version": "ea001-dynamic-replanning-microprobes-decision.v1"
+}

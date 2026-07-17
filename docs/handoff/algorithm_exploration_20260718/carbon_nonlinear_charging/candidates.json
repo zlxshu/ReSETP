@@ -1,0 +1,250 @@
+{
+  "schema_version": "resetp.algorithm-exploration.theme3.v1",
+  "theme": "time-varying carbon, time-of-use price, charging scheduling, and nonlinear charging",
+  "authority": "EA-001",
+  "status": "EXPLORATION_ONLY_AWAITING_USER_APPROVAL",
+  "formal_solver_modified": false,
+  "formal_experiment_allowed": false,
+  "user_approval_required_for_any_implementation": true,
+  "ranking_basis": [
+    "mechanism fit with current E4/E5 gaps",
+    "primary-paper traceability",
+    "official repository and license clarity",
+    "ability to isolate contribution under the same full-evaluation budget",
+    "implementation and license risk"
+  ],
+  "candidates": [
+    {
+      "candidate_id": "C3-01",
+      "name": "FIXED_ROUTE_NONLINEAR_CHARGING_LABEL_OPTIMIZER",
+      "kind": "literature_clean_room_reimplementation",
+      "priority": 1,
+      "mechanism": "For a fixed customer sequence, jointly select charging-station insertions, charging times, and partial nonlinear charge amounts using forward/backward time-SOC functions and label dominance.",
+      "primary_sources": ["S01", "S02", "S03"],
+      "official_repository": null,
+      "license": "NO_REUSABLE_IMPLEMENTATION_LICENSE_FOUND",
+      "proposed_isolated_location": "baselines/algorithm_exploration/carbon_nonlinear_charging/c3_01_fixed_route_label/",
+      "formal_integration_point_if_approved": [
+        "solver/src/setp_solver/support/charging.py",
+        "solver/src/setp_solver/support/carbon_charging.py",
+        "solver/src/setp_solver/search/multitrip_schedule.py"
+      ],
+      "difference_from_standard_alns": "Adds an optimization oracle over charging decisions after route moves instead of using only station insertion or constant-power feasibility repair.",
+      "expected_benefit_hypothesis": "Restore NL-to-NL feasibility and reduce route duration or formal cost on routes whose linear charging replay is infeasible or direction-reversing.",
+      "complexity": "Pseudo-polynomial or label-count dependent; worst case exponential without strong dominance.",
+      "budget_accounting": "Each complete solution produced for ALNS acceptance consumes one search evaluation; label expansions and oracle calls are separate diagnostic counters and wall time.",
+      "failure_risks": [
+        "label explosion",
+        "incorrect dominance under time-varying price and carbon",
+        "clean-room reimplementation drift",
+        "new SOC or time discretization would require approval"
+      ],
+      "minimum_isolated_probe": "Hand-enumerated micro routes plus dense-grid oracle; verify nonlinear duration, SOC, feasibility, station insertion, and objective equality.",
+      "probe_status": "NOT_RUN",
+      "approval_status": "AWAITING_USER_APPROVAL"
+    },
+    {
+      "candidate_id": "C3-02",
+      "name": "RCSP_CHARGING_ORACLE_CSPY",
+      "kind": "open_source_component_candidate",
+      "priority": 2,
+      "mechanism": "Represent charging opportunities in a directed time-SOC graph and solve a constrained shortest path with custom resource extension functions.",
+      "primary_sources": ["S08", "S09"],
+      "official_repository": "https://github.com/torressa/cspy",
+      "license": "MIT",
+      "verified_commit": "dd83e885b6a5c99f993c9f88c35599a6919dcc66",
+      "proposed_isolated_location": "baselines/algorithm_exploration/carbon_nonlinear_charging/c3_02_cspy_oracle/",
+      "formal_integration_point_if_approved": "subprocess or dependency behind a versioned charging-oracle interface",
+      "difference_from_standard_alns": "Supplies an exact or heuristic resource-feasible charging subproblem rather than another destroy-repair weight.",
+      "expected_benefit_hypothesis": "A lower-friction Python prototype for validating time, SOC, price, carbon, and availability resource semantics.",
+      "complexity": "Label-count dependent and potentially exponential; Python graph construction may dominate small-route runtime.",
+      "budget_accounting": "Oracle calls, generated labels, dominated labels, runtime, and complete solution evaluations must be logged separately.",
+      "failure_risks": [
+        "repository code is generic and last pushed in 2024",
+        "custom nonlinear resource may violate bidirectional assumptions",
+        "time-expanded graph size"
+      ],
+      "minimum_isolated_probe": "Budget-free functional probe only; compare with exhaustive enumeration on tiny fixed routes.",
+      "probe_status": "NOT_RUN",
+      "approval_status": "AWAITING_USER_APPROVAL"
+    },
+    {
+      "candidate_id": "C3-03",
+      "name": "RCSP_CHARGING_ORACLE_PATHWYSE",
+      "kind": "open_source_high_performance_backup",
+      "priority": 3,
+      "mechanism": "Use PathWyse bidirectional dynamic programming, customizable nonlinear resources, dominance, DSSR/NG-path, and join procedures for a charging RCSP.",
+      "primary_sources": ["S10", "S11"],
+      "official_repository": "https://github.com/pathwyse/pathwyse",
+      "license": "GPL-3.0-or-later",
+      "verified_commit": "e3bf8477de8ff7a9a777a8c980b81330f5d1ec6f",
+      "proposed_isolated_location": "external isolated process only until license approval",
+      "formal_integration_point_if_approved": "to be decided only after GPL review",
+      "difference_from_standard_alns": "High-performance extensible labeling engine; it is infrastructure, not by itself a paper innovation.",
+      "expected_benefit_hypothesis": "Outperform the cspy prototype if charging labels become the runtime bottleneck.",
+      "complexity": "Label-count dependent; C++ implementation can reduce constant factors.",
+      "budget_accounting": "Same accounting as C3-02 with subprocess startup and serialization time included.",
+      "failure_risks": [
+        "GPL obligations",
+        "enterprise/open-source feature boundary",
+        "integration complexity",
+        "performance on generic RCSP may not transfer"
+      ],
+      "minimum_isolated_probe": "Only after explicit license and prototype approval; use the same tiny cases as C3-02.",
+      "probe_status": "NOT_RUN_LICENSE_APPROVAL_REQUIRED",
+      "approval_status": "AWAITING_USER_APPROVAL"
+    },
+    {
+      "candidate_id": "C3-04",
+      "name": "ROLLING_CARBON_AWARE_CHARGING_SCHEDULER",
+      "kind": "literature_reimplementation_with_unlicensed_author_code_as_reference",
+      "priority": 4,
+      "mechanism": "At each rolling step, optimize active EV charging power over a forecast horizon under arrival/departure, SOC, per-EV power, and site transformer constraints.",
+      "primary_sources": ["S06", "S07"],
+      "official_repository": "https://github.com/kaicheng0824/carbon_aware_ev_charging",
+      "license": "NO_LICENSE_DO_NOT_COPY",
+      "verified_commit": "8f990a295039a073bf5aba4df2fdca8b697de0cd",
+      "proposed_isolated_location": "clean-room implementation only after approval",
+      "formal_integration_point_if_approved": "E4 fixed-route scheduler and E7 rolling charging subproblem",
+      "difference_from_standard_alns": "Adds a rolling charging controller and matched carbon/TOU/EDF/equal-share baselines; it does not search routes.",
+      "expected_benefit_hypothesis": "Make carbon timing identifiable under dynamic arrivals and shared transformer limits.",
+      "complexity": "Repeated finite-horizon optimization; grows with active vehicles, horizon slots, and shared constraints.",
+      "budget_accounting": "Record every rolling optimization call and wall time; ALNS complete-solution budget remains separate.",
+      "failure_risks": [
+        "paper assumes linear SOC",
+        "US five-minute data do not match China thirty-minute inputs",
+        "forecast error may erase benefit",
+        "author code cannot be copied"
+      ],
+      "minimum_isolated_probe": "Clean-room formulation matched against equations and small analytical cases; no author-code import.",
+      "probe_status": "NOT_RUN",
+      "approval_status": "AWAITING_USER_APPROVAL"
+    },
+    {
+      "candidate_id": "C3-05",
+      "name": "TOU_VNS_TS_WITH_CHARGING_REOPTIMIZATION",
+      "kind": "literature_clean_room_reimplementation",
+      "priority": 5,
+      "mechanism": "Use cyclic exchange diversification plus 2-opt-star, exchange, relocate, and station insert/remove, and re-optimize charge timing after route changes.",
+      "primary_sources": ["S04"],
+      "official_repository": null,
+      "license": "NO_REUSABLE_IMPLEMENTATION_LICENSE_FOUND",
+      "proposed_isolated_location": "baselines/algorithm_exploration/carbon_nonlinear_charging/c3_05_tou_vns_ts/",
+      "formal_integration_point_if_approved": "new ALNS neighborhoods calling the common charging oracle",
+      "difference_from_standard_alns": "Couples route neighborhoods to time-of-use charging reoptimization instead of adding a generic local-search phase.",
+      "expected_benefit_hypothesis": "Improve exploration when route order changes charging-window and electricity-price opportunities.",
+      "complexity": "Neighborhood size plus per-move charging subproblem cost.",
+      "budget_accounting": "Each complete neighboring solution scored for selection consumes one evaluation; route-delta and charging-oracle calls remain visible.",
+      "failure_risks": [
+        "V2G semantics must be removed",
+        "may duplicate existing relocate/exchange operators",
+        "oracle cost can starve route exploration"
+      ],
+      "minimum_isolated_probe": "Operator activity and non-duplication audit before any performance probe.",
+      "probe_status": "NOT_RUN",
+      "approval_status": "AWAITING_USER_APPROVAL"
+    },
+    {
+      "candidate_id": "C3-06",
+      "name": "DEPOT_SHARED_CAPACITY_SCHEDULING_REFERENCE",
+      "kind": "open_source_reference_not_core_dependency",
+      "priority": 6,
+      "mechanism": "Schedule multiple EVs in fixed time slots under per-vehicle and hierarchical site power limits with time-of-use prices.",
+      "primary_sources": ["S12", "S13"],
+      "official_repository": "https://github.com/SAP-archive/emobility-smart-charging",
+      "license": "Apache-2.0",
+      "verified_commit": "feab7c3fba4689e9b166c2bb45635e8614046262",
+      "proposed_isolated_location": "external archived reference or test fixture",
+      "formal_integration_point_if_approved": "none preferred; independently implement a small common scheduling oracle",
+      "difference_from_standard_alns": "Models depot charger/transformer contention explicitly; does not search routes.",
+      "expected_benefit_hypothesis": "Provide a reference for E5 shared charging capacity and baseline schedules.",
+      "complexity": "Time slots multiplied by vehicles and infrastructure constraints.",
+      "budget_accounting": "Reference calls and wall time are logged but do not silently alter ALNS evaluation count.",
+      "failure_risks": [
+        "repository archived on 2026-07-16",
+        "Java service integration burden",
+        "no nonlinear charging or carbon objective"
+      ],
+      "minimum_isolated_probe": "Read-only sample replay or independent formula cross-check after approval.",
+      "probe_status": "NOT_RUN",
+      "approval_status": "AWAITING_USER_APPROVAL"
+    },
+    {
+      "candidate_id": "C3-R01",
+      "name": "DUAL_ORACLE_CARBON_PRICE_CONFLICT_CHARGING",
+      "kind": "self_designed_research_candidate",
+      "priority": 2,
+      "mechanism": "Solve matched price-only and carbon-only fixed-route charging oracles, derive route-level conflict and slack scores, destroy high-conflict charging structures, and repair with a joint formal-objective oracle.",
+      "primary_sources": ["S01", "S02", "S03", "S04", "S06", "S08", "S10"],
+      "official_repository": null,
+      "license": "PROJECT_ORIGINAL_IF_IMPLEMENTED_CLEAN_ROOM",
+      "proposed_isolated_location": "baselines/algorithm_exploration/carbon_nonlinear_charging/c3_r01_dual_oracle/",
+      "formal_integration_point_if_approved": "dedicated carbon-price conflict destroy/repair operator and fixed-route charging oracle",
+      "difference_from_standard_alns": "Uses disagreement between two matched charging oracles as a problem-specific destroy signal; not a parameter retune.",
+      "expected_benefit_hypothesis": "Focus scarce evaluations on routes where time-varying price and carbon create actionable conflict while preserving nonlinear feasibility.",
+      "falsification_tests": [
+        "operator activity must be nonzero on exposure-qualified cases",
+        "conflict ranking must outperform random charging-route selection under the same complete-evaluation budget",
+        "improvement must survive the carbon-blind paired control",
+        "wall-time cost must not eliminate route-search gains"
+      ],
+      "complexity": "Two diagnostic oracles per selected route plus one joint repair oracle; caching is essential.",
+      "budget_accounting": "All oracle calls, cache hits, labels, generated complete candidates, accepted candidates, full evaluations, and wall time are separate counters.",
+      "failure_risks": [
+        "conflict score may be redundant with time-window slack",
+        "multi-objective joint oracle semantics require approval",
+        "too many oracle calls",
+        "carbon benefit may remain small in total operational emissions"
+      ],
+      "minimum_isolated_probe": "Synthetic micro cases with known price-carbon agreement and conflict, followed by a result-blind China development subset only after approval.",
+      "probe_status": "NOT_RUN",
+      "approval_status": "AWAITING_USER_APPROVAL"
+    }
+  ],
+  "carbon_identification_contract": {
+    "mechanism_level": {
+      "held_constant": [
+        "route sequence",
+        "customer service",
+        "vehicle",
+        "candidate charging stations",
+        "total required charging energy",
+        "initial and terminal SOC requirements",
+        "nonlinear charging curve",
+        "charger and transformer capacity",
+        "time discretization",
+        "solver and stopping rule"
+      ],
+      "arms": {
+        "COST_ONLY_BLIND": "reads time-of-use price and sets all slot carbon coefficients to zero",
+        "CARBON_ONLY": "reads carbon intensity and sets all slot electricity-price coefficients to zero",
+        "JOINT_COST_CARBON": "reads both signals under a separately approved formal objective"
+      },
+      "identified_effect": "paired JOINT_COST_CARBON minus COST_ONLY_BLIND"
+    },
+    "algorithm_level": {
+      "held_constant": [
+        "formal full-solution objective and evaluator",
+        "initial solution",
+        "random seed",
+        "complete-evaluation budget",
+        "non-carbon operator pool",
+        "acceptance rule",
+        "final independent evaluator"
+      ],
+      "arms": {
+        "CARBON_OPERATOR_OFF": "carbon-guided conflict destroy and repair absent",
+        "CARBON_OPERATOR_ON": "carbon-guided conflict destroy and repair present"
+      },
+      "identified_effect": "paired same-objective operator-on minus operator-off"
+    },
+    "dynamic_e7_blind_arm": "The carbon-blind arm must retain the same rolling mechanism, state inheritance, cooperation, fairness, nonlinear physics, price signal, oracle class, and budget; only future carbon information is hidden from scheduling and search guidance, while final settlement uses the same realized carbon profile."
+  },
+  "excluded_as_algorithm_candidates": [
+    {
+      "source_id": "S14",
+      "name": "Carbon Aware SDK",
+      "reason": "Useful carbon-data API, not a vehicle-routing or charging-optimization algorithm."
+    }
+  ]
+}

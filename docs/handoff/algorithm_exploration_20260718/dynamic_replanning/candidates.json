@@ -1,0 +1,299 @@
+{
+  "schema_version": "1.0",
+  "topic": "E7 dynamic rolling replanning algorithm exploration",
+  "governance_authorization": "EA-001",
+  "status": "EXPLORATION_ONLY_AWAITING_USER_APPROVAL",
+  "formal_search_allowed": false,
+  "e7_intermediate_results_read": false,
+  "e7_protected_files_modified": false,
+  "formal_solver_modified": false,
+  "performance_claim_allowed": false,
+  "research_cycles": {
+    "cycle_1": "dynamic and online VRP, rolling horizon, route freezing, regret and ejection insertion, route stability and dynamic ALNS literature and implementation landscape",
+    "cycle_2": "official paper, source code, license, operator API, response-time semantics and frozen E7 public-contract adaptation audit"
+  },
+  "candidates": [
+    {
+      "candidate_id": "DYN-C1",
+      "name_zh": "当前状态伪车场与时间窗兼容动态ALNS",
+      "origin_type": "LITERATURE_METHOD",
+      "approval_state": "AWAITING_USER_APPROVAL_FOR_ISOLATED_PROTOTYPE",
+      "target_mechanisms": [
+        "rolling horizon",
+        "live vehicle state",
+        "response time",
+        "multi-depot responsibility"
+      ],
+      "core_idea": "At each event, encode each active vehicle current state as a vehicle-specific start or pseudo-depot, preserve frozen commitments, and use forward/backward time-window labels for fast insertion-position screening.",
+      "evidence_source_ids": [
+        "S03",
+        "S07"
+      ],
+      "open_source_status": "NO_VERIFIED_OFFICIAL_CODE",
+      "license": "paper methods require clean-room reimplementation",
+      "verified_version": "DOI 10.1016/j.cie.2024.110122",
+      "standard_alns_difference": "The current state is part of the solution representation and insertion feasibility uses cached temporal labels instead of full route recomputation for every position.",
+      "expected_benefit_hypothesis": "More legal insertion candidates can be screened per second and stage latency can fall without changing independent feasibility outcomes.",
+      "complexity": "The cited O(1) result concerns a single insertion-position feasibility update after preprocessing; total enumeration remains dependent on unserved customers, vehicles, routes and positions.",
+      "budget_accounting": "Label checks are repair-delta diagnostics; each complete candidate solution sent to the ReSETP evaluator must count once. No performance comparison before G0 closure.",
+      "e7_adaptation": "Current vehicle position becomes the route-specific start; onboard orders remain vehicle-bound; frozen prefixes are excluded from destroy and repair.",
+      "failure_risks": [
+        "label semantics may not cover SOC, shared charging or nonlinear charging",
+        "paper-only implementation risk",
+        "pseudo-depot conversion may lose physical vehicle identity if serialized incorrectly"
+      ],
+      "isolation_probe": {
+        "status": "SOURCE_AND_API_DESIGN_ONLY",
+        "next_probe_if_approved": "state serialization round-trip plus label-vs-full-check microinstances at budgets 0,1,2,5"
+      },
+      "falsification": "Reject if any label-approved insertion fails independent full feasibility, or if legal-candidate throughput and stage latency do not improve under equal complete-evaluation accounting."
+    },
+    {
+      "candidate_id": "DYN-C2",
+      "name_zh": "路线稳定双目标pBiALNS",
+      "origin_type": "LITERATURE_METHOD",
+      "approval_state": "AWAITING_USER_APPROVAL_FOR_ISOLATED_PROTOTYPE",
+      "target_mechanisms": [
+        "route stability",
+        "rolling replanning",
+        "driver plan disruption"
+      ],
+      "core_idea": "Optimize operating cost together with route-change cost, maintaining non-dominated alternatives; audit route changes using edit distance and cheaper decomposed churn metrics.",
+      "evidence_source_ids": [
+        "S04",
+        "S05",
+        "S08"
+      ],
+      "open_source_status": "NO_VERIFIED_OFFICIAL_CODE",
+      "license": "paper methods require clean-room reimplementation",
+      "verified_version": "HAL-00674440 and DOI 10.1016/j.dss.2012.06.007",
+      "standard_alns_difference": "Route stability is an explicit objective or acceptance dimension rather than an incidental consequence of warm starting.",
+      "expected_benefit_hypothesis": "Future-route churn should fall while the cost, acceptance and feasibility trade-off remains observable.",
+      "complexity": "Full route-sequence Levenshtein distance is quadratic in paired route lengths; customer vehicle-change count and changed-future-edge count can be recomputed in linear time and retained as primary online metrics.",
+      "budget_accounting": "Stability metric computation is evaluation overhead and must be reported separately; each complete candidate remains one complete evaluation.",
+      "e7_adaptation": "Executed prefixes are immutable and excluded from the change metric; only future suffix changes count. Route matching must be by physical vehicle identity.",
+      "failure_risks": [
+        "apparent stability could be achieved by rejecting new orders",
+        "route matching ambiguity if physical identity is lost",
+        "Pareto archive overhead may violate response-time requirements"
+      ],
+      "isolation_probe": {
+        "status": "PAPER_METHOD_AUDITED_NO_CODE_RUN",
+        "next_probe_if_approved": "independent churn-metric recomputation on synthetic route pairs, then single-thread archive overhead probe"
+      },
+      "falsification": "Reject if stability metrics do not decrease against the same search without stability, or if any decrease is explained only by lower request acceptance or frozen-prefix violation."
+    },
+    {
+      "candidate_id": "DYN-C3",
+      "name_zh": "有界regret-ejection在线重插入",
+      "origin_type": "LITERATURE_COMPOSITE_METHOD",
+      "approval_state": "AWAITING_USER_APPROVAL_FOR_ISOLATED_PROTOTYPE",
+      "target_mechanisms": [
+        "new request repair",
+        "demand-change repair",
+        "response time",
+        "route feasibility"
+      ],
+      "core_idea": "Attempt regret-2 or regret-3 insertion first, then use a strictly bounded ejection chain to displace a small number of unfrozen customers when direct insertion fails.",
+      "evidence_source_ids": [
+        "S01",
+        "S06",
+        "S07",
+        "S15"
+      ],
+      "open_source_status": "NO_VERIFIED_MATCHING_DYNAMIC_IMPLEMENTATION",
+      "license": "paper methods require clean-room reimplementation",
+      "verified_version": "DOIs 10.1287/trsc.1050.0135, 10.1016/j.jocs.2020.101199 and 10.1287/trsc.2018.0837",
+      "standard_alns_difference": "The repair operator is event-triggered and has an explicit bounded ejection fallback, rather than generic greedy reinsertion.",
+      "expected_benefit_hypothesis": "Compared with direct insertion, feasible recovery rate should rise or emergency single-order trips should fall under the same response limit.",
+      "complexity": "Regret insertion enumerates feasible positions; ejection search grows rapidly with branching and depth, so both maximum depth and candidates per level must be frozen before any result-bearing run.",
+      "budget_accounting": "Fast position tests do not count as complete evaluations; every complete ejection-chain solution evaluated by the full objective counts once and cannot be hidden inside one outer operator call.",
+      "e7_adaptation": "Only unfrozen and not-yet-committed customers may be ejected; onboard orders, current service, started charging and locked suffix commitments remain immutable.",
+      "failure_risks": [
+        "branching explosion",
+        "hidden complete evaluations inside the chain",
+        "dial-a-ride precedence assumptions may not transfer",
+        "frozen-customer contamination"
+      ],
+      "isolation_probe": {
+        "status": "ALGORITHM_DETAIL_AUDITED_NO_RESETP_PROTOTYPE",
+        "next_probe_if_approved": "hand-checkable event microinstances with maximum depth 0,1,2 and full evaluation counter assertions"
+      },
+      "falsification": "Reject if feasible repair rate does not improve, if complete evaluation counts exceed the frozen bound, or if any accepted chain touches a frozen action."
+    },
+    {
+      "candidate_id": "DYN-C4",
+      "name_zh": "OR-Tools冻结前缀可行修复器",
+      "origin_type": "OPEN_SOURCE_ENGINE_CANDIDATE",
+      "approval_state": "AWAITING_USER_APPROVAL_FOR_ISOLATED_PROTOTYPE",
+      "target_mechanisms": [
+        "route freezing",
+        "warm start",
+        "emergency feasibility",
+        "response time"
+      ],
+      "core_idea": "Use partial-route locks for already driven prefixes and solve or improve the remaining assignment under a strict time limit, then independently recalculate in ReSETP.",
+      "evidence_source_ids": [
+        "S13"
+      ],
+      "open_source_status": "OFFICIAL_CODE_VERIFIED",
+      "license": "Apache-2.0",
+      "verified_version": "stable commit 98c165af62df62b3056c2ee0fca66b24e79097cb",
+      "standard_alns_difference": "Constraint-programming routing search with explicit partial-route locks rather than destroy-repair operators.",
+      "expected_benefit_hypothesis": "A frozen-consistent feasible suffix may be produced rapidly enough to serve as an emergency repair oracle or external comparator.",
+      "complexity": "Heuristic CP routing remains NP-hard; runtime is controlled by time, solution and LNS sublimits rather than a polynomial guarantee.",
+      "budget_accounting": "External-engine wall time, solution count and independent ReSETP complete evaluations must be reported separately; it cannot be mixed into the ALNS complete-evaluation budget without a new approved comparison contract.",
+      "e7_adaptation": "Apply locks to executed prefixes and physical-vehicle assignments; convert only the unfrozen suffix. ReSETP remains the final feasibility and objective authority.",
+      "failure_risks": [
+        "model translation may omit nonlinear charging, shared chargers, fairness or carbon",
+        "interface conversion overhead",
+        "external-engine budget not directly comparable to ALNS evaluations"
+      ],
+      "isolation_probe": {
+        "status": "OFFICIAL_HEADER_API_AND_LICENSE_VERIFIED",
+        "next_probe_if_approved": "minimal two-vehicle lock-preservation test with independent route and state recalc"
+      },
+      "falsification": "Reject if any locked prefix or vehicle identity changes, if independent ReSETP recalc fails, or if conversion plus solve latency is not competitive with the existing emergency repair path."
+    },
+    {
+      "candidate_id": "DYN-C5",
+      "name_zh": "开源状态与算子供体组合",
+      "origin_type": "OPEN_SOURCE_DONOR_STACK",
+      "approval_state": "AWAITING_USER_APPROVAL_FOR_COMPONENT_PROBES",
+      "target_mechanisms": [
+        "event-state interface",
+        "warm-start comparator",
+        "EVRPTW charging neighborhoods",
+        "operator selection"
+      ],
+      "core_idea": "Use dvrpsim for state-interface checks, PyVRP as a fast warm-start suffix comparator, RoutingBlocks as an EVRPTW station-operator donor, and N-Wouda/ALNS only as a reference framework.",
+      "evidence_source_ids": [
+        "S09",
+        "S10",
+        "S11",
+        "S12"
+      ],
+      "open_source_status": "COMPONENTS_VERIFIED_WITH_LIMITATIONS",
+      "license": "dvrpsim MIT; PyVRP MIT; ALNS MIT; RoutingBlocks source headers MIT but no root LICENSE file",
+      "verified_version": "dvrpsim 29f4cd8f; PyVRP 58592ec7; RoutingBlocks 2d2ee06c; ALNS 5ef1fd11",
+      "standard_alns_difference": "This is not a new algorithm; it is a controlled set of implementation donors and comparators.",
+      "expected_benefit_hypothesis": "Independent donor implementations can reduce reimplementation risk and expose whether a proposed ReSETP operator is genuinely active and fast.",
+      "complexity": "Depends on the selected donor; cross-language or data-model conversion can dominate small event stages.",
+      "budget_accounting": "No donor performance result can be mixed with the internal ALNS budget. Wall-clock comparators require a separately approved contract.",
+      "e7_adaptation": "No direct integration is approved. Every component must remain in an isolated directory and return candidates for independent ReSETP checking.",
+      "failure_risks": [
+        "dependency sprawl",
+        "semantic mismatch",
+        "RoutingBlocks repository-level license ambiguity",
+        "warm start mistaken for hard freezing"
+      ],
+      "isolation_probe": {
+        "status": "REPOSITORIES_CLONED_TO_TEMP_AND_APIS_INSPECTED",
+        "next_probe_if_approved": "one component at a time; no combined dependency installation"
+      },
+      "falsification": "Reject a donor if its semantic adapter is larger than the reusable operator, if it cannot preserve physical state, or if its result cannot be independently checked."
+    },
+    {
+      "candidate_id": "DYN-S1",
+      "name_zh": "事件条件稳定—责任—碳联合ALNS",
+      "origin_type": "SELF_DESIGNED_RESEARCH_CANDIDATE",
+      "approval_state": "AWAITING_USER_APPROVAL_FOR_DESIGN_PROTOTYPE",
+      "target_mechanisms": [
+        "event-specific neighborhoods",
+        "route stability",
+        "response time",
+        "responsibility reallocation",
+        "carbon-aware charging"
+      ],
+      "core_idea": "Map each event type to an eligible destroy set, repair with stability-aware regret and bounded ejection, reassign only uncommitted multi-depot-feasible customers, and invoke fixed-route carbon scheduling only for movable charging actions.",
+      "evidence_source_ids": [
+        "S01",
+        "S03",
+        "S04",
+        "S06",
+        "S07",
+        "S09",
+        "S11",
+        "S13",
+        "S15"
+      ],
+      "open_source_status": "NOT_IMPLEMENTED",
+      "license": "new ReSETP code if approved; borrowed ideas require attribution and clean-room implementation",
+      "verified_version": "design candidate v0",
+      "standard_alns_difference": "Event type controls neighborhood eligibility; frozen boundaries are part of operator definitions; responsibility and carbon are explicit repair layers rather than passive scalar weights.",
+      "expected_benefit_hypothesis": "The full design should recover more dynamic events with less route churn, expose useful cross-depot reassignment, and lower charging emissions without violating the response budget.",
+      "complexity": "Candidate screening times insertion enumeration plus bounded ejection branching plus fixed-route charging-slot optimization; all branches require explicit caps and cached labels.",
+      "budget_accounting": "Only complete candidate solutions consume the complete-evaluation budget; repair-delta, label and charging-subproblem calls receive separate counters. G0 must pass before performance claims.",
+      "e7_adaptation": "New, cancel and demand-change events have different eligible neighborhoods; physical vehicle state and frozen actions are immutable; carbon scheduling is causal and may move only uncommitted charging.",
+      "failure_risks": [
+        "too many interacting layers",
+        "latency overhead",
+        "inactive responsibility or carbon layers",
+        "double counting complete evaluations",
+        "stability objective masking poor service"
+      ],
+      "isolation_probe": {
+        "status": "DESIGN_ONLY",
+        "next_probe_if_approved": "four separate micro-probes before any combined prototype"
+      },
+      "falsification": "The full candidate fails if any layer is inactive on its preregistered exposure set, if full evaluation accounting is not exact, if route stability improves only through lower service, or if carbon changes without an auditable charging-action move.",
+      "proposed_ablations": [
+        {
+          "ablation_id": "A-STABILITY",
+          "change": "disable route-change cost and stability acceptance only",
+          "primary_measures": [
+            "future-edge churn",
+            "customer vehicle changes",
+            "route edit distance",
+            "accepted requests",
+            "system cost"
+          ],
+          "falsifiable_expectation": "stability-on reduces churn without using lower request acceptance as the explanation"
+        },
+        {
+          "ablation_id": "A-RESPONSE",
+          "change": "disable temporal label cache and candidate pruning only",
+          "primary_measures": [
+            "legal candidates per second",
+            "complete evaluations",
+            "stage wall time",
+            "independent feasibility agreement"
+          ],
+          "falsifiable_expectation": "fast layer improves legal-candidate throughput and stage latency with identical independent feasibility"
+        },
+        {
+          "ablation_id": "A-RESPONSIBILITY",
+          "change": "forbid cross-depot assignment of all uncommitted customers",
+          "primary_measures": [
+            "multi-depot-feasible dynamic customers",
+            "cross-depot absorption",
+            "system cost",
+            "member benefit constraints",
+            "depot load"
+          ],
+          "falsifiable_expectation": "responsibility layer is active and improves at least one preregistered operational outcome without violating member constraints"
+        },
+        {
+          "ablation_id": "A-CARBON",
+          "change": "keep identical route and responsibility repair but replace carbon-aware fixed-route charging reschedule with carbon-blind timing",
+          "primary_measures": [
+            "moved charging actions",
+            "moved energy",
+            "charging emissions",
+            "operational emissions",
+            "electricity cost",
+            "stage latency"
+          ],
+          "falsifiable_expectation": "carbon layer moves auditable charging energy and lowers charging emissions; no moved action means no mechanism claim"
+        }
+      ]
+    }
+  ],
+  "recommended_next_step_if_user_approves": "Prototype DYN-C1 state encoding, DYN-C4 lock preservation, DYN-C3 bounded ejection accounting and DYN-C2 stability metrics as four independent micro-probes before combining DYN-S1.",
+  "explicit_non_decisions": [
+    "No candidate is selected for the formal ALNS.",
+    "No model, unit, objective, parameter, event stream or experiment contract is changed.",
+    "No formal E7 fifth arm or new statistical contract is activated.",
+    "No performance superiority is claimed."
+  ]
+}

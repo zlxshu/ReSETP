@@ -1,0 +1,204 @@
+{
+  "authority": "EA-001",
+  "budget_contract": {
+    "finite_budget_dominance": false,
+    "meaning": "maximum fully replayed complete plan count",
+    "reason": "preserve identical deterministic candidate prefixes for pointwise comparison",
+    "values": [
+      0,
+      1,
+      2,
+      5
+    ]
+  },
+  "case_contract": {
+    "case_id": "ARTIFICIAL_CONFLICT_TWO_CHARGERS",
+    "comparison_tolerance": 1e-09,
+    "curve": {
+      "cumulative_seconds": [
+        0.0,
+        720.0,
+        1440.0
+      ],
+      "energy_kwh": [
+        0.0,
+        6.0,
+        10.0
+      ]
+    },
+    "initial_soc_kwh": 6.0,
+    "initial_time_seconds": 0.0,
+    "legs": [
+      {
+        "charge_after_service": {
+          "actions": [
+            {
+              "target_soc_kwh": 6.0,
+              "wait_seconds": 0.0
+            },
+            {
+              "target_soc_kwh": 6.0,
+              "wait_seconds": 900.0
+            },
+            {
+              "target_soc_kwh": 8.0,
+              "wait_seconds": 0.0
+            },
+            {
+              "target_soc_kwh": 8.0,
+              "wait_seconds": 900.0
+            }
+          ],
+          "latest_finish_seconds": 3600.0
+        },
+        "drive_energy_kwh": 3.0,
+        "name": "customer_1",
+        "service_seconds": 300.0,
+        "service_window": [
+          600.0,
+          1200.0
+        ],
+        "travel_seconds": 600.0
+      },
+      {
+        "charge_after_service": {
+          "actions": [
+            {
+              "target_soc_kwh": 7.0,
+              "wait_seconds": 0.0
+            },
+            {
+              "target_soc_kwh": 7.0,
+              "wait_seconds": 900.0
+            },
+            {
+              "target_soc_kwh": 9.0,
+              "wait_seconds": 0.0
+            },
+            {
+              "target_soc_kwh": 9.0,
+              "wait_seconds": 900.0
+            }
+          ],
+          "latest_finish_seconds": 7200.0
+        },
+        "drive_energy_kwh": 4.0,
+        "name": "customer_2",
+        "service_seconds": 300.0,
+        "service_window": [
+          2100.0,
+          5400.0
+        ],
+        "travel_seconds": 900.0
+      },
+      {
+        "charge_after_service": null,
+        "drive_energy_kwh": 6.0,
+        "name": "terminal",
+        "service_seconds": 0.0,
+        "service_window": [
+          0.0,
+          12600.0
+        ],
+        "travel_seconds": 1200.0
+      }
+    ],
+    "objective": {
+      "carbon": 0.25,
+      "price": 1.0
+    },
+    "signals": {
+      "boundaries_seconds": [
+        0.0,
+        900.0,
+        1800.0,
+        2700.0,
+        3600.0,
+        4500.0,
+        5400.0,
+        6300.0,
+        7200.0,
+        8100.0,
+        9000.0,
+        9900.0,
+        10800.0,
+        11700.0,
+        12600.0
+      ],
+      "carbon_per_kwh": [
+        0.2,
+        0.2,
+        1.0,
+        1.0,
+        0.3,
+        0.3,
+        1.1,
+        1.1,
+        0.4,
+        0.4,
+        0.9,
+        0.9,
+        0.5,
+        0.5
+      ],
+      "price_per_kwh": [
+        1.0,
+        1.0,
+        0.4,
+        0.4,
+        1.2,
+        1.2,
+        0.5,
+        0.5,
+        1.1,
+        1.1,
+        0.6,
+        0.6,
+        0.9,
+        0.9
+      ]
+    },
+    "terminal_min_soc_kwh": 1.0
+  },
+  "created_at": "2026-07-18T03:06:42.132867+08:00",
+  "cspy": {
+    "acceptance_result_source": "previously_sealed_live_probe",
+    "comparison_boundary": "finite graph of clean-room replayed feasible plans; no native nonlinear REF claim",
+    "distribution_version": "0.1.2",
+    "environment_retention": "MUST_BE_DELETED_BEFORE_FINAL_HASHING",
+    "install_command_used_in_disposable_repo_local_environment": "python3 -m venv .venv-cspy && .venv-cspy/bin/python -m pip install cspy==0.1.2",
+    "license": "MIT",
+    "module_version": "0.1.0",
+    "version_discrepancy_observed": "distribution 0.1.2 reports cspy.__version__ 0.1.0"
+  },
+  "e7_read_or_modified": false,
+  "explicit_non_decisions": [
+    "no formal carbon-price weight",
+    "no formal time discretization",
+    "no formal SOC discretization",
+    "no China-instance parameter",
+    "no algorithm performance claim"
+  ],
+  "fixture_nature": "ARTIFICIAL_TEST_FIXTURE_NOT_FORMAL_PARAMETER",
+  "formal_search": false,
+  "formal_solver_imported": false,
+  "formal_solver_modified": false,
+  "model_changed": false,
+  "parameter_or_contract_changed": false,
+  "prototype_id": "carbon_nonlinear_charging_20260718",
+  "python": {
+    "implementation": "CPython",
+    "platform": "macOS-15.7.5-arm64-arm-64bit-Mach-O",
+    "version": "3.13.9"
+  },
+  "schema_version": "resetp.algorithm-prototype.metadata.v1",
+  "scope": "isolated artificial micro-route functionality, activity, and accounting only",
+  "source_basis": [
+    "Montoya et al. 2017 DOI 10.1016/j.trb.2017.02.004",
+    "Froger et al. 2019 DOI 10.1016/j.cor.2018.12.013",
+    "Liang et al. 2021 DOI 10.48550/arXiv.2108.01273",
+    "cspy JOSS DOI 10.21105/joss.01655 and MIT repository"
+  ],
+  "unit_changed": false,
+  "winner_modified": false
+}

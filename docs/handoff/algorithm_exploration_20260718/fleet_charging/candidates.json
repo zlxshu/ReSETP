@@ -1,0 +1,276 @@
+{
+  "schema_version": "resetp.algorithm_exploration.fleet_charging.v1",
+  "created_at": "2026-07-18T02:30:00+08:00",
+  "theme": "混合车队、车型选择、SOC与非线性补能联合机制",
+  "authorization": "EA-001",
+  "status": "EXPLORATION_ONLY_AWAITING_USER_APPROVAL",
+  "formal_search_allowed": false,
+  "protected_files_modified": false,
+  "candidates": [
+    {
+      "candidate_id": "FC-C01",
+      "name": "Hiermann Joint Resize and RelocateAndResize",
+      "candidate_type": "LITERATURE_REIMPLEMENTATION",
+      "source_evidence": ["FC-S01"],
+      "problem_mechanism": "客户跨路线移动时同步重选受影响路线车型，并在固定客户顺序后重排充电站。",
+      "difference_from_standard_alns": "标准ALNS的插入通常只选择路线和位置；本候选把车辆类型作为ASSIGN属性，增加保持客户序列的Resize，以及客户移动与两条路线车型重选耦合的RelocateAndResize。",
+      "core_operators": [
+        "Resize",
+        "RelocateAndResize",
+        "vehicle-type-aware sequential insertion",
+        "vehicle-type-aware parallel regret insertion",
+        "fixed-order charging-station labeling"
+      ],
+      "complexity": {
+        "same_vehicle_type_bounded_move": "文献利用预处理序列实现O(1)增量评价。",
+        "vehicle_type_change": "需要按新车型重算受影响序列，文献说明为对节点数线性。",
+        "nonlinear_extension": "原方法不含部分非线性补能；若接精确FRVCP标签，最坏复杂度转为指数。"
+      },
+      "portability": "MEDIUM",
+      "license": {
+        "code": "NO_OFFICIAL_CODE_FOUND",
+        "paper": "publisher copyright",
+        "allowed_action": "可依据论文独立重实现，不可声称移植作者代码。"
+      },
+      "minimum_isolated_probe": {
+        "scope": "独立目录中的两路线、两车型、一个SOC紧约束小例。",
+        "arms": ["existing_vehicle_type_swap", "Resize", "RelocateAndResize"],
+        "checks": [
+          "车型确实变化且客户集合不变",
+          "载重、时间窗和SOC独立复算为零违规",
+          "预算0/1/2/5不越界",
+          "操作至少在一个预置小例中活跃"
+        ],
+        "performance_claim_allowed": false
+      },
+      "budget_accounting": {
+        "complete_candidate_evaluation": "每次形成并评分一个完整解记1次，超限前检查。",
+        "route_recompute": "另记route_recompute_calls和affected_nodes，不替代完整解计数。",
+        "repair_delta": "只作诊断计数，不得伪装成完整评价。"
+      },
+      "failure_risks": [
+        "原方法充满电且线性充电，直接照搬会与ReSETP非线性物理口径冲突。",
+        "车型切换可能造成频繁全路线重算和预算吞吐下降。",
+        "若车型经济参数本身使一类车辆支配，算子活跃也无法创造真实混合车队。"
+      ],
+      "recommendation": "APPROVE_PROTOTYPE_AFTER_E7_AND_G0",
+      "user_approval_status": "AWAITING_USER_APPROVAL"
+    },
+    {
+      "candidate_id": "FC-C02",
+      "name": "frvcpy/Froger Exact Nonlinear Fixed-Route Charging Oracle",
+      "candidate_type": "OPEN_SOURCE_COMPONENT",
+      "source_evidence": ["FC-S02", "FC-S03", "FC-S04", "FC-S05", "FC-S12"],
+      "problem_mechanism": "对给定客户访问顺序和车型，以分段线性SOC函数标签精确选择充电站、访问次数和部分充电量。",
+      "difference_from_standard_alns": "标准ALNS通常用贪心充电插入或完整解黑箱复算；本候选把充电决策作为可独立求解的资源约束最短路子问题，并给出最优固定路线充电计划。",
+      "core_operators": [
+        "SOC-function label extension",
+        "charging-breakpoint expansion",
+        "energy/time preprocessing bounds",
+        "label dominance",
+        "multiple charging-station visits between customer stops"
+      ],
+      "complexity": {
+        "worst_case": "FRVCP为NP-hard，标签数最坏指数增长。",
+        "reported_empirical": "Froger文献在29443条路线上的精确标签平均约1毫秒；frvcpy软件论文测试平均5.6毫秒。",
+        "probe": "出版示例在当前Python 3.13环境成功复现，但未把单次时间作为ReSETP性能证据。"
+      },
+      "portability": "HIGH_FOR_ISOLATED_ORACLE_MEDIUM_FOR_FULL_INTEGRATION",
+      "license": {
+        "code": "Apache-2.0",
+        "requirements": "保留许可证、版权和修改声明。",
+        "paper": "INFORMS software paper"
+      },
+      "minimum_isolated_probe": {
+        "scope": "复制一个不含正式实例的3客户、2站、2种充电技术小例，并由穷举断点计划交叉验证。",
+        "arms": ["current_greedy_charging_repair", "frvcpy_exact_oracle"],
+        "checks": [
+          "线性退化时与解析解一致",
+          "非线性断点时SOC和时间逐段一致",
+          "允许多站访问时不漏可行计划",
+          "故意不可行时返回不可行而非补能量",
+          "预算0/1/2/5和route_oracle_calls分账"
+        ],
+        "performance_claim_allowed": false
+      },
+      "budget_accounting": {
+        "route_oracle_calls": "每次标签求解单独计数并记录标签扩展数、支配删除数和耗时。",
+        "complete_candidate_evaluation": "只有把受影响路线装回完整解并调用统一评价器时才记完整评价1次。",
+        "cache": "缓存命中仍记route_oracle_cache_hit，但不得重复记完整评价；缓存键必须含客户序列、车型、初始SOC、曲线和时窗哈希。"
+      },
+      "failure_risks": [
+        "仓库维护停留在2021年，需自维护和充分回归。",
+        "原目标主要最小化路线持续时间，ReSETP还含人民币、电价、碳价和固定成本，适配器必须经建模审批。",
+        "充电站容量、枪数、场内排队和跨趟实体车SOC不在原包默认模型内。",
+        "大路线或大量候选站时标签可能爆炸。"
+      ],
+      "recommendation": "HIGHEST_PRIORITY_ISOLATED_PROTOTYPE",
+      "user_approval_status": "AWAITING_USER_APPROVAL"
+    },
+    {
+      "candidate_id": "FC-C03",
+      "name": "PyVRP Heterogeneous-Fleet Local-Search Kernel Reference",
+      "candidate_type": "OPEN_SOURCE_ENGINEERING_REFERENCE",
+      "source_evidence": ["FC-S06", "FC-S07", "FC-S13"],
+      "problem_mechanism": "提供异构车型、固定与变动成本、不同路网剖面和高性能交换/搬移/尾交换局部搜索的工程实现。",
+      "difference_from_standard_alns": "它不是ALNS破坏修复，而是带颗粒化邻域、缓存序列评价和扰动的高性能ILS局部搜索；可作为ReSETP联合邻域的数据结构与增量评价参照。",
+      "core_operators": [
+        "Exchange10/20/11/21/22",
+        "SwapTails",
+        "granular neighborhood",
+        "promising-client filtering",
+        "empty-route search across vehicle types"
+      ],
+      "complexity": {
+        "move_evaluation": "受支持约束使用缓存段评价，固定长度交换通常为常数级增量计算。",
+        "neighborhood": "颗粒化邻域将全对搜索缩到每客户固定邻居数，但整体迭代复杂度仍随实例与算子集增长。",
+        "soc_extension": "加入SOC/非线性充电后原复杂度保证不再直接成立。"
+      },
+      "portability": "MEDIUM_AS_REFERENCE_LOW_AS_DIRECT_EMBED",
+      "license": {
+        "code": "MIT",
+        "requirements": "保留版权与许可证声明。",
+        "paper": "INFORMS Journal on Computing"
+      },
+      "minimum_isolated_probe": {
+        "scope": "外部PyVRP模型只复现中国开发小例的客户、载重、时间窗和车型成本，不传入SOC；与ReSETP同一初始客户分配做接口和活性对照。",
+        "arms": ["PyVRP external local search", "ReSETP route-only local search"],
+        "checks": [
+          "两边独立复算客户覆盖、载重和时间窗",
+          "PyVRP车型分配和固定成本可读",
+          "不得把无SOC的PyVRP解写成ReSETP可行解",
+          "不读取Solomon正式测试集结果"
+        ],
+        "performance_claim_allowed": false
+      },
+      "budget_accounting": {
+        "external_iterations": "只作外部库活动计数，不能和ReSETP完整评价混为一谈。",
+        "translated_complete_evaluation": "每个翻译回ReSETP并完整评分的解记1次。",
+        "fair_comparison": "未来若批准性能比较，必须用同一CPU/墙钟与完整评价双口径。"
+      },
+      "failure_risks": [
+        "不原生支持SOC、非线性充电和ReSETP跨趟实体车账本。",
+        "C++核心直接嵌入会增加维护和接口漂移风险。",
+        "外部迭代数与ReSETP完整评价不是同一预算单位。"
+      ],
+      "recommendation": "USE_AS_REFERENCE_AND_STRONG_EXTERNAL_BASELINE_NOT_FIRST_MERGE",
+      "user_approval_status": "AWAITING_USER_APPROVAL"
+    },
+    {
+      "candidate_id": "FC-C04",
+      "name": "Wang HEVRP-NL Route Evaluation, ReplacePath and Route-Pool Assembly",
+      "candidate_type": "LITERATURE_REIMPLEMENTATION",
+      "source_evidence": ["FC-S08", "FC-S09"],
+      "problem_mechanism": "每条客户路线遍历所有车型并选择最低广义成本；非线性充电路径由ReplacePath替换；高质量路线进入有界池并由集合划分重组。",
+      "difference_from_standard_alns": "标准ALNS只在单个当前解中破坏修复；本候选把车型选择嵌入每条路线评价，并增加充电路径邻域和跨迭代路线池重组。",
+      "core_operators": [
+        "evaluate route under every vehicle type",
+        "heuristic nonlinear charging-time minimization",
+        "ReplacePath",
+        "Intra/Inter Swap",
+        "Intra/Inter Relocate",
+        "Tail-Cross",
+        "reduced-cost filtered route pool",
+        "set-partitioning route assembly"
+      ],
+      "complexity": {
+        "route_type_scan": "每条路线至少乘以车型数K；论文把基础固定/行驶/容量部分写为O(1)，非线性充电评价按路线与充电段传播。",
+        "exact_subproblem": "论文明确FRVCP为NP-hard，因此采用快速启发式路线评价。",
+        "route_pool": "集合划分随路线池规模指数增长，论文通过上限和约化成本过滤控制。"
+      },
+      "portability": "MEDIUM_LOW",
+      "license": {
+        "code": "NO_OFFICIAL_CODE_FOUND",
+        "working_paper": "private research copy; no redistribution",
+        "allowed_action": "依据公开算法描述独立重实现；不得复制或声称复用作者源码。"
+      },
+      "minimum_isolated_probe": {
+        "scope": "先只实现route-type scan和ReplacePath，不实现集合划分；在3条固定客户序列、2车型、3个预枚举充电路径上与穷举交叉验证。",
+        "arms": ["route_type_scan_only", "route_type_scan_plus_replace_path"],
+        "checks": [
+          "逐车型成本表完整且选择可复算",
+          "ReplacePath保持相邻非充电节点端点不变",
+          "非线性充电计划可行性独立复算",
+          "启发式评价与精确frvcpy评价差距原样报告",
+          "预算0/1/2/5不越界"
+        ],
+        "performance_claim_allowed": false
+      },
+      "budget_accounting": {
+        "route_type_evaluations": "每个路线×车型评价单独计数。",
+        "replace_path_trials": "每个候选充电路径记局部试探次数。",
+        "complete_candidate_evaluation": "每个重装后的完整解必须记1次。",
+        "set_partitioning": "若以后批准，另记模型调用、候选路线数、求解时间和最终完整解评价。"
+      },
+      "failure_risks": [
+        "无官方代码，复现成本和误读风险高。",
+        "论文快速充电评价是启发式，不等于精确NL→NL。",
+        "集合划分需要MILP求解器并可能吞噬预算和墙钟。",
+        "文献基准参数是构造的，不能直接替代中国参数合同。"
+      ],
+      "recommendation": "SECOND_STAGE_CLEAN_ROOM_PROTOTYPE_AFTER_EXACT_ORACLE",
+      "user_approval_status": "AWAITING_USER_APPROVAL"
+    },
+    {
+      "candidate_id": "FC-C05",
+      "name": "VMR-NL: Vehicle-Mode Regret Repair with Tiered Nonlinear Charging Oracle",
+      "candidate_type": "SELF_DESIGNED_RESEARCH_CANDIDATE",
+      "source_evidence": ["FC-S01", "FC-S02", "FC-S06", "FC-S08", "FC-S09", "FC-S11"],
+      "problem_mechanism": "把未分配客户的后悔值从“路线×位置”扩展为“路线×位置×车辆模式×充电路径”，同时联合决定CV/EV、客户插入位置、初始SOC延续和非线性补能计划。",
+      "difference_from_standard_alns": "标准regret-k只比较若干插入位置；VMR-NL比较离散车辆模式，并用两层预言机处理SOC：先用前后缀资源包络筛掉明显不可行或劣质模式，再对保留候选调用精确非线性标签。候选的后悔值是最佳模式与次佳独立模式之间的成本差，而不是同一路线中两个位置的差。",
+      "core_operators": [
+        "mode-aware regret removal priority",
+        "joint route-position-vehicle-mode insertion",
+        "prefix/suffix load-time-SOC lower-bound screening",
+        "top-B exact nonlinear charging oracle",
+        "affected-route cache with physical-contract hash",
+        "optional route split or CV fallback when every EV mode is infeasible"
+      ],
+      "complexity": {
+        "naive": "对u个未分配客户、R条路线、平均P个位置、K种车型，复杂度为O(uRPK·L)，L是一次非线性路线预言机代价；精确L最坏指数。",
+        "tiered": "便宜包络筛选为近似O(uRPK)，只对结果盲固定的top-B候选调用精确L；B必须预注册，不能按结果调。",
+        "cache": "相同客户序列、车型、初始SOC和物理合同哈希可复用路线预言机结果。"
+      },
+      "portability": "MEDIUM_AFTER_G0",
+      "license": {
+        "self_designed_code": "project license to be decided before implementation",
+        "inspiration": "Apache-2.0 frvcpy and MIT PyVRP require retained attribution if source is reused; clean-room literature reimplementation must cite papers.",
+        "novelty_status": "UNPROVEN_UNTIL_DEDICATED_NOVELTY_REVIEW"
+      },
+      "minimum_isolated_probe": {
+        "scope": "独立目录构造6客户、2路线、CV/EV各1种、2个充电站和两段非线性曲线；预置一个只有CV可行、一个EV直达可行、一个EV需部分充电才优的客户。",
+        "arms": [
+          "standard_regret2_plus_posthoc_vehicle_swap",
+          "VMR_NL_screen_only",
+          "VMR_NL_exact_top_B"
+        ],
+        "checks": [
+          "三种预置机制分支都被触发",
+          "每个完整候选独立复算零违规",
+          "筛选不得删掉穷举最优模式的小例",
+          "预算0/1/2/5严格闭合",
+          "固定种子重复运行轨迹一致",
+          "任何单位、SOC、曲线或成本转换只读取已批准合同"
+        ],
+        "performance_claim_allowed": false
+      },
+      "budget_accounting": {
+        "screen_evaluations": "包络和下界调用单列，不得作为完整方案评价。",
+        "route_oracle_calls": "每次精确或启发式路线充电求解按类型单列。",
+        "complete_candidate_evaluations": "任何用于排序、接受或更新最好解的完整解评分必须先预留预算并记1次。",
+        "reference_evaluations": "最终独立复算单列，不得混入搜索预算。",
+        "repair_delta_evaluations": "只用于诊断，不能隐匿完整评分。",
+        "zero_budget_rule": "预算0时不得生成或评分候选，只返回初始状态和零计数。"
+      },
+      "failure_risks": [
+        "不是已证明的新算法；可能与既有mode-aware insertion或route-type scan重叠，需要独立新颖性审查。",
+        "精确预言机调用过多会使吞吐崩溃。",
+        "top-B筛选若设计不当会误删需要充电但长期更优的EV模式。",
+        "CV fallback可能导致搜索退化为全燃油，必须报告车型客户/需求/距离四种份额。",
+        "物理合同未批准或非线性核心未闭合时只能用合成小例功能探针。"
+      ],
+      "recommendation": "PREFERRED_SELF_DESIGNED_PROTOTYPE_SUBJECT_TO_USER_APPROVAL",
+      "user_approval_status": "AWAITING_USER_APPROVAL"
+    }
+  ]
+}

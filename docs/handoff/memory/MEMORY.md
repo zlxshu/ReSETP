@@ -1,8 +1,14 @@
 # Memory Index
 
+- [EA-001授权口径纠正与隔离原型开工（2026-07-18）](../model_change_approval_register_20260718.md) — 用户授权自主创建独立原型和预算0/1/2/5非正式探针；逐项批准门只拦正式合入、模型/单位/参数变化、正式实验臂和论文主张。四份算法探索包已统一为`isolated_prototype_allowed_under_EA001=true`、`formal_search_allowed=false`并重算哈希；四条隔离原型与九城车场补证v3已开工。E7在02:51推进到6/9，运行期间继续禁止触碰`winner.py`，G0正式改码等待E7科学收口。
+
+- [中国方案重建执行总看板（2026-07-18）](../china_rebuild_execution_dashboard_20260718.md) — 统一记录总目标、治理边界、事实状态、E7与后台监控、主线遗留、挂账和验收标准。正式结构为3城市群×9规模×3互斥复本=81；E3--E7目标为方向理想、效应够大、主要检验显著；完整中国重跑前依次闭合E7、硬基础设施、G0、分机制算法创新、两套强基线、非线性核心和用户审批。
+
 - [ALNS分机制创新探索授权（2026-07-18）](../alns_mechanism_innovation_exploration_contract_20260718.md) — 用户授权对混合车队/补能、合作责任、时变碳/电价、参与公平和动态重规划五类机制自主检索开源/文献算子并设计自研候选，可做隔离原型和非正式探针；状态仅`APPROVED_FOR_EXPLORATION_ONLY`。任何候选合入正式ALNS、进入机制门/正式实验或形成论文创新主张，仍须用户逐项批准。
 
 - [建模、单位、参数与新方法审批总规则（2026-07-18）](../model_change_approval_register_20260718.md) — 用户规定所有单位/代理/模型/参数变更和新算例生成、抽样配额、道路、能耗充电、算法、统计方法都须先报备、溯源核验、影响分析并获明确批准；批准后再同步代码、合同、HANDOFF、memory、测试和证据。未经批准只能做取证或探针，正式状态保持HALT/DRAFT。当前MC-001为中国订单体积到kg转换，MC-002为E3--E7显著性实现方法，MC-003为2025-02默认展示日，均待用户裁决。
+
+- [算法探索主题3：碳、分时电价与非线性充电（2026-07-18）](algorithm_exploration_carbon_nonlinear_charging_20260718.md) — EA-001两轮研究已完成，固定路线非线性标签法、cspy/PathWyse、Cheng碳感知调度、Lin时变价VNS/TS和SAP共享容量排程已核原文/仓库/许可证；提出双oracle碳—价冲突自研候选和严格碳盲对照。全部仅探索，等待用户逐项批准。
 
 - [中国V2基础设施纠错、普通商业车场、电价、碳日期与全实验切换（2026-07-17/18）](../china_full_experiment_cutover_and_uk_retirement_contract_20260718.md) — 当前权威：正式主集为3城市群×9梯度×3互斥复本=81；E7科学收口后UK轨只读退役。旧订单和手工城市配额已由机器HALT。九城普通商业车场身份来源已9/9快照验签，但正式货车门、准入和现场车辆充电仍0/9。2025-02七价区同月价表覆盖九城，绝对价缺口解除，车场合同档位仍HALT。2026碳插值禁止正式使用，正式月份为2025-02全28日；默认展示日A/B/C/D待用户在结果盲状态选择。有向道路采用同路径距离/时间/Σ(v²d)三矩阵；E7计时运行期间禁止重型解析和核心改动。
 
@@ -308,3 +314,44 @@
 - 九城Overpass基础池已从缺4项恢复为27/27城市要素成功。固定配额下首轮互斥充足性为24/27；未削配额，使用官方OSM Map API对石家庄/重庆扩大框做4×4分块，32/32成功，客户池45→105、126→305。
 - 最终27/27格通过`PASS_81_MUTUAL_EXCLUSIVITY_POOL_GATE`，跨城市OSM身份冲突为0。该门只证明源池足以构造三个互斥复本；V2正式实例、订单见证、场址、路网和充电参数仍未闭合。
 - 已进一步实际生成81份客户位置分配、共5805行；每格三个复本零OSM身份重叠，逐实例城市配额精确匹配，判`PASS_81_DISJOINT_LOCATION_ASSIGNMENTS_BUILT`。这里只完成位置层，不能称完整V2实例。
+
+# 2026-07-18 算法探索主题2：合作责任重划与参与公平
+
+- 按EA-001和用户指定的`academic-deep-research`两轮要求完成5外部候选+1自研候选，交付目录=`docs/handoff/algorithm_exploration_20260718/collaboration_fairness/`，判决=`EXPLORATION_ONLY_AWAITING_USER_APPROVAL`；未改solver、`winner.py`、E7或正式实验合同。
+- 当前E6公平并非纯事后筛选：`fairness_enabled`、`P_d0`和`theta`已经进入完整候选评价、局部搜索和修复后检查。短板是每个违规成员只加一个`BIG_M`，不看公平赤字大小；跨场专用邻域主要为单边界客户或双方各一个客户，缺少公平导向多步链和路线池重组。
+- Soriano等（2023）本机Zotero全文已核：Eq.11为`P_d >= P_hat*P_d0`，重构插入分数使用公平修正项，Proximity removal按到其他车场距离排序，局部搜索只允许公平可行移动。PDF SHA256=`07bf3ac92303eab0b7d9e713606334b1db262097692eeedce6942056392544e2`；未发现作者开源代码。
+- PyVRP v0.13.4固定提交=`18815548d04a90a0e5eea2a0bed53a81ea9d2d49`，MIT许可证已核，真实SwapStar、SwapTails和Exchange源码/测试存在；只能借用算子结构，不能绕过ReSETP充电、多趟、公平和完整评价。路线池SP候选须先审计列可加性：非零碳配额下当前成员碳成本分摊不简单路线可加。
+- 推荐探索顺序：Soriano式公平修正插入隔离原型→MIT署名真实SWAP-star/SwapTails适配→路线列可加性审计→再试公平赤字跨场链—路线池自研组合。EA-001已授权独立原型与预算0/1/2/5功能探针；G0闭合前不得作性能优越性判断，合入正式求解器、机制门、正式实验或论文主张仍须用户批准。
+
+# 2026-07-18 算法探索主题4：E7动态滚动重规划
+
+- 按EA-001和用户指定的`academic-deep-research`两轮要求完成5个文献/开源候选和1个精细自研候选，交付目录=`docs/handoff/algorithm_exploration_20260718/dynamic_replanning/`，判决=`EXPLORATION_ONLY_AWAITING_USER_APPROVAL`、`formal_search_allowed=false`。未读取当前E7中间结果，未改E7保护文件、`winner.py`、正式solver、事件流、模型、单位或实验合同。
+- 文献核验的高匹配方向为：Wang等（2024）的当前状态伪车场与时间窗兼容快速插入、Pillac等（2012）的路线稳定双目标pBiALNS、Vallée等（2020）结合Ropke--Pisinger regret的有界ejection重插入。必须保留边界：`O(1)`只指单候选位置时间窗检查；上述论文均未核到可直接复用的官方代码。
+- 开源核验：OR-Tools Apache-2.0源码明确支持锁定在线路由已行驶前缀并从既有assignment继续求解；dvrpsim MIT可导出车辆实时状态并记录求解耗时但不是算法；PyVRP MIT有warm start但无硬冻结；RoutingBlocks有EVRPTW站点邻域但根目录无LICENSE；N-Wouda/ALNS只是通用框架。
+- 自研候选“事件条件稳定—责任—碳联合ALNS”把事件类型、冻结边界、稳定修复、未承诺客户责任重分配和固定路线充电重排拆成可开关层，并预设稳定性/响应时间/责任/碳四项可证伪消融。推荐下一步四个独立微探针，但均须用户另行批准；G0闭合前不得宣称性能胜负。
+
+# 2026-07-18 EA-001合作责任/参与公平隔离功能原型
+
+- 隔离目录=`baselines/algorithm_prototypes/collaboration_fairness_20260718/`。固定三车场四客户人工微例完成`BASE/PROX_ONLY/FAIR_ONLY/PROX_FAIR`四臂与预算0/1/2/5的16行功能探针；未导入或修改正式solver、`winner.py`、E7、模型、单位或正式合同。
+- 判决=`PASS_FUNCTION_ACTIVITY_ACCOUNTING_ONLY`：完整评价计数不越界，预算0无候选评价，公平赤字幅度交换会改变接收车场，所有记录由独立模块复算一致；9项单测、Ruff、`py_compile`和五件记录哈希闭合。
+- 只允许引用功能、活性、计数和复算结论。G0仍未闭合；该原型不构成性能、正式E3/E6、中国算例或论文创新证据，正式接入仍须用户批准。
+
+# 2026-07-18 EA-001动态重规划隔离微探针
+
+- 隔离目录=`baselines/algorithm_prototypes/dynamic_replanning_20260718/`。四个手工微例覆盖当前车辆状态伪车场序列化/回读、硬冻结前缀、自有有界regret/ejection预算计数和路线稳定性指标独立复算；OR-Tools 9.15.6755只作两车外部锁定语义对照。
+- 判决=`PASS_FUNCTION_ACTIVITY_ACCOUNTING_ONLY`：状态回读等值；自有与OR-Tools前缀均保持且故意污染被拒绝；预算0/1/2/5计数严格为0/1/2/5，深度2弹射在预算2首次激活；两套稳定性实现对换车客户2、有向未来弧对称差6、车辆—位置变化2、Levenshtein距离2完全一致。
+- 13项pytest、Ruff、`py_compile`、7项主体哈希和AppleDouble清理均通过。未读E7中间结果，未改正式solver、`winner.py`、E7、模型、单位或正式合同。人工评价不等于正式ReSETP评价，不支持性能主张，正式接入仍须用户批准。
+
+# 2026-07-18 EA-001时变碳/非线性充电隔离原型
+
+- 隔离目录=`baselines/algorithm_prototypes/carbon_nonlinear_charging_20260718/`。人工固定微路线的穷举oracle和clean-room前向时间—SOC标签原型覆盖两个充电机会、三段行驶、时间窗、SOC、两段式非线性充电和逐槽变化的价格/碳信号；全部数值只作测试夹具，不是正式参数或离散精度。
+- 判决=`PASS_ISOLATED_FUNCTION_ACTIVITY_ACCOUNTING_ONLY`：预算0/1/2/5的完整评价计数和最佳完整状态逐位一致；无限预算支配实际激活且与穷举最优一致；分段非线性充电和跨信号槽积分均激活。9项pytest与Ruff通过，五件记录和哈希闭合。
+- MIT `cspy==0.1.2`只在有限可行计划图上完成最短路交叉检查；未声称原生支持非线性资源扩展。其分发版本0.1.2与模块版本0.1.0差异已记录；临时仓库内虚拟环境已删除，最终目录不含环境、AppleDouble或缓存。
+- 本批只支持功能、活性和计数结论；未导入或修改正式solver、`winner.py`、E7、模型、单位、参数或合同。正式接入、碳价权重、时间/SOC离散、正式实验和论文主张仍须用户批准。
+
+# 2026-07-18 中国九城主车场入口—通行—充电带网补证 v3
+
+- 独立证据包=`data/ChinaInstances/china_depot_gate_closure_probe_v3_20260718/`；不存在的`docs/handoff/china_depot_site_evidence_v2_20260718.md`没有被补造，真实v2输入锚点为`data/ChinaInstances/china_depot_site_evidence_v2_20260718/report.md`、同目录机器记录和正式候选manifest。
+- 机器判决=`PARTIAL_EVIDENCE_GAIN_CURRENT_PRIMARY_STILL_HALTED_ALTERNATIVES_READY_FOR_USER_REVIEW`。当前九个主场址仍为0/9正式闭合；北京、广州、佛山、重庆四点只获得入口或资产身份补强。入口WGS84、外部配送车准入/时段/预约、场址绑定的已投运枪数/功率/接口/货车资格三条硬门均保持0/9，不用园区中心、门卫建筑、地图POI或规划值代替。
+- 九城共保留16个未应用的替代候选，每城至少1个；优先人工核验深圳坪山智慧物流港、重庆京东亚洲一号、广州丰厚物流园充电站和天津东疆京津物流园。北京两个参数较完整的候选仍只是获批/建设规模，不得写成投运。
+- 人工最小清单为每城1项、共9项。正式替换数0，未改场址合同、模型、单位、代码或E7，`formal_search_allowed=false`。来源URL、30份本地快照、逐点CSV、候选CSV、人工清单、raw/decision/report/hash齐全；按`source_snapshots`相对路径和明确校验行格式复算的快照树SHA-256=`334b48a53b206cabc7350e0d35f7faea50f69c05136bd332386c25ab551992bc`。

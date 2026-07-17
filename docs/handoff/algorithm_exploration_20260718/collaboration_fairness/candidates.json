@@ -1,0 +1,191 @@
+{
+  "schema": "resetp.algorithm_exploration.collaboration_fairness.candidates.v1",
+  "created_at": "2026-07-18T02:30:00+08:00",
+  "theme": "多车场合作责任重划 + 参与公平",
+  "authority": "EA-001",
+  "status": "EXPLORATION_ONLY_AWAITING_USER_APPROVAL",
+  "formal_solver_modified": false,
+  "formal_search_allowed": false,
+  "candidates": [
+    {
+      "candidate_id": "CF-EXT-01",
+      "name": "收益公平约束引导的 epsilon-ALNS",
+      "origin": "LITERATURE_REIMPLEMENTATION",
+      "primary_sources": ["CF-S01"],
+      "open_source_repository": null,
+      "license_status": "NO_AUTHOR_CODE_LOCATED_PAPER_REIMPLEMENTATION_ONLY",
+      "mechanism": "用 P_d >= theta*P_d0 形成一组单目标问题；修复插入分数乘以公平修正项，使未达到利润下界的车场在重构阶段更容易获得客户，而不是只在完整解末端拒绝。",
+      "difference_from_current_alns": "当前完整候选按每个违规车场加同一个 BIG_M，且跨场修复主要按路由成本排序；本候选把公平赤字的大小和方向直接放入每次插入评分。",
+      "e3_e6_fit": "E6 的 theta、P_d0 和服务车场利润口径与论文 Eq. 11 同构；E3 可在 fairness_off 时只保留 proximity removal，不改变合作可行域。",
+      "expected_benefit": "提高公平可行候选的生成率、降低硬拒绝浪费，并形成五档 theta 的可解释成本—参与前沿。",
+      "complexity": "每个待插客户仍枚举可行插入；额外计算各车场利润赤字，渐进复杂度不变但常数增加。",
+      "budget_accounting": "每个完整重构解调用统一完整评价器并计 1；插入增量与利润增量另记 repair_delta，不得冒充免费；G0 前只允许 0/1/2/5 功能探针。",
+      "main_risks": [
+        "论文无作者代码，公式和边界必须逐式重实现",
+        "论文为同质车队且无 ReSETP 充电/多趟语义",
+        "公平修正系数若未经独立消融可能退化为调参"
+      ],
+      "required_ablation": [
+        "当前硬公平门",
+        "只加 proximity removal",
+        "只加公平修正插入",
+        "proximity + 公平修正插入"
+      ],
+      "recommendation": "HIGH_PRIORITY_PROTOTYPE_AFTER_USER_APPROVAL_AND_G0",
+      "user_approval_state": "AWAITING_USER_APPROVAL"
+    },
+    {
+      "candidate_id": "CF-EXT-02",
+      "name": "跨车场动态半径 2-opt/2-opt-star 与串交换",
+      "origin": "LITERATURE_REIMPLEMENTATION",
+      "primary_sources": ["CF-S02"],
+      "open_source_repository": null,
+      "license_status": "PAPER_CC_BY_4_0_NO_CODE_LOCATED",
+      "mechanism": "对不同车场路线的 2-opt、2-opt-star、relocate、swap、Or-opt 和 string exchange 使用包含车场交换修正项的动态半径剪枝，寻找 best-improving 跨场移动。",
+      "difference_from_current_alns": "当前专用跨场算子主要删除一个边界客户或双方各一个客户再修复；本候选直接搜索路线尾段与连续客户串的跨场重组。",
+      "e3_e6_fit": "适合 E3 责任边界重构；在 E6 中只有通过参与约束或公平赤字筛选的移动才可进入候选档案。",
+      "expected_benefit": "扩大跨场邻域并减少无效枚举，尤其针对责任交错和边界客户成串迁移。",
+      "complexity": "论文目标是用动态半径把大量 O(n^2) 候选剪掉；ReSETP 的时间窗、车型、充电和多趟可行性会增加增量检查成本。",
+      "budget_accounting": "每次完整应用后的解计 1 次完整评价；被安全下界剪掉的边不计完整评价但记录 examined/pruned；必须另报局部搜索耗时。",
+      "main_risks": [
+        "论文已报告平均局部最优改善未转化为最终 ILS 最优改善",
+        "异质车队与充电资源使论文剪枝界不能原样使用",
+        "实现复杂且容易产生未计数的内部完整评分"
+      ],
+      "required_ablation": [
+        "当前单客户边界算子",
+        "加连续串交换但无动态半径",
+        "加动态半径剪枝",
+        "完整跨场邻域"
+      ],
+      "recommendation": "MEDIUM_PRIORITY_ISOLATED_OPERATOR_PROBE",
+      "user_approval_state": "AWAITING_USER_APPROVAL"
+    },
+    {
+      "candidate_id": "CF-EXT-03",
+      "name": "PyVRP/HGS 风格的 SWAP-star、SwapTails 与 Exchange 移植",
+      "origin": "OPEN_SOURCE_ADAPTATION",
+      "primary_sources": ["CF-S08", "CF-S09", "CF-S10"],
+      "open_source_repository": "https://github.com/PyVRP/PyVRP",
+      "pinned_version": "v0.13.4",
+      "pinned_commit": "18815548d04a90a0e5eea2a0bed53a81ea9d2d49",
+      "license_status": "MIT_VERIFIED",
+      "mechanism": "SWAP-star 交换两个客户并分别寻找自由重插位置；SwapTails 交换两条路线的后缀；Exchange(N,M) 支持连续片段交换。只借用算子结构与测试思想，必须接入 ReSETP 自己的完整可行性与评价器。",
+      "difference_from_current_alns": "仓库历史 swapstar-lite 只在原位置换客户，不是 Vidal/PyVRP 的自由重插 SWAP-star；当前跨场修复也没有高性能尾段交换缓存。",
+      "e3_e6_fit": "可把不同 home depot 路线作为候选对；E6 必须在应用后按成员利润下界检查，不能用 PyVRP 原生成本替代论文模型。",
+      "expected_benefit": "使用经过公开测试的高性能邻域结构，提升跨路线和跨车场重组强度。",
+      "complexity": "C++ 原实现依赖专门的 segment/cost cache；Python 直译可能失去性能，干净适配需定义项目增量界或绑定层。",
+      "budget_accounting": "所有应用后完整解计入统一完整评价；缓存增量调用单列；不可把 PyVRP 内部迭代数与 ReSETP 完整评价数等同。",
+      "main_risks": [
+        "MIT 允许复用但需保留版权与许可文本",
+        "原代码不含 ReSETP 充电、多趟连续性和利润公平",
+        "直接调用外部 solver 会破坏同预算比较"
+      ],
+      "required_ablation": [
+        "真实 SWAP-star",
+        "SwapTails",
+        "Exchange(1,1)/(2,1)",
+        "三算子联合"
+      ],
+      "recommendation": "HIGH_PRIORITY_CLEAN_ROOM_OR_ATTRIBUTED_ADAPTATION_AFTER_APPROVAL",
+      "user_approval_state": "AWAITING_USER_APPROVAL"
+    },
+    {
+      "candidate_id": "CF-EXT-04",
+      "name": "带参与保障的路线池集合划分受限主问题",
+      "origin": "LITERATURE_MATHEURISTIC_REIMPLEMENTATION",
+      "primary_sources": ["CF-S05", "CF-S06", "CF-S07"],
+      "open_source_repository": null,
+      "license_status": "NO_VERIFIED_AUTHOR_CODE_OPEN_SOLVER_STILL_TO_BE_SELECTED",
+      "mechanism": "从整个搜索历史收集完整可行路线列；每列携带客户覆盖、车场、车型、实体车/趟资源、成本和成员利润贡献；固定检查点求解带客户一次覆盖、车队上限和 P_d >= theta*P_d0 的受限集合划分主问题。",
+      "difference_from_current_alns": "当前 ALNS 只保留当前/最好完整解，无法把不同迭代中的优质路线重新拼装；公平约束也没有进入路线组合主问题。",
+      "e3_e6_fit": "E3 用于跨种子/跨迭代责任重组；E6 的参与下界可成为主问题硬约束。只有 E6 碳成本对路线可加时才允许直接线性化，否则必须主问题后用统一评价器复核或增加精确修正。",
+      "expected_benefit": "把局部搜索发现的互补路线组合成全局更强方案，并在组合阶段保证双方参与。",
+      "complexity": "受限主问题列数随搜索增长；需去重、支配剪枝、列上限和固定求解时限。",
+      "budget_accounting": "主问题在预注册完整评价检查点调用；输出的每个完整组合解计 1 次完整评价；MIP 节点数、墙钟和池规模另报，不得视为免费。",
+      "main_risks": [
+        "路线池缺少关键列时主问题无能为力",
+        "ReSETP 多趟实体车与充电桩容量可能跨路线耦合，普通 SP 列不充分",
+        "非零碳配额下当前成员碳成本分配并非简单路线可加"
+      ],
+      "required_ablation": [
+        "无路线池",
+        "只做成本 SP",
+        "成本 SP + 参与约束",
+        "参与约束 SP + 跨场新列生成"
+      ],
+      "recommendation": "HIGH_PRIORITY_AFTER_ROUTE_COLUMN_SEMANTICS_AUDIT",
+      "user_approval_state": "AWAITING_USER_APPROVAL"
+    },
+    {
+      "candidate_id": "CF-EXT-05",
+      "name": "多步跨场 ejection chain / cyclic transfer",
+      "origin": "LITERATURE_REIMPLEMENTATION",
+      "primary_sources": ["CF-S03", "CF-S04"],
+      "open_source_repository": null,
+      "license_status": "NO_AUTHOR_CODE_LOCATED",
+      "mechanism": "将一个客户/客户串移入另一车场路线后产生的容量、时间或公平压力继续向下一条路线传递，直到形成负成本闭链或在限定深度内找到可行终点。",
+      "difference_from_current_alns": "当前 reciprocal 算子一次只删除两名客户，不能通过三条以上路线逐级释放容量或利润空间。",
+      "e3_e6_fit": "链的节点可定义为 route-depot 状态；边权同时记录路由成本变化和各成员利润变化；只有统一完整检查通过的闭链才成为候选。",
+      "expected_benefit": "越过单步交换的局部障碍，适合多车场责任交错和严格参与下界。",
+      "complexity": "链深、分支与可行性检查会快速增长，必须限制深度、候选边和回访。",
+      "budget_accounting": "链构建的增量边评估单列；每条落地完整链计 1 次完整评价；失败链必须记录而不能静默丢弃。",
+      "main_risks": [
+        "2017 方法针对开放路径，回场语义需重建",
+        "无开源代码，复现成本高",
+        "若链排序混入未经批准的权重会变成隐性调参"
+      ],
+      "required_ablation": [
+        "链深1",
+        "链深2",
+        "链深3",
+        "是否加入公平赤字导向"
+      ],
+      "recommendation": "MEDIUM_PRIORITY_AFTER_SIMPLER_OPERATORS",
+      "user_approval_state": "AWAITING_USER_APPROVAL"
+    },
+    {
+      "candidate_id": "CF-SELF-01",
+      "name": "公平赤字导向的跨场链—路线池协同 ALNS",
+      "origin": "SELF_DESIGNED_RESEARCH_CANDIDATE",
+      "primary_sources": ["CF-S01", "CF-S02", "CF-S03", "CF-S04", "CF-S05", "CF-S06", "CF-S08", "CF-S10", "CF-S12", "CF-S13", "CF-S14"],
+      "open_source_repository": null,
+      "license_status": "NEW_DESIGN_WITH_ATTRIBUTED_COMPONENTS",
+      "mechanism": {
+        "state_signal": "对每个成员定义归一化公平赤字 delta_d=max(0, theta*P_d0-P_d)/P_d0，并维护成员利润松弛量。",
+        "destroy": "优先移除对赤字成员最有潜在贡献、对捐出成员仍有利润松弛的边界客户或连续客户串。",
+        "chain_repair": "构造限定深度的跨场 ejection chain，每一步用真实路由增量和成员利润向量记账；目标先降低最大公平赤字，再降低系统成本。",
+        "near_feasible_archive": "正式公平可行档案之外保留一个只允许公平约束暂时不满足、其他物理约束全满足的近可行档案；按赤字大小而非违规个数排序，避免 BIG_M 平台。",
+        "route_pool_master": "在固定检查点用带参与下界的受限路线池主问题重组已验证路线；输出必须经过统一完整评价和多趟/充电资源复核。",
+        "epsilon_frontier": "对预注册 theta 档独立运行或顺序暖启，但每档预算相同、起点来源可追溯。"
+      },
+      "claimed_novelty_boundary": "候选创新不是任何单一组件，而是把成员公平赤字作为跨场链生成信号，并在同一搜索中用参与约束路线池主问题闭合。未经文献查重、原型消融和用户批准不得写成论文创新。",
+      "difference_from_current_alns": "把当前按违规个数的硬 BIG_M 平台替换为可度量的公平赤字搜索通道，同时把单/双客户跨场重分工升级为多步链和路线级重组。",
+      "e3_e6_fit": "E3 使用 fairness signal 关闭的跨场链与路线池；E6 打开公平赤字、参与约束主问题和 theta 前沿。两者共享责任重划核心但公平增量可单独消融。",
+      "expected_benefit": "同时提高合作方案质量与参与可行命中率，并让每个机制都有独立、可证伪的活性和贡献证据。",
+      "complexity": "最高；需要路线级可加性审计、近可行档案、链搜索、受限主问题和严格预算计数。",
+      "budget_accounting": {
+        "precondition": "ALNS G0 全部评分调用点闭合后才允许性能门。",
+        "functional_probe": "预算0/1/2/5，仅验证导入隔离、活性、可行性、计数和速度，不下胜负结论。",
+        "mechanism_gate": "共同起点与共同种子；每臂相同完整评价预算；所有主问题输出和链落地解都消费完整评价；增量评分、MIP时间、池规模和链展开数另报。",
+        "secondary_fairness": "除完整评价预算外报告同墙钟结果，避免强算子用大量免费内部工作。"
+      },
+      "required_ablation": [
+        "A 当前 ALNS + 现有跨场算子 + 硬公平门",
+        "B A + 公平修正插入",
+        "C B + 真实 SWAP-star/SwapTails 跨场邻域",
+        "D C + 限深公平 ejection chain",
+        "E C + 带参与保障路线池主问题",
+        "F C + D + E 完整候选"
+      ],
+      "stop_rules": [
+        "任一臂出现未计数完整评分立即 HALT",
+        "公平可行率不升或系统成本显著恶化则不得升级",
+        "路线池组合不能被独立完整复算时立即 HALT",
+        "中国正式81实例和Solomon正式测试集不得用于调试或筛选"
+      ],
+      "recommendation": "TOP_RESEARCH_CANDIDATE_FOR_USER_TO_APPROVE_ISOLATED_PROTOTYPE_ONLY",
+      "user_approval_state": "AWAITING_USER_APPROVAL"
+    }
+  ]
+}

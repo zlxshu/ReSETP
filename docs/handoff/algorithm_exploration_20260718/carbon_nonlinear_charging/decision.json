@@ -1,0 +1,43 @@
+{
+  "schema_version": "resetp.algorithm-exploration.decision.v1",
+  "theme": "carbon_nonlinear_charging",
+  "authority": "EA-001",
+  "decision": "EXPLORATION_ONLY_AWAITING_USER_APPROVAL",
+  "research_cycles_completed": 2,
+  "primary_papers_verified": 9,
+  "official_repositories_verified": 6,
+  "candidate_count": 7,
+  "literature_or_open_source_candidate_count": 6,
+  "self_designed_candidate_count": 1,
+  "formal_search_allowed": false,
+  "isolated_prototype_allowed_under_EA001": true,
+  "formal_solver_modified": false,
+  "winner_modified": false,
+  "e7_modified_or_interrupted": false,
+  "formal_experiment_started": false,
+  "unit_conversion_performed": false,
+  "model_semantics_changed": false,
+  "recommended_exploration_and_future_formal_decisions": [
+    {
+      "approval_id_to_create_if_approved": "EA-001-C3-P1",
+      "proposal": "Build an isolated MIT-cspy functional prototype on hand-enumerated micro routes under EA-001; retain the listed approval ID only for formal integration.",
+      "does_not_authorize": "formal solver integration, China formal instances, E4/E5/E7 runs, or paper claims"
+    },
+    {
+      "approval_id_to_create_if_approved": "EA-001-C3-P2",
+      "proposal": "Build a clean-room fixed-route nonlinear charging label prototype based on Montoya-Froger-Liang under EA-001; retain the listed approval ID only for formal integration.",
+      "does_not_authorize": "copying unlicensed code or formal solver integration"
+    },
+    {
+      "approval_id_to_create_if_approved": "EA-001-C3-L1",
+      "proposal": "Test GPL-3.0 PathWyse only in an isolated process as a performance backup; any linking or distribution decision still requires approval.",
+      "does_not_authorize": "linking or distributing it with ReSETP"
+    },
+    {
+      "approval_id_to_create_if_approved": "EA-001-C3-R1",
+      "proposal": "Run an isolated falsification probe for the self-designed dual-oracle carbon-price conflict operator under EA-001; retain the listed approval ID only for formal integration.",
+      "does_not_authorize": "formal ALNS mechanism gate or manuscript innovation claim"
+    }
+  ],
+  "hard_stop": "No candidate may be implemented in the formal solver or used in formal experiments until the user explicitly approves the corresponding method, model semantics, license boundary, and probe scope."
+}
