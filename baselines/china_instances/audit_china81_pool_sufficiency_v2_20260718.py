@@ -50,6 +50,13 @@ def display_path(path: Path) -> str:
 
 def audit(pool_root: Path, output: Path, overlay_roots: tuple[Path, ...] = ()) -> dict[str, Any]:
     contract = read_json(CONTRACT)
+    if str(contract.get("status", "")).startswith("HALT_"):
+        raise RuntimeError(
+            "customer-location contract is deliberately halted pending PPS city-quota recalibration: "
+            f"{contract.get('status')}"
+        )
+    if "city_quotas" not in contract:
+        raise RuntimeError("active city_quotas are not frozen in the customer-location contract")
     output.mkdir(parents=True, exist_ok=True)
     pool_decision_path = pool_root / "decision.json"
     pool_verdict = read_json(pool_decision_path).get("verdict") if pool_decision_path.exists() else "MISSING"

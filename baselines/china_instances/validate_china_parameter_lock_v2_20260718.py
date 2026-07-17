@@ -19,7 +19,7 @@ REPO = Path(__file__).resolve().parents[2]
 LOCK = REPO / "data/ChinaInstances/china_parameter_lock_v2_20260718.json"
 VEHICLE_SOURCE_ROOT = REPO / "docs/handoff/china_vehicle_parameter_sources_20260718"
 PRICES = REPO / "solver/src/setp_solver/prices.py"
-FACILITY_MANIFEST = REPO / "docs/handoff/china_facility_manifest_v2_20260718.json"
+ORDINARY_DEPOT_MANIFEST = REPO / "data/ChinaInstances/china_ordinary_commercial_depot_manifest_v2_20260718.json"
 LOCATION_ASSIGNMENTS = REPO / "data/ChinaInstances/china81_customer_location_assignments_v2_20260718"
 EXPECTED_CITIES = {
     "beijing",
@@ -66,6 +66,21 @@ def validate_order_contract(
         return {"exists": True, "path": relative_path}
     if contract.get("schema") != "resetp.china.order-attribute-contract.v2":
         errors.append(_error("ORDER_ATTRIBUTE_SCHEMA_MISMATCH", str(contract.get("schema"))))
+    if str(contract.get("status", "")).startswith("HALT_"):
+        errors.append(
+            _error(
+                "ORDER_ATTRIBUTE_RECALIBRATION_REQUIRED",
+                str(contract.get("status")),
+            )
+        )
+        return {
+            "exists": True,
+            "path": relative_path,
+            "sha256": sha256(path),
+            "status": contract.get("status"),
+            "customer_sizes": contract.get("customer_sizes"),
+            "variants": sorted(contract.get("variants", {})),
+        }
     if contract.get("status") != "LOCKED_DESIGN_NOT_APPLIED":
         errors.append(_error("ORDER_ATTRIBUTE_STATUS_INVALID", str(contract.get("status"))))
     if contract.get("formal_search_allowed") is not False:
@@ -148,6 +163,21 @@ def validate_customer_location_contract(
     contract = json.loads(path.read_text(encoding="utf-8"))
     if contract.get("schema") != "resetp.china.customer-location-contract.v2":
         errors.append(_error("CUSTOMER_LOCATION_SCHEMA_MISMATCH", str(contract.get("schema"))))
+    if str(contract.get("status", "")).startswith("HALT_"):
+        errors.append(
+            _error(
+                "CUSTOMER_LOCATION_PPS_RECALIBRATION_REQUIRED",
+                str(contract.get("status")),
+            )
+        )
+        return {
+            "exists": True,
+            "path": relative_path,
+            "sha256": sha256(path),
+            "status": contract.get("status"),
+            "customer_sizes": contract.get("customer_sizes"),
+            "replicate_labels": contract.get("replicate_labels"),
+        }
     if contract.get("status") != "LOCKED_DESIGN_POOL_SUFFICIENCY_PASSED_NOT_BUILT":
         errors.append(_error("CUSTOMER_LOCATION_STATUS_INVALID", str(contract.get("status"))))
     if contract.get("formal_search_allowed") is not False:
@@ -271,21 +301,40 @@ def _error(code: str, detail: str) -> dict[str, str]:
     return {"code": code, "detail": detail}
 
 
-def validate_facility_manifest(errors: list[dict[str, str]], warnings: list[dict[str, str]]) -> dict[str, Any]:
-    """Validate the named-depot candidate layer without accepting it as formal."""
+def validate_facility_manifest(
+    data: dict[str, Any], errors: list[dict[str, str]], warnings: list[dict[str, str]]
+) -> dict[str, Any]:
+    """Validate ordinary commercial depot candidates without accepting park centres as truck gates."""
 
-    if not FACILITY_MANIFEST.is_file():
-        errors.append(_error("FACILITY_MANIFEST_MISSING", str(FACILITY_MANIFEST)))
+    facility_contract = data.get("facility_contract", {})
+    relative_path = facility_contract.get("candidate_manifest")
+    if not isinstance(relative_path, str) or not relative_path:
+        errors.append(_error("FACILITY_MANIFEST_PATH_MISSING", "facility_contract.candidate_manifest"))
+        return {"exists": False, "record_count": 0, "pending_records": []}
+    facility_manifest = REPO / relative_path
+    if facility_manifest != ORDINARY_DEPOT_MANIFEST:
+        errors.append(
+            _error(
+                "FACILITY_MANIFEST_NOT_ORDINARY_COMMERCIAL",
+                f"expected={ORDINARY_DEPOT_MANIFEST.relative_to(REPO)}, observed={relative_path}",
+            )
+        )
+    if not facility_manifest.is_file():
+        errors.append(_error("FACILITY_MANIFEST_MISSING", str(facility_manifest)))
         return {"exists": False, "record_count": 0, "pending_records": []}
 
     try:
-        manifest = json.loads(FACILITY_MANIFEST.read_text(encoding="utf-8"))
+        manifest = json.loads(facility_manifest.read_text(encoding="utf-8"))
     except (OSError, json.JSONDecodeError) as exc:
         errors.append(_error("FACILITY_MANIFEST_UNREADABLE", repr(exc)))
         return {"exists": True, "record_count": 0, "pending_records": []}
 
+    if manifest.get("schema") != "resetp.china.ordinary-commercial-depot-manifest.v2":
+        errors.append(_error("FACILITY_MANIFEST_SCHEMA_INVALID", str(manifest.get("schema"))))
     if manifest.get("formal_search_allowed") is not False:
         errors.append(_error("FACILITY_MANIFEST_FORMAL_FLAG_INVALID", "candidate manifest must not authorize formal search"))
+    if manifest.get("result_aware_selection_allowed") is not False:
+        errors.append(_error("FACILITY_RESULT_AWARE_SELECTION_NOT_BLOCKED", "depot selection cannot use experiment results"))
     records = manifest.get("records", [])
     if not isinstance(records, list):
         errors.append(_error("FACILITY_RECORDS_NOT_LIST", type(records).__name__))
@@ -300,109 +349,88 @@ def validate_facility_manifest(errors: list[dict[str, str]], warnings: list[dict
             )
         )
 
-    required = (
-        "facility_id",
-        "city",
-        "name_zh",
-        "facility_kind",
-        "source_url",
-        "source_capture",
-        "coordinates",
-        "osm_or_operator_id",
-        "operator_or_owner",
-        "operating_status",
-        "selection_reason",
-    )
+    required = ("city", "primary", "backup", "primary_source", "backup_source", "formal_status")
     pending_records: list[str] = []
-    preferred_site_count = 0
-    hard_parameter_audit_count = 0
-    seen_ids: set[str] = set()
+    source_capture_count = 0
+    verified_gate_count = 0
+    verified_charger_count = 0
+    seen_cities: set[str] = set()
     for index, record in enumerate(records):
         if not isinstance(record, dict):
             errors.append(_error("FACILITY_RECORD_INVALID", f"index={index}"))
             continue
-        facility_id = str(record.get("facility_id") or f"index-{index}")
-        if facility_id in seen_ids:
-            errors.append(_error("FACILITY_ID_DUPLICATE", facility_id))
-        seen_ids.add(facility_id)
+        city = str(record.get("city") or f"index-{index}")
+        facility_id = f"{city}:{record.get('primary', 'unnamed')}"
+        if city in seen_cities:
+            errors.append(_error("FACILITY_CITY_DUPLICATE", city))
+        seen_cities.add(city)
         for field in required:
             if field not in record or record.get(field) in ("", {}):
                 errors.append(_error("FACILITY_FIELD_MISSING", f"{facility_id}.{field}"))
-        source_url = record.get("source_url")
+        source_url = record.get("primary_source")
         if not isinstance(source_url, str) or not source_url.startswith("https://"):
             errors.append(_error("FACILITY_SOURCE_URL_INVALID", facility_id))
-        capture = record.get("source_capture")
+        capture = record.get("primary_source_capture")
+        capture_hash = record.get("primary_source_capture_sha256")
         if capture in (None, ""):
             errors.append(_error("FACILITY_SOURCE_CAPTURE_PENDING", facility_id))
         else:
             capture_path = REPO / str(capture)
             if not capture_path.is_file():
                 errors.append(_error("FACILITY_SOURCE_CAPTURE_MISSING", str(capture_path)))
-            elif record.get("source_capture_sha256") in (None, ""):
+            elif capture_hash in (None, ""):
                 errors.append(_error("FACILITY_SOURCE_CAPTURE_HASH_MISSING", facility_id))
-            elif sha256(capture_path) != str(record["source_capture_sha256"]):
+            elif sha256(capture_path) != str(capture_hash):
                 errors.append(_error("FACILITY_SOURCE_CAPTURE_HASH_MISMATCH", facility_id))
-        coordinates = record.get("coordinates")
-        latitude = coordinates.get("latitude") if isinstance(coordinates, dict) else None
-        longitude = coordinates.get("longitude") if isinstance(coordinates, dict) else None
-        if not all(isinstance(value, (int, float)) and math.isfinite(value) for value in (latitude, longitude)):
-            errors.append(_error("FACILITY_COORDINATES_PENDING", facility_id))
-        if record.get("osm_or_operator_id") in (None, ""):
-            errors.append(_error("FACILITY_MAP_OR_OPERATOR_ID_PENDING", facility_id))
-        preferred = record.get("preferred_operational_site")
-        if not isinstance(preferred, dict):
-            errors.append(_error("FACILITY_PREFERRED_SITE_PENDING", facility_id))
+            else:
+                source_capture_count += 1
+        brochure = record.get("official_brochure_capture")
+        if brochure not in (None, ""):
+            brochure_path = REPO / str(brochure)
+            brochure_hash = record.get("official_brochure_capture_sha256")
+            if not brochure_path.is_file():
+                errors.append(_error("FACILITY_BROCHURE_CAPTURE_MISSING", str(brochure_path)))
+            elif brochure_hash in (None, ""):
+                errors.append(_error("FACILITY_BROCHURE_HASH_MISSING", facility_id))
+            elif sha256(brochure_path) != str(brochure_hash):
+                errors.append(_error("FACILITY_BROCHURE_HASH_MISMATCH", facility_id))
+        park_center = record.get("park_center_candidate")
+        if park_center is not None:
+            if not isinstance(park_center, dict) or park_center.get("crs") != "BD-09":
+                errors.append(_error("FACILITY_PARK_CENTER_CRS_INVALID", facility_id))
+            elif "not_truck_gate" not in str(park_center.get("source_scope", "")):
+                errors.append(_error("FACILITY_PARK_CENTER_SCOPE_UNSAFE", facility_id))
+        gate = record.get("verified_truck_gate")
+        if not isinstance(gate, dict) or gate.get("status") != "VERIFIED":
+            errors.append(_error("FACILITY_TRUCK_GATE_PENDING", facility_id))
         else:
-            preferred_site_count += 1
-            city = str(record.get("city"))
-            expected_uid = EXPECTED_PREFERRED_MAP_UIDS.get(city)
-            if preferred.get("map_uid") != expected_uid:
-                errors.append(
-                    _error(
-                        "FACILITY_PREFERRED_SITE_CITY_MISMATCH",
-                        f"{city}: expected map_uid={expected_uid}, observed={preferred.get('map_uid')}",
-                    )
-                )
-            raw_coordinate = preferred.get("map_coordinate_original")
-            if not isinstance(raw_coordinate, dict) or raw_coordinate.get("crs") != "BD09MC":
-                errors.append(_error("FACILITY_PREFERRED_SITE_CRS_INVALID", facility_id))
-            else:
-                x = raw_coordinate.get("x")
-                y = raw_coordinate.get("y")
-                if not all(isinstance(value, (int, float)) and math.isfinite(value) for value in (x, y)):
-                    errors.append(_error("FACILITY_PREFERRED_SITE_COORDINATE_INVALID", facility_id))
-                # BD-09MC is a projected metre coordinate.  Values in this
-                # range must never be accepted as WGS84 latitude/longitude.
-                if isinstance(x, (int, float)) and isinstance(y, (int, float)) and abs(x) <= 180 and abs(y) <= 90:
-                    errors.append(_error("FACILITY_PREFERRED_SITE_CRS_RANGE_SUSPICIOUS", facility_id))
-            sources = preferred.get("official_operation_sources")
-            if not isinstance(sources, list) or not sources or not all(
-                isinstance(url, str) and url.startswith("https://") for url in sources
-            ):
-                errors.append(_error("FACILITY_OPERATION_SOURCE_INVALID", facility_id))
-            if preferred.get("evidence_scope") in (None, ""):
-                errors.append(_error("FACILITY_PREFERRED_SITE_SCOPE_MISSING", facility_id))
-            hard_audit = preferred.get("hard_parameter_audit")
-            if not isinstance(hard_audit, dict):
-                errors.append(_error("FACILITY_HARD_PARAMETER_AUDIT_MISSING", facility_id))
-            else:
-                hard_parameter_audit_count += 1
-                if hard_audit.get("formal_depot_parameter_lock") is not False:
-                    errors.append(_error("FACILITY_HARD_PARAMETER_LOCK_PREMATURE", facility_id))
-                for field in (
-                    "operational_truck_parking_spaces",
-                    "operational_vehicle_charger_count",
-                    "operational_connector_count",
-                    "operational_rated_power_kw",
-                ):
-                    if field not in hard_audit:
-                        errors.append(_error("FACILITY_HARD_PARAMETER_FIELD_MISSING", f"{facility_id}.{field}"))
-            hard_sources = preferred.get("hard_parameter_sources")
-            if not isinstance(hard_sources, list) or not hard_sources:
-                errors.append(_error("FACILITY_HARD_PARAMETER_SOURCE_MISSING", facility_id))
-        if record.get("operator_or_owner") in (None, ""):
-            errors.append(_error("FACILITY_OPERATOR_PENDING", facility_id))
-        if "PENDING" in str(record.get("operating_status", "")):
+            coordinate = gate.get("wgs84")
+            latitude = coordinate.get("latitude") if isinstance(coordinate, dict) else None
+            longitude = coordinate.get("longitude") if isinstance(coordinate, dict) else None
+            if not all(isinstance(value, (int, float)) and math.isfinite(value) for value in (latitude, longitude)):
+                errors.append(_error("FACILITY_TRUCK_GATE_COORDINATE_INVALID", facility_id))
+            if gate.get("road_node_id") in (None, ""):
+                errors.append(_error("FACILITY_TRUCK_GATE_ROAD_NODE_PENDING", facility_id))
+            if gate.get("evidence") in (None, [], ""):
+                errors.append(_error("FACILITY_TRUCK_GATE_EVIDENCE_PENDING", facility_id))
+            if not any(error["detail"] == facility_id and error["code"].startswith("FACILITY_TRUCK_GATE") for error in errors):
+                verified_gate_count += 1
+        operations = record.get("verified_operations")
+        if not isinstance(operations, dict) or operations.get("status") != "VERIFIED":
+            errors.append(_error("FACILITY_OPERATIONS_PENDING", facility_id))
+        else:
+            for field in ("external_delivery_trucks_allowed", "access_rule", "gate_open_hours", "parking_or_dock_capacity"):
+                if operations.get(field) in (None, ""):
+                    errors.append(_error("FACILITY_OPERATION_FIELD_PENDING", f"{facility_id}.{field}"))
+        charging = record.get("verified_vehicle_charging")
+        if not isinstance(charging, dict) or charging.get("status") not in {"VERIFIED_OPERATIONAL", "VERIFIED_ABSENT"}:
+            errors.append(_error("FACILITY_VEHICLE_CHARGING_PENDING", facility_id))
+        elif charging.get("status") == "VERIFIED_OPERATIONAL":
+            for field in ("location", "charger_count", "connector_count", "rated_power_kw", "delivery_trucks_allowed"):
+                if charging.get(field) in (None, ""):
+                    errors.append(_error("FACILITY_CHARGING_FIELD_PENDING", f"{facility_id}.{field}"))
+            verified_charger_count += 1
+        if "PENDING" in str(record.get("formal_status", "")):
             pending_records.append(facility_id)
 
     if pending_records:
@@ -412,21 +440,70 @@ def validate_facility_manifest(errors: list[dict[str, str]], warnings: list[dict
                 "detail": f"{len(pending_records)} records still require coordinate/operation verification",
             }
         )
-    if preferred_site_count == len(EXPECTED_CITIES):
-        warnings.append(
-            {
-                "code": "FACILITY_ENTRANCE_CANDIDATES_ONLY",
-                "detail": "9/9 cities have map-identified operational-site candidates, but raw BD09MC coordinates are not formal WGS84 depot coordinates",
-            }
-        )
     return {
         "exists": True,
+        "path": relative_path,
+        "schema": manifest.get("schema"),
         "record_count": len(records),
         "cities": sorted(set(cities)),
         "pending_records": pending_records,
-        "preferred_site_count": preferred_site_count,
-        "hard_parameter_audit_count": hard_parameter_audit_count,
-        "preferred_coordinate_crs": "BD09MC",
+        "source_capture_count": source_capture_count,
+        "verified_truck_gate_count": verified_gate_count,
+        "verified_vehicle_charging_count": verified_charger_count,
+        "historical_special_facilities_used": False,
+    }
+
+
+def validate_default_date_decision(
+    data: dict[str, Any], errors: list[dict[str, str]], warnings: list[dict[str, str]]
+) -> dict[str, Any]:
+    """Ensure a favorable default date is preselected without deleting the full-month panel."""
+
+    carbon_contract = data.get("carbon_contract", {})
+    relative_path = carbon_contract.get("default_date_decision")
+    if not isinstance(relative_path, str) or not relative_path:
+        errors.append(_error("DEFAULT_DATE_DECISION_PATH_MISSING", "carbon_contract.default_date_decision"))
+        return {"exists": False}
+    path = REPO / relative_path
+    if not path.is_file():
+        errors.append(_error("DEFAULT_DATE_DECISION_MISSING", str(path)))
+        return {"exists": False, "path": relative_path}
+    try:
+        decision = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError) as exc:
+        errors.append(_error("DEFAULT_DATE_DECISION_UNREADABLE", repr(exc)))
+        return {"exists": True, "path": relative_path}
+    if decision.get("schema") != "resetp.china.default-date-decision.v2":
+        errors.append(_error("DEFAULT_DATE_DECISION_SCHEMA_INVALID", str(decision.get("schema"))))
+    if decision.get("formal_month") != "2025-02":
+        errors.append(_error("DEFAULT_DATE_FORMAL_MONTH_INVALID", str(decision.get("formal_month"))))
+    if decision.get("full_month_panel_required") is not True:
+        errors.append(_error("DEFAULT_DATE_FULL_MONTH_PANEL_NOT_REQUIRED", "all 28 February days must remain"))
+    if decision.get("selection_must_precede_formal_experiment_results") is not True:
+        errors.append(_error("DEFAULT_DATE_RESULT_BLIND_RULE_MISSING", "selection must precede formal results"))
+    if decision.get("optimization_results_read") is not False:
+        errors.append(_error("DEFAULT_DATE_RESULT_CONTAMINATION", str(decision.get("optimization_results_read"))))
+    options = decision.get("options", {})
+    if set(options) != {"A", "B", "C", "D"}:
+        errors.append(_error("DEFAULT_DATE_OPTIONS_INVALID", repr(sorted(options))))
+    selected = decision.get("selected_option")
+    if selected is None:
+        warnings.append(
+            {
+                "code": "DEFAULT_DATE_USER_SELECTION_PENDING",
+                "detail": "choose A, B, C or D before formal China experiments; full February remains mandatory",
+            }
+        )
+    elif selected not in options:
+        errors.append(_error("DEFAULT_DATE_SELECTION_INVALID", repr(selected)))
+    return {
+        "exists": True,
+        "path": relative_path,
+        "status": decision.get("status"),
+        "selected_option": selected,
+        "formal_month": decision.get("formal_month"),
+        "full_month_panel_required": decision.get("full_month_panel_required"),
+        "optimization_results_read": decision.get("optimization_results_read"),
     }
 
 
@@ -495,7 +572,8 @@ def validate_lock(lock: dict[str, Any] | None = None) -> dict[str, Any]:
     order_summary = validate_order_contract(data, errors, warnings)
     customer_location_summary = validate_customer_location_contract(data, errors, warnings)
     road_matrix_summary = validate_road_matrix_contract(data, errors, warnings)
-    facility_summary = validate_facility_manifest(errors, warnings)
+    facility_summary = validate_facility_manifest(data, errors, warnings)
+    default_date_summary = validate_default_date_decision(data, errors, warnings)
 
     # This is intentionally a blocker until the protected core is changed in a
     # single audited semantic transition.  The historical British constants
@@ -519,6 +597,7 @@ def validate_lock(lock: dict[str, Any] | None = None) -> dict[str, Any]:
         "customer_location_contract": customer_location_summary,
         "road_matrix_contract": road_matrix_summary,
         "facility_manifest": facility_summary,
+        "default_date_decision": default_date_summary,
         "search_evaluations": 0,
     }
 

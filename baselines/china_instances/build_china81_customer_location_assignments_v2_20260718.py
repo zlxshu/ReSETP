@@ -72,6 +72,13 @@ def build(output: Path = OUTPUT) -> dict[str, Any]:
     if output.exists():
         raise RuntimeError(f"refusing to overwrite existing assignment package: {output}")
     contract = read_json(CONTRACT)
+    if str(contract.get("status", "")).startswith("HALT_"):
+        raise RuntimeError(
+            "customer-location contract is deliberately halted pending PPS city-quota recalibration: "
+            f"{contract.get('status')}"
+        )
+    if "city_quotas" not in contract:
+        raise RuntimeError("active city_quotas are not frozen in the customer-location contract")
     gate = read_json(POOL_GATE / "decision.json")
     if gate.get("verdict") != "PASS_81_MUTUAL_EXCLUSIVITY_POOL_GATE":
         raise RuntimeError(f"pool gate is not PASS: {gate.get('verdict')}")
