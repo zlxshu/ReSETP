@@ -243,3 +243,6 @@
 
 - 主稿算法有效性分析补入PyVRP 0.13.4现代强基线的选择依据、同机单线程墙钟轴与内部完整候选评价轴，并新增Wouda--Lan--Kool 2024正式期刊文献；Solomon结果原子门内预注册391.943 s、4 worker、10种子及CPU/RT/Tbest/Runs口径，未提前声称胜负。
 - XeLaTeX双遍重编为22页A4，30项论文测试与pending-E7故事审计通过，日志无未定义引用、版面溢出或LaTeX错误；第11页目检层级、表格和新增段落正常。TeX/PDF/log SHA-256=`568d922ec4886e8bdc356bc6bdccf0a961ed66166bd8b32b7bc51c130781f31a`/`3d54681c859a17568fbf38083fc1fd86487bbce3af819603c7704b9bb8fccd04`/`3f4e276261c3e74e01e18d0ed3dd6999f69fc80727b20d6c1a8848dc4f0dbd82`。未改公式、符号或实验数字。
+# 2026-07-17 E7时效污染清洁重跑
+
+正式E7已产生120个任务，但外部SIGSTOP持续13934秒，污染9个N322任务的stage-1 elapsed_seconds；步骤1--6在时效门HALT。已启动`e7_timing_clean_rerun_20260717.py`（SHA-256=`dedaaf140e20809ba19672169d149e2526ac03a5e0960dce41a3e83015fce304`）及独立hooks目录`/private/tmp/.resetp-e7-timing-clean-rerun-20260717.monitor`，严格50 evaluations、6 workers、PYTHONHASHSEED=0、原事件流/种子/四臂，隔离输出；4个parent任务用Git提交`17df1cd2`旧探针，5个child任务用`8b2de296`修复探针。脚本不会覆盖旧正式包，并要求新阶段耗时小于13934秒、去除elapsed_seconds后的语义载荷与历史同合同一致、父/子历史120个任务断点哈希前后不变。完成/异常事件前不读取中间方向，不运行下游重放。
