@@ -4,6 +4,7 @@ import importlib.util
 import json
 import sys
 import time
+import signal
 from pathlib import Path
 
 import pytest
@@ -43,6 +44,8 @@ def fake_contract() -> dict[str, object]:
         "max_runtime_seconds": runner.FORMAL_MAX_RUNTIME_SECONDS,
         "big_m_proofs": {name: runner.bundle_bounds(name) for name in runner.FORMAL_INSTANCES},
         "bundle_hashes": {name: runner.bundle_hashes(name) for name in runner.FORMAL_INSTANCES},
+        "algorithm_freeze_sha256": "freeze-hash",
+        "algorithm_version": "test-version",
     }
 
 
@@ -54,14 +57,56 @@ def test_reference_inventory_is_exact_and_zero_search() -> None:
     assert references["C101"]["bks_distance_published_2dp"] == 828.94
 
 
-def test_worker_module_does_not_load_bks_at_import_and_pool_uses_spawn() -> None:
+def test_worker_module_does_not_load_bks_and_uses_bounded_killable_processes() -> None:
     source = (ROOT / "baselines/e2_alns/run_solomon_sintef_formal_20260717.py").read_text(
         encoding="utf-8"
     )
     assert "FORMAL_INSTANCES = tuple(sorted(read_references()))" not in source
     assert len(runner.FORMAL_INSTANCES) == 56
     assert len(set(runner.FORMAL_INSTANCES)) == 56
-    assert 'mp_context=mp.get_context("spawn")' in source
+    assert "subprocess.Popen(" in source
+    assert '"--worker-task"' in source
+    assert "len(active) < FORMAL_WORKERS" in source
+    assert "ProcessPoolExecutor" not in source
+    assert "start_new_session=True" in source
+    assert "os.killpg(" in source
+
+
+def test_canonical_solution_record_is_jsonl_safe() -> None:
+    record = {
+        "task_key": "C101__seed1",
+        "solution": {"routes": [{"node_sequence": ["D0", "C1", "D0"]}]},
+        "operator_counts": {"跨场": 1},
+    }
+    encoded = runner.canonical_json(record)
+    assert "\n" not in encoded
+    assert json.loads(encoded) == record
+
+
+def test_class_summary_does_not_publish_partial_cnv_or_ctd() -> None:
+    references = runner.read_references()
+    instance_rows = []
+    for name in runner.FORMAL_INSTANCES:
+        reference = references[name]
+        instance_rows.append(
+            {
+                "instance": name,
+                "class": reference["class"],
+                "best_route_count": "" if name == "C101" else reference["bks_vehicle_count"],
+                "best_distance": "" if name == "C101" else reference["bks_distance_published_2dp"],
+                "avg_process_cpu_seconds": 1.0,
+                "avg_elapsed_seconds": 2.0,
+                "avg_time_to_best_seconds": 0.5,
+                "runs": 10,
+                "valid_runs": 0 if name == "C101" else 10,
+            }
+        )
+    summaries = {row["class"]: row for row in runner.build_class_summary(instance_rows)}
+    assert summaries["C1"]["complete_instance_count"] == 8
+    assert summaries["C1"]["CNV"] == ""
+    assert summaries["C1"]["CTD"] == ""
+    assert summaries["C2"]["complete_instance_count"] == 8
+    assert summaries["C2"]["CNV"] != ""
 
 
 def test_formal_task_matrix_is_exact_and_contains_no_bks() -> None:
@@ -70,6 +115,94 @@ def test_formal_task_matrix_is_exact_and_contains_no_bks() -> None:
     assert len({task["task_key"] for task in tasks}) == 560
     assert all("bks" not in json.dumps(task, sort_keys=True).lower() for task in tasks)
     assert all("reference" not in json.dumps(task, sort_keys=True).lower() for task in tasks)
+    assert all(task["algorithm_freeze_sha256"] == "freeze-hash" for task in tasks)
+
+
+def test_runtime_contract_rejects_bundle_or_freeze_drift(monkeypatch: pytest.MonkeyPatch) -> None:
+    task = runner.build_search_tasks(fake_contract())[0]
+    monkeypatch.setattr(runner, "bundle_hashes", lambda _name: dict(task["bundle_hashes"]))
+    monkeypatch.setattr(runner, "sha256", lambda _path: "freeze-hash")
+    monkeypatch.setattr(
+        runner,
+        "require_algorithm_freeze",
+        lambda: {"algorithm_version": "test-version"},
+    )
+    runner.verify_task_runtime_contract(task)
+    monkeypatch.setattr(runner, "bundle_hashes", lambda _name: {"instance.json": "drift"})
+    with pytest.raises(runner.FormalRunError, match="bundle hashes differ"):
+        runner.verify_task_runtime_contract(task)
+
+
+def test_worker_attempt_paths_never_reuse_incident_or_logs(tmp_path: Path) -> None:
+    first = runner.worker_paths(tmp_path, "C101__seed1", "attempt-1")
+    second = runner.worker_paths(tmp_path, "C101__seed1", "attempt-2")
+    assert first["incident"] != second["incident"]
+    assert first["stdout"] != second["stdout"]
+    first["incident"].parent.mkdir(parents=True)
+    first["incident"].write_text("preserved", encoding="utf-8")
+    second["stdout"].parent.mkdir(parents=True)
+    second["stdout"].write_text("new", encoding="utf-8")
+    assert first["incident"].read_text(encoding="utf-8") == "preserved"
+
+
+def test_stop_workers_uses_process_group_and_preserves_incident(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    class FakeProcess:
+        pid = 4242
+        returncode = None
+        wait_calls = 0
+
+        def poll(self):
+            return self.returncode
+
+        def wait(self, timeout=None):
+            self.wait_calls += 1
+            if timeout is not None and self.wait_calls == 1:
+                raise runner.subprocess.TimeoutExpired("worker", timeout)
+            self.returncode = -signal.SIGKILL
+            return self.returncode
+
+    process = FakeProcess()
+    paths = runner.worker_paths(tmp_path, "C101__seed1", "attempt-1")
+    paths["task"].parent.mkdir(parents=True)
+    paths["task"].write_text("{}", encoding="utf-8")
+    calls = []
+    monkeypatch.setattr(runner.os, "killpg", lambda pid, sig: calls.append((pid, sig)))
+    record = {
+        "task": {"task_key": "C101__seed1"},
+        "paths": paths,
+        "process": process,
+        "stdout_handle": None,
+        "stderr_handle": None,
+        "started_ns": time.perf_counter_ns(),
+    }
+    runner.stop_workers({"C101__seed1": record})
+    assert calls == [(4242, signal.SIGTERM), (4242, signal.SIGKILL)]
+    incident = json.loads(paths["incident"].read_text(encoding="utf-8"))
+    assert incident["code"] == "PARENT_ABORTED_INFLIGHT"
+
+
+def test_stop_workers_terminates_a_real_dummy_process_group(tmp_path: Path) -> None:
+    process = runner.subprocess.Popen(
+        [sys.executable, "-c", "import time; time.sleep(60)"],
+        start_new_session=True,
+    )
+    paths = runner.worker_paths(tmp_path, "dummy", "attempt-1")
+    paths["task"].parent.mkdir(parents=True)
+    paths["task"].write_text("{}", encoding="utf-8")
+    record = {
+        "task": {"task_key": "dummy"},
+        "paths": paths,
+        "process": process,
+        "stdout_handle": None,
+        "stderr_handle": None,
+        "started_ns": time.perf_counter_ns(),
+    }
+    runner.stop_workers({"dummy": record})
+    assert process.poll() is not None
+    assert paths["incident"].is_file()
 
 
 def test_all_instance_specific_big_m_values_prove_lexicographic_priority() -> None:

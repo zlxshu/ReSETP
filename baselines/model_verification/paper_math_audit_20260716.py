@@ -294,6 +294,10 @@ def audit_structural_counterexamples(tex: str) -> list[dict[str, str]]:
 
 
 def audit_notation_and_cost_semantics(tex: str) -> list[dict[str, str]]:
+    bare_semantic_superscripts = re.findall(
+        r"\^\{(?:fix|km|fuel|elec|occ|tr|op|car)\}",
+        tex,
+    )
     budget_symbol_distinct = (
         r"N_{\mathrm{eval}}" in tex
         and "评价预算为 $B$" not in tex
@@ -338,8 +342,18 @@ def audit_notation_and_cost_semantics(tex: str) -> list[dict[str, str]]:
         and "通过移除式" in tex
         and "不设参与底线" in tex
     )
-    cross_depot_friction_zero = r"c_{i,d_i^0}^{tr}=0" in tex
+    cross_depot_friction_zero = r"c_{i,d_i^0}^{\mathrm{tr}}=0" in tex
     return [
+        record(
+            "成本与碳价的语义上标使用正体",
+            "PASS" if not bare_semantic_superscripts else "FAIL",
+            (
+                "fix、km、fuel、elec、occ、tr、op和car均为语义标签，正文统一使用\\mathrm正体。"
+                if not bare_semantic_superscripts
+                else f"仍发现{len(bare_semantic_superscripts)}处裸斜体语义上标：{bare_semantic_superscripts[:8]}。"
+            ),
+            "把语义标签写为\\mathrm{fix}、\\mathrm{km}、\\mathrm{fuel}、\\mathrm{elec}、\\mathrm{occ}、\\mathrm{tr}、\\mathrm{op}和\\mathrm{car}，变量字母仍用斜体。",
+        ),
         record(
             "电池容量与算法评价预算不共用符号",
             "PASS" if budget_symbol_distinct else "FAIL",
@@ -385,7 +399,7 @@ def audit_notation_and_cost_semantics(tex: str) -> list[dict[str, str]]:
         record(
             "原责任车场的跨场摩擦为零",
             "PASS" if cross_depot_friction_zero else "FAIL",
-            "符号表明确c_{i,d_i^0}^{tr}=0。" if cross_depot_friction_zero else "跨场摩擦成本未排除客户由原责任车场服务的情形。",
+            "符号表明确c_{i,d_i^0}^{\\mathrm{tr}}=0。" if cross_depot_friction_zero else "跨场摩擦成本未排除客户由原责任车场服务的情形。",
             "显式规定客户由原责任车场服务时跨场摩擦为零。",
         ),
     ]

@@ -1,0 +1,51 @@
+{
+  "adapter_path": "baselines/e2_alns/run_solomon_external_strong_baselines_20260717.py",
+  "adapter_sha256": "816ead3bd5496876a7970fbb56fb002f4727d20df505e9de9d223a5ef3116473",
+  "candidate_only": true,
+  "created_at_utc": "2026-07-16T20:26:11.338863+00:00",
+  "formal_search_authorized": false,
+  "formal_solomon_search_evaluations": 0,
+  "model_api_signatures": {
+    "add_client": "(x: 'float', y: 'float', delivery: 'int | list[int]' = [], pickup: 'int | list[int]' = [], service_duration: 'int' = 0, tw_early: 'int' = 0, tw_late: 'int' = 9223372036854775807, release_time: 'int' = 0, prize: 'int' = 0, required: 'bool' = True, group: 'ClientGroup | None' = None, *, name: 'str' = '') -> 'Client'",
+    "add_depot": "(x: 'float', y: 'float', tw_early: 'int' = 0, tw_late: 'int' = 9223372036854775807, service_duration: 'int' = 0, *, name: 'str' = '') -> 'Depot'",
+    "add_edge": "(frm: 'Client | Depot', to: 'Client | Depot', distance: 'int', duration: 'int' = 0, profile: 'Profile | None' = None) -> 'Edge'",
+    "add_vehicle_type": "(num_available: 'int' = 1, capacity: 'int | list[int]' = [], start_depot: 'Depot | None' = None, end_depot: 'Depot | None' = None, fixed_cost: 'int' = 0, tw_early: 'int' = 0, tw_late: 'int' = 9223372036854775807, shift_duration: 'int' = 9223372036854775807, max_distance: 'int' = 9223372036854775807, unit_distance_cost: 'int' = 1, unit_duration_cost: 'int' = 0, profile: 'Profile | None' = None, start_late: 'int | None' = None, initial_load: 'int | list[int]' = [], reload_depots: 'list[Depot]' = [], max_reloads: 'int' = 18446744073709551615, max_overtime: 'int' = 0, unit_overtime_cost: 'int' = 0, *, name: 'str' = '') -> 'VehicleType'",
+    "solve": "(stop: 'StoppingCriterion', seed: 'int' = 0, collect_stats: 'bool' = True, display: 'bool' = True, params: 'SolveParams' = <pyvrp.solve.SolveParams object at 0x101e1cb90>, missing_value: 'int' = 17592186044416, initial_solution: 'Solution | None' = None) -> 'Result'"
+  },
+  "python_executable": "/opt/anaconda3/bin/python3.13",
+  "python_version": "3.13.9 | packaged by Anaconda, Inc. | (main, Oct 21 2025, 19:11:29) [Clang 20.1.8 ]",
+  "pyvrp_version": "0.13.4",
+  "schema_version": "resetp.e2.pyvrp-0.13.4-tool-probe.v1",
+  "statistics_layout": {
+    "data_count": 20,
+    "num_iterations": 20,
+    "result_runtime_seconds": 0.0002672080008778721,
+    "runtime_delta_count": 20,
+    "runtime_delta_sum_seconds": 0.0002658749872352928,
+    "time_to_best_seconds": 3.137500607408583e-05
+  },
+  "statistics_source_path": "/Users/zhouleixishu/.codex/runtimes/resetp-pyvrp-0.13.4/lib/python3.13/site-packages/pyvrp/Statistics.py",
+  "statistics_source_sha256": "bf978251926ce06ffe40b08d19f5ae6efd1d5f7cd64f409af40632a355bdd6cd",
+  "synthetic_probe_client_count": 3,
+  "synthetic_probe_iterations": 20,
+  "synthetic_result": {
+    "feasible": true,
+    "objective": 106,
+    "routes": [
+      [
+        1,
+        2,
+        3
+      ]
+    ]
+  },
+  "thread_environment": {
+    "MKL_NUM_THREADS": "1",
+    "NUMEXPR_NUM_THREADS": "1",
+    "OMP_NUM_THREADS": "1",
+    "OPENBLAS_NUM_THREADS": "1",
+    "VECLIB_MAXIMUM_THREADS": "1"
+  },
+  "wheel_path": "baselines/e2_alns/external_tools/pyvrp-0.13.4/pyvrp-0.13.4-cp313-cp313-macosx_11_0_arm64.whl",
+  "wheel_sha256": "49b84319fcfcd2206c05f55e970d090ab054d577a1d82cbac276d376fe89970c"
+}

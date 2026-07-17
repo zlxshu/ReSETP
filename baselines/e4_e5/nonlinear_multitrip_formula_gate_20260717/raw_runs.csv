@@ -1,0 +1,12 @@
+check,case,expected,actual,absolute_error,pass
+inverse_round_trip,energy=0.0,0.0,0.0,0.0,True
+inverse_round_trip,energy=1.25,1.25,1.25,0.0,True
+inverse_round_trip,energy=8.0,8.0,8.0,0.0,True
+inverse_round_trip,energy=8.5,8.5,8.5,0.0,True
+inverse_round_trip,energy=9.0,9.0,9.0,0.0,True
+inverse_round_trip,energy=9.75,9.75,9.75,0.0,True
+inverse_round_trip,energy=10.0,10.0,10.0,0.0,True
+constant_power_degeneracy,two_trips_50kWh_gap1h,78.0|50.0,78|50,0.0,True
+constant_power_materialization,return_charge_duration,28.0|22.0|3600.0,28|22|3600,0.0,True
+nonlinear_backward_recursion_dense_scan,drives=3|4|3_gaps=1800|3600,7.000000000000892,7.0,8.917311333789257e-13,True
+infeasible_chain_rejected,drives=8|8_gap=0,True,True,0.0,True

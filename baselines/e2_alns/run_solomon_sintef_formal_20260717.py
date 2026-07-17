@@ -10,18 +10,18 @@ are joined by the parent process only after independent solution recomputation.
 from __future__ import annotations
 
 import argparse
+from collections import deque
 import csv
 import hashlib
 import inspect
 import io
 import json
 import math
-import multiprocessing as mp
 import os
+import signal
 import subprocess
 import sys
 import time
-from concurrent.futures import ProcessPoolExecutor, as_completed
 from dataclasses import asdict
 from datetime import datetime, timezone
 from decimal import Decimal, ROUND_HALF_UP
@@ -57,6 +57,8 @@ FORMAL_SEEDS = tuple(range(1, 11))
 FORMAL_EVAL_BUDGET = 4000
 FORMAL_WORKERS = 8
 FORMAL_MAX_RUNTIME_SECONDS = 1800.0
+HARD_TIMEOUT_GRACE_SECONDS = 5.0
+WORKER_POLL_SECONDS = 0.2
 GOLD_PYTHON = "/opt/anaconda3/bin/python3.13"
 GOLD_NUMPY = "2.3.5"
 CONTRACT_SCHEMA = "resetp.e2.solomon-sintef-formal.v1"
@@ -130,6 +132,16 @@ def atomic_csv(path: Path, rows: list[dict[str, Any]], fields: list[str]) -> Non
     writer.writeheader()
     writer.writerows({field: row.get(field, "") for field in fields} for row in rows)
     atomic_text(path, buffer.getvalue())
+
+
+def canonical_json(value: Any) -> str:
+    return json.dumps(
+        value,
+        ensure_ascii=False,
+        sort_keys=True,
+        separators=(",", ":"),
+        allow_nan=False,
+    )
 
 
 def round_half_up_2(value: float) -> float:
@@ -556,6 +568,8 @@ def build_search_tasks(contract: Mapping[str, Any]) -> list[dict[str, Any]]:
             "max_runtime_seconds": contract["max_runtime_seconds"],
             "big_m": contract["big_m_proofs"][name]["big_m"],
             "bundle_hashes": contract["bundle_hashes"][name],
+            "algorithm_freeze_sha256": contract["algorithm_freeze_sha256"],
+            "algorithm_version": contract["algorithm_version"],
         }
         for name in contract["instances"]
         for seed in contract["seeds"]
@@ -570,10 +584,26 @@ def build_search_tasks(contract: Mapping[str, Any]) -> list[dict[str, Any]]:
     return tasks
 
 
+def verify_task_runtime_contract(task: Mapping[str, Any]) -> None:
+    """Reject bundle or algorithm drift before/after every search task."""
+
+    name = str(task["instance"])
+    expected_bundle = task.get("bundle_hashes")
+    if not isinstance(expected_bundle, Mapping) or bundle_hashes(name) != dict(expected_bundle):
+        raise FormalRunError(f"worker bundle hashes differ: {name}")
+    expected_freeze = str(task.get("algorithm_freeze_sha256", ""))
+    if not expected_freeze or sha256(ALGORITHM_FREEZE) != expected_freeze:
+        raise FormalRunError("worker algorithm-freeze hash differs")
+    freeze = require_algorithm_freeze()
+    if freeze.get("algorithm_version") != task.get("algorithm_version"):
+        raise FormalRunError("worker algorithm version differs")
+
+
 def run_task(task: Mapping[str, Any]) -> dict[str, Any]:
     """Run one task.  Unexpected exceptions escape and are never checkpointed."""
 
     verify_gold_environment()
+    verify_task_runtime_contract(task)
     from setp_solver.algorithms.resetp_alns.kernel import winner  # noqa: PLC0415
 
     entry = getattr(winner, "run_solomon_path_core", None)
@@ -594,6 +624,7 @@ def run_task(task: Mapping[str, Any]) -> dict[str, Any]:
     )
     solver_elapsed = (time.perf_counter_ns() - solver_started) / 1e9
     process_cpu = (time.process_time_ns() - process_started) / 1e9
+    verify_task_runtime_contract(task)
     required = {
         "best_solution",
         "best_lexicographic_score",
@@ -647,6 +678,7 @@ def run_task(task: Mapping[str, Any]) -> dict[str, Any]:
         "elapsed_seconds": solver_elapsed,
         "task_elapsed_seconds": task_elapsed,
         "time_to_best_seconds": first_best,
+        "algorithm_reported_feasible": bool(result["feasible"]),
         "feasible": solution_feasible,
         "independent_recompute_pass": bool(recomputed["passed"]),
         "violation_count": len(recomputed["failures"]),
@@ -692,6 +724,7 @@ def build_contract() -> dict[str, Any]:
         "reference_join_boundary": "BKS records remain parent-only and are joined after worker recomputation.",
         "gate_hashes": gate_hashes,
         "cpu_contract_sha256": sha256(CPU_CONTRACT),
+        "cpu_contract": cpu,
         "cpu_reporting": cpu["literature_reporting_semantics"],
         "e7_closeout_hashes": e7_hashes,
         "algorithm_freeze_sha256": sha256(ALGORITHM_FREEZE),
@@ -729,7 +762,14 @@ def checkpoint_path(root: Path, key: str) -> Path:
 
 
 def save_checkpoint(path: Path, contract_sha: str, task: Mapping[str, Any], row: Mapping[str, Any]) -> None:
-    identity = {key: task[key] for key in ("schema_version", "task_key", "instance", "class", "seed", "eval_budget", "max_runtime_seconds", "big_m")}
+    identity = {
+        key: task[key]
+        for key in (
+            "schema_version", "task_key", "instance", "class", "seed", "eval_budget",
+            "max_runtime_seconds", "big_m", "bundle_hashes", "algorithm_freeze_sha256",
+            "algorithm_version",
+        )
+    }
     payload = {
         "schema_version": CHECKPOINT_SCHEMA,
         "contract_sha256": contract_sha,
@@ -745,7 +785,14 @@ def load_checkpoint(path: Path, contract_sha: str, task: Mapping[str, Any]) -> d
         payload = json.loads(path.read_text(encoding="utf-8"))
     except Exception as exc:
         raise CheckpointError(f"cannot read checkpoint {path}: {exc}") from exc
-    identity = {key: task[key] for key in ("schema_version", "task_key", "instance", "class", "seed", "eval_budget", "max_runtime_seconds", "big_m")}
+    identity = {
+        key: task[key]
+        for key in (
+            "schema_version", "task_key", "instance", "class", "seed", "eval_budget",
+            "max_runtime_seconds", "big_m", "bundle_hashes", "algorithm_freeze_sha256",
+            "algorithm_version",
+        )
+    }
     if payload.get("schema_version") != CHECKPOINT_SCHEMA:
         raise CheckpointError(f"checkpoint schema differs: {path}")
     if payload.get("contract_sha256") != contract_sha or payload.get("task_identity") != identity:
@@ -813,6 +860,7 @@ def build_instance_summary(rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
                 "gap_valid_runs": len(gap_rows),
                 "avg_process_cpu_seconds": fmean(float(row["process_cpu_seconds"]) for row in group),
                 "avg_elapsed_seconds": fmean(float(row["elapsed_seconds"]) for row in group),
+                "avg_time_to_best_seconds": fmean(float(row["time_to_best_seconds"]) for row in group),
                 "bks_hits": sum(bool(row["full_bks_hit"]) for row in good),
                 "runs": len(group),
                 "valid_runs": len(good),
@@ -827,16 +875,19 @@ def build_class_summary(instance_rows: list[dict[str, Any]]) -> list[dict[str, A
     for class_name in ("C1", "C2", "R1", "R2", "RC1", "RC2"):
         group = [row for row in instance_rows if row["class"] == class_name]
         completed = [row for row in group if row["best_route_count"] != ""]
+        complete_class = len(completed) == len(group)
         output.append(
             {
                 "class": class_name,
                 "instance_count": len(group),
-                "avg_best_route_count": fmean(float(row["best_route_count"]) for row in completed) if completed else "",
-                "avg_best_distance": fmean(float(row["best_distance"]) for row in completed) if completed else "",
-                "CNV": sum(int(row["best_route_count"]) for row in completed),
-                "CTD": sum(float(row["best_distance"]) for row in completed),
+                "complete_instance_count": len(completed),
+                "avg_best_route_count": fmean(float(row["best_route_count"]) for row in completed) if complete_class else "",
+                "avg_best_distance": fmean(float(row["best_distance"]) for row in completed) if complete_class else "",
+                "CNV": sum(int(row["best_route_count"]) for row in completed) if complete_class else "",
+                "CTD": sum(float(row["best_distance"]) for row in completed) if complete_class else "",
                 "avg_process_cpu_seconds": fmean(float(row["avg_process_cpu_seconds"]) for row in group),
                 "avg_elapsed_seconds": fmean(float(row["avg_elapsed_seconds"]) for row in group),
+                "avg_time_to_best_seconds": fmean(float(row["avg_time_to_best_seconds"]) for row in group),
                 "Runs": sum(int(row["runs"]) for row in group),
                 "valid_runs": sum(int(row["valid_runs"]) for row in group),
             }
@@ -850,7 +901,8 @@ RAW_FIELDS = [
     "distance_rounded_2", "reached_bks_vehicle_count", "distance_gap_pct", "full_bks_hit",
     "bks_conflict_candidate", "lexicographic_score", "eval_budget", "evaluations", "candidate_scores",
     "repair_delta_count", "process_cpu_seconds", "elapsed_seconds", "task_elapsed_seconds",
-    "time_to_best_seconds", "feasible", "independent_recompute_pass", "violation_count", "timeout",
+    "time_to_best_seconds", "algorithm_reported_feasible", "feasible",
+    "independent_recompute_pass", "violation_count", "timeout",
     "status", "failure_codes", "solution_sha256", "started_at_utc", "finished_at_utc",
 ]
 
@@ -872,6 +924,13 @@ def write_final_evidence(out: Path, contract: Mapping[str, Any], rows: list[dict
         "objective": contract["objective"],
         "cpu_field_definition": "process_cpu_seconds is this study's operational process-CPU measure",
         "elapsed_field_definition": "elapsed_seconds is solver wall-clock time",
+        "time_to_best_definition": "time_to_best_seconds is wall-clock time to the final run-best solution",
+        "machine": contract["cpu_contract"]["machine"],
+        "runtime": contract["cpu_contract"]["runtime"],
+        "workers": contract["workers"],
+        "single_thread_per_solver": contract["cpu_contract"]["execution_rules"][
+            "single_thread_per_solver"
+        ],
         "test_set_used_for_tuning": False,
     }
     decision = {
@@ -884,7 +943,33 @@ def write_final_evidence(out: Path, contract: Mapping[str, Any], rows: list[dict
         "all_unfavorable_results_retained": True,
     }
     atomic_json(out / "metadata.json", metadata)
-    atomic_csv(out / "raw_runs.csv", rows, RAW_FIELDS)
+    atomic_json(out / "cpu_contract_snapshot.json", contract["cpu_contract"])
+    raw_rows = [
+        {
+            **row,
+            "failure_codes": canonical_json(row.get("failure_codes", [])),
+        }
+        for row in rows
+    ]
+    atomic_csv(out / "raw_runs.csv", raw_rows, RAW_FIELDS)
+    solution_records = [
+        {
+            "task_key": row["task_key"],
+            "instance": row["instance"],
+            "seed": row["seed"],
+            "status": row["status"],
+            "solution_sha256": row["solution_sha256"],
+            "solution": row["solution"],
+            "independent_recomputation": row["independent_recomputation"],
+            "operator_counts": row.get("operator_counts", {}),
+            "score_counts": row.get("score_counts", {}),
+        }
+        for row in rows
+    ]
+    atomic_text(
+        out / "solutions.jsonl",
+        "".join(canonical_json(record) + "\n" for record in solution_records),
+    )
     atomic_csv(out / "instance_summary.csv", instance_summary, list(instance_summary[0]))
     atomic_csv(out / "class_summary.csv", class_summary, list(class_summary[0]))
     atomic_json(out / "decision.json", decision)
@@ -905,6 +990,12 @@ def write_final_evidence(out: Path, contract: Mapping[str, Any], rows: list[dict
         "BKS只在父进程独立复算后关联，未进入搜索任务。CPU/s为本文操作性定义的进程CPU时间，"
         "RT/s为墙钟时间；两者均不作为跨论文硬件速度优越性的直接证据。\n",
     )
+    task_artifacts = {
+        str(path.relative_to(out)): sha256(path)
+        for path in sorted((out / ".tasks").rglob("*"))
+        if path.is_file() and not path.name.startswith("._")
+    }
+    atomic_json(out / "task_artifact_hashes.json", task_artifacts)
     subprocess.run(["dot_clean", "-m", str(out)], check=True)
     sidecars = list(out.rglob("._*"))
     if sidecars:
@@ -921,15 +1012,257 @@ def write_final_evidence(out: Path, contract: Mapping[str, Any], rows: list[dict
     return decision
 
 
+def worker_paths(out: Path, key: str, attempt_id: str) -> dict[str, Path]:
+    root = out / ".tasks" / "attempts" / key / attempt_id
+    return {
+        "task": root / "task.json",
+        "result": root / "result.json",
+        "stdout": root / "stdout.log",
+        "stderr": root / "stderr.log",
+        "incident": root / "incident.json",
+    }
+
+
+def launch_worker(out: Path, task: Mapping[str, Any]) -> dict[str, Any]:
+    attempt_id = f"{time.time_ns()}-{os.getpid()}"
+    paths = worker_paths(out, str(task["task_key"]), attempt_id)
+    atomic_json(paths["task"], dict(task))
+    paths["stdout"].parent.mkdir(parents=True, exist_ok=True)
+    stdout_handle = paths["stdout"].open("w", encoding="utf-8")
+    stderr_handle = paths["stderr"].open("w", encoding="utf-8")
+    command = [
+        GOLD_PYTHON,
+        str(Path(__file__).resolve()),
+        "--worker-task",
+        str(paths["task"]),
+        "--worker-output",
+        str(paths["result"]),
+    ]
+    try:
+        process = subprocess.Popen(
+            command,
+            cwd=REPO,
+            env=os.environ.copy(),
+            stdout=stdout_handle,
+            stderr=stderr_handle,
+            start_new_session=True,
+        )
+    except BaseException:
+        stdout_handle.close()
+        stderr_handle.close()
+        raise
+    return {
+        "task": dict(task),
+        "paths": paths,
+        "process": process,
+        "stdout_handle": stdout_handle,
+        "stderr_handle": stderr_handle,
+        "started_ns": time.perf_counter_ns(),
+    }
+
+
+def close_worker_handles(record: Mapping[str, Any]) -> None:
+    for key in ("stdout_handle", "stderr_handle"):
+        handle = record.get(key)
+        if handle is not None and not handle.closed:
+            handle.close()
+
+
+def stop_workers(active: Mapping[str, Mapping[str, Any]]) -> None:
+    for record in active.values():
+        process = record["process"]
+        if process.poll() is None:
+            if not record["paths"]["incident"].is_file():
+                record_worker_incident(
+                    record,
+                    "PARENT_ABORTED_INFLIGHT",
+                    "parent stopped all in-flight workers after a formal-run halt",
+                )
+            try:
+                os.killpg(process.pid, signal.SIGTERM)
+            except ProcessLookupError:
+                pass
+    deadline = time.monotonic() + 2.0
+    for record in active.values():
+        process = record["process"]
+        remaining = max(0.0, deadline - time.monotonic())
+        if process.poll() is None:
+            try:
+                process.wait(timeout=remaining)
+            except subprocess.TimeoutExpired:
+                try:
+                    os.killpg(process.pid, signal.SIGKILL)
+                except ProcessLookupError:
+                    pass
+                process.wait()
+        close_worker_handles(record)
+
+
+def record_worker_incident(record: Mapping[str, Any], code: str, detail: str) -> None:
+    paths = record["paths"]
+    process = record["process"]
+    if paths["incident"].is_file():
+        return
+    atomic_json(
+        paths["incident"],
+        {
+            "code": code,
+            "detail": detail,
+            "task": record["task"],
+            "pid": process.pid,
+            "returncode": process.poll(),
+            "elapsed_seconds": (time.perf_counter_ns() - record["started_ns"]) / 1e9,
+            "stdout_log": str(paths["stdout"].relative_to(out_root(paths["task"]))),
+            "stderr_log": str(paths["stderr"].relative_to(out_root(paths["task"]))),
+            "recorded_at_utc": datetime.now(timezone.utc).isoformat(),
+        },
+    )
+
+
+def out_root(task_path: Path) -> Path:
+    """Return the formal output root for a path beneath ``.tasks``."""
+
+    for parent in task_path.parents:
+        if parent.name == ".tasks":
+            return parent.parent
+    raise FormalRunError(f"worker IPC path is outside .tasks: {task_path}")
+
+
+def collect_worker_result(record: Mapping[str, Any]) -> dict[str, Any]:
+    process = record["process"]
+    close_worker_handles(record)
+    if process.returncode != 0:
+        record_worker_incident(
+            record,
+            "WORKER_EXIT_NONZERO",
+            f"worker exited with code {process.returncode}",
+        )
+        raise FormalRunError(
+            f"worker failed for {record['task']['task_key']}; see {record['paths']['stderr']}"
+        )
+    path = record["paths"]["result"]
+    try:
+        row = json.loads(path.read_text(encoding="utf-8"))
+    except Exception as exc:
+        record_worker_incident(record, "WORKER_RESULT_INVALID", str(exc))
+        raise FormalRunError(
+            f"worker result is invalid for {record['task']['task_key']}: {exc}"
+        ) from exc
+    if row.get("task_key") != record["task"]["task_key"]:
+        record_worker_incident(record, "WORKER_RESULT_IDENTITY_MISMATCH", "task key differs")
+        raise FormalRunError(f"worker result identity differs: {record['task']['task_key']}")
+    return row
+
+
+def execute_pending_tasks(
+    out: Path,
+    contract: Mapping[str, Any],
+    tasks: list[dict[str, Any]],
+    completed: dict[str, dict[str, Any]],
+    references: Mapping[str, Mapping[str, Any]],
+) -> None:
+    queue = deque(task for task in tasks if task["task_key"] not in completed)
+    active: dict[str, dict[str, Any]] = {}
+    previous_handlers: dict[int, Any] = {}
+    interrupted_signum: int | None = None
+
+    def handle_parent_signal(signum: int, _frame: Any) -> None:
+        nonlocal interrupted_signum
+        interrupted_signum = signum
+
+    for signum in (signal.SIGINT, signal.SIGTERM):
+        previous_handlers[signum] = signal.getsignal(signum)
+        signal.signal(signum, handle_parent_signal)
+    try:
+        while queue or active:
+            if interrupted_signum is not None:
+                for record in active.values():
+                    record_worker_incident(
+                        record,
+                        "PARENT_SIGNAL_ABORT",
+                        f"parent received signal {interrupted_signum}",
+                    )
+                raise FormalRunError(
+                    f"formal runner interrupted by signal {interrupted_signum}"
+                )
+            while queue and len(active) < FORMAL_WORKERS:
+                task = queue.popleft()
+                key = str(task["task_key"])
+                old_mask = signal.pthread_sigmask(
+                    signal.SIG_BLOCK,
+                    {signal.SIGINT, signal.SIGTERM},
+                )
+                try:
+                    active[key] = launch_worker(out, task)
+                finally:
+                    signal.pthread_sigmask(signal.SIG_SETMASK, old_mask)
+                if interrupted_signum is not None:
+                    break
+            progressed = False
+            for key, record in list(active.items()):
+                process = record["process"]
+                elapsed = (time.perf_counter_ns() - record["started_ns"]) / 1e9
+                hard_limit = float(record["task"]["max_runtime_seconds"]) + HARD_TIMEOUT_GRACE_SECONDS
+                if process.poll() is None and elapsed > hard_limit:
+                    record_worker_incident(
+                        record,
+                        "WORKER_HARD_TIMEOUT",
+                        f"elapsed {elapsed:.3f}s exceeded hard limit {hard_limit:.3f}s",
+                    )
+                    raise FormalRunError(f"worker hard timeout: {key}")
+                if process.poll() is None:
+                    continue
+                row = collect_worker_result(record)
+                del active[key]
+                progressed = True
+                task = record["task"]
+                verify_task_runtime_contract(task)
+                joined = join_reference(
+                    row,
+                    references[str(task["instance"])],
+                    str(contract["algorithm_version"]),
+                )
+                save_checkpoint(
+                    checkpoint_path(out, key),
+                    str(contract["contract_sha256"]),
+                    task,
+                    joined,
+                )
+                completed[key] = joined
+                if joined["bks_conflict_candidate"]:
+                    raise BKSConflictError(
+                        f"BKS conflict candidate preserved at {checkpoint_path(out, key)}"
+                    )
+            if active and not progressed:
+                time.sleep(WORKER_POLL_SECONDS)
+    except BaseException:
+        stop_workers(active)
+        raise
+    finally:
+        for signum, handler in previous_handlers.items():
+            signal.signal(signum, handler)
+
+
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser()
     parser.add_argument("--output", type=Path, default=DEFAULT_OUT)
     parser.add_argument("--preflight-only", action="store_true")
+    parser.add_argument("--worker-task", type=Path)
+    parser.add_argument("--worker-output", type=Path)
     return parser.parse_args()
 
 
 def main() -> int:
     args = parse_args()
+    worker_task = getattr(args, "worker_task", None)
+    worker_output = getattr(args, "worker_output", None)
+    if worker_task is not None or worker_output is not None:
+        if worker_task is None or worker_output is None:
+            raise FormalRunError("worker mode requires both task and output paths")
+        task = json.loads(worker_task.read_text(encoding="utf-8"))
+        row = run_task(task)
+        atomic_json(worker_output, row)
+        return 0
     contract_request = build_contract()
     tasks = build_search_tasks(contract_request)
     if args.preflight_only:
@@ -940,32 +1273,9 @@ def main() -> int:
     conflicts = [key for key, row in completed.items() if bool(row.get("bks_conflict_candidate"))]
     if conflicts:
         raise BKSConflictError(f"existing BKS conflict checkpoints require independent audit: {conflicts}")
-    pending = [task for task in tasks if task["task_key"] not in completed]
     refs = read_references()
     try:
-        # ``spawn`` prevents workers from inheriting the parent-only BKS table.
-        # The worker module contains only frozen instance identities and each
-        # submitted task is independently checked to be BKS-free.
-        with ProcessPoolExecutor(
-            max_workers=FORMAL_WORKERS,
-            mp_context=mp.get_context("spawn"),
-        ) as executor:
-            futures = {executor.submit(run_task, task): task for task in pending}
-            for future in as_completed(futures):
-                task = futures[future]
-                row = future.result()  # unexpected worker failures halt without a completed checkpoint
-                joined = join_reference(row, refs[task["instance"]], contract["algorithm_version"])
-                save_checkpoint(
-                    checkpoint_path(args.output, task["task_key"]),
-                    contract["contract_sha256"],
-                    task,
-                    joined,
-                )
-                completed[task["task_key"]] = joined
-                if joined["bks_conflict_candidate"]:
-                    raise BKSConflictError(
-                        f"BKS conflict candidate preserved at {checkpoint_path(args.output, task['task_key'])}"
-                    )
+        execute_pending_tasks(args.output, contract, tasks, completed, refs)
     except BaseException:
         atomic_json(
             args.output / "run_state.json",

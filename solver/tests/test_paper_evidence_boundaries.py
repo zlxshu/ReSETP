@@ -29,6 +29,23 @@ def test_story_audit_manifest_is_exact(tmp_path) -> None:
     assert failures == [f"{tmp_path}: missing report.md"]
 
 
+def test_story_audit_rebuilds_and_hashes_all_seven_e7_exhibits(tmp_path) -> None:
+    expected = {name: f"sealed {name}\n" for name in audit.E7_EXHIBITS}
+    for name, text in expected.items():
+        (tmp_path / name).write_text(text, encoding="utf-8")
+    provenance = {
+        "generated_hashes": {
+            name: audit.sha256(tmp_path / name) for name in audit.E7_EXHIBITS
+        }
+    }
+    assert audit.e7_generated_exhibit_failures(tmp_path, expected, provenance) == []
+    target = tmp_path / audit.E7_EXHIBITS[0]
+    target.write_text("tampered\n", encoding="utf-8")
+    failures = audit.e7_generated_exhibit_failures(tmp_path, expected, provenance)
+    assert any("does not reproduce" in failure for failure in failures)
+    assert any("exhibit hash differs" in failure for failure in failures)
+
+
 def test_story_audit_requires_complete_replay_invariant_counts() -> None:
     decision = {
         "status": "PASS_E7_REPLAY_INVARIANTS_AUDIT",
@@ -150,7 +167,7 @@ def test_pending_paper_has_a_hard_e2_public_benchmark_hook() -> None:
 def test_solomon_main_table_uses_sintef_hierarchical_metrics() -> None:
     text = audit.TEX.read_text(encoding="utf-8")
     start = text.index(r"\subsubsection{Solomon标准算例实验}")
-    end = text.index(r"\ifETwoPublicReady\subsubsection{本文模型实验}", start)
+    end = text.index(r"\subsubsection{本文模型实验}", start)
     section = text[start:end]
     for required in audit.E2_SOLOMON_MAIN_TABLE_REQUIRED_TERMS:
         assert required in section
@@ -165,10 +182,10 @@ def test_paper_uses_one_atomic_e7_exhibit_gate() -> None:
     assert r"\newif\ifESevenReady" in preamble
     assert r"\ESevenReadyfalse" in preamble
     assert r"\ESevenReadytrue" in preamble
-    for filename in audit.E7_EXHIBITS:
+    for filename in audit.E7_REQUIRED_PAPER_FILES:
         assert f"generated_tables/{filename}" in preamble
     assert preamble.count(r"\IfFileExists{generated_tables/e7_dynamic_") == len(
-        audit.E7_EXHIBITS
+        audit.E7_REQUIRED_PAPER_FILES
     )
     assert r"\IfFileExists{generated_tables/e7_dynamic_" not in body
 
@@ -265,6 +282,10 @@ def test_introduction_citations_are_single_and_first_appearance_ordered() -> Non
         r"\section{模型建立}", maxsplit=1
     )[0]
     assert not re.findall(r"\\cite\{[^}]*,[^}]*\}", introduction)
+    assert all(
+        sentence.count(r"\cite{") <= 1
+        for sentence in re.split(r"[。！？；\n]+", introduction)
+    )
 
     first_appearance: list[str] = []
     for group in re.findall(r"\\cite\{([^}]+)\}", body):

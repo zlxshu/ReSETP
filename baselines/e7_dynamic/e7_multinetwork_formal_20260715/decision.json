@@ -1,0 +1,31 @@
+{
+  "child_contract_sha256": "b703492d88d5a4db69f4302c709767871a8743ddef853e7be1d8b4ca956c0721",
+  "child_task_count": 18,
+  "controlled_arm_failures": [
+    {
+      "arm": "no_participation",
+      "failed_stage": 2,
+      "failed_trigger_second": 21600.0,
+      "failure_error": "stage search found no executable continuation (initial_feasible=False, changed=50, executable=0, accepted=0, top_rejections=[('E7_DYNAMIC_MULTITRIP_V1: no inherited asset can serve open route DYN_EVENT_N_S1_001', 11), ('E7_DYNAMIC_MULTITRIP_V1: route REPACK_001 exceeds one battery', 8), ('E7_DYNAMIC_MULTITRIP_V1: no inherited asset can serve open route S2_OPEN_002', 4)])",
+      "network": "N114",
+      "responsibility_condition": "historical_mixed",
+      "stream_seed": 1
+    },
+    {
+      "arm": "no_participation",
+      "failed_stage": 2,
+      "failed_trigger_second": 21600.0,
+      "failure_error": "stage search found no executable continuation (initial_feasible=False, changed=50, executable=0, accepted=0, top_rejections=[('E7_DYNAMIC_MULTITRIP_V1: no inherited asset can serve open route DYN_EVENT_N_S3_001', 10), ('E7_DYNAMIC_MULTITRIP_V1: route REPACK_001 exceeds one battery', 7), ('E7_DYNAMIC_MULTITRIP_V1: no inherited asset can serve open route S2_OPEN_004', 4)])",
+      "network": "N114",
+      "responsibility_condition": "historical_mixed",
+      "stream_seed": 3
+    }
+  ],
+  "failures": [],
+  "parent_contract_sha256": "bffdc512b8b39fe5c11bb80b63204a39f2a529d7810741354c401644cc3be16f",
+  "parent_task_count": 102,
+  "recovery_contract_sha256": "fdebc49e8057f25cea4c12bec119055c18edf5772927646f93bb5b78e314fe61",
+  "result_direction_used_for_inclusion": false,
+  "scientific_interpretation_status": "PENDING_INDEPENDENT_AUDIT",
+  "verdict": "E7_FORMAL_EVIDENCE_COMPLETE_WITH_ARM_FAILURES"
+}

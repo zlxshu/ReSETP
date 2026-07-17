@@ -1,0 +1,3 @@
+# Homberger 200客户开发bundle适配门
+
+判定：`PASS_HOMBERGER_200_DEVELOPMENT_BUNDLE_GATE`。12个预注册开发实例已转换为双精度通用bundle并由项目加载器逐字段回读；搜索评价为0，搜索可读文件不含公开参考结果。该开发集只用于G1/G2算法开发，不能进入Solomon最终测试表。

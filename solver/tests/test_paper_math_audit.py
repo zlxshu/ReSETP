@@ -39,6 +39,7 @@ def test_current_manuscript_closes_carbon_and_participation_semantics() -> None:
     rows = {row["check"]: row for row in audit.audit_notation_and_cost_semantics(tex)}
 
     required = {
+        "成本与碳价的语义上标使用正体",
         "电网碳强度量纲与数值范围闭合",
         "预测碳强度与事后实际碳强度分离",
         "充电桩容量按连续时间并发核验",
@@ -48,6 +49,15 @@ def test_current_manuscript_closes_carbon_and_participation_semantics() -> None:
     }
     assert required <= rows.keys()
     assert all(rows[name]["status"] == "PASS" for name in required)
+
+
+def test_bare_semantic_superscript_is_rejected() -> None:
+    tex = audit.PAPER.read_text(encoding="utf-8")
+    mutated = tex.replace(r"C_{kp}^{\mathrm{op}}", r"C_{kp}^{op}", 1)
+    assert mutated != tex
+
+    rows = {row["check"]: row for row in audit.audit_notation_and_cost_semantics(mutated)}
+    assert rows["成本与碳价的语义上标使用正体"]["status"] == "FAIL"
 
 
 def test_pending_manuscript_cannot_look_like_completed_e7_evidence(

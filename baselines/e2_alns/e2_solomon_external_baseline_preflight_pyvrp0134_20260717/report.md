@@ -1,0 +1,7 @@
+# Solomon现代强基线零搜索预检
+
+判定：`HALT_EXTERNAL_BASELINE_PREREQUISITES`。本预检没有导入或调用求解器，搜索评价为0。PyVRP/HGS类外部强基线只按同机、单线程、相同墙钟上限比较；本文ALNS、LNS与消融仍按相同完整候选评价预算比较，两类结果不得混成同一公平轴。
+
+官方HGS-CVRP只支持CVRP，不能直接作为Solomon硬时间窗基线。若采用HGS，必须另行冻结一个明确支持VRPTW的实现及命令适配器。PyVRP也须冻结版本、源码哈希、建模API、距离缩放与固定车辆成本的字典序实现，再由独立双精度评价器复算输出路线。
+
+当前缺口：E7_STEPS_1_TO_6_ATTESTATION_MISSING、EXTERNAL_BASELINE_TOOL_FREEZE_MISSING。

@@ -1,5 +1,19 @@
 # Memory Index
 
+- [E7步骤1--6事件后链路静态预检（2026-07-17）](../e7_steps_1_to_6_postevent_preflight_20260717.md) — 六个收口入口和源码指纹均存在且可编译；暂停时效、重放不变量、独立总审计、论文展品和证明构建器21项测试通过。未读取正式E7目录或方向。28日零搜索重放入口自身不拒绝非空输出目录，因此COMPLETED事件后必须先做目录不存在/为空的外部门禁；本轮未改该脚本。该预检不代表E7完成。
+
+- [客户责任结构图坐标轴意见裁决（2026-07-17）](../../paper_submission_final/generated_figures/e3_customer_structure.pdf) — 直接核对Soriano等（2023）正式PDF第8页图3，母版为无坐标轴、无边框、并列同尺度的类别空间图，图例只标成员符号和客户数；当前图采用相同语法且两面板共享坐标范围。因此拒绝机械增加坐标轴、尺度和单位，避免偏离指定母版并把机制示意误作地理测量图；图和数据未改，六图视觉门保持PASS。
+
+- [公式语义上标正体化与审计防回退（2026-07-17）](../../paper_submission_final/paper_main.pdf) — `fix/km/fuel/elec/occ/tr/op/car`统一用`\mathrm{}`正体；新增数学门禁止裸斜体语义上标。旧审计器的`tr`匹配随正文正体化失配后已同步修正，正文未回退。数学审计28/0/1、两层模型7/7、35项论文回归、pending-E7故事门和六图视觉门通过；独立Tectonic编译22页A4并逐页检查第4--7页。TeX/PDF/log哈希=`972284a0...74c3`/`8a91addb...b2b8ae`/`d09c16ea...8f10`；实验数字和E7保护源未变。
+
+- [英文题名10词硬门闭合（2026-07-17）](../../paper_submission_final/paper_main.pdf) — 旧英文题名按连字符词计为11词，修正为与20字中文题名逐项对应的10词`Multi-depot Collaborative Routing Model and Algorithm under Time-varying Carbon Intensity`。数学审计由1项失败回到27/0/1，两层模型7/7，25项论文回归和pending-E7故事门通过。Tectonic独立双遍编译22页A4并目检首页；未改公式、符号、实验数字或E7保护源。
+
+- [4.1最终解分析展品合同（2026-07-17）](../paper_final_solution_exhibit_contract_20260717.md) — 预注册`N114`—地理聚集—seed1作为50客户正文主算例，不按结果挑种子；同一保存解生成路线责任图、实体车趟次充电表、参数表和解释，manifest最后发布。客户、排班、容量、时间、SOC、共享桩、成本和排放须独立复算，失败原样保留；最终算法冻结前不生成结果。
+
+- [摘要公开Benchmark越权与英文题名纠正（2026-07-17）](../../paper_submission_final/paper_main.pdf) — Solomon四件套形成前，中英文摘要及E7摘要生成器不再声称公开算例结果；英文题名补回“协同”。未改公式、符号、实验数字或E7保护源；22页A4编译、论文生成/边界测试26项、Ruff和py_compile通过。
+
+- [Solomon现代强基线零搜索接口（2026-07-17）](../e2_solomon_external_strong_baseline_interface_20260717.md) — PyVRP外部强基线按同机单线程墙钟轴，本文ALNS/LNS按完整候选评价预算轴，两轴禁止混表；560项正式接口按独立attempt、逐任务原子checkpoint和artifact哈希实现可恢复执行。PyVRP 0.13.4官方wheel、独立环境、Tbest累计增量解析和正式bundle适配器已通过v3的16项真实探针与32项接口测试；最终冻结器可哈希96个安装文件，冻结载荷本身也经`freeze_payload_sha256`校验。当前只缺E7步骤1--6证明与最终工具冻结，故仍为`HALT_EXTERNAL_BASELINE_PREREQUISITES`、Solomon搜索0次；官方HGS-CVRP不支持VRPTW，不能直接参赛。
+
 - [Homberger 200客户开发集零搜索来源门（2026-07-17）](../e2_homberger_200_source_gate_20260717.md) — 12个预注册开发实例由SINTEF官方压缩包冻结，逐例结构、车辆上限、分组容量和时间窗12/12通过；权威判定为`PASS_HOMBERGER_200_ZERO_SEARCH_SOURCE_GATE`，五记录面在`e2_homberger_200_source_gate_20260717_v2`。来源快照不保存BKS或详细解路线，搜索评价0次；E7和预算闭合门以前不授权开发搜索。
 
 - [主稿显性模仿痕迹与章节层级纠正（2026-07-16）](../chen_yudie_2025_master_reverse_engineering_20260716.md) — 撤销算法章点名母版并接本文方法的拼接句，流程图源文件去除`chen`命名；模型、算法和数值试验目录按陈雨蝶原文实测编号收回。E2/E7缺证据时不再把内部阶段提示印进PDF，仍由原子门与审计阻断。当前21页PDF中简体“径”61处、繁体“徑”0处，正文不含陈雨蝶、母版、模板、阶段稿或不得投稿；15项论文回归与20项E2 runner回归通过。路线级展品未闭合前不伪造4.1.2最终解分析。
@@ -163,13 +177,69 @@
 - [M1/pending稿证据隔离与E2大修判定门] 2026-07-16：E7七件套未形成时，主稿的中英文摘要、关键词、引言动态贡献、讨论建议与结论动态条目均条件接入，动态结果缺失分支显示“阶段稿不得投稿”，并有测试防止缺证据稿静默伪装完成；正文删去“正式实验/正式统计/仅核验”等内部审计腔但保留失败运行披露，公开适配器和分阶段负证据仍有直接边界句。陈雨蝶母版在算法流程动机处形成事实性引用，42条文献42/42均被正文实际引用，并新增双向闭合门。数学审计27/0/1，pending故事、六图视觉和14项定向测试通过。Intel版MiKTeX挂起后，原生ARM Tectonic在非沙箱环境用缓存资源双遍编译出22页A4当前PDF，逐页渲染检查通过；仅保留CMEX9/10无ToUnicode和系统字体路径警告。E2只在公开标准算例显示跨规模、稳定、可归因的结构短板时触发一次ALNS大修；若触发，冻结单一新版本、做消融和独立测试并统一重跑受影响E2--E7证据，不拼接版本。
 - [M1/简体“径”字形而非仅编码的验收门] 2026-07-16：标题黑体原先虽然源字符为U+5F84，`Arial Unicode MS`却实际渲染出繁体地区字形；以后“路径/口径/径”必须同时验收源字符、嵌入字体和成品页字形。中文黑体固定为`SimHei`优先、`Hiragino Sans GB W6`次选、`Heiti SC`兜底，禁止回退到通用Unicode字体；正文保持`Songti SC`。当前21页PDF标题已为现代简体字形，嵌入`HiraginoSansGB-W6`且无`ArialUnicodeMS`，16项论文边界测试通过。此前把可提取性视为字形正确的判断作废。
 - [M1/标题可见性与出版社字号终验] 2026-07-16：`Hiragino Sans GB W6`虽能显示简体“径”，但用户端阅读器无法显示全部标题，因此撤销该回退。中文黑体改为`SimHei`优先、`Noto Sans CJK SC`次选、缺失即失败；成品PDF的Noto字体嵌入且`ToUnicode=yes`，标题和各级标题可见。字号不得在正文任意改写：官方类继续控制正文10.5 pt与一级标题小四号，图表题/表内9 pt，图内最终不低于8 pt。引言引用改为单编号并按首次出现严格递增；第4章正式编号、成本分项公式和E7动态设计恢复，未封存E7结果仍由原子门隔离。公式变更后的数学审计为27/0/1，两层模型门7/7；E7与E2公开基准未闭合前仍不投稿。
-# 2026-07-17 Solomon主基准、BKS与CPU口径
+# 2026-07-17 Solomon主基准、BKS与CPU口径（当前权威版）
 
-- E2公开算法能力验证改用Solomon 56个100客户VRPTW算例为主，CVRPLIB六例降为回退。主口径严格采用DIMACS距离单目标、硬时间窗、车辆数上限和1位小数截断；不得与SINTEF车辆数优先/双精度口径混表。
+- E2公开算法能力验证采用Solomon 56个100客户VRPTW算例为主，CVRPLIB六例降为回退。主口径是SINTEF分层目标：先最小车辆数、再最小双精度欧氏距离；DIMACS单目标/1位截断距离仅作历史回退或补充证据，不得与SINTEF主表混用。
 - 本地`/Volumes/移动硬盘（512G）/VRP/算例/solomon-100.zip` SHA-256为`8a0a72cbe6b7f8f9988ace4ebde0378ec34943acaaac47f2c408915e41887747`；C101与官方VRPTWController提交`87de6d63eca1c8d4b5862c7a850fdc5a40595fe1`字节一致。论文表中的BKS只能作为候选线索，须交叉核对算例、目标、舍入、可行性与最优标志。
-- Solomon 56例全部冻结为最终测试集，不用于调参。算法改进只在非Solomon开发集；主表优先PyVRP/HGS等现代强基线，弱匹配老算法不再占据主表。外部实现按CPU标准化墙钟时间比较，内部ALNS/LNS/消融按相同完整评价预算比较，且报告CPU、核数、worker、单线程分数、原始和标准化时间。
-- 零搜索适配门已完成：`audit_solomon_dimacs_adapter_20260717.py`对56/56个算例完成本地包—官方提交字节比对、节点结构、六类数量、距离矩阵口径和BKS/最优标志审计，判定`PASS_SOLOMON_DIMACS_ZERO_SEARCH_ADAPTER_GATE`，搜索评价次数为0。E7仍由hooks运行；其完成前不修改`winner.py`或启动正式搜索。详细合同见`docs/handoff/e2_solomon_primary_benchmark_contract_20260717.md`。
+- Solomon 56例全部冻结为最终测试集，不用于调参。算法改进只在非Solomon开发集；主表优先PyVRP/HGS等现代强基线，弱匹配老算法不再占据主表。文献表中的`CPU`解释为计算时间，另报`RT`、`Tbest`、`Runs`以及硬件/线程；不同机器的原始CPU时间不得直接支持优越性。内部ALNS/LNS/消融在预算G0闭合后按同一完整评价预算比较。
+- SINTEF零搜索门已完成：56例BKS二元组逐例复算、无BKS搜索bundle逐字段/双精度矩阵回读和CPU口径门均通过。正式560项搜索未授权；search worker不得导入BKS，父进程仅在搜索后封存复算。E7仍由hooks运行；其完成前不修改`winner.py`或启动搜索。
 - 最终ALNS改进合同限定为三个结构候选，并设置G0--G4硬门。Solomon 56例全部禁调参；12个Homberger 200客户实例作开发。候选若预算外评分、连续失败或必须改变问题定义才能改善即停止。只有最终外部测试支持时才允许写优越性，详见`docs/handoff/e2_alns_upgrade_outcome_contract_20260717.md`。
-- 主TeX的公开基准原子门已从旧CVRPLIB三件套改为Solomon三件套，避免旧文件未来误触发废弃小节。重新编译为22页A4，39项定向测试和pending-E7故事审计通过；当前PDF仍因Solomon正式搜索未完成而不显示该小节。
-- 56个Solomon正式bundle已生成并通过通用加载器逐字段/矩阵回读，判定`PASS_SOLOMON_DIMACS_BUNDLE_GATE`；节点、时间窗、服务时间、CV上限和截断距离矩阵全部一致，4项测试通过，仍为0次搜索。输出在`baselines/e2_alns/solomon_dimacs_formal_bundles_20260717/`。
-- CPU合同冻结Apple M1的4性能核+4能效核和PassMark单线程3674，DIMACS标准化系数1.837。首次软链接路径误差失败保留；v3预检通过。匹配墙钟时间比较用4 workers，评价预算批次/非定时审计可用8 workers吃满全部核心，后者耗时不用于跨语言快慢结论。
+- 主TeX的公开基准原子门已改为Solomon四件套：12例预注册展示表、56例类别汇总表、解释文本和来源manifest；缺一不进入PDF。当前PDF因正式搜索未完成而不显示该小节。
+- 早期DIMACS bundle与PassMark标准化合同只作历史回退/机器探索记录。正式SINTEF bundle不含BKS；正式表按同机线程合同报告CPU、RT、Tbest与Runs，不用PassMark换算声称异机算法更优。
+
+# 2026-07-17 中国时变碳强度与价格情景
+
+- 中国情景不再寻找并不存在的“官方全国逐时实测库”，而用官方2023省级年均因子作固定对照、Li等*Scientific Data* 2026的31省S1—2025逐时投影作中国TVCI情景、现有NESO 48槽作英国真实外部对照。小时值只阶梯复制为两个半小时槽，不插值伪造精度。
+- 中国价格主情景为上海—2025年7月—人民币：CEA 75.02元/tCO2e，上海一般工商业10 kV谷/平/峰/尖峰终端电价0.3191/0.6811/1.1637/1.4352元/kWh，0号柴油最高零售价6.88元/L，公共充电服务费典型0.42元/kWh。道路物流未被全国碳市场直接覆盖，CEA价格只是内部碳影子价/政策扩围/上游传导情景，不得写为物流企业当期法定履约成本。
+- 本文保持配送作业阶段CO2边界，不为回应外部评论而强制引入全LCA。中国365日充电重放和12个事前选定的季节代表日保留日际反转；反常识结果、近零改善、成本—排放冲突和英国结论不可迁移均作为正式结果保留。完整冻结合同见`docs/handoff/china_policy_scenario_contract_20260717.md`。
+- Figshare v3 S1文件MD5与源端一致；首次全工作簿审计因2055年6个、2060年51个空值保留HALT记录。当前权威v2只授权无缺失的S1—2025，2055/2060禁用；2025年8760小时已无插值复制为17520个半小时槽，所有365日均通过积分守恒，上海12个代表日按结果盲规则冻结。判定为`PASS_CHINA_TVCI_2025_SOURCE_GATE_WITH_FUTURE_YEAR_NULLS_RECORDED`，搜索0，证据目录`baselines/e4_e5/china_tvci_source_gate_20260717_v2/`。
+- 上海政策价格机器门绑定13份官方快照，生成CEA内部碳影子价、柴油最高零售价、充电服务费、48槽分时电价和配送作业阶段排放因子。判定`PASS_CHINA_POLICY_PRICE_ZERO_SEARCH_GATE`，搜索0，证据目录`baselines/e4_e5/china_policy_price_gate_20260717/`。其中CEA严禁写成道路物流企业当期法定碳成本，柴油价严禁写成车队实际交易价。
+
+# 2026-07-17 非线性充电稳健性复算
+
+- 固定功率充电不预先判为核心模型失效。正确顺序是对封存正式方案先做SOC暴露审计，再做`L->NL-E`与`L->NL-C`固定路径复算，重新核对时间窗、实体车趟次、共享桩并发、SOC和分时排放。
+- 只有正式方案非线性不可行、充电择时标题级方向反转、仅调时刻无法恢复可行，或必须改路径/车型/车辆/充电站/充电量时，才升级核心模型并重跑受影响证据。若结论几乎不变，该结果同样是对线性简化适用边界的正式支持。
+- 数学接口用累计时间函数`xi_s(b)`和分段功率积分，必须经过单调/连续/功率不递增、电量守恒、恒功率退化、候选点精确性和独立可行性门。通用三段曲线冒烟为`PASS_GENERIC_NL_CHARGING_FORMULA_SMOKE`，不得当作真车工程标定。完整合同见`docs/handoff/nonlinear_charging_robustness_contract_20260717.md`。
+- 纯复算器`baselines/e4_e5/nonlinear_charging_replay_20260717.py`已实现分段曲线、充电时长、跨槽电量积分、候选起始时刻和权重选时。首轮单测暴露并修正了相邻数组错用严格`zip`的基础错误；修正后5项数学回归、Ruff和py_compile通过。它尚未接入路径搜索或封存方案，不代表非线性实验完成。
+
+# 2026-07-17 ALNS评价预算闭合静态审计
+
+- 零搜索AST审计识别31个相关评分调用点：5个明确记入`EvalBudget`，24个仍阻断闭合，0个未分类。封存历史原始表重算确认未计费完整解评分11547次，实际/报告评价数均值比13.830。权威判定为`HALT_ALNS_BUDGET_CLOSURE_REQUIRED`，证据目录=`baselines/e2_alns/e2_alns_budget_closure_static_20260717/`。E7后G0要求：搜索期完整候选评分与预算一对一；初始/终局/历史/断点复算可不占搜索预算，但须独立记数；静态无BLOCK后还须过零/极小预算行为门。通过前禁止正式Solomon/Homberger胜负测试。
+
+# 2026-07-17 E7论文展品重建与原子就绪门
+
+- E7论文接入不再只检查七个文件是否存在。`build_20260715_formal_evidence.py`统一重建三表、正文解释、结论和中英文摘要，并用`e7_dynamic_paper_evidence_manifest.json`绑定来源根、来源哈希、builder哈希、七件展品哈希及120任务、30配对、6单元、840逐日配对覆盖。发布时manifest最后落盘，主TeX只有七件展品加manifest共八个文件齐全才进入E7分支。
+- 28日电网日结果由840行封存逐日记录重新聚合；政策比较和大部分机制诊断由30条配对及120条任务状态重算。独立总审计CSV没有逐流跨场服务字段，因此跨场流数量只能作为来源manifest约束的衍生字段保留，不能声称由论文生成器从底层会话独立复算。生成与审计定向测试、聚焦联合测试、Ruff、py_compile、XeLaTeX和pending故事门已通过；这不代表E7正式结果已经完成。
+# 2026-07-17 当前主稿Desk-reject硬门
+
+- [当前主稿Desk-reject风险门（2026-07-17）](../paper_desk_reject_gate_20260717.md) — 当前标题、成本公式、简体“径”、单句单篇引文和无母版穿帮已通过；一级阻断现为ALNS预算、Solomon公开Benchmark、E7正式结果、代表性最终解展品和非线性充电`NL->NL`核心升级。算法命名、分阶段负消融、旧弱基线、中国正式情景和图轴仍是后续门；五个一级门关闭前不把润色文本标为投稿版。
+
+# 2026-07-17 ALNS完整方案评价预算G0修复合同
+
+- [ALNS完整方案评价预算G0修复合同（2026-07-17）](../e2_alns_budget_g0_patch_plan_20260717.md) — 31个评分调用点中24个仍阻断，历史隐藏完整评分11,547次；修复采用candidate/reference/repair-delta三通道和超限前检查，不能机械补`budget.record()`。E7十步收口前只冻结方案，不动共享`winner.py`；G0须通过静态零阻断、零/极小预算、逐候选一对一计费、独立复算和重放门，失败则继续`HALT_ALNS_BUDGET_CLOSURE_REQUIRED`并禁止Homberger/Solomon胜负搜索。
+
+# 2026-07-17 引言引用与编译版面闭合
+
+- 引言文献叙述现执行单句单篇引用，测试禁止同一中文句或分号单元含多个`\cite`，参考文献首次出现顺序继续递增。真实编译捕获符号长表的新分页错误后，删除表尾空行并给表头保留18行最小空间；当前22页PDF的首页、引言、表1、章节标题、符号表和成本函数页已目检，35项定向测试与pending-E7故事审计通过。TeX/PDF/log哈希为`269a4e8ab3fe1674be3a2188439820bf56522baf9d5323306f6aa668f0cbe752`/`bf3a1ecdda3584b7cdf2b0a44197815d967031d5a0ee110f72f068f0e2fa4790`/`1b3f6bf5cbf59adfe4a9c4dad5ced3162fac5017b112e78c9d9d525432c84184`。本轮未改公式、符号和实验数字；公开BKS与E7仍不得写成已完成。
+
+# 2026-07-17 Homberger开发bundle适配门
+
+- [Homberger 200客户开发bundle适配门](../e2_homberger_200_development_bundle_gate_20260717.md) — 12个预注册200客户实例已转换为双精度通用bundle并由项目加载器逐字段回读，搜索评价0，搜索可读文件不含BKS。判`PASS_HOMBERGER_200_DEVELOPMENT_BUNDLE_GATE`，证据在`baselines/e2_alns/homberger_200_development_bundles_20260717/`；E7十步收口和ALNS预算G0闭合前仍禁止G1开发搜索。
+
+# 2026-07-17 非线性充电正式固定方案复算
+
+- E3的108份封存排班和E4的28个完整电网日完成零搜索复算。`L->L`独立闭合132 300次动作；主曲线`NL90_mild`的`L->NL-E/C`有168个seed--day方案不可行、14个方向反转，压力曲线`NL80_stress`为476和28。判决=`PASS_NL_CHARGING_REPLAY_CORE_UPGRADE_REQUIRED`；独立审计逐项核对264 600行动作、18 144行方案、6 048行配对、输入/源码/产物哈希及电量守恒并通过。E7十步收口与ALNS预算G0之前不得改共享求解器；之后必须执行`NL->NL`并重识别受影响E2--E7证据，不得只保留可行或有利子集。证据目录=`baselines/e4_e5/nonlinear_charging_robustness_replay_20260717/`。
+- 核心升级采用一个共享$\xi/H$内核和非线性趟次链后向递推，`ChargingAction`须显式带起止SOC与曲线ID；成本、检查、排班、动态和证书不得各自重写充电时长。执行顺序为E7十步收口→ALNS预算G0→非线性内核→Homberger开发→Solomon外测→同版本重跑E2--E7与中国情景。完整方案=`docs/handoff/nonlinear_charging_core_upgrade_plan_20260717.md`。
+- 独立原型的非线性多趟排班数学门已通过：累计时间逆函数最大往返误差0，恒功率两趟递推退化为(78,50) kWh，非线性后向递推与0.001 kWh稠密扫描误差$8.917\times10^{-13}$ kWh，容量不足链被拒绝；判决=`PASS_NONLINEAR_MULTITRIP_FORMULA_GATE`。该结果只授权E7/G0后实施，不授权当前修改共享求解器。
+
+# 2026-07-17 PyVRP 0.13.4候选强基线工具门
+
+- PyVRP 0.13.4已从官方macOS arm64 wheel安装到独立解释器`/Users/zhouleixishu/.codex/runtimes/resetp-pyvrp-0.13.4/bin/python`；本地wheel SHA-256=`49b84319fcfcd2206c05f55e970d090ab054d577a1d82cbac276d376fe89970c`，与PyPI官方文件哈希一致。冻结环境清单、API签名和源码哈希的权威版为`baselines/e2_alns/pyvrp_0134_tool_probe_20260717_v3/`；v2及早期同名目录只作历史记录。v3为适配器增加`freeze_payload_sha256`强校验后重建run，不读Solomon或BKS，正式搜索评价0为0；适配器与冻结构建器32项测试通过。
+- 0.13.4将统计点放在`Statistics.data`，将逐迭代耗时增量放在`Statistics.runtimes`。外部基线适配器已改为累计增量后读取首次达到最终可行最好成本的Tbest；适配器与冻结构建器32项接口测试通过。3客户合成VRPTW的v3探针16/16通过，并真实走通正式bundle适配器的旧Model API分支；Solomon正式搜索评价为0，判定=`PASS_PYVRP_0134_CANDIDATE_TOOL_PROBE`。
+- 新零搜索预检不再报告`NO_COMPATIBLE_EXTERNAL_STRONG_BASELINE_INSTALLED`，只保留`E7_STEPS_1_TO_6_ATTESTATION_MISSING`与`EXTERNAL_BASELINE_TOOL_FREEZE_MISSING`，证据在`baselines/e2_alns/e2_solomon_external_baseline_preflight_pyvrp0134_20260717/`。这只是候选工具冻结；E7证明形成前不得创建最终授权冻结或启动56例×10种子正式搜索。
+- 最终冻结只允许由`build_final_external_baseline_freeze_20260717.py`在精确授权串和E7步骤1--6证明同时存在时创建，且拒绝覆盖。候选阶段已验证96个PyVRP安装文件可逐项哈希，最终冻结尚未生成。墙钟由PyVRP官方1000客户VRPTW两小时协议按客户数线性外推至100客户，再按冻结PassMark因子1.837换算为标准720 s/本机391.94338595536203 s；这只是本文预注册外推假设，不是官方Solomon协议。4个worker均单线程，计时公平轴与内部完整候选评价轴分表。
+
+# 2026-07-17 PyVRP实验设计入稿与当前PDF
+
+- 主稿算法有效性分析补入PyVRP 0.13.4现代强基线的选择依据、同机单线程墙钟轴与内部完整候选评价轴，并新增Wouda--Lan--Kool 2024正式期刊文献；Solomon结果原子门内预注册391.943 s、4 worker、10种子及CPU/RT/Tbest/Runs口径，未提前声称胜负。
+- XeLaTeX双遍重编为22页A4，30项论文测试与pending-E7故事审计通过，日志无未定义引用、版面溢出或LaTeX错误；第11页目检层级、表格和新增段落正常。TeX/PDF/log SHA-256=`568d922ec4886e8bdc356bc6bdccf0a961ed66166bd8b32b7bc51c130781f31a`/`3d54681c859a17568fbf38083fc1fd86487bbce3af819603c7704b9bb8fccd04`/`3f4e276261c3e74e01e18d0ed3dd6999f69fc80727b20d6c1a8848dc4f0dbd82`。未改公式、符号或实验数字。

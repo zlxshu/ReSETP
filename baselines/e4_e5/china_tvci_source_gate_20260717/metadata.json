@@ -1,0 +1,101 @@
+{
+  "created_at": "2026-07-16T19:11:16.921354+00:00",
+  "day_selection": "four calendar quarters; closest-to-median daily mean, maximum intraday range, minimum intraday range; earliest date breaks ties",
+  "derived_half_hour_row_count": 17520,
+  "figshare": {
+    "article_id": 28953545,
+    "doi": "10.6084/m9.figshare.28953545.v3",
+    "license": {
+      "name": "CC BY 4.0",
+      "url": "https://creativecommons.org/licenses/by/4.0/",
+      "value": 1
+    },
+    "modified_date": "2026-04-02T03:52:26Z",
+    "published_date": "2026-04-02T03:51:56Z",
+    "s1_file": {
+      "computed_md5": "3cdf56af1e9c90167fc4c85ccc5afd5b",
+      "download_url": "https://ndownloader.figshare.com/files/63393795",
+      "id": 63393795,
+      "is_link_only": false,
+      "mimetype": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+      "name": "CEF data for Scenario S1.xlsx",
+      "size": 16131311,
+      "supplied_md5": "3cdf56af1e9c90167fc4c85ccc5afd5b"
+    },
+    "title": "High temporal and spatial resolution projected electricity carbon emission factors of China from 2025-2060",
+    "version": 3
+  },
+  "half_hour_conversion": "each hourly value is copied to two consecutive 30-minute slots; no interpolation",
+  "platform": "macOS-15.7.5-arm64-arm-64bit-Mach-O",
+  "python": "3.13.9 | packaged by Anaconda, Inc. | (main, Oct 21 2025, 19:11:29) [Clang 20.1.8 ]",
+  "region_series_count": 32,
+  "s1_2025_hour_count": 8760,
+  "schema_version": "resetp.china-tvci-source-gate.v1",
+  "script_sha256": "d530945639d7070839be8ce3abc4a9bc1427c6318bdec9daffe300d8f9631dc0",
+  "search_evaluations": 0,
+  "selected_day_count": 12,
+  "source_nature": "31-province hourly simulation/projection; not official, observed, real-time, or marginal emissions",
+  "source_units": "tCO2/MWh, numerically equal to kgCO2/kWh",
+  "sources": {
+    "CEF_data_Scenario_S1.xlsx": {
+      "bytes": 16131311,
+      "expected_sha256": "8e23df4a39707077a2c772e9ab0a275b388fe4ded04d0db4fe0937616499486d",
+      "hash_match": true,
+      "path": "data/Carbon/中国情景/raw_20260717/CEF_data_Scenario_S1.xlsx",
+      "sha256": "8e23df4a39707077a2c772e9ab0a275b388fe4ded04d0db4fe0937616499486d"
+    },
+    "MEE_2023_power_CO2_factors.pdf": {
+      "bytes": 121854,
+      "expected_sha256": "d43b60a3eaad9f3fe59ca37c204d3d0e1b6ea52742a092f0d856971a3f018e5a",
+      "hash_match": true,
+      "path": "data/Carbon/中国情景/raw_20260717/MEE_2023_power_CO2_factors.pdf",
+      "sha256": "d43b60a3eaad9f3fe59ca37c204d3d0e1b6ea52742a092f0d856971a3f018e5a"
+    },
+    "MEE_2023_power_carbon_footprint_factors.pdf": {
+      "bytes": 328178,
+      "expected_sha256": "68afcb5a56d63311642fa4974004a13e87c693d3de16d934f718977af080ad09",
+      "hash_match": true,
+      "path": "data/Carbon/中国情景/raw_20260717/MEE_2023_power_carbon_footprint_factors.pdf",
+      "sha256": "68afcb5a56d63311642fa4974004a13e87c693d3de16d934f718977af080ad09"
+    },
+    "NDRC_land_transport_GHG_guideline.pdf": {
+      "bytes": 686674,
+      "expected_sha256": "84aadb948141b5229f9339254dd305bbf54b435e140827244d9e3c69b289bb31",
+      "hash_match": true,
+      "path": "data/Carbon/中国情景/raw_20260717/NDRC_land_transport_GHG_guideline.pdf",
+      "sha256": "84aadb948141b5229f9339254dd305bbf54b435e140827244d9e3c69b289bb31"
+    },
+    "Shanghai_2025_07_industrial_tou_tariff_10kV.pdf": {
+      "bytes": 138730,
+      "expected_sha256": "e2293dcc5fb15da3eaad204c929447a1a6dfa757248610b38ef1dec674157bf9",
+      "hash_match": true,
+      "path": "data/Carbon/中国情景/raw_20260717/Shanghai_2025_07_industrial_tou_tariff_10kV.pdf",
+      "sha256": "e2293dcc5fb15da3eaad204c929447a1a6dfa757248610b38ef1dec674157bf9"
+    },
+    "figshare_article_28953545.json": {
+      "bytes": 6325,
+      "expected_sha256": "c4729e9cd5d2de21652b12185729c560d04d454cb6d43ac7888ffde181c936d5",
+      "hash_match": true,
+      "path": "data/Carbon/中国情景/raw_20260717/figshare_article_28953545.json",
+      "sha256": "c4729e9cd5d2de21652b12185729c560d04d454cb6d43ac7888ffde181c936d5"
+    },
+    "figshare_dataset_annotation.pdf": {
+      "bytes": 231104,
+      "expected_sha256": "75d3d0a265cc3e1df044f00c8a10f4328f85c9de776582df4f22b2a75916691d",
+      "hash_match": true,
+      "path": "data/Carbon/中国情景/raw_20260717/figshare_dataset_annotation.pdf",
+      "sha256": "75d3d0a265cc3e1df044f00c8a10f4328f85c9de776582df4f22b2a75916691d"
+    }
+  },
+  "status": "HALT_CHINA_TVCI_SOURCE_GATE",
+  "workbook_years": [
+    "2025",
+    "2030",
+    "2035",
+    "2040",
+    "2045",
+    "2050",
+    "2055",
+    "2060"
+  ]
+}

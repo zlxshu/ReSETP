@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import importlib.util
+import json
 import sys
 from pathlib import Path
 
@@ -70,12 +71,14 @@ def test_class_table_rows_have_valid_latex_line_terminators() -> None:
         {
             "class": name,
             "instance_count": "8",
+            "complete_instance_count": "8",
             "avg_best_route_count": "10.0",
             "avg_best_distance": "800.0",
             "CNV": "80",
             "CTD": "6400.0",
             "avg_process_cpu_seconds": "12.3",
             "avg_elapsed_seconds": "13.4",
+            "avg_time_to_best_seconds": "4.5",
             "valid_runs": "80",
             "Runs": "80",
         }
@@ -137,6 +140,7 @@ def test_summary_values_must_recompute_from_raw_rows() -> None:
                 "reached_bks_vehicle_count": "True",
                 "full_bks_hit": "False",
                 "bks_conflict_candidate": "False",
+                "algorithm_reported_feasible": "True",
                 "feasible": "True",
                 "independent_recompute_pass": "True",
                 "timeout": "False",
@@ -152,3 +156,83 @@ def test_summary_values_must_recompute_from_raw_rows() -> None:
     instance_csv[0]["avg_distance"] = "999999"
     with pytest.raises(builder.E2SolomonEvidenceError, match="differs from raw rows"):
         builder.assert_summary_rows_match_raw(raw, instance_csv, class_csv)
+
+
+def test_required_sources_include_contract_and_final_run_state() -> None:
+    assert "contract.json" in builder.REQUIRED_SOURCE_FILES
+    assert "run_state.json" in builder.REQUIRED_SOURCE_FILES
+
+
+def test_solution_validation_rejects_rounded_distance_tamper(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    solution = {"routes": []}
+    record = {
+        "task_key": "C101__seed1",
+        "instance": "C101",
+        "seed": 1,
+        "status": "OK",
+        "solution_sha256": builder.runner.canonical_sha256(solution),
+        "solution": solution,
+        "independent_recomputation": {
+            "passed": True,
+            "failures": [],
+            "route_count": 0,
+            "distance_double": 1.234,
+            "distance_rounded_2": 1.23,
+        },
+    }
+    (tmp_path / "solutions.jsonl").write_text(json.dumps(record) + "\n", encoding="utf-8")
+    monkeypatch.setattr(builder.runner, "FORMAL_INSTANCES", ("C101",))
+    monkeypatch.setattr(builder.runner, "FORMAL_SEEDS", (1,))
+    monkeypatch.setattr(
+        builder.runner,
+        "pure_vrptw_recompute",
+        lambda *_args, **_kwargs: record["independent_recomputation"],
+    )
+    raw = [{
+        "task_key": "C101__seed1",
+        "instance": "C101",
+        "seed": "1",
+        "status": "OK",
+        "solution_sha256": record["solution_sha256"],
+        "independent_recompute_pass": "True",
+        "route_count": "0",
+        "distance_double": "1.234",
+        "distance_rounded_2": "9.99",
+        "violation_count": "0",
+        "algorithm_reported_feasible": "True",
+        "feasible": "True",
+    }]
+    with pytest.raises(builder.E2SolomonEvidenceError, match="rounded solution distance differs"):
+        builder.validate_solution_records(tmp_path, raw, {"C101__seed1"})
+
+
+def test_decision_failure_list_must_recompute_from_raw_rows() -> None:
+    rows = [
+        {"task_key": "C101__seed1", "status": "OK"},
+        {"task_key": "C101__seed2", "status": "ALGORITHM_FAILURE"},
+    ]
+    valid = {
+        "verdict": "FORMAL_COMPLETE_WITH_ALGORITHM_FAILURES",
+        "failures": ["C101__seed2"],
+        "failure_count": 1,
+        "bks_conflict_candidate_count": 0,
+        "all_unfavorable_results_retained": True,
+    }
+    builder.assert_decision_matches_raw(valid, rows)
+    invalid = {**valid, "failures": []}
+    with pytest.raises(builder.E2SolomonEvidenceError, match="decision failures differ"):
+        builder.assert_decision_matches_raw(invalid, rows)
+
+
+def test_task_artifact_manifest_rejects_incident_tamper(tmp_path: Path) -> None:
+    incident = tmp_path / ".tasks/attempts/C101__seed1/attempt-1/incident.json"
+    incident.parent.mkdir(parents=True)
+    incident.write_text("preserved", encoding="utf-8")
+    (tmp_path / "task_artifact_hashes.json").write_text(
+        json.dumps({str(incident.relative_to(tmp_path)): builder.sha256(incident)}),
+        encoding="utf-8",
+    )
+    builder.verify_task_artifact_manifest(tmp_path)
+    incident.write_text("tampered", encoding="utf-8")
+    with pytest.raises(builder.E2SolomonEvidenceError, match="task-artifact hash drift"):
+        builder.verify_task_artifact_manifest(tmp_path)

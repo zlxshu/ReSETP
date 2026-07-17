@@ -22,6 +22,9 @@ ROOT = Path(__file__).resolve().parents[2]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 from baselines.paper_story import build_20260715_formal_evidence as evidence_builder  # noqa: E402
+from baselines.paper_story import (  # noqa: E402
+    build_e2_solomon_sintef_paper_evidence_20260717 as e2_public_builder,
+)
 
 TEX = ROOT / "docs/paper_submission_final/paper_main.tex"
 PAPER_DIR = TEX.parent
@@ -49,19 +52,13 @@ E2_LEGACY_UNLISTED = {
 }
 E2B = ROOT / "baselines/e2_alns/e2b_component_ablation_formal_20260715"
 E2_PUBLIC = ROOT / "baselines/e2_alns/e2_solomon_sintef_formal_20260717"
-E2_PUBLIC_REQUIRED_SOURCE_FILES = (
-    "metadata.json",
-    "raw_runs.csv",
-    "decision.json",
-    "artifact_hashes.json",
-    "report.md",
-)
+E2_PUBLIC_REQUIRED_SOURCE_FILES = e2_public_builder.REQUIRED_SOURCE_FILES
 E2_PUBLIC_GENERATED_EXHIBITS = (
-    "e2_solomon_benchmark.tex",
-    "e2_solomon_class_summary.tex",
-    "e2_solomon_interpretation.tex",
+    e2_public_builder.TABLE_NAME,
+    e2_public_builder.CLASS_TABLE_NAME,
+    e2_public_builder.INTERPRETATION_NAME,
 )
-E2_PUBLIC_MANIFEST = "e2_solomon_paper_evidence_manifest.json"
+E2_PUBLIC_MANIFEST = e2_public_builder.PROVENANCE_NAME
 E2_PUBLIC_EXHIBITS = (
     *E2_PUBLIC_GENERATED_EXHIBITS,
     E2_PUBLIC_MANIFEST,
@@ -78,8 +75,11 @@ E2_SOLOMON_MAIN_TABLE_REQUIRED_TERMS = (
     "双精度欧氏距离",
     "总距离保留2位小数",
     "共计560次",
+    "结果产生前固定选取每类按名称排序的首、末各1例",
+    "分类表覆盖全部56例",
     "进程CPU时间",
     "RT表示实测墙钟时间",
+    "$T_{best}$表示首次达到本次最好解的墙钟时间",
     "Runs表示独立运行次数",
 )
 E3 = ROOT / "baselines/e3_ablation/e3_medium_paired_cost_formal_20260715"
@@ -107,15 +107,9 @@ E7_REPLAY_INVARIANTS = (
     ROOT / "baselines/e7_dynamic/e7_replay_invariants_audit_20260715"
 )
 E7_AUDIT = ROOT / "baselines/e7_dynamic/e7_multinetwork_independent_audit_20260715"
-E7_EXHIBITS = (
-    "e7_dynamic_policy_comparison.tex",
-    "e7_dynamic_mechanism_diagnostics.tex",
-    "e7_dynamic_charging_replay.tex",
-    "e7_dynamic_interpretation.tex",
-    "e7_dynamic_conclusion.tex",
-    "e7_dynamic_abstract_zh.tex",
-    "e7_dynamic_abstract_en.tex",
-)
+E7_EXHIBITS = evidence_builder.E7_EXHIBIT_NAMES
+E7_PROVENANCE = evidence_builder.E7_PROVENANCE_NAME
+E7_REQUIRED_PAPER_FILES = (*E7_EXHIBITS, E7_PROVENANCE)
 E7_REPLAY_INVARIANT_COUNTS = {
     "full_task_count": 30,
     "task_day_row_count": 840,
@@ -136,7 +130,7 @@ E7_REQUIRED_INDEPENDENT_CHECKS = (
 CURRENT_TITLE_ZH = "时变碳强度下多车场协同路径优化模型及算法"
 FORBIDDEN_PATH_GLYPHS = ("路经", "路劲", "路徑", "路迳", "路逕")
 CURRENT_TITLE_EN = (
-    "Model and Algorithm for Multi-depot Routing under Time-varying Carbon Intensity"
+    "Multi-depot Collaborative Routing Model and Algorithm under Time-varying Carbon Intensity"
 )
 REQUIRED_EXPERIMENT_SURFACES = (
     "metadata.json",
@@ -977,7 +971,7 @@ def verify_paper_build() -> tuple[list[str], dict[str, Any], list[str]]:
             "依据预测电网碳强度安排充电",
             "本文核算运营直接排放和购入电力间接排放",
         ]
-        if all((TABLES / filename).is_file() for filename in E7_EXHIBITS):
+        if all((TABLES / filename).is_file() for filename in E7_REQUIRED_PAPER_FILES):
             required_fragments.append(
                 "本文同时记录每个重规划阶段的实际计算时间（wall-clock time）"
             )
@@ -987,6 +981,11 @@ def verify_paper_build() -> tuple[list[str], dict[str, Any], list[str]]:
 
     fonts = _run_command(["pdffonts", str(PAPER_PDF)])
     if fonts.returncode == 0:
+        font_names = {
+            line.split()[0].split("+", 1)[-1]
+            for line in fonts.stdout.splitlines()[2:]
+            if line.split()
+        }
         non_unicode_fonts = [
             line.split()[0].split("+", 1)[-1]
             for line in fonts.stdout.splitlines()[2:]
@@ -997,6 +996,18 @@ def verify_paper_build() -> tuple[list[str], dict[str, Any], list[str]]:
                 "embedded fonts without ToUnicode mapping: "
                 + ", ".join(sorted(set(non_unicode_fonts)))
             )
+        forbidden_cjk_fallbacks = {
+            name
+            for name in font_names
+            if "ArialUnicode" in name or "HiraginoSansGB" in name
+        }
+        if forbidden_cjk_fallbacks:
+            failures.append(
+                "forbidden Chinese fallback font is embedded: "
+                + ", ".join(sorted(forbidden_cjk_fallbacks))
+            )
+        if not any("NotoSansCJKsc" in name or "SimHei" in name for name in font_names):
+            failures.append("approved Chinese heading font is not embedded")
         info["non_unicode_font_count"] = len(set(non_unicode_fonts))
     else:
         warnings.append("pdffonts unavailable; font mapping was not inspected")
@@ -1019,6 +1030,31 @@ def read_json(path: Path) -> dict[str, Any]:
 def require(text: str, fragment: str, failures: list[str], label: str) -> None:
     if fragment not in text:
         failures.append(f"manuscript missing {label}: {fragment}")
+
+
+def e7_generated_exhibit_failures(
+    table_root: Path,
+    expected_exhibits: dict[str, str],
+    provenance: dict[str, Any],
+) -> list[str]:
+    """Require byte-for-byte reproduction and manifest hashes for all seven files."""
+
+    failures: list[str] = []
+    generated_hashes = provenance.get("generated_hashes", {})
+    if not isinstance(generated_hashes, dict) or set(generated_hashes) != set(
+        E7_EXHIBITS
+    ):
+        failures.append("E7 paper-evidence generated inventory differs")
+    for filename, expected in expected_exhibits.items():
+        path = table_root / filename
+        if not path.is_file():
+            failures.append(f"sealed E7 manuscript exhibit missing: {filename}")
+            continue
+        if path.read_text(encoding="utf-8") != expected:
+            failures.append(f"sealed E7 exhibit does not reproduce: {filename}")
+        if generated_hashes.get(filename) != sha256(path):
+            failures.append(f"E7 paper-evidence exhibit hash differs: {filename}")
+    return failures
 
 
 def replay_invariant_decision_failures(decision: dict[str, Any]) -> list[str]:
@@ -1065,13 +1101,38 @@ def e6_endpoint_summary() -> dict[tuple[str, float], tuple[float, float]]:
 def audit(*, allow_pending_e7: bool) -> dict[str, Any]:
     failures: list[str] = []
     text = TEX.read_text(encoding="utf-8")
+    if text.count("动态需求; 参与约束; 自适应大邻域搜索") < 1:
+        failures.append("Chinese keywords omit dynamic demand")
+    if "dynamic demand; participation constraints;" not in text:
+        failures.append("English keywords omit dynamic demand")
     for forbidden in FORBIDDEN_PATH_GLYPHS:
         if forbidden in text:
             failures.append(
                 f"manuscript uses forbidden path glyph or homophone: {forbidden}"
             )
+    introduction_start = text.find(r"\section{引言}")
+    introduction_end = text.find(r"\section{模型建立}", introduction_start)
+    if introduction_start < 0 or introduction_end < 0:
+        failures.append("manuscript introduction boundary is missing")
+    else:
+        introduction = text[introduction_start:introduction_end]
+        introduction_citations = re.findall(r"\\cite\{([^}]*)\}", introduction)
+        if any("," in keys for keys in introduction_citations):
+            failures.append("introduction contains a multi-key citation command")
+        for sentence in re.split(r"[。！？；\n]+", introduction):
+            if sentence.count(r"\cite{") > 1:
+                failures.append(
+                    "introduction contains more than one citation in a sentence or semicolon unit"
+                )
+                break
+        first_citations = list(dict.fromkeys(introduction_citations))
+        bibliography_keys = re.findall(r"\\bibitem\{([^}]*)\}", text)
+        if bibliography_keys[: len(first_citations)] != first_citations:
+            failures.append(
+                "introduction first-citation order differs from bibliography numbering"
+            )
     solomon_heading = r"\subsubsection{Solomon标准算例实验}"
-    solomon_following_heading = r"\ifETwoPublicReady\subsubsection{本文模型实验}"
+    solomon_following_heading = r"\subsubsection{本文模型实验}"
     solomon_start = text.find(solomon_heading)
     solomon_end = text.find(solomon_following_heading, solomon_start)
     if solomon_start < 0 or solomon_end < 0:
@@ -1482,23 +1543,61 @@ def audit(*, allow_pending_e7: bool) -> dict[str, Any]:
                 "sealed E2 Solomon benchmark exhibits missing: " + ", ".join(missing_exhibits)
             )
         else:
-            provenance = read_json(TABLES / E2_PUBLIC_MANIFEST)
-            for filename in E2_PUBLIC_REQUIRED_SOURCE_FILES:
-                if provenance.get("source_hashes", {}).get(filename) != sha256(
-                    E2_PUBLIC / filename
+            try:
+                rows, instances, classes, contracts = e2_public_builder.load_and_validate(
+                    E2_PUBLIC
+                )
+                provenance = read_json(TABLES / E2_PUBLIC_MANIFEST)
+                expected_exhibits = {
+                    e2_public_builder.TABLE_NAME: e2_public_builder.render_instance_table(
+                        instances
+                    ),
+                    e2_public_builder.CLASS_TABLE_NAME: e2_public_builder.render_class_table(
+                        classes
+                    ),
+                    e2_public_builder.INTERPRETATION_NAME: (
+                        e2_public_builder.render_interpretation(rows, instances)
+                    ),
+                }
+                if provenance.get("source_root") != str(E2_PUBLIC.relative_to(ROOT)):
+                    failures.append("E2 Solomon benchmark provenance source root differs")
+                if provenance.get("source_contract_sha256") != contracts["metadata"].get(
+                    "contract_sha256"
                 ):
-                    failures.append(
-                        f"E2 Solomon benchmark provenance source hash differs: {filename}"
-                    )
-            for filename in E2_PUBLIC_GENERATED_EXHIBITS:
-                if provenance.get("generated_hashes", {}).get(filename) != sha256(
-                    TABLES / filename
+                    failures.append("E2 Solomon benchmark provenance contract differs")
+                if provenance.get("display_instances") != list(
+                    e2_public_builder.DISPLAY_INSTANCES
                 ):
-                    failures.append(
-                        f"E2 Solomon benchmark provenance exhibit hash differs: {filename}"
-                    )
+                    failures.append("E2 Solomon display-instance registration differs")
+                if provenance.get("full_test_coverage") != {"instances": 56, "runs": 560}:
+                    failures.append("E2 Solomon full-test coverage declaration differs")
+                if provenance.get("builder_sha256") != sha256(
+                    Path(e2_public_builder.__file__).resolve()
+                ):
+                    failures.append("E2 Solomon benchmark builder hash differs")
+                for filename in E2_PUBLIC_REQUIRED_SOURCE_FILES:
+                    if provenance.get("source_hashes", {}).get(filename) != sha256(
+                        E2_PUBLIC / filename
+                    ):
+                        failures.append(
+                            f"E2 Solomon benchmark provenance source hash differs: {filename}"
+                        )
+                for filename, expected_text in expected_exhibits.items():
+                    actual_text = (TABLES / filename).read_text(encoding="utf-8")
+                    if actual_text != expected_text:
+                        failures.append(
+                            f"E2 Solomon benchmark exhibit does not reproduce: {filename}"
+                        )
+                    if provenance.get("generated_hashes", {}).get(filename) != sha256(
+                        TABLES / filename
+                    ):
+                        failures.append(
+                            f"E2 Solomon benchmark provenance exhibit hash differs: {filename}"
+                        )
+            except Exception as exc:
+                failures.append(f"E2 Solomon formal evidence validation failed: {exc}")
 
-    for filename in E7_EXHIBITS:
+    for filename in E7_REQUIRED_PAPER_FILES:
         require(
             text,
             f"generated_tables/{filename}",
@@ -1533,7 +1632,7 @@ def audit(*, allow_pending_e7: bool) -> dict[str, Any]:
             failures.append(
                 "E7 formal/replay/replay-invariants/independent-audit decisions are not all sealed"
             )
-        if any((TABLES / filename).is_file() for filename in E7_EXHIBITS):
+        if any((TABLES / filename).is_file() for filename in E7_REQUIRED_PAPER_FILES):
             failures.append("E7 manuscript exhibit exists before all E7 decisions are sealed")
     else:
         for evidence in (E7_FORMAL, E7_REPLAY, E7_REPLAY_INVARIANTS, E7_AUDIT):
@@ -1561,32 +1660,59 @@ def audit(*, allow_pending_e7: bool) -> dict[str, Any]:
         for field in E7_REQUIRED_INDEPENDENT_CHECKS:
             if independent_checks.get(field) is not True:
                 failures.append(f"E7 independent audit did not enforce {field}")
-        for filename in E7_EXHIBITS:
+        for filename in E7_REQUIRED_PAPER_FILES:
             if not (TABLES / filename).is_file():
                 failures.append(f"sealed E7 manuscript exhibit missing: {filename}")
-        pair_frame = pd.read_csv(E7_AUDIT / "raw_runs.csv")
-        task_frame = pd.read_csv(E7_AUDIT / "task_status.csv")
-        paired_frame = pd.read_csv(E7_AUDIT / "paired_summary.csv")
-        replay_frame = pd.read_csv(E7_REPLAY / "summary.csv")
-        expected_interpretation = evidence_builder.render_e7_interpretation(
-            pair_frame, task_frame, paired_frame, replay_frame, independent
-        )
-        expected_conclusion = evidence_builder.render_e7_conclusion(
-            pair_frame, paired_frame, replay_frame, independent
-        )
-        expected_abstract_zh, expected_abstract_en = evidence_builder.render_e7_abstracts(
-            pair_frame, paired_frame, replay_frame, independent
-        )
-        for filename, expected in (
-            ("e7_dynamic_interpretation.tex", expected_interpretation),
-            ("e7_dynamic_conclusion.tex", expected_conclusion),
-            ("e7_dynamic_abstract_zh.tex", expected_abstract_zh),
-            ("e7_dynamic_abstract_en.tex", expected_abstract_en),
-        ):
-            path = TABLES / filename
-            if path.is_file() and path.read_text(encoding="utf-8") != expected:
-                failures.append(f"sealed E7 result prose is stale or altered: {filename}")
-        dynamic_text = expected_interpretation + expected_conclusion
+        dynamic_text = ""
+        try:
+            pair_frame, task_frame, paired_frame, replay_frame, source_decision = (
+                evidence_builder.load_e7_evidence(E7_AUDIT, E7_REPLAY)
+            )
+            expected_exhibits = evidence_builder.render_e7_bundle(
+                pair_frame,
+                task_frame,
+                paired_frame,
+                replay_frame,
+                source_decision,
+            )
+            provenance = read_json(TABLES / E7_PROVENANCE)
+            expected_source_roots = {
+                "independent_audit": evidence_builder.source_root_label(E7_AUDIT),
+                "28day_replay": evidence_builder.source_root_label(E7_REPLAY),
+            }
+            if provenance.get("schema_version") != "resetp.e7.paper-evidence.v1":
+                failures.append("E7 paper-evidence manifest schema differs")
+            if provenance.get("source_roots") != expected_source_roots:
+                failures.append("E7 paper-evidence source roots differ")
+            if provenance.get("source_hashes") != evidence_builder.e7_source_hashes(
+                E7_AUDIT, E7_REPLAY
+            ):
+                failures.append("E7 paper-evidence source hashes differ")
+            if provenance.get("builder_sha256") != sha256(
+                Path(evidence_builder.__file__).resolve()
+            ):
+                failures.append("E7 paper-evidence builder hash differs")
+            if provenance.get("coverage") != {
+                "formal_tasks": 120,
+                "stream_pairs": 30,
+                "network_condition_cells": 6,
+                "replay_pairs": 840,
+                "reader_facing_exhibits": 7,
+            }:
+                failures.append("E7 paper-evidence coverage declaration differs")
+            if "cross-site stream counts" not in str(
+                provenance.get("reconstruction_boundary", "")
+            ):
+                failures.append("E7 paper-evidence reconstruction boundary is missing")
+            failures.extend(
+                e7_generated_exhibit_failures(TABLES, expected_exhibits, provenance)
+            )
+            dynamic_text = (
+                expected_exhibits[evidence_builder.E7_INTERPRETATION_NAME]
+                + expected_exhibits[evidence_builder.E7_CONCLUSION_NAME]
+            )
+        except Exception as exc:
+            failures.append(f"E7 paper-evidence reproduction failed: {exc}")
         controlled = formal.get("controlled_arm_failures", [])
         if int(independent.get("controlled_arm_failure_count", -1)) != len(controlled):
             failures.append("E7 formal and independent controlled-failure counts disagree")

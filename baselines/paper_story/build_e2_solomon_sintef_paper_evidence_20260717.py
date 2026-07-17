@@ -25,12 +25,17 @@ INTERPRETATION_NAME = "e2_solomon_interpretation.tex"
 PROVENANCE_NAME = "e2_solomon_paper_evidence_manifest.json"
 REQUIRED_SOURCE_FILES = (
     "metadata.json",
+    "contract.json",
     "raw_runs.csv",
     "decision.json",
     "artifact_hashes.json",
     "report.md",
     "instance_summary.csv",
     "class_summary.csv",
+    "solutions.jsonl",
+    "cpu_contract_snapshot.json",
+    "run_state.json",
+    "task_artifact_hashes.json",
 )
 DISPLAY_INSTANCES = (
     "C101", "C109", "C201", "C208", "R101", "R112",
@@ -108,7 +113,7 @@ def normalized_raw_rows(rows: list[dict[str, str]]) -> list[dict[str, Any]]:
     }
     boolean_fields = {
         "reached_bks_vehicle_count", "full_bks_hit", "bks_conflict_candidate",
-        "feasible", "independent_recompute_pass", "timeout",
+        "algorithm_reported_feasible", "feasible", "independent_recompute_pass", "timeout",
     }
     output: list[dict[str, Any]] = []
     for row in rows:
@@ -166,13 +171,112 @@ def assert_summary_rows_match_raw(
                     )
 
 
+def validate_solution_records(
+    source: Path,
+    rows: list[dict[str, str]],
+    expected_keys: set[str],
+) -> None:
+    try:
+        records = [
+            json.loads(line)
+            for line in (source / "solutions.jsonl").read_text(encoding="utf-8").splitlines()
+            if line.strip()
+        ]
+    except (OSError, json.JSONDecodeError) as exc:
+        raise E2SolomonEvidenceError(f"formal solution records cannot be read: {exc}") from exc
+    keys = [str(record.get("task_key", "")) for record in records]
+    if len(records) != len(expected_keys) or set(keys) != expected_keys or len(set(keys)) != len(expected_keys):
+        raise E2SolomonEvidenceError("formal solution-record identities differ")
+    raw_by_key = {row["task_key"]: row for row in rows}
+    for record in records:
+        key = str(record["task_key"])
+        raw = raw_by_key[key]
+        if (
+            str(record.get("instance")) != raw["instance"]
+            or int(record.get("seed", -1)) != int(raw["seed"])
+            or str(record.get("status")) != raw["status"]
+        ):
+            raise E2SolomonEvidenceError(f"formal solution-record identity differs: {key}")
+        solution = record.get("solution")
+        if not isinstance(solution, dict):
+            raise E2SolomonEvidenceError(f"formal solution payload is invalid: {key}")
+        solution_hash = runner.canonical_sha256(solution)
+        if solution_hash != record.get("solution_sha256") or solution_hash != raw["solution_sha256"]:
+            raise E2SolomonEvidenceError(f"formal solution hash differs: {key}")
+        recomputed = runner.pure_vrptw_recompute(
+            solution,
+            runner.BUNDLES / str(record["instance"]),
+        )
+        if truthy(raw["independent_recompute_pass"]) != bool(recomputed["passed"]):
+            raise E2SolomonEvidenceError(f"formal solution feasibility differs: {key}")
+        if int(raw["route_count"]) != int(recomputed["route_count"]):
+            raise E2SolomonEvidenceError(f"formal solution route count differs: {key}")
+        if not math.isclose(
+            float(raw["distance_double"]),
+            float(recomputed["distance_double"]),
+            rel_tol=1e-10,
+            abs_tol=1e-8,
+        ):
+            raise E2SolomonEvidenceError(f"formal solution distance differs: {key}")
+        if not math.isclose(
+            float(raw["distance_rounded_2"]),
+            float(recomputed["distance_rounded_2"]),
+            rel_tol=0.0,
+            abs_tol=1e-12,
+        ):
+            raise E2SolomonEvidenceError(f"formal rounded solution distance differs: {key}")
+        if int(raw["violation_count"]) != len(recomputed["failures"]):
+            raise E2SolomonEvidenceError(f"formal solution violation count differs: {key}")
+        expected_feasible = truthy(raw["algorithm_reported_feasible"]) and bool(recomputed["passed"])
+        if truthy(raw["feasible"]) != expected_feasible:
+            raise E2SolomonEvidenceError(f"formal solution feasible flag differs: {key}")
+        sealed_recompute = record.get("independent_recomputation")
+        if not isinstance(sealed_recompute, dict) or runner.canonical_sha256(sealed_recompute) != runner.canonical_sha256(recomputed):
+            raise E2SolomonEvidenceError(f"sealed independent recomputation differs: {key}")
+
+
+def assert_decision_matches_raw(decision: dict[str, Any], rows: list[dict[str, str]]) -> None:
+    raw_failures = sorted(row["task_key"] for row in rows if row.get("status") != "OK")
+    expected_verdict = "FORMAL_COMPLETE" if not raw_failures else "FORMAL_COMPLETE_WITH_ALGORITHM_FAILURES"
+    if (
+        decision.get("verdict") != expected_verdict
+        or sorted(decision.get("failures", [])) != raw_failures
+        or int(decision.get("failure_count", -1)) != len(raw_failures)
+        or decision.get("all_unfavorable_results_retained") is not True
+    ):
+        raise E2SolomonEvidenceError("formal decision failures differ from raw rows")
+    conflict_count = sum(truthy(row.get("bks_conflict_candidate")) for row in rows)
+    if int(decision.get("bks_conflict_candidate_count", -1)) != conflict_count:
+        raise E2SolomonEvidenceError("formal BKS conflict count differs from raw rows")
+
+
+def verify_task_artifact_manifest(source: Path) -> None:
+    manifest = json.loads((source / "task_artifact_hashes.json").read_text(encoding="utf-8"))
+    if not isinstance(manifest, dict):
+        raise E2SolomonEvidenceError("formal task-artifact manifest is not a mapping")
+    observed = {
+        str(path.relative_to(source))
+        for path in (source / ".tasks").rglob("*")
+        if path.is_file() and not path.name.startswith("._")
+    }
+    if set(manifest) != observed:
+        raise E2SolomonEvidenceError("formal task-artifact inventory differs")
+    drift = [relative for relative, expected in manifest.items() if sha256(source / relative) != expected]
+    if drift:
+        raise E2SolomonEvidenceError(f"formal task-artifact hash drift: {drift[:5]}")
+
+
 def load_and_validate(source: Path) -> tuple[list[dict[str, str]], list[dict[str, str]], list[dict[str, str]], dict[str, Any]]:
     missing = [name for name in REQUIRED_SOURCE_FILES if not (source / name).is_file()]
     if missing:
         raise E2SolomonEvidenceError(f"formal evidence files are missing: {missing}")
     verify_source_manifest(source)
+    verify_task_artifact_manifest(source)
     metadata = json.loads((source / "metadata.json").read_text(encoding="utf-8"))
+    contract = json.loads((source / "contract.json").read_text(encoding="utf-8"))
     decision = json.loads((source / "decision.json").read_text(encoding="utf-8"))
+    run_state = json.loads((source / "run_state.json").read_text(encoding="utf-8"))
+    cpu_snapshot = json.loads((source / "cpu_contract_snapshot.json").read_text(encoding="utf-8"))
     if metadata.get("schema_version") != runner.CONTRACT_SCHEMA:
         raise E2SolomonEvidenceError("formal metadata schema differs")
     if int(metadata.get("task_count", -1)) != 560 or int(metadata.get("instance_count", -1)) != 56:
@@ -183,6 +287,24 @@ def load_and_validate(source: Path) -> tuple[list[dict[str, str]], list[dict[str
         raise E2SolomonEvidenceError("formal decision matrix differs")
     if int(decision.get("bks_conflict_candidate_count", -1)) != 0:
         raise E2SolomonEvidenceError("BKS conflict candidates require independent audit before publication")
+    contract_sha = str(contract.get("contract_sha256", ""))
+    if not contract_sha or metadata.get("contract_sha256") != contract_sha:
+        raise E2SolomonEvidenceError("formal contract hash differs across evidence surfaces")
+    contract_body = {
+        key: value
+        for key, value in contract.items()
+        if key not in {"contract_sha256", "created_at_utc", "git_head_at_start"}
+    }
+    if runner.canonical_sha256(contract_body) != contract_sha:
+        raise E2SolomonEvidenceError("formal contract body hash differs")
+    if metadata.get("algorithm_version") != contract.get("algorithm_version"):
+        raise E2SolomonEvidenceError("formal algorithm version differs across evidence surfaces")
+    if int(contract.get("eval_budget", -1)) != runner.FORMAL_EVAL_BUDGET:
+        raise E2SolomonEvidenceError("formal contract evaluation budget differs")
+    if runner.canonical_sha256(cpu_snapshot) != runner.canonical_sha256(contract.get("cpu_contract")):
+        raise E2SolomonEvidenceError("formal CPU contract snapshot differs")
+    if run_state.get("verdict") != decision.get("verdict") or int(run_state.get("completed_task_count", -1)) != 560 or int(run_state.get("expected_task_count", -1)) != 560:
+        raise E2SolomonEvidenceError("formal final run state differs from decision")
 
     rows = read_csv(source / "raw_runs.csv")
     expected_keys = {
@@ -193,11 +315,18 @@ def load_and_validate(source: Path) -> tuple[list[dict[str, str]], list[dict[str
     observed_keys = [row.get("task_key", "") for row in rows]
     if len(rows) != 560 or set(observed_keys) != expected_keys or len(set(observed_keys)) != 560:
         raise E2SolomonEvidenceError("formal raw task identities differ")
+    assert_decision_matches_raw(decision, rows)
+    validate_solution_records(source, rows, expected_keys)
     references = runner.read_references()
     for row in rows:
         reference = references[row["instance"]]
+        expected_key = runner.task_key(row["instance"], int(row["seed"]))
+        if row["task_key"] != expected_key or row["class"] != reference["class"]:
+            raise E2SolomonEvidenceError(f"formal raw task mapping differs: {row['task_key']}")
         if int(row["eval_budget"]) != runner.FORMAL_EVAL_BUDGET:
             raise E2SolomonEvidenceError(f"evaluation budget differs: {row['task_key']}")
+        if row.get("algorithm_version") != metadata.get("algorithm_version"):
+            raise E2SolomonEvidenceError(f"algorithm version differs: {row['task_key']}")
         if int(row["bks_vehicle_count"]) != reference["bks_vehicle_count"]:
             raise E2SolomonEvidenceError(f"BKS vehicle count differs: {row['task_key']}")
         if float(row["bks_distance"]) != reference["bks_distance_published_2dp"]:
@@ -222,6 +351,20 @@ def load_and_validate(source: Path) -> tuple[list[dict[str, str]], list[dict[str
                 raise E2SolomonEvidenceError(f"OK row is not independently feasible: {row['task_key']}")
             if int(row["evaluations"]) != runner.FORMAL_EVAL_BUDGET or int(row["candidate_scores"]) != runner.FORMAL_EVAL_BUDGET:
                 raise E2SolomonEvidenceError(f"OK row does not close evaluation budget: {row['task_key']}")
+        try:
+            failure_codes = json.loads(row["failure_codes"])
+        except (TypeError, json.JSONDecodeError) as exc:
+            raise E2SolomonEvidenceError(f"failure codes are invalid: {row['task_key']}") from exc
+        if not isinstance(failure_codes, list) or (row["status"] == "OK") != (not failure_codes):
+            raise E2SolomonEvidenceError(f"status and failure codes differ: {row['task_key']}")
+        expected_infeasible = (
+            not truthy(row["algorithm_reported_feasible"])
+            or not truthy(row["independent_recompute_pass"])
+        )
+        if ("INFEASIBLE" in failure_codes) != expected_infeasible:
+            raise E2SolomonEvidenceError(f"infeasible failure code differs: {row['task_key']}")
+        if ("TIMEOUT" in failure_codes) != truthy(row["timeout"]):
+            raise E2SolomonEvidenceError(f"timeout failure code differs: {row['task_key']}")
     instances = read_csv(source / "instance_summary.csv")
     classes = read_csv(source / "class_summary.csv")
     if len(instances) != 56 or {row["instance"] for row in instances} != set(runner.FORMAL_INSTANCES):
@@ -229,7 +372,12 @@ def load_and_validate(source: Path) -> tuple[list[dict[str, str]], list[dict[str
     if [row["class"] for row in classes] != ["C1", "C2", "R1", "R2", "RC1", "RC2"]:
         raise E2SolomonEvidenceError("class summary order or coverage differs")
     assert_summary_rows_match_raw(rows, instances, classes)
-    return rows, instances, classes, {"metadata": metadata, "decision": decision}
+    return rows, instances, classes, {
+        "metadata": metadata,
+        "contract": contract,
+        "decision": decision,
+        "run_state": run_state,
+    }
 
 
 def number(row: dict[str, str], field: str, digits: int) -> str:
@@ -267,9 +415,9 @@ def render_instance_table(instances: list[dict[str, str]]) -> str:
 
 def render_class_table(classes: list[dict[str, str]]) -> str:
     lines = [
-        r"\begin{tabular*}{0.94\linewidth}{@{\extracolsep{\fill}}lrrrrrrrr@{}}",
+        r"\begin{tabular*}{0.98\linewidth}{@{\extracolsep{\fill}}lrrrrrrrrr@{}}",
         r"\toprule",
-        r"类别 & 算例数 & 平均$K$ & 平均$D$ & CNV & CTD & CPU/s & RT/s & 有效/Runs \\",
+        r"类别 & 算例数 & 平均$K$ & 平均$D$ & CNV & CTD & CPU/s & RT/s & $T_{best}$/s & 有效例;运行 \\",
         r"\midrule",
     ]
     for row in classes:
@@ -277,15 +425,20 @@ def render_class_table(classes: list[dict[str, str]]) -> str:
             f"{row['class']} & {row['instance_count']} & {number(row, 'avg_best_route_count', 2)} & "
             f"{number(row, 'avg_best_distance', 2)} & {row['CNV']} & {number(row, 'CTD', 2)} & "
             f"{number(row, 'avg_process_cpu_seconds', 1)} & {number(row, 'avg_elapsed_seconds', 1)} & "
-            f"{row['valid_runs']}/{row['Runs']} " + r"\\"
+            f"{number(row, 'avg_time_to_best_seconds', 1)} & "
+            f"{row['complete_instance_count']}/{row['instance_count']};{row['valid_runs']}/{row['Runs']} " + r"\\"
         )
     total_runs = sum(int(row["Runs"]) for row in classes)
     total_valid = sum(int(row["valid_runs"]) for row in classes)
+    total_complete = sum(int(row["complete_instance_count"]) for row in classes)
+    all_classes_complete = total_complete == 56
+    total_cnv = str(sum(int(row["CNV"]) for row in classes)) if all_classes_complete else "--"
+    total_ctd = f"{sum(float(row['CTD']) for row in classes):.2f}" if all_classes_complete else "--"
     lines.extend(
         [
             r"\midrule",
-            f"合计 & 56 & -- & -- & {sum(int(row['CNV']) for row in classes)} & "
-            f"{sum(float(row['CTD']) for row in classes):.2f} & -- & -- & {total_valid}/{total_runs} "
+            f"合计 & 56 & -- & -- & {total_cnv} & {total_ctd} & -- & -- & -- & "
+            f"{total_complete}/56;{total_valid}/{total_runs} "
             + r"\\",
             r"\bottomrule",
             r"\end{tabular*}",
@@ -329,20 +482,33 @@ def build(source: Path, output: Path) -> dict[str, Any]:
         CLASS_TABLE_NAME: render_class_table(classes),
         INTERPRETATION_NAME: render_interpretation(rows, instances),
     }
-    for name, text in exhibits.items():
-        atomic_text(output / name, text)
-    provenance = {
-        "schema_version": "resetp.e2.solomon-sintef-paper-evidence.v1",
-        "source_root": str(source.relative_to(ROOT)),
-        "source_contract_sha256": contracts["metadata"]["contract_sha256"],
-        "source_hashes": {name: sha256(source / name) for name in REQUIRED_SOURCE_FILES},
-        "generated_hashes": {name: sha256(output / name) for name in exhibits},
-        "display_instances": list(DISPLAY_INSTANCES),
-        "display_rule": "lexicographic first and last instance of each Solomon class; frozen before results",
-        "full_test_coverage": {"instances": 56, "runs": 560},
-        "builder_sha256": sha256(Path(__file__).resolve()),
-    }
-    atomic_text(output / PROVENANCE_NAME, json.dumps(provenance, ensure_ascii=False, indent=2, sort_keys=True) + "\n")
+    output.parent.mkdir(parents=True, exist_ok=True)
+    with tempfile.TemporaryDirectory(prefix=".e2-solomon-stage-", dir=output.parent) as directory:
+        stage = Path(directory)
+        for name, text in exhibits.items():
+            atomic_text(stage / name, text)
+        provenance = {
+            "schema_version": "resetp.e2.solomon-sintef-paper-evidence.v1",
+            "source_root": str(source.relative_to(ROOT)),
+            "source_contract_sha256": contracts["metadata"]["contract_sha256"],
+            "source_hashes": {name: sha256(source / name) for name in REQUIRED_SOURCE_FILES},
+            "generated_hashes": {name: sha256(stage / name) for name in exhibits},
+            "display_instances": list(DISPLAY_INSTANCES),
+            "display_rule": "lexicographic first and last instance of each Solomon class; frozen before results",
+            "full_test_coverage": {"instances": 56, "runs": 560},
+            "builder_sha256": sha256(Path(__file__).resolve()),
+        }
+        atomic_text(
+            stage / PROVENANCE_NAME,
+            json.dumps(provenance, ensure_ascii=False, indent=2, sort_keys=True) + "\n",
+        )
+        output.mkdir(parents=True, exist_ok=True)
+        # The manifest is the visibility gate.  Remove the old one before any
+        # exhibit replacement and publish the new manifest last.
+        (output / PROVENANCE_NAME).unlink(missing_ok=True)
+        for name in exhibits:
+            os.replace(stage / name, output / name)
+        os.replace(stage / PROVENANCE_NAME, output / PROVENANCE_NAME)
     return provenance
 
 
