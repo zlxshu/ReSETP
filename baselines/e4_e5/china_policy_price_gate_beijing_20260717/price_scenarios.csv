@@ -1,0 +1,12 @@
+parameter,scenario,value,unit,model_value,model_unit,interpretation
+carbon_shadow_price,observed_low,56.32000,yuan_per_tCO2e,0.05632000,yuan_per_kgCO2e,复用冻结CEA观察值；内部影子价格，不是道路物流法定履约成本
+carbon_shadow_price,base,75.02000,yuan_per_tCO2e,0.07502000,yuan_per_kgCO2e,复用冻结CEA观察值；内部影子价格，不是道路物流法定履约成本
+carbon_shadow_price,observed_high,105.65000,yuan_per_tCO2e,0.10565000,yuan_per_kgCO2e,复用冻结CEA观察值；内部影子价格，不是道路物流法定履约成本
+diesel_price,official_current_2026-07-03,6.87,yuan_per_L,6.87,yuan_per_L,官方0号柴油最高零售价快照，不等于车队批量采购成交价
+public_charging_service_fee,depot_owned,0.00,yuan_per_kWh,0.00000000,yuan_per_kWh,自有充电不计公共服务费
+public_charging_service_fee,public_typical,,yuan_per_kWh,,yuan_per_kWh,未找到官方当期公共中位价；NA不进入模型
+public_charging_service_fee,public_guidance_cap,,yuan_per_kWh,,yuan_per_kWh,未找到官方当期指导上限；NA不进入模型
+electricity_tariff,valley,0.435829,yuan_per_kWh,0.435829,yuan_per_kWh,historical_official_snapshot_only
+electricity_tariff,flat,0.681335,yuan_per_kWh,0.681335,yuan_per_kWh,historical_official_snapshot_only
+electricity_tariff,peak,0.926841,yuan_per_kWh,0.926841,yuan_per_kWh,historical_official_snapshot_only
+electricity_tariff,sharp_peak,1.057777,yuan_per_kWh,1.057777,yuan_per_kWh,historical_official_snapshot_only

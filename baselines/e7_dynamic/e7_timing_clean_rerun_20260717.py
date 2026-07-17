@@ -27,8 +27,8 @@ ROOT = Path(__file__).resolve().parents[2]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
-from baselines.e7_dynamic import audit_e7_external_pause_timing_20260716 as timing_audit
-from baselines.e7_dynamic import e7_formal_resumable_runner_20260715 as formal
+from baselines.e7_dynamic import audit_e7_external_pause_timing_20260716 as timing_audit  # noqa: E402
+from baselines.e7_dynamic import e7_formal_resumable_runner_20260715 as formal  # noqa: E402
 
 
 PARENT_OUTPUT = ROOT / "baselines/e7_dynamic/e7_multinetwork_formal_20260715"
@@ -44,6 +44,16 @@ CHILD_CONTRACT_SHA256 = "b703492d88d5a4db69f4302c709767871a8743ddef853e7be1d8b4c
 EXPECTED_PAUSE_SECONDS = 13934.0
 EXPECTED_EVALUATIONS = 50
 EXPECTED_WORKERS = 6
+EXPECTED_RECOVERY_SCHEMA = "setp.e7.parent_child_recovery.v1"
+EXPECTED_AUTHORIZED_FIX = "exact_trigger_charge_start_boundary"
+RECOVERY_CONTRACT_KEYS = {
+    "recovery_schema",
+    "authorized_fix",
+    "parent_contract_sha256",
+    "recovery_task_ids",
+}
+EXPECTED_RECOVERY_TASK_COUNT = 18
+EXPECTED_TASK_COUNT = 120
 
 PARENT_CONTAMINATED = {
     "N322__geographic__stream2__full",
@@ -170,6 +180,100 @@ def snapshot_task_dir(root: Path) -> dict[str, str]:
     return {str(path.relative_to(root)): sha256(path) for path in paths}
 
 
+def verify_parent_child_contracts(
+    parent_contract: Mapping[str, Any], child_contract: Mapping[str, Any]
+) -> None:
+    """Validate recovery lineage, then compare the shared contract fields."""
+    if child_contract.get("recovery_schema") != EXPECTED_RECOVERY_SCHEMA:
+        raise RerunContractError(
+            "child contract key recovery_schema differs: "
+            f"expected {EXPECTED_RECOVERY_SCHEMA!r}, "
+            f"got {child_contract.get('recovery_schema')!r}"
+        )
+    if child_contract.get("authorized_fix") != EXPECTED_AUTHORIZED_FIX:
+        raise RerunContractError(
+            "child contract key authorized_fix differs: "
+            f"expected {EXPECTED_AUTHORIZED_FIX!r}, "
+            f"got {child_contract.get('authorized_fix')!r}"
+        )
+    if child_contract.get("parent_contract_sha256") != PARENT_CONTRACT_SHA256:
+        raise RerunContractError(
+            "child contract key parent_contract_sha256 differs: "
+            f"expected {PARENT_CONTRACT_SHA256!r}, "
+            f"got {child_contract.get('parent_contract_sha256')!r}"
+        )
+
+    recovery_task_ids = child_contract.get("recovery_task_ids")
+    if not isinstance(recovery_task_ids, list):
+        raise RerunContractError(
+            "child contract key recovery_task_ids must be a list of strings"
+        )
+    if len(recovery_task_ids) != EXPECTED_RECOVERY_TASK_COUNT:
+        raise RerunContractError(
+            "child contract key recovery_task_ids must contain exactly "
+            f"{EXPECTED_RECOVERY_TASK_COUNT} items; got {len(recovery_task_ids)}"
+        )
+    if any(not isinstance(task_id, str) for task_id in recovery_task_ids):
+        raise RerunContractError(
+            "child contract key recovery_task_ids must contain only strings"
+        )
+    if len(set(recovery_task_ids)) != len(recovery_task_ids):
+        raise RerunContractError(
+            "child contract key recovery_task_ids contains duplicate task IDs"
+        )
+
+    expected_task_ids = {
+        str(task["task_id"]) for task in formal._expected_tasks(EXPECTED_EVALUATIONS)
+    }
+    if len(expected_task_ids) != EXPECTED_TASK_COUNT:
+        raise RerunContractError(
+            "child contract key recovery_task_ids cannot be checked: "
+            f"expected task universe has {EXPECTED_TASK_COUNT} IDs, "
+            f"got {len(expected_task_ids)}"
+        )
+    unknown_task_ids = sorted(set(recovery_task_ids) - expected_task_ids)
+    if unknown_task_ids:
+        raise RerunContractError(
+            "child contract key recovery_task_ids contains IDs outside the "
+            f"120-task universe: {unknown_task_ids}"
+        )
+
+    for key in sorted(RECOVERY_CONTRACT_KEYS):
+        if key in parent_contract:
+            raise RerunContractError(
+                f"parent contract must not contain recovery key {key}"
+            )
+
+    child_without_recovery = dict(child_contract)
+    for key in RECOVERY_CONTRACT_KEYS:
+        child_without_recovery.pop(key, None)
+    scheduler_exemptions = {
+        "contract_sha256",
+        "source_file_hashes",
+        "source_commit_at_start",
+    }
+    parent_shared = {
+        key: value
+        for key, value in parent_contract.items()
+        if key not in scheduler_exemptions
+    }
+    child_shared = {
+        key: value
+        for key, value in child_without_recovery.items()
+        if key not in scheduler_exemptions
+    }
+    if parent_shared != child_shared:
+        differing_keys = sorted(
+            key
+            for key in set(parent_shared) | set(child_shared)
+            if parent_shared.get(key) != child_shared.get(key)
+        )
+        raise RerunContractError(
+            "parent and child contracts differ beyond the scheduler source: "
+            f"keys={differing_keys}"
+        )
+
+
 def verify_historical_package(parent_contract: Mapping[str, Any], child_contract: Mapping[str, Any]) -> dict[str, str]:
     manifest = read_json(PARENT_OUTPUT / "artifact_hashes.json")
     if formal._artifact_hashes(PARENT_OUTPUT) != manifest:
@@ -207,7 +311,6 @@ def identify_contaminated_tasks() -> tuple[dict[str, Any], float, list[dict[str,
         expected_lineage = "parent" if task_id in PARENT_CONTAMINATED else "child"
         if lineage_by_id.get(task_id) != expected_lineage:
             raise RerunContractError(f"historical lineage differs for {task_id}")
-    tasks = {str(task["task_id"]): dict(task) for task in formal._expected_tasks(EXPECTED_EVALUATIONS)}
     return incident, pause, [
         {**dict(stage), "lineage": lineage_by_id[str(stage["task_id"])]}
         for stage in stages
@@ -310,14 +413,7 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
     child_contract = read_json(child_contract_path)
     verify_contract(parent_contract, PARENT_CONTRACT_SHA256, "parent")
     verify_contract(child_contract, CHILD_CONTRACT_SHA256, "child")
-    if {
-        key: value for key, value in parent_contract.items()
-        if key not in {"contract_sha256", "source_file_hashes", "source_commit_at_start"}
-    } != {
-        key: value for key, value in child_contract.items()
-        if key not in {"contract_sha256", "source_file_hashes", "source_commit_at_start"}
-    }:
-        raise RerunContractError("parent and child contracts differ beyond the scheduler source")
+    verify_parent_child_contracts(parent_contract, child_contract)
     verify_historical_package(parent_contract, child_contract)
     incident, pause, contaminated = identify_contaminated_tasks()
     ensure_output_contracts(parent_contract_path, child_contract_path)

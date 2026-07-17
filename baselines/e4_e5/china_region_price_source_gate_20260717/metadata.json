@@ -1,0 +1,31 @@
+{
+  "schema_version": "resetp.china-region-price-source-gate.v1",
+  "created_at_utc": "2026-07-17T00:00:00Z",
+  "status": "PARTIAL_CHINA_REGION_PRICE_SOURCE_GATE",
+  "task_scope": "official price and regional-data source gate only; no optimization",
+  "optimization_runs": 0,
+  "search_evaluations": 0,
+  "source_count": 13,
+  "source_priority": [
+    "regulator or grid-company original page/PDF/XLS",
+    "Ministry of Ecology and Environment / NDRC original page",
+    "official exchange original daily market page"
+  ],
+  "tvci_linkage": {
+    "trusted_gate": "baselines/e4_e5/china_tvci_source_gate_20260717_v2",
+    "trusted_gate_status": "PASS_CHINA_TVCI_2025_SOURCE_GATE_WITH_FUTURE_YEAR_NULLS_RECORDED",
+    "trusted_derivative": "baselines/e4_e5/china_tvci_source_gate_20260717_v2/tvci_2025_48slot_wide.csv",
+    "trusted_derivative_sha256": "099f266558815a34f11b046545fa7bd294e5b823417c4977ef6556967b40c745",
+    "s1_workbook_sha256": "8e23df4a39707077a2c772e9ab0a275b388fe4ded04d0db4fe0937616499486d",
+    "source_nature": "Li et al. S1-2025 provincial hourly simulation/projection, not official, observed, real-time, or marginal emissions",
+    "license": "CC BY 4.0; retain attribution and projection qualification"
+  },
+  "carbon_price_semantics": "CEA observations may be used only as an internal shadow-price, policy-expansion, or upstream-pass-through scenario. They are not a current statutory road-logistics allowance cost.",
+  "appledouble_event": "AppleDouble sidecars were created by the external-volume download path during acquisition, detected before final hashing, removed, and excluded from the manifest. Final scan is clean.",
+  "known_limits": [
+    "Monthly proxy-purchase electricity prices are time-specific and are not a permanent regional tariff.",
+    "The NDRC diesel attachment gives standard-product ceilings in CNY/t. Do not invent CNY/L conversions without a same-date official local conversion/retail notice.",
+    "Guangdong province policy explicitly excludes Shenzhen; Shenzhen has a separate policy and must not be silently replaced by Guangzhou/Foshan values.",
+    "The Chengdu--Chongqing corridor crosses Sichuan and Chongqing. A Chongqing electricity tariff cannot price the Chengdu side without a documented surrogate decision."
+  ]
+}

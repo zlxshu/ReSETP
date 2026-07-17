@@ -1,0 +1,112 @@
+{
+  "decision": "PARTIAL_CHINA_REGION_PRICE_SOURCE_GATE",
+  "decision_basis": "Each requested main-city anchor has official policy or market evidence, but none of the three multi-city corridors has a single fully current, fully scope-matched, reproducibly downloaded end-use electricity-price chain for every city in its geography. This is a source/data gate only, not permission to optimize.",
+  "regions": {
+    "jjj_beijing": {
+      "status": "PARTIAL",
+      "anchor": "Beijing",
+      "tou_price_snapshot": {
+        "status": "PASS_HISTORICAL_SNAPSHOT_ONLY",
+        "customer_scope": "State Grid proxy-purchase commercial-industrial, two-part, 1-10 kV",
+        "effective_date": "2024-07-01 to 2024-07-31",
+        "unit": "CNY/kWh energy charge",
+        "sharp_peak": 1.057777,
+        "peak": 0.926841,
+        "flat": 0.681335,
+        "valley": 0.435829,
+        "times": "peak 10:00-13:00 and 17:00-22:00; flat 07:00-10:00, 13:00-17:00, 22:00-23:00; valley 23:00-07:00; Jul/Aug sharp peak 11:00-13:00 and 16:00-17:00",
+        "source_id": "BJ-TARIFF-2024-07"
+      },
+      "diesel": {
+        "status": "PARTIAL_TONNE_ONLY",
+        "date": "2026-07-03 24:00 onward",
+        "value": 7935,
+        "unit": "CNY/t, NDRC 0# vehicle-diesel standard-product maximum retail ceiling",
+        "not_authorized": "CNY/L conversion without a same-date official Beijing local notice"
+      },
+      "carbon_price": "PASS_SHADOW_ONLY: CEA close 75.02 CNY/tCO2e on 2025-06-30 is a national dated observation and may be a common internal shadow price, not a Beijing-local or road-logistics statutory cost.",
+      "tvci": "PASS_DIRECT: exact Beijing column exists in trusted S1-2025 48-slot table.",
+      "blocking_gaps": [
+        "The numeric electricity snapshot is July 2024, not a current permanent tariff.",
+        "The regional geography includes Tianjin and Hebei, but this gate only authorizes a clearly labelled Beijing-anchor surrogate after an explicit later approval."
+      ]
+    },
+    "prd_guangdong": {
+      "status": "PARTIAL",
+      "anchor": "Guangdong",
+      "tou_price_snapshot": {
+        "status": "PARTIAL",
+        "customer_scope": "Guangzhou/Foshan 1-10 kV general-commercial price table, but TOU eligibility is limited to former ordinary-industrial special-transformer users; value excludes funds and surcharges",
+        "effective_date": "from 2021-10-01",
+        "unit": "CNY/kWh energy charge",
+        "sharp_peak": "1.3759375 derived as official peak 1.10075 x 1.25; only in sharp-peak trigger periods",
+        "peak": 1.10075,
+        "flat": 0.6475,
+        "valley": 0.24605,
+        "times": "peak 10:00-12:00 and 14:00-19:00; valley 00:00-08:00; otherwise flat; sharp peak 11:00-12:00 and 15:00-17:00 during Jul-Sep and qualifying >=35C days",
+        "source_ids": ["GD-TOU-2021", "GD-TARIFF-2021-10"]
+      },
+      "shenzhen_exception": "Guangdong provincial policy expressly excludes Shenzhen. Shenzhen has a separate official TOU policy, but the original page could not be downloaded by the available local TLS client; it must not be replaced with Guangzhou/Foshan numbers.",
+      "diesel": {
+        "status": "PARTIAL_TONNE_ONLY",
+        "date": "2026-07-03 24:00 onward",
+        "value": 7970,
+        "unit": "CNY/t, NDRC 0# vehicle-diesel standard-product maximum retail ceiling",
+        "not_authorized": "CNY/L conversion without a same-date official Guangdong or Shenzhen local notice"
+      },
+      "carbon_price": "PASS_SHADOW_ONLY: same national CEA observation only; do not substitute a Guangdong or Shenzhen local market price for CEA without a separate decision.",
+      "tvci": "PASS_DIRECT: exact Guangdong column exists in trusted S1-2025 48-slot table.",
+      "blocking_gaps": [
+        "PRD includes Shenzhen, whose price policy and applicable user scope are separate from Guangdong province.",
+        "The preserved Guangzhou/Foshan numeric tariff is an October-2021 historical table and not a general commercial/depot tariff by default."
+      ]
+    },
+    "cy_chongqing_sichuan": {
+      "status": "PARTIAL",
+      "anchor": "Chongqing",
+      "tou_price_snapshot": {
+        "status": "PASS_CHONGQING_HISTORICAL_SNAPSHOT_ONLY",
+        "customer_scope": "State Grid proxy-purchase commercial-industrial, two-part, 1-10 kV; policy TOU scope is narrower for industrial categories",
+        "effective_date": "2024-07-01 to 2024-07-31",
+        "unit": "CNY/kWh energy charge",
+        "sharp_peak": 1.291963,
+        "peak": 1.093205,
+        "flat": 0.720533,
+        "valley": 0.335439,
+        "times": "policy: peak 11:00-17:00 and 20:00-22:00; flat 08:00-11:00, 17:00-20:00, 22:00-24:00; valley 00:00-08:00; sharp peak 12:00-14:00 in Jul/Aug and Dec/Jan",
+        "source_ids": ["CQ-TOU-2021", "CQ-TARIFF-2024-07"]
+      },
+      "diesel": {
+        "status": "PASS_CHONGQING_ONLY",
+        "date": "2026-07-03 24:00 onward",
+        "chongqing": "6.90 CNY/L and 8110 CNY/t official maximum retail for 0# vehicle diesel VI",
+        "chengdu": "8135 CNY/t shown in the same NDRC table; no same-date official CNY/L conversion preserved",
+        "source_ids": ["NDRC-DIESEL-TABLE-2026-07", "CQ-DIESEL-2026-07"]
+      },
+      "carbon_price": "PASS_SHADOW_ONLY: same national CEA observation only; it is not a Chongqing or Sichuan local statutory road-logistics cost.",
+      "tvci": "PASS_DIRECT: exact Chongqing column exists in trusted S1-2025 48-slot table; the preregistration explicitly chooses it as the cross-province main-city curve approximation.",
+      "blocking_gaps": [
+        "The corridor includes Chengdu/Sichuan. No Sichuan end-use TOU chain is in this gate, so Chongqing electricity price cannot be applied corridor-wide.",
+        "The numeric electricity snapshot is July 2024 and user-scope alignment for a logistics depot needs a later contract."
+      ]
+    }
+  },
+  "authorizes": [
+    "use the three named S1-2025 TVCI province columns without copying Shanghai values",
+    "cite the saved official sources and their dates/hashes",
+    "use CEA 75.02 CNY/tCO2e dated 2025-06-30 only as an internal shadow-price observation"
+  ],
+  "does_not_authorize": [
+    "using Shanghai electricity or diesel values for Beijing, Guangdong, Shenzhen, Chongqing, or Sichuan",
+    "treating any historical monthly proxy-purchase price as a current permanent tariff",
+    "treating CEA as a local market price, road-logistics tax, or present legal allowance cost",
+    "converting tonne-denominated diesel ceilings to litres without a same-date official local conversion",
+    "any C31 optimization or solver configuration"
+  ],
+  "next_gate_required": [
+    "freeze a same-period electricity snapshot and exact depot user/electrical-voltage category for each city used in C31",
+    "obtain a reproducible Shenzhen original-page download or an official locally downloadable equivalent",
+    "choose and document a Sichuan electricity-price chain or explicitly restrict the price anchor to Chongqing-only",
+    "obtain same-date local CNY/L diesel notices where the model requires litres"
+  ]
+}

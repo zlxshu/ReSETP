@@ -1,5 +1,27 @@
 # Memory Index
 
+- [C31 成渝 100 客户 DRAFT-v2 结构门通过（2026-07-17）](../china_3x3_instance_probe_20260717.md) — 保留绵竹片区 HALT 后，最终采用成都青羊、德阳旌阳、眉山东坡、资阳雁江、乐山市中 33 个真实 OSM Map API 静态小块，客户配额固定为 55/10/17/3/15。候选通过 100 客户、2 车场、3 充电站、105 节点、48 槽重庆TVCI、加载器复算和 98.409748 km 覆盖足迹门；结构门、pytest、Ruff、py_compile 通过，搜索评价0次。判决=`PASS_DRAFT_STRUCTURE_GATE / NOT_READY_FOR_V2_FREEZE`，仍不能进入正式优化；E7清洁重跑仍在后台运行。
+
+- [中国三地当前充电服务费缺口（2026-07-17）](../../baselines/e4_e5/china_policy_price_gate_beijing_20260717/decision.json) — 北京/广东/重庆独立零搜索包均判`HALT_*_CHARGING_SERVICE_FEE_OFFICIAL_NUMERIC_SOURCE_MISSING`；官方能确认分时段和部分历史电价，但公共充电服务费已市场化，缺当期官方中位/指导上限数字，不得用旧政策、二手OCR或估算填补。TVCI列可接入，但完整当前成本情景未冻结。
+
+- [新增中国证据包AppleDouble复核（2026-07-17）](../china_3x3_instance_probe_20260717.md) — 价格来源门和C31 OSM草稿包首次独立校验发现外置卷`._*`旁车；已按`HASH_CONTAMINATED_APPLEDOUBLE`记录并清理，价格五件套17项哈希不变，C31源文件本体未改。
+
+- [C31 3×3草稿构造与唯一冻结阻断（2026-07-17）](../china_3x3_instance_probe_20260717.md) — Map API分块静态快照36/36成功；jjj/prd/cy要素池分别为1595/26/3、1413/119/10、571/58/5；9个50/100/200客户DRAFT均已生成，9/9结构门通过、优化搜索0次。唯一阻断：`c31-cy-100c-01-DRAFT`覆盖半径3.7 km。v2初始16块后只扩绵竹16块，32次请求全HTTP 200；当前有效28块的成都青羊/绵竹扩大池/眉山东坡/资阳雁江池为481/47/4、0/14/0、17/9/0、13/3/0。固定25 POI/块时绵竹仍为0，未生成候选，初次HALT保存在`attempt_history.json`，当前仍判`HALT_C31_CY_100C_SELECTED_REAL_MAP_API_POOL_INSUFFICIENT`。不得把该限定HALT夸大为全都市圈无数据，绝不补随机点；仍不得进入正式实验或v2冻结。
+
+- [京/粤/渝价格来源门完成（2026-07-17）](../china_region_price_source_gate_20260717.md) — 判决=`PARTIAL_CHINA_REGION_PRICE_SOURCE_GATE`；北京/广东/重庆TVCI列可直接接入，但北京和重庆为历史分时快照，广东仅广州/佛山且不覆盖深圳，四川电价未闭合。只有重庆保存同日6.90 CNY/L柴油值，其他地区吨价禁止自行换算；CEA只能作带日期内部影子价。五件套和17项哈希在`baselines/e4_e5/china_region_price_source_gate_20260717/`，未授权价格写入求解器或C31优化。
+
+- [中国公开EV配送算例检索收口（2026-07-17）](../china_open_ev_vrp_instance_search_20260717.md) — 实际下载/读取重庆EV动态配送论文、LaDe重庆订单表、北京充电站、七城EV统计和公开取送订单数据；没有同一来源同时闭合多车场、EV/电池、充电站、客户需求与硬时间窗。判决=`HALT_NO_COMPLETE_OPEN_INSTANCE`，原始文件和SHA256在`data/ChinaInstances/open_sources_20260717/`；C31转为“公开数据做来源锚点+预注册自建”，不得拼接部分数据冒充公开完整实例。
+
+- [E7接力启动与中国3×3支线恢复（2026-07-17）](../../HANDOFF.md) — 上一轮会话限额导致三条中国支线未产生结果；E7合同比较修复已通过真实合同与三种篡改测试。首次启动因未继承`PYTHONHASHSEED=0`在计算前HALT，输出目录未产生结果；随后用显式环境变量、原50评价/6 workers在`/private/tmp/.resetp-e7-timing-clean-rerun-20260717-takeover-env.monitor`启动并处于`RUNNING`。公开算例检索、京/粤/渝来源链、C31草稿构造由独立支线执行，仍禁止优化搜索。
+
+- [E7清洁重跑当前启动阻断（2026-07-17）](../../../baselines/e7_dynamic/e7_timing_clean_rerun_20260717.py) — 代码修复与静态/定向测试已通过，但当前Codex环境的进程池探针在`SC_SEM_NSEMS_MAX`处被沙箱拒绝；Terminal/LaunchServices和用户级`launchctl submit`也不可用。为遵守非沙箱铁律没有调用监控`start`，重跑未启动，输出目录保持不存在/为空；需在真正非沙箱终端按原命令启动。
+
+- [E7清洁重跑合同比较修复（2026-07-17）](../../../baselines/e7_dynamic/e7_timing_clean_rerun_20260717.py) — Codex仅改目标脚本：显式校验四个恢复谱系键和父合同禁带约束，再从子合同副本删除四键并保留原三键调度源豁免。真实父/子合同通过；`authorized_fix`篡改、未知第五键、父合同带`recovery_schema`三种定向篡改均拒绝。Ruff、py_compile和diff通过；脚本SHA-256=`1949837b7dff684962531f2216f3280a23f285d4e7047100e83c254f60238c8e`。重启前输出目录不存在/为空；监控配置没有固定旧脚本哈希。
+
+- [中国3×3算例设计预注册（2026-07-17）](../china_3x3_instance_design_20260717.md) — 用户拍板：主场景转中国，3电网原型区域（京津冀/珠三角/成渝=煤电/风光/水电）×3规模{50,100,200}全交叉=9算例`c31-*`；字面全国算例被物理否决；英国轨退役留档；几何可风格化但碳曲线/价格必须官方来源；正式采纳点=NL统一重跑；v2冻结前禁止任何性能比较。同日Codex四任务并行：A=E7修复重启、B=京/粤/渝价格链、C=公开算例检索、D=数据探针+DRAFT构造。
+
+- [E7清洁重跑HALT根因=脚本白名单bug（2026-07-17）](../../../baselines/e7_dynamic/e7_timing_clean_rerun_20260717.py) — `e7_timing_clean_rerun_20260717.py` run() 的父/子合同比较只豁免 `contract_sha256/source_file_hashes/source_commit_at_start` 三键，漏掉子合同按 `setp.e7.parent_child_recovery.v1` 架构必有的四个恢复谱系键（`recovery_schema/authorized_fix/parent_contract_sha256/recovery_task_ids`，18项任务ID），故任何情况都会在启动前抛 `RerunContractError`；两份合同文件本身已被 SHA-256 常量验签（父`bffdc512...e16f`/子`b703492...0721`），实质字段零漂移。修复=显式校验四键字面值/常量/18项子集后再比较其余键，不得笼统扩大豁免集。输出目录当时为空，无污染。修复提示词已交用户转 Codex；本轮 Claude 未改代码。
+
 - [E7步骤1--6事件后链路静态预检（2026-07-17）](../e7_steps_1_to_6_postevent_preflight_20260717.md) — 六个收口入口和源码指纹均存在且可编译；暂停时效、重放不变量、独立总审计、论文展品和证明构建器21项测试通过。未读取正式E7目录或方向。28日零搜索重放入口自身不拒绝非空输出目录，因此COMPLETED事件后必须先做目录不存在/为空的外部门禁；本轮未改该脚本。该预检不代表E7完成。
 
 - [客户责任结构图坐标轴意见裁决（2026-07-17）](../../paper_submission_final/generated_figures/e3_customer_structure.pdf) — 直接核对Soriano等（2023）正式PDF第8页图3，母版为无坐标轴、无边框、并列同尺度的类别空间图，图例只标成员符号和客户数；当前图采用相同语法且两面板共享坐标范围。因此拒绝机械增加坐标轴、尺度和单位，避免偏离指定母版并把机制示意误作地理测量图；图和数据未改，六图视觉门保持PASS。
@@ -246,3 +268,7 @@
 # 2026-07-17 E7时效污染清洁重跑
 
 正式E7已产生120个任务，但外部SIGSTOP持续13934秒，污染9个N322任务的stage-1 elapsed_seconds；步骤1--6在时效门HALT。已启动`e7_timing_clean_rerun_20260717.py`（SHA-256=`dedaaf140e20809ba19672169d149e2526ac03a5e0960dce41a3e83015fce304`）及独立hooks目录`/private/tmp/.resetp-e7-timing-clean-rerun-20260717.monitor`，严格50 evaluations、6 workers、PYTHONHASHSEED=0、原事件流/种子/四臂，隔离输出；4个parent任务用Git提交`17df1cd2`旧探针，5个child任务用`8b2de296`修复探针。脚本不会覆盖旧正式包，并要求新阶段耗时小于13934秒、去除elapsed_seconds后的语义载荷与历史同合同一致、父/子历史120个任务断点哈希前后不变。完成/异常事件前不读取中间方向，不运行下游重放。
+
+# 2026-07-17 中国 81 个自建算例谱系
+
+当前中国主集不是旧 C31 的 3×3，而是三区域×9 客户梯度×3 变体=81 个 DRAFT。地点使用已有 OSM 快照中的命名真实地图 POI，需求/服务/TW逐客户继承同梯度 Goeke--Schneider 公开源文件并按 8/9 映射到三班；中国订单真实性、工业候选车场、缺失充电容量和直线距离均已在 `china-81-instance-lineage-20260717.md` 与 `china_81_instance_design_20260717.md` 明确划界。81/81 结构门通过但搜索评价为0，正式实验仍未授权。

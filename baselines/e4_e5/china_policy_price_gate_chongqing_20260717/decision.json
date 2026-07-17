@@ -1,0 +1,19 @@
+{
+  "decision": "HALT_CHONGQING_CHARGING_SERVICE_FEE_OFFICIAL_NUMERIC_SOURCE_MISSING",
+  "failure_count": 1,
+  "failures": [
+    "当期公共充电服务费官方中位价和指导上限数值缺失；不能使用旧政策数字、二手转述或估算。"
+  ],
+  "search_evaluations": 0,
+  "solver_evaluations": 0,
+  "authorizes": [
+    "使用官方分时政策时段制作48槽",
+    "使用登记的官方柴油最高零售价",
+    "复用冻结CEA影子价格"
+  ],
+  "does_not_authorize": [
+    "把HALT链当作当前完整可运行价格场景",
+    "把CEA当作道路物流法定碳成本",
+    "运行任何优化器或solver"
+  ]
+}
