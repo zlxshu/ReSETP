@@ -753,11 +753,20 @@ def write_counts(
     return rows
 
 
-def write_station_summary(output: Path, pool_rows: dict[tuple[str, str], list[dict[str, Any]]]) -> list[dict[str, Any]]:
+def write_station_summary(
+    output: Path,
+    pool_rows: dict[tuple[str, str], list[dict[str, Any]]],
+    runs: list[dict[str, Any]],
+) -> list[dict[str, Any]]:
+    extracted_cities = {
+        row["city"]
+        for row in runs
+        if row.get("feature") == "charging_station" and row.get("status") == "success"
+    }
     rows: list[dict[str, Any]] = []
     for city in sorted(CITIES):
         stations = pool_rows.get((city, "charging_station"), [])
-        if not stations:
+        if city not in extracted_cities:
             rows.append(
                 {
                     "city": city,
@@ -772,6 +781,24 @@ def write_station_summary(output: Path, pool_rows: dict[tuple[str, str], list[di
                     "positive_power_or_capacity_rate": "",
                     "socket_tag_rate": "",
                     "status": "NOT_EXTRACTED",
+                }
+            )
+            continue
+        if not stations:
+            rows.append(
+                {
+                    "city": city,
+                    "region": CITIES[city]["region"],
+                    "station_count": 0,
+                    "positive_power_count": 0,
+                    "positive_capacity_count": 0,
+                    "positive_power_or_capacity_count": 0,
+                    "socket_tag_count": 0,
+                    "positive_power_rate": "0.000000",
+                    "positive_capacity_rate": "0.000000",
+                    "positive_power_or_capacity_rate": "0.000000",
+                    "socket_tag_rate": "0.000000",
+                    "status": "EXTRACTED",
                 }
             )
             continue
@@ -869,11 +896,11 @@ def write_report(
         (
             [
                 row["city"],
-                row["station_count"] or "—",
-                f"{row['positive_power_count']} ({row['positive_power_rate']})" if row["station_count"] else "—",
-                f"{row['positive_capacity_count']} ({row['positive_capacity_rate']})" if row["station_count"] else "—",
-                f"{row['positive_power_or_capacity_count']} ({row['positive_power_or_capacity_rate']})" if row["station_count"] else "—",
-                f"{row['socket_tag_count']} ({row['socket_tag_rate']})" if row["station_count"] else "—",
+                row["station_count"] if row["status"] == "EXTRACTED" else "—",
+                f"{row['positive_power_count']} ({row['positive_power_rate']})" if row["status"] == "EXTRACTED" else "—",
+                f"{row['positive_capacity_count']} ({row['positive_capacity_rate']})" if row["status"] == "EXTRACTED" else "—",
+                f"{row['positive_power_or_capacity_count']} ({row['positive_power_or_capacity_rate']})" if row["status"] == "EXTRACTED" else "—",
+                f"{row['socket_tag_count']} ({row['socket_tag_rate']})" if row["status"] == "EXTRACTED" else "—",
                 row["status"],
             ]
             for row in station_rows
@@ -1079,7 +1106,7 @@ def run(args: argparse.Namespace) -> int:
             halt_markdown = "**P1 未闭合：** 至少一个城市/要素未获得可复核的新原始响应；请恢复网络后用同一输出目录续跑。"
     write_csv(output / "raw_runs.csv", sorted(runs, key=lambda row: str(row["run_id"])), RUN_FIELDS)
     counts = write_counts(output, boxes, old_rows, pool_rows, runs)
-    station_rows = write_station_summary(output, pool_rows)
+    station_rows = write_station_summary(output, pool_rows, runs)
     zero_station_cities = [row["city"] for row in station_rows if row["status"] == "EXTRACTED" and int(row["station_count"]) == 0]
     decision = {
         "schema": "resetp.china9.full-pool.decision.v1",

@@ -26,11 +26,11 @@ def test_china_vehicle_source_captures_exist() -> None:
         assert capture.is_file(), capture
 
 
-def test_china_order_attribute_contract_is_locked_and_result_independent() -> None:
+def test_china_order_attribute_contract_preserves_model_approval_halt_and_f1_payload_chain() -> None:
     lock = json.loads(LOCK.read_text(encoding="utf-8"))
     contract_path = Path(__file__).resolve().parents[1] / lock["customer_contract"]["order_attribute_contract"]
     contract = json.loads(contract_path.read_text(encoding="utf-8"))
-    assert contract["status"] == "LOCKED_DESIGN_NOT_APPLIED"
+    assert contract["status"] == "HALT_MODEL_TRANSFORMATION_AWAITING_USER_APPROVAL"
     assert contract["formal_search_allowed"] is False
     assert contract["observed_chinese_orders_claim_allowed"] is False
     assert contract["units"] == {
@@ -38,43 +38,52 @@ def test_china_order_attribute_contract_is_locked_and_result_independent() -> No
         "time": "minute_from_local_midnight",
         "service_time": "minute",
     }
-    assert sum(row["probability"] for row in contract["demand_mixture"]) == 1.0
-    assert max(row["integer_uniform_kg"][1] for row in contract["demand_mixture"]) < 1300
-    assert contract["witness_contract"]["route_load_limit_kg"] == 1040
+    assert len(contract["demand_mixture"]) == 5
+    assert sum(row["source_count"] for row in contract["demand_mixture"]) == 1222
+    assert max(row["fixed_proxy_kg"] for row in contract["demand_mixture"]) == 417
+    assert contract["demand_conversion_rule"]["classification"] == "CONSTRUCTED_CAPACITY_SHARE_SCENARIO_PROXY"
+    assert contract["service_time_rule"]["values_minutes"] == [6, 9, 12, 15, 18]
+    assert contract["service_time_rule"]["observed_stop_duration_claim_allowed"] is False
+    assert set(contract["time_window_profiles"]) == {
+        "base_empirical_delivery",
+        "sensitivity_wide_pickup_proxy",
+        "sensitivity_tight_delivery_lower_half",
+    }
+    assert contract["calibration_evidence"]["named_city_or_company_claim_allowed"] is False
+    assert contract["calibration_evidence"]["model_transformation_approved_by_user"] is False
+    assert contract["witness_contract"]["vehicle_payload_reference_kg"] == 1000
+    assert contract["witness_contract"]["route_load_limit_kg"] == 1000
+    assert contract["witness_contract"]["optional_robustness_construction_target_kg"] == 800
+    assert (
+        contract["witness_contract"]["optional_robustness_construction_target_role"]
+        == "SENSITIVITY_ONLY_NOT_HARD_CAPACITY"
+    )
     assert contract["witness_contract"]["algorithm_search_evaluations"] == 0
     assert contract["witness_contract"]["regeneration_after_failure_allowed"] is False
     assert contract["seed_rule"]["independent_of_algorithm_results"] is True
     assert set(contract["variants"]) == {"01", "02", "03"}
-    assert {variant["window_profile"] for variant in contract["variants"].values()} == {"base_balanced"}
+    assert {variant["window_profile"] for variant in contract["variants"].values()} == {
+        "base_empirical_delivery"
+    }
     assert {variant["replicate_index"] for variant in contract["variants"].values()} == {1, 2, 3}
     exclusivity = contract["mutual_exclusivity_contract"]
     assert exclusivity["customer_map_identity_overlap_allowed"] is False
     assert exclusivity["same_instance_with_changed_label_allowed"] is False
     assert exclusivity["post_result_customer_replacement_allowed"] is False
     assert exclusivity["cross_size_disjointness_required"] is False
-    profiles = contract["time_window_profiles"]
-    assert set(profiles) == {"base_balanced", "sensitivity_wide", "sensitivity_tight"}
-    for profile in profiles.values():
-        assert len(set(profile["window_width_minutes"])) > 1
-        assert sum(profile["window_width_weights"]) == 1.0
 
 
-def test_china_customer_location_contract_is_27_cells_with_three_disjoint_replicates() -> None:
+def test_china_customer_location_contract_preserves_halt_but_keeps_81_identity_gate() -> None:
     lock = json.loads(LOCK.read_text(encoding="utf-8"))
     contract_path = Path(__file__).resolve().parents[1] / lock["customer_contract"]["customer_location_contract"]
     contract = json.loads(contract_path.read_text(encoding="utf-8"))
-    assert contract["status"] == "LOCKED_DESIGN_POOL_SUFFICIENCY_PASSED_NOT_BUILT"
+    assert contract["status"] == "HALT_HAND_SET_CITY_QUOTAS_AWAITING_PPS_RECALIBRATION"
     assert contract["replicates_per_region_size"] == 3
     assert contract["replicate_labels"] == ["01", "02", "03"]
     assert contract["within_cell_identity_overlap_allowed"] is False
     assert contract["cross_size_identity_overlap_allowed"] is True
     assert contract["post_result_replacement_allowed"] is False
-    assert set(contract["city_quotas"]) == {"jjj", "prd", "cy"}
-    assert sum(len(table) for table in contract["city_quotas"].values()) == 27
-    for table in contract["city_quotas"].values():
-        assert sorted(int(size) for size in table) == contract["customer_sizes"]
-        for size, quotas in table.items():
-            assert sum(quotas.values()) == int(size)
+    assert contract.get("city_quotas") is None
     gate = contract["sufficiency_gate"]
     decision = json.loads((Path(__file__).resolve().parents[1] / gate["evidence_package"] / "decision.json").read_text(encoding="utf-8"))
     assert decision["verdict"] == "PASS_81_MUTUAL_EXCLUSIVITY_POOL_GATE"
@@ -164,13 +173,44 @@ def test_nine_city_operational_sites_do_not_cross_cities_or_fake_wgs84() -> None
 
 def test_facility_validator_recognises_all_candidates_but_keeps_formal_gate_closed() -> None:
     result = validate_lock()
-    assert result["facility_manifest"]["preferred_site_count"] == 9
-    assert result["facility_manifest"]["hard_parameter_audit_count"] == 9
-    assert result["facility_manifest"]["preferred_coordinate_crs"] == "BD09MC"
+    assert result["facility_manifest"]["record_count"] == 9
+    assert result["facility_manifest"]["source_capture_count"] == 9
+    assert result["facility_manifest"]["verified_truck_gate_count"] == 0
+    assert result["facility_manifest"]["verified_vehicle_charging_count"] == 0
     assert result["pass"] is False
     codes = {item["code"] for item in result["errors"]}
-    assert "FACILITY_COORDINATES_PENDING" in codes
+    assert "FACILITY_TRUCK_GATE_PENDING" in codes
+    assert "FACILITY_OPERATIONS_PENDING" in codes
+    assert "FACILITY_VEHICLE_CHARGING_PENDING" in codes
     assert "LEGACY_BRITISH_CORE_STILL_ACTIVE" in codes
+
+
+def test_f1_f2_f3_f4_machine_decisions_are_bound_and_result_blind() -> None:
+    lock = json.loads(LOCK.read_text(encoding="utf-8"))
+    ev = lock["vehicle_contract"]["ev"]
+    assert (ev["curb_mass_kg"], ev["payload_capacity_kg"], ev["battery_kwh"]) == (3300, 1000, 140.41)
+    assert (ev["motor_rated_power_kw"], ev["motor_peak_power_kw"]) == (75, 167)
+    assert ev["official_range_claim_km"] == 400
+    cv = lock["vehicle_contract"]["cv"]
+    assert cv["selection_status"] == "SELECTED_OFFICIAL_FIRST_COLUMN_BOX_BODY_CHAIN"
+    assert cv["configuration"] == "官方第一配置列G12J8/G12K8，厢式货箱"
+    assert (cv["curb_mass_kg"], cv["payload_capacity_kg"], cv["gross_mass_kg"]) == (2565, 1735, 4495)
+    assert (cv["box_internal_width_mm"], cv["box_internal_height_mm"]) == (2100, 2200)
+
+    f3 = lock["price_contract"]["f3_pre_registered_row_selection"]
+    assert f3["legal_basis"]["document_number"] == "发改价格〔2023〕526号"
+    manifest = Path(__file__).resolve().parents[1] / f3["legal_basis"]["snapshot_manifest"]
+    assert manifest.is_file()
+
+    decision_path = Path(__file__).resolve().parents[1] / lock["carbon_contract"]["default_date_decision"]
+    decision = json.loads(decision_path.read_text(encoding="utf-8"))
+    assert decision["status"] == "PENDING_EXPLICIT_USER_APPROVAL"
+    assert decision["selected_option"] is None
+    assert decision["selected_common_default_date"] is None
+    assert decision["recommendation"]["recommended_option"] == "C"
+    assert decision["recommendation"]["recommended_common_default_date"] == "2025-02-12"
+    assert decision["optimization_results_read"] is False
+    assert decision["holiday_sensitivity"]["remaining_days"] == 24
 
 
 def test_current_core_is_still_blocked_until_the_single_localisation_transition() -> None:

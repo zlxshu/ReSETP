@@ -16,11 +16,12 @@
 6. `docs/handoff/memory/project-prd-execution-v2.md`
 7. `docs/handoff/codex_prompts/MASTER_codex_takeover_plan.md`
 8. `CLAUDE.md`
+9. `docs/handoff/model_change_approval_register_20260718.md`
 
 启动后必须在第一条工作汇报里写明：
 
 ```text
-已读强制入口：HANDOFF / READ_ME_FIRST / PRD v2 / planning map / memory index / project-prd memory / MASTER / CLAUDE
+已读强制入口：HANDOFF / READ_ME_FIRST / PRD v2 / planning map / memory index / project-prd memory / MASTER / CLAUDE / model-change approval register
 当前任务入口：
 当前停止条件：
 ```
@@ -36,6 +37,7 @@ E2 / 算法对比 / T3 / baseline 相关任务还必须读：
 - `docs/handoff/memory/baseline-algorithm-catalog.md`
 - `docs/handoff/memory/alns-crush-root-cause.md`
 - 历史：`docs/handoff/codex_prompts/20260702_c1_e2_g0_plateau_5174_audit.md`（已执行完，仅档案）
+- `docs/handoff/alns_mechanism_innovation_exploration_contract_20260718.md`
 
 动态需求 / E7 / T9 相关任务还必须读：
 
@@ -57,6 +59,7 @@ DR-ALNS / x86 / PPO / Track17-25 相关任务还必须读：
 - PRD v2 的 G2 场景口径部分
 - `solver/src/setp_solver/prices.py`
 - `docs/paper_submission_final/paper_main.tex` 参数表
+- `docs/handoff/model_change_approval_register_20260718.md`
 
 ## 3. 强制记录制度
 
@@ -89,6 +92,8 @@ artifact_hashes.json
 - `solver/src/setp_solver/cost.py`
 - `solver/src/setp_solver/check.py`
 - `solver/src/setp_solver/search/evaluation.py`
+
+未获用户明确批准，也不得把下列任何候选写成正式锁定或投入正式实验：单位/币种/物理量转换，观测数据代理化，目标函数或约束变化，默认参数与主情景，新算例生成/抽样/配额/插补/筛选方法，道路矩阵/能耗/充电构造方法，新算法机制，以及统计单位、主要终点、检验与多重校正方法。允许先做来源取证、描述统计和不改变正式入口的探针，但必须写 `HALT_*_AWAITING_USER_APPROVAL` 或 `DRAFT_METHOD_AWAITING_USER_APPROVAL`，并登记到 `docs/handoff/model_change_approval_register_20260718.md`。
 
 不得把 `VALID_BUT_WEAK`、`MECHANISM_BUT_TIE`、`HALT_*` 包装成胜利。不得用 x86 绝对成本和 M1 正式表混比。不得用 DR-ALNS 弱信号救 E2。
 

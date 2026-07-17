@@ -129,6 +129,22 @@ class China9PoolReadbackTests(unittest.TestCase):
             self.assertTrue(all(row["new_status"] == "NOT_EXTRACTED" for row in counts))
             self.assertTrue(all(row["new_count"] == "" for row in counts))
 
+    def test_zero_station_response_is_extracted_zero_not_missing(self) -> None:
+        counts = {
+            row["city"]: row
+            for row in read_rows(OUTPUT / "city_counts.csv")
+            if row["feature"] == "charging_station"
+        }
+        station_rows = {row["city"]: row for row in read_rows(OUTPUT / "station_parameter_summary.csv")}
+        for city, count_row in counts.items():
+            summary = station_rows[city]
+            if count_row["new_status"] == "EXTRACTED":
+                self.assertEqual(summary["status"], "EXTRACTED", city)
+                self.assertEqual(summary["station_count"], count_row["new_count"], city)
+            else:
+                self.assertEqual(summary["status"], "NOT_EXTRACTED", city)
+                self.assertEqual(summary["station_count"], "", city)
+
 
 if __name__ == "__main__":
     unittest.main()

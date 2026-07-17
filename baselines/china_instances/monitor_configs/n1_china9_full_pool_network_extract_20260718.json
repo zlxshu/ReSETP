@@ -1,0 +1,61 @@
+{
+  "schema_version": 1,
+  "name": "resetp-n1-china9-full-pool-network-extract-20260718",
+  "objective": "Complete the resumable nine-city Overpass extraction for charging stations, named POIs and logistics candidates without rebuilding China81 instances or reading solver results.",
+  "workdir": "/Volumes/移动硬盘（512G）/ReSETP",
+  "poll_seconds": 120,
+  "stale_seconds": 7200,
+  "max_runtime_seconds": 14400,
+  "pause_on_anomaly": true,
+  "required_command_substrings": [
+    "extract_china9_full_pool_20260718.py",
+    "--mode",
+    "overpass",
+    "--workers",
+    "2"
+  ],
+  "forbidden_command_substrings": [
+    "--offline-audit",
+    "--workers 3",
+    "--workers 4"
+  ],
+  "min_cpu_percent_when_active": 0,
+  "low_cpu_consecutive_checks": 60,
+  "max_rss_mb": 3000,
+  "min_system_free_memory_mb": 256,
+  "min_system_memory_free_percent": 5,
+  "logs": [
+    "/private/tmp/claude-501/-Volumes------512G--ReSETP/38626f72-2a61-4597-ad8a-10a84edca51a/scratchpad/n1_extract.log"
+  ],
+  "progress_files": [],
+  "result_files": [],
+  "completion_files": [],
+  "checkpoint_paths": [
+    "/Volumes/移动硬盘（512G）/ReSETP/data/ChinaInstances/china9_city_full_pool_20260718/raw",
+    "/Volumes/移动硬盘（512G）/ReSETP/data/ChinaInstances/china9_city_full_pool_20260718/requests"
+  ],
+  "protected_files": [
+    {
+      "path": "/Volumes/移动硬盘（512G）/ReSETP/baselines/china_instances/extract_china9_full_pool_20260718.py",
+      "kind": "experiment_contract"
+    },
+    {
+      "path": "/Volumes/移动硬盘（512G）/ReSETP/data/ChinaInstances/CHINA81_DRAFT_20260717_source_bound/artifact_hashes.json",
+      "kind": "core_data"
+    },
+    {
+      "path": "/Volumes/移动硬盘（512G）/ReSETP/solver/src/setp_solver/cost.py",
+      "kind": "cost_function"
+    },
+    {
+      "path": "/Volumes/移动硬盘（512G）/ReSETP/solver/src/setp_solver/check.py",
+      "kind": "evaluator"
+    }
+  ],
+  "csv_rules": [],
+  "milestones": [],
+  "ai": {
+    "enabled": false,
+    "timeout_seconds": 180
+  }
+}
