@@ -46,22 +46,25 @@ def source_rows() -> list[dict[str, str | int]]:
     rows: list[dict[str, str | int]] = []
     for record in manifest["records"]:
         site = record.get("preferred_operational_site") or {}
-        for index, url in enumerate(site.get("official_operation_sources") or [], start=1):
-            rows.append(
-                {
-                    "facility_id": record["facility_id"],
-                    "city": record["city"],
-                    "site_name_zh": site.get("name_zh", ""),
-                    "source_index": index,
-                    "source_url": url,
-                    "evidence_scope": site.get("evidence_scope", ""),
-                }
-            )
+        for source_group in ("official_operation_sources", "hard_parameter_sources"):
+            for index, url in enumerate(site.get(source_group) or [], start=1):
+                rows.append(
+                    {
+                        "facility_id": record["facility_id"],
+                        "city": record["city"],
+                        "site_name_zh": site.get("name_zh", ""),
+                        "source_group": source_group,
+                        "source_index": index,
+                        "source_url": url,
+                        "evidence_scope": site.get("evidence_scope", ""),
+                    }
+                )
     return rows
 
 
 def capture(row: dict[str, str | int], raw: Path, timeout: float) -> dict[str, object]:
-    stem = f"{row['facility_id']}__{int(row['source_index']):02d}"
+    group = str(row["source_group"]).removesuffix("_sources")
+    stem = f"{row['facility_id']}__{group}__{int(row['source_index']):02d}"
     output = raw / f"{stem}.bin"
     error_path = raw / f"{stem}.error.txt"
     url = str(row["source_url"])

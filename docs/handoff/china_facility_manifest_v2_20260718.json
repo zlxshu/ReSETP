@@ -7,6 +7,9 @@
   "source_review_date": "2026-07-18",
   "source_capture_batch": "data/ChinaInstances/china_facility_sources_v2_20260718_clean_v2",
   "source_capture_batch_verdict": "OFFICIAL_FACILITY_SOURCE_AVAILABLE_9_OF_9_PRIMARY_URL_CAPTURE_8_OF_9",
+  "operational_source_capture_batch": "data/ChinaInstances/china_operational_site_sources_v2_20260718_run3_hard_parameters",
+  "operational_source_capture_verdict": "PASS_OPERATION_SOURCE_CAPTURE_9_OF_9_CITIES",
+  "operational_source_capture_note": "运营与硬参数共38条URL中保存35条并覆盖9/9城；深圳同主机HTTP绕过命令行TLS BAD_ECPOINT在raw_runs.csv明记；交通运输部、东莞港务集团和佛山纪检页面各1条失败，但相关城市均有其他一手来源保存成功。",
   "purpose": "九城命名物流设施与具体货车入口候选清单；官方运营证据、地图入口身份和坐标系分别记录，不把园区中心点、开放大门标签或规划桩位偷换成正式车场合同。",
   "required_before_formal": [
     "source_capture_sha256",
@@ -25,7 +28,7 @@
       "city": "beijing",
       "name_zh": "京平综合物流枢纽（马坊物流基地）",
       "facility_kind": "rail_freight_hub",
-      "operator_or_owner": null,
+      "operator_or_owner": "北京京平国际陆港运营发展有限公司（运营合作证据；资产所有权未知）",
       "government_source_authority": "北京市人民政府门户网站",
       "official_identity_status": "OFFICIAL_SOURCE_RECORDED",
       "source_url": "https://www.beijing.gov.cn/ywdt/gzdt/202408/t20240822_3779844.html",
@@ -48,7 +51,23 @@
           "https://www.beijing.gov.cn/ywdt/gqrd/202509/t20250909_4194699.html",
           "https://www.beijing.gov.cn/ywdt/gqrd/202405/t20240517_3686953.html"
         ],
-        "evidence_scope": "北京市政府直接记录班列从平谷马坊铁路站发出且在马坊铁路场站集结；地图和OSM支持陆港实体。道路吸附点仍须核成具体货车门，停车容量、开放时段和场内充电待核。"
+        "evidence_scope": "北京市政府直接记录班列从平谷马坊铁路站发出且在马坊铁路场站集结；地图和OSM支持陆港实体。道路吸附点仍须核成具体货车门，停车容量、开放时段和场内充电待核。",
+        "hard_parameter_sources": [
+          "https://fgw.beijing.gov.cn/fzggzl/yfxz/xzxk_sgs/202105/t20210510_2385546.htm",
+          "https://fgw.beijing.gov.cn/gzdt/fgzs/mtbdx/bzwlxw/202307/t20230724_3206027.htm"
+        ],
+        "hard_parameter_audit": {
+          "formal_depot_parameter_lock": false,
+          "entrance_coordinate_status": "ROAD_SNAP_CANDIDATE_UNVERIFIED_AS_TRUCK_GATE",
+          "asset_owner": "UNKNOWN",
+          "access_class": "RAIL_FREIGHT_HUB_SITE_SPECIFIC_RULES_UNKNOWN",
+          "normal_operating_hours": "UNKNOWN",
+          "operational_truck_parking_spaces": "UNKNOWN",
+          "operational_vehicle_charger_count": "UNKNOWN",
+          "operational_connector_count": "UNKNOWN",
+          "operational_rated_power_kw": "UNKNOWN",
+          "regional_charging_evidence": "AREA_AGGREGATE_NOT_DEPOT_BOUND_NOT_FORMAL"
+        }
       },
       "operating_status": "OPERATION_EVIDENCED_ENTRANCE_ACCESS_CONTRACT_PENDING",
       "selection_reason": "北京市政府页面同时点名京平综合物流枢纽和马坊物流基地，并说明其公铁联运物流基础设施属性。",
@@ -60,7 +79,7 @@
       "city": "tianjin",
       "name_zh": "天津东疆综保区港口型国家物流枢纽",
       "facility_kind": "port_logistics_park",
-      "operator_or_owner": null,
+      "operator_or_owner": "天津万滨物流服务有限公司（物业所有/出租链；园区管理主体未知）",
       "government_source_authority": "天津市发展和改革委员会",
       "official_identity_status": "OFFICIAL_SOURCE_RECORDED",
       "source_url": "https://fzgg.tj.gov.cn/zwgk_47325/zcfg_47338/zcwjx/fgwj/202210/t20221024_6016462.html",
@@ -82,7 +101,32 @@
           "https://sthj.tj.gov.cn/ZWXX808/TZGG6419/202410/W020241018613257591606.pdf",
           "https://www.sinosky.com/"
         ],
-        "evidence_scope": "天津市生态环境局公开名录证明物流企业在北港西路902号万纬天津港物流园运营；地图提供停车场出入口POI。该入口是否允许重型货车、门禁时段、停车容量和场内充电待核。"
+        "evidence_scope": "天津市生态环境局公开名录证明物流企业在北港西路902号万纬天津港物流园运营；地图提供停车场出入口POI。该入口是否允许重型货车、门禁时段、停车容量和场内充电待核。",
+        "hard_parameter_sources": [
+          "https://jtys.tj.gov.cn/ZWXX2900/TZGG2982/202303/W020230327608605529030.pdf",
+          "https://www.hkexnews.hk/listedco/listconews/sehk/2025/0313/2025031301277_c.pdf",
+          "https://www.teda.gov.cn/contents/26/87314.html"
+        ],
+        "hard_parameter_audit": {
+          "formal_depot_parameter_lock": false,
+          "entrance_coordinate_status": "MAPPED_PARKING_ENTRANCE_TRUCK_ACCESS_UNVERIFIED",
+          "park_management_operator": "UNKNOWN",
+          "access_class": "ACTIVE_LOGISTICS_TENANTS_TRUCK_RULES_UNKNOWN",
+          "normal_operating_hours": "UNKNOWN",
+          "operational_truck_parking_spaces": "UNKNOWN",
+          "operational_vehicle_charger_count": "UNKNOWN",
+          "operational_connector_count": "UNKNOWN",
+          "operational_rated_power_kw": "UNKNOWN",
+          "regional_fallback_charger": {
+            "name_zh": "天津港北疆区域公共充电站",
+            "status": "OPERATION_EVIDENCED_PROXIMITY_UNVERIFIED_NOT_FORMAL",
+            "charger_count": 16,
+            "rated_power_kw_per_charger": 320,
+            "connector_count": "UNKNOWN",
+            "operating_hours": "UNKNOWN",
+            "eligible_vehicle_scope": "北疆外协倒运车辆及集疏港车辆"
+          }
+        }
       },
       "operating_status": "TENANT_OPERATION_EVIDENCED_MAPPED_ENTRANCE_TRUCK_ACCESS_PENDING",
       "selection_reason": "天津市政府文件将东疆综保区作为依托天津港的港口型国家物流枢纽和冷链物流基地建设区域。",
@@ -94,7 +138,7 @@
       "city": "shijiazhuang",
       "name_zh": "石家庄国际陆港",
       "facility_kind": "rail_freight_hub",
-      "operator_or_owner": null,
+      "operator_or_owner": "河北省国际陆港有限公司（全面负责园区投建管运）",
       "government_source_authority": "石家庄市人民政府",
       "official_identity_status": "OFFICIAL_SOURCE_RECORDED",
       "source_url": "https://www.sjz.gov.cn/columns/ba3cae66-c5bf-45c6-a0cc-9ade69246aa9/202503/01/d5c08f53-1d89-4fc4-ad7c-f077b5b79e52.html",
@@ -116,7 +160,22 @@
           "https://www.cnlandport.com/product/12.html",
           "https://www.cnlandport.com/Contact.html"
         ],
-        "evidence_scope": "运营方证明陆港依托京广铁路高邑货运站运营并给出京广铁路石家庄陆港站地址；地图提供北门和道路吸附点。北门是否为主要货车门、门禁时段、停车容量和场内充电待核。"
+        "evidence_scope": "运营方证明陆港依托京广铁路高邑货运站运营并给出京广铁路石家庄陆港站地址；地图提供北门和道路吸附点。北门是否为主要货车门、门禁时段、停车容量和场内充电待核。",
+        "hard_parameter_sources": [
+          "https://www.mot.gov.cn/jiaotongyaowen/202506/t20250616_4170644.html",
+          "https://www.cnlandport.com/News_detail/113.html"
+        ],
+        "hard_parameter_audit": {
+          "formal_depot_parameter_lock": false,
+          "entrance_coordinate_status": "NORTH_GATE_ROAD_SNAP_UNVERIFIED_AS_MAIN_TRUCK_GATE",
+          "access_class": "INTERNATIONAL_LAND_PORT_SITE_SPECIFIC_RULES_UNKNOWN",
+          "normal_operating_hours": "UNKNOWN",
+          "operational_truck_parking_spaces": "UNKNOWN",
+          "operational_vehicle_charger_count": "UNKNOWN",
+          "operational_connector_count": "UNKNOWN",
+          "operational_rated_power_kw": "UNKNOWN",
+          "on_site_electric_truck_evidence": "首批100辆纯电牵引车用于短途运输；不证明充电位置或参数"
+        }
       },
       "operating_status": "OPERATOR_OPERATION_EVIDENCED_NORTH_GATE_TRUCK_ACCESS_PENDING",
       "selection_reason": "石家庄市政府页面将石家庄国际陆港列入综合货运枢纽体系建设对象。",
@@ -128,7 +187,7 @@
       "city": "guangzhou",
       "name_zh": "广州空港物流枢纽",
       "facility_kind": "airport_logistics_hub",
-      "operator_or_owner": null,
+      "operator_or_owner": "中国铁路广州局集团有限公司（集团层面；具体车场法人未知）",
       "government_source_authority": "广州市人民政府",
       "official_identity_status": "OFFICIAL_SOURCE_RECORDED",
       "source_url": "https://www.gz.gov.cn/zwgk/ghjh/fzgh/ssw/content/mpost_8661346.html",
@@ -149,7 +208,22 @@
           "https://www.gz.gov.cn/xw/zwlb/gqdt/byq/content/post_8014572.html",
           "https://www.gz.gov.cn/zt/zzyyzq/bmdt/content/post_10634822.html"
         ],
-        "evidence_scope": "官方支持一期投运、班列和集装箱卡车作业；地图支持东门POI。社会货车预约规则、开放时间和场内充电仍待核。"
+        "evidence_scope": "官方支持一期投运、班列和集装箱卡车作业；地图支持东门POI。社会货车预约规则、开放时间和场内充电仍待核。",
+        "hard_parameter_sources": [
+          "https://sw.gz.gov.cn/swzx/dwmy/content/post_10084579.html"
+        ],
+        "hard_parameter_audit": {
+          "formal_depot_parameter_lock": false,
+          "entrance_coordinate_status": "MAP_EAST_GATE_NOT_OFFICIALLY_CONFIRMED",
+          "legal_site_operator": "UNKNOWN",
+          "access_class": "RAIL_CONTAINER_TERMINAL_SOCIAL_TRUCK_RULES_UNKNOWN",
+          "normal_operating_hours": "UNKNOWN",
+          "special_period_24h_green_channel_not_generalised": true,
+          "operational_truck_parking_spaces": "UNKNOWN",
+          "operational_vehicle_charger_count": "UNKNOWN",
+          "operational_connector_count": "UNKNOWN",
+          "operational_rated_power_kw": "UNKNOWN"
+        }
       },
       "operating_status": "OPERATION_EVIDENCED_ENTRANCE_ACCESS_CONTRACT_PENDING",
       "selection_reason": "广州市政府物流枢纽规划将空港物流枢纽作为广州综合物流网络的重要节点。",
@@ -206,7 +280,25 @@
           "https://www.sz.gov.cn/szzt2010/wgkzl/glgk/jgxxgk/gyqyyy/content/post_10699280.html",
           "https://www.sz.gov.cn/cn/xxgk/zfxxgj/gqdt/content/post_12582907.html"
         ],
-        "evidence_scope": "一期集装箱线已投入运营且既有铁路货场保持作业；85万平方米上盖项目仍属建设项目，不得写成已运营配送园区。实际货车卡口和充电设施待核。"
+        "evidence_scope": "一期集装箱线已投入运营且既有铁路货场保持作业；85万平方米上盖项目仍属建设项目，不得写成已运营配送园区。实际货车卡口和充电设施待核。",
+        "hard_parameter_sources": [
+          "https://gzw.sz.gov.cn/gkmlpt/content/10/10699/post_10699270.html",
+          "https://pnr.sz.gov.cn/attachment/1/1645/1645187/12485163.pdf"
+        ],
+        "hard_parameter_audit": {
+          "formal_depot_parameter_lock": false,
+          "entrance_coordinate_status": "FREIGHT_YARD_POI_CENTER_TRUCK_GATE_UNKNOWN",
+          "ground_freight_operator": "UNKNOWN",
+          "access_class": "EXISTING_RAIL_FREIGHT_YARD_SITE_SPECIFIC_RULES_UNKNOWN",
+          "normal_operating_hours": "UNKNOWN",
+          "operational_truck_parking_spaces": "UNKNOWN",
+          "planned_truck_parking_spaces_upper_project": 1068,
+          "planned_charging_spaces_total_unallocated_upper_project": 642,
+          "planned_values_may_be_used_as_operational": false,
+          "operational_vehicle_charger_count": "UNKNOWN",
+          "operational_connector_count": "UNKNOWN",
+          "operational_rated_power_kw": "UNKNOWN"
+        }
       },
       "operating_status": "GROUND_FREIGHT_OPERATION_EVIDENCED_OVERBUILD_NOT_OPERATIONAL_ENTRANCE_ACCESS_PENDING",
       "selection_reason": "深圳政府在线页面明确给出平湖南综合物流枢纽铁路地面层工程已具备开通条件，支持其作为实际物流设施候选。",
@@ -218,7 +310,7 @@
       "city": "dongguan",
       "name_zh": "东莞清溪保税物流中心（B型）",
       "facility_kind": "port_logistics_park",
-      "operator_or_owner": null,
+      "operator_or_owner": "东莞港务集团（集团运营责任；具体签约法人待确认）",
       "government_source_authority": "东莞市人民政府",
       "official_identity_status": "OFFICIAL_SOURCE_RECORDED",
       "source_url": "https://www.dg.gov.cn/shatian/jjst/styw/content/post_4280217.html",
@@ -240,7 +332,24 @@
           "https://www.dg.gov.cn/dgqxz/gkmlpt/content/4/4494/post_4494741.html",
           "https://www.dgportgroup.com/article/102/45.html"
         ],
-        "evidence_scope": "官方支持货车进出卡口、仓库装卸、2025年运营数据和7×24小时通关；最终节点仍须锁定实际车辆卡口，场内充电待核。"
+        "evidence_scope": "官方支持货车进出卡口、仓库装卸、2025年运营数据和7×24小时通关；最终节点仍须锁定实际车辆卡口，场内充电待核。",
+        "hard_parameter_sources": [
+          "https://www.dg.gov.cn/gzw/qyjj/qydt/content/post_4333793.html"
+        ],
+        "hard_parameter_audit": {
+          "formal_depot_parameter_lock": false,
+          "entrance_coordinate_status": "PHYSICAL_GATE_CONFIRMED_COORDINATE_PENDING",
+          "legal_site_operator": "UNKNOWN_PENDING_OPERATOR_CONFIRMATION",
+          "access_class": "CUSTOMS_REGULATED_ORDINARY_DELIVERY_ACCESS_UNKNOWN",
+          "customs_gate_hours": "7x24",
+          "normal_ordinary_vehicle_operating_hours": "UNKNOWN",
+          "yard_area_m2": 14300,
+          "yard_area_may_be_converted_to_parking_spaces": false,
+          "operational_truck_parking_spaces": "UNKNOWN",
+          "operational_vehicle_charger_count": "UNKNOWN",
+          "operational_connector_count": "UNKNOWN",
+          "operational_rated_power_kw": "UNKNOWN"
+        }
       },
       "operating_status": "OPERATION_7X24_CUSTOMS_EVIDENCED_VEHICLE_GATE_PENDING",
       "selection_reason": "从只有建设范围的沙田片区升级为有货车卡口、仓储装卸和现行运营数据的清溪保税物流中心。",
@@ -252,7 +361,7 @@
       "city": "foshan",
       "name_zh": "佛山国际陆港",
       "facility_kind": "rail_freight_hub",
-      "operator_or_owner": null,
+      "operator_or_owner": "广东省智慧陆港管理有限公司（项目公司；当前运营法人待确认）",
       "government_source_authority": "广东省人民政府",
       "official_identity_status": "OFFICIAL_SOURCE_RECORDED",
       "source_url": "https://www.gd.gov.cn/gdywdt/dsdt/content/post_4148215.html",
@@ -274,7 +383,28 @@
           "https://www.gd.gov.cn/gdywdt/dsdt/content/post_4148215.html",
           "https://jijian.nanhai.gov.cn/cms/html/13073/2024/20241122160845796684113/20241122160845796684113_1.html"
         ],
-        "evidence_scope": "官方支持2023年投运和持续货运业务；OSM仅为园区面中心，不得冒充货车入口。具体卡口和场内充电待核。"
+        "evidence_scope": "官方支持2023年投运和持续货运业务；OSM仅为园区面中心，不得冒充货车入口。具体卡口和场内充电待核。",
+        "hard_parameter_sources": [
+          "https://static.cninfo.com.cn/finalpage/2021-12-11/1211874049.PDF"
+        ],
+        "hard_parameter_audit": {
+          "formal_depot_parameter_lock": false,
+          "entrance_coordinate_status": "FACILITY_AREA_ONLY_TRUCK_GATE_UNKNOWN",
+          "current_legal_operator": "UNKNOWN_PENDING_DIRECT_CONFIRMATION",
+          "access_class": "OPERATING_INTERMODAL_LAND_PORT_GATE_RULES_UNKNOWN",
+          "normal_operating_hours": "UNKNOWN",
+          "operational_truck_parking_spaces": "UNKNOWN",
+          "operational_vehicle_charger_count": "UNKNOWN",
+          "operational_connector_count": "UNKNOWN",
+          "operational_rated_power_kw": "UNKNOWN",
+          "planning_lead": {
+            "project_code": "2405-440605-04-05-363943",
+            "project_name": "广汽能源佛山国际陆港枢纽超充站",
+            "on_site_candidate": "6车位/6台60kW",
+            "adjacent_candidate": "10车位/10台60kW",
+            "status": "UNVERIFIED_SEARCH_INDEX_LEAD_NOT_FORMAL_NO_OFFICIAL_DETAIL_OR_LIVE_OPERATOR_CONFIRMATION"
+          }
+        }
       },
       "operating_status": "OPERATION_EVIDENCED_FREIGHT_GATE_PENDING",
       "selection_reason": "广东省政府公开信息将佛山国际陆港作为已命名的陆港设施候选。",
@@ -286,7 +416,7 @@
       "city": "chengdu",
       "name_zh": "成都国际铁路港",
       "facility_kind": "rail_freight_hub",
-      "operator_or_owner": null,
+      "operator_or_owner": "中铁联合国际集装箱有限公司成都分公司（场站作业组织；设施所有权未知）",
       "government_source_authority": "四川省人民政府",
       "official_identity_status": "OFFICIAL_SOURCE_RECORDED",
       "source_url": "https://www.sc.gov.cn/10462/10464/10797/2020/8/27/07e4d4877886412285920f85d123473a.shtml",
@@ -309,7 +439,24 @@
           "https://www.sc.gov.cn/10462/zfwjts/2025/8/28/51af9db714c040369bf938b036b6ff01.shtml",
           "https://jtt.sc.gov.cn/jtt/c111874/2025/9/12/17f7d101dc094701bba68b75bce4156a.shtml"
         ],
-        "evidence_scope": "官方支持中心站名称、鸿泰大道201号、中欧班列枢纽和集装箱公路集疏运；地图支持北门POI。车型准入、开放时段和场内充电待核。"
+        "evidence_scope": "官方支持中心站名称、鸿泰大道201号、中欧班列枢纽和集装箱公路集疏运；地图支持北门POI。车型准入、开放时段和场内充电待核。",
+        "hard_parameter_sources": [
+          "https://www.crct.com/index.php?a=lists&c=index&catid=24&m=content",
+          "https://www.crct.com/index.php?a=show&c=index&catid=32&id=1&m=content",
+          "https://www.sc.gov.cn/10462/10464/10797/2017/12/4/10439827.shtml"
+        ],
+        "hard_parameter_audit": {
+          "formal_depot_parameter_lock": false,
+          "entrance_coordinate_status": "MAP_NORTH_GATE_UNVERIFIED_AS_CUSTOMS_TRUCK_GATE",
+          "asset_owner": "UNKNOWN",
+          "access_class": "INTERMODAL_RAIL_ROAD_DEPOT_SITE_SPECIFIC_ACCESS_UNKNOWN",
+          "normal_operating_hours": "UNKNOWN",
+          "operational_truck_parking_spaces": "UNKNOWN",
+          "operational_vehicle_charger_count": "UNKNOWN",
+          "operational_connector_count": "UNKNOWN",
+          "operational_rated_power_kw": "UNKNOWN",
+          "excluded_charging_inference": "冷藏箱充电和场内电动设备不等于配送车辆充电桩"
+        }
       },
       "operating_status": "OPERATION_EVIDENCED_NORTH_GATE_ACCESS_CONTRACT_PENDING",
       "selection_reason": "四川省政府公开信息支持成都国际铁路港的正式设施身份和铁路港开发区背景。",
@@ -321,7 +468,7 @@
       "city": "chongqing",
       "name_zh": "重庆公路物流基地（南彭）",
       "facility_kind": "road_logistics_base",
-      "operator_or_owner": null,
+      "operator_or_owner": "重庆公运东盟国际物流有限公司（运营主体；设施所有权未知）",
       "government_source_authority": "重庆市人民政府",
       "official_identity_status": "OFFICIAL_SOURCE_RECORDED",
       "source_url": "https://www.cq.gov.cn/zt/yhyshj/zsyz/zqcyyq/bnq/202512/t20251226_15274244.html",
@@ -342,7 +489,25 @@
           "https://www.cq.gov.cn/ywdt/jrcq/202508/t20250819_14911996_app.html",
           "https://www.cq.gov.cn/ywdt/jrcq/202307/t20230722_12174804.html"
         ],
-        "evidence_scope": "重庆市政府直接记录跨境公路班车从南彭B保驶出并在中心集拼；地图将西北门标为开放大门、东北门标为暂不可通行。开放标签不等于全天普通配送车准入，场内充电待核。"
+        "evidence_scope": "重庆市政府直接记录跨境公路班车从南彭B保驶出并在中心集拼；地图将西北门标为开放大门、东北门标为暂不可通行。开放标签不等于全天普通配送车准入，场内充电待核。",
+        "hard_parameter_sources": [
+          "https://www.cqgyjt.com/cqgydmgjwlyxgs",
+          "https://www.cq.gov.cn/zt/yhyshj/zsyz/zspt/zhq/202409/t20240919_13643400.html",
+          "https://www.cq.gov.cn/zt/xblhxtd/jdtp/202412/t20241224_14016506.html"
+        ],
+        "hard_parameter_audit": {
+          "formal_depot_parameter_lock": false,
+          "entrance_coordinate_status": "MAP_NORTHWEST_GATE_UNVERIFIED_AS_OFFICIAL_B_ZONE_GATE",
+          "asset_owner": "UNKNOWN",
+          "access_class": "CUSTOMS_REGULATED_CROSS_BORDER_HUB_NOT_ORDINARY_CITY_DEPOT",
+          "ordinary_city_delivery_depot_allowed": false,
+          "normal_operating_hours": "UNKNOWN",
+          "operational_truck_parking_spaces": "UNKNOWN",
+          "operational_vehicle_charger_count": "UNKNOWN",
+          "operational_connector_count": "UNKNOWN",
+          "operational_rated_power_kw": "UNKNOWN",
+          "excluded_charging_inference": "沙坪坝兆瓦级重卡超充站不在南彭且仍属建设信息"
+        }
       },
       "operating_status": "OPERATION_EVIDENCED_OPEN_GATE_MAP_LABEL_ACCESS_CONTRACT_PENDING",
       "selection_reason": "重庆市政府页面明确给出重庆公路物流基地，适合作为重庆城市配送车场候选。",

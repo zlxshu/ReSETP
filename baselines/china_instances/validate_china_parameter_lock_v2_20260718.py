@@ -20,6 +20,7 @@ LOCK = REPO / "data/ChinaInstances/china_parameter_lock_v2_20260718.json"
 VEHICLE_SOURCE_ROOT = REPO / "docs/handoff/china_vehicle_parameter_sources_20260718"
 PRICES = REPO / "solver/src/setp_solver/prices.py"
 FACILITY_MANIFEST = REPO / "docs/handoff/china_facility_manifest_v2_20260718.json"
+LOCATION_ASSIGNMENTS = REPO / "data/ChinaInstances/china81_customer_location_assignments_v2_20260718"
 EXPECTED_CITIES = {
     "beijing",
     "tianjin",
@@ -74,6 +75,28 @@ def validate_order_contract(
     variants = contract.get("variants", {})
     if set(variants) != {"01", "02", "03"}:
         errors.append(_error("ORDER_ATTRIBUTE_VARIANTS_INVALID", repr(sorted(variants))))
+    if {row.get("window_profile") for row in variants.values() if isinstance(row, dict)} != {"base_balanced"}:
+        errors.append(_error("ORDER_ATTRIBUTE_REPLICATE_PROFILE_CONFOUNDED", repr(variants)))
+    if {row.get("replicate_index") for row in variants.values() if isinstance(row, dict)} != {1, 2, 3}:
+        errors.append(_error("ORDER_ATTRIBUTE_REPLICATE_INDEX_INVALID", repr(variants)))
+    exclusivity = contract.get("mutual_exclusivity_contract", {})
+    for field in (
+        "customer_map_identity_overlap_allowed",
+        "customer_id_overlap_allowed",
+        "order_seed_overlap_allowed",
+        "same_instance_with_changed_label_allowed",
+        "post_result_customer_replacement_allowed",
+    ):
+        if exclusivity.get(field) is not False:
+            errors.append(_error("ORDER_ATTRIBUTE_MUTUAL_EXCLUSIVITY_INVALID", f"{field}={exclusivity.get(field)!r}"))
+    profiles = contract.get("time_window_profiles", {})
+    if set(profiles) != {"base_balanced", "sensitivity_wide", "sensitivity_tight"}:
+        errors.append(_error("ORDER_ATTRIBUTE_WINDOW_PROFILES_INVALID", repr(sorted(profiles))))
+    for profile_id, profile in profiles.items():
+        widths = profile.get("window_width_minutes", []) if isinstance(profile, dict) else []
+        weights = profile.get("window_width_weights", []) if isinstance(profile, dict) else []
+        if len(widths) < 2 or len(widths) != len(weights) or not math.isclose(sum(float(value) for value in weights), 1.0):
+            errors.append(_error("ORDER_ATTRIBUTE_WINDOW_PROFILE_INVALID", profile_id))
     mixture = contract.get("demand_mixture", [])
     probabilities = [row.get("probability") for row in mixture if isinstance(row, dict)]
     if len(probabilities) != 3 or not math.isclose(sum(float(value) for value in probabilities), 1.0):
@@ -106,6 +129,133 @@ def validate_order_contract(
         "status": contract.get("status"),
         "customer_sizes": contract.get("customer_sizes"),
         "variants": sorted(variants),
+    }
+
+
+def validate_customer_location_contract(
+    data: dict[str, Any], errors: list[dict[str, str]], warnings: list[dict[str, str]]
+) -> dict[str, Any]:
+    """Validate the 3 regions x 9 sizes x 3 disjoint-replicate location design."""
+
+    relative_path = data.get("customer_contract", {}).get("customer_location_contract")
+    if not isinstance(relative_path, str) or not relative_path:
+        errors.append(_error("CUSTOMER_LOCATION_CONTRACT_PATH_MISSING", "customer_contract.customer_location_contract"))
+        return {"exists": False}
+    path = REPO / relative_path
+    if not path.is_file():
+        errors.append(_error("CUSTOMER_LOCATION_CONTRACT_MISSING", str(path)))
+        return {"exists": False, "path": relative_path}
+    contract = json.loads(path.read_text(encoding="utf-8"))
+    if contract.get("schema") != "resetp.china.customer-location-contract.v2":
+        errors.append(_error("CUSTOMER_LOCATION_SCHEMA_MISMATCH", str(contract.get("schema"))))
+    if contract.get("status") != "LOCKED_DESIGN_POOL_SUFFICIENCY_PASSED_NOT_BUILT":
+        errors.append(_error("CUSTOMER_LOCATION_STATUS_INVALID", str(contract.get("status"))))
+    if contract.get("formal_search_allowed") is not False:
+        errors.append(_error("CUSTOMER_LOCATION_FORMAL_FLAG_INVALID", "must remain false before pool and build gates pass"))
+    if contract.get("replicates_per_region_size") != 3 or contract.get("replicate_labels") != ["01", "02", "03"]:
+        errors.append(_error("CUSTOMER_LOCATION_REPLICATE_CONTRACT_INVALID", repr(contract)))
+    if contract.get("within_cell_identity_overlap_allowed") is not False:
+        errors.append(_error("CUSTOMER_LOCATION_OVERLAP_GUARD_MISSING", "within-cell OSM identity overlap must be false"))
+    if contract.get("post_result_replacement_allowed") is not False:
+        errors.append(_error("CUSTOMER_LOCATION_RESULT_TUNING_GUARD_MISSING", "post-result replacement must be false"))
+    quotas = contract.get("city_quotas", {})
+    sizes = contract.get("customer_sizes", [])
+    if set(quotas) != {"jjj", "prd", "cy"} or sum(len(table) for table in quotas.values()) != 27:
+        errors.append(_error("CUSTOMER_LOCATION_27_CELL_SCOPE_INVALID", repr(quotas.keys())))
+    for region, table in quotas.items():
+        if sorted(int(size) for size in table) != sizes:
+            errors.append(_error("CUSTOMER_LOCATION_SIZE_GRID_INVALID", region))
+        for size, city_quotas in table.items():
+            if sum(int(value) for value in city_quotas.values()) != int(size):
+                errors.append(_error("CUSTOMER_LOCATION_CITY_QUOTA_INVALID", f"{region}/{size}={city_quotas!r}"))
+    gate = contract.get("sufficiency_gate", {})
+    package = REPO / str(gate.get("evidence_package", ""))
+    decision_path = package / "decision.json"
+    metadata_path = package / "metadata.json"
+    artifact_hashes_path = package / "artifact_hashes.json"
+    if not all(artifact.is_file() for artifact in (decision_path, metadata_path, artifact_hashes_path)):
+        errors.append(_error("CUSTOMER_LOCATION_GATE_EVIDENCE_MISSING", str(package)))
+    if metadata_path.is_file():
+        metadata = json.loads(metadata_path.read_text(encoding="utf-8"))
+        if metadata.get("contract_sha256") != sha256(path):
+            errors.append(_error("CUSTOMER_LOCATION_GATE_CONTRACT_HASH_STALE", str(metadata.get("contract_sha256"))))
+    if decision_path.is_file():
+        decision = json.loads(decision_path.read_text(encoding="utf-8"))
+        if decision.get("verdict") != gate.get("required_verdict") or decision.get("region_size_cells_passed") != 27:
+            errors.append(_error("CUSTOMER_LOCATION_GATE_VERDICT_INVALID", repr(decision)))
+    assignment_decision_path = LOCATION_ASSIGNMENTS / "decision.json"
+    assignment_metadata_path = LOCATION_ASSIGNMENTS / "metadata.json"
+    assignment_status = "MISSING"
+    if assignment_decision_path.is_file() and assignment_metadata_path.is_file():
+        assignment_decision = json.loads(assignment_decision_path.read_text(encoding="utf-8"))
+        assignment_metadata = json.loads(assignment_metadata_path.read_text(encoding="utf-8"))
+        assignment_status = str(assignment_decision.get("verdict"))
+        if (
+            assignment_status != "PASS_81_DISJOINT_LOCATION_ASSIGNMENTS_BUILT"
+            or assignment_decision.get("instances") != 81
+            or assignment_decision.get("within_cell_overlap_violations") != []
+            or assignment_metadata.get("contract_sha256") != sha256(path)
+        ):
+            errors.append(_error("CUSTOMER_LOCATION_ASSIGNMENT_EVIDENCE_INVALID", repr(assignment_decision)))
+    else:
+        errors.append(_error("CUSTOMER_LOCATION_ASSIGNMENT_EVIDENCE_MISSING", str(LOCATION_ASSIGNMENTS)))
+    warnings.append(
+        {
+            "code": "CUSTOMER_LOCATION_ASSIGNMENTS_BUILT_NOT_FORMAL_INSTANCES",
+            "detail": "81 disjoint customer location selections exist; orders, depots, chargers and road matrices are not attached",
+        }
+    )
+    return {
+        "exists": True,
+        "path": relative_path,
+        "sha256": sha256(path),
+        "status": contract.get("status"),
+        "region_size_cells": sum(len(table) for table in quotas.values()),
+        "replicates_per_cell": contract.get("replicates_per_region_size"),
+        "assignment_status": assignment_status,
+    }
+
+
+def validate_road_matrix_contract(
+    data: dict[str, Any], errors: list[dict[str, str]], warnings: list[dict[str, str]]
+) -> dict[str, Any]:
+    distance = data.get("distance_contract", {})
+    relative_path = distance.get("road_matrix_contract")
+    if not isinstance(relative_path, str) or not relative_path:
+        errors.append(_error("ROAD_MATRIX_CONTRACT_PATH_MISSING", "distance_contract.road_matrix_contract"))
+        return {"exists": False}
+    path = REPO / relative_path
+    if not path.is_file():
+        errors.append(_error("ROAD_MATRIX_CONTRACT_MISSING", str(path)))
+        return {"exists": False, "path": relative_path}
+    contract = json.loads(path.read_text(encoding="utf-8"))
+    if contract.get("schema") != "resetp.china.road-matrix-contract.v2":
+        errors.append(_error("ROAD_MATRIX_SCHEMA_MISMATCH", str(contract.get("schema"))))
+    if contract.get("formal_search_allowed") is not False:
+        errors.append(_error("ROAD_MATRIX_FORMAL_FLAG_INVALID", "design contract cannot authorize search"))
+    coordinate = contract.get("coordinate_contract", {})
+    if coordinate.get("formal_crs") != "WGS84" or coordinate.get("raw_baidu_crs") != "BD09MC":
+        errors.append(_error("ROAD_MATRIX_CRS_CONTRACT_INVALID", repr(coordinate)))
+    if coordinate.get("raw_baidu_values_may_enter_formal_lat_lon") is not False:
+        errors.append(_error("ROAD_MATRIX_BAIDU_RAW_COORDINATE_GUARD_MISSING", repr(coordinate)))
+    router = contract.get("router_contract", {})
+    if router.get("euclidean_multiplier_allowed") is not False or router.get("straight_line_fallback_allowed") is not False:
+        errors.append(_error("ROAD_MATRIX_GEOMETRIC_FALLBACK_NOT_BLOCKED", repr(router)))
+    invariants = contract.get("matrix_invariants", {})
+    if invariants.get("unreachable_node_policy") != "HALT_INSTANCE_NO_REPLACEMENT_AFTER_RESULTS":
+        errors.append(_error("ROAD_MATRIX_UNREACHABLE_POLICY_INVALID", repr(invariants)))
+    warnings.append(
+        {
+            "code": "ROAD_MATRIX_DESIGN_WAITING_FOR_WGS84_ENTRANCES",
+            "detail": "matrix design is locked, but no formal road matrices exist until depot and charger road nodes are verified",
+        }
+    )
+    return {
+        "exists": True,
+        "path": relative_path,
+        "sha256": sha256(path),
+        "status": contract.get("status"),
+        "formal_crs": coordinate.get("formal_crs"),
     }
 
 
@@ -165,6 +315,7 @@ def validate_facility_manifest(errors: list[dict[str, str]], warnings: list[dict
     )
     pending_records: list[str] = []
     preferred_site_count = 0
+    hard_parameter_audit_count = 0
     seen_ids: set[str] = set()
     for index, record in enumerate(records):
         if not isinstance(record, dict):
@@ -231,6 +382,24 @@ def validate_facility_manifest(errors: list[dict[str, str]], warnings: list[dict
                 errors.append(_error("FACILITY_OPERATION_SOURCE_INVALID", facility_id))
             if preferred.get("evidence_scope") in (None, ""):
                 errors.append(_error("FACILITY_PREFERRED_SITE_SCOPE_MISSING", facility_id))
+            hard_audit = preferred.get("hard_parameter_audit")
+            if not isinstance(hard_audit, dict):
+                errors.append(_error("FACILITY_HARD_PARAMETER_AUDIT_MISSING", facility_id))
+            else:
+                hard_parameter_audit_count += 1
+                if hard_audit.get("formal_depot_parameter_lock") is not False:
+                    errors.append(_error("FACILITY_HARD_PARAMETER_LOCK_PREMATURE", facility_id))
+                for field in (
+                    "operational_truck_parking_spaces",
+                    "operational_vehicle_charger_count",
+                    "operational_connector_count",
+                    "operational_rated_power_kw",
+                ):
+                    if field not in hard_audit:
+                        errors.append(_error("FACILITY_HARD_PARAMETER_FIELD_MISSING", f"{facility_id}.{field}"))
+            hard_sources = preferred.get("hard_parameter_sources")
+            if not isinstance(hard_sources, list) or not hard_sources:
+                errors.append(_error("FACILITY_HARD_PARAMETER_SOURCE_MISSING", facility_id))
         if record.get("operator_or_owner") in (None, ""):
             errors.append(_error("FACILITY_OPERATOR_PENDING", facility_id))
         if "PENDING" in str(record.get("operating_status", "")):
@@ -256,6 +425,7 @@ def validate_facility_manifest(errors: list[dict[str, str]], warnings: list[dict
         "cities": sorted(set(cities)),
         "pending_records": pending_records,
         "preferred_site_count": preferred_site_count,
+        "hard_parameter_audit_count": hard_parameter_audit_count,
         "preferred_coordinate_crs": "BD09MC",
     }
 
@@ -271,6 +441,11 @@ def validate_lock(lock: dict[str, Any] | None = None) -> dict[str, Any]:
         errors.append(_error("SCHEMA_MISMATCH", str(data.get("schema"))))
     if data.get("formal_search_allowed") is not False:
         errors.append(_error("FORMAL_SEARCH_FLAG_MUST_BE_FALSE", "V2 contract is not yet frozen"))
+    scope = data.get("scope", {})
+    if scope.get("target_instances") != 81 or scope.get("customer_sizes") != [10, 15, 20, 25, 50, 75, 100, 150, 200]:
+        errors.append(_error("CHINA81_SCOPE_INVALID", repr(scope)))
+    if scope.get("instances_per_region_size") != 3 or scope.get("mutual_exclusivity_required") is not True:
+        errors.append(_error("CHINA81_MUTUAL_EXCLUSIVITY_CONTRACT_INVALID", repr(scope)))
     units = data.get("units", {})
     expected_units = {
         "currency": "CNY",
@@ -318,6 +493,8 @@ def validate_lock(lock: dict[str, Any] | None = None) -> dict[str, Any]:
         errors.append(_error("TIME_VARYING_PRICE_NOT_REQUIRED", "D3 objective contract is missing"))
 
     order_summary = validate_order_contract(data, errors, warnings)
+    customer_location_summary = validate_customer_location_contract(data, errors, warnings)
+    road_matrix_summary = validate_road_matrix_contract(data, errors, warnings)
     facility_summary = validate_facility_manifest(errors, warnings)
 
     # This is intentionally a blocker until the protected core is changed in a
@@ -339,6 +516,8 @@ def validate_lock(lock: dict[str, Any] | None = None) -> dict[str, Any]:
         "errors": errors,
         "warnings": warnings,
         "order_attribute_contract": order_summary,
+        "customer_location_contract": customer_location_summary,
+        "road_matrix_contract": road_matrix_summary,
         "facility_manifest": facility_summary,
         "search_evaluations": 0,
     }
