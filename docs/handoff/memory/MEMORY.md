@@ -1,5 +1,11 @@
 # Memory Index
 
+- [用户实验与论文要求总台账、实验重基线期间写作暂停（2026-07-17）](../user_requirements_traceability_and_writing_hold_20260717.md) — 汇总用户关于对比与张力、反常识边界、E1--E7、Solomon/BKS与自有算例分工、现代强基线、CPU/RT/Runs、ALNS不预设优越、TVCI与动态E7、Python数学审计、公式≤35、陈雨蝶第一母版、图表高保真外壳、政策起笔、单编号递增引用、字体字号、无附录和顾问只读治理的要求。当前实验方案正在大幅调整，论文正文/摘要/图表/结论保持WRITE-HOLD，解除条件见台账第7节。
+
+- [中国V2九城官方设施来源补齐与地图池边界（2026-07-17）](../china_v2_parameter_lock_20260718.md) — 九城均已有本地官方设施来源字节；主URL抓取8/9，深圳命令行TLS失败后通过浏览器和规划资源局当前附件域取得现行核查表/规划许可证。深圳核查表载明1068个货车停车位和642个充电桩位，但桩位不得解释为枪数、投运数量或功率。九城OSM全量池仍因4个城市-要素组合缺失判`HALT_P1_INCOMPLETE_NETWORK_EXTRACTION`；成功池只作候选，OSM稀疏功率/桩数标签不得承担正式参数。参数锁继续`NOT_FORMAL`。
+
+- [中国V2订单属性预注册（2026-07-17）](../china_order_attribute_contract_v2_20260718.md) — 需求/服务时间/承诺窗明确为中国单位和中国车辆载重约束下的合成实验设计，不冒充企业订单。需求三段为20--80/81--200/201--350 kg，服务8/12/18 min，01/02/03为宽/中/紧窗，06:00--22:00、30 min网格；道路矩阵冻结后才允许围绕确定性零搜索见证落窗。见证失败即HALT，禁止结果后救火；设计状态=`LOCKED_DESIGN_NOT_APPLIED`，测试7/7通过。
+
 - [C31 成渝 100 客户 DRAFT-v2 结构门通过（2026-07-17）](../china_3x3_instance_probe_20260717.md) — 保留绵竹片区 HALT 后，最终采用成都青羊、德阳旌阳、眉山东坡、资阳雁江、乐山市中 33 个真实 OSM Map API 静态小块，客户配额固定为 55/10/17/3/15。候选通过 100 客户、2 车场、3 充电站、105 节点、48 槽重庆TVCI、加载器复算和 98.409748 km 覆盖足迹门；结构门、pytest、Ruff、py_compile 通过，搜索评价0次。判决=`PASS_DRAFT_STRUCTURE_GATE / NOT_READY_FOR_V2_FREEZE`，仍不能进入正式优化；E7清洁重跑仍在后台运行。
 
 - [中国三地当前充电服务费缺口（2026-07-17）](../../baselines/e4_e5/china_policy_price_gate_beijing_20260717/decision.json) — 北京/广东/重庆独立零搜索包均判`HALT_*_CHARGING_SERVICE_FEE_OFFICIAL_NUMERIC_SOURCE_MISSING`；官方能确认分时段和部分历史电价，但公共充电服务费已市场化，缺当期官方中位/指导上限数字，不得用旧政策、二手OCR或估算填补。TVCI列可接入，但完整当前成本情景未冻结。
@@ -272,3 +278,13 @@
 # 2026-07-17 中国 81 个自建算例谱系
 
 当前中国主集不是旧 C31 的 3×3，而是三区域×9 客户梯度×3 变体=81 个 DRAFT。地点使用已有 OSM 快照中的命名真实地图 POI，需求/服务/TW逐客户继承同梯度 Goeke--Schneider 公开源文件并按 8/9 映射到三班；中国订单真实性、工业候选车场、缺失充电容量和直线距离均已在 `china-81-instance-lineage-20260717.md` 与 `china_81_instance_design_20260717.md` 明确划界。81/81 结构门通过但搜索评价为0，正式实验仍未授权。
+
+# 2026-07-17 P1 九城全量池现场
+
+# 2026-07-17 中国V2车型、设施与硬参数审计
+
+- 中国车型候选锁到江淮1卡威铃K7柴油配置和福田欧马可智蓝ES1·140，来源快照、字段边界和哈希在`docs/handoff/china_vehicle_parameter_sources_20260718/`。九城命名设施 manifest 见`docs/handoff/china_facility_manifest_v2_20260718.json`；官方来源抓取7/9成功保存本地原始响应，深圳 TLS 失败、东莞 URL 404 均保留，不用搜索摘要替代。
+- 清洁来源批次为`data/ChinaInstances/china_facility_sources_v2_20260718_clean/`；首次`._*`污染批次不作证据，清洁批次已去除旁车文件并完成哈希回读。新增`baselines/china_instances/audit_china_instance_contract_v2_20260718.py`，将需求、时间窗、服务时间、载重、设施、充电、道路矩阵、48槽TVCI和CNY设为零搜索硬门；历史中国DRAFT被明确拒绝。
+- `data/ChinaInstances/china_parameter_lock_v2_20260718.json`仍为`NOT_FORMAL`、`formal_search_allowed=false`。设施坐标/运营核验、道路矩阵、车场桩合同、按车型核心参数化、中国48槽分时电价目标函数和NL核心未闭合前，禁止中国正式E1--E7或公开算例胜负批次。
+
+- 新脚本=`baselines/china_instances/extract_china9_full_pool_20260718.py`，只做查询框推导、OSM下载/转换、去重和审计；不改算例、不改solver、不搜索。九城旧基线（命名POI/工业候选/公共站）为北京963/18/2、天津79/5/1、石家庄22/1/0、深圳297/39/4、东莞29/19/0、广州651/29/2、佛山332/26/4、成都442/39/4、重庆80/11/1；北京963由旧catalog中`anchor=jjj_beijing`的全框原始响应复算，不能因缺少`logical_anchor`而漏计。新池因本机DNS/外网出口阻断判`HALT_ENV_NETWORK_EGRESS_UNAVAILABLE`，九城新计数全部留空；双路服务两小时停止条件未触发。现场输出=`data/ChinaInstances/china9_city_full_pool_20260718/`，三大区域旧快照参考候选各12条，四件套、raw网络探针、逐文件SHA-256、AppleDouble清理记录和6项回读测试齐全；网络恢复后原目录可续跑，P4仍待用户拍板。

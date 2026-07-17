@@ -1,0 +1,352 @@
+{
+  "schema": "resetp.china.facility-manifest.v2",
+  "contract_version": "V2-0.1",
+  "status": "CANDIDATE_ONLY",
+  "formal_search_allowed": false,
+  "created_date": "2026-07-18",
+  "source_review_date": "2026-07-18",
+  "source_capture_batch": "data/ChinaInstances/china_facility_sources_v2_20260718_clean_v2",
+  "source_capture_batch_verdict": "OFFICIAL_FACILITY_SOURCE_AVAILABLE_9_OF_9_PRIMARY_URL_CAPTURE_8_OF_9",
+  "purpose": "九城命名物流设施与具体货车入口候选清单；官方运营证据、地图入口身份和坐标系分别记录，不把园区中心点、开放大门标签或规划桩位偷换成正式车场合同。",
+  "required_before_formal": [
+    "source_capture_sha256",
+    "latitude",
+    "longitude",
+    "osm_or_operator_id_or_official_map_position",
+    "operator_or_owner",
+    "operating_status",
+    "customer_to_depot_road_distance_audit",
+    "depot_charger_contract"
+  ],
+  "records": [
+    {
+      "facility_id": "cn-bj-jingping-mafang",
+      "region": "jjj",
+      "city": "beijing",
+      "name_zh": "京平综合物流枢纽（马坊物流基地）",
+      "facility_kind": "rail_freight_hub",
+      "operator_or_owner": null,
+      "government_source_authority": "北京市人民政府门户网站",
+      "official_identity_status": "OFFICIAL_SOURCE_RECORDED",
+      "source_url": "https://www.beijing.gov.cn/ywdt/gzdt/202408/t20240822_3779844.html",
+      "source_title": "京平综合物流枢纽基本情况",
+      "source_capture": "data/ChinaInstances/china_facility_sources_v2_20260718_clean_v2/raw/cn-bj-jingping-mafang.bin",
+      "source_capture_sha256": "c2e69d3cc4c7bca1dbd0e43260f93fd5085f8804971b5f58b8019882809011ff",
+      "source_capture_status": "CAPTURED_HTTP_200",
+      "coordinates": {"latitude": null, "longitude": null},
+      "osm_or_operator_id": "baidu_uid:07dc236824a0e3ba49fc8d2b;osm_way:1104072601",
+      "preferred_operational_site": {
+        "name_zh": "北京平谷国际陆港（马坊铁路场站）货车入口候选",
+        "map_provider": "Baidu Map",
+        "map_uid": "07dc236824a0e3ba49fc8d2b",
+        "osm_id": "way/1104072601",
+        "map_coordinate_original": {"crs": "BD09MC", "x": 13027727.767401, "y": 4851328.223199, "coordinate_role": "baidu_road_snap_candidate"},
+        "map_address": "北京市平谷区陆港大街与马坊规划六路交叉路口往东南约260米",
+        "map_url": "https://map.baidu.com/mobile/webapp/place/detail/qt=ninf&wd=%E5%8C%97%E4%BA%AC%E5%B9%B3%E8%B0%B7%E5%9B%BD%E9%99%85%E9%99%86%E6%B8%AF&c=131&uid=07dc236824a0e3ba49fc8d2b/showall=1",
+        "osm_centroid_wgs84_not_gate": {"latitude": 40.0846906, "longitude": 117.0177225},
+        "official_operation_sources": [
+          "https://www.beijing.gov.cn/ywdt/gqrd/202509/t20250909_4194699.html",
+          "https://www.beijing.gov.cn/ywdt/gqrd/202405/t20240517_3686953.html"
+        ],
+        "evidence_scope": "北京市政府直接记录班列从平谷马坊铁路站发出且在马坊铁路场站集结；地图和OSM支持陆港实体。道路吸附点仍须核成具体货车门，停车容量、开放时段和场内充电待核。"
+      },
+      "operating_status": "OPERATION_EVIDENCED_ENTRANCE_ACCESS_CONTRACT_PENDING",
+      "selection_reason": "北京市政府页面同时点名京平综合物流枢纽和马坊物流基地，并说明其公铁联运物流基础设施属性。",
+      "source_scope": "政府页面支持设施身份和功能背景；不直接提供本项目使用的入口坐标、运营主体合同或车场充电桩数量。"
+    },
+    {
+      "facility_id": "cn-tj-dongjiang-port-logistics",
+      "region": "jjj",
+      "city": "tianjin",
+      "name_zh": "天津东疆综保区港口型国家物流枢纽",
+      "facility_kind": "port_logistics_park",
+      "operator_or_owner": null,
+      "government_source_authority": "天津市发展和改革委员会",
+      "official_identity_status": "OFFICIAL_SOURCE_RECORDED",
+      "source_url": "https://fzgg.tj.gov.cn/zwgk_47325/zcfg_47338/zcwjx/fgwj/202210/t20221024_6016462.html",
+      "source_title": "天津市加快冷链物流发展实施方案",
+      "source_capture": "data/ChinaInstances/china_facility_sources_v2_20260718_clean_v2/raw/cn-tj-dongjiang-port-logistics.bin",
+      "source_capture_sha256": "5f10b7baae7a505d92ef76d4682b14f606f6886756f8ef7bf4274489941e415b",
+      "source_capture_status": "CAPTURED_HTTP_200",
+      "coordinates": {"latitude": null, "longitude": null},
+      "osm_or_operator_id": "baidu_uid:0aa45c3b9adf9a5e6e20b930;baidu_gate_uid:46024ec9e95c210921f017a5",
+      "preferred_operational_site": {
+        "name_zh": "万纬天津港物流园停车场出入口候选",
+        "map_provider": "Baidu Map",
+        "map_uid": "0aa45c3b9adf9a5e6e20b930",
+        "map_gate_uid": "46024ec9e95c210921f017a5",
+        "map_coordinate_original": {"crs": "BD09MC", "x": 13109219.37, "y": 4702752.25, "coordinate_role": "mapped_parking_entrance_candidate"},
+        "map_address": "天津市滨海新区北港西路902号",
+        "map_url": "https://map.baidu.com/mobile/webapp/place/detail/qt=ninf&wd=%E4%B8%87%E7%BA%AC%E5%A4%A9%E6%B4%A5%E6%B8%AF%E7%89%A9%E6%B5%81%E5%9B%AD&c=332&uid=0aa45c3b9adf9a5e6e20b930/showall=1",
+        "official_operation_sources": [
+          "https://sthj.tj.gov.cn/ZWXX808/TZGG6419/202410/W020241018613257591606.pdf",
+          "https://www.sinosky.com/"
+        ],
+        "evidence_scope": "天津市生态环境局公开名录证明物流企业在北港西路902号万纬天津港物流园运营；地图提供停车场出入口POI。该入口是否允许重型货车、门禁时段、停车容量和场内充电待核。"
+      },
+      "operating_status": "TENANT_OPERATION_EVIDENCED_MAPPED_ENTRANCE_TRUCK_ACCESS_PENDING",
+      "selection_reason": "天津市政府文件将东疆综保区作为依托天津港的港口型国家物流枢纽和冷链物流基地建设区域。",
+      "source_scope": "政府文件支持枢纽区域身份和规划功能；不直接锁定单一车辆入口或车场充电容量。"
+    },
+    {
+      "facility_id": "cn-sjz-international-land-port",
+      "region": "jjj",
+      "city": "shijiazhuang",
+      "name_zh": "石家庄国际陆港",
+      "facility_kind": "rail_freight_hub",
+      "operator_or_owner": null,
+      "government_source_authority": "石家庄市人民政府",
+      "official_identity_status": "OFFICIAL_SOURCE_RECORDED",
+      "source_url": "https://www.sjz.gov.cn/columns/ba3cae66-c5bf-45c6-a0cc-9ade69246aa9/202503/01/d5c08f53-1d89-4fc4-ad7c-f077b5b79e52.html",
+      "source_title": "石家庄：构建综合货运枢纽体系新格局",
+      "source_capture": "data/ChinaInstances/china_facility_sources_v2_20260718_clean_v2/raw/cn-sjz-international-land-port.bin",
+      "source_capture_sha256": "87fb20e7feddba3da367fb4993a86738106a0884281878d4934e1e95ad5ca63b",
+      "source_capture_status": "CAPTURED_HTTP_200",
+      "coordinates": {"latitude": null, "longitude": null},
+      "osm_or_operator_id": "baidu_uid:f13a67f3eea2123a82a12e5e;baidu_gate_uid:2869d26d7f472ed617c8f609",
+      "preferred_operational_site": {
+        "name_zh": "石家庄国际陆港北门候选",
+        "map_provider": "Baidu Map",
+        "map_uid": "f13a67f3eea2123a82a12e5e",
+        "map_gate_uid": "2869d26d7f472ed617c8f609",
+        "map_coordinate_original": {"crs": "BD09MC", "x": 12757387.7858, "y": 4499685.74321, "coordinate_role": "north_gate_road_snap_candidate"},
+        "map_address": "河北省石家庄市高邑县高邑大街与刘秀路交叉路口往西约240米",
+        "map_url": "https://map.baidu.com/mobile/webapp/place/detail/qt=ninf&wd=%E7%9F%B3%E5%AE%B6%E5%BA%84%E5%9B%BD%E9%99%85%E9%99%86%E6%B8%AF-%E5%8C%97%E9%97%A8&c=150&uid=2869d26d7f472ed617c8f609/showall=1",
+        "official_operation_sources": [
+          "https://www.cnlandport.com/product/12.html",
+          "https://www.cnlandport.com/Contact.html"
+        ],
+        "evidence_scope": "运营方证明陆港依托京广铁路高邑货运站运营并给出京广铁路石家庄陆港站地址；地图提供北门和道路吸附点。北门是否为主要货车门、门禁时段、停车容量和场内充电待核。"
+      },
+      "operating_status": "OPERATOR_OPERATION_EVIDENCED_NORTH_GATE_TRUCK_ACCESS_PENDING",
+      "selection_reason": "石家庄市政府页面将石家庄国际陆港列入综合货运枢纽体系建设对象。",
+      "source_scope": "政府页面支持设施名称和枢纽建设背景；不替代入口坐标、运营证据或桩参数核验。"
+    },
+    {
+      "facility_id": "cn-gz-airport-logistics-hub",
+      "region": "prd",
+      "city": "guangzhou",
+      "name_zh": "广州空港物流枢纽",
+      "facility_kind": "airport_logistics_hub",
+      "operator_or_owner": null,
+      "government_source_authority": "广州市人民政府",
+      "official_identity_status": "OFFICIAL_SOURCE_RECORDED",
+      "source_url": "https://www.gz.gov.cn/zwgk/ghjh/fzgh/ssw/content/mpost_8661346.html",
+      "source_title": "广州市“十四五”现代物流枢纽及产业发展土地利用规划",
+      "source_capture": "data/ChinaInstances/china_facility_sources_v2_20260718_clean_v2/raw/cn-gz-airport-logistics-hub.bin",
+      "source_capture_sha256": "2b9c4796c2a6b443f6895170eb86cd1bb221f33270c8db41b3fbcb882160a4d0",
+      "source_capture_status": "CAPTURED_HTTP_200",
+      "coordinates": {"latitude": null, "longitude": null},
+      "osm_or_operator_id": "baidu_uid:f5141d94db59caa1c356ac61",
+      "preferred_operational_site": {
+        "name_zh": "广州国际港（广州铁路集装箱中心站）东门",
+        "map_provider": "Baidu Map",
+        "map_uid": "f5141d94db59caa1c356ac61",
+        "map_coordinate_original": {"crs": "BD09MC", "x": 12600969.272983871, "y": 2656619.1698387098, "coordinate_role": "mapped_east_gate_candidate"},
+        "map_address": "广州市白云区蓼江北街",
+        "map_url": "https://map.baidu.com/poi/%E5%B9%BF%E5%B7%9E%E5%9B%BD%E9%99%85%E6%B8%AF-%E4%B8%9C%E9%97%A8/@12600969.272983871,2656619.1698387098,11.73z?uid=f5141d94db59caa1c356ac61",
+        "official_operation_sources": [
+          "https://www.gz.gov.cn/xw/zwlb/gqdt/byq/content/post_8014572.html",
+          "https://www.gz.gov.cn/zt/zzyyzq/bmdt/content/post_10634822.html"
+        ],
+        "evidence_scope": "官方支持一期投运、班列和集装箱卡车作业；地图支持东门POI。社会货车预约规则、开放时间和场内充电仍待核。"
+      },
+      "operating_status": "OPERATION_EVIDENCED_ENTRANCE_ACCESS_CONTRACT_PENDING",
+      "selection_reason": "广州市政府物流枢纽规划将空港物流枢纽作为广州综合物流网络的重要节点。",
+      "source_scope": "政府规划支持枢纽类型和规划身份；不直接锁定配送车场入口或充电设施。"
+    },
+    {
+      "facility_id": "cn-sz-pinghu-integrated-logistics",
+      "region": "prd",
+      "city": "shenzhen",
+      "name_zh": "平湖南既有/一期铁路货场地面作业层",
+      "facility_kind": "rail_freight_hub",
+      "operator_or_owner": "深圳市深国铁路物流发展有限公司（规划许可用地单位；实际配送运营主体仍待核）",
+      "government_source_authority": "深圳市人民政府",
+      "official_identity_status": "OFFICIAL_SOURCE_RECORDED",
+      "source_url": "https://www.sz.gov.cn/cn/xxgk/zfxxgj/gqdt/content/post_12582907.html",
+      "source_title": "平湖南综合物流枢纽铁路地面层工程具备开通条件",
+      "source_capture": "docs/handoff/china_facility_manifest_v2_20260718_sources/raw/shenzhen_international_logistics_design_review_LG202500781.pdf",
+      "source_capture_sha256": "ebdc6e32d551612bb3811a16238ecc7942f553c47cd55136ae90604947871c2e",
+      "source_capture_status": "CAPTURED_HTTP_200_FROM_CURRENT_PNR_OFFICIAL_ATTACHMENT_PRIMARY_NEWS_PAGE_TLS_FAILED",
+      "supplementary_official_sources": [
+        {
+          "url": "https://pnr.sz.gov.cn/xxgk/gggs/content/post_12485164.html",
+          "title": "深圳国际综合物流枢纽中心项目建设工程规划许可证及总平面图通告",
+          "authority": "深圳市规划和自然资源局龙岗管理局",
+          "evidence_scope": "项目名称、许可变更、附件入口和用地单位"
+        },
+        {
+          "url": "https://pnr.sz.gov.cn/attachment/1/1645/1645187/12485163.pdf",
+          "title": "深圳市建设工程设计文件核查表（LG202500781）",
+          "authority": "深圳市规划和自然资源局龙岗管理局",
+          "local_capture": "docs/handoff/china_facility_manifest_v2_20260718_sources/raw/shenzhen_international_logistics_design_review_LG202500781.pdf",
+          "sha256": "ebdc6e32d551612bb3811a16238ecc7942f553c47cd55136ae90604947871c2e",
+          "evidence_scope": "现行核查表载明用地单位、平湖南铁路货场、宗地号、1068个货车停车位和642个充电桩位；桩位不得解释为充电枪数、投运数量或功率"
+        },
+        {
+          "url": "https://pnr.sz.gov.cn/attachment/1/1645/1645190/12485164.pdf",
+          "title": "建设工程规划许可证（建字第4403072023GG0164314（改1）号）",
+          "authority": "深圳市规划和自然资源局龙岗管理局",
+          "local_capture": "docs/handoff/china_facility_manifest_v2_20260718_sources/raw/shenzhen_international_logistics_planning_permit_4403072023GG0164314_rev1.pdf",
+          "sha256": "3cd4b4dee405a7ae3d080c5f308fbf34a9847750526e7613bd68638817b3e687",
+          "evidence_scope": "现行建设位置、用地单位、计容面积、许可编号与发证日期"
+        }
+      ],
+      "coordinates": {"latitude": null, "longitude": null},
+      "osm_or_operator_id": "baidu_uid:6421a1c69b1aeab68a36eef1",
+      "preferred_operational_site": {
+        "name_zh": "平湖南货场",
+        "map_provider": "Baidu Map",
+        "map_uid": "6421a1c69b1aeab68a36eef1",
+        "map_coordinate_original": {"crs": "BD09MC", "x": 12706685.84532258, "y": 2573771.703548387},
+        "map_address": "深圳市龙岗区联李东路赛为大厦东侧约280米",
+        "map_url": "https://map.baidu.com/poi/%E5%B9%B3%E6%B9%96%E5%8D%97%E8%B4%A7%E5%9C%BA/@12706685.84532258,2573771.703548387,14.57z?uid=6421a1c69b1aeab68a36eef1",
+        "official_operation_sources": [
+          "https://www.sz.gov.cn/szzt2010/wgkzl/glgk/jgxxgk/gyqyyy/content/post_10699280.html",
+          "https://www.sz.gov.cn/cn/xxgk/zfxxgj/gqdt/content/post_12582907.html"
+        ],
+        "evidence_scope": "一期集装箱线已投入运营且既有铁路货场保持作业；85万平方米上盖项目仍属建设项目，不得写成已运营配送园区。实际货车卡口和充电设施待核。"
+      },
+      "operating_status": "GROUND_FREIGHT_OPERATION_EVIDENCED_OVERBUILD_NOT_OPERATIONAL_ENTRANCE_ACCESS_PENDING",
+      "selection_reason": "深圳政府在线页面明确给出平湖南综合物流枢纽铁路地面层工程已具备开通条件，支持其作为实际物流设施候选。",
+      "source_scope": "政府页面支持项目运营阶段和枢纽身份；现行规划许可支持平湖南铁路货场、货车停车位和充电桩位的规划存在性，但不提供本项目所需的车辆入口坐标、实际投运桩数、枪数或功率。"
+    },
+    {
+      "facility_id": "cn-dg-port-national-logistics-hub",
+      "region": "prd",
+      "city": "dongguan",
+      "name_zh": "东莞清溪保税物流中心（B型）",
+      "facility_kind": "port_logistics_park",
+      "operator_or_owner": null,
+      "government_source_authority": "东莞市人民政府",
+      "official_identity_status": "OFFICIAL_SOURCE_RECORDED",
+      "source_url": "https://www.dg.gov.cn/shatian/jjst/styw/content/post_4280217.html",
+      "source_title": "东莞枢纽沙田片区入选“国字号”（区域来源）；具体优选场址另见清溪运营证据",
+      "source_capture": "data/ChinaInstances/china_facility_sources_v2_20260718_clean_v2/raw/cn-dg-port-national-logistics-hub.bin",
+      "source_capture_sha256": "c5f4150966d4b7c2841eefe0445bcc4241915e1e51bce4ad78a3bdb5177c56ec",
+      "source_capture_status": "CAPTURED_HTTP_200",
+      "coordinates": {"latitude": null, "longitude": null},
+      "osm_or_operator_id": "baidu_uid:ee7fc367b5165e7f22f017f0",
+      "preferred_operational_site": {
+        "name_zh": "东莞清溪保税物流中心（B型）",
+        "map_provider": "Baidu Map",
+        "map_uid": "ee7fc367b5165e7f22f017f0",
+        "map_coordinate_original": {"crs": "BD09MC", "x": 12708115.754155073, "y": 2598512.7008971577},
+        "map_address": "东莞市清溪镇柏朗北街锦程学校北500米；官方口径为浮岗村北环路侧",
+        "map_url": "https://map.baidu.com/poi/%E4%B8%9C%E8%8E%9E%E6%B8%85%E6%BA%AA%E4%BF%9D%E7%A8%8E%E7%89%A9%E6%B5%81%E4%B8%AD%E5%BF%83/@12708115.754155073,2598512.7008971577,18.24z?uid=ee7fc367b5165e7f22f017f0",
+        "official_operation_sources": [
+          "https://www.dg.gov.cn/dgqxz/gkmlpt/content/4/4334/post_4334630.html",
+          "https://www.dg.gov.cn/dgqxz/gkmlpt/content/4/4494/post_4494741.html",
+          "https://www.dgportgroup.com/article/102/45.html"
+        ],
+        "evidence_scope": "官方支持货车进出卡口、仓库装卸、2025年运营数据和7×24小时通关；最终节点仍须锁定实际车辆卡口，场内充电待核。"
+      },
+      "operating_status": "OPERATION_7X24_CUSTOMS_EVIDENCED_VEHICLE_GATE_PENDING",
+      "selection_reason": "从只有建设范围的沙田片区升级为有货车卡口、仓储装卸和现行运营数据的清溪保税物流中心。",
+      "source_scope": "原政府页面保留为东莞物流枢纽区域来源；正式场址选择由清溪运营证据支撑，仍不证明场内充电能力。"
+    },
+    {
+      "facility_id": "cn-fs-international-land-port",
+      "region": "prd",
+      "city": "foshan",
+      "name_zh": "佛山国际陆港",
+      "facility_kind": "rail_freight_hub",
+      "operator_or_owner": null,
+      "government_source_authority": "广东省人民政府",
+      "official_identity_status": "OFFICIAL_SOURCE_RECORDED",
+      "source_url": "https://www.gd.gov.cn/gdywdt/dsdt/content/post_4148215.html",
+      "source_title": "佛山国际陆港正式启用",
+      "source_capture": "data/ChinaInstances/china_facility_sources_v2_20260718_clean_v2/raw/cn-fs-international-land-port.bin",
+      "source_capture_sha256": "32d0798a7e032cc9ae85a4a8b172a15ade29771a6e4c135415bb1c5bd4a5dd73",
+      "source_capture_status": "CAPTURED_HTTP_200",
+      "coordinates": {"latitude": null, "longitude": null},
+      "osm_or_operator_id": "baidu_uid:b3de3ceec4a5b371b31e3674;osm_way:1072462242",
+      "preferred_operational_site": {
+        "name_zh": "佛山国际陆港",
+        "map_provider": "Baidu Map and OpenStreetMap",
+        "map_uid": "b3de3ceec4a5b371b31e3674",
+        "osm_id": "way/1072462242",
+        "map_coordinate_original": {"crs": "BD09MC", "x": 12584527.18, "y": 2641371.741726343},
+        "osm_centroid_wgs84_not_gate": {"latitude": 23.2131787, "longitude": 113.0304422},
+        "map_url": "https://map.baidu.com/poi/%E4%BD%9B%E5%B1%B1%E5%9B%BD%E9%99%85%E9%99%86%E6%B8%AF/@12584527.18,2641371.741726343,18.32z?uid=b3de3ceec4a5b371b31e3674",
+        "official_operation_sources": [
+          "https://www.gd.gov.cn/gdywdt/dsdt/content/post_4148215.html",
+          "https://jijian.nanhai.gov.cn/cms/html/13073/2024/20241122160845796684113/20241122160845796684113_1.html"
+        ],
+        "evidence_scope": "官方支持2023年投运和持续货运业务；OSM仅为园区面中心，不得冒充货车入口。具体卡口和场内充电待核。"
+      },
+      "operating_status": "OPERATION_EVIDENCED_FREIGHT_GATE_PENDING",
+      "selection_reason": "广东省政府公开信息将佛山国际陆港作为已命名的陆港设施候选。",
+      "source_scope": "公开信息支持设施身份线索；正式使用仍需固定具体入口、地图要素和运营/桩证据。"
+    },
+    {
+      "facility_id": "cn-cd-international-railway-port",
+      "region": "cy",
+      "city": "chengdu",
+      "name_zh": "成都国际铁路港",
+      "facility_kind": "rail_freight_hub",
+      "operator_or_owner": null,
+      "government_source_authority": "四川省人民政府",
+      "official_identity_status": "OFFICIAL_SOURCE_RECORDED",
+      "source_url": "https://www.sc.gov.cn/10462/10464/10797/2020/8/27/07e4d4877886412285920f85d123473a.shtml",
+      "source_title": "省政府批复设立成都国际铁路港经济开发区",
+      "source_capture": "data/ChinaInstances/china_facility_sources_v2_20260718_clean_v2/raw/cn-cd-international-railway-port.bin",
+      "source_capture_sha256": "1dd251a6fa739072b08cc8a50e1afbd4b7c667a8e44aec10ae1f004cd95df53f",
+      "source_capture_status": "CAPTURED_HTTP_200",
+      "coordinates": {"latitude": null, "longitude": null},
+      "osm_or_operator_id": "baidu_uid:85880009b61de98646572689;osm_way:633016112",
+      "preferred_operational_site": {
+        "name_zh": "中铁联集成都中心站北门",
+        "map_provider": "Baidu Map",
+        "map_uid": "85880009b61de98646572689",
+        "osm_id": "way/633016112",
+        "map_coordinate_original": {"crs": "BD09MC", "x": 11612807.514168799, "y": 3592970.041764707},
+        "map_address": "成都市青白江区鸿泰大道201号",
+        "map_url": "https://map.baidu.com/poi/%E4%B8%AD%E9%93%81%E8%81%94%E9%9B%86%E6%88%90%E9%83%BD%E4%B8%AD%E5%BF%83%E7%AB%99-%E5%8C%97%E9%97%A8/@11612807.514168799,3592970.041764707,12.75z?uid=85880009b61de98646572689",
+        "official_operation_sources": [
+          "https://www.crct.com/index.php?a=lists&c=index&catid=66&m=content",
+          "https://www.sc.gov.cn/10462/zfwjts/2025/8/28/51af9db714c040369bf938b036b6ff01.shtml",
+          "https://jtt.sc.gov.cn/jtt/c111874/2025/9/12/17f7d101dc094701bba68b75bce4156a.shtml"
+        ],
+        "evidence_scope": "官方支持中心站名称、鸿泰大道201号、中欧班列枢纽和集装箱公路集疏运；地图支持北门POI。车型准入、开放时段和场内充电待核。"
+      },
+      "operating_status": "OPERATION_EVIDENCED_NORTH_GATE_ACCESS_CONTRACT_PENDING",
+      "selection_reason": "四川省政府公开信息支持成都国际铁路港的正式设施身份和铁路港开发区背景。",
+      "source_scope": "开发区/港区身份不等于单一配送车场；正式算例必须再锁定可复核入口和道路网络节点。"
+    },
+    {
+      "facility_id": "cn-cq-nanpeng-road-logistics-base",
+      "region": "cy",
+      "city": "chongqing",
+      "name_zh": "重庆公路物流基地（南彭）",
+      "facility_kind": "road_logistics_base",
+      "operator_or_owner": null,
+      "government_source_authority": "重庆市人民政府",
+      "official_identity_status": "OFFICIAL_SOURCE_RECORDED",
+      "source_url": "https://www.cq.gov.cn/zt/yhyshj/zsyz/zqcyyq/bnq/202512/t20251226_15274244.html",
+      "source_title": "重庆公路物流基地",
+      "source_capture": "data/ChinaInstances/china_facility_sources_v2_20260718_clean_v2/raw/cn-cq-nanpeng-road-logistics-base.bin",
+      "source_capture_sha256": "3dd62f03dbb021f8fc49a3ec8e9e780c0d2025c16251ed5e786c68dd0dad6010",
+      "source_capture_status": "CAPTURED_HTTP_200",
+      "coordinates": {"latitude": null, "longitude": null},
+      "osm_or_operator_id": "baidu_uid:6e699d1ad3a23e9b260bd089",
+      "preferred_operational_site": {
+        "name_zh": "重庆南彭公路保税物流中心西北门",
+        "map_provider": "Baidu Map",
+        "map_uid": "6e699d1ad3a23e9b260bd089",
+        "map_coordinate_original": {"crs": "BD09MC", "x": 11871339.229050536, "y": 3413808.996485784},
+        "map_address": "重庆市巴南区白合子、重庆绕城高速公路南约450米",
+        "map_url": "https://map.baidu.com/poi/%E9%87%8D%E5%BA%86%E5%8D%97%E5%BD%AD%E5%85%AC%E8%B7%AF%E4%BF%9D%E7%A8%8E%E7%89%A9%E6%B5%81%E4%B8%AD%E5%BF%83-%E8%A5%BF%E5%8C%97%E9%97%A8/@11871339.229050536,3413808.996485784,9.76z?uid=6e699d1ad3a23e9b260bd089",
+        "official_operation_sources": [
+          "https://www.cq.gov.cn/ywdt/jrcq/202508/t20250819_14911996_app.html",
+          "https://www.cq.gov.cn/ywdt/jrcq/202307/t20230722_12174804.html"
+        ],
+        "evidence_scope": "重庆市政府直接记录跨境公路班车从南彭B保驶出并在中心集拼；地图将西北门标为开放大门、东北门标为暂不可通行。开放标签不等于全天普通配送车准入，场内充电待核。"
+      },
+      "operating_status": "OPERATION_EVIDENCED_OPEN_GATE_MAP_LABEL_ACCESS_CONTRACT_PENDING",
+      "selection_reason": "重庆市政府页面明确给出重庆公路物流基地，适合作为重庆城市配送车场候选。",
+      "source_scope": "政府页面支持基地身份；不直接锁定实际车辆出入口、运营主体合同或车场充电桩参数。"
+    }
+  ]
+}
