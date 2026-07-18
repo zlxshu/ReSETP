@@ -114,7 +114,12 @@ def greedy_fleet_closure(
     if not math.isfinite(current_cost):
         return FleetClosureOutcome(current, current_cost, attempts, 0, trace_rows)
     while len(trace_rows) < max_accepted_flips:
-        outcome = propose_fleet_charge_corepair(current, context, max_attempts=len(current.routes))
+        outcome = propose_fleet_charge_corepair(
+            current,
+            context,
+            max_attempts=len(current.routes),
+            current_objective=current_cost,
+        )
         attempts += int(outcome.attempts)
         if outcome.solution is None or not outcome.best_improved:
             break

@@ -20,13 +20,16 @@ from typing import Any, Callable
 import numpy as np
 
 from setp_solver.check import check_solution
-from setp_solver.cost import evaluate
 from setp_solver.instance_loader import Instance
 from setp_solver.prices import DEFAULT_PRICES
 from setp_solver.solution import Route, Solution
 from setp_solver.algorithms.resetp_alns.support.charging import repair_route_charging
 from setp_solver.algorithms.resetp_alns.support.construction import build_initial_solution
-from setp_solver.search.evaluation import BIG_M, EvalBudget, EvaluationContext, cross_depot_violations, fairness_context_for_solution, record_repair_delta, score_candidate, score_reference
+from setp_solver.search.evaluation import BIG_M, EvalBudget, EvaluationContext, cross_depot_violations, fairness_context_for_solution, record_repair_delta
+from setp_solver.algorithms.resetp_alns.runtime.budgeted_scoring import (
+    score_reference_solution,
+    score_search_candidate,
+)
 from setp_solver.algorithms.resetp_alns.operators.feasible_repair import (
     enumerate_feasible_insertions,
     nearest_depot_id,
@@ -99,13 +102,9 @@ class AlnsState:
     allow_new_route_repair: bool = True
 
     def objective(self) -> float:
-        if self.objective_value is not None:
-            return float(self.objective_value)
-        from setp_solver.search.e3_multitrip_runtime import enabled as e3_multitrip_enabled
-
-        if e3_multitrip_enabled():
-            raise RuntimeError("strict E3 state reached objective() before its prepared solution was stored")
-        return float(score_reference(self.solution, self.context))
+        if self.objective_value is None:
+            raise RuntimeError("ALNS state has no stored objective; implicit complete-solution scoring is forbidden")
+        return float(self.objective_value)
 
 
 @dataclass(frozen=True)
@@ -183,9 +182,7 @@ def run_alns_wouda(
         allow_cross_depot=search_policy.allow_cross_depot,
         repair_delta_mode="exact" if eval_budget is None else "fast",
     )
-    from setp_solver.search.e3_multitrip_runtime import prepare_and_score_reference
-
-    initial, initial_obj = prepare_and_score_reference(initial, context)
+    initial, initial_obj = score_reference_solution(initial, context, phase="initial")
     initial_state = AlnsState(initial, context, objective_value=initial_obj, policy=search_policy)
 
     run = _run_adaptive_sa_alns(
@@ -246,8 +243,7 @@ class _EvalOrRuntimeStop:
 def _budget_limit(iterations: int | None, eval_budget: int | None) -> int:
     if eval_budget is None:
         return max(1000, int(iterations or 5) * 200)
-    target = int(eval_budget)
-    return target + max(1000, target // 10)
+    return int(eval_budget)
 
 
 def _count_table(counts: Any) -> dict[str, tuple[int, int, int, int]]:
@@ -410,24 +406,17 @@ def _run_adaptive_sa_alns(
         destroyed = destroy_op(current, rng, progress=progress)
         candidate = repair_op(destroyed, rng)
         if not candidate.removed_customers and not _hard_violations(candidate.solution, candidate.context) and _solution_changed(current.solution, candidate.solution):
-            improved_solution = improve_solution_locally(candidate.solution, candidate.context)
+            improved_solution, improved_objective = improve_solution_locally(
+                candidate.solution,
+                candidate.context,
+                incumbent_objective=candidate.objective(),
+            )
             if _solution_changed(candidate.solution, improved_solution):
-                candidate = replace(candidate, solution=improved_solution, objective_value=None)
-        if not candidate.removed_customers:
-            from setp_solver.search.e3_multitrip_runtime import prepare_solution
-            from setp_solver.search.multitrip_schedule import drop_multitrip_identity
-
-            try:
-                prepared_solution, _ = prepare_solution(
-                    drop_multitrip_identity(candidate.solution), candidate.context
+                candidate = replace(
+                    candidate,
+                    solution=improved_solution,
+                    objective_value=improved_objective,
                 )
-            except ValueError:
-                prepared_solution = candidate.solution
-            if prepared_solution is not candidate.solution:
-                from setp_solver.search.e3_multitrip_runtime import prepare_and_score_reference
-
-                prepared_solution, prepared_objective = prepare_and_score_reference(prepared_solution, candidate.context)
-                candidate = replace(candidate, solution=prepared_solution, objective_value=prepared_objective)
         if destroy_name == "route_elimination_removal" and (
             len(candidate.solution.routes) >= len(current.solution.routes) or candidate.objective() >= previous_obj - 1e-9
         ):
@@ -1082,7 +1071,7 @@ def _ranked_insert_positions(route: Route, customer_id: str, instance: Instance)
 
 
 def _finalize_candidate_state(state: AlnsState) -> AlnsState:
-    from setp_solver.search.e3_multitrip_runtime import enabled as e3_multitrip_enabled, prepare_and_score_candidate
+    from setp_solver.search.e3_multitrip_runtime import enabled as e3_multitrip_enabled
 
     # The legacy normalizer assigns trips round-robin before checking time or
     # battery continuity. Strict E3 has its own exact scheduler, so feeding
@@ -1095,7 +1084,11 @@ def _finalize_candidate_state(state: AlnsState) -> AlnsState:
     )
 
     with timed_section(state.context, "full_candidate_score"):
-        solution, objective = prepare_and_score_candidate(solution, state.context)
+        solution, objective = score_search_candidate(
+            solution,
+            state.context,
+            channel="destroy_repair",
+        )
     return replace(state, solution=solution, objective_value=objective, removed_customers=state.removed_customers)
 
 
@@ -1109,17 +1102,6 @@ def _repair_route_delta_score(
 ) -> float:
     record_repair_delta(context)
     return route_model_cost_delta(route, actions, context, base_route=base_route, base_actions=base_actions)
-
-
-def _repair_solution_delta_score(solution: Solution, context: EvaluationContext) -> float:
-    record_repair_delta(context)
-    try:
-        if context.repair_delta_mode == "exact":
-            return score_reference(solution, context)
-        with timed_section(context, "repair_solution_score"):
-            return float(evaluate(solution, context.instance, context.carbon_profile, context.prices, carbon_quota_kg=context.carbon_quota_kg)["total_cost"])
-    except Exception:
-        return BIG_M
 
 
 def _route_distance(route: Route, instance: Instance) -> float:

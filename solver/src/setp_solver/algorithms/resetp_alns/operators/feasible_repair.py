@@ -7,7 +7,7 @@ import os
 from typing import Any
 
 from setp_solver.check import check_solution
-from setp_solver.cost import _arc_loads, ev_arc_energy_kwh, evaluate, route_node_schedule
+from setp_solver.cost import _arc_loads, ev_arc_energy_kwh, route_node_schedule
 from setp_solver.instance_loader import Instance, Node
 from setp_solver.solution import ChargingAction, CrossSiteService, Route, Solution
 from setp_solver.algorithms.resetp_alns.support.charging import repair_route_charging
@@ -603,11 +603,8 @@ def _delta_score(
 
 
 def _solution_cost(solution: Solution, context: EvaluationContext) -> float:
-    try:
-        with timed_section(context, "repair_fallback_solution_cost"):
-            return float(evaluate(solution, context.instance, context.carbon_profile, context.prices, carbon_quota_kg=context.carbon_quota_kg)["total_cost"])
-    except Exception:
-        return BIG_M
+    _ = solution, context
+    return BIG_M
 
 
 def _solution_key(solution: Solution) -> tuple[Any, ...]:

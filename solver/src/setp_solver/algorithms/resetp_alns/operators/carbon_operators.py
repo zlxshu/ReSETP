@@ -346,18 +346,7 @@ def _route_carbon_kg(route: Route, solution: Solution, context: Any) -> float:
 
 
 def _solution_carbon_kg(solution: Solution, context: Any) -> float:
-    try:
-        return float(
-            evaluate(
-                solution,
-                context.instance,
-                context.carbon_profile,
-                context.prices,
-                carbon_quota_kg=context.carbon_quota_kg,
-            )["E_total"]
-        )
-    except Exception:
-        return BIG_M
+    return float(sum(_route_carbon_kg(route, solution, context) for route in solution.routes))
 
 
 def _action_carbon_kg(action: Any, context: Any) -> float:

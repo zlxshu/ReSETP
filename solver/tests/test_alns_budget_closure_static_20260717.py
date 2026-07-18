@@ -40,62 +40,17 @@ def test_historical_budget_diagnosis_is_hash_verified_and_rederived() -> None:
     }
 
 
-def test_static_contract_covers_every_current_scorer_call() -> None:
-    module = _load_module()
-    rows = module.classify_calls(module.scan_scorer_calls())
-    assert len(rows) == len(module.EXPECTED_RULES)
-    assert not [row for row in rows if row["phase"] == "unclassified"]
-    assert any(
-        row["source"] == "operators/local_search.py"
-        and row["function"] == "_score_internal_solution"
-        and row["closure_status"] == "BLOCK"
-        for row in rows
-    )
-    assert any(
-        row["source"] == "kernel/alns_core.py"
-        and row["function"] == "_finalize_candidate_state"
-        and row["closure_status"] == "PASS"
-        for row in rows
-    )
-
-
-def test_zero_search_audit_writes_five_surfaces_and_halt(tmp_path: Path) -> None:
-    module = _load_module()
-    output = tmp_path / "budget-audit"
-    decision = module.run_audit(output)
+def test_historical_halt_five_surfaces_remain_hash_sealed() -> None:
+    root = REPO_ROOT / "baselines/e2_alns/e2_alns_budget_closure_static_20260717"
+    decision = json.loads((root / "decision.json").read_text(encoding="utf-8"))
     assert decision["verdict"] == "HALT_ALNS_BUDGET_CLOSURE_REQUIRED"
-    assert decision["search_evaluations"] == 0
-    assert decision["formal_benchmark_authorized"] is False
-    expected = {
-        "metadata.json",
-        "raw_runs.csv",
-        "decision.json",
-        "artifact_hashes.json",
-        "report.md",
-    }
-    assert {path.name for path in output.iterdir()} == expected
-
-    metadata = json.loads((output / "metadata.json").read_text(encoding="utf-8"))
-    assert metadata["audit_kind"] == "zero_search_static_source_audit"
-    assert metadata["search_evaluations"] == 0
-    assert metadata["experiments_started"] == 0
-
-    with (output / "raw_runs.csv").open(newline="", encoding="utf-8") as handle:
-        rows = list(csv.DictReader(handle))
-    assert len(rows) == decision["scorer_call_count"]
-    assert sum(row["closure_status"] == "BLOCK" for row in rows) == decision["closure_blocker_call_sites"]
-
-    manifest = json.loads((output / "artifact_hashes.json").read_text(encoding="utf-8"))
+    manifest = json.loads((root / "artifact_hashes.json").read_text(encoding="utf-8"))
     for rel, expected_hash in manifest.items():
-        path = output / rel.removeprefix("OUTPUT/") if rel.startswith("OUTPUT/") else REPO_ROOT / rel
+        if not (
+            rel.startswith("baselines/e2_alns/e2_alns_budget_closure_static_20260717/")
+            or rel.startswith("baselines/e2_alns/m1_local_search_budget_20260710/")
+            or rel == "baselines/e2_alns/audit_alns_budget_closure_20260717.py"
+        ):
+            continue
+        path = root / rel.removeprefix("OUTPUT/") if rel.startswith("OUTPUT/") else REPO_ROOT / rel
         assert _sha256(path) == expected_hash
-    assert not any(path.name.startswith("._") for path in output.rglob("*"))
-
-
-def test_g0_contract_requires_one_to_one_runtime_evidence() -> None:
-    module = _load_module()
-    rows = module.classify_calls(module.scan_scorer_calls())
-    blockers = [row for row in rows if row["closure_status"] == "BLOCK"]
-    assert blockers
-    assert any(row["accounting"] == "unbudgeted_direct_model_eval" for row in blockers)
-    assert any(row["accounting"] == "unbudgeted_reference" for row in blockers)

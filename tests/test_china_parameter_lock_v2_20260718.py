@@ -26,11 +26,11 @@ def test_china_vehicle_source_captures_exist() -> None:
         assert capture.is_file(), capture
 
 
-def test_china_order_attribute_contract_preserves_model_approval_halt_and_f1_payload_chain() -> None:
+def test_china_order_attribute_contract_records_mc001_but_preserves_formal_halt_and_f1_payload_chain() -> None:
     lock = json.loads(LOCK.read_text(encoding="utf-8"))
     contract_path = Path(__file__).resolve().parents[1] / lock["customer_contract"]["order_attribute_contract"]
     contract = json.loads(contract_path.read_text(encoding="utf-8"))
-    assert contract["status"] == "HALT_MODEL_TRANSFORMATION_AWAITING_USER_APPROVAL"
+    assert contract["status"] == "APPROVED_CAPACITY_SHARE_PROXY_BLOCKED_BY_REMAINING_FORMAL_GATES"
     assert contract["formal_search_allowed"] is False
     assert contract["observed_chinese_orders_claim_allowed"] is False
     assert contract["units"] == {
@@ -50,7 +50,8 @@ def test_china_order_attribute_contract_preserves_model_approval_halt_and_f1_pay
         "sensitivity_tight_delivery_lower_half",
     }
     assert contract["calibration_evidence"]["named_city_or_company_claim_allowed"] is False
-    assert contract["calibration_evidence"]["model_transformation_approved_by_user"] is False
+    assert contract["calibration_evidence"]["model_transformation_approved_by_user"] is True
+    assert contract["calibration_evidence"]["approval_id"] == "MC-001"
     assert contract["witness_contract"]["vehicle_payload_reference_kg"] == 1000
     assert contract["witness_contract"]["route_load_limit_kg"] == 1000
     assert contract["witness_contract"]["optional_robustness_construction_target_kg"] == 800
@@ -73,11 +74,17 @@ def test_china_order_attribute_contract_preserves_model_approval_halt_and_f1_pay
     assert exclusivity["cross_size_disjointness_required"] is False
 
 
-def test_china_customer_location_contract_preserves_halt_but_keeps_81_identity_gate() -> None:
+def test_china_customer_location_contract_records_mc005_but_keeps_81_identity_gate() -> None:
     lock = json.loads(LOCK.read_text(encoding="utf-8"))
     contract_path = Path(__file__).resolve().parents[1] / lock["customer_contract"]["customer_location_contract"]
     contract = json.loads(contract_path.read_text(encoding="utf-8"))
-    assert contract["status"] == "HALT_HAND_SET_CITY_QUOTAS_AWAITING_PPS_RECALIBRATION"
+    assert (
+        contract["status"]
+        == "CONDITIONALLY_APPROVED_GDP_PPS_CANDIDATE_A_POOL_REPLENISHMENT_PENDING"
+    )
+    assert contract["formal_search_allowed"] is False
+    assert contract["city_quota_method"]["approval_id"] == "MC-005"
+    assert contract["city_quota_method"]["status"] == "CONDITIONALLY_APPROVED_NOT_YET_APPLIED"
     assert contract["replicates_per_region_size"] == 3
     assert contract["replicate_labels"] == ["01", "02", "03"]
     assert contract["within_cell_identity_overlap_allowed"] is False
@@ -204,9 +211,11 @@ def test_f1_f2_f3_f4_machine_decisions_are_bound_and_result_blind() -> None:
 
     decision_path = Path(__file__).resolve().parents[1] / lock["carbon_contract"]["default_date_decision"]
     decision = json.loads(decision_path.read_text(encoding="utf-8"))
-    assert decision["status"] == "PENDING_EXPLICIT_USER_APPROVAL"
-    assert decision["selected_option"] is None
-    assert decision["selected_common_default_date"] is None
+    assert decision["status"] == "APPROVED_OPTION_C"
+    assert decision["selected_option"] == "C"
+    assert decision["selected_common_default_date"] == "2025-02-12"
+    assert decision["approval"]["approval_id"] == "MC-003"
+    assert decision["approval"]["approved_by_user"] is True
     assert decision["recommendation"]["recommended_option"] == "C"
     assert decision["recommendation"]["recommended_common_default_date"] == "2025-02-12"
     assert decision["optimization_results_read"] is False

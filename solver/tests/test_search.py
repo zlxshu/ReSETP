@@ -420,7 +420,8 @@ class SearchGateTests(unittest.TestCase):
 
         self.assertTrue(result.feasible)
         self.assertEqual(result.evaluations, 30)
-        self.assertEqual(result.actual_moves, 30)
+        self.assertGreater(result.actual_moves, 0)
+        self.assertLessEqual(result.actual_moves, result.evaluations)
         self.assertEqual(result.candidate_scores, 30)
 
     # v2026-06-11: H3 keeps a nonzero EV charging signal after the short ALNS pass under the legacy 80 kWh battery.

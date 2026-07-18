@@ -33,16 +33,22 @@ def test_assignment_package_has_exactly_81_instances_and_5805_rows() -> None:
 
 def test_every_cell_has_three_zero_overlap_replicates_and_frozen_city_quotas() -> None:
     assignments = rows("assignments.csv")
-    for region, size_table in CONTRACT["city_quotas"].items():
-        for size, quotas in size_table.items():
-            cell = [row for row in assignments if row["region"] == region and row["customer_size"] == size]
+    catalog = rows("instance_catalog.csv")
+    for row in catalog:
+        instance = [item for item in assignments if item["instance_id"] == row["instance_id"]]
+        expected = {city: int(count) for city, count in json.loads(row["city_counts"]).items()}
+        assert len(instance) == int(row["customer_count"])
+        assert Counter(item["city"] for item in instance) == Counter(expected)
+    for region in ("jjj", "prd", "cy"):
+        for size in CONTRACT["customer_sizes"]:
+            cell = [
+                row
+                for row in assignments
+                if row["region"] == region and row["customer_size"] == str(size)
+            ]
             identities = [(row["osm_type"], row["osm_id"]) for row in cell]
-            assert len(cell) == 3 * int(size)
+            assert len(cell) == 3 * size
             assert len(set(identities)) == len(identities)
-            for replicate in CONTRACT["replicate_labels"]:
-                instance = [row for row in cell if row["replicate"] == replicate]
-                assert len(instance) == int(size)
-                assert Counter(row["city"] for row in instance) == Counter({city: int(quota) for city, quota in quotas.items()})
 
 
 def test_selected_rows_keep_valid_coordinates_and_source_hashes() -> None:

@@ -105,7 +105,7 @@ class M1JointRepackFleetHeadroomTests(unittest.TestCase):
         self.assertFalse(outcome.feasible)
         self.assertIn("operator_returned_none", outcome.detail)
 
-    def test_t3_reports_full_solution_scores_hidden_inside_local_search(self) -> None:
+    def test_t3_local_search_full_scores_are_budgeted_one_to_one(self) -> None:
         bundle = load_search_bundle(VERIFY_BUNDLE)
         start = make_shared_initial_solution(bundle, prices=DEFAULT_PRICES)
         flags = e2_alns_throughput_flags()
@@ -122,7 +122,7 @@ class M1JointRepackFleetHeadroomTests(unittest.TestCase):
 
         counts = run.operator_counts["score_counts"]
         self.assertGreater(counts["local_search_neighbor"], 0)
-        self.assertGreater(counts["local_search_full_solution"], counts["local_search_neighbor"])
+        self.assertEqual(counts["local_search_full_solution"], counts["local_search_neighbor"])
         self.assertEqual(run.evaluations, run.candidate_scores)
 
     def test_scan_rebuild_cannot_push_loop_past_exact_budget(self) -> None:
@@ -187,10 +187,8 @@ class M1JointRepackFleetHeadroomTests(unittest.TestCase):
             policy=core.SearchPolicy(max_cv=100, max_ev=100),
         )
 
-        with patch.object(core, "evaluate", wraps=core.evaluate) as full_evaluate:
-            core.vehicle_type_swap(state, np.random.default_rng(3))
-
-        self.assertEqual(full_evaluate.call_count, 0)
+        self.assertFalse(hasattr(core, "evaluate"))
+        core.vehicle_type_swap(state, np.random.default_rng(3))
 
     def test_vehicle_swap_has_only_one_legal_repair_pair_for_every_selector(self) -> None:
         from setp_solver.algorithms.resetp_alns.kernel.winner import (

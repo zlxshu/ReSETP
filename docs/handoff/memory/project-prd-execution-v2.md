@@ -9,6 +9,8 @@ metadata:
 
 E7正式结果终验
 
+2026-07-18 ALNS完整方案评价预算G0闭合：新增统一评分边界与候选调用前硬停止，candidate/reference/repair-delta三账分离；局部搜索、RVND、scan、strong bridge、global repack、fleet-charge及strict E3路径纳入预算，碳特征与repair fallback隐藏完整评分移除。`baselines/e2_alns/e2_alns_budget_g0_20260718/`判`PASS_ALNS_BUDGET_G0_COMPLETE`，静态0阻断/0未分类、186项行为回归全过，0/1/2/3/7预算无target+1。旧E2预算HALT证据保持；只放行Homberger G1开发，旧胜负证据不得复活或与新版本拼接。
+
 2026-07-02 新增 `docs/handoff/project_prd_execution_map_v2_20260702.md`。这是全项目级 PRD/施工图，不只是 E2 PRD。
 
 2026-07-11早期主线纠偏（历史）：**E2算法性能闭合优先**。30次staged ALNS-LNS hybrid/LNS稳定性门完成前，电池容量/车型结构/充电活跃度复核和动态低碳均曾标记`DEFERRED / BLOCKED_BY_E2_ALGORITHM_FOUNDATION`。该状态已被同日后续E2收口和统一遗留任务计划覆盖；当前顺序见`docs/handoff/e2_legacy_items_1_6_9_execution_plan_20260711.md`，旧`m1_e2_deferred_tasks_20260711.md`只作历史挂账登记。

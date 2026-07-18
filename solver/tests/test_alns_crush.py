@@ -13,7 +13,7 @@ from setp_solver.search.alns_crush import (
 from setp_solver.search.candidates import _apply_dr_destroy_repair, _path_repair_delta_score
 from setp_solver.search.evaluation import EvaluationContext, model_cost, score_reference
 from setp_solver.search.feasible_repair import _delta_score
-from setp_solver.search.local_search import improve_solution_locally
+from setp_solver.algorithms.resetp_alns.operators.local_search import improve_solution_locally
 from setp_solver.solution import Route, Solution
 
 
@@ -144,11 +144,17 @@ class AlnsCrushTests(unittest.TestCase):
         instance = _two_opt_instance()
         context = EvaluationContext(instance, [])
         solution = Solution(routes=[Route("CV1", "cv", "D0", ["D0", "C1", "C3", "C2", "D0"])])
+        incumbent_objective = model_cost(solution, context)
 
         with patch.dict("os.environ", {"SETP_ALNS_CRUSH_LOCAL_SEARCH": "1"}):
-            improved = improve_solution_locally(solution, context)
+            improved, improved_objective = improve_solution_locally(
+                solution,
+                context,
+                incumbent_objective=incumbent_objective,
+            )
 
         self.assertEqual(check_solution(improved, instance), [])
+        self.assertLess(improved_objective, incumbent_objective)
         self.assertLess(model_cost(improved, context), model_cost(solution, context))
         self.assertEqual(improved.routes[0].node_sequence, ["D0", "C1", "C2", "C3", "D0"])
 

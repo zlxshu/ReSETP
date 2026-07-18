@@ -55,7 +55,12 @@ from setp_solver.algorithms.resetp_alns.operators.strong_bridge import _apply_st
 from setp_solver.algorithms.resetp_alns.operators.strong_bridge import solution_signature_hash
 from setp_solver.algorithms.resetp_alns.support.construction import build_initial_solution
 from setp_solver.algorithms.resetp_alns.support.elite_archive import EliteArchive
-from setp_solver.search.evaluation import EvalBudget, model_cost, EvaluationContext, cross_depot_violations, fairness_context_for_solution, score_candidate, score_reference
+from setp_solver.search.evaluation import EvalBudget, EvaluationContext, cross_depot_violations, fairness_context_for_solution
+from setp_solver.algorithms.resetp_alns.runtime.budgeted_scoring import (
+    cached_or_reference_model_cost,
+    score_reference_solution,
+    score_search_candidate,
+)
 from setp_solver.search.charging import replay_fixed_route_charging
 from setp_solver.algorithms.resetp_alns.support.fleet import UNBOUNDED_FLEET
 from setp_solver.algorithms.resetp_alns.support.fleet_charge_corepair import propose_fleet_charge_corepair
@@ -587,10 +592,12 @@ def apply_winner_action(
             bridge_feasible = bool(getattr(bridge_outcome, "feasible", False))
             bridge_changed = bool(getattr(bridge_outcome, "changed", False))
             annotated_bridge = _annotate_cross_site_services(bridge_outcome.solution, context)
-            from setp_solver.search.e3_multitrip_runtime import prepare_and_score_candidate
-
             with timed_section(context, "score:strong_bridge_backend"):
-                annotated_bridge, bridge_obj = prepare_and_score_candidate(annotated_bridge, context)
+                annotated_bridge, bridge_obj = score_search_candidate(
+                    annotated_bridge,
+                    context,
+                    channel="strong_bridge",
+                )
             candidate = replace(
                 previous_state,
                 solution=annotated_bridge,
@@ -901,7 +908,14 @@ def run_true_lns_middle_alns_hybrid(
         ("closing_alns", closing["best_solution"]),
     )
     context = EvaluationContext(bundle.instance, bundle.carbon_profile, prices=prices)
-    best_stage, best_solution = min(candidates, key=lambda item: model_cost(item[1], context))
+    best_stage, best_solution = min(
+        candidates,
+        key=lambda item: cached_or_reference_model_cost(
+            item[1],
+            context,
+            phase=f"hybrid_stage_selection:{item[0]}",
+        ),
+    )
     violations = check_solution(best_solution, bundle.instance, prices)
     history: list[dict[str, Any]] = []
     offset = 0
@@ -924,7 +938,11 @@ def run_true_lns_middle_alns_hybrid(
         "evaluations": total_evaluations,
         "elapsed_seconds": time.perf_counter() - started,
         "best_solution": best_solution,
-        "best_cost": model_cost(best_solution, context),
+        "best_cost": cached_or_reference_model_cost(
+            best_solution,
+            context,
+            phase="hybrid_final_report",
+        ),
         "feasible": len(violations) == 0,
         "violation_count": len(violations),
         "battery_kwh": float(getattr(prices, "B_battery_kwh")),
@@ -1043,9 +1061,17 @@ def _run_staged_hybrid_entry(
         "eval_budget": int(cfg.eval_budget),
         "max_runtime_seconds": float(cfg.max_runtime_seconds),
         "evaluations": int(run.evaluations),
+        "candidate_scores": int(run.candidate_scores),
+        "repair_scores": int(run.repair_scores),
+        "repair_delta_count": int(run.repair_delta_count),
+        "actual_moves": int(run.actual_moves),
         "elapsed_seconds": time.perf_counter() - started,
         "best_solution": run.best_solution,
-        "best_cost": model_cost(run.best_solution, context),
+        "best_cost": cached_or_reference_model_cost(
+            run.best_solution,
+            context,
+            phase="winner_variant_final_report",
+        ),
         "feasible": len(violations) == 0,
         "violation_count": len(violations),
         "battery_kwh": float(getattr(prices, "B_battery_kwh")),
@@ -1283,7 +1309,11 @@ def _reschedule_staged_result(
             else "staged ALNS-LNS hybrid + immediate charging ablation"
         ),
         "best_solution": rescheduled,
-        "best_cost": model_cost(rescheduled, context),
+        "best_cost": cached_or_reference_model_cost(
+            rescheduled,
+            context,
+            phase="post_schedule_final_report",
+        ),
         "feasible": len(violations) == 0,
         "violation_count": len(violations),
         "carbon_aware_operators": charging_strategy == "aware",
@@ -1579,7 +1609,11 @@ def _run_winner_variant(
         "evaluations": int(evaluations),
         "elapsed_seconds": time.perf_counter() - started,
         "best_solution": solution,
-        "best_cost": model_cost(solution, context),
+        "best_cost": cached_or_reference_model_cost(
+            solution,
+            context,
+            phase="winner_kernel_final_report",
+        ),
         "feasible": len(violations) == 0,
         "violation_count": len(violations),
         "flags": dict(flags),
@@ -1634,10 +1668,12 @@ def _run_winner_kernel_loop(
     structural_component = structural_component_from_flags(flags)
     ledger: TimingLedger | None = attach_timing_ledger(context) if _flag_enabled_from(flags, "SETP_ALNS_CRUSH_TIMING_LEDGER") else None
     initial_solution = _annotate_cross_site_services(initial_solution, context)
-    from setp_solver.search.e3_multitrip_runtime import prepare_and_score_reference
-
     with timed_section(context, "initial_reference_score"):
-        initial_solution, initial_obj = prepare_and_score_reference(initial_solution, context)
+        initial_solution, initial_obj = score_reference_solution(
+            initial_solution,
+            context,
+            phase="initial",
+        )
     current = best = AlnsState(initial_solution, context, objective_value=initial_obj, policy=policy)
     route_pool = RoutePool(max_routes=512) if structural_component == "route_pool" else None
     elite_archive = EliteArchive(max_size=16, diversity_min=0.10) if structural_component == "elite_archive" else None
@@ -1756,6 +1792,7 @@ def _run_winner_kernel_loop(
             and _can_consume_scan_eval(context, target)
         ):
             proposal: Solution | None = None
+            proposal_objective: float | None = None
             structural_operator = structural_component
             structural_trace: dict[str, Any] = {}
             if route_pool is not None:
@@ -1766,8 +1803,15 @@ def _run_winner_kernel_loop(
                 structural_operator = "elite_archive_restart"
             elif structural_component == "global_order_repack":
                 structural_operator = "global_order_repack"
-                outcome = propose_global_order_repack(current.solution, best.solution, context, _derive_strong_bridge_rng(rng))
+                outcome = propose_global_order_repack(
+                    current.solution,
+                    best.solution,
+                    context,
+                    _derive_strong_bridge_rng(rng),
+                    current_objective=current.objective(),
+                )
                 proposal = outcome.solution
+                proposal_objective = outcome.objective
                 structural_trace.update(
                     {
                         "repack_attempts": int(outcome.attempts),
@@ -1782,11 +1826,23 @@ def _run_winner_kernel_loop(
                 )
             elif structural_component == "fleet_charge_corepair":
                 structural_operator = "fleet_charge_corepair"
-                outcome = propose_fleet_charge_corepair(current.solution, context, max_attempts=16)
+                outcome = propose_fleet_charge_corepair(
+                    current.solution,
+                    context,
+                    max_attempts=16,
+                    current_objective=current.objective(),
+                )
                 proposal = outcome.solution
+                proposal_objective = outcome.objective
                 if proposal is None and best.solution is not current.solution:
-                    outcome = propose_fleet_charge_corepair(best.solution, context, max_attempts=16)
+                    outcome = propose_fleet_charge_corepair(
+                        best.solution,
+                        context,
+                        max_attempts=16,
+                        current_objective=best.objective(),
+                    )
                     proposal = outcome.solution
+                    proposal_objective = outcome.objective
                 structural_trace.update(
                     {
                         "fleet_charge_attempts": int(outcome.attempts),
@@ -1812,10 +1868,15 @@ def _run_winner_kernel_loop(
             candidate_obj = math.inf
             if proposal is not None:
                 proposal = _annotate_cross_site_services(proposal, context)
-                from setp_solver.search.e3_multitrip_runtime import prepare_and_score_candidate
-
-                with timed_section(context, structural_operator):
-                    proposal, candidate_obj = prepare_and_score_candidate(proposal, context)
+                if proposal_objective is None:
+                    with timed_section(context, structural_operator):
+                        proposal, candidate_obj = score_search_candidate(
+                            proposal,
+                            context,
+                            channel=structural_operator,
+                        )
+                else:
+                    candidate_obj = float(proposal_objective)
                 candidate = AlnsState(proposal, context, objective_value=candidate_obj, policy=policy)
                 hard_violation_count = _hard_violation_count(candidate.solution, candidate.context)
                 changed = _solution_changed(current.solution, candidate.solution)
@@ -1956,11 +2017,15 @@ def _run_winner_kernel_loop(
             and _can_consume_scan_eval(context, target)
         ):
             with timed_section(context, "rvnd_swapstar"):
-                rvnd_result = rvnd_swapstar_intensify(candidate.solution, context, max_moves=4)
+                rvnd_result = rvnd_swapstar_intensify(
+                    candidate.solution,
+                    context,
+                    max_moves=4,
+                    incumbent_objective=candidate_obj,
+                )
             if rvnd_result.solution is not None and _solution_changed(candidate.solution, rvnd_result.solution):
-                from setp_solver.search.e3_multitrip_runtime import prepare_and_score_candidate
-
-                rvnd_solution, rvnd_obj = prepare_and_score_candidate(rvnd_result.solution, context)
+                rvnd_solution = rvnd_result.solution
+                rvnd_obj = float(rvnd_result.objective)
                 if rvnd_obj < candidate_obj - 1e-9:
                     candidate = replace(candidate, solution=rvnd_solution, objective_value=rvnd_obj)
                     candidate_obj = rvnd_obj
@@ -2081,9 +2146,11 @@ def _run_winner_kernel_loop(
             acceptance = _make_winner_acceptance_criterion(current, config=acceptance_config, flags=flags)
     destroy_counts_out = {name: tuple(row) for name, row in destroy_counts.items()}
     repair_counts_out = {name: tuple(row) for name, row in repair_counts.items()}
-    from setp_solver.search.e3_multitrip_runtime import prepare_and_score_reference
-
-    prepared_best, prepared_best_obj = prepare_and_score_reference(best.solution, context)
+    prepared_best, prepared_best_obj = score_reference_solution(
+        best.solution,
+        context,
+        phase="final",
+    )
     best = replace(best, solution=prepared_best, objective_value=prepared_best_obj)
     with timed_section(context, "final_check"):
         from setp_solver.search.e3_multitrip_runtime import hard_violations as e3_hard_violations
@@ -2171,7 +2238,11 @@ def _winner_history_entry(
     include_trace_fields: bool = False,
 ) -> dict[str, Any]:
     with timed_section(context, "history_model_cost"):
-        best_cost = float(model_cost(solution, context))
+        best_cost = cached_or_reference_model_cost(
+            solution,
+            context,
+            phase="history",
+        )
     row = {
         "eval": int(eval_count),
         "time_seconds": max(0.0, time.perf_counter() - started),
@@ -2527,13 +2598,7 @@ def _candidate_change_and_violations(
 ) -> tuple[AlnsState, bool, int]:
     annotated = _annotate_cross_site_services(candidate.solution, candidate.context)
     if annotated is not candidate.solution:
-        candidate = replace(candidate, solution=annotated, objective_value=None)
-        if not candidate.removed_customers:
-            from setp_solver.search.e3_multitrip_runtime import enabled as e3_multitrip_enabled, prepare_and_score_reference
-
-            if e3_multitrip_enabled():
-                prepared, objective = prepare_and_score_reference(candidate.solution, candidate.context)
-                candidate = replace(candidate, solution=prepared, objective_value=objective)
+        candidate = replace(candidate, solution=annotated)
     changed = _solution_changed(previous_state.solution, candidate.solution)
     hard_violation_count = _hard_violation_count(candidate.solution, candidate.context) if not candidate.removed_customers else 1
     if trace is not None:
@@ -2542,11 +2607,19 @@ def _candidate_change_and_violations(
         before_solution = candidate.solution
         before_obj = candidate.objective()
         with timed_section(candidate.context, "local_search"):
-            improved_solution = improve_solution_locally(candidate.solution, candidate.context)
+            improved_solution, improved_objective = improve_solution_locally(
+                candidate.solution,
+                candidate.context,
+                incumbent_objective=before_obj,
+            )
         improved_solution = _annotate_cross_site_services(improved_solution, candidate.context)
         if trace is not None:
             improved = _solution_changed(before_solution, improved_solution)
-            after_state = replace(candidate, solution=improved_solution, objective_value=None) if improved else candidate
+            after_state = (
+                replace(candidate, solution=improved_solution, objective_value=improved_objective)
+                if improved
+                else candidate
+            )
             trace.update(
                 {
                     "local_search_attempted": True,
@@ -2559,7 +2632,7 @@ def _candidate_change_and_violations(
                 }
             )
         if _solution_changed(candidate.solution, improved_solution):
-            from setp_solver.search.e3_multitrip_runtime import prepare_and_score_reference, prepare_solution
+            from setp_solver.search.e3_multitrip_runtime import prepare_solution
             from setp_solver.search.multitrip_schedule import drop_multitrip_identity
 
             try:
@@ -2568,7 +2641,6 @@ def _candidate_change_and_violations(
                 )
             except ValueError:
                 pass
-            improved_solution, improved_objective = prepare_and_score_reference(improved_solution, candidate.context)
             candidate = replace(candidate, solution=improved_solution, objective_value=improved_objective)
             changed = _solution_changed(previous_state.solution, candidate.solution)
             hard_violation_count = _hard_violation_count(candidate.solution, candidate.context)
@@ -2634,7 +2706,11 @@ def _maybe_write_e2_checkpoint(
     try:
         path.parent.mkdir(parents=True, exist_ok=True)
         with timed_section(context, "checkpoint_model_cost"):
-            cost = float(model_cost(solution, context))
+            cost = cached_or_reference_model_cost(
+                solution,
+                context,
+                phase="checkpoint",
+            )
         payload = {
             "schema_version": "setp-e2-checkpoint.v1",
             "eval": int(eval_count),
@@ -2693,9 +2769,11 @@ def _scan_restart_state(
         solution = scan_all_cv_solution(state.context.instance, offset=offset, prices=state.context.prices)
         solution = _annotate_cross_site_services(solution, state.context)
     with timed_section(state.context, "scan_score"):
-        from setp_solver.search.e3_multitrip_runtime import prepare_and_score_candidate
-
-        solution, objective = prepare_and_score_candidate(solution, state.context)
+        solution, objective = score_search_candidate(
+            solution,
+            state.context,
+            channel="scan_restart",
+        )
     breakdown = state.context.score_breakdowns.get(id(solution), {})
     if int(breakdown.get("violation_count", 0)) != 0:
         counter["infeasible"] += 1

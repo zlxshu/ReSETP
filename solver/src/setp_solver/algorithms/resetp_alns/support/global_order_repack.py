@@ -8,7 +8,11 @@ import random
 
 from setp_solver.check import check_solution
 from setp_solver.solution import Solution
-from setp_solver.search.evaluation import EvaluationContext, model_cost
+from setp_solver.search.evaluation import EvaluationContext
+from setp_solver.algorithms.resetp_alns.runtime.budgeted_scoring import (
+    SearchBudgetExhausted,
+    score_search_candidate,
+)
 from setp_solver.algorithms.resetp_alns.support.order_decoder import OrderDecodeContext, order_to_solution, route_type_hints, solution_order
 
 
@@ -29,6 +33,8 @@ class GlobalRepackOutcome:
     cost_fix_delta: float
     order_source: str
     trace_rows: list[dict[str, object]]
+    objective: float | None
+    evaluations_used: int
 
 
 def order_perturbations(order: list[str], instance: object, rng: random.Random) -> list[OrderPerturbation]:
@@ -46,10 +52,12 @@ def propose_global_order_repack(
     best_solution: Solution,
     context: EvaluationContext,
     rng: random.Random,
+    *,
+    current_objective: float,
 ) -> GlobalRepackOutcome:
     decode_context = OrderDecodeContext(context.instance, context.prices, context.carbon_profile, rng)
     sources = (("current", current_solution), ("best", best_solution))
-    current_cost = _feasible_model_cost(current_solution, context)
+    current_cost = float(current_objective)
     best_candidate: Solution | None = None
     best_cost = current_cost
     attempts = 0
@@ -57,6 +65,9 @@ def propose_global_order_repack(
     trace_rows: list[dict[str, object]] = []
     source_label = ""
     source_route_count = len(current_solution.routes)
+    evaluations_before = int(context.budget.count) if context.budget is not None else int(
+        context.score_counts.get("candidate", 0)
+    )
     for source_name, source_solution in sources:
         base_order = solution_order(source_solution, context.instance)
         hints = route_type_hints(source_solution, context.instance)
@@ -64,7 +75,16 @@ def propose_global_order_repack(
             attempts += 1
             candidate = order_to_solution(perturbation.order, decode_context, current_solution=source_solution, type_hints=hints)
             violations = check_solution(candidate, context.instance, context.prices)
-            candidate_cost = math.inf if violations else _feasible_model_cost(candidate, context)
+            candidate_cost = math.inf
+            if not violations:
+                try:
+                    candidate, candidate_cost = score_search_candidate(
+                        candidate,
+                        context,
+                        channel="global_order_repack",
+                    )
+                except SearchBudgetExhausted:
+                    break
             if not violations:
                 feasible += 1
             improved = not violations and candidate_cost < best_cost - 1e-9
@@ -83,7 +103,10 @@ def propose_global_order_repack(
                 source_label = f"{source_name}:{perturbation.label}"
                 source_route_count = len(source_solution.routes)
     if best_candidate is None:
-        return GlobalRepackOutcome(None, attempts, feasible, False, False, 0, 0.0, "", trace_rows)
+        used = _evaluations_used(context, evaluations_before)
+        return GlobalRepackOutcome(
+            None, attempts, feasible, False, False, 0, 0.0, "", trace_rows, None, used
+        )
     return GlobalRepackOutcome(
         best_candidate,
         attempts,
@@ -94,6 +117,8 @@ def propose_global_order_repack(
         _fixed_cost_delta(best_candidate, current_solution, context),
         source_label,
         trace_rows,
+        best_cost,
+        _evaluations_used(context, evaluations_before),
     )
 
 
@@ -135,10 +160,11 @@ def _depot_group_shuffle_order(order: list[str], instance: object, rng: random.R
     return out
 
 
-def _feasible_model_cost(solution: Solution, context: EvaluationContext) -> float:
-    if check_solution(solution, context.instance, context.prices):
-        return math.inf
-    return float(model_cost(solution, context))
+def _evaluations_used(context: EvaluationContext, before: int) -> int:
+    after = int(context.budget.count) if context.budget is not None else int(
+        context.score_counts.get("candidate", 0)
+    )
+    return max(0, after - before)
 
 
 def _fixed_cost_delta(candidate: Solution, source: Solution, context: EvaluationContext) -> float:

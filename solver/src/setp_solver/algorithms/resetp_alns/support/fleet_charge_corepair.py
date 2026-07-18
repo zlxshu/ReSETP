@@ -2,14 +2,17 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass, replace
+from dataclasses import dataclass
 import math
 
 from setp_solver.check import check_solution
-from setp_solver.cost import evaluate
 from setp_solver.solution import Route, Solution
 from setp_solver.algorithms.resetp_alns.support.charging import repair_route_charging
-from setp_solver.search.evaluation import EvaluationContext, model_cost
+from setp_solver.search.evaluation import EvaluationContext
+from setp_solver.algorithms.resetp_alns.runtime.budgeted_scoring import (
+    SearchBudgetExhausted,
+    score_search_candidate,
+)
 from setp_solver.algorithms.resetp_alns.support.fleet import normalize_solution_vehicle_trips
 
 
@@ -28,6 +31,8 @@ class FleetChargeOutcome:
     fixed_delta: float
     route_index: int
     trace_rows: list[dict[str, object]]
+    objective: float | None
+    evaluations_used: int
 
 
 def propose_fleet_charge_corepair(
@@ -35,9 +40,10 @@ def propose_fleet_charge_corepair(
     context: EvaluationContext,
     *,
     max_attempts: int = 16,
+    current_objective: float,
 ) -> FleetChargeOutcome:
-    current_cost = _feasible_model_cost(solution, context)
-    current_metrics = evaluate(solution, context.instance, context.carbon_profile, context.prices) if math.isfinite(current_cost) else {}
+    current_cost = float(current_objective)
+    current_metrics: dict[str, float] = {}
     best_candidate: Solution | None = None
     best_cost = current_cost
     best_index = -1
@@ -46,6 +52,9 @@ def propose_fleet_charge_corepair(
     attempts = 0
     feasible = 0
     trace_rows: list[dict[str, object]] = []
+    evaluations_before = int(context.budget.count) if context.budget is not None else int(
+        context.score_counts.get("candidate", 0)
+    )
     for idx, route in enumerate(solution.routes):
         if attempts >= max_attempts:
             break
@@ -57,8 +66,14 @@ def propose_fleet_charge_corepair(
             violations = check_solution(candidate, context.instance, context.prices)
             if not violations:
                 feasible += 1
-                candidate_cost = _feasible_model_cost(candidate, context)
-                metrics = evaluate(candidate, context.instance, context.carbon_profile, context.prices)
+                try:
+                    candidate, candidate_cost = score_search_candidate(
+                        candidate,
+                        context,
+                        channel="fleet_charge_corepair",
+                    )
+                except SearchBudgetExhausted:
+                    break
         improved = candidate is not None and candidate_cost < best_cost - 1e-9
         target_type = "ev" if route.vehicle_type.lower() == "cv" else "cv"
         trace_rows.append(
@@ -81,8 +96,12 @@ def propose_fleet_charge_corepair(
             best_source = route.vehicle_type.lower()
             best_target = target_type
     if best_candidate is None:
-        return FleetChargeOutcome(None, attempts, feasible, False, False, "", "", 0.0, 0.0, 0.0, 0.0, -1, trace_rows)
-    best_metrics = evaluate(best_candidate, context.instance, context.carbon_profile, context.prices)
+        used = _evaluations_used(context, evaluations_before)
+        return FleetChargeOutcome(
+            None, attempts, feasible, False, False, "", "", 0.0, 0.0, 0.0, 0.0,
+            -1, trace_rows, None, used
+        )
+    best_metrics: dict[str, float] = {}
     return FleetChargeOutcome(
         best_candidate,
         attempts,
@@ -97,6 +116,8 @@ def propose_fleet_charge_corepair(
         _metric_delta(best_metrics, current_metrics, "cost_fix"),
         best_index,
         trace_rows,
+        best_cost,
+        _evaluations_used(context, evaluations_before),
     )
 
 
@@ -131,10 +152,11 @@ def flip_route_type_candidate(solution: Solution, idx: int, context: EvaluationC
     return candidate
 
 
-def _feasible_model_cost(solution: Solution, context: EvaluationContext) -> float:
-    if check_solution(solution, context.instance, context.prices):
-        return math.inf
-    return float(model_cost(solution, context))
+def _evaluations_used(context: EvaluationContext, before: int) -> int:
+    after = int(context.budget.count) if context.budget is not None else int(
+        context.score_counts.get("candidate", 0)
+    )
+    return max(0, after - before)
 
 
 def _metric_delta(candidate: dict[str, float], source: dict[str, float], key: str) -> float:

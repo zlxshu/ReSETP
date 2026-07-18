@@ -11,7 +11,11 @@ from setp_solver.check import check_solution
 from setp_solver.instance_loader import Instance
 from setp_solver.solution import ChargingAction, Route, Solution
 from setp_solver.algorithms.resetp_alns.support.charging import repair_route_charging
-from setp_solver.search.evaluation import EvaluationContext, fairness_context_for_solution, score_reference
+from setp_solver.search.evaluation import EvaluationContext, fairness_context_for_solution
+from setp_solver.algorithms.resetp_alns.runtime.budgeted_scoring import (
+    SearchBudgetExhausted,
+    score_search_candidate,
+)
 
 
 @dataclass(frozen=True)
@@ -22,6 +26,7 @@ class RvndResult:
     moves_used: int
     time_seconds: float
     route_count_delta: int
+    objective: float
 
 
 def improve_solution_locally(
@@ -30,17 +35,26 @@ def improve_solution_locally(
     *,
     max_passes: int = 1,
     max_neighbors: int = 24,
-) -> Solution:
+    incumbent_objective: float,
+) -> tuple[Solution, float]:
     """Run a bounded 2-opt/Or-opt/relocate improvement pass."""
 
     if os.environ.get("SETP_ALNS_CRUSH_LOCAL_SEARCH", "1").lower() in {"0", "false", "no"}:
-        return solution
+        return solution, float(incumbent_objective)
     best = solution
-    best_score = _score_internal_solution(best, context, channel="local_search", neighbor=False)
+    best_score = float(incumbent_objective)
     for _ in range(max(1, int(max_passes))):
         improved = False
         for candidate in _neighborhood(best, context, max_neighbors=max_neighbors):
-            score = _score_internal_solution(candidate, context, channel="local_search", neighbor=True)
+            try:
+                candidate, score = _score_internal_solution(
+                    candidate,
+                    context,
+                    channel="local_search",
+                    neighbor=True,
+                )
+            except SearchBudgetExhausted:
+                return best, best_score
             if score < best_score - 1e-9:
                 best = candidate
                 best_score = score
@@ -48,7 +62,7 @@ def improve_solution_locally(
                 break
         if not improved:
             break
-    return best
+    return best, best_score
 
 
 def rvnd_swapstar_intensify(
@@ -56,13 +70,14 @@ def rvnd_swapstar_intensify(
     context: EvaluationContext,
     *,
     max_moves: int = 120,
+    incumbent_objective: float,
 ) -> RvndResult:
     """Run a bounded inter-route intensification pass for diagnostics."""
 
     started = time.perf_counter()
     before_routes = len(solution.routes)
     best = solution
-    best_score = _score_internal_solution(best, context, channel="rvnd", neighbor=False)
+    best_score = float(incumbent_objective)
     moves_used = 0
     improve_count = 0
     neighborhoods = (
@@ -76,7 +91,17 @@ def rvnd_swapstar_intensify(
             improved = False
             for candidate in neighborhood(best):
                 moves_used += 1
-                score = _score_internal_solution(candidate, context, channel="rvnd", neighbor=True)
+                try:
+                    candidate, score = _score_internal_solution(
+                        candidate,
+                        context,
+                        channel="rvnd",
+                        neighbor=True,
+                    )
+                except SearchBudgetExhausted:
+                    improved = False
+                    moves_used = max_moves
+                    break
                 if score < best_score - 1e-9:
                     best = candidate
                     best_score = score
@@ -92,6 +117,7 @@ def rvnd_swapstar_intensify(
         moves_used=moves_used,
         time_seconds=max(0.0, time.perf_counter() - started),
         route_count_delta=len(best.routes) - before_routes,
+        objective=best_score,
     )
 
 
@@ -101,13 +127,13 @@ def _score_internal_solution(
     *,
     channel: str,
     neighbor: bool,
-) -> float:
+) -> tuple[Solution, float]:
     full_key = f"{channel}_full_solution"
     context.score_counts[full_key] = int(context.score_counts.get(full_key, 0)) + 1
     if neighbor:
         neighbor_key = f"{channel}_neighbor"
         context.score_counts[neighbor_key] = int(context.score_counts.get(neighbor_key, 0)) + 1
-    return score_reference(solution, context)
+    return score_search_candidate(solution, context, channel=channel)
 
 
 def _neighborhood(solution: Solution, context: EvaluationContext, *, max_neighbors: int) -> Iterator[Solution]:
