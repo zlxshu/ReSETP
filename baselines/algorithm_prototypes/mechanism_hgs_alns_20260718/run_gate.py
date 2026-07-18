@@ -5,7 +5,7 @@ from __future__ import annotations
 
 import argparse
 import csv
-from dataclasses import asdict
+from dataclasses import asdict, replace
 import hashlib
 import json
 from pathlib import Path
@@ -20,7 +20,15 @@ for path in (SOLVER_SRC, HERE):
     if str(path) not in sys.path:
         sys.path.insert(0, str(path))
 
-from prototype import independent_cost, run_combined, run_outer_search, run_pure_alns  # noqa: E402
+from prototype import (  # noqa: E402
+    independent_cost,
+    run_combined,
+    run_mechanism_intensified,
+    run_memetic_combined,
+    run_outer_search,
+    run_pure_alns,
+)
+from setp_solver.prices import DEFAULT_PRICES  # noqa: E402
 
 
 DEFAULT_BUNDLES = (
@@ -58,11 +66,13 @@ def row_for(
     *,
     outer_share: float = 0.25,
     inner_basins: int = 1,
+    educator_depth: int = 4,
+    prices: Any = DEFAULT_PRICES,
 ) -> dict[str, Any]:
     if algorithm == "pure_alns":
-        result = run_pure_alns(bundle, seed=seed, eval_budget=budget)
+        result = run_pure_alns(bundle, seed=seed, eval_budget=budget, prices=prices)
     elif algorithm == "pure_hgs_style_outer":
-        result = run_outer_search(bundle, seed=seed, eval_budget=budget)
+        result = run_outer_search(bundle, seed=seed, eval_budget=budget, prices=prices)
     elif algorithm == "mechanism_hgs_alns_skeleton":
         result = run_combined(
             bundle,
@@ -70,10 +80,26 @@ def row_for(
             eval_budget=budget,
             outer_share=outer_share,
             inner_basins=inner_basins,
+            prices=prices,
+        )
+    elif algorithm == "mechanism_hgs_alns_memetic":
+        result = run_memetic_combined(
+            bundle,
+            seed=seed,
+            eval_budget=budget,
+            educator_depth=educator_depth,
+            prices=prices,
+        )
+    elif algorithm == "mechanism_hgs_alns_intensified":
+        result = run_mechanism_intensified(
+            bundle,
+            seed=seed,
+            eval_budget=budget,
+            prices=prices,
         )
     else:
         raise ValueError(algorithm)
-    recomputed = independent_cost(bundle, result.best_solution)
+    recomputed = independent_cost(bundle, result.best_solution, prices)
     return {
         "instance": bundle.name,
         "seed": seed,
@@ -91,7 +117,12 @@ def row_for(
     }
 
 
-def decide(rows: list[dict[str, Any]], *, performance_mode: bool) -> dict[str, Any]:
+def decide(
+    rows: list[dict[str, Any]],
+    *,
+    performance_mode: bool,
+    combo_algorithm: str,
+) -> dict[str, Any]:
     accounting_pass = all(
         row["budget_exact"] and row["cost_match"] and row["feasible"]
         for row in rows
@@ -113,7 +144,7 @@ def decide(rows: list[dict[str, Any]], *, performance_mode: bool) -> dict[str, A
             }
             if len(group) != 3:
                 continue
-            combo = group["mechanism_hgs_alns_skeleton"]
+            combo = group[combo_algorithm]
             paired.append(
                 {
                     "instance": instance,
@@ -147,15 +178,32 @@ def main() -> int:
     parser.add_argument("--bundles", nargs="*", type=Path)
     parser.add_argument("--outer-share", type=float, default=0.25)
     parser.add_argument("--inner-basins", type=int, default=1)
+    parser.add_argument(
+        "--combo-mode",
+        choices=("sequential", "memetic", "intensified"),
+        default="sequential",
+    )
+    parser.add_argument("--educator-depth", type=int, default=4)
+    parser.add_argument("--battery-kwh", type=float)
     parser.add_argument("--out-dir", type=Path, default=HERE)
     args = parser.parse_args()
     bundles = tuple(path.resolve() for path in (args.bundles or DEFAULT_BUNDLES))
     out = args.out_dir.resolve()
     out.mkdir(parents=True, exist_ok=True)
     rows: list[dict[str, Any]] = []
+    prices = (
+        replace(DEFAULT_PRICES, B_battery_kwh=float(args.battery_kwh))
+        if args.battery_kwh is not None
+        else DEFAULT_PRICES
+    )
+    combo_algorithm = {
+        "sequential": "mechanism_hgs_alns_skeleton",
+        "memetic": "mechanism_hgs_alns_memetic",
+        "intensified": "mechanism_hgs_alns_intensified",
+    }[args.combo_mode]
     if args.functional:
         for budget in (0, 1, 2, 5):
-            for algorithm in ("pure_hgs_style_outer", "mechanism_hgs_alns_skeleton"):
+            for algorithm in ("pure_hgs_style_outer", combo_algorithm):
                 rows.append(
                     row_for(
                         FUNCTIONAL_BUNDLE,
@@ -164,13 +212,15 @@ def main() -> int:
                         algorithm,
                         outer_share=args.outer_share,
                         inner_basins=args.inner_basins,
+                        educator_depth=args.educator_depth,
+                        prices=prices,
                     )
                 )
     else:
         seeds = tuple(int(item) for item in args.seeds.split(",") if item.strip())
         for bundle in bundles:
             for seed in seeds:
-                for algorithm in ("pure_alns", "pure_hgs_style_outer", "mechanism_hgs_alns_skeleton"):
+                for algorithm in ("pure_alns", "pure_hgs_style_outer", combo_algorithm):
                     rows.append(
                         row_for(
                             bundle,
@@ -179,6 +229,8 @@ def main() -> int:
                             algorithm,
                             outer_share=args.outer_share,
                             inner_basins=args.inner_basins,
+                            educator_depth=args.educator_depth,
+                            prices=prices,
                         )
                     )
 
@@ -191,7 +243,11 @@ def main() -> int:
         writer = csv.DictWriter(handle, fieldnames=fieldnames)
         writer.writeheader()
         writer.writerows(rows)
-    decision = decide(rows, performance_mode=not args.functional)
+    decision = decide(
+        rows,
+        performance_mode=not args.functional,
+        combo_algorithm=combo_algorithm,
+    )
     write_json(out / "decision.json", decision)
     write_json(
         out / "metadata.json",
@@ -207,6 +263,9 @@ def main() -> int:
             "budget": None if args.functional else args.budget,
             "outer_share": args.outer_share,
             "inner_basins": args.inner_basins,
+            "combo_mode": args.combo_mode,
+            "educator_depth": args.educator_depth,
+            "battery_kwh": float(prices.B_battery_kwh),
             "seeds": [1] if args.functional else [int(item) for item in args.seeds.split(",") if item.strip()],
             "protected_files_modified": False,
         },
@@ -218,14 +277,25 @@ def main() -> int:
         "- Scope: development only; formal search remains forbidden.",
         "- Comparison rule: same bundle, paired seed, exact complete-evaluation budget, independent final recomputation.",
         "",
-        "The current implementation tests only the outer-population plus ALNS-education skeleton. "
-        "The four mechanism-specific prototypes remain isolated until this skeleton passes the double-win gate.",
+        (
+            "The current implementation interleaves route-block offspring generation and short ALNS education."
+            if args.combo_mode == "memetic"
+            else (
+                "The current implementation preserves the ALNS core and always applies cross-depot SWAP-star plus fleet/charging closure."
+                if args.combo_mode == "intensified"
+                else "The current implementation tests the sequential outer-population plus ALNS-education skeleton."
+            )
+        ),
     ]
     (out / "report.md").write_text("\n".join(report) + "\n", encoding="utf-8")
     hashes = {
         path.name: sha256(path)
         for path in sorted(out.iterdir())
-        if path.is_file() and path.name != "artifact_hashes.json"
+        if (
+            path.is_file()
+            and path.name != "artifact_hashes.json"
+            and not path.name.startswith("._")
+        )
     }
     write_json(out / "artifact_hashes.json", hashes)
     print(json.dumps(decision, ensure_ascii=False, indent=2))
