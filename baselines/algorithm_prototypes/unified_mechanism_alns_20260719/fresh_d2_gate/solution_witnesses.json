@@ -1,0 +1,5208 @@
+[
+  {
+    "arm": "current_project_pure_alns",
+    "budget": 100,
+    "dataset_role": "primary",
+    "instance_id": "DEV-DUAL-D2-GROUP456-SRC10-N21-DEP2",
+    "mechanism_activity": {
+      "alns_actual_moves": 0,
+      "reference_replays": 2,
+      "score_counts": {
+        "candidate": 100,
+        "candidate_channel:destroy_repair": 100,
+        "reference": 2,
+        "reference_cache_hit": 9,
+        "reference_cache_hit:history": 9,
+        "reference_phase:final": 1,
+        "reference_phase:initial": 1,
+        "repair_delta": 9867
+      }
+    },
+    "metrics": {
+      "E_cv_direct": 365.0292861981738,
+      "E_ev_indirect": 0.0,
+      "E_total": 365.0292861981738,
+      "carbon_quota_kg": 0.0,
+      "cost_carbon": 18.37557426721607,
+      "cost_elec": 0.0,
+      "cost_fix": 240.0,
+      "cost_fuel": 203.48506315129137,
+      "cost_km": 253.72788592907506,
+      "cost_occ": 0.0,
+      "cost_transship": 0.0,
+      "depot_charging_kwh": 0,
+      "distance_cv": 724936.8169402145,
+      "distance_ev": 0,
+      "distance_total": 724936.8169402145,
+      "electricity_kwh": 0,
+      "ev_drive_kwh": 0,
+      "fuel_liters": 141.98943768843162,
+      "n_veh_cv": 1,
+      "n_veh_ev": 0,
+      "station_charging_kwh": 0,
+      "total_cost": 715.5885233475825
+    },
+    "recomputed_cost": 715.5885233475825,
+    "reported_cost": 715.5885233475825,
+    "reporting_full_replays": 2,
+    "seed": 1,
+    "solution": {
+      "charging_actions": [],
+      "cross_site_services": [],
+      "routes": [
+        {
+          "home_depot_id": "D0",
+          "node_sequence": [
+            "D0",
+            "C008",
+            "C007",
+            "C009",
+            "C004",
+            "C019",
+            "C016",
+            "C012",
+            "D0"
+          ],
+          "vehicle_id": "CV1#T1",
+          "vehicle_type": "cv"
+        },
+        {
+          "home_depot_id": "D0",
+          "node_sequence": [
+            "D0",
+            "C010",
+            "C002",
+            "C005",
+            "C018",
+            "C011",
+            "C014",
+            "C013",
+            "C017",
+            "D0"
+          ],
+          "vehicle_id": "CV1#T2",
+          "vehicle_type": "cv"
+        },
+        {
+          "home_depot_id": "D1",
+          "node_sequence": [
+            "D1",
+            "C006",
+            "C003",
+            "C001",
+            "C015",
+            "C020",
+            "C021",
+            "D1"
+          ],
+          "vehicle_id": "CV1#T3",
+          "vehicle_type": "cv"
+        }
+      ]
+    },
+    "solution_signature": "b7cf9ff7656bf1e6a9cbd362395387b9c8406cbb35205643ee312051781ca498"
+  },
+  {
+    "arm": "mechanism_alns_v7",
+    "budget": 100,
+    "dataset_role": "primary",
+    "instance_id": "DEV-DUAL-D2-GROUP456-SRC10-N21-DEP2",
+    "mechanism_activity": {
+      "base_alns_activity": {
+        "alns_actual_moves": 0,
+        "reference_replays": 2,
+        "score_counts": {
+          "candidate": 100,
+          "candidate_channel:destroy_repair": 100,
+          "reference": 2,
+          "reference_cache_hit": 9,
+          "reference_cache_hit:history": 9,
+          "reference_phase:final": 1,
+          "reference_phase:initial": 1,
+          "repair_delta": 9867
+        }
+      },
+      "carbon_activity": {
+        "action_changes": [
+          {
+            "new_emissions_kg": 21.201278902318574,
+            "new_start_second": 62840.060456369705,
+            "old_emissions_kg": 26.986097404541134,
+            "old_start_second": 41400.0,
+            "station_id": "D0",
+            "vehicle_id": "EV1#T1"
+          },
+          {
+            "new_emissions_kg": 21.409235534744376,
+            "new_start_second": 61640.030439979164,
+            "old_emissions_kg": 24.790894589218844,
+            "old_start_second": 41400.0,
+            "station_id": "D0",
+            "vehicle_id": "EV1#T2"
+          }
+        ],
+        "actions_retimed": 2,
+        "candidate_start_count": 52,
+        "complete_evaluations": 0,
+        "eligible_actions": 2,
+        "exact_decoder_updates": 1,
+        "feasibility_checks": 1,
+        "improvements": 1,
+        "objective_delta": -0.4614404802041321,
+        "old_local_objective": 63.30485140809617,
+        "route_local_schedule_evaluations": 52,
+        "selected_local_objective": 62.84341092789204
+      },
+      "final_recomputed_cost": 628.0856551294905,
+      "independent_final_replays": 1,
+      "joint_activity": {
+        "assembled_patterns": 4,
+        "complete_evaluations": 0,
+        "current_pattern": [
+          "cv",
+          "cv",
+          "cv"
+        ],
+        "current_proxy_cost": 715.5885233475825,
+        "exact_decoder_updates": 1,
+        "feasibility_checks": 4,
+        "improvements": 1,
+        "objective_delta": -87.04142773788783,
+        "patterns_considered": 4,
+        "route_proxy_evaluations": 5,
+        "selected_pattern": [
+          "ev",
+          "ev",
+          "cv"
+        ],
+        "selected_proxy_cost": 628.5470956096947
+      },
+      "responsibility_activity": {
+        "accepted_moves": [],
+        "complete_route_search_evaluations": 0,
+        "exact_decoder_updates": 0,
+        "final_recomputed_cost": 715.5885233475825,
+        "full_feasibility_checks": 64,
+        "improvements": 0,
+        "independent_final_replays": 1,
+        "local_exact_evaluations": 5,
+        "monotone_envelope_selected": "single_identical_branch",
+        "net_final_improvements": 0,
+        "objective_closure_error": 0.0,
+        "proxy_moves_considered": 1122,
+        "stop_reason": "no_improving_exact_candidate"
+      }
+    },
+    "metrics": {
+      "E_cv_direct": 117.66321172104428,
+      "E_ev_indirect": 42.610514437062946,
+      "E_total": 160.27372615810722,
+      "carbon_quota_kg": 0.0,
+      "cost_carbon": 8.068179374799119,
+      "cost_elec": 60.69839763113029,
+      "cost_fix": 240.0,
+      "cost_fuel": 65.59119219448603,
+      "cost_km": 253.72788592907506,
+      "cost_occ": 0.0,
+      "cost_transship": 0.0,
+      "depot_charging_kwh": 327.5682548900718,
+      "distance_cv": 244105.85821898974,
+      "distance_ev": 480830.95872122474,
+      "distance_total": 724936.8169402145,
+      "electricity_kwh": 327.5682548900718,
+      "ev_drive_kwh": 327.5682548900718,
+      "fuel_liters": 45.76874760622847,
+      "n_veh_cv": 1,
+      "n_veh_ev": 1,
+      "station_charging_kwh": 0,
+      "total_cost": 628.0856551294905
+    },
+    "recomputed_cost": 628.0856551294905,
+    "reported_cost": 628.0856551294905,
+    "reporting_full_replays": 2,
+    "seed": 1,
+    "solution": {
+      "charging_actions": [
+        {
+          "charge_day_offset": 0,
+          "charge_start_second": 62840.060456369705,
+          "energy_kwh": 169.96074945278352,
+          "occupancy_minutes": 463.5293166894096,
+          "station_id": "D0",
+          "vehicle_id": "EV1#T1"
+        },
+        {
+          "charge_day_offset": 0,
+          "charge_start_second": 61640.030439979164,
+          "energy_kwh": 157.60750543728824,
+          "occupancy_minutes": 429.8386511926043,
+          "station_id": "D0",
+          "vehicle_id": "EV1#T2"
+        }
+      ],
+      "cross_site_services": [
+        {
+          "customer_id": "C009",
+          "served_by_depot_id": "D0"
+        },
+        {
+          "customer_id": "C004",
+          "served_by_depot_id": "D0"
+        },
+        {
+          "customer_id": "C014",
+          "served_by_depot_id": "D0"
+        }
+      ],
+      "routes": [
+        {
+          "home_depot_id": "D0",
+          "node_sequence": [
+            "D0",
+            "C008",
+            "C007",
+            "C009",
+            "C004",
+            "C019",
+            "C016",
+            "C012",
+            "D0"
+          ],
+          "vehicle_id": "EV1#T1",
+          "vehicle_type": "ev"
+        },
+        {
+          "home_depot_id": "D0",
+          "node_sequence": [
+            "D0",
+            "C010",
+            "C002",
+            "C005",
+            "C018",
+            "C011",
+            "C014",
+            "C013",
+            "C017",
+            "D0"
+          ],
+          "vehicle_id": "EV1#T2",
+          "vehicle_type": "ev"
+        },
+        {
+          "home_depot_id": "D1",
+          "node_sequence": [
+            "D1",
+            "C006",
+            "C003",
+            "C001",
+            "C015",
+            "C020",
+            "C021",
+            "D1"
+          ],
+          "vehicle_id": "CV1#T1",
+          "vehicle_type": "cv"
+        }
+      ]
+    },
+    "solution_signature": "504398b1c8725a242681c2be7893eb92bb1027e12fc63ce0932229951f2a4271"
+  },
+  {
+    "arm": "mechanism_judged_dual_basin_alns",
+    "budget": 100,
+    "dataset_role": "primary",
+    "instance_id": "DEV-DUAL-D2-GROUP456-SRC10-N21-DEP2",
+    "mechanism_activity": {
+      "alns_candidate_evaluations": 98,
+      "alns_phases": [
+        {
+          "elapsed_seconds": 0.318975624977611,
+          "eval_budget": 68,
+          "evaluations": 68,
+          "history_length": 9,
+          "operator_counts": {
+            "destroy": {
+              "random_customer_removal": [
+                8,
+                0,
+                0,
+                60
+              ],
+              "route_segment_removal": [
+                0,
+                0,
+                0,
+                0
+              ],
+              "shaw_related_removal": [
+                0,
+                0,
+                0,
+                0
+              ],
+              "vehicle_type_swap": [
+                0,
+                0,
+                0,
+                0
+              ],
+              "whole_route_removal": [
+                0,
+                0,
+                0,
+                0
+              ],
+              "worst_customer_removal": [
+                0,
+                0,
+                0,
+                0
+              ]
+            },
+            "repair": {
+              "greedy_insert_repair": [
+                0,
+                0,
+                0,
+                1
+              ],
+              "regret2_insert_repair": [
+                0,
+                0,
+                0,
+                1
+              ],
+              "regret3_insert_repair": [
+                8,
+                0,
+                0,
+                58
+              ]
+            },
+            "scan": {
+              "infeasible": 0,
+              "rebuild_accepts": 0,
+              "rebuild_attempts": 0,
+              "restart_accepts": 0,
+              "restart_attempts": 0
+            },
+            "score_counts": {
+              "candidate": 68,
+              "candidate_channel:destroy_repair": 68,
+              "reference": 2,
+              "reference_cache_hit": 9,
+              "reference_cache_hit:history": 9,
+              "reference_phase:final": 1,
+              "reference_phase:initial": 1,
+              "repair_delta": 7057
+            },
+            "structural": {
+              "accepted": 0,
+              "attempts": 0,
+              "best_improved": 0,
+              "rejected": 0
+            },
+            "timing": {}
+          },
+          "seed": 1
+        },
+        {
+          "elapsed_seconds": 0.2429067909833975,
+          "eval_budget": 30,
+          "evaluations": 30,
+          "history_length": 1,
+          "operator_counts": {
+            "destroy": {
+              "random_customer_removal": [
+                0,
+                0,
+                0,
+                6
+              ],
+              "route_segment_removal": [
+                0,
+                0,
+                0,
+                5
+              ],
+              "shaw_related_removal": [
+                0,
+                0,
+                0,
+                6
+              ],
+              "vehicle_type_swap": [
+                0,
+                0,
+                0,
+                1
+              ],
+              "whole_route_removal": [
+                0,
+                0,
+                0,
+                6
+              ],
+              "worst_customer_removal": [
+                0,
+                0,
+                0,
+                6
+              ]
+            },
+            "repair": {
+              "greedy_insert_repair": [
+                0,
+                0,
+                0,
+                11
+              ],
+              "regret2_insert_repair": [
+                0,
+                0,
+                0,
+                10
+              ],
+              "regret3_insert_repair": [
+                0,
+                0,
+                0,
+                9
+              ]
+            },
+            "scan": {
+              "infeasible": 0,
+              "rebuild_accepts": 0,
+              "rebuild_attempts": 0,
+              "restart_accepts": 0,
+              "restart_attempts": 0
+            },
+            "score_counts": {
+              "candidate": 30,
+              "candidate_channel:destroy_repair": 30,
+              "reference": 2,
+              "reference_cache_hit": 1,
+              "reference_cache_hit:history": 1,
+              "reference_phase:final": 1,
+              "reference_phase:initial": 1,
+              "repair_delta": 1209
+            },
+            "structural": {
+              "accepted": 0,
+              "attempts": 0,
+              "best_improved": 0,
+              "rejected": 0
+            },
+            "timing": {}
+          },
+          "seed": 100003
+        }
+      ],
+      "envelope_costs": {
+        "charged_mid_mechanism": 628.0856551294905,
+        "opening_alns_phase": 715.5885233475825,
+        "selected_scored_seed": 797.2696872255025,
+        "tail_alns_phase": 628.0856551294905,
+        "terminal_after_tail": 628.0856551294905
+      },
+      "envelope_selected": "charged_mid_mechanism",
+      "final_completion": {
+        "carbon": {
+          "action_changes": [],
+          "actions_retimed": 0,
+          "candidate_start_count": 52,
+          "complete_evaluations": 0,
+          "eligible_actions": 2,
+          "exact_decoder_updates": 0,
+          "feasibility_checks": 0,
+          "improvements": 0,
+          "old_local_objective": 62.84341092789204,
+          "route_local_schedule_evaluations": 52,
+          "selected_local_objective": 62.84341092789204,
+          "stop_reason": "no_feasible_improving_retime"
+        },
+        "complete_route_search_evaluations": 0,
+        "full_solution_replays": 3,
+        "joint": {
+          "assembled_patterns": 1,
+          "complete_evaluations": 0,
+          "current_pattern": [
+            "ev",
+            "ev",
+            "cv"
+          ],
+          "current_proxy_cost": 628.0856551294905,
+          "exact_decoder_updates": 0,
+          "feasibility_checks": 1,
+          "improvements": 0,
+          "patterns_considered": 4,
+          "route_proxy_evaluations": 5,
+          "selected_pattern": [
+            "ev",
+            "ev",
+            "cv"
+          ],
+          "selected_proxy_cost": 628.0856551294905,
+          "stop_reason": "current_pattern_is_best"
+        },
+        "responsibility": {
+          "accepted_moves": [],
+          "complete_route_search_evaluations": 0,
+          "exact_decoder_updates": 0,
+          "final_recomputed_cost": 628.0856551294905,
+          "full_feasibility_checks": 64,
+          "improvements": 0,
+          "independent_final_replays": 1,
+          "local_exact_evaluations": 5,
+          "objective_closure_error": 0.0,
+          "proxy_moves_considered": 1122,
+          "stop_reason": "no_improving_exact_candidate"
+        },
+        "route_local_exact_evaluations": 5,
+        "route_local_schedule_evaluations": 52,
+        "route_proxy_evaluations": 5
+      },
+      "final_recomputed_cost": 628.0856551294905,
+      "hgs_native": {
+        "native_calls": 2,
+        "native_cost_by_depot": {
+          "D0": 800.4993767074154,
+          "D1": 2180.211835700495
+        },
+        "native_cpu_seconds": 0.00967,
+        "native_route_count": 3,
+        "no_improvement_iterations": 100,
+        "official_commit": "1a927955cd2861a29d978f0d359d6e647db9319c",
+        "order_hash": "fe77b71d37002b87bff42c576102255e0a0794d414ebc2b6137540477bdeb867",
+        "time_window_weight": 1.0,
+        "wall_seconds": 0.010180292010772973
+      },
+      "mid_candidate_evaluations": 1,
+      "middle": {
+        "attempted": true,
+        "candidate_evaluations": 1,
+        "changed": true,
+        "completed_cost": 628.0856551294905,
+        "completion": {
+          "carbon": {
+            "action_changes": [
+              {
+                "new_emissions_kg": 21.201278902318574,
+                "new_start_second": 62840.060456369705,
+                "old_emissions_kg": 26.986097404541134,
+                "old_start_second": 41400.0,
+                "station_id": "D0",
+                "vehicle_id": "EV1#T1"
+              },
+              {
+                "new_emissions_kg": 21.409235534744376,
+                "new_start_second": 61640.030439979164,
+                "old_emissions_kg": 24.790894589218844,
+                "old_start_second": 41400.0,
+                "station_id": "D0",
+                "vehicle_id": "EV1#T2"
+              }
+            ],
+            "actions_retimed": 2,
+            "candidate_start_count": 52,
+            "complete_evaluations": 0,
+            "eligible_actions": 2,
+            "exact_decoder_updates": 1,
+            "feasibility_checks": 1,
+            "improvements": 1,
+            "objective_delta": -0.4614404802041321,
+            "old_local_objective": 63.30485140809617,
+            "route_local_schedule_evaluations": 52,
+            "selected_local_objective": 62.84341092789204
+          },
+          "complete_route_search_evaluations": 0,
+          "full_solution_replays": 3,
+          "joint": {
+            "assembled_patterns": 4,
+            "complete_evaluations": 0,
+            "current_pattern": [
+              "cv",
+              "cv",
+              "cv"
+            ],
+            "current_proxy_cost": 715.5885233475825,
+            "exact_decoder_updates": 1,
+            "feasibility_checks": 4,
+            "improvements": 1,
+            "objective_delta": -87.04142773788783,
+            "patterns_considered": 4,
+            "route_proxy_evaluations": 5,
+            "selected_pattern": [
+              "ev",
+              "ev",
+              "cv"
+            ],
+            "selected_proxy_cost": 628.5470956096947
+          },
+          "responsibility": {
+            "accepted_moves": [],
+            "complete_route_search_evaluations": 0,
+            "exact_decoder_updates": 0,
+            "final_recomputed_cost": 715.5885233475825,
+            "full_feasibility_checks": 64,
+            "improvements": 0,
+            "independent_final_replays": 1,
+            "local_exact_evaluations": 5,
+            "objective_closure_error": 0.0,
+            "proxy_moves_considered": 1122,
+            "stop_reason": "no_improving_exact_candidate"
+          },
+          "route_local_exact_evaluations": 5,
+          "route_local_schedule_evaluations": 52,
+          "route_proxy_evaluations": 5
+        },
+        "opening_budget": 68,
+        "score_counts": {
+          "candidate": 1,
+          "candidate_channel:dual_basin_mid_mechanism": 1
+        },
+        "source_cost": 715.5885233475825,
+        "tail_budget": 30
+      },
+      "reference_replay_ledger": {
+        "alns_initial_and_final": 4,
+        "final_completion": 3,
+        "final_envelope_recompute": 1,
+        "middle_completion": 3,
+        "selector": 1,
+        "total_reported": 12
+      },
+      "selector": {
+        "candidate_evaluations": 1,
+        "cost_margin_hgs_minus_default": 115.54135801138364,
+        "default_cost": 797.2696872255025,
+        "default_fast_completion": {
+          "carbon": {
+            "action_changes": [
+              {
+                "new_emissions_kg": 33.533002942874354,
+                "new_start_second": 50253.49625512499,
+                "old_emissions_kg": 35.125042620232435,
+                "old_start_second": 45000.0,
+                "station_id": "D0",
+                "vehicle_id": "EV1#T1"
+              },
+              {
+                "new_emissions_kg": 11.294264737521699,
+                "new_start_second": 70842.7004248916,
+                "old_emissions_kg": 13.249591208046711,
+                "old_start_second": 39600.0,
+                "station_id": "D0",
+                "vehicle_id": "EV1#T2"
+              }
+            ],
+            "actions_retimed": 2,
+            "candidate_start_count": 46,
+            "complete_evaluations": 0,
+            "eligible_actions": 2,
+            "exact_decoder_updates": 1,
+            "feasibility_checks": 1,
+            "improvements": 1,
+            "objective_delta": -0.17857441188444056,
+            "old_local_objective": 62.15074779829604,
+            "route_local_schedule_evaluations": 46,
+            "selected_local_objective": 61.9721733864116
+          },
+          "complete_candidate_evaluations": 0,
+          "joint": {
+            "assembled_patterns": 4,
+            "complete_evaluations": 0,
+            "current_pattern": [
+              "cv",
+              "cv",
+              "cv"
+            ],
+            "current_proxy_cost": 883.4898569962385,
+            "exact_decoder_updates": 1,
+            "feasibility_checks": 4,
+            "improvements": 1,
+            "objective_delta": -86.04159535885151,
+            "patterns_considered": 4,
+            "route_proxy_evaluations": 5,
+            "selected_pattern": [
+              "ev",
+              "ev",
+              "cv"
+            ],
+            "selected_proxy_cost": 797.448261637387
+          },
+          "route_local_schedule_evaluations": 46,
+          "route_proxy_evaluations": 5
+        },
+        "hgs_cost": 912.8110452368861,
+        "hgs_fast_completion": {
+          "carbon": {
+            "action_changes": [
+              {
+                "new_emissions_kg": 1.7616795563184862,
+                "new_start_second": 95400.0,
+                "old_emissions_kg": 1.8421337143487286,
+                "old_start_second": 99000.0,
+                "station_id": "D0",
+                "vehicle_id": "EV1#T1"
+              }
+            ],
+            "actions_retimed": 1,
+            "candidate_start_count": 84,
+            "complete_evaluations": 0,
+            "eligible_actions": 1,
+            "exact_decoder_updates": 1,
+            "feasibility_checks": 1,
+            "improvements": 1,
+            "objective_delta": -0.004050062315243075,
+            "old_local_objective": 6.761180683396794,
+            "route_local_schedule_evaluations": 84,
+            "selected_local_objective": 6.757130621081551
+          },
+          "complete_candidate_evaluations": 0,
+          "joint": {
+            "assembled_patterns": 4,
+            "complete_evaluations": 0,
+            "current_pattern": [
+              "cv",
+              "cv",
+              "cv"
+            ],
+            "current_proxy_cost": 922.7686295445377,
+            "exact_decoder_updates": 1,
+            "feasibility_checks": 4,
+            "improvements": 1,
+            "objective_delta": -9.953534245336414,
+            "patterns_considered": 4,
+            "route_proxy_evaluations": 5,
+            "selected_pattern": [
+              "cv",
+              "ev",
+              "cv"
+            ],
+            "selected_proxy_cost": 912.8150952992013
+          },
+          "route_local_schedule_evaluations": 84,
+          "route_proxy_evaluations": 5
+        },
+        "reference_replays": 1,
+        "score_counts": {
+          "candidate": 1,
+          "candidate_channel:dual_basin_hgs_alternative": 1,
+          "reference": 1,
+          "reference_phase:dual_basin_default_anchor": 1
+        },
+        "selected_basin": "current_alns_warm",
+        "selector_mode": "mechanism"
+      },
+      "selector_candidate_evaluations": 1,
+      "total_candidate_evaluations": 100
+    },
+    "metrics": {
+      "E_cv_direct": 117.66321172104428,
+      "E_ev_indirect": 42.610514437062946,
+      "E_total": 160.27372615810722,
+      "carbon_quota_kg": 0.0,
+      "cost_carbon": 8.068179374799119,
+      "cost_elec": 60.69839763113029,
+      "cost_fix": 240.0,
+      "cost_fuel": 65.59119219448603,
+      "cost_km": 253.72788592907506,
+      "cost_occ": 0.0,
+      "cost_transship": 0.0,
+      "depot_charging_kwh": 327.5682548900718,
+      "distance_cv": 244105.85821898974,
+      "distance_ev": 480830.95872122474,
+      "distance_total": 724936.8169402145,
+      "electricity_kwh": 327.5682548900718,
+      "ev_drive_kwh": 327.5682548900718,
+      "fuel_liters": 45.76874760622847,
+      "n_veh_cv": 1,
+      "n_veh_ev": 1,
+      "station_charging_kwh": 0,
+      "total_cost": 628.0856551294905
+    },
+    "recomputed_cost": 628.0856551294905,
+    "reported_cost": 628.0856551294905,
+    "reporting_full_replays": 2,
+    "seed": 1,
+    "solution": {
+      "charging_actions": [
+        {
+          "charge_day_offset": 0,
+          "charge_start_second": 62840.060456369705,
+          "energy_kwh": 169.96074945278352,
+          "occupancy_minutes": 463.5293166894096,
+          "station_id": "D0",
+          "vehicle_id": "EV1#T1"
+        },
+        {
+          "charge_day_offset": 0,
+          "charge_start_second": 61640.030439979164,
+          "energy_kwh": 157.60750543728824,
+          "occupancy_minutes": 429.8386511926043,
+          "station_id": "D0",
+          "vehicle_id": "EV1#T2"
+        }
+      ],
+      "cross_site_services": [
+        {
+          "customer_id": "C009",
+          "served_by_depot_id": "D0"
+        },
+        {
+          "customer_id": "C004",
+          "served_by_depot_id": "D0"
+        },
+        {
+          "customer_id": "C014",
+          "served_by_depot_id": "D0"
+        }
+      ],
+      "routes": [
+        {
+          "home_depot_id": "D0",
+          "node_sequence": [
+            "D0",
+            "C008",
+            "C007",
+            "C009",
+            "C004",
+            "C019",
+            "C016",
+            "C012",
+            "D0"
+          ],
+          "vehicle_id": "EV1#T1",
+          "vehicle_type": "ev"
+        },
+        {
+          "home_depot_id": "D0",
+          "node_sequence": [
+            "D0",
+            "C010",
+            "C002",
+            "C005",
+            "C018",
+            "C011",
+            "C014",
+            "C013",
+            "C017",
+            "D0"
+          ],
+          "vehicle_id": "EV1#T2",
+          "vehicle_type": "ev"
+        },
+        {
+          "home_depot_id": "D1",
+          "node_sequence": [
+            "D1",
+            "C006",
+            "C003",
+            "C001",
+            "C015",
+            "C020",
+            "C021",
+            "D1"
+          ],
+          "vehicle_id": "CV1#T1",
+          "vehicle_type": "cv"
+        }
+      ]
+    },
+    "solution_signature": "504398b1c8725a242681c2be7893eb92bb1027e12fc63ce0932229951f2a4271"
+  },
+  {
+    "arm": "mechanism_judged_dual_basin_no_mid_ablation",
+    "budget": 100,
+    "dataset_role": "primary",
+    "instance_id": "DEV-DUAL-D2-GROUP456-SRC10-N21-DEP2",
+    "mechanism_activity": {
+      "alns_candidate_evaluations": 99,
+      "alns_phases": [
+        {
+          "elapsed_seconds": 0.44848695799009874,
+          "eval_budget": 99,
+          "evaluations": 99,
+          "history_length": 9,
+          "operator_counts": {
+            "destroy": {
+              "random_customer_removal": [
+                8,
+                0,
+                0,
+                91
+              ],
+              "route_segment_removal": [
+                0,
+                0,
+                0,
+                0
+              ],
+              "shaw_related_removal": [
+                0,
+                0,
+                0,
+                0
+              ],
+              "vehicle_type_swap": [
+                0,
+                0,
+                0,
+                0
+              ],
+              "whole_route_removal": [
+                0,
+                0,
+                0,
+                0
+              ],
+              "worst_customer_removal": [
+                0,
+                0,
+                0,
+                0
+              ]
+            },
+            "repair": {
+              "greedy_insert_repair": [
+                0,
+                0,
+                0,
+                1
+              ],
+              "regret2_insert_repair": [
+                0,
+                0,
+                0,
+                1
+              ],
+              "regret3_insert_repair": [
+                8,
+                0,
+                0,
+                89
+              ]
+            },
+            "scan": {
+              "infeasible": 0,
+              "rebuild_accepts": 0,
+              "rebuild_attempts": 0,
+              "restart_accepts": 0,
+              "restart_attempts": 0
+            },
+            "score_counts": {
+              "candidate": 99,
+              "candidate_channel:destroy_repair": 99,
+              "reference": 2,
+              "reference_cache_hit": 9,
+              "reference_cache_hit:history": 9,
+              "reference_phase:final": 1,
+              "reference_phase:initial": 1,
+              "repair_delta": 9823
+            },
+            "structural": {
+              "accepted": 0,
+              "attempts": 0,
+              "best_improved": 0,
+              "rejected": 0
+            },
+            "timing": {}
+          },
+          "seed": 1
+        }
+      ],
+      "envelope_costs": {
+        "selected_scored_seed": 797.2696872255025,
+        "single_alns_phase": 715.5885233475825,
+        "terminal_after_single_phase": 628.0856551294905
+      },
+      "envelope_selected": "terminal_after_single_phase",
+      "final_completion": {
+        "carbon": {
+          "action_changes": [
+            {
+              "new_emissions_kg": 21.201278902318574,
+              "new_start_second": 62840.060456369705,
+              "old_emissions_kg": 26.986097404541134,
+              "old_start_second": 41400.0,
+              "station_id": "D0",
+              "vehicle_id": "EV1#T1"
+            },
+            {
+              "new_emissions_kg": 21.409235534744376,
+              "new_start_second": 61640.030439979164,
+              "old_emissions_kg": 24.790894589218844,
+              "old_start_second": 41400.0,
+              "station_id": "D0",
+              "vehicle_id": "EV1#T2"
+            }
+          ],
+          "actions_retimed": 2,
+          "candidate_start_count": 52,
+          "complete_evaluations": 0,
+          "eligible_actions": 2,
+          "exact_decoder_updates": 1,
+          "feasibility_checks": 1,
+          "improvements": 1,
+          "objective_delta": -0.4614404802041321,
+          "old_local_objective": 63.30485140809617,
+          "route_local_schedule_evaluations": 52,
+          "selected_local_objective": 62.84341092789204
+        },
+        "complete_route_search_evaluations": 0,
+        "full_solution_replays": 3,
+        "joint": {
+          "assembled_patterns": 4,
+          "complete_evaluations": 0,
+          "current_pattern": [
+            "cv",
+            "cv",
+            "cv"
+          ],
+          "current_proxy_cost": 715.5885233475825,
+          "exact_decoder_updates": 1,
+          "feasibility_checks": 4,
+          "improvements": 1,
+          "objective_delta": -87.04142773788783,
+          "patterns_considered": 4,
+          "route_proxy_evaluations": 5,
+          "selected_pattern": [
+            "ev",
+            "ev",
+            "cv"
+          ],
+          "selected_proxy_cost": 628.5470956096947
+        },
+        "responsibility": {
+          "accepted_moves": [],
+          "complete_route_search_evaluations": 0,
+          "exact_decoder_updates": 0,
+          "final_recomputed_cost": 715.5885233475825,
+          "full_feasibility_checks": 64,
+          "improvements": 0,
+          "independent_final_replays": 1,
+          "local_exact_evaluations": 5,
+          "objective_closure_error": 0.0,
+          "proxy_moves_considered": 1122,
+          "stop_reason": "no_improving_exact_candidate"
+        },
+        "route_local_exact_evaluations": 5,
+        "route_local_schedule_evaluations": 52,
+        "route_proxy_evaluations": 5
+      },
+      "final_recomputed_cost": 628.0856551294905,
+      "hgs_native": {
+        "native_calls": 2,
+        "native_cost_by_depot": {
+          "D0": 800.4993767074154,
+          "D1": 2180.211835700495
+        },
+        "native_cpu_seconds": 0.009923,
+        "native_route_count": 3,
+        "no_improvement_iterations": 100,
+        "official_commit": "1a927955cd2861a29d978f0d359d6e647db9319c",
+        "order_hash": "fe77b71d37002b87bff42c576102255e0a0794d414ebc2b6137540477bdeb867",
+        "time_window_weight": 1.0,
+        "wall_seconds": 0.010523875011131167
+      },
+      "mid_candidate_evaluations": 0,
+      "middle": {
+        "attempted": false,
+        "candidate_evaluations": 0,
+        "changed": false
+      },
+      "reference_replay_ledger": {
+        "alns_initial_and_final": 2,
+        "final_completion": 3,
+        "final_envelope_recompute": 1,
+        "middle_completion": 0,
+        "selector": 1,
+        "total_reported": 7
+      },
+      "selector": {
+        "candidate_evaluations": 1,
+        "cost_margin_hgs_minus_default": 115.54135801138364,
+        "default_cost": 797.2696872255025,
+        "default_fast_completion": {
+          "carbon": {
+            "action_changes": [
+              {
+                "new_emissions_kg": 33.533002942874354,
+                "new_start_second": 50253.49625512499,
+                "old_emissions_kg": 35.125042620232435,
+                "old_start_second": 45000.0,
+                "station_id": "D0",
+                "vehicle_id": "EV1#T1"
+              },
+              {
+                "new_emissions_kg": 11.294264737521699,
+                "new_start_second": 70842.7004248916,
+                "old_emissions_kg": 13.249591208046711,
+                "old_start_second": 39600.0,
+                "station_id": "D0",
+                "vehicle_id": "EV1#T2"
+              }
+            ],
+            "actions_retimed": 2,
+            "candidate_start_count": 46,
+            "complete_evaluations": 0,
+            "eligible_actions": 2,
+            "exact_decoder_updates": 1,
+            "feasibility_checks": 1,
+            "improvements": 1,
+            "objective_delta": -0.17857441188444056,
+            "old_local_objective": 62.15074779829604,
+            "route_local_schedule_evaluations": 46,
+            "selected_local_objective": 61.9721733864116
+          },
+          "complete_candidate_evaluations": 0,
+          "joint": {
+            "assembled_patterns": 4,
+            "complete_evaluations": 0,
+            "current_pattern": [
+              "cv",
+              "cv",
+              "cv"
+            ],
+            "current_proxy_cost": 883.4898569962385,
+            "exact_decoder_updates": 1,
+            "feasibility_checks": 4,
+            "improvements": 1,
+            "objective_delta": -86.04159535885151,
+            "patterns_considered": 4,
+            "route_proxy_evaluations": 5,
+            "selected_pattern": [
+              "ev",
+              "ev",
+              "cv"
+            ],
+            "selected_proxy_cost": 797.448261637387
+          },
+          "route_local_schedule_evaluations": 46,
+          "route_proxy_evaluations": 5
+        },
+        "hgs_cost": 912.8110452368861,
+        "hgs_fast_completion": {
+          "carbon": {
+            "action_changes": [
+              {
+                "new_emissions_kg": 1.7616795563184862,
+                "new_start_second": 95400.0,
+                "old_emissions_kg": 1.8421337143487286,
+                "old_start_second": 99000.0,
+                "station_id": "D0",
+                "vehicle_id": "EV1#T1"
+              }
+            ],
+            "actions_retimed": 1,
+            "candidate_start_count": 84,
+            "complete_evaluations": 0,
+            "eligible_actions": 1,
+            "exact_decoder_updates": 1,
+            "feasibility_checks": 1,
+            "improvements": 1,
+            "objective_delta": -0.004050062315243075,
+            "old_local_objective": 6.761180683396794,
+            "route_local_schedule_evaluations": 84,
+            "selected_local_objective": 6.757130621081551
+          },
+          "complete_candidate_evaluations": 0,
+          "joint": {
+            "assembled_patterns": 4,
+            "complete_evaluations": 0,
+            "current_pattern": [
+              "cv",
+              "cv",
+              "cv"
+            ],
+            "current_proxy_cost": 922.7686295445377,
+            "exact_decoder_updates": 1,
+            "feasibility_checks": 4,
+            "improvements": 1,
+            "objective_delta": -9.953534245336414,
+            "patterns_considered": 4,
+            "route_proxy_evaluations": 5,
+            "selected_pattern": [
+              "cv",
+              "ev",
+              "cv"
+            ],
+            "selected_proxy_cost": 912.8150952992013
+          },
+          "route_local_schedule_evaluations": 84,
+          "route_proxy_evaluations": 5
+        },
+        "reference_replays": 1,
+        "score_counts": {
+          "candidate": 1,
+          "candidate_channel:dual_basin_hgs_alternative": 1,
+          "reference": 1,
+          "reference_phase:dual_basin_default_anchor": 1
+        },
+        "selected_basin": "current_alns_warm",
+        "selector_mode": "mechanism"
+      },
+      "selector_candidate_evaluations": 1,
+      "total_candidate_evaluations": 100
+    },
+    "metrics": {
+      "E_cv_direct": 117.66321172104428,
+      "E_ev_indirect": 42.610514437062946,
+      "E_total": 160.27372615810722,
+      "carbon_quota_kg": 0.0,
+      "cost_carbon": 8.068179374799119,
+      "cost_elec": 60.69839763113029,
+      "cost_fix": 240.0,
+      "cost_fuel": 65.59119219448603,
+      "cost_km": 253.72788592907506,
+      "cost_occ": 0.0,
+      "cost_transship": 0.0,
+      "depot_charging_kwh": 327.5682548900718,
+      "distance_cv": 244105.85821898974,
+      "distance_ev": 480830.95872122474,
+      "distance_total": 724936.8169402145,
+      "electricity_kwh": 327.5682548900718,
+      "ev_drive_kwh": 327.5682548900718,
+      "fuel_liters": 45.76874760622847,
+      "n_veh_cv": 1,
+      "n_veh_ev": 1,
+      "station_charging_kwh": 0,
+      "total_cost": 628.0856551294905
+    },
+    "recomputed_cost": 628.0856551294905,
+    "reported_cost": 628.0856551294905,
+    "reporting_full_replays": 2,
+    "seed": 1,
+    "solution": {
+      "charging_actions": [
+        {
+          "charge_day_offset": 0,
+          "charge_start_second": 62840.060456369705,
+          "energy_kwh": 169.96074945278352,
+          "occupancy_minutes": 463.5293166894096,
+          "station_id": "D0",
+          "vehicle_id": "EV1#T1"
+        },
+        {
+          "charge_day_offset": 0,
+          "charge_start_second": 61640.030439979164,
+          "energy_kwh": 157.60750543728824,
+          "occupancy_minutes": 429.8386511926043,
+          "station_id": "D0",
+          "vehicle_id": "EV1#T2"
+        }
+      ],
+      "cross_site_services": [
+        {
+          "customer_id": "C009",
+          "served_by_depot_id": "D0"
+        },
+        {
+          "customer_id": "C004",
+          "served_by_depot_id": "D0"
+        },
+        {
+          "customer_id": "C014",
+          "served_by_depot_id": "D0"
+        }
+      ],
+      "routes": [
+        {
+          "home_depot_id": "D0",
+          "node_sequence": [
+            "D0",
+            "C008",
+            "C007",
+            "C009",
+            "C004",
+            "C019",
+            "C016",
+            "C012",
+            "D0"
+          ],
+          "vehicle_id": "EV1#T1",
+          "vehicle_type": "ev"
+        },
+        {
+          "home_depot_id": "D0",
+          "node_sequence": [
+            "D0",
+            "C010",
+            "C002",
+            "C005",
+            "C018",
+            "C011",
+            "C014",
+            "C013",
+            "C017",
+            "D0"
+          ],
+          "vehicle_id": "EV1#T2",
+          "vehicle_type": "ev"
+        },
+        {
+          "home_depot_id": "D1",
+          "node_sequence": [
+            "D1",
+            "C006",
+            "C003",
+            "C001",
+            "C015",
+            "C020",
+            "C021",
+            "D1"
+          ],
+          "vehicle_id": "CV1#T1",
+          "vehicle_type": "cv"
+        }
+      ]
+    },
+    "solution_signature": "504398b1c8725a242681c2be7893eb92bb1027e12fc63ce0932229951f2a4271"
+  },
+  {
+    "arm": "official_hgs_route_source_plus_common_completion",
+    "budget": 100,
+    "dataset_role": "primary",
+    "instance_id": "DEV-DUAL-D2-GROUP456-SRC10-N21-DEP2",
+    "mechanism_activity": {
+      "common_completion": {
+        "carbon": {
+          "action_changes": [
+            {
+              "new_emissions_kg": 24.926404196833534,
+              "new_start_second": 59574.83489680407,
+              "old_emissions_kg": 31.0084757741663,
+              "old_start_second": 43200.0,
+              "station_id": "D0",
+              "vehicle_id": "EV1#T1"
+            },
+            {
+              "new_emissions_kg": 17.179824620339158,
+              "new_start_second": 65398.42209206993,
+              "old_emissions_kg": 19.51012930119999,
+              "old_start_second": 39600.0,
+              "station_id": "D0",
+              "vehicle_id": "EV1#T2"
+            }
+          ],
+          "actions_retimed": 2,
+          "candidate_start_count": 52,
+          "complete_evaluations": 0,
+          "eligible_actions": 2,
+          "exact_decoder_updates": 1,
+          "feasibility_checks": 1,
+          "improvements": 1,
+          "objective_delta": -0.4234790208374619,
+          "old_local_objective": 62.68304840707201,
+          "route_local_schedule_evaluations": 52,
+          "selected_local_objective": 62.259569386234546
+        },
+        "complete_route_search_evaluations": 0,
+        "full_solution_replays": 3,
+        "joint": {
+          "assembled_patterns": 4,
+          "complete_evaluations": 0,
+          "current_pattern": [
+            "cv",
+            "cv",
+            "cv"
+          ],
+          "current_proxy_cost": 754.2297519696313,
+          "exact_decoder_updates": 1,
+          "feasibility_checks": 4,
+          "improvements": 1,
+          "objective_delta": -86.91055401323706,
+          "patterns_considered": 4,
+          "route_proxy_evaluations": 5,
+          "selected_pattern": [
+            "ev",
+            "ev",
+            "cv"
+          ],
+          "selected_proxy_cost": 667.3191979563942
+        },
+        "responsibility": {
+          "accepted_moves": [
+            {
+              "exact_objective_delta": -20.501929110651986,
+              "kind": "reciprocal_exchange",
+              "moved_customers": [
+                "C005",
+                "C004"
+              ],
+              "proxy_delta": -10.54029149048262,
+              "round": 1,
+              "route_indices": [
+                0,
+                2
+              ]
+            },
+            {
+              "exact_objective_delta": -95.56587191034055,
+              "kind": "reciprocal_exchange",
+              "moved_customers": [
+                "C012",
+                "C009"
+              ],
+              "proxy_delta": -49.06424780043442,
+              "round": 2,
+              "route_indices": [
+                0,
+                2
+              ]
+            },
+            {
+              "exact_objective_delta": -13.19230400561446,
+              "kind": "handover",
+              "moved_customers": [
+                "C005"
+              ],
+              "proxy_delta": -6.795374285605624,
+              "round": 3,
+              "route_indices": [
+                2,
+                1
+              ]
+            }
+          ],
+          "complete_route_search_evaluations": 0,
+          "exact_decoder_updates": 3,
+          "final_recomputed_cost": 754.2297519696313,
+          "full_feasibility_checks": 192,
+          "improvements": 3,
+          "independent_final_replays": 1,
+          "local_exact_evaluations": 20,
+          "objective_closure_error": 1.1368683772161603e-13,
+          "proxy_moves_considered": 4210,
+          "stop_reason": "round_limit_reached"
+        },
+        "route_local_exact_evaluations": 20,
+        "route_local_schedule_evaluations": 52,
+        "route_proxy_evaluations": 5
+      },
+      "route_source": {
+        "hgs_adapter_wall_milliseconds": 1003.132422,
+        "hgs_candidate_decodes": 100,
+        "hgs_improvements": 0,
+        "hgs_native_calls": 200,
+        "hgs_native_cpu_milliseconds": 959.863,
+        "invalid_decodes": 0,
+        "official_hgs_commit": "1a927955cd2861a29d978f0d359d6e647db9319c",
+        "reference_replays": 1,
+        "unique_hgs_orders": 8
+      }
+    },
+    "metrics": {
+      "E_cv_direct": 147.0852928263321,
+      "E_ev_indirect": 42.10622881717269,
+      "E_total": 189.1915216435048,
+      "carbon_quota_kg": 0.0,
+      "cost_carbon": 9.523901199534032,
+      "cost_elec": 60.13994182757807,
+      "cost_fix": 240.0,
+      "cost_fuel": 81.9924900029627,
+      "cost_km": 275.239385905482,
+      "cost_occ": 0.0,
+      "cost_transship": 0.0,
+      "depot_charging_kwh": 324.55446210241814,
+      "distance_cv": 300076.7961245255,
+      "distance_ev": 486321.44931970886,
+      "distance_total": 786398.2454442343,
+      "electricity_kwh": 324.55446210241814,
+      "ev_drive_kwh": 324.55446210241814,
+      "fuel_liters": 57.21337659825741,
+      "n_veh_cv": 1,
+      "n_veh_ev": 1,
+      "station_charging_kwh": 0,
+      "total_cost": 666.8957189355567
+    },
+    "recomputed_cost": 666.8957189355567,
+    "reported_cost": 666.8957189355567,
+    "reporting_full_replays": 2,
+    "seed": 1,
+    "solution": {
+      "charging_actions": [
+        {
+          "charge_day_offset": 0,
+          "charge_start_second": 59574.83489680407,
+          "energy_kwh": 189.91490565012904,
+          "occupancy_minutes": 517.9497426821702,
+          "station_id": "D0",
+          "vehicle_id": "EV1#T1"
+        },
+        {
+          "charge_day_offset": 0,
+          "charge_start_second": 65398.42209206993,
+          "energy_kwh": 134.63955645228907,
+          "occupancy_minutes": 367.1987903244247,
+          "station_id": "D0",
+          "vehicle_id": "EV1#T2"
+        }
+      ],
+      "cross_site_services": [
+        {
+          "customer_id": "C009",
+          "served_by_depot_id": "D0"
+        },
+        {
+          "customer_id": "C004",
+          "served_by_depot_id": "D0"
+        },
+        {
+          "customer_id": "C012",
+          "served_by_depot_id": "D1"
+        }
+      ],
+      "routes": [
+        {
+          "home_depot_id": "D0",
+          "node_sequence": [
+            "D0",
+            "C008",
+            "C007",
+            "C009",
+            "C004",
+            "C019",
+            "C016",
+            "C013",
+            "D0"
+          ],
+          "vehicle_id": "EV1#T1",
+          "vehicle_type": "ev"
+        },
+        {
+          "home_depot_id": "D0",
+          "node_sequence": [
+            "D0",
+            "C010",
+            "C002",
+            "C005",
+            "C018",
+            "C011",
+            "C017",
+            "D0"
+          ],
+          "vehicle_id": "EV1#T2",
+          "vehicle_type": "ev"
+        },
+        {
+          "home_depot_id": "D1",
+          "node_sequence": [
+            "D1",
+            "C001",
+            "C003",
+            "C006",
+            "C014",
+            "C012",
+            "C015",
+            "C020",
+            "C021",
+            "D1"
+          ],
+          "vehicle_id": "CV1#T1",
+          "vehicle_type": "cv"
+        }
+      ]
+    },
+    "solution_signature": "c4b5b93ad60f76fb62486a8e7cfdba155136106ed1304338dfa1fcdaa615efcb"
+  },
+  {
+    "arm": "original_n_wouda_alns_plus_common_completion",
+    "budget": 100,
+    "dataset_role": "primary",
+    "instance_id": "DEV-DUAL-D2-GROUP456-SRC10-N21-DEP2",
+    "mechanism_activity": {
+      "common_completion": {
+        "carbon": {
+          "action_changes": [
+            {
+              "new_emissions_kg": 24.926404196833534,
+              "new_start_second": 59574.83489680407,
+              "old_emissions_kg": 31.0084757741663,
+              "old_start_second": 43200.0,
+              "station_id": "D0",
+              "vehicle_id": "EV1#T1"
+            },
+            {
+              "new_emissions_kg": 17.179824620339158,
+              "new_start_second": 65398.42209206993,
+              "old_emissions_kg": 19.51012930119999,
+              "old_start_second": 39600.0,
+              "station_id": "D0",
+              "vehicle_id": "EV1#T2"
+            }
+          ],
+          "actions_retimed": 2,
+          "candidate_start_count": 52,
+          "complete_evaluations": 0,
+          "eligible_actions": 2,
+          "exact_decoder_updates": 1,
+          "feasibility_checks": 1,
+          "improvements": 1,
+          "objective_delta": -0.4234790208374619,
+          "old_local_objective": 62.68304840707201,
+          "route_local_schedule_evaluations": 52,
+          "selected_local_objective": 62.259569386234546
+        },
+        "complete_route_search_evaluations": 0,
+        "full_solution_replays": 3,
+        "joint": {
+          "assembled_patterns": 4,
+          "complete_evaluations": 0,
+          "current_pattern": [
+            "cv",
+            "cv",
+            "cv"
+          ],
+          "current_proxy_cost": 754.2297519696313,
+          "exact_decoder_updates": 1,
+          "feasibility_checks": 4,
+          "improvements": 1,
+          "objective_delta": -86.91055401323706,
+          "patterns_considered": 4,
+          "route_proxy_evaluations": 5,
+          "selected_pattern": [
+            "ev",
+            "ev",
+            "cv"
+          ],
+          "selected_proxy_cost": 667.3191979563942
+        },
+        "responsibility": {
+          "accepted_moves": [
+            {
+              "exact_objective_delta": -20.501929110651986,
+              "kind": "reciprocal_exchange",
+              "moved_customers": [
+                "C005",
+                "C004"
+              ],
+              "proxy_delta": -10.54029149048262,
+              "round": 1,
+              "route_indices": [
+                0,
+                2
+              ]
+            },
+            {
+              "exact_objective_delta": -95.56587191034055,
+              "kind": "reciprocal_exchange",
+              "moved_customers": [
+                "C012",
+                "C009"
+              ],
+              "proxy_delta": -49.06424780043442,
+              "round": 2,
+              "route_indices": [
+                0,
+                2
+              ]
+            },
+            {
+              "exact_objective_delta": -13.19230400561446,
+              "kind": "handover",
+              "moved_customers": [
+                "C005"
+              ],
+              "proxy_delta": -6.795374285605624,
+              "round": 3,
+              "route_indices": [
+                2,
+                1
+              ]
+            }
+          ],
+          "complete_route_search_evaluations": 0,
+          "exact_decoder_updates": 3,
+          "final_recomputed_cost": 754.2297519696313,
+          "full_feasibility_checks": 192,
+          "improvements": 3,
+          "independent_final_replays": 1,
+          "local_exact_evaluations": 20,
+          "objective_closure_error": 1.1368683772161603e-13,
+          "proxy_moves_considered": 4210,
+          "stop_reason": "round_limit_reached"
+        },
+        "route_local_exact_evaluations": 20,
+        "route_local_schedule_evaluations": 52,
+        "route_proxy_evaluations": 5
+      },
+      "route_source": {
+        "candidate_scores": 100,
+        "destroy_operators": 5,
+        "iterations": 100,
+        "reference_replays": 1,
+        "repair_delta_scores": 7412,
+        "repair_operators": 3,
+        "upstream_alns_commit": "4962d91385990033d9bce81d1407cf846d4fb70c"
+      }
+    },
+    "metrics": {
+      "E_cv_direct": 147.0852928263321,
+      "E_ev_indirect": 42.10622881717269,
+      "E_total": 189.1915216435048,
+      "carbon_quota_kg": 0.0,
+      "cost_carbon": 9.523901199534032,
+      "cost_elec": 60.13994182757807,
+      "cost_fix": 240.0,
+      "cost_fuel": 81.9924900029627,
+      "cost_km": 275.239385905482,
+      "cost_occ": 0.0,
+      "cost_transship": 0.0,
+      "depot_charging_kwh": 324.55446210241814,
+      "distance_cv": 300076.7961245255,
+      "distance_ev": 486321.44931970886,
+      "distance_total": 786398.2454442343,
+      "electricity_kwh": 324.55446210241814,
+      "ev_drive_kwh": 324.55446210241814,
+      "fuel_liters": 57.21337659825741,
+      "n_veh_cv": 1,
+      "n_veh_ev": 1,
+      "station_charging_kwh": 0,
+      "total_cost": 666.8957189355567
+    },
+    "recomputed_cost": 666.8957189355567,
+    "reported_cost": 666.8957189355567,
+    "reporting_full_replays": 2,
+    "seed": 1,
+    "solution": {
+      "charging_actions": [
+        {
+          "charge_day_offset": 0,
+          "charge_start_second": 59574.83489680407,
+          "energy_kwh": 189.91490565012904,
+          "occupancy_minutes": 517.9497426821702,
+          "station_id": "D0",
+          "vehicle_id": "EV1#T1"
+        },
+        {
+          "charge_day_offset": 0,
+          "charge_start_second": 65398.42209206993,
+          "energy_kwh": 134.63955645228907,
+          "occupancy_minutes": 367.1987903244247,
+          "station_id": "D0",
+          "vehicle_id": "EV1#T2"
+        }
+      ],
+      "cross_site_services": [
+        {
+          "customer_id": "C009",
+          "served_by_depot_id": "D0"
+        },
+        {
+          "customer_id": "C004",
+          "served_by_depot_id": "D0"
+        },
+        {
+          "customer_id": "C012",
+          "served_by_depot_id": "D1"
+        }
+      ],
+      "routes": [
+        {
+          "home_depot_id": "D0",
+          "node_sequence": [
+            "D0",
+            "C008",
+            "C007",
+            "C009",
+            "C004",
+            "C019",
+            "C016",
+            "C013",
+            "D0"
+          ],
+          "vehicle_id": "EV1#T1",
+          "vehicle_type": "ev"
+        },
+        {
+          "home_depot_id": "D0",
+          "node_sequence": [
+            "D0",
+            "C010",
+            "C002",
+            "C005",
+            "C018",
+            "C011",
+            "C017",
+            "D0"
+          ],
+          "vehicle_id": "EV1#T2",
+          "vehicle_type": "ev"
+        },
+        {
+          "home_depot_id": "D1",
+          "node_sequence": [
+            "D1",
+            "C001",
+            "C003",
+            "C006",
+            "C014",
+            "C012",
+            "C015",
+            "C020",
+            "C021",
+            "D1"
+          ],
+          "vehicle_id": "CV1#T1",
+          "vehicle_type": "cv"
+        }
+      ]
+    },
+    "solution_signature": "c4b5b93ad60f76fb62486a8e7cfdba155136106ed1304338dfa1fcdaa615efcb"
+  },
+  {
+    "arm": "raw_cost_dual_basin_ablation",
+    "budget": 100,
+    "dataset_role": "primary",
+    "instance_id": "DEV-DUAL-D2-GROUP456-SRC10-N21-DEP2",
+    "mechanism_activity": {
+      "alns_candidate_evaluations": 98,
+      "alns_phases": [
+        {
+          "elapsed_seconds": 0.3172599170356989,
+          "eval_budget": 68,
+          "evaluations": 68,
+          "history_length": 9,
+          "operator_counts": {
+            "destroy": {
+              "random_customer_removal": [
+                8,
+                0,
+                0,
+                60
+              ],
+              "route_segment_removal": [
+                0,
+                0,
+                0,
+                0
+              ],
+              "shaw_related_removal": [
+                0,
+                0,
+                0,
+                0
+              ],
+              "vehicle_type_swap": [
+                0,
+                0,
+                0,
+                0
+              ],
+              "whole_route_removal": [
+                0,
+                0,
+                0,
+                0
+              ],
+              "worst_customer_removal": [
+                0,
+                0,
+                0,
+                0
+              ]
+            },
+            "repair": {
+              "greedy_insert_repair": [
+                0,
+                0,
+                0,
+                1
+              ],
+              "regret2_insert_repair": [
+                0,
+                0,
+                0,
+                1
+              ],
+              "regret3_insert_repair": [
+                8,
+                0,
+                0,
+                58
+              ]
+            },
+            "scan": {
+              "infeasible": 0,
+              "rebuild_accepts": 0,
+              "rebuild_attempts": 0,
+              "restart_accepts": 0,
+              "restart_attempts": 0
+            },
+            "score_counts": {
+              "candidate": 68,
+              "candidate_channel:destroy_repair": 68,
+              "reference": 2,
+              "reference_cache_hit": 9,
+              "reference_cache_hit:history": 9,
+              "reference_phase:final": 1,
+              "reference_phase:initial": 1,
+              "repair_delta": 7057
+            },
+            "structural": {
+              "accepted": 0,
+              "attempts": 0,
+              "best_improved": 0,
+              "rejected": 0
+            },
+            "timing": {}
+          },
+          "seed": 1
+        },
+        {
+          "elapsed_seconds": 0.24429883301490918,
+          "eval_budget": 30,
+          "evaluations": 30,
+          "history_length": 1,
+          "operator_counts": {
+            "destroy": {
+              "random_customer_removal": [
+                0,
+                0,
+                0,
+                6
+              ],
+              "route_segment_removal": [
+                0,
+                0,
+                0,
+                5
+              ],
+              "shaw_related_removal": [
+                0,
+                0,
+                0,
+                6
+              ],
+              "vehicle_type_swap": [
+                0,
+                0,
+                0,
+                1
+              ],
+              "whole_route_removal": [
+                0,
+                0,
+                0,
+                6
+              ],
+              "worst_customer_removal": [
+                0,
+                0,
+                0,
+                6
+              ]
+            },
+            "repair": {
+              "greedy_insert_repair": [
+                0,
+                0,
+                0,
+                11
+              ],
+              "regret2_insert_repair": [
+                0,
+                0,
+                0,
+                10
+              ],
+              "regret3_insert_repair": [
+                0,
+                0,
+                0,
+                9
+              ]
+            },
+            "scan": {
+              "infeasible": 0,
+              "rebuild_accepts": 0,
+              "rebuild_attempts": 0,
+              "restart_accepts": 0,
+              "restart_attempts": 0
+            },
+            "score_counts": {
+              "candidate": 30,
+              "candidate_channel:destroy_repair": 30,
+              "reference": 2,
+              "reference_cache_hit": 1,
+              "reference_cache_hit:history": 1,
+              "reference_phase:final": 1,
+              "reference_phase:initial": 1,
+              "repair_delta": 1209
+            },
+            "structural": {
+              "accepted": 0,
+              "attempts": 0,
+              "best_improved": 0,
+              "rejected": 0
+            },
+            "timing": {}
+          },
+          "seed": 100003
+        }
+      ],
+      "envelope_costs": {
+        "charged_mid_mechanism": 628.0856551294905,
+        "opening_alns_phase": 715.5885233475825,
+        "selected_scored_seed": 883.4898569962384,
+        "tail_alns_phase": 628.0856551294905,
+        "terminal_after_tail": 628.0856551294905
+      },
+      "envelope_selected": "charged_mid_mechanism",
+      "final_completion": {
+        "carbon": {
+          "action_changes": [],
+          "actions_retimed": 0,
+          "candidate_start_count": 52,
+          "complete_evaluations": 0,
+          "eligible_actions": 2,
+          "exact_decoder_updates": 0,
+          "feasibility_checks": 0,
+          "improvements": 0,
+          "old_local_objective": 62.84341092789204,
+          "route_local_schedule_evaluations": 52,
+          "selected_local_objective": 62.84341092789204,
+          "stop_reason": "no_feasible_improving_retime"
+        },
+        "complete_route_search_evaluations": 0,
+        "full_solution_replays": 3,
+        "joint": {
+          "assembled_patterns": 1,
+          "complete_evaluations": 0,
+          "current_pattern": [
+            "ev",
+            "ev",
+            "cv"
+          ],
+          "current_proxy_cost": 628.0856551294905,
+          "exact_decoder_updates": 0,
+          "feasibility_checks": 1,
+          "improvements": 0,
+          "patterns_considered": 4,
+          "route_proxy_evaluations": 5,
+          "selected_pattern": [
+            "ev",
+            "ev",
+            "cv"
+          ],
+          "selected_proxy_cost": 628.0856551294905,
+          "stop_reason": "current_pattern_is_best"
+        },
+        "responsibility": {
+          "accepted_moves": [],
+          "complete_route_search_evaluations": 0,
+          "exact_decoder_updates": 0,
+          "final_recomputed_cost": 628.0856551294905,
+          "full_feasibility_checks": 64,
+          "improvements": 0,
+          "independent_final_replays": 1,
+          "local_exact_evaluations": 5,
+          "objective_closure_error": 0.0,
+          "proxy_moves_considered": 1122,
+          "stop_reason": "no_improving_exact_candidate"
+        },
+        "route_local_exact_evaluations": 5,
+        "route_local_schedule_evaluations": 52,
+        "route_proxy_evaluations": 5
+      },
+      "final_recomputed_cost": 628.0856551294905,
+      "hgs_native": {
+        "native_calls": 2,
+        "native_cost_by_depot": {
+          "D0": 800.4993767074154,
+          "D1": 2180.211835700495
+        },
+        "native_cpu_seconds": 0.009547,
+        "native_route_count": 3,
+        "no_improvement_iterations": 100,
+        "official_commit": "1a927955cd2861a29d978f0d359d6e647db9319c",
+        "order_hash": "fe77b71d37002b87bff42c576102255e0a0794d414ebc2b6137540477bdeb867",
+        "time_window_weight": 1.0,
+        "wall_seconds": 0.010036334046162665
+      },
+      "mid_candidate_evaluations": 1,
+      "middle": {
+        "attempted": true,
+        "candidate_evaluations": 1,
+        "changed": true,
+        "completed_cost": 628.0856551294905,
+        "completion": {
+          "carbon": {
+            "action_changes": [
+              {
+                "new_emissions_kg": 21.201278902318574,
+                "new_start_second": 62840.060456369705,
+                "old_emissions_kg": 26.986097404541134,
+                "old_start_second": 41400.0,
+                "station_id": "D0",
+                "vehicle_id": "EV1#T1"
+              },
+              {
+                "new_emissions_kg": 21.409235534744376,
+                "new_start_second": 61640.030439979164,
+                "old_emissions_kg": 24.790894589218844,
+                "old_start_second": 41400.0,
+                "station_id": "D0",
+                "vehicle_id": "EV1#T2"
+              }
+            ],
+            "actions_retimed": 2,
+            "candidate_start_count": 52,
+            "complete_evaluations": 0,
+            "eligible_actions": 2,
+            "exact_decoder_updates": 1,
+            "feasibility_checks": 1,
+            "improvements": 1,
+            "objective_delta": -0.4614404802041321,
+            "old_local_objective": 63.30485140809617,
+            "route_local_schedule_evaluations": 52,
+            "selected_local_objective": 62.84341092789204
+          },
+          "complete_route_search_evaluations": 0,
+          "full_solution_replays": 3,
+          "joint": {
+            "assembled_patterns": 4,
+            "complete_evaluations": 0,
+            "current_pattern": [
+              "cv",
+              "cv",
+              "cv"
+            ],
+            "current_proxy_cost": 715.5885233475825,
+            "exact_decoder_updates": 1,
+            "feasibility_checks": 4,
+            "improvements": 1,
+            "objective_delta": -87.04142773788783,
+            "patterns_considered": 4,
+            "route_proxy_evaluations": 5,
+            "selected_pattern": [
+              "ev",
+              "ev",
+              "cv"
+            ],
+            "selected_proxy_cost": 628.5470956096947
+          },
+          "responsibility": {
+            "accepted_moves": [],
+            "complete_route_search_evaluations": 0,
+            "exact_decoder_updates": 0,
+            "final_recomputed_cost": 715.5885233475825,
+            "full_feasibility_checks": 64,
+            "improvements": 0,
+            "independent_final_replays": 1,
+            "local_exact_evaluations": 5,
+            "objective_closure_error": 0.0,
+            "proxy_moves_considered": 1122,
+            "stop_reason": "no_improving_exact_candidate"
+          },
+          "route_local_exact_evaluations": 5,
+          "route_local_schedule_evaluations": 52,
+          "route_proxy_evaluations": 5
+        },
+        "opening_budget": 68,
+        "score_counts": {
+          "candidate": 1,
+          "candidate_channel:dual_basin_mid_mechanism": 1
+        },
+        "source_cost": 715.5885233475825,
+        "tail_budget": 30
+      },
+      "reference_replay_ledger": {
+        "alns_initial_and_final": 4,
+        "final_completion": 3,
+        "final_envelope_recompute": 1,
+        "middle_completion": 3,
+        "selector": 1,
+        "total_reported": 12
+      },
+      "selector": {
+        "candidate_evaluations": 1,
+        "cost_margin_hgs_minus_default": 39.27877254829946,
+        "default_cost": 883.4898569962384,
+        "default_fast_completion": {
+          "ablation": "route-local mechanism judgement removed",
+          "complete_candidate_evaluations": 0
+        },
+        "hgs_cost": 922.7686295445378,
+        "hgs_fast_completion": {
+          "ablation": "route-local mechanism judgement removed",
+          "complete_candidate_evaluations": 0
+        },
+        "reference_replays": 1,
+        "score_counts": {
+          "candidate": 1,
+          "candidate_channel:dual_basin_hgs_alternative": 1,
+          "reference": 1,
+          "reference_phase:dual_basin_default_anchor": 1
+        },
+        "selected_basin": "current_alns_warm",
+        "selector_mode": "raw"
+      },
+      "selector_candidate_evaluations": 1,
+      "total_candidate_evaluations": 100
+    },
+    "metrics": {
+      "E_cv_direct": 117.66321172104428,
+      "E_ev_indirect": 42.610514437062946,
+      "E_total": 160.27372615810722,
+      "carbon_quota_kg": 0.0,
+      "cost_carbon": 8.068179374799119,
+      "cost_elec": 60.69839763113029,
+      "cost_fix": 240.0,
+      "cost_fuel": 65.59119219448603,
+      "cost_km": 253.72788592907506,
+      "cost_occ": 0.0,
+      "cost_transship": 0.0,
+      "depot_charging_kwh": 327.5682548900718,
+      "distance_cv": 244105.85821898974,
+      "distance_ev": 480830.95872122474,
+      "distance_total": 724936.8169402145,
+      "electricity_kwh": 327.5682548900718,
+      "ev_drive_kwh": 327.5682548900718,
+      "fuel_liters": 45.76874760622847,
+      "n_veh_cv": 1,
+      "n_veh_ev": 1,
+      "station_charging_kwh": 0,
+      "total_cost": 628.0856551294905
+    },
+    "recomputed_cost": 628.0856551294905,
+    "reported_cost": 628.0856551294905,
+    "reporting_full_replays": 2,
+    "seed": 1,
+    "solution": {
+      "charging_actions": [
+        {
+          "charge_day_offset": 0,
+          "charge_start_second": 62840.060456369705,
+          "energy_kwh": 169.96074945278352,
+          "occupancy_minutes": 463.5293166894096,
+          "station_id": "D0",
+          "vehicle_id": "EV1#T1"
+        },
+        {
+          "charge_day_offset": 0,
+          "charge_start_second": 61640.030439979164,
+          "energy_kwh": 157.60750543728824,
+          "occupancy_minutes": 429.8386511926043,
+          "station_id": "D0",
+          "vehicle_id": "EV1#T2"
+        }
+      ],
+      "cross_site_services": [
+        {
+          "customer_id": "C009",
+          "served_by_depot_id": "D0"
+        },
+        {
+          "customer_id": "C004",
+          "served_by_depot_id": "D0"
+        },
+        {
+          "customer_id": "C014",
+          "served_by_depot_id": "D0"
+        }
+      ],
+      "routes": [
+        {
+          "home_depot_id": "D0",
+          "node_sequence": [
+            "D0",
+            "C008",
+            "C007",
+            "C009",
+            "C004",
+            "C019",
+            "C016",
+            "C012",
+            "D0"
+          ],
+          "vehicle_id": "EV1#T1",
+          "vehicle_type": "ev"
+        },
+        {
+          "home_depot_id": "D0",
+          "node_sequence": [
+            "D0",
+            "C010",
+            "C002",
+            "C005",
+            "C018",
+            "C011",
+            "C014",
+            "C013",
+            "C017",
+            "D0"
+          ],
+          "vehicle_id": "EV1#T2",
+          "vehicle_type": "ev"
+        },
+        {
+          "home_depot_id": "D1",
+          "node_sequence": [
+            "D1",
+            "C006",
+            "C003",
+            "C001",
+            "C015",
+            "C020",
+            "C021",
+            "D1"
+          ],
+          "vehicle_id": "CV1#T1",
+          "vehicle_type": "cv"
+        }
+      ]
+    },
+    "solution_signature": "504398b1c8725a242681c2be7893eb92bb1027e12fc63ce0932229951f2a4271"
+  },
+  {
+    "arm": "current_project_pure_alns",
+    "budget": 100,
+    "dataset_role": "primary",
+    "instance_id": "DEV-DUAL-D2-GROUP789-SRC15-N34-DEP2",
+    "mechanism_activity": {
+      "alns_actual_moves": 0,
+      "reference_replays": 2,
+      "score_counts": {
+        "candidate": 100,
+        "candidate_channel:destroy_repair": 100,
+        "reference": 2,
+        "reference_cache_hit": 6,
+        "reference_cache_hit:history": 6,
+        "reference_phase:final": 1,
+        "reference_phase:initial": 1,
+        "repair_delta": 2282
+      }
+    },
+    "metrics": {
+      "E_cv_direct": 245.35896251733473,
+      "E_ev_indirect": 34.13724713225447,
+      "E_total": 279.4962096495892,
+      "carbon_quota_kg": 0.0,
+      "cost_carbon": 14.069839193760322,
+      "cost_elec": 51.81142429045824,
+      "cost_fix": 400.0,
+      "cost_fuel": 136.77500921246624,
+      "cost_km": 315.4634943292413,
+      "cost_occ": 0.0,
+      "cost_transship": 0.0,
+      "depot_charging_kwh": 279.60833400139364,
+      "distance_cv": 481165.91490929085,
+      "distance_ev": 420158.3546028272,
+      "distance_total": 901324.2695121181,
+      "electricity_kwh": 279.60833400139364,
+      "ev_drive_kwh": 279.60833400139364,
+      "fuel_liters": 95.43996176991573,
+      "n_veh_cv": 2,
+      "n_veh_ev": 1,
+      "station_charging_kwh": 0,
+      "total_cost": 918.1197670259261
+    },
+    "recomputed_cost": 918.1197670259261,
+    "reported_cost": 918.1197670259261,
+    "reporting_full_replays": 2,
+    "seed": 1,
+    "solution": {
+      "charging_actions": [
+        {
+          "charge_day_offset": 0,
+          "charge_start_second": 39600.0,
+          "energy_kwh": 150.81314882673777,
+          "occupancy_minutes": 411.30858770928484,
+          "station_id": "D0",
+          "vehicle_id": "EV1#T3"
+        },
+        {
+          "charge_day_offset": 0,
+          "charge_start_second": 81000.0,
+          "energy_kwh": 40.48200819072014,
+          "occupancy_minutes": 110.4054768837822,
+          "station_id": "D0",
+          "vehicle_id": "EV1#T2"
+        },
+        {
+          "charge_day_offset": 0,
+          "charge_start_second": 73800.0,
+          "energy_kwh": 88.31317698393575,
+          "occupancy_minutes": 240.8541190470975,
+          "station_id": "D0",
+          "vehicle_id": "EV1#T1"
+        }
+      ],
+      "cross_site_services": [],
+      "routes": [
+        {
+          "home_depot_id": "D0",
+          "node_sequence": [
+            "D0",
+            "C006",
+            "C015",
+            "C013",
+            "C022",
+            "C023",
+            "C016",
+            "C032",
+            "C034",
+            "D0"
+          ],
+          "vehicle_id": "EV1#T1",
+          "vehicle_type": "ev"
+        },
+        {
+          "home_depot_id": "D0",
+          "node_sequence": [
+            "D0",
+            "C011",
+            "C028",
+            "C029",
+            "D0"
+          ],
+          "vehicle_id": "EV1#T2",
+          "vehicle_type": "ev"
+        },
+        {
+          "home_depot_id": "D1",
+          "node_sequence": [
+            "D1",
+            "C009",
+            "C014",
+            "C019",
+            "C025",
+            "C030",
+            "C021",
+            "C026",
+            "C033",
+            "D1"
+          ],
+          "vehicle_id": "CV1#T1",
+          "vehicle_type": "cv"
+        },
+        {
+          "home_depot_id": "D0",
+          "node_sequence": [
+            "D0",
+            "C012",
+            "C008",
+            "C010",
+            "C005",
+            "C018",
+            "C017",
+            "C024",
+            "D0"
+          ],
+          "vehicle_id": "EV1#T3",
+          "vehicle_type": "ev"
+        },
+        {
+          "home_depot_id": "D1",
+          "node_sequence": [
+            "D1",
+            "C003",
+            "C002",
+            "C001",
+            "C004",
+            "C007",
+            "C020",
+            "C027",
+            "C031",
+            "D1"
+          ],
+          "vehicle_id": "CV2#T1",
+          "vehicle_type": "cv"
+        }
+      ]
+    },
+    "solution_signature": "64e513af703c2e5a5cac6a4f85754dc99bfbe9985d0d77a0a9aa1b94a5e5587f"
+  },
+  {
+    "arm": "mechanism_alns_v7",
+    "budget": 100,
+    "dataset_role": "primary",
+    "instance_id": "DEV-DUAL-D2-GROUP789-SRC15-N34-DEP2",
+    "mechanism_activity": {
+      "base_alns_activity": {
+        "alns_actual_moves": 0,
+        "reference_replays": 2,
+        "score_counts": {
+          "candidate": 100,
+          "candidate_channel:destroy_repair": 100,
+          "reference": 2,
+          "reference_cache_hit": 6,
+          "reference_cache_hit:history": 6,
+          "reference_phase:final": 1,
+          "reference_phase:initial": 1,
+          "repair_delta": 2282
+        }
+      },
+      "carbon_activity": {
+        "action_changes": [
+          {
+            "new_emissions_kg": 7.986601229756353,
+            "new_start_second": 74644.06511522263,
+            "old_emissions_kg": 8.44545328428942,
+            "old_start_second": 73800.0,
+            "station_id": "D0",
+            "vehicle_id": "EV1#T1"
+          },
+          {
+            "new_emissions_kg": 5.336967060254508,
+            "new_start_second": 77778.97039022887,
+            "old_emissions_kg": 5.4782647662608355,
+            "old_start_second": 77400.0,
+            "station_id": "D0",
+            "vehicle_id": "EV1#T2"
+          },
+          {
+            "new_emissions_kg": 19.325721355674162,
+            "new_start_second": 63831.47569864901,
+            "old_emissions_kg": 22.495428880494615,
+            "old_start_second": 39600.0,
+            "station_id": "D0",
+            "vehicle_id": "EV1#T3"
+          },
+          {
+            "new_emissions_kg": 18.518676015792643,
+            "new_start_second": 64139.81249988738,
+            "old_emissions_kg": 19.558777081971982,
+            "old_start_second": 37800.0,
+            "station_id": "D1",
+            "vehicle_id": "EV1#T4"
+          }
+        ],
+        "actions_retimed": 4,
+        "candidate_start_count": 85,
+        "complete_evaluations": 0,
+        "eligible_actions": 4,
+        "exact_decoder_updates": 1,
+        "feasibility_checks": 1,
+        "improvements": 1,
+        "objective_delta": -0.24213330341648032,
+        "old_local_objective": 84.32090026201845,
+        "route_local_schedule_evaluations": 85,
+        "selected_local_objective": 84.07876695860197
+      },
+      "final_recomputed_cost": 873.8062266250638,
+      "independent_final_replays": 1,
+      "joint_activity": {
+        "assembled_patterns": 4,
+        "complete_evaluations": 0,
+        "current_pattern": [
+          "ev",
+          "ev",
+          "cv",
+          "ev",
+          "cv"
+        ],
+        "current_proxy_cost": 911.771447003247,
+        "exact_decoder_updates": 1,
+        "feasibility_checks": 4,
+        "improvements": 1,
+        "objective_delta": -37.72308707476668,
+        "patterns_considered": 16,
+        "route_proxy_evaluations": 9,
+        "selected_pattern": [
+          "ev",
+          "ev",
+          "cv",
+          "ev",
+          "ev"
+        ],
+        "selected_proxy_cost": 874.0483599284803
+      },
+      "responsibility_activity": {
+        "accepted_moves": [
+          {
+            "exact_objective_delta": -6.039884970226581,
+            "kind": "handover",
+            "moved_customers": [
+              "C031"
+            ],
+            "proxy_delta": 0.4132576566375377,
+            "round": 1,
+            "route_indices": [
+              4,
+              1
+            ]
+          },
+          {
+            "exact_objective_delta": -0.30843505245252345,
+            "kind": "reciprocal_exchange",
+            "moved_customers": [
+              "C013",
+              "C020"
+            ],
+            "proxy_delta": -0.9119023276482737,
+            "round": 2,
+            "route_indices": [
+              0,
+              4
+            ]
+          }
+        ],
+        "complete_route_search_evaluations": 0,
+        "downstream_bypass_objective": 917.9529926517339,
+        "downstream_responsibility_objective": 873.8062266250639,
+        "exact_decoder_updates": 2,
+        "final_recomputed_cost": 911.7714470032471,
+        "full_feasibility_checks": 192,
+        "improvements": 2,
+        "independent_final_replays": 1,
+        "local_exact_evaluations": 31,
+        "monotone_envelope_selected": "responsibility_branch",
+        "net_final_improvements": 1,
+        "objective_closure_error": 1.1368683772161603e-13,
+        "proxy_moves_considered": 11230,
+        "stop_reason": "no_improving_exact_candidate"
+      }
+    },
+    "metrics": {
+      "E_cv_direct": 123.00758928289517,
+      "E_ev_indirect": 51.167965661477666,
+      "E_total": 174.17555494437283,
+      "carbon_quota_kg": 0.0,
+      "cost_carbon": 8.767997435899728,
+      "cost_elec": 81.5029715672032,
+      "cost_fix": 400.0,
+      "cost_fuel": 68.57040796373028,
+      "cost_km": 314.9648496582306,
+      "cost_occ": 0.0,
+      "cost_transship": 0.0,
+      "depot_charging_kwh": 439.84334358987155,
+      "distance_cv": 238432.0348281392,
+      "distance_ev": 661467.5356239482,
+      "distance_total": 899899.5704520874,
+      "electricity_kwh": 439.84334358987155,
+      "ev_drive_kwh": 439.84334358987155,
+      "fuel_liters": 47.84760865517429,
+      "n_veh_cv": 1,
+      "n_veh_ev": 1,
+      "station_charging_kwh": 0,
+      "total_cost": 873.8062266250638
+    },
+    "recomputed_cost": 873.8062266250638,
+    "reported_cost": 873.8062266250639,
+    "reporting_full_replays": 2,
+    "seed": 1,
+    "solution": {
+      "charging_actions": [
+        {
+          "charge_day_offset": 0,
+          "charge_start_second": 74644.06511522263,
+          "energy_kwh": 83.79299351902975,
+          "occupancy_minutes": 228.52634596099023,
+          "station_id": "D0",
+          "vehicle_id": "EV1#T1"
+        },
+        {
+          "charge_day_offset": 0,
+          "charge_start_second": 77778.97039022887,
+          "energy_kwh": 64.10900733775425,
+          "occupancy_minutes": 174.8427472847843,
+          "station_id": "D0",
+          "vehicle_id": "EV1#T2"
+        },
+        {
+          "charge_day_offset": 0,
+          "charge_start_second": 63831.47569864901,
+          "energy_kwh": 150.81314882673777,
+          "occupancy_minutes": 411.30858770928484,
+          "station_id": "D0",
+          "vehicle_id": "EV1#T3"
+        },
+        {
+          "charge_day_offset": 0,
+          "charge_start_second": 64139.81249988738,
+          "energy_kwh": 141.1281939063498,
+          "occupancy_minutes": 384.8950742900449,
+          "station_id": "D1",
+          "vehicle_id": "EV1#T4"
+        }
+      ],
+      "cross_site_services": [
+        {
+          "customer_id": "C020",
+          "served_by_depot_id": "D0"
+        },
+        {
+          "customer_id": "C031",
+          "served_by_depot_id": "D0"
+        },
+        {
+          "customer_id": "C013",
+          "served_by_depot_id": "D1"
+        }
+      ],
+      "routes": [
+        {
+          "home_depot_id": "D0",
+          "node_sequence": [
+            "D0",
+            "C006",
+            "C015",
+            "C022",
+            "C020",
+            "C023",
+            "C016",
+            "C032",
+            "C034",
+            "D0"
+          ],
+          "vehicle_id": "EV1#T1",
+          "vehicle_type": "ev"
+        },
+        {
+          "home_depot_id": "D0",
+          "node_sequence": [
+            "D0",
+            "C011",
+            "C028",
+            "C029",
+            "C031",
+            "D0"
+          ],
+          "vehicle_id": "EV1#T2",
+          "vehicle_type": "ev"
+        },
+        {
+          "home_depot_id": "D1",
+          "node_sequence": [
+            "D1",
+            "C009",
+            "C014",
+            "C019",
+            "C025",
+            "C030",
+            "C021",
+            "C026",
+            "C033",
+            "D1"
+          ],
+          "vehicle_id": "CV1#T1",
+          "vehicle_type": "cv"
+        },
+        {
+          "home_depot_id": "D0",
+          "node_sequence": [
+            "D0",
+            "C012",
+            "C008",
+            "C010",
+            "C005",
+            "C018",
+            "C017",
+            "C024",
+            "D0"
+          ],
+          "vehicle_id": "EV1#T3",
+          "vehicle_type": "ev"
+        },
+        {
+          "home_depot_id": "D1",
+          "node_sequence": [
+            "D1",
+            "C003",
+            "C002",
+            "C001",
+            "C004",
+            "C007",
+            "C013",
+            "C027",
+            "D1"
+          ],
+          "vehicle_id": "EV1#T4",
+          "vehicle_type": "ev"
+        }
+      ]
+    },
+    "solution_signature": "51014086b27c0afa6cb52067163face7dbe1d821f1fa13aa938cc1cc8b570b38"
+  },
+  {
+    "arm": "mechanism_judged_dual_basin_alns",
+    "budget": 100,
+    "dataset_role": "primary",
+    "instance_id": "DEV-DUAL-D2-GROUP789-SRC15-N34-DEP2",
+    "mechanism_activity": {
+      "alns_candidate_evaluations": 98,
+      "alns_phases": [
+        {
+          "elapsed_seconds": 0.2964972499758005,
+          "eval_budget": 68,
+          "evaluations": 68,
+          "history_length": 5,
+          "operator_counts": {
+            "destroy": {
+              "random_customer_removal": [
+                0,
+                0,
+                0,
+                3
+              ],
+              "route_segment_removal": [
+                1,
+                0,
+                0,
+                16
+              ],
+              "shaw_related_removal": [
+                0,
+                0,
+                0,
+                3
+              ],
+              "vehicle_type_swap": [
+                2,
+                0,
+                0,
+                23
+              ],
+              "whole_route_removal": [
+                1,
+                0,
+                0,
+                16
+              ],
+              "worst_customer_removal": [
+                0,
+                0,
+                0,
+                3
+              ]
+            },
+            "repair": {
+              "greedy_insert_repair": [
+                3,
+                0,
+                0,
+                41
+              ],
+              "regret2_insert_repair": [
+                1,
+                0,
+                0,
+                18
+              ],
+              "regret3_insert_repair": [
+                0,
+                0,
+                0,
+                5
+              ]
+            },
+            "scan": {
+              "infeasible": 0,
+              "rebuild_accepts": 0,
+              "rebuild_attempts": 0,
+              "restart_accepts": 0,
+              "restart_attempts": 0
+            },
+            "score_counts": {
+              "candidate": 68,
+              "candidate_channel:destroy_repair": 68,
+              "reference": 2,
+              "reference_cache_hit": 5,
+              "reference_cache_hit:history": 5,
+              "reference_phase:final": 1,
+              "reference_phase:initial": 1,
+              "repair_delta": 2117
+            },
+            "structural": {
+              "accepted": 0,
+              "attempts": 0,
+              "best_improved": 0,
+              "rejected": 0
+            },
+            "timing": {}
+          },
+          "seed": 1
+        },
+        {
+          "elapsed_seconds": 0.2646566249895841,
+          "eval_budget": 30,
+          "evaluations": 30,
+          "history_length": 1,
+          "operator_counts": {
+            "destroy": {
+              "random_customer_removal": [
+                0,
+                0,
+                0,
+                6
+              ],
+              "route_segment_removal": [
+                0,
+                0,
+                0,
+                5
+              ],
+              "shaw_related_removal": [
+                0,
+                0,
+                0,
+                6
+              ],
+              "vehicle_type_swap": [
+                0,
+                0,
+                0,
+                1
+              ],
+              "whole_route_removal": [
+                0,
+                0,
+                0,
+                6
+              ],
+              "worst_customer_removal": [
+                0,
+                0,
+                0,
+                6
+              ]
+            },
+            "repair": {
+              "greedy_insert_repair": [
+                0,
+                0,
+                0,
+                11
+              ],
+              "regret2_insert_repair": [
+                0,
+                0,
+                0,
+                10
+              ],
+              "regret3_insert_repair": [
+                0,
+                0,
+                0,
+                9
+              ]
+            },
+            "scan": {
+              "infeasible": 0,
+              "rebuild_accepts": 0,
+              "rebuild_attempts": 0,
+              "restart_accepts": 0,
+              "restart_attempts": 0
+            },
+            "score_counts": {
+              "candidate": 30,
+              "candidate_channel:destroy_repair": 30,
+              "reference": 2,
+              "reference_cache_hit": 1,
+              "reference_cache_hit:history": 1,
+              "reference_phase:final": 1,
+              "reference_phase:initial": 1,
+              "repair_delta": 1118
+            },
+            "structural": {
+              "accepted": 0,
+              "attempts": 0,
+              "best_improved": 0,
+              "rejected": 0
+            },
+            "timing": {}
+          },
+          "seed": 100003
+        }
+      ],
+      "envelope_costs": {
+        "charged_mid_mechanism": 883.7023466965015,
+        "opening_alns_phase": 928.0158870973638,
+        "selected_scored_seed": 1003.7513883613857,
+        "tail_alns_phase": 883.7023466965015,
+        "terminal_after_tail": 883.7023466965015
+      },
+      "envelope_selected": "charged_mid_mechanism",
+      "final_completion": {
+        "carbon": {
+          "action_changes": [],
+          "actions_retimed": 0,
+          "candidate_start_count": 85,
+          "complete_evaluations": 0,
+          "eligible_actions": 4,
+          "exact_decoder_updates": 0,
+          "feasibility_checks": 0,
+          "improvements": 0,
+          "old_local_objective": 84.07876695860199,
+          "route_local_schedule_evaluations": 85,
+          "selected_local_objective": 84.07876695860199,
+          "stop_reason": "no_feasible_improving_retime"
+        },
+        "complete_route_search_evaluations": 0,
+        "full_solution_replays": 3,
+        "joint": {
+          "assembled_patterns": 1,
+          "complete_evaluations": 0,
+          "current_pattern": [
+            "ev",
+            "ev",
+            "ev",
+            "cv",
+            "ev"
+          ],
+          "current_proxy_cost": 883.7023466965014,
+          "exact_decoder_updates": 0,
+          "feasibility_checks": 1,
+          "improvements": 0,
+          "patterns_considered": 16,
+          "route_proxy_evaluations": 9,
+          "selected_pattern": [
+            "ev",
+            "ev",
+            "ev",
+            "cv",
+            "ev"
+          ],
+          "selected_proxy_cost": 883.7023466965014,
+          "stop_reason": "current_pattern_is_best"
+        },
+        "responsibility": {
+          "accepted_moves": [],
+          "complete_route_search_evaluations": 0,
+          "exact_decoder_updates": 0,
+          "final_recomputed_cost": 883.7023466965015,
+          "full_feasibility_checks": 64,
+          "improvements": 0,
+          "independent_final_replays": 1,
+          "local_exact_evaluations": 9,
+          "objective_closure_error": 0.0,
+          "proxy_moves_considered": 3696,
+          "stop_reason": "no_improving_exact_candidate"
+        },
+        "route_local_exact_evaluations": 9,
+        "route_local_schedule_evaluations": 85,
+        "route_proxy_evaluations": 9
+      },
+      "final_recomputed_cost": 883.7023466965015,
+      "hgs_native": {
+        "native_calls": 2,
+        "native_cost_by_depot": {
+          "D0": 2106.850170038213,
+          "D1": 2252.1683762824814
+        },
+        "native_cpu_seconds": 0.026271000000000003,
+        "native_route_count": 5,
+        "no_improvement_iterations": 100,
+        "official_commit": "1a927955cd2861a29d978f0d359d6e647db9319c",
+        "order_hash": "722d13244fe10d7f31e5a8e6ec9f60061dc2d1882181d924ec64f412902c5b0c",
+        "time_window_weight": 1.0,
+        "wall_seconds": 0.02738545899046585
+      },
+      "mid_candidate_evaluations": 1,
+      "middle": {
+        "attempted": true,
+        "candidate_evaluations": 1,
+        "changed": true,
+        "completed_cost": 883.7023466965015,
+        "completion": {
+          "carbon": {
+            "action_changes": [
+              {
+                "new_emissions_kg": 7.986601229756353,
+                "new_start_second": 74644.06511522263,
+                "old_emissions_kg": 8.44545328428942,
+                "old_start_second": 73800.0,
+                "station_id": "D0",
+                "vehicle_id": "EV1#T1"
+              },
+              {
+                "new_emissions_kg": 5.336967060254508,
+                "new_start_second": 77778.97039022887,
+                "old_emissions_kg": 5.4782647662608355,
+                "old_start_second": 77400.0,
+                "station_id": "D0",
+                "vehicle_id": "EV1#T2"
+              },
+              {
+                "new_emissions_kg": 18.518676015792643,
+                "new_start_second": 64139.81249988738,
+                "old_emissions_kg": 19.558777081971982,
+                "old_start_second": 37800.0,
+                "station_id": "D1",
+                "vehicle_id": "EV1#T3"
+              },
+              {
+                "new_emissions_kg": 19.325721355674162,
+                "new_start_second": 63831.47569864901,
+                "old_emissions_kg": 22.495428880494615,
+                "old_start_second": 39600.0,
+                "station_id": "D0",
+                "vehicle_id": "EV1#T4"
+              }
+            ],
+            "actions_retimed": 4,
+            "candidate_start_count": 85,
+            "complete_evaluations": 0,
+            "eligible_actions": 4,
+            "exact_decoder_updates": 1,
+            "feasibility_checks": 1,
+            "improvements": 1,
+            "objective_delta": -0.2421333034164661,
+            "old_local_objective": 84.32090026201845,
+            "route_local_schedule_evaluations": 85,
+            "selected_local_objective": 84.07876695860199
+          },
+          "complete_route_search_evaluations": 0,
+          "full_solution_replays": 3,
+          "joint": {
+            "assembled_patterns": 4,
+            "complete_evaluations": 0,
+            "current_pattern": [
+              "ev",
+              "ev",
+              "cv",
+              "cv",
+              "ev"
+            ],
+            "current_proxy_cost": 921.6675670746847,
+            "exact_decoder_updates": 1,
+            "feasibility_checks": 4,
+            "improvements": 1,
+            "objective_delta": -37.723087074766795,
+            "patterns_considered": 16,
+            "route_proxy_evaluations": 9,
+            "selected_pattern": [
+              "ev",
+              "ev",
+              "ev",
+              "cv",
+              "ev"
+            ],
+            "selected_proxy_cost": 883.9444799999179
+          },
+          "responsibility": {
+            "accepted_moves": [
+              {
+                "exact_objective_delta": -6.039884970226581,
+                "kind": "handover",
+                "moved_customers": [
+                  "C031"
+                ],
+                "proxy_delta": 0.4132576566375377,
+                "round": 1,
+                "route_indices": [
+                  2,
+                  1
+                ]
+              },
+              {
+                "exact_objective_delta": -0.30843505245252345,
+                "kind": "reciprocal_exchange",
+                "moved_customers": [
+                  "C013",
+                  "C020"
+                ],
+                "proxy_delta": -0.9119023276482737,
+                "round": 2,
+                "route_indices": [
+                  0,
+                  2
+                ]
+              }
+            ],
+            "complete_route_search_evaluations": 0,
+            "exact_decoder_updates": 2,
+            "final_recomputed_cost": 921.6675670746847,
+            "full_feasibility_checks": 192,
+            "improvements": 2,
+            "independent_final_replays": 1,
+            "local_exact_evaluations": 31,
+            "objective_closure_error": 0.0,
+            "proxy_moves_considered": 11183,
+            "stop_reason": "no_improving_exact_candidate"
+          },
+          "route_local_exact_evaluations": 31,
+          "route_local_schedule_evaluations": 85,
+          "route_proxy_evaluations": 9
+        },
+        "opening_budget": 68,
+        "score_counts": {
+          "candidate": 1,
+          "candidate_channel:dual_basin_mid_mechanism": 1
+        },
+        "source_cost": 928.0158870973638,
+        "tail_budget": 30
+      },
+      "reference_replay_ledger": {
+        "alns_initial_and_final": 4,
+        "final_completion": 3,
+        "final_envelope_recompute": 1,
+        "middle_completion": 3,
+        "selector": 1,
+        "total_reported": 12
+      },
+      "selector": {
+        "candidate_evaluations": 1,
+        "cost_margin_hgs_minus_default": 8.898954754794204,
+        "default_cost": 1003.7513883613857,
+        "default_fast_completion": {
+          "carbon": {
+            "action_changes": [
+              {
+                "new_emissions_kg": 2.6383247414837068,
+                "new_start_second": 82861.9555779149,
+                "old_emissions_kg": 2.64484537483833,
+                "old_start_second": 82800.0,
+                "station_id": "D0",
+                "vehicle_id": "EV1#T1"
+              },
+              {
+                "new_emissions_kg": 12.63975546756054,
+                "new_start_second": 69555.7708374258,
+                "old_emissions_kg": 13.567016991061486,
+                "old_start_second": 37800.0,
+                "station_id": "D0",
+                "vehicle_id": "EV1#T2"
+              }
+            ],
+            "actions_retimed": 2,
+            "candidate_start_count": 58,
+            "complete_evaluations": 0,
+            "eligible_actions": 2,
+            "exact_decoder_updates": 1,
+            "feasibility_checks": 1,
+            "improvements": 1,
+            "objective_delta": -0.047006593776110606,
+            "old_local_objective": 28.446092974012473,
+            "route_local_schedule_evaluations": 58,
+            "selected_local_objective": 28.399086380236362
+          },
+          "complete_candidate_evaluations": 0,
+          "joint": {
+            "assembled_patterns": 3,
+            "complete_evaluations": 0,
+            "current_pattern": [
+              "cv",
+              "cv",
+              "cv",
+              "cv",
+              "cv"
+            ],
+            "current_proxy_cost": 1044.5437370032396,
+            "exact_decoder_updates": 1,
+            "feasibility_checks": 3,
+            "improvements": 1,
+            "objective_delta": -40.74534204807776,
+            "patterns_considered": 4,
+            "route_proxy_evaluations": 7,
+            "selected_pattern": [
+              "cv",
+              "ev",
+              "ev",
+              "cv",
+              "cv"
+            ],
+            "selected_proxy_cost": 1003.7983949551618
+          },
+          "route_local_schedule_evaluations": 58,
+          "route_proxy_evaluations": 7
+        },
+        "hgs_cost": 1012.6503431161799,
+        "hgs_fast_completion": {
+          "carbon": {
+            "action_changes": [
+              {
+                "new_emissions_kg": 3.815471693252579,
+                "new_start_second": 92173.01584323426,
+                "old_emissions_kg": 4.207273135917449,
+                "old_start_second": 99000.0,
+                "station_id": "D0",
+                "vehicle_id": "EV1#T1"
+              },
+              {
+                "new_emissions_kg": 21.858077597903005,
+                "new_start_second": 62068.80786981931,
+                "old_emissions_kg": 25.0490382773565,
+                "old_start_second": 37800.0,
+                "station_id": "D0",
+                "vehicle_id": "EV1#T2"
+              },
+              {
+                "new_emissions_kg": 2.8689284230248844,
+                "new_start_second": 93600.0,
+                "old_emissions_kg": 3.0559296464438934,
+                "old_start_second": 99000.0,
+                "station_id": "D0",
+                "vehicle_id": "EV1#T3"
+              },
+              {
+                "new_emissions_kg": 1.2407048982376885,
+                "new_start_second": 10210.929583334917,
+                "old_emissions_kg": 1.2815933001152229,
+                "old_start_second": 12600.0,
+                "station_id": "D0",
+                "vehicle_id": "EV1#T4"
+              },
+              {
+                "new_emissions_kg": 22.285655931036718,
+                "new_start_second": 60809.05864396763,
+                "old_emissions_kg": 23.32357292622742,
+                "old_start_second": 37800.0,
+                "station_id": "D1",
+                "vehicle_id": "EV1#T5"
+              }
+            ],
+            "actions_retimed": 5,
+            "candidate_start_count": 274,
+            "complete_evaluations": 0,
+            "eligible_actions": 5,
+            "exact_decoder_updates": 1,
+            "feasibility_checks": 1,
+            "improvements": 1,
+            "objective_delta": -0.24407695050277312,
+            "old_local_objective": 93.64796480067488,
+            "route_local_schedule_evaluations": 274,
+            "selected_local_objective": 93.40388785017211
+          },
+          "complete_candidate_evaluations": 0,
+          "joint": {
+            "assembled_patterns": 12,
+            "complete_evaluations": 0,
+            "current_pattern": [
+              "cv",
+              "cv",
+              "cv",
+              "cv",
+              "cv",
+              "cv"
+            ],
+            "current_proxy_cost": 1145.4503870957876,
+            "exact_decoder_updates": 1,
+            "feasibility_checks": 12,
+            "improvements": 1,
+            "objective_delta": -132.55596702910498,
+            "patterns_considered": 32,
+            "route_proxy_evaluations": 11,
+            "selected_pattern": [
+              "ev",
+              "ev",
+              "ev",
+              "ev",
+              "ev",
+              "cv"
+            ],
+            "selected_proxy_cost": 1012.8944200666826
+          },
+          "route_local_schedule_evaluations": 274,
+          "route_proxy_evaluations": 11
+        },
+        "reference_replays": 1,
+        "score_counts": {
+          "candidate": 1,
+          "candidate_channel:dual_basin_hgs_alternative": 1,
+          "reference": 1,
+          "reference_phase:dual_basin_default_anchor": 1
+        },
+        "selected_basin": "current_alns_warm",
+        "selector_mode": "mechanism"
+      },
+      "selector_candidate_evaluations": 1,
+      "total_candidate_evaluations": 100
+    },
+    "metrics": {
+      "E_cv_direct": 130.67638314615346,
+      "E_ev_indirect": 51.16796566147768,
+      "E_total": 181.84434880763115,
+      "carbon_quota_kg": 0.0,
+      "cost_carbon": 9.154044518976153,
+      "cost_elec": 81.50297156720319,
+      "cost_fix": 400.0,
+      "cost_fuel": 72.84536633710354,
+      "cost_km": 320.1999642732186,
+      "cost_occ": 0.0,
+      "cost_transship": 0.0,
+      "depot_charging_kwh": 439.84334358987155,
+      "distance_cv": 253389.50515667634,
+      "distance_ev": 661467.5356239482,
+      "distance_total": 914857.0407806246,
+      "electricity_kwh": 439.84334358987155,
+      "ev_drive_kwh": 439.84334358987155,
+      "fuel_liters": 50.830623359921525,
+      "n_veh_cv": 1,
+      "n_veh_ev": 1,
+      "station_charging_kwh": 0,
+      "total_cost": 883.7023466965015
+    },
+    "recomputed_cost": 883.7023466965015,
+    "reported_cost": 883.7023466965015,
+    "reporting_full_replays": 2,
+    "seed": 1,
+    "solution": {
+      "charging_actions": [
+        {
+          "charge_day_offset": 0,
+          "charge_start_second": 74644.06511522263,
+          "energy_kwh": 83.79299351902975,
+          "occupancy_minutes": 228.52634596099023,
+          "station_id": "D0",
+          "vehicle_id": "EV1#T1"
+        },
+        {
+          "charge_day_offset": 0,
+          "charge_start_second": 77778.97039022887,
+          "energy_kwh": 64.10900733775425,
+          "occupancy_minutes": 174.8427472847843,
+          "station_id": "D0",
+          "vehicle_id": "EV1#T2"
+        },
+        {
+          "charge_day_offset": 0,
+          "charge_start_second": 64139.81249988738,
+          "energy_kwh": 141.1281939063498,
+          "occupancy_minutes": 384.8950742900449,
+          "station_id": "D1",
+          "vehicle_id": "EV1#T3"
+        },
+        {
+          "charge_day_offset": 0,
+          "charge_start_second": 63831.47569864901,
+          "energy_kwh": 150.81314882673777,
+          "occupancy_minutes": 411.30858770928484,
+          "station_id": "D0",
+          "vehicle_id": "EV1#T4"
+        }
+      ],
+      "cross_site_services": [
+        {
+          "customer_id": "C020",
+          "served_by_depot_id": "D0"
+        },
+        {
+          "customer_id": "C031",
+          "served_by_depot_id": "D0"
+        },
+        {
+          "customer_id": "C013",
+          "served_by_depot_id": "D1"
+        }
+      ],
+      "routes": [
+        {
+          "home_depot_id": "D0",
+          "node_sequence": [
+            "D0",
+            "C006",
+            "C015",
+            "C022",
+            "C020",
+            "C023",
+            "C016",
+            "C032",
+            "C034",
+            "D0"
+          ],
+          "vehicle_id": "EV1#T1",
+          "vehicle_type": "ev"
+        },
+        {
+          "home_depot_id": "D0",
+          "node_sequence": [
+            "D0",
+            "C011",
+            "C028",
+            "C029",
+            "C031",
+            "D0"
+          ],
+          "vehicle_id": "EV1#T2",
+          "vehicle_type": "ev"
+        },
+        {
+          "home_depot_id": "D1",
+          "node_sequence": [
+            "D1",
+            "C003",
+            "C002",
+            "C001",
+            "C004",
+            "C007",
+            "C013",
+            "C027",
+            "D1"
+          ],
+          "vehicle_id": "EV1#T3",
+          "vehicle_type": "ev"
+        },
+        {
+          "home_depot_id": "D1",
+          "node_sequence": [
+            "D1",
+            "C009",
+            "C014",
+            "C025",
+            "C019",
+            "C030",
+            "C021",
+            "C026",
+            "C033",
+            "D1"
+          ],
+          "vehicle_id": "CV1#T1",
+          "vehicle_type": "cv"
+        },
+        {
+          "home_depot_id": "D0",
+          "node_sequence": [
+            "D0",
+            "C012",
+            "C008",
+            "C010",
+            "C005",
+            "C018",
+            "C017",
+            "C024",
+            "D0"
+          ],
+          "vehicle_id": "EV1#T4",
+          "vehicle_type": "ev"
+        }
+      ]
+    },
+    "solution_signature": "0a691c73d97e1cae2afed0d90d18082b1fa7d8894ff6b9c78a83d471b197e7d2"
+  },
+  {
+    "arm": "mechanism_judged_dual_basin_no_mid_ablation",
+    "budget": 100,
+    "dataset_role": "primary",
+    "instance_id": "DEV-DUAL-D2-GROUP789-SRC15-N34-DEP2",
+    "mechanism_activity": {
+      "alns_candidate_evaluations": 99,
+      "alns_phases": [
+        {
+          "elapsed_seconds": 0.3490922909695655,
+          "eval_budget": 99,
+          "evaluations": 99,
+          "history_length": 6,
+          "operator_counts": {
+            "destroy": {
+              "random_customer_removal": [
+                0,
+                0,
+                0,
+                3
+              ],
+              "route_segment_removal": [
+                2,
+                0,
+                5,
+                31
+              ],
+              "shaw_related_removal": [
+                0,
+                0,
+                0,
+                3
+              ],
+              "vehicle_type_swap": [
+                2,
+                0,
+                0,
+                30
+              ],
+              "whole_route_removal": [
+                1,
+                0,
+                1,
+                18
+              ],
+              "worst_customer_removal": [
+                0,
+                0,
+                0,
+                3
+              ]
+            },
+            "repair": {
+              "greedy_insert_repair": [
+                3,
+                0,
+                1,
+                50
+              ],
+              "regret2_insert_repair": [
+                2,
+                0,
+                5,
+                33
+              ],
+              "regret3_insert_repair": [
+                0,
+                0,
+                0,
+                5
+              ]
+            },
+            "scan": {
+              "infeasible": 0,
+              "rebuild_accepts": 0,
+              "rebuild_attempts": 0,
+              "restart_accepts": 0,
+              "restart_attempts": 0
+            },
+            "score_counts": {
+              "candidate": 99,
+              "candidate_channel:destroy_repair": 99,
+              "reference": 2,
+              "reference_cache_hit": 6,
+              "reference_cache_hit:history": 6,
+              "reference_phase:final": 1,
+              "reference_phase:initial": 1,
+              "repair_delta": 2278
+            },
+            "structural": {
+              "accepted": 0,
+              "attempts": 0,
+              "best_improved": 0,
+              "rejected": 0
+            },
+            "timing": {}
+          },
+          "seed": 1
+        }
+      ],
+      "envelope_costs": {
+        "selected_scored_seed": 1003.7513883613857,
+        "single_alns_phase": 918.1197670259261,
+        "terminal_after_single_phase": 873.8062266250638
+      },
+      "envelope_selected": "terminal_after_single_phase",
+      "final_completion": {
+        "carbon": {
+          "action_changes": [
+            {
+              "new_emissions_kg": 7.986601229756353,
+              "new_start_second": 74644.06511522263,
+              "old_emissions_kg": 8.44545328428942,
+              "old_start_second": 73800.0,
+              "station_id": "D0",
+              "vehicle_id": "EV1#T1"
+            },
+            {
+              "new_emissions_kg": 5.336967060254508,
+              "new_start_second": 77778.97039022887,
+              "old_emissions_kg": 5.4782647662608355,
+              "old_start_second": 77400.0,
+              "station_id": "D0",
+              "vehicle_id": "EV1#T2"
+            },
+            {
+              "new_emissions_kg": 19.325721355674162,
+              "new_start_second": 63831.47569864901,
+              "old_emissions_kg": 22.495428880494615,
+              "old_start_second": 39600.0,
+              "station_id": "D0",
+              "vehicle_id": "EV1#T3"
+            },
+            {
+              "new_emissions_kg": 18.518676015792643,
+              "new_start_second": 64139.81249988738,
+              "old_emissions_kg": 19.558777081971982,
+              "old_start_second": 37800.0,
+              "station_id": "D1",
+              "vehicle_id": "EV1#T4"
+            }
+          ],
+          "actions_retimed": 4,
+          "candidate_start_count": 85,
+          "complete_evaluations": 0,
+          "eligible_actions": 4,
+          "exact_decoder_updates": 1,
+          "feasibility_checks": 1,
+          "improvements": 1,
+          "objective_delta": -0.24213330341648032,
+          "old_local_objective": 84.32090026201845,
+          "route_local_schedule_evaluations": 85,
+          "selected_local_objective": 84.07876695860197
+        },
+        "complete_route_search_evaluations": 0,
+        "full_solution_replays": 3,
+        "joint": {
+          "assembled_patterns": 4,
+          "complete_evaluations": 0,
+          "current_pattern": [
+            "ev",
+            "ev",
+            "cv",
+            "ev",
+            "cv"
+          ],
+          "current_proxy_cost": 911.771447003247,
+          "exact_decoder_updates": 1,
+          "feasibility_checks": 4,
+          "improvements": 1,
+          "objective_delta": -37.72308707476668,
+          "patterns_considered": 16,
+          "route_proxy_evaluations": 9,
+          "selected_pattern": [
+            "ev",
+            "ev",
+            "cv",
+            "ev",
+            "ev"
+          ],
+          "selected_proxy_cost": 874.0483599284803
+        },
+        "responsibility": {
+          "accepted_moves": [
+            {
+              "exact_objective_delta": -6.039884970226581,
+              "kind": "handover",
+              "moved_customers": [
+                "C031"
+              ],
+              "proxy_delta": 0.4132576566375377,
+              "round": 1,
+              "route_indices": [
+                4,
+                1
+              ]
+            },
+            {
+              "exact_objective_delta": -0.30843505245252345,
+              "kind": "reciprocal_exchange",
+              "moved_customers": [
+                "C013",
+                "C020"
+              ],
+              "proxy_delta": -0.9119023276482737,
+              "round": 2,
+              "route_indices": [
+                0,
+                4
+              ]
+            }
+          ],
+          "complete_route_search_evaluations": 0,
+          "exact_decoder_updates": 2,
+          "final_recomputed_cost": 911.7714470032471,
+          "full_feasibility_checks": 192,
+          "improvements": 2,
+          "independent_final_replays": 1,
+          "local_exact_evaluations": 31,
+          "objective_closure_error": 1.1368683772161603e-13,
+          "proxy_moves_considered": 11230,
+          "stop_reason": "no_improving_exact_candidate"
+        },
+        "route_local_exact_evaluations": 31,
+        "route_local_schedule_evaluations": 85,
+        "route_proxy_evaluations": 9
+      },
+      "final_recomputed_cost": 873.8062266250638,
+      "hgs_native": {
+        "native_calls": 2,
+        "native_cost_by_depot": {
+          "D0": 2106.850170038213,
+          "D1": 2252.1683762824814
+        },
+        "native_cpu_seconds": 0.026135,
+        "native_route_count": 5,
+        "no_improvement_iterations": 100,
+        "official_commit": "1a927955cd2861a29d978f0d359d6e647db9319c",
+        "order_hash": "722d13244fe10d7f31e5a8e6ec9f60061dc2d1882181d924ec64f412902c5b0c",
+        "time_window_weight": 1.0,
+        "wall_seconds": 0.02725166699383408
+      },
+      "mid_candidate_evaluations": 0,
+      "middle": {
+        "attempted": false,
+        "candidate_evaluations": 0,
+        "changed": false
+      },
+      "reference_replay_ledger": {
+        "alns_initial_and_final": 2,
+        "final_completion": 3,
+        "final_envelope_recompute": 1,
+        "middle_completion": 0,
+        "selector": 1,
+        "total_reported": 7
+      },
+      "selector": {
+        "candidate_evaluations": 1,
+        "cost_margin_hgs_minus_default": 8.898954754794204,
+        "default_cost": 1003.7513883613857,
+        "default_fast_completion": {
+          "carbon": {
+            "action_changes": [
+              {
+                "new_emissions_kg": 2.6383247414837068,
+                "new_start_second": 82861.9555779149,
+                "old_emissions_kg": 2.64484537483833,
+                "old_start_second": 82800.0,
+                "station_id": "D0",
+                "vehicle_id": "EV1#T1"
+              },
+              {
+                "new_emissions_kg": 12.63975546756054,
+                "new_start_second": 69555.7708374258,
+                "old_emissions_kg": 13.567016991061486,
+                "old_start_second": 37800.0,
+                "station_id": "D0",
+                "vehicle_id": "EV1#T2"
+              }
+            ],
+            "actions_retimed": 2,
+            "candidate_start_count": 58,
+            "complete_evaluations": 0,
+            "eligible_actions": 2,
+            "exact_decoder_updates": 1,
+            "feasibility_checks": 1,
+            "improvements": 1,
+            "objective_delta": -0.047006593776110606,
+            "old_local_objective": 28.446092974012473,
+            "route_local_schedule_evaluations": 58,
+            "selected_local_objective": 28.399086380236362
+          },
+          "complete_candidate_evaluations": 0,
+          "joint": {
+            "assembled_patterns": 3,
+            "complete_evaluations": 0,
+            "current_pattern": [
+              "cv",
+              "cv",
+              "cv",
+              "cv",
+              "cv"
+            ],
+            "current_proxy_cost": 1044.5437370032396,
+            "exact_decoder_updates": 1,
+            "feasibility_checks": 3,
+            "improvements": 1,
+            "objective_delta": -40.74534204807776,
+            "patterns_considered": 4,
+            "route_proxy_evaluations": 7,
+            "selected_pattern": [
+              "cv",
+              "ev",
+              "ev",
+              "cv",
+              "cv"
+            ],
+            "selected_proxy_cost": 1003.7983949551618
+          },
+          "route_local_schedule_evaluations": 58,
+          "route_proxy_evaluations": 7
+        },
+        "hgs_cost": 1012.6503431161799,
+        "hgs_fast_completion": {
+          "carbon": {
+            "action_changes": [
+              {
+                "new_emissions_kg": 3.815471693252579,
+                "new_start_second": 92173.01584323426,
+                "old_emissions_kg": 4.207273135917449,
+                "old_start_second": 99000.0,
+                "station_id": "D0",
+                "vehicle_id": "EV1#T1"
+              },
+              {
+                "new_emissions_kg": 21.858077597903005,
+                "new_start_second": 62068.80786981931,
+                "old_emissions_kg": 25.0490382773565,
+                "old_start_second": 37800.0,
+                "station_id": "D0",
+                "vehicle_id": "EV1#T2"
+              },
+              {
+                "new_emissions_kg": 2.8689284230248844,
+                "new_start_second": 93600.0,
+                "old_emissions_kg": 3.0559296464438934,
+                "old_start_second": 99000.0,
+                "station_id": "D0",
+                "vehicle_id": "EV1#T3"
+              },
+              {
+                "new_emissions_kg": 1.2407048982376885,
+                "new_start_second": 10210.929583334917,
+                "old_emissions_kg": 1.2815933001152229,
+                "old_start_second": 12600.0,
+                "station_id": "D0",
+                "vehicle_id": "EV1#T4"
+              },
+              {
+                "new_emissions_kg": 22.285655931036718,
+                "new_start_second": 60809.05864396763,
+                "old_emissions_kg": 23.32357292622742,
+                "old_start_second": 37800.0,
+                "station_id": "D1",
+                "vehicle_id": "EV1#T5"
+              }
+            ],
+            "actions_retimed": 5,
+            "candidate_start_count": 274,
+            "complete_evaluations": 0,
+            "eligible_actions": 5,
+            "exact_decoder_updates": 1,
+            "feasibility_checks": 1,
+            "improvements": 1,
+            "objective_delta": -0.24407695050277312,
+            "old_local_objective": 93.64796480067488,
+            "route_local_schedule_evaluations": 274,
+            "selected_local_objective": 93.40388785017211
+          },
+          "complete_candidate_evaluations": 0,
+          "joint": {
+            "assembled_patterns": 12,
+            "complete_evaluations": 0,
+            "current_pattern": [
+              "cv",
+              "cv",
+              "cv",
+              "cv",
+              "cv",
+              "cv"
+            ],
+            "current_proxy_cost": 1145.4503870957876,
+            "exact_decoder_updates": 1,
+            "feasibility_checks": 12,
+            "improvements": 1,
+            "objective_delta": -132.55596702910498,
+            "patterns_considered": 32,
+            "route_proxy_evaluations": 11,
+            "selected_pattern": [
+              "ev",
+              "ev",
+              "ev",
+              "ev",
+              "ev",
+              "cv"
+            ],
+            "selected_proxy_cost": 1012.8944200666826
+          },
+          "route_local_schedule_evaluations": 274,
+          "route_proxy_evaluations": 11
+        },
+        "reference_replays": 1,
+        "score_counts": {
+          "candidate": 1,
+          "candidate_channel:dual_basin_hgs_alternative": 1,
+          "reference": 1,
+          "reference_phase:dual_basin_default_anchor": 1
+        },
+        "selected_basin": "current_alns_warm",
+        "selector_mode": "mechanism"
+      },
+      "selector_candidate_evaluations": 1,
+      "total_candidate_evaluations": 100
+    },
+    "metrics": {
+      "E_cv_direct": 123.00758928289517,
+      "E_ev_indirect": 51.167965661477666,
+      "E_total": 174.17555494437283,
+      "carbon_quota_kg": 0.0,
+      "cost_carbon": 8.767997435899728,
+      "cost_elec": 81.5029715672032,
+      "cost_fix": 400.0,
+      "cost_fuel": 68.57040796373028,
+      "cost_km": 314.9648496582306,
+      "cost_occ": 0.0,
+      "cost_transship": 0.0,
+      "depot_charging_kwh": 439.84334358987155,
+      "distance_cv": 238432.0348281392,
+      "distance_ev": 661467.5356239482,
+      "distance_total": 899899.5704520874,
+      "electricity_kwh": 439.84334358987155,
+      "ev_drive_kwh": 439.84334358987155,
+      "fuel_liters": 47.84760865517429,
+      "n_veh_cv": 1,
+      "n_veh_ev": 1,
+      "station_charging_kwh": 0,
+      "total_cost": 873.8062266250638
+    },
+    "recomputed_cost": 873.8062266250638,
+    "reported_cost": 873.8062266250638,
+    "reporting_full_replays": 2,
+    "seed": 1,
+    "solution": {
+      "charging_actions": [
+        {
+          "charge_day_offset": 0,
+          "charge_start_second": 74644.06511522263,
+          "energy_kwh": 83.79299351902975,
+          "occupancy_minutes": 228.52634596099023,
+          "station_id": "D0",
+          "vehicle_id": "EV1#T1"
+        },
+        {
+          "charge_day_offset": 0,
+          "charge_start_second": 77778.97039022887,
+          "energy_kwh": 64.10900733775425,
+          "occupancy_minutes": 174.8427472847843,
+          "station_id": "D0",
+          "vehicle_id": "EV1#T2"
+        },
+        {
+          "charge_day_offset": 0,
+          "charge_start_second": 63831.47569864901,
+          "energy_kwh": 150.81314882673777,
+          "occupancy_minutes": 411.30858770928484,
+          "station_id": "D0",
+          "vehicle_id": "EV1#T3"
+        },
+        {
+          "charge_day_offset": 0,
+          "charge_start_second": 64139.81249988738,
+          "energy_kwh": 141.1281939063498,
+          "occupancy_minutes": 384.8950742900449,
+          "station_id": "D1",
+          "vehicle_id": "EV1#T4"
+        }
+      ],
+      "cross_site_services": [
+        {
+          "customer_id": "C020",
+          "served_by_depot_id": "D0"
+        },
+        {
+          "customer_id": "C031",
+          "served_by_depot_id": "D0"
+        },
+        {
+          "customer_id": "C013",
+          "served_by_depot_id": "D1"
+        }
+      ],
+      "routes": [
+        {
+          "home_depot_id": "D0",
+          "node_sequence": [
+            "D0",
+            "C006",
+            "C015",
+            "C022",
+            "C020",
+            "C023",
+            "C016",
+            "C032",
+            "C034",
+            "D0"
+          ],
+          "vehicle_id": "EV1#T1",
+          "vehicle_type": "ev"
+        },
+        {
+          "home_depot_id": "D0",
+          "node_sequence": [
+            "D0",
+            "C011",
+            "C028",
+            "C029",
+            "C031",
+            "D0"
+          ],
+          "vehicle_id": "EV1#T2",
+          "vehicle_type": "ev"
+        },
+        {
+          "home_depot_id": "D1",
+          "node_sequence": [
+            "D1",
+            "C009",
+            "C014",
+            "C019",
+            "C025",
+            "C030",
+            "C021",
+            "C026",
+            "C033",
+            "D1"
+          ],
+          "vehicle_id": "CV1#T1",
+          "vehicle_type": "cv"
+        },
+        {
+          "home_depot_id": "D0",
+          "node_sequence": [
+            "D0",
+            "C012",
+            "C008",
+            "C010",
+            "C005",
+            "C018",
+            "C017",
+            "C024",
+            "D0"
+          ],
+          "vehicle_id": "EV1#T3",
+          "vehicle_type": "ev"
+        },
+        {
+          "home_depot_id": "D1",
+          "node_sequence": [
+            "D1",
+            "C003",
+            "C002",
+            "C001",
+            "C004",
+            "C007",
+            "C013",
+            "C027",
+            "D1"
+          ],
+          "vehicle_id": "EV1#T4",
+          "vehicle_type": "ev"
+        }
+      ]
+    },
+    "solution_signature": "51014086b27c0afa6cb52067163face7dbe1d821f1fa13aa938cc1cc8b570b38"
+  },
+  {
+    "arm": "official_hgs_route_source_plus_common_completion",
+    "budget": 100,
+    "dataset_role": "primary",
+    "instance_id": "DEV-DUAL-D2-GROUP789-SRC15-N34-DEP2",
+    "mechanism_activity": {
+      "common_completion": {
+        "carbon": {
+          "action_changes": [
+            {
+              "new_emissions_kg": 2.6383247414837068,
+              "new_start_second": 82861.9555779149,
+              "old_emissions_kg": 2.64484537483833,
+              "old_start_second": 82800.0,
+              "station_id": "D0",
+              "vehicle_id": "EV1#T1"
+            },
+            {
+              "new_emissions_kg": 12.63975546756054,
+              "new_start_second": 69555.7708374258,
+              "old_emissions_kg": 13.567016991061486,
+              "old_start_second": 37800.0,
+              "station_id": "D0",
+              "vehicle_id": "EV1#T2"
+            }
+          ],
+          "actions_retimed": 2,
+          "candidate_start_count": 58,
+          "complete_evaluations": 0,
+          "eligible_actions": 2,
+          "exact_decoder_updates": 1,
+          "feasibility_checks": 1,
+          "improvements": 1,
+          "objective_delta": -0.047006593776110606,
+          "old_local_objective": 28.446092974012473,
+          "route_local_schedule_evaluations": 58,
+          "selected_local_objective": 28.399086380236362
+        },
+        "complete_route_search_evaluations": 0,
+        "full_solution_replays": 3,
+        "joint": {
+          "assembled_patterns": 3,
+          "complete_evaluations": 0,
+          "current_pattern": [
+            "cv",
+            "cv",
+            "cv",
+            "cv",
+            "cv"
+          ],
+          "current_proxy_cost": 1044.5437370032396,
+          "exact_decoder_updates": 1,
+          "feasibility_checks": 3,
+          "improvements": 1,
+          "objective_delta": -40.74534204807776,
+          "patterns_considered": 4,
+          "route_proxy_evaluations": 7,
+          "selected_pattern": [
+            "cv",
+            "ev",
+            "ev",
+            "cv",
+            "cv"
+          ],
+          "selected_proxy_cost": 1003.7983949551618
+        },
+        "responsibility": {
+          "accepted_moves": [],
+          "complete_route_search_evaluations": 0,
+          "exact_decoder_updates": 0,
+          "final_recomputed_cost": 1044.5437370032396,
+          "full_feasibility_checks": 64,
+          "improvements": 0,
+          "independent_final_replays": 1,
+          "local_exact_evaluations": 13,
+          "objective_closure_error": 0.0,
+          "proxy_moves_considered": 3819,
+          "stop_reason": "no_improving_exact_candidate"
+        },
+        "route_local_exact_evaluations": 13,
+        "route_local_schedule_evaluations": 58,
+        "route_proxy_evaluations": 7
+      },
+      "route_source": {
+        "hgs_adapter_wall_milliseconds": 2767.20596,
+        "hgs_candidate_decodes": 100,
+        "hgs_improvements": 0,
+        "hgs_native_calls": 200,
+        "hgs_native_cpu_milliseconds": 2662.668,
+        "invalid_decodes": 0,
+        "official_hgs_commit": "1a927955cd2861a29d978f0d359d6e647db9319c",
+        "reference_replays": 1,
+        "unique_hgs_orders": 30
+      }
+    },
+    "metrics": {
+      "E_cv_direct": 383.23828357931535,
+      "E_ev_indirect": 15.278080209044248,
+      "E_total": 398.5163637883596,
+      "carbon_quota_kg": 0.0,
+      "cost_carbon": 20.061313753106024,
+      "cost_elec": 27.629987822513073,
+      "cost_fix": 400.0,
+      "cost_fuel": 213.63564317903118,
+      "cost_km": 342.4244436067355,
+      "cost_occ": 0.0,
+      "cost_transship": 0.0,
+      "depot_charging_kwh": 149.1094863600274,
+      "distance_cv": 747631.926894839,
+      "distance_ev": 230723.62626726247,
+      "distance_total": 978355.5531621015,
+      "electricity_kwh": 149.1094863600274,
+      "ev_drive_kwh": 149.1094863600274,
+      "fuel_liters": 149.07239074665492,
+      "n_veh_cv": 2,
+      "n_veh_ev": 1,
+      "station_charging_kwh": 0,
+      "total_cost": 1003.7513883613857
+    },
+    "recomputed_cost": 1003.7513883613857,
+    "reported_cost": 1003.7513883613857,
+    "reporting_full_replays": 2,
+    "seed": 1,
+    "solution": {
+      "charging_actions": [
+        {
+          "charge_day_offset": 0,
+          "charge_start_second": 82861.9555779149,
+          "energy_kwh": 39.78782547341898,
+          "occupancy_minutes": 108.51225129114268,
+          "station_id": "D0",
+          "vehicle_id": "EV1#T1"
+        },
+        {
+          "charge_day_offset": 0,
+          "charge_start_second": 69555.7708374258,
+          "energy_kwh": 109.32166088660841,
+          "occupancy_minutes": 298.1499842362047,
+          "station_id": "D0",
+          "vehicle_id": "EV1#T2"
+        }
+      ],
+      "cross_site_services": [],
+      "routes": [
+        {
+          "home_depot_id": "D0",
+          "node_sequence": [
+            "D0",
+            "C012",
+            "C005",
+            "C018",
+            "C017",
+            "C024",
+            "C016",
+            "C032",
+            "D0"
+          ],
+          "vehicle_id": "CV1#T1",
+          "vehicle_type": "cv"
+        },
+        {
+          "home_depot_id": "D0",
+          "node_sequence": [
+            "D0",
+            "C013",
+            "C022",
+            "C023",
+            "C034",
+            "D0"
+          ],
+          "vehicle_id": "EV1#T1",
+          "vehicle_type": "ev"
+        },
+        {
+          "home_depot_id": "D0",
+          "node_sequence": [
+            "D0",
+            "C015",
+            "C006",
+            "C008",
+            "C011",
+            "C010",
+            "C028",
+            "C029",
+            "D0"
+          ],
+          "vehicle_id": "EV1#T2",
+          "vehicle_type": "ev"
+        },
+        {
+          "home_depot_id": "D1",
+          "node_sequence": [
+            "D1",
+            "C003",
+            "C002",
+            "C001",
+            "C004",
+            "C007",
+            "C020",
+            "C027",
+            "C031",
+            "D1"
+          ],
+          "vehicle_id": "CV2#T1",
+          "vehicle_type": "cv"
+        },
+        {
+          "home_depot_id": "D1",
+          "node_sequence": [
+            "D1",
+            "C009",
+            "C014",
+            "C025",
+            "C019",
+            "C030",
+            "C021",
+            "C026",
+            "C033",
+            "D1"
+          ],
+          "vehicle_id": "CV1#T2",
+          "vehicle_type": "cv"
+        }
+      ]
+    },
+    "solution_signature": "12780c55b9ca6997040dab82630fdee76e80c7d60deb49b94c3789ad29dde1b5"
+  },
+  {
+    "arm": "original_n_wouda_alns_plus_common_completion",
+    "budget": 100,
+    "dataset_role": "primary",
+    "instance_id": "DEV-DUAL-D2-GROUP789-SRC15-N34-DEP2",
+    "mechanism_activity": {
+      "common_completion": {
+        "carbon": {
+          "action_changes": [
+            {
+              "new_emissions_kg": 2.6383247414837068,
+              "new_start_second": 82861.9555779149,
+              "old_emissions_kg": 2.64484537483833,
+              "old_start_second": 82800.0,
+              "station_id": "D0",
+              "vehicle_id": "EV1#T1"
+            },
+            {
+              "new_emissions_kg": 12.63975546756054,
+              "new_start_second": 69555.7708374258,
+              "old_emissions_kg": 13.567016991061486,
+              "old_start_second": 37800.0,
+              "station_id": "D0",
+              "vehicle_id": "EV1#T2"
+            }
+          ],
+          "actions_retimed": 2,
+          "candidate_start_count": 58,
+          "complete_evaluations": 0,
+          "eligible_actions": 2,
+          "exact_decoder_updates": 1,
+          "feasibility_checks": 1,
+          "improvements": 1,
+          "objective_delta": -0.047006593776110606,
+          "old_local_objective": 28.446092974012473,
+          "route_local_schedule_evaluations": 58,
+          "selected_local_objective": 28.399086380236362
+        },
+        "complete_route_search_evaluations": 0,
+        "full_solution_replays": 3,
+        "joint": {
+          "assembled_patterns": 3,
+          "complete_evaluations": 0,
+          "current_pattern": [
+            "cv",
+            "cv",
+            "cv",
+            "cv",
+            "cv"
+          ],
+          "current_proxy_cost": 1044.5437370032396,
+          "exact_decoder_updates": 1,
+          "feasibility_checks": 3,
+          "improvements": 1,
+          "objective_delta": -40.74534204807776,
+          "patterns_considered": 4,
+          "route_proxy_evaluations": 7,
+          "selected_pattern": [
+            "cv",
+            "ev",
+            "ev",
+            "cv",
+            "cv"
+          ],
+          "selected_proxy_cost": 1003.7983949551618
+        },
+        "responsibility": {
+          "accepted_moves": [],
+          "complete_route_search_evaluations": 0,
+          "exact_decoder_updates": 0,
+          "final_recomputed_cost": 1044.5437370032396,
+          "full_feasibility_checks": 64,
+          "improvements": 0,
+          "independent_final_replays": 1,
+          "local_exact_evaluations": 13,
+          "objective_closure_error": 0.0,
+          "proxy_moves_considered": 3819,
+          "stop_reason": "no_improving_exact_candidate"
+        },
+        "route_local_exact_evaluations": 13,
+        "route_local_schedule_evaluations": 58,
+        "route_proxy_evaluations": 7
+      },
+      "route_source": {
+        "candidate_scores": 100,
+        "destroy_operators": 5,
+        "iterations": 100,
+        "reference_replays": 1,
+        "repair_delta_scores": 13194,
+        "repair_operators": 3,
+        "upstream_alns_commit": "4962d91385990033d9bce81d1407cf846d4fb70c"
+      }
+    },
+    "metrics": {
+      "E_cv_direct": 383.23828357931535,
+      "E_ev_indirect": 15.278080209044248,
+      "E_total": 398.5163637883596,
+      "carbon_quota_kg": 0.0,
+      "cost_carbon": 20.061313753106024,
+      "cost_elec": 27.629987822513073,
+      "cost_fix": 400.0,
+      "cost_fuel": 213.63564317903118,
+      "cost_km": 342.4244436067355,
+      "cost_occ": 0.0,
+      "cost_transship": 0.0,
+      "depot_charging_kwh": 149.1094863600274,
+      "distance_cv": 747631.926894839,
+      "distance_ev": 230723.62626726247,
+      "distance_total": 978355.5531621015,
+      "electricity_kwh": 149.1094863600274,
+      "ev_drive_kwh": 149.1094863600274,
+      "fuel_liters": 149.07239074665492,
+      "n_veh_cv": 2,
+      "n_veh_ev": 1,
+      "station_charging_kwh": 0,
+      "total_cost": 1003.7513883613857
+    },
+    "recomputed_cost": 1003.7513883613857,
+    "reported_cost": 1003.7513883613857,
+    "reporting_full_replays": 2,
+    "seed": 1,
+    "solution": {
+      "charging_actions": [
+        {
+          "charge_day_offset": 0,
+          "charge_start_second": 82861.9555779149,
+          "energy_kwh": 39.78782547341898,
+          "occupancy_minutes": 108.51225129114268,
+          "station_id": "D0",
+          "vehicle_id": "EV1#T1"
+        },
+        {
+          "charge_day_offset": 0,
+          "charge_start_second": 69555.7708374258,
+          "energy_kwh": 109.32166088660841,
+          "occupancy_minutes": 298.1499842362047,
+          "station_id": "D0",
+          "vehicle_id": "EV1#T2"
+        }
+      ],
+      "cross_site_services": [],
+      "routes": [
+        {
+          "home_depot_id": "D0",
+          "node_sequence": [
+            "D0",
+            "C012",
+            "C005",
+            "C018",
+            "C017",
+            "C024",
+            "C016",
+            "C032",
+            "D0"
+          ],
+          "vehicle_id": "CV1#T1",
+          "vehicle_type": "cv"
+        },
+        {
+          "home_depot_id": "D0",
+          "node_sequence": [
+            "D0",
+            "C013",
+            "C022",
+            "C023",
+            "C034",
+            "D0"
+          ],
+          "vehicle_id": "EV1#T1",
+          "vehicle_type": "ev"
+        },
+        {
+          "home_depot_id": "D0",
+          "node_sequence": [
+            "D0",
+            "C015",
+            "C006",
+            "C008",
+            "C011",
+            "C010",
+            "C028",
+            "C029",
+            "D0"
+          ],
+          "vehicle_id": "EV1#T2",
+          "vehicle_type": "ev"
+        },
+        {
+          "home_depot_id": "D1",
+          "node_sequence": [
+            "D1",
+            "C003",
+            "C002",
+            "C001",
+            "C004",
+            "C007",
+            "C020",
+            "C027",
+            "C031",
+            "D1"
+          ],
+          "vehicle_id": "CV2#T1",
+          "vehicle_type": "cv"
+        },
+        {
+          "home_depot_id": "D1",
+          "node_sequence": [
+            "D1",
+            "C009",
+            "C014",
+            "C025",
+            "C019",
+            "C030",
+            "C021",
+            "C026",
+            "C033",
+            "D1"
+          ],
+          "vehicle_id": "CV1#T2",
+          "vehicle_type": "cv"
+        }
+      ]
+    },
+    "solution_signature": "12780c55b9ca6997040dab82630fdee76e80c7d60deb49b94c3789ad29dde1b5"
+  },
+  {
+    "arm": "raw_cost_dual_basin_ablation",
+    "budget": 100,
+    "dataset_role": "primary",
+    "instance_id": "DEV-DUAL-D2-GROUP789-SRC15-N34-DEP2",
+    "mechanism_activity": {
+      "alns_candidate_evaluations": 98,
+      "alns_phases": [
+        {
+          "elapsed_seconds": 0.29699687496759,
+          "eval_budget": 68,
+          "evaluations": 68,
+          "history_length": 5,
+          "operator_counts": {
+            "destroy": {
+              "random_customer_removal": [
+                0,
+                0,
+                0,
+                3
+              ],
+              "route_segment_removal": [
+                1,
+                0,
+                0,
+                16
+              ],
+              "shaw_related_removal": [
+                0,
+                0,
+                0,
+                3
+              ],
+              "vehicle_type_swap": [
+                2,
+                0,
+                0,
+                23
+              ],
+              "whole_route_removal": [
+                1,
+                0,
+                0,
+                16
+              ],
+              "worst_customer_removal": [
+                0,
+                0,
+                0,
+                3
+              ]
+            },
+            "repair": {
+              "greedy_insert_repair": [
+                3,
+                0,
+                0,
+                41
+              ],
+              "regret2_insert_repair": [
+                1,
+                0,
+                0,
+                18
+              ],
+              "regret3_insert_repair": [
+                0,
+                0,
+                0,
+                5
+              ]
+            },
+            "scan": {
+              "infeasible": 0,
+              "rebuild_accepts": 0,
+              "rebuild_attempts": 0,
+              "restart_accepts": 0,
+              "restart_attempts": 0
+            },
+            "score_counts": {
+              "candidate": 68,
+              "candidate_channel:destroy_repair": 68,
+              "reference": 2,
+              "reference_cache_hit": 5,
+              "reference_cache_hit:history": 5,
+              "reference_phase:final": 1,
+              "reference_phase:initial": 1,
+              "repair_delta": 2117
+            },
+            "structural": {
+              "accepted": 0,
+              "attempts": 0,
+              "best_improved": 0,
+              "rejected": 0
+            },
+            "timing": {}
+          },
+          "seed": 1
+        },
+        {
+          "elapsed_seconds": 0.26759558299090713,
+          "eval_budget": 30,
+          "evaluations": 30,
+          "history_length": 1,
+          "operator_counts": {
+            "destroy": {
+              "random_customer_removal": [
+                0,
+                0,
+                0,
+                6
+              ],
+              "route_segment_removal": [
+                0,
+                0,
+                0,
+                5
+              ],
+              "shaw_related_removal": [
+                0,
+                0,
+                0,
+                6
+              ],
+              "vehicle_type_swap": [
+                0,
+                0,
+                0,
+                1
+              ],
+              "whole_route_removal": [
+                0,
+                0,
+                0,
+                6
+              ],
+              "worst_customer_removal": [
+                0,
+                0,
+                0,
+                6
+              ]
+            },
+            "repair": {
+              "greedy_insert_repair": [
+                0,
+                0,
+                0,
+                11
+              ],
+              "regret2_insert_repair": [
+                0,
+                0,
+                0,
+                10
+              ],
+              "regret3_insert_repair": [
+                0,
+                0,
+                0,
+                9
+              ]
+            },
+            "scan": {
+              "infeasible": 0,
+              "rebuild_accepts": 0,
+              "rebuild_attempts": 0,
+              "restart_accepts": 0,
+              "restart_attempts": 0
+            },
+            "score_counts": {
+              "candidate": 30,
+              "candidate_channel:destroy_repair": 30,
+              "reference": 2,
+              "reference_cache_hit": 1,
+              "reference_cache_hit:history": 1,
+              "reference_phase:final": 1,
+              "reference_phase:initial": 1,
+              "repair_delta": 1118
+            },
+            "structural": {
+              "accepted": 0,
+              "attempts": 0,
+              "best_improved": 0,
+              "rejected": 0
+            },
+            "timing": {}
+          },
+          "seed": 100003
+        }
+      ],
+      "envelope_costs": {
+        "charged_mid_mechanism": 883.7023466965015,
+        "opening_alns_phase": 928.0158870973638,
+        "selected_scored_seed": 1044.5437370032396,
+        "tail_alns_phase": 883.7023466965015,
+        "terminal_after_tail": 883.7023466965015
+      },
+      "envelope_selected": "charged_mid_mechanism",
+      "final_completion": {
+        "carbon": {
+          "action_changes": [],
+          "actions_retimed": 0,
+          "candidate_start_count": 85,
+          "complete_evaluations": 0,
+          "eligible_actions": 4,
+          "exact_decoder_updates": 0,
+          "feasibility_checks": 0,
+          "improvements": 0,
+          "old_local_objective": 84.07876695860199,
+          "route_local_schedule_evaluations": 85,
+          "selected_local_objective": 84.07876695860199,
+          "stop_reason": "no_feasible_improving_retime"
+        },
+        "complete_route_search_evaluations": 0,
+        "full_solution_replays": 3,
+        "joint": {
+          "assembled_patterns": 1,
+          "complete_evaluations": 0,
+          "current_pattern": [
+            "ev",
+            "ev",
+            "ev",
+            "cv",
+            "ev"
+          ],
+          "current_proxy_cost": 883.7023466965014,
+          "exact_decoder_updates": 0,
+          "feasibility_checks": 1,
+          "improvements": 0,
+          "patterns_considered": 16,
+          "route_proxy_evaluations": 9,
+          "selected_pattern": [
+            "ev",
+            "ev",
+            "ev",
+            "cv",
+            "ev"
+          ],
+          "selected_proxy_cost": 883.7023466965014,
+          "stop_reason": "current_pattern_is_best"
+        },
+        "responsibility": {
+          "accepted_moves": [],
+          "complete_route_search_evaluations": 0,
+          "exact_decoder_updates": 0,
+          "final_recomputed_cost": 883.7023466965015,
+          "full_feasibility_checks": 64,
+          "improvements": 0,
+          "independent_final_replays": 1,
+          "local_exact_evaluations": 9,
+          "objective_closure_error": 0.0,
+          "proxy_moves_considered": 3696,
+          "stop_reason": "no_improving_exact_candidate"
+        },
+        "route_local_exact_evaluations": 9,
+        "route_local_schedule_evaluations": 85,
+        "route_proxy_evaluations": 9
+      },
+      "final_recomputed_cost": 883.7023466965015,
+      "hgs_native": {
+        "native_calls": 2,
+        "native_cost_by_depot": {
+          "D0": 2106.850170038213,
+          "D1": 2252.1683762824814
+        },
+        "native_cpu_seconds": 0.026585,
+        "native_route_count": 5,
+        "no_improvement_iterations": 100,
+        "official_commit": "1a927955cd2861a29d978f0d359d6e647db9319c",
+        "order_hash": "722d13244fe10d7f31e5a8e6ec9f60061dc2d1882181d924ec64f412902c5b0c",
+        "time_window_weight": 1.0,
+        "wall_seconds": 0.027682707994244993
+      },
+      "mid_candidate_evaluations": 1,
+      "middle": {
+        "attempted": true,
+        "candidate_evaluations": 1,
+        "changed": true,
+        "completed_cost": 883.7023466965015,
+        "completion": {
+          "carbon": {
+            "action_changes": [
+              {
+                "new_emissions_kg": 7.986601229756353,
+                "new_start_second": 74644.06511522263,
+                "old_emissions_kg": 8.44545328428942,
+                "old_start_second": 73800.0,
+                "station_id": "D0",
+                "vehicle_id": "EV1#T1"
+              },
+              {
+                "new_emissions_kg": 5.336967060254508,
+                "new_start_second": 77778.97039022887,
+                "old_emissions_kg": 5.4782647662608355,
+                "old_start_second": 77400.0,
+                "station_id": "D0",
+                "vehicle_id": "EV1#T2"
+              },
+              {
+                "new_emissions_kg": 18.518676015792643,
+                "new_start_second": 64139.81249988738,
+                "old_emissions_kg": 19.558777081971982,
+                "old_start_second": 37800.0,
+                "station_id": "D1",
+                "vehicle_id": "EV1#T3"
+              },
+              {
+                "new_emissions_kg": 19.325721355674162,
+                "new_start_second": 63831.47569864901,
+                "old_emissions_kg": 22.495428880494615,
+                "old_start_second": 39600.0,
+                "station_id": "D0",
+                "vehicle_id": "EV1#T4"
+              }
+            ],
+            "actions_retimed": 4,
+            "candidate_start_count": 85,
+            "complete_evaluations": 0,
+            "eligible_actions": 4,
+            "exact_decoder_updates": 1,
+            "feasibility_checks": 1,
+            "improvements": 1,
+            "objective_delta": -0.2421333034164661,
+            "old_local_objective": 84.32090026201845,
+            "route_local_schedule_evaluations": 85,
+            "selected_local_objective": 84.07876695860199
+          },
+          "complete_route_search_evaluations": 0,
+          "full_solution_replays": 3,
+          "joint": {
+            "assembled_patterns": 4,
+            "complete_evaluations": 0,
+            "current_pattern": [
+              "ev",
+              "ev",
+              "cv",
+              "cv",
+              "ev"
+            ],
+            "current_proxy_cost": 921.6675670746847,
+            "exact_decoder_updates": 1,
+            "feasibility_checks": 4,
+            "improvements": 1,
+            "objective_delta": -37.723087074766795,
+            "patterns_considered": 16,
+            "route_proxy_evaluations": 9,
+            "selected_pattern": [
+              "ev",
+              "ev",
+              "ev",
+              "cv",
+              "ev"
+            ],
+            "selected_proxy_cost": 883.9444799999179
+          },
+          "responsibility": {
+            "accepted_moves": [
+              {
+                "exact_objective_delta": -6.039884970226581,
+                "kind": "handover",
+                "moved_customers": [
+                  "C031"
+                ],
+                "proxy_delta": 0.4132576566375377,
+                "round": 1,
+                "route_indices": [
+                  2,
+                  1
+                ]
+              },
+              {
+                "exact_objective_delta": -0.30843505245252345,
+                "kind": "reciprocal_exchange",
+                "moved_customers": [
+                  "C013",
+                  "C020"
+                ],
+                "proxy_delta": -0.9119023276482737,
+                "round": 2,
+                "route_indices": [
+                  0,
+                  2
+                ]
+              }
+            ],
+            "complete_route_search_evaluations": 0,
+            "exact_decoder_updates": 2,
+            "final_recomputed_cost": 921.6675670746847,
+            "full_feasibility_checks": 192,
+            "improvements": 2,
+            "independent_final_replays": 1,
+            "local_exact_evaluations": 31,
+            "objective_closure_error": 0.0,
+            "proxy_moves_considered": 11183,
+            "stop_reason": "no_improving_exact_candidate"
+          },
+          "route_local_exact_evaluations": 31,
+          "route_local_schedule_evaluations": 85,
+          "route_proxy_evaluations": 9
+        },
+        "opening_budget": 68,
+        "score_counts": {
+          "candidate": 1,
+          "candidate_channel:dual_basin_mid_mechanism": 1
+        },
+        "source_cost": 928.0158870973638,
+        "tail_budget": 30
+      },
+      "reference_replay_ledger": {
+        "alns_initial_and_final": 4,
+        "final_completion": 3,
+        "final_envelope_recompute": 1,
+        "middle_completion": 3,
+        "selector": 1,
+        "total_reported": 12
+      },
+      "selector": {
+        "candidate_evaluations": 1,
+        "cost_margin_hgs_minus_default": 100.90665009254803,
+        "default_cost": 1044.5437370032396,
+        "default_fast_completion": {
+          "ablation": "route-local mechanism judgement removed",
+          "complete_candidate_evaluations": 0
+        },
+        "hgs_cost": 1145.4503870957876,
+        "hgs_fast_completion": {
+          "ablation": "route-local mechanism judgement removed",
+          "complete_candidate_evaluations": 0
+        },
+        "reference_replays": 1,
+        "score_counts": {
+          "candidate": 1,
+          "candidate_channel:dual_basin_hgs_alternative": 1,
+          "reference": 1,
+          "reference_phase:dual_basin_default_anchor": 1
+        },
+        "selected_basin": "current_alns_warm",
+        "selector_mode": "raw"
+      },
+      "selector_candidate_evaluations": 1,
+      "total_candidate_evaluations": 100
+    },
+    "metrics": {
+      "E_cv_direct": 130.67638314615346,
+      "E_ev_indirect": 51.16796566147768,
+      "E_total": 181.84434880763115,
+      "carbon_quota_kg": 0.0,
+      "cost_carbon": 9.154044518976153,
+      "cost_elec": 81.50297156720319,
+      "cost_fix": 400.0,
+      "cost_fuel": 72.84536633710354,
+      "cost_km": 320.1999642732186,
+      "cost_occ": 0.0,
+      "cost_transship": 0.0,
+      "depot_charging_kwh": 439.84334358987155,
+      "distance_cv": 253389.50515667634,
+      "distance_ev": 661467.5356239482,
+      "distance_total": 914857.0407806246,
+      "electricity_kwh": 439.84334358987155,
+      "ev_drive_kwh": 439.84334358987155,
+      "fuel_liters": 50.830623359921525,
+      "n_veh_cv": 1,
+      "n_veh_ev": 1,
+      "station_charging_kwh": 0,
+      "total_cost": 883.7023466965015
+    },
+    "recomputed_cost": 883.7023466965015,
+    "reported_cost": 883.7023466965015,
+    "reporting_full_replays": 2,
+    "seed": 1,
+    "solution": {
+      "charging_actions": [
+        {
+          "charge_day_offset": 0,
+          "charge_start_second": 74644.06511522263,
+          "energy_kwh": 83.79299351902975,
+          "occupancy_minutes": 228.52634596099023,
+          "station_id": "D0",
+          "vehicle_id": "EV1#T1"
+        },
+        {
+          "charge_day_offset": 0,
+          "charge_start_second": 77778.97039022887,
+          "energy_kwh": 64.10900733775425,
+          "occupancy_minutes": 174.8427472847843,
+          "station_id": "D0",
+          "vehicle_id": "EV1#T2"
+        },
+        {
+          "charge_day_offset": 0,
+          "charge_start_second": 64139.81249988738,
+          "energy_kwh": 141.1281939063498,
+          "occupancy_minutes": 384.8950742900449,
+          "station_id": "D1",
+          "vehicle_id": "EV1#T3"
+        },
+        {
+          "charge_day_offset": 0,
+          "charge_start_second": 63831.47569864901,
+          "energy_kwh": 150.81314882673777,
+          "occupancy_minutes": 411.30858770928484,
+          "station_id": "D0",
+          "vehicle_id": "EV1#T4"
+        }
+      ],
+      "cross_site_services": [
+        {
+          "customer_id": "C020",
+          "served_by_depot_id": "D0"
+        },
+        {
+          "customer_id": "C031",
+          "served_by_depot_id": "D0"
+        },
+        {
+          "customer_id": "C013",
+          "served_by_depot_id": "D1"
+        }
+      ],
+      "routes": [
+        {
+          "home_depot_id": "D0",
+          "node_sequence": [
+            "D0",
+            "C006",
+            "C015",
+            "C022",
+            "C020",
+            "C023",
+            "C016",
+            "C032",
+            "C034",
+            "D0"
+          ],
+          "vehicle_id": "EV1#T1",
+          "vehicle_type": "ev"
+        },
+        {
+          "home_depot_id": "D0",
+          "node_sequence": [
+            "D0",
+            "C011",
+            "C028",
+            "C029",
+            "C031",
+            "D0"
+          ],
+          "vehicle_id": "EV1#T2",
+          "vehicle_type": "ev"
+        },
+        {
+          "home_depot_id": "D1",
+          "node_sequence": [
+            "D1",
+            "C003",
+            "C002",
+            "C001",
+            "C004",
+            "C007",
+            "C013",
+            "C027",
+            "D1"
+          ],
+          "vehicle_id": "EV1#T3",
+          "vehicle_type": "ev"
+        },
+        {
+          "home_depot_id": "D1",
+          "node_sequence": [
+            "D1",
+            "C009",
+            "C014",
+            "C025",
+            "C019",
+            "C030",
+            "C021",
+            "C026",
+            "C033",
+            "D1"
+          ],
+          "vehicle_id": "CV1#T1",
+          "vehicle_type": "cv"
+        },
+        {
+          "home_depot_id": "D0",
+          "node_sequence": [
+            "D0",
+            "C012",
+            "C008",
+            "C010",
+            "C005",
+            "C018",
+            "C017",
+            "C024",
+            "D0"
+          ],
+          "vehicle_id": "EV1#T4",
+          "vehicle_type": "ev"
+        }
+      ]
+    },
+    "solution_signature": "0a691c73d97e1cae2afed0d90d18082b1fa7d8894ff6b9c78a83d471b197e7d2"
+  }
+]

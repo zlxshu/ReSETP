@@ -1,0 +1,46 @@
+{
+  "arms": [
+    "mechanism_judged_dual_basin_alns",
+    "mechanism_alns_v7",
+    "current_project_pure_alns",
+    "official_hgs_route_source_plus_common_completion",
+    "original_n_wouda_alns_plus_common_completion",
+    "raw_cost_dual_basin_ablation",
+    "mechanism_judged_dual_basin_no_mid_ablation"
+  ],
+  "backup_activated": false,
+  "backup_instance_ids": [
+    "DEV-DUAL-D2-BACKUP-GROUP456-SRC20-N44-DEP2",
+    "DEV-DUAL-D2-BACKUP-GROUP789-SRC75-N168-DEP2"
+  ],
+  "blind_lock_sha256": "604715a0a8bebf48a44bf2f060a8a20959e172afcb530d5383cad6df2eec2f5c",
+  "budget": 100,
+  "complete_resetp_candidate_evaluations_equalized": true,
+  "completed_arm_count": 14,
+  "decision_dataset_role": "primary",
+  "environment": {
+    "MKL_NUM_THREADS": "1",
+    "NUMEXPR_NUM_THREADS": "1",
+    "OMP_NUM_THREADS": "1",
+    "OPENBLAS_NUM_THREADS": "1",
+    "PYTHONHASHSEED": "0",
+    "VECLIB_MAXIMUM_THREADS": "1"
+  },
+  "formal_experiment_activated": false,
+  "freshness_label": "NEW_COMPOSITE_BUNDLE_NOT_RAW_PRISTINE",
+  "gate_elapsed_seconds": 26.422148082987405,
+  "prices": {
+    "B_battery_kwh": 280.0
+  },
+  "primary_instance_ids": [
+    "DEV-DUAL-D2-GROUP456-SRC10-N21-DEP2",
+    "DEV-DUAL-D2-GROUP789-SRC15-N34-DEP2"
+  ],
+  "purpose": "stage1_isolated_development_gate_only",
+  "reporting_full_replays_per_completed_arm": 2,
+  "run_failure_count": 0,
+  "schema_version": "resetp.dual-basin-alns.d2-metadata.v2",
+  "seed": 1,
+  "stage2_activated": false,
+  "total_compute_equalized": false
+}
