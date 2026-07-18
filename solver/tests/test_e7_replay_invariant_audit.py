@@ -40,6 +40,16 @@ def test_invariant_manifest_requires_exact_inventory_and_hashes(tmp_path) -> Non
     assert audit.verify_manifest(tmp_path) == ["unlisted:unexpected.txt"]
 
 
+def test_remove_appledouble_keeps_scientific_files(tmp_path) -> None:
+    scientific = tmp_path / "raw_runs.csv"
+    sidecar = tmp_path / "._raw_runs.csv"
+    scientific.write_text("value\n1\n", encoding="utf-8")
+    sidecar.write_bytes(b"macOS metadata")
+    assert audit.remove_appledouble(tmp_path) == ["._raw_runs.csv"]
+    assert scientific.read_text(encoding="utf-8") == "value\n1\n"
+    assert not sidecar.exists()
+
+
 def test_invariant_audit_loads_from_outside_repository_without_pythonpath(
     tmp_path,
 ) -> None:

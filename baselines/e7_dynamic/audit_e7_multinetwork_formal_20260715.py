@@ -17,7 +17,9 @@ from typing import Any
 ROOT = Path(__file__).resolve().parents[2]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
-from baselines.e7_dynamic import audit_e7_external_pause_timing_20260716 as pause_audit
+from baselines.e7_dynamic import (  # noqa: E402
+    audit_e7_external_pause_timing_20260716 as pause_audit,
+)
 
 
 FORMAL = ROOT / "baselines/e7_dynamic/e7_multinetwork_formal_20260715"
@@ -64,6 +66,16 @@ def write_json(path: Path, value: Any) -> None:
         json.dumps(value, ensure_ascii=False, indent=2, sort_keys=True) + "\n",
         encoding="utf-8",
     )
+
+
+def remove_appledouble(root: Path) -> list[str]:
+    """Remove macOS sidecars from this newly generated audit package only."""
+    removed: list[str] = []
+    for path in sorted(root.rglob("._*")):
+        if path.is_file():
+            removed.append(str(path.relative_to(root)))
+            path.unlink()
+    return removed
 
 
 def verify_manifest(root: Path) -> tuple[int, list[str]]:
@@ -182,9 +194,12 @@ def main() -> int:
     )
     sessions = json.loads((FORMAL / "sessions.json").read_text(encoding="utf-8"))
     pause_incident = json.loads(pause_audit.INCIDENT.read_text(encoding="utf-8"))
-    pause_contamination = pause_audit.contaminated_stages(
-        sessions, float(pause_incident["pause_duration_seconds"])
+    pause_timing_gate = pause_audit.verified_effective_timing_gate(
+        sessions,
+        float(pause_incident["pause_duration_seconds"]),
+        incident_sha256=sha256(pause_audit.INCIDENT),
     )
+    pause_contamination = pause_timing_gate["unresolved_contaminated_stages"]
     matrix_failures = formal_task_matrix_failures(sessions)
     if matrix_failures:
         raise RuntimeError(f"formal task matrix is not exact: {matrix_failures}")
@@ -588,6 +603,12 @@ def main() -> int:
             REPLAY_INVARIANTS / "decision.json"
         ),
         "external_pause_incident_sha256": sha256(pause_audit.INCIDENT),
+        "timing_rerun_completion_sha256": pause_timing_gate[
+            "timing_rerun_completion_sha256"
+        ],
+        "timing_rerun_manifest_sha256": pause_timing_gate[
+            "timing_rerun_manifest_sha256"
+        ],
         "audit_source_sha256": sha256(Path(__file__).resolve()),
     }
     write_json(OUT / "metadata.json", metadata)
@@ -605,6 +626,7 @@ def main() -> int:
             "economic_closure_failures": economic_closure_failures,
             "external_pause_timing_contamination_count": len(pause_contamination),
             "external_pause_timing_contamination": pause_contamination,
+            "external_pause_timing_gate": pause_timing_gate,
             "controlled_arm_failure_count": sum(
                 payload["execution_status"] == "HALT_NO_EXECUTABLE_CONTINUATION"
                 for payload in sessions
@@ -619,12 +641,16 @@ def main() -> int:
         "程序报告的受控不可执行臂仍留在任务状态表，不进入四臂成对均值。\n",
         encoding="utf-8",
     )
+    remove_appledouble(OUT)
     hashes = {
         str(path.relative_to(OUT)): sha256(path)
         for path in sorted(OUT.rglob("*"))
         if path.is_file() and path.name != "artifact_hashes.json" and not path.name.startswith("._")
     }
     write_json(OUT / "artifact_hashes.json", hashes)
+    remove_appledouble(OUT)
+    if list(OUT.rglob("._*")):
+        raise RuntimeError("AppleDouble files remain in independent E7 audit")
     return 0
 
 

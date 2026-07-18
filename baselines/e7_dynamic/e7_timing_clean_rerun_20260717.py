@@ -17,6 +17,7 @@ import hashlib
 import json
 import os
 from pathlib import Path
+import statistics
 import subprocess
 import sys
 import time
@@ -54,6 +55,8 @@ RECOVERY_CONTRACT_KEYS = {
 }
 EXPECTED_RECOVERY_TASK_COUNT = 18
 EXPECTED_TASK_COUNT = 120
+PARENT_REPRODUCTION_RELATIVE_TOLERANCE = 0.05
+CHILD_SHIFT_CLUSTER_PAUSE_FRACTION = 0.10
 
 PARENT_CONTAMINATED = {
     "N322__geographic__stream2__full",
@@ -334,6 +337,140 @@ def without_elapsed(value: Any) -> Any:
     return value
 
 
+def stage_elapsed(payload: Mapping[str, Any], stage: int) -> float:
+    """Return the unique elapsed time for one declared contaminated stage."""
+    matching = [
+        row
+        for row in payload.get("rows", [])
+        if int(row.get("stage", -1)) == int(stage)
+    ]
+    if len(matching) != 1:
+        raise RerunContractError(
+            f"expected exactly one timing row for stage {stage}; got {len(matching)}"
+        )
+    elapsed = float(matching[0].get("elapsed_seconds", float("nan")))
+    if not (elapsed > 0.0):
+        raise RerunContractError(
+            f"stage {stage} elapsed_seconds must be positive; got {elapsed}"
+        )
+    return elapsed
+
+
+def paired_timing_acceptance(
+    payloads: Mapping[str, Mapping[str, Any]],
+    historical_payloads: Mapping[str, Mapping[str, Any]],
+    contaminated: Sequence[Mapping[str, Any]],
+    pause_seconds: float,
+) -> dict[str, Any]:
+    """Apply the user-approved paired timing acceptance contract v2.
+
+    Parent-lineage stages must reproduce their historical elapsed time within
+    five percent. Child-lineage stages must be faster than the historical
+    paused stages, and their removed-time shifts must cluster around a common
+    additive offset. The cluster tolerance is anchored to ten percent of the
+    independently recorded pause duration, not to optimization outcomes.
+    """
+    by_task = {str(item["task_id"]): dict(item) for item in contaminated}
+    if set(by_task) != set(payloads) or set(by_task) != set(historical_payloads):
+        raise RerunContractError("paired timing task identities do not match")
+    if set(task_id for task_id, item in by_task.items() if item["lineage"] == "parent") != PARENT_CONTAMINATED:
+        raise RerunContractError("paired timing parent identities differ")
+    if set(task_id for task_id, item in by_task.items() if item["lineage"] == "child") != CHILD_CONTAMINATED:
+        raise RerunContractError("paired timing child identities differ")
+
+    evidence: list[dict[str, Any]] = []
+    child_shifts: list[float] = []
+    failures: list[str] = []
+    for task_id in sorted(by_task):
+        item = by_task[task_id]
+        stage = int(item["stage"])
+        lineage = str(item["lineage"])
+        old_elapsed = stage_elapsed(historical_payloads[task_id], stage)
+        new_elapsed = stage_elapsed(payloads[task_id], stage)
+        delta_seconds = new_elapsed - old_elapsed
+        relative_delta = delta_seconds / old_elapsed
+        accepted = True
+        mode: str
+        if lineage == "parent":
+            mode = "CLEAN_HISTORICAL_TIMING_REPRODUCED"
+            accepted = (
+                abs(relative_delta) <= PARENT_REPRODUCTION_RELATIVE_TOLERANCE
+            )
+            if not accepted:
+                failures.append(
+                    f"{task_id}/stage{stage}: parent relative timing difference "
+                    f"{relative_delta:.6f} exceeds "
+                    f"{PARENT_REPRODUCTION_RELATIVE_TOLERANCE:.6f}"
+                )
+        elif lineage == "child":
+            mode = "HISTORICAL_PAUSE_OFFSET_REMOVED"
+            removed_seconds = old_elapsed - new_elapsed
+            child_shifts.append(removed_seconds)
+            accepted = removed_seconds > 0.0
+            if not accepted:
+                failures.append(
+                    f"{task_id}/stage{stage}: child rerun did not remove positive time"
+                )
+        else:
+            raise RerunContractError(f"unknown timing lineage: {lineage}")
+        evidence.append(
+            {
+                "task_id": task_id,
+                "stage": stage,
+                "lineage": lineage,
+                "mode": mode,
+                "historical_elapsed_seconds": old_elapsed,
+                "rerun_elapsed_seconds": new_elapsed,
+                "delta_seconds": delta_seconds,
+                "relative_delta": relative_delta,
+                "accepted_before_child_cluster_gate": accepted,
+            }
+        )
+
+    child_shift_median = statistics.median(child_shifts)
+    child_cluster_tolerance_seconds = (
+        pause_seconds * CHILD_SHIFT_CLUSTER_PAUSE_FRACTION
+    )
+    for row in evidence:
+        if row["lineage"] != "child":
+            row["child_shift_deviation_from_median_seconds"] = None
+            row["accepted"] = row["accepted_before_child_cluster_gate"]
+            continue
+        removed_seconds = -float(row["delta_seconds"])
+        deviation = abs(removed_seconds - child_shift_median)
+        clustered = deviation <= child_cluster_tolerance_seconds
+        row["child_shift_deviation_from_median_seconds"] = deviation
+        row["accepted"] = (
+            bool(row["accepted_before_child_cluster_gate"]) and clustered
+        )
+        if not clustered:
+            failures.append(
+                f"{row['task_id']}/stage{row['stage']}: removed-time shift "
+                f"deviates from child median by {deviation:.3f}s, above "
+                f"{child_cluster_tolerance_seconds:.3f}s"
+            )
+
+    if failures:
+        raise RerunContractError("; ".join(failures))
+    return {
+        "schema": "setp.e7.timing_acceptance.v2",
+        "status": "PASS_PAIRED_TIMING_ACCEPTANCE_V2",
+        "parent_reproduction_relative_tolerance": (
+            PARENT_REPRODUCTION_RELATIVE_TOLERANCE
+        ),
+        "child_shift_cluster_pause_fraction": (
+            CHILD_SHIFT_CLUSTER_PAUSE_FRACTION
+        ),
+        "child_shift_cluster_tolerance_seconds": (
+            child_cluster_tolerance_seconds
+        ),
+        "child_removed_time_median_seconds": child_shift_median,
+        "parent_task_count": len(PARENT_CONTAMINATED),
+        "child_task_count": len(CHILD_CONTAMINATED),
+        "tasks": evidence,
+    }
+
+
 def write_json(path: Path, payload: Any) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     temporary = path.with_name(f".{path.name}.tmp-{os.getpid()}")
@@ -461,26 +598,24 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
         raise RerunContractError("timing-clean rerun did not close all nine task identities")
 
     semantic_mismatches: list[str] = []
-    contaminated_timing_failures: list[str] = []
     for task_id, payload in sorted(payloads.items()):
         if payload.get("execution_status") != "PASS":
             semantic_mismatches.append(f"{task_id}: rerun did not return PASS")
             continue
-        for row in payload.get("rows", []):
-            if float(row.get("elapsed_seconds", float("inf"))) >= pause:
-                contaminated_timing_failures.append(
-                    f"{task_id}/stage{row.get('stage')}: elapsed_seconds >= pause"
-                )
         if canonical_sha256(without_elapsed(payload)) != canonical_sha256(
             without_elapsed(historical_payloads[task_id])
         ):
             semantic_mismatches.append(
                 f"{task_id}: non-timing payload differs from the same-contract historical payload"
             )
-    if contaminated_timing_failures:
-        raise RerunContractError("; ".join(contaminated_timing_failures))
     if semantic_mismatches:
         raise RerunContractError("; ".join(semantic_mismatches))
+    timing_acceptance = paired_timing_acceptance(
+        payloads,
+        historical_payloads,
+        contaminated,
+        pause,
+    )
 
     after_all = verify_historical_package(parent_contract, child_contract)
     if after_all != before_all:
@@ -490,7 +625,7 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
         for task_id in sorted(payloads)
     }
     result = {
-        "schema": "setp.e7.timing_clean_rerun.v1",
+        "schema": "setp.e7.timing_clean_rerun.v2",
         "status": "PASS_E7_TIMING_CLEAN_RERUN_COMPLETE",
         "started_at_utc": started_at,
         "finished_at_utc": now_utc(),
@@ -515,7 +650,8 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
         "result_direction_used_for_inclusion": False,
         "replacement_reason": "external_pause_timing_contamination",
         "semantic_non_timing_match": True,
-        "all_new_stage_elapsed_below_pause": True,
+        "paired_timing_acceptance": timing_acceptance,
+        "formal_timing_source": "all_nine_rerun_checkpoints",
         "output_root": str(OUTPUT.relative_to(ROOT)),
     }
     write_json(OUTPUT / "RERUN_FINISHED.json", result)

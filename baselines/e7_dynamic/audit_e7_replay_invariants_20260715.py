@@ -25,8 +25,10 @@ for item in (ROOT, ROOT / "solver/src", ROOT / "models/src"):
     if str(item) not in sys.path:
         sys.path.insert(0, str(item))
 
-from baselines.e7_dynamic import e7_multiday_zero_search_replay_20260715 as replay
-from baselines.e7_dynamic import e7_replay_invariants_20260715 as invariants
+from baselines.e7_dynamic import (  # noqa: E402
+    e7_multiday_zero_search_replay_20260715 as replay,
+)
+from baselines.e7_dynamic import e7_replay_invariants_20260715 as invariants  # noqa: E402
 
 
 FORMAL = ROOT / "baselines/e7_dynamic/e7_multinetwork_formal_20260715"
@@ -62,6 +64,16 @@ def write_json(path: Path, value: Any) -> None:
         json.dumps(value, ensure_ascii=False, indent=2, sort_keys=True) + "\n",
         encoding="utf-8",
     )
+
+
+def remove_appledouble(root: Path) -> list[str]:
+    """Remove macOS sidecars from a newly generated evidence package only."""
+    removed: list[str] = []
+    for path in sorted(root.rglob("._*")):
+        if path.is_file():
+            removed.append(str(path.relative_to(root)))
+            path.unlink()
+    return removed
 
 
 def verify_manifest(root: Path) -> list[str]:
@@ -320,12 +332,18 @@ def main() -> int:
             "不调用路径搜索；相邻滚动触发充电窗口、共享充电桩容量、路线与电量哈希以及已封存排放值均通过。\n",
             encoding="utf-8",
         )
+        remove_appledouble(temporary)
         hashes = {
             str(path.relative_to(temporary)): sha256(path)
             for path in sorted(temporary.rglob("*"))
-            if path.is_file() and path.name != "artifact_hashes.json"
+            if path.is_file()
+            and path.name != "artifact_hashes.json"
+            and not path.name.startswith("._")
         }
         write_json(temporary / "artifact_hashes.json", hashes)
+        remove_appledouble(temporary)
+        if list(temporary.rglob("._*")):
+            raise RuntimeError("AppleDouble files remain in invariant evidence")
         temporary.replace(OUT)
     except Exception:
         shutil.rmtree(temporary, ignore_errors=True)

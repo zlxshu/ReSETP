@@ -1,0 +1,89 @@
+{
+  "checks": {
+    "external_monitor_pause_timing_uncontaminated": true,
+    "formal_artifact_hashes_pass": true,
+    "formal_decision_complete": true,
+    "formal_session_count_120": true,
+    "full_mechanism_task_count_30": true,
+    "full_stage_participation_floor_pass": true,
+    "no_cooperation_cross_service_zero": true,
+    "paired_economic_decomposition_closes": true,
+    "replay_30_tasks_each_28_distinct_days": true,
+    "replay_all_tasks_share_same_28_days": true,
+    "replay_artifact_hashes_pass": true,
+    "replay_charger_capacity_and_trigger_windows_pass": true,
+    "replay_decision_pass": true,
+    "replay_exact_30_task_matrix": true,
+    "replay_full_arm_only": true,
+    "replay_invariant_row_count_840": true,
+    "replay_invariants_artifact_hashes_pass": true,
+    "replay_invariants_decision_pass": true,
+    "replay_route_and_energy_hashes_pass": true,
+    "replay_route_search_evaluations_zero": true,
+    "replay_row_count_840": true,
+    "replay_summary_has_six_140_row_cells": true,
+    "replay_unique_row_keys_840": true,
+    "six_cells_with_five_streams": true
+  },
+  "controlled_arm_failure_count": 2,
+  "economic_closure_failures": [],
+  "external_pause_timing_contamination": [],
+  "external_pause_timing_contamination_count": 0,
+  "external_pause_timing_gate": {
+    "approved_replacement_stage_count": 9,
+    "historical_contaminated_stage_count": 9,
+    "paired_timing_acceptance_status": "PASS_PAIRED_TIMING_ACCEPTANCE_V2",
+    "pause_duration_seconds": 13934.0,
+    "replacement_stage_keys": [
+      {
+        "stage": 1,
+        "task_id": "N322__geographic__stream2__full"
+      },
+      {
+        "stage": 1,
+        "task_id": "N322__geographic__stream2__no_cooperation"
+      },
+      {
+        "stage": 1,
+        "task_id": "N322__geographic__stream2__no_participation"
+      },
+      {
+        "stage": 1,
+        "task_id": "N322__geographic__stream2__simple_insertion"
+      },
+      {
+        "stage": 1,
+        "task_id": "N322__geographic__stream5__no_cooperation"
+      },
+      {
+        "stage": 1,
+        "task_id": "N322__historical_mixed__stream2__full"
+      },
+      {
+        "stage": 1,
+        "task_id": "N322__historical_mixed__stream2__no_cooperation"
+      },
+      {
+        "stage": 1,
+        "task_id": "N322__historical_mixed__stream2__no_participation"
+      },
+      {
+        "stage": 1,
+        "task_id": "N322__historical_mixed__stream2__simple_insertion"
+      }
+    ],
+    "status": "PASS_E7_EXTERNAL_PAUSE_TIMING_GATE_V2",
+    "timing_rerun_completion_sha256": "1a0f7a7a95cdb002475fb603df9b6426532a28d500ef81e398de15f6c578c2e9",
+    "timing_rerun_manifest_sha256": "ac00f9233cf306c5b688bbdee66eebe712778307f5767a7b510a2432358dda8c",
+    "timing_rerun_schema": "setp.e7.timing_clean_rerun.v2",
+    "unresolved_contaminated_stage_count": 0,
+    "unresolved_contaminated_stages": []
+  },
+  "formal_hash_failures": [],
+  "no_cooperation_cross_failure_count": 0,
+  "replay_hash_failures": [],
+  "replay_invariant_hash_failures": [],
+  "replay_row_failures": [],
+  "stage_floor_failure_count": 0,
+  "verdict": "PASS_E7_MULTINETWORK_FORMAL_AND_REPLAY_INDEPENDENT_AUDIT"
+}

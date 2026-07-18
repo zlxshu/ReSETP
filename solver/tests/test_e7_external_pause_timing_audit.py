@@ -52,3 +52,19 @@ def test_recorded_pause_duration_matches_event_timestamps() -> None:
         len(record["sha256"]) == 64
         for record in incident["event_evidence"].values()
     )
+
+
+def test_approved_v2_rerun_replaces_exact_nine_suspect_stages() -> None:
+    sessions = json.loads(
+        (audit.FORMAL / "sessions.json").read_text(encoding="utf-8")
+    )
+    incident = json.loads(audit.INCIDENT.read_text(encoding="utf-8"))
+    result = audit.verified_effective_timing_gate(
+        sessions,
+        float(incident["pause_duration_seconds"]),
+        incident_sha256=audit.sha256(audit.INCIDENT),
+    )
+    assert result["status"] == "PASS_E7_EXTERNAL_PAUSE_TIMING_GATE_V2"
+    assert result["historical_contaminated_stage_count"] == 9
+    assert result["approved_replacement_stage_count"] == 9
+    assert result["unresolved_contaminated_stage_count"] == 0
