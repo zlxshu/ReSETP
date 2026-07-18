@@ -1675,6 +1675,7 @@ def _run_winner_kernel_loop(
     independent_profit: dict[str, float] | None = None,
     fairness_theta: float | None = None,
     customer_home_depot: dict[str, str] | None = None,
+    mechanism_controller: Any | None = None,
 ) -> AlnsRunResult:
     policy = policy or _search_policy_for_instance(instance, require_charging_signal=config.require_charging_signal)
     effective_prices = prices or DEFAULT_PRICES
@@ -1753,8 +1754,12 @@ def _run_winner_kernel_loop(
     )
     acceptance_config = _chain_acceptance_config(selector_kind, config)
     acceptance = _make_winner_acceptance_criterion(current, config=acceptance_config, flags=flags)
-    destroy_counts = {name: [0, 0, 0, 0] for name, _ in operator_set.destroy_ops}
-    repair_counts = {name: [0, 0, 0, 0] for name, _ in operator_set.repair_ops}
+    destroy_counts = {
+        name: [0, 0, 0, 0] for name, _ in operator_set.destroy_ops
+    }
+    repair_counts = {
+        name: [0, 0, 0, 0] for name, _ in operator_set.repair_ops
+    }
     scan_counts = {
         "restart_attempts": 0,
         "restart_accepts": 0,
@@ -2054,8 +2059,75 @@ def _run_winner_kernel_loop(
                     }
                 )
         progress = _chain_phase_progress(selector_kind, moves, target)
-        forced_cross_pair = _forced_cross_depot_pair(operator_set, context)
-        if forced_cross_pair is None:
+        prescription = None
+        expert_result: dict[str, Any] = {}
+        if mechanism_controller is not None:
+            prescription = mechanism_controller.choose(
+                current.solution,
+                context,
+                eval_count=(
+                    context.budget.count if context.budget else 0
+                ),
+                move_count=moves,
+                moves_since_best_improvement=(
+                    moves_since_best_improvement
+                ),
+            )
+            if prescription is not None:
+                expert_result = dict(
+                    mechanism_controller.propose(
+                        prescription,
+                        current_solution=current.solution,
+                        best_solution=best.solution,
+                        current_objective=current.objective(),
+                        best_objective=best.objective(),
+                        context=context,
+                    )
+                    or {}
+                )
+                proposed_solution = expert_result.get("solution")
+                if (
+                    proposed_solution is None
+                    or not _solution_changed(
+                        current.solution,
+                        proposed_solution,
+                    )
+                ):
+                    mechanism_controller.record_no_candidate(
+                        prescription,
+                        activity=dict(
+                            expert_result.get("activity", {})
+                        ),
+                    )
+                    prescription = None
+        forced_cross_pair = (
+            None
+            if mechanism_controller is not None
+            else _forced_cross_depot_pair(operator_set, context)
+        )
+        if prescription is not None:
+            destroy_idx = -1
+            repair_idx = -1
+            destroy_name = (
+                f"diagnose_{prescription.mechanism_id}"
+            )
+            repair_name = (
+                f"expert_{prescription.mechanism_id}"
+            )
+            selector_info = {
+                "selector_type": "mechanism_prescription",
+                "selector_phase": "context_gated",
+                "mechanism_id": str(prescription.mechanism_id),
+                "mechanism_pressure": float(prescription.pressure),
+                "mechanism_signal_reason": str(
+                    prescription.signal.reason
+                ),
+                "mechanism_signal_metrics": dict(
+                    prescription.signal.metrics
+                ),
+            }
+            selection_source = "mechanism_prescription"
+        elif forced_cross_pair is None:
             destroy_idx, repair_idx = selector(
                 selector_rng,
                 best,
@@ -2077,8 +2149,9 @@ def _run_winner_kernel_loop(
             context.score_counts["cross_depot_forced_operator_calls"] = int(
                 context.score_counts.get("cross_depot_forced_operator_calls", 0)
             ) + 1
-        destroy_name = operator_set.destroy_ops[int(destroy_idx)][0]
-        repair_name = operator_set.repair_ops[int(repair_idx)][0]
+        if prescription is None:
+            destroy_name = operator_set.destroy_ops[int(destroy_idx)][0]
+            repair_name = operator_set.repair_ops[int(repair_idx)][0]
         _record_selector_choice(
             selector_diagnostics,
             destroy_name=destroy_name,
@@ -2088,26 +2161,111 @@ def _run_winner_kernel_loop(
         )
         previous_obj = current.objective()
         previous_best_obj = best.objective()
-        action = WinnerOperatorAction(
-            destroy_op_id=destroy_name,
-            repair_op_id=repair_name,
-            raw_action=(int(destroy_idx), int(repair_idx), -1, -1),
-        )
-        result = apply_winner_action(
-            current.solution,
-            action,
-            context,
-            rng=rng,
-            operator_set=operator_set,
-            policy=policy,
-            current_obj=previous_obj,
-            progress=progress,
-            variant_flags=flags,
-        )
+        if prescription is not None:
+            proposed_solution = _annotate_cross_site_services(
+                expert_result["solution"],
+                context,
+            )
+            with timed_section(
+                context,
+                f"mechanism_expert:{prescription.mechanism_id}",
+            ):
+                proposed_solution, candidate_obj = (
+                    score_search_candidate(
+                        proposed_solution,
+                        context,
+                        channel=(
+                            "mechanism_prescription:"
+                            f"{prescription.mechanism_id}"
+                        ),
+                    )
+                )
+            estimated_objective = expert_result.get(
+                "estimated_objective"
+            )
+            if (
+                estimated_objective is not None
+                and abs(
+                    float(estimated_objective)
+                    - float(candidate_obj)
+                )
+                > 1.0e-7
+            ):
+                raise RuntimeError(
+                    "mechanism expert objective closure failed: "
+                    f"{prescription.mechanism_id}: "
+                    f"{estimated_objective} != {candidate_obj}"
+                )
+            candidate = AlnsState(
+                proposed_solution,
+                context,
+                objective_value=float(candidate_obj),
+                policy=policy,
+                source_solution=current.solution,
+            )
+            hard_violation_count = _hard_violation_count(
+                candidate.solution,
+                context,
+            )
+            if hard_violation_count:
+                raise RuntimeError(
+                    "mechanism expert returned an infeasible candidate: "
+                    f"{prescription.mechanism_id}: "
+                    f"{hard_violation_count}"
+                )
+            result = {
+                "candidate_state": candidate,
+                "candidate_obj": float(candidate_obj),
+                "actual_evals_added": 1,
+                "changed": True,
+                "hard_violation_count": 0,
+                "trace": {
+                    "operator_base_id": operator_base_id,
+                    "winner_operator_module": (
+                        winner_operator_module
+                    ),
+                    "destroy_id": destroy_name,
+                    "repair_id": repair_name,
+                    "candidate_backend": (
+                        "model_specific_mechanism_expert"
+                    ),
+                    "changed": True,
+                    "removed_count": 0,
+                    "hard_violation_count": 0,
+                    "candidate_obj": float(candidate_obj),
+                    "actual_evals_added": 1,
+                    "mechanism_expert_activity": dict(
+                        expert_result.get("activity", {})
+                    ),
+                },
+            }
+        else:
+            action = WinnerOperatorAction(
+                destroy_op_id=destroy_name,
+                repair_op_id=repair_name,
+                raw_action=(
+                    int(destroy_idx),
+                    int(repair_idx),
+                    -1,
+                    -1,
+                ),
+            )
+            result = apply_winner_action(
+                current.solution,
+                action,
+                context,
+                rng=rng,
+                operator_set=operator_set,
+                policy=policy,
+                current_obj=previous_obj,
+                progress=progress,
+                variant_flags=flags,
+            )
         candidate = result["candidate_state"]
         candidate_obj = float(result["candidate_obj"])
         if (
-            structural_component == "rvnd_swapstar"
+            prescription is None
+            and structural_component == "rvnd_swapstar"
             and moves_since_best_improvement >= 3 * _structural_rescue_interval(target)
             and moves >= _structural_late_stage_start(target)
             and not candidate.removed_customers
@@ -2154,7 +2312,8 @@ def _run_winner_kernel_loop(
                         }
                     )
         if (
-            structural_component == "true_swapstar"
+            prescription is None
+            and structural_component == "true_swapstar"
             and _structural_component_due(
                 structural_component,
                 moves=moves,
@@ -2234,6 +2393,23 @@ def _run_winner_kernel_loop(
         hard_violation_count = int(result.get("hard_violation_count", _hard_violation_count(candidate.solution, candidate.context)))
         best_improved = accepted and candidate_obj < previous_best_obj - 1e-9 and hard_violation_count == 0
         better_current = accepted and candidate_obj < previous_obj - 1e-9
+        if prescription is not None:
+            mechanism_controller.record_outcome(
+                prescription,
+                source_solution=current.solution,
+                candidate_solution=candidate.solution,
+                changed=bool(changed),
+                accepted=bool(accepted),
+                best_improved=bool(best_improved),
+                evaluations_added=int(
+                    result.get("actual_evals_added", 0)
+                ),
+                candidate_objective=float(candidate_obj),
+                previous_objective=float(previous_obj),
+                expert_activity=dict(
+                    expert_result.get("activity", {})
+                ),
+            )
         if trace_diagnostic:
             trace_row = dict(result.get("trace", {}))
             trace_row.update(
@@ -2296,9 +2472,21 @@ def _run_winner_kernel_loop(
                 )
         if not best_improved:
             moves_since_best_improvement += 1
-        destroy_counts[destroy_name][outcome_idx] += 1
-        repair_counts[repair_name][outcome_idx] += 1
-        selector.update(candidate, int(destroy_idx), int(repair_idx), outcome_idx)
+        destroy_counts.setdefault(
+            destroy_name,
+            [0, 0, 0, 0],
+        )[outcome_idx] += 1
+        repair_counts.setdefault(
+            repair_name,
+            [0, 0, 0, 0],
+        )[outcome_idx] += 1
+        if prescription is None:
+            selector.update(
+                candidate,
+                int(destroy_idx),
+                int(repair_idx),
+                outcome_idx,
+            )
         if _should_reset_chain_selector(selector_kind, moves):
             selector = _make_operator_selector(
                 len(operator_set.destroy_ops),
@@ -2366,6 +2554,11 @@ def _run_winner_kernel_loop(
         "scan": dict(scan_counts),
         "timing": timing_snapshot,
         "structural": dict(structural_counts),
+        "mechanism_prescriptions": (
+            mechanism_controller.diagnostics()
+            if mechanism_controller is not None
+            else {}
+        ),
         "score_counts": dict(context.score_counts),
     }
     if trace_diagnostic:
@@ -2701,6 +2894,7 @@ def _empty_selector_diagnostics(
         "selector_sample_count": 0,
         "softmax_sample_count": 0,
         "forced_cross_depot_count": 0,
+        "mechanism_prescription_count": 0,
         "pair_selection_counts": {},
         "_temperature_count": 0,
         "_temperature_sum": 0.0,
@@ -2729,6 +2923,10 @@ def _record_selector_choice(
     if selection_source == "forced_cross_depot":
         diagnostics["forced_cross_depot_count"] = (
             int(diagnostics["forced_cross_depot_count"]) + 1
+        )
+    elif selection_source == "mechanism_prescription":
+        diagnostics["mechanism_prescription_count"] = (
+            int(diagnostics["mechanism_prescription_count"]) + 1
         )
     else:
         diagnostics["selector_sample_count"] = (

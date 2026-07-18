@@ -403,6 +403,7 @@ def exact_cross_depot_responsibility_decode(
     max_rounds: int = 3,
     max_exact_candidates_per_round: int = 64,
     top_insertions: int = 3,
+    independent_final_replay: bool = True,
 ) -> tuple[Solution, float, dict[str, Any]]:
     """Apply monotone cross-depot handovers using affected-route exact deltas."""
 
@@ -492,6 +493,12 @@ def exact_cross_depot_responsibility_decode(
         activity["improvements"] += 1
     else:
         activity["stop_reason"] = "round_limit_reached"
+
+    if not independent_final_replay:
+        activity["independent_final_replays"] = 0
+        activity["final_recomputed_cost"] = None
+        activity["objective_closure_error"] = None
+        return best, float(objective), activity
 
     recomputed = float(
         evaluate(

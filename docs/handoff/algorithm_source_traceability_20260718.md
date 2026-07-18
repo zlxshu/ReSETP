@@ -21,7 +21,7 @@
 | 合作公平动作 | Soriano 等（2023）把利润公平直接放进插入和局部移动 | 自研“公平缺口定向修复”：以各车场最强独立经营收益为基准，低于100%才定向移交客户；先消除归一化缺口，再选代价最低的合格方案 | 20客户三种子中1项绑定并修复、2项已达标且零动作；完整搜索预算不变、收益账另计。当前只证明行为和一个绑定效果，不证明统计稳定性 |
 | 充电碳时机动作 | Cheng 等（2022）在车辆可用时间、变压器与电池约束下优化碳感知充电；Froger 等（2019）和 Kullman 等（2021）支持把固定路线充电子问题嵌入大搜索 | 固定路线、车型、电量和充电时长，只枚举可行窗口端点、碳信号断点及反向对齐点，寻找最低真实碳账的开始时刻；不把它冒充尚未实现的非线性充电或分时电价联合优化 | 旧20客户平台从621.291324降到621.083114且零违规；v6碳择时相对删减版9/9严格改善、完整路线搜索评价增加0。分时电价和非线性曲线仍等阶段二接口 |
 | 动态订单动作 | Pillac 等（2012）强调重规划稳定；Wang 等（2024）用车辆当前状态重建后续问题；Vallée 等（2020）用有限连锁腾挪接入难订单 | 自研“冻结前段的有限连锁修复”：已经执行和在途部分绝不动，先把新增订单放入可编辑未来路线；直接放不下时才启用有界后悔—弹射链 | 冻结E7单事件中57个位置有8个可行，最佳方案未来路线少1条、成本降29.675379；0/1/2/5深度二功能账重新验签。一个事件不能替代正式动态统计 |
-| 动作选择与接受 | Auer 等（2002）是置信上界选择依据；Kirkpatrick 等（1983）是模拟退火接受依据 | 只作为通用控制方法，不列为论文创新 | 方程、代码、参数和引用一致；关闭后只做控制消融 |
+| 动作选择与接受 | Auer 等（2002）是置信上界选择依据；Kirkpatrick 等（1983）是模拟退火接受依据；Johnn 等（2023）表明当前解状态可以用于 ALNS 动作选择，Wouda、Lan（2023）的成熟接口支持上下文状态 | 通用 AlphaUCB 继续负责普通路线动作；新候选只在便宜病灶出现且局部真账确认改善时，稀疏提交一位对应机制专家，随后继续同一搜索。上下文调度不是论文创新主体 | 先过三机制绑定/不绑定的 0/1/2/5 行为门；再在旧题训练门比较“有病灶”与“同动作池但无病灶”。若病灶版无增益立即停止 |
 | 算子选择稳定底盘 | Ropke、Pisinger（2006）及Pisinger、Ropke（2007）用分段轮盘按每次调用的平均成绩更新算子权重；Wouda、Lan（2023）提供成熟ALNS软件接口 | 项目独立实现“平均成绩分段轮盘”，只修复通用搜索的早期垄断，不把它包装成机制创新；Softmax组合已因旧题训练明显倒退而停止 | 先在已知垄断旧题做2起点×3种子×400次的短门；只有成本、覆盖和墙钟同时过门才允许旧题交叉确认 |
 
 ## 论文身份硬门
@@ -38,6 +38,7 @@
 - Pisinger, D., & Ropke, S. (2007). *A General Heuristic for Vehicle Routing Problems*. DOI: `10.1016/j.cor.2005.09.012`.
 - Auer, P., Cesa-Bianchi, N., & Fischer, P. (2002). *Finite-time Analysis of the Multiarmed Bandit Problem*. DOI: `10.1023/A:1013689704352`.
 - Wouda, N. A., & Lan, L. (2023). *ALNS: a Python implementation of the adaptive large neighbourhood search metaheuristic*. DOI: `10.21105/joss.05028`.
+- Johnn, S.-N., Darvariu, V.-A., Handl, J., & Kalcsics, J. (2023). *Graph Reinforcement Learning for Operator Selection in the ALNS Metaheuristic*. arXiv: `2302.14678`.
 - Kirkpatrick, S., Gelatt, C. D., & Vecchi, M. P. (1983). *Optimization by Simulated Annealing*. DOI: `10.1126/science.220.4598.671`.
 - Prins, C. (2004). *A Simple and Effective Evolutionary Algorithm for the Vehicle Routing Problem*. DOI: `10.1016/S0305-0548(03)00158-8`.
 - Vidal, T., Crainic, T. G., Gendreau, M., Lahrichi, N., & Rei, W. (2012). *A Hybrid Genetic Algorithm for Multidepot and Periodic Vehicle Routing Problems*. DOI: `10.1287/opre.1120.1048`.

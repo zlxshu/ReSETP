@@ -1,0 +1,230 @@
+"""Small frozen binding and non-binding fixtures for mechanism behaviour."""
+
+from __future__ import annotations
+
+from dataclasses import replace
+from pathlib import Path
+import sys
+
+
+HERE = Path(__file__).resolve().parent
+REPO = HERE.parents[2]
+LEGACY = (
+    REPO
+    / "baselines/algorithm_prototypes/mechanism_hgs_alns_20260718"
+)
+for path in (
+    REPO / "solver/src",
+    REPO / "models/src",
+    HERE,
+    LEGACY,
+    REPO,
+):
+    if str(path) not in sys.path:
+        sys.path.insert(0, str(path))
+
+from setp_solver.check import check_solution  # noqa: E402
+from setp_solver.prices import DEFAULT_PRICES  # noqa: E402
+from setp_solver.profit import infer_customer_home_depots  # noqa: E402
+from setp_solver.search.bundle import load_search_bundle  # noqa: E402
+from setp_solver.search.candidates import make_shared_initial_solution  # noqa: E402
+from setp_solver.solution import (  # noqa: E402
+    ChargingAction,
+    CrossSiteService,
+    Route,
+    Solution,
+)
+from v4_mechanism_alns_solver import (  # noqa: E402
+    _assemble_pattern,
+    _route_variants,
+)
+from v7_responsibility_solver import (  # noqa: E402
+    annotate_cross_site_services,
+)
+
+
+PLATEAU_BUNDLE = (
+    REPO
+    / "models/data_bundle/generated_instances/"
+    "L-main_size_preserving_v2_archive_20260710/"
+    "L-main-threeshift-20c-01"
+)
+RESPONSIBILITY_BUNDLE = (
+    REPO
+    / "models/data_bundle/generated_instances/"
+    "L-main_mixed23_archive_20260709/"
+    "L-main-multidepot-25c-01"
+)
+PRICES_280 = replace(DEFAULT_PRICES, B_battery_kwh=280.0)
+
+
+def plateau_solution() -> Solution:
+    return Solution(
+        routes=[
+            Route(
+                "EV1#T1",
+                "ev",
+                "D1",
+                [
+                    "D1",
+                    "C001",
+                    "C006",
+                    "C004",
+                    "C002",
+                    "C012",
+                    "C015",
+                    "C013",
+                    "D1",
+                ],
+            ),
+            Route(
+                "EV1#T2",
+                "ev",
+                "D0",
+                [
+                    "D0",
+                    "C003",
+                    "C011",
+                    "C018",
+                    "C016",
+                    "C010",
+                    "C017",
+                    "C014",
+                    "D0",
+                ],
+            ),
+            Route(
+                "CV1#T1",
+                "cv",
+                "D0",
+                [
+                    "D0",
+                    "C008",
+                    "C009",
+                    "C005",
+                    "C007",
+                    "C020",
+                    "C019",
+                    "D0",
+                ],
+            ),
+        ],
+        charging_actions=[
+            ChargingAction(
+                "EV1#T2",
+                "D0",
+                199.23734894483937,
+                543.3745880313801,
+                54000.0,
+            ),
+            ChargingAction(
+                "EV1#T1",
+                "D1",
+                126.15083488573185,
+                344.0477315065415,
+                39600.0,
+            ),
+        ],
+    )
+
+
+def all_cv_plateau() -> Solution:
+    bundle = load_search_bundle(PLATEAU_BUNDLE)
+    parent = plateau_solution()
+    variants = []
+    for route in parent.routes:
+        actions = tuple(
+            action
+            for action in parent.charging_actions
+            if action.vehicle_id == route.vehicle_id
+        )
+        variants.append(
+            _route_variants(
+                route,
+                current_actions=actions,
+                instance=bundle.instance,
+                carbon_profile=bundle.carbon_profile,
+                prices=PRICES_280,
+            )
+        )
+    candidate = _assemble_pattern(
+        variants,
+        ("cv",) * len(variants),
+        parent=parent,
+        instance=bundle.instance,
+    )
+    if candidate is None:
+        raise RuntimeError("failed to build all-CV plateau fixture")
+    violations = check_solution(
+        candidate,
+        bundle.instance,
+        PRICES_280,
+    )
+    if violations:
+        raise RuntimeError(
+            f"all-CV plateau fixture is infeasible: {violations[:8]}"
+        )
+    return candidate
+
+
+def responsibility_nonbinding_solution() -> Solution:
+    bundle = load_search_bundle(RESPONSIBILITY_BUNDLE)
+    return make_shared_initial_solution(bundle, PRICES_280)
+
+
+def responsibility_binding_solution() -> Solution:
+    bundle = load_search_bundle(RESPONSIBILITY_BUNDLE)
+    owners = infer_customer_home_depots(bundle.instance)
+    initial = responsibility_nonbinding_solution()
+    routes = list(initial.routes)
+    source_index = next(
+        index
+        for index, route in enumerate(routes)
+        if route.home_depot_id == "D0"
+        and "C13" in route.node_sequence
+    )
+    target_index = next(
+        index
+        for index, route in enumerate(routes)
+        if route.home_depot_id == "D1"
+        and "C11" in route.node_sequence
+        and "C24" in route.node_sequence
+    )
+    source = routes[source_index]
+    target = routes[target_index]
+    routes[source_index] = replace(
+        source,
+        node_sequence=[
+            node_id
+            for node_id in source.node_sequence
+            if node_id != "C13"
+        ],
+    )
+    routes[target_index] = replace(
+        target,
+        node_sequence=[
+            *target.node_sequence[:-1],
+            "C13",
+            target.node_sequence[-1],
+        ],
+    )
+    binding = annotate_cross_site_services(
+        Solution(
+            routes=routes,
+            charging_actions=list(initial.charging_actions),
+            cross_site_services=[
+                CrossSiteService("C13", "D1")
+            ],
+        ),
+        owners,
+    )
+    violations = check_solution(
+        binding,
+        bundle.instance,
+        PRICES_280,
+    )
+    if violations:
+        raise RuntimeError(
+            f"responsibility binding fixture is infeasible: {violations[:8]}"
+        )
+    return binding
