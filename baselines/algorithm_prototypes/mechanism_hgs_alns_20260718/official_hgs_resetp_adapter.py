@@ -85,12 +85,15 @@ class _NativeSolution(ctypes.Structure):
 class HGSAdapterConfig:
     seed: int
     no_improvement_iterations: int = 100
+    time_window_weight: float = 1.0
 
     def __post_init__(self) -> None:
         if self.seed < 0:
             raise ValueError("seed must be non-negative")
         if self.no_improvement_iterations <= 0:
             raise ValueError("no_improvement_iterations must be positive")
+        if self.time_window_weight < 0:
+            raise ValueError("time_window_weight must be non-negative")
 
 
 @dataclass(frozen=True)
@@ -163,6 +166,7 @@ class OfficialHGSLibrary:
         depot_id: str,
         customer_ids: list[str],
         capacity: float,
+        speed_m_per_second: float,
         max_vehicles: int,
         config: HGSAdapterConfig,
     ) -> tuple[tuple[tuple[str, ...], ...], float, float]:
@@ -192,10 +196,34 @@ class OfficialHGSLibrary:
         coordinates_y = vector(*(float(node.y) / DISTANCE_SCALE for node in nodes))
         service_times = vector(*(0.0 for _ in nodes))
         demands = vector(*(float(node.demand) for node in nodes))
-        matrix = (ctypes.c_double * (count * count))(
-            *(
+        temporal_anchor = {
+            node.node_id: (
+                0.5 * (float(node.ready_time) + float(node.due_time))
+                if node.node_type.lower() == "c"
+                else None
+            )
+            for node in nodes
+        }
+
+        def translated_distance(left: Any, right: Any) -> float:
+            spatial = (
                 float(instance.distance(left.node_id, right.node_id))
                 / DISTANCE_SCALE
+            )
+            left_time = temporal_anchor[left.node_id]
+            right_time = temporal_anchor[right.node_id]
+            if left_time is None or right_time is None:
+                return spatial
+            temporal = (
+                abs(float(left_time) - float(right_time))
+                * float(speed_m_per_second)
+                / DISTANCE_SCALE
+            )
+            return spatial + float(config.time_window_weight) * temporal
+
+        matrix = (ctypes.c_double * (count * count))(
+            *(
+                translated_distance(left, right)
                 for left in nodes
                 for right in nodes
             )
@@ -250,7 +278,7 @@ class OfficialHGSLibrary:
                 if load > float(capacity) + TOLERANCE:
                     raise RuntimeError("official HGS capacity validation failed")
             reconstructed = sum(
-                float(instance.distance(left, right)) / DISTANCE_SCALE
+                translated_distance(node_lookup[left], node_lookup[right])
                 for route in routes
                 for left, right in zip(
                     (depot_id, *route),
@@ -304,6 +332,7 @@ def official_hgs_order(
     instance: Any,
     initial_solution: Solution,
     capacity: float,
+    speed_m_per_second: float,
     config: HGSAdapterConfig,
     library: OfficialHGSLibrary | None = None,
 ) -> HGSOrderResult:
@@ -340,10 +369,12 @@ def official_hgs_order(
             depot_id=depot_id,
             customer_ids=customers,
             capacity=capacity,
+            speed_m_per_second=speed_m_per_second,
             max_vehicles=route_limits[depot_id],
             config=HGSAdapterConfig(
                 seed=int(config.seed) + 104_729 * depot_index,
                 no_improvement_iterations=config.no_improvement_iterations,
+                time_window_weight=config.time_window_weight,
             ),
         )
         routes_by_depot[depot_id] = routes

@@ -1,0 +1,98 @@
+{
+  "ai": {
+    "enabled": false,
+    "timeout_seconds": 180
+  },
+  "checkpoint_paths": [
+    "/Volumes/移动硬盘（512G）/ReSETP/data/ChinaInstances/china_stage2_local_osrm_graphs_20260718/checkpoint.json",
+    "/Volumes/移动硬盘（512G）/ReSETP/data/ChinaInstances/china_stage2_local_osrm_graphs_20260718/graphs"
+  ],
+  "completion_files": [
+    "/Volumes/移动硬盘（512G）/ReSETP/data/ChinaInstances/china_stage2_local_osrm_graphs_20260718/LOCAL_OSRM_GRAPHS_COMPLETE.json"
+  ],
+  "config_path": "/Volumes/移动硬盘（512G）/ReSETP/baselines/china_instances/monitor_configs/china_stage2_local_osrm_graphs_20260718.json",
+  "csv_rules": [
+    {
+      "duplicate_key_fields": [
+        "region",
+        "profile",
+        "stage"
+      ],
+      "feasible_field": "status",
+      "max_duplicate_fraction": 0,
+      "min_feasible_rate": 1.0,
+      "path": "/Volumes/移动硬盘（512G）/ReSETP/data/ChinaInstances/china_stage2_local_osrm_graphs_20260718/raw_runs.csv",
+      "required": true,
+      "required_after_seconds": 7200,
+      "required_fields": [
+        "region",
+        "profile",
+        "stage",
+        "status",
+        "returncode"
+      ],
+      "truthy": [
+        "PASS"
+      ]
+    }
+  ],
+  "forbidden_command_substrings": [
+    "--force",
+    "--smoke",
+    "--debug"
+  ],
+  "logs": [],
+  "low_cpu_consecutive_checks": 5,
+  "max_rss_mb": 7000,
+  "max_runtime_seconds": 43200,
+  "milestones": [
+    {
+      "min_size": 64,
+      "path": "/Volumes/移动硬盘（512G）/ReSETP/data/ChinaInstances/china_stage2_local_osrm_graphs_20260718/checkpoint.json"
+    }
+  ],
+  "min_cpu_percent_when_active": 1,
+  "min_system_free_memory_mb": 256,
+  "min_system_memory_free_percent": 5,
+  "name": "china-stage2-local-osrm-graphs",
+  "objective": "顺序构建五份冻结PBF的CV和EV本地OSRM 26.7.3 CH图，不运行求解器",
+  "pause_on_anomaly": true,
+  "poll_seconds": 30,
+  "progress_files": [
+    "/Volumes/移动硬盘（512G）/ReSETP/data/ChinaInstances/china_stage2_local_osrm_graphs_20260718/checkpoint.json",
+    "/Volumes/移动硬盘（512G）/ReSETP/data/ChinaInstances/china_stage2_local_osrm_graphs_20260718/raw_runs.csv"
+  ],
+  "protected_files": [
+    {
+      "kind": "experiment_contract",
+      "path": "/Volumes/移动硬盘（512G）/ReSETP/docs/handoff/china_stage2_g1_independent_execution_contract_20260718.md"
+    },
+    {
+      "kind": "core_data",
+      "path": "/Volumes/移动硬盘（512G）/ReSETP/data/ChinaInstances/china_mc004_mc006_preclosure_v4_20260718/osm_freeze_inventory.csv"
+    },
+    {
+      "kind": "primary_config",
+      "path": "/Volumes/移动硬盘（512G）/ReSETP/data/ChinaInstances/phase1_osrm_smoke_v2_20260718/freight_cv_v2673.lua"
+    },
+    {
+      "kind": "primary_config",
+      "path": "/Volumes/移动硬盘（512G）/ReSETP/data/ChinaInstances/phase1_osrm_smoke_v2_20260718/freight_ev_v2673.lua"
+    }
+  ],
+  "required_command_substrings": [
+    "build_china_stage2_local_osrm_graphs_20260718.py",
+    "--threads",
+    "6"
+  ],
+  "result_files": [
+    "/Volumes/移动硬盘（512G）/ReSETP/data/ChinaInstances/china_stage2_local_osrm_graphs_20260718/metadata.json",
+    "/Volumes/移动硬盘（512G）/ReSETP/data/ChinaInstances/china_stage2_local_osrm_graphs_20260718/raw_runs.csv",
+    "/Volumes/移动硬盘（512G）/ReSETP/data/ChinaInstances/china_stage2_local_osrm_graphs_20260718/decision.json",
+    "/Volumes/移动硬盘（512G）/ReSETP/data/ChinaInstances/china_stage2_local_osrm_graphs_20260718/artifact_hashes.json",
+    "/Volumes/移动硬盘（512G）/ReSETP/data/ChinaInstances/china_stage2_local_osrm_graphs_20260718/report.md"
+  ],
+  "schema_version": 1,
+  "stale_seconds": 7200,
+  "workdir": "/Volumes/移动硬盘（512G）/ReSETP"
+}

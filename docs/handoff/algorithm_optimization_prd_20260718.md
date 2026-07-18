@@ -1,8 +1,8 @@
-# 算法优化 PRD：群体化 ALNS（碳/EV 感知 HGS）
+# 算法优化 PRD：机制优先 ALNS（官方 HGS 作为强开源对照）
 
 - 编号：ALGO-OPT-PRD-001
 - 日期：2026-07-18
-- 状态：`APPROVED_ISOLATED_MECHANISM_HGS_ALNS_DEVELOPMENT_ONLY`（2026-07-18；允许来源补齐、独立目录组合实现、预算0/1/2/5行为门与少量非正式开发题三方比较；正式搜索仍为`formal_search_allowed=false`）
+- 状态：`PASS_STAGE1_ALGORITHM_INFRASTRUCTURE_DEVELOPMENT_CLOSEOUT`（2026-07-18；HGS 内嵌路线已止损，机制优先 ALNS 已通过统一隔离开发门；这不是正式性能证据，`formal_search_allowed=false`、`stage2_allowed=false`）
 - 目标读者：Codex、任何接手 ReSETP 算法线的代理（冷启动可读，自包含）
 - 关联：`docs/handoff/e2_alns_g1_stage1_closeout_20260718.md`、`docs/handoff/alns_mechanism_innovation_exploration_contract_20260718.md`、`docs/handoff/model_change_approval_register_20260718.md`、`docs/handoff/algorithm_exploration_20260718/fleet_charging/`、memory `baseline-algorithm-catalog`
 
@@ -14,11 +14,13 @@
 
 这只证明官方CVRP搜索引擎值得作为结构参考和隔离工程底座，不等于本PRD Phase 0完成。官方HGS-CVRP没有硬时间窗、异质车队、SOC、非线性充电、分时价格、碳、公平和多车场语义，不能冒充Solomon/Homberger VRPTW或完整ReSETP求解器。后续任何VRPTW/HGS式自研、EV-aware Split、ALNS education合入、正式测试集或E2--E7重跑仍须单独预注册与批准。
 
+随后最小等预算拆件门否定了把 HGS 硬塞进候选的方案：官方 HGS 直接插入只在 1/6 对优于去掉 HGS 的版本；把官方 HGS 原生路线交给路线池重组，也没有在两道诊断题上带来最终改善。按本 PRD 的止损纪律，HGS 从候选内部组件降为必须击败的外部对照。当前执行主线改为“ALNS 负责路线搜索、问题专用步骤处理模型耦合”，详见 §6.0C；原 HGS 架构段保留为历史提案，不再代表当前算法。
+
 ---
 
 ## 0. 一句话
 
-当前"改进版 ALNS"在单解框架内的小修补已**连续碰壁**（十余个算子几乎全部蒸发；赢家内核与 LNS 同源），边际递减明显——这**不等于"已到理论天花板"**，但足以说明再在单解框架内叠算子性价比很低。一条**有依据、但尚未证明**的方向，是引入群体 + Split（HGS 类结构），把现有 ALNS 作为 education 内核。它**不是唯一可选方向**（路线池 + 集合划分、受控路线消除 + 有限深度 ejection chain 等同样有依据），只是当前**外部证据与项目内信号最集中**的一条。本 PRD 规定该方向的目标、架构、文献依据、分阶段过门、验收、风险、影响矩阵与治理边界；**成功预期一律按证据校准，不预设称霸**。
+当前证据不支持“换成 HGS 外壳就会更强”。更可靠的方向是保留已经有效的 ALNS 路线搜索，把算力用在本模型真正耦合的决策上，并要求每个专用步骤都通过“拿掉它就变差、没有病灶就不动作”的拆件门。统一开发门已经为车型—补能、充电碳时机、多车场责任、参与公平和动态订单形成受限证据，并使整套候选在静态九任务上同时严格胜原装 HGS、原装 ALNS和当前项目 ALNS；但覆盖仍小，公平只有一个绑定任务，动态只有一个真实事件，非线性充电与分时电价仍依赖阶段二模型接口。**开发通过不等于正式 E2 获胜，也不自动放行阶段二。**
 
 ---
 
@@ -83,7 +85,9 @@
 
 ---
 
-## 4. 算法架构：Population/Memetic TVCI-ALNS
+## 4. 原 HGS 架构假设（历史提案，已被 §6.0C 止损）
+
+本节记录为什么曾考虑群体、切分和交叉，供复核与避免重复试错。它不再是当前候选的实施架构。
 
 ### 4.1 解表达
 - **giant tour（无路线分隔的客户顺序）+ Split 解码**为核心表达；同时保留现有 `Solution{routes, charging_actions, cross_site_services}` 作为评价/检查的落地结构。
@@ -103,9 +107,7 @@
 **Split 适配的诚实风险（须正视）**：经典 Split 只在"给定顺序、单一同质车、简单可加路线成本"下才是最优 DP。本模型的多车场、车型选择、SOC 连续演化、非线性充电、跨趟实体车和公平约束都会破坏 Split 的可加性假设——把它们塞进 Split **不是套用现成算法，而是重新设计一个可能昂贵的新子算法**（最坏含指数级 FRVCP），其收益未证。因此它是"值得先隔离验证的自研候选"，**不能当"已知有效的现成件"**。
 
 ### 4.3 身份保留说明与身份风险
-拟让 ALNS 成为 HGS 的 education（intensification）内核；对外名称 `Population/Memetic TVCI-ALNS`，保留 `staged_hybrid_carbon_aware` 兼容标识护旧证据。定位是"面向本模型机制专门化的 HGS"，不是"全新基础 ALNS"，也不是"通用 HGS"。
-
-**身份风险（须正视，不回避）**：若性能增量主要来自群体 + Split + 交叉、而非 ALNS 内核，则论文主算法**事实上会变成"HGS（内嵌 ALNS 局部搜索）"，不再是你想要的"改进版 ALNS"**。四臂消融（纯 ALNS / 直接强重组 / 群体化 / 群体化 + 机制算子）必须能定位增量来源；若增量几乎全来自群体 + Split，应诚实按 HGS 变体署名，或据此重新决定是否走这条路——**不得用"education 内核"的措辞把 HGS 包装成 ALNS**。
+原计划拟让 ALNS 成为 HGS 的精修内核。拆件结果显示 HGS 接入没有稳定贡献，因此该身份不成立，不能再使用 `Population/Memetic TVCI-ALNS` 或“HGS--ALNS 成功融合”的说法。当前候选诚实身份为“带模型专用整套决策步骤的改进 ALNS”；只有将来新的群体组件独立过门，身份才可重审。
 
 ### 4.4 Phase-2 加速器（可选，冲 BKS 最后几个点）
 精英路线池 + 集合划分（set-partitioning）重组，Wang 2025 靠它刷 65 个新 BKS。诚实边界：仓库早期"静态小池 SP=0/6 headroom"是**小池**结论；HGS 大精英池是不同 regime，值得在 Phase-2 单独验证，不得据旧小池结论提前否决，也不得据文献提前宣称有效。
@@ -121,6 +123,7 @@
 | 顺序空间能压路线数 | 仓库实测 | A11 `global_repack_fleet_charge_probe_20260707`（4000 胜 LNS）|
 | Split 是最优切分的权威方法 | 文献 | Prins 2004（route-first cluster-second + DP split）|
 | HGS 是 VRP benchmark 冠军范式 | 文献 | Vidal 2012（HGS）；Vidal 2022（HGS-CVRP + SWAP*）；PyVRP/DIMACS |
+| 通用框架必须靠问题专用动作产生实质创新 | 文献 | Liu、Luo、Yu 2024（AHGSLNS）；Zhao、Archetti、Pham、Vidal 2025（为库存—路径耦合专门设计动作并嵌入 HGS） |
 | VRPTW benchmark 车辆数优先计分，正对车队病灶 | 公开评测惯例 | Solomon/Gehring-Homberger 计分：先最小化车辆数再距离 |
 | 固定路线充电可独立增值 | 文献 | Froger 2019（只重优化充电改进 120 个 EVRP 最优解中 23 个）；Kullman 2021 frvcpy |
 | 车型—路线联动算子 | 文献 | Hiermann 2016（Resize / RelocateAndResize）|
@@ -139,7 +142,7 @@
 ### 6.0 当前实际批准范围（用户 2026-07-18 选 B）—— 优先于以下 Phase 草案
 用户批准的是**最小侦察**，不是直接建完整 HGS。侦察只回答两问：
 - **B-(a) 强 HGS 参照是否明显优于当前算法**：**已完成**。官方 `vidalt/HGS-CVRP` 桥接在 3 个 CVRP 开发题上对当前 ALNS 中位改善 11.22%/12.16%/12.74%，2/3 题少用路线（13v14、13v15、8v8），判 `GO_A_ENGINEERING_DISCOVERY`。**诚实边界**：这是**纯 CVRP**，而当前 ALNS 为本模型（碳/EV/多车场）专门化、跑纯 CVRP 属**出设计域**，故 11–12% 幅度**被放大、不能 1:1 迁移到本模型**；且这是整台 HGS，**未隔离 Split**。它只证明"HGS 搜索机器值得作结构参考 + 隔离工程底座"，不证明本 PRD 的组合会赢。
-- **B-(b) 经典 Split 单独是否真能减少路线**：**未做**。这是下一步最便宜、最能验证本 PRD 核心论点（"headroom 在顺序空间、Split 是钥匙"）的隔离探针。
+- **B-(b) 经典 Split 单独是否真能减少路线**：**仍未独立完成**。后续已经验证官方 HGS 直接插入和官方 HGS 路线池重组都没有稳定最终贡献，但这不等于单独否定经典 Split。由于当前主线已转为机制优先 ALNS，Split 不再是默认下一步；若未来重启，必须另立结果盲任务卡。
 **下列 Phase 0–2 均为草案、均未批准**；其中"建最小 HGS（群体 + 交叉 + Split + 多样性）"**并不便宜**，是 B 通过后另行审批的工程阶段，不属于 B。
 
 ### 6.0A 用户追加批准：机制化组合的隔离开发
@@ -157,6 +160,32 @@
 用户提出“多车场才开启”后，开发了不读取结果的显式合同开关：仅在至少两个车场、场景合同标明`multidepot`且无多班次标记时启用，否则精确退回纯ALNS。25客户小门达到启用3/3双赢、禁用6/6零漂；但10/15/20/25/50客户放大门仅4/15双赢，其中20和50客户中位退步5.97%和6.22%，只有25客户中位改善7.58%。因此当前判`HOLD_MULTIDEPOT_SWITCH`。按“25客户”再设阈值属于结果后拟合，禁止采用。
 
 后续不再优化通用外壳或开关阈值。只有车型补能、公平、碳价冲突和动态冻结四个动作分别在自己的病灶开发门取得独立增益，才允许重新组合；正式搜索继续禁止。
+
+### 6.0C 拆件止损与机制优先转向
+
+在用户把设计权交由本 Codex、并再次强调“新算法必须胜过原装开源算法”后，开发门扩为五方同场：官方 Vidal HGS-CVRP 中性适配、原装 `alns 7.0.0` 中性适配、当前项目 ALNS、机制优先完整版、拿掉当前专用步骤的版本。题目、种子、B100 完整评价预算和最终复算器一致；原装控制结果只在源证据哈希吻合后复用。
+
+两条 HGS 内嵌路线均未证明贡献。直接插入版对“拿掉 HGS”仅 1/6 严格胜出，HGS 先手仅直接改善 1/6；官方 HGS 原生路线进入精英路线池的两题 seed1 探针也没有最终改善。按止损线，HGS 不再是候选内部组件，只保留为必须击败的开源强对照。这不是否定 HGS 在纯 CVRP 上的能力，而是说明它在当前中性转换下没有给复杂 ReSETP 候选增值。
+
+当前第一项机制化实现是“车型—充电整套方案选择”。ALNS 先处理客户分组和路线顺序；新步骤为每条路线生成可行燃油车/电动车及充电方案，用另记账的路线局部代理筛选所有路线的完整组合，最后只让最佳完整组合接受一次统一完整评分。固定 280 kWh、20/25/50 客户、三种子、B100 的五方小门中，完整版同时胜两套原装开源对照 9/9；相对当前项目 ALNS 为 6 胜、3 平、0 负；相对拿掉联合选择的版本同样为 6 胜、3 平，其中 25/50 客户六对全部严格胜出。20 客户三对均到 `621.2913242409613`，不能证明全局最优，也不允许事后删题或改规则。九任务总墙钟为完整版 7.231 秒、当前项目 ALNS 6.462 秒，完整版在这个短门约慢 11.9%；官方 HGS 和原装 ALNS 对照分别为 19.874 秒和 10.553 秒。这里只记账，不用几秒级短门作正式速度结论。
+
+因此“胜原装开源算法”的开发底线已经满足，但跑前完整合同仍未满足，判定=`HOLD_FULL_CONTRACT_SMALL_SATURATION_OR_COMPONENT_GAP`。车型—补能只有受限开发证据；跨车场责任、公平、碳—电价和动态订单仍未证明。不得把该小门写成正式 E2 结果，不得同步为主稿新算法、不得正式合入或启动阶段二。若要把共同平台值的平局改成通过，或启动正式 E2/影响矩阵重跑，必须用户另批。
+
+### 6.0D 统一开发收口：平台值被推翻，五个机制形成受限证据
+
+后续没有修改“平局失败”的规则，而是直接核查20客户共同值。固定路线、车型、电量和充电时长后，只移动两个充电开始时刻，真实统一评价从`621.2913242409613`降到`621.0831141941019`，零违规；因此旧值不是全局最优，“饱和平台”解释正式作废。基于Cheng等（2022）的碳感知充电约束结构，以及Froger等（2019）和Kullman等（2021）的固定路线充电子问题思想，实现了只枚举可行时间窗口端点、碳信号断点和反向对齐断点的固定时长择时器。它不改路线、车型、电量或充电时长，局部时间账与完整路线搜索预算分开。
+
+随后形成当前开发候选`v7`：ALNS完整使用B100路线搜索预算；跨车场责任步骤只考虑不同车场路线之间的客户移交或互换，并在后续车型—补能和碳择时之后，与完全绕过该步骤的分支取较优者；车型—补能步骤整套选择路线的燃油车/电动车及可行补能方案；公平步骤按相对独立经营收益的缺口定向移交客户；动态步骤冻结已完成和在途状态，只改未来路线。各步骤的代理筛选、局部路线账、收益账、动态候选账和最终独立复算分别记账，完整路线搜索评价没有隐藏增加。
+
+统一证据位于`baselines/algorithm_prototypes/mechanism_hgs_alns_20260718/mechanism_v7_stage1_closeout_gate/`，机器判定=`PASS_STAGE1_ALGORITHM_INFRASTRUCTURE_DEVELOPMENT_CLOSEOUT`，独立从62行原始记录和上游哈希重算同样通过。最小结果为：
+
+- 静态20/25/50客户×三种子×B100共9项，候选9/9同时严格胜固定官方Vidal HGS-CVRP中性适配、原装`alns 7.0.0`中性适配和当前项目ALNS，并且9/9不差于v6；相对当前项目ALNS改善`0.0335%--13.4936%`。
+- 多车场10/15/20/25/50/75客户×三种子共18项，责任步骤在4项绑定并改善`1.2652%--5.6731%`，其余14项精确不动作、不倒退；三个事后发现任务又分别严格胜三套对照，但只能作为开发确认，不能冒充结果盲正式样本。
+- 公平门固定为每个车场至少达到三次独立经营中找到的最强收益的100%。三种子中1项真实绑定并修复到零缺口，系统成本增加`4.6905%`；另2项原本达标并精确零动作。这里证明的是“缺口出现时算法会定向修复”，不是充分统计。
+- 冻结E7单一真实新增订单事件中，57个未来插入位置有8个动态可行；最佳方案保持已完成、在途和继承资产合同，未来路线少1条，成本下降`29.675379`。预算0/1/2/5的深度二后悔—弹射兜底旧功能证据重新验哈希通过；仍不是正式动态统计。
+- 15项相关回归通过；`cost.py`、`check.py`、`search/evaluation.py`三份保护文件零差异。最终证据继续写明`formal_search_allowed=false`、`formal_solver_integration_allowed=false`、`stage2_allowed=false`。
+
+当前身份可以诚实写为“机制驱动ALNS”，不能写成“HGS--ALNS成功融合”。五个部件已有开发故事，但还没有正式论文性能资格。正式下一步必须由用户批准后，先冻结阶段二的非线性充电和分时电价接口、公开benchmark选择、统计样本和等预算/墙钟双轴，再只做分层小门；小门不通过就停止，不自动扩成全量E2--E7或China81。
 
 ### Phase 0（草案，未批，非"便宜"）—— 最小 HGS 工程
 - **范围**：实现最小 HGS = giant tour + 经典（固定成本感知）Split + OX 交叉 + 基础群体 + true SWAP*/2-opt education，在**纯 VRPTW 归约**（EV/碳/多车场关闭）下运行。
@@ -216,11 +245,11 @@
 
 | # | 风险 | 严重度 | 缓解 |
 |---|---|---|---|
-| R1 | 公开 benchmark 称霸 ≈ 确定，但**自有中国实例 headroom 可能天生低**，任何算法都拉不开 | 高 | Phase 0 先锁定公开 benchmark 那半个高确定收益；自有实例领先以"转负例+显著性"为现实目标，不承诺绝对成本悬崖 |
-| R2 | **7/31 deadline**：HGS 是真算法工程 + 强制 E2–E7 重跑 | 高 | 分阶段可中止；Phase 0 便宜早决；若时间不足，冻结在"通用 HGS 已验证+机制故事"的中间态交付 |
+| R1 | 官方 HGS 在纯 CVRP 很强，但迁移到复杂 ReSETP 后可能不增值；中国实例也可能存在共同平台值 | 高 | 已用直接插入和路线池拆件止损，不再预设 HGS 贡献；正式胜负只认冻结 E2，平台值只能按跑前规则处理 |
+| R2 | **7/31 deadline**：每个机制都是真算法工程，正式冻结后还会触发 E2–E7 重跑 | 高 | 逐机制小门、失败即停；正式重跑必须用户批准，不用半成品故事赶进度 |
 | R3 | 精确 FRVCP 最坏指数增长 | 中 | 分层筛选（包络先筛，top-B 才调预言机）；top-B 预注册并用小例穷举证明不漏最佳模式 |
 | R4 | SP 路线池随池增大变贵、且历史小池零 headroom | 中 | 作 Phase-2 可选加速器；大精英池单独验证；不达标即弃 |
-| R5 | 身份漂移（ALNS→memetic）引审稿质疑 | 中 | 明确定位"ALNS 作 education 内核的 memetic HGS"；四臂消融（纯 ALNS/直接强重组/群体化/群体化+机制算子）说清增量来源 |
+| R5 | 把无贡献的 HGS 拼接包装成创新，引发身份与消融质疑 | 中 | HGS 当前只作外部对照；候选按“机制优先 ALNS”命名，每个专用步骤必须用拿掉它的版本证明贡献 |
 | R6 | 跨机浮点（M1 vs x86） | 中 | 正式数字只用 M1；x86 只做相对% |
 | R7 | 调参污染正式测试集 | 高 | §7.1 三层算例硬隔离；正式集只进最终验收 |
 
@@ -256,13 +285,18 @@
 - Prins, C. (2004). A simple and effective evolutionary algorithm for the vehicle routing problem. *Computers & Operations Research*, 31(12), 1985–2002.（giant tour + Split）
 - Vidal, T., Crainic, T. G., Gendreau, M., Lahrichi, N., & Rei, W. (2012). A hybrid genetic algorithm for multidepot and periodic vehicle routing problems. *Operations Research*, 60(3), 611–624.（HGS）
 - Vidal, T. (2022). Hybrid genetic search for the CVRP: Open-source implementation and SWAP* neighborhood. *Computers & Operations Research*, 140, 105643.（HGS-CVRP + SWAP*）
+- Liu, W., Luo, Y., & Yu, Y. (2024). An adaptive hybrid genetic and large neighborhood search approach for multi-attribute vehicle routing problems. arXiv:2402.18903.（遗传搜索与 ALNS 结合及按实例自适应）
+- Zhao, J., Archetti, C., Pham, T. A., & Vidal, T. (2025). Large neighborhood and hybrid genetic search for inventory routing problems. arXiv:2506.03172.（先为模型耦合设计专用动作，再嵌入强搜索框架）
 - Hiermann, G., Puchinger, J., Ropke, S., & Hartl, R. F. (2016). The electric fleet size and mix VRP with time windows and recharging stations. *EJOR*, 252(3), 995–1018.
 - Froger, A., Mendoza, J. E., Jabali, O., & Laporte, G. (2019). Improved formulations and algorithmic components for the EVRP with nonlinear charging functions. *Computers & Operations Research*, 104, 256–294.
 - Kullman, N. D., Froger, A., Mendoza, J. E., & Goodson, J. C. (2021). frvcpy: An open-source solver for the fixed route vehicle charging problem. *INFORMS Journal on Computing*, 33(4), 1277–1283.
+- Cheng, K.-W., Bian, Y., Shi, Y., & Chen, Y. (2022). Carbon-Aware EV Charging. *IEEE SmartGridComm 2022*. DOI:10.1109/SMARTGRIDCOMM52983.2022.9960988.
+- Soriano, A., Gansterer, M., & Hartl, R. F. (2023). A hybrid metaheuristic to solve the resource constrained multi-depot vehicle routing problem. *International Journal of Production Economics*, 257, 108669.
+- Pillac, V., Gendreau, M., Guéret, C., & Medaglia, A. L. (2012). An event-driven optimization framework for dynamic vehicle routing. *Decision Support Systems*, 54(1), 414–423.
+- Vallée, S., Oulamara, A., & Ramdane Cherif-Khettaf, W. (2020). New online reinsertion approaches for a dynamic dial-a-ride problem. *Journal of Computational Science*, 47, 101199.
 - Wang, W., Adulyasak, Y., Cordeau, J.-F., & He, G. (2025). The heterogeneous-fleet EVRP with nonlinear charging functions. *Transportation Research Part C*, 170, 104932.
 - Wouda, N. A., Lan, L., & Kool, W. (2024). PyVRP: A high-performance VRP solver package. *INFORMS Journal on Computing*, 36(4), 943–955.
 - 陈雨蝶, 干宏程, 程亮, 等 (2025). 双碳背景下复杂冷链物流模型及求解算法. *系统工程理论与实践*. DOI:10.12011/SETP2024-2027.（目标期刊母版）
-- Soriano 等 (2023). 多车场公平/协同路由（公平修正插入）。
 - 综述锚：周鲜成 2021《绿色 VRP 模型与求解算法综述》，系统工程理论与实践（目标期刊算法三层分类）。
 
 ## 附录 B：术语表

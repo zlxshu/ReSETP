@@ -12,7 +12,7 @@ import csv
 import json
 import math
 from pathlib import Path
-from typing import Any, Iterable
+from typing import Any
 
 import numpy as np
 
@@ -37,11 +37,47 @@ def _finite_number(value: Any) -> bool:
     return isinstance(value, (int, float)) and math.isfinite(float(value))
 
 
+def _matrix_errors(
+    matrix: np.ndarray | None,
+    node_count: int,
+    label: str,
+) -> list[dict[str, str]]:
+    if matrix is None:
+        return [_error(f"{label}_MATRIX_MISSING", f"{label.lower()} matrix missing")]
+    value = np.asarray(matrix, dtype=float)
+    if value.shape != (node_count, node_count):
+        return [
+            _error(
+                f"{label}_MATRIX_SHAPE_INVALID",
+                f"{value.shape} != {(node_count, node_count)}",
+            )
+        ]
+    if not np.isfinite(value).all():
+        return [_error(f"{label}_MATRIX_NONFINITE", "matrix contains NaN or infinity")]
+    if np.any(value < 0) or not np.allclose(np.diag(value), 0.0, atol=1e-6):
+        return [
+            _error(
+                f"{label}_MATRIX_BASIC_INVARIANT_FAILED",
+                "negative value or nonzero diagonal",
+            )
+        ]
+    if np.any(value[~np.eye(node_count, dtype=bool)] <= 0):
+        return [
+            _error(
+                f"{label}_MATRIX_OFF_DIAGONAL_NOT_POSITIVE",
+                "every directed off-diagonal value must be positive",
+            )
+        ]
+    return []
+
+
 def audit_instance(
     payload: dict[str, Any],
     nodes: list[dict[str, Any]],
     distance_matrix: np.ndarray | None,
     carbon_rows: list[dict[str, Any]] | None,
+    duration_matrix: np.ndarray | None = None,
+    sum_v2d_matrix: np.ndarray | None = None,
 ) -> dict[str, Any]:
     errors: list[dict[str, str]] = []
     warnings: list[dict[str, str]] = []
@@ -55,8 +91,16 @@ def audit_instance(
         "stations": len(stations),
     }
 
-    if payload.get("formal_experiment_authorized") is not False or payload.get("draft_only") is not False:
-        errors.append(_error("FORMAL_FLAG_NOT_CLOSED", "V2 candidate must remain explicit until every gate passes"))
+    if (
+        payload.get("formal_experiment_authorized") is not False
+        or payload.get("draft_only") is not True
+    ):
+        errors.append(
+            _error(
+                "FORMAL_FLAG_NOT_CLOSED",
+                "pre-acceptance V2 candidate requires formal_experiment_authorized=false and draft_only=true",
+            )
+        )
     if payload.get("demand_unit") != "kg" or payload.get("distance_unit") not in {"meter", "metre"}:
         errors.append(_error("UNIT_CONTRACT_INVALID", "demand must be kg and distance must be meter"))
     price_contract = metadata.get("price_contract", {})
@@ -143,17 +187,13 @@ def audit_instance(
     rule = str(metadata.get("distance_rule", ""))
     if "road_network" not in rule.lower() or not distance_contract.get("router_name"):
         errors.append(_error("ROAD_DISTANCE_CONTRACT_MISSING", rule or "missing"))
-    if distance_matrix is None:
-        errors.append(_error("DISTANCE_MATRIX_MISSING", "distance_matrix.npy"))
-    else:
+    distance_errors = _matrix_errors(distance_matrix, len(nodes), "DISTANCE")
+    errors.extend(distance_errors)
+    errors.extend(_matrix_errors(duration_matrix, len(nodes), "DURATION"))
+    errors.extend(_matrix_errors(sum_v2d_matrix, len(nodes), "SUM_V2D"))
+    if not distance_errors and distance_matrix is not None:
         matrix = np.asarray(distance_matrix, dtype=float)
-        if matrix.shape != (len(nodes), len(nodes)):
-            errors.append(_error("DISTANCE_MATRIX_SHAPE_INVALID", f"{matrix.shape} != {(len(nodes), len(nodes))}"))
-        elif np.isnan(matrix).any():
-            errors.append(_error("DISTANCE_MATRIX_NAN", "matrix contains NaN values"))
-        elif np.any(matrix < 0) or not np.allclose(np.diag(matrix), 0.0, atol=1e-6) or not np.allclose(matrix, matrix.T, atol=1e-6):
-            errors.append(_error("DISTANCE_MATRIX_BASIC_INVARIANT_FAILED", "negative, diagonal, or symmetry failure"))
-        else:
+        if matrix.shape == (len(nodes), len(nodes)):
             customer_indices = [nodes.index(node) for node in customers]
             depot_indices = [nodes.index(node) for node in depots]
             station_indices = [nodes.index(node) for node in stations]
@@ -193,7 +233,28 @@ def audit_instance(
     }
 
 
-def _load_bundle(bundle: Path) -> tuple[dict[str, Any], list[dict[str, Any]], np.ndarray | None, list[dict[str, Any]] | None]:
+def _load_matrix_csv(path: Path, nodes: list[dict[str, Any]]) -> np.ndarray | None:
+    if not path.is_file():
+        return None
+    with path.open(encoding="utf-8-sig", newline="") as handle:
+        reader = csv.reader(handle)
+        rows = list(reader)
+    node_ids = [str(node["node_id"]) for node in nodes]
+    if not rows or rows[0][1:] != node_ids or [row[0] for row in rows[1:]] != node_ids:
+        raise ValueError(f"matrix node order drift: {path}")
+    return np.asarray([[float(value) for value in row[1:]] for row in rows[1:]])
+
+
+def _load_bundle(
+    bundle: Path,
+) -> tuple[
+    dict[str, Any],
+    list[dict[str, Any]],
+    np.ndarray | None,
+    np.ndarray | None,
+    np.ndarray | None,
+    list[dict[str, Any]] | None,
+]:
     payload = json.loads((bundle / "instance.json").read_text(encoding="utf-8"))
     nodes_path = bundle / "nodes.csv"
     if nodes_path.is_file():
@@ -213,15 +274,25 @@ def _load_bundle(bundle: Path) -> tuple[dict[str, Any], list[dict[str, Any]], np
                     pass
     else:
         nodes = payload.get("nodes", [])
-    matrix_path = bundle / "distance_matrix.npy"
-    matrix = np.load(matrix_path, allow_pickle=False) if matrix_path.is_file() else None
+    legacy_matrix_path = bundle / "distance_matrix.npy"
+    distance = (
+        _load_matrix_csv(bundle / "road_distance_m.csv", nodes)
+        if (bundle / "road_distance_m.csv").is_file()
+        else (
+            np.load(legacy_matrix_path, allow_pickle=False)
+            if legacy_matrix_path.is_file()
+            else None
+        )
+    )
+    duration = _load_matrix_csv(bundle / "road_duration_s.csv", nodes)
+    sum_v2d = _load_matrix_csv(bundle / "road_sum_v2d_m3_s2.csv", nodes)
     carbon_path = bundle / "carbon_profile.csv"
     if carbon_path.is_file():
         with carbon_path.open(encoding="utf-8", newline="") as handle:
             carbon_rows = list(csv.DictReader(handle))
     else:
         carbon_rows = None
-    return payload, nodes, matrix, carbon_rows
+    return payload, nodes, distance, duration, sum_v2d, carbon_rows
 
 
 def main() -> int:
@@ -229,8 +300,15 @@ def main() -> int:
     parser.add_argument("bundle", type=Path)
     args = parser.parse_args()
     bundle = args.bundle.resolve()
-    payload, nodes, matrix, carbon_rows = _load_bundle(bundle)
-    result = audit_instance(payload, nodes, matrix, carbon_rows)
+    payload, nodes, distance, duration, sum_v2d, carbon_rows = _load_bundle(bundle)
+    result = audit_instance(
+        payload,
+        nodes,
+        distance,
+        carbon_rows,
+        duration,
+        sum_v2d,
+    )
     print(json.dumps(result, ensure_ascii=False, indent=2))
     return 0 if result["pass"] else 1
 

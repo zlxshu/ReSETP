@@ -1,0 +1,30 @@
+{
+  "algorithms": [
+    "mechanism_hgs_alns_v2",
+    "mechanism_hgs_alns_v2_without_hgs_ablation",
+    "mechanism_hgs_alns_v2_without_experts_ablation"
+  ],
+  "approval": "EA-HGS-002-development-only",
+  "battery_kwh": 280.0,
+  "bundles": [
+    "models/data_bundle/generated_instances/L-main_size_preserving_v2_archive_20260710/L-main-threeshift-25c-01",
+    "models/data_bundle/generated_instances/L-main_size_preserving_v2_archive_20260710/L-main-threeshift-50c-01"
+  ],
+  "candidate_hgs_share": 0.02,
+  "candidate_mechanism_share": 0.12,
+  "claim_boundary": "Small development ablation only. It tests whether each named component adds value under the same complete-evaluation budget; it does not authorize formal experiments.",
+  "complete_evaluation_budget_per_arm": 100,
+  "created_at_utc": "2026-07-18T13:21:20.152058+00:00",
+  "development_only": true,
+  "formal_search_allowed": false,
+  "official_hgs_commit": "1a927955cd2861a29d978f0d359d6e647db9319c",
+  "official_hgs_library": "build/official-hgs-cvrp-1a927955cd28/source/build-resetp/libhgscvrp.dylib",
+  "official_hgs_library_sha256": "0f12d6ebeda11652e81540d8b1b15455ce3e66bfee3e0367526e944fb85bb001",
+  "schema_version": "resetp.mechanism-hgs-alns-v2-ablation.v1",
+  "seeds": [
+    1,
+    2,
+    3
+  ],
+  "strict_gate": "On every same-instance same-seed task, the full candidate must strictly beat both equal-budget ablations. Official HGS must be called and a mechanism expert must improve the solution. Ties fail."
+}

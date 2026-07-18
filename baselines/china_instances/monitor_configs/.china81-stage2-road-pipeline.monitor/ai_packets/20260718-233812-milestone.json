@@ -1,0 +1,165 @@
+{
+  "created_at": "2026-07-18T15:38:12+00:00",
+  "current_status": {
+    "checked_at": "2026-07-18T15:38:12+00:00",
+    "checkpoint_inventory": [
+      {
+        "age_seconds": 22.83369517326355,
+        "exists": true,
+        "mtime": 1784389069.81,
+        "path": "/Volumes/移动硬盘（512G）/ReSETP/data/ChinaInstances/china_stage2_local_osrm_graphs_20260718/checkpoint.json",
+        "size": 261
+      }
+    ],
+    "csv_summaries": [],
+    "files": {
+      "/Volumes/移动硬盘（512G）/ReSETP/baselines/china_instances/monitor_configs/.china81-stage2-road-pipeline.monitor/experiment.stdout.log": {
+        "age_seconds": 580.4816918373108,
+        "exists": true,
+        "mtime": 1784388512.16,
+        "path": "/Volumes/移动硬盘（512G）/ReSETP/baselines/china_instances/monitor_configs/.china81-stage2-road-pipeline.monitor/experiment.stdout.log",
+        "size": 432
+      },
+      "/Volumes/移动硬盘（512G）/ReSETP/data/ChinaInstances/china81_g1_independent_frozen_v1_20260718/decision.json": {
+        "exists": false,
+        "path": "/Volumes/移动硬盘（512G）/ReSETP/data/ChinaInstances/china81_g1_independent_frozen_v1_20260718/decision.json"
+      },
+      "/Volumes/移动硬盘（512G）/ReSETP/data/ChinaInstances/china81_local_directed_matrices_v1_20260718/checkpoint_jjj_cv.json": {
+        "exists": false,
+        "path": "/Volumes/移动硬盘（512G）/ReSETP/data/ChinaInstances/china81_local_directed_matrices_v1_20260718/checkpoint_jjj_cv.json"
+      },
+      "/Volumes/移动硬盘（512G）/ReSETP/data/ChinaInstances/china81_local_directed_matrices_v1_20260718/decision.json": {
+        "exists": false,
+        "path": "/Volumes/移动硬盘（512G）/ReSETP/data/ChinaInstances/china81_local_directed_matrices_v1_20260718/decision.json"
+      },
+      "/Volumes/移动硬盘（512G）/ReSETP/data/ChinaInstances/china81_stage2_road_pipeline_status_20260718.json": {
+        "age_seconds": 1.0718371868133545,
+        "exists": true,
+        "mtime": 1784389091.57,
+        "path": "/Volumes/移动硬盘（512G）/ReSETP/data/ChinaInstances/china81_stage2_road_pipeline_status_20260718.json",
+        "size": 323
+      },
+      "/Volumes/移动硬盘（512G）/ReSETP/data/ChinaInstances/china_stage2_local_osrm_graphs_20260718/checkpoint.json": {
+        "age_seconds": 22.83188796043396,
+        "exists": true,
+        "mtime": 1784389069.81,
+        "path": "/Volumes/移动硬盘（512G）/ReSETP/data/ChinaInstances/china_stage2_local_osrm_graphs_20260718/checkpoint.json",
+        "size": 261
+      }
+    },
+    "findings": [],
+    "log_paths": [
+      "/Volumes/移动硬盘（512G）/ReSETP/baselines/china_instances/monitor_configs/.china81-stage2-road-pipeline.monitor/experiment.stdout.log"
+    ],
+    "name": "china81-stage2-road-pipeline",
+    "paused": false,
+    "process": {
+      "alive": true,
+      "cpu_percent": 243.29999999999998,
+      "members": [
+        {
+          "command": "python3 baselines/china_instances/run_china81_stage2_road_pipeline_20260718.py",
+          "cpu_percent": 0.0,
+          "elapsed": "06:31",
+          "pgid": 59265,
+          "pid": 59265,
+          "ppid": 1,
+          "rss_kb": 9408,
+          "state": "Ss"
+        },
+        {
+          "command": "python3 baselines/china_instances/build_chengyu_merged_osrm_graphs_20260718.py",
+          "cpu_percent": 3.6,
+          "elapsed": "00:01",
+          "pgid": 59265,
+          "pid": 70145,
+          "ppid": 59265,
+          "rss_kb": 29104,
+          "state": "S"
+        },
+        {
+          "command": "osmium merge /Volumes/移动硬盘（512G）/ReSETP/data/ChinaInstances/china_mc004_mc006_preclosure_v4_20260718/fixed_osm_inputs/sichuan-260716.osm.pbf /Volumes/移动硬盘（512G）/ReSETP/data/ChinaInstances/china_mc004_mc006_preclosure_v4_20260718/fixed_osm_inputs/chongqing-260716.osm.pbf -o /Volumes/移动硬盘（512G）/ReSETP/data/ChinaInstances/china_stage2_chengyu_merged_osm_v1_20260718/chengyu-260716.osm.pbf",
+          "cpu_percent": 239.7,
+          "elapsed": "00:01",
+          "pgid": 59265,
+          "pid": 70152,
+          "ppid": 70145,
+          "rss_kb": 105360,
+          "state": "R"
+        }
+      ],
+      "pgid": 59265,
+      "root_pid": 59265,
+      "rss_mb": 140.5
+    },
+    "protected_files": {
+      "/Volumes/移动硬盘（512G）/ReSETP/data/ChinaInstances/china81_stage2_static_inputs_v1_20260718/parameter_lock.json": {
+        "age_seconds": 989.2325158119202,
+        "exists": true,
+        "kind": "primary_config",
+        "mtime": 1784388103.41,
+        "path": "/Volumes/移动硬盘（512G）/ReSETP/data/ChinaInstances/china81_stage2_static_inputs_v1_20260718/parameter_lock.json",
+        "sha256": "7d59967bdf798dfaf7e89743adf8392d2db20c80dba8a70ad349b27d5de9a793",
+        "size": 1960
+      },
+      "/Volumes/移动硬盘（512G）/ReSETP/data/ChinaInstances/china_mc004_mc006_preclosure_v4_20260718/osm_freeze_inventory.csv": {
+        "age_seconds": 32485.572889089584,
+        "exists": true,
+        "kind": "core_data",
+        "mtime": 1784356607.07,
+        "path": "/Volumes/移动硬盘（512G）/ReSETP/data/ChinaInstances/china_mc004_mc006_preclosure_v4_20260718/osm_freeze_inventory.csv",
+        "sha256": "48d0616c752b099fc04f512a89dfd8fdea3dfb2ec896005f00aefb8efd8a14a7",
+        "size": 1963
+      },
+      "/Volumes/移动硬盘（512G）/ReSETP/docs/handoff/china_stage2_g1_independent_execution_contract_20260718.md": {
+        "age_seconds": 3476.3429629802704,
+        "exists": true,
+        "kind": "experiment_contract",
+        "mtime": 1784385616.3,
+        "path": "/Volumes/移动硬盘（512G）/ReSETP/docs/handoff/china_stage2_g1_independent_execution_contract_20260718.md",
+        "sha256": "7313c81250f14c971832e4553326f2ad1941211c37e0492e0301524a6fb4eaa5",
+        "size": 6236
+      }
+    },
+    "runtime_seconds": 391.1440830230713,
+    "schema_version": 1,
+    "state": "RUNNING",
+    "system": {
+      "free_memory_mb": 130.921875,
+      "load_average_15m": 5.4228515625,
+      "load_average_1m": 4.1044921875,
+      "load_average_5m": 5.048828125,
+      "logical_cpus": 8,
+      "memory_pressure_free_percent": 53.0,
+      "swapouts": 11580205
+    }
+  },
+  "experiment": {
+    "allowed_ai_actions": [
+      "continue",
+      "pause_for_read_only_diagnosis",
+      "keep_paused_and_preserve_scene",
+      "recommend_safe_stop",
+      "recommend_checkpoint_restart",
+      "escalate_research_contract_change_to_user"
+    ],
+    "expected_contract": {},
+    "forbidden_ai_actions": [
+      "change_model_or_research_question",
+      "change_evaluator_or_cost_function",
+      "change_experiment_contract_or_core_data",
+      "change_primary_config_or_paper_conclusion",
+      "resume_paused_job_without_explicit_human_command"
+    ],
+    "name": "china81-stage2-road-pipeline",
+    "objective": "完成所有不依赖G1的China81本地道路图、有向三矩阵和零搜索审计"
+  },
+  "minimal_log_tails": {
+    "/Volumes/移动硬盘（512G）/ReSETP/baselines/china_instances/monitor_configs/.china81-stage2-road-pipeline.monitor/experiment.stdout.log": [
+      "python3: can't open file '/Volumes/移动硬盘（512G）/ReSETP/baselines/china_instances/monitor_configs/baselines/china_instances/run_china81_stage2_road_pipeline_20260718.py': [Errno 2] No such file or directory",
+      "python3: can't open file '/Volumes/移动硬盘（512G）/ReSETP/baselines/china_instances/monitor_configs/baselines/china_instances/run_china81_stage2_road_pipeline_20260718.py': [Errno 2] No such file or directory"
+    ]
+  },
+  "reason": "MILESTONE",
+  "schema_version": 1
+}

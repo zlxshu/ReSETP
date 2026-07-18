@@ -1,0 +1,228 @@
+[
+  {
+    "algorithm": "mechanism_alns_v6",
+    "fingerprints": {
+      "charging_quantity_fingerprint": "52b87b6580636bb08d96f8c7f3bcf09bcdc31573d31f8d3861bde33d88b66422",
+      "charging_schedule_fingerprint": "3b4992bf232d959c1d93b4651e88d2b1430ff9fc26c4deefbece0c6db48db159",
+      "route_vehicle_fingerprint": "aee41b1b108f82f58c3a91dd11ede2a0bcf2ec46353edc9c9fc650a2415f1b8e"
+    },
+    "instance": "L-main-threeshift-20c-01",
+    "mechanism_activity": {
+      "base_alns_activity": {
+        "alns_actual_moves": 0
+      },
+      "carbon_activity": {
+        "action_changes": [
+          {
+            "new_emissions_kg": 14.783641318446831,
+            "new_start_second": 67943.63051422453,
+            "old_emissions_kg": 17.91811052479856,
+            "old_start_second": 39600.0,
+            "station_id": "D1",
+            "vehicle_id": "EV1#T2"
+          },
+          {
+            "new_emissions_kg": 28.85145272670086,
+            "new_start_second": 55309.447923893276,
+            "old_emissions_kg": 29.85305914330108,
+            "old_start_second": 54000.0,
+            "station_id": "D0",
+            "vehicle_id": "EV1#T1"
+          }
+        ],
+        "actions_retimed": 2,
+        "candidate_start_count": 38,
+        "complete_evaluations": 0,
+        "eligible_actions": 2,
+        "exact_decoder_updates": 1,
+        "feasibility_checks": 1,
+        "improvements": 1,
+        "objective_delta": -0.20821004685939926,
+        "old_local_objective": 62.69923114489698,
+        "route_local_schedule_evaluations": 38,
+        "selected_local_objective": 62.49102109803758
+      },
+      "carbon_decoder_seconds": 0.0011591669754125178,
+      "independent_final_replays": 1,
+      "joint_activity": {
+        "assembled_patterns": 1,
+        "complete_evaluations": 0,
+        "current_pattern": [
+          "cv",
+          "ev",
+          "ev"
+        ],
+        "current_proxy_cost": 621.2913242409613,
+        "exact_decoder_updates": 0,
+        "feasibility_checks": 1,
+        "improvements": 0,
+        "patterns_considered": 4,
+        "route_proxy_evaluations": 5,
+        "selected_pattern": [
+          "cv",
+          "ev",
+          "ev"
+        ],
+        "selected_proxy_cost": 621.2913242409613,
+        "stop_reason": "current_pattern_is_best"
+      },
+      "joint_decoder_seconds": 0.0010846250224858522,
+      "shared_base": true
+    },
+    "metrics": {
+      "E_cv_direct": 108.39950281360655,
+      "E_ev_indirect": 43.63509404514769,
+      "E_total": 152.03459685875424,
+      "carbon_quota_kg": 0.0,
+      "cost_carbon": 7.653421605869689,
+      "cost_elec": 60.294430463804844,
+      "cost_fix": 240.0,
+      "cost_fuel": 60.42715066872809,
+      "cost_km": 252.7081114556993,
+      "cost_occ": 0.0,
+      "cost_transship": 0.0,
+      "depot_charging_kwh": 325.3881838305712,
+      "distance_cv": 219055.40511070803,
+      "distance_ev": 502967.77047700435,
+      "distance_total": 722023.1755877123,
+      "electricity_kwh": 325.3881838305712,
+      "ev_drive_kwh": 325.3881838305712,
+      "fuel_liters": 42.165341336074306,
+      "n_veh_cv": 1,
+      "n_veh_ev": 1,
+      "station_charging_kwh": 0,
+      "total_cost": 621.0831141941019
+    },
+    "objective": 621.0831141941019,
+    "seed": 1
+  },
+  {
+    "algorithm": "mechanism_alns_v6",
+    "fingerprints": {
+      "charging_quantity_fingerprint": "835f239b35fbd71c88d9f719fb95d3269d4cd5511525f7ce0f4515a2709834e2",
+      "charging_schedule_fingerprint": "976762ed6c9c22ca54e4c190721ef9ff7f0d4c770d278324b2650d97a024fb56",
+      "route_vehicle_fingerprint": "f2c2719ec58ec3ab6130c37aa9da17a32deaf86e802345e4bebac2f679fee2a3"
+    },
+    "instance": "L-main-threeshift-50c-01",
+    "mechanism_activity": {
+      "base_alns_activity": {
+        "alns_actual_moves": 0
+      },
+      "carbon_activity": {
+        "action_changes": [
+          {
+            "new_emissions_kg": 25.214150164970672,
+            "new_start_second": 58573.518547260464,
+            "old_emissions_kg": 30.58397251231538,
+            "old_start_second": 46800.0,
+            "station_id": "D0",
+            "vehicle_id": "EV1#T1"
+          },
+          {
+            "new_emissions_kg": 12.807580499672865,
+            "new_start_second": 70254.26918661143,
+            "old_emissions_kg": 15.690593262741146,
+            "old_start_second": 37800.0,
+            "station_id": "D0",
+            "vehicle_id": "EV2#T1"
+          },
+          {
+            "new_emissions_kg": 14.450133858606725,
+            "new_start_second": 68292.72154675513,
+            "old_emissions_kg": 20.773183008916828,
+            "old_start_second": 45000.0,
+            "station_id": "D0",
+            "vehicle_id": "EV3#T1"
+          },
+          {
+            "new_emissions_kg": 14.418748042997755,
+            "new_start_second": 67855.86960269709,
+            "old_emissions_kg": 17.674164030787793,
+            "old_start_second": 41400.0,
+            "station_id": "D1",
+            "vehicle_id": "EV1#T2"
+          },
+          {
+            "new_emissions_kg": 5.387756445480796,
+            "new_start_second": 78377.57452588787,
+            "old_emissions_kg": 9.365179259822272,
+            "old_start_second": 43200.0,
+            "station_id": "D1",
+            "vehicle_id": "EV2#T2"
+          }
+        ],
+        "actions_retimed": 5,
+        "candidate_start_count": 159,
+        "complete_evaluations": 0,
+        "eligible_actions": 5,
+        "exact_decoder_updates": 1,
+        "feasibility_checks": 1,
+        "improvements": 1,
+        "objective_delta": -1.0978511189840958,
+        "old_local_objective": 118.56090754008471,
+        "route_local_schedule_evaluations": 159,
+        "selected_local_objective": 117.46305642110062
+      },
+      "carbon_decoder_seconds": 0.0027682919753715396,
+      "independent_final_replays": 1,
+      "joint_activity": {
+        "assembled_patterns": 14,
+        "complete_evaluations": 0,
+        "current_pattern": [
+          "cv",
+          "cv",
+          "cv",
+          "cv",
+          "cv",
+          "cv",
+          "cv"
+        ],
+        "current_proxy_cost": 1399.4640614125535,
+        "exact_decoder_updates": 1,
+        "feasibility_checks": 14,
+        "improvements": 1,
+        "objective_delta": -164.26446457089446,
+        "patterns_considered": 32,
+        "route_proxy_evaluations": 12,
+        "selected_pattern": [
+          "ev",
+          "ev",
+          "ev",
+          "cv",
+          "cv",
+          "ev",
+          "ev"
+        ],
+        "selected_proxy_cost": 1235.199596841659
+      },
+      "joint_decoder_seconds": 0.006309707998298109,
+      "shared_base": true
+    },
+    "metrics": {
+      "E_cv_direct": 180.5293895224939,
+      "E_ev_indirect": 72.2783690117288,
+      "E_total": 252.80775853422267,
+      "carbon_quota_kg": 0.0,
+      "cost_carbon": 12.72634256461277,
+      "cost_elec": 113.82456332505018,
+      "cost_fix": 560.0,
+      "cost_fuel": 100.6358547563369,
+      "cost_km": 446.9149850766752,
+      "cost_occ": 0.0,
+      "cost_transship": 0.0,
+      "depot_charging_kwh": 614.2717934433362,
+      "distance_cv": 361248.7424140832,
+      "distance_ev": 915651.2149478459,
+      "distance_total": 1276899.9573619291,
+      "electricity_kwh": 614.2717934433362,
+      "ev_drive_kwh": 614.2717934433362,
+      "fuel_liters": 70.22249302654168,
+      "n_veh_cv": 2,
+      "n_veh_ev": 3,
+      "station_charging_kwh": 0,
+      "total_cost": 1234.101745722675
+    },
+    "objective": 1234.1017457226749,
+    "seed": 1
+  }
+]

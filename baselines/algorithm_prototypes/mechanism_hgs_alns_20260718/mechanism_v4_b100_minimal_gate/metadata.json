@@ -1,0 +1,35 @@
+{
+  "algorithms": [
+    "official_vidal_hgs_neutral_resetp_adapter",
+    "original_n_wouda_alns_7_0_0_neutral_resetp_adapter",
+    "current_project_alns",
+    "mechanism_alns_v4",
+    "mechanism_alns_v4_without_joint_ablation"
+  ],
+  "approval": "EA-HGS-002-development-only-pivot",
+  "battery_kwh": 280.0,
+  "bundles": [
+    "models/data_bundle/generated_instances/L-main_size_preserving_v2_archive_20260710/L-main-threeshift-20c-01",
+    "models/data_bundle/generated_instances/L-main_size_preserving_v2_archive_20260710/L-main-threeshift-25c-01",
+    "models/data_bundle/generated_instances/L-main_size_preserving_v2_archive_20260710/L-main-threeshift-50c-01"
+  ],
+  "claim_boundary": "This gate tests the joint fleet/charging component only. The cross-depot, fairness, carbon-price, and dynamic components remain unproven because these development bundles do not expose their required mechanisms.",
+  "complete_evaluation_budget_per_arm": 100,
+  "control_reuse": {
+    "control_artifact_manifest": "baselines/algorithm_prototypes/mechanism_hgs_alns_20260718/official_v2_b100_confirmation_gate/artifact_hashes.json",
+    "control_artifact_manifest_sha256": "3b4a96dbfe3aab10c644c60cf876e0a8a5b0f2c523df9cc15ff1d0daea6b7b94",
+    "control_raw_runs": "baselines/algorithm_prototypes/mechanism_hgs_alns_20260718/official_v2_b100_confirmation_gate/raw_runs.csv",
+    "control_raw_runs_sha256": "2500167c8d5a106e4d7c6efb5f22e7f525c843df4fb01b1347cf192ad9a98cf2"
+  },
+  "created_at_utc": "2026-07-18T13:40:48.461643+00:00",
+  "cross_depot_reserved_evaluations": 2,
+  "development_only": true,
+  "formal_search_allowed": false,
+  "schema_version": "resetp.mechanism-alns-v4-gate.v1",
+  "seeds": [
+    1,
+    2,
+    3
+  ],
+  "strict_gate": "Every pair must strictly beat both pinned original open-source controls, the current project ALNS, and the equal-budget joint-decoder ablation. The joint decoder must improve with one complete evaluation. Ties fail the full contract."
+}

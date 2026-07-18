@@ -1,0 +1,30 @@
+{
+  "algorithms": [
+    "official_vidal_hgs_neutral_resetp_adapter",
+    "original_n_wouda_alns_7_0_0_neutral_resetp_adapter",
+    "current_project_alns",
+    "mechanism_hgs_alns_v2"
+  ],
+  "approval": "EA-HGS-002",
+  "battery_kwh": 280.0,
+  "bundles": [
+    "models/data_bundle/generated_instances/L-main_size_preserving_v2_archive_20260710/L-main-threeshift-25c-01",
+    "models/data_bundle/generated_instances/L-main_size_preserving_v2_archive_20260710/L-main-threeshift-50c-01"
+  ],
+  "candidate_hgs_share": 0.08,
+  "candidate_mechanism_share": 0.12,
+  "claim_boundary": "Non-formal mechanism-active ReSETP development evidence only. The official HGS control is the unmodified symmetric-CVRP core plus a neutral frozen-depot translation layer, not an upstream solver for the full ReSETP model.",
+  "complete_evaluation_budget_per_arm": 30,
+  "created_at_utc": "2026-07-18T13:08:43.262593+00:00",
+  "development_only": true,
+  "formal_search_allowed": false,
+  "official_hgs_commit": "1a927955cd2861a29d978f0d359d6e647db9319c",
+  "official_hgs_library": "build/official-hgs-cvrp-1a927955cd28/source/build-resetp/libhgscvrp.dylib",
+  "official_hgs_library_sha256": "0f12d6ebeda11652e81540d8b1b15455ce3e66bfee3e0367526e944fb85bb001",
+  "original_alns_commit": "4962d91385990033d9bce81d1407cf846d4fb70c",
+  "schema_version": "resetp.mechanism-hgs-alns-v2-gate.v1",
+  "seeds": [
+    1
+  ],
+  "strict_gate": "Every paired task must strictly beat the pinned official HGS neutral adapter, the pinned original N-Wouda ALNS neutral adapter, and the current project ALNS. The candidate must also use official HGS and obtain at least one accepted mechanism-expert improvement. Ties fail."
+}

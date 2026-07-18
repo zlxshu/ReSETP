@@ -1,0 +1,71 @@
+{
+  "approval": "user-approved mechanism-first development; no formal stage-2 authorization",
+  "claim_boundary": "This is a development closeout, not formal evidence. Static coverage is 20/25/50 customers at B100; multi-depot coverage is 10--75 customers at B100 with three post-discovery control tasks; fairness is one 20-customer bundle across three seeds; dynamics is one frozen add event plus a synthetic depth-two fallback. Nonlinear charging, time-varying electricity prices, formal E2--E7, China81, large-scale statistics, formal integration and stage 2 remain unapproved and unproven.",
+  "created_at_utc": "2026-07-18T15:24:01.027981+00:00",
+  "development_only": true,
+  "fairness_reference": "per-depot maximum stand-alone profit across seeds 1, 2, 3",
+  "fairness_theta": 1.0,
+  "formal_search_allowed": false,
+  "multidepot_post_discovery_confirm_tasks": [
+    {
+      "seed": 3,
+      "size": 25
+    },
+    {
+      "seed": 1,
+      "size": 50
+    },
+    {
+      "seed": 2,
+      "size": 75
+    }
+  ],
+  "multidepot_sizes": [
+    10,
+    15,
+    20,
+    25,
+    50,
+    75
+  ],
+  "route_search_budget": 100,
+  "schema_version": "resetp.stage1-algorithm-closeout.v1",
+  "seeds": [
+    1,
+    2,
+    3
+  ],
+  "sources": [
+    {
+      "doi": "10.1016/j.ijpe.2022.108669",
+      "role": "multi-depot cooperation and participation fairness",
+      "title": "A hybrid metaheuristic to solve the resource constrained multi-depot vehicle routing problem"
+    },
+    {
+      "doi": "10.1109/SMARTGRIDCOMM52983.2022.9960988",
+      "role": "time-varying carbon-aware charge timing",
+      "title": "Carbon-Aware EV Charging"
+    },
+    {
+      "doi": "10.1287/ijoc.2020.1035",
+      "role": "fixed-route charging oracle architecture",
+      "title": "frvcpy: An Open-Source Solver for the Fixed Route Vehicle Charging Problem"
+    },
+    {
+      "identifier": "arXiv:2506.03172",
+      "role": "operators tailored to the model coupling",
+      "title": "Large Neighborhood and Hybrid Genetic Search for Inventory Routing Problems"
+    }
+  ],
+  "stage2_allowed": false,
+  "static_battery_kwh": 280.0,
+  "static_source_reuse": {
+    "artifact_hashes": "baselines/algorithm_prototypes/mechanism_hgs_alns_20260718/mechanism_v6_b100_shared_base_gate/artifact_hashes.json",
+    "artifact_hashes_sha256": "29e7163024e005f3115182a389e7be3b87b43bae483de64712a6bfa359c49de5",
+    "decision": "baselines/algorithm_prototypes/mechanism_hgs_alns_20260718/mechanism_v6_b100_shared_base_gate/decision.json",
+    "decision_sha256": "817d62b84bf895dcda30335e333df0ec1fa998cfbd9009b42ca63ff2927ed05f",
+    "raw_runs": "baselines/algorithm_prototypes/mechanism_hgs_alns_20260718/mechanism_v6_b100_shared_base_gate/raw_runs.csv",
+    "raw_runs_sha256": "3ffd11ad013a3706489ac33a2e1f92e44a0cd257688aa8de40782a8269c59ec8"
+  },
+  "strict_gate": "The static candidate must beat both pinned original open-source controls and the current project ALNS on all nine tasks, and must never lose to v6. The responsibility decoder must improve every binding multi-depot task and tie every nonbinding task without consuming route-search evaluations; three post-discovery tasks must also beat all three controls. The fixed theta=1.0 profit floor uses the strongest stand-alone profit found across the predeclared seeds: every binding seed must be repaired while cost-only remains below the floor, and every nonbinding seed must be an exact no-op. The real dynamic event must improve under inherited assets and the depth-two fallback artifact must verify."
+}

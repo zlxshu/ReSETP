@@ -137,6 +137,11 @@ def run_official_hgs_neutral(
                 if isinstance(prices, dict)
                 else getattr(prices, "Q_capacity")
             ),
+            speed_m_per_second=float(
+                prices["v_speed_ms"]
+                if isinstance(prices, dict)
+                else getattr(prices, "v_speed_ms")
+            ),
             config=HGSAdapterConfig(
                 seed=int(seed) * 1_000_003 + candidate_index,
                 no_improvement_iterations=no_improvement_iterations,
@@ -424,7 +429,7 @@ def _apply_mechanism_experts(
     return solution, objective, counters
 
 
-def run_mechanism_hgs_alns_v2(
+def _run_mechanism_hgs_alns_v2(
     bundle_dir: str | Path,
     *,
     seed: int,
@@ -432,16 +437,20 @@ def run_mechanism_hgs_alns_v2(
     prices: Any = DEFAULT_PRICES,
     hgs_share: float = 0.08,
     mechanism_share: float = 0.12,
+    use_official_hgs: bool,
+    use_mechanism_experts: bool,
+    algorithm_label: str,
 ) -> ArmResult:
-    """Run official HGS skeletons, ALNS education, and eligible experts."""
+    """Run the candidate or one development-only component ablation."""
 
     started = time.perf_counter()
     bundle = load_search_bundle(bundle_dir)
     warm = make_shared_initial_solution(bundle, prices=prices)
+    warm_cost = independent_cost(bundle_dir, warm, prices)
     total = max(0, int(eval_budget))
     if total == 0:
         return ArmResult(
-            algorithm="mechanism_hgs_alns_v2",
+            algorithm=algorithm_label,
             best_solution=warm,
             best_cost=independent_cost(bundle_dir, warm, prices),
             evaluations=0,
@@ -455,7 +464,11 @@ def run_mechanism_hgs_alns_v2(
             mechanism_activity={},
         )
 
-    hgs_budget = max(1, int(round(total * max(0.0, float(hgs_share)))))
+    hgs_budget = (
+        max(1, int(round(total * max(0.0, float(hgs_share)))))
+        if use_official_hgs
+        else 0
+    )
     mechanism_room = max(
         1, int(round(total * max(0.0, float(mechanism_share))))
     )
@@ -463,42 +476,71 @@ def run_mechanism_hgs_alns_v2(
         mechanism_room = max(0, total - hgs_budget)
     education_budget = max(0, total - hgs_budget - mechanism_room)
 
-    skeleton = run_official_hgs_neutral(
-        bundle_dir,
-        seed=seed,
-        eval_budget=hgs_budget,
-        prices=prices,
-        initial_solution=warm,
-    )
+    if use_official_hgs:
+        skeleton = run_official_hgs_neutral(
+            bundle_dir,
+            seed=seed,
+            eval_budget=hgs_budget,
+            prices=prices,
+            initial_solution=warm,
+        )
+        skeleton_solution = skeleton.best_solution
+        skeleton_cost = float(skeleton.best_cost)
+        skeleton_evaluations = skeleton.evaluations
+        hgs_activity = dict(skeleton.mechanism_activity)
+    else:
+        skeleton = None
+        skeleton_solution = warm
+        skeleton_cost = float(warm_cost)
+        skeleton_evaluations = 0
+        hgs_activity = {
+            "development_ablation": "official_hgs_removed",
+            "hgs_native_calls": 0,
+        }
     if education_budget:
         educated = run_pure_alns(
             bundle_dir,
             seed=seed,
             eval_budget=education_budget,
             prices=prices,
-            initial_solution=skeleton.best_solution,
+            initial_solution=skeleton_solution,
         )
         solution = educated.best_solution
         objective = educated.best_cost
+        educated_cost = float(educated.best_cost)
         education_activity = dict(educated.mechanism_activity)
     else:
         educated = None
-        solution = skeleton.best_solution
-        objective = skeleton.best_cost
+        solution = skeleton_solution
+        objective = skeleton_cost
+        educated_cost = skeleton_cost
         education_activity = {}
 
-    expert_budget = EvalBudget(limit=mechanism_room, target=mechanism_room)
+    expert_limit = mechanism_room if use_mechanism_experts else 0
+    expert_budget = EvalBudget(limit=expert_limit, target=expert_limit)
     expert_context = EvaluationContext(
         bundle.instance,
         bundle.carbon_profile,
         prices=prices,
         budget=expert_budget,
     )
-    solution, objective, expert_activity = _apply_mechanism_experts(
-        solution=solution,
-        objective=objective,
-        context=expert_context,
-    )
+    if use_mechanism_experts:
+        solution, objective, expert_activity = _apply_mechanism_experts(
+            solution=solution,
+            objective=objective,
+            context=expert_context,
+        )
+    else:
+        expert_activity = {
+            "development_ablation": "mechanism_experts_removed",
+            "depot_expert_eligible": 0,
+            "depot_expert_evaluations": 0,
+            "depot_expert_improvements": 0,
+            "fleet_charge_expert_eligible": 0,
+            "fleet_charge_expert_evaluations": 0,
+            "fleet_charge_expert_improvements": 0,
+        }
+    post_expert_cost = float(objective)
     filler = mechanism_room - expert_budget.count
     filler_activity: dict[str, Any] = {}
     if filler:
@@ -515,13 +557,13 @@ def run_mechanism_hgs_alns_v2(
             objective = continuation.best_cost
 
     evaluations = (
-        skeleton.evaluations
+        skeleton_evaluations
         + (educated.evaluations if educated is not None else 0)
         + expert_budget.count
         + filler
     )
     return ArmResult(
-        algorithm="mechanism_hgs_alns_v2",
+        algorithm=algorithm_label,
         best_solution=solution,
         best_cost=float(objective),
         evaluations=evaluations,
@@ -533,15 +575,96 @@ def run_mechanism_hgs_alns_v2(
             prices=prices,
         ),
         mechanism_activity={
-            "hgs_evaluations": skeleton.evaluations,
+            "warm_cost": float(warm_cost),
+            "skeleton_cost": skeleton_cost,
+            "educated_cost": educated_cost,
+            "post_expert_cost": post_expert_cost,
+            "final_cost": float(objective),
+            "development_use_official_hgs": bool(use_official_hgs),
+            "development_use_mechanism_experts": bool(
+                use_mechanism_experts
+            ),
+            "hgs_evaluations": skeleton_evaluations,
             "alns_education_evaluations": (
                 educated.evaluations if educated is not None else 0
             ),
             "expert_evaluations": expert_budget.count,
             "filler_alns_evaluations": filler,
-            "hgs_activity": skeleton.mechanism_activity,
+            "hgs_activity": hgs_activity,
             "education_activity": education_activity,
             "expert_activity": expert_activity,
             "filler_activity": filler_activity,
         },
+    )
+
+
+def run_mechanism_hgs_alns_v2(
+    bundle_dir: str | Path,
+    *,
+    seed: int,
+    eval_budget: int,
+    prices: Any = DEFAULT_PRICES,
+    hgs_share: float = 0.08,
+    mechanism_share: float = 0.12,
+) -> ArmResult:
+    """Run official HGS skeletons, ALNS education, and eligible experts."""
+
+    return _run_mechanism_hgs_alns_v2(
+        bundle_dir,
+        seed=seed,
+        eval_budget=eval_budget,
+        prices=prices,
+        hgs_share=hgs_share,
+        mechanism_share=mechanism_share,
+        use_official_hgs=True,
+        use_mechanism_experts=True,
+        algorithm_label="mechanism_hgs_alns_v2",
+    )
+
+
+def run_mechanism_hgs_alns_v2_without_hgs(
+    bundle_dir: str | Path,
+    *,
+    seed: int,
+    eval_budget: int,
+    prices: Any = DEFAULT_PRICES,
+    hgs_share: float = 0.08,
+    mechanism_share: float = 0.12,
+) -> ArmResult:
+    """Development-only ablation that removes official HGS."""
+
+    return _run_mechanism_hgs_alns_v2(
+        bundle_dir,
+        seed=seed,
+        eval_budget=eval_budget,
+        prices=prices,
+        hgs_share=hgs_share,
+        mechanism_share=mechanism_share,
+        use_official_hgs=False,
+        use_mechanism_experts=True,
+        algorithm_label="mechanism_hgs_alns_v2_without_hgs_ablation",
+    )
+
+
+def run_mechanism_hgs_alns_v2_without_experts(
+    bundle_dir: str | Path,
+    *,
+    seed: int,
+    eval_budget: int,
+    prices: Any = DEFAULT_PRICES,
+    hgs_share: float = 0.08,
+    mechanism_share: float = 0.12,
+) -> ArmResult:
+    """Development-only ablation that removes both mechanism experts."""
+
+    return _run_mechanism_hgs_alns_v2(
+        bundle_dir,
+        seed=seed,
+        eval_budget=eval_budget,
+        prices=prices,
+        hgs_share=hgs_share,
+        mechanism_share=mechanism_share,
+        use_official_hgs=True,
+        use_mechanism_experts=False,
+        algorithm_label="mechanism_hgs_alns_v2_without_experts_ablation",
     )

@@ -1,0 +1,52 @@
+{
+  "command": [
+    "python3",
+    "baselines/china_instances/run_china81_stage2_road_pipeline_20260718.py"
+  ],
+  "events_emitted": [
+    "/Volumes/移动硬盘（512G）/ReSETP/data/ChinaInstances/china_stage2_local_osrm_graphs_20260718/LOCAL_OSRM_GRAPHS_COMPLETE.json:64",
+    "/Volumes/移动硬盘（512G）/ReSETP/data/ChinaInstances/china_stage2_chengyu_merged_osm_v1_20260718/decision.json:64"
+  ],
+  "last_event_state": "ANOMALY",
+  "log_initial_sizes": {
+    "/Volumes/移动硬盘（512G）/ReSETP/baselines/china_instances/monitor_configs/.china81-stage2-road-pipeline.monitor/experiment.stdout.log": 2626
+  },
+  "low_cpu_checks": 0,
+  "mode": "start",
+  "monitor_config_sha256": "c38e7e060091694e6849ed700fcd7c3473152b7148c02df7ffb8a4ebd3840ff1",
+  "paused": false,
+  "pgid": 74935,
+  "pid": 74935,
+  "protected_hashes": {
+    "/Volumes/移动硬盘（512G）/ReSETP/data/ChinaInstances/china81_stage2_static_inputs_v1_20260718/parameter_lock.json": {
+      "age_seconds": 1675.6071310043335,
+      "exists": true,
+      "kind": "primary_config",
+      "mtime": 1784388103.41,
+      "path": "/Volumes/移动硬盘（512G）/ReSETP/data/ChinaInstances/china81_stage2_static_inputs_v1_20260718/parameter_lock.json",
+      "sha256": "7d59967bdf798dfaf7e89743adf8392d2db20c80dba8a70ad349b27d5de9a793",
+      "size": 1960
+    },
+    "/Volumes/移动硬盘（512G）/ReSETP/data/ChinaInstances/china_mc004_mc006_preclosure_v4_20260718/osm_freeze_inventory.csv": {
+      "age_seconds": 33171.94737815857,
+      "exists": true,
+      "kind": "core_data",
+      "mtime": 1784356607.07,
+      "path": "/Volumes/移动硬盘（512G）/ReSETP/data/ChinaInstances/china_mc004_mc006_preclosure_v4_20260718/osm_freeze_inventory.csv",
+      "sha256": "48d0616c752b099fc04f512a89dfd8fdea3dfb2ec896005f00aefb8efd8a14a7",
+      "size": 1963
+    },
+    "/Volumes/移动硬盘（512G）/ReSETP/docs/handoff/china_stage2_g1_independent_execution_contract_20260718.md": {
+      "age_seconds": 4162.717558145523,
+      "exists": true,
+      "kind": "experiment_contract",
+      "mtime": 1784385616.3,
+      "path": "/Volumes/移动硬盘（512G）/ReSETP/docs/handoff/china_stage2_g1_independent_execution_contract_20260718.md",
+      "sha256": "7313c81250f14c971832e4553326f2ad1941211c37e0492e0301524a6fb4eaa5",
+      "size": 6236
+    }
+  },
+  "started_at": "2026-07-18T15:49:39+00:00",
+  "started_at_epoch": 1784389779.017079,
+  "stdout_path": "/Volumes/移动硬盘（512G）/ReSETP/baselines/china_instances/monitor_configs/.china81-stage2-road-pipeline.monitor/experiment.stdout.log"
+}

@@ -1,0 +1,53 @@
+{
+  "algorithms": [
+    "official_vidal_hgs_neutral_resetp_adapter",
+    "original_n_wouda_alns_7_0_0_neutral_resetp_adapter",
+    "current_project_alns",
+    "mechanism_alns_v5",
+    "mechanism_alns_v5_without_carbon_ablation"
+  ],
+  "approval": "EA-HGS-002-development-only",
+  "battery_kwh": 280.0,
+  "bundles": [
+    "models/data_bundle/generated_instances/L-main_size_preserving_v2_archive_20260710/L-main-threeshift-20c-01",
+    "models/data_bundle/generated_instances/L-main_size_preserving_v2_archive_20260710/L-main-threeshift-25c-01",
+    "models/data_bundle/generated_instances/L-main_size_preserving_v2_archive_20260710/L-main-threeshift-50c-01"
+  ],
+  "claim_boundary": "This is a three-instance development gate. It proves a time-varying-carbon depot-charge timing component on the current linear 280-kWh development model. It does not prove nonlinear charging, time-varying electricity price, fairness, dynamic replanning, formal E2 performance, China81 validity, or stage-2 readiness.",
+  "complete_evaluation_budget_per_arm": 100,
+  "control_reuse": {
+    "control_artifact_manifest": "baselines/algorithm_prototypes/mechanism_hgs_alns_20260718/mechanism_v4_b100_minimal_gate/artifact_hashes.json",
+    "control_artifact_manifest_sha256": "3537bd4e0007f6693cb775b32b67b193557492ec9e004b15fa0ec70c7962de77",
+    "control_raw_runs": "baselines/algorithm_prototypes/mechanism_hgs_alns_20260718/mechanism_v4_b100_minimal_gate/raw_runs.csv",
+    "control_raw_runs_sha256": "e4eb1dc4fe021091b5e2e0928ca097ace097af3c685b95b4140a3974632b25bc"
+  },
+  "created_at_utc": "2026-07-18T14:25:57.030404+00:00",
+  "cross_depot_reserved_evaluations": 2,
+  "development_only": true,
+  "formal_search_allowed": false,
+  "schema_version": "resetp.mechanism-alns-v5-gate.v1",
+  "seeds": [
+    1,
+    2,
+    3
+  ],
+  "source_basis": [
+    {
+      "doi": "10.1109/SMARTGRIDCOMM52983.2022.9960988",
+      "role": "retime charging within availability and physical constraints using time-varying grid carbon",
+      "title": "Carbon-Aware EV Charging"
+    },
+    {
+      "doi": "10.1287/ijoc.2020.1035",
+      "role": "treat charging as a route-level subproblem embedded inside a larger routing method",
+      "title": "frvcpy: An Open-Source Solver for the Fixed Route Vehicle Charging Problem"
+    },
+    {
+      "identifier": "arXiv:2506.03172",
+      "role": "design a tailored operator around the model coupling and verify it by ablation",
+      "title": "Large Neighborhood and Hybrid Genetic Search for Inventory Routing Problems"
+    }
+  ],
+  "stage2_allowed": false,
+  "strict_gate": "Every paired task must use the exact complete-evaluation budget, remain feasible under independent replay, strictly beat both pinned original open-source controls and the current project ALNS, and strictly beat the equal-budget carbon-retiming ablation. The carbon pair must preserve routes, vehicle types, and charging quantities while changing charge starts and reducing charging emissions. Ties fail."
+}

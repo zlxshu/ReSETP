@@ -174,7 +174,7 @@ adaptive large neighborhood search}%
 
 在分时充电减排方面，现有研究主要沿两条路径展开。一类利用实时碳强度调整充电时刻\textsuperscript{\cite{ref:50}}。Li等基于上海3777辆电动车11个月的运行数据，在不改变出行计划的条件下量化有序充电的减排潜力\textsuperscript{\cite{ref:52}}。另一类把充电与电价、碳交易或路网负荷联合考虑。Hu等将动态电价、节点碳流和碳交易用于电动车群充电调度\textsuperscript{\cite{ref:53}}。Zhang等联合行驶路径与充电站选择，以缩短出行时间和平衡充电站负荷为主要目标\textsuperscript{\cite{ref:54}}。上述研究说明了碳信号与充电灵活性的价值，但对受客户时间窗、实体车多趟和动态订单约束的配送车队，固定配送任务后的充电灵活性及其边际减排作用仍缺少系统证据。
 
-在混合车队低碳路径方面，Goeke和Schneider建立了油电混合车队路径模型\textsuperscript{\cite{ref:27}}。李得成等进一步研究车型配置与路径的联合决策\textsuperscript{\cite{ref:6}}。陈婉茹等将碳交易引入多中心混合车队的路径与速度决策\textsuperscript{\cite{ref:23}}。复杂冷链场景的多重约束又进一步扩展了低碳路径问题\textsuperscript{\cite{ref:48}}。Froger等说明共享充电站容量会改变电动车路径的可行域\textsuperscript{\cite{ref:12}}。胡路等进一步考察多充电桩排队与客户时间窗的联合约束\textsuperscript{\cite{ref:13}}。Keskin和\c{C}atay通过部分充电策略扩大可行决策空间\textsuperscript{\cite{ref:45}}。Diefenbach等表明，非线性充电曲线会进一步改变充电与车辆排程\textsuperscript{\cite{ref:46}}。这些研究为车辆能耗和碳成本核算提供了基础，但大多同时改变路线、车辆和充电安排，难以单独判断减排是来自配送结构变化，还是来自既定排班内的充电时刻调整。
+在混合车队低碳路径方面，Goeke和Schneider建立了油电混合车队路径模型\textsuperscript{\cite{ref:27}}。李得成等进一步研究车型配置与路径的联合决策\textsuperscript{\cite{ref:6}}。陈婉茹等将碳交易引入多中心混合车队的路径与速度决策\textsuperscript{\cite{ref:23}}。复杂冷链场景的多重约束又进一步扩展了低碳路径问题\textsuperscript{\cite{ref:48}}。Froger等说明共享充电站容量会改变电动车路径的可行域\textsuperscript{\cite{ref:12}}。胡路等进一步考察多充电桩排队与客户时间窗的联合约束\textsuperscript{\cite{ref:13}}。Keskin和\c{C}atay通过部分充电策略扩大可行决策空间\textsuperscript{\cite{ref:45}}。Diefenbach等表明，非线性充电曲线会进一步改变充电与车辆排程\textsuperscript{\cite{ref:46}}。Kullman等将固定路线充电子问题封装为可嵌入更大路径搜索的开源精确求解工具\textsuperscript{\cite{ref:73}}；Cheng等则在车辆可用时间、站端容量和电池约束下直接优化充电碳排\textsuperscript{\cite{ref:50}}。这些研究为车辆能耗和碳成本核算提供了基础，但大多同时改变路线、车辆和充电安排，难以单独判断减排是来自配送结构变化，还是来自既定排班内的充电时刻调整。
 
 在多车场协同方面，Wang等考察了多车场电动车共享充电设施的路径协同\textsuperscript{\cite{ref:7}}。时变路网下的车辆与设施共享又扩大了动态协同空间\textsuperscript{\cite{ref:25}}。Fern\'andez等则直接将共享客户作为协同路径的核心决策\textsuperscript{\cite{ref:49}}。系统总收益增加并不表示每个参与方都获益，Soriano等因此在多车场路径中显式考虑利润公平\textsuperscript{\cite{ref:8}}。Shi等进一步联合讨论协同运输计划与利润分配\textsuperscript{\cite{ref:9}}。Agussurja等研究了维持稳定且公平分配所需的最小补贴\textsuperscript{\cite{ref:10}}。客户原责任与地理服务边界的关系还会影响合作空间：责任划分越接近地理边界，独立经营可能越有效，留给跨场重组的增量空间反而越小。
 
@@ -1034,6 +1034,7 @@ I^{\mathrm{dev}}=\frac{\sum_{i\in N}q_i\left(d_{i o_i}-d_{i d_i^*}\right)}{\sum_
 \bibitem{ref:70} Prins C. A simple and effective evolutionary algorithm for the vehicle routing problem[J]. Computers \& Operations Research, 2004, 31(12): 1985--2002. DOI: 10.1016/S0305-0548(03)00158-8.
 \bibitem{ref:71} Vidal T, Crainic T G, Gendreau M, Lahrichi N, Rei W. A hybrid genetic algorithm for multidepot and periodic vehicle routing problems[J]. Operations Research, 2012, 60(3): 611--624. DOI: 10.1287/opre.1120.1048.
 \bibitem{ref:72} Vidal T. Hybrid genetic search for the CVRP: Open-source implementation and SWAP* neighborhood[J]. Computers \& Operations Research, 2022, 140: 105643. DOI: 10.1016/j.cor.2021.105643.
+\bibitem{ref:73} Kullman N D, Froger A, Mendoza J E, Goodson J C. frvcpy: An open-source solver for the fixed route vehicle charging problem[J]. INFORMS Journal on Computing, 2021, 33(4): 1277--1283. DOI: 10.1287/ijoc.2020.1035.
 \end{thebibliography}
 
 \end{document}

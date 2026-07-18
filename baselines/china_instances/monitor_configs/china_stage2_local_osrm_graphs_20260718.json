@@ -1,0 +1,97 @@
+{
+  "schema_version": 1,
+  "name": "china-stage2-local-osrm-graphs",
+  "objective": "顺序构建五份冻结PBF的CV和EV本地OSRM 26.7.3 CH图，不运行求解器",
+  "workdir": "../../..",
+  "poll_seconds": 30,
+  "stale_seconds": 7200,
+  "max_runtime_seconds": 43200,
+  "pause_on_anomaly": true,
+  "required_command_substrings": [
+    "build_china_stage2_local_osrm_graphs_20260718.py",
+    "--threads",
+    "6"
+  ],
+  "forbidden_command_substrings": [
+    "--force",
+    "--smoke",
+    "--debug"
+  ],
+  "min_cpu_percent_when_active": 1,
+  "low_cpu_consecutive_checks": 5,
+  "max_rss_mb": 7000,
+  "min_system_free_memory_mb": 256,
+  "min_system_memory_free_percent": 5,
+  "logs": [],
+  "progress_files": [
+    "../../../data/ChinaInstances/china_stage2_local_osrm_graphs_20260718/checkpoint.json",
+    "../../../data/ChinaInstances/china_stage2_local_osrm_graphs_20260718/raw_runs.csv"
+  ],
+  "result_files": [
+    "../../../data/ChinaInstances/china_stage2_local_osrm_graphs_20260718/metadata.json",
+    "../../../data/ChinaInstances/china_stage2_local_osrm_graphs_20260718/raw_runs.csv",
+    "../../../data/ChinaInstances/china_stage2_local_osrm_graphs_20260718/decision.json",
+    "../../../data/ChinaInstances/china_stage2_local_osrm_graphs_20260718/artifact_hashes.json",
+    "../../../data/ChinaInstances/china_stage2_local_osrm_graphs_20260718/report.md"
+  ],
+  "completion_files": [
+    "../../../data/ChinaInstances/china_stage2_local_osrm_graphs_20260718/LOCAL_OSRM_GRAPHS_COMPLETE.json"
+  ],
+  "checkpoint_paths": [
+    "../../../data/ChinaInstances/china_stage2_local_osrm_graphs_20260718/checkpoint.json",
+    "../../../data/ChinaInstances/china_stage2_local_osrm_graphs_20260718/graphs"
+  ],
+  "protected_files": [
+    {
+      "path": "../../../docs/handoff/china_stage2_g1_independent_execution_contract_20260718.md",
+      "kind": "experiment_contract"
+    },
+    {
+      "path": "../../../data/ChinaInstances/china_mc004_mc006_preclosure_v4_20260718/osm_freeze_inventory.csv",
+      "kind": "core_data"
+    },
+    {
+      "path": "../../../data/ChinaInstances/phase1_osrm_smoke_v2_20260718/freight_cv_v2673.lua",
+      "kind": "primary_config"
+    },
+    {
+      "path": "../../../data/ChinaInstances/phase1_osrm_smoke_v2_20260718/freight_ev_v2673.lua",
+      "kind": "primary_config"
+    }
+  ],
+  "csv_rules": [
+    {
+      "path": "../../../data/ChinaInstances/china_stage2_local_osrm_graphs_20260718/raw_runs.csv",
+      "required": true,
+      "required_after_seconds": 7200,
+      "required_fields": [
+        "region",
+        "profile",
+        "stage",
+        "status",
+        "returncode"
+      ],
+      "feasible_field": "status",
+      "truthy": [
+        "PASS"
+      ],
+      "min_feasible_rate": 1.0,
+      "duplicate_key_fields": [
+        "region",
+        "profile",
+        "stage"
+      ],
+      "max_duplicate_fraction": 0
+    }
+  ],
+  "milestones": [
+    {
+      "path": "../../../data/ChinaInstances/china_stage2_local_osrm_graphs_20260718/checkpoint.json",
+      "min_size": 64
+    }
+  ],
+  "ai": {
+    "enabled": false,
+    "timeout_seconds": 180
+  }
+}

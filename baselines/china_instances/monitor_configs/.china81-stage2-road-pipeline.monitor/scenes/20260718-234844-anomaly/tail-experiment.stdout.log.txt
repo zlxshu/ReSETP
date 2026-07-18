@@ -1,0 +1,27 @@
+python3: can't open file '/Volumes/移动硬盘（512G）/ReSETP/baselines/china_instances/monitor_configs/baselines/china_instances/run_china81_stage2_road_pipeline_20260718.py': [Errno 2] No such file or directory
+python3: can't open file '/Volumes/移动硬盘（512G）/ReSETP/baselines/china_instances/monitor_configs/baselines/china_instances/run_china81_stage2_road_pipeline_20260718.py': [Errno 2] No such file or directory
+Traceback (most recent call last):
+  File "/Volumes/移动硬盘（512G）/ReSETP/baselines/china_instances/build_china81_directed_matrices_20260718.py", line 297, in <module>
+    raise SystemExit(main())
+                     ~~~~^^
+  File "/Volumes/移动硬盘（512G）/ReSETP/baselines/china_instances/build_china81_directed_matrices_20260718.py", line 244, in main
+    proc = start_router(graph_base, port, args.router_threads)
+  File "/Volumes/移动硬盘（512G）/ReSETP/baselines/china_instances/build_china81_directed_matrices_20260718.py", line 129, in start_router
+    raise MatrixBuildError(f"osrm-routed health timeout; see {log}")
+build_local_directed_road_matrices_20260718.MatrixBuildError: osrm-routed health timeout; see /Volumes/移动硬盘（512G）/ReSETP/data/ChinaInstances/china81_local_directed_matrices_v1_20260718/router_logs/hebei-cv.log
+Traceback (most recent call last):
+  File "/Volumes/移动硬盘（512G）/ReSETP/baselines/china_instances/run_china81_stage2_road_pipeline_20260718.py", line 57, in <module>
+    raise SystemExit(main())
+                     ~~~~^^
+  File "/Volumes/移动硬盘（512G）/ReSETP/baselines/china_instances/run_china81_stage2_road_pipeline_20260718.py", line 46, in main
+    run(["python3", "baselines/china_instances/build_china81_directed_matrices_20260718.py",
+    ~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+         "--workers", "24", "--router-threads", "6"], "china81_matrices")
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Volumes/移动硬盘（512G）/ReSETP/baselines/china_instances/run_china81_stage2_road_pipeline_20260718.py", line 33, in run
+    subprocess.run(command, cwd=REPO, check=True)
+    ~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/anaconda3/lib/python3.13/subprocess.py", line 577, in run
+    raise CalledProcessError(retcode, process.args,
+                             output=stdout, stderr=stderr)
+subprocess.CalledProcessError: Command '['python3', 'baselines/china_instances/build_china81_directed_matrices_20260718.py', '--workers', '24', '--router-threads', '6']' returned non-zero exit status 1.
