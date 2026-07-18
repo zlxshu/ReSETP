@@ -502,7 +502,7 @@ z_{kp}^\tau\in\{0,1\},
 \section{算法设计}
 
 \subsection{算法流程}
-可行模式数随客户规模指数增长，客户调整还会同时改变配送趟组合、实体车衔接和跨场服务关系。为在有限评价预算内完成上述联动搜索，本文采用自适应大邻域搜索\textsuperscript{\cite{ref:36}}：先以破坏与修复操作重组客户和配送趟，再核验实体车全天排班；配送方案确定后，仅在合法窗口内调整充电时刻。动态事件到达时，保留已执行任务，依据车辆当前位置、可用时刻和剩余电量重构后续方案\textsuperscript{\cite{ref:51}}。算法流程见图 \ref{fig:algorithm-flow}。
+可行模式数随客户规模指数增长，客户调整还会同时改变配送趟组合、实体车衔接和跨场服务关系。为在有限评价预算内完成上述联动搜索，本文采用自适应大邻域搜索\textsuperscript{\cite{ref:66,ref:36}}：先以破坏与修复操作重组客户和配送趟，再核验实体车全天排班；配送方案确定后，仅在合法窗口内调整充电时刻。动态事件到达时，保留已执行任务，依据车辆当前位置、可用时刻和剩余电量重构后续方案\textsuperscript{\cite{ref:51}}。算法流程见图 \ref{fig:algorithm-flow}。
 
 \input{generated_figures/algorithm_flow.tex}
 
@@ -515,7 +515,7 @@ z_{kp}^\tau\in\{0,1\},
 初始解先将客户分配给最近车场，再用regret-2插入形成可行配送趟，并按车辆数量上限将趟次衔接为实体车排班。车型选择和充电访问均通过统一评价函数与可行性检查。
 
 \noindent 步骤2：破坏、修复与跨场调整。
-（1）基础破坏。随机移除用于扩大搜索范围；最差移除按删除客户前后的边际里程由大到小选择；相关移除先随机确定一个种子客户，再按空间距离、时间窗、需求差异和是否位于同一配送趟计算相关程度。整趟移除和连续片段移除分别打破趟级结构和趟内局部结构。车型交换不删除客户，而是在保持客户顺序的条件下尝试燃油车与电动车互换；燃油车换为电动车时同步修复充电，反向转换时删除相应充电会话。所有改变均须重新通过实体车数量和完整排班核验。
+（1）基础破坏。随机移除用于扩大搜索范围；最差移除按删除客户前后的边际里程由大到小选择；相关移除先随机确定一个种子客户，再按空间距离、时间窗、需求差异和是否位于同一配送趟计算相关程度\textsuperscript{\cite{ref:67}}。整趟移除和连续片段移除分别打破趟级结构和趟内局部结构。车型交换不删除客户，而是在保持客户顺序的条件下尝试燃油车与电动车互换；燃油车换为电动车时同步修复充电，反向转换时删除相应充电会话。所有改变均须重新通过实体车数量和完整排班核验。
 
 （2）可行修复。贪婪插入每次选择目标增量最小的客户—位置组合；regret-2和regret-3插入分别按次优与最优、第三优与最优插入代价之差确定优先客户，再采用其最优可行位置。普通阶段只评价与待插客户邻近的若干配送趟和位置；中间强重组阶段对随机、最差和相关移除产生的较大客户集合执行完整可行插入。若任一待插客户没有合法位置，则本次修复失败并返回破坏前方案；只有全部客户重新插入且完整评价通过，候选方案才进入接受判定。
 
@@ -524,7 +524,7 @@ z_{kp}^\tau\in\{0,1\},
 \noindent 步骤3：算子选择、解接受与权重更新。
 设合法破坏--修复算子对集合为$\mathcal C$。对算子对$(h,g)$，记其截至第$n$次
 迭代的平均得分和使用次数为$\bar w_{hg}(n)$与$n_{hg}(n)$。本文按置信上界
-（upper confidence bound，UCB）选择算子对：
+（upper confidence bound，UCB）选择算子对\textsuperscript{\cite{ref:68}}：
 \begin{equation}
 (h_n,g_n)=\arg\max_{(h,g)\in\mathcal C}
 \left\{\bar w_{hg}(n)+
@@ -539,7 +539,7 @@ $4,3,2,0.05$。对应的在线更新为
 n_{hg}(n+1)=n_{hg}(n)+1.
 \label{eq:ucb-update}
 \end{equation}
-若候选解$S'$优于当前解$S$则直接接受；否则按模拟退火准则接受：
+若候选解$S'$优于当前解$S$则直接接受；否则按模拟退火准则接受\textsuperscript{\cite{ref:69}}：
 \begin{equation}
 \begin{aligned}
 P\{S'\leftarrow S\}&=\min\left\{1,
@@ -675,7 +675,7 @@ $CE$ & $0$ kgCO$_2$e & & \\
 
 \subsection{算法有效性分析}
 
-公开标准算例选取PyVRP 0.13.4作为现代强基线。该工具采用面向带时间窗车辆路径问题的混合遗传搜索，并公开了建模接口、算法实现与基准结果\cite{ref:64}。PyVRP按同机单线程墙钟时间比较，本文ALNS、LNS及组件消融按相同完整候选评价次数比较，两类公平轴分表报告，不将跨语言迭代次数强行换算。
+公开标准算例选取PyVRP 0.13.4作为现代强基线。该工具采用面向带时间窗车辆路径问题的混合遗传搜索；该类方法通过维护多个不同方案、交叉重组和局部改进兼顾搜索范围与精细改进\cite{ref:71,ref:72}，PyVRP进一步公开了建模接口、算法实现与基准结果\cite{ref:64}。PyVRP按同机单线程墙钟时间比较，本文ALNS、LNS及组件消融按相同完整候选评价次数比较，两类公平轴分表报告，不将跨语言迭代次数强行换算。
 
 \ifETwoPublicReady
 \subsubsection{Solomon标准算例实验}
@@ -1027,6 +1027,13 @@ I^{\mathrm{dev}}=\frac{\sum_{i\in N}q_i\left(d_{i o_i}-d_{i d_i^*}\right)}{\sum_
 \bibitem{ref:60} 高娇娇, 郭秀萍. 考虑卡车无人机协同配送模式下的车辆路径问题研究[J]. 工业工程与管理, 2024, 29(3): 30--39. Gao J J, Guo X P. Research on vehicle routing problem considering truck-UAV cooperative distribution mode[J]. Industrial Engineering and Management, 2024, 29(3): 30--39.
 \bibitem{ref:61} 马祥丽, 马良, 张惠珍. 不确定车辆数的多约束车辆路径问题[J]. 计算机工程与应用, 2025, 61(6): 369--376. Ma X L, Ma L, Zhang H Z. Multi-constraint vehicle routing problem with variable fleets[J]. Computer Engineering and Applications, 2025, 61(6): 369--376.
 \bibitem{ref:64} Wouda N A, Lan L, Kool W. PyVRP: A high-performance VRP solver package[J]. INFORMS Journal on Computing, 2024, 36(4): 943--955. DOI: 10.1287/ijoc.2023.0055.
+\bibitem{ref:66} Ropke S, Pisinger D. An adaptive large neighborhood search heuristic for the pickup and delivery problem with time windows[J]. Transportation Science, 2006, 40(4): 455--472. DOI: 10.1287/trsc.1050.0135.
+\bibitem{ref:67} Shaw P. Using constraint programming and local search methods to solve vehicle routing problems[C]//Maher M, Puget J F. Principles and Practice of Constraint Programming---CP98. Berlin: Springer, 1998: 417--431. DOI: 10.1007/3-540-49481-2\_30.
+\bibitem{ref:68} Auer P, Cesa-Bianchi N, Fischer P. Finite-time analysis of the multiarmed bandit problem[J]. Machine Learning, 2002, 47(2--3): 235--256. DOI: 10.1023/A:1013689704352.
+\bibitem{ref:69} Kirkpatrick S, Gelatt C D, Vecchi M P. Optimization by simulated annealing[J]. Science, 1983, 220(4598): 671--680. DOI: 10.1126/science.220.4598.671.
+\bibitem{ref:70} Prins C. A simple and effective evolutionary algorithm for the vehicle routing problem[J]. Computers \& Operations Research, 2004, 31(12): 1985--2002. DOI: 10.1016/S0305-0548(03)00158-8.
+\bibitem{ref:71} Vidal T, Crainic T G, Gendreau M, Lahrichi N, Rei W. A hybrid genetic algorithm for multidepot and periodic vehicle routing problems[J]. Operations Research, 2012, 60(3): 611--624. DOI: 10.1287/opre.1120.1048.
+\bibitem{ref:72} Vidal T. Hybrid genetic search for the CVRP: Open-source implementation and SWAP* neighborhood[J]. Computers \& Operations Research, 2022, 140: 105643. DOI: 10.1016/j.cor.2021.105643.
 \end{thebibliography}
 
 \end{document}
