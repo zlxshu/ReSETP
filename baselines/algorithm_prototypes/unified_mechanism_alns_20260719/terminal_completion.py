@@ -8,6 +8,7 @@ default anchor and newly selected winner symmetrically.
 from __future__ import annotations
 
 from dataclasses import dataclass
+import math
 from pathlib import Path
 from typing import Any
 
@@ -59,6 +60,7 @@ def apply_terminal_completion(
     )
     original = annotate_cross_site_services(solution, owners)
     original_cost = _model_cost(original, context)
+    _require_finite("terminal_source_cost", original_cost)
     original_violations = check_solution(original, bundle.instance, prices)
     if original_violations:
         raise ValueError(f"terminal-completion source is infeasible: {original_violations[:8]}")
@@ -94,6 +96,12 @@ def apply_terminal_completion(
         responsibility_cost,
     )
     bypass_branch = downstream(original, original_cost)
+    _require_finite(
+        "terminal_branches",
+        responsibility_cost,
+        responsibility_branch[1],
+        bypass_branch[1],
+    )
     if bypass_branch[1] < responsibility_branch[1] - TOL:
         selected = bypass_branch
         selected_branch = "bypass_responsibility"
@@ -103,6 +111,7 @@ def apply_terminal_completion(
 
     final_solution, claimed, joint, carbon = selected
     recomputed = _model_cost(final_solution, context)
+    _require_finite("terminal_selected_cost", claimed, recomputed)
     if abs(float(recomputed) - float(claimed)) > 1.0e-7:
         raise RuntimeError(
             f"terminal completion objective mismatch: {claimed} != {recomputed}"
@@ -147,11 +156,61 @@ def apply_terminal_completion(
         "route_local_exact_evaluations": int(
             responsibility.get("local_exact_evaluations", 0)
         ),
-        "route_proxy_evaluations": int(
-            joint.get("route_proxy_evaluations", 0)
+        "route_proxy_evaluations": (
+            int(
+                responsibility_branch[2].get(
+                    "route_proxy_evaluations",
+                    0,
+                )
+            )
+            + int(
+                bypass_branch[2].get(
+                    "route_proxy_evaluations",
+                    0,
+                )
+            )
         ),
-        "route_local_schedule_evaluations": int(
-            carbon.get("route_local_schedule_evaluations", 0)
+        "route_local_schedule_evaluations": (
+            int(
+                responsibility_branch[3].get(
+                    "route_local_schedule_evaluations",
+                    0,
+                )
+            )
+            + int(
+                bypass_branch[3].get(
+                    "route_local_schedule_evaluations",
+                    0,
+                )
+            )
+        ),
+        "full_feasibility_checks": (
+            int(responsibility.get("full_feasibility_checks", 0))
+            + int(
+                responsibility_branch[2].get(
+                    "feasibility_checks",
+                    0,
+                )
+            )
+            + int(
+                responsibility_branch[3].get(
+                    "feasibility_checks",
+                    0,
+                )
+            )
+            + int(
+                bypass_branch[2].get(
+                    "feasibility_checks",
+                    0,
+                )
+            )
+            + int(
+                bypass_branch[3].get(
+                    "feasibility_checks",
+                    0,
+                )
+            )
+            + 2
         ),
         "complete_route_search_evaluations": 0,
     }
@@ -175,3 +234,8 @@ def _model_cost(solution: Solution, context: EvaluationContext) -> float:
             carbon_quota_kg=context.carbon_quota_kg,
         )["total_cost"]
     )
+
+
+def _require_finite(label: str, *values: float) -> None:
+    if not all(math.isfinite(float(value)) for value in values):
+        raise RuntimeError(f"{label} contains a non-finite value: {values}")

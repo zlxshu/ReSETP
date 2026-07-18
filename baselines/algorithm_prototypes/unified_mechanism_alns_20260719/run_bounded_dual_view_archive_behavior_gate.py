@@ -8,6 +8,7 @@ from datetime import datetime, timezone
 import csv
 import hashlib
 import json
+import math
 import os
 from pathlib import Path
 import platform
@@ -39,6 +40,7 @@ from contextual_expert_fixtures import (  # noqa: E402
     PRICES_280,
     RESPONSIBILITY_BUNDLE,
     all_cv_plateau,
+    fast_nonbinding_solution,
     plateau_solution,
     responsibility_binding_solution,
     responsibility_nonbinding_solution,
@@ -59,15 +61,19 @@ from setp_solver.check import check_solution  # noqa: E402
 from setp_solver.prices import DEFAULT_PRICES  # noqa: E402
 from setp_solver.profit import infer_customer_home_depots  # noqa: E402
 from setp_solver.search.bundle import load_search_bundle  # noqa: E402
+from setp_solver.search.evaluation import (  # noqa: E402
+    EvalBudget,
+    EvaluationContext,
+)
 from setp_solver.solution import (  # noqa: E402
     ChargingAction,
     CrossSiteService,
     Route,
     Solution,
 )
-from terminal_completion import apply_terminal_completion  # noqa: E402
 from v7_responsibility_solver import (  # noqa: E402
     annotate_cross_site_services,
+    exact_cross_depot_responsibility_decode,
 )
 
 
@@ -98,6 +104,8 @@ SOURCE_FILES = (
     "baselines/algorithm_prototypes/unified_mechanism_alns_20260719/"
     "bounded_dual_view_archive_solver.py",
     "baselines/algorithm_prototypes/unified_mechanism_alns_20260719/"
+    "test_bounded_dual_view_archive_solver.py",
+    "baselines/algorithm_prototypes/unified_mechanism_alns_20260719/"
     "fast_mechanism_completion.py",
     "baselines/algorithm_prototypes/unified_mechanism_alns_20260719/"
     "terminal_completion.py",
@@ -118,6 +126,9 @@ SOURCE_FILES = (
     "solver/src/setp_solver/algorithms/resetp_alns/kernel/winner.py",
     "solver/src/setp_solver/algorithms/resetp_alns/support/"
     "construction.py",
+    "solver/src/setp_solver/algorithms/resetp_alns/runtime/"
+    "budgeted_scoring.py",
+    "solver/src/setp_solver/search/e3_multitrip_runtime.py",
     "docs/handoff/bounded_dual_view_archive_contract_20260719.md",
 )
 FIXED_ENVIRONMENT = {
@@ -195,14 +206,18 @@ def main() -> int:
         {"kind": "shared_start", "budgets": list(BUDGETS)},
     )
     archive_candidates: dict[str, Any] = {}
+    parent_audits: dict[str, Any] = {}
     for budget in BUDGETS:
         for enabled in (False, True):
             payload = payloads[("archive", budget, enabled)]
             label = f"B{budget}:{'enabled' if enabled else 'control'}"
             activity = dict(payload["activity"])
+            parent_audit = _parent_archive_audit(FIXTURE, payload)
+            parent_audits[label] = parent_audit
             archive_candidates[label] = {
                 "prescore_rows": activity.get("prescore_rows", []),
                 "archive_entries": activity.get("archive_entries", []),
+                "parent_audit": parent_audit,
             }
             _add_witness(
                 witnesses,
@@ -240,8 +255,39 @@ def main() -> int:
                         "entry_index": entry_index,
                     },
                 )
+            for entry_index, entry in enumerate(
+                activity.get("prescore_rows", [])
+            ):
+                _add_witness(
+                    witnesses,
+                    _solution_from_payload(
+                        entry["raw_solution_snapshot"]
+                    ),
+                    {
+                        "kind": "prescore_raw",
+                        "budget": budget,
+                        "archive_enabled": enabled,
+                        "entry_index": entry_index,
+                    },
+                )
+                _add_witness(
+                    witnesses,
+                    _solution_from_payload(
+                        entry["fast_completed_solution_snapshot"]
+                    ),
+                    {
+                        "kind": "prescore_fast_completed",
+                        "budget": budget,
+                        "archive_enabled": enabled,
+                        "entry_index": entry_index,
+                    },
+                )
 
-    failures = _gate_failures(payloads, component_probes)
+    failures = _gate_failures(
+        payloads,
+        component_probes,
+        parent_audits,
+    )
     drift_failures = _drift_failures(
         source_hashes_before,
         protected_hashes_before,
@@ -298,7 +344,19 @@ def main() -> int:
                     "the control was changed to skip all prescoring and this "
                     "gate was rerun before any strength test."
                 ),
-            }
+            },
+            {
+                "attempt": 2,
+                "status": "INVALID_UNCOMMITTED_BEHAVIOUR_ATTEMPT",
+                "reason": (
+                    "The solver counted only the selected terminal branch's "
+                    "route-local work and omitted the raw-search independent "
+                    "replay from positive-budget post-search totals. The gate "
+                    "also did not independently reconstruct all ledgers. The "
+                    "attempt was retained under an explicit invalid directory; "
+                    "no strength instance was run."
+                ),
+            },
         ],
         "formal_search_allowed": False,
         "stage2_activated": False,
@@ -336,6 +394,8 @@ def _worker_main() -> int:
     enabled = bool(request["enabled"])
     start = _solution_from_payload(request["shared_start"])
     start_exact = solver._exact_solution_hash(start)
+    start_cost = independent_cost(bundle_dir, start, PRICES)
+    _require_finite("worker_start_cost", start_cost)
     worker_started = time.perf_counter()
     if mode == "capture":
         raw = run_winner_kernel(
@@ -374,11 +434,18 @@ def _worker_main() -> int:
                 "final_rng_state",
             }
         }
+        recomputed = independent_cost(bundle_dir, final, PRICES)
+        _require_finite(
+            "capture_worker_cost",
+            float(raw["best_cost"]),
+            float(recomputed),
+        )
         payload = {
             "mode": mode,
             "enabled": enabled,
             "budget": budget,
             "start_exact_signature": start_exact,
+            "start_cost": float(start_cost),
             "evaluations": int(raw["evaluations"]),
             "candidate_scores": int(raw["candidate_scores"]),
             "actual_moves": int(raw["actual_moves"]),
@@ -390,9 +457,7 @@ def _worker_main() -> int:
                 selector.get("selection_count_closed", False)
             ),
             "raw_cost": float(raw["best_cost"]),
-            "worker_recomputed_cost": float(
-                independent_cost(bundle_dir, final, PRICES)
-            ),
+            "worker_recomputed_cost": float(recomputed),
             "raw_algorithm_signature": solution_signature_hash(final),
             "raw_exact_signature": solver._exact_solution_hash(final),
             "raw_skeleton_signature": solver._route_skeleton_hash(
@@ -433,17 +498,22 @@ def _worker_main() -> int:
             load_search_bundle(bundle_dir).instance,
             PRICES,
         )
+        recomputed = independent_cost(bundle_dir, final, PRICES)
+        _require_finite(
+            "archive_worker_cost",
+            float(result.best_cost),
+            float(recomputed),
+        )
         payload = {
             "mode": mode,
             "enabled": enabled,
             "budget": budget,
             "start_exact_signature": start_exact,
+            "start_cost": float(start_cost),
             "algorithm": result.algorithm,
             "evaluations": int(result.evaluations),
             "claimed_final_cost": float(result.best_cost),
-            "worker_recomputed_cost": float(
-                independent_cost(bundle_dir, final, PRICES)
-            ),
+            "worker_recomputed_cost": float(recomputed),
             "worker_feasible": bool(result.feasible and not violations),
             "worker_violation_count": len(violations),
             "final_algorithm_signature": solution_signature_hash(final),
@@ -516,19 +586,27 @@ def _component_probes() -> dict[str, Any]:
             source_cost
             + float(outcome.activity["projected_objective_delta"])
         )
+        _require_finite(
+            label,
+            source_cost,
+            completed_cost,
+            expected,
+        )
         probes[label] = {
             "source_cost": float(source_cost),
             "completed_cost": float(completed_cost),
             "changed": bool(outcome.changed),
             "cost_closure_error": abs(completed_cost - expected),
+            "source_exact_signature": solver._exact_solution_hash(
+                source
+            ),
+            "completed_exact_signature": solver._exact_solution_hash(
+                outcome.solution
+            ),
             "activity": outcome.activity,
         }
 
-    fixed_point_source = apply_fast_route_local_completion(
-        all_cv_plateau(),
-        plateau_bundle,
-        prices=PRICES_280,
-    ).solution
+    fixed_point_source = fast_nonbinding_solution()
     fixed_point = apply_fast_route_local_completion(
         fixed_point_source,
         plateau_bundle,
@@ -557,6 +635,18 @@ def _component_probes() -> dict[str, Any]:
         "activity": fixed_point.activity,
     }
 
+    responsibility_bundle = load_search_bundle(RESPONSIBILITY_BUNDLE)
+    owners = infer_customer_home_depots(
+        responsibility_bundle.instance
+    )
+    responsibility_context = EvaluationContext(
+        responsibility_bundle.instance,
+        responsibility_bundle.carbon_profile,
+        prices=PRICES_280,
+        budget=EvalBudget(limit=0, target=0),
+        customer_home_depot=owners,
+        allow_cross_depot=True,
+    )
     for label, source in (
         ("responsibility_binding", responsibility_binding_solution()),
         (
@@ -564,24 +654,249 @@ def _component_probes() -> dict[str, Any]:
             responsibility_nonbinding_solution(),
         ),
     ):
-        outcome = apply_terminal_completion(
+        source = annotate_cross_site_services(source, owners)
+        source_cost = independent_cost(
             RESPONSIBILITY_BUNDLE,
             source,
-            prices=PRICES_280,
+            PRICES_280,
+        )
+        completed, completed_cost, activity = (
+            exact_cross_depot_responsibility_decode(
+                source,
+                responsibility_context,
+                incumbent_objective=source_cost,
+                owners=owners,
+            )
+        )
+        replayed = independent_cost(
+            RESPONSIBILITY_BUNDLE,
+            completed,
+            PRICES_280,
+        )
+        _require_finite(
+            label,
+            source_cost,
+            completed_cost,
+            replayed,
+        )
+        violations = check_solution(
+            completed,
+            responsibility_bundle.instance,
+            PRICES_280,
         )
         probes[label] = {
-            "source_cost": float(outcome.source_cost),
-            "completed_cost": float(outcome.cost),
-            "feasible": bool(outcome.feasible),
-            "selected_branch": str(outcome.selected_branch),
-            "activity": outcome.activity,
+            "source_cost": float(source_cost),
+            "completed_cost": float(completed_cost),
+            "replayed_cost": float(replayed),
+            "feasible": not violations,
+            "source_exact_signature": solver._exact_solution_hash(
+                source
+            ),
+            "completed_exact_signature": solver._exact_solution_hash(
+                completed
+            ),
+            "activity": activity,
         }
     return probes
+
+
+def _parent_archive_audit(
+    bundle_dir: Path,
+    payload: dict[str, Any],
+) -> dict[str, Any]:
+    failures: list[str] = []
+    bundle = load_search_bundle(bundle_dir)
+    activity = dict(payload["activity"])
+    final = _solution_from_payload(payload["final_solution"])
+    final_cost = independent_cost(bundle_dir, final, PRICES)
+    if not _all_finite(
+        final_cost,
+        payload["claimed_final_cost"],
+        payload["worker_recomputed_cost"],
+    ):
+        failures.append("nonfinite_final")
+    if abs(final_cost - float(payload["claimed_final_cost"])) > 1.0e-7:
+        failures.append("parent_final_cost")
+    if solver._exact_solution_hash(final) != payload[
+        "final_exact_signature"
+    ]:
+        failures.append("parent_final_signature")
+    if check_solution(final, bundle.instance, PRICES):
+        failures.append("parent_final_infeasible")
+
+    prescore_replays = 0
+    for index, row in enumerate(activity.get("prescore_rows", [])):
+        raw = _solution_from_payload(row["raw_solution_snapshot"])
+        fast = _solution_from_payload(
+            row["fast_completed_solution_snapshot"]
+        )
+        raw_cost = independent_cost(bundle_dir, raw, PRICES)
+        fast_cost = independent_cost(bundle_dir, fast, PRICES)
+        prescore_replays += 2
+        expected = (
+            raw_cost
+            + float(
+                row["fast_activity"]["projected_objective_delta"]
+            )
+        )
+        if not _all_finite(
+            raw_cost,
+            fast_cost,
+            expected,
+            row["raw_cost"],
+            row["fast_completed_cost"],
+        ):
+            failures.append(f"prescore:{index}:nonfinite")
+        if abs(raw_cost - float(row["raw_cost"])) > 1.0e-7:
+            failures.append(f"prescore:{index}:raw_cost")
+        if (
+            abs(fast_cost - float(row["fast_completed_cost"]))
+            > 1.0e-7
+        ):
+            failures.append(f"prescore:{index}:fast_cost")
+        if abs(fast_cost - expected) > 1.0e-7:
+            failures.append(f"prescore:{index}:closure")
+        if solver._exact_solution_hash(raw) != row["exact_signature"]:
+            failures.append(f"prescore:{index}:raw_signature")
+        if (
+            solver._exact_solution_hash(fast)
+            != row["fast_completed_exact_signature"]
+        ):
+            failures.append(f"prescore:{index}:fast_signature")
+        if (
+            solver._route_skeleton_hash(raw, bundle.instance)
+            != row["skeleton_signature"]
+        ):
+            failures.append(f"prescore:{index}:skeleton")
+        if check_solution(raw, bundle.instance, PRICES):
+            failures.append(f"prescore:{index}:raw_infeasible")
+        if check_solution(fast, bundle.instance, PRICES):
+            failures.append(f"prescore:{index}:fast_infeasible")
+
+    archive_replays = 0
+    entries = list(activity.get("archive_entries", []))
+    for index, row in enumerate(entries):
+        raw = _solution_from_payload(row["raw_solution_snapshot"])
+        completed = _solution_from_payload(
+            row["completed_solution_snapshot"]
+        )
+        raw_cost = independent_cost(bundle_dir, raw, PRICES)
+        completed_cost = independent_cost(
+            bundle_dir,
+            completed,
+            PRICES,
+        )
+        archive_replays += 2
+        if not _all_finite(
+            raw_cost,
+            completed_cost,
+            row["raw_cost"],
+            row["completed_cost"],
+        ):
+            failures.append(f"archive:{index}:nonfinite")
+        if abs(raw_cost - float(row["raw_cost"])) > 1.0e-7:
+            failures.append(f"archive:{index}:raw_cost")
+        if (
+            abs(completed_cost - float(row["completed_cost"]))
+            > 1.0e-7
+        ):
+            failures.append(f"archive:{index}:completed_cost")
+        if solver._exact_solution_hash(raw) != row["exact_signature"]:
+            failures.append(f"archive:{index}:raw_signature")
+        if (
+            solver._exact_solution_hash(completed)
+            != row["completed_exact_signature"]
+        ):
+            failures.append(f"archive:{index}:completed_signature")
+        if (
+            solver._route_skeleton_hash(raw, bundle.instance)
+            != row["skeleton_signature"]
+        ):
+            failures.append(f"archive:{index}:skeleton")
+        if check_solution(raw, bundle.instance, PRICES):
+            failures.append(f"archive:{index}:raw_infeasible")
+        if check_solution(completed, bundle.instance, PRICES):
+            failures.append(f"archive:{index}:completed_infeasible")
+        if completed_cost > raw_cost + solver.TOL:
+            failures.append(f"archive:{index}:terminal_regression")
+
+    if int(payload["budget"]) > 0:
+        ordinary = [
+            row for row in entries if row["is_main_search_final"]
+        ]
+        if len(ordinary) != 1:
+            failures.append("ordinary_count")
+        else:
+            if (
+                ordinary[0]["exact_signature"]
+                != activity["raw_search_exact_signature"]
+            ):
+                failures.append("ordinary_raw_not_search_final")
+            if (
+                ordinary[0]["completed_exact_signature"]
+                != activity[
+                    "ordinary_final_completed_exact_signature"
+                ]
+            ):
+                failures.append("ordinary_completed_signature")
+
+        ranked = sorted(
+            activity.get("prescore_rows", []),
+            key=lambda row: (
+                float(row["fast_completed_cost"]),
+                float(row["raw_cost"]),
+                -int(row["eval"]),
+                str(row["skeleton_signature"]),
+                str(row["exact_signature"]),
+            ),
+        )
+        expected_nonfinal = (
+            [
+                str(row["exact_signature"])
+                for row in ranked[: solver.ARCHIVE_CAPACITY - 1]
+            ]
+            if bool(payload["enabled"])
+            else []
+        )
+        actual_nonfinal = [
+            str(row["exact_signature"])
+            for row in entries
+            if not row["is_main_search_final"]
+        ]
+        if actual_nonfinal != expected_nonfinal:
+            failures.append("archive_ranking")
+
+        selected = min(
+            entries,
+            key=lambda row: (
+                float(row["completed_cost"]),
+                0 if row["is_main_search_final"] else 1,
+                -int(row["eval"]),
+                str(row["skeleton_signature"]),
+                str(row["completed_exact_signature"]),
+            ),
+        )
+        if (
+            selected["completed_exact_signature"]
+            != payload["final_exact_signature"]
+        ):
+            failures.append("selected_branch")
+    elif entries:
+        failures.append("zero_budget_archive_entries")
+
+    return {
+        "passed": not failures,
+        "failures": failures,
+        "parent_final_replays": 1,
+        "parent_prescore_solution_replays": prescore_replays,
+        "parent_archive_solution_replays": archive_replays,
+    }
 
 
 def _gate_failures(
     payloads: dict[tuple[str, int, bool], dict[str, Any]],
     probes: dict[str, Any],
+    parent_audits: dict[str, Any],
 ) -> list[str]:
     failures: list[str] = []
     for budget in BUDGETS:
@@ -590,6 +905,7 @@ def _gate_failures(
         tag = f"capture:B{budget}"
         for field in (
             "start_exact_signature",
+            "start_cost",
             "evaluations",
             "candidate_scores",
             "actual_moves",
@@ -609,6 +925,13 @@ def _gate_failures(
         ):
             if off[field] != on[field]:
                 failures.append(f"{tag}:{field}_drift")
+        if not _all_finite(
+            on["start_cost"],
+            on["raw_cost"],
+            on["worker_recomputed_cost"],
+            on["worker_elapsed_seconds"],
+        ):
+            failures.append(f"{tag}:nonfinite")
         if int(off["snapshot_row_count"]) != 0:
             failures.append(f"{tag}:capture_off_has_snapshots")
         if int(on["snapshot_row_count"]) != int(on["history_length"]):
@@ -626,6 +949,15 @@ def _gate_failures(
             - float(on["worker_recomputed_cost"])
         ) > 1.0e-7:
             failures.append(f"{tag}:objective_replay")
+        if budget == 0:
+            if (
+                on["start_exact_signature"] != on["raw_exact_signature"]
+                or abs(
+                    float(on["start_cost"]) - float(on["raw_cost"])
+                )
+                > 1.0e-7
+            ):
+                failures.append(f"{tag}:zero_budget_changed")
 
         control = payloads[("archive", budget, False)]
         candidate = payloads[("archive", budget, True)]
@@ -654,33 +986,203 @@ def _gate_failures(
             if left[field] != right[field]:
                 failures.append(f"{tag}:{field}_drift")
         for activity, arm in ((left, "control"), (right, "candidate")):
+            prefix = f"{tag}:{arm}"
+            score_counts = dict(activity["score_counts"])
+            candidate_channels = sum(
+                int(value)
+                for key, value in score_counts.items()
+                if str(key).startswith("candidate_channel:")
+            )
             if not (
                 int(activity["complete_search_candidate_evaluations"])
                 == int(activity["candidate_scores"])
                 == int(activity["actual_moves"])
+                == int(activity["generic_candidate_evaluations"])
+                == int(score_counts.get("candidate", 0))
+                == int(candidate_channels)
                 == budget
             ):
-                failures.append(f"{tag}:{arm}_budget_ledger")
+                failures.append(f"{prefix}:budget_ledger")
             if int(activity["mechanism_candidate_evaluations"]) != 0:
-                failures.append(f"{tag}:{arm}_hidden_mechanism_candidate")
+                failures.append(f"{prefix}:hidden_mechanism_candidate")
             if bool(activity["archive_feedback_into_search"]):
-                failures.append(f"{tag}:{arm}_archive_feedback")
+                failures.append(f"{prefix}:archive_feedback")
             if bool(activity["second_route_search_started"]):
-                failures.append(f"{tag}:{arm}_second_route_search")
+                failures.append(f"{prefix}:second_route_search")
+            prescore_rows = list(activity.get("prescore_rows", []))
+            archive_entries = list(
+                activity.get("archive_entries", [])
+            )
+            if not (
+                int(activity["prescore_candidate_count"])
+                == int(activity["prescore_reference_replays"])
+                == len(prescore_rows)
+            ):
+                failures.append(f"{prefix}:prescore_ledger")
             if int(activity["prescore_candidate_count"]) > (
                 solver.PRESCORE_CAPACITY
             ):
-                failures.append(f"{tag}:{arm}_prescore_capacity")
+                failures.append(f"{prefix}:prescore_capacity")
+            if not (
+                int(activity["archive_entry_count"])
+                == int(activity["archive_completion_call_count"])
+                == len(archive_entries)
+            ):
+                failures.append(f"{prefix}:archive_call_ledger")
             if int(activity["archive_entry_count"]) > (
                 solver.ARCHIVE_CAPACITY
             ):
-                failures.append(f"{tag}:{arm}_archive_capacity")
+                failures.append(f"{prefix}:archive_capacity")
+            terminal_replays = sum(
+                int(
+                    row["activity"].get(
+                        "full_solution_replays",
+                        0,
+                    )
+                )
+                for row in archive_entries
+            )
+            if terminal_replays != int(
+                activity["archive_completion_reference_replays"]
+            ):
+                failures.append(f"{prefix}:terminal_replay_ledger")
+            expected_independent = 1 if budget == 0 else 2
+            if not (
+                int(activity["raw_search_independent_replays"]) == 1
+                and int(
+                    activity["selected_final_independent_replays"]
+                )
+                == (0 if budget == 0 else 1)
+                and int(activity["independent_final_replays"])
+                == expected_independent
+            ):
+                failures.append(f"{prefix}:independent_replay_ledger")
+            if int(activity["post_search_full_solution_replays"]) != (
+                len(prescore_rows)
+                + terminal_replays
+                + expected_independent
+            ):
+                failures.append(f"{prefix}:post_search_replay_ledger")
+
+            route_exact = sum(
+                int(
+                    row["activity"].get(
+                        "route_local_exact_evaluations",
+                        0,
+                    )
+                )
+                for row in archive_entries
+            )
+            route_proxy = sum(
+                int(
+                    row["activity"].get(
+                        "route_proxy_evaluations",
+                        0,
+                    )
+                )
+                for row in archive_entries
+            ) + sum(
+                int(
+                    row["fast_activity"].get(
+                        "route_proxy_evaluations",
+                        0,
+                    )
+                )
+                for row in prescore_rows
+            )
+            route_schedule = sum(
+                int(
+                    row["activity"].get(
+                        "route_local_schedule_evaluations",
+                        0,
+                    )
+                )
+                for row in archive_entries
+            ) + sum(
+                int(
+                    row["fast_activity"].get(
+                        "route_local_schedule_evaluations",
+                        0,
+                    )
+                )
+                for row in prescore_rows
+            )
+            feasibility = sum(
+                int(
+                    row["activity"].get(
+                        "full_feasibility_checks",
+                        0,
+                    )
+                )
+                for row in archive_entries
+            ) + sum(
+                int(
+                    row["fast_activity"].get(
+                        "full_feasibility_checks",
+                        0,
+                    )
+                )
+                for row in prescore_rows
+            )
+            if route_exact != int(
+                activity["route_local_exact_evaluations"]
+            ):
+                failures.append(f"{prefix}:route_exact_ledger")
+            if route_proxy != int(activity["route_proxy_evaluations"]):
+                failures.append(f"{prefix}:route_proxy_ledger")
+            if route_schedule != int(
+                activity["route_local_schedule_evaluations"]
+            ):
+                failures.append(f"{prefix}:route_schedule_ledger")
+            if feasibility != int(
+                activity["mechanism_feasibility_checks"]
+            ):
+                failures.append(f"{prefix}:feasibility_ledger")
+
             skeletons = [
                 row["skeleton_signature"]
-                for row in activity.get("archive_entries", [])
+                for row in archive_entries
             ]
             if len(skeletons) != len(set(skeletons)):
-                failures.append(f"{tag}:{arm}_duplicate_skeleton")
+                failures.append(f"{prefix}:duplicate_skeleton")
+            ordinary = [
+                row
+                for row in archive_entries
+                if row["is_main_search_final"]
+            ]
+            if budget > 0:
+                if len(ordinary) != 1:
+                    failures.append(f"{prefix}:ordinary_count")
+                elif (
+                    ordinary[0]["exact_signature"]
+                    != activity["raw_search_exact_signature"]
+                ):
+                    failures.append(
+                        f"{prefix}:ordinary_raw_signature"
+                    )
+            elif ordinary:
+                failures.append(f"{prefix}:zero_budget_ordinary")
+            if not _all_finite(
+                control["start_cost"],
+                activity["raw_search_cost"],
+                activity["ordinary_final_completed_cost"],
+                activity["selected_completed_cost"],
+                (
+                    payloads[("archive", budget, arm == "candidate")][
+                        "claimed_final_cost"
+                    ]
+                ),
+            ):
+                failures.append(f"{prefix}:nonfinite")
+            audit_label = (
+                f"B{budget}:"
+                f"{'enabled' if arm == 'candidate' else 'control'}"
+            )
+            if not bool(parent_audits[audit_label]["passed"]):
+                failures.extend(
+                    f"{prefix}:parent:{failure}"
+                    for failure in parent_audits[audit_label]["failures"]
+                )
         if int(left["prescore_candidate_count"]) != 0:
             failures.append(f"{tag}:control_performed_prescore")
         if budget == 0:
@@ -693,8 +1195,30 @@ def _gate_failures(
                 )
             ):
                 failures.append(f"{tag}:zero_budget_mechanism_work")
+            for payload, activity, arm in (
+                (control, left, "control"),
+                (candidate, right, "candidate"),
+            ):
+                if not (
+                    payload["start_exact_signature"]
+                    == activity["raw_search_exact_signature"]
+                    == payload["final_exact_signature"]
+                    and abs(
+                        float(payload["start_cost"])
+                        - float(payload["claimed_final_cost"])
+                    )
+                    <= 1.0e-7
+                    and int(
+                        activity["post_search_full_solution_replays"]
+                    )
+                    == 1
+                ):
+                    failures.append(f"{tag}:{arm}:zero_budget_changed")
         else:
-            if not bool(right["ordinary_final_forced"]):
+            if not (
+                bool(left["ordinary_final_forced"])
+                and bool(right["ordinary_final_forced"])
+            ):
                 failures.append(f"{tag}:ordinary_final_not_forced")
             if int(left["archive_entry_count"]) != 1:
                 failures.append(f"{tag}:control_not_single_terminal")
@@ -703,6 +1227,36 @@ def _gate_failures(
                 - float(right["ordinary_final_completed_cost"])
             ) > 1.0e-7:
                 failures.append(f"{tag}:ordinary_branch_drift")
+            left_rows = [
+                row
+                for row in left["archive_entries"]
+                if row["is_main_search_final"]
+            ]
+            right_rows = [
+                row
+                for row in right["archive_entries"]
+                if row["is_main_search_final"]
+            ]
+            if len(left_rows) == 1 and len(right_rows) == 1:
+                left_ordinary = left_rows[0]
+                right_ordinary = right_rows[0]
+                if not (
+                    left_ordinary["exact_signature"]
+                    == right_ordinary["exact_signature"]
+                    == left["raw_search_exact_signature"]
+                    == right["raw_search_exact_signature"]
+                ):
+                    failures.append(
+                        f"{tag}:ordinary_raw_signature_drift"
+                    )
+                if not (
+                    left_ordinary["completed_exact_signature"]
+                    == right_ordinary["completed_exact_signature"]
+                    == control["final_exact_signature"]
+                ):
+                    failures.append(
+                        f"{tag}:ordinary_completed_signature_drift"
+                    )
             if (
                 float(candidate["claimed_final_cost"])
                 > float(right["ordinary_final_completed_cost"]) + 1.0e-9
@@ -722,6 +1276,12 @@ def _gate_failures(
 
     for label in ("fleet_charge_binding", "carbon_time_binding"):
         row = probes[label]
+        if not _all_finite(
+            row["source_cost"],
+            row["completed_cost"],
+            row["cost_closure_error"],
+        ):
+            failures.append(f"component:{label}:nonfinite")
         if not bool(row["changed"]):
             failures.append(f"component:{label}:not_changed")
         if (
@@ -731,7 +1291,24 @@ def _gate_failures(
             failures.append(f"component:{label}:regressed")
         if float(row["cost_closure_error"]) > 1.0e-7:
             failures.append(f"component:{label}:closure")
+    fleet = probes["fleet_charge_binding"]
+    if int(
+        fleet["activity"]["joint"].get("exact_decoder_updates", 0)
+    ) < 1:
+        failures.append("component:fleet_charge_binding:joint_inactive")
+    carbon = probes["carbon_time_binding"]
+    if int(
+        carbon["activity"]["joint"].get("exact_decoder_updates", 0)
+    ) != 0:
+        failures.append("component:carbon_time_binding:joint_masquerade")
+    if int(
+        carbon["activity"]["carbon"].get("exact_decoder_updates", 0)
+    ) < 1:
+        failures.append("component:carbon_time_binding:carbon_inactive")
+
     fixed = probes["fast_nonbinding_fixed_point"]
+    if not _all_finite(fixed["cost_difference"]):
+        failures.append("component:fast_nonbinding:nonfinite")
     if bool(fixed["changed"]):
         failures.append("component:fast_nonbinding:changed")
     if (
@@ -743,10 +1320,16 @@ def _gate_failures(
         failures.append("component:fast_nonbinding:cost")
 
     responsibility = probes["responsibility_binding"]
+    if not _all_finite(
+        responsibility["source_cost"],
+        responsibility["completed_cost"],
+        responsibility["replayed_cost"],
+    ):
+        failures.append("component:responsibility_binding:nonfinite")
     if not bool(responsibility["feasible"]):
         failures.append("component:responsibility_binding:infeasible")
     if int(
-        responsibility["activity"]["responsibility"].get(
+        responsibility["activity"].get(
             "exact_decoder_updates",
             0,
         )
@@ -759,6 +1342,12 @@ def _gate_failures(
         failures.append("component:responsibility_binding:regressed")
 
     nonbinding = probes["responsibility_nonbinding"]
+    if not _all_finite(
+        nonbinding["source_cost"],
+        nonbinding["completed_cost"],
+        nonbinding["replayed_cost"],
+    ):
+        failures.append("component:responsibility_nonbinding:nonfinite")
     if not bool(nonbinding["feasible"]):
         failures.append("component:responsibility_nonbinding:infeasible")
     if (
@@ -766,6 +1355,21 @@ def _gate_failures(
         > float(nonbinding["source_cost"]) + solver.TOL
     ):
         failures.append("component:responsibility_nonbinding:regressed")
+    if (
+        nonbinding["source_exact_signature"]
+        != nonbinding["completed_exact_signature"]
+        or abs(
+            float(nonbinding["source_cost"])
+            - float(nonbinding["completed_cost"])
+        )
+        > 1.0e-7
+        or int(
+            nonbinding["activity"].get("exact_decoder_updates", 0)
+        )
+        != 0
+        or list(nonbinding["activity"].get("accepted_moves", []))
+    ):
+        failures.append("component:responsibility_nonbinding:changed")
     return failures
 
 
@@ -787,6 +1391,7 @@ def _raw_rows(
                     "mode": mode,
                     "budget": budget,
                     "enabled": enabled,
+                    "start_cost": payload["start_cost"],
                     "evaluations": payload["evaluations"],
                     "candidate_scores": payload["candidate_scores"],
                     "actual_moves": payload["actual_moves"],
@@ -811,8 +1416,22 @@ def _raw_rows(
                         "selector_rng_final_state_sha256"
                     ],
                     "prescore_count": 0,
+                    "prescore_reference_replays": 0,
                     "archive_count": 0,
+                    "archive_completion_call_count": 0,
+                    "archive_completion_reference_replays": 0,
+                    "raw_search_independent_replays": 0,
+                    "selected_final_independent_replays": 0,
+                    "independent_final_replays": 0,
+                    "post_search_full_solution_replays": 0,
+                    "route_local_exact_evaluations": 0,
+                    "route_proxy_evaluations": 0,
+                    "route_local_schedule_evaluations": 0,
+                    "mechanism_feasibility_checks": 0,
                     "mechanism_candidate_evaluations": 0,
+                    "worker_recomputed_cost": payload[
+                        "worker_recomputed_cost"
+                    ],
                     "worker_elapsed_seconds": payload[
                         "worker_elapsed_seconds"
                     ],
@@ -825,6 +1444,7 @@ def _raw_rows(
                     "mode": mode,
                     "budget": budget,
                     "enabled": enabled,
+                    "start_cost": payload["start_cost"],
                     "evaluations": payload["evaluations"],
                     "candidate_scores": activity["candidate_scores"],
                     "actual_moves": activity["actual_moves"],
@@ -851,9 +1471,45 @@ def _raw_rows(
                     "prescore_count": activity[
                         "prescore_candidate_count"
                     ],
+                    "prescore_reference_replays": activity[
+                        "prescore_reference_replays"
+                    ],
                     "archive_count": activity["archive_entry_count"],
+                    "archive_completion_call_count": activity[
+                        "archive_completion_call_count"
+                    ],
+                    "archive_completion_reference_replays": activity[
+                        "archive_completion_reference_replays"
+                    ],
+                    "raw_search_independent_replays": activity[
+                        "raw_search_independent_replays"
+                    ],
+                    "selected_final_independent_replays": activity[
+                        "selected_final_independent_replays"
+                    ],
+                    "independent_final_replays": activity[
+                        "independent_final_replays"
+                    ],
+                    "post_search_full_solution_replays": activity[
+                        "post_search_full_solution_replays"
+                    ],
+                    "route_local_exact_evaluations": activity[
+                        "route_local_exact_evaluations"
+                    ],
+                    "route_proxy_evaluations": activity[
+                        "route_proxy_evaluations"
+                    ],
+                    "route_local_schedule_evaluations": activity[
+                        "route_local_schedule_evaluations"
+                    ],
+                    "mechanism_feasibility_checks": activity[
+                        "mechanism_feasibility_checks"
+                    ],
                     "mechanism_candidate_evaluations": activity[
                         "mechanism_candidate_evaluations"
+                    ],
+                    "worker_recomputed_cost": payload[
+                        "worker_recomputed_cost"
                     ],
                     "worker_elapsed_seconds": payload[
                         "worker_elapsed_seconds"
@@ -904,17 +1560,17 @@ def _invoke_worker(request: dict[str, Any]) -> dict[str, Any]:
             "bounded archive worker failed: "
             f"rc={completed.returncode}\n{completed.stderr[-4000:]}"
         )
-    line = next(
-        (
-            row
-            for row in reversed(completed.stdout.splitlines())
-            if row.startswith(WORKER_SENTINEL)
-        ),
-        None,
-    )
-    if line is None:
-        raise RuntimeError("bounded archive worker emitted no sentinel")
-    return json.loads(line[len(WORKER_SENTINEL) :])
+    lines = [
+        row
+        for row in completed.stdout.splitlines()
+        if row.startswith(WORKER_SENTINEL)
+    ]
+    if len(lines) != 1:
+        raise RuntimeError(
+            "bounded archive worker must emit exactly one sentinel: "
+            f"{len(lines)}"
+        )
+    return json.loads(lines[0][len(WORKER_SENTINEL) :])
 
 
 def _require_clean_sources() -> None:
@@ -923,17 +1579,24 @@ def _require_clean_sources() -> None:
         if not (REPO / path).is_file():
             failures.append(f"missing:{path}")
             continue
-        unstaged = subprocess.run(
-            ["git", "diff", "--quiet", "--", path],
+        tracked = subprocess.run(
+            ["git", "ls-files", "--error-unmatch", "--", path],
             cwd=REPO,
+            text=True,
+            capture_output=True,
             check=False,
-        ).returncode
-        staged = subprocess.run(
-            ["git", "diff", "--cached", "--quiet", "--", path],
+        ).returncode == 0
+        if not tracked:
+            failures.append(f"untracked:{path}")
+            continue
+        status = subprocess.run(
+            ["git", "status", "--porcelain=v1", "--", path],
             cwd=REPO,
+            text=True,
+            capture_output=True,
             check=False,
-        ).returncode
-        if unstaged or staged:
+        ).stdout.strip()
+        if status:
             failures.append(f"dirty:{path}")
     if failures:
         raise RuntimeError(
@@ -978,12 +1641,17 @@ def _add_witness(
     metadata: dict[str, Any],
 ) -> None:
     exact = solver._exact_solution_hash(solution)
+    snapshot = asdict(solution)
+    if exact in witnesses and witnesses[exact]["solution"] != snapshot:
+        raise RuntimeError(
+            "full-content witness hash collision with unequal payloads"
+        )
     row = witnesses.setdefault(
         exact,
         {
             "full_content_sha256": exact,
             "algorithm_signature": solution_signature_hash(solution),
-            "solution": asdict(solution),
+            "solution": snapshot,
             "uses": [],
         },
     )
@@ -1082,6 +1750,18 @@ def _git(*args: str) -> str:
         capture_output=True,
         check=True,
     ).stdout.strip()
+
+
+def _all_finite(*values: Any) -> bool:
+    try:
+        return all(math.isfinite(float(value)) for value in values)
+    except (TypeError, ValueError):
+        return False
+
+
+def _require_finite(label: str, *values: Any) -> None:
+    if not _all_finite(*values):
+        raise RuntimeError(f"{label} contains a non-finite value: {values}")
 
 
 if __name__ == "__main__":

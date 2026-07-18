@@ -13,6 +13,7 @@ channel before using it to choose a search basin.
 from __future__ import annotations
 
 from dataclasses import dataclass
+import math
 from typing import Any
 
 from setp_solver.check import check_solution
@@ -62,6 +63,15 @@ def apply_fast_route_local_completion(
         incumbent_objective=proxy_objective,
         consume_complete_evaluation=False,
     )
+    deltas = (
+        float(joint.get("objective_delta", 0.0)),
+        float(carbon.get("objective_delta", 0.0)),
+    )
+    if not all(math.isfinite(value) for value in deltas):
+        raise RuntimeError(
+            "fast route-local completion produced a non-finite delta: "
+            f"{deltas}"
+        )
     completed = annotate_cross_site_services(completed, owners)
     violations = check_solution(completed, bundle.instance, prices)
     if violations:
@@ -81,20 +91,22 @@ def apply_fast_route_local_completion(
             "joint": joint,
             "carbon": carbon,
             "joint_objective_delta": float(
-                joint.get("objective_delta", 0.0)
+                deltas[0]
             ),
             "carbon_objective_delta": float(
-                carbon.get("objective_delta", 0.0)
+                deltas[1]
             ),
-            "projected_objective_delta": float(
-                joint.get("objective_delta", 0.0)
-            )
-            + float(carbon.get("objective_delta", 0.0)),
+            "projected_objective_delta": float(sum(deltas)),
             "route_proxy_evaluations": int(
                 joint.get("route_proxy_evaluations", 0)
             ),
             "route_local_schedule_evaluations": int(
                 carbon.get("route_local_schedule_evaluations", 0)
+            ),
+            "full_feasibility_checks": (
+                int(joint.get("feasibility_checks", 0))
+                + int(carbon.get("feasibility_checks", 0))
+                + 1
             ),
             "complete_candidate_evaluations": 0,
         },

@@ -16,6 +16,7 @@ from __future__ import annotations
 from dataclasses import asdict, dataclass
 import hashlib
 import json
+import math
 from pathlib import Path
 import time
 from typing import Any
@@ -83,6 +84,11 @@ def run_bounded_dual_view_archive_alns(
 
     raw_solution = raw["best_solution"]
     raw_cost = independent_cost(bundle_dir, raw_solution, prices)
+    _require_finite(
+        "raw_search_cost",
+        float(raw["best_cost"]),
+        float(raw_cost),
+    )
     if abs(float(raw_cost) - float(raw["best_cost"])) > 1.0e-7:
         raise RuntimeError(
             "bounded archive raw objective replay mismatch: "
@@ -141,9 +147,13 @@ def run_bounded_dual_view_archive_alns(
                 "prescore_candidate_count": 0,
                 "prescore_reference_replays": 0,
                 "archive_entry_count": 0,
+                "archive_completion_call_count": 0,
                 "archive_completion_reference_replays": 0,
                 "post_search_full_solution_replays": 1,
+                "raw_search_independent_replays": 1,
+                "selected_final_independent_replays": 0,
                 "independent_final_replays": 1,
+                "mechanism_feasibility_checks": 0,
                 "archive_contributed": False,
                 "ordinary_final_forced": False,
                 "ordinary_final_completed_cost": float(raw_cost),
@@ -182,6 +192,13 @@ def run_bounded_dual_view_archive_alns(
             float(item["raw_cost"])
             + float(fast.activity["projected_objective_delta"])
         )
+        _require_finite(
+            "fast_prescore",
+            float(item["raw_cost"]),
+            float(fast.activity["projected_objective_delta"]),
+            float(fast_cost),
+            float(expected),
+        )
         closure_error = abs(float(fast_cost) - expected)
         if closure_error > 1.0e-7:
             raise RuntimeError(
@@ -205,6 +222,10 @@ def run_bounded_dual_view_archive_alns(
                 "fast_changed": bool(fast.changed),
                 "fast_cost_closure_error": float(closure_error),
                 "fast_activity": fast.activity,
+                "raw_solution_snapshot": asdict(item["solution"]),
+                "fast_completed_solution_snapshot": asdict(
+                    fast.solution
+                ),
             }
         )
 
@@ -256,6 +277,11 @@ def run_bounded_dual_view_archive_alns(
             raise RuntimeError(
                 "bounded archive terminal completion returned infeasible"
             )
+        _require_finite(
+            "terminal_completion",
+            float(completion.source_cost),
+            float(completion.cost),
+        )
         completed.append(
             {
                 **{
@@ -278,9 +304,21 @@ def run_bounded_dual_view_archive_alns(
             }
         )
 
-    ordinary = next(
+    ordinary_rows = [
         item for item in completed if item["is_main_search_final"]
-    )
+    ]
+    if len(ordinary_rows) != 1:
+        raise RuntimeError(
+            "bounded archive must contain exactly one ordinary final branch"
+        )
+    ordinary = ordinary_rows[0]
+    if (
+        str(ordinary["exact_signature"])
+        != str(final_item["exact_signature"])
+    ):
+        raise RuntimeError(
+            "bounded archive ordinary branch is not the raw search final"
+        )
     selected = min(
         completed,
         key=lambda item: (
@@ -299,6 +337,12 @@ def run_bounded_dual_view_archive_alns(
 
     final_solution = selected["_solution"]
     final_cost = independent_cost(bundle_dir, final_solution, prices)
+    _require_finite(
+        "selected_final",
+        float(ordinary["completed_cost"]),
+        float(selected["completed_cost"]),
+        float(final_cost),
+    )
     if abs(float(final_cost) - float(selected["completed_cost"])) > 1.0e-7:
         raise RuntimeError(
             "bounded archive selected objective replay mismatch: "
@@ -342,6 +386,13 @@ def run_bounded_dual_view_archive_alns(
         )
         for item in prescore_rows
     )
+    feasibility_checks = sum(
+        int(item["activity"].get("full_feasibility_checks", 0))
+        for item in completed
+    ) + sum(
+        int(item["fast_activity"].get("full_feasibility_checks", 0))
+        for item in prescore_rows
+    )
     archive_contributed = bool(
         not selected["is_main_search_final"]
         and float(selected["completed_cost"])
@@ -373,16 +424,20 @@ def run_bounded_dual_view_archive_alns(
             "prescore_candidate_count": len(prescore_rows),
             "prescore_reference_replays": len(prescore_rows),
             "archive_entry_count": len(completed),
+            "archive_completion_call_count": len(completed),
             "archive_completion_reference_replays": int(
                 completion_reference_replays
             ),
             "post_search_full_solution_replays": int(
-                len(prescore_rows) + completion_reference_replays + 1
+                len(prescore_rows) + completion_reference_replays + 2
             ),
-            "independent_final_replays": 1,
+            "raw_search_independent_replays": 1,
+            "selected_final_independent_replays": 1,
+            "independent_final_replays": 2,
             "route_local_exact_evaluations": int(route_local_exact),
             "route_proxy_evaluations": int(route_proxy),
             "route_local_schedule_evaluations": int(route_schedule),
+            "mechanism_feasibility_checks": int(feasibility_checks),
             "archive_contributed": archive_contributed,
             "ordinary_final_forced": True,
             "ordinary_final_completed_cost": float(
@@ -537,6 +592,7 @@ def _archive_item(
     instance: Any,
     is_main_search_final: bool,
 ) -> dict[str, Any]:
+    _require_finite("archive_raw_cost", float(raw_cost))
     return {
         "history_index": int(history_index),
         "eval": int(eval_count),
@@ -677,3 +733,8 @@ def _sha_json(payload: Any) -> str:
         separators=(",", ":"),
     ).encode("utf-8")
     return hashlib.sha256(encoded).hexdigest()
+
+
+def _require_finite(label: str, *values: float) -> None:
+    if not all(math.isfinite(float(value)) for value in values):
+        raise RuntimeError(f"{label} contains a non-finite value: {values}")

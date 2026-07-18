@@ -29,6 +29,7 @@ from contextual_expert_fixtures import (  # noqa: E402
     PLATEAU_BUNDLE,
     PRICES_280,
     all_cv_plateau,
+    fast_nonbinding_solution,
 )
 from fast_mechanism_completion import (  # noqa: E402
     apply_fast_route_local_completion,
@@ -116,8 +117,9 @@ class BoundedDualViewArchiveSolverTest(unittest.TestCase):
         self.assertAlmostEqual(first_cost, expected, places=7)
         self.assertTrue(first.changed)
 
+        frozen_nonbinding = fast_nonbinding_solution()
         second = apply_fast_route_local_completion(
-            first.solution,
+            frozen_nonbinding,
             bundle,
             prices=PRICES_280,
         )
@@ -126,12 +128,17 @@ class BoundedDualViewArchiveSolverTest(unittest.TestCase):
             second.solution,
             PRICES_280,
         )
+        frozen_cost = independent_cost(
+            PLATEAU_BUNDLE,
+            frozen_nonbinding,
+            PRICES_280,
+        )
         self.assertFalse(second.changed)
         self.assertEqual(
-            solver._exact_solution_hash(first.solution),
+            solver._exact_solution_hash(frozen_nonbinding),
             solver._exact_solution_hash(second.solution),
         )
-        self.assertAlmostEqual(first_cost, second_cost, places=7)
+        self.assertAlmostEqual(frozen_cost, second_cost, places=7)
 
     def test_zero_budget_starts_no_archive_completion(self) -> None:
         result = solver.run_bounded_dual_view_archive_alns(
@@ -149,6 +156,12 @@ class BoundedDualViewArchiveSolverTest(unittest.TestCase):
         self.assertEqual(activity["prescore_candidate_count"], 0)
         self.assertEqual(activity["archive_entry_count"], 0)
         self.assertEqual(activity["mechanism_candidate_evaluations"], 0)
+        self.assertEqual(activity["raw_search_independent_replays"], 1)
+        self.assertEqual(
+            activity["selected_final_independent_replays"],
+            0,
+        )
+        self.assertEqual(activity["post_search_full_solution_replays"], 1)
 
     def test_archive_is_bounded_and_cannot_lose_to_ordinary_branch(self) -> None:
         control = solver.run_bounded_dual_view_archive_alns(
@@ -185,6 +198,8 @@ class BoundedDualViewArchiveSolverTest(unittest.TestCase):
         self.assertEqual(right["candidate_scores"], 5)
         self.assertEqual(right["actual_moves"], 5)
         self.assertEqual(right["mechanism_candidate_evaluations"], 0)
+        self.assertEqual(left["prescore_candidate_count"], 0)
+        self.assertEqual(left["prescore_reference_replays"], 0)
         self.assertLessEqual(
             right["archive_entry_count"],
             solver.ARCHIVE_CAPACITY,
@@ -194,6 +209,17 @@ class BoundedDualViewArchiveSolverTest(unittest.TestCase):
             solver.PRESCORE_CAPACITY,
         )
         self.assertTrue(right["ordinary_final_forced"])
+        self.assertEqual(
+            right["post_search_full_solution_replays"],
+            right["prescore_reference_replays"]
+            + right["archive_completion_reference_replays"]
+            + right["independent_final_replays"],
+        )
+        self.assertEqual(right["raw_search_independent_replays"], 1)
+        self.assertEqual(
+            right["selected_final_independent_replays"],
+            1,
+        )
         self.assertLessEqual(
             candidate.best_cost,
             right["ordinary_final_completed_cost"] + 1.0e-9,
