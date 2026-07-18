@@ -59,6 +59,7 @@ OUTPUT_FILES = (
     "metadata.json",
     "raw_runs.csv",
     "decision.json",
+    "mechanism_proposal_witnesses.json",
     "solution_witnesses.json",
     "report.md",
 )
@@ -74,9 +75,17 @@ SOURCE_FILES = (
     "contextual_expert_solver.py",
     "baselines/algorithm_prototypes/unified_mechanism_alns_20260719/"
     "contextual_expert_fixtures.py",
+    "baselines/algorithm_prototypes/unified_mechanism_alns_20260719/"
+    "initial_pool.py",
+    "baselines/algorithm_prototypes/unified_mechanism_alns_20260719/"
+    "terminal_completion.py",
     "solver/src/setp_solver/algorithms/resetp_alns/support/"
     "mechanism_prescription.py",
     "solver/src/setp_solver/algorithms/resetp_alns/kernel/winner.py",
+    "baselines/algorithm_prototypes/mechanism_hgs_alns_20260718/"
+    "prototype.py",
+    "baselines/algorithm_prototypes/mechanism_hgs_alns_20260718/"
+    "v4_mechanism_alns_solver.py",
     "baselines/algorithm_prototypes/mechanism_hgs_alns_20260718/"
     "v5_carbon_retiming_solver.py",
     "baselines/algorithm_prototypes/mechanism_hgs_alns_20260718/"
@@ -123,6 +132,7 @@ def main() -> int:
     )
     rows: list[dict[str, Any]] = []
     witnesses: dict[str, Any] = {}
+    proposal_witnesses: dict[str, Any] = {}
     for case in cases:
         for binding_label, builder in (
             ("binding", case["binding_builder"]),
@@ -208,6 +218,7 @@ def main() -> int:
                     result.best_solution,
                     PRICES_280,
                 )
+                events = list(diagnostics.get("events", []))
                 witnesses.setdefault(
                     final_signature,
                     {
@@ -225,6 +236,64 @@ def main() -> int:
                 generic_evaluations = int(
                     activity["generic_candidate_evaluations"]
                 )
+                if (
+                    binding_label == "binding"
+                    and budget == 1
+                    and mechanism_evaluations == 1
+                    and generic_evaluations == 0
+                ):
+                    if len(events) != 1:
+                        raise RuntimeError(
+                            f"{mechanism_id}: B1 proposal witness "
+                            f"requires exactly one event, got {len(events)}"
+                        )
+                    event = dict(events[0])
+                    if (
+                        not bool(event.get("accepted"))
+                        or abs(
+                            float(event["candidate_objective"])
+                            - float(final_recomputed)
+                        )
+                        > 1.0e-7
+                    ):
+                        raise RuntimeError(
+                            f"{mechanism_id}: B1 final is not the "
+                            "accepted mechanism proposal"
+                        )
+                    proposal_witnesses[mechanism_id] = {
+                        "proof_basis": (
+                            "At B=1 the only complete candidate was "
+                            "this accepted mechanism proposal; terminal "
+                            "completion was disabled, so the returned "
+                            "final solution is the proposal itself."
+                        ),
+                        "bundle": _relative(case["bundle"]),
+                        "start_signature": start_signature,
+                        "proposal_signature": final_signature,
+                        "start_solution": asdict(start_solution),
+                        "proposal_solution": asdict(
+                            result.best_solution
+                        ),
+                        "start_objective": float(
+                            independent_cost(
+                                case["bundle"],
+                                start_solution,
+                                PRICES_280,
+                            )
+                        ),
+                        "estimated_objective": float(
+                            dict(
+                                event.get("expert_activity", {})
+                            )["estimated_objective"]
+                        ),
+                        "shared_candidate_objective": float(
+                            event["candidate_objective"]
+                        ),
+                        "independent_recomputed_objective": float(
+                            final_recomputed
+                        ),
+                        "event": event,
+                    }
                 budget_closed = (
                     int(result.evaluations)
                     == int(activity["candidate_scores"])
@@ -288,14 +357,14 @@ def main() -> int:
                         "final_signature": final_signature,
                         "elapsed_seconds": float(elapsed),
                         "events_json": json.dumps(
-                            diagnostics.get("events", []),
+                            events,
                             ensure_ascii=False,
                             sort_keys=True,
                         ),
                     }
                 )
 
-    decision = _decision(rows)
+    decision = _decision(rows, proposal_witnesses)
     metadata = {
         "schema_version": (
             "resetp.context-gated-exact-mechanism-behaviour.v1"
@@ -336,6 +405,10 @@ def main() -> int:
     _write_json(output_dir / "decision.json", decision)
     _write_json(output_dir / "metadata.json", metadata)
     _write_json(
+        output_dir / "mechanism_proposal_witnesses.json",
+        proposal_witnesses,
+    )
+    _write_json(
         output_dir / "solution_witnesses.json",
         witnesses,
     )
@@ -374,10 +447,20 @@ def _case(
     }
 
 
-def _decision(rows: list[dict[str, Any]]) -> dict[str, Any]:
+def _decision(
+    rows: list[dict[str, Any]],
+    proposal_witnesses: dict[str, Any],
+) -> dict[str, Any]:
     failures: list[str] = []
     if len(rows) != 24:
         failures.append(f"row_count:{len(rows)}")
+    missing_witnesses = set(
+        (RESPONSIBILITY, FLEET_CHARGE, CARBON_TIME)
+    ) - set(proposal_witnesses)
+    if missing_witnesses:
+        failures.append(
+            f"missing_proposal_witnesses:{sorted(missing_witnesses)}"
+        )
     for row in rows:
         tag = (
             f"{row['mechanism_id']}:{row['binding']}:B{row['budget']}"
@@ -431,6 +514,9 @@ def _decision(rows: list[dict[str, Any]]) -> dict[str, Any]:
         ),
         "scope_violation_count": sum(
             int(row["scope_violations"]) for row in rows
+        ),
+        "mechanism_proposal_witness_count": len(
+            proposal_witnesses
         ),
         "binding_complete_candidate_count": sum(
             int(row["mechanism_candidate_evaluations"])
