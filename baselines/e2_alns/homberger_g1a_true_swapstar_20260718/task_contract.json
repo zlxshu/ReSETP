@@ -1,0 +1,37 @@
+{
+  "arms": [
+    "baseline",
+    "candidate_true_swapstar"
+  ],
+  "budget_per_arm": 400,
+  "common_initial_solution": "earliest_due_time_then_current_distance_then_customer_id",
+  "implicit_parameter_tuning": false,
+  "instances": [
+    "C1_2_1",
+    "C2_2_8",
+    "R1_2_8",
+    "RC2_2_8"
+  ],
+  "performance_claim": false,
+  "result_blind_matrix": true,
+  "seeds": [
+    1,
+    2,
+    3
+  ],
+  "task_card": "docs/handoff/e2_alns_g1a_true_swapstar_contract_20260718.md",
+  "thresholds": {
+    "active_geometry_families": [
+      "C",
+      "R",
+      "RC"
+    ],
+    "failure_count": 0,
+    "mean_elapsed_overhead_pct_maximum": 25.0,
+    "mean_improvement_pct_strictly_greater_than": 0.0,
+    "nondegrade_minimum": 8,
+    "pair_count": 12,
+    "task_count": 24,
+    "worst_improvement_pct_minimum": -2.0
+  }
+}

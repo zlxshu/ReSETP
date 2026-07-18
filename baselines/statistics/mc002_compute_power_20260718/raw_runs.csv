@@ -1,0 +1,14 @@
+record_type,metric,value,unit,assumption_or_boundary
+STRUCTURE,china81_instance_count,81,instances,counted from draft structure only; not formal-ready
+COMPUTE,static_E3_E5_E6_arm_runs_k5,2835,arm_runs,2+2+3 arms across 81 maps and 5 seeds
+COMPUTE,static_E3_E5_E6_complete_evaluations_B4000,11340000,complete_evaluations,illustrative budget; China budget not frozen
+COMPUTE,static_E3_E5_E6_cpu_hours_anchor,58.592891,cpu_hours,E6 frontier median at 4000 evaluations; excludes nonlinear slowdown
+COMPUTE,E4_fixed_route_replays_k5,22680,day_replays,zero route search; charging scheduler cost not timed
+COMPUTE,E7_five_arm_tasks_k5,2025,dynamic_tasks,one frozen event stream per common seed
+COMPUTE,E7_fifth_arm_increment_k5,405,dynamic_tasks,correct China-81 increment; old +30 claim is invalid
+COMPUTE,E7_five_arm_cpu_hours_anchor_not_eta,1300.833106,cpu_hours,old UK 50/100/150 means; 200 uses 150 mean lower-bound proxy
+COMPUTE,E7_fifth_arm_cpu_hours_anchor_not_eta,260.166621,cpu_hours,one fifth of five-arm anchor; China nonlinear runtime unknown
+COMPUTE,algorithm_six_arm_gate_runs_k5,270,arm_runs,representative sizes not yet frozen
+COMPUTE,algorithm_six_arm_gate_evaluations_B1600,432000,complete_evaluations,recommended low-cost mechanism gate proposal
+POWER,standardized_MDE_n27_alpha0.01_power0.80,0.643584055439,paired_SD,one-sided paired t proxy; Holm worst first threshold
+POWER,standardized_MDE_n27_alpha0.01_power0.90,0.733216646475,paired_SD,one-sided paired t proxy; Holm worst first threshold

@@ -9,6 +9,12 @@ metadata:
 
 E7正式结果终验
 
+2026-07-18 阶段一非算法最终收口：独立复核撤销旧“小路网4/4即完成”判断后，MC-005候选A已写入合同并重建81份/5805行权威位置分配，27格内三复本身份零重叠；九个普通设施形成WGS84情景道路接入点并在五份冻结PBF上完成CV/EV 18/18最小路线；OSRM 26.7.3完整功能门18/18覆盖高宽长重、hgv、单行、不可达、方向性距离/时间、注释和`Σ(v²d)`。用户批准MC-004方法并明确暂时不进入阶段二；最终独立审计判`PASS_PHASE1_NONALGORITHM_HANDOFF_READY`，待批0、错误0、搜索评价0。算法优化、全矩阵、正式China81实例和正式搜索均未启动。
+
+2026-07-18 阶段一并行状态：六线均已推进到当前证据边界，但总状态为`PHASE1_PARTIAL_COMPLETE_BLOCKED__STAGE2_NOT_STARTED`。G1a因RC三对零触发而停止完整G1；MC-002算力/功效和重庆池27格门闭合；覆盖九城的固定OSM 5/5验签。九主场0/9、两备选0/2、本地router和货运profile继续HALT；六项统计终裁、备选不替换决定、11点人工输入与MC-004重批未完成前禁止阶段二。详见`docs/handoff/phase1_parallel_status_and_user_gate_20260718.md`。
+
+2026-07-18 G1阶段一最低成本筛选：SISR因R类三种子实际调用为0而淘汰；真正SWAP*通过独立活性门和当前源码C类统一预算接入门。追加四实例×三共同种子×两臂×B400的G1a，24/24任务和12/12共同起点全部闭合，平均改善`0.003918%`等数值门通过，但RC三对均零触发，未满足C/R/RC活性覆盖，判`STOP_TRUE_SWAPSTAR_BEFORE_FULL_G1`。完整G1共115,200次评价没有启动，本候选本轮关闭。后续开发严格按正式门暴露的瓶颈选择：路线数/固定成本→受控路线消除与有限深度ejection chain；同路线距离→granular局部搜索；车型、非线性补能、碳价、公平和动态机制→自有复杂模型开发集。详见`docs/handoff/e2_alns_g1_stage1_closeout_20260718.md`。
+
 2026-07-18 ALNS完整方案评价预算G0闭合：新增统一评分边界与候选调用前硬停止，candidate/reference/repair-delta三账分离；局部搜索、RVND、scan、strong bridge、global repack、fleet-charge及strict E3路径纳入预算，碳特征与repair fallback隐藏完整评分移除。`baselines/e2_alns/e2_alns_budget_g0_20260718/`判`PASS_ALNS_BUDGET_G0_COMPLETE`，静态0阻断/0未分类、186项行为回归全过，0/1/2/3/7预算无target+1。旧E2预算HALT证据保持；只放行Homberger G1开发，旧胜负证据不得复活或与新版本拼接。
 
 2026-07-02 新增 `docs/handoff/project_prd_execution_map_v2_20260702.md`。这是全项目级 PRD/施工图，不只是 E2 PRD。

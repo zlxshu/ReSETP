@@ -1,0 +1,31 @@
+{
+  "findings": {
+    "china81_count_verified": true,
+    "e7_fifth_arm_increment_tasks_at_k5": 405,
+    "full_e7_eta_claim_allowed": false,
+    "minimum_common_seeds_recommendation": 5,
+    "old_plus_30_claim_valid_for_china81": false,
+    "primary_inferential_n": 27,
+    "seeds_do_not_increase_primary_n": true,
+    "single_seed_count_guarantees_all_five_families_power": false,
+    "variance_blind_escalation_cap_recommendation": 7
+  },
+  "formal_search_allowed": false,
+  "remaining_user_approvals": [],
+  "user_approval": {
+    "approval_id": "P1-APP-05",
+    "approval_date": "2026-07-18",
+    "scope": "MC-002 method freeze and bounded hidden runtime gate only; no full E7, six-arm or phase-two execution authorization"
+  },
+  "result_blind_freeze_recommendation": {
+    "algorithm_gate_rule": "if approved, use 3 regions x 3 predeclared representative sizes x 5 common seeds x 6 arms at B1600 before any full mechanism matrix",
+    "e7_rule": "do not launch 2025 tasks directly; first run a result-hidden runtime pilot on one predeclared small/medium/large cell and all five arms",
+    "initial_common_seeds_per_map": 5,
+    "stop_rule": "at 7 seeds, do not add more seeds to chase p-values; HALT and revisit independent-unit count, endpoint variance, or material threshold",
+    "top_up_rule": "compute only within-map paired residual variance and runtime/failure rates; if the predeclared conservative MDE target is not met and within-seed variance remains material, add all maps uniformly to 7",
+    "within_cell_estimator": "mean over three mutually exclusive maps; within each map mean over common seeds; each of 27 cells contributes one value"
+  },
+  "schema": "resetp.mc002.compute-power-decision.v1",
+  "status": "PASS_MC002_METHOD_FROZEN_FULL_RUNS_NOT_AUTHORIZED",
+  "whole_mc002_contract_frozen": true
+}

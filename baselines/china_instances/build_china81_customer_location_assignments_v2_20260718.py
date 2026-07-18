@@ -17,9 +17,9 @@ import numpy as np
 REPO = Path(__file__).resolve().parents[2]
 CONTRACT = REPO / "data/ChinaInstances/china_customer_location_contract_v2_20260718.json"
 BASE_POOL = REPO / "data/ChinaInstances/china9_city_full_pool_20260718_rerun_overpass_v2"
-OVERLAY = REPO / "data/ChinaInstances/china81_customer_pool_replenishment_map_api_v2_20260718"
-POOL_GATE = REPO / "data/ChinaInstances/china81_pool_sufficiency_gate_v2_20260718"
-OUTPUT = REPO / "data/ChinaInstances/china81_customer_location_assignments_v2_20260718"
+LEGACY_OVERLAY = REPO / "data/ChinaInstances/china81_customer_pool_replenishment_map_api_v2_20260718"
+MC005_CLOSURE = REPO / "data/ChinaInstances/china81_chongqing_mc005_pool_closure_20260718"
+OUTPUT = REPO / "data/ChinaInstances/china81_customer_location_assignments_mc005_final_v2_20260718"
 
 
 def read_json(path: Path) -> Any:
@@ -59,12 +59,19 @@ def seed_for(region: str, size: int, replicate: str, city: str) -> int:
 
 def load_pools() -> dict[str, dict[tuple[str, str], dict[str, str]]]:
     pools: dict[str, dict[tuple[str, str], dict[str, str]]] = {}
-    for root in (BASE_POOL, OVERLAY):
+    for root in (BASE_POOL, LEGACY_OVERLAY):
         for path in sorted((root / "pools").glob("*__named_poi.csv")):
             city = path.name.split("__", 1)[0]
             city_pool = pools.setdefault(city, {})
             for row in read_rows(path):
                 city_pool[(row["osm_type"], row["osm_id"])] = row
+    # MC-005's authoritative closure package already contains the deduplicated
+    # 532-row Chongqing merge. Replace, rather than append to, the old pool so
+    # the assignment input has one unambiguous source.
+    chongqing_path = MC005_CLOSURE / "pools/chongqing__merged_named_poi.csv"
+    pools["chongqing"] = {
+        (row["osm_type"], row["osm_id"]): row for row in read_rows(chongqing_path)
+    }
     return pools
 
 
@@ -79,8 +86,8 @@ def build(output: Path = OUTPUT) -> dict[str, Any]:
         )
     if "city_quotas" not in contract:
         raise RuntimeError("active city_quotas are not frozen in the customer-location contract")
-    gate = read_json(POOL_GATE / "decision.json")
-    if gate.get("verdict") != "PASS_81_MUTUAL_EXCLUSIVITY_POOL_GATE":
+    gate = read_json(MC005_CLOSURE / "decision.json")
+    if gate.get("verdict") != "PASS_MC005_CHONGQING_POOL_AND_27_CELL_GATE":
         raise RuntimeError(f"pool gate is not PASS: {gate.get('verdict')}")
     pools = load_pools()
     assignments: list[dict[str, Any]] = []
@@ -174,8 +181,11 @@ def build(output: Path = OUTPUT) -> dict[str, Any]:
             "contract": str(CONTRACT.relative_to(REPO)),
             "contract_sha256": sha256(CONTRACT),
             "base_pool_decision_sha256": sha256(BASE_POOL / "decision.json"),
-            "overlay_decision_sha256": sha256(OVERLAY / "decision.json"),
-            "pool_gate_decision_sha256": sha256(POOL_GATE / "decision.json"),
+            "legacy_overlay_decision_sha256": sha256(LEGACY_OVERLAY / "decision.json"),
+            "mc005_closure_decision_sha256": sha256(MC005_CLOSURE / "decision.json"),
+            "mc005_merged_chongqing_pool_sha256": sha256(
+                MC005_CLOSURE / "pools/chongqing__merged_named_poi.csv"
+            ),
             "seed_algorithm": contract["location_seed_rule"],
             "search_evaluations": 0,
         },

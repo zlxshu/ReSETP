@@ -2080,7 +2080,6 @@ def _run_winner_kernel_loop(
             )
             and not candidate.removed_customers
             and int(result.get("hard_violation_count", 0)) == 0
-            and _solution_changed(current.solution, candidate.solution)
             and _can_consume_scan_eval(context, target)
         ):
             structural_counts["attempts"] += 1

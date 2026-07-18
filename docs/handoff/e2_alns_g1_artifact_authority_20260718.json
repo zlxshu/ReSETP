@@ -1,0 +1,35 @@
+{
+  "schema_version": "resetp.e2.alns-g1-artifact-authority.v1",
+  "date": "2026-07-18",
+  "authoritative_current_source_packages": [
+    {
+      "path": "baselines/e2_alns/homberger_g1a_true_swapstar_20260718",
+      "verdict": "STOP_TRUE_SWAPSTAR_BEFORE_FULL_G1",
+      "purpose": "four-family three-seed sequential gate; RC activation missing"
+    },
+    {
+      "path": "baselines/e2_alns/homberger_g1_true_swapstar_risk_gate_v2_20260718",
+      "verdict": "HOLD_TRUE_SWAPSTAR_BEFORE_FORMAL_G1",
+      "purpose": "historical current-source R1 single-seed ambiguity resolved by the later G1a stop gate"
+    },
+    {
+      "path": "baselines/e2_alns/homberger_g1_true_swapstar_integration_smoke_v3_20260718",
+      "verdict": "PASS_TRUE_SWAPSTAR_KERNEL_INTEGRATION_SMOKE",
+      "purpose": "current-source C1 activation and exact-budget attestation"
+    }
+  ],
+  "historical_packages": {
+    "rule": "Preserve result records and original ledgers; do not demand that a historical ledger's mutable source path equal the later working-tree source.",
+    "paths": [
+      "baselines/e2_alns/homberger_g1_sisr_micro_20260718",
+      "baselines/e2_alns/homberger_g1_sisr_micro_v2_20260718",
+      "baselines/e2_alns/homberger_g1_true_swapstar_micro_20260718",
+      "baselines/e2_alns/homberger_g1_true_swapstar_integration_smoke_20260718",
+      "baselines/e2_alns/homberger_g1_true_swapstar_integration_smoke_v2_20260718",
+      "baselines/e2_alns/homberger_g1_true_swapstar_risk_gate_20260718"
+    ]
+  },
+  "formal_g1_executed": false,
+  "true_swapstar_candidate_closed": true,
+  "performance_claim_allowed": false
+}
