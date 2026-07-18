@@ -357,6 +357,17 @@ def main() -> int:
                     "no strength instance was run."
                 ),
             },
+            {
+                "attempt": 3,
+                "status": "NO_OUTPUT_PRODUCED",
+                "reason": (
+                    "The zero-budget activity payload omitted explicit zero "
+                    "values for three route-local ledger fields. Summary "
+                    "normalization raised KeyError before the output directory "
+                    "was created. Only the missing zero fields were added; no "
+                    "strength instance was run."
+                ),
+            },
         ],
         "formal_search_allowed": False,
         "stage2_activated": False,
