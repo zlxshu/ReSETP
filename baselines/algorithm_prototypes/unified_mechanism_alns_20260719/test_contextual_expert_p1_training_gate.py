@@ -23,6 +23,7 @@ for search_path in (
 
 from run_contextual_expert_p1_training_gate import (  # noqa: E402
     INSTANCES,
+    _add_witness,
     _decision,
     _solution_from_payload,
 )
@@ -59,6 +60,41 @@ def test_solution_payload_round_trip_preserves_all_decisions() -> None:
         ],
     )
     assert _solution_from_payload(asdict(solution)) == solution
+
+
+def test_witnesses_keep_full_precision_signature_variants() -> None:
+    first = Solution(
+        charging_actions=[
+            ChargingAction(
+                "EV1#T1",
+                "D1",
+                1.0,
+                1.0,
+                3600.0000001,
+            )
+        ]
+    )
+    second = Solution(
+        charging_actions=[
+            ChargingAction(
+                "EV1#T1",
+                "D1",
+                1.0,
+                1.0,
+                3600.0000002,
+            )
+        ]
+    )
+    witnesses = {}
+    _add_witness(witnesses, first, {"arm": "control"})
+    _add_witness(witnesses, second, {"arm": "candidate"})
+    assert len(witnesses) == 2
+    assert {
+        entry["algorithm_signature"]
+        for entry in witnesses.values()
+    } == {
+        next(iter(witnesses.values()))["algorithm_signature"]
+    }
 
 
 def test_frozen_p1_decision_requires_every_gate() -> None:

@@ -272,6 +272,21 @@ def main() -> int:
             "only; no formal performance, HGS, v7, or external ALNS "
             "claim."
         ),
+        "prior_execution_incidents": [
+            {
+                "date": "2026-07-19",
+                "status": "NO_OUTPUT_PRODUCED",
+                "detail": (
+                    "The first invocation completed child workers but "
+                    "stopped before comparisons or output creation "
+                    "because two full-precision witnesses shared the "
+                    "rounded algorithm signature. Only witness storage "
+                    "was changed to use full-content hashes; the solver, "
+                    "budgets, thresholds, and decision rule were not "
+                    "changed."
+                ),
+            }
+        ],
         "formal_search_allowed": False,
         "stage2_activated": False,
     }
@@ -1010,17 +1025,28 @@ def _add_witness(
     solution: Solution,
     use: dict[str, Any],
 ) -> None:
-    signature = solution_signature_hash(solution)
+    payload = asdict(solution)
+    algorithm_signature = solution_signature_hash(solution)
+    content_sha256 = _sha_text(
+        json.dumps(
+            payload,
+            ensure_ascii=False,
+            sort_keys=True,
+            separators=(",", ":"),
+        )
+    )
     entry = witnesses.setdefault(
-        signature,
+        content_sha256,
         {
-            "solution": asdict(solution),
+            "algorithm_signature": algorithm_signature,
+            "full_content_sha256": content_sha256,
+            "solution": payload,
             "uses": [],
         },
     )
-    if entry["solution"] != asdict(solution):
+    if entry["solution"] != payload:
         raise RuntimeError(
-            f"solution signature collision: {signature}"
+            f"full-content witness collision: {content_sha256}"
         )
     entry["uses"].append(use)
 
