@@ -80,6 +80,16 @@ def apply_fast_route_local_completion(
         activity={
             "joint": joint,
             "carbon": carbon,
+            "joint_objective_delta": float(
+                joint.get("objective_delta", 0.0)
+            ),
+            "carbon_objective_delta": float(
+                carbon.get("objective_delta", 0.0)
+            ),
+            "projected_objective_delta": float(
+                joint.get("objective_delta", 0.0)
+            )
+            + float(carbon.get("objective_delta", 0.0)),
             "route_proxy_evaluations": int(
                 joint.get("route_proxy_evaluations", 0)
             ),

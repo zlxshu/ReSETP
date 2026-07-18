@@ -116,6 +116,31 @@ def apply_terminal_completion(
         "responsibility": responsibility,
         "joint": joint,
         "carbon": carbon,
+        "branches": {
+            "responsibility": {
+                "source_cost": float(responsibility_cost),
+                "completed_cost": float(responsibility_branch[1]),
+                "joint": responsibility_branch[2],
+                "carbon": responsibility_branch[3],
+            },
+            "bypass_responsibility": {
+                "source_cost": float(original_cost),
+                "completed_cost": float(bypass_branch[1]),
+                "joint": bypass_branch[2],
+                "carbon": bypass_branch[3],
+            },
+        },
+        "selected_branch": selected_branch,
+        "responsibility_branch_completed_cost": float(
+            responsibility_branch[1]
+        ),
+        "bypass_responsibility_completed_cost": float(bypass_branch[1]),
+        "net_responsibility_gain": float(
+            bypass_branch[1] - responsibility_branch[1]
+        ),
+        "responsibility_effective_after_downstream": bool(
+            responsibility_branch[1] < bypass_branch[1] - TOL
+        ),
         "full_solution_replays": (
             2 + int(responsibility.get("independent_final_replays", 0))
         ),
