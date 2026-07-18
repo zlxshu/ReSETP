@@ -66,6 +66,8 @@ from setp_solver.algorithms.resetp_alns.support.fleet import UNBOUNDED_FLEET
 from setp_solver.algorithms.resetp_alns.support.fleet_charge_corepair import propose_fleet_charge_corepair
 from setp_solver.algorithms.resetp_alns.support.global_order_repack import propose_global_order_repack
 from setp_solver.algorithms.resetp_alns.operators.local_search import improve_solution_locally, rvnd_swapstar_intensify
+from setp_solver.algorithms.resetp_alns.operators.sisr_string_removal import sisr_string_removal
+from setp_solver.algorithms.resetp_alns.operators.true_swapstar import true_swapstar_intensify
 from setp_solver.algorithms.resetp_alns.support.route_pool import RoutePool
 from setp_solver.algorithms.resetp_alns.runtime import SimulatedAnnealing
 from setp_solver.algorithms.resetp_alns.support.timing import TimingLedger, attach_timing_ledger, timed_section
@@ -116,6 +118,7 @@ _CRUSH_FLAG_NAMES = (
     "SETP_ALNS_CRUSH_CHAIN_UCB_SELECTOR",
     "SETP_ALNS_CRUSH_ROUTE_POOL_RECOMBINATION",
     "SETP_ALNS_CRUSH_RVND_SWAPSTAR",
+    "SETP_ALNS_CRUSH_TRUE_SWAPSTAR",
     "SETP_ALNS_CRUSH_ELITE_ARCHIVE_RESTART",
     "SETP_ALNS_CRUSH_GLOBAL_ORDER_REPACK",
     "SETP_ALNS_CRUSH_FLEET_CHARGE_COREPAIR",
@@ -139,6 +142,7 @@ SELECTOR_FLAGS = (
 )
 ROUTE_POOL_RECOMBINATION_FLAG = "SETP_ALNS_CRUSH_ROUTE_POOL_RECOMBINATION"
 RVND_SWAPSTAR_FLAG = "SETP_ALNS_CRUSH_RVND_SWAPSTAR"
+TRUE_SWAPSTAR_FLAG = "SETP_ALNS_CRUSH_TRUE_SWAPSTAR"
 ELITE_ARCHIVE_RESTART_FLAG = "SETP_ALNS_CRUSH_ELITE_ARCHIVE_RESTART"
 GLOBAL_ORDER_REPACK_FLAG = "SETP_ALNS_CRUSH_GLOBAL_ORDER_REPACK"
 FLEET_CHARGE_COREPAIR_FLAG = "SETP_ALNS_CRUSH_FLEET_CHARGE_COREPAIR"
@@ -146,6 +150,7 @@ CROSS_DEPOT_FORCE_INTERVAL = 100
 STRUCTURAL_FLAGS = (
     ROUTE_POOL_RECOMBINATION_FLAG,
     RVND_SWAPSTAR_FLAG,
+    TRUE_SWAPSTAR_FLAG,
     ELITE_ARCHIVE_RESTART_FLAG,
     GLOBAL_ORDER_REPACK_FLAG,
     FLEET_CHARGE_COREPAIR_FLAG,
@@ -190,6 +195,7 @@ E2_ALNS_COMPONENT_SOURCES = {
     CHAIN_UCB_SELECTOR_FLAG: "Diagnostic only: bounded rewards preserve accepted-move continuity without twenty-point lock-in",
     ROUTE_POOL_RECOMBINATION_FLAG: "Diagnostic only: route-pool recombination on stagnation; candidate still uses existing evaluator/checker",
     RVND_SWAPSTAR_FLAG: "Diagnostic only: bounded RVND/SWAP*-lite intensification on stagnation",
+    TRUE_SWAPSTAR_FLAG: "Development only: budgeted Vidal true-SWAP* free reinsertion on late stagnation",
     ELITE_ARCHIVE_RESTART_FLAG: "Diagnostic only: diverse elite archive current-restart on stagnation",
     GLOBAL_ORDER_REPACK_FLAG: "Diagnostic only: global customer-order repack using the shared LNS order decoder",
     FLEET_CHARGE_COREPAIR_FLAG: "Diagnostic only: fleet-type and charging co-repair for complete candidate routes",
@@ -217,6 +223,7 @@ class WinnerKernelConfig:
     carbon_operator_bias: float = 0.0
     refined_carbon_operators: bool = False
     refined_carbon_weight: float = 1.0
+    include_sisr_string_removal: bool = False
 
 
 @dataclass(frozen=True)
@@ -243,6 +250,7 @@ class WinnerOperatorSet:
     carbon_bias_weight: float = 0.0
     refined_carbon: bool = False
     refined_carbon_weight: float = 0.0
+    include_sisr_string_removal: bool = False
 
     @classmethod
     def create(
@@ -255,6 +263,7 @@ class WinnerOperatorSet:
         carbon_bias_weight: float = 1.0,
         refined_carbon: bool = False,
         refined_carbon_weight: float = 1.0,
+        include_sisr_string_removal: bool = False,
     ) -> "WinnerOperatorSet":
         bias = float(carbon_bias_weight) if carbon_aware else 0.0
         refined_weight = float(refined_carbon_weight) if refined_carbon else 0.0
@@ -287,6 +296,8 @@ class WinnerOperatorSet:
             destroy_ops.append(("cross_depot_boundary_removal", cross_depot_boundary_removal))
         if include_route_elimination:
             destroy_ops.insert(4, ("route_elimination_removal", route_elimination_removal))
+        if include_sisr_string_removal:
+            destroy_ops.insert(5, ("sisr_string_removal", sisr_string_removal))
         if carbon_aware:
             destroy_ops.extend(
                 [
@@ -329,6 +340,7 @@ class WinnerOperatorSet:
             carbon_bias_weight=bias,
             refined_carbon=bool(refined_carbon),
             refined_carbon_weight=refined_weight,
+            include_sisr_string_removal=bool(include_sisr_string_removal),
         )
 
     @property
@@ -373,6 +385,7 @@ def winner_variant_flags(*, include_route_elimination: bool = False) -> dict[str
         MINIMUM_COVERAGE_SELECTOR_FLAG: "0",
         ROUTE_POOL_RECOMBINATION_FLAG: "0",
         RVND_SWAPSTAR_FLAG: "0",
+        TRUE_SWAPSTAR_FLAG: "0",
         ELITE_ARCHIVE_RESTART_FLAG: "0",
         GLOBAL_ORDER_REPACK_FLAG: "0",
         FLEET_CHARGE_COREPAIR_FLAG: "0",
@@ -410,6 +423,7 @@ def e2_alns_variant_flags() -> dict[str, str]:
         MINIMUM_COVERAGE_SELECTOR_FLAG: "0",
         ROUTE_POOL_RECOMBINATION_FLAG: "0",
         RVND_SWAPSTAR_FLAG: "0",
+        TRUE_SWAPSTAR_FLAG: "0",
         ELITE_ARCHIVE_RESTART_FLAG: "0",
         GLOBAL_ORDER_REPACK_FLAG: "0",
         FLEET_CHARGE_COREPAIR_FLAG: "0",
@@ -441,6 +455,7 @@ def e2_alns_scan_bridge_flags() -> dict[str, str]:
         MINIMUM_COVERAGE_SELECTOR_FLAG: "0",
         ROUTE_POOL_RECOMBINATION_FLAG: "0",
         RVND_SWAPSTAR_FLAG: "0",
+        TRUE_SWAPSTAR_FLAG: "0",
         ELITE_ARCHIVE_RESTART_FLAG: "0",
         GLOBAL_ORDER_REPACK_FLAG: "0",
         FLEET_CHARGE_COREPAIR_FLAG: "0",
@@ -1689,6 +1704,7 @@ def _run_winner_kernel_loop(
         carbon_bias_weight=config.carbon_operator_bias,
         refined_carbon=config.refined_carbon_operators,
         refined_carbon_weight=config.refined_carbon_weight,
+        include_sisr_string_removal=config.include_sisr_string_removal,
     )
     selector_kind = _selector_kind_from_flags(flags)
     selector_coupling, protected_destroy_indices = _minimum_coverage_contract(operator_set, selector_kind)
@@ -2054,6 +2070,72 @@ def _run_winner_kernel_loop(
                             "rvnd_swapstar_route_count_delta": rvnd_result.route_count_delta,
                         }
                     )
+        if (
+            structural_component == "true_swapstar"
+            and _structural_component_due(
+                structural_component,
+                moves=moves,
+                moves_since_best_improvement=moves_since_best_improvement,
+                target=target,
+            )
+            and not candidate.removed_customers
+            and int(result.get("hard_violation_count", 0)) == 0
+            and _solution_changed(current.solution, candidate.solution)
+            and _can_consume_scan_eval(context, target)
+        ):
+            structural_counts["attempts"] += 1
+            with timed_section(context, "true_swapstar"):
+                swapstar_result = true_swapstar_intensify(
+                    candidate.solution,
+                    context,
+                    max_evaluations=4,
+                    incumbent_objective=candidate_obj,
+                )
+            swapstar_improved = (
+                bool(swapstar_result.accepted_moves)
+                and swapstar_result.objective < candidate_obj - 1e-9
+                and _solution_changed(
+                    candidate.solution,
+                    swapstar_result.solution,
+                )
+            )
+            result["trace"].update(
+                {
+                    "structural_component": "true_swapstar",
+                    "true_swapstar_attempted": True,
+                    "true_swapstar_improved": swapstar_improved,
+                    "true_swapstar_evaluations_used": (
+                        swapstar_result.evaluations_used
+                    ),
+                    "true_swapstar_proxy_moves_considered": (
+                        swapstar_result.proxy_moves_considered
+                    ),
+                    "true_swapstar_feasibility_checks": (
+                        swapstar_result.feasibility_checks
+                    ),
+                    "true_swapstar_accepted_move_count": len(
+                        swapstar_result.accepted_moves
+                    ),
+                    "true_swapstar_time_seconds": (
+                        swapstar_result.elapsed_seconds
+                    ),
+                    "true_swapstar_stop_reason": swapstar_result.stop_reason,
+                }
+            )
+            if swapstar_improved:
+                candidate = replace(
+                    candidate,
+                    solution=swapstar_result.solution,
+                    objective_value=float(swapstar_result.objective),
+                )
+                candidate_obj = float(swapstar_result.objective)
+                result["candidate_state"] = candidate
+                result["candidate_obj"] = candidate_obj
+                structural_counts["accepted"] += 1
+                if candidate_obj < previous_best_obj - 1e-9:
+                    structural_counts["best_improved"] += 1
+            else:
+                structural_counts["rejected"] += 1
         changed = _solution_changed(current.solution, candidate.solution)
         with timed_section(context, "acceptance"):
             accepted = _accept_winner_candidate(
@@ -2565,6 +2647,7 @@ def structural_component_from_flags(flags: dict[str, str] | None = None) -> str 
     mapping = {
         ROUTE_POOL_RECOMBINATION_FLAG: "route_pool",
         RVND_SWAPSTAR_FLAG: "rvnd_swapstar",
+        TRUE_SWAPSTAR_FLAG: "true_swapstar",
         ELITE_ARCHIVE_RESTART_FLAG: "elite_archive",
         GLOBAL_ORDER_REPACK_FLAG: "global_order_repack",
         FLEET_CHARGE_COREPAIR_FLAG: "fleet_charge_corepair",

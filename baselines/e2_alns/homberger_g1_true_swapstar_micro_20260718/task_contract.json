@@ -1,0 +1,23 @@
+{
+  "candidate": "true_swapstar_free_reinsertion",
+  "comparator": "frozen_alns_continue_from_same_baseline_b40_checkpoint",
+  "forbidden": [
+    "full_g1_implicit_launch",
+    "Solomon_or_China_formal_data",
+    "BKS_or_reference_routes",
+    "parameter_rescue_after_results"
+  ],
+  "overlap_tolerance": 0.05,
+  "pass_thresholds": {
+    "failures": 0,
+    "mean_elapsed_overhead_pct_max": 25.0,
+    "mean_improvement_pct_min_exclusive": 0.0,
+    "nondegrade_min": 4,
+    "pair_count": 6,
+    "worst_improvement_pct_min": -2.0
+  },
+  "proxy": "strictly_negative_double_precision_distance_delta",
+  "route_pair_scope": "same_depot_same_vehicle_type",
+  "task_card": "docs/handoff/e2_alns_g1_true_swapstar_task_card_20260718.md",
+  "top_insertions": 3
+}

@@ -1,0 +1,32 @@
+{
+  "common_initial_solution": "earliest_due_time_then_current_distance_then_customer_id",
+  "full_g1_thresholds": {
+    "failure_count": 0,
+    "mean_elapsed_overhead_pct_maximum": 25.0,
+    "mean_improvement_pct_strictly_greater_than": 0.0,
+    "nondegrade_minimum": 24,
+    "pair_count": 36,
+    "worst_improvement_pct_minimum": -2.0
+  },
+  "instances": [
+    "C1_2_1",
+    "R1_2_8"
+  ],
+  "mode": "micro",
+  "objective": [
+    "minimize_vehicle_count",
+    "then_minimize_double_precision_total_distance"
+  ],
+  "screen_budget": 40,
+  "seeds": [
+    1,
+    2,
+    3
+  ],
+  "smoke_budgets": [
+    0,
+    1,
+    2,
+    5
+  ]
+}
