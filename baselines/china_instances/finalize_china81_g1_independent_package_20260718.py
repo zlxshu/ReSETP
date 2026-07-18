@@ -10,12 +10,20 @@ import math
 from collections import defaultdict
 from pathlib import Path
 
+from china81_artifact_integrity_20260719 import (
+    require_decision,
+    verify_artifact_package,
+)
+
 
 REPO = Path(__file__).resolve().parents[2]
 STATIC = REPO / "data/ChinaInstances/china81_stage2_static_inputs_v1_20260718"
 MATRICES = REPO / "data/ChinaInstances/china81_local_directed_matrices_v9_20260718"
-ORDERS = STATIC.parent / "china81_order_attributes_mc001_v1_20260718/orders.csv"
+ORDER_PACKAGE = STATIC.parent / "china81_order_attributes_mc001_v1_20260718"
+ORDERS = ORDER_PACKAGE / "orders.csv"
 OUT = REPO / "data/ChinaInstances/china81_g1_independent_frozen_v2_20260718"
+EXPECTED_INSTANCES = 81
+EXPECTED_ORDERS = 5_805
 
 
 def sha256(path: Path) -> str:
@@ -62,9 +70,47 @@ def write_json(path: Path, data: dict) -> None:
 
 def main() -> int:
     OUT.mkdir(parents=True, exist_ok=True)
+    authority_files = ("metadata.json", "raw_runs.csv", "decision.json", "report.md")
+    verified_static_files = verify_artifact_package(STATIC, authority_files)
+    verified_matrix_files = verify_artifact_package(MATRICES, authority_files)
+    verified_order_files = verify_artifact_package(ORDER_PACKAGE, authority_files)
+    require_decision(
+        STATIC / "decision.json",
+        "PASS_G1_INDEPENDENT_STATIC_INPUTS_FROZEN",
+        {"formal_experiment_authorized": False, "search_evaluations": 0},
+    )
+    require_decision(
+        MATRICES / "decision.json",
+        "PASS_CHINA81_LOCAL_DIRECTED_THREE_MATRICES",
+        {"ordered_pairs_complete": True, "unreachable_pairs": 0},
+    )
+    require_decision(
+        ORDER_PACKAGE / "decision.json",
+        "PASS_CHINA81_MC001_ORDER_ATTRIBUTE_LAYER_BUILT",
+        {
+            "instances": EXPECTED_INSTANCES,
+            "order_rows": EXPECTED_ORDERS,
+            "joint_empirical_rows_preserved": True,
+            "formal_search_allowed": False,
+        },
+    )
     catalog = rows(STATIC / "instance_catalog.csv")
+    all_orders = rows(ORDERS)
+    catalog_ids = [row["instance_id"] for row in catalog]
+    order_instance_ids = {row["instance_id"] for row in all_orders}
+    package_violations = []
+    if len(catalog) != EXPECTED_INSTANCES:
+        package_violations.append(
+            f"INSTANCE_COUNT:{len(catalog)}!={EXPECTED_INSTANCES}"
+        )
+    if len(set(catalog_ids)) != len(catalog_ids):
+        package_violations.append("DUPLICATE_INSTANCE_ID")
+    if len(all_orders) != EXPECTED_ORDERS:
+        package_violations.append(f"ORDER_COUNT:{len(all_orders)}!={EXPECTED_ORDERS}")
+    if order_instance_ids != set(catalog_ids):
+        package_violations.append("ORDER_INSTANCE_COVERAGE")
     order_by_instance: dict[str, list[dict[str, str]]] = defaultdict(list)
-    for row in rows(ORDERS):
+    for row in all_orders:
         order_by_instance[row["instance_id"]].append(row)
     audits = []
     manifests = []
@@ -75,8 +121,18 @@ def main() -> int:
         by_id = {r["node_id"]: r for r in node_rows}
         instance_orders = order_by_instance[instance]
         violations = []
+        if len(by_id) != len(node_rows):
+            violations.append("DUPLICATE_NODE_ID")
         if len(instance_orders) != int(item["customer_count"]):
             violations.append("ORDER_COUNT")
+        customer_node_ids = {
+            row["node_id"]
+            for row in node_rows
+            if row["node_type"].strip().lower() == "customer"
+        }
+        order_customer_ids = {row["customer_id"] for row in instance_orders}
+        if customer_node_ids != order_customer_ids:
+            violations.append("ORDER_CUSTOMER_IDENTITY")
         for order in instance_orders:
             demand = float(order["demand_kg"])
             early = float(order["time_window_early_minute"])
@@ -144,7 +200,7 @@ def main() -> int:
         manifests.append({
             "instance_id": instance,
             "region": item["region"],
-            "order_seed": instance_orders[0]["order_seed"],
+            "order_seed": instance_orders[0]["order_seed"] if instance_orders else "",
             "nodes_path": str(node_file.relative_to(REPO)),
             "nodes_sha256": sha256(node_file),
             "orders_source_sha256": sha256(ORDERS),
@@ -158,6 +214,11 @@ def main() -> int:
     metadata = {
         "schema": "resetp.china81-g1-independent-frozen.v2",
         "instances": len(audits), "orders": sum(int(r["customer_count"]) for r in audits),
+        "expected_instances": EXPECTED_INSTANCES,
+        "expected_orders": EXPECTED_ORDERS,
+        "verified_static_files": verified_static_files,
+        "verified_matrix_files": verified_matrix_files,
+        "verified_order_files": verified_order_files,
         "static_package_sha256": sha256(STATIC / "artifact_hashes.json"),
         "matrix_package_sha256": sha256(MATRICES / "artifact_hashes.json"),
         "audit_scope": [
@@ -176,16 +237,21 @@ def main() -> int:
     write_json(OUT / "metadata.json", metadata)
     verdict = (
         "PASS_CHINA81_G1_INDEPENDENT_DATA_FROZEN__G1_PHYSICAL_SEARCH_ACCEPTANCE_HELD"
-        if not failed else "HALT_CHINA81_ZERO_SEARCH_AUDIT"
+        if not failed and not package_violations
+        else "HALT_CHINA81_ZERO_SEARCH_AUDIT"
     )
     write_json(OUT / "decision.json", {
         "verdict": verdict, "passed_instances": len(audits) - len(failed),
-        "failed_instances": len(failed), "formal_experiment_authorized": False,
+        "failed_instances": len(failed), "package_violations": package_violations,
+        "observed_instances": len(audits), "expected_instances": EXPECTED_INSTANCES,
+        "observed_orders": len(all_orders), "expected_orders": EXPECTED_ORDERS,
+        "formal_experiment_authorized": False,
         "formal_search_allowed": False, "search_evaluations": 0,
     })
     (OUT / "report.md").write_text(
         "# China81 G1 独立数据冻结\n\n"
-        f"零搜索审计结果：{len(audits) - len(failed)}/81 通过。审计覆盖订单必要条件、"
+        f"零搜索审计结果：{len(audits) - len(failed)}/{len(audits)} 通过；"
+        f"包级违规 {len(package_violations)} 项。审计覆盖订单必要条件、"
         "CV/EV 三矩阵、设施双向可达和单客户时间窗见证。400 km 仅作官方续航尺度诊断；"
         "非线性 SOC、充电时间和算法可行性必须等待 G1 汇合后复算。正式搜索仍关闭。\n",
         encoding="utf-8",
@@ -196,7 +262,7 @@ def main() -> int:
     }
     write_json(OUT / "artifact_hashes.json", {"sha256": hashes})
     print(json.dumps({"verdict": verdict, "failed": len(failed)}, ensure_ascii=False))
-    return 0 if not failed else 2
+    return 0 if not failed and not package_violations else 2
 
 
 if __name__ == "__main__":

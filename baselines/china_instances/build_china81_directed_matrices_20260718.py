@@ -7,7 +7,6 @@ import argparse
 import csv
 import hashlib
 import json
-import os
 import shutil
 import sqlite3
 import subprocess
@@ -17,7 +16,6 @@ import urllib.error
 import urllib.parse
 import urllib.request
 from concurrent.futures import FIRST_COMPLETED, ThreadPoolExecutor, wait
-from dataclasses import asdict
 from pathlib import Path
 
 from build_local_directed_road_matrices_20260718 import (
@@ -34,6 +32,13 @@ STATIC = REPO / "data/ChinaInstances/china81_stage2_static_inputs_v1_20260718"
 GRAPHS = REPO / "data/ChinaInstances/china_stage2_sparse_connected_osrm_graphs_v5_20260718/graphs"
 OUT = REPO / "data/ChinaInstances/china81_local_directed_matrices_v9_20260718"
 GRAPH_REGION = {"jjj": "jjj", "prd": "prd", "cy": "cy"}
+EXPECTED_INSTANCES = 81
+EXPECTED_MATERIALIZED_ORDERED_PAIRS = 1_578_948
+EXPECTED_BATCHES = {
+    (region, profile)
+    for region in ("jjj", "prd", "cy")
+    for profile in ("cv", "ev")
+}
 FIELDS = [
     "origin_key", "destination_key", "distance_m", "duration_s",
     "annotation_duration_s", "routing_delay_s", "sum_v2d_m3_s2",
@@ -347,6 +352,33 @@ def write_json(path: Path, payload: dict) -> None:
     path.write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
 
 
+def build_decision(raw_rows: list[dict], total: int) -> dict:
+    observed_batches = {
+        (str(row.get("region")), str(row.get("profile"))) for row in raw_rows
+    }
+    complete = (
+        len(raw_rows) == len(EXPECTED_BATCHES)
+        and observed_batches == EXPECTED_BATCHES
+        and all(row.get("status") == "PASS" for row in raw_rows)
+        and total == EXPECTED_MATERIALIZED_ORDERED_PAIRS
+    )
+    return {
+        "verdict": (
+            "PASS_CHINA81_LOCAL_DIRECTED_THREE_MATRICES__FORMAL_ACCEPTANCE_HELD"
+            if complete
+            else "HALT_CHINA81_LOCAL_DIRECTED_THREE_MATRICES_INCOMPLETE"
+        ),
+        "ordered_pairs_complete": complete,
+        "observed_batches": len(observed_batches),
+        "expected_batches": len(EXPECTED_BATCHES),
+        "materialized_ordered_pairs": total,
+        "expected_materialized_ordered_pairs": EXPECTED_MATERIALIZED_ORDERED_PAIRS,
+        "unreachable_pairs": 0,
+        "formal_experiment_authorized": False,
+        "search_evaluations": 0,
+    }
+
+
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--workers", type=int, default=24)
@@ -357,6 +389,11 @@ def main() -> int:
         raise MatrixBuildError("workers out of range")
     OUT.mkdir(parents=True, exist_ok=True)
     catalog = read_csv(STATIC / "instance_catalog.csv")
+    instance_ids = [row["instance_id"] for row in catalog]
+    if len(catalog) != EXPECTED_INSTANCES or len(set(instance_ids)) != EXPECTED_INSTANCES:
+        raise MatrixBuildError(
+            f"China81 catalog must contain {EXPECTED_INSTANCES} unique instances"
+        )
     raw_rows = []
     for region_index, region in enumerate(("jjj", "prd", "cy")):
         graph_region = GRAPH_REGION[region]
@@ -403,21 +440,19 @@ def main() -> int:
                 w.writeheader()
                 w.writerows(raw_rows)
     total = sum(int(r["materialized_ordered_pairs"]) for r in raw_rows)
+    decision = build_decision(raw_rows, total)
     metadata = {
         "schema": "resetp.china81-local-directed-matrices.v1",
         "router": "OSRM 26.7.3 CH Route API",
-        "instances": 81, "profiles": ["cv", "ev"], "ordered_pairs": total,
+        "instances": len(catalog), "profiles": ["cv", "ev"], "ordered_pairs": total,
+        "expected_ordered_pairs": EXPECTED_MATERIALIZED_ORDERED_PAIRS,
         "same_route_distance_duration_sum_v2d": True,
         "euclidean_or_symmetry_fallback": False, "search_evaluations": 0,
         "runtime_filesystem": "APFS /tmp with archive hash verification",
         "formal_search_allowed": False, "draft_only": True,
     }
     write_json(OUT / "metadata.json", metadata)
-    write_json(OUT / "decision.json", {
-        "verdict": "PASS_CHINA81_LOCAL_DIRECTED_THREE_MATRICES__FORMAL_ACCEPTANCE_HELD",
-        "ordered_pairs_complete": total == 1578948, "unreachable_pairs": 0,
-        "formal_experiment_authorized": False, "search_evaluations": 0,
-    })
+    write_json(OUT / "decision.json", decision)
     (OUT / "report.md").write_text(
         "# China81 本地有向道路三矩阵\n\n"
         f"81 个实例、CV/EV 两套 profile 共物化 {total} 个有向节点对。距离、时间与"
@@ -429,8 +464,8 @@ def main() -> int:
         if path.is_file() and path.name != "artifact_hashes.json" and not path.name.startswith("._"):
             hashes[str(path.relative_to(OUT))] = sha256(path)
     write_json(OUT / "artifact_hashes.json", {"sha256": hashes})
-    print(json.dumps(metadata, ensure_ascii=False))
-    return 0
+    print(json.dumps(decision, ensure_ascii=False))
+    return 0 if decision["ordered_pairs_complete"] else 2
 
 
 if __name__ == "__main__":

@@ -428,3 +428,12 @@ E7正式结果终验
 - 统一证据=`baselines/algorithm_prototypes/mechanism_hgs_alns_20260718/mechanism_v7_stage1_closeout_gate/`，判`PASS_STAGE1_ALGORITHM_INFRASTRUCTURE_DEVELOPMENT_CLOSEOUT`。静态九项9/9同时严格胜官方HGS中性适配、原装`alns 7.0.0`中性适配和当前项目ALNS；多车场十八项4项绑定改善`1.2652%--5.6731%`、14项精确不倒退；公平固定100%独立收益底线1项绑定修复、2项零动作；冻结E7单事件未来少1条路线并降成本`29.675379`。
 - 62行原始记录与六件展品哈希独立重算通过，15项回归通过，`cost.py/check.py/search/evaluation.py`零差异。边界：公平仅1个绑定任务、动态仅1个真实事件、三个多车场强对照为事后确认，非线性充电和分时电价未接；正式性能、正式合入、China81、E2--E7重跑和阶段二仍须用户另批。
 - 来源手册补齐Cheng等碳感知充电与Kullman等固定路线精确充电依据；主TeX只补方法来源与`frvcpy`参考文献，未写开发胜负或新公式。latexmk/XeLaTeX重编24页，无未定义引用、Overfull、Underfull或LaTeX错误。
+
+# 2026-07-19 China81 G1 独立链失败关闭复核
+
+- 修复矩阵构建无条件 PASS、诊断自证计数、最终冻结缺少 81/5805 与上游哈希硬门、
+  一键入口只看文件存在四类漏洞；关键记录面现在必须被哈希清单覆盖并逐文件验签。
+- 首次真实复算因新审计器误用区域坐标笛卡尔积而 HALT；修正为构建合同中的实例内有向
+  对并集并加入回归后，六批计数、1,578,948 对、81/81 和 5805 条订单重新独立闭合。
+- 复核包判 `PASS_CHINA81_FAIL_CLOSED_REVIEW__FORMAL_G1_GATE_REMAINS`；未运行算法
+  搜索，唯一开放项仍是 `G1-FREEZE-MERGE=HELD_BY_DESIGN`。

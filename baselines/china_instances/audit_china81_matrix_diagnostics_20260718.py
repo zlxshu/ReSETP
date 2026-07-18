@@ -10,10 +10,23 @@ import math
 import sqlite3
 from pathlib import Path
 
+from china81_artifact_integrity_20260719 import (
+    require_decision,
+    verify_artifact_package,
+)
+
 
 REPO = Path(__file__).resolve().parents[2]
+STATIC = REPO / "data/ChinaInstances/china81_stage2_static_inputs_v1_20260718"
 MATRICES = REPO / "data/ChinaInstances/china81_local_directed_matrices_v9_20260718"
 OUT = REPO / "data/ChinaInstances/china81_matrix_diagnostics_v1_20260718"
+EXPECTED_INSTANCES = 81
+EXPECTED_MATERIALIZED_ORDERED_PAIRS = 1_578_948
+EXPECTED_BATCHES = {
+    (region, profile)
+    for region in ("jjj", "prd", "cy")
+    for profile in ("cv", "ev")
+}
 
 
 def sha256(path: Path) -> str:
@@ -46,14 +59,85 @@ def write_csv(path: Path, rows: list[dict], fields: list[str]) -> None:
         writer.writerows(rows)
 
 
+def read_csv(path: Path) -> list[dict[str, str]]:
+    with path.open(newline="", encoding="utf-8-sig") as handle:
+        return list(csv.DictReader(handle))
+
+
+def coordinate_key(row: dict[str, str]) -> str:
+    return f"{float(row['longitude']):.7f},{float(row['latitude']):.7f}"
+
+
+def derive_expected_counts(
+    static_root: Path,
+) -> tuple[dict[str, int], dict[str, int]]:
+    """Derive route-cache and materialized-pair counts from static inputs only."""
+
+    catalog = read_csv(static_root / "instance_catalog.csv")
+    instance_ids = [row["instance_id"] for row in catalog]
+    if len(catalog) != EXPECTED_INSTANCES or len(set(instance_ids)) != EXPECTED_INSTANCES:
+        raise RuntimeError(
+            f"China81 catalog must contain {EXPECTED_INSTANCES} unique instances"
+        )
+    regional_pairs = {region: set() for region in ("jjj", "prd", "cy")}
+    materialized = {region: 0 for region in ("jjj", "prd", "cy")}
+    for item in catalog:
+        region = item["region"]
+        if region not in regional_pairs:
+            raise RuntimeError(f"unexpected China81 region: {region}")
+        nodes = read_csv(
+            static_root / "instances" / item["instance_id"] / "nodes.csv"
+        )
+        keys = [coordinate_key(row) for row in nodes]
+        if len(keys) != len(set(keys)):
+            raise RuntimeError(f"duplicate node coordinate in {item['instance_id']}")
+        regional_pairs[region].update(
+            (origin, destination)
+            for origin in keys
+            for destination in keys
+            if origin != destination
+        )
+        materialized[region] += len(nodes) * (len(nodes) - 1)
+    unique = {region: len(pairs) for region, pairs in regional_pairs.items()}
+    return unique, materialized
+
+
 def main() -> int:
     OUT.mkdir(parents=True, exist_ok=True)
+    authority_files = ("metadata.json", "raw_runs.csv", "decision.json", "report.md")
+    verified_static_files = verify_artifact_package(STATIC, authority_files)
+    require_decision(
+        STATIC / "decision.json",
+        "PASS_G1_INDEPENDENT_STATIC_INPUTS_FROZEN",
+        {"formal_experiment_authorized": False, "search_evaluations": 0},
+    )
+    verified_matrix_files = verify_artifact_package(
+        MATRICES,
+        authority_files,
+    )
+    require_decision(
+        MATRICES / "decision.json",
+        "PASS_CHINA81_LOCAL_DIRECTED_THREE_MATRICES",
+        {"ordered_pairs_complete": True, "unreachable_pairs": 0},
+    )
     summaries: list[dict] = []
     edge_cases: list[dict] = []
-    expected = {}
+    expected_unique, expected_materialized = derive_expected_counts(STATIC)
+    recorded: dict[tuple[str, str], tuple[int, int, str]] = {}
     with (MATRICES / "raw_runs.csv").open(newline="", encoding="utf-8") as handle:
         for row in csv.DictReader(handle):
-            expected[(row["region"], row["profile"])] = int(row["unique_route_requests"])
+            batch = (row["region"], row["profile"])
+            if batch in recorded:
+                raise RuntimeError(f"duplicate matrix batch record: {batch}")
+            recorded[batch] = (
+                int(row["unique_route_requests"]),
+                int(row["materialized_ordered_pairs"]),
+                row["status"],
+            )
+    if set(recorded) != EXPECTED_BATCHES:
+        raise RuntimeError(
+            f"matrix batch set mismatch: {sorted(recorded)}"
+        )
 
     for region in ("jjj", "prd", "cy"):
         for profile in ("cv", "ev"):
@@ -125,8 +209,24 @@ def main() -> int:
                     "region": region,
                     "profile": profile,
                     "route_count": route_count,
-                    "expected_route_count": expected[(region, profile)],
-                    "count_match": route_count == expected[(region, profile)],
+                    "expected_route_count": expected_unique[region],
+                    "recorded_route_count": recorded[(region, profile)][0],
+                    "route_count_match": (
+                        route_count
+                        == expected_unique[region]
+                        == recorded[(region, profile)][0]
+                    ),
+                    "expected_materialized_ordered_pairs": expected_materialized[
+                        region
+                    ],
+                    "recorded_materialized_ordered_pairs": recorded[
+                        (region, profile)
+                    ][1],
+                    "materialized_count_match": (
+                        expected_materialized[region]
+                        == recorded[(region, profile)][1]
+                    ),
+                    "recorded_status": recorded[(region, profile)][2],
                     "zero_duration_positive_distance_segments": int(
                         totals["zero_segments"] or 0
                     ),
@@ -155,19 +255,34 @@ def main() -> int:
         "response_sha256", "request_sha256",
     ]
     write_csv(OUT / "edge_cases.csv", edge_cases, edge_fields)
-    all_counts_match = all(row["count_match"] for row in summaries)
+    all_counts_match = all(
+        row["route_count_match"]
+        and row["materialized_count_match"]
+        and row["recorded_status"] == "PASS"
+        for row in summaries
+    )
+    materialized_total = sum(
+        row["expected_materialized_ordered_pairs"] for row in summaries
+    )
     maximum_snap = max(float(row["max_endpoint_snap_m"]) for row in summaries)
     verdict = (
         "PASS_CHINA81_MATRIX_DIAGNOSTICS_COMPLETE"
-        if all_counts_match and maximum_snap <= 10_000
+        if (
+            all_counts_match
+            and materialized_total == EXPECTED_MATERIALIZED_ORDERED_PAIRS
+            and maximum_snap <= 10_000
+        )
         else "HALT_CHINA81_MATRIX_DIAGNOSTICS"
     )
     metadata = {
         "schema": "resetp.china81-matrix-diagnostics.v1",
         "matrix_package": str(MATRICES.relative_to(REPO)),
         "matrix_artifact_hashes_sha256": sha256(MATRICES / "artifact_hashes.json"),
+        "verified_static_files": verified_static_files,
+        "verified_matrix_files": verified_matrix_files,
         "unique_route_requests": sum(row["route_count"] for row in summaries),
-        "materialized_ordered_pairs": 1_578_948,
+        "materialized_ordered_pairs": materialized_total,
+        "expected_materialized_ordered_pairs": EXPECTED_MATERIALIZED_ORDERED_PAIRS,
         "maximum_allowed_endpoint_snap_m": 10_000,
         "selection_contract": (
             "direct route first; on NoRoute evaluate at most 32 nearest road "
@@ -182,6 +297,10 @@ def main() -> int:
     decision = {
         "verdict": verdict,
         "all_six_route_counts_match": all_counts_match,
+        "materialized_ordered_pairs": materialized_total,
+        "materialized_ordered_pairs_complete": (
+            materialized_total == EXPECTED_MATERIALIZED_ORDERED_PAIRS
+        ),
         "max_endpoint_snap_m": maximum_snap,
         "zero_duration_positive_distance_segments": sum(
             row["zero_duration_positive_distance_segments"] for row in summaries
