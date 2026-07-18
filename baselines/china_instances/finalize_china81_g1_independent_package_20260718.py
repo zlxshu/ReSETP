@@ -13,9 +13,9 @@ from pathlib import Path
 
 REPO = Path(__file__).resolve().parents[2]
 STATIC = REPO / "data/ChinaInstances/china81_stage2_static_inputs_v1_20260718"
-MATRICES = REPO / "data/ChinaInstances/china81_local_directed_matrices_v1_20260718"
+MATRICES = REPO / "data/ChinaInstances/china81_local_directed_matrices_v9_20260718"
 ORDERS = STATIC.parent / "china81_order_attributes_mc001_v1_20260718/orders.csv"
-OUT = REPO / "data/ChinaInstances/china81_g1_independent_frozen_v1_20260718"
+OUT = REPO / "data/ChinaInstances/china81_g1_independent_frozen_v2_20260718"
 
 
 def sha256(path: Path) -> str:
@@ -156,7 +156,7 @@ def main() -> int:
     write_csv(OUT / "raw_runs.csv", audits)
     write_csv(OUT / "instance_manifest.csv", manifests)
     metadata = {
-        "schema": "resetp.china81-g1-independent-frozen.v1",
+        "schema": "resetp.china81-g1-independent-frozen.v2",
         "instances": len(audits), "orders": sum(int(r["customer_count"]) for r in audits),
         "static_package_sha256": sha256(STATIC / "artifact_hashes.json"),
         "matrix_package_sha256": sha256(MATRICES / "artifact_hashes.json"),

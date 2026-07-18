@@ -784,3 +784,23 @@ LaDe-P重庆取件表已真实下载并登记SHA-256=`d58248d1...b056`，共1,17
   distance/duration/Σ(v²d) 三矩阵→逐实例零搜索审计→刷新就绪台账。
 - 正式搜索守卫仍 fail closed。最终 SOC、非线性充电时间、算法可行性和 China81 正式验收
   必须等待 G1 冻结；当前静态冻结和道路长任务不能写成正式实验结果。
+
+# 2026-07-18 阶段二 G1 独立部分执行完成，正式验收继续挂账
+
+- 道路长任务已完成。最终权威图为
+  `data/ChinaInstances/china_stage2_sparse_connected_osrm_graphs_v5_20260718/`：
+  京津冀、珠三角、成渝各 CV/EV 六张图全部完成并通过全输入点吸附。旧 v1--v4
+  只保留为 exFAT 空间索引失败、连通性修复和 APFS 迁移诊断证据。
+- 权威三矩阵为 `data/ChinaInstances/china81_local_directed_matrices_v9_20260718/`：
+  81 实例共物化 1,578,948 个有向点对，不可达 0、搜索评价 0，距离、时间和
+  `Σ(v²d)` 均来自同一条本地 OSRM 路线；没有欧氏、对称复制或直线回退。
+- 独立诊断 `china81_matrix_diagnostics_v1_20260718` 六批计数全匹配，并把
+  10,455 个正距离零时长终端子段、40 个同吸附点对、12 个亚分辨率点对和
+  8 个确定性有向绕点修复逐行留证，不用 epsilon 或反向路线掩盖。
+- 最终 G1 独立汇合包 `china81_g1_independent_frozen_v2_20260718` 为 81/81 通过、
+  失败 0，机器判定
+  `PASS_CHINA81_G1_INDEPENDENT_DATA_FROZEN__G1_PHYSICAL_SEARCH_ACCEPTANCE_HELD`。
+  就绪台账只剩 `G1-FREEZE-MERGE=HELD_BY_DESIGN` 一个开放项。
+- MC-008 至此完成。运行入口和监控配置已指向 v5/v9，并改为冻结件缺失即停，不会把
+  历史失败目录认成活任务。正式 SOC、非线性补能、算法搜索、China81 正式验收和
+  E1--E7 仍须等待 G1 冻结与阶段一统一。

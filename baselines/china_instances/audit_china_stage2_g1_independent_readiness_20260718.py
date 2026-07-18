@@ -33,12 +33,12 @@ ORDERS = (
 )
 ROAD_GRAPHS = (
     REPO
-    / "data/ChinaInstances/china_stage2_local_osrm_graphs_20260718"
-    / "LOCAL_OSRM_GRAPHS_COMPLETE.json"
+    / "data/ChinaInstances/china_stage2_sparse_connected_osrm_graphs_v5_20260718"
+    / "SPARSE_CONNECTED_OSRM_GRAPHS_COMPLETE.json"
 )
 ROAD_MATRICES = (
     REPO
-    / "data/ChinaInstances/china81_local_directed_matrices_v1_20260718"
+    / "data/ChinaInstances/china81_local_directed_matrices_v9_20260718"
     / "decision.json"
 )
 OUTPUT = (
@@ -114,7 +114,7 @@ def build_items() -> list[dict[str, Any]]:
             else "RUNNING",
             True,
             str(ROAD_GRAPHS.relative_to(REPO)),
-            "finish all five frozen extracts under CV and EV profiles",
+            "retain six APFS-built sparse-connected CV/EV graphs and archive hashes",
         ),
         item(
             "ROAD-MATRICES",
@@ -125,7 +125,7 @@ def build_items() -> list[dict[str, Any]]:
             else "RUNNING",
             True,
             str(ROAD_MATRICES.relative_to(REPO)),
-            "finish directed distance, duration and sum(v^2*d) matrices locally",
+            "retain complete directed distance, duration and sum(v^2*d) matrices",
         ),
         item(
             "FACILITY-DEPOT-CHARGING",

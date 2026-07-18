@@ -52,6 +52,12 @@ class Metrics:
     destination_matched_lon: float
     destination_matched_lat: float
     annotation_segments: int
+    zero_duration_positive_distance_segments: int
+    colocated_snapped_pair: int
+    subresolution_zero_duration_pair: int
+    via_repair: int
+    via_matched_lon: float
+    via_matched_lat: float
 
 
 def sha256(path: Path) -> str:
@@ -115,18 +121,23 @@ def parse_response(payload: dict[str, Any]) -> Metrics:
     waypoints = payload.get("waypoints")
     if not isinstance(routes, list) or len(routes) != 1:
         raise MatrixBuildError("exactly one selected route is required")
-    if not isinstance(waypoints, list) or len(waypoints) != 2:
-        raise MatrixBuildError("exactly two matched waypoints are required")
+    if not isinstance(waypoints, list) or len(waypoints) not in {2, 3}:
+        raise MatrixBuildError("two endpoints and at most one repair via are required")
     legs = routes[0].get("legs")
-    if not isinstance(legs, list) or len(legs) != 1:
-        raise MatrixBuildError("exactly one route leg is required")
-    annotation = legs[0].get("annotation", {})
-    distances = annotation.get("distance")
-    durations = annotation.get("duration")
+    if not isinstance(legs, list) or len(legs) != len(waypoints) - 1:
+        raise MatrixBuildError("route leg count must match endpoint/via waypoints")
+    distances: list[Any] = []
+    durations: list[Any] = []
+    for leg in legs:
+        annotation = leg.get("annotation", {})
+        leg_distances = annotation.get("distance")
+        leg_durations = annotation.get("duration")
+        if not isinstance(leg_distances, list) or not isinstance(leg_durations, list):
+            raise MatrixBuildError("every route leg requires distance/duration annotations")
+        distances.extend(leg_distances)
+        durations.extend(leg_durations)
     if (
-        not isinstance(distances, list)
-        or not isinstance(durations, list)
-        or not distances
+        not distances
         or len(distances) != len(durations)
     ):
         raise MatrixBuildError("aligned non-empty distance/duration annotations required")
@@ -134,6 +145,9 @@ def parse_response(payload: dict[str, Any]) -> Metrics:
     distance_m = 0.0
     annotation_duration_s = 0.0
     sum_v2d = 0.0
+    zero_duration_segments = 0
+    pending_zero_duration_distance = 0.0
+    coalesced: list[list[float]] = []
     for raw_distance, raw_duration in zip(distances, durations, strict=True):
         distance = float(raw_distance)
         duration = float(raw_duration)
@@ -142,25 +156,52 @@ def parse_response(payload: dict[str, Any]) -> Metrics:
             or not math.isfinite(duration)
             or distance < 0
             or duration < 0
-            or (distance > 0 and duration <= 0)
         ):
             raise MatrixBuildError("invalid annotation segment")
         distance_m += distance
         annotation_duration_s += duration
+        if distance > 0 and duration == 0:
+            zero_duration_segments += 1
+            pending_zero_duration_distance += distance
+        elif duration > 0:
+            coalesced.append([distance + pending_zero_duration_distance, duration])
+            pending_zero_duration_distance = 0.0
+    if pending_zero_duration_distance:
+        if coalesced:
+            coalesced[-1][0] += pending_zero_duration_distance
+    for distance, duration in coalesced:
         if distance > 0:
             sum_v2d += (distance / duration) ** 2 * distance
 
     route_distance = float(routes[0].get("distance", math.nan))
     route_duration = float(routes[0].get("duration", math.nan))
-    if (
-        distance_m <= 0
-        or annotation_duration_s <= 0
-        or sum_v2d <= 0
-        or not math.isfinite(route_distance)
-        or not math.isfinite(route_duration)
-        or route_duration <= 0
-    ):
-        raise MatrixBuildError("same-route metrics must be finite and positive")
+    matched = [waypoint.get("location") for waypoint in waypoints]
+    if any(not isinstance(value, list) or len(value) != 2 for value in matched):
+        raise MatrixBuildError("matched waypoint coordinates are missing")
+    colocated = (
+        distance_m == 0
+        and annotation_duration_s == 0
+        and route_distance == 0
+        and route_duration == 0
+        and math.isclose(float(matched[0][0]), float(matched[-1][0]), abs_tol=1e-9)
+        and math.isclose(float(matched[0][1]), float(matched[-1][1]), abs_tol=1e-9)
+    )
+    subresolution = (
+        0 < distance_m <= 2.0
+        and annotation_duration_s == 0
+        and 0 < route_distance <= 2.0
+        and route_duration == 0
+    )
+    if not colocated and not subresolution:
+        if (
+            distance_m <= 0
+            or annotation_duration_s <= 0
+            or sum_v2d <= 0
+            or not math.isfinite(route_distance)
+            or not math.isfinite(route_duration)
+            or route_duration <= 0
+        ):
+            raise MatrixBuildError("same-route metrics must be finite and positive")
     if not math.isclose(
         distance_m, route_distance, abs_tol=max(1.0, route_distance * 1e-4)
     ):
@@ -168,9 +209,6 @@ def parse_response(payload: dict[str, Any]) -> Metrics:
     routing_delay = route_duration - annotation_duration_s
     if routing_delay < -1.0:
         raise MatrixBuildError("route duration is shorter than edge annotation time")
-    matched = [waypoint.get("location") for waypoint in waypoints]
-    if any(not isinstance(value, list) or len(value) != 2 for value in matched):
-        raise MatrixBuildError("matched waypoint coordinates are missing")
     return Metrics(
         distance_m=distance_m,
         duration_s=route_duration,
@@ -179,9 +217,15 @@ def parse_response(payload: dict[str, Any]) -> Metrics:
         sum_v2d_m3_s2=sum_v2d,
         origin_matched_lon=float(matched[0][0]),
         origin_matched_lat=float(matched[0][1]),
-        destination_matched_lon=float(matched[1][0]),
-        destination_matched_lat=float(matched[1][1]),
+        destination_matched_lon=float(matched[-1][0]),
+        destination_matched_lat=float(matched[-1][1]),
         annotation_segments=len(distances),
+        zero_duration_positive_distance_segments=zero_duration_segments,
+        colocated_snapped_pair=int(colocated),
+        subresolution_zero_duration_pair=int(subresolution),
+        via_repair=int(len(matched) == 3),
+        via_matched_lon=float(matched[1][0]) if len(matched) == 3 else 0.0,
+        via_matched_lat=float(matched[1][1]) if len(matched) == 3 else 0.0,
     )
 
 

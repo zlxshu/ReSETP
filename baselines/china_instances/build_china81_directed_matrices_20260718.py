@@ -14,6 +14,7 @@ import subprocess
 import tempfile
 import time
 import urllib.error
+import urllib.parse
 import urllib.request
 from concurrent.futures import FIRST_COMPLETED, ThreadPoolExecutor, wait
 from dataclasses import asdict
@@ -31,13 +32,16 @@ from build_local_directed_road_matrices_20260718 import (
 REPO = Path(__file__).resolve().parents[2]
 STATIC = REPO / "data/ChinaInstances/china81_stage2_static_inputs_v1_20260718"
 GRAPHS = REPO / "data/ChinaInstances/china_stage2_sparse_connected_osrm_graphs_v5_20260718/graphs"
-OUT = REPO / "data/ChinaInstances/china81_local_directed_matrices_v5_20260718"
+OUT = REPO / "data/ChinaInstances/china81_local_directed_matrices_v9_20260718"
 GRAPH_REGION = {"jjj": "jjj", "prd": "prd", "cy": "cy"}
 FIELDS = [
     "origin_key", "destination_key", "distance_m", "duration_s",
     "annotation_duration_s", "routing_delay_s", "sum_v2d_m3_s2",
     "origin_matched_lon", "origin_matched_lat", "destination_matched_lon",
-    "destination_matched_lat", "annotation_segments", "response_sha256",
+    "destination_matched_lat", "annotation_segments",
+    "zero_duration_positive_distance_segments", "colocated_snapped_pair",
+    "subresolution_zero_duration_pair", "via_repair", "via_matched_lon",
+    "via_matched_lat", "response_sha256",
     "request_sha256",
 ]
 
@@ -68,6 +72,11 @@ def init_db(path: Path) -> sqlite3.Connection:
         sum_v2d_m3_s2 REAL NOT NULL, origin_matched_lon REAL NOT NULL,
         origin_matched_lat REAL NOT NULL, destination_matched_lon REAL NOT NULL,
         destination_matched_lat REAL NOT NULL, annotation_segments INTEGER NOT NULL,
+        zero_duration_positive_distance_segments INTEGER NOT NULL,
+        colocated_snapped_pair INTEGER NOT NULL,
+        subresolution_zero_duration_pair INTEGER NOT NULL,
+        via_repair INTEGER NOT NULL,
+        via_matched_lon REAL NOT NULL, via_matched_lat REAL NOT NULL,
         response_sha256 TEXT NOT NULL, request_sha256 TEXT NOT NULL,
         PRIMARY KEY(origin_key,destination_key))"""
     )
@@ -75,25 +84,113 @@ def init_db(path: Path) -> sqlite3.Connection:
     return db
 
 
+def request_bytes(url: str, timeout: float) -> bytes:
+    request = urllib.request.Request(
+        url, headers={"User-Agent": "ReSETP-China81/20260718"}
+    )
+    with urllib.request.urlopen(request, timeout=timeout) as response:
+        return response.read()
+
+
+def via_url(endpoint: str, pair: tuple[str, str], via: tuple[float, float]) -> str:
+    origin_key, destination_key = pair
+    coordinates = (
+        f"{origin_key};{via[0]:.7f},{via[1]:.7f};{destination_key}"
+    )
+    query = urllib.parse.urlencode(
+        {
+            "alternatives": "false",
+            "annotations": "distance,duration",
+            "overview": "false",
+            "steps": "false",
+            "radiuses": "10000;10000;10000",
+            "continue_straight": "false",
+        }
+    )
+    return f"{endpoint.rstrip('/')}/route/v1/driving/{coordinates}?{query}"
+
+
+def nearest_via_candidates(
+    endpoint: str, pair: tuple[str, str], timeout: float
+) -> list[tuple[float, float, float]]:
+    candidates: dict[tuple[float, float], float] = {}
+    for coordinate in pair:
+        url = (
+            f"{endpoint.rstrip('/')}/nearest/v1/driving/{coordinate}"
+            "?number=32"
+        )
+        payload = json.loads(request_bytes(url, timeout))
+        if payload.get("code") != "Ok":
+            raise MatrixBuildError("nearest candidate query failed")
+        for waypoint in payload.get("waypoints", []):
+            location = waypoint.get("location")
+            if not isinstance(location, list) or len(location) != 2:
+                continue
+            key = (float(location[0]), float(location[1]))
+            offset = float(waypoint.get("distance", float("inf")))
+            candidates[key] = min(offset, candidates.get(key, float("inf")))
+    return sorted(
+        ((offset, longitude, latitude) for (longitude, latitude), offset in candidates.items())
+    )
+
+
+def row_from_response(
+    pair: tuple[str, str], url: str, raw: bytes
+) -> tuple:
+    metrics = parse_response(json.loads(raw))
+    return (
+        pair[0], pair[1],
+        *[getattr(metrics, name) for name in FIELDS[2:-2]],
+        hashlib.sha256(raw).hexdigest(),
+        hashlib.sha256(url.encode()).hexdigest(),
+    )
+
+
 def fetch(endpoint: str, pair: tuple[str, str], timeout: float) -> tuple:
     origin_key, destination_key = pair
     url = route_url(endpoint, "driving", node_from_key(origin_key), node_from_key(destination_key))
     last = ""
+    no_route = False
     for attempt in range(3):
         try:
-            req = urllib.request.Request(url, headers={"User-Agent": "ReSETP-China81/20260718"})
-            with urllib.request.urlopen(req, timeout=timeout) as response:
-                raw = response.read()
-            metrics = parse_response(json.loads(raw))
-            return (
-                origin_key, destination_key,
-                *[getattr(metrics, name) for name in FIELDS[2:-2]],
-                hashlib.sha256(raw).hexdigest(),
-                hashlib.sha256(url.encode()).hexdigest(),
-            )
+            return row_from_response(pair, url, request_bytes(url, timeout))
+        except urllib.error.HTTPError as exc:
+            raw_error = exc.read()
+            try:
+                no_route = json.loads(raw_error).get("code") == "NoRoute"
+            except json.JSONDecodeError:
+                no_route = False
+            last = f"HTTPError: HTTP {exc.code}"
+            if no_route:
+                break
         except (OSError, ValueError, TimeoutError, urllib.error.URLError, MatrixBuildError) as exc:
             last = f"{type(exc).__name__}: {exc}"
-            time.sleep(0.25 * (attempt + 1))
+        time.sleep(0.25 * (attempt + 1))
+    if no_route:
+        best: tuple[tuple[float, float, float, float, float], tuple] | None = None
+        for offset, longitude, latitude in nearest_via_candidates(
+            endpoint, pair, timeout
+        ):
+            candidate_url = via_url(
+                endpoint, pair, (longitude, latitude)
+            )
+            try:
+                candidate_row = row_from_response(
+                    pair, candidate_url, request_bytes(candidate_url, timeout)
+                )
+            except urllib.error.HTTPError:
+                continue
+            metrics_key = (
+                float(candidate_row[FIELDS.index("distance_m")]),
+                float(candidate_row[FIELDS.index("duration_s")]),
+                offset,
+                longitude,
+                latitude,
+            )
+            if best is None or metrics_key < best[0]:
+                best = (metrics_key, candidate_row)
+        if best is not None:
+            return best[1]
     raise MatrixBuildError(f"unreachable {pair}: {last}")
 
 
@@ -188,7 +285,10 @@ def fill_cache(
                     pass
             if len(batch) >= 500 or not futures:
                 db.executemany(
-                    "INSERT OR REPLACE INTO routes VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?)", batch
+                    "INSERT OR REPLACE INTO routes VALUES("
+                    + ",".join("?" for _ in FIELDS)
+                    + ")",
+                    batch,
                 )
                 db.commit()
                 batch.clear()

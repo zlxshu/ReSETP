@@ -4,14 +4,21 @@ description: 全项目 PRD 与施工图 v2；用于 Codex 执行 ReSETP 宏观�
 metadata:
   node_type: memory
   type: project
-  updated: 2026-07-02
+  updated: 2026-07-18
 ---
 
 E7正式结果终验
 
+2026-07-18 阶段二 G1 独立输入执行完成：静态 China81 输入、九城设施与中国成本情景、
+统计阈值、六张区域 CV/EV 本地路网、1,578,948 个有向同路线三矩阵和 81 实例零搜索审计
+全部闭合。权威矩阵 v9 不可达为 0，无欧氏/对称/直线回退；最终汇合包 81/81 通过。
+机器判=`PASS_CHINA81_G1_INDEPENDENT_DATA_FROZEN__G1_PHYSICAL_SEARCH_ACCEPTANCE_HELD`。
+唯一开放项是 `G1-FREEZE-MERGE`；正式 SOC、非线性补能、算法验收、China81 胜负和
+E1--E7 仍等待 G1 冻结与阶段一统一。
+
 2026-07-18 阶段一非算法最终收口：独立复核撤销旧“小路网4/4即完成”判断后，MC-005候选A已写入合同并重建81份/5805行权威位置分配，27格内三复本身份零重叠；九个普通设施形成WGS84情景道路接入点并在五份冻结PBF上完成CV/EV 18/18最小路线；OSRM 26.7.3完整功能门18/18覆盖高宽长重、hgv、单行、不可达、方向性距离/时间、注释和`Σ(v²d)`。用户批准MC-004方法并明确暂时不进入阶段二；最终独立审计判`PASS_PHASE1_NONALGORITHM_HANDOFF_READY`，待批0、错误0、搜索评价0。算法优化、全矩阵、正式China81实例和正式搜索均未启动。
 
-2026-07-18 阶段一并行状态：六线均已推进到当前证据边界，但总状态为`PHASE1_PARTIAL_COMPLETE_BLOCKED__STAGE2_NOT_STARTED`。G1a因RC三对零触发而停止完整G1；MC-002算力/功效和重庆池27格门闭合；覆盖九城的固定OSM 5/5验签。九主场0/9、两备选0/2、本地router和货运profile继续HALT；六项统计终裁、备选不替换决定、11点人工输入与MC-004重批未完成前禁止阶段二。详见`docs/handoff/phase1_parallel_status_and_user_gate_20260718.md`。
+2026-07-18 阶段一并行历史状态（已被上方后续授权与执行终局覆盖）：六线当时均推进到证据边界，总状态为`PHASE1_PARTIAL_COMPLETE_BLOCKED__STAGE2_NOT_STARTED`。G1a因RC三对零触发而停止完整G1；MC-002算力/功效和重庆池27格门闭合；覆盖九城的固定OSM 5/5验签。九主场0/9、两备选0/2、本地router和货运profile当时继续HALT；六项统计终裁、备选不替换决定、11点人工输入与MC-004重批当时未完成。详见`docs/handoff/phase1_parallel_status_and_user_gate_20260718.md`。
 
 2026-07-18 G1阶段一最低成本筛选：SISR因R类三种子实际调用为0而淘汰；真正SWAP*通过独立活性门和当前源码C类统一预算接入门。追加四实例×三共同种子×两臂×B400的G1a，24/24任务和12/12共同起点全部闭合，平均改善`0.003918%`等数值门通过，但RC三对均零触发，未满足C/R/RC活性覆盖，判`STOP_TRUE_SWAPSTAR_BEFORE_FULL_G1`。完整G1共115,200次评价没有启动，本候选本轮关闭。后续开发严格按正式门暴露的瓶颈选择：路线数/固定成本→受控路线消除与有限深度ejection chain；同路线距离→granular局部搜索；车型、非线性补能、碳价、公平和动态机制→自有复杂模型开发集。详见`docs/handoff/e2_alns_g1_stage1_closeout_20260718.md`。
 
