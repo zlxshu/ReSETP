@@ -96,6 +96,7 @@ class ContextualExpertConfig:
     total_eval_budget: int = 100
     runtime_cap_seconds: float = 3600.0
     enable_prescriptions: bool = True
+    apply_terminal_completion: bool = True
     assessment_interval: int = 20
     per_mechanism_cooldown: int = 60
     enabled_mechanisms: tuple[str, ...] = MECHANISM_ORDER
@@ -321,26 +322,37 @@ def run_contextual_expert_alns(
         raise RuntimeError(
             f"raw kernel objective replay mismatch: {run.best_obj} != {raw_cost}"
         )
-    completed = apply_terminal_completion(
-        bundle_dir,
-        raw_solution,
-        prices=prices,
-    )
-    if not completed.feasible:
-        raise RuntimeError(
-            "contextual expert terminal completion returned infeasible"
+    completion_started = time.perf_counter()
+    if cfg.apply_terminal_completion:
+        completed = apply_terminal_completion(
+            bundle_dir,
+            raw_solution,
+            prices=prices,
         )
+        if not completed.feasible:
+            raise RuntimeError(
+                "contextual expert terminal completion returned infeasible"
+            )
+        final_solution = completed.solution
+        claimed_final_cost = float(completed.cost)
+        completion_activity = dict(completed.activity)
+    else:
+        final_solution = raw_solution
+        claimed_final_cost = float(raw_cost)
+        completion_activity = {
+            "full_solution_replays": 0,
+            "disabled_for_behaviour_isolation": True,
+        }
+    completion_elapsed = time.perf_counter() - completion_started
     final_cost = independent_cost(
         bundle_dir,
-        completed.solution,
+        final_solution,
         prices,
     )
-    if abs(float(final_cost) - float(completed.cost)) > 1.0e-7:
-        raise RuntimeError(
-            "terminal completion objective replay mismatch"
-        )
+    if abs(float(final_cost) - claimed_final_cost) > 1.0e-7:
+        raise RuntimeError("final objective replay mismatch")
     violations = check_solution(
-        completed.solution,
+        final_solution,
         bundle.instance,
         prices,
     )
@@ -357,18 +369,17 @@ def run_contextual_expert_alns(
         }
         for row in run.history
     ]
-    completion_activity = dict(completed.activity)
     return ArmResult(
         algorithm=(
             "context_gated_exact_mechanism_alns"
             if cfg.enable_prescriptions
             else "continuous_default_alpha_alns_control"
         ),
-        best_solution=completed.solution,
+        best_solution=final_solution,
         best_cost=float(final_cost),
         evaluations=int(run.evaluations),
         elapsed_seconds=time.perf_counter() - started,
-        route_count=len(completed.solution.routes),
+        route_count=len(final_solution.routes),
         feasible=True,
         mechanism_activity={
             "continuous_main_search": True,
@@ -397,7 +408,10 @@ def run_contextual_expert_alns(
             "raw_signature": solution_signature_hash(raw_solution),
             "completed_cost": float(final_cost),
             "completed_signature": solution_signature_hash(
-                completed.solution
+                final_solution
+            ),
+            "terminal_completion_enabled": bool(
+                cfg.apply_terminal_completion
             ),
             "main_search_history_fingerprint": _sha_json(
                 history_payload
@@ -407,10 +421,7 @@ def run_contextual_expert_alns(
             ),
             "raw_search_elapsed_seconds": float(raw_elapsed),
             "terminal_completion_elapsed_seconds": float(
-                max(
-                    0.0,
-                    time.perf_counter() - started - raw_elapsed,
-                )
+                completion_elapsed
             ),
         },
     )

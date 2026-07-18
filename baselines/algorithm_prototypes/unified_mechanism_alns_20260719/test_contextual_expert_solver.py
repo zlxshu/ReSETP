@@ -154,6 +154,7 @@ def test_fleet_binding_budget_microgate_stays_in_one_loop(
         initial_solution=binding,
         config=ContextualExpertConfig(
             total_eval_budget=budget,
+            apply_terminal_completion=False,
             assessment_interval=20,
             per_mechanism_cooldown=60,
             enabled_mechanisms=(FLEET_CHARGE,),
@@ -192,6 +193,7 @@ def test_carbon_binding_builds_one_scoped_candidate() -> None:
         initial_solution=plateau_solution(),
         config=ContextualExpertConfig(
             total_eval_budget=1,
+            apply_terminal_completion=False,
             enabled_mechanisms=(CARBON_TIME,),
         ),
     )
@@ -216,6 +218,7 @@ def test_responsibility_binding_builds_one_scoped_candidate() -> None:
         initial_solution=binding,
         config=ContextualExpertConfig(
             total_eval_budget=1,
+            apply_terminal_completion=False,
             enabled_mechanisms=(RESPONSIBILITY,),
             responsibility_exact_candidates=1,
         ),
@@ -237,6 +240,7 @@ def test_responsibility_nonbinding_attempt_is_not_charged() -> None:
         initial_solution=initial,
         config=ContextualExpertConfig(
             total_eval_budget=1,
+            apply_terminal_completion=False,
             enabled_mechanisms=(RESPONSIBILITY,),
             responsibility_exact_candidates=1,
         ),

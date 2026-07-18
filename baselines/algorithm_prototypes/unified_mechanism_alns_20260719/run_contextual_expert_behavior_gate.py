@@ -149,6 +149,7 @@ def main() -> int:
                     initial_solution=start_solution,
                     config=ContextualExpertConfig(
                         total_eval_budget=budget,
+                        apply_terminal_completion=False,
                         assessment_interval=20,
                         per_mechanism_cooldown=60,
                         enabled_mechanisms=(
@@ -397,6 +398,8 @@ def _decision(rows: list[dict[str, Any]]) -> dict[str, Any]:
                 or row["mechanism_candidate_evaluations"]
             ):
                 failures.append(f"{tag}:zero_budget_activity")
+            if row["final_signature"] != row["start_signature"]:
+                failures.append(f"{tag}:zero_budget_solution_drift")
             continue
         if row["binding"] == "binding":
             if row["mechanism_candidate_evaluations"] != 1:
