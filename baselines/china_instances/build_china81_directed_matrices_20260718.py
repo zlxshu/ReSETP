@@ -8,8 +8,10 @@ import csv
 import hashlib
 import json
 import os
+import shutil
 import sqlite3
 import subprocess
+import tempfile
 import time
 import urllib.error
 import urllib.request
@@ -28,8 +30,8 @@ from build_local_directed_road_matrices_20260718 import (
 
 REPO = Path(__file__).resolve().parents[2]
 STATIC = REPO / "data/ChinaInstances/china81_stage2_static_inputs_v1_20260718"
-GRAPHS = REPO / "data/ChinaInstances/china_stage2_sparse_connected_osrm_graphs_v3_20260718/graphs"
-OUT = REPO / "data/ChinaInstances/china81_local_directed_matrices_v3_20260718"
+GRAPHS = REPO / "data/ChinaInstances/china_stage2_sparse_connected_osrm_graphs_v5_20260718/graphs"
+OUT = REPO / "data/ChinaInstances/china81_local_directed_matrices_v5_20260718"
 GRAPH_REGION = {"jjj": "jjj", "prd": "prd", "cy": "cy"}
 FIELDS = [
     "origin_key", "destination_key", "distance_m", "duration_s",
@@ -134,6 +136,26 @@ def start_router(graph_base: Path, port: int, threads: int) -> subprocess.Popen:
             time.sleep(0.25)
     proc.terminate()
     raise MatrixBuildError(f"osrm-routed health timeout; see {log}")
+
+
+def restore_graph_to_apfs(
+    graph_dir: Path, manifest: dict, runtime_dir: Path, graph_name: str
+) -> Path:
+    expected = manifest.get("apfs_to_archive_copy_hashes", {})
+    if not expected:
+        raise MatrixBuildError(f"missing APFS/archive copy hashes: {graph_dir}")
+    for filename, expected_hash in sorted(expected.items()):
+        source = graph_dir / filename
+        target = runtime_dir / filename
+        if not source.is_file() or sha256(source) != expected_hash:
+            raise MatrixBuildError(f"archived graph hash drift: {source}")
+        shutil.copy2(source, target)
+        if sha256(target) != expected_hash:
+            raise MatrixBuildError(f"APFS restore hash drift: {target}")
+    graph_base = runtime_dir / graph_name
+    if not graph_base.with_suffix(".osrm.hsgr").is_file():
+        raise MatrixBuildError(f"restored contracted graph missing: {graph_base}")
+    return graph_base
 
 
 def fill_cache(
@@ -241,26 +263,36 @@ def main() -> int:
         for profile_index, profile in enumerate(("cv", "ev")):
             graph_dir = GRAPHS / graph_region / profile
             manifest = graph_dir / "graph_manifest.json"
-            graph_base = graph_dir / f"{graph_region}-{profile}.osrm"
-            if not manifest.is_file() or not graph_base.with_suffix(".osrm.hsgr").is_file():
+            archived_base = graph_dir / f"{graph_region}-{profile}.osrm"
+            if not manifest.is_file() or not archived_base.with_suffix(".osrm.hsgr").is_file():
                 raise MatrixBuildError(f"missing accepted graph: {graph_dir}")
+            manifest_payload = json.loads(manifest.read_text(encoding="utf-8"))
             required = required_pairs(region, catalog)
             db_path = OUT / f"route_cache_{region}_{profile}.sqlite"
             db = init_db(db_path)
             port = 5100 + region_index * 10 + profile_index
-            proc = start_router(graph_base, port, args.router_threads)
             started = time.monotonic()
-            try:
-                fill_cache(db, f"http://127.0.0.1:{port}", required, args.workers,
-                           args.timeout_s, OUT / f"checkpoint_{region}_{profile}.json")
-                pairs = materialize(region, profile, db, catalog)
-            finally:
-                proc.terminate()
+            with tempfile.TemporaryDirectory(
+                prefix=f"resetp-matrix-{region}-{profile}-", dir="/tmp"
+            ) as runtime_name:
+                graph_base = restore_graph_to_apfs(
+                    graph_dir,
+                    manifest_payload,
+                    Path(runtime_name),
+                    archived_base.name,
+                )
+                proc = start_router(graph_base, port, args.router_threads)
                 try:
-                    proc.wait(timeout=15)
-                except subprocess.TimeoutExpired:
-                    proc.kill()
-                db.close()
+                    fill_cache(db, f"http://127.0.0.1:{port}", required, args.workers,
+                               args.timeout_s, OUT / f"checkpoint_{region}_{profile}.json")
+                    pairs = materialize(region, profile, db, catalog)
+                finally:
+                    proc.terminate()
+                    try:
+                        proc.wait(timeout=15)
+                    except subprocess.TimeoutExpired:
+                        proc.kill()
+                    db.close()
             raw_rows.append({
                 "region": region, "profile": profile, "unique_route_requests": len(required),
                 "materialized_ordered_pairs": pairs, "elapsed_seconds": time.monotonic() - started,
@@ -277,6 +309,7 @@ def main() -> int:
         "instances": 81, "profiles": ["cv", "ev"], "ordered_pairs": total,
         "same_route_distance_duration_sum_v2d": True,
         "euclidean_or_symmetry_fallback": False, "search_evaluations": 0,
+        "runtime_filesystem": "APFS /tmp with archive hash verification",
         "formal_search_allowed": False, "draft_only": True,
     }
     write_json(OUT / "metadata.json", metadata)

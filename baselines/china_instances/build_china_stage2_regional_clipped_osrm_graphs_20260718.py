@@ -14,7 +14,9 @@ from __future__ import annotations
 import csv
 import json
 import os
+import shutil
 import subprocess
+import tempfile
 import time
 import urllib.error
 import urllib.request
@@ -37,7 +39,7 @@ from build_china_stage2_local_osrm_graphs_20260718 import (
 
 REPO = Path(__file__).resolve().parents[2]
 STATIC = REPO / "data/ChinaInstances/china81_stage2_static_inputs_v1_20260718"
-OUT = REPO / "data/ChinaInstances/china_stage2_sparse_connected_osrm_graphs_v3_20260718"
+OUT = REPO / "data/ChinaInstances/china_stage2_sparse_connected_osrm_graphs_v5_20260718"
 HEBEI = REPO / "data/ChinaInstances/china_mc004_mc006_preclosure_v4_20260718/fixed_osm_inputs/hebei-260716.osm.pbf"
 GUANGDONG = REPO / "data/ChinaInstances/china_mc004_mc006_preclosure_v4_20260718/fixed_osm_inputs/guangdong-260716.osm.pbf"
 CHENGYU = REPO / "data/ChinaInstances/china_stage2_chengyu_merged_osm_v1_20260718/chengyu-260716.osm.pbf"
@@ -333,47 +335,65 @@ def main() -> int:
             graph_dir = OUT / "graphs" / region / profile.name
             graph_dir.mkdir(parents=True, exist_ok=False)
             graph_base = graph_dir / f"{region}-{profile.name}.osrm"
-            run_stage(
-                [
-                    runtime["osrm-extract"]["path"],
-                    str(clip),
-                    "--profile",
-                    str(profile.path),
-                    "--small-component-size",
-                    "0",
-                    "--threads",
-                    "6",
-                    "--output",
-                    str(graph_base),
-                ],
-                environment,
-                graph_dir / "extract.log",
-                region,
-                profile.name,
-                "extract",
-                rows,
-                raw_runs,
-            )
-            run_stage(
-                [
-                    runtime["osrm-contract"]["path"],
-                    str(graph_base),
-                    "--threads",
-                    "6",
-                ],
-                environment,
-                graph_dir / "contract.log",
-                region,
-                profile.name,
-                "contract",
-                rows,
-                raw_runs,
-            )
-            probe = probe_all_points(
-                graph_base,
-                points,
-                5220 + region_index * 2 + profile_index,
-            )
+            with tempfile.TemporaryDirectory(
+                prefix=f"resetp-osrm-{region}-{profile.name}-",
+                dir="/tmp",
+            ) as temporary_name:
+                temporary_base = (
+                    Path(temporary_name) / f"{region}-{profile.name}.osrm"
+                )
+                run_stage(
+                    [
+                        runtime["osrm-extract"]["path"],
+                        str(clip),
+                        "--profile",
+                        str(profile.path),
+                        "--threads",
+                        "6",
+                        "--output",
+                        str(temporary_base),
+                    ],
+                    environment,
+                    graph_dir / "extract.log",
+                    region,
+                    profile.name,
+                    "extract_apfs_runtime",
+                    rows,
+                    raw_runs,
+                )
+                run_stage(
+                    [
+                        runtime["osrm-contract"]["path"],
+                        str(temporary_base),
+                        "--threads",
+                        "6",
+                    ],
+                    environment,
+                    graph_dir / "contract.log",
+                    region,
+                    profile.name,
+                    "contract_apfs_runtime",
+                    rows,
+                    raw_runs,
+                )
+                probe = probe_all_points(
+                    temporary_base,
+                    points,
+                    5220 + region_index * 2 + profile_index,
+                )
+                copied_hashes: dict[str, str] = {}
+                for source_file in sorted(
+                    temporary_base.parent.glob(temporary_base.name + "*")
+                ):
+                    target_file = graph_dir / source_file.name
+                    shutil.copy2(source_file, target_file)
+                    source_hash = sha256(source_file)
+                    target_hash = sha256(target_file)
+                    if source_hash != target_hash:
+                        raise GraphBuildError(
+                            f"APFS-to-archive hash drift: {target_file}"
+                        )
+                    copied_hashes[target_file.name] = target_hash
             probe.update({"region": region, "profile": profile.name})
             probe_records.append(probe)
             atomic_json(OUT / "route_probe_checkpoint.json", {"records": probe_records})
@@ -388,6 +408,9 @@ def main() -> int:
                     "identity": f"{region}/{profile.name}",
                     "clip_sha256": clip_hash,
                     "profile_sha256": profile.sha256,
+                    "build_filesystem": "APFS /tmp",
+                    "archive_filesystem": "exFAT repository volume",
+                    "apfs_to_archive_copy_hashes": copied_hashes,
                     "route_probe": probe,
                     "files": {
                         str(path.relative_to(graph_dir)): sha256(path)
@@ -397,12 +420,14 @@ def main() -> int:
             )
 
     metadata = {
-        "schema": "resetp.china-stage2.sparse-connected-osrm-graphs.v3",
+        "schema": "resetp.china-stage2.sparse-connected-osrm-graphs.v5",
         "generated_utc": utc_now(),
         "reason": (
             "full-province v1 extract/contract succeeded but its spatial index "
-            "returned NoSegment for all tested coordinates and the broader v2 "
-            "clip repeated it; both are retained as failed-at-use evidence"
+            "returned NoSegment for all tested coordinates, the broader v2 "
+            "clip repeated it, v3 proved large indexes must be built on APFS, "
+            "and v4 proved small-component-size=0 can snap to disconnected "
+            "local roads; all failures are retained"
         ),
         "runtime": runtime,
         "profiles": [
@@ -411,6 +436,14 @@ def main() -> int:
         ],
         "regions": metadata_regions,
         "route_probes": probe_records,
+        "runtime_filesystem_contract": (
+            "build and route on APFS; archive to exFAT only after byte hashes "
+            "match; restore to APFS and reverify hashes before matrix routing"
+        ),
+        "endpoint_component_contract": (
+            "OSRM default small-component filtering retained; the phase1 "
+            "micro-probe override small-component-size=0 is forbidden here"
+        ),
         "search_evaluations": 0,
         "formal_search_allowed": False,
     }
@@ -427,12 +460,15 @@ def main() -> int:
         },
     )
     (OUT / "report.md").write_text(
-        "# China81 稀疏连通 OSRM 图 v3\n\n"
+        "# China81 稀疏连通 OSRM 图 v5\n\n"
         "从原冻结 PBF 保留各城市 China81 坐标周边全部道路，并保留区域内"
         "motorway/trunk/primary/secondary 城际主干，生成三个可复现稀疏连通输入，"
-        "再用冻结 CV/EV profile 构建六套 CH 图。每套图均通过该区域全部去重"
+        "再在 APFS 临时盘使用冻结 CV/EV profile 构建六套 CH 图。每套图均通过该区域全部去重"
         "China81 坐标的 Nearest API 吸附检查。旧全省图与宽区域裁剪图保留为"
-        "“构建通过但使用失败”的异常证据，不进入矩阵。\n\n"
+        "“构建通过但使用失败”的异常证据，不进入矩阵。图文件逐字节哈希一致后"
+        "才归档到 exFAT 仓库；矩阵运行前必须回读 APFS 并复核哈希。\n\n"
+        "正式图保留 OSRM 默认小分量过滤，禁止沿用微探针的"
+        "`--small-component-size 0`，避免端点吸附到孤立局部道路。\n\n"
         "本任务不调用求解器，搜索评价为 0；G1 冻结前仍不构成正式算法验收。\n",
         encoding="utf-8",
     )

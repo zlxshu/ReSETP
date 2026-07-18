@@ -100,6 +100,7 @@ def route_url(endpoint: str, profile: str, origin: Node, destination: Node) -> s
             "annotations": "distance,duration",
             "overview": "false",
             "steps": "false",
+            "radiuses": "10000;10000",
         }
     )
     return (
