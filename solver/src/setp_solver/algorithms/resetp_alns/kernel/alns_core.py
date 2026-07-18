@@ -280,6 +280,8 @@ def _make_operator_selector(
     warmup_per_pair: int = 10,
     epsilon: float = 0.10,
     target_iterations: int = 4000,
+    softmax_temperature_start: float = 1.0,
+    softmax_temperature_end: float = 0.1,
     op_coupling: np.ndarray | None = None,
     protected_destroy_indices: tuple[int, ...] = (),
 ) -> Any:
@@ -328,8 +330,8 @@ def _make_operator_selector(
             num_destroy=num_destroy,
             num_repair=num_repair,
             op_coupling=op_coupling,
-            temperature_start=1.0,
-            temperature_end=0.1,
+            temperature_start=float(softmax_temperature_start),
+            temperature_end=float(softmax_temperature_end),
             target_iterations=target_iterations,
         )
     if normalized == "chain_ucb":

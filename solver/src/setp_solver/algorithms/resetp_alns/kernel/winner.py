@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from contextlib import contextmanager
 from dataclasses import asdict, dataclass, replace
+import hashlib
 import json
 import math
 import os
@@ -224,6 +225,10 @@ class WinnerKernelConfig:
     refined_carbon_operators: bool = False
     refined_carbon_weight: float = 1.0
     include_sisr_string_removal: bool = False
+    capture_best_solutions: bool = False
+    softmax_temperature_start: float = 1.0
+    softmax_temperature_end: float = 0.1
+    split_selector_rng: bool = False
 
 
 @dataclass(frozen=True)
@@ -1622,6 +1627,12 @@ def _run_winner_variant(
         "max_runtime_seconds": float(config.max_runtime_seconds),
         "include_route_elimination": bool(config.include_route_elimination),
         "evaluations": int(evaluations),
+        "candidate_scores": int(getattr(run, "candidate_scores", 0)),
+        "repair_scores": int(getattr(run, "repair_scores", 0)),
+        "repair_delta_count": int(
+            getattr(run, "repair_delta_count", 0)
+        ),
+        "actual_moves": int(getattr(run, "actual_moves", 0)),
         "elapsed_seconds": time.perf_counter() - started,
         "best_solution": solution,
         "best_cost": cached_or_reference_model_cost(
@@ -1714,6 +1725,12 @@ def _run_winner_kernel_loop(
         selector_kind=selector_kind,
         balanced=_flag_enabled_from(flags, BALANCED_SELECTOR_FLAG),
         target_iterations=int(config.eval_budget),
+        softmax_temperature_start=float(
+            config.softmax_temperature_start
+        ),
+        softmax_temperature_end=float(
+            config.softmax_temperature_end
+        ),
         op_coupling=selector_coupling,
         protected_destroy_indices=protected_destroy_indices,
     )
@@ -1729,6 +1746,21 @@ def _run_winner_kernel_loop(
         "infeasible": 0,
     }
     rng = np.random.default_rng(config.seed)
+    selector_rng = rng
+    if config.split_selector_rng:
+        selector_rng = np.random.default_rng(
+            [
+                int(config.seed) % (2**32),
+                0x53454C45,
+            ]
+        )
+    selector_diagnostics = _empty_selector_diagnostics(
+        selector_kind=selector_kind,
+        split_selector_rng=bool(config.split_selector_rng),
+        temperature_start=float(config.softmax_temperature_start),
+        temperature_end=float(config.softmax_temperature_end),
+        target_iterations=int(config.eval_budget),
+    )
     target = int(config.eval_budget)
     started = time.perf_counter()
     history = [
@@ -1740,6 +1772,7 @@ def _run_winner_kernel_loop(
             started,
             "shared_warm_start",
             include_trace_fields=trace_diagnostic,
+            include_solution_snapshot=config.capture_best_solutions,
         )
     ]
     candidate_trace: list[dict[str, Any]] = []
@@ -1765,6 +1798,7 @@ def _run_winner_kernel_loop(
                         started,
                         "scan_restart",
                         include_trace_fields=trace_diagnostic,
+                        include_solution_snapshot=config.capture_best_solutions,
                     )
                 )
     while True:
@@ -1797,6 +1831,7 @@ def _run_winner_kernel_loop(
                             started,
                             "scan_rebuild",
                             include_trace_fields=trace_diagnostic,
+                            include_solution_snapshot=config.capture_best_solutions,
                         )
                     )
                 continue
@@ -1923,6 +1958,9 @@ def _run_winner_kernel_loop(
                                 started,
                                 structural_operator,
                                 include_trace_fields=trace_diagnostic,
+                                include_solution_snapshot=(
+                                    config.capture_best_solutions
+                                ),
                             )
                         )
                         _maybe_write_e2_checkpoint(
@@ -1995,14 +2033,36 @@ def _run_winner_kernel_loop(
         progress = _chain_phase_progress(selector_kind, moves, target)
         forced_cross_pair = _forced_cross_depot_pair(operator_set, context)
         if forced_cross_pair is None:
-            destroy_idx, repair_idx = selector(rng, best, current)
+            destroy_idx, repair_idx = selector(
+                selector_rng,
+                best,
+                current,
+            )
+            selector_info = (
+                selector.last_selection_info()
+                if hasattr(selector, "last_selection_info")
+                else {}
+            )
+            selection_source = "selector"
         else:
             destroy_idx, repair_idx = forced_cross_pair
+            selector_info = {
+                "selector_type": "forced_cross_depot",
+                "selector_phase": "forced",
+            }
+            selection_source = "forced_cross_depot"
             context.score_counts["cross_depot_forced_operator_calls"] = int(
                 context.score_counts.get("cross_depot_forced_operator_calls", 0)
             ) + 1
         destroy_name = operator_set.destroy_ops[int(destroy_idx)][0]
         repair_name = operator_set.repair_ops[int(repair_idx)][0]
+        _record_selector_choice(
+            selector_diagnostics,
+            destroy_name=destroy_name,
+            repair_name=repair_name,
+            selection_source=selection_source,
+            selector_info=selector_info,
+        )
         previous_obj = current.objective()
         previous_best_obj = best.objective()
         action = WinnerOperatorAction(
@@ -2153,11 +2213,11 @@ def _run_winner_kernel_loop(
         better_current = accepted and candidate_obj < previous_obj - 1e-9
         if trace_diagnostic:
             trace_row = dict(result.get("trace", {}))
-            selector_info = selector.last_selection_info() if hasattr(selector, "last_selection_info") else {}
             trace_row.update(
                 {
                     "move": int(moves),
                     "eval": int(context.budget.count if context.budget else 0),
+                    "selection_source": selection_source,
                     "previous_best_obj": float(previous_best_obj),
                     "accepted": bool(accepted),
                     "best_improved": bool(best_improved),
@@ -2200,6 +2260,7 @@ def _run_winner_kernel_loop(
                         started,
                         f"{destroy_name}+{repair_name}",
                         include_trace_fields=trace_diagnostic,
+                        include_solution_snapshot=config.capture_best_solutions,
                     )
                 )
                 _maybe_write_e2_checkpoint(
@@ -2221,6 +2282,12 @@ def _run_winner_kernel_loop(
                 len(operator_set.repair_ops),
                 selector_kind=selector_kind,
                 target_iterations=int(config.eval_budget),
+                softmax_temperature_start=float(
+                    config.softmax_temperature_start
+                ),
+                softmax_temperature_end=float(
+                    config.softmax_temperature_end
+                ),
                 op_coupling=selector_coupling,
                 protected_destroy_indices=protected_destroy_indices,
             )
@@ -2238,10 +2305,23 @@ def _run_winner_kernel_loop(
 
         feasible = len(e3_hard_violations(best.solution, context)) == 0
     actual_moves = sum(sum(row) for row in destroy_counts_out.values())
+    selector_diagnostics = _finalize_selector_diagnostics(
+        selector_diagnostics
+    )
+    selector_diagnostics["main_rng_final_state_sha256"] = (
+        _rng_state_fingerprint(rng)
+    )
+    selector_diagnostics["selector_rng_final_state_sha256"] = (
+        _rng_state_fingerprint(selector_rng)
+    )
+    selector_diagnostics["selection_count_closed"] = (
+        int(selector_diagnostics["selection_count"]) == int(actual_moves)
+    )
     timing_snapshot = ledger.snapshot() if ledger is not None else {}
     operator_counts_out = {
         "destroy": destroy_counts_out,
         "repair": repair_counts_out,
+        "selector": dict(selector_diagnostics),
         "scan": dict(scan_counts),
         "timing": timing_snapshot,
         "structural": dict(structural_counts),
@@ -2249,6 +2329,8 @@ def _run_winner_kernel_loop(
     }
     if trace_diagnostic:
         operator_counts_out["candidate_trace"] = candidate_trace
+    if config.capture_best_solutions:
+        operator_counts_out["final_rng_state"] = rng.bit_generator.state
     return AlnsRunResult(
         initial_solution,
         best.solution,
@@ -2317,6 +2399,7 @@ def _winner_history_entry(
     operator: str,
     *,
     include_trace_fields: bool = False,
+    include_solution_snapshot: bool = False,
 ) -> dict[str, Any]:
     with timed_section(context, "history_model_cost"):
         best_cost = cached_or_reference_model_cost(
@@ -2334,6 +2417,8 @@ def _winner_history_entry(
     if include_trace_fields:
         row["route_count"] = len(solution.routes)
         row["signature"] = solution_signature_hash(solution)
+    if include_solution_snapshot:
+        row["solution_snapshot"] = asdict(solution)
     return row
 
 
@@ -2542,6 +2627,159 @@ def _accept_winner_candidate(
     if str(destroy_name) == "vehicle_type_swap":
         return float(candidate_obj) < float(previous_obj) - 1e-9
     return bool(acceptance(rng, best, current, candidate))
+
+
+def _empty_selector_diagnostics(
+    *,
+    selector_kind: str,
+    split_selector_rng: bool,
+    temperature_start: float,
+    temperature_end: float,
+    target_iterations: int,
+) -> dict[str, Any]:
+    return {
+        "selector_kind": str(selector_kind),
+        "selection_rng_contract": (
+            "independent_seeded_stream"
+            if split_selector_rng
+            else "shared_main_stream"
+        ),
+        "softmax_temperature_start": float(temperature_start),
+        "softmax_temperature_end": float(temperature_end),
+        "temperature_schedule_basis": "outer_selector_updates",
+        "target_iterations": int(target_iterations),
+        "selection_count": 0,
+        "selector_sample_count": 0,
+        "softmax_sample_count": 0,
+        "forced_cross_depot_count": 0,
+        "pair_selection_counts": {},
+        "_temperature_count": 0,
+        "_temperature_sum": 0.0,
+        "_probability_count": 0,
+        "_probability_sum": 0.0,
+        "first_temperature": None,
+        "final_temperature": None,
+        "minimum_temperature": None,
+        "maximum_temperature": None,
+        "minimum_selected_probability": None,
+        "maximum_selected_probability": None,
+    }
+
+
+def _record_selector_choice(
+    diagnostics: dict[str, Any],
+    *,
+    destroy_name: str,
+    repair_name: str,
+    selection_source: str,
+    selector_info: dict[str, Any],
+) -> None:
+    diagnostics["selection_count"] = (
+        int(diagnostics["selection_count"]) + 1
+    )
+    if selection_source == "forced_cross_depot":
+        diagnostics["forced_cross_depot_count"] = (
+            int(diagnostics["forced_cross_depot_count"]) + 1
+        )
+    else:
+        diagnostics["selector_sample_count"] = (
+            int(diagnostics["selector_sample_count"]) + 1
+        )
+        if str(selector_info.get("selector_type", "")) == "softmax":
+            diagnostics["softmax_sample_count"] = (
+                int(diagnostics["softmax_sample_count"]) + 1
+            )
+
+    pair_id = f"{destroy_name}+{repair_name}"
+    pair_counts = diagnostics["pair_selection_counts"]
+    pair_counts[pair_id] = int(pair_counts.get(pair_id, 0)) + 1
+
+    _record_finite_selector_metric(
+        diagnostics,
+        selector_info.get("selector_temperature"),
+        prefix="temperature",
+    )
+    _record_finite_selector_metric(
+        diagnostics,
+        selector_info.get("selector_probability"),
+        prefix="probability",
+    )
+
+
+def _record_finite_selector_metric(
+    diagnostics: dict[str, Any],
+    value: Any,
+    *,
+    prefix: str,
+) -> None:
+    try:
+        numeric = float(value)
+    except (TypeError, ValueError):
+        return
+    if not math.isfinite(numeric):
+        return
+
+    count_key = f"_{prefix}_count"
+    sum_key = f"_{prefix}_sum"
+    diagnostics[count_key] = int(diagnostics[count_key]) + 1
+    diagnostics[sum_key] = float(diagnostics[sum_key]) + numeric
+    if prefix == "temperature":
+        if diagnostics["first_temperature"] is None:
+            diagnostics["first_temperature"] = numeric
+        diagnostics["final_temperature"] = numeric
+        minimum_key = "minimum_temperature"
+        maximum_key = "maximum_temperature"
+    else:
+        minimum_key = "minimum_selected_probability"
+        maximum_key = "maximum_selected_probability"
+    current_minimum = diagnostics[minimum_key]
+    current_maximum = diagnostics[maximum_key]
+    diagnostics[minimum_key] = (
+        numeric
+        if current_minimum is None
+        else min(float(current_minimum), numeric)
+    )
+    diagnostics[maximum_key] = (
+        numeric
+        if current_maximum is None
+        else max(float(current_maximum), numeric)
+    )
+
+
+def _finalize_selector_diagnostics(
+    diagnostics: dict[str, Any],
+) -> dict[str, Any]:
+    finalized = dict(diagnostics)
+    temperature_count = int(finalized.pop("_temperature_count"))
+    temperature_sum = float(finalized.pop("_temperature_sum"))
+    probability_count = int(finalized.pop("_probability_count"))
+    probability_sum = float(finalized.pop("_probability_sum"))
+    finalized["mean_temperature"] = (
+        temperature_sum / temperature_count
+        if temperature_count
+        else None
+    )
+    finalized["mean_selected_probability"] = (
+        probability_sum / probability_count
+        if probability_count
+        else None
+    )
+    finalized["temperature_sample_count"] = temperature_count
+    finalized["probability_sample_count"] = probability_count
+    finalized["pair_selection_counts"] = dict(
+        finalized["pair_selection_counts"]
+    )
+    return finalized
+
+
+def _rng_state_fingerprint(rng: np.random.Generator) -> str:
+    payload = json.dumps(
+        rng.bit_generator.state,
+        sort_keys=True,
+        separators=(",", ":"),
+        default=str,
+    ).encode("utf-8")
+    return hashlib.sha256(payload).hexdigest()
 
 
 def _selector_kind_from_flags(flags: dict[str, str]) -> str:
