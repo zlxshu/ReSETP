@@ -5,9 +5,9 @@ The upstream copyright notice and license are retained in
 """
 from .accept import HillClimbing, RecordToRecordTravel, SimulatedAnnealing, update
 from .outcome import Outcome
-from .select import AlphaUCB, BalancedAlphaUCB, EpsilonDecayAlphaUCB, MinimumCoverageAlphaUCB, SoftmaxAlphaUCB, ThompsonPairSelector
+from .select import AlphaUCB, AveragedSegmentedRouletteWheel, BalancedAlphaUCB, EpsilonDecayAlphaUCB, MinimumCoverageAlphaUCB, SoftmaxAlphaUCB, ThompsonPairSelector
 
 __all__ = [
-    "AlphaUCB", "BalancedAlphaUCB", "EpsilonDecayAlphaUCB", "HillClimbing", "MinimumCoverageAlphaUCB", "Outcome",
+    "AlphaUCB", "AveragedSegmentedRouletteWheel", "BalancedAlphaUCB", "EpsilonDecayAlphaUCB", "HillClimbing", "MinimumCoverageAlphaUCB", "Outcome",
     "RecordToRecordTravel", "SimulatedAnnealing", "SoftmaxAlphaUCB", "ThompsonPairSelector", "update",
 ]

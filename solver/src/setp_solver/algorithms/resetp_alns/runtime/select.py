@@ -192,6 +192,193 @@ class AlphaUCB(OperatorSelectionScheme):
         return d_idx, r_idx
 
 
+class AveragedSegmentedRouletteWheel(OperatorSelectionScheme):
+    """Segmented ALNS roulette with score-per-use weight updates.
+
+    This follows the classical Ropke-Pisinger update structure: operator
+    probabilities stay fixed inside a segment, then each used operator's
+    weight is blended with its average reward in that segment.  Dividing by
+    the number of uses prevents a frequently selected operator from gaining
+    weight merely because it was called more often.
+
+    The implementation is project-local so the score-per-use formula is
+    explicit.  It reuses the MIT-licensed selection base retained in this
+    directory, but does not claim the selection rule as a new contribution.
+    """
+
+    def __init__(
+        self,
+        scores: Sequence[float],
+        reaction: float,
+        segment_length: int,
+        num_destroy: int,
+        num_repair: int,
+        op_coupling: np.ndarray | None = None,
+    ) -> None:
+        super().__init__(num_destroy, num_repair, op_coupling)
+        if len(scores) < 4:
+            raise ValueError(f"Expected four scores, found {len(scores)}")
+        if any(float(score) < 0.0 for score in scores):
+            raise ValueError("Negative scores are not understood.")
+        if not 0.0 <= float(reaction) <= 1.0:
+            raise ValueError("reaction must lie in [0, 1].")
+        if int(segment_length) < 1:
+            raise ValueError("segment_length must be positive.")
+
+        self._scores = [float(score) for score in scores]
+        self._reaction = float(reaction)
+        self._segment_length = int(segment_length)
+        self._destroy_weights = np.ones(num_destroy, dtype=float)
+        self._repair_weights = np.ones(num_repair, dtype=float)
+        self._destroy_segment_scores = np.zeros(
+            num_destroy,
+            dtype=float,
+        )
+        self._repair_segment_scores = np.zeros(
+            num_repair,
+            dtype=float,
+        )
+        self._destroy_segment_uses = np.zeros(num_destroy, dtype=int)
+        self._repair_segment_uses = np.zeros(num_repair, dtype=int)
+        self._iter = 0
+        self._completed_segments = 0
+
+    @property
+    def reaction(self) -> float:
+        return self._reaction
+
+    @property
+    def segment_length(self) -> int:
+        return self._segment_length
+
+    @property
+    def completed_segments(self) -> int:
+        return self._completed_segments
+
+    @property
+    def destroy_weights(self) -> np.ndarray:
+        return self._destroy_weights.copy()
+
+    @property
+    def repair_weights(self) -> np.ndarray:
+        return self._repair_weights.copy()
+
+    def __call__(
+        self,
+        rng: object,
+        best: object,
+        curr: object,
+    ) -> tuple[int, int]:
+        if (
+            self._iter > 0
+            and self._iter % self._segment_length == 0
+        ):
+            self._close_segment()
+
+        destroy_probabilities = self._normalized(
+            self._destroy_weights
+        )
+        destroy_idx = self._choice(
+            rng,
+            np.arange(self.num_destroy),
+            destroy_probabilities,
+        )
+        coupled_repair_indices = np.flatnonzero(
+            self.op_coupling[destroy_idx]
+        )
+        repair_probabilities = self._normalized(
+            self._repair_weights[coupled_repair_indices]
+        )
+        repair_position = self._choice(
+            rng,
+            np.arange(len(coupled_repair_indices)),
+            repair_probabilities,
+        )
+        repair_idx = int(coupled_repair_indices[repair_position])
+        pair_probability = float(
+            destroy_probabilities[destroy_idx]
+            * repair_probabilities[repair_position]
+        )
+        self._record_selection(
+            destroy_idx,
+            repair_idx,
+            selector_type="averaged_segmented_roulette",
+            selector_phase=f"segment_{self._completed_segments + 1}",
+            selector_value=float(
+                self._destroy_weights[destroy_idx]
+                + self._repair_weights[repair_idx]
+            ),
+            selector_probability=pair_probability,
+        )
+        return destroy_idx, repair_idx
+
+    def update(
+        self,
+        candidate: object,
+        d_idx: int,
+        r_idx: int,
+        outcome: int,
+    ) -> None:
+        score = self._scores[int(outcome)]
+        self._destroy_segment_scores[int(d_idx)] += score
+        self._repair_segment_scores[int(r_idx)] += score
+        self._destroy_segment_uses[int(d_idx)] += 1
+        self._repair_segment_uses[int(r_idx)] += 1
+        self._iter += 1
+
+    def _close_segment(self) -> None:
+        self._blend_used(
+            self._destroy_weights,
+            self._destroy_segment_scores,
+            self._destroy_segment_uses,
+        )
+        self._blend_used(
+            self._repair_weights,
+            self._repair_segment_scores,
+            self._repair_segment_uses,
+        )
+        self._destroy_segment_scores.fill(0.0)
+        self._repair_segment_scores.fill(0.0)
+        self._destroy_segment_uses.fill(0)
+        self._repair_segment_uses.fill(0)
+        self._completed_segments += 1
+
+    def _blend_used(
+        self,
+        weights: np.ndarray,
+        scores: np.ndarray,
+        uses: np.ndarray,
+    ) -> None:
+        used = uses > 0
+        if not np.any(used):
+            return
+        averages = scores[used] / uses[used]
+        weights[used] = (
+            (1.0 - self._reaction) * weights[used]
+            + self._reaction * averages
+        )
+
+    @staticmethod
+    def _normalized(weights: np.ndarray) -> np.ndarray:
+        total = float(np.sum(weights))
+        if not math.isfinite(total) or total <= 0.0:
+            raise RuntimeError("roulette weights are not normalizable")
+        probabilities = np.asarray(weights, dtype=float) / total
+        if not np.all(np.isfinite(probabilities)):
+            raise RuntimeError("roulette probabilities are not finite")
+        return probabilities
+
+    @staticmethod
+    def _choice(
+        rng: object,
+        choices: np.ndarray,
+        probabilities: np.ndarray,
+    ) -> int:
+        if not hasattr(rng, "choice"):
+            raise TypeError("roulette selector requires rng.choice")
+        return int(rng.choice(choices, p=probabilities))
+
+
 class BalancedAlphaUCB(AlphaUCB):
     """Diagnostic selector that prevents early pair starvation.
 

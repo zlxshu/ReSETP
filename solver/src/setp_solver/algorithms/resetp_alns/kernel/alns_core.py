@@ -42,6 +42,7 @@ from setp_solver.algorithms.resetp_alns.operators.local_search import improve_so
 from setp_solver.algorithms.resetp_alns.operators.repair_scoring import route_model_cost_delta
 from setp_solver.algorithms.resetp_alns.runtime import (
     AlphaUCB,
+    AveragedSegmentedRouletteWheel,
     BalancedAlphaUCB,
     EpsilonDecayAlphaUCB,
     HillClimbing,
@@ -282,6 +283,8 @@ def _make_operator_selector(
     target_iterations: int = 4000,
     softmax_temperature_start: float = 1.0,
     softmax_temperature_end: float = 0.1,
+    segmented_roulette_reaction: float = 0.1,
+    segmented_roulette_length: int = 100,
     op_coupling: np.ndarray | None = None,
     protected_destroy_indices: tuple[int, ...] = (),
 ) -> Any:
@@ -333,6 +336,15 @@ def _make_operator_selector(
             temperature_start=float(softmax_temperature_start),
             temperature_end=float(softmax_temperature_end),
             target_iterations=target_iterations,
+        )
+    if normalized == "averaged_segmented_roulette":
+        return AveragedSegmentedRouletteWheel(
+            [20.0, 8.0, 2.0, 0.05],
+            reaction=float(segmented_roulette_reaction),
+            segment_length=int(segmented_roulette_length),
+            num_destroy=num_destroy,
+            num_repair=num_repair,
+            op_coupling=op_coupling,
         )
     if normalized == "chain_ucb":
         return AlphaUCB(

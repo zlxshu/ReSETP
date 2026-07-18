@@ -115,6 +115,7 @@ _CRUSH_FLAG_NAMES = (
     "SETP_ALNS_CRUSH_EPS_DECAY_SELECTOR",
     "SETP_ALNS_CRUSH_THOMPSON_SELECTOR",
     "SETP_ALNS_CRUSH_SOFTMAX_SELECTOR",
+    "SETP_ALNS_CRUSH_AVERAGED_SEGMENTED_ROULETTE",
     "SETP_ALNS_CRUSH_MINIMUM_COVERAGE_SELECTOR",
     "SETP_ALNS_CRUSH_CHAIN_UCB_SELECTOR",
     "SETP_ALNS_CRUSH_ROUTE_POOL_RECOMBINATION",
@@ -131,6 +132,9 @@ BALANCED_SELECTOR_FLAG = "SETP_ALNS_CRUSH_BALANCED_SELECTOR"
 EPS_DECAY_SELECTOR_FLAG = "SETP_ALNS_CRUSH_EPS_DECAY_SELECTOR"
 THOMPSON_SELECTOR_FLAG = "SETP_ALNS_CRUSH_THOMPSON_SELECTOR"
 SOFTMAX_SELECTOR_FLAG = "SETP_ALNS_CRUSH_SOFTMAX_SELECTOR"
+AVERAGED_SEGMENTED_ROULETTE_FLAG = (
+    "SETP_ALNS_CRUSH_AVERAGED_SEGMENTED_ROULETTE"
+)
 MINIMUM_COVERAGE_SELECTOR_FLAG = "SETP_ALNS_CRUSH_MINIMUM_COVERAGE_SELECTOR"
 CHAIN_UCB_SELECTOR_FLAG = "SETP_ALNS_CRUSH_CHAIN_UCB_SELECTOR"
 SELECTOR_FLAGS = (
@@ -138,6 +142,7 @@ SELECTOR_FLAGS = (
     EPS_DECAY_SELECTOR_FLAG,
     THOMPSON_SELECTOR_FLAG,
     SOFTMAX_SELECTOR_FLAG,
+    AVERAGED_SEGMENTED_ROULETTE_FLAG,
     MINIMUM_COVERAGE_SELECTOR_FLAG,
     CHAIN_UCB_SELECTOR_FLAG,
 )
@@ -192,6 +197,7 @@ E2_ALNS_COMPONENT_SOURCES = {
     EPS_DECAY_SELECTOR_FLAG: "Diagnostic only: balanced scheduler with decaying epsilon exploration",
     THOMPSON_SELECTOR_FLAG: "Diagnostic only: Thompson-sampling operator pair scheduler",
     SOFTMAX_SELECTOR_FLAG: "Diagnostic only: softmax operator pair scheduler over AlphaUCB values",
+    AVERAGED_SEGMENTED_ROULETTE_FLAG: "Development only: classical segment-fixed roulette with score-per-use weight updates",
     MINIMUM_COVERAGE_SELECTOR_FLAG: "Diagnostic only: one-pass legal-pair coverage plus sparse structural-family refresh",
     CHAIN_UCB_SELECTOR_FLAG: "Diagnostic only: bounded rewards preserve accepted-move continuity without twenty-point lock-in",
     ROUTE_POOL_RECOMBINATION_FLAG: "Diagnostic only: route-pool recombination on stagnation; candidate still uses existing evaluator/checker",
@@ -228,6 +234,8 @@ class WinnerKernelConfig:
     capture_best_solutions: bool = False
     softmax_temperature_start: float = 1.0
     softmax_temperature_end: float = 0.1
+    segmented_roulette_reaction: float = 0.1
+    segmented_roulette_length: int = 100
     split_selector_rng: bool = False
 
 
@@ -387,6 +395,7 @@ def winner_variant_flags(*, include_route_elimination: bool = False) -> dict[str
         EPS_DECAY_SELECTOR_FLAG: "0",
         THOMPSON_SELECTOR_FLAG: "0",
         SOFTMAX_SELECTOR_FLAG: "0",
+        AVERAGED_SEGMENTED_ROULETTE_FLAG: "0",
         MINIMUM_COVERAGE_SELECTOR_FLAG: "0",
         ROUTE_POOL_RECOMBINATION_FLAG: "0",
         RVND_SWAPSTAR_FLAG: "0",
@@ -425,6 +434,7 @@ def e2_alns_variant_flags() -> dict[str, str]:
         EPS_DECAY_SELECTOR_FLAG: "0",
         THOMPSON_SELECTOR_FLAG: "0",
         SOFTMAX_SELECTOR_FLAG: "0",
+        AVERAGED_SEGMENTED_ROULETTE_FLAG: "0",
         MINIMUM_COVERAGE_SELECTOR_FLAG: "0",
         ROUTE_POOL_RECOMBINATION_FLAG: "0",
         RVND_SWAPSTAR_FLAG: "0",
@@ -457,6 +467,7 @@ def e2_alns_scan_bridge_flags() -> dict[str, str]:
         EPS_DECAY_SELECTOR_FLAG: "0",
         THOMPSON_SELECTOR_FLAG: "0",
         SOFTMAX_SELECTOR_FLAG: "0",
+        AVERAGED_SEGMENTED_ROULETTE_FLAG: "0",
         MINIMUM_COVERAGE_SELECTOR_FLAG: "0",
         ROUTE_POOL_RECOMBINATION_FLAG: "0",
         RVND_SWAPSTAR_FLAG: "0",
@@ -1731,6 +1742,12 @@ def _run_winner_kernel_loop(
         softmax_temperature_end=float(
             config.softmax_temperature_end
         ),
+        segmented_roulette_reaction=float(
+            config.segmented_roulette_reaction
+        ),
+        segmented_roulette_length=int(
+            config.segmented_roulette_length
+        ),
         op_coupling=selector_coupling,
         protected_destroy_indices=protected_destroy_indices,
     )
@@ -1759,6 +1776,12 @@ def _run_winner_kernel_loop(
         split_selector_rng=bool(config.split_selector_rng),
         temperature_start=float(config.softmax_temperature_start),
         temperature_end=float(config.softmax_temperature_end),
+        segmented_roulette_reaction=float(
+            config.segmented_roulette_reaction
+        ),
+        segmented_roulette_length=int(
+            config.segmented_roulette_length
+        ),
         target_iterations=int(config.eval_budget),
     )
     target = int(config.eval_budget)
@@ -2288,6 +2311,12 @@ def _run_winner_kernel_loop(
                 softmax_temperature_end=float(
                     config.softmax_temperature_end
                 ),
+                segmented_roulette_reaction=float(
+                    config.segmented_roulette_reaction
+                ),
+                segmented_roulette_length=int(
+                    config.segmented_roulette_length
+                ),
                 op_coupling=selector_coupling,
                 protected_destroy_indices=protected_destroy_indices,
             )
@@ -2303,8 +2332,20 @@ def _run_winner_kernel_loop(
     with timed_section(context, "final_check"):
         from setp_solver.search.e3_multitrip_runtime import hard_violations as e3_hard_violations
 
-        feasible = len(e3_hard_violations(best.solution, context)) == 0
+    feasible = len(e3_hard_violations(best.solution, context)) == 0
     actual_moves = sum(sum(row) for row in destroy_counts_out.values())
+    if hasattr(selector, "completed_segments"):
+        selector_diagnostics["completed_segments"] = int(
+            selector.completed_segments
+        )
+    if hasattr(selector, "destroy_weights"):
+        selector_diagnostics["final_destroy_weights"] = [
+            float(value) for value in selector.destroy_weights
+        ]
+    if hasattr(selector, "repair_weights"):
+        selector_diagnostics["final_repair_weights"] = [
+            float(value) for value in selector.repair_weights
+        ]
     selector_diagnostics = _finalize_selector_diagnostics(
         selector_diagnostics
     )
@@ -2635,6 +2676,8 @@ def _empty_selector_diagnostics(
     split_selector_rng: bool,
     temperature_start: float,
     temperature_end: float,
+    segmented_roulette_reaction: float,
+    segmented_roulette_length: int,
     target_iterations: int,
 ) -> dict[str, Any]:
     return {
@@ -2646,6 +2689,12 @@ def _empty_selector_diagnostics(
         ),
         "softmax_temperature_start": float(temperature_start),
         "softmax_temperature_end": float(temperature_end),
+        "segmented_roulette_reaction": float(
+            segmented_roulette_reaction
+        ),
+        "segmented_roulette_length": int(
+            segmented_roulette_length
+        ),
         "temperature_schedule_basis": "outer_selector_updates",
         "target_iterations": int(target_iterations),
         "selection_count": 0,
@@ -2793,6 +2842,9 @@ def _selector_kind_from_flags(flags: dict[str, str]) -> str:
         EPS_DECAY_SELECTOR_FLAG: "eps_decay",
         THOMPSON_SELECTOR_FLAG: "thompson",
         SOFTMAX_SELECTOR_FLAG: "softmax",
+        AVERAGED_SEGMENTED_ROULETTE_FLAG: (
+            "averaged_segmented_roulette"
+        ),
         MINIMUM_COVERAGE_SELECTOR_FLAG: "minimum_coverage",
         CHAIN_UCB_SELECTOR_FLAG: "chain_ucb",
     }
