@@ -1,0 +1,94 @@
+{
+  "battery_kwh": 280.0,
+  "contract_repo_relative": "docs/handoff/softmax_mechanism_training_contract_20260719.md",
+  "contract_sha256": "23305502fa251f9a05edb2f7599b8310fd789aadf47906fa5931753907024734",
+  "created_at_utc": "2026-07-18T21:35:34.512131+00:00",
+  "elapsed_seconds": 17.593981457990594,
+  "eval_budget": 100,
+  "formal_l_main_activated": false,
+  "git_head": "2890c6eef19068c145f0320075e9ef9338507f29",
+  "git_status_short": "M HANDOFF.md\n M baselines/e2_alns/build_final_external_baseline_freeze_20260717.py\n M baselines/e2_alns/probe_pyvrp_0134_api_20260717.py\n M docs/handoff/algorithm_optimization_prd_20260718.md\n M docs/handoff/algorithm_stage2_architecture_20260719.md\n M docs/handoff/e2_solomon_external_strong_baseline_interface_20260717.md\n M docs/handoff/memory/MEMORY.md\n?? baselines/algorithm_prototypes/algo_reset_20260719/\n?? baselines/algorithm_prototypes/mechanism_hgs_alns_20260718/mechanism_v8_interleaved_microgate/\n?? baselines/algorithm_prototypes/mechanism_hgs_alns_20260718/mechanism_v9_seeded_microgate/\n?? baselines/algorithm_prototypes/mechanism_hgs_alns_20260718/run_v8_interleaved_microgate.py\n?? baselines/algorithm_prototypes/mechanism_hgs_alns_20260718/run_v9_seeded_microgate.py\n?? baselines/algorithm_prototypes/mechanism_hgs_alns_20260718/v8_interleaved_mechanism_solver.py\n?? baselines/algorithm_prototypes/mechanism_hgs_alns_20260718/v9_mechanism_seeded_solver.py\n?? baselines/algorithm_prototypes/unified_mechanism_alns_20260719/cyclic_mechanism_solver.py\n?? baselines/algorithm_prototypes/unified_mechanism_alns_20260719/mechanism_elite_solver.py\n?? baselines/algorithm_prototypes/unified_mechanism_alns_20260719/test_mechanism_elite_solver.py\n?? baselines/e2_alns/build_homberger_headroom_blind_bundles_20260719.py\n?? baselines/e2_alns/external_tools/pyvrp-0.12.2/\n?? baselines/e2_alns/homberger_headroom_blind_bundles_20260719/\n?? baselines/e2_alns/probe_pyvrp_hgs_0122_20260719.py\n?? baselines/e2_alns/pyvrp_0134_tool_probe_20260717_v4_repo_runtime/\n?? baselines/e2_alns/pyvrp_hgs_0122_tool_freeze_20260719/\n?? docs/handoff/algorithm_hgs_alns_fusion_reset_20260719.md\n?? docs/handoff/codex_prompts/20260719_mechanism_route_pool_incremental_gate.md\n?? models/scripts/__pycache__/._build_e2_benchmark_instances.cpython-313.pyc\n?? models/scripts/__pycache__/build_e2_benchmark_instances.cpython-313.pyc",
+  "post_run_packaging_corrections": [
+    "artifact_hashes.json was narrowed to reader-facing files after AppleDouble sidecars were observed; no score, witness, comparison, decision, or report value changed",
+    "raw_runs.csv line endings were normalized from CRLF to LF for repository hygiene; no CSV field or value changed"
+  ],
+  "runner_source_repo_relative": "baselines/algorithm_prototypes/unified_mechanism_alns_20260719/run_softmax_training_confirmation.py",
+  "runner_source_sha256_at_scoring": "72d40ab94ea938aac0497322bba2fb056d806375726195963e07c896dc81f153",
+  "instances": [
+    {
+      "bundle_repo_relative": "baselines/algorithm_prototypes/unified_mechanism_alns_20260719/blind_d1_bundles/DEV-INIT-D1-DONOR03-SRC25-N54-DEP2",
+      "instance_id": "DEV-INIT-D1-DONOR03-SRC25-N54-DEP2"
+    },
+    {
+      "bundle_repo_relative": "baselines/algorithm_prototypes/unified_mechanism_alns_20260719/blind_d1_bundles/DEV-INIT-D1-DONOR03-SRC50-N108-DEP2",
+      "instance_id": "DEV-INIT-D1-DONOR03-SRC50-N108-DEP2"
+    },
+    {
+      "bundle_repo_relative": "baselines/algorithm_prototypes/unified_mechanism_alns_20260719/fresh_d2_bundles/DEV-DUAL-D2-GROUP456-SRC10-N21-DEP2",
+      "instance_id": "DEV-DUAL-D2-GROUP456-SRC10-N21-DEP2"
+    },
+    {
+      "bundle_repo_relative": "baselines/algorithm_prototypes/unified_mechanism_alns_20260719/fresh_d2_bundles/DEV-DUAL-D2-GROUP789-SRC15-N34-DEP2",
+      "instance_id": "DEV-DUAL-D2-GROUP789-SRC15-N34-DEP2"
+    }
+  ],
+  "license_repo_relative": "solver/src/setp_solver/algorithms/resetp_alns/runtime/LICENSE-N-WOUDA-ALNS.md",
+  "policies": {
+    "control_alpha": {
+      "enable_softmax": false,
+      "runtime_cap_seconds": 3600.0,
+      "split_selector_rng": true,
+      "temperature_end": 1.0,
+      "temperature_start": 1.0,
+      "total_eval_budget": 100
+    },
+    "softmax_fixed_1": {
+      "enable_softmax": true,
+      "runtime_cap_seconds": 3600.0,
+      "split_selector_rng": true,
+      "temperature_end": 1.0,
+      "temperature_start": 1.0,
+      "total_eval_budget": 100
+    },
+    "softmax_linear_1_to_0p1": {
+      "enable_softmax": true,
+      "runtime_cap_seconds": 3600.0,
+      "split_selector_rng": true,
+      "temperature_end": 0.1,
+      "temperature_start": 1.0,
+      "total_eval_budget": 100
+    }
+  },
+  "run_orders": {
+    "DEV-DUAL-D2-GROUP456-SRC10-N21-DEP2": [
+      "control_alpha",
+      "softmax_fixed_1",
+      "softmax_linear_1_to_0p1"
+    ],
+    "DEV-DUAL-D2-GROUP789-SRC15-N34-DEP2": [
+      "softmax_linear_1_to_0p1",
+      "softmax_fixed_1",
+      "control_alpha"
+    ],
+    "DEV-INIT-D1-DONOR03-SRC25-N54-DEP2": [
+      "control_alpha",
+      "softmax_linear_1_to_0p1",
+      "softmax_fixed_1"
+    ],
+    "DEV-INIT-D1-DONOR03-SRC50-N108-DEP2": [
+      "softmax_fixed_1",
+      "softmax_linear_1_to_0p1",
+      "control_alpha"
+    ]
+  },
+  "schema_version": "resetp.softmax-mechanism-training-confirmation.v1",
+  "seed": 1,
+  "selector_source": "N-Wouda/alns AlphaUCB adaptation plus project Softmax extension",
+  "source_hashes": {
+    "alns_core.py": "8d832f4964a123fda317876b3572145548a7ea15940ae49f7aaa528b84189b3c",
+    "select.py": "785bcf79c1ff268003214405e051f6386db4e7a5499482485f91333429c6bbea",
+    "softmax_mechanism_solver.py": "1d195b7eadab906a9d0fb67e8cc64d7abadd78184c3f554afaa4cdb645472253",
+    "winner.py": "2c6ff2ec2a15ec2dfedf4b65370fa463745eb288fb047af9eb732377de8c687d"
+  },
+  "stage2_activated": false
+}

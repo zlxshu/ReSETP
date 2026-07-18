@@ -168,11 +168,19 @@ def row_from_result(
     activity = dict(result.mechanism_activity)
     selector = dict(activity["selector_diagnostics"])
     score_counts = dict(activity["score_counts"])
+    actual_moves = int(activity["alns_actual_moves"])
+    selector_selection_count = int(selector["selection_count"])
+    selector_count_closed = bool(
+        selector["selection_count_closed"]
+    )
     exact_budget = (
         int(result.evaluations)
         == int(activity["candidate_scores"])
         == int(score_counts.get("candidate", -1))
+        == actual_moves
+        == selector_selection_count
         == BUDGET
+        and selector_count_closed
     )
     return {
         "instance_id": instance_id,
@@ -187,7 +195,7 @@ def row_from_result(
         ),
         "reference_scores": int(score_counts.get("reference", 0)),
         "repair_delta_count": int(activity["repair_delta_count"]),
-        "actual_moves": int(activity["alns_actual_moves"]),
+        "actual_moves": actual_moves,
         "exact_budget": bool(exact_budget),
         "feasible": bool(result.feasible),
         "best_cost": float(result.best_cost),
@@ -209,12 +217,8 @@ def row_from_result(
         "selector_rng_contract": str(
             selector["selection_rng_contract"]
         ),
-        "selector_selection_count": int(
-            selector["selection_count"]
-        ),
-        "selector_count_closed": bool(
-            selector["selection_count_closed"]
-        ),
+        "selector_selection_count": selector_selection_count,
+        "selector_count_closed": selector_count_closed,
         "softmax_sample_count": int(
             selector["softmax_sample_count"]
         ),
@@ -542,7 +546,11 @@ def main() -> int:
         "policy_id",
     ]
     buffer = io.StringIO(newline="")
-    writer = csv.DictWriter(buffer, fieldnames=fields)
+    writer = csv.DictWriter(
+        buffer,
+        fieldnames=fields,
+        lineterminator="\n",
+    )
     writer.writeheader()
     writer.writerows(rows)
     atomic_text(OUT / "raw_runs.csv", buffer.getvalue())
@@ -557,7 +565,11 @@ def main() -> int:
     hashes = {
         path.name: sha256(path)
         for path in sorted(OUT.iterdir())
-        if path.is_file() and path.name != "artifact_hashes.json"
+        if (
+            path.is_file()
+            and path.name != "artifact_hashes.json"
+            and not path.name.startswith("._")
+        )
     }
     atomic_json(OUT / "artifact_hashes.json", hashes)
     print(json.dumps(decision, ensure_ascii=False, sort_keys=True))
