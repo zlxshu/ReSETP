@@ -336,6 +336,9 @@ def run_contextual_expert_alns(
         final_solution = completed.solution
         claimed_final_cost = float(completed.cost)
         completion_activity = dict(completed.activity)
+        completion_selected_branch = str(
+            completed.selected_branch
+        )
     else:
         final_solution = raw_solution
         claimed_final_cost = float(raw_cost)
@@ -343,6 +346,7 @@ def run_contextual_expert_alns(
             "full_solution_replays": 0,
             "disabled_for_behaviour_isolation": True,
         }
+        completion_selected_branch = "disabled"
     completion_elapsed = time.perf_counter() - completion_started
     final_cost = independent_cost(
         bundle_dir,
@@ -418,6 +422,36 @@ def run_contextual_expert_alns(
             ),
             "terminal_reference_replays": int(
                 completion_activity.get("full_solution_replays", 0)
+            ),
+            "post_search_full_solution_replays": int(
+                2
+                + int(
+                    completion_activity.get(
+                        "full_solution_replays",
+                        0,
+                    )
+                )
+            ),
+            "terminal_selected_branch": (
+                completion_selected_branch
+            ),
+            "terminal_route_local_exact_evaluations": int(
+                completion_activity.get(
+                    "route_local_exact_evaluations",
+                    0,
+                )
+            ),
+            "terminal_route_proxy_evaluations": int(
+                completion_activity.get(
+                    "route_proxy_evaluations",
+                    0,
+                )
+            ),
+            "terminal_route_local_schedule_evaluations": int(
+                completion_activity.get(
+                    "route_local_schedule_evaluations",
+                    0,
+                )
             ),
             "raw_search_elapsed_seconds": float(raw_elapsed),
             "terminal_completion_elapsed_seconds": float(

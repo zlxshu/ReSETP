@@ -165,6 +165,10 @@ def test_fleet_binding_budget_microgate_stays_in_one_loop(
     assert result.evaluations == budget
     assert activity["search_loop_count"] == 1
     assert activity["search_restart_count"] == 0
+    assert activity["terminal_completion_enabled"] is False
+    assert activity["terminal_selected_branch"] == "disabled"
+    assert activity["terminal_reference_replays"] == 0
+    assert activity["post_search_full_solution_replays"] == 2
     assert activity["mechanism_candidate_evaluations"] == expected_mechanism
     assert activity["generic_candidate_evaluations"] == (
         budget - expected_mechanism
@@ -251,6 +255,38 @@ def test_responsibility_nonbinding_attempt_is_not_charged() -> None:
     assert activity["generic_candidate_evaluations"] == 1
     assert mechanism["complete_candidate_evaluations"][RESPONSIBILITY] == 0
     assert mechanism["accepted"][RESPONSIBILITY] == 0
+
+
+def test_terminal_completion_exposes_all_post_search_ledgers() -> None:
+    result = run_contextual_expert_alns(
+        PLATEAU_BUNDLE,
+        seed=1,
+        prices=PRICES_280,
+        initial_solution=all_cv_plateau(),
+        config=ContextualExpertConfig(
+            total_eval_budget=0,
+            apply_terminal_completion=True,
+            enable_prescriptions=False,
+        ),
+    )
+    activity = result.mechanism_activity
+    assert activity["terminal_completion_enabled"] is True
+    assert activity["terminal_selected_branch"] in {
+        "responsibility",
+        "bypass_responsibility",
+    }
+    assert activity["terminal_reference_replays"] >= 2
+    assert activity["post_search_full_solution_replays"] == (
+        2 + activity["terminal_reference_replays"]
+    )
+    assert activity["terminal_route_local_exact_evaluations"] >= 0
+    assert activity["terminal_route_proxy_evaluations"] >= 0
+    assert (
+        activity["terminal_route_local_schedule_evaluations"]
+        >= 0
+    )
+
+
 def _toy_instance() -> Instance:
     nodes = [
         Node("D1", "d", 0.0, 0.0),
