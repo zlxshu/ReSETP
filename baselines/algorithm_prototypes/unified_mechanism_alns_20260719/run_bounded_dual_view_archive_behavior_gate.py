@@ -285,6 +285,21 @@ def main() -> int:
             "Behaviour, accounting, replay, non-feedback, and monotone "
             "envelope only. No algorithm-strength or stage-two claim."
         ),
+        "prior_execution_incidents": [
+            {
+                "attempt": 1,
+                "status": "INVALID_UNCOMMITTED_BEHAVIOUR_ATTEMPT",
+                "reason": (
+                    "The archive-disabled control still performed cheap "
+                    "historical prescoring. It did not affect search or final "
+                    "cost, but it inflated control wall time and could bias a "
+                    "later wall-clock ratio in favour of the candidate. The "
+                    "attempt was retained under an explicit invalid directory; "
+                    "the control was changed to skip all prescoring and this "
+                    "gate was rerun before any strength test."
+                ),
+            }
+        ],
         "formal_search_allowed": False,
         "stage2_activated": False,
     }
@@ -666,6 +681,8 @@ def _gate_failures(
             ]
             if len(skeletons) != len(set(skeletons)):
                 failures.append(f"{tag}:{arm}_duplicate_skeleton")
+        if int(left["prescore_candidate_count"]) != 0:
+            failures.append(f"{tag}:control_performed_prescore")
         if budget == 0:
             if any(
                 int(right[field]) != 0

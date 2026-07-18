@@ -165,7 +165,11 @@ def run_bounded_dual_view_archive_alns(
         for item in history
         if item["skeleton_signature"] != final_item["skeleton_signature"]
     ]
-    sampled = _evenly_spaced(nonfinal, PRESCORE_CAPACITY)
+    sampled = (
+        _evenly_spaced(nonfinal, PRESCORE_CAPACITY)
+        if cfg.enable_archive
+        else []
+    )
     prescore_rows: list[dict[str, Any]] = []
     for item in sampled:
         fast = apply_fast_route_local_completion(
