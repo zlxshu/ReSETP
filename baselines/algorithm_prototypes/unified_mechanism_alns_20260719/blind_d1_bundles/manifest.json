@@ -1,0 +1,61 @@
+{
+  "contract_repo_relative": "docs/handoff/unified_mechanism_alns_execution_contract_20260719.md",
+  "contract_sha256": "0d760274550ce4389297cdb03dbc187baa24b329e74033b03ffbc5f4973778cd",
+  "donor": "03",
+  "formal_l_main_activated": false,
+  "generator_repo_relative": "models/scripts/build_e2_benchmark_instances.py",
+  "generator_sha256": "876ccd081c4aabdf28d5f54573af4d3a6025583353f7bb7734c7e2b2d65fb5e7",
+  "instances": [
+    {
+      "actual_customer_count": 54,
+      "actual_depot_count": 2,
+      "builder_reported_customer_count": 54,
+      "bundle_files": {
+        "carbon_profile.csv": "f552d7b082593582369ab0dfd938983eeadd38a76a0b0a3e79d3410c00421433",
+        "depot_candidate_scores.csv": "5a8b68426dbd978eceaa6bb49dee44ed312bb36192a610e507adef980b9e59c7",
+        "distance_matrix.npy": "1b9bfd39088dab8c538ff48a41168b9b08c104d6cfd78bc9598ee85874599f23",
+        "instance.json": "19938c743cd50b343555cfbd4138821a0304308a878cb7e4ce999e53b8e3861b",
+        "instance_evrptwmf.txt": "634cf9811b3be5df9409ddb3412134e4f7eade1617e344e748d7ce285e177c0f",
+        "nodes.csv": "ab05b7216e82c54ab88760408169e045e58219bfec578a7aa74d933ab15a6561",
+        "scenario_manifest.json": "2c1b905c9081e7cee4e5cfa93aa809d5f153de0bd59aedc28ca870426423954c",
+        "station_candidate_scores.csv": "c480afd83e4ca0c39b7cca49074537df2ed1e7171dde5b32f00b93271c70f1a3",
+        "three_shift_manifest.json": "295fce7f07e00450bfc092918a117f12ed5abef443b05f29d00392184b5902d8"
+      },
+      "instance_id": "DEV-INIT-D1-DONOR03-SRC25-N54-DEP2",
+      "source_id": "E-UK25_03",
+      "source_path_repo_relative": "models/data_bundle/raw_instances/goeke_uk/E-UK25_03.txt",
+      "source_scale": 25,
+      "source_sha256": "c3a8c469efa6ebb675657c600243d3e460af4dc07e0de7d204d6893c1952b3a2"
+    },
+    {
+      "actual_customer_count": 108,
+      "actual_depot_count": 2,
+      "builder_reported_customer_count": 108,
+      "bundle_files": {
+        "carbon_profile.csv": "f552d7b082593582369ab0dfd938983eeadd38a76a0b0a3e79d3410c00421433",
+        "depot_candidate_scores.csv": "3f57b62ccb524b6e911be19e2b336d963763842bae87de723b5f4e13be303147",
+        "distance_matrix.npy": "e896436b393f01bc287c09ad838a0b01217f4ebfbe555700c5629715762c2c24",
+        "instance.json": "3406326529f749e82b329433985539c390bc184579dac274cd28160c9de136f7",
+        "instance_evrptwmf.txt": "47374cfd2e8f24d284373b192fa8dade83c04951631d9a4839ea6a95f78cdf44",
+        "nodes.csv": "c6ca380f225ba04884aece639576b3fec7df3e3518a899c267e0938e8396747b",
+        "scenario_manifest.json": "4040ee3578d2bb914091633e4e3a8e951b21da70b73cddd3fab5fedee7b1b3ab",
+        "station_candidate_scores.csv": "876f1e6136e0c3e49dd99e9741e9f544721b71c9f76fe42d194b7c3b7660dbc7",
+        "three_shift_manifest.json": "9d8ee13a92c26b33b264cab18e128805a6ade817afae217318314042ec76a44f"
+      },
+      "instance_id": "DEV-INIT-D1-DONOR03-SRC50-N108-DEP2",
+      "source_id": "E-UK50_03",
+      "source_path_repo_relative": "models/data_bundle/raw_instances/goeke_uk/E-UK50_03.txt",
+      "source_scale": 50,
+      "source_sha256": "e16bfb973b801d086d0ea7fda6e3d1296129ace628ed5d51bc7500579edec550"
+    }
+  ],
+  "purpose": "isolated_initial_pool_diagnosis_only_not_formal_benchmark",
+  "result_blind": true,
+  "schema_version": "resetp.unified-mechanism-alns.d1-dataset.v1",
+  "selection_rule": "donor 03 is the only not-previously-observed donor for the source-scale 25/50 mechanism-development pair after donor 02",
+  "source_scales": [
+    25,
+    50
+  ],
+  "stage2_activated": false
+}

@@ -1,0 +1,1065 @@
+{
+  "config": {
+    "add_event_source_paths": [],
+    "base_instance_path": null,
+    "carbon_alignment_mode": "fixed_utc_anchor",
+    "carbon_profile_path": "/Volumes/移动硬盘（512G）/ReSETP/data/Carbon/时变碳强度/regional_carbon_intensity_2025-11-01_to_2025-11-30.csv",
+    "carbon_regions": [
+      "R1",
+      "R2",
+      "R3"
+    ],
+    "carbon_time_anchor_utc": "2025-11-13T00:00:00+00:00",
+    "cluster_std_ratio": 0.12,
+    "coord_bounds": [
+      -60000.0,
+      60000.0,
+      -45000.0,
+      45000.0
+    ],
+    "coord_mode": "three_shift_merge",
+    "demand_mean": 520.0,
+    "demand_min": 50.0,
+    "demand_mode": "empirical",
+    "demand_std": 240.0,
+    "depot_due_time": 86400.0,
+    "depot_strategy": "scored_candidates",
+    "donor_goeke_id": "E-UK10_04",
+    "dynamic_event_config": {
+      "enabled": false,
+      "event_rate": null,
+      "event_ratio": [
+        5.0,
+        2.0,
+        1.0,
+        1.0
+      ],
+      "n_events": 0,
+      "q_accum_policy": "positive_only",
+      "q_kg": 500.0,
+      "random_mode": "random",
+      "t_min": 1800.0,
+      "time_window_change_ratio": [
+        1.0,
+        3.0,
+        1.0
+      ]
+    },
+    "e2_category": "threeshift",
+    "empirical_exact_base": true,
+    "horizon_end": 86400.0,
+    "horizon_start": 0.0,
+    "max_customer_demand_ratio": 0.65,
+    "max_isolated_customer_share": 0.08,
+    "min_customer_distance": 300.0,
+    "min_depot_distance": 5000.0,
+    "min_station_distance": 1500.0,
+    "n_customer_clusters": 4,
+    "n_customers": 21,
+    "n_depots": 2,
+    "n_stations": 2,
+    "num_cv": 1,
+    "num_ev": 1,
+    "scenario_id": "DEV-DUAL-D2-GROUP456-SRC10",
+    "seed": 400021,
+    "service_time_max": 1800.0,
+    "service_time_min": 180.0,
+    "station_avoid_node_overlap": true,
+    "station_capacity": 1,
+    "station_charge_power_kw": 60.0,
+    "station_min_node_distance": 1.0,
+    "station_strategy": "hybrid_support",
+    "three_shift_manifest": {
+      "build_note": "Customer windows are shifted by 0/9/18h; only >24h third-shift tail customers are dropped.",
+      "count_policy": {
+        "forbidden": [
+          "target_count_planning",
+          "prefix_truncation",
+          "algorithm_result_based_selection"
+        ],
+        "input_customer_counts": [
+          10,
+          10,
+          10
+        ],
+        "policy": "fresh_group456_full_source_natural_24h_tail_cut",
+        "source_donors": [
+          "04",
+          "05",
+          "06"
+        ],
+        "source_scale": 10
+      },
+      "deleted_customer_count": 9,
+      "deleted_customers": [
+        {
+          "reason": "shifted_due_time_exceeds_24h",
+          "shift_seconds": 64800.0,
+          "shifted_due_time": 86820.0,
+          "shifted_ready_time": 66128.0,
+          "source_base_id": "E-UK10_06",
+          "source_node_id": "C1",
+          "source_scenario_id": "DEV-DUAL-D2-GROUP456-SRC10__shift3_E-UK10_06_n10"
+        },
+        {
+          "reason": "shifted_due_time_exceeds_24h",
+          "shift_seconds": 64800.0,
+          "shifted_due_time": 88456.0,
+          "shifted_ready_time": 68881.0,
+          "source_base_id": "E-UK10_06",
+          "source_node_id": "C2",
+          "source_scenario_id": "DEV-DUAL-D2-GROUP456-SRC10__shift3_E-UK10_06_n10"
+        },
+        {
+          "reason": "shifted_due_time_exceeds_24h",
+          "shift_seconds": 64800.0,
+          "shifted_due_time": 89707.0,
+          "shifted_ready_time": 69581.0,
+          "source_base_id": "E-UK10_06",
+          "source_node_id": "C3",
+          "source_scenario_id": "DEV-DUAL-D2-GROUP456-SRC10__shift3_E-UK10_06_n10"
+        },
+        {
+          "reason": "shifted_due_time_exceeds_24h",
+          "shift_seconds": 64800.0,
+          "shifted_due_time": 86580.0,
+          "shifted_ready_time": 67080.0,
+          "source_base_id": "E-UK10_06",
+          "source_node_id": "C4",
+          "source_scenario_id": "DEV-DUAL-D2-GROUP456-SRC10__shift3_E-UK10_06_n10"
+        },
+        {
+          "reason": "shifted_due_time_exceeds_24h",
+          "shift_seconds": 64800.0,
+          "shifted_due_time": 87353.0,
+          "shifted_ready_time": 68728.0,
+          "source_base_id": "E-UK10_06",
+          "source_node_id": "C5",
+          "source_scenario_id": "DEV-DUAL-D2-GROUP456-SRC10__shift3_E-UK10_06_n10"
+        },
+        {
+          "reason": "shifted_due_time_exceeds_24h",
+          "shift_seconds": 64800.0,
+          "shifted_due_time": 88230.0,
+          "shifted_ready_time": 67751.0,
+          "source_base_id": "E-UK10_06",
+          "source_node_id": "C6",
+          "source_scenario_id": "DEV-DUAL-D2-GROUP456-SRC10__shift3_E-UK10_06_n10"
+        },
+        {
+          "reason": "shifted_due_time_exceeds_24h",
+          "shift_seconds": 64800.0,
+          "shifted_due_time": 89180.0,
+          "shifted_ready_time": 68414.0,
+          "source_base_id": "E-UK10_06",
+          "source_node_id": "C7",
+          "source_scenario_id": "DEV-DUAL-D2-GROUP456-SRC10__shift3_E-UK10_06_n10"
+        },
+        {
+          "reason": "shifted_due_time_exceeds_24h",
+          "shift_seconds": 64800.0,
+          "shifted_due_time": 88052.0,
+          "shifted_ready_time": 68132.0,
+          "source_base_id": "E-UK10_06",
+          "source_node_id": "C8",
+          "source_scenario_id": "DEV-DUAL-D2-GROUP456-SRC10__shift3_E-UK10_06_n10"
+        },
+        {
+          "reason": "shifted_due_time_exceeds_24h",
+          "shift_seconds": 64800.0,
+          "shifted_due_time": 86644.0,
+          "shifted_ready_time": 67310.0,
+          "source_base_id": "E-UK10_06",
+          "source_node_id": "C9",
+          "source_scenario_id": "DEV-DUAL-D2-GROUP456-SRC10__shift3_E-UK10_06_n10"
+        }
+      ],
+      "facility_layout_policy": "share first-shift physical layout and public-station attributes; normalize merged depot route-upper-bound chargers",
+      "facility_layout_source": "DEV-DUAL-D2-GROUP456-SRC10__shift1_E-UK10_04_n10",
+      "final_fleet": {
+        "num_cv": 1,
+        "num_ev": 1
+      },
+      "final_fleet_policy": "anchor_first_shift_source",
+      "formal_v3": true,
+      "kept_customer_count": 21,
+      "kept_customers": [
+        {
+          "due_time": 24902.0,
+          "new_node_id": "C001",
+          "ready_time": 5380.0,
+          "shift_seconds": 0.0,
+          "shifted_due_time": 24902.0,
+          "shifted_ready_time": 5380.0,
+          "source_base_id": "E-UK10_04",
+          "source_node_id": "C1",
+          "source_scenario_id": "DEV-DUAL-D2-GROUP456-SRC10__shift1_E-UK10_04_n10"
+        },
+        {
+          "due_time": 23319.0,
+          "new_node_id": "C002",
+          "ready_time": 2409.0,
+          "shift_seconds": 0.0,
+          "shifted_due_time": 23319.0,
+          "shifted_ready_time": 2409.0,
+          "source_base_id": "E-UK10_04",
+          "source_node_id": "C2",
+          "source_scenario_id": "DEV-DUAL-D2-GROUP456-SRC10__shift1_E-UK10_04_n10"
+        },
+        {
+          "due_time": 21731.0,
+          "new_node_id": "C003",
+          "ready_time": 3055.0,
+          "shift_seconds": 0.0,
+          "shifted_due_time": 21731.0,
+          "shifted_ready_time": 3055.0,
+          "source_base_id": "E-UK10_04",
+          "source_node_id": "C3",
+          "source_scenario_id": "DEV-DUAL-D2-GROUP456-SRC10__shift1_E-UK10_04_n10"
+        },
+        {
+          "due_time": 22594.0,
+          "new_node_id": "C004",
+          "ready_time": 2353.0,
+          "shift_seconds": 0.0,
+          "shifted_due_time": 22594.0,
+          "shifted_ready_time": 2353.0,
+          "source_base_id": "E-UK10_04",
+          "source_node_id": "C4",
+          "source_scenario_id": "DEV-DUAL-D2-GROUP456-SRC10__shift1_E-UK10_04_n10"
+        },
+        {
+          "due_time": 20219.0,
+          "new_node_id": "C005",
+          "ready_time": 1013.0,
+          "shift_seconds": 0.0,
+          "shifted_due_time": 20219.0,
+          "shifted_ready_time": 1013.0,
+          "source_base_id": "E-UK10_04",
+          "source_node_id": "C5",
+          "source_scenario_id": "DEV-DUAL-D2-GROUP456-SRC10__shift1_E-UK10_04_n10"
+        },
+        {
+          "due_time": 23623.0,
+          "new_node_id": "C006",
+          "ready_time": 4689.0,
+          "shift_seconds": 0.0,
+          "shifted_due_time": 23623.0,
+          "shifted_ready_time": 4689.0,
+          "source_base_id": "E-UK10_04",
+          "source_node_id": "C6",
+          "source_scenario_id": "DEV-DUAL-D2-GROUP456-SRC10__shift1_E-UK10_04_n10"
+        },
+        {
+          "due_time": 23722.0,
+          "new_node_id": "C007",
+          "ready_time": 4143.0,
+          "shift_seconds": 0.0,
+          "shifted_due_time": 23722.0,
+          "shifted_ready_time": 4143.0,
+          "source_base_id": "E-UK10_04",
+          "source_node_id": "C7",
+          "source_scenario_id": "DEV-DUAL-D2-GROUP456-SRC10__shift1_E-UK10_04_n10"
+        },
+        {
+          "due_time": 23249.0,
+          "new_node_id": "C008",
+          "ready_time": 4834.0,
+          "shift_seconds": 0.0,
+          "shifted_due_time": 23249.0,
+          "shifted_ready_time": 4834.0,
+          "source_base_id": "E-UK10_04",
+          "source_node_id": "C8",
+          "source_scenario_id": "DEV-DUAL-D2-GROUP456-SRC10__shift1_E-UK10_04_n10"
+        },
+        {
+          "due_time": 22872.0,
+          "new_node_id": "C009",
+          "ready_time": 3093.0,
+          "shift_seconds": 0.0,
+          "shifted_due_time": 22872.0,
+          "shifted_ready_time": 3093.0,
+          "source_base_id": "E-UK10_04",
+          "source_node_id": "C9",
+          "source_scenario_id": "DEV-DUAL-D2-GROUP456-SRC10__shift1_E-UK10_04_n10"
+        },
+        {
+          "due_time": 22732.0,
+          "new_node_id": "C010",
+          "ready_time": 3409.0,
+          "shift_seconds": 0.0,
+          "shifted_due_time": 22732.0,
+          "shifted_ready_time": 3409.0,
+          "source_base_id": "E-UK10_04",
+          "source_node_id": "C10",
+          "source_scenario_id": "DEV-DUAL-D2-GROUP456-SRC10__shift1_E-UK10_04_n10"
+        },
+        {
+          "due_time": 21283.0,
+          "new_node_id": "C011",
+          "ready_time": 2015.0,
+          "shift_seconds": 32400.0,
+          "shifted_due_time": 53683.0,
+          "shifted_ready_time": 34415.0,
+          "source_base_id": "E-UK10_05",
+          "source_node_id": "C1",
+          "source_scenario_id": "DEV-DUAL-D2-GROUP456-SRC10__shift2_E-UK10_05_n10"
+        },
+        {
+          "due_time": 22406.0,
+          "new_node_id": "C012",
+          "ready_time": 3310.0,
+          "shift_seconds": 32400.0,
+          "shifted_due_time": 54806.0,
+          "shifted_ready_time": 35710.0,
+          "source_base_id": "E-UK10_05",
+          "source_node_id": "C2",
+          "source_scenario_id": "DEV-DUAL-D2-GROUP456-SRC10__shift2_E-UK10_05_n10"
+        },
+        {
+          "due_time": 23573.0,
+          "new_node_id": "C013",
+          "ready_time": 3917.0,
+          "shift_seconds": 32400.0,
+          "shifted_due_time": 55973.0,
+          "shifted_ready_time": 36317.0,
+          "source_base_id": "E-UK10_05",
+          "source_node_id": "C3",
+          "source_scenario_id": "DEV-DUAL-D2-GROUP456-SRC10__shift2_E-UK10_05_n10"
+        },
+        {
+          "due_time": 22212.0,
+          "new_node_id": "C014",
+          "ready_time": 2359.0,
+          "shift_seconds": 32400.0,
+          "shifted_due_time": 54612.0,
+          "shifted_ready_time": 34759.0,
+          "source_base_id": "E-UK10_05",
+          "source_node_id": "C4",
+          "source_scenario_id": "DEV-DUAL-D2-GROUP456-SRC10__shift2_E-UK10_05_n10"
+        },
+        {
+          "due_time": 20280.0,
+          "new_node_id": "C015",
+          "ready_time": 1393.0,
+          "shift_seconds": 32400.0,
+          "shifted_due_time": 52680.0,
+          "shifted_ready_time": 33793.0,
+          "source_base_id": "E-UK10_05",
+          "source_node_id": "C5",
+          "source_scenario_id": "DEV-DUAL-D2-GROUP456-SRC10__shift2_E-UK10_05_n10"
+        },
+        {
+          "due_time": 23834.0,
+          "new_node_id": "C016",
+          "ready_time": 3687.0,
+          "shift_seconds": 32400.0,
+          "shifted_due_time": 56234.0,
+          "shifted_ready_time": 36087.0,
+          "source_base_id": "E-UK10_05",
+          "source_node_id": "C6",
+          "source_scenario_id": "DEV-DUAL-D2-GROUP456-SRC10__shift2_E-UK10_05_n10"
+        },
+        {
+          "due_time": 24329.0,
+          "new_node_id": "C017",
+          "ready_time": 4899.0,
+          "shift_seconds": 32400.0,
+          "shifted_due_time": 56729.0,
+          "shifted_ready_time": 37299.0,
+          "source_base_id": "E-UK10_05",
+          "source_node_id": "C7",
+          "source_scenario_id": "DEV-DUAL-D2-GROUP456-SRC10__shift2_E-UK10_05_n10"
+        },
+        {
+          "due_time": 20216.0,
+          "new_node_id": "C018",
+          "ready_time": 678.0,
+          "shift_seconds": 32400.0,
+          "shifted_due_time": 52616.0,
+          "shifted_ready_time": 33078.0,
+          "source_base_id": "E-UK10_05",
+          "source_node_id": "C8",
+          "source_scenario_id": "DEV-DUAL-D2-GROUP456-SRC10__shift2_E-UK10_05_n10"
+        },
+        {
+          "due_time": 22286.0,
+          "new_node_id": "C019",
+          "ready_time": 2546.0,
+          "shift_seconds": 32400.0,
+          "shifted_due_time": 54686.0,
+          "shifted_ready_time": 34946.0,
+          "source_base_id": "E-UK10_05",
+          "source_node_id": "C9",
+          "source_scenario_id": "DEV-DUAL-D2-GROUP456-SRC10__shift2_E-UK10_05_n10"
+        },
+        {
+          "due_time": 25088.0,
+          "new_node_id": "C020",
+          "ready_time": 4744.0,
+          "shift_seconds": 32400.0,
+          "shifted_due_time": 57488.0,
+          "shifted_ready_time": 37144.0,
+          "source_base_id": "E-UK10_05",
+          "source_node_id": "C10",
+          "source_scenario_id": "DEV-DUAL-D2-GROUP456-SRC10__shift2_E-UK10_05_n10"
+        },
+        {
+          "due_time": 21427.0,
+          "new_node_id": "C021",
+          "ready_time": 1458.0,
+          "shift_seconds": 64800.0,
+          "shifted_due_time": 86227.0,
+          "shifted_ready_time": 66258.0,
+          "source_base_id": "E-UK10_06",
+          "source_node_id": "C10",
+          "source_scenario_id": "DEV-DUAL-D2-GROUP456-SRC10__shift3_E-UK10_06_n10"
+        }
+      ],
+      "merged_customer_count": 21,
+      "name": "DEV-DUAL-D2-GROUP456-SRC10",
+      "return_deadline_seconds": 86400.0,
+      "source_children": [
+        {
+          "deleted_customer_count": 0,
+          "input_customer_count": 10,
+          "kept_customer_count": 10,
+          "scenario_id": "DEV-DUAL-D2-GROUP456-SRC10__shift1_E-UK10_04_n10",
+          "shift_seconds": 0.0,
+          "source_base_id": "E-UK10_04",
+          "validation": {
+            "customer_count": 10,
+            "customer_demand_cap": 1040.0,
+            "depot_count": 2,
+            "distance_matrix_shape": [
+              14,
+              14
+            ],
+            "duplicate_coordinate_count": 2,
+            "exact_base_layout_relaxed": true,
+            "isolated_customer_share": 0.4,
+            "max_customer_demand": 718.0,
+            "min_depot_distance": 30898.541710743604,
+            "node_count": 14,
+            "passed": true,
+            "station_count": 2
+          }
+        },
+        {
+          "deleted_customer_count": 0,
+          "input_customer_count": 10,
+          "kept_customer_count": 10,
+          "scenario_id": "DEV-DUAL-D2-GROUP456-SRC10__shift2_E-UK10_05_n10",
+          "shift_seconds": 32400.0,
+          "source_base_id": "E-UK10_05",
+          "validation": {
+            "customer_count": 10,
+            "customer_demand_cap": 1040.0,
+            "depot_count": 2,
+            "distance_matrix_shape": [
+              14,
+              14
+            ],
+            "duplicate_coordinate_count": 1,
+            "exact_base_layout_relaxed": true,
+            "isolated_customer_share": 0.3,
+            "max_customer_demand": 702.0,
+            "min_depot_distance": 30898.541710743604,
+            "node_count": 14,
+            "passed": true,
+            "station_count": 2
+          }
+        },
+        {
+          "deleted_customer_count": 9,
+          "input_customer_count": 10,
+          "kept_customer_count": 1,
+          "scenario_id": "DEV-DUAL-D2-GROUP456-SRC10__shift3_E-UK10_06_n10",
+          "shift_seconds": 64800.0,
+          "source_base_id": "E-UK10_06",
+          "validation": {
+            "customer_count": 10,
+            "customer_demand_cap": 1040.0,
+            "depot_count": 2,
+            "distance_matrix_shape": [
+              14,
+              14
+            ],
+            "duplicate_coordinate_count": 1,
+            "exact_base_layout_relaxed": true,
+            "isolated_customer_share": 0.4,
+            "max_customer_demand": 712.0,
+            "min_depot_distance": 30898.541710743604,
+            "node_count": 14,
+            "passed": true,
+            "station_count": 2
+          }
+        }
+      ],
+      "source_fleets": [
+        {
+          "num_cv": 1,
+          "num_ev": 1,
+          "source_base_id": "E-UK10_04"
+        },
+        {
+          "num_cv": 1,
+          "num_ev": 1,
+          "source_base_id": "E-UK10_05"
+        },
+        {
+          "num_cv": 1,
+          "num_ev": 1,
+          "source_base_id": "E-UK10_06"
+        }
+      ],
+      "source_scale": 10,
+      "total_demand": 9054.0,
+      "validation": {
+        "customer_count": 21,
+        "customer_demand_cap": 1040.0,
+        "depot_count": 2,
+        "distance_matrix_shape": [
+          25,
+          25
+        ],
+        "duplicate_coordinate_count": 2,
+        "exact_base_layout_relaxed": true,
+        "isolated_customer_share": 0.38095238095238093,
+        "max_customer_demand": 718.0,
+        "min_depot_distance": 30898.541710743604,
+        "node_count": 25,
+        "passed": true,
+        "station_count": 2
+      }
+    },
+    "time_window_max_width": 21600.0,
+    "time_window_min_width": 3600.0,
+    "time_window_mode": "empirical_shifted",
+    "time_window_shift_seconds": 0.0,
+    "vehicle_capacity": 1600.0
+  },
+  "files": {
+    "carbon_profile_csv": "carbon_profile.csv",
+    "depot_candidate_scores_csv": "depot_candidate_scores.csv",
+    "distance_matrix_npy": "distance_matrix.npy",
+    "evrptwmf_txt": "instance_evrptwmf.txt",
+    "instance_json": "instance.json",
+    "nodes_csv": "nodes.csv",
+    "scenario_manifest_json": "scenario_manifest.json",
+    "station_candidate_scores_csv": "station_candidate_scores.csv",
+    "three_shift_manifest_json": "three_shift_manifest.json"
+  },
+  "generator": "setp_instance_lab",
+  "generator_version": "0.1.0",
+  "hashes": {
+    "carbon_profile_csv": "f552d7b082593582369ab0dfd938983eeadd38a76a0b0a3e79d3410c00421433",
+    "depot_candidate_scores_csv": "0611dad4861dcdcb97a639d40145c476e4db5a0d4bf2db52669cbee0d37f31f6",
+    "distance_matrix_npy": "c109837185a260179910937381201a0416c34e4d1252a402d9a2eea275843a4b",
+    "evrptwmf_txt": "07bc192833e2011e3c200bda1fa81c13e5589bf6ba2f8b5b43f71e3df7e8912a",
+    "instance_json": "445f3ade329ddc1ddd7bae7232cc6c732f18ce3724d463da1867ec90a9797925",
+    "nodes_csv": "9ae46ebb65c9194d6be9080ac3e58b2e98f4473791124bb6e97c1964179a8116",
+    "station_candidate_scores_csv": "ec9033a656f324b0fcc0cddcb096a8b7bf4f2f5a8d634a859e2870c4eeebdc60",
+    "three_shift_manifest_json": "7fefce2fb8e26b65b77530a410d710043b6bc2d209e6ddf9b73ab6d781b9c447"
+  },
+  "metadata": {
+    "carbon_alignment_mode": "fixed_utc_anchor",
+    "carbon_n_slots": 48,
+    "carbon_profile_source": "/Volumes/移动硬盘（512G）/ReSETP/data/Carbon/时变碳强度/regional_carbon_intensity_2025-11-01_to_2025-11-30.csv",
+    "carbon_slot_seconds": 1800,
+    "carbon_time_anchor_utc": "2025-11-13T00:00:00+00:00",
+    "carbon_unit": "gCO2/kWh",
+    "depot_chargers": 21,
+    "depot_chargers_policy": "customer_count_route_upper_bound",
+    "num_cv": 1,
+    "num_ev": 1,
+    "public_station_chargers": 1,
+    "source": "e2_three_shift_merge",
+    "station_avoid_node_overlap": true,
+    "station_min_node_distance": 1.0,
+    "three_shift_manifest": {
+      "build_note": "Customer windows are shifted by 0/9/18h; only >24h third-shift tail customers are dropped.",
+      "count_policy": {
+        "forbidden": [
+          "target_count_planning",
+          "prefix_truncation",
+          "algorithm_result_based_selection"
+        ],
+        "input_customer_counts": [
+          10,
+          10,
+          10
+        ],
+        "policy": "fresh_group456_full_source_natural_24h_tail_cut",
+        "source_donors": [
+          "04",
+          "05",
+          "06"
+        ],
+        "source_scale": 10
+      },
+      "deleted_customer_count": 9,
+      "deleted_customers": [
+        {
+          "reason": "shifted_due_time_exceeds_24h",
+          "shift_seconds": 64800.0,
+          "shifted_due_time": 86820.0,
+          "shifted_ready_time": 66128.0,
+          "source_base_id": "E-UK10_06",
+          "source_node_id": "C1",
+          "source_scenario_id": "DEV-DUAL-D2-GROUP456-SRC10__shift3_E-UK10_06_n10"
+        },
+        {
+          "reason": "shifted_due_time_exceeds_24h",
+          "shift_seconds": 64800.0,
+          "shifted_due_time": 88456.0,
+          "shifted_ready_time": 68881.0,
+          "source_base_id": "E-UK10_06",
+          "source_node_id": "C2",
+          "source_scenario_id": "DEV-DUAL-D2-GROUP456-SRC10__shift3_E-UK10_06_n10"
+        },
+        {
+          "reason": "shifted_due_time_exceeds_24h",
+          "shift_seconds": 64800.0,
+          "shifted_due_time": 89707.0,
+          "shifted_ready_time": 69581.0,
+          "source_base_id": "E-UK10_06",
+          "source_node_id": "C3",
+          "source_scenario_id": "DEV-DUAL-D2-GROUP456-SRC10__shift3_E-UK10_06_n10"
+        },
+        {
+          "reason": "shifted_due_time_exceeds_24h",
+          "shift_seconds": 64800.0,
+          "shifted_due_time": 86580.0,
+          "shifted_ready_time": 67080.0,
+          "source_base_id": "E-UK10_06",
+          "source_node_id": "C4",
+          "source_scenario_id": "DEV-DUAL-D2-GROUP456-SRC10__shift3_E-UK10_06_n10"
+        },
+        {
+          "reason": "shifted_due_time_exceeds_24h",
+          "shift_seconds": 64800.0,
+          "shifted_due_time": 87353.0,
+          "shifted_ready_time": 68728.0,
+          "source_base_id": "E-UK10_06",
+          "source_node_id": "C5",
+          "source_scenario_id": "DEV-DUAL-D2-GROUP456-SRC10__shift3_E-UK10_06_n10"
+        },
+        {
+          "reason": "shifted_due_time_exceeds_24h",
+          "shift_seconds": 64800.0,
+          "shifted_due_time": 88230.0,
+          "shifted_ready_time": 67751.0,
+          "source_base_id": "E-UK10_06",
+          "source_node_id": "C6",
+          "source_scenario_id": "DEV-DUAL-D2-GROUP456-SRC10__shift3_E-UK10_06_n10"
+        },
+        {
+          "reason": "shifted_due_time_exceeds_24h",
+          "shift_seconds": 64800.0,
+          "shifted_due_time": 89180.0,
+          "shifted_ready_time": 68414.0,
+          "source_base_id": "E-UK10_06",
+          "source_node_id": "C7",
+          "source_scenario_id": "DEV-DUAL-D2-GROUP456-SRC10__shift3_E-UK10_06_n10"
+        },
+        {
+          "reason": "shifted_due_time_exceeds_24h",
+          "shift_seconds": 64800.0,
+          "shifted_due_time": 88052.0,
+          "shifted_ready_time": 68132.0,
+          "source_base_id": "E-UK10_06",
+          "source_node_id": "C8",
+          "source_scenario_id": "DEV-DUAL-D2-GROUP456-SRC10__shift3_E-UK10_06_n10"
+        },
+        {
+          "reason": "shifted_due_time_exceeds_24h",
+          "shift_seconds": 64800.0,
+          "shifted_due_time": 86644.0,
+          "shifted_ready_time": 67310.0,
+          "source_base_id": "E-UK10_06",
+          "source_node_id": "C9",
+          "source_scenario_id": "DEV-DUAL-D2-GROUP456-SRC10__shift3_E-UK10_06_n10"
+        }
+      ],
+      "facility_layout_policy": "share first-shift physical layout and public-station attributes; normalize merged depot route-upper-bound chargers",
+      "facility_layout_source": "DEV-DUAL-D2-GROUP456-SRC10__shift1_E-UK10_04_n10",
+      "final_fleet": {
+        "num_cv": 1,
+        "num_ev": 1
+      },
+      "final_fleet_policy": "anchor_first_shift_source",
+      "formal_v3": true,
+      "kept_customer_count": 21,
+      "kept_customers": [
+        {
+          "due_time": 24902.0,
+          "new_node_id": "C001",
+          "ready_time": 5380.0,
+          "shift_seconds": 0.0,
+          "shifted_due_time": 24902.0,
+          "shifted_ready_time": 5380.0,
+          "source_base_id": "E-UK10_04",
+          "source_node_id": "C1",
+          "source_scenario_id": "DEV-DUAL-D2-GROUP456-SRC10__shift1_E-UK10_04_n10"
+        },
+        {
+          "due_time": 23319.0,
+          "new_node_id": "C002",
+          "ready_time": 2409.0,
+          "shift_seconds": 0.0,
+          "shifted_due_time": 23319.0,
+          "shifted_ready_time": 2409.0,
+          "source_base_id": "E-UK10_04",
+          "source_node_id": "C2",
+          "source_scenario_id": "DEV-DUAL-D2-GROUP456-SRC10__shift1_E-UK10_04_n10"
+        },
+        {
+          "due_time": 21731.0,
+          "new_node_id": "C003",
+          "ready_time": 3055.0,
+          "shift_seconds": 0.0,
+          "shifted_due_time": 21731.0,
+          "shifted_ready_time": 3055.0,
+          "source_base_id": "E-UK10_04",
+          "source_node_id": "C3",
+          "source_scenario_id": "DEV-DUAL-D2-GROUP456-SRC10__shift1_E-UK10_04_n10"
+        },
+        {
+          "due_time": 22594.0,
+          "new_node_id": "C004",
+          "ready_time": 2353.0,
+          "shift_seconds": 0.0,
+          "shifted_due_time": 22594.0,
+          "shifted_ready_time": 2353.0,
+          "source_base_id": "E-UK10_04",
+          "source_node_id": "C4",
+          "source_scenario_id": "DEV-DUAL-D2-GROUP456-SRC10__shift1_E-UK10_04_n10"
+        },
+        {
+          "due_time": 20219.0,
+          "new_node_id": "C005",
+          "ready_time": 1013.0,
+          "shift_seconds": 0.0,
+          "shifted_due_time": 20219.0,
+          "shifted_ready_time": 1013.0,
+          "source_base_id": "E-UK10_04",
+          "source_node_id": "C5",
+          "source_scenario_id": "DEV-DUAL-D2-GROUP456-SRC10__shift1_E-UK10_04_n10"
+        },
+        {
+          "due_time": 23623.0,
+          "new_node_id": "C006",
+          "ready_time": 4689.0,
+          "shift_seconds": 0.0,
+          "shifted_due_time": 23623.0,
+          "shifted_ready_time": 4689.0,
+          "source_base_id": "E-UK10_04",
+          "source_node_id": "C6",
+          "source_scenario_id": "DEV-DUAL-D2-GROUP456-SRC10__shift1_E-UK10_04_n10"
+        },
+        {
+          "due_time": 23722.0,
+          "new_node_id": "C007",
+          "ready_time": 4143.0,
+          "shift_seconds": 0.0,
+          "shifted_due_time": 23722.0,
+          "shifted_ready_time": 4143.0,
+          "source_base_id": "E-UK10_04",
+          "source_node_id": "C7",
+          "source_scenario_id": "DEV-DUAL-D2-GROUP456-SRC10__shift1_E-UK10_04_n10"
+        },
+        {
+          "due_time": 23249.0,
+          "new_node_id": "C008",
+          "ready_time": 4834.0,
+          "shift_seconds": 0.0,
+          "shifted_due_time": 23249.0,
+          "shifted_ready_time": 4834.0,
+          "source_base_id": "E-UK10_04",
+          "source_node_id": "C8",
+          "source_scenario_id": "DEV-DUAL-D2-GROUP456-SRC10__shift1_E-UK10_04_n10"
+        },
+        {
+          "due_time": 22872.0,
+          "new_node_id": "C009",
+          "ready_time": 3093.0,
+          "shift_seconds": 0.0,
+          "shifted_due_time": 22872.0,
+          "shifted_ready_time": 3093.0,
+          "source_base_id": "E-UK10_04",
+          "source_node_id": "C9",
+          "source_scenario_id": "DEV-DUAL-D2-GROUP456-SRC10__shift1_E-UK10_04_n10"
+        },
+        {
+          "due_time": 22732.0,
+          "new_node_id": "C010",
+          "ready_time": 3409.0,
+          "shift_seconds": 0.0,
+          "shifted_due_time": 22732.0,
+          "shifted_ready_time": 3409.0,
+          "source_base_id": "E-UK10_04",
+          "source_node_id": "C10",
+          "source_scenario_id": "DEV-DUAL-D2-GROUP456-SRC10__shift1_E-UK10_04_n10"
+        },
+        {
+          "due_time": 21283.0,
+          "new_node_id": "C011",
+          "ready_time": 2015.0,
+          "shift_seconds": 32400.0,
+          "shifted_due_time": 53683.0,
+          "shifted_ready_time": 34415.0,
+          "source_base_id": "E-UK10_05",
+          "source_node_id": "C1",
+          "source_scenario_id": "DEV-DUAL-D2-GROUP456-SRC10__shift2_E-UK10_05_n10"
+        },
+        {
+          "due_time": 22406.0,
+          "new_node_id": "C012",
+          "ready_time": 3310.0,
+          "shift_seconds": 32400.0,
+          "shifted_due_time": 54806.0,
+          "shifted_ready_time": 35710.0,
+          "source_base_id": "E-UK10_05",
+          "source_node_id": "C2",
+          "source_scenario_id": "DEV-DUAL-D2-GROUP456-SRC10__shift2_E-UK10_05_n10"
+        },
+        {
+          "due_time": 23573.0,
+          "new_node_id": "C013",
+          "ready_time": 3917.0,
+          "shift_seconds": 32400.0,
+          "shifted_due_time": 55973.0,
+          "shifted_ready_time": 36317.0,
+          "source_base_id": "E-UK10_05",
+          "source_node_id": "C3",
+          "source_scenario_id": "DEV-DUAL-D2-GROUP456-SRC10__shift2_E-UK10_05_n10"
+        },
+        {
+          "due_time": 22212.0,
+          "new_node_id": "C014",
+          "ready_time": 2359.0,
+          "shift_seconds": 32400.0,
+          "shifted_due_time": 54612.0,
+          "shifted_ready_time": 34759.0,
+          "source_base_id": "E-UK10_05",
+          "source_node_id": "C4",
+          "source_scenario_id": "DEV-DUAL-D2-GROUP456-SRC10__shift2_E-UK10_05_n10"
+        },
+        {
+          "due_time": 20280.0,
+          "new_node_id": "C015",
+          "ready_time": 1393.0,
+          "shift_seconds": 32400.0,
+          "shifted_due_time": 52680.0,
+          "shifted_ready_time": 33793.0,
+          "source_base_id": "E-UK10_05",
+          "source_node_id": "C5",
+          "source_scenario_id": "DEV-DUAL-D2-GROUP456-SRC10__shift2_E-UK10_05_n10"
+        },
+        {
+          "due_time": 23834.0,
+          "new_node_id": "C016",
+          "ready_time": 3687.0,
+          "shift_seconds": 32400.0,
+          "shifted_due_time": 56234.0,
+          "shifted_ready_time": 36087.0,
+          "source_base_id": "E-UK10_05",
+          "source_node_id": "C6",
+          "source_scenario_id": "DEV-DUAL-D2-GROUP456-SRC10__shift2_E-UK10_05_n10"
+        },
+        {
+          "due_time": 24329.0,
+          "new_node_id": "C017",
+          "ready_time": 4899.0,
+          "shift_seconds": 32400.0,
+          "shifted_due_time": 56729.0,
+          "shifted_ready_time": 37299.0,
+          "source_base_id": "E-UK10_05",
+          "source_node_id": "C7",
+          "source_scenario_id": "DEV-DUAL-D2-GROUP456-SRC10__shift2_E-UK10_05_n10"
+        },
+        {
+          "due_time": 20216.0,
+          "new_node_id": "C018",
+          "ready_time": 678.0,
+          "shift_seconds": 32400.0,
+          "shifted_due_time": 52616.0,
+          "shifted_ready_time": 33078.0,
+          "source_base_id": "E-UK10_05",
+          "source_node_id": "C8",
+          "source_scenario_id": "DEV-DUAL-D2-GROUP456-SRC10__shift2_E-UK10_05_n10"
+        },
+        {
+          "due_time": 22286.0,
+          "new_node_id": "C019",
+          "ready_time": 2546.0,
+          "shift_seconds": 32400.0,
+          "shifted_due_time": 54686.0,
+          "shifted_ready_time": 34946.0,
+          "source_base_id": "E-UK10_05",
+          "source_node_id": "C9",
+          "source_scenario_id": "DEV-DUAL-D2-GROUP456-SRC10__shift2_E-UK10_05_n10"
+        },
+        {
+          "due_time": 25088.0,
+          "new_node_id": "C020",
+          "ready_time": 4744.0,
+          "shift_seconds": 32400.0,
+          "shifted_due_time": 57488.0,
+          "shifted_ready_time": 37144.0,
+          "source_base_id": "E-UK10_05",
+          "source_node_id": "C10",
+          "source_scenario_id": "DEV-DUAL-D2-GROUP456-SRC10__shift2_E-UK10_05_n10"
+        },
+        {
+          "due_time": 21427.0,
+          "new_node_id": "C021",
+          "ready_time": 1458.0,
+          "shift_seconds": 64800.0,
+          "shifted_due_time": 86227.0,
+          "shifted_ready_time": 66258.0,
+          "source_base_id": "E-UK10_06",
+          "source_node_id": "C10",
+          "source_scenario_id": "DEV-DUAL-D2-GROUP456-SRC10__shift3_E-UK10_06_n10"
+        }
+      ],
+      "merged_customer_count": 21,
+      "name": "DEV-DUAL-D2-GROUP456-SRC10",
+      "return_deadline_seconds": 86400.0,
+      "source_children": [
+        {
+          "deleted_customer_count": 0,
+          "input_customer_count": 10,
+          "kept_customer_count": 10,
+          "scenario_id": "DEV-DUAL-D2-GROUP456-SRC10__shift1_E-UK10_04_n10",
+          "shift_seconds": 0.0,
+          "source_base_id": "E-UK10_04",
+          "validation": {
+            "customer_count": 10,
+            "customer_demand_cap": 1040.0,
+            "depot_count": 2,
+            "distance_matrix_shape": [
+              14,
+              14
+            ],
+            "duplicate_coordinate_count": 2,
+            "exact_base_layout_relaxed": true,
+            "isolated_customer_share": 0.4,
+            "max_customer_demand": 718.0,
+            "min_depot_distance": 30898.541710743604,
+            "node_count": 14,
+            "passed": true,
+            "station_count": 2
+          }
+        },
+        {
+          "deleted_customer_count": 0,
+          "input_customer_count": 10,
+          "kept_customer_count": 10,
+          "scenario_id": "DEV-DUAL-D2-GROUP456-SRC10__shift2_E-UK10_05_n10",
+          "shift_seconds": 32400.0,
+          "source_base_id": "E-UK10_05",
+          "validation": {
+            "customer_count": 10,
+            "customer_demand_cap": 1040.0,
+            "depot_count": 2,
+            "distance_matrix_shape": [
+              14,
+              14
+            ],
+            "duplicate_coordinate_count": 1,
+            "exact_base_layout_relaxed": true,
+            "isolated_customer_share": 0.3,
+            "max_customer_demand": 702.0,
+            "min_depot_distance": 30898.541710743604,
+            "node_count": 14,
+            "passed": true,
+            "station_count": 2
+          }
+        },
+        {
+          "deleted_customer_count": 9,
+          "input_customer_count": 10,
+          "kept_customer_count": 1,
+          "scenario_id": "DEV-DUAL-D2-GROUP456-SRC10__shift3_E-UK10_06_n10",
+          "shift_seconds": 64800.0,
+          "source_base_id": "E-UK10_06",
+          "validation": {
+            "customer_count": 10,
+            "customer_demand_cap": 1040.0,
+            "depot_count": 2,
+            "distance_matrix_shape": [
+              14,
+              14
+            ],
+            "duplicate_coordinate_count": 1,
+            "exact_base_layout_relaxed": true,
+            "isolated_customer_share": 0.4,
+            "max_customer_demand": 712.0,
+            "min_depot_distance": 30898.541710743604,
+            "node_count": 14,
+            "passed": true,
+            "station_count": 2
+          }
+        }
+      ],
+      "source_fleets": [
+        {
+          "num_cv": 1,
+          "num_ev": 1,
+          "source_base_id": "E-UK10_04"
+        },
+        {
+          "num_cv": 1,
+          "num_ev": 1,
+          "source_base_id": "E-UK10_05"
+        },
+        {
+          "num_cv": 1,
+          "num_ev": 1,
+          "source_base_id": "E-UK10_06"
+        }
+      ],
+      "source_scale": 10,
+      "total_demand": 9054.0,
+      "validation": {
+        "customer_count": 21,
+        "customer_demand_cap": 1040.0,
+        "depot_count": 2,
+        "distance_matrix_shape": [
+          25,
+          25
+        ],
+        "duplicate_coordinate_count": 2,
+        "exact_base_layout_relaxed": true,
+        "isolated_customer_share": 0.38095238095238093,
+        "max_customer_demand": 718.0,
+        "min_depot_distance": 30898.541710743604,
+        "node_count": 25,
+        "passed": true,
+        "station_count": 2
+      }
+    }
+  },
+  "scenario_id": "DEV-DUAL-D2-GROUP456-SRC10",
+  "schema_version": "setp-instance-lab.v1",
+  "seed": 400021,
+  "validation": {
+    "customer_count": 21,
+    "customer_demand_cap": 1040.0,
+    "depot_count": 2,
+    "distance_matrix_shape": [
+      25,
+      25
+    ],
+    "duplicate_coordinate_count": 2,
+    "exact_base_layout_relaxed": true,
+    "isolated_customer_share": 0.38095238095238093,
+    "max_customer_demand": 718.0,
+    "min_depot_distance": 30898.541710743604,
+    "node_count": 25,
+    "passed": true,
+    "station_count": 2
+  }
+}

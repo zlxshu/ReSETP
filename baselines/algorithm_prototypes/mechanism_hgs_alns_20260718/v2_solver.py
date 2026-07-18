@@ -191,6 +191,7 @@ def run_official_hgs_neutral(
         ),
         mechanism_activity={
             "official_hgs_commit": "1a927955cd2861a29d978f0d359d6e647db9319c",
+            "reference_replays": 1,
             "hgs_candidate_decodes": total,
             "hgs_native_calls": hgs_calls,
             "hgs_native_cpu_milliseconds": round(
@@ -327,6 +328,9 @@ def run_original_n_wouda_alns_neutral(
         ),
         mechanism_activity={
             "upstream_alns_commit": ORIGINAL_ALNS_COMMIT,
+            "reference_replays": int(
+                context.score_counts.get("reference", 0)
+            ),
             "destroy_operators": len(destroy_operators),
             "repair_operators": len(repair_operators),
             "candidate_scores": int(context.score_counts.get("candidate", 0)),

@@ -1,0 +1,625 @@
+{
+  "build_note": "Customer windows are shifted by 0/9/18h; only >24h third-shift tail customers are dropped.",
+  "count_policy": {
+    "forbidden": [
+      "target_count_planning",
+      "prefix_truncation",
+      "algorithm_result_based_selection"
+    ],
+    "input_customer_counts": [
+      15,
+      15,
+      15
+    ],
+    "policy": "fresh_group789_full_source_natural_24h_tail_cut",
+    "source_donors": [
+      "07",
+      "08",
+      "09"
+    ],
+    "source_scale": 15
+  },
+  "deleted_customer_count": 11,
+  "deleted_customers": [
+    {
+      "reason": "shifted_due_time_exceeds_24h",
+      "shift_seconds": 64800.0,
+      "shifted_due_time": 87086.0,
+      "shifted_ready_time": 65852.0,
+      "source_base_id": "E-UK15_09",
+      "source_node_id": "C3",
+      "source_scenario_id": "DEV-DUAL-D2-GROUP789-SRC15__shift3_E-UK15_09_n15"
+    },
+    {
+      "reason": "shifted_due_time_exceeds_24h",
+      "shift_seconds": 64800.0,
+      "shifted_due_time": 88437.0,
+      "shifted_ready_time": 68187.0,
+      "source_base_id": "E-UK15_09",
+      "source_node_id": "C4",
+      "source_scenario_id": "DEV-DUAL-D2-GROUP789-SRC15__shift3_E-UK15_09_n15"
+    },
+    {
+      "reason": "shifted_due_time_exceeds_24h",
+      "shift_seconds": 64800.0,
+      "shifted_due_time": 88691.0,
+      "shifted_ready_time": 67848.0,
+      "source_base_id": "E-UK15_09",
+      "source_node_id": "C5",
+      "source_scenario_id": "DEV-DUAL-D2-GROUP789-SRC15__shift3_E-UK15_09_n15"
+    },
+    {
+      "reason": "shifted_due_time_exceeds_24h",
+      "shift_seconds": 64800.0,
+      "shifted_due_time": 86638.0,
+      "shifted_ready_time": 67961.0,
+      "source_base_id": "E-UK15_09",
+      "source_node_id": "C6",
+      "source_scenario_id": "DEV-DUAL-D2-GROUP789-SRC15__shift3_E-UK15_09_n15"
+    },
+    {
+      "reason": "shifted_due_time_exceeds_24h",
+      "shift_seconds": 64800.0,
+      "shifted_due_time": 87878.0,
+      "shifted_ready_time": 67733.0,
+      "source_base_id": "E-UK15_09",
+      "source_node_id": "C9",
+      "source_scenario_id": "DEV-DUAL-D2-GROUP789-SRC15__shift3_E-UK15_09_n15"
+    },
+    {
+      "reason": "shifted_due_time_exceeds_24h",
+      "shift_seconds": 64800.0,
+      "shifted_due_time": 88519.0,
+      "shifted_ready_time": 68584.0,
+      "source_base_id": "E-UK15_09",
+      "source_node_id": "C10",
+      "source_scenario_id": "DEV-DUAL-D2-GROUP789-SRC15__shift3_E-UK15_09_n15"
+    },
+    {
+      "reason": "shifted_due_time_exceeds_24h",
+      "shift_seconds": 64800.0,
+      "shifted_due_time": 86743.0,
+      "shifted_ready_time": 67024.0,
+      "source_base_id": "E-UK15_09",
+      "source_node_id": "C11",
+      "source_scenario_id": "DEV-DUAL-D2-GROUP789-SRC15__shift3_E-UK15_09_n15"
+    },
+    {
+      "reason": "shifted_due_time_exceeds_24h",
+      "shift_seconds": 64800.0,
+      "shifted_due_time": 87095.0,
+      "shifted_ready_time": 66991.0,
+      "source_base_id": "E-UK15_09",
+      "source_node_id": "C12",
+      "source_scenario_id": "DEV-DUAL-D2-GROUP789-SRC15__shift3_E-UK15_09_n15"
+    },
+    {
+      "reason": "shifted_due_time_exceeds_24h",
+      "shift_seconds": 64800.0,
+      "shifted_due_time": 89597.0,
+      "shifted_ready_time": 69409.0,
+      "source_base_id": "E-UK15_09",
+      "source_node_id": "C13",
+      "source_scenario_id": "DEV-DUAL-D2-GROUP789-SRC15__shift3_E-UK15_09_n15"
+    },
+    {
+      "reason": "shifted_due_time_exceeds_24h",
+      "shift_seconds": 64800.0,
+      "shifted_due_time": 88784.0,
+      "shifted_ready_time": 68897.0,
+      "source_base_id": "E-UK15_09",
+      "source_node_id": "C14",
+      "source_scenario_id": "DEV-DUAL-D2-GROUP789-SRC15__shift3_E-UK15_09_n15"
+    },
+    {
+      "reason": "shifted_due_time_exceeds_24h",
+      "shift_seconds": 64800.0,
+      "shifted_due_time": 88301.0,
+      "shifted_ready_time": 69610.0,
+      "source_base_id": "E-UK15_09",
+      "source_node_id": "C15",
+      "source_scenario_id": "DEV-DUAL-D2-GROUP789-SRC15__shift3_E-UK15_09_n15"
+    }
+  ],
+  "facility_layout_policy": "share first-shift physical layout and public-station attributes; normalize merged depot route-upper-bound chargers",
+  "facility_layout_source": "DEV-DUAL-D2-GROUP789-SRC15__shift1_E-UK15_07_n15",
+  "final_fleet": {
+    "num_cv": 2,
+    "num_ev": 1
+  },
+  "final_fleet_policy": "anchor_first_shift_source",
+  "formal_v3": true,
+  "kept_customer_count": 34,
+  "kept_customers": [
+    {
+      "due_time": 24648.0,
+      "new_node_id": "C001",
+      "ready_time": 5132.0,
+      "shift_seconds": 0.0,
+      "shifted_due_time": 24648.0,
+      "shifted_ready_time": 5132.0,
+      "source_base_id": "E-UK15_07",
+      "source_node_id": "C1",
+      "source_scenario_id": "DEV-DUAL-D2-GROUP789-SRC15__shift1_E-UK15_07_n15"
+    },
+    {
+      "due_time": 23246.0,
+      "new_node_id": "C002",
+      "ready_time": 2599.0,
+      "shift_seconds": 0.0,
+      "shifted_due_time": 23246.0,
+      "shifted_ready_time": 2599.0,
+      "source_base_id": "E-UK15_07",
+      "source_node_id": "C2",
+      "source_scenario_id": "DEV-DUAL-D2-GROUP789-SRC15__shift1_E-UK15_07_n15"
+    },
+    {
+      "due_time": 21858.0,
+      "new_node_id": "C003",
+      "ready_time": 1622.0,
+      "shift_seconds": 0.0,
+      "shifted_due_time": 21858.0,
+      "shifted_ready_time": 1622.0,
+      "source_base_id": "E-UK15_07",
+      "source_node_id": "C3",
+      "source_scenario_id": "DEV-DUAL-D2-GROUP789-SRC15__shift1_E-UK15_07_n15"
+    },
+    {
+      "due_time": 22243.0,
+      "new_node_id": "C004",
+      "ready_time": 2049.0,
+      "shift_seconds": 0.0,
+      "shifted_due_time": 22243.0,
+      "shifted_ready_time": 2049.0,
+      "source_base_id": "E-UK15_07",
+      "source_node_id": "C4",
+      "source_scenario_id": "DEV-DUAL-D2-GROUP789-SRC15__shift1_E-UK15_07_n15"
+    },
+    {
+      "due_time": 22997.0,
+      "new_node_id": "C005",
+      "ready_time": 2719.0,
+      "shift_seconds": 0.0,
+      "shifted_due_time": 22997.0,
+      "shifted_ready_time": 2719.0,
+      "source_base_id": "E-UK15_07",
+      "source_node_id": "C5",
+      "source_scenario_id": "DEV-DUAL-D2-GROUP789-SRC15__shift1_E-UK15_07_n15"
+    },
+    {
+      "due_time": 21833.0,
+      "new_node_id": "C006",
+      "ready_time": 2643.0,
+      "shift_seconds": 0.0,
+      "shifted_due_time": 21833.0,
+      "shifted_ready_time": 2643.0,
+      "source_base_id": "E-UK15_07",
+      "source_node_id": "C6",
+      "source_scenario_id": "DEV-DUAL-D2-GROUP789-SRC15__shift1_E-UK15_07_n15"
+    },
+    {
+      "due_time": 26177.0,
+      "new_node_id": "C007",
+      "ready_time": 5139.0,
+      "shift_seconds": 0.0,
+      "shifted_due_time": 26177.0,
+      "shifted_ready_time": 5139.0,
+      "source_base_id": "E-UK15_07",
+      "source_node_id": "C7",
+      "source_scenario_id": "DEV-DUAL-D2-GROUP789-SRC15__shift1_E-UK15_07_n15"
+    },
+    {
+      "due_time": 23327.0,
+      "new_node_id": "C008",
+      "ready_time": 4330.0,
+      "shift_seconds": 0.0,
+      "shifted_due_time": 23327.0,
+      "shifted_ready_time": 4330.0,
+      "source_base_id": "E-UK15_07",
+      "source_node_id": "C8",
+      "source_scenario_id": "DEV-DUAL-D2-GROUP789-SRC15__shift1_E-UK15_07_n15"
+    },
+    {
+      "due_time": 20286.0,
+      "new_node_id": "C009",
+      "ready_time": 640.0,
+      "shift_seconds": 0.0,
+      "shifted_due_time": 20286.0,
+      "shifted_ready_time": 640.0,
+      "source_base_id": "E-UK15_07",
+      "source_node_id": "C9",
+      "source_scenario_id": "DEV-DUAL-D2-GROUP789-SRC15__shift1_E-UK15_07_n15"
+    },
+    {
+      "due_time": 23518.0,
+      "new_node_id": "C010",
+      "ready_time": 4367.0,
+      "shift_seconds": 0.0,
+      "shifted_due_time": 23518.0,
+      "shifted_ready_time": 4367.0,
+      "source_base_id": "E-UK15_07",
+      "source_node_id": "C10",
+      "source_scenario_id": "DEV-DUAL-D2-GROUP789-SRC15__shift1_E-UK15_07_n15"
+    },
+    {
+      "due_time": 22696.0,
+      "new_node_id": "C011",
+      "ready_time": 2505.0,
+      "shift_seconds": 0.0,
+      "shifted_due_time": 22696.0,
+      "shifted_ready_time": 2505.0,
+      "source_base_id": "E-UK15_07",
+      "source_node_id": "C11",
+      "source_scenario_id": "DEV-DUAL-D2-GROUP789-SRC15__shift1_E-UK15_07_n15"
+    },
+    {
+      "due_time": 21758.0,
+      "new_node_id": "C012",
+      "ready_time": 2642.0,
+      "shift_seconds": 0.0,
+      "shifted_due_time": 21758.0,
+      "shifted_ready_time": 2642.0,
+      "source_base_id": "E-UK15_07",
+      "source_node_id": "C12",
+      "source_scenario_id": "DEV-DUAL-D2-GROUP789-SRC15__shift1_E-UK15_07_n15"
+    },
+    {
+      "due_time": 24326.0,
+      "new_node_id": "C013",
+      "ready_time": 3802.0,
+      "shift_seconds": 0.0,
+      "shifted_due_time": 24326.0,
+      "shifted_ready_time": 3802.0,
+      "source_base_id": "E-UK15_07",
+      "source_node_id": "C13",
+      "source_scenario_id": "DEV-DUAL-D2-GROUP789-SRC15__shift1_E-UK15_07_n15"
+    },
+    {
+      "due_time": 21911.0,
+      "new_node_id": "C014",
+      "ready_time": 1980.0,
+      "shift_seconds": 0.0,
+      "shifted_due_time": 21911.0,
+      "shifted_ready_time": 1980.0,
+      "source_base_id": "E-UK15_07",
+      "source_node_id": "C14",
+      "source_scenario_id": "DEV-DUAL-D2-GROUP789-SRC15__shift1_E-UK15_07_n15"
+    },
+    {
+      "due_time": 20477.0,
+      "new_node_id": "C015",
+      "ready_time": 1726.0,
+      "shift_seconds": 0.0,
+      "shifted_due_time": 20477.0,
+      "shifted_ready_time": 1726.0,
+      "source_base_id": "E-UK15_07",
+      "source_node_id": "C15",
+      "source_scenario_id": "DEV-DUAL-D2-GROUP789-SRC15__shift1_E-UK15_07_n15"
+    },
+    {
+      "due_time": 24390.0,
+      "new_node_id": "C016",
+      "ready_time": 4107.0,
+      "shift_seconds": 32400.0,
+      "shifted_due_time": 56790.0,
+      "shifted_ready_time": 36507.0,
+      "source_base_id": "E-UK15_08",
+      "source_node_id": "C1",
+      "source_scenario_id": "DEV-DUAL-D2-GROUP789-SRC15__shift2_E-UK15_08_n15"
+    },
+    {
+      "due_time": 23088.0,
+      "new_node_id": "C017",
+      "ready_time": 3112.0,
+      "shift_seconds": 32400.0,
+      "shifted_due_time": 55488.0,
+      "shifted_ready_time": 35512.0,
+      "source_base_id": "E-UK15_08",
+      "source_node_id": "C2",
+      "source_scenario_id": "DEV-DUAL-D2-GROUP789-SRC15__shift2_E-UK15_08_n15"
+    },
+    {
+      "due_time": 22175.0,
+      "new_node_id": "C018",
+      "ready_time": 1679.0,
+      "shift_seconds": 32400.0,
+      "shifted_due_time": 54575.0,
+      "shifted_ready_time": 34079.0,
+      "source_base_id": "E-UK15_08",
+      "source_node_id": "C3",
+      "source_scenario_id": "DEV-DUAL-D2-GROUP789-SRC15__shift2_E-UK15_08_n15"
+    },
+    {
+      "due_time": 21289.0,
+      "new_node_id": "C019",
+      "ready_time": 778.0,
+      "shift_seconds": 32400.0,
+      "shifted_due_time": 53689.0,
+      "shifted_ready_time": 33178.0,
+      "source_base_id": "E-UK15_08",
+      "source_node_id": "C4",
+      "source_scenario_id": "DEV-DUAL-D2-GROUP789-SRC15__shift2_E-UK15_08_n15"
+    },
+    {
+      "due_time": 21845.0,
+      "new_node_id": "C020",
+      "ready_time": 2428.0,
+      "shift_seconds": 32400.0,
+      "shifted_due_time": 54245.0,
+      "shifted_ready_time": 34828.0,
+      "source_base_id": "E-UK15_08",
+      "source_node_id": "C5",
+      "source_scenario_id": "DEV-DUAL-D2-GROUP789-SRC15__shift2_E-UK15_08_n15"
+    },
+    {
+      "due_time": 20990.0,
+      "new_node_id": "C021",
+      "ready_time": 776.0,
+      "shift_seconds": 32400.0,
+      "shifted_due_time": 53390.0,
+      "shifted_ready_time": 33176.0,
+      "source_base_id": "E-UK15_08",
+      "source_node_id": "C6",
+      "source_scenario_id": "DEV-DUAL-D2-GROUP789-SRC15__shift2_E-UK15_08_n15"
+    },
+    {
+      "due_time": 24408.0,
+      "new_node_id": "C022",
+      "ready_time": 3065.0,
+      "shift_seconds": 32400.0,
+      "shifted_due_time": 56808.0,
+      "shifted_ready_time": 35465.0,
+      "source_base_id": "E-UK15_08",
+      "source_node_id": "C7",
+      "source_scenario_id": "DEV-DUAL-D2-GROUP789-SRC15__shift2_E-UK15_08_n15"
+    },
+    {
+      "due_time": 24282.0,
+      "new_node_id": "C023",
+      "ready_time": 4747.0,
+      "shift_seconds": 32400.0,
+      "shifted_due_time": 56682.0,
+      "shifted_ready_time": 37147.0,
+      "source_base_id": "E-UK15_08",
+      "source_node_id": "C8",
+      "source_scenario_id": "DEV-DUAL-D2-GROUP789-SRC15__shift2_E-UK15_08_n15"
+    },
+    {
+      "due_time": 23381.0,
+      "new_node_id": "C024",
+      "ready_time": 3319.0,
+      "shift_seconds": 32400.0,
+      "shifted_due_time": 55781.0,
+      "shifted_ready_time": 35719.0,
+      "source_base_id": "E-UK15_08",
+      "source_node_id": "C9",
+      "source_scenario_id": "DEV-DUAL-D2-GROUP789-SRC15__shift2_E-UK15_08_n15"
+    },
+    {
+      "due_time": 22064.0,
+      "new_node_id": "C025",
+      "ready_time": 3199.0,
+      "shift_seconds": 32400.0,
+      "shifted_due_time": 54464.0,
+      "shifted_ready_time": 35599.0,
+      "source_base_id": "E-UK15_08",
+      "source_node_id": "C10",
+      "source_scenario_id": "DEV-DUAL-D2-GROUP789-SRC15__shift2_E-UK15_08_n15"
+    },
+    {
+      "due_time": 21769.0,
+      "new_node_id": "C026",
+      "ready_time": 3005.0,
+      "shift_seconds": 32400.0,
+      "shifted_due_time": 54169.0,
+      "shifted_ready_time": 35405.0,
+      "source_base_id": "E-UK15_08",
+      "source_node_id": "C11",
+      "source_scenario_id": "DEV-DUAL-D2-GROUP789-SRC15__shift2_E-UK15_08_n15"
+    },
+    {
+      "due_time": 23447.0,
+      "new_node_id": "C027",
+      "ready_time": 3845.0,
+      "shift_seconds": 32400.0,
+      "shifted_due_time": 55847.0,
+      "shifted_ready_time": 36245.0,
+      "source_base_id": "E-UK15_08",
+      "source_node_id": "C12",
+      "source_scenario_id": "DEV-DUAL-D2-GROUP789-SRC15__shift2_E-UK15_08_n15"
+    },
+    {
+      "due_time": 22189.0,
+      "new_node_id": "C028",
+      "ready_time": 1494.0,
+      "shift_seconds": 32400.0,
+      "shifted_due_time": 54589.0,
+      "shifted_ready_time": 33894.0,
+      "source_base_id": "E-UK15_08",
+      "source_node_id": "C13",
+      "source_scenario_id": "DEV-DUAL-D2-GROUP789-SRC15__shift2_E-UK15_08_n15"
+    },
+    {
+      "due_time": 23617.0,
+      "new_node_id": "C029",
+      "ready_time": 3172.0,
+      "shift_seconds": 32400.0,
+      "shifted_due_time": 56017.0,
+      "shifted_ready_time": 35572.0,
+      "source_base_id": "E-UK15_08",
+      "source_node_id": "C14",
+      "source_scenario_id": "DEV-DUAL-D2-GROUP789-SRC15__shift2_E-UK15_08_n15"
+    },
+    {
+      "due_time": 23442.0,
+      "new_node_id": "C030",
+      "ready_time": 3791.0,
+      "shift_seconds": 32400.0,
+      "shifted_due_time": 55842.0,
+      "shifted_ready_time": 36191.0,
+      "source_base_id": "E-UK15_08",
+      "source_node_id": "C15",
+      "source_scenario_id": "DEV-DUAL-D2-GROUP789-SRC15__shift2_E-UK15_08_n15"
+    },
+    {
+      "due_time": 18980.0,
+      "new_node_id": "C031",
+      "ready_time": 641.0,
+      "shift_seconds": 64800.0,
+      "shifted_due_time": 83780.0,
+      "shifted_ready_time": 65441.0,
+      "source_base_id": "E-UK15_09",
+      "source_node_id": "C1",
+      "source_scenario_id": "DEV-DUAL-D2-GROUP789-SRC15__shift3_E-UK15_09_n15"
+    },
+    {
+      "due_time": 21042.0,
+      "new_node_id": "C032",
+      "ready_time": 887.0,
+      "shift_seconds": 64800.0,
+      "shifted_due_time": 85842.0,
+      "shifted_ready_time": 65687.0,
+      "source_base_id": "E-UK15_09",
+      "source_node_id": "C2",
+      "source_scenario_id": "DEV-DUAL-D2-GROUP789-SRC15__shift3_E-UK15_09_n15"
+    },
+    {
+      "due_time": 21064.0,
+      "new_node_id": "C033",
+      "ready_time": 920.0,
+      "shift_seconds": 64800.0,
+      "shifted_due_time": 85864.0,
+      "shifted_ready_time": 65720.0,
+      "source_base_id": "E-UK15_09",
+      "source_node_id": "C7",
+      "source_scenario_id": "DEV-DUAL-D2-GROUP789-SRC15__shift3_E-UK15_09_n15"
+    },
+    {
+      "due_time": 19683.0,
+      "new_node_id": "C034",
+      "ready_time": 769.0,
+      "shift_seconds": 64800.0,
+      "shifted_due_time": 84483.0,
+      "shifted_ready_time": 65569.0,
+      "source_base_id": "E-UK15_09",
+      "source_node_id": "C8",
+      "source_scenario_id": "DEV-DUAL-D2-GROUP789-SRC15__shift3_E-UK15_09_n15"
+    }
+  ],
+  "merged_customer_count": 34,
+  "name": "DEV-DUAL-D2-GROUP789-SRC15",
+  "return_deadline_seconds": 86400.0,
+  "source_children": [
+    {
+      "deleted_customer_count": 0,
+      "input_customer_count": 15,
+      "kept_customer_count": 15,
+      "scenario_id": "DEV-DUAL-D2-GROUP789-SRC15__shift1_E-UK15_07_n15",
+      "shift_seconds": 0.0,
+      "source_base_id": "E-UK15_07",
+      "validation": {
+        "customer_count": 15,
+        "customer_demand_cap": 1040.0,
+        "depot_count": 2,
+        "distance_matrix_shape": [
+          19,
+          19
+        ],
+        "duplicate_coordinate_count": 2,
+        "exact_base_layout_relaxed": true,
+        "isolated_customer_share": 0.26666666666666666,
+        "max_customer_demand": 795.0,
+        "min_depot_distance": 42184.33179569518,
+        "node_count": 19,
+        "passed": true,
+        "station_count": 2
+      }
+    },
+    {
+      "deleted_customer_count": 0,
+      "input_customer_count": 15,
+      "kept_customer_count": 15,
+      "scenario_id": "DEV-DUAL-D2-GROUP789-SRC15__shift2_E-UK15_08_n15",
+      "shift_seconds": 32400.0,
+      "source_base_id": "E-UK15_08",
+      "validation": {
+        "customer_count": 15,
+        "customer_demand_cap": 1040.0,
+        "depot_count": 2,
+        "distance_matrix_shape": [
+          19,
+          19
+        ],
+        "duplicate_coordinate_count": 1,
+        "exact_base_layout_relaxed": true,
+        "isolated_customer_share": 0.0,
+        "max_customer_demand": 810.0,
+        "min_depot_distance": 42184.33179569518,
+        "node_count": 19,
+        "passed": true,
+        "station_count": 2
+      }
+    },
+    {
+      "deleted_customer_count": 11,
+      "input_customer_count": 15,
+      "kept_customer_count": 4,
+      "scenario_id": "DEV-DUAL-D2-GROUP789-SRC15__shift3_E-UK15_09_n15",
+      "shift_seconds": 64800.0,
+      "source_base_id": "E-UK15_09",
+      "validation": {
+        "customer_count": 15,
+        "customer_demand_cap": 1040.0,
+        "depot_count": 2,
+        "distance_matrix_shape": [
+          19,
+          19
+        ],
+        "duplicate_coordinate_count": 1,
+        "exact_base_layout_relaxed": true,
+        "isolated_customer_share": 0.06666666666666667,
+        "max_customer_demand": 804.0,
+        "min_depot_distance": 42184.33179569518,
+        "node_count": 19,
+        "passed": true,
+        "station_count": 2
+      }
+    }
+  ],
+  "source_fleets": [
+    {
+      "num_cv": 2,
+      "num_ev": 1,
+      "source_base_id": "E-UK15_07"
+    },
+    {
+      "num_cv": 1,
+      "num_ev": 1,
+      "source_base_id": "E-UK15_08"
+    },
+    {
+      "num_cv": 2,
+      "num_ev": 1,
+      "source_base_id": "E-UK15_09"
+    }
+  ],
+  "source_scale": 15,
+  "total_demand": 15356.0,
+  "validation": {
+    "customer_count": 34,
+    "customer_demand_cap": 1040.0,
+    "depot_count": 2,
+    "distance_matrix_shape": [
+      38,
+      38
+    ],
+    "duplicate_coordinate_count": 2,
+    "exact_base_layout_relaxed": true,
+    "isolated_customer_share": 0.11764705882352941,
+    "max_customer_demand": 810.0,
+    "min_depot_distance": 42184.33179569518,
+    "node_count": 38,
+    "passed": true,
+    "station_count": 2
+  }
+}

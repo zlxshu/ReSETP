@@ -258,7 +258,17 @@ def run_pure_alns(
         elapsed_seconds=time.perf_counter() - started,
         route_count=len(result["best_solution"].routes),
         feasible=bool(result["feasible"]),
-        mechanism_activity={"alns_actual_moves": int(result.get("actual_moves", 0))},
+        mechanism_activity={
+            "alns_actual_moves": int(result.get("actual_moves", 0)),
+            "score_counts": dict(
+                result.get("operator_counts", {}).get("score_counts", {})
+            ),
+            "reference_replays": int(
+                result.get("operator_counts", {})
+                .get("score_counts", {})
+                .get("reference", 0)
+            ),
+        },
     )
 
 

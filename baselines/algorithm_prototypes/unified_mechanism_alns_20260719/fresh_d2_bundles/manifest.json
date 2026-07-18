@@ -1,0 +1,345 @@
+{
+  "backup_instances": [
+    {
+      "actual_customer_count": 44,
+      "actual_depot_count": 2,
+      "actual_station_count": 3,
+      "builder_reported_customer_count": 44,
+      "bundle_files": {
+        "carbon_profile.csv": "f552d7b082593582369ab0dfd938983eeadd38a76a0b0a3e79d3410c00421433",
+        "depot_candidate_scores.csv": "99b4769dfa0799a1da4a981f0526111b94b18209bee1d5a6c1ed3af2b5e44cc0",
+        "distance_matrix.npy": "109cb0cffce555a72605d3d5a2db435f6cca6124660667953ac95d9fcf77a960",
+        "instance.json": "5d6a45a33531d6e96dd98533c33253627eaea1bf23a149fd4f25823dddf6b813",
+        "instance_evrptwmf.txt": "3bc18b4204ff799653a571045637e0d413dc07abc6ddfbbe2b819030869df088",
+        "nodes.csv": "563d9b76eca5128810814238df6978368136d8335cdb2c251c9e78e4d1d8c1f2",
+        "scenario_manifest.json": "cb69767825d12f13b76d779762bc8e1dbe31f88c90c2caf00705f1cf7251c9b7",
+        "station_candidate_scores.csv": "de138ed51c116c254b4dfd0cb12a31e20a2c98a91f7dbd7ffdec5d936dff5f21",
+        "three_shift_manifest.json": "b9cbdd98fa3328c86456bc7f7f01095ebc024abf737477a3e06b87e2a6049813"
+      },
+      "carbon_distinct_values": 48,
+      "carbon_max_gco2_per_kwh": 188.94444444444446,
+      "carbon_min_gco2_per_kwh": 47.5,
+      "carbon_slot_count": 48,
+      "cross_depot_feasible_witness": {
+        "cross_site_service_count": 1,
+        "customer_id": "C001",
+        "feasible_alternate_depot": "D0",
+        "full_solution_feasible": true,
+        "nearest_owner_depot": "D1"
+      },
+      "instance_id": "DEV-DUAL-D2-BACKUP-GROUP456-SRC20-N44-DEP2",
+      "movable_charge_witness": {
+        "earliest_start_second": 37529.977313207324,
+        "energy_kwh": 4.784815437316919,
+        "latest_start_second": 121475.052887959,
+        "movable_slack_seconds": 83945.07557475168,
+        "station_id": "D0",
+        "vehicle_id": "EV1#T1"
+      },
+      "nearest_owner_depots": [
+        "D0",
+        "D1"
+      ],
+      "num_cv": 2,
+      "num_ev": 1,
+      "role": "saturation_backup",
+      "source_ids": [
+        "E-UK20_04",
+        "E-UK20_05",
+        "E-UK20_06"
+      ],
+      "source_paths_repo_relative": [
+        "models/data_bundle/raw_instances/goeke_uk/E-UK20_04.txt",
+        "models/data_bundle/raw_instances/goeke_uk/E-UK20_05.txt",
+        "models/data_bundle/raw_instances/goeke_uk/E-UK20_06.txt"
+      ],
+      "source_scale": 20,
+      "source_sha256": {
+        "E-UK20_04": "b5623b508daf3e0e5280740145ddb11353dbe92cd830268bd2e072cee5831413",
+        "E-UK20_05": "1c2fedcbc2cb8df58ec005fda0af0cc33900fb0f2c33b95a3090b2b0ab040789",
+        "E-UK20_06": "2c3e2c2575b0c29b02a1087ffd58500a8362fb6232853cab439a2bee28a471b9"
+      },
+      "structure_pass": true
+    },
+    {
+      "actual_customer_count": 168,
+      "actual_depot_count": 2,
+      "actual_station_count": 8,
+      "builder_reported_customer_count": 168,
+      "bundle_files": {
+        "carbon_profile.csv": "f552d7b082593582369ab0dfd938983eeadd38a76a0b0a3e79d3410c00421433",
+        "depot_candidate_scores.csv": "c1f55153ab31733686d0cff81aa721e89780d393db8feb48bfe80d598829c4cc",
+        "distance_matrix.npy": "2ad7723a732bc730fc4ecd01ae28013278a93fa1c1bc1f8fa9a42fe9faca9d26",
+        "instance.json": "fba98cb880f3bc93bd0eedc6d090f125294e3cabf25de848f1dc9c040c8fbf0a",
+        "instance_evrptwmf.txt": "c7b724a40de34b8edb512e6b71a4e23891db48df30da9142cb36b8334e41e841",
+        "nodes.csv": "09d3a5eb11d38ab585e8d625cb9eddadb86077f643d1c77d2be33ddcf89d4fd7",
+        "scenario_manifest.json": "cd5a0666c9d709db38b66a6c987576ec08114cfa2229781119af87e1df49f07d",
+        "station_candidate_scores.csv": "913ade5ea05e92c34867a35117312c56d4f11c283e404c8b72fed5b7d92b8c03",
+        "three_shift_manifest.json": "18059d6be09649bfb9f634a6debabbd9e62d44dfe90714a17c0467100b50f8a3"
+      },
+      "carbon_distinct_values": 48,
+      "carbon_max_gco2_per_kwh": 188.94444444444446,
+      "carbon_min_gco2_per_kwh": 47.5,
+      "carbon_slot_count": 48,
+      "cross_depot_feasible_witness": {
+        "cross_site_service_count": 1,
+        "customer_id": "C001",
+        "feasible_alternate_depot": "D0",
+        "full_solution_feasible": true,
+        "nearest_owner_depot": "D1"
+      },
+      "instance_id": "DEV-DUAL-D2-BACKUP-GROUP789-SRC75-N168-DEP2",
+      "movable_charge_witness": {
+        "earliest_start_second": 4732.5087455061985,
+        "energy_kwh": 3.424579398461438,
+        "latest_start_second": 88733.10553474557,
+        "movable_slack_seconds": 84000.59678923937,
+        "station_id": "D1",
+        "vehicle_id": "EV1#T1"
+      },
+      "nearest_owner_depots": [
+        "D0",
+        "D1"
+      ],
+      "num_cv": 6,
+      "num_ev": 5,
+      "role": "saturation_backup",
+      "source_ids": [
+        "E-UK75_07",
+        "E-UK75_08",
+        "E-UK75_09"
+      ],
+      "source_paths_repo_relative": [
+        "models/data_bundle/raw_instances/goeke_uk/E-UK75_07.txt",
+        "models/data_bundle/raw_instances/goeke_uk/E-UK75_08.txt",
+        "models/data_bundle/raw_instances/goeke_uk/E-UK75_09.txt"
+      ],
+      "source_scale": 75,
+      "source_sha256": {
+        "E-UK75_07": "4ca326c7fe291dd10c2c87b9f7f1d4bc92042b4b756d5de6b52c5769010929f1",
+        "E-UK75_08": "43d83f7de5090301b1603ea100f3f82954c570df77a214ac6d505a18b7d0a01b",
+        "E-UK75_09": "76318d96dd83472184ce5e515a53a387ba5384221282f070e1fa3a1c43d52af3"
+      },
+      "structure_pass": true
+    }
+  ],
+  "backup_source_groups": {
+    "20": [
+      "04",
+      "05",
+      "06"
+    ],
+    "75": [
+      "07",
+      "08",
+      "09"
+    ]
+  },
+  "builder_repo_relative": "baselines/algorithm_prototypes/unified_mechanism_alns_20260719/build_fresh_d2_bundles.py",
+  "builder_sha256": "fb495e046b0f2528f36d029b29c5d58d931364cbba5a35e9508a168f87e0bd63",
+  "contract_repo_relative": "docs/handoff/dual_basin_mechanism_alns_fresh_gate_contract_20260719.md",
+  "contract_sha256": "c224ce8df36aa3f9aa55d69e12d7a7e764e84ccbca55519d4c694ccd69fbbe17",
+  "formal_l_main_activated": false,
+  "freshness_label": "NEW_COMPOSITE_BUNDLE_NOT_RAW_PRISTINE",
+  "generator_repo_relative": "models/scripts/build_e2_benchmark_instances.py",
+  "generator_sha256": "876ccd081c4aabdf28d5f54573af4d3a6025583353f7bb7734c7e2b2d65fb5e7",
+  "instances": [
+    {
+      "actual_customer_count": 21,
+      "actual_depot_count": 2,
+      "actual_station_count": 2,
+      "builder_reported_customer_count": 21,
+      "bundle_files": {
+        "carbon_profile.csv": "f552d7b082593582369ab0dfd938983eeadd38a76a0b0a3e79d3410c00421433",
+        "depot_candidate_scores.csv": "0611dad4861dcdcb97a639d40145c476e4db5a0d4bf2db52669cbee0d37f31f6",
+        "distance_matrix.npy": "c109837185a260179910937381201a0416c34e4d1252a402d9a2eea275843a4b",
+        "instance.json": "445f3ade329ddc1ddd7bae7232cc6c732f18ce3724d463da1867ec90a9797925",
+        "instance_evrptwmf.txt": "07bc192833e2011e3c200bda1fa81c13e5589bf6ba2f8b5b43f71e3df7e8912a",
+        "nodes.csv": "9ae46ebb65c9194d6be9080ac3e58b2e98f4473791124bb6e97c1964179a8116",
+        "scenario_manifest.json": "bbf4ce90d861fd2d8d1a4d5bd2eb5dba07c1143b46deb24437b24d20395276d0",
+        "station_candidate_scores.csv": "ec9033a656f324b0fcc0cddcb096a8b7bf4f2f5a8d634a859e2870c4eeebdc60",
+        "three_shift_manifest.json": "7fefce2fb8e26b65b77530a410d710043b6bc2d209e6ddf9b73ab6d781b9c447"
+      },
+      "carbon_distinct_values": 48,
+      "carbon_max_gco2_per_kwh": 188.94444444444446,
+      "carbon_min_gco2_per_kwh": 47.5,
+      "carbon_slot_count": 48,
+      "cross_depot_feasible_witness": {
+        "cross_site_service_count": 1,
+        "customer_id": "C001",
+        "feasible_alternate_depot": "D0",
+        "full_solution_feasible": true,
+        "nearest_owner_depot": "D1"
+      },
+      "instance_id": "DEV-DUAL-D2-GROUP456-SRC10-N21-DEP2",
+      "movable_charge_witness": {
+        "earliest_start_second": 36947.17117479389,
+        "energy_kwh": 9.220262331337148,
+        "latest_start_second": 120676.05862553277,
+        "movable_slack_seconds": 83728.88745073887,
+        "station_id": "D0",
+        "vehicle_id": "EV1#T1"
+      },
+      "nearest_owner_depots": [
+        "D0",
+        "D1"
+      ],
+      "num_cv": 1,
+      "num_ev": 1,
+      "role": "primary",
+      "source_ids": [
+        "E-UK10_04",
+        "E-UK10_05",
+        "E-UK10_06"
+      ],
+      "source_paths_repo_relative": [
+        "models/data_bundle/raw_instances/goeke_uk/E-UK10_04.txt",
+        "models/data_bundle/raw_instances/goeke_uk/E-UK10_05.txt",
+        "models/data_bundle/raw_instances/goeke_uk/E-UK10_06.txt"
+      ],
+      "source_scale": 10,
+      "source_sha256": {
+        "E-UK10_04": "57d434474509e7c1dee623fdceb8ff65f836f1722a1feddc9fd14d1270d0a2ec",
+        "E-UK10_05": "5491155fb5dbd3ee817b4f063271a80e5f9342542e99e12d239d94654792de75",
+        "E-UK10_06": "83d56437391a1f0536c00d58c7599bb85312660290088ed9ba7e0290521ce636"
+      },
+      "structure_pass": true
+    },
+    {
+      "actual_customer_count": 34,
+      "actual_depot_count": 2,
+      "actual_station_count": 2,
+      "builder_reported_customer_count": 34,
+      "bundle_files": {
+        "carbon_profile.csv": "f552d7b082593582369ab0dfd938983eeadd38a76a0b0a3e79d3410c00421433",
+        "depot_candidate_scores.csv": "0dc39189e87ce60e97a13e1b6f3237d19a45f6c1af1f4f35e23febb81d198e39",
+        "distance_matrix.npy": "dadc3cb90918f4a22bc32139db3101b50e3bfce4d501214fdb739c8bb0224118",
+        "instance.json": "85980bf150b41fd938154a6f534ab205eb6bd4f2d6cb615dc207afec6f64ecde",
+        "instance_evrptwmf.txt": "d42d8f5f9d09e1fc9a0d12b2ff7507d445184129065e60e9e2ab69f787cb2c58",
+        "nodes.csv": "82342655892ba77de693b61e2fabcf894b82af6723f30d0a1a751f9fb66b0778",
+        "scenario_manifest.json": "91febec51a7c9730e76131bfd78c9fd319932b852038bf793765fa760aeff34d",
+        "station_candidate_scores.csv": "2df9f13074cda2963df5e455dd8460fe2797a389e8ab71b22ac6b6aab2ab274e",
+        "three_shift_manifest.json": "d67e41c396a0d9ca4a7f72092a675e5dba3774118ee70177c519e892a71e09fe"
+      },
+      "carbon_distinct_values": 48,
+      "carbon_max_gco2_per_kwh": 188.94444444444446,
+      "carbon_min_gco2_per_kwh": 47.5,
+      "carbon_slot_count": 48,
+      "cross_depot_feasible_witness": {
+        "cross_site_service_count": 1,
+        "customer_id": "C001",
+        "feasible_alternate_depot": "D0",
+        "full_solution_feasible": true,
+        "nearest_owner_depot": "D1"
+      },
+      "instance_id": "DEV-DUAL-D2-GROUP789-SRC15-N34-DEP2",
+      "movable_charge_witness": {
+        "earliest_start_second": 36736.04531953039,
+        "energy_kwh": 6.218931949533287,
+        "latest_start_second": 120898.31127054598,
+        "movable_slack_seconds": 84162.26595101558,
+        "station_id": "D0",
+        "vehicle_id": "EV1#T1"
+      },
+      "nearest_owner_depots": [
+        "D0",
+        "D1"
+      ],
+      "num_cv": 2,
+      "num_ev": 1,
+      "role": "primary",
+      "source_ids": [
+        "E-UK15_07",
+        "E-UK15_08",
+        "E-UK15_09"
+      ],
+      "source_paths_repo_relative": [
+        "models/data_bundle/raw_instances/goeke_uk/E-UK15_07.txt",
+        "models/data_bundle/raw_instances/goeke_uk/E-UK15_08.txt",
+        "models/data_bundle/raw_instances/goeke_uk/E-UK15_09.txt"
+      ],
+      "source_scale": 15,
+      "source_sha256": {
+        "E-UK15_07": "455f74c87b8f32cc8d0737fbf3b8f971cc45cc8f7121558f83c38ab5bc44b5dc",
+        "E-UK15_08": "8200a07ae179decfb795484711cda1696a98fdd994c23a5fdd8f295fb4b361a7",
+        "E-UK15_09": "aff622279df6b71a7163f843b3fb127ae98a6b59a96561c3ac749f59051687ee"
+      },
+      "structure_pass": true
+    }
+  ],
+  "prior_occurrence_allowlist": [
+    "baselines/e2_alns/fleet_cap_operational_gate_data/raw_goeke_fleet_counts.csv",
+    "baselines/e2_alns/goeke_public_benchmark_feasibility_20260716/raw_runs.csv",
+    "baselines/e2_alns/source_bound_operational_mix_map_data/raw_goeke_fleet_counts.csv"
+  ],
+  "prior_source_occurrences": {
+    "E-UK10_04": [
+      "baselines/e2_alns/goeke_public_benchmark_feasibility_20260716/raw_runs.csv",
+      "baselines/e2_alns/source_bound_operational_mix_map_data/raw_goeke_fleet_counts.csv"
+    ],
+    "E-UK10_05": [
+      "baselines/e2_alns/goeke_public_benchmark_feasibility_20260716/raw_runs.csv",
+      "baselines/e2_alns/source_bound_operational_mix_map_data/raw_goeke_fleet_counts.csv"
+    ],
+    "E-UK10_06": [
+      "baselines/e2_alns/goeke_public_benchmark_feasibility_20260716/raw_runs.csv",
+      "baselines/e2_alns/source_bound_operational_mix_map_data/raw_goeke_fleet_counts.csv"
+    ],
+    "E-UK15_07": [
+      "baselines/e2_alns/goeke_public_benchmark_feasibility_20260716/raw_runs.csv",
+      "baselines/e2_alns/source_bound_operational_mix_map_data/raw_goeke_fleet_counts.csv"
+    ],
+    "E-UK15_08": [
+      "baselines/e2_alns/goeke_public_benchmark_feasibility_20260716/raw_runs.csv",
+      "baselines/e2_alns/source_bound_operational_mix_map_data/raw_goeke_fleet_counts.csv"
+    ],
+    "E-UK15_09": [
+      "baselines/e2_alns/goeke_public_benchmark_feasibility_20260716/raw_runs.csv",
+      "baselines/e2_alns/source_bound_operational_mix_map_data/raw_goeke_fleet_counts.csv"
+    ],
+    "E-UK20_04": [
+      "baselines/e2_alns/goeke_public_benchmark_feasibility_20260716/raw_runs.csv",
+      "baselines/e2_alns/source_bound_operational_mix_map_data/raw_goeke_fleet_counts.csv"
+    ],
+    "E-UK20_05": [
+      "baselines/e2_alns/goeke_public_benchmark_feasibility_20260716/raw_runs.csv",
+      "baselines/e2_alns/source_bound_operational_mix_map_data/raw_goeke_fleet_counts.csv"
+    ],
+    "E-UK20_06": [
+      "baselines/e2_alns/goeke_public_benchmark_feasibility_20260716/raw_runs.csv",
+      "baselines/e2_alns/source_bound_operational_mix_map_data/raw_goeke_fleet_counts.csv"
+    ],
+    "E-UK75_07": [
+      "baselines/e2_alns/fleet_cap_operational_gate_data/raw_goeke_fleet_counts.csv",
+      "baselines/e2_alns/goeke_public_benchmark_feasibility_20260716/raw_runs.csv",
+      "baselines/e2_alns/source_bound_operational_mix_map_data/raw_goeke_fleet_counts.csv"
+    ],
+    "E-UK75_08": [
+      "baselines/e2_alns/fleet_cap_operational_gate_data/raw_goeke_fleet_counts.csv",
+      "baselines/e2_alns/goeke_public_benchmark_feasibility_20260716/raw_runs.csv",
+      "baselines/e2_alns/source_bound_operational_mix_map_data/raw_goeke_fleet_counts.csv"
+    ],
+    "E-UK75_09": [
+      "baselines/e2_alns/fleet_cap_operational_gate_data/raw_goeke_fleet_counts.csv",
+      "baselines/e2_alns/goeke_public_benchmark_feasibility_20260716/raw_runs.csv",
+      "baselines/e2_alns/source_bound_operational_mix_map_data/raw_goeke_fleet_counts.csv"
+    ]
+  },
+  "purpose": "stage1_isolated_fresh_development_gate_only_not_formal_benchmark",
+  "raw_sources_previously_used_only_for_public_feasibility_inventory": true,
+  "repo_search_found_no_prior_current_candidate_score": true,
+  "schema_version": "resetp.dual-basin-alns.d2-dataset.v1",
+  "source_groups": {
+    "10": [
+      "04",
+      "05",
+      "06"
+    ],
+    "15": [
+      "07",
+      "08",
+      "09"
+    ]
+  },
+  "stage2_activated": false
+}

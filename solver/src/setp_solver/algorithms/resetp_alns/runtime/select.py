@@ -2,6 +2,8 @@
 
 Adapted from N-Wouda/alns 7.0.0 (MIT License). Only AlphaUCB and its minimal
 base validation are retained because that is the only selector used here.
+The upstream copyright notice and complete MIT text are retained in
+``runtime/LICENSE-N-WOUDA-ALNS.md``.
 """
 
 from __future__ import annotations

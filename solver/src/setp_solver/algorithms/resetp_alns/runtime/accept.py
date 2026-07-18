@@ -2,7 +2,8 @@
 
 Adapted from N-Wouda/alns 7.0.0 (MIT License). The formulas, validation rules,
 and temperature/threshold updates are intentionally kept equivalent for the
-criteria used by this repository.
+criteria used by this repository.  The upstream copyright notice and complete
+MIT text are retained in ``runtime/LICENSE-N-WOUDA-ALNS.md``.
 """
 
 from __future__ import annotations

@@ -32,15 +32,31 @@ from setp_solver.solution import Solution
 
 REPO = Path(__file__).resolve().parents[3]
 OFFICIAL_COMMIT = "1a927955cd2861a29d978f0d359d6e647db9319c"
+OFFICIAL_PREFIX = (
+    REPO / "build/official-hgs-cvrp-1a927955cd28"
+)
 INSTALL_MANIFEST = (
-    REPO / "build/official-hgs-cvrp-1a927955cd28/install_manifest.json"
+    OFFICIAL_PREFIX / "install_manifest.json"
 )
-OFFICIAL_LIBRARY = (
-    REPO
-    / "build/official-hgs-cvrp-1a927955cd28/source/build-resetp/libhgscvrp.dylib"
+TRACKED_LICENSE = REPO / "third_party/hgs-cvrp/LICENSE"
+REBUILD_SCRIPT = REPO / "scripts/setup_official_hgs_cvrp_20260718.py"
+_LEGACY_LIBRARY = (
+    OFFICIAL_PREFIX / "source/build-resetp/libhgscvrp.dylib"
 )
-OFFICIAL_LIBRARY_SHA256 = (
+_LEGACY_LIBRARY_SHA256 = (
     "0f12d6ebeda11652e81540d8b1b15455ce3e66bfee3e0367526e944fb85bb001"
+)
+try:
+    _INSTALL_HINT = json.loads(
+        INSTALL_MANIFEST.read_text(encoding="utf-8")
+    )
+except (FileNotFoundError, json.JSONDecodeError):
+    _INSTALL_HINT = {}
+OFFICIAL_LIBRARY = Path(
+    str(_INSTALL_HINT.get("library", _LEGACY_LIBRARY))
+)
+OFFICIAL_LIBRARY_SHA256 = str(
+    _INSTALL_HINT.get("library_sha256", _LEGACY_LIBRARY_SHA256)
 )
 DISTANCE_SCALE = 1_000.0
 TOLERANCE = 1.0e-7
@@ -118,6 +134,11 @@ def sha256(path: Path) -> str:
 
 def verify_official_install() -> dict[str, Any]:
     manifest = json.loads(INSTALL_MANIFEST.read_text(encoding="utf-8"))
+    if manifest.get("schema_version") != "resetp.official-hgs-cvrp-install.v2":
+        raise RuntimeError(
+            "official HGS install manifest is not the portable v2 schema; "
+            "rerun scripts/setup_official_hgs_cvrp_20260718.py"
+        )
     if manifest.get("pinned_commit") != OFFICIAL_COMMIT:
         raise RuntimeError("official HGS commit drift")
     if manifest.get("license") != "MIT" or manifest.get("upstream_tests") != "PASS":
@@ -125,11 +146,44 @@ def verify_official_install() -> dict[str, Any]:
     binary = Path(str(manifest.get("binary", "")))
     if not binary.is_file() or sha256(binary) != manifest.get("binary_sha256"):
         raise RuntimeError("official HGS executable hash drift")
+    library = Path(str(manifest.get("library", "")))
     if (
-        not OFFICIAL_LIBRARY.is_file()
-        or sha256(OFFICIAL_LIBRARY) != OFFICIAL_LIBRARY_SHA256
+        library != OFFICIAL_LIBRARY
+        or not library.is_file()
+        or sha256(library) != manifest.get("library_sha256")
+        or sha256(library) != OFFICIAL_LIBRARY_SHA256
     ):
         raise RuntimeError("official HGS shared-library hash drift")
+    source_license = Path(str(manifest.get("source_dir", ""))) / "LICENSE"
+    manifest_tracked_license = Path(
+        str(manifest.get("tracked_license", ""))
+    )
+    manifest_rebuild_script = Path(
+        str(manifest.get("rebuild_script", ""))
+    )
+    if (
+        not source_license.is_file()
+        or not TRACKED_LICENSE.is_file()
+        or manifest_tracked_license != TRACKED_LICENSE
+        or sha256(source_license) != manifest.get("license_sha256")
+        or sha256(TRACKED_LICENSE)
+        != manifest.get("tracked_license_sha256")
+        or sha256(source_license) != sha256(TRACKED_LICENSE)
+    ):
+        raise RuntimeError("official HGS tracked-license chain drift")
+    if (
+        not REBUILD_SCRIPT.is_file()
+        or manifest_rebuild_script != REBUILD_SCRIPT
+        or sha256(REBUILD_SCRIPT) != manifest.get("rebuild_script_sha256")
+    ):
+        raise RuntimeError("official HGS rebuild entrypoint drift")
+    for label, path in (("binary", binary), ("library", library)):
+        try:
+            path.resolve().relative_to(OFFICIAL_PREFIX.resolve())
+        except ValueError as error:
+            raise RuntimeError(
+                f"official HGS {label} escaped the managed build prefix"
+            ) from error
     return manifest
 
 
