@@ -2,15 +2,23 @@
 
 - 编号：ALGO-OPT-PRD-001
 - 日期：2026-07-18
-- 状态：`DRAFT_AWAITING_USER_APPROVAL`（`formal_search_allowed=false`；未批准前不得实施、不得改正式入口、不得写论文创新主张）
+- 状态：`PARTIALLY_APPROVED_OFFICIAL_HGS_CVRP_BRIDGE_ONLY`（2026-07-18；官方CVRP引擎B门与隔离CLI桥已批准并完成；其余PRD、VRPTW/EV-aware Split、正式接入和正式搜索仍为`formal_search_allowed=false`）
 - 目标读者：Codex、任何接手 ReSETP 算法线的代理（冷启动可读，自包含）
 - 关联：`docs/handoff/e2_alns_g1_stage1_closeout_20260718.md`、`docs/handoff/alns_mechanism_innovation_exploration_contract_20260718.md`、`docs/handoff/model_change_approval_register_20260718.md`、`docs/handoff/algorithm_exploration_20260718/fleet_charging/`、memory `baseline-algorithm-catalog`
 
 ---
 
+## 2026-07-18 执行校正
+
+用户批准“先走B，强烈向好则走A”。固定官方`vidalt/HGS-CVRP`提交`1a927955cd2861a29d978f0d359d6e647db9319c`在三个非冻结CVRP开发题、三种子、每次3秒的结果盲门中达到`GO_A_ENGINEERING_DISCOVERY`；随后本机固定安装、官方5项测试、Python到原生C++的严格CLI桥及独立可行性/距离复算均通过。
+
+这只证明官方CVRP搜索引擎值得作为结构参考和隔离工程底座，不等于本PRD Phase 0完成。官方HGS-CVRP没有硬时间窗、异质车队、SOC、非线性充电、分时价格、碳、公平和多车场语义，不能冒充Solomon/Homberger VRPTW或完整ReSETP求解器。后续任何VRPTW/HGS式自研、EV-aware Split、ALNS education合入、正式测试集或E2--E7重跑仍须单独预注册与批准。
+
+---
+
 ## 0. 一句话
 
-当前"改进版 ALNS"在单解框架内已到性能天花板（证据确凿）；要在 benchmark 上一骑绝尘，唯一有压倒性外部证据的路径是进入 **HGS（Hybrid Genetic Search）类**——把现有 ALNS 作为 education 内核，外加**群体、EV-aware Split、交叉**三件套，升级为 **Population/Memetic TVCI-ALNS**。本 PRD 规定其目标、架构、文献依据、分阶段过门、验收、风险、影响矩阵与治理边界。
+当前"改进版 ALNS"在单解框架内的小修补已**连续碰壁**（十余个算子几乎全部蒸发；赢家内核与 LNS 同源），边际递减明显——这**不等于"已到理论天花板"**，但足以说明再在单解框架内叠算子性价比很低。一条**有依据、但尚未证明**的方向，是引入群体 + Split（HGS 类结构），把现有 ALNS 作为 education 内核。它**不是唯一可选方向**（路线池 + 集合划分、受控路线消除 + 有限深度 ejection chain 等同样有依据），只是当前**外部证据与项目内信号最集中**的一条。本 PRD 规定该方向的目标、架构、文献依据、分阶段过门、验收、风险、影响矩阵与治理边界；**成功预期一律按证据校准，不预设称霸**。
 
 ---
 
@@ -37,23 +45,23 @@
 
 ---
 
-## 2. 背景：为什么当前 ALNS 到顶了（证据，不是判断）
+## 2. 背景：为什么单解 ALNS 的小修补连续碰壁（证据）
 
-四条独立证据指向同一结论：**在单解 ALNS 框架内没有可供"新机制"发挥的额外空间。**
+四条证据共同说明：**在单解 ALNS 框架内继续叠算子，边际收益已很低。**（这是"小修补连续碰壁"，不是"理论到顶"——受控路线消除、路线池等理论上仍可能改善，只是历史上都未过门。）
 
 1. **赢家 ALNS ≡ LNS 引擎**。当前赢家（staged hybrid / TVCI-ALNS）的强中段调用 `_apply_strong_alns_destroy_repair`（`winner.py:596`），与 LNS 基线调用的（`metaheuristic_baselines.py:1758`）是**同一函数**。"让 ALNS 赢 LNS"≈"让一个东西赢它自己"。
 2. **残差分差是一个 £80 的离散台阶**。`cost.py:125` 的 `cost_fix = 路线数 × vehicle_fixed_cost(80.0)`；硬子集上 ALNS 对 LNS 的全部分差 ≈ `0.3125 路线 × £80 ≈ 25`，几乎等于总分差 `23.77`。算法不是"路排得差"才输，是偶尔"少删一条路线"才输；而增量邻域（relocate/swap/2-opt/SWAP*）在固定路线数内挪客户，结构上删不动路线。
 3. **headroom 存在、可行、且只在"客户顺序空间"可达**。`route_packing_reachability_audit_20260708`：解码出 105 个更少路线的候选，**0 个不可行**；且是靠"固定成本感知的客户顺序解码"够到的。
 4. **A11 顺序重排是唯一真赢过 LNS 的机制，但被埋没**。`global_repack_fleet_charge_probe_20260707`：A11 在正式 4000 预算下对 LNS **25 胜 16 负**、路线/固定成本缺口砍 60%、平均 gap +0.70%、过全部门；但 8000 衰减（临时贪心解码器是天花板），且其好结果产在 07-09 架构拨正前，当前默认关闭（`winner.py` 三个正式配置 `GLOBAL_ORDER_REPACK=0`）。
 
-**结论**：病灶=车队规模（41% 成本）的离散台阶；钥匙=顺序空间的最优切分；现有临时解码器不够，需要权威的 **Split**，并把它放进有多样性来源的**群体**框架。
+**结论（方向性，非定论）**：病灶=车队规模（41% 成本）的离散台阶；**最可能的**钥匙=顺序空间的最优切分（Split）+ 多样性来源（群体）。这是当前证据最支持的一条**假设**，**不是唯一路**——路线池 + 集合划分、受控路线消除 + 有限深度 ejection chain 是同级候选；选它，只因外部证据与项目内 A11 信号目前集中在 Split/群体这一条，而非它已被证明胜出。
 
 ---
 
 ## 3. 目标、非目标与成功判据
 
 ### 3.1 目标
-1. **公开 benchmark 通用求解能力一骑绝尘**：在标准 VRPTW（Solomon/Homberger）上逼近/持平已发布 BKS；在 EVRP-NL 类公开集上对照文献强方法不落下风。
+1. **公开 benchmark 通用求解能力达到有竞争力/接近强方法**：在标准 VRPTW（Solomon/Homberger）上逼近已发布 BKS、与强参照差距可控；EVRP-NL 类公开集上对照文献强方法不明显落后。**不预设"称霸"**——公开 CVRP 上 HGS 引擎强是已知事实，但能否迁移到本模型（时间窗/EV/充电/多车场/碳/公平）尚未证明。
 2. **自有中国实例上稳健领先**：把当前对 LNS 的 ~15 个配对负例转正，取得逐网统计显著（Wilcoxon+Holm，对齐 MC-002 原则）。
 3. **算法创新可解释**：每个机制专用算子有干净消融，能一句话说清它凭什么起作用（陈雨蝶式机制内化）。
 
@@ -89,10 +97,14 @@
 | 交叉算子 | SREX/OX/边重组；**尊重多车场责任结构** | **新** | Vidal 2012；Wang 2025 |
 | Education（现有 ALNS 内核） | 强化：true SWAP* + 粒度 relocate/2-opt + 机制算子（碳择时重排/公平赤字修复） | **大部分已有**（SWAP* 阶段一、carbon-aware 已有；公平赤字待建） | Vidal 2022 SWAP*；Hiermann 2016；Soriano 2023 |
 
-⭐ **EV-aware Split 是全局胜负手**：它同时是自研精细性能算子（对应 Wang 逐车型路线评价）和陈雨蝶式机制内化算子（把碳/车型/充电焊进切分），并直接修复 A11 的 8000 衰减病根（临时贪心 → 最优 DP）。
+⭐ **EV-aware Split 是本方向最有希望的候选算子，但不是已证的胜负手**：它同时是自研精细性能算子（对应 Wang 逐车型路线评价）和陈雨蝶式机制内化算子（把碳/车型/充电焊进切分），**思路上**能修 A11 的 8000 衰减病根（临时贪心 → 最优 DP）。
 
-### 4.3 身份保留说明
-ALNS 不被抛弃，而是成为 HGS 的 education（intensification）内核。对外名称 `Population/Memetic TVCI-ALNS`；现有 `staged_hybrid_carbon_aware` 兼容标识保留以保护已封存证据。这不是"全新基础 ALNS"，也不是"通用 HGS"，而是**面向本模型机制专门化的 HGS**。
+**Split 适配的诚实风险（须正视）**：经典 Split 只在"给定顺序、单一同质车、简单可加路线成本"下才是最优 DP。本模型的多车场、车型选择、SOC 连续演化、非线性充电、跨趟实体车和公平约束都会破坏 Split 的可加性假设——把它们塞进 Split **不是套用现成算法，而是重新设计一个可能昂贵的新子算法**（最坏含指数级 FRVCP），其收益未证。因此它是"值得先隔离验证的自研候选"，**不能当"已知有效的现成件"**。
+
+### 4.3 身份保留说明与身份风险
+拟让 ALNS 成为 HGS 的 education（intensification）内核；对外名称 `Population/Memetic TVCI-ALNS`，保留 `staged_hybrid_carbon_aware` 兼容标识护旧证据。定位是"面向本模型机制专门化的 HGS"，不是"全新基础 ALNS"，也不是"通用 HGS"。
+
+**身份风险（须正视，不回避）**：若性能增量主要来自群体 + Split + 交叉、而非 ALNS 内核，则论文主算法**事实上会变成"HGS（内嵌 ALNS 局部搜索）"，不再是你想要的"改进版 ALNS"**。四臂消融（纯 ALNS / 直接强重组 / 群体化 / 群体化 + 机制算子）必须能定位增量来源；若增量几乎全来自群体 + Split，应诚实按 HGS 变体署名，或据此重新决定是否走这条路——**不得用"education 内核"的措辞把 HGS 包装成 ALNS**。
 
 ### 4.4 Phase-2 加速器（可选，冲 BKS 最后几个点）
 精英路线池 + 集合划分（set-partitioning）重组，Wang 2025 靠它刷 65 个新 BKS。诚实边界：仓库早期"静态小池 SP=0/6 headroom"是**小池**结论；HGS 大精英池是不同 regime，值得在 Phase-2 单独验证，不得据旧小池结论提前否决，也不得据文献提前宣称有效。
@@ -123,7 +135,13 @@ ALNS 不被抛弃，而是成为 HGS 的 education（intensification）内核。
 
 总原则：**公开 benchmark 先行去风险；不改模型语义的先做；跨模型边界的走审批；证据不足不进下一阶段。**
 
-### Phase 0 —— 引擎去风险（便宜、决定性、不碰模型语义）
+### 6.0 当前实际批准范围（用户 2026-07-18 选 B）—— 优先于以下 Phase 草案
+用户批准的是**最小侦察**，不是直接建完整 HGS。侦察只回答两问：
+- **B-(a) 强 HGS 参照是否明显优于当前算法**：**已完成**。官方 `vidalt/HGS-CVRP` 桥接在 3 个 CVRP 开发题上对当前 ALNS 中位改善 11.22%/12.16%/12.74%，2/3 题少用路线（13v14、13v15、8v8），判 `GO_A_ENGINEERING_DISCOVERY`。**诚实边界**：这是**纯 CVRP**，而当前 ALNS 为本模型（碳/EV/多车场）专门化、跑纯 CVRP 属**出设计域**，故 11–12% 幅度**被放大、不能 1:1 迁移到本模型**；且这是整台 HGS，**未隔离 Split**。它只证明"HGS 搜索机器值得作结构参考 + 隔离工程底座"，不证明本 PRD 的组合会赢。
+- **B-(b) 经典 Split 单独是否真能减少路线**：**未做**。这是下一步最便宜、最能验证本 PRD 核心论点（"headroom 在顺序空间、Split 是钥匙"）的隔离探针。
+**下列 Phase 0–2 均为草案、均未批准**；其中"建最小 HGS（群体 + 交叉 + Split + 多样性）"**并不便宜**，是 B 通过后另行审批的工程阶段，不属于 B。
+
+### Phase 0（草案，未批，非"便宜"）—— 最小 HGS 工程
 - **范围**：实现最小 HGS = giant tour + 经典（固定成本感知）Split + OX 交叉 + 基础群体 + true SWAP*/2-opt education，在**纯 VRPTW 归约**（EV/碳/多车场关闭）下运行。
 - **复用**：公开算例 harness 已存在——`build_solomon_dimacs_bundles_20260717.py`、`build_solomon_sintef_bundles_20260717.py`、`audit_solomon_sintef_bks_20260717.py`、Homberger loaders、`instance_loader.py:load_instance`。Phase 0 只做算法，不重造加载器。
 - **开发集**：Solomon R1/C1/RC1 代表子集 + Homberger-200 少量；**仅作开发去风险**，不作正式 BKS 表（见 §7.4）。

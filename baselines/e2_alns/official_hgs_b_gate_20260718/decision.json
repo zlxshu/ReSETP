@@ -1,0 +1,48 @@
+{
+  "all_shared_tasks_valid": true,
+  "authorization_boundary": "GO authorizes isolated HGS engineering discovery only; it does not authorize formal test-set use, China81, E2-E7 reruns, solver replacement, or project Stage 2.",
+  "clear_win_instance_count": 3,
+  "decided_at_utc": "2026-07-18T10:26:45.859883+00:00",
+  "decision": "GO_A_ENGINEERING_DISCOVERY",
+  "hgs_near_bks_gate_passed": true,
+  "instance_summaries": {
+    "X-n110-k13": {
+      "alns_median_cost": 16863.0,
+      "alns_median_routes": 14.0,
+      "complete": true,
+      "hgs_advantage_over_alns_pct": 11.21983039791259,
+      "hgs_median_cost": 14971.0,
+      "hgs_median_gap_pct": 0.0,
+      "hgs_median_routes": 13.0
+    },
+    "X-n157-k13": {
+      "alns_median_cost": 19216.0,
+      "alns_median_routes": 15.0,
+      "complete": true,
+      "hgs_advantage_over_alns_pct": 12.161740216486262,
+      "hgs_median_cost": 16879.0,
+      "hgs_median_gap_pct": 0.0177767243422612,
+      "hgs_median_routes": 13.0
+    },
+    "X-n190-k8": {
+      "alns_median_cost": 19638.0,
+      "alns_median_routes": 8.0,
+      "complete": true,
+      "hgs_advantage_over_alns_pct": 12.740604949587535,
+      "hgs_median_cost": 17136.0,
+      "hgs_median_gap_pct": 0.9187279151943463,
+      "hgs_median_routes": 8.0
+    }
+  },
+  "no_material_loss_gate_passed": true,
+  "schema_version": "resetp.algorithm.hgs-b-recon.v1",
+  "strong_positive": true,
+  "thresholds": {
+    "max_allowed_disadvantage_pct": 0.5,
+    "max_hgs_instance_median_gap_pct": 1.0,
+    "max_hgs_pooled_median_gap_pct": 0.5,
+    "min_clear_advantage_pct": 2.0,
+    "minimum_clear_win_instances": 2
+  },
+  "upstream_tests_passed": true
+}

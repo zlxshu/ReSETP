@@ -1,0 +1,38 @@
+{
+  "purpose": "numeric, unit, empirical-row and TeX audit of approved China order-attribute methods",
+  "audit_date": "2026-07-18",
+  "method": "Decimal arithmetic plus full 1,222-row deterministic replay",
+  "source": "data/ChinaInstances/china_order_attribute_calibration_v2_20260718/empirical_order_attribute_rows.csv",
+  "contract": "data/ChinaInstances/china_order_attribute_contract_v2_20260718.json",
+  "paper": "docs/paper_submission_final/paper_main.tex",
+  "source_sha256": "17714b610432a41073c464343292ba6b433981f226b6adf0fa7234a5a80cdbba",
+  "contract_sha256": "d667461e27f34b22bf1906b42e9cf96f364966525de1b188ba9fddf771e5c701",
+  "paper_sha256": "3aaad699d20b3c8f88ca3e5021f574a2be19fa0cf4b8400c4e1b7d20d1a9a9a0",
+  "checks": [
+    {
+      "check": "source_row_count",
+      "status": "PASS",
+      "detail": "rows=1222"
+    },
+    {
+      "check": "window_summary",
+      "status": "PASS",
+      "detail": "min=30.015509, median=45.6985725, max=59.974984"
+    },
+    {
+      "check": "joint_empirical_row_semantics",
+      "status": "PASS",
+      "detail": "all rows retain volume, mapped demand, service duration, delivery-window start and width jointly"
+    },
+    {
+      "check": "machine_contract_boundaries",
+      "status": "PASS",
+      "detail": "status=APPROVED_ORDER_ATTRIBUTE_METHODS_BLOCKED_BY_STAGE2_INPUT_GATES, formal_search_allowed=False"
+    },
+    {
+      "check": "tex_formula_and_boundaries",
+      "status": "PASS",
+      "detail": "all required formula, boundary and citation tokens present"
+    }
+  ]
+}

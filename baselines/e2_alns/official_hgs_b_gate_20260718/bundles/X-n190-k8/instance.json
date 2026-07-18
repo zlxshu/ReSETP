@@ -1,0 +1,1915 @@
+{
+  "metadata": {
+    "development_only": true,
+    "distance_rule": "floor(Euclidean+0.5)",
+    "num_ev": 0,
+    "objective": "total_distance_only",
+    "source_commit": "1a927955cd2861a29d978f0d359d6e647db9319c",
+    "source_instance": "X-n190-k8",
+    "source_repo": "https://github.com/vidalt/HGS-CVRP.git",
+    "source_sha256": "91ffef7fc8b5707a470b182a05501b379003b64d671a58205bc944dcb34e224f"
+  },
+  "nodes": [
+    {
+      "demand": 0.0,
+      "due_time": 1000000000000.0,
+      "node_id": "D0",
+      "node_type": "d",
+      "ready_time": 0.0,
+      "service_time": 0.0,
+      "x": 0.0,
+      "y": 0.0
+    },
+    {
+      "demand": 3.0,
+      "due_time": 1000000000000.0,
+      "node_id": "C1",
+      "node_type": "c",
+      "ready_time": 0.0,
+      "service_time": 0.0,
+      "x": 425.0,
+      "y": 323.0
+    },
+    {
+      "demand": 7.0,
+      "due_time": 1000000000000.0,
+      "node_id": "C2",
+      "node_type": "c",
+      "ready_time": 0.0,
+      "service_time": 0.0,
+      "x": 806.0,
+      "y": 514.0
+    },
+    {
+      "demand": 2.0,
+      "due_time": 1000000000000.0,
+      "node_id": "C3",
+      "node_type": "c",
+      "ready_time": 0.0,
+      "service_time": 0.0,
+      "x": 853.0,
+      "y": 637.0
+    },
+    {
+      "demand": 4.0,
+      "due_time": 1000000000000.0,
+      "node_id": "C4",
+      "node_type": "c",
+      "ready_time": 0.0,
+      "service_time": 0.0,
+      "x": 564.0,
+      "y": 311.0
+    },
+    {
+      "demand": 3.0,
+      "due_time": 1000000000000.0,
+      "node_id": "C5",
+      "node_type": "c",
+      "ready_time": 0.0,
+      "service_time": 0.0,
+      "x": 871.0,
+      "y": 502.0
+    },
+    {
+      "demand": 2.0,
+      "due_time": 1000000000000.0,
+      "node_id": "C6",
+      "node_type": "c",
+      "ready_time": 0.0,
+      "service_time": 0.0,
+      "x": 803.0,
+      "y": 526.0
+    },
+    {
+      "demand": 4.0,
+      "due_time": 1000000000000.0,
+      "node_id": "C7",
+      "node_type": "c",
+      "ready_time": 0.0,
+      "service_time": 0.0,
+      "x": 822.0,
+      "y": 680.0
+    },
+    {
+      "demand": 1.0,
+      "due_time": 1000000000000.0,
+      "node_id": "C8",
+      "node_type": "c",
+      "ready_time": 0.0,
+      "service_time": 0.0,
+      "x": 827.0,
+      "y": 577.0
+    },
+    {
+      "demand": 6.0,
+      "due_time": 1000000000000.0,
+      "node_id": "C9",
+      "node_type": "c",
+      "ready_time": 0.0,
+      "service_time": 0.0,
+      "x": 834.0,
+      "y": 646.0
+    },
+    {
+      "demand": 6.0,
+      "due_time": 1000000000000.0,
+      "node_id": "C10",
+      "node_type": "c",
+      "ready_time": 0.0,
+      "service_time": 0.0,
+      "x": 636.0,
+      "y": 403.0
+    },
+    {
+      "demand": 9.0,
+      "due_time": 1000000000000.0,
+      "node_id": "C11",
+      "node_type": "c",
+      "ready_time": 0.0,
+      "service_time": 0.0,
+      "x": 699.0,
+      "y": 724.0
+    },
+    {
+      "demand": 2.0,
+      "due_time": 1000000000000.0,
+      "node_id": "C12",
+      "node_type": "c",
+      "ready_time": 0.0,
+      "service_time": 0.0,
+      "x": 830.0,
+      "y": 479.0
+    },
+    {
+      "demand": 4.0,
+      "due_time": 1000000000000.0,
+      "node_id": "C13",
+      "node_type": "c",
+      "ready_time": 0.0,
+      "service_time": 0.0,
+      "x": 486.0,
+      "y": 257.0
+    },
+    {
+      "demand": 1.0,
+      "due_time": 1000000000000.0,
+      "node_id": "C14",
+      "node_type": "c",
+      "ready_time": 0.0,
+      "service_time": 0.0,
+      "x": 411.0,
+      "y": 384.0
+    },
+    {
+      "demand": 8.0,
+      "due_time": 1000000000000.0,
+      "node_id": "C15",
+      "node_type": "c",
+      "ready_time": 0.0,
+      "service_time": 0.0,
+      "x": 881.0,
+      "y": 642.0
+    },
+    {
+      "demand": 4.0,
+      "due_time": 1000000000000.0,
+      "node_id": "C16",
+      "node_type": "c",
+      "ready_time": 0.0,
+      "service_time": 0.0,
+      "x": 424.0,
+      "y": 422.0
+    },
+    {
+      "demand": 2.0,
+      "due_time": 1000000000000.0,
+      "node_id": "C17",
+      "node_type": "c",
+      "ready_time": 0.0,
+      "service_time": 0.0,
+      "x": 807.0,
+      "y": 718.0
+    },
+    {
+      "demand": 5.0,
+      "due_time": 1000000000000.0,
+      "node_id": "C18",
+      "node_type": "c",
+      "ready_time": 0.0,
+      "service_time": 0.0,
+      "x": 949.0,
+      "y": 612.0
+    },
+    {
+      "demand": 4.0,
+      "due_time": 1000000000000.0,
+      "node_id": "C19",
+      "node_type": "c",
+      "ready_time": 0.0,
+      "service_time": 0.0,
+      "x": 362.0,
+      "y": 135.0
+    },
+    {
+      "demand": 9.0,
+      "due_time": 1000000000000.0,
+      "node_id": "C20",
+      "node_type": "c",
+      "ready_time": 0.0,
+      "service_time": 0.0,
+      "x": 836.0,
+      "y": 662.0
+    },
+    {
+      "demand": 10.0,
+      "due_time": 1000000000000.0,
+      "node_id": "C21",
+      "node_type": "c",
+      "ready_time": 0.0,
+      "service_time": 0.0,
+      "x": 791.0,
+      "y": 570.0
+    },
+    {
+      "demand": 8.0,
+      "due_time": 1000000000000.0,
+      "node_id": "C22",
+      "node_type": "c",
+      "ready_time": 0.0,
+      "service_time": 0.0,
+      "x": 822.0,
+      "y": 508.0
+    },
+    {
+      "demand": 1.0,
+      "due_time": 1000000000000.0,
+      "node_id": "C23",
+      "node_type": "c",
+      "ready_time": 0.0,
+      "service_time": 0.0,
+      "x": 794.0,
+      "y": 622.0
+    },
+    {
+      "demand": 8.0,
+      "due_time": 1000000000000.0,
+      "node_id": "C24",
+      "node_type": "c",
+      "ready_time": 0.0,
+      "service_time": 0.0,
+      "x": 823.0,
+      "y": 464.0
+    },
+    {
+      "demand": 5.0,
+      "due_time": 1000000000000.0,
+      "node_id": "C25",
+      "node_type": "c",
+      "ready_time": 0.0,
+      "service_time": 0.0,
+      "x": 803.0,
+      "y": 367.0
+    },
+    {
+      "demand": 7.0,
+      "due_time": 1000000000000.0,
+      "node_id": "C26",
+      "node_type": "c",
+      "ready_time": 0.0,
+      "service_time": 0.0,
+      "x": 390.0,
+      "y": 502.0
+    },
+    {
+      "demand": 10.0,
+      "due_time": 1000000000000.0,
+      "node_id": "C27",
+      "node_type": "c",
+      "ready_time": 0.0,
+      "service_time": 0.0,
+      "x": 868.0,
+      "y": 651.0
+    },
+    {
+      "demand": 3.0,
+      "due_time": 1000000000000.0,
+      "node_id": "C28",
+      "node_type": "c",
+      "ready_time": 0.0,
+      "service_time": 0.0,
+      "x": 732.0,
+      "y": 456.0
+    },
+    {
+      "demand": 3.0,
+      "due_time": 1000000000000.0,
+      "node_id": "C29",
+      "node_type": "c",
+      "ready_time": 0.0,
+      "service_time": 0.0,
+      "x": 356.0,
+      "y": 253.0
+    },
+    {
+      "demand": 9.0,
+      "due_time": 1000000000000.0,
+      "node_id": "C30",
+      "node_type": "c",
+      "ready_time": 0.0,
+      "service_time": 0.0,
+      "x": 794.0,
+      "y": 481.0
+    },
+    {
+      "demand": 1.0,
+      "due_time": 1000000000000.0,
+      "node_id": "C31",
+      "node_type": "c",
+      "ready_time": 0.0,
+      "service_time": 0.0,
+      "x": 356.0,
+      "y": 312.0
+    },
+    {
+      "demand": 3.0,
+      "due_time": 1000000000000.0,
+      "node_id": "C32",
+      "node_type": "c",
+      "ready_time": 0.0,
+      "service_time": 0.0,
+      "x": 994.0,
+      "y": 676.0
+    },
+    {
+      "demand": 9.0,
+      "due_time": 1000000000000.0,
+      "node_id": "C33",
+      "node_type": "c",
+      "ready_time": 0.0,
+      "service_time": 0.0,
+      "x": 817.0,
+      "y": 658.0
+    },
+    {
+      "demand": 6.0,
+      "due_time": 1000000000000.0,
+      "node_id": "C34",
+      "node_type": "c",
+      "ready_time": 0.0,
+      "service_time": 0.0,
+      "x": 591.0,
+      "y": 333.0
+    },
+    {
+      "demand": 5.0,
+      "due_time": 1000000000000.0,
+      "node_id": "C35",
+      "node_type": "c",
+      "ready_time": 0.0,
+      "service_time": 0.0,
+      "x": 776.0,
+      "y": 532.0
+    },
+    {
+      "demand": 7.0,
+      "due_time": 1000000000000.0,
+      "node_id": "C36",
+      "node_type": "c",
+      "ready_time": 0.0,
+      "service_time": 0.0,
+      "x": 811.0,
+      "y": 509.0
+    },
+    {
+      "demand": 8.0,
+      "due_time": 1000000000000.0,
+      "node_id": "C37",
+      "node_type": "c",
+      "ready_time": 0.0,
+      "service_time": 0.0,
+      "x": 298.0,
+      "y": 246.0
+    },
+    {
+      "demand": 6.0,
+      "due_time": 1000000000000.0,
+      "node_id": "C38",
+      "node_type": "c",
+      "ready_time": 0.0,
+      "service_time": 0.0,
+      "x": 813.0,
+      "y": 517.0
+    },
+    {
+      "demand": 5.0,
+      "due_time": 1000000000000.0,
+      "node_id": "C39",
+      "node_type": "c",
+      "ready_time": 0.0,
+      "service_time": 0.0,
+      "x": 793.0,
+      "y": 488.0
+    },
+    {
+      "demand": 4.0,
+      "due_time": 1000000000000.0,
+      "node_id": "C40",
+      "node_type": "c",
+      "ready_time": 0.0,
+      "service_time": 0.0,
+      "x": 944.0,
+      "y": 655.0
+    },
+    {
+      "demand": 10.0,
+      "due_time": 1000000000000.0,
+      "node_id": "C41",
+      "node_type": "c",
+      "ready_time": 0.0,
+      "service_time": 0.0,
+      "x": 901.0,
+      "y": 555.0
+    },
+    {
+      "demand": 8.0,
+      "due_time": 1000000000000.0,
+      "node_id": "C42",
+      "node_type": "c",
+      "ready_time": 0.0,
+      "service_time": 0.0,
+      "x": 847.0,
+      "y": 594.0
+    },
+    {
+      "demand": 5.0,
+      "due_time": 1000000000000.0,
+      "node_id": "C43",
+      "node_type": "c",
+      "ready_time": 0.0,
+      "service_time": 0.0,
+      "x": 696.0,
+      "y": 429.0
+    },
+    {
+      "demand": 7.0,
+      "due_time": 1000000000000.0,
+      "node_id": "C44",
+      "node_type": "c",
+      "ready_time": 0.0,
+      "service_time": 0.0,
+      "x": 454.0,
+      "y": 303.0
+    },
+    {
+      "demand": 5.0,
+      "due_time": 1000000000000.0,
+      "node_id": "C45",
+      "node_type": "c",
+      "ready_time": 0.0,
+      "service_time": 0.0,
+      "x": 369.0,
+      "y": 330.0
+    },
+    {
+      "demand": 6.0,
+      "due_time": 1000000000000.0,
+      "node_id": "C46",
+      "node_type": "c",
+      "ready_time": 0.0,
+      "service_time": 0.0,
+      "x": 721.0,
+      "y": 539.0
+    },
+    {
+      "demand": 2.0,
+      "due_time": 1000000000000.0,
+      "node_id": "C47",
+      "node_type": "c",
+      "ready_time": 0.0,
+      "service_time": 0.0,
+      "x": 874.0,
+      "y": 502.0
+    },
+    {
+      "demand": 1.0,
+      "due_time": 1000000000000.0,
+      "node_id": "C48",
+      "node_type": "c",
+      "ready_time": 0.0,
+      "service_time": 0.0,
+      "x": 860.0,
+      "y": 564.0
+    },
+    {
+      "demand": 3.0,
+      "due_time": 1000000000000.0,
+      "node_id": "C49",
+      "node_type": "c",
+      "ready_time": 0.0,
+      "service_time": 0.0,
+      "x": 381.0,
+      "y": 508.0
+    },
+    {
+      "demand": 6.0,
+      "due_time": 1000000000000.0,
+      "node_id": "C50",
+      "node_type": "c",
+      "ready_time": 0.0,
+      "service_time": 0.0,
+      "x": 773.0,
+      "y": 575.0
+    },
+    {
+      "demand": 2.0,
+      "due_time": 1000000000000.0,
+      "node_id": "C51",
+      "node_type": "c",
+      "ready_time": 0.0,
+      "service_time": 0.0,
+      "x": 671.0,
+      "y": 571.0
+    },
+    {
+      "demand": 3.0,
+      "due_time": 1000000000000.0,
+      "node_id": "C52",
+      "node_type": "c",
+      "ready_time": 0.0,
+      "service_time": 0.0,
+      "x": 901.0,
+      "y": 482.0
+    },
+    {
+      "demand": 4.0,
+      "due_time": 1000000000000.0,
+      "node_id": "C53",
+      "node_type": "c",
+      "ready_time": 0.0,
+      "service_time": 0.0,
+      "x": 852.0,
+      "y": 672.0
+    },
+    {
+      "demand": 1.0,
+      "due_time": 1000000000000.0,
+      "node_id": "C54",
+      "node_type": "c",
+      "ready_time": 0.0,
+      "service_time": 0.0,
+      "x": 887.0,
+      "y": 576.0
+    },
+    {
+      "demand": 7.0,
+      "due_time": 1000000000000.0,
+      "node_id": "C55",
+      "node_type": "c",
+      "ready_time": 0.0,
+      "service_time": 0.0,
+      "x": 805.0,
+      "y": 608.0
+    },
+    {
+      "demand": 3.0,
+      "due_time": 1000000000000.0,
+      "node_id": "C56",
+      "node_type": "c",
+      "ready_time": 0.0,
+      "service_time": 0.0,
+      "x": 828.0,
+      "y": 575.0
+    },
+    {
+      "demand": 5.0,
+      "due_time": 1000000000000.0,
+      "node_id": "C57",
+      "node_type": "c",
+      "ready_time": 0.0,
+      "service_time": 0.0,
+      "x": 434.0,
+      "y": 177.0
+    },
+    {
+      "demand": 10.0,
+      "due_time": 1000000000000.0,
+      "node_id": "C58",
+      "node_type": "c",
+      "ready_time": 0.0,
+      "service_time": 0.0,
+      "x": 715.0,
+      "y": 450.0
+    },
+    {
+      "demand": 5.0,
+      "due_time": 1000000000000.0,
+      "node_id": "C59",
+      "node_type": "c",
+      "ready_time": 0.0,
+      "service_time": 0.0,
+      "x": 827.0,
+      "y": 622.0
+    },
+    {
+      "demand": 9.0,
+      "due_time": 1000000000000.0,
+      "node_id": "C60",
+      "node_type": "c",
+      "ready_time": 0.0,
+      "service_time": 0.0,
+      "x": 757.0,
+      "y": 746.0
+    },
+    {
+      "demand": 1.0,
+      "due_time": 1000000000000.0,
+      "node_id": "C61",
+      "node_type": "c",
+      "ready_time": 0.0,
+      "service_time": 0.0,
+      "x": 977.0,
+      "y": 648.0
+    },
+    {
+      "demand": 8.0,
+      "due_time": 1000000000000.0,
+      "node_id": "C62",
+      "node_type": "c",
+      "ready_time": 0.0,
+      "service_time": 0.0,
+      "x": 826.0,
+      "y": 595.0
+    },
+    {
+      "demand": 6.0,
+      "due_time": 1000000000000.0,
+      "node_id": "C63",
+      "node_type": "c",
+      "ready_time": 0.0,
+      "service_time": 0.0,
+      "x": 439.0,
+      "y": 212.0
+    },
+    {
+      "demand": 3.0,
+      "due_time": 1000000000000.0,
+      "node_id": "C64",
+      "node_type": "c",
+      "ready_time": 0.0,
+      "service_time": 0.0,
+      "x": 514.0,
+      "y": 184.0
+    },
+    {
+      "demand": 2.0,
+      "due_time": 1000000000000.0,
+      "node_id": "C65",
+      "node_type": "c",
+      "ready_time": 0.0,
+      "service_time": 0.0,
+      "x": 836.0,
+      "y": 661.0
+    },
+    {
+      "demand": 8.0,
+      "due_time": 1000000000000.0,
+      "node_id": "C66",
+      "node_type": "c",
+      "ready_time": 0.0,
+      "service_time": 0.0,
+      "x": 503.0,
+      "y": 227.0
+    },
+    {
+      "demand": 1.0,
+      "due_time": 1000000000000.0,
+      "node_id": "C67",
+      "node_type": "c",
+      "ready_time": 0.0,
+      "service_time": 0.0,
+      "x": 499.0,
+      "y": 447.0
+    },
+    {
+      "demand": 4.0,
+      "due_time": 1000000000000.0,
+      "node_id": "C68",
+      "node_type": "c",
+      "ready_time": 0.0,
+      "service_time": 0.0,
+      "x": 792.0,
+      "y": 564.0
+    },
+    {
+      "demand": 4.0,
+      "due_time": 1000000000000.0,
+      "node_id": "C69",
+      "node_type": "c",
+      "ready_time": 0.0,
+      "service_time": 0.0,
+      "x": 791.0,
+      "y": 599.0
+    },
+    {
+      "demand": 9.0,
+      "due_time": 1000000000000.0,
+      "node_id": "C70",
+      "node_type": "c",
+      "ready_time": 0.0,
+      "service_time": 0.0,
+      "x": 932.0,
+      "y": 582.0
+    },
+    {
+      "demand": 5.0,
+      "due_time": 1000000000000.0,
+      "node_id": "C71",
+      "node_type": "c",
+      "ready_time": 0.0,
+      "service_time": 0.0,
+      "x": 904.0,
+      "y": 484.0
+    },
+    {
+      "demand": 4.0,
+      "due_time": 1000000000000.0,
+      "node_id": "C72",
+      "node_type": "c",
+      "ready_time": 0.0,
+      "service_time": 0.0,
+      "x": 453.0,
+      "y": 362.0
+    },
+    {
+      "demand": 4.0,
+      "due_time": 1000000000000.0,
+      "node_id": "C73",
+      "node_type": "c",
+      "ready_time": 0.0,
+      "service_time": 0.0,
+      "x": 636.0,
+      "y": 374.0
+    },
+    {
+      "demand": 5.0,
+      "due_time": 1000000000000.0,
+      "node_id": "C74",
+      "node_type": "c",
+      "ready_time": 0.0,
+      "service_time": 0.0,
+      "x": 781.0,
+      "y": 639.0
+    },
+    {
+      "demand": 4.0,
+      "due_time": 1000000000000.0,
+      "node_id": "C75",
+      "node_type": "c",
+      "ready_time": 0.0,
+      "service_time": 0.0,
+      "x": 723.0,
+      "y": 590.0
+    },
+    {
+      "demand": 9.0,
+      "due_time": 1000000000000.0,
+      "node_id": "C76",
+      "node_type": "c",
+      "ready_time": 0.0,
+      "service_time": 0.0,
+      "x": 911.0,
+      "y": 613.0
+    },
+    {
+      "demand": 6.0,
+      "due_time": 1000000000000.0,
+      "node_id": "C77",
+      "node_type": "c",
+      "ready_time": 0.0,
+      "service_time": 0.0,
+      "x": 834.0,
+      "y": 510.0
+    },
+    {
+      "demand": 1.0,
+      "due_time": 1000000000000.0,
+      "node_id": "C78",
+      "node_type": "c",
+      "ready_time": 0.0,
+      "service_time": 0.0,
+      "x": 786.0,
+      "y": 449.0
+    },
+    {
+      "demand": 10.0,
+      "due_time": 1000000000000.0,
+      "node_id": "C79",
+      "node_type": "c",
+      "ready_time": 0.0,
+      "service_time": 0.0,
+      "x": 772.0,
+      "y": 732.0
+    },
+    {
+      "demand": 10.0,
+      "due_time": 1000000000000.0,
+      "node_id": "C80",
+      "node_type": "c",
+      "ready_time": 0.0,
+      "service_time": 0.0,
+      "x": 776.0,
+      "y": 461.0
+    },
+    {
+      "demand": 9.0,
+      "due_time": 1000000000000.0,
+      "node_id": "C81",
+      "node_type": "c",
+      "ready_time": 0.0,
+      "service_time": 0.0,
+      "x": 749.0,
+      "y": 533.0
+    },
+    {
+      "demand": 3.0,
+      "due_time": 1000000000000.0,
+      "node_id": "C82",
+      "node_type": "c",
+      "ready_time": 0.0,
+      "service_time": 0.0,
+      "x": 825.0,
+      "y": 882.0
+    },
+    {
+      "demand": 3.0,
+      "due_time": 1000000000000.0,
+      "node_id": "C83",
+      "node_type": "c",
+      "ready_time": 0.0,
+      "service_time": 0.0,
+      "x": 401.0,
+      "y": 275.0
+    },
+    {
+      "demand": 10.0,
+      "due_time": 1000000000000.0,
+      "node_id": "C84",
+      "node_type": "c",
+      "ready_time": 0.0,
+      "service_time": 0.0,
+      "x": 965.0,
+      "y": 597.0
+    },
+    {
+      "demand": 10.0,
+      "due_time": 1000000000000.0,
+      "node_id": "C85",
+      "node_type": "c",
+      "ready_time": 0.0,
+      "service_time": 0.0,
+      "x": 760.0,
+      "y": 479.0
+    },
+    {
+      "demand": 8.0,
+      "due_time": 1000000000000.0,
+      "node_id": "C86",
+      "node_type": "c",
+      "ready_time": 0.0,
+      "service_time": 0.0,
+      "x": 841.0,
+      "y": 501.0
+    },
+    {
+      "demand": 4.0,
+      "due_time": 1000000000000.0,
+      "node_id": "C87",
+      "node_type": "c",
+      "ready_time": 0.0,
+      "service_time": 0.0,
+      "x": 901.0,
+      "y": 531.0
+    },
+    {
+      "demand": 7.0,
+      "due_time": 1000000000000.0,
+      "node_id": "C88",
+      "node_type": "c",
+      "ready_time": 0.0,
+      "service_time": 0.0,
+      "x": 443.0,
+      "y": 318.0
+    },
+    {
+      "demand": 7.0,
+      "due_time": 1000000000000.0,
+      "node_id": "C89",
+      "node_type": "c",
+      "ready_time": 0.0,
+      "service_time": 0.0,
+      "x": 771.0,
+      "y": 511.0
+    },
+    {
+      "demand": 6.0,
+      "due_time": 1000000000000.0,
+      "node_id": "C90",
+      "node_type": "c",
+      "ready_time": 0.0,
+      "service_time": 0.0,
+      "x": 854.0,
+      "y": 615.0
+    },
+    {
+      "demand": 8.0,
+      "due_time": 1000000000000.0,
+      "node_id": "C91",
+      "node_type": "c",
+      "ready_time": 0.0,
+      "service_time": 0.0,
+      "x": 821.0,
+      "y": 631.0
+    },
+    {
+      "demand": 7.0,
+      "due_time": 1000000000000.0,
+      "node_id": "C92",
+      "node_type": "c",
+      "ready_time": 0.0,
+      "service_time": 0.0,
+      "x": 734.0,
+      "y": 539.0
+    },
+    {
+      "demand": 6.0,
+      "due_time": 1000000000000.0,
+      "node_id": "C93",
+      "node_type": "c",
+      "ready_time": 0.0,
+      "service_time": 0.0,
+      "x": 705.0,
+      "y": 577.0
+    },
+    {
+      "demand": 7.0,
+      "due_time": 1000000000000.0,
+      "node_id": "C94",
+      "node_type": "c",
+      "ready_time": 0.0,
+      "service_time": 0.0,
+      "x": 773.0,
+      "y": 573.0
+    },
+    {
+      "demand": 2.0,
+      "due_time": 1000000000000.0,
+      "node_id": "C95",
+      "node_type": "c",
+      "ready_time": 0.0,
+      "service_time": 0.0,
+      "x": 646.0,
+      "y": 327.0
+    },
+    {
+      "demand": 3.0,
+      "due_time": 1000000000000.0,
+      "node_id": "C96",
+      "node_type": "c",
+      "ready_time": 0.0,
+      "service_time": 0.0,
+      "x": 842.0,
+      "y": 630.0
+    },
+    {
+      "demand": 9.0,
+      "due_time": 1000000000000.0,
+      "node_id": "C97",
+      "node_type": "c",
+      "ready_time": 0.0,
+      "service_time": 0.0,
+      "x": 806.0,
+      "y": 436.0
+    },
+    {
+      "demand": 9.0,
+      "due_time": 1000000000000.0,
+      "node_id": "C98",
+      "node_type": "c",
+      "ready_time": 0.0,
+      "service_time": 0.0,
+      "x": 960.0,
+      "y": 576.0
+    },
+    {
+      "demand": 10.0,
+      "due_time": 1000000000000.0,
+      "node_id": "C99",
+      "node_type": "c",
+      "ready_time": 0.0,
+      "service_time": 0.0,
+      "x": 350.0,
+      "y": 337.0
+    },
+    {
+      "demand": 4.0,
+      "due_time": 1000000000000.0,
+      "node_id": "C100",
+      "node_type": "c",
+      "ready_time": 0.0,
+      "service_time": 0.0,
+      "x": 828.0,
+      "y": 580.0
+    },
+    {
+      "demand": 5.0,
+      "due_time": 1000000000000.0,
+      "node_id": "C101",
+      "node_type": "c",
+      "ready_time": 0.0,
+      "service_time": 0.0,
+      "x": 876.0,
+      "y": 502.0
+    },
+    {
+      "demand": 1.0,
+      "due_time": 1000000000000.0,
+      "node_id": "C102",
+      "node_type": "c",
+      "ready_time": 0.0,
+      "service_time": 0.0,
+      "x": 532.0,
+      "y": 332.0
+    },
+    {
+      "demand": 8.0,
+      "due_time": 1000000000000.0,
+      "node_id": "C103",
+      "node_type": "c",
+      "ready_time": 0.0,
+      "service_time": 0.0,
+      "x": 518.0,
+      "y": 383.0
+    },
+    {
+      "demand": 6.0,
+      "due_time": 1000000000000.0,
+      "node_id": "C104",
+      "node_type": "c",
+      "ready_time": 0.0,
+      "service_time": 0.0,
+      "x": 770.0,
+      "y": 509.0
+    },
+    {
+      "demand": 5.0,
+      "due_time": 1000000000000.0,
+      "node_id": "C105",
+      "node_type": "c",
+      "ready_time": 0.0,
+      "service_time": 0.0,
+      "x": 251.0,
+      "y": 3.0
+    },
+    {
+      "demand": 1.0,
+      "due_time": 1000000000000.0,
+      "node_id": "C106",
+      "node_type": "c",
+      "ready_time": 0.0,
+      "service_time": 0.0,
+      "x": 264.0,
+      "y": 445.0
+    },
+    {
+      "demand": 5.0,
+      "due_time": 1000000000000.0,
+      "node_id": "C107",
+      "node_type": "c",
+      "ready_time": 0.0,
+      "service_time": 0.0,
+      "x": 817.0,
+      "y": 655.0
+    },
+    {
+      "demand": 7.0,
+      "due_time": 1000000000000.0,
+      "node_id": "C108",
+      "node_type": "c",
+      "ready_time": 0.0,
+      "service_time": 0.0,
+      "x": 493.0,
+      "y": 395.0
+    },
+    {
+      "demand": 1.0,
+      "due_time": 1000000000000.0,
+      "node_id": "C109",
+      "node_type": "c",
+      "ready_time": 0.0,
+      "service_time": 0.0,
+      "x": 777.0,
+      "y": 522.0
+    },
+    {
+      "demand": 7.0,
+      "due_time": 1000000000000.0,
+      "node_id": "C110",
+      "node_type": "c",
+      "ready_time": 0.0,
+      "service_time": 0.0,
+      "x": 525.0,
+      "y": 263.0
+    },
+    {
+      "demand": 6.0,
+      "due_time": 1000000000000.0,
+      "node_id": "C111",
+      "node_type": "c",
+      "ready_time": 0.0,
+      "service_time": 0.0,
+      "x": 793.0,
+      "y": 632.0
+    },
+    {
+      "demand": 6.0,
+      "due_time": 1000000000000.0,
+      "node_id": "C112",
+      "node_type": "c",
+      "ready_time": 0.0,
+      "service_time": 0.0,
+      "x": 713.0,
+      "y": 403.0
+    },
+    {
+      "demand": 8.0,
+      "due_time": 1000000000000.0,
+      "node_id": "C113",
+      "node_type": "c",
+      "ready_time": 0.0,
+      "service_time": 0.0,
+      "x": 810.0,
+      "y": 633.0
+    },
+    {
+      "demand": 4.0,
+      "due_time": 1000000000000.0,
+      "node_id": "C114",
+      "node_type": "c",
+      "ready_time": 0.0,
+      "service_time": 0.0,
+      "x": 837.0,
+      "y": 649.0
+    },
+    {
+      "demand": 8.0,
+      "due_time": 1000000000000.0,
+      "node_id": "C115",
+      "node_type": "c",
+      "ready_time": 0.0,
+      "service_time": 0.0,
+      "x": 757.0,
+      "y": 561.0
+    },
+    {
+      "demand": 9.0,
+      "due_time": 1000000000000.0,
+      "node_id": "C116",
+      "node_type": "c",
+      "ready_time": 0.0,
+      "service_time": 0.0,
+      "x": 766.0,
+      "y": 750.0
+    },
+    {
+      "demand": 3.0,
+      "due_time": 1000000000000.0,
+      "node_id": "C117",
+      "node_type": "c",
+      "ready_time": 0.0,
+      "service_time": 0.0,
+      "x": 411.0,
+      "y": 544.0
+    },
+    {
+      "demand": 1.0,
+      "due_time": 1000000000000.0,
+      "node_id": "C118",
+      "node_type": "c",
+      "ready_time": 0.0,
+      "service_time": 0.0,
+      "x": 315.0,
+      "y": 293.0
+    },
+    {
+      "demand": 7.0,
+      "due_time": 1000000000000.0,
+      "node_id": "C119",
+      "node_type": "c",
+      "ready_time": 0.0,
+      "service_time": 0.0,
+      "x": 362.0,
+      "y": 490.0
+    },
+    {
+      "demand": 5.0,
+      "due_time": 1000000000000.0,
+      "node_id": "C120",
+      "node_type": "c",
+      "ready_time": 0.0,
+      "service_time": 0.0,
+      "x": 484.0,
+      "y": 275.0
+    },
+    {
+      "demand": 1.0,
+      "due_time": 1000000000000.0,
+      "node_id": "C121",
+      "node_type": "c",
+      "ready_time": 0.0,
+      "service_time": 0.0,
+      "x": 754.0,
+      "y": 590.0
+    },
+    {
+      "demand": 10.0,
+      "due_time": 1000000000000.0,
+      "node_id": "C122",
+      "node_type": "c",
+      "ready_time": 0.0,
+      "service_time": 0.0,
+      "x": 736.0,
+      "y": 784.0
+    },
+    {
+      "demand": 7.0,
+      "due_time": 1000000000000.0,
+      "node_id": "C123",
+      "node_type": "c",
+      "ready_time": 0.0,
+      "service_time": 0.0,
+      "x": 911.0,
+      "y": 461.0
+    },
+    {
+      "demand": 5.0,
+      "due_time": 1000000000000.0,
+      "node_id": "C124",
+      "node_type": "c",
+      "ready_time": 0.0,
+      "service_time": 0.0,
+      "x": 882.0,
+      "y": 671.0
+    },
+    {
+      "demand": 2.0,
+      "due_time": 1000000000000.0,
+      "node_id": "C125",
+      "node_type": "c",
+      "ready_time": 0.0,
+      "service_time": 0.0,
+      "x": 845.0,
+      "y": 506.0
+    },
+    {
+      "demand": 8.0,
+      "due_time": 1000000000000.0,
+      "node_id": "C126",
+      "node_type": "c",
+      "ready_time": 0.0,
+      "service_time": 0.0,
+      "x": 895.0,
+      "y": 582.0
+    },
+    {
+      "demand": 5.0,
+      "due_time": 1000000000000.0,
+      "node_id": "C127",
+      "node_type": "c",
+      "ready_time": 0.0,
+      "service_time": 0.0,
+      "x": 453.0,
+      "y": 298.0
+    },
+    {
+      "demand": 6.0,
+      "due_time": 1000000000000.0,
+      "node_id": "C128",
+      "node_type": "c",
+      "ready_time": 0.0,
+      "service_time": 0.0,
+      "x": 581.0,
+      "y": 300.0
+    },
+    {
+      "demand": 7.0,
+      "due_time": 1000000000000.0,
+      "node_id": "C129",
+      "node_type": "c",
+      "ready_time": 0.0,
+      "service_time": 0.0,
+      "x": 472.0,
+      "y": 372.0
+    },
+    {
+      "demand": 7.0,
+      "due_time": 1000000000000.0,
+      "node_id": "C130",
+      "node_type": "c",
+      "ready_time": 0.0,
+      "service_time": 0.0,
+      "x": 828.0,
+      "y": 569.0
+    },
+    {
+      "demand": 3.0,
+      "due_time": 1000000000000.0,
+      "node_id": "C131",
+      "node_type": "c",
+      "ready_time": 0.0,
+      "service_time": 0.0,
+      "x": 296.0,
+      "y": 298.0
+    },
+    {
+      "demand": 5.0,
+      "due_time": 1000000000000.0,
+      "node_id": "C132",
+      "node_type": "c",
+      "ready_time": 0.0,
+      "service_time": 0.0,
+      "x": 766.0,
+      "y": 642.0
+    },
+    {
+      "demand": 2.0,
+      "due_time": 1000000000000.0,
+      "node_id": "C133",
+      "node_type": "c",
+      "ready_time": 0.0,
+      "service_time": 0.0,
+      "x": 461.0,
+      "y": 360.0
+    },
+    {
+      "demand": 4.0,
+      "due_time": 1000000000000.0,
+      "node_id": "C134",
+      "node_type": "c",
+      "ready_time": 0.0,
+      "service_time": 0.0,
+      "x": 771.0,
+      "y": 657.0
+    },
+    {
+      "demand": 10.0,
+      "due_time": 1000000000000.0,
+      "node_id": "C135",
+      "node_type": "c",
+      "ready_time": 0.0,
+      "service_time": 0.0,
+      "x": 727.0,
+      "y": 553.0
+    },
+    {
+      "demand": 3.0,
+      "due_time": 1000000000000.0,
+      "node_id": "C136",
+      "node_type": "c",
+      "ready_time": 0.0,
+      "service_time": 0.0,
+      "x": 883.0,
+      "y": 400.0
+    },
+    {
+      "demand": 2.0,
+      "due_time": 1000000000000.0,
+      "node_id": "C137",
+      "node_type": "c",
+      "ready_time": 0.0,
+      "service_time": 0.0,
+      "x": 853.0,
+      "y": 527.0
+    },
+    {
+      "demand": 4.0,
+      "due_time": 1000000000000.0,
+      "node_id": "C138",
+      "node_type": "c",
+      "ready_time": 0.0,
+      "service_time": 0.0,
+      "x": 748.0,
+      "y": 466.0
+    },
+    {
+      "demand": 8.0,
+      "due_time": 1000000000000.0,
+      "node_id": "C139",
+      "node_type": "c",
+      "ready_time": 0.0,
+      "service_time": 0.0,
+      "x": 447.0,
+      "y": 363.0
+    },
+    {
+      "demand": 10.0,
+      "due_time": 1000000000000.0,
+      "node_id": "C140",
+      "node_type": "c",
+      "ready_time": 0.0,
+      "service_time": 0.0,
+      "x": 884.0,
+      "y": 716.0
+    },
+    {
+      "demand": 3.0,
+      "due_time": 1000000000000.0,
+      "node_id": "C141",
+      "node_type": "c",
+      "ready_time": 0.0,
+      "service_time": 0.0,
+      "x": 953.0,
+      "y": 573.0
+    },
+    {
+      "demand": 7.0,
+      "due_time": 1000000000000.0,
+      "node_id": "C142",
+      "node_type": "c",
+      "ready_time": 0.0,
+      "service_time": 0.0,
+      "x": 748.0,
+      "y": 499.0
+    },
+    {
+      "demand": 6.0,
+      "due_time": 1000000000000.0,
+      "node_id": "C143",
+      "node_type": "c",
+      "ready_time": 0.0,
+      "service_time": 0.0,
+      "x": 818.0,
+      "y": 424.0
+    },
+    {
+      "demand": 3.0,
+      "due_time": 1000000000000.0,
+      "node_id": "C144",
+      "node_type": "c",
+      "ready_time": 0.0,
+      "service_time": 0.0,
+      "x": 761.0,
+      "y": 559.0
+    },
+    {
+      "demand": 8.0,
+      "due_time": 1000000000000.0,
+      "node_id": "C145",
+      "node_type": "c",
+      "ready_time": 0.0,
+      "service_time": 0.0,
+      "x": 754.0,
+      "y": 551.0
+    },
+    {
+      "demand": 4.0,
+      "due_time": 1000000000000.0,
+      "node_id": "C146",
+      "node_type": "c",
+      "ready_time": 0.0,
+      "service_time": 0.0,
+      "x": 915.0,
+      "y": 521.0
+    },
+    {
+      "demand": 6.0,
+      "due_time": 1000000000000.0,
+      "node_id": "C147",
+      "node_type": "c",
+      "ready_time": 0.0,
+      "service_time": 0.0,
+      "x": 802.0,
+      "y": 462.0
+    },
+    {
+      "demand": 10.0,
+      "due_time": 1000000000000.0,
+      "node_id": "C148",
+      "node_type": "c",
+      "ready_time": 0.0,
+      "service_time": 0.0,
+      "x": 997.0,
+      "y": 502.0
+    },
+    {
+      "demand": 4.0,
+      "due_time": 1000000000000.0,
+      "node_id": "C149",
+      "node_type": "c",
+      "ready_time": 0.0,
+      "service_time": 0.0,
+      "x": 411.0,
+      "y": 333.0
+    },
+    {
+      "demand": 10.0,
+      "due_time": 1000000000000.0,
+      "node_id": "C150",
+      "node_type": "c",
+      "ready_time": 0.0,
+      "service_time": 0.0,
+      "x": 797.0,
+      "y": 466.0
+    },
+    {
+      "demand": 1.0,
+      "due_time": 1000000000000.0,
+      "node_id": "C151",
+      "node_type": "c",
+      "ready_time": 0.0,
+      "service_time": 0.0,
+      "x": 873.0,
+      "y": 543.0
+    },
+    {
+      "demand": 1.0,
+      "due_time": 1000000000000.0,
+      "node_id": "C152",
+      "node_type": "c",
+      "ready_time": 0.0,
+      "service_time": 0.0,
+      "x": 902.0,
+      "y": 534.0
+    },
+    {
+      "demand": 5.0,
+      "due_time": 1000000000000.0,
+      "node_id": "C153",
+      "node_type": "c",
+      "ready_time": 0.0,
+      "service_time": 0.0,
+      "x": 981.0,
+      "y": 614.0
+    },
+    {
+      "demand": 9.0,
+      "due_time": 1000000000000.0,
+      "node_id": "C154",
+      "node_type": "c",
+      "ready_time": 0.0,
+      "service_time": 0.0,
+      "x": 843.0,
+      "y": 695.0
+    },
+    {
+      "demand": 4.0,
+      "due_time": 1000000000000.0,
+      "node_id": "C155",
+      "node_type": "c",
+      "ready_time": 0.0,
+      "service_time": 0.0,
+      "x": 796.0,
+      "y": 701.0
+    },
+    {
+      "demand": 3.0,
+      "due_time": 1000000000000.0,
+      "node_id": "C156",
+      "node_type": "c",
+      "ready_time": 0.0,
+      "service_time": 0.0,
+      "x": 459.0,
+      "y": 378.0
+    },
+    {
+      "demand": 10.0,
+      "due_time": 1000000000000.0,
+      "node_id": "C157",
+      "node_type": "c",
+      "ready_time": 0.0,
+      "service_time": 0.0,
+      "x": 681.0,
+      "y": 627.0
+    },
+    {
+      "demand": 3.0,
+      "due_time": 1000000000000.0,
+      "node_id": "C158",
+      "node_type": "c",
+      "ready_time": 0.0,
+      "service_time": 0.0,
+      "x": 781.0,
+      "y": 616.0
+    },
+    {
+      "demand": 9.0,
+      "due_time": 1000000000000.0,
+      "node_id": "C159",
+      "node_type": "c",
+      "ready_time": 0.0,
+      "service_time": 0.0,
+      "x": 726.0,
+      "y": 474.0
+    },
+    {
+      "demand": 7.0,
+      "due_time": 1000000000000.0,
+      "node_id": "C160",
+      "node_type": "c",
+      "ready_time": 0.0,
+      "service_time": 0.0,
+      "x": 407.0,
+      "y": 302.0
+    },
+    {
+      "demand": 6.0,
+      "due_time": 1000000000000.0,
+      "node_id": "C161",
+      "node_type": "c",
+      "ready_time": 0.0,
+      "service_time": 0.0,
+      "x": 782.0,
+      "y": 644.0
+    },
+    {
+      "demand": 8.0,
+      "due_time": 1000000000000.0,
+      "node_id": "C162",
+      "node_type": "c",
+      "ready_time": 0.0,
+      "service_time": 0.0,
+      "x": 832.0,
+      "y": 667.0
+    },
+    {
+      "demand": 10.0,
+      "due_time": 1000000000000.0,
+      "node_id": "C163",
+      "node_type": "c",
+      "ready_time": 0.0,
+      "service_time": 0.0,
+      "x": 575.0,
+      "y": 296.0
+    },
+    {
+      "demand": 7.0,
+      "due_time": 1000000000000.0,
+      "node_id": "C164",
+      "node_type": "c",
+      "ready_time": 0.0,
+      "service_time": 0.0,
+      "x": 788.0,
+      "y": 619.0
+    },
+    {
+      "demand": 10.0,
+      "due_time": 1000000000000.0,
+      "node_id": "C165",
+      "node_type": "c",
+      "ready_time": 0.0,
+      "service_time": 0.0,
+      "x": 430.0,
+      "y": 313.0
+    },
+    {
+      "demand": 10.0,
+      "due_time": 1000000000000.0,
+      "node_id": "C166",
+      "node_type": "c",
+      "ready_time": 0.0,
+      "service_time": 0.0,
+      "x": 593.0,
+      "y": 548.0
+    },
+    {
+      "demand": 6.0,
+      "due_time": 1000000000000.0,
+      "node_id": "C167",
+      "node_type": "c",
+      "ready_time": 0.0,
+      "service_time": 0.0,
+      "x": 945.0,
+      "y": 400.0
+    },
+    {
+      "demand": 1.0,
+      "due_time": 1000000000000.0,
+      "node_id": "C168",
+      "node_type": "c",
+      "ready_time": 0.0,
+      "service_time": 0.0,
+      "x": 490.0,
+      "y": 287.0
+    },
+    {
+      "demand": 1.0,
+      "due_time": 1000000000000.0,
+      "node_id": "C169",
+      "node_type": "c",
+      "ready_time": 0.0,
+      "service_time": 0.0,
+      "x": 772.0,
+      "y": 449.0
+    },
+    {
+      "demand": 1.0,
+      "due_time": 1000000000000.0,
+      "node_id": "C170",
+      "node_type": "c",
+      "ready_time": 0.0,
+      "service_time": 0.0,
+      "x": 419.0,
+      "y": 448.0
+    },
+    {
+      "demand": 4.0,
+      "due_time": 1000000000000.0,
+      "node_id": "C171",
+      "node_type": "c",
+      "ready_time": 0.0,
+      "service_time": 0.0,
+      "x": 499.0,
+      "y": 256.0
+    },
+    {
+      "demand": 8.0,
+      "due_time": 1000000000000.0,
+      "node_id": "C172",
+      "node_type": "c",
+      "ready_time": 0.0,
+      "service_time": 0.0,
+      "x": 427.0,
+      "y": 245.0
+    },
+    {
+      "demand": 4.0,
+      "due_time": 1000000000000.0,
+      "node_id": "C173",
+      "node_type": "c",
+      "ready_time": 0.0,
+      "service_time": 0.0,
+      "x": 720.0,
+      "y": 625.0
+    },
+    {
+      "demand": 10.0,
+      "due_time": 1000000000000.0,
+      "node_id": "C174",
+      "node_type": "c",
+      "ready_time": 0.0,
+      "service_time": 0.0,
+      "x": 871.0,
+      "y": 555.0
+    },
+    {
+      "demand": 5.0,
+      "due_time": 1000000000000.0,
+      "node_id": "C175",
+      "node_type": "c",
+      "ready_time": 0.0,
+      "service_time": 0.0,
+      "x": 701.0,
+      "y": 703.0
+    },
+    {
+      "demand": 4.0,
+      "due_time": 1000000000000.0,
+      "node_id": "C176",
+      "node_type": "c",
+      "ready_time": 0.0,
+      "service_time": 0.0,
+      "x": 859.0,
+      "y": 496.0
+    },
+    {
+      "demand": 7.0,
+      "due_time": 1000000000000.0,
+      "node_id": "C177",
+      "node_type": "c",
+      "ready_time": 0.0,
+      "service_time": 0.0,
+      "x": 925.0,
+      "y": 476.0
+    },
+    {
+      "demand": 10.0,
+      "due_time": 1000000000000.0,
+      "node_id": "C178",
+      "node_type": "c",
+      "ready_time": 0.0,
+      "service_time": 0.0,
+      "x": 790.0,
+      "y": 585.0
+    },
+    {
+      "demand": 9.0,
+      "due_time": 1000000000000.0,
+      "node_id": "C179",
+      "node_type": "c",
+      "ready_time": 0.0,
+      "service_time": 0.0,
+      "x": 811.0,
+      "y": 591.0
+    },
+    {
+      "demand": 1.0,
+      "due_time": 1000000000000.0,
+      "node_id": "C180",
+      "node_type": "c",
+      "ready_time": 0.0,
+      "service_time": 0.0,
+      "x": 991.0,
+      "y": 637.0
+    },
+    {
+      "demand": 6.0,
+      "due_time": 1000000000000.0,
+      "node_id": "C181",
+      "node_type": "c",
+      "ready_time": 0.0,
+      "service_time": 0.0,
+      "x": 902.0,
+      "y": 569.0
+    },
+    {
+      "demand": 9.0,
+      "due_time": 1000000000000.0,
+      "node_id": "C182",
+      "node_type": "c",
+      "ready_time": 0.0,
+      "service_time": 0.0,
+      "x": 405.0,
+      "y": 298.0
+    },
+    {
+      "demand": 3.0,
+      "due_time": 1000000000000.0,
+      "node_id": "C183",
+      "node_type": "c",
+      "ready_time": 0.0,
+      "service_time": 0.0,
+      "x": 861.0,
+      "y": 389.0
+    },
+    {
+      "demand": 8.0,
+      "due_time": 1000000000000.0,
+      "node_id": "C184",
+      "node_type": "c",
+      "ready_time": 0.0,
+      "service_time": 0.0,
+      "x": 394.0,
+      "y": 306.0
+    },
+    {
+      "demand": 5.0,
+      "due_time": 1000000000000.0,
+      "node_id": "C185",
+      "node_type": "c",
+      "ready_time": 0.0,
+      "service_time": 0.0,
+      "x": 942.0,
+      "y": 611.0
+    },
+    {
+      "demand": 9.0,
+      "due_time": 1000000000000.0,
+      "node_id": "C186",
+      "node_type": "c",
+      "ready_time": 0.0,
+      "service_time": 0.0,
+      "x": 912.0,
+      "y": 528.0
+    },
+    {
+      "demand": 8.0,
+      "due_time": 1000000000000.0,
+      "node_id": "C187",
+      "node_type": "c",
+      "ready_time": 0.0,
+      "service_time": 0.0,
+      "x": 876.0,
+      "y": 663.0
+    },
+    {
+      "demand": 1.0,
+      "due_time": 1000000000000.0,
+      "node_id": "C188",
+      "node_type": "c",
+      "ready_time": 0.0,
+      "service_time": 0.0,
+      "x": 399.0,
+      "y": 126.0
+    },
+    {
+      "demand": 5.0,
+      "due_time": 1000000000000.0,
+      "node_id": "C189",
+      "node_type": "c",
+      "ready_time": 0.0,
+      "service_time": 0.0,
+      "x": 850.0,
+      "y": 696.0
+    }
+  ],
+  "schema_version": "resetp.cvrplib-distance-only.v1"
+}

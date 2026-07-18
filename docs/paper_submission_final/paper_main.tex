@@ -591,6 +591,13 @@ a_q^{ch}=\arg\min_{a\in\mathcal A_q}\sum_{t\in T}\widehat\gamma_t y_{qt}(a).
 
 本文以Goeke和Schneider的混合车队路径算例为基础\textsuperscript{\cite{ref:27,ref:28}}。该算例由英国城市坐标转换而来，空间尺度属于区域—城际配送，而非城市末端短途配送\textsuperscript{\cite{ref:47}}。本文保留客户需求、时间窗、服务时间及道路距离关系，将三个班次的客户自然合并到24 h运营周期，并扩展第二车场；超过当日运营窗口的末班客户按预先规定的规则剔除，不按目标客户数截取。由此得到9个网络，实际客户数为22--449，最大点间距离为168.7--248.1 km。车辆载重容量取$Q=3650$ kg；算法与协同实验采用$B=280$ kWh，以保证严格多趟排班下的电动车可行性；另以$B=80$ kWh考察电池容量变化对结果的影响。算例规模见表 \ref{tab:e2e3-instances}，其余参数见表 \ref{tab:parameter-settings}。
 
+为构造与上述英国封存结果分开报告的中国地区扩展算例，本文采用Zhang公开的中国中部某匿名零担城市物流企业10个高峰日、1222条订单数据\textsuperscript{\cite{ref:65}}。原始数据含货物体积和交付时间窗，但不含实测重量与实测停站时长。设订单$i$的原始体积为$v_i^{\mathrm{ord}}$（m$^3$），其载重需求$q_i$（kg）和客户占用时长$\sigma_{ir}$（min）按
+\[
+q_i=\operatorname{round}\!\left(\frac{v_i^{\mathrm{ord}}}{7.2}\times1000\right),\qquad
+\sigma_{ir}=0.1v_i^{\mathrm{ord}}\times60=6v_i^{\mathrm{ord}}
+\]
+构造。前式保持订单占来源车辆7.2 m$^3$体积容量与占目标车辆1000 kg载重容量的比例，属于容量占比场景代理，不代表实测货重或物理密度；后式采用原论文案例参数，不代表实测停站时长。基础时间窗从1222条交付订单中按预先固定、与算法结果无关的种子有放回抽取完整经验行，并联合保留同一行的时间窗起点、宽度、体积映射需求和服务时长，不拆分各字段独立抽样。每个地区—规模单元的01、02、03表示三个客户与订单身份互斥的算例复本，不表示宽、中、紧三种时间窗。
+
 为统一碳强度、电价和碳价的时间与地区口径，本文采用英国公开数据进行情景标定，成本统一以英镑计量。电网碳强度取NESO发布的Great Britain实际碳强度，并换算为kgCO\textsubscript{2}/kWh\textsuperscript{\cite{ref:29,ref:30}}；柴油排放因子、柴油价格、电价和碳价分别取自GOV.UK温室气体转换因子、道路燃油价格、非居民部门电价和UK ETS资料\textsuperscript{\cite{ref:31,ref:32,ref:33,ref:34,ref:35}}。公共站和车场充电功率分别取60 kW和22 kW\textsuperscript{\cite{ref:62,ref:63}}；充电占用成本$c_s^{\mathrm{occ}}$作为补能技术情景参数。
 
 车辆能耗参数与第2节模型保持一致。燃油车油耗和碳排放按CMEM相关公式计算，电动汽车行驶阶段不计直接尾气排放，充电侧间接碳排放由实际充电量和对应时段电网碳强度确定。对照算法包括遗传算法（genetic algorithm，GA）、粒子群优化（particle swarm optimization，PSO）、变邻域搜索（variable neighborhood search，VNS）、蚁群优化（ant colony optimization，ACO）、遗传--变邻域混合算法（GA-VNS）、大邻域搜索（large neighborhood search，LNS）和灰狼优化（grey wolf optimizer，GWO）。各对照的更新规则由以下文献确定：GA取Narayanan等文中的遗传算法对照，PSO和VNS分别依据Kennedy和Eberhart、Woller等的方法，ACO、LNS和GWO依次依据何美玲等、高娇娇和郭秀萍、马祥丽等的算法结构\textsuperscript{\cite{ref:56,ref:57,ref:58,ref:59,ref:60,ref:61}}。各算法均在统一客户序列和路线解码器上重新实现；下述参数均在算法比较前确定。GA-VNS在该解码框架下组合GA的全局搜索与VNS局部改进。
@@ -1003,6 +1010,7 @@ I^{\mathrm{dev}}=\frac{\sum_{i\in N}q_i\left(d_{i o_i}-d_{i d_i^*}\right)}{\sum_
 \bibitem{ref:36} Demir E, Bektas T, Laporte G. An adaptive large neighborhood search heuristic for the pollution-routing problem[J]. European Journal of Operational Research, 2012, 223(2): 346--359.
 \bibitem{ref:28} Goeke D, Schneider M. EVRPTW-MF[DB/OL]. Mendeley Data, 2022, V1. DOI: 10.17632/bd7rm5fw6k.1. \href{https://data.mendeley.com/datasets/bd7rm5fw6k}{\nolinkurl{data.mendeley.com/datasets/bd7rm5fw6k}}.
 \bibitem{ref:47} Bektas T, Laporte G. The pollution-routing problem[J]. Transportation Research Part B: Methodological, 2011, 45(8): 1232--1250.
+\bibitem{ref:65} Zhang J. Pickup and delivery planning for the crowdsourced freight delivery routing problem[J]. PLOS ONE, 2025, 20(2): e0318432. DOI: 10.1371/journal.pone.0318432.
 \bibitem{ref:29} National Energy System Operator. National Carbon Intensity Forecast[DB/OL]. [2026-06-01]. \url{https://www.neso.energy/data-portal/national-carbon-intensity-forecast/national_carbon_intensity_forecast}.
 \bibitem{ref:30} National Energy System Operator. Carbon Intensity API[DB/OL]. [2026-06-01]. \url{https://carbonintensity.org.uk/}.
 \bibitem{ref:31} Department for Energy Security and Net Zero. Greenhouse gas reporting: conversion factors 2025[EB/OL]. [2025-06-04]. \url{https://www.gov.uk/government/publications/greenhouse-gas-reporting-conversion-factors-2025}.
