@@ -1,17 +1,7 @@
 {
-  "algorithm_rerun": false,
-  "evidence_level": "TRAINING_BEHAVIOR_ONLY",
   "formal_search_allowed": false,
   "fresh_d3_allowed": false,
-  "incident_file": "execution_failure.json",
-  "incident_hash_file": "appledouble_incident_raw_hashes_20260719.json",
-  "incident_original_wrapper_files": [
-    "incident_original_decision.json",
-    "incident_original_metadata.json",
-    "incident_original_report.md",
-    "incident_original_solution_witnesses.json"
-  ],
-  "original_gate_git_head": "80fab582e020b903d5302fc3502490836bc4826b",
+  "git_head": "80fab582e020b903d5302fc3502490836bc4826b",
   "preflight": {
     "dependency_file_count": 17,
     "git_clean": true,
@@ -49,21 +39,8 @@
     "unit_test_log": "test_all_ev_saved_solution_is_exact_noop (test_fuel_route_retirement_ev_repack_solver.FuelRouteRetirementSolverTest.test_all_ev_saved_solution_is_exact_noop) ... ok\ntest_candidate_requires_cost_and_cv_gain_together (test_fuel_route_retirement_ev_repack_solver.FuelRouteRetirementSolverTest.test_candidate_requires_cost_and_cv_gain_together) ... ok\ntest_completion_route_search_ledger_is_mandatory (test_fuel_route_retirement_ev_repack_solver.FuelRouteRetirementSolverTest.test_completion_route_search_ledger_is_mandatory) ... ok\ntest_completion_that_moves_customers_fails_closed (test_fuel_route_retirement_ev_repack_solver.FuelRouteRetirementSolverTest.test_completion_that_moves_customers_fails_closed) ... ok\ntest_fast_completion_rejects_nested_search_self_report (test_fuel_route_retirement_ev_repack_solver.FuelRouteRetirementSolverTest.test_fast_completion_rejects_nested_search_self_report) ... ok\ntest_frozen_config_and_zero_ablation_entry (test_fuel_route_retirement_ev_repack_solver.FuelRouteRetirementSolverTest.test_frozen_config_and_zero_ablation_entry) ... ok\ntest_mock_strict_gain_accepts_and_retires_source (test_fuel_route_retirement_ev_repack_solver.FuelRouteRetirementSolverTest.test_mock_strict_gain_accepts_and_retires_source) ... ok\ntest_nonfinite_route_score_fails_closed (test_fuel_route_retirement_ev_repack_solver.FuelRouteRetirementSolverTest.test_nonfinite_route_score_fails_closed) ... ok\ntest_one_level_ejection_cannot_return_to_origin (test_fuel_route_retirement_ev_repack_solver.FuelRouteRetirementSolverTest.test_one_level_ejection_cannot_return_to_origin) ... ok\ntest_real_plateau_enumeration_preserves_coverage_and_slots (test_fuel_route_retirement_ev_repack_solver.FuelRouteRetirementSolverTest.test_real_plateau_enumeration_preserves_coverage_and_slots) ... ok\ntest_regret2_places_unique_option_customer_first (test_fuel_route_retirement_ev_repack_solver.FuelRouteRetirementSolverTest.test_regret2_places_unique_option_customer_first) ... ok\ntest_repair_is_deterministic (test_fuel_route_retirement_ev_repack_solver.FuelRouteRetirementSolverTest.test_repair_is_deterministic) ... ok\ntest_semantic_hash_ignores_only_collection_order (test_fuel_route_retirement_ev_repack_solver.FuelRouteRetirementSolverTest.test_semantic_hash_ignores_only_collection_order) ... ok\n\n----------------------------------------------------------------------\nRan 13 tests in 0.111s\n\nOK\n",
     "unit_tests_run": 13
   },
-  "raw_runs_sha256": "be4df7555ddaea01b128b96e01aa4ed5645b9039a254fa432e6b3d35f32498c4",
-  "recovery_git_head": "108e0cc8f817172048c427aadcd3fb9a93a63128",
-  "recovery_summary": {
-    "algorithm_rerun": false,
-    "cv_zero_candidate_count": 1,
-    "decision": "STOP_FUEL_ROUTE_RETIREMENT_EV_REPACK_BEHAVIOR",
-    "exact_candidate_count": 4,
-    "independent_replays": 8,
-    "minimum_completed_candidate_cost": 661.4407527272798,
-    "raw_runs_sha256": "be4df7555ddaea01b128b96e01aa4ed5645b9039a254fa432e6b3d35f32498c4",
-    "route_search_attempts": [],
-    "source_cost": 621.0831141941019
-  },
   "route_search_attempts": [],
   "schema_version": "resetp.fuel-route-retirement-behavior.v1",
   "stage2_allowed": false,
-  "status": "SEALED_RECOVERED_AFTER_APPLEDOUBLE"
+  "status": "INCONCLUSIVE_EXECUTION_FAILURE"
 }
