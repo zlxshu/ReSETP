@@ -1,0 +1,3965 @@
+{
+  "adaptive_arm": {
+    "adaptive_acceptance": true,
+    "d_max": 30.0,
+    "d_min": 15.0,
+    "name": "adaptive_da30_15"
+  },
+  "complete": true,
+  "config": "adaptive_da30_15",
+  "cost": 6384427,
+  "distance": 6384427,
+  "duration": 13542409,
+  "feasible": true,
+  "instance": "PR21A.vrp",
+  "instance_sha256": "39706474f564e75511b3ceef6e090885f78dec9e978f27796f12a7816805221f",
+  "iterations_completed": 11610,
+  "mother_config": {
+    "history_length": 300,
+    "max_perturbations": 25,
+    "min_perturbations": 1,
+    "name": "swapstar_best",
+    "num_iters_no_improvement": 150000,
+    "num_neighbours": 50,
+    "route_operators": [
+      "SwapStar"
+    ],
+    "symmetric_neighbours": false,
+    "weight_time_warp": 1.0,
+    "weight_wait_time": 0.2
+  },
+  "num_clients": 420,
+  "num_routes": 35,
+  "pyvrp_version": "0.13.4",
+  "requested_iterations": null,
+  "requested_runtime_seconds": 30.0,
+  "rng_state": [
+    1208070870,
+    845266929,
+    2102372416,
+    144389596
+  ],
+  "round_func": "exact",
+  "routes": [
+    {
+      "distance": 242484,
+      "duration": 465484,
+      "end_depot": 0,
+      "feasible": true,
+      "start_depot": 0,
+      "vehicle_type": 0,
+      "visits": [
+        206,
+        122,
+        229,
+        56,
+        107,
+        251,
+        46,
+        22,
+        66,
+        78,
+        14,
+        263,
+        29
+      ]
+    },
+    {
+      "distance": 164947,
+      "duration": 382405,
+      "end_depot": 0,
+      "feasible": true,
+      "start_depot": 0,
+      "vehicle_type": 0,
+      "visits": [
+        331,
+        375,
+        330,
+        12,
+        156,
+        94,
+        188,
+        351,
+        69,
+        274,
+        282,
+        161,
+        421
+      ]
+    },
+    {
+      "distance": 207222,
+      "duration": 406289,
+      "end_depot": 0,
+      "feasible": true,
+      "start_depot": 0,
+      "vehicle_type": 0,
+      "visits": [
+        353,
+        44,
+        117,
+        67,
+        223,
+        20,
+        91,
+        64,
+        212,
+        349,
+        210,
+        384
+      ]
+    },
+    {
+      "distance": 179396,
+      "duration": 390943,
+      "end_depot": 0,
+      "feasible": true,
+      "start_depot": 0,
+      "vehicle_type": 0,
+      "visits": [
+        404,
+        65,
+        301,
+        189,
+        147,
+        273,
+        358,
+        366,
+        362,
+        385
+      ]
+    },
+    {
+      "distance": 178277,
+      "duration": 367277,
+      "end_depot": 1,
+      "feasible": true,
+      "start_depot": 1,
+      "vehicle_type": 1,
+      "visits": [
+        332,
+        326,
+        277,
+        38,
+        255,
+        361,
+        73,
+        254,
+        338,
+        19,
+        367,
+        214,
+        57
+      ]
+    },
+    {
+      "distance": 265954,
+      "duration": 468207,
+      "end_depot": 1,
+      "feasible": true,
+      "start_depot": 1,
+      "vehicle_type": 1,
+      "visits": [
+        99,
+        55,
+        232,
+        413,
+        192,
+        420,
+        143,
+        315,
+        171,
+        49,
+        270,
+        131,
+        241,
+        167,
+        312
+      ]
+    },
+    {
+      "distance": 222856,
+      "duration": 472352,
+      "end_depot": 1,
+      "feasible": true,
+      "start_depot": 1,
+      "vehicle_type": 1,
+      "visits": [
+        408,
+        144,
+        185,
+        27,
+        16,
+        416,
+        31,
+        97,
+        317,
+        36,
+        79,
+        276,
+        71,
+        230
+      ]
+    },
+    {
+      "distance": 190280,
+      "duration": 352280,
+      "end_depot": 1,
+      "feasible": true,
+      "start_depot": 1,
+      "vehicle_type": 1,
+      "visits": [
+        32,
+        160,
+        114,
+        278,
+        173,
+        377,
+        190,
+        376,
+        202,
+        391,
+        224,
+        305
+      ]
+    },
+    {
+      "distance": 207050,
+      "duration": 472379,
+      "end_depot": 2,
+      "feasible": true,
+      "start_depot": 2,
+      "vehicle_type": 2,
+      "visits": [
+        59,
+        336,
+        176,
+        373,
+        324,
+        342,
+        37,
+        186,
+        266,
+        402,
+        28,
+        287,
+        382,
+        135,
+        221,
+        166,
+        418
+      ]
+    },
+    {
+      "distance": 261396,
+      "duration": 465435,
+      "end_depot": 3,
+      "feasible": true,
+      "start_depot": 3,
+      "vehicle_type": 3,
+      "visits": [
+        297,
+        341,
+        95,
+        217,
+        134,
+        234,
+        245,
+        203,
+        410,
+        123,
+        218,
+        284,
+        407,
+        405,
+        240,
+        201
+      ]
+    },
+    {
+      "distance": 85976,
+      "duration": 358694,
+      "end_depot": 3,
+      "feasible": true,
+      "start_depot": 3,
+      "vehicle_type": 3,
+      "visits": [
+        128,
+        183,
+        415,
+        329,
+        77,
+        339,
+        311
+      ]
+    },
+    {
+      "distance": 50175,
+      "duration": 233965,
+      "end_depot": 4,
+      "feasible": true,
+      "start_depot": 4,
+      "vehicle_type": 4,
+      "visits": [
+        399,
+        299,
+        237,
+        18,
+        322
+      ]
+    },
+    {
+      "distance": 186872,
+      "duration": 378872,
+      "end_depot": 5,
+      "feasible": true,
+      "start_depot": 5,
+      "vehicle_type": 5,
+      "visits": [
+        340,
+        327,
+        92,
+        269,
+        50,
+        337,
+        227,
+        54,
+        200,
+        296,
+        392,
+        387,
+        246,
+        81
+      ]
+    },
+    {
+      "distance": 175813,
+      "duration": 441511,
+      "end_depot": 5,
+      "feasible": true,
+      "start_depot": 5,
+      "vehicle_type": 5,
+      "visits": [
+        116,
+        187,
+        268,
+        15,
+        280,
+        333,
+        411,
+        157,
+        204,
+        112,
+        414,
+        321,
+        253,
+        106
+      ]
+    },
+    {
+      "distance": 164055,
+      "duration": 339388,
+      "end_depot": 5,
+      "feasible": true,
+      "start_depot": 5,
+      "vehicle_type": 5,
+      "visits": [
+        197,
+        213,
+        125,
+        24,
+        136,
+        383,
+        87,
+        346,
+        140,
+        298
+      ]
+    },
+    {
+      "distance": 211890,
+      "duration": 443249,
+      "end_depot": 5,
+      "feasible": true,
+      "start_depot": 5,
+      "vehicle_type": 5,
+      "visits": [
+        127,
+        401,
+        104,
+        231,
+        409,
+        370,
+        350,
+        359,
+        425,
+        163,
+        295,
+        225,
+        120,
+        165
+      ]
+    },
+    {
+      "distance": 117598,
+      "duration": 331316,
+      "end_depot": 6,
+      "feasible": true,
+      "start_depot": 6,
+      "vehicle_type": 6,
+      "visits": [
+        275,
+        372,
+        233,
+        101,
+        159,
+        316,
+        364,
+        389,
+        352,
+        285,
+        262,
+        209
+      ]
+    },
+    {
+      "distance": 205761,
+      "duration": 467889,
+      "end_depot": 7,
+      "feasible": true,
+      "start_depot": 7,
+      "vehicle_type": 7,
+      "visits": [
+        13,
+        179,
+        357,
+        41,
+        82,
+        164,
+        172,
+        236,
+        83,
+        257,
+        103,
+        196,
+        129,
+        348,
+        310,
+        74
+      ]
+    },
+    {
+      "distance": 151917,
+      "duration": 438329,
+      "end_depot": 7,
+      "feasible": true,
+      "start_depot": 7,
+      "vehicle_type": 7,
+      "visits": [
+        427,
+        283,
+        403,
+        397,
+        207,
+        58,
+        300,
+        289,
+        17,
+        313,
+        205,
+        138,
+        162
+      ]
+    },
+    {
+      "distance": 218357,
+      "duration": 473003,
+      "end_depot": 7,
+      "feasible": true,
+      "start_depot": 7,
+      "vehicle_type": 7,
+      "visits": [
+        76,
+        115,
+        252,
+        170,
+        70,
+        294,
+        360,
+        155,
+        174,
+        345,
+        314,
+        53,
+        100,
+        149,
+        35,
+        30
+      ]
+    },
+    {
+      "distance": 236435,
+      "duration": 385435,
+      "end_depot": 7,
+      "feasible": true,
+      "start_depot": 7,
+      "vehicle_type": 7,
+      "visits": [
+        168,
+        267,
+        119,
+        151,
+        308,
+        118,
+        84,
+        211,
+        148,
+        371,
+        335,
+        292
+      ]
+    },
+    {
+      "distance": 307968,
+      "duration": 457968,
+      "end_depot": 8,
+      "feasible": true,
+      "start_depot": 8,
+      "vehicle_type": 8,
+      "visits": [
+        374,
+        320,
+        72,
+        153,
+        259,
+        137,
+        88,
+        258,
+        42,
+        169,
+        368,
+        400,
+        363
+      ]
+    },
+    {
+      "distance": 141947,
+      "duration": 405920,
+      "end_depot": 8,
+      "feasible": true,
+      "start_depot": 8,
+      "vehicle_type": 8,
+      "visits": [
+        154,
+        412,
+        26,
+        406,
+        52,
+        293,
+        239,
+        146,
+        417,
+        177,
+        355
+      ]
+    },
+    {
+      "distance": 77007,
+      "duration": 291379,
+      "end_depot": 8,
+      "feasible": true,
+      "start_depot": 8,
+      "vehicle_type": 8,
+      "visits": [
+        422,
+        63,
+        381,
+        193,
+        113,
+        61,
+        423
+      ]
+    },
+    {
+      "distance": 147322,
+      "duration": 325084,
+      "end_depot": 9,
+      "feasible": true,
+      "start_depot": 9,
+      "vehicle_type": 9,
+      "visits": [
+        132,
+        379,
+        62,
+        108,
+        222,
+        105,
+        39,
+        356,
+        431,
+        195,
+        175,
+        109
+      ]
+    },
+    {
+      "distance": 228487,
+      "duration": 451487,
+      "end_depot": 9,
+      "feasible": true,
+      "start_depot": 9,
+      "vehicle_type": 9,
+      "visits": [
+        328,
+        220,
+        130,
+        181,
+        80,
+        235,
+        424,
+        256,
+        238,
+        47,
+        139,
+        343,
+        243,
+        89,
+        325
+      ]
+    },
+    {
+      "distance": 253168,
+      "duration": 440605,
+      "end_depot": 9,
+      "feasible": true,
+      "start_depot": 9,
+      "vehicle_type": 9,
+      "visits": [
+        390,
+        51,
+        248,
+        380,
+        184,
+        110,
+        286,
+        194,
+        264,
+        307,
+        272,
+        396,
+        228
+      ]
+    },
+    {
+      "distance": 199160,
+      "duration": 453092,
+      "end_depot": 9,
+      "feasible": true,
+      "start_depot": 9,
+      "vehicle_type": 9,
+      "visits": [
+        369,
+        199,
+        309,
+        242,
+        365,
+        344,
+        429,
+        45,
+        398,
+        68,
+        303,
+        265,
+        395
+      ]
+    },
+    {
+      "distance": 221963,
+      "duration": 453906,
+      "end_depot": 10,
+      "feasible": true,
+      "start_depot": 10,
+      "vehicle_type": 10,
+      "visits": [
+        182,
+        145,
+        393,
+        60,
+        96,
+        142,
+        180,
+        226,
+        48,
+        291,
+        378,
+        271
+      ]
+    },
+    {
+      "distance": 238495,
+      "duration": 387156,
+      "end_depot": 10,
+      "feasible": true,
+      "start_depot": 10,
+      "vehicle_type": 10,
+      "visits": [
+        279,
+        158,
+        250,
+        133,
+        290,
+        261,
+        354,
+        323,
+        306,
+        178,
+        319,
+        86,
+        347,
+        215
+      ]
+    },
+    {
+      "distance": 29269,
+      "duration": 65269,
+      "end_depot": 10,
+      "feasible": true,
+      "start_depot": 10,
+      "vehicle_type": 10,
+      "visits": [
+        75,
+        33
+      ]
+    },
+    {
+      "distance": 201976,
+      "duration": 386976,
+      "end_depot": 11,
+      "feasible": true,
+      "start_depot": 11,
+      "vehicle_type": 11,
+      "visits": [
+        281,
+        304,
+        302,
+        247,
+        150,
+        43,
+        249,
+        25,
+        93,
+        208,
+        386,
+        419,
+        219,
+        191
+      ]
+    },
+    {
+      "distance": 54792,
+      "duration": 113792,
+      "end_depot": 11,
+      "feasible": true,
+      "start_depot": 11,
+      "vehicle_type": 11,
+      "visits": [
+        334,
+        34,
+        288
+      ]
+    },
+    {
+      "distance": 223000,
+      "duration": 437293,
+      "end_depot": 11,
+      "feasible": true,
+      "start_depot": 11,
+      "vehicle_type": 11,
+      "visits": [
+        85,
+        111,
+        126,
+        244,
+        141,
+        102,
+        152,
+        124,
+        394,
+        260,
+        198,
+        121,
+        426
+      ]
+    },
+    {
+      "distance": 135162,
+      "duration": 337780,
+      "end_depot": 11,
+      "feasible": true,
+      "start_depot": 11,
+      "vehicle_type": 11,
+      "visits": [
+        318,
+        90,
+        23,
+        98,
+        430,
+        428,
+        388,
+        216,
+        40,
+        21
+      ]
+    }
+  ],
+  "runner_diagnostics": {
+    "acceptance": {
+      "acceptance_rate": 0.16959517657192075,
+      "accepted": 1969,
+      "evaluated": 11610,
+      "last_eta": 0.01,
+      "last_threshold": 6409551.633,
+      "previous_block_best": 6410701
+    },
+    "adaptive_acceptance": true
+  },
+  "runtime_seconds": 30.001367749995552,
+  "schema": "resetp.mda-ils-vns-adaptive-worker.v1",
+  "search_diagnostics": {
+    "calls": 11610,
+    "current_strength": 25,
+    "gamma": 30,
+    "num_updates": 387,
+    "record_search": {
+      "calls": 20,
+      "exhaustive_calls": 20,
+      "route_calls": 20,
+      "route_gain": 17736,
+      "route_improvements": 1,
+      "route_operator_statistics": [
+        {
+          "applications": 0,
+          "evaluations": 595,
+          "operator": "SwapStar"
+        }
+      ],
+      "route_seconds": 0.019786957185715437
+    },
+    "sample_positions": [
+      10,
+      20,
+      30
+    ],
+    "sample_seconds": 0.3831002074875869,
+    "strength_usage": {
+      "12": 0,
+      "16": 390,
+      "20": 1770,
+      "25": 2040,
+      "30": 3570,
+      "4": 0,
+      "40": 3840,
+      "8": 0
+    },
+    "updates": [
+      {
+        "actual_average_distance": 22.0,
+        "call": 30,
+        "new_strength": 40,
+        "old_strength": 30,
+        "progress": 0.006632894432793061,
+        "target_distance": 29.900516562513076
+      },
+      {
+        "actual_average_distance": 47.0,
+        "call": 60,
+        "new_strength": 25,
+        "old_strength": 40,
+        "progress": 0.014270216667015726,
+        "target_distance": 29.785951416997705
+      },
+      {
+        "actual_average_distance": 31.333333333333332,
+        "call": 90,
+        "new_strength": 25,
+        "old_strength": 25,
+        "progress": 0.017493861100714034,
+        "target_distance": 29.737594812497264
+      },
+      {
+        "actual_average_distance": 26.333333333333332,
+        "call": 120,
+        "new_strength": 30,
+        "old_strength": 25,
+        "progress": 0.02142194443343518,
+        "target_distance": 29.67867741698865
+      },
+      {
+        "actual_average_distance": 21.333333333333332,
+        "call": 150,
+        "new_strength": 40,
+        "old_strength": 30,
+        "progress": 0.025438213866436854,
+        "target_distance": 29.618429354508407
+      },
+      {
+        "actual_average_distance": 50.666666666666664,
+        "call": 180,
+        "new_strength": 25,
+        "old_strength": 40,
+        "progress": 0.02996649860093991,
+        "target_distance": 29.550505021004938
+      },
+      {
+        "actual_average_distance": 23.666666666666668,
+        "call": 210,
+        "new_strength": 30,
+        "old_strength": 25,
+        "progress": 0.033565599999080105,
+        "target_distance": 29.496519500011345
+      },
+      {
+        "actual_average_distance": 27.666666666666668,
+        "call": 240,
+        "new_strength": 30,
+        "old_strength": 30,
+        "progress": 0.03712614999967627,
+        "target_distance": 29.443110437510768
+      },
+      {
+        "actual_average_distance": 21.0,
+        "call": 270,
+        "new_strength": 40,
+        "old_strength": 30,
+        "progress": 0.039542793032402795,
+        "target_distance": 29.406860812508967
+      },
+      {
+        "actual_average_distance": 28.0,
+        "call": 300,
+        "new_strength": 40,
+        "old_strength": 40,
+        "progress": 0.043218515266198666,
+        "target_distance": 29.351724958512932
+      },
+      {
+        "actual_average_distance": 35.333333333333336,
+        "call": 330,
+        "new_strength": 30,
+        "old_strength": 40,
+        "progress": 0.047834629165784764,
+        "target_distance": 29.282483249990037
+      },
+      {
+        "actual_average_distance": 18.0,
+        "call": 360,
+        "new_strength": 40,
+        "old_strength": 30,
+        "progress": 0.05045902219911416,
+        "target_distance": 29.243117229489144
+      },
+      {
+        "actual_average_distance": 32.333333333333336,
+        "call": 390,
+        "new_strength": 40,
+        "old_strength": 40,
+        "progress": 0.05399633333242188,
+        "target_distance": 29.1900572500017
+      },
+      {
+        "actual_average_distance": 39.333333333333336,
+        "call": 420,
+        "new_strength": 30,
+        "old_strength": 40,
+        "progress": 0.057802986099462335,
+        "target_distance": 29.132957791996887
+      },
+      {
+        "actual_average_distance": 22.666666666666668,
+        "call": 450,
+        "new_strength": 40,
+        "old_strength": 30,
+        "progress": 0.060350473599586014,
+        "target_distance": 29.09474827098893
+      },
+      {
+        "actual_average_distance": 38.0,
+        "call": 480,
+        "new_strength": 30,
+        "old_strength": 40,
+        "progress": 0.06410387636666807,
+        "target_distance": 29.038444125006208
+      },
+      {
+        "actual_average_distance": 31.0,
+        "call": 510,
+        "new_strength": 30,
+        "old_strength": 30,
+        "progress": 0.0668977499997709,
+        "target_distance": 28.996536312508397
+      },
+      {
+        "actual_average_distance": 27.333333333333332,
+        "call": 540,
+        "new_strength": 30,
+        "old_strength": 30,
+        "progress": 0.06923554166569375,
+        "target_distance": 28.96146860450972
+      },
+      {
+        "actual_average_distance": 21.333333333333332,
+        "call": 570,
+        "new_strength": 40,
+        "old_strength": 30,
+        "progress": 0.0716405916668009,
+        "target_distance": 28.925393000012264
+      },
+      {
+        "actual_average_distance": 40.333333333333336,
+        "call": 600,
+        "new_strength": 30,
+        "old_strength": 40,
+        "progress": 0.07502531943415912,
+        "target_distance": 28.874622270988766
+      },
+      {
+        "actual_average_distance": 22.666666666666668,
+        "call": 630,
+        "new_strength": 40,
+        "old_strength": 30,
+        "progress": 0.0779535846998139,
+        "target_distance": 28.830699979502242
+      },
+      {
+        "actual_average_distance": 31.333333333333332,
+        "call": 660,
+        "new_strength": 40,
+        "old_strength": 40,
+        "progress": 0.08165065833406213,
+        "target_distance": 28.775245229509892
+      },
+      {
+        "actual_average_distance": 32.666666666666664,
+        "call": 690,
+        "new_strength": 40,
+        "old_strength": 40,
+        "progress": 0.08561599166714587,
+        "target_distance": 28.715762354491744
+      },
+      {
+        "actual_average_distance": 35.333333333333336,
+        "call": 720,
+        "new_strength": 30,
+        "old_strength": 40,
+        "progress": 0.08932422083259249,
+        "target_distance": 28.660138875013217
+      },
+      {
+        "actual_average_distance": 25.666666666666668,
+        "call": 750,
+        "new_strength": 30,
+        "old_strength": 30,
+        "progress": 0.09150923053384759,
+        "target_distance": 28.627363500010688
+      },
+      {
+        "actual_average_distance": 17.666666666666668,
+        "call": 780,
+        "new_strength": 40,
+        "old_strength": 30,
+        "progress": 0.0938723472005222,
+        "target_distance": 28.59191683350946
+      },
+      {
+        "actual_average_distance": 31.0,
+        "call": 810,
+        "new_strength": 40,
+        "old_strength": 40,
+        "progress": 0.09723034583342573,
+        "target_distance": 28.541547166998498
+      },
+      {
+        "actual_average_distance": 40.0,
+        "call": 840,
+        "new_strength": 30,
+        "old_strength": 40,
+        "progress": 0.1005020055337809,
+        "target_distance": 28.492472333513433
+      },
+      {
+        "actual_average_distance": 26.0,
+        "call": 870,
+        "new_strength": 30,
+        "old_strength": 30,
+        "progress": 0.10281541803269648,
+        "target_distance": 28.45777075001388
+      },
+      {
+        "actual_average_distance": 22.0,
+        "call": 900,
+        "new_strength": 40,
+        "old_strength": 30,
+        "progress": 0.10532194166638267,
+        "target_distance": 28.420175437495345
+      },
+      {
+        "actual_average_distance": 29.0,
+        "call": 930,
+        "new_strength": 40,
+        "old_strength": 40,
+        "progress": 0.10848483750014566,
+        "target_distance": 28.372729729511775
+      },
+      {
+        "actual_average_distance": 26.666666666666668,
+        "call": 960,
+        "new_strength": 40,
+        "old_strength": 40,
+        "progress": 0.11204277499928139,
+        "target_distance": 28.319360687513836
+      },
+      {
+        "actual_average_distance": 30.0,
+        "call": 990,
+        "new_strength": 40,
+        "old_strength": 40,
+        "progress": 0.11501652500010096,
+        "target_distance": 28.274754542013397
+      },
+      {
+        "actual_average_distance": 24.0,
+        "call": 1020,
+        "new_strength": 40,
+        "old_strength": 40,
+        "progress": 0.11818566666721987,
+        "target_distance": 28.227220479486277
+      },
+      {
+        "actual_average_distance": 27.333333333333332,
+        "call": 1050,
+        "new_strength": 40,
+        "old_strength": 40,
+        "progress": 0.12197930416635548,
+        "target_distance": 28.17031250000582
+      },
+      {
+        "actual_average_distance": 45.666666666666664,
+        "call": 1080,
+        "new_strength": 25,
+        "old_strength": 40,
+        "progress": 0.12520401386621718,
+        "target_distance": 28.121942083496833
+      },
+      {
+        "actual_average_distance": 18.333333333333332,
+        "call": 1110,
+        "new_strength": 40,
+        "old_strength": 25,
+        "progress": 0.1272395902662538,
+        "target_distance": 28.091408145992318
+      },
+      {
+        "actual_average_distance": 28.333333333333332,
+        "call": 1140,
+        "new_strength": 40,
+        "old_strength": 40,
+        "progress": 0.13070766943274065,
+        "target_distance": 28.03938977100188
+      },
+      {
+        "actual_average_distance": 18.0,
+        "call": 1170,
+        "new_strength": 40,
+        "old_strength": 40,
+        "progress": 0.13453287083345156,
+        "target_distance": 27.98200927101425
+      },
+      {
+        "actual_average_distance": 37.333333333333336,
+        "call": 1200,
+        "new_strength": 30,
+        "old_strength": 40,
+        "progress": 0.1378956263671474,
+        "target_distance": 27.93156756251119
+      },
+      {
+        "actual_average_distance": 23.0,
+        "call": 1230,
+        "new_strength": 40,
+        "old_strength": 30,
+        "progress": 0.14044758886642134,
+        "target_distance": 27.893290604493814
+      },
+      {
+        "actual_average_distance": 25.666666666666668,
+        "call": 1260,
+        "new_strength": 40,
+        "old_strength": 40,
+        "progress": 0.14341725000025082,
+        "target_distance": 27.848743417009246
+      },
+      {
+        "actual_average_distance": 28.666666666666668,
+        "call": 1290,
+        "new_strength": 40,
+        "old_strength": 40,
+        "progress": 0.1467069374998876,
+        "target_distance": 27.799398104514694
+      },
+      {
+        "actual_average_distance": 33.666666666666664,
+        "call": 1320,
+        "new_strength": 30,
+        "old_strength": 40,
+        "progress": 0.15013524719979615,
+        "target_distance": 27.747973604506114
+      },
+      {
+        "actual_average_distance": 23.666666666666668,
+        "call": 1350,
+        "new_strength": 40,
+        "old_strength": 30,
+        "progress": 0.15228422636670683,
+        "target_distance": 27.7157385419996
+      },
+      {
+        "actual_average_distance": 33.666666666666664,
+        "call": 1380,
+        "new_strength": 30,
+        "old_strength": 40,
+        "progress": 0.15579163333362278,
+        "target_distance": 27.66312775001279
+      },
+      {
+        "actual_average_distance": 8.333333333333334,
+        "call": 1410,
+        "new_strength": 40,
+        "old_strength": 30,
+        "progress": 0.15810326249920764,
+        "target_distance": 27.628452895994997
+      },
+      {
+        "actual_average_distance": 26.0,
+        "call": 1440,
+        "new_strength": 40,
+        "old_strength": 40,
+        "progress": 0.16119796943385153,
+        "target_distance": 27.582032104488462
+      },
+      {
+        "actual_average_distance": 30.0,
+        "call": 1470,
+        "new_strength": 40,
+        "old_strength": 40,
+        "progress": 0.164710755533694,
+        "target_distance": 27.52934433351038
+      },
+      {
+        "actual_average_distance": 38.333333333333336,
+        "call": 1500,
+        "new_strength": 30,
+        "old_strength": 40,
+        "progress": 0.16814372219960205,
+        "target_distance": 27.47784664601204
+      },
+      {
+        "actual_average_distance": 27.666666666666668,
+        "call": 1530,
+        "new_strength": 30,
+        "old_strength": 30,
+        "progress": 0.17073886803312538,
+        "target_distance": 27.438919604494004
+      },
+      {
+        "actual_average_distance": 25.333333333333332,
+        "call": 1560,
+        "new_strength": 30,
+        "old_strength": 30,
+        "progress": 0.1731846458336804,
+        "target_distance": 27.40223583349143
+      },
+      {
+        "actual_average_distance": 22.0,
+        "call": 1590,
+        "new_strength": 40,
+        "old_strength": 30,
+        "progress": 0.17552902500028722,
+        "target_distance": 27.367067167011555
+      },
+      {
+        "actual_average_distance": 28.333333333333332,
+        "call": 1620,
+        "new_strength": 40,
+        "old_strength": 40,
+        "progress": 0.17928614860090117,
+        "target_distance": 27.310710146004567
+      },
+      {
+        "actual_average_distance": 33.0,
+        "call": 1650,
+        "new_strength": 30,
+        "old_strength": 40,
+        "progress": 0.18261251386720687,
+        "target_distance": 27.2608150835149
+      },
+      {
+        "actual_average_distance": 24.666666666666668,
+        "call": 1680,
+        "new_strength": 30,
+        "old_strength": 30,
+        "progress": 0.1852555402670987,
+        "target_distance": 27.221169208496576
+      },
+      {
+        "actual_average_distance": 11.333333333333334,
+        "call": 1710,
+        "new_strength": 40,
+        "old_strength": 30,
+        "progress": 0.1874483708331051,
+        "target_distance": 27.18827616699855
+      },
+      {
+        "actual_average_distance": 20.333333333333332,
+        "call": 1740,
+        "new_strength": 40,
+        "old_strength": 40,
+        "progress": 0.19061557500002285,
+        "target_distance": 27.14076879201457
+      },
+      {
+        "actual_average_distance": 31.0,
+        "call": 1770,
+        "new_strength": 30,
+        "old_strength": 40,
+        "progress": 0.19371047776658087,
+        "target_distance": 27.0943449169863
+      },
+      {
+        "actual_average_distance": 14.333333333333334,
+        "call": 1800,
+        "new_strength": 40,
+        "old_strength": 30,
+        "progress": 0.19635675693280064,
+        "target_distance": 27.05465124998591
+      },
+      {
+        "actual_average_distance": 25.666666666666668,
+        "call": 1830,
+        "new_strength": 40,
+        "old_strength": 40,
+        "progress": 0.19955591386727367,
+        "target_distance": 27.006663687498076
+      },
+      {
+        "actual_average_distance": 49.0,
+        "call": 1860,
+        "new_strength": 20,
+        "old_strength": 40,
+        "progress": 0.2032638985993496,
+        "target_distance": 26.95104693749454
+      },
+      {
+        "actual_average_distance": 14.333333333333334,
+        "call": 1890,
+        "new_strength": 40,
+        "old_strength": 20,
+        "progress": 0.20474284443383414,
+        "target_distance": 26.92885939599364
+      },
+      {
+        "actual_average_distance": 39.0,
+        "call": 1920,
+        "new_strength": 30,
+        "old_strength": 40,
+        "progress": 0.20778311803393687,
+        "target_distance": 26.88325541699305
+      },
+      {
+        "actual_average_distance": 32.666666666666664,
+        "call": 1950,
+        "new_strength": 25,
+        "old_strength": 30,
+        "progress": 0.2107550666667521,
+        "target_distance": 26.838676624989603
+      },
+      {
+        "actual_average_distance": 7.333333333333333,
+        "call": 1980,
+        "new_strength": 40,
+        "old_strength": 25,
+        "progress": 0.21285262776655145,
+        "target_distance": 26.80721299999277
+      },
+      {
+        "actual_average_distance": 28.333333333333332,
+        "call": 2010,
+        "new_strength": 40,
+        "old_strength": 40,
+        "progress": 0.21600693609992352,
+        "target_distance": 26.759898062504362
+      },
+      {
+        "actual_average_distance": 34.0,
+        "call": 2040,
+        "new_strength": 30,
+        "old_strength": 40,
+        "progress": 0.2190384805338302,
+        "target_distance": 26.71442531250068
+      },
+      {
+        "actual_average_distance": 22.0,
+        "call": 2070,
+        "new_strength": 40,
+        "old_strength": 30,
+        "progress": 0.2213021791675904,
+        "target_distance": 26.68046933351434
+      },
+      {
+        "actual_average_distance": 33.333333333333336,
+        "call": 2100,
+        "new_strength": 30,
+        "old_strength": 40,
+        "progress": 0.22466981526619445,
+        "target_distance": 26.62995520851109
+      },
+      {
+        "actual_average_distance": 24.0,
+        "call": 2130,
+        "new_strength": 30,
+        "old_strength": 30,
+        "progress": 0.2267952749990703,
+        "target_distance": 26.598073083499912
+      },
+      {
+        "actual_average_distance": 26.0,
+        "call": 2160,
+        "new_strength": 30,
+        "old_strength": 30,
+        "progress": 0.2294135458340558,
+        "target_distance": 26.558798667014344
+      },
+      {
+        "actual_average_distance": 29.0,
+        "call": 2190,
+        "new_strength": 25,
+        "old_strength": 30,
+        "progress": 0.2317223986009291,
+        "target_distance": 26.524166187504306
+      },
+      {
+        "actual_average_distance": 24.666666666666668,
+        "call": 2220,
+        "new_strength": 25,
+        "old_strength": 25,
+        "progress": 0.23358204583249365,
+        "target_distance": 26.496271125011845
+      },
+      {
+        "actual_average_distance": 15.0,
+        "call": 2250,
+        "new_strength": 40,
+        "old_strength": 25,
+        "progress": 0.23550096943314808,
+        "target_distance": 26.46748747950187
+      },
+      {
+        "actual_average_distance": 20.0,
+        "call": 2280,
+        "new_strength": 40,
+        "old_strength": 40,
+        "progress": 0.23830343193258158,
+        "target_distance": 26.42545066701132
+      },
+      {
+        "actual_average_distance": 24.0,
+        "call": 2310,
+        "new_strength": 40,
+        "old_strength": 40,
+        "progress": 0.24156944719919313,
+        "target_distance": 26.37646056248923
+      },
+      {
+        "actual_average_distance": 25.0,
+        "call": 2340,
+        "new_strength": 40,
+        "old_strength": 40,
+        "progress": 0.24523245693417267,
+        "target_distance": 26.321515562507557
+      },
+      {
+        "actual_average_distance": 28.666666666666668,
+        "call": 2370,
+        "new_strength": 40,
+        "old_strength": 40,
+        "progress": 0.2488081277658542,
+        "target_distance": 26.26788060448598
+      },
+      {
+        "actual_average_distance": 37.333333333333336,
+        "call": 2400,
+        "new_strength": 30,
+        "old_strength": 40,
+        "progress": 0.25269458193409566,
+        "target_distance": 26.209583979507443
+      },
+      {
+        "actual_average_distance": 15.333333333333334,
+        "call": 2430,
+        "new_strength": 40,
+        "old_strength": 30,
+        "progress": 0.255171697200664,
+        "target_distance": 26.172427604498807
+      },
+      {
+        "actual_average_distance": 40.333333333333336,
+        "call": 2460,
+        "new_strength": 25,
+        "old_strength": 40,
+        "progress": 0.2586765861002884,
+        "target_distance": 26.119856000004802
+      },
+      {
+        "actual_average_distance": 8.666666666666666,
+        "call": 2490,
+        "new_strength": 40,
+        "old_strength": 25,
+        "progress": 0.26079785416756446,
+        "target_distance": 26.088036937493598
+      },
+      {
+        "actual_average_distance": 31.333333333333332,
+        "call": 2520,
+        "new_strength": 30,
+        "old_strength": 40,
+        "progress": 0.26440168886717097,
+        "target_distance": 26.033976895996602
+      },
+      {
+        "actual_average_distance": 22.0,
+        "call": 2550,
+        "new_strength": 40,
+        "old_strength": 30,
+        "progress": 0.26730016666697337,
+        "target_distance": 25.990503083507065
+      },
+      {
+        "actual_average_distance": 31.666666666666668,
+        "call": 2580,
+        "new_strength": 30,
+        "old_strength": 40,
+        "progress": 0.2706843916676007,
+        "target_distance": 25.939736146014184
+      },
+      {
+        "actual_average_distance": 29.0,
+        "call": 2610,
+        "new_strength": 25,
+        "old_strength": 30,
+        "progress": 0.27383508053414213,
+        "target_distance": 25.892476542008808
+      },
+      {
+        "actual_average_distance": 29.333333333333332,
+        "call": 2640,
+        "new_strength": 20,
+        "old_strength": 25,
+        "progress": 0.2767954777673973,
+        "target_distance": 25.848070770996856
+      },
+      {
+        "actual_average_distance": 25.666666666666668,
+        "call": 2670,
+        "new_strength": 20,
+        "old_strength": 20,
+        "progress": 0.27880381666667137,
+        "target_distance": 25.81794497949886
+      },
+      {
+        "actual_average_distance": 15.0,
+        "call": 2700,
+        "new_strength": 30,
+        "old_strength": 20,
+        "progress": 0.280094469433728,
+        "target_distance": 25.79858516700915
+      },
+      {
+        "actual_average_distance": 14.0,
+        "call": 2730,
+        "new_strength": 40,
+        "old_strength": 30,
+        "progress": 0.28318631249906806,
+        "target_distance": 25.752207874989836
+      },
+      {
+        "actual_average_distance": 25.666666666666668,
+        "call": 2760,
+        "new_strength": 40,
+        "old_strength": 40,
+        "progress": 0.28743161109935805,
+        "target_distance": 25.688528687489452
+      },
+      {
+        "actual_average_distance": 33.666666666666664,
+        "call": 2790,
+        "new_strength": 30,
+        "old_strength": 40,
+        "progress": 0.2915746027661953,
+        "target_distance": 25.626383187511237
+      },
+      {
+        "actual_average_distance": 20.0,
+        "call": 2820,
+        "new_strength": 40,
+        "old_strength": 30,
+        "progress": 0.29467831943378164,
+        "target_distance": 25.57982837499003
+      },
+      {
+        "actual_average_distance": 31.333333333333332,
+        "call": 2850,
+        "new_strength": 30,
+        "old_strength": 40,
+        "progress": 0.29814355136671417,
+        "target_distance": 25.52784985449398
+      },
+      {
+        "actual_average_distance": 29.333333333333332,
+        "call": 2880,
+        "new_strength": 25,
+        "old_strength": 30,
+        "progress": 0.30132277083272735,
+        "target_distance": 25.480161499988753
+      },
+      {
+        "actual_average_distance": 14.333333333333334,
+        "call": 2910,
+        "new_strength": 40,
+        "old_strength": 25,
+        "progress": 0.30394623886677435,
+        "target_distance": 25.440808896004455
+      },
+      {
+        "actual_average_distance": 31.666666666666668,
+        "call": 2940,
+        "new_strength": 30,
+        "old_strength": 40,
+        "progress": 0.30716632500019236,
+        "target_distance": 25.392507771000965
+      },
+      {
+        "actual_average_distance": 14.333333333333334,
+        "call": 2970,
+        "new_strength": 40,
+        "old_strength": 30,
+        "progress": 0.30939673333389994,
+        "target_distance": 25.35905143749551
+      },
+      {
+        "actual_average_distance": 30.333333333333332,
+        "call": 3000,
+        "new_strength": 30,
+        "old_strength": 40,
+        "progress": 0.3132431458332576,
+        "target_distance": 25.30135552099091
+      },
+      {
+        "actual_average_distance": 19.333333333333332,
+        "call": 3030,
+        "new_strength": 40,
+        "old_strength": 30,
+        "progress": 0.31559055553322346,
+        "target_distance": 25.266144312510733
+      },
+      {
+        "actual_average_distance": 38.333333333333336,
+        "call": 3060,
+        "new_strength": 25,
+        "old_strength": 40,
+        "progress": 0.3188884874999834,
+        "target_distance": 25.216678271011915
+      },
+      {
+        "actual_average_distance": 17.0,
+        "call": 3090,
+        "new_strength": 40,
+        "old_strength": 25,
+        "progress": 0.320580422199176,
+        "target_distance": 25.191296167002292
+      },
+      {
+        "actual_average_distance": 34.666666666666664,
+        "call": 3120,
+        "new_strength": 30,
+        "old_strength": 40,
+        "progress": 0.32384727636623817,
+        "target_distance": 25.14229347949731
+      },
+      {
+        "actual_average_distance": 18.666666666666668,
+        "call": 3150,
+        "new_strength": 40,
+        "old_strength": 30,
+        "progress": 0.3255995152673374,
+        "target_distance": 25.116012208512984
+      },
+      {
+        "actual_average_distance": 31.333333333333332,
+        "call": 3180,
+        "new_strength": 30,
+        "old_strength": 40,
+        "progress": 0.3284912305340792,
+        "target_distance": 25.072633792005945
+      },
+      {
+        "actual_average_distance": 24.333333333333332,
+        "call": 3210,
+        "new_strength": 30,
+        "old_strength": 30,
+        "progress": 0.3309104569333916,
+        "target_distance": 25.036345792002976
+      },
+      {
+        "actual_average_distance": 22.0,
+        "call": 3240,
+        "new_strength": 30,
+        "old_strength": 30,
+        "progress": 0.33308509026731675,
+        "target_distance": 25.003729041985935
+      },
+      {
+        "actual_average_distance": 17.0,
+        "call": 3270,
+        "new_strength": 40,
+        "old_strength": 30,
+        "progress": 0.33519850416729846,
+        "target_distance": 24.972024333488662
+      },
+      {
+        "actual_average_distance": 21.333333333333332,
+        "call": 3300,
+        "new_strength": 40,
+        "old_strength": 40,
+        "progress": 0.3376633569326562,
+        "target_distance": 24.93505183351226
+      },
+      {
+        "actual_average_distance": 37.666666666666664,
+        "call": 3330,
+        "new_strength": 25,
+        "old_strength": 40,
+        "progress": 0.3409224319329951,
+        "target_distance": 24.886165770993102
+      },
+      {
+        "actual_average_distance": 20.333333333333332,
+        "call": 3360,
+        "new_strength": 30,
+        "old_strength": 25,
+        "progress": 0.34281314720089234,
+        "target_distance": 24.857804958504857
+      },
+      {
+        "actual_average_distance": 17.0,
+        "call": 3390,
+        "new_strength": 40,
+        "old_strength": 30,
+        "progress": 0.34510976386760983,
+        "target_distance": 24.823357958492124
+      },
+      {
+        "actual_average_distance": 39.666666666666664,
+        "call": 3420,
+        "new_strength": 25,
+        "old_strength": 40,
+        "progress": 0.34804764583241193,
+        "target_distance": 24.779290395992575
+      },
+      {
+        "actual_average_distance": 25.0,
+        "call": 3450,
+        "new_strength": 25,
+        "old_strength": 25,
+        "progress": 0.3498465291670679,
+        "target_distance": 24.75230422950699
+      },
+      {
+        "actual_average_distance": 34.666666666666664,
+        "call": 3480,
+        "new_strength": 16,
+        "old_strength": 25,
+        "progress": 0.35185009999938,
+        "target_distance": 24.72225060450728
+      },
+      {
+        "actual_average_distance": 9.0,
+        "call": 3510,
+        "new_strength": 40,
+        "old_strength": 16,
+        "progress": 0.35294192499908,
+        "target_distance": 24.705872874998022
+      },
+      {
+        "actual_average_distance": 30.0,
+        "call": 3540,
+        "new_strength": 30,
+        "old_strength": 40,
+        "progress": 0.35594527500021894,
+        "target_distance": 24.660822854493745
+      },
+      {
+        "actual_average_distance": 25.0,
+        "call": 3570,
+        "new_strength": 30,
+        "old_strength": 30,
+        "progress": 0.358353856933536,
+        "target_distance": 24.62469479200081
+      },
+      {
+        "actual_average_distance": 24.333333333333332,
+        "call": 3600,
+        "new_strength": 30,
+        "old_strength": 30,
+        "progress": 0.3607933874998707,
+        "target_distance": 24.58810443751281
+      },
+      {
+        "actual_average_distance": 23.0,
+        "call": 3630,
+        "new_strength": 30,
+        "old_strength": 30,
+        "progress": 0.3631516402664905,
+        "target_distance": 24.552727770991623
+      },
+      {
+        "actual_average_distance": 24.0,
+        "call": 3660,
+        "new_strength": 30,
+        "old_strength": 30,
+        "progress": 0.36542312083377815,
+        "target_distance": 24.51865777099738
+      },
+      {
+        "actual_average_distance": 23.333333333333332,
+        "call": 3690,
+        "new_strength": 30,
+        "old_strength": 30,
+        "progress": 0.3677486069325823,
+        "target_distance": 24.483772833511466
+      },
+      {
+        "actual_average_distance": 24.0,
+        "call": 3720,
+        "new_strength": 30,
+        "old_strength": 30,
+        "progress": 0.3697270721992633,
+        "target_distance": 24.454095979512203
+      },
+      {
+        "actual_average_distance": 15.0,
+        "call": 3750,
+        "new_strength": 40,
+        "old_strength": 30,
+        "progress": 0.37205994166627837,
+        "target_distance": 24.41910583351273
+      },
+      {
+        "actual_average_distance": 27.333333333333332,
+        "call": 3780,
+        "new_strength": 40,
+        "old_strength": 40,
+        "progress": 0.37477114583404425,
+        "target_distance": 24.378434833488427
+      },
+      {
+        "actual_average_distance": 44.666666666666664,
+        "call": 3810,
+        "new_strength": 20,
+        "old_strength": 40,
+        "progress": 0.3776061291670582,
+        "target_distance": 24.335910041991156
+      },
+      {
+        "actual_average_distance": 13.666666666666666,
+        "call": 3840,
+        "new_strength": 40,
+        "old_strength": 20,
+        "progress": 0.3789388208339612,
+        "target_distance": 24.315919874992687
+      },
+      {
+        "actual_average_distance": 30.0,
+        "call": 3870,
+        "new_strength": 30,
+        "old_strength": 40,
+        "progress": 0.3821183888668505,
+        "target_distance": 24.26822618750157
+      },
+      {
+        "actual_average_distance": 15.0,
+        "call": 3900,
+        "new_strength": 40,
+        "old_strength": 30,
+        "progress": 0.3843911708332598,
+        "target_distance": 24.2341374795069
+      },
+      {
+        "actual_average_distance": 32.333333333333336,
+        "call": 3930,
+        "new_strength": 30,
+        "old_strength": 40,
+        "progress": 0.38718177636619655,
+        "target_distance": 24.19227558351122
+      },
+      {
+        "actual_average_distance": 20.0,
+        "call": 3960,
+        "new_strength": 40,
+        "old_strength": 30,
+        "progress": 0.3893843249999918,
+        "target_distance": 24.15924043749692
+      },
+      {
+        "actual_average_distance": 28.333333333333332,
+        "call": 3990,
+        "new_strength": 30,
+        "old_strength": 40,
+        "progress": 0.39215866386657583,
+        "target_distance": 24.11762172949966
+      },
+      {
+        "actual_average_distance": 16.666666666666668,
+        "call": 4020,
+        "new_strength": 40,
+        "old_strength": 30,
+        "progress": 0.39442448469926605,
+        "target_distance": 24.08363735448802
+      },
+      {
+        "actual_average_distance": 43.0,
+        "call": 4050,
+        "new_strength": 20,
+        "old_strength": 40,
+        "progress": 0.3973929708338498,
+        "target_distance": 24.039107104501454
+      },
+      {
+        "actual_average_distance": 15.666666666666666,
+        "call": 4080,
+        "new_strength": 30,
+        "old_strength": 20,
+        "progress": 0.39909799583256245,
+        "target_distance": 24.013532250013668
+      },
+      {
+        "actual_average_distance": 19.333333333333332,
+        "call": 4110,
+        "new_strength": 40,
+        "old_strength": 30,
+        "progress": 0.4015094083326403,
+        "target_distance": 23.977360771008534
+      },
+      {
+        "actual_average_distance": 30.0,
+        "call": 4140,
+        "new_strength": 30,
+        "old_strength": 40,
+        "progress": 0.40441301666627016,
+        "target_distance": 23.933806646004086
+      },
+      {
+        "actual_average_distance": 15.666666666666666,
+        "call": 4170,
+        "new_strength": 40,
+        "old_strength": 30,
+        "progress": 0.4067632805342631,
+        "target_distance": 23.898555749998195
+      },
+      {
+        "actual_average_distance": 32.333333333333336,
+        "call": 4200,
+        "new_strength": 30,
+        "old_strength": 40,
+        "progress": 0.40980032083267964,
+        "target_distance": 23.852997333509848
+      },
+      {
+        "actual_average_distance": 30.333333333333332,
+        "call": 4230,
+        "new_strength": 25,
+        "old_strength": 30,
+        "progress": 0.41225259443356965,
+        "target_distance": 23.816217167011928
+      },
+      {
+        "actual_average_distance": 24.333333333333332,
+        "call": 4260,
+        "new_strength": 25,
+        "old_strength": 25,
+        "progress": 0.4143400750006549,
+        "target_distance": 23.784900875005405
+      },
+      {
+        "actual_average_distance": 13.0,
+        "call": 4290,
+        "new_strength": 40,
+        "old_strength": 25,
+        "progress": 0.41635468193368674,
+        "target_distance": 23.754682083497755
+      },
+      {
+        "actual_average_distance": 26.666666666666668,
+        "call": 4320,
+        "new_strength": 40,
+        "old_strength": 40,
+        "progress": 0.4193140236001151,
+        "target_distance": 23.71029187500244
+      },
+      {
+        "actual_average_distance": 29.333333333333332,
+        "call": 4350,
+        "new_strength": 30,
+        "old_strength": 40,
+        "progress": 0.4223722500008686,
+        "target_distance": 23.664418354514055
+      },
+      {
+        "actual_average_distance": 22.666666666666668,
+        "call": 4380,
+        "new_strength": 30,
+        "old_strength": 30,
+        "progress": 0.4245514069334604,
+        "target_distance": 23.631730604509357
+      },
+      {
+        "actual_average_distance": 24.666666666666668,
+        "call": 4410,
+        "new_strength": 30,
+        "old_strength": 30,
+        "progress": 0.4270295458341328,
+        "target_distance": 23.594559208489954
+      },
+      {
+        "actual_average_distance": 15.666666666666666,
+        "call": 4440,
+        "new_strength": 40,
+        "old_strength": 30,
+        "progress": 0.4297927180324526,
+        "target_distance": 23.553111646004254
+      },
+      {
+        "actual_average_distance": 30.0,
+        "call": 4470,
+        "new_strength": 30,
+        "old_strength": 40,
+        "progress": 0.43288406943320296,
+        "target_distance": 23.50674104198697
+      },
+      {
+        "actual_average_distance": 25.333333333333332,
+        "call": 4500,
+        "new_strength": 30,
+        "old_strength": 30,
+        "progress": 0.4348390152658491,
+        "target_distance": 23.477416854497278
+      },
+      {
+        "actual_average_distance": 26.666666666666668,
+        "call": 4530,
+        "new_strength": 25,
+        "old_strength": 30,
+        "progress": 0.43686507636642397,
+        "target_distance": 23.447025792003842
+      },
+      {
+        "actual_average_distance": 17.333333333333332,
+        "call": 4560,
+        "new_strength": 30,
+        "old_strength": 25,
+        "progress": 0.43859635553283927,
+        "target_distance": 23.421056771010626
+      },
+      {
+        "actual_average_distance": 23.666666666666668,
+        "call": 4590,
+        "new_strength": 30,
+        "old_strength": 30,
+        "progress": 0.4410557999993519,
+        "target_distance": 23.384165041992674
+      },
+      {
+        "actual_average_distance": 35.666666666666664,
+        "call": 4620,
+        "new_strength": 20,
+        "old_strength": 30,
+        "progress": 0.44373796943303506,
+        "target_distance": 23.34393568750238
+      },
+      {
+        "actual_average_distance": 18.666666666666668,
+        "call": 4650,
+        "new_strength": 25,
+        "old_strength": 20,
+        "progress": 0.4452484499992958,
+        "target_distance": 23.321274958492722
+      },
+      {
+        "actual_average_distance": 15.0,
+        "call": 4680,
+        "new_strength": 40,
+        "old_strength": 25,
+        "progress": 0.4471408152661752,
+        "target_distance": 23.29289210450952
+      },
+      {
+        "actual_average_distance": 26.666666666666668,
+        "call": 4710,
+        "new_strength": 30,
+        "old_strength": 40,
+        "progress": 0.4502329235993481,
+        "target_distance": 23.246507895994
+      },
+      {
+        "actual_average_distance": 18.333333333333332,
+        "call": 4740,
+        "new_strength": 40,
+        "old_strength": 30,
+        "progress": 0.4527638305327855,
+        "target_distance": 23.20854487500037
+      },
+      {
+        "actual_average_distance": 32.0,
+        "call": 4770,
+        "new_strength": 30,
+        "old_strength": 40,
+        "progress": 0.45606549999987084,
+        "target_distance": 23.159022625011858
+      },
+      {
+        "actual_average_distance": 17.333333333333332,
+        "call": 4800,
+        "new_strength": 40,
+        "old_strength": 30,
+        "progress": 0.4584461527663128,
+        "target_distance": 23.12331012499635
+      },
+      {
+        "actual_average_distance": 19.666666666666668,
+        "call": 4830,
+        "new_strength": 40,
+        "old_strength": 40,
+        "progress": 0.4621439236002819,
+        "target_distance": 23.067843812488718
+      },
+      {
+        "actual_average_distance": 47.0,
+        "call": 4860,
+        "new_strength": 20,
+        "old_strength": 40,
+        "progress": 0.46530663333251143,
+        "target_distance": 23.020405354502145
+      },
+      {
+        "actual_average_distance": 16.0,
+        "call": 4890,
+        "new_strength": 30,
+        "old_strength": 20,
+        "progress": 0.4664493041675693,
+        "target_distance": 23.003263229504228
+      },
+      {
+        "actual_average_distance": 19.0,
+        "call": 4920,
+        "new_strength": 40,
+        "old_strength": 30,
+        "progress": 0.4689067263660642,
+        "target_distance": 22.966401145997224
+      },
+      {
+        "actual_average_distance": 37.666666666666664,
+        "call": 4950,
+        "new_strength": 25,
+        "old_strength": 40,
+        "progress": 0.4724324249992302,
+        "target_distance": 22.913516375003383
+      },
+      {
+        "actual_average_distance": 15.333333333333334,
+        "call": 4980,
+        "new_strength": 40,
+        "old_strength": 25,
+        "progress": 0.47436056526688236,
+        "target_distance": 22.884597041993402
+      },
+      {
+        "actual_average_distance": 27.333333333333332,
+        "call": 5010,
+        "new_strength": 30,
+        "old_strength": 40,
+        "progress": 0.4775757625000551,
+        "target_distance": 22.836366333503975
+      },
+      {
+        "actual_average_distance": 23.333333333333332,
+        "call": 5040,
+        "new_strength": 30,
+        "old_strength": 30,
+        "progress": 0.48007375553327925,
+        "target_distance": 22.798896083491854
+      },
+      {
+        "actual_average_distance": 13.0,
+        "call": 5070,
+        "new_strength": 40,
+        "old_strength": 30,
+        "progress": 0.4827977638672261,
+        "target_distance": 22.758035875012865
+      },
+      {
+        "actual_average_distance": 30.666666666666668,
+        "call": 5100,
+        "new_strength": 30,
+        "old_strength": 40,
+        "progress": 0.48582473609906934,
+        "target_distance": 22.712631437490927
+      },
+      {
+        "actual_average_distance": 22.666666666666668,
+        "call": 5130,
+        "new_strength": 30,
+        "old_strength": 30,
+        "progress": 0.48817366666626183,
+        "target_distance": 22.677397791994736
+      },
+      {
+        "actual_average_distance": 24.666666666666668,
+        "call": 5160,
+        "new_strength": 30,
+        "old_strength": 30,
+        "progress": 0.4907525166675138,
+        "target_distance": 22.638714104512474
+      },
+      {
+        "actual_average_distance": 22.666666666666668,
+        "call": 5190,
+        "new_strength": 30,
+        "old_strength": 30,
+        "progress": 0.49315510969997073,
+        "target_distance": 22.602675687492592
+      },
+      {
+        "actual_average_distance": 15.666666666666666,
+        "call": 5220,
+        "new_strength": 40,
+        "old_strength": 30,
+        "progress": 0.49554813470070563,
+        "target_distance": 22.56678006250877
+      },
+      {
+        "actual_average_distance": 41.666666666666664,
+        "call": 5250,
+        "new_strength": 20,
+        "old_strength": 40,
+        "progress": 0.49895983053332504,
+        "target_distance": 22.51560775001417
+      },
+      {
+        "actual_average_distance": 6.333333333333333,
+        "call": 5280,
+        "new_strength": 40,
+        "old_strength": 20,
+        "progress": 0.5006324041673603,
+        "target_distance": 22.49051597950165
+      },
+      {
+        "actual_average_distance": 35.333333333333336,
+        "call": 5310,
+        "new_strength": 25,
+        "old_strength": 40,
+        "progress": 0.5039199055327723,
+        "target_distance": 22.441203666996444
+      },
+      {
+        "actual_average_distance": 14.0,
+        "call": 5340,
+        "new_strength": 40,
+        "old_strength": 25,
+        "progress": 0.5056846500005728,
+        "target_distance": 22.414732062490657
+      },
+      {
+        "actual_average_distance": 29.666666666666668,
+        "call": 5370,
+        "new_strength": 30,
+        "old_strength": 40,
+        "progress": 0.5089914430340287,
+        "target_distance": 22.365133646002505
+      },
+      {
+        "actual_average_distance": 18.333333333333332,
+        "call": 5400,
+        "new_strength": 40,
+        "old_strength": 30,
+        "progress": 0.5111724083331258,
+        "target_distance": 22.332415667013265
+      },
+      {
+        "actual_average_distance": 31.0,
+        "call": 5430,
+        "new_strength": 30,
+        "old_strength": 40,
+        "progress": 0.5145557833331016,
+        "target_distance": 22.281665791990235
+      },
+      {
+        "actual_average_distance": 32.333333333333336,
+        "call": 5460,
+        "new_strength": 20,
+        "old_strength": 30,
+        "progress": 0.5173278694332112,
+        "target_distance": 22.240084791992558
+      },
+      {
+        "actual_average_distance": 15.666666666666666,
+        "call": 5490,
+        "new_strength": 30,
+        "old_strength": 20,
+        "progress": 0.5191002749993155,
+        "target_distance": 22.213498083496233
+      },
+      {
+        "actual_average_distance": 20.666666666666668,
+        "call": 5520,
+        "new_strength": 30,
+        "old_strength": 30,
+        "progress": 0.5213272346998565,
+        "target_distance": 22.180093104514526
+      },
+      {
+        "actual_average_distance": 14.0,
+        "call": 5550,
+        "new_strength": 40,
+        "old_strength": 30,
+        "progress": 0.5238489194326879,
+        "target_distance": 22.14226824999787
+      },
+      {
+        "actual_average_distance": 33.666666666666664,
+        "call": 5580,
+        "new_strength": 25,
+        "old_strength": 40,
+        "progress": 0.5270008069327257,
+        "target_distance": 22.094990374986082
+      },
+      {
+        "actual_average_distance": 21.333333333333332,
+        "call": 5610,
+        "new_strength": 25,
+        "old_strength": 25,
+        "progress": 0.5292398500004007,
+        "target_distance": 22.06140437501017
+      },
+      {
+        "actual_average_distance": 22.333333333333332,
+        "call": 5640,
+        "new_strength": 25,
+        "old_strength": 25,
+        "progress": 0.5310935416666325,
+        "target_distance": 22.033598667010665
+      },
+      {
+        "actual_average_distance": 13.333333333333334,
+        "call": 5670,
+        "new_strength": 40,
+        "old_strength": 25,
+        "progress": 0.5330152666661888,
+        "target_distance": 22.00477358349599
+      },
+      {
+        "actual_average_distance": 26.0,
+        "call": 5700,
+        "new_strength": 30,
+        "old_strength": 40,
+        "progress": 0.5358103249998142,
+        "target_distance": 21.962847499991767
+      },
+      {
+        "actual_average_distance": 13.666666666666666,
+        "call": 5730,
+        "new_strength": 40,
+        "old_strength": 30,
+        "progress": 0.5380193027667701,
+        "target_distance": 21.929712687502615
+      },
+      {
+        "actual_average_distance": 37.0,
+        "call": 5760,
+        "new_strength": 25,
+        "old_strength": 40,
+        "progress": 0.5414941735992519,
+        "target_distance": 21.87759216700215
+      },
+      {
+        "actual_average_distance": 29.666666666666668,
+        "call": 5790,
+        "new_strength": 20,
+        "old_strength": 25,
+        "progress": 0.5438029430340976,
+        "target_distance": 21.84295804199064
+      },
+      {
+        "actual_average_distance": 9.0,
+        "call": 5820,
+        "new_strength": 40,
+        "old_strength": 20,
+        "progress": 0.5450495569326449,
+        "target_distance": 21.824259104498196
+      },
+      {
+        "actual_average_distance": 27.666666666666668,
+        "call": 5850,
+        "new_strength": 30,
+        "old_strength": 40,
+        "progress": 0.5481130847008899,
+        "target_distance": 21.778308187494986
+      },
+      {
+        "actual_average_distance": 27.0,
+        "call": 5880,
+        "new_strength": 25,
+        "old_strength": 30,
+        "progress": 0.5504671624997476,
+        "target_distance": 21.74299475000589
+      },
+      {
+        "actual_average_distance": 25.0,
+        "call": 5910,
+        "new_strength": 20,
+        "old_strength": 25,
+        "progress": 0.5523474111008303,
+        "target_distance": 21.714790708501823
+      },
+      {
+        "actual_average_distance": 18.0,
+        "call": 5940,
+        "new_strength": 25,
+        "old_strength": 20,
+        "progress": 0.5541689208340055,
+        "target_distance": 21.687467917014146
+      },
+      {
+        "actual_average_distance": 11.0,
+        "call": 5970,
+        "new_strength": 40,
+        "old_strength": 25,
+        "progress": 0.5560657416664374,
+        "target_distance": 21.65901633349131
+      },
+      {
+        "actual_average_distance": 25.666666666666668,
+        "call": 6000,
+        "new_strength": 30,
+        "old_strength": 40,
+        "progress": 0.5591146111003279,
+        "target_distance": 21.6132829170092
+      },
+      {
+        "actual_average_distance": 21.333333333333332,
+        "call": 6030,
+        "new_strength": 30,
+        "old_strength": 30,
+        "progress": 0.5613362972003718,
+        "target_distance": 21.579957604495576
+      },
+      {
+        "actual_average_distance": 22.0,
+        "call": 6060,
+        "new_strength": 30,
+        "old_strength": 30,
+        "progress": 0.5633966305331948,
+        "target_distance": 21.549052499991376
+      },
+      {
+        "actual_average_distance": 34.0,
+        "call": 6090,
+        "new_strength": 20,
+        "old_strength": 30,
+        "progress": 0.5654889125008291,
+        "target_distance": 21.517668687505648
+      },
+      {
+        "actual_average_distance": 8.666666666666666,
+        "call": 6120,
+        "new_strength": 40,
+        "old_strength": 20,
+        "progress": 0.5669622013675204,
+        "target_distance": 21.495568896003533
+      },
+      {
+        "actual_average_distance": 41.666666666666664,
+        "call": 6150,
+        "new_strength": 20,
+        "old_strength": 40,
+        "progress": 0.5703068208337451,
+        "target_distance": 21.44540299999062
+      },
+      {
+        "actual_average_distance": 9.0,
+        "call": 6180,
+        "new_strength": 40,
+        "old_strength": 20,
+        "progress": 0.5716501971997786,
+        "target_distance": 21.42524899999262
+      },
+      {
+        "actual_average_distance": 29.666666666666668,
+        "call": 6210,
+        "new_strength": 30,
+        "old_strength": 40,
+        "progress": 0.5745165972000298,
+        "target_distance": 21.382253437506733
+      },
+      {
+        "actual_average_distance": 32.666666666666664,
+        "call": 6240,
+        "new_strength": 20,
+        "old_strength": 30,
+        "progress": 0.5769522388659728,
+        "target_distance": 21.34571816699463
+      },
+      {
+        "actual_average_distance": 9.666666666666666,
+        "call": 6270,
+        "new_strength": 40,
+        "old_strength": 20,
+        "progress": 0.5782595861004666,
+        "target_distance": 21.326108145993203
+      },
+      {
+        "actual_average_distance": 29.666666666666668,
+        "call": 6300,
+        "new_strength": 30,
+        "old_strength": 40,
+        "progress": 0.5813484361007188,
+        "target_distance": 21.279775292001432
+      },
+      {
+        "actual_average_distance": 33.666666666666664,
+        "call": 6330,
+        "new_strength": 20,
+        "old_strength": 30,
+        "progress": 0.5834843971999362,
+        "target_distance": 21.24773581250338
+      },
+      {
+        "actual_average_distance": 22.333333333333332,
+        "call": 6360,
+        "new_strength": 20,
+        "old_strength": 20,
+        "progress": 0.5849506235991915,
+        "target_distance": 21.225745542004006
+      },
+      {
+        "actual_average_distance": 16.333333333333332,
+        "call": 6390,
+        "new_strength": 25,
+        "old_strength": 20,
+        "progress": 0.586496818032659,
+        "target_distance": 21.202549895999255
+      },
+      {
+        "actual_average_distance": 18.666666666666668,
+        "call": 6420,
+        "new_strength": 30,
+        "old_strength": 25,
+        "progress": 0.588346616665755,
+        "target_distance": 21.17480252101086
+      },
+      {
+        "actual_average_distance": 32.333333333333336,
+        "call": 6450,
+        "new_strength": 20,
+        "old_strength": 30,
+        "progress": 0.590604336099932,
+        "target_distance": 21.14093689600122
+      },
+      {
+        "actual_average_distance": 9.0,
+        "call": 6480,
+        "new_strength": 40,
+        "old_strength": 20,
+        "progress": 0.5921407971996814,
+        "target_distance": 21.117890562512912
+      },
+      {
+        "actual_average_distance": 24.333333333333332,
+        "call": 6510,
+        "new_strength": 30,
+        "old_strength": 40,
+        "progress": 0.59495892500078,
+        "target_distance": 21.075618104514433
+      },
+      {
+        "actual_average_distance": 17.333333333333332,
+        "call": 6540,
+        "new_strength": 40,
+        "old_strength": 30,
+        "progress": 0.5971811652668596,
+        "target_distance": 21.042286833486287
+      },
+      {
+        "actual_average_distance": 41.333333333333336,
+        "call": 6570,
+        "new_strength": 20,
+        "old_strength": 40,
+        "progress": 0.6004452736000531,
+        "target_distance": 20.99332599999616
+      },
+      {
+        "actual_average_distance": 7.666666666666667,
+        "call": 6600,
+        "new_strength": 40,
+        "old_strength": 20,
+        "progress": 0.6018660041658829,
+        "target_distance": 20.972012187499786
+      },
+      {
+        "actual_average_distance": 33.666666666666664,
+        "call": 6630,
+        "new_strength": 25,
+        "old_strength": 40,
+        "progress": 0.6047057194324831,
+        "target_distance": 20.929416312486865
+      },
+      {
+        "actual_average_distance": 16.333333333333332,
+        "call": 6660,
+        "new_strength": 30,
+        "old_strength": 25,
+        "progress": 0.6066595472007369,
+        "target_distance": 20.900109145994065
+      },
+      {
+        "actual_average_distance": 16.666666666666668,
+        "call": 6690,
+        "new_strength": 40,
+        "old_strength": 30,
+        "progress": 0.6089381471994177,
+        "target_distance": 20.865929583495017
+      },
+      {
+        "actual_average_distance": 35.333333333333336,
+        "call": 6720,
+        "new_strength": 25,
+        "old_strength": 40,
+        "progress": 0.6121351388671125,
+        "target_distance": 20.817975437501445
+      },
+      {
+        "actual_average_distance": 17.0,
+        "call": 6750,
+        "new_strength": 30,
+        "old_strength": 25,
+        "progress": 0.6141421749993848,
+        "target_distance": 20.787869687512284
+      },
+      {
+        "actual_average_distance": 19.0,
+        "call": 6780,
+        "new_strength": 30,
+        "old_strength": 30,
+        "progress": 0.6164045666674307,
+        "target_distance": 20.75393727098708
+      },
+      {
+        "actual_average_distance": 16.333333333333332,
+        "call": 6810,
+        "new_strength": 40,
+        "old_strength": 30,
+        "progress": 0.6189140527664373,
+        "target_distance": 20.716291708493372
+      },
+      {
+        "actual_average_distance": 35.666666666666664,
+        "call": 6840,
+        "new_strength": 25,
+        "old_strength": 40,
+        "progress": 0.6219673694324835,
+        "target_distance": 20.67049131251406
+      },
+      {
+        "actual_average_distance": 13.0,
+        "call": 6870,
+        "new_strength": 40,
+        "old_strength": 25,
+        "progress": 0.6238393333333079,
+        "target_distance": 20.64241168749868
+      },
+      {
+        "actual_average_distance": 33.0,
+        "call": 6900,
+        "new_strength": 25,
+        "old_strength": 40,
+        "progress": 0.6269561416663539,
+        "target_distance": 20.59565985450172
+      },
+      {
+        "actual_average_distance": 8.333333333333334,
+        "call": 6930,
+        "new_strength": 40,
+        "old_strength": 25,
+        "progress": 0.6287841236005381,
+        "target_distance": 20.568242583511164
+      },
+      {
+        "actual_average_distance": 21.0,
+        "call": 6960,
+        "new_strength": 40,
+        "old_strength": 40,
+        "progress": 0.6319673541661662,
+        "target_distance": 20.52049164599157
+      },
+      {
+        "actual_average_distance": 21.333333333333332,
+        "call": 6990,
+        "new_strength": 40,
+        "old_strength": 40,
+        "progress": 0.6351973624996996,
+        "target_distance": 20.472041500004707
+      },
+      {
+        "actual_average_distance": 27.333333333333332,
+        "call": 7020,
+        "new_strength": 30,
+        "old_strength": 40,
+        "progress": 0.6383632249994359,
+        "target_distance": 20.4245563125005
+      },
+      {
+        "actual_average_distance": 17.666666666666668,
+        "call": 7050,
+        "new_strength": 30,
+        "old_strength": 30,
+        "progress": 0.6405618416669313,
+        "target_distance": 20.391574292007135
+      },
+      {
+        "actual_average_distance": 19.0,
+        "call": 7080,
+        "new_strength": 30,
+        "old_strength": 30,
+        "progress": 0.6425077638666455,
+        "target_distance": 20.36238543750369
+      },
+      {
+        "actual_average_distance": 15.666666666666666,
+        "call": 7110,
+        "new_strength": 40,
+        "old_strength": 30,
+        "progress": 0.6446028444333933,
+        "target_distance": 20.330959292012267
+      },
+      {
+        "actual_average_distance": 24.0,
+        "call": 7140,
+        "new_strength": 30,
+        "old_strength": 40,
+        "progress": 0.6478142388669463,
+        "target_distance": 20.28278872949886
+      },
+      {
+        "actual_average_distance": 23.333333333333332,
+        "call": 7170,
+        "new_strength": 25,
+        "old_strength": 30,
+        "progress": 0.6504228986004212,
+        "target_distance": 20.243660729494877
+      },
+      {
+        "actual_average_distance": 14.333333333333334,
+        "call": 7200,
+        "new_strength": 40,
+        "old_strength": 25,
+        "progress": 0.6522493819337494,
+        "target_distance": 20.21626431250479
+      },
+      {
+        "actual_average_distance": 37.0,
+        "call": 7230,
+        "new_strength": 20,
+        "old_strength": 40,
+        "progress": 0.6554945277671019,
+        "target_distance": 20.16758395850775
+      },
+      {
+        "actual_average_distance": 10.666666666666666,
+        "call": 7260,
+        "new_strength": 40,
+        "old_strength": 20,
+        "progress": 0.6568645833331781,
+        "target_distance": 20.14703383349115
+      },
+      {
+        "actual_average_distance": 37.0,
+        "call": 7290,
+        "new_strength": 20,
+        "old_strength": 40,
+        "progress": 0.6597131972007143,
+        "target_distance": 20.10430402099155
+      },
+      {
+        "actual_average_distance": 11.333333333333334,
+        "call": 7320,
+        "new_strength": 40,
+        "old_strength": 20,
+        "progress": 0.6610124638672763,
+        "target_distance": 20.084814770991215
+      },
+      {
+        "actual_average_distance": 42.0,
+        "call": 7350,
+        "new_strength": 20,
+        "old_strength": 40,
+        "progress": 0.6639877944330995,
+        "target_distance": 20.040185374993598
+      },
+      {
+        "actual_average_distance": 18.666666666666668,
+        "call": 7380,
+        "new_strength": 20,
+        "old_strength": 20,
+        "progress": 0.6654350250008672,
+        "target_distance": 20.018476875004126
+      },
+      {
+        "actual_average_distance": 6.666666666666667,
+        "call": 7410,
+        "new_strength": 40,
+        "old_strength": 20,
+        "progress": 0.6667716819327325,
+        "target_distance": 19.99842710449593
+      },
+      {
+        "actual_average_distance": 34.666666666666664,
+        "call": 7440,
+        "new_strength": 25,
+        "old_strength": 40,
+        "progress": 0.6700233985999754,
+        "target_distance": 19.949653896008385
+      },
+      {
+        "actual_average_distance": 16.666666666666668,
+        "call": 7470,
+        "new_strength": 30,
+        "old_strength": 25,
+        "progress": 0.6717564319338029,
+        "target_distance": 19.923655958496965
+      },
+      {
+        "actual_average_distance": 19.666666666666668,
+        "call": 7500,
+        "new_strength": 30,
+        "old_strength": 30,
+        "progress": 0.6743725666659884,
+        "target_distance": 19.884413729509106
+      },
+      {
+        "actual_average_distance": 11.0,
+        "call": 7530,
+        "new_strength": 40,
+        "old_strength": 30,
+        "progress": 0.6766716083337088,
+        "target_distance": 19.849930312513607
+      },
+      {
+        "actual_average_distance": 34.666666666666664,
+        "call": 7560,
+        "new_strength": 25,
+        "old_strength": 40,
+        "progress": 0.679495740266672,
+        "target_distance": 19.807565729512135
+      },
+      {
+        "actual_average_distance": 18.666666666666668,
+        "call": 7590,
+        "new_strength": 25,
+        "old_strength": 25,
+        "progress": 0.6813425513663485,
+        "target_distance": 19.779863895993913
+      },
+      {
+        "actual_average_distance": 18.666666666666668,
+        "call": 7620,
+        "new_strength": 25,
+        "old_strength": 25,
+        "progress": 0.6832215069327503,
+        "target_distance": 19.751679958513705
+      },
+      {
+        "actual_average_distance": 11.666666666666666,
+        "call": 7650,
+        "new_strength": 40,
+        "old_strength": 25,
+        "progress": 0.685719961100646,
+        "target_distance": 19.71420293749543
+      },
+      {
+        "actual_average_distance": 36.666666666666664,
+        "call": 7680,
+        "new_strength": 20,
+        "old_strength": 40,
+        "progress": 0.6885919986001682,
+        "target_distance": 19.67112199999974
+      },
+      {
+        "actual_average_distance": 10.0,
+        "call": 7710,
+        "new_strength": 40,
+        "old_strength": 20,
+        "progress": 0.6900568166670079,
+        "target_distance": 19.64915047949762
+      },
+      {
+        "actual_average_distance": 36.333333333333336,
+        "call": 7740,
+        "new_strength": 20,
+        "old_strength": 40,
+        "progress": 0.6931041458330582,
+        "target_distance": 19.603440062492155
+      },
+      {
+        "actual_average_distance": 10.333333333333334,
+        "call": 7770,
+        "new_strength": 40,
+        "old_strength": 20,
+        "progress": 0.694620801366788,
+        "target_distance": 19.580690292001236
+      },
+      {
+        "actual_average_distance": 28.0,
+        "call": 7800,
+        "new_strength": 30,
+        "old_strength": 40,
+        "progress": 0.6975743749993853,
+        "target_distance": 19.53638639600831
+      },
+      {
+        "actual_average_distance": 24.666666666666668,
+        "call": 7830,
+        "new_strength": 25,
+        "old_strength": 30,
+        "progress": 0.6996616611004962,
+        "target_distance": 19.505077000008896
+      },
+      {
+        "actual_average_distance": 19.0,
+        "call": 7860,
+        "new_strength": 25,
+        "old_strength": 25,
+        "progress": 0.701628206934159,
+        "target_distance": 19.475578749988927
+      },
+      {
+        "actual_average_distance": 14.333333333333334,
+        "call": 7890,
+        "new_strength": 30,
+        "old_strength": 25,
+        "progress": 0.7036914055332697,
+        "target_distance": 19.444631166988984
+      },
+      {
+        "actual_average_distance": 26.666666666666668,
+        "call": 7920,
+        "new_strength": 20,
+        "old_strength": 30,
+        "progress": 0.7062229319339773,
+        "target_distance": 19.40665837499546
+      },
+      {
+        "actual_average_distance": 4.666666666666667,
+        "call": 7950,
+        "new_strength": 40,
+        "old_strength": 20,
+        "progress": 0.7086004485997061,
+        "target_distance": 19.370996374986134
+      },
+      {
+        "actual_average_distance": 28.333333333333332,
+        "call": 7980,
+        "new_strength": 25,
+        "old_strength": 40,
+        "progress": 0.7122144569332401,
+        "target_distance": 19.316785395989427
+      },
+      {
+        "actual_average_distance": 23.666666666666668,
+        "call": 8010,
+        "new_strength": 20,
+        "old_strength": 25,
+        "progress": 0.7143017666666613,
+        "target_distance": 19.28547566701309
+      },
+      {
+        "actual_average_distance": 7.333333333333333,
+        "call": 8040,
+        "new_strength": 40,
+        "old_strength": 20,
+        "progress": 0.7161446624998159,
+        "target_distance": 19.257832333503757
+      },
+      {
+        "actual_average_distance": 26.666666666666668,
+        "call": 8070,
+        "new_strength": 30,
+        "old_strength": 40,
+        "progress": 0.7202560333341049,
+        "target_distance": 19.19616197948926
+      },
+      {
+        "actual_average_distance": 24.666666666666668,
+        "call": 8100,
+        "new_strength": 25,
+        "old_strength": 30,
+        "progress": 0.7227099402671835,
+        "target_distance": 19.159356604504865
+      },
+      {
+        "actual_average_distance": 12.666666666666666,
+        "call": 8130,
+        "new_strength": 40,
+        "old_strength": 25,
+        "progress": 0.7250439999993735,
+        "target_distance": 19.12434297951404
+      },
+      {
+        "actual_average_distance": 30.666666666666668,
+        "call": 8160,
+        "new_strength": 25,
+        "old_strength": 40,
+        "progress": 0.7286635180333785,
+        "target_distance": 19.070049792004284
+      },
+      {
+        "actual_average_distance": 15.333333333333334,
+        "call": 8190,
+        "new_strength": 30,
+        "old_strength": 25,
+        "progress": 0.7307842638673416,
+        "target_distance": 19.03823802099214
+      },
+      {
+        "actual_average_distance": 18.0,
+        "call": 8220,
+        "new_strength": 30,
+        "old_strength": 30,
+        "progress": 0.7335164458335688,
+        "target_distance": 18.99725533349556
+      },
+      {
+        "actual_average_distance": 19.666666666666668,
+        "call": 8250,
+        "new_strength": 30,
+        "old_strength": 30,
+        "progress": 0.7361111999993833,
+        "target_distance": 18.95833402100834
+      },
+      {
+        "actual_average_distance": 18.0,
+        "call": 8280,
+        "new_strength": 30,
+        "old_strength": 30,
+        "progress": 0.7385680625001745,
+        "target_distance": 18.921481416997267
+      },
+      {
+        "actual_average_distance": 21.0,
+        "call": 8310,
+        "new_strength": 25,
+        "old_strength": 30,
+        "progress": 0.740935726366782,
+        "target_distance": 18.885967229492962
+      },
+      {
+        "actual_average_distance": 17.666666666666668,
+        "call": 8340,
+        "new_strength": 25,
+        "old_strength": 25,
+        "progress": 0.74299100136656,
+        "target_distance": 18.8551405420003
+      },
+      {
+        "actual_average_distance": 14.666666666666666,
+        "call": 8370,
+        "new_strength": 30,
+        "old_strength": 25,
+        "progress": 0.745035052767101,
+        "target_distance": 18.824477312504314
+      },
+      {
+        "actual_average_distance": 32.333333333333336,
+        "call": 8400,
+        "new_strength": 16,
+        "old_strength": 30,
+        "progress": 0.7479304152657278,
+        "target_distance": 18.781046833493747
+      },
+      {
+        "actual_average_distance": 8.0,
+        "call": 8430,
+        "new_strength": 40,
+        "old_strength": 16,
+        "progress": 0.7505107986003471,
+        "target_distance": 18.74234372950741
+      },
+      {
+        "actual_average_distance": 41.666666666666664,
+        "call": 8460,
+        "new_strength": 16,
+        "old_strength": 40,
+        "progress": 0.7561435138670883,
+        "target_distance": 18.657850521005457
+      },
+      {
+        "actual_average_distance": 11.666666666666666,
+        "call": 8490,
+        "new_strength": 25,
+        "old_strength": 16,
+        "progress": 0.75906746526598,
+        "target_distance": 18.613991396006895
+      },
+      {
+        "actual_average_distance": 20.666666666666668,
+        "call": 8520,
+        "new_strength": 20,
+        "old_strength": 25,
+        "progress": 0.7634355013666209,
+        "target_distance": 18.54847056249855
+      },
+      {
+        "actual_average_distance": 16.333333333333332,
+        "call": 8550,
+        "new_strength": 25,
+        "old_strength": 20,
+        "progress": 0.7669264235999436,
+        "target_distance": 18.496109792002244
+      },
+      {
+        "actual_average_distance": 11.0,
+        "call": 8580,
+        "new_strength": 40,
+        "old_strength": 25,
+        "progress": 0.7711919597000815,
+        "target_distance": 18.43212564600981
+      },
+      {
+        "actual_average_distance": 32.0,
+        "call": 8610,
+        "new_strength": 25,
+        "old_strength": 40,
+        "progress": 0.7770462819336292,
+        "target_distance": 18.344311458495213
+      },
+      {
+        "actual_average_distance": 3.0,
+        "call": 8640,
+        "new_strength": 40,
+        "old_strength": 25,
+        "progress": 0.7792599500001719,
+        "target_distance": 18.311104229505872
+      },
+      {
+        "actual_average_distance": 36.0,
+        "call": 8670,
+        "new_strength": 20,
+        "old_strength": 40,
+        "progress": 0.7836523236008361,
+        "target_distance": 18.24521781250951
+      },
+      {
+        "actual_average_distance": 15.666666666666666,
+        "call": 8700,
+        "new_strength": 25,
+        "old_strength": 20,
+        "progress": 0.7855354666671095,
+        "target_distance": 18.216970604495145
+      },
+      {
+        "actual_average_distance": 9.333333333333334,
+        "call": 8730,
+        "new_strength": 40,
+        "old_strength": 25,
+        "progress": 0.7876687916674806,
+        "target_distance": 18.184970312489895
+      },
+      {
+        "actual_average_distance": 34.0,
+        "call": 8760,
+        "new_strength": 20,
+        "old_strength": 40,
+        "progress": 0.79184393750038,
+        "target_distance": 18.122349167009816
+      },
+      {
+        "actual_average_distance": 11.333333333333334,
+        "call": 8790,
+        "new_strength": 30,
+        "old_strength": 20,
+        "progress": 0.7934406513658663,
+        "target_distance": 18.098393229505746
+      },
+      {
+        "actual_average_distance": 26.0,
+        "call": 8820,
+        "new_strength": 20,
+        "old_strength": 30,
+        "progress": 0.7965068833339805,
+        "target_distance": 18.052399083506316
+      },
+      {
+        "actual_average_distance": 11.0,
+        "call": 8850,
+        "new_strength": 30,
+        "old_strength": 20,
+        "progress": 0.7982351763659001,
+        "target_distance": 18.026474958489416
+      },
+      {
+        "actual_average_distance": 14.666666666666666,
+        "call": 8880,
+        "new_strength": 40,
+        "old_strength": 30,
+        "progress": 0.8008873444341589,
+        "target_distance": 17.986692395992577
+      },
+      {
+        "actual_average_distance": 26.0,
+        "call": 8910,
+        "new_strength": 30,
+        "old_strength": 40,
+        "progress": 0.8048724430341584,
+        "target_distance": 17.926915874995757
+      },
+      {
+        "actual_average_distance": 18.666666666666668,
+        "call": 8940,
+        "new_strength": 30,
+        "old_strength": 30,
+        "progress": 0.8075161013674612,
+        "target_distance": 17.887260854506167
+      },
+      {
+        "actual_average_distance": 28.0,
+        "call": 8970,
+        "new_strength": 20,
+        "old_strength": 30,
+        "progress": 0.8101065416665126,
+        "target_distance": 17.848407145997044
+      },
+      {
+        "actual_average_distance": 16.666666666666668,
+        "call": 9000,
+        "new_strength": 20,
+        "old_strength": 20,
+        "progress": 0.8117222680341608,
+        "target_distance": 17.82416849999572
+      },
+      {
+        "actual_average_distance": 9.333333333333334,
+        "call": 9030,
+        "new_strength": 40,
+        "old_strength": 20,
+        "progress": 0.8137563638660746,
+        "target_distance": 17.793660604511388
+      },
+      {
+        "actual_average_distance": 32.0,
+        "call": 9060,
+        "new_strength": 20,
+        "old_strength": 40,
+        "progress": 0.817223450000165,
+        "target_distance": 17.741650771000423
+      },
+      {
+        "actual_average_distance": 4.666666666666667,
+        "call": 9090,
+        "new_strength": 40,
+        "old_strength": 20,
+        "progress": 0.8185786013666074,
+        "target_distance": 17.72132347949082
+      },
+      {
+        "actual_average_distance": 35.333333333333336,
+        "call": 9120,
+        "new_strength": 20,
+        "old_strength": 40,
+        "progress": 0.8219766305332693,
+        "target_distance": 17.670352583489148
+      },
+      {
+        "actual_average_distance": 19.0,
+        "call": 9150,
+        "new_strength": 20,
+        "old_strength": 20,
+        "progress": 0.8234348027675878,
+        "target_distance": 17.648479666997446
+      },
+      {
+        "actual_average_distance": 13.666666666666666,
+        "call": 9180,
+        "new_strength": 25,
+        "old_strength": 20,
+        "progress": 0.8250859055338272,
+        "target_distance": 17.623713542008772
+      },
+      {
+        "actual_average_distance": 28.333333333333332,
+        "call": 9210,
+        "new_strength": 16,
+        "old_strength": 25,
+        "progress": 0.8267361680336762,
+        "target_distance": 17.598963249998633
+      },
+      {
+        "actual_average_distance": 13.666666666666666,
+        "call": 9240,
+        "new_strength": 20,
+        "old_strength": 16,
+        "progress": 0.8278966541673678,
+        "target_distance": 17.58155235450249
+      },
+      {
+        "actual_average_distance": 10.666666666666666,
+        "call": 9270,
+        "new_strength": 30,
+        "old_strength": 20,
+        "progress": 0.8293907485999322,
+        "target_distance": 17.55914137500804
+      },
+      {
+        "actual_average_distance": 15.666666666666666,
+        "call": 9300,
+        "new_strength": 30,
+        "old_strength": 30,
+        "progress": 0.8315902250004001,
+        "target_distance": 17.52614841700415
+      },
+      {
+        "actual_average_distance": 20.0,
+        "call": 9330,
+        "new_strength": 25,
+        "old_strength": 30,
+        "progress": 0.8337922416666212,
+        "target_distance": 17.493118249985855
+      },
+      {
+        "actual_average_distance": 27.0,
+        "call": 9360,
+        "new_strength": 16,
+        "old_strength": 25,
+        "progress": 0.8356129763667316,
+        "target_distance": 17.465810146008153
+      },
+      {
+        "actual_average_distance": 4.333333333333333,
+        "call": 9390,
+        "new_strength": 40,
+        "old_strength": 16,
+        "progress": 0.8367947263662548,
+        "target_distance": 17.448081458511297
+      },
+      {
+        "actual_average_distance": 32.333333333333336,
+        "call": 9420,
+        "new_strength": 20,
+        "old_strength": 40,
+        "progress": 0.8398967166664079,
+        "target_distance": 17.40155156250694
+      },
+      {
+        "actual_average_distance": 10.666666666666666,
+        "call": 9450,
+        "new_strength": 30,
+        "old_strength": 20,
+        "progress": 0.8411971902668787,
+        "target_distance": 17.382044333498925
+      },
+      {
+        "actual_average_distance": 15.0,
+        "call": 9480,
+        "new_strength": 30,
+        "old_strength": 30,
+        "progress": 0.8433217666674561,
+        "target_distance": 17.350175125000533
+      },
+      {
+        "actual_average_distance": 17.333333333333332,
+        "call": 9510,
+        "new_strength": 30,
+        "old_strength": 30,
+        "progress": 0.8454376513662283,
+        "target_distance": 17.31843712500995
+      },
+      {
+        "actual_average_distance": 25.333333333333332,
+        "call": 9540,
+        "new_strength": 20,
+        "old_strength": 30,
+        "progress": 0.8476935180330959,
+        "target_distance": 17.284599208505824
+      },
+      {
+        "actual_average_distance": 14.0,
+        "call": 9570,
+        "new_strength": 25,
+        "old_strength": 20,
+        "progress": 0.8491385583338948,
+        "target_distance": 17.262923375004902
+      },
+      {
+        "actual_average_distance": 18.333333333333332,
+        "call": 9600,
+        "new_strength": 25,
+        "old_strength": 25,
+        "progress": 0.850745098599388,
+        "target_distance": 17.2388258750143
+      },
+      {
+        "actual_average_distance": 20.0,
+        "call": 9630,
+        "new_strength": 20,
+        "old_strength": 25,
+        "progress": 0.8525674194330349,
+        "target_distance": 17.211490646004677
+      },
+      {
+        "actual_average_distance": 10.666666666666666,
+        "call": 9660,
+        "new_strength": 30,
+        "old_strength": 20,
+        "progress": 0.8539512249990366,
+        "target_distance": 17.19073354199645
+      },
+      {
+        "actual_average_distance": 28.0,
+        "call": 9690,
+        "new_strength": 20,
+        "old_strength": 30,
+        "progress": 0.8561185250000563,
+        "target_distance": 17.158224292012164
+      },
+      {
+        "actual_average_distance": 14.0,
+        "call": 9720,
+        "new_strength": 25,
+        "old_strength": 20,
+        "progress": 0.8573080999990149,
+        "target_distance": 17.14038358349353
+      },
+      {
+        "actual_average_distance": 23.333333333333332,
+        "call": 9750,
+        "new_strength": 20,
+        "old_strength": 25,
+        "progress": 0.8593158471999535,
+        "target_distance": 17.110264458489837
+      },
+      {
+        "actual_average_distance": 9.666666666666666,
+        "call": 9780,
+        "new_strength": 40,
+        "old_strength": 20,
+        "progress": 0.8606037152659458,
+        "target_distance": 17.090946187498048
+      },
+      {
+        "actual_average_distance": 37.666666666666664,
+        "call": 9810,
+        "new_strength": 20,
+        "old_strength": 40,
+        "progress": 0.8639635958340174,
+        "target_distance": 17.04054847950465
+      },
+      {
+        "actual_average_distance": 22.666666666666668,
+        "call": 9840,
+        "new_strength": 16,
+        "old_strength": 20,
+        "progress": 0.865349468033916,
+        "target_distance": 17.019760354509344
+      },
+      {
+        "actual_average_distance": 13.333333333333334,
+        "call": 9870,
+        "new_strength": 20,
+        "old_strength": 16,
+        "progress": 0.8668108110995187,
+        "target_distance": 16.997840354510117
+      },
+      {
+        "actual_average_distance": 9.333333333333334,
+        "call": 9900,
+        "new_strength": 40,
+        "old_strength": 20,
+        "progress": 0.8684951347007882,
+        "target_distance": 16.972574708488537
+      },
+      {
+        "actual_average_distance": 20.666666666666668,
+        "call": 9930,
+        "new_strength": 30,
+        "old_strength": 40,
+        "progress": 0.8715457138663624,
+        "target_distance": 16.926819729502313
+      },
+      {
+        "actual_average_distance": 33.333333333333336,
+        "call": 9960,
+        "new_strength": 16,
+        "old_strength": 30,
+        "progress": 0.873893897200469,
+        "target_distance": 16.89159375001327
+      },
+      {
+        "actual_average_distance": 4.666666666666667,
+        "call": 9990,
+        "new_strength": 40,
+        "old_strength": 16,
+        "progress": 0.8750670722006665,
+        "target_distance": 16.873995770991314
+      },
+      {
+        "actual_average_distance": 31.333333333333332,
+        "call": 10020,
+        "new_strength": 20,
+        "old_strength": 40,
+        "progress": 0.8781132263674711,
+        "target_distance": 16.8283038334921
+      },
+      {
+        "actual_average_distance": 15.0,
+        "call": 10050,
+        "new_strength": 20,
+        "old_strength": 20,
+        "progress": 0.879989711100158,
+        "target_distance": 16.800156916986452
+      },
+      {
+        "actual_average_distance": 13.0,
+        "call": 10080,
+        "new_strength": 25,
+        "old_strength": 20,
+        "progress": 0.8815115166672816,
+        "target_distance": 16.777329729491612
+      },
+      {
+        "actual_average_distance": 19.333333333333332,
+        "call": 10110,
+        "new_strength": 20,
+        "old_strength": 25,
+        "progress": 0.8837478985990553,
+        "target_distance": 16.74378677099594
+      },
+      {
+        "actual_average_distance": 7.0,
+        "call": 10140,
+        "new_strength": 40,
+        "old_strength": 20,
+        "progress": 0.8852030471995628,
+        "target_distance": 16.721956458495697
+      },
+      {
+        "actual_average_distance": 27.666666666666668,
+        "call": 10170,
+        "new_strength": 25,
+        "old_strength": 40,
+        "progress": 0.8886375694341647,
+        "target_distance": 16.6704386670026
+      },
+      {
+        "actual_average_distance": 17.0,
+        "call": 10200,
+        "new_strength": 25,
+        "old_strength": 25,
+        "progress": 0.8906838930328377,
+        "target_distance": 16.63974343749578
+      },
+      {
+        "actual_average_distance": 16.0,
+        "call": 10230,
+        "new_strength": 25,
+        "old_strength": 25,
+        "progress": 0.8925444041669834,
+        "target_distance": 16.611835687508574
+      },
+      {
+        "actual_average_distance": 11.0,
+        "call": 10260,
+        "new_strength": 40,
+        "old_strength": 25,
+        "progress": 0.8944177430336518,
+        "target_distance": 16.583735958498437
+      },
+      {
+        "actual_average_distance": 32.0,
+        "call": 10290,
+        "new_strength": 20,
+        "old_strength": 40,
+        "progress": 0.8972266291675624,
+        "target_distance": 16.541602729499573
+      },
+      {
+        "actual_average_distance": 3.6666666666666665,
+        "call": 10320,
+        "new_strength": 40,
+        "old_strength": 20,
+        "progress": 0.8989644249998189,
+        "target_distance": 16.515535708487732
+      },
+      {
+        "actual_average_distance": 26.666666666666668,
+        "call": 10350,
+        "new_strength": 25,
+        "old_strength": 40,
+        "progress": 0.901958476365932,
+        "target_distance": 16.47062545848894
+      },
+      {
+        "actual_average_distance": 24.666666666666668,
+        "call": 10380,
+        "new_strength": 16,
+        "old_strength": 25,
+        "progress": 0.9036070583330001,
+        "target_distance": 16.44589595848811
+      },
+      {
+        "actual_average_distance": 8.0,
+        "call": 10410,
+        "new_strength": 30,
+        "old_strength": 16,
+        "progress": 0.9047802819327141,
+        "target_distance": 16.428297645994462
+      },
+      {
+        "actual_average_distance": 19.0,
+        "call": 10440,
+        "new_strength": 25,
+        "old_strength": 30,
+        "progress": 0.9069815221999307,
+        "target_distance": 16.395279479504097
+      },
+      {
+        "actual_average_distance": 12.666666666666666,
+        "call": 10470,
+        "new_strength": 30,
+        "old_strength": 25,
+        "progress": 0.908882827765774,
+        "target_distance": 16.366763375001028
+      },
+      {
+        "actual_average_distance": 24.666666666666668,
+        "call": 10500,
+        "new_strength": 20,
+        "old_strength": 30,
+        "progress": 0.9116400985997947,
+        "target_distance": 16.325401125010103
+      },
+      {
+        "actual_average_distance": 9.666666666666666,
+        "call": 10530,
+        "new_strength": 30,
+        "old_strength": 20,
+        "progress": 0.9133200596998601,
+        "target_distance": 16.300201729492983
+      },
+      {
+        "actual_average_distance": 16.333333333333332,
+        "call": 10560,
+        "new_strength": 30,
+        "old_strength": 30,
+        "progress": 0.9156268444339124,
+        "target_distance": 16.265600042010192
+      },
+      {
+        "actual_average_distance": 21.0,
+        "call": 10590,
+        "new_strength": 25,
+        "old_strength": 30,
+        "progress": 0.9180137027675906,
+        "target_distance": 16.22979610451148
+      },
+      {
+        "actual_average_distance": 19.333333333333332,
+        "call": 10620,
+        "new_strength": 20,
+        "old_strength": 25,
+        "progress": 0.9200444096990396,
+        "target_distance": 16.1993391875003
+      },
+      {
+        "actual_average_distance": 17.333333333333332,
+        "call": 10650,
+        "new_strength": 20,
+        "old_strength": 20,
+        "progress": 0.9233485041671278,
+        "target_distance": 16.14978120851447
+      },
+      {
+        "actual_average_distance": 9.666666666666666,
+        "call": 10680,
+        "new_strength": 30,
+        "old_strength": 20,
+        "progress": 0.9264617875004963,
+        "target_distance": 16.1030764374882
+      },
+      {
+        "actual_average_distance": 15.666666666666666,
+        "call": 10710,
+        "new_strength": 30,
+        "old_strength": 30,
+        "progress": 0.9293979875006092,
+        "target_distance": 16.059033645986347
+      },
+      {
+        "actual_average_distance": 21.0,
+        "call": 10740,
+        "new_strength": 25,
+        "old_strength": 30,
+        "progress": 0.9324251527665183,
+        "target_distance": 16.0136262710148
+      },
+      {
+        "actual_average_distance": 23.666666666666668,
+        "call": 10770,
+        "new_strength": 16,
+        "old_strength": 25,
+        "progress": 0.9355713750002905,
+        "target_distance": 15.966433729510754
+      },
+      {
+        "actual_average_distance": 11.0,
+        "call": 10800,
+        "new_strength": 25,
+        "old_strength": 16,
+        "progress": 0.9379463097002978,
+        "target_distance": 15.930808042001445
+      },
+      {
+        "actual_average_distance": 17.666666666666668,
+        "call": 10830,
+        "new_strength": 20,
+        "old_strength": 25,
+        "progress": 0.9405212958323924,
+        "target_distance": 15.892183374991873
+      },
+      {
+        "actual_average_distance": 8.666666666666666,
+        "call": 10860,
+        "new_strength": 40,
+        "old_strength": 20,
+        "progress": 0.9424189291661605,
+        "target_distance": 15.863718854496256
+      },
+      {
+        "actual_average_distance": 27.666666666666668,
+        "call": 10890,
+        "new_strength": 25,
+        "old_strength": 40,
+        "progress": 0.9463374180331205,
+        "target_distance": 15.804941458511166
+      },
+      {
+        "actual_average_distance": 18.0,
+        "call": 10920,
+        "new_strength": 20,
+        "old_strength": 25,
+        "progress": 0.9489906777666571,
+        "target_distance": 15.765143146010814
+      },
+      {
+        "actual_average_distance": 17.0,
+        "call": 10950,
+        "new_strength": 20,
+        "old_strength": 20,
+        "progress": 0.951100133334209,
+        "target_distance": 15.733500229514902
+      },
+      {
+        "actual_average_distance": 18.0,
+        "call": 10980,
+        "new_strength": 16,
+        "old_strength": 20,
+        "progress": 0.9526868180333016,
+        "target_distance": 15.709700270992471
+      },
+      {
+        "actual_average_distance": 12.0,
+        "call": 11010,
+        "new_strength": 20,
+        "old_strength": 16,
+        "progress": 0.953953141666716,
+        "target_distance": 15.69070541698602
+      },
+      {
+        "actual_average_distance": 4.0,
+        "call": 11040,
+        "new_strength": 40,
+        "old_strength": 20,
+        "progress": 0.9558006083340539,
+        "target_distance": 15.662993062491296
+      },
+      {
+        "actual_average_distance": 26.333333333333332,
+        "call": 11070,
+        "new_strength": 25,
+        "old_strength": 40,
+        "progress": 0.9591774763675252,
+        "target_distance": 15.61234027100727
+      },
+      {
+        "actual_average_distance": 16.0,
+        "call": 11100,
+        "new_strength": 25,
+        "old_strength": 25,
+        "progress": 0.9610979999997653,
+        "target_distance": 15.583532166987425
+      },
+      {
+        "actual_average_distance": 15.666666666666666,
+        "call": 11130,
+        "new_strength": 25,
+        "old_strength": 25,
+        "progress": 0.9629734624992125,
+        "target_distance": 15.555399812496034
+      },
+      {
+        "actual_average_distance": 15.0,
+        "call": 11160,
+        "new_strength": 25,
+        "old_strength": 25,
+        "progress": 0.9646870652659951,
+        "target_distance": 15.52969658348593
+      },
+      {
+        "actual_average_distance": 13.0,
+        "call": 11190,
+        "new_strength": 30,
+        "old_strength": 25,
+        "progress": 0.966633343033027,
+        "target_distance": 15.50050191700575
+      },
+      {
+        "actual_average_distance": 20.0,
+        "call": 11220,
+        "new_strength": 25,
+        "old_strength": 30,
+        "progress": 0.968957722200624,
+        "target_distance": 15.465636270993855
+      },
+      {
+        "actual_average_distance": 17.0,
+        "call": 11250,
+        "new_strength": 25,
+        "old_strength": 25,
+        "progress": 0.9715577236008054,
+        "target_distance": 15.426637083495734
+      },
+      {
+        "actual_average_distance": 17.666666666666668,
+        "call": 11280,
+        "new_strength": 20,
+        "old_strength": 25,
+        "progress": 0.9742473777674604,
+        "target_distance": 15.386292333510937
+      },
+      {
+        "actual_average_distance": 19.666666666666668,
+        "call": 11310,
+        "new_strength": 16,
+        "old_strength": 20,
+        "progress": 0.9766266555331337,
+        "target_distance": 15.350606604508357
+      },
+      {
+        "actual_average_distance": 12.0,
+        "call": 11340,
+        "new_strength": 20,
+        "old_strength": 16,
+        "progress": 0.9783033458341379,
+        "target_distance": 15.325452791992575
+      },
+      {
+        "actual_average_distance": 3.6666666666666665,
+        "call": 11370,
+        "new_strength": 40,
+        "old_strength": 20,
+        "progress": 0.9802235916664358,
+        "target_distance": 15.29665337500046
+      },
+      {
+        "actual_average_distance": 33.333333333333336,
+        "call": 11400,
+        "new_strength": 20,
+        "old_strength": 40,
+        "progress": 0.983982002766182,
+        "target_distance": 15.240273812494706
+      },
+      {
+        "actual_average_distance": 10.666666666666666,
+        "call": 11430,
+        "new_strength": 30,
+        "old_strength": 20,
+        "progress": 0.9859193208336364,
+        "target_distance": 15.211220812489046
+      },
+      {
+        "actual_average_distance": 25.0,
+        "call": 11460,
+        "new_strength": 20,
+        "old_strength": 30,
+        "progress": 0.9889095180338093,
+        "target_distance": 15.16635935450904
+      },
+      {
+        "actual_average_distance": 19.0,
+        "call": 11490,
+        "new_strength": 16,
+        "old_strength": 20,
+        "progress": 0.9911282680327228,
+        "target_distance": 15.133078437502263
+      },
+      {
+        "actual_average_distance": 3.3333333333333335,
+        "call": 11520,
+        "new_strength": 40,
+        "old_strength": 16,
+        "progress": 0.992472309700679,
+        "target_distance": 15.112918166996678
+      },
+      {
+        "actual_average_distance": 35.333333333333336,
+        "call": 11550,
+        "new_strength": 16,
+        "old_strength": 40,
+        "progress": 0.9971293652663007,
+        "target_distance": 15.043062812503194
+      },
+      {
+        "actual_average_distance": 12.666666666666666,
+        "call": 11580,
+        "new_strength": 20,
+        "old_strength": 16,
+        "progress": 0.9991572458335819,
+        "target_distance": 15.01264493749477
+      },
+      {
+        "actual_average_distance": 13.0,
+        "call": 11610,
+        "new_strength": 25,
+        "old_strength": 20,
+        "progress": 1.0,
+        "target_distance": 15.0
+      }
+    ]
+  },
+  "seed": 3,
+  "working_name": "MDA-ILS-VNS"
+}

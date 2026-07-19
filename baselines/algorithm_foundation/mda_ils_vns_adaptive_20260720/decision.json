@@ -1,0 +1,101 @@
+{
+  "behaviour": {
+    "all_equal": true,
+    "comparisons": [
+      {
+        "all_equal": true,
+        "field_equality": {
+          "cost": true,
+          "distance": true,
+          "duration": true,
+          "iterations_completed": true,
+          "rng_state": true,
+          "routes": true
+        },
+        "iterations": 5
+      },
+      {
+        "all_equal": true,
+        "field_equality": {
+          "cost": true,
+          "distance": true,
+          "duration": true,
+          "iterations_completed": true,
+          "rng_state": true,
+          "routes": true
+        },
+        "iterations": 100
+      },
+      {
+        "all_equal": true,
+        "field_equality": {
+          "cost": true,
+          "distance": true,
+          "duration": true,
+          "iterations_completed": true,
+          "rng_state": true,
+          "routes": true
+        },
+        "iterations": 1000
+      }
+    ]
+  },
+  "china81_authorized": false,
+  "confirmation": {},
+  "development": {
+    "losses": 3,
+    "mean_gap_by_arm": {
+      "adaptive_d20_10": 1.5825464640432412,
+      "adaptive_d30_15": 2.7061297187324516,
+      "adaptive_da30_15": 1.8353882683980471,
+      "foundation": 1.1357115744462867
+    },
+    "pairs": [
+      {
+        "candidate": 6766500,
+        "candidate_gain": -19154,
+        "candidate_gain_percent": -0.28387457824157825,
+        "candidate_iterations": 16363,
+        "instance": "PR11A",
+        "iteration_ratio": 0.5780753197202007,
+        "mother": 6747346,
+        "mother_iterations": 28306,
+        "seed": 3
+      },
+      {
+        "candidate": 6378058,
+        "candidate_gain": -21971,
+        "candidate_gain_percent": -0.34566864802196695,
+        "candidate_iterations": 16331,
+        "instance": "PR17A",
+        "iteration_ratio": 0.5618978805394991,
+        "mother": 6356087,
+        "mother_iterations": 29064,
+        "seed": 3
+      },
+      {
+        "candidate": 6337353,
+        "candidate_gain": -43832,
+        "candidate_gain_percent": -0.6964622824012187,
+        "candidate_iterations": 16023,
+        "instance": "PR21A",
+        "iteration_ratio": 0.5503348789283874,
+        "mother": 6293521,
+        "mother_iterations": 29115,
+        "seed": 3
+      }
+    ],
+    "passed": false,
+    "selected_adaptive_arm": "adaptive_d20_10",
+    "total_candidate": 19481911,
+    "total_mother": 19396954,
+    "wins": 0
+  },
+  "execution_error": null,
+  "full_v13_authorized": false,
+  "new_bks_count": 0,
+  "selected_adaptive_arm": "adaptive_d20_10",
+  "stage2_authorized": false,
+  "static_checks_passed": true,
+  "verdict": "STOP_ADAPTIVE_LAYER_KEEP_FOUNDATION"
+}

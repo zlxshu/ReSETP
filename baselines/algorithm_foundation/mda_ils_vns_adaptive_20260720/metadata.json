@@ -1,0 +1,132 @@
+{
+  "adaptive_arms": {
+    "adaptive_d20_10": {
+      "adaptive_acceptance": false,
+      "d_max": 20.0,
+      "d_min": 10.0
+    },
+    "adaptive_d30_15": {
+      "adaptive_acceptance": false,
+      "d_max": 30.0,
+      "d_min": 15.0
+    },
+    "adaptive_da30_15": {
+      "adaptive_acceptance": true,
+      "d_max": 30.0,
+      "d_min": 15.0
+    },
+    "foundation": {
+      "adaptive_acceptance": false,
+      "d_max": null,
+      "d_min": null
+    }
+  },
+  "behaviour_iterations": [
+    5,
+    100,
+    1000
+  ],
+  "confirmation": {
+    "instances": [
+      "PR16A",
+      "PR20A",
+      "PR24A"
+    ],
+    "runtime_seconds": 60.0,
+    "seeds": [
+      1,
+      2
+    ]
+  },
+  "contract": "MDA-ILS-VNS-A1-001",
+  "contract_path": "docs/handoff/mda_ils_vns_adaptive_contract_20260720.md",
+  "contract_sha256": "6eacdc1791fd20961a3262cb7460259b799d884ccfade93627b2299503521d6f",
+  "development": {
+    "instances": [
+      "PR11A",
+      "PR17A",
+      "PR21A"
+    ],
+    "runtime_seconds": 30.0,
+    "seed": 3
+  },
+  "finished_at_utc": "2026-07-19T19:17:57.507245+00:00",
+  "git_head": "948bf945c10beb64aa008264886d3593480ce399",
+  "host": "macOS-15.7.5-arm64-arm-64bit-Mach-O",
+  "protected_hashes_after": {
+    "docs/paper_submission_final/paper_main.tex": "6936bcf31d37c65c5f1100416a5406443c506c060c5b8823df696ac311d0f735",
+    "solver/src/setp_solver/check.py": "53f5cc27d3ac72bdd2bbec113eb8af11ad18a82490502f800941140495e8e142",
+    "solver/src/setp_solver/cost.py": "d8bfee1844c8f8e89bac1233a3cd862d7ac7d088039f97751b8274756c41dee4",
+    "solver/src/setp_solver/prices.py": "d6ad8d59ea555c0f91e98196a8ed3d704c62f1fef3ce4b5bd519ef218a911d3d",
+    "solver/src/setp_solver/search/evaluation.py": "c7215263c39d1d5a1429b41ca8ac40d950dbdf2bdc288337e56fbe9733406fc3"
+  },
+  "protected_hashes_before": {
+    "docs/paper_submission_final/paper_main.tex": "6936bcf31d37c65c5f1100416a5406443c506c060c5b8823df696ac311d0f735",
+    "solver/src/setp_solver/check.py": "53f5cc27d3ac72bdd2bbec113eb8af11ad18a82490502f800941140495e8e142",
+    "solver/src/setp_solver/cost.py": "d8bfee1844c8f8e89bac1233a3cd862d7ac7d088039f97751b8274756c41dee4",
+    "solver/src/setp_solver/prices.py": "d6ad8d59ea555c0f91e98196a8ed3d704c62f1fef3ce4b5bd519ef218a911d3d",
+    "solver/src/setp_solver/search/evaluation.py": "c7215263c39d1d5a1429b41ca8ac40d950dbdf2bdc288337e56fbe9733406fc3"
+  },
+  "python": "build/python_envs/pyvrp-0.13.4/bin/python",
+  "source_hashes": {
+    "baselines/algorithm_prototypes/mda_ils_vns_20260720/adaptive_ils.py": "30eae67841a37695c208d39c1ce7900b4544bc1163d4e10a1af36408014ae253",
+    "baselines/algorithm_prototypes/mda_ils_vns_20260720/run_adaptive_gate.py": "a68d4808829be4b228fdcd33efc1e29086507a633efa1cf1ca33429351ca3976",
+    "baselines/algorithm_prototypes/mda_ils_vns_20260720/run_adaptive_worker.py": "359f1cd0db76033ce2c557c989e0823877c8caed4a725a7464542d7ea42bc97a",
+    "baselines/algorithm_prototypes/mda_ils_vns_20260720/run_worker.py": "698fb2decc16ef4f0f79683905e9ee31e8654a5d27fcc2898d51b616360d6cda",
+    "baselines/algorithm_prototypes/mda_ils_vns_20260720/selective_route_vns.py": "6a0711cd79570ce5256591c693ea5cd4791c1339a6038b4bcc85564705dc33ad",
+    "baselines/algorithm_prototypes/mda_ils_vns_20260720/test_adaptive_ils.py": "8baef8aa1b693bf9c5d014a8cf66bab631ff4a10be8464e0ead1d3866e175629"
+  },
+  "started_at_utc": "2026-07-19T19:16:52.942067+00:00",
+  "static_checks": {
+    "all_passed": true,
+    "audit_code": {
+      "command": [
+        "/Volumes/移动硬盘（512G）/ReSETP/build/python_envs/pyvrp-0.13.4/bin/python",
+        "/Users/zhouleixishu/.codex/skills/audit-code/scripts/audit_code.py",
+        "/Volumes/移动硬盘（512G）/ReSETP/baselines/algorithm_prototypes/mda_ils_vns_20260720"
+      ],
+      "returncode": 0,
+      "stderr": "",
+      "stdout": "Auditing code: /Volumes/移动硬盘（512G）/ReSETP/baselines/algorithm_prototypes/mda_ils_vns_20260720\n\n[*] Scanning source files for vulnerabilities...\n\n  Total files scanned: 64\n\n[*] Checking for .env files...\n    0 issue(s)\n[*] Checking file permissions on sensitive files...\n    0 issue(s)\n[*] Checking .gitignore coverage...\n    0 issue(s)\n\n## audit-code Report\n\n**Scanned:** /Volumes/移动硬盘（512G）/ReSETP/baselines/algorithm_prototypes/mda_ils_vns_20260720\n**Findings:** 0 critical, 0 high, 0 medium, 0 low, 0 info\n\nNo security issues detected.\n\n"
+    },
+    "ruff_check": {
+      "command": [
+        "ruff",
+        "check",
+        "adaptive_ils.py",
+        "run_adaptive_worker.py",
+        "run_adaptive_gate.py",
+        "test_adaptive_ils.py"
+      ],
+      "returncode": 0,
+      "stderr": "",
+      "stdout": "All checks passed!\n"
+    },
+    "ruff_format": {
+      "command": [
+        "ruff",
+        "format",
+        "--check",
+        "adaptive_ils.py",
+        "run_adaptive_worker.py",
+        "run_adaptive_gate.py",
+        "test_adaptive_ils.py"
+      ],
+      "returncode": 0,
+      "stderr": "",
+      "stdout": "4 files already formatted\n"
+    },
+    "unittest": {
+      "command": [
+        "/Volumes/移动硬盘（512G）/ReSETP/build/python_envs/pyvrp-0.13.4/bin/python",
+        "-m",
+        "unittest",
+        "-v",
+        "test_adaptive_ils.py"
+      ],
+      "returncode": 0,
+      "stderr": "test_acceptance_always_accepts_improvement (test_adaptive_ils.AdaptiveILSTest.test_acceptance_always_accepts_improvement) ... ok\ntest_acceptance_updates_block_baseline (test_adaptive_ils.AdaptiveILSTest.test_acceptance_updates_block_baseline) ... ok\ntest_nearest_strength_breaks_tie_downward (test_adaptive_ils.AdaptiveILSTest.test_nearest_strength_breaks_tie_downward) ... ok\ntest_strength_update_moves_and_clips (test_adaptive_ils.AdaptiveILSTest.test_strength_update_moves_and_clips) ... ok\ntest_structural_distance_counts_edge_and_depot_touch (test_adaptive_ils.AdaptiveILSTest.test_structural_distance_counts_edge_and_depot_touch) ... ok\ntest_structural_distance_identical_is_zero (test_adaptive_ils.AdaptiveILSTest.test_structural_distance_identical_is_zero) ... ok\n\n----------------------------------------------------------------------\nRan 6 tests in 0.000s\n\nOK\n",
+      "stdout": ""
+    }
+  }
+}
