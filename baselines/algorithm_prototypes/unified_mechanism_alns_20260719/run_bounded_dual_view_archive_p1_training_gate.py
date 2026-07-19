@@ -12,10 +12,12 @@ import math
 import os
 from pathlib import Path
 import platform
+import secrets
 from statistics import median
 import subprocess
 import sys
 import time
+import traceback
 from typing import Any
 
 
@@ -73,8 +75,17 @@ BUDGET = 100
 PRICES = replace(DEFAULT_PRICES, B_battery_kwh=280.0)
 TOL = 1.0e-9
 BEHAVIOUR_DIR = HERE / "bounded_dual_view_archive_behavior_gate"
+CANONICAL_OUTPUT_DIR = (
+    HERE / "bounded_dual_view_archive_p1_training_gate"
+)
+HISTORICAL_P1_METADATA = (
+    HERE / "contextual_expert_p1_training_gate/metadata.json"
+)
 WORKER_SENTINEL = "RESET_BOUNDED_ARCHIVE_P1_WORKER="
+PARENT_TOKEN_ENV = "RESET_BOUNDED_ARCHIVE_P1_PARENT_TOKEN"
+ATTEMPT_OWNED_BY_PROCESS = False
 OUTPUT_FILES = (
+    "attempt_started.json",
     "metadata.json",
     "raw_runs.csv",
     "comparisons.json",
@@ -82,6 +93,8 @@ OUTPUT_FILES = (
     "archive_candidates.json",
     "solution_witnesses.json",
     "report.md",
+    "run_finished.json",
+    "appledouble_seal.json",
 )
 PROTECTED_FILES = (
     "solver/src/setp_solver/cost.py",
@@ -120,6 +133,10 @@ SOURCE_FILES = (
     "budgeted_scoring.py",
     "solver/src/setp_solver/search/e3_multitrip_runtime.py",
     "docs/handoff/bounded_dual_view_archive_contract_20260719.md",
+    "docs/handoff/"
+    "bounded_dual_view_archive_p1_execution_contract_20260719.md",
+    "baselines/algorithm_prototypes/unified_mechanism_alns_20260719/"
+    "contextual_expert_p1_training_gate/metadata.json",
 )
 FIXED_ENVIRONMENT = {
     "PYTHONHASHSEED": "0",
@@ -130,16 +147,23 @@ FIXED_ENVIRONMENT = {
 
 
 def main() -> int:
+    global ATTEMPT_OWNED_BY_PROCESS
     parser = argparse.ArgumentParser()
     parser.add_argument(
         "--output-dir",
         type=Path,
-        default=HERE / "bounded_dual_view_archive_p1_training_gate",
+        default=CANONICAL_OUTPUT_DIR,
     )
-    parser.add_argument(
+    mode = parser.add_mutually_exclusive_group()
+    mode.add_argument(
         "--worker",
         action="store_true",
         help=argparse.SUPPRESS,
+    )
+    mode.add_argument(
+        "--preflight-only",
+        action="store_true",
+        help="validate the frozen gate without scoring any instance",
     )
     args = parser.parse_args()
     _freeze_environment()
@@ -147,9 +171,38 @@ def main() -> int:
         return _worker_main()
 
     output_dir = args.output_dir.resolve()
+    if output_dir != CANONICAL_OUTPUT_DIR.resolve():
+        raise ValueError(
+            "P1 is a one-shot gate and only the canonical output path is "
+            f"allowed: {CANONICAL_OUTPUT_DIR}"
+        )
     if output_dir.exists():
         raise FileExistsError(f"P1 output directory exists: {output_dir}")
     behaviour_preflight = _verify_behaviour_gate()
+    if not bool(behaviour_preflight.get("passed")):
+        raise RuntimeError(
+            "P1 refused before scoring because behaviour evidence is not "
+            "sealed: "
+            + json.dumps(
+                behaviour_preflight,
+                ensure_ascii=False,
+                sort_keys=True,
+            )
+        )
+    preexisting_appledouble = behaviour._appledouble_paths(
+        tuple(REPO / path for path in SOURCE_FILES + PROTECTED_FILES)
+        + tuple(ARCHIVE / instance for instance in INSTANCES)
+        + (
+            BEHAVIOUR_DIR,
+            HISTORICAL_P1_METADATA.parent,
+            output_dir,
+        )
+    )
+    if preexisting_appledouble:
+        raise RuntimeError(
+            "HASH_CONTAMINATED_APPLEDOUBLE before P1: "
+            + ", ".join(preexisting_appledouble)
+        )
     _require_clean_sources()
     source_hashes_before = {
         path: _sha256(REPO / path) for path in SOURCE_FILES
@@ -160,10 +213,91 @@ def main() -> int:
     input_hashes_before = _input_hashes(
         tuple(ARCHIVE / instance for instance in INSTANCES)
     )
+    historical_metadata = json.loads(
+        HISTORICAL_P1_METADATA.read_text(encoding="utf-8")
+    )
+    historical_instances = list(
+        historical_metadata.get("instances", [])
+    )
+    historical_input_hashes = dict(
+        historical_metadata.get("input_hashes", {})
+    )
+    if historical_instances != list(INSTANCES):
+        raise RuntimeError(
+            "historical P1 instance freeze does not match this gate"
+        )
+    if historical_input_hashes != input_hashes_before:
+        raise RuntimeError(
+            "historical P1 input freeze mismatch; the old-three gate "
+            "refuses to score altered or substituted data"
+        )
+    historical_git_head = str(
+        historical_metadata.get("git_head", "")
+    )
+    historical_git_head_is_ancestor = bool(
+        historical_git_head
+        and subprocess.run(
+            [
+                "git",
+                "merge-base",
+                "--is-ancestor",
+                historical_git_head,
+                "HEAD",
+            ],
+            cwd=REPO,
+            check=False,
+        ).returncode
+        == 0
+    )
+    if not historical_git_head_is_ancestor:
+        raise RuntimeError(
+            "historical P1 evidence commit is not an ancestor of HEAD"
+        )
     shared_starts = {
         instance: _shared_start(ARCHIVE / instance)
         for instance in INSTANCES
     }
+    if args.preflight_only:
+        print(
+            json.dumps(
+                {
+                    "passed": True,
+                    "behaviour_preflight": behaviour_preflight,
+                    "source_file_count": len(source_hashes_before),
+                    "protected_file_count": len(
+                        protected_hashes_before
+                    ),
+                    "input_file_count": len(input_hashes_before),
+                    "historical_p1_metadata": _relative(
+                        HISTORICAL_P1_METADATA
+                    ),
+                    "historical_p1_git_head": historical_metadata.get(
+                        "git_head"
+                    ),
+                    "historical_p1_git_head_is_ancestor": True,
+                    "historical_input_freeze_match": True,
+                    "shared_starts": {
+                        instance: {
+                            "exact_signature": (
+                                solver._exact_solution_hash(start)
+                            ),
+                            "cost": independent_cost(
+                                ARCHIVE / instance,
+                                start,
+                                PRICES,
+                            ),
+                        }
+                        for instance, start in shared_starts.items()
+                    },
+                    "scoring_started": False,
+                    "output_written": False,
+                },
+                ensure_ascii=False,
+                indent=2,
+                sort_keys=True,
+            )
+        )
+        return 0
     run_order = sorted(
         (
             (instance, arm)
@@ -174,6 +308,40 @@ def main() -> int:
             f"{item[0]}:{item[1]}:seed={SEED}:B={BUDGET}:bounded"
         ),
     )
+    output_dir.mkdir(parents=True, exist_ok=False)
+    ATTEMPT_OWNED_BY_PROCESS = True
+    _write_json(
+        output_dir / "attempt_started.json",
+        {
+            "schema_version": (
+                "resetp.bounded-dual-view-archive-p1-attempt.v1"
+            ),
+            "status": "SCORING_STARTED",
+            "started_at_utc": datetime.now(timezone.utc).isoformat(),
+            "canonical_output_dir": _relative(output_dir),
+            "one_shot": True,
+            "git_head": _git("rev-parse", "HEAD"),
+            "instances": list(INSTANCES),
+            "arms": list(ARMS),
+            "seed": SEED,
+            "complete_candidate_budget_per_arm": BUDGET,
+            "run_order": [
+                {"instance": instance, "arm": arm}
+                for instance, arm in run_order
+            ],
+            "behaviour_decision_sha256": _sha256(
+                BEHAVIOUR_DIR / "decision.json"
+            ),
+            "historical_p1_metadata_sha256": _sha256(
+                HISTORICAL_P1_METADATA
+            ),
+            "source_hashes": source_hashes_before,
+            "protected_file_hashes": protected_hashes_before,
+            "input_hashes": input_hashes_before,
+            "scoring_started": True,
+        },
+    )
+    parent_token = secrets.token_hex(32)
     started = time.perf_counter()
     payloads: dict[tuple[str, str], dict[str, Any]] = {}
     for instance, arm in run_order:
@@ -183,7 +351,8 @@ def main() -> int:
                 "instance": instance,
                 "arm": arm,
                 "shared_start": asdict(shared_starts[instance]),
-            }
+            },
+            parent_token=parent_token,
         )
 
     rows: list[dict[str, Any]] = []
@@ -241,6 +410,18 @@ def main() -> int:
                         "entry_index": index,
                     },
                 )
+                _add_witness(
+                    witnesses,
+                    _solution_from_payload(
+                        entry["completed_solution_snapshot"]
+                    ),
+                    {
+                        "kind": "archive_completed",
+                        "instance": instance,
+                        "arm": arm,
+                        "entry_index": index,
+                    },
+                )
             for index, entry in enumerate(
                 activity.get("prescore_rows", [])
             ):
@@ -263,18 +444,6 @@ def main() -> int:
                     ),
                     {
                         "kind": "prescore_fast_completed",
-                        "instance": instance,
-                        "arm": arm,
-                        "entry_index": index,
-                    },
-                )
-                _add_witness(
-                    witnesses,
-                    _solution_from_payload(
-                        entry["completed_solution_snapshot"]
-                    ),
-                    {
-                        "kind": "archive_completed",
                         "instance": instance,
                         "arm": arm,
                         "entry_index": index,
@@ -311,9 +480,21 @@ def main() -> int:
         "fixed_environment": dict(FIXED_ENVIRONMENT),
         "prices": asdict(PRICES),
         "elapsed_seconds": time.perf_counter() - started,
+        "wall_clock_contract": (
+            "Parent-process elapsed time around each complete worker "
+            "subprocess, including startup, imports, solving, replay, "
+            "serialization, and exit."
+        ),
         "python": sys.version,
         "platform": platform.platform(),
         "behaviour_preflight": behaviour_preflight,
+        "historical_input_freeze": {
+            "metadata_path": _relative(HISTORICAL_P1_METADATA),
+            "metadata_git_head": historical_metadata.get("git_head"),
+            "metadata_git_head_is_ancestor": True,
+            "metadata_sha256": _sha256(HISTORICAL_P1_METADATA),
+            "input_hashes_match": True,
+        },
         "source_hashes": source_hashes_before,
         "protected_file_hashes": protected_hashes_before,
         "input_hashes": input_hashes_before,
@@ -326,7 +507,6 @@ def main() -> int:
         "stage2_activated": False,
     }
 
-    output_dir.mkdir(parents=True, exist_ok=False)
     _write_csv(output_dir / "raw_runs.csv", rows)
     _write_json(output_dir / "comparisons.json", comparisons)
     _write_json(output_dir / "decision.json", decision)
@@ -340,6 +520,80 @@ def main() -> int:
         output_dir / "report.md",
         _report(comparisons, decision),
     )
+    if decision["execution_failures"]:
+        raise RuntimeError(
+            "P1 execution contract failed after scoring: "
+            + ", ".join(decision["execution_failures"])
+        )
+    expected_exit_code = 0 if decision["passed"] else 1
+    _write_json(
+        output_dir / "run_finished.json",
+        {
+            "schema_version": (
+                "resetp.bounded-dual-view-archive-p1-finish.v1"
+            ),
+            "status": "PASS" if decision["passed"] else "STOP",
+            "finished_at_utc": datetime.now(timezone.utc).isoformat(),
+            "expected_exit_code": expected_exit_code,
+            "scoring_completed": True,
+            "artifact_seal_required": True,
+            "fresh_d3_allowed": bool(
+                decision.get("fresh_d3_allowed")
+            ),
+            "stage2_allowed": False,
+        },
+    )
+    output_appledouble = behaviour._appledouble_paths((output_dir,))
+    first_cleanup = behaviour._clean_appledouble_output(output_dir)
+    after_first_cleanup = behaviour._appledouble_paths((output_dir,))
+    appledouble_seal = {
+        "schema_version": "resetp.appledouble-seal.v1",
+        "transient_status": (
+            "HASH_CONTAMINATED_APPLEDOUBLE"
+            if output_appledouble
+            else "NO_APPLEDOUBLE_DETECTED"
+        ),
+        "detected_paths": output_appledouble,
+        "cleanup_command": ["dot_clean", "-m", str(output_dir)],
+        "cleanup_returncode": first_cleanup["returncode"],
+        "cleanup_stdout": first_cleanup["stdout"],
+        "cleanup_stderr": first_cleanup["stderr"],
+        "remaining_after_first_cleanup": after_first_cleanup,
+        "raw_data_rewritten": False,
+        "final_status": "PENDING_FINAL_CLEAN_CHECK",
+    }
+    _write_json(output_dir / "appledouble_seal.json", appledouble_seal)
+    second_cleanup = behaviour._clean_appledouble_output(output_dir)
+    remaining_before_hash = behaviour._appledouble_paths((output_dir,))
+    if (
+        int(first_cleanup["returncode"]) != 0
+        or int(second_cleanup["returncode"]) != 0
+        or after_first_cleanup
+        or remaining_before_hash
+    ):
+        raise RuntimeError(
+            "HASH_CONTAMINATED_APPLEDOUBLE P1 cleanup failed: "
+            + json.dumps(
+                {
+                    "first_cleanup": first_cleanup,
+                    "second_cleanup": second_cleanup,
+                    "after_first_cleanup": after_first_cleanup,
+                    "remaining_before_hash": remaining_before_hash,
+                },
+                ensure_ascii=False,
+                sort_keys=True,
+            )
+        )
+    appledouble_seal["final_status"] = "CLEANED_AND_READY_TO_REHASH"
+    _write_json(output_dir / "appledouble_seal.json", appledouble_seal)
+    final_seal_cleanup = behaviour._clean_appledouble_output(output_dir)
+    if (
+        int(final_seal_cleanup["returncode"]) != 0
+        or behaviour._appledouble_paths((output_dir,))
+    ):
+        raise RuntimeError(
+            "HASH_CONTAMINATED_APPLEDOUBLE P1 final seal cleanup failed"
+        )
     _write_json(
         output_dir / "artifact_hashes.json",
         {
@@ -347,12 +601,97 @@ def main() -> int:
             for name in OUTPUT_FILES
         },
     )
+    final_hash_cleanup = behaviour._clean_appledouble_output(output_dir)
+    final_appledouble = behaviour._appledouble_paths((output_dir,))
+    if int(final_hash_cleanup["returncode"]) != 0 or final_appledouble:
+        raise RuntimeError(
+            "HASH_CONTAMINATED_APPLEDOUBLE after P1 hash write: "
+            + ", ".join(final_appledouble)
+        )
+    sealed_hashes = json.loads(
+        (output_dir / "artifact_hashes.json").read_text(
+            encoding="utf-8"
+        )
+    )
+    sealed_hash_mismatches = [
+        name
+        for name, expected in sealed_hashes.items()
+        if not (output_dir / name).is_file()
+        or _sha256(output_dir / name) != expected
+    ]
+    if sealed_hash_mismatches:
+        raise RuntimeError(
+            "P1 artifact hashes changed after final AppleDouble cleanup: "
+            + ", ".join(sealed_hash_mismatches)
+        )
+    monitor_completion_pending = (
+        output_dir / "monitor_completion.pending.json"
+    )
+    _write_json(
+        monitor_completion_pending,
+        {
+            "schema_version": (
+                "resetp.bounded-dual-view-archive-p1-monitor.v1"
+            ),
+            "status": "PASS" if decision["passed"] else "STOP",
+            "finished_at_utc": datetime.now(timezone.utc).isoformat(),
+            "expected_exit_code": expected_exit_code,
+            "artifact_hashes_sha256": _sha256(
+                output_dir / "artifact_hashes.json"
+            ),
+            "decision_sha256": _sha256(
+                output_dir / "decision.json"
+            ),
+        },
+    )
+    monitor_cleanup = behaviour._clean_appledouble_output(output_dir)
+    if (
+        int(monitor_cleanup["returncode"]) != 0
+        or behaviour._appledouble_paths((output_dir,))
+    ):
+        raise RuntimeError(
+            "HASH_CONTAMINATED_APPLEDOUBLE after monitor completion"
+        )
+    post_monitor_hash_mismatches = [
+        name
+        for name, expected in sealed_hashes.items()
+        if not (output_dir / name).is_file()
+        or _sha256(output_dir / name) != expected
+    ]
+    if post_monitor_hash_mismatches:
+        raise RuntimeError(
+            "P1 artifacts changed after the final dot_clean: "
+            + ", ".join(post_monitor_hash_mismatches)
+        )
+    monitor_completion_path = output_dir / "monitor_completion.json"
+    monitor_completion_pending.replace(monitor_completion_path)
+    if behaviour._appledouble_paths((output_dir,)):
+        raise RuntimeError(
+            "HASH_CONTAMINATED_APPLEDOUBLE after monitor marker rename"
+        )
     print(json.dumps(decision, ensure_ascii=False, indent=2))
-    return 0 if not drift_failures else 2
+    ATTEMPT_OWNED_BY_PROCESS = False
+    return expected_exit_code
 
 
 def _worker_main() -> int:
     request = json.loads(sys.stdin.read())
+    request_parent_token = str(request.pop("parent_token", ""))
+    environment_parent_token = os.environ.get(PARENT_TOKEN_ENV, "")
+    if (
+        not request_parent_token
+        or not environment_parent_token
+        or not secrets.compare_digest(
+            request_parent_token,
+            environment_parent_token,
+        )
+        or not (
+            CANONICAL_OUTPUT_DIR / "attempt_started.json"
+        ).is_file()
+    ):
+        raise RuntimeError(
+            "P1 worker refused a call outside the canonical parent attempt"
+        )
     bundle_dir = Path(request["bundle"])
     instance = str(request["instance"])
     arm = str(request["arm"])
@@ -565,6 +904,18 @@ def _normalize_payload(
         parent_cost,
         payload["total_solver_elapsed_seconds"],
         payload["worker_solver_elapsed_seconds"],
+        payload["parent_wall_elapsed_seconds"],
+    )
+    solver_elapsed = float(payload["total_solver_elapsed_seconds"])
+    worker_elapsed = float(payload["worker_solver_elapsed_seconds"])
+    parent_elapsed = float(payload["parent_wall_elapsed_seconds"])
+    timer_tolerance = max(0.05, 0.05 * worker_elapsed)
+    timer_consistent = (
+        solver_elapsed > 0.0
+        and worker_elapsed > 0.0
+        and parent_elapsed > 0.0
+        and abs(solver_elapsed - worker_elapsed) <= timer_tolerance
+        and parent_elapsed + 1.0e-9 >= worker_elapsed
     )
     return (
         {
@@ -729,6 +1080,11 @@ def _normalize_payload(
             "worker_solver_elapsed_seconds": float(
                 payload["worker_solver_elapsed_seconds"]
             ),
+            "parent_wall_elapsed_seconds": float(
+                payload["parent_wall_elapsed_seconds"]
+            ),
+            "timer_tolerance_seconds": float(timer_tolerance),
+            "timer_consistent": bool(timer_consistent),
         },
         final,
     )
@@ -745,10 +1101,10 @@ def _comparisons(rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
         control_cost = float(control["parent_recomputed_cost"])
         candidate_cost = float(candidate["parent_recomputed_cost"])
         control_elapsed = float(
-            control["total_solver_elapsed_seconds"]
+            control["parent_wall_elapsed_seconds"]
         )
         candidate_elapsed = float(
-            candidate["total_solver_elapsed_seconds"]
+            candidate["parent_wall_elapsed_seconds"]
         )
         _require_finite(
             f"comparison:{instance}",
@@ -757,7 +1113,11 @@ def _comparisons(rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
             control_elapsed,
             candidate_elapsed,
         )
-        if control_cost <= 0.0 or control_elapsed <= 0.0:
+        if (
+            control_cost <= 0.0
+            or control_elapsed <= 0.0
+            or candidate_elapsed <= 0.0
+        ):
             raise RuntimeError(
                 f"comparison:{instance} has a non-positive denominator"
             )
@@ -860,6 +1220,8 @@ def _decision(
             failures.append(f"{tag}:local_ledger")
         if not bool(row["parent_archive_audit_passed"]):
             failures.append(f"{tag}:parent_archive_audit")
+        if not bool(row["timer_consistent"]):
+            failures.append(f"{tag}:timer_mismatch")
         if (
             not bool(row["worker_feasible"])
             or not bool(row["parent_feasible"])
@@ -879,6 +1241,8 @@ def _decision(
             row["parent_recomputed_cost"],
             row["total_solver_elapsed_seconds"],
             row["worker_solver_elapsed_seconds"],
+            row["parent_wall_elapsed_seconds"],
+            row["timer_tolerance_seconds"],
         ):
             failures.append(f"{tag}:nonfinite")
         if int(row["mechanism_candidate_evaluations"]) != 0:
@@ -1000,6 +1364,19 @@ def _verify_behaviour_gate() -> dict[str, Any]:
         return {"passed": False, "reason": "missing_behaviour_evidence"}
     decision = json.loads(decision_path.read_text(encoding="utf-8"))
     expected_hashes = json.loads(hashes_path.read_text(encoding="utf-8"))
+    expected_artifact_names = {
+        "appledouble_seal.json",
+        "archive_candidates.json",
+        "decision.json",
+        "independent_audit.md",
+        "metadata.json",
+        "raw_runs.csv",
+        "report.md",
+        "solution_witnesses.json",
+    }
+    artifact_key_set_match = (
+        set(expected_hashes) == expected_artifact_names
+    )
     appledouble_contamination = behaviour._appledouble_paths(
         (BEHAVIOUR_DIR,)
     )
@@ -1012,6 +1389,44 @@ def _verify_behaviour_gate() -> dict[str, Any]:
     metadata = json.loads(
         (BEHAVIOUR_DIR / "metadata.json").read_text(encoding="utf-8")
     )
+    seal_path = BEHAVIOUR_DIR / "appledouble_seal.json"
+    seal = (
+        json.loads(seal_path.read_text(encoding="utf-8"))
+        if seal_path.is_file()
+        else {}
+    )
+    expected_source_hashes = dict(
+        metadata.get("source_hashes", {})
+    )
+    source_hash_mismatches = [
+        path
+        for path, expected in expected_source_hashes.items()
+        if not (REPO / path).is_file()
+        or _sha256(REPO / path) != expected
+    ]
+    expected_protected_hashes = dict(
+        metadata.get("protected_file_hashes", {})
+    )
+    protected_hash_mismatches = [
+        path
+        for path, expected in expected_protected_hashes.items()
+        if not (REPO / path).is_file()
+        or _sha256(REPO / path) != expected
+    ]
+    expected_input_hashes = dict(metadata.get("input_hashes", {}))
+    current_input_hashes = behaviour._input_hashes(
+        (
+            behaviour.FIXTURE,
+            behaviour.PLATEAU_BUNDLE,
+            behaviour.RESPONSIBILITY_BUNDLE,
+        )
+    )
+    input_hashes_match = current_input_hashes == expected_input_hashes
+    seal_clean = (
+        seal.get("final_status") == "CLEANED_AND_READY_TO_REHASH"
+        and not seal.get("remaining_after_first_cleanup")
+        and seal.get("raw_data_rewritten") is False
+    )
     source_commit = str(metadata.get("git_head", ""))
     ancestor = bool(
         source_commit
@@ -1023,20 +1438,30 @@ def _verify_behaviour_gate() -> dict[str, Any]:
         == 0
     )
     evidence_tracked = (
-        subprocess.run(
-            [
-                "git",
-                "ls-files",
-                "--error-unmatch",
-                "--",
-                str(decision_path.relative_to(REPO)),
-            ],
-            cwd=REPO,
-            text=True,
-            capture_output=True,
-            check=False,
-        ).returncode
-        == 0
+        artifact_key_set_match
+        and all(
+            subprocess.run(
+                [
+                    "git",
+                    "ls-files",
+                    "--error-unmatch",
+                    "--",
+                    str(path.relative_to(REPO)),
+                ],
+                cwd=REPO,
+                text=True,
+                capture_output=True,
+                check=False,
+            ).returncode
+            == 0
+            for path in (
+                hashes_path,
+                *(
+                    BEHAVIOUR_DIR / name
+                    for name in sorted(expected_artifact_names)
+                ),
+            )
+        )
     )
     evidence_clean = not subprocess.run(
         [
@@ -1054,15 +1479,36 @@ def _verify_behaviour_gate() -> dict[str, Any]:
     return {
         "passed": bool(
             decision.get("passed")
+            and decision.get("old_three_instance_gate_allowed")
+            and artifact_key_set_match
             and not mismatches
             and not appledouble_contamination
+            and len(expected_source_hashes) == 17
+            and not source_hash_mismatches
+            and len(expected_protected_hashes) == 3
+            and not protected_hash_mismatches
+            and len(expected_input_hashes) == 40
+            and input_hashes_match
+            and seal_clean
             and ancestor
             and evidence_tracked
             and evidence_clean
         ),
         "verdict": decision.get("verdict"),
+        "old_three_instance_gate_allowed": decision.get(
+            "old_three_instance_gate_allowed"
+        ),
         "artifact_hash_mismatches": mismatches,
+        "artifact_key_set_match": artifact_key_set_match,
+        "artifact_count": len(expected_hashes),
         "appledouble_contamination": appledouble_contamination,
+        "source_hash_mismatches": source_hash_mismatches,
+        "source_hash_count": len(expected_source_hashes),
+        "protected_hash_mismatches": protected_hash_mismatches,
+        "protected_hash_count": len(expected_protected_hashes),
+        "input_hashes_match": input_hashes_match,
+        "input_hash_count": len(expected_input_hashes),
+        "appledouble_seal_clean": seal_clean,
         "source_commit": source_commit,
         "source_commit_is_ancestor": ancestor,
         "evidence_tracked": evidence_tracked,
@@ -1093,18 +1539,27 @@ def _shared_start(bundle_dir: Path) -> Solution:
     return start
 
 
-def _invoke_worker(request: dict[str, Any]) -> dict[str, Any]:
+def _invoke_worker(
+    request: dict[str, Any],
+    *,
+    parent_token: str,
+) -> dict[str, Any]:
     environment = dict(os.environ)
     environment.update(FIXED_ENVIRONMENT)
+    environment[PARENT_TOKEN_ENV] = parent_token
+    worker_request = dict(request)
+    worker_request["parent_token"] = parent_token
+    parent_wall_started = time.perf_counter()
     completed = subprocess.run(
         [sys.executable, str(Path(__file__).resolve()), "--worker"],
         cwd=REPO,
         env=environment,
-        input=json.dumps(request, ensure_ascii=False),
+        input=json.dumps(worker_request, ensure_ascii=False),
         text=True,
         capture_output=True,
         check=False,
     )
+    parent_wall_elapsed = time.perf_counter() - parent_wall_started
     if completed.returncode != 0:
         raise RuntimeError(
             "bounded archive P1 worker failed: "
@@ -1120,7 +1575,11 @@ def _invoke_worker(request: dict[str, Any]) -> dict[str, Any]:
             "bounded archive P1 worker must emit exactly one sentinel: "
             f"{len(lines)}"
         )
-    return json.loads(lines[0][len(WORKER_SENTINEL) :])
+    payload = json.loads(lines[0][len(WORKER_SENTINEL) :])
+    payload["parent_wall_elapsed_seconds"] = float(
+        parent_wall_elapsed
+    )
+    return payload
 
 
 def _report(
@@ -1364,5 +1823,124 @@ def _require_finite(label: str, *values: Any) -> None:
         raise RuntimeError(f"{label} contains a non-finite value: {values}")
 
 
+def _record_execution_failure(exc: Exception) -> None:
+    if not ATTEMPT_OWNED_BY_PROCESS:
+        return
+    if not CANONICAL_OUTPUT_DIR.is_dir():
+        return
+    attempt_path = CANONICAL_OUTPUT_DIR / "attempt_started.json"
+    if not attempt_path.is_file():
+        _write_json(
+            attempt_path,
+            {
+                "schema_version": (
+                    "resetp.bounded-dual-view-archive-p1-attempt.v1"
+                ),
+                "status": "ATTEMPT_CREATION_FAILURE",
+                "started_at_utc": datetime.now(
+                    timezone.utc
+                ).isoformat(),
+                "canonical_output_dir": _relative(
+                    CANONICAL_OUTPUT_DIR
+                ),
+                "one_shot": True,
+                "scoring_started": False,
+            },
+        )
+    artifact_path = CANONICAL_OUTPUT_DIR / "artifact_hashes.json"
+    if artifact_path.exists():
+        invalid_path = (
+            CANONICAL_OUTPUT_DIR
+            / "artifact_hashes.invalid_execution_failure.json"
+        )
+        suffix = 2
+        while invalid_path.exists():
+            invalid_path = (
+                CANONICAL_OUTPUT_DIR
+                / (
+                    "artifact_hashes.invalid_execution_failure_"
+                    f"{suffix}.json"
+                )
+            )
+            suffix += 1
+        artifact_path.replace(invalid_path)
+    failure_payload = {
+        "schema_version": (
+            "resetp.bounded-dual-view-archive-p1-failure.v1"
+        ),
+        "status": "EXECUTION_FAILURE",
+        "failed_at_utc": datetime.now(timezone.utc).isoformat(),
+        "exit_code": 2,
+        "exception_type": type(exc).__name__,
+        "message": str(exc),
+        "traceback": traceback.format_exc(),
+        "scoring_may_have_started": True,
+        "formal_search_allowed": False,
+        "fresh_d3_allowed": False,
+        "stage2_allowed": False,
+    }
+    _write_json(
+        CANONICAL_OUTPUT_DIR / "execution_failure.json",
+        failure_payload,
+    )
+    _write_json(
+        CANONICAL_OUTPUT_DIR / "run_finished.json",
+        {
+            "schema_version": (
+                "resetp.bounded-dual-view-archive-p1-finish.v1"
+            ),
+            "status": "EXECUTION_FAILURE",
+            "finished_at_utc": failure_payload["failed_at_utc"],
+            "expected_exit_code": 2,
+            "scoring_completed": False,
+            "artifact_seal_pending": False,
+            "fresh_d3_allowed": False,
+            "stage2_allowed": False,
+        },
+    )
+    _write_json(
+        CANONICAL_OUTPUT_DIR / "monitor_completion.json",
+        {
+            "schema_version": (
+                "resetp.bounded-dual-view-archive-p1-monitor.v1"
+            ),
+            "status": "EXECUTION_FAILURE",
+            "finished_at_utc": failure_payload["failed_at_utc"],
+            "expected_exit_code": 2,
+            "artifact_hashes_sha256": None,
+            "decision_sha256": (
+                _sha256(CANONICAL_OUTPUT_DIR / "decision.json")
+                if (
+                    CANONICAL_OUTPUT_DIR / "decision.json"
+                ).is_file()
+                else None
+            ),
+        },
+    )
+
+
+def _entrypoint() -> int:
+    global ATTEMPT_OWNED_BY_PROCESS
+    try:
+        return main()
+    except Exception as exc:
+        if "--worker" not in sys.argv:
+            try:
+                _record_execution_failure(exc)
+            except Exception as record_exc:
+                print(
+                    "P1 failed and its failure scene could not be sealed: "
+                    f"{record_exc}",
+                    file=sys.stderr,
+                )
+            finally:
+                ATTEMPT_OWNED_BY_PROCESS = False
+        print(
+            f"P1 execution failure: {type(exc).__name__}: {exc}",
+            file=sys.stderr,
+        )
+        return 2
+
+
 if __name__ == "__main__":
-    raise SystemExit(main())
+    raise SystemExit(_entrypoint())
