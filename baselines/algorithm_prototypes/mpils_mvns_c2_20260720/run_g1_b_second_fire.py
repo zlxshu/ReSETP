@@ -81,8 +81,17 @@ def main() -> int:
         "# MPILS-MVNS-C2 G1 B组首发",
         "# MPILS-MVNS-C2 G1 B组唯一第二发",
     ).replace(
+        "FAIL_G1_B_FIRST_FIRE__DIAGNOSIS_REQUIRED",
+        str(decision["verdict"]),
+    ).replace(
+        "PASS_G1_B_FIRST_FIRE_ZERO_LOSS_AT_LEAST_ONE_WIN",
+        str(decision["verdict"]),
+    ).replace(
         "本门只是一种子、三道未被第一候选看过的开发题。",
         "本门是两发协议允许的唯一第二发。",
+    ).replace(
+        "失败则先做死因判断，不得直接救援。",
+        "第二发失败即终止当前替换式扰动路线。",
     )
     report += (
         "\n唯一修订为停滞门和冷却期从128改为1666；其余算法与判据不变。"

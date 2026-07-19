@@ -1,0 +1,92 @@
+{
+  "contract": "MPILS-MVNS-C2-G1-B-SECOND-FIRE",
+  "contract_path": "docs/handoff/mpils_mvns_c2_g1_b_second_fire_contract_20260720.md",
+  "contract_sha256": "bdc2f86d6a69194265ce2c348609015e82600ba107b91e57fe0b007002bc9c9f",
+  "counts": {
+    "a_group_calls": 0,
+    "china81_calls": 0,
+    "confirmation_calls": 0,
+    "independent_validation_calls": 6,
+    "solver_arms": 6
+  },
+  "finished_at_utc": "2026-07-19T16:58:41.187663+00:00",
+  "git": {
+    "g0_freeze_commit": "2f434816",
+    "head": "5f1f1b680ed73b50fa32edc98d6f8cd0521cdc78",
+    "initial_worktree_clean": true
+  },
+  "host": {
+    "platform": "macOS-15.7.5-arm64-arm-64bit-Mach-O",
+    "pyvrp": "0.13.4",
+    "runner_python": "3.13.9",
+    "solver_python": "build/python_envs/pyvrp-0.13.4/bin/python"
+  },
+  "input": {
+    "arms": [
+      "mother",
+      "mpils_mvns_c2"
+    ],
+    "end_to_end_limit_seconds": 10.0,
+    "instance_hashes": {
+      "PR11B": "3d01ae5941af2819741824546a53eba3ecb9b45b9fcb2b74d9802d2fd5b2f70f",
+      "PR17B": "c2ba4022e18b6f37aee2df95b109fe60cb9d38010be09d843e6457eeeae5d280",
+      "PR21B": "644d7c02c63f5481a4e773ea5c75fb0a2474e52414af6af8bde52c4ba7a7cb1b"
+    },
+    "instances": [
+      "PR11B",
+      "PR17B",
+      "PR21B"
+    ],
+    "internal_runtime_seconds": 8.5,
+    "run_orders": {
+      "PR11B": [
+        "mother",
+        "mpils_mvns_c2"
+      ],
+      "PR17B": [
+        "mpils_mvns_c2",
+        "mother"
+      ],
+      "PR21B": [
+        "mother",
+        "mpils_mvns_c2"
+      ]
+    },
+    "seed": 1,
+    "target_table": "baselines/algorithm_foundation/mdvrptw_v13_comparison_20260719/opponent_targets.csv",
+    "target_table_sha256": "997dabc4ef4ea72375e7741dc18e4d3d5267e721d2a187cc6bc2931b247b6f2c"
+  },
+  "protected_hashes_after": {
+    "docs/paper_submission_final/paper_main.tex": "6936bcf31d37c65c5f1100416a5406443c506c060c5b8823df696ac311d0f735",
+    "solver/src/setp_solver/check.py": "53f5cc27d3ac72bdd2bbec113eb8af11ad18a82490502f800941140495e8e142",
+    "solver/src/setp_solver/cost.py": "d8bfee1844c8f8e89bac1233a3cd862d7ac7d088039f97751b8274756c41dee4",
+    "solver/src/setp_solver/prices.py": "d6ad8d59ea555c0f91e98196a8ed3d704c62f1fef3ce4b5bd519ef218a911d3d",
+    "solver/src/setp_solver/search/evaluation.py": "c7215263c39d1d5a1429b41ca8ac40d950dbdf2bdc288337e56fbe9733406fc3"
+  },
+  "protected_hashes_before": {
+    "docs/paper_submission_final/paper_main.tex": "6936bcf31d37c65c5f1100416a5406443c506c060c5b8823df696ac311d0f735",
+    "solver/src/setp_solver/check.py": "53f5cc27d3ac72bdd2bbec113eb8af11ad18a82490502f800941140495e8e142",
+    "solver/src/setp_solver/cost.py": "d8bfee1844c8f8e89bac1233a3cd862d7ac7d088039f97751b8274756c41dee4",
+    "solver/src/setp_solver/prices.py": "d6ad8d59ea555c0f91e98196a8ed3d704c62f1fef3ce4b5bd519ef218a911d3d",
+    "solver/src/setp_solver/search/evaluation.py": "c7215263c39d1d5a1429b41ca8ac40d950dbdf2bdc288337e56fbe9733406fc3"
+  },
+  "single_revision": {
+    "cooldown_after": 1666,
+    "cooldown_before": 128,
+    "strength_rule_changed": false,
+    "trigger_after_after": 1666,
+    "trigger_after_before": 128,
+    "worker_sha256": "630de0d770796948079c2f7ece0d4725fae32af36c929a2b09fb93d2e83c92eb"
+  },
+  "source_hashes": {
+    "c2_core.py": "78308a199b1cb9ff0a96ba74086ddc49ba476f821d16964f2f006a15672c3a9f",
+    "event_driven_ils.py": "71590b0f493bdf8e6bc53330b2412a1c4646e98f88d9c40606a09ef59a456b18"
+  },
+  "started_at_utc": "2026-07-19T16:57:48.820725+00:00",
+  "thread_limits": {
+    "MKL_NUM_THREADS": "1",
+    "OMP_NUM_THREADS": "1",
+    "OPENBLAS_NUM_THREADS": "1",
+    "VECLIB_MAXIMUM_THREADS": "1"
+  }
+}
