@@ -1,0 +1,64 @@
+{
+  "configuration_names": [
+    "default",
+    "swapstar_best",
+    "swaproutes_best",
+    "route_vns_best",
+    "route_vns_k80",
+    "route_vns_tw_k80",
+    "route_vns_restart75k",
+    "route_vns_perturb5_40"
+  ],
+  "contract": "MDA-ILS-VNS-F0-001",
+  "contract_path": "docs/handoff/mda_ils_vns_foundation_contract_20260720.md",
+  "contract_sha256": "31a08b2f20adf211cc770d35c8653b26ca94adb237ba7a92c67fad64223e75c3",
+  "development": {
+    "instances": [
+      "PR11A",
+      "PR17A",
+      "PR21A"
+    ],
+    "runtime_seconds": 30.0,
+    "seed": 1
+  },
+  "finished_at_utc": "2026-07-19T18:52:00.858023+00:00",
+  "git_head": "162e56aded1c2c429a46b2794055c2c9429ad351",
+  "host": "macOS-15.7.5-arm64-arm-64bit-Mach-O",
+  "protected_hashes_after": {
+    "docs/paper_submission_final/paper_main.tex": "6936bcf31d37c65c5f1100416a5406443c506c060c5b8823df696ac311d0f735",
+    "solver/src/setp_solver/check.py": "53f5cc27d3ac72bdd2bbec113eb8af11ad18a82490502f800941140495e8e142",
+    "solver/src/setp_solver/cost.py": "d8bfee1844c8f8e89bac1233a3cd862d7ac7d088039f97751b8274756c41dee4",
+    "solver/src/setp_solver/prices.py": "d6ad8d59ea555c0f91e98196a8ed3d704c62f1fef3ce4b5bd519ef218a911d3d",
+    "solver/src/setp_solver/search/evaluation.py": "c7215263c39d1d5a1429b41ca8ac40d950dbdf2bdc288337e56fbe9733406fc3"
+  },
+  "protected_hashes_before": {
+    "docs/paper_submission_final/paper_main.tex": "6936bcf31d37c65c5f1100416a5406443c506c060c5b8823df696ac311d0f735",
+    "solver/src/setp_solver/check.py": "53f5cc27d3ac72bdd2bbec113eb8af11ad18a82490502f800941140495e8e142",
+    "solver/src/setp_solver/cost.py": "d8bfee1844c8f8e89bac1233a3cd862d7ac7d088039f97751b8274756c41dee4",
+    "solver/src/setp_solver/prices.py": "d6ad8d59ea555c0f91e98196a8ed3d704c62f1fef3ce4b5bd519ef218a911d3d",
+    "solver/src/setp_solver/search/evaluation.py": "c7215263c39d1d5a1429b41ca8ac40d950dbdf2bdc288337e56fbe9733406fc3"
+  },
+  "python": "build/python_envs/pyvrp-0.13.4/bin/python",
+  "screen": {
+    "instance": "PR17A",
+    "runtime_seconds": 20.0,
+    "seed": 1
+  },
+  "source_hashes": {
+    "baselines/algorithm_prototypes/mda_ils_vns_20260720/run_worker.py": "698fb2decc16ef4f0f79683905e9ee31e8654a5d27fcc2898d51b616360d6cda",
+    "baselines/algorithm_prototypes/mda_ils_vns_20260720/selective_route_vns.py": "6a0711cd79570ce5256591c693ea5cd4791c1339a6038b4bcc85564705dc33ad"
+  },
+  "started_at_utc": "2026-07-19T18:48:18.796058+00:00",
+  "validation": {
+    "instances": [
+      "PR11B",
+      "PR17B",
+      "PR21B"
+    ],
+    "runtime_seconds": 60.0,
+    "seeds": [
+      1,
+      2
+    ]
+  }
+}
