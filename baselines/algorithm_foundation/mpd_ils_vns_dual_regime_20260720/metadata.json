@@ -1,0 +1,152 @@
+{
+  "arms": [
+    "foundation",
+    "wide",
+    "wide70_fast30",
+    "fast20_wide60_fast20"
+  ],
+  "behaviour_checks": {
+    "all_equal": true,
+    "checks": [
+      {
+        "all_equal": true,
+        "field_equality": {
+          "cost": true,
+          "distance": true,
+          "duration": true,
+          "iterations_completed": true,
+          "rng_state": true,
+          "routes": true
+        },
+        "iterations": 5,
+        "mechanism_ledger_valid": true
+      },
+      {
+        "all_equal": true,
+        "field_equality": {
+          "cost": true,
+          "distance": true,
+          "duration": true,
+          "iterations_completed": true,
+          "rng_state": true,
+          "routes": true
+        },
+        "iterations": 100,
+        "mechanism_ledger_valid": true
+      },
+      {
+        "all_equal": true,
+        "field_equality": {
+          "cost": true,
+          "distance": true,
+          "duration": true,
+          "iterations_completed": true,
+          "rng_state": true,
+          "routes": true
+        },
+        "iterations": 1000,
+        "mechanism_ledger_valid": true
+      }
+    ]
+  },
+  "confirmation": {
+    "instances": [
+      "PR16B",
+      "PR20B",
+      "PR24B"
+    ],
+    "runtime_seconds": 90.0,
+    "seeds": [
+      1,
+      2
+    ]
+  },
+  "contract": "MPD-ILS-VNS-D1-001",
+  "contract_path": "docs/handoff/mpd_ils_vns_dual_regime_contract_20260720.md",
+  "contract_sha256": "fe35c3ff8adea4f0c5b9361de0bd92c51af68683ca5615e357614f35c3d93fdc",
+  "development": {
+    "instances": [
+      "PR11A",
+      "PR17A",
+      "PR21A"
+    ],
+    "runtime_seconds": 60.0,
+    "seed": 7
+  },
+  "finished_at_utc": "2026-07-19T20:07:25.853290+00:00",
+  "git_head": "36c44bcb54b7c2e0800762eb09bb898ef25de5b7",
+  "host": "macOS-15.7.5-arm64-arm-64bit-Mach-O",
+  "protected_hashes_after": {
+    "docs/paper_submission_final/paper_main.tex": "6936bcf31d37c65c5f1100416a5406443c506c060c5b8823df696ac311d0f735",
+    "solver/src/setp_solver/check.py": "53f5cc27d3ac72bdd2bbec113eb8af11ad18a82490502f800941140495e8e142",
+    "solver/src/setp_solver/cost.py": "d8bfee1844c8f8e89bac1233a3cd862d7ac7d088039f97751b8274756c41dee4",
+    "solver/src/setp_solver/prices.py": "d6ad8d59ea555c0f91e98196a8ed3d704c62f1fef3ce4b5bd519ef218a911d3d",
+    "solver/src/setp_solver/search/evaluation.py": "c7215263c39d1d5a1429b41ca8ac40d950dbdf2bdc288337e56fbe9733406fc3"
+  },
+  "protected_hashes_before": {
+    "docs/paper_submission_final/paper_main.tex": "6936bcf31d37c65c5f1100416a5406443c506c060c5b8823df696ac311d0f735",
+    "solver/src/setp_solver/check.py": "53f5cc27d3ac72bdd2bbec113eb8af11ad18a82490502f800941140495e8e142",
+    "solver/src/setp_solver/cost.py": "d8bfee1844c8f8e89bac1233a3cd862d7ac7d088039f97751b8274756c41dee4",
+    "solver/src/setp_solver/prices.py": "d6ad8d59ea555c0f91e98196a8ed3d704c62f1fef3ce4b5bd519ef218a911d3d",
+    "solver/src/setp_solver/search/evaluation.py": "c7215263c39d1d5a1429b41ca8ac40d950dbdf2bdc288337e56fbe9733406fc3"
+  },
+  "python": "build/python_envs/pyvrp-0.13.4/bin/python",
+  "source_hashes": {
+    "baselines/algorithm_prototypes/mda_ils_vns_20260720/multi_stage_regimes.py": "a8fcf421b1c8124205f0e9d99df01e40fbceb8c3ba4d12433e41cd0cf42a2125",
+    "baselines/algorithm_prototypes/mda_ils_vns_20260720/run_multi_stage_worker.py": "be015e434913bdebbf0ae0fe000b04c1a4374004707348c46f753e9f0a5d39d5",
+    "baselines/algorithm_prototypes/mda_ils_vns_20260720/selective_route_vns.py": "6a0711cd79570ce5256591c693ea5cd4791c1339a6038b4bcc85564705dc33ad"
+  },
+  "started_at_utc": "2026-07-19T20:05:21.651113+00:00",
+  "static_checks": {
+    "all_passed": true,
+    "audit": {
+      "command": [
+        "/Volumes/移动硬盘（512G）/ReSETP/build/python_envs/pyvrp-0.13.4/bin/python",
+        "/Users/zhouleixishu/.codex/skills/audit-code/scripts/audit_code.py",
+        "/Volumes/移动硬盘（512G）/ReSETP/baselines/algorithm_prototypes/mda_ils_vns_20260720"
+      ],
+      "returncode": 0,
+      "stderr": "",
+      "stdout": "Auditing code: /Volumes/移动硬盘（512G）/ReSETP/baselines/algorithm_prototypes/mda_ils_vns_20260720\n\n[*] Scanning source files for vulnerabilities...\n\n  Total files scanned: 154\n\n[*] Checking for .env files...\n    0 issue(s)\n[*] Checking file permissions on sensitive files...\n    0 issue(s)\n[*] Checking .gitignore coverage...\n    0 issue(s)\n\n## audit-code Report\n\n**Scanned:** /Volumes/移动硬盘（512G）/ReSETP/baselines/algorithm_prototypes/mda_ils_vns_20260720\n**Findings:** 0 critical, 0 high, 0 medium, 0 low, 0 info\n\nNo security issues detected.\n\n"
+    },
+    "format": {
+      "command": [
+        "ruff",
+        "format",
+        "--check",
+        "multi_stage_regimes.py",
+        "run_multi_stage_worker.py",
+        "run_dual_regime_gate.py",
+        "test_multi_stage_regimes.py"
+      ],
+      "returncode": 0,
+      "stderr": "",
+      "stdout": "4 files already formatted\n"
+    },
+    "ruff": {
+      "command": [
+        "ruff",
+        "check",
+        "multi_stage_regimes.py",
+        "run_multi_stage_worker.py",
+        "run_dual_regime_gate.py",
+        "test_multi_stage_regimes.py"
+      ],
+      "returncode": 0,
+      "stderr": "",
+      "stdout": "All checks passed!\n"
+    },
+    "unittest": {
+      "command": [
+        "/Volumes/移动硬盘（512G）/ReSETP/build/python_envs/pyvrp-0.13.4/bin/python",
+        "-m",
+        "unittest",
+        "-v",
+        "test_multi_stage_regimes.py"
+      ],
+      "returncode": 0,
+      "stderr": "test_fast_and_wide_match_frozen_sources (test_multi_stage_regimes.MultiStageRegimesTest.test_fast_and_wide_match_frozen_sources) ... ok\ntest_phase_boundaries_are_monotone_and_complete (test_multi_stage_regimes.MultiStageRegimesTest.test_phase_boundaries_are_monotone_and_complete) ... ok\ntest_public_experts_are_queried_not_disabled (test_multi_stage_regimes.MultiStageRegimesTest.test_public_experts_are_queried_not_disabled) ... ok\n\n----------------------------------------------------------------------\nRan 3 tests in 0.000s\n\nOK\n",
+      "stdout": ""
+    }
+  }
+}

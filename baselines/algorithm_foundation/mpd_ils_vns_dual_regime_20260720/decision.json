@@ -1,0 +1,97 @@
+{
+  "china81_authorized": false,
+  "confirmation": {},
+  "development": {
+    "comparisons": {
+      "foundation": {
+        "losses": 1,
+        "max_loss_percent": 0.2677571085560297,
+        "pairs": [
+          {
+            "candidate_gain": -18022,
+            "candidate_gain_percent": -0.2677571085560297,
+            "candidate_objective": 6748749,
+            "comparator": "foundation",
+            "comparator_objective": 6730727,
+            "instance": "PR11A",
+            "seed": 7
+          },
+          {
+            "candidate_gain": 14835,
+            "candidate_gain_percent": 0.23456930087912495,
+            "candidate_objective": 6309522,
+            "comparator": "foundation",
+            "comparator_objective": 6324357,
+            "instance": "PR17A",
+            "seed": 7
+          },
+          {
+            "candidate_gain": 255,
+            "candidate_gain_percent": 0.00406570044365561,
+            "candidate_objective": 6271727,
+            "comparator": "foundation",
+            "comparator_objective": 6271982,
+            "instance": "PR21A",
+            "seed": 7
+          }
+        ],
+        "ties": 0,
+        "total_candidate": 19329998,
+        "total_comparator": 19327066,
+        "wins": 2
+      },
+      "wide": {
+        "losses": 0,
+        "max_loss_percent": 0.0,
+        "pairs": [
+          {
+            "candidate_gain": 11503,
+            "candidate_gain_percent": 0.17015637878587958,
+            "candidate_objective": 6748749,
+            "comparator": "wide",
+            "comparator_objective": 6760252,
+            "instance": "PR11A",
+            "seed": 7
+          },
+          {
+            "candidate_gain": 45089,
+            "candidate_gain_percent": 0.7095477598864824,
+            "candidate_objective": 6309522,
+            "comparator": "wide",
+            "comparator_objective": 6354611,
+            "instance": "PR17A",
+            "seed": 7
+          },
+          {
+            "candidate_gain": 36012,
+            "candidate_gain_percent": 0.5709177250358647,
+            "candidate_objective": 6271727,
+            "comparator": "wide",
+            "comparator_objective": 6307739,
+            "instance": "PR21A",
+            "seed": 7
+          }
+        ],
+        "ties": 0,
+        "total_candidate": 19329998,
+        "total_comparator": 19422602,
+        "wins": 3
+      }
+    },
+    "integrity_passed": true,
+    "mean_gap_by_arm": {
+      "fast20_wide60_fast20": 0.7794657123988212,
+      "foundation": 0.7691539756448572,
+      "wide": 1.2686028667267577,
+      "wide70_fast30": 1.2792724406670866
+    },
+    "passed": false,
+    "selected": "fast20_wide60_fast20"
+  },
+  "execution_error": null,
+  "full_v13_authorized": false,
+  "new_bks_count": 0,
+  "selected_hybrid": "fast20_wide60_fast20",
+  "stage2_authorized": false,
+  "verdict": "STOP_MPD_ILS_VNS_PUBLIC_ARCHITECTURE__PIVOT_CHINA81"
+}

@@ -1,0 +1,862 @@
+{
+  "arm": "wide70_fast30",
+  "arm_payload": [
+    {
+      "cumulative_fraction": 0.7,
+      "regime": "wide"
+    },
+    {
+      "cumulative_fraction": 1.0,
+      "regime": "foundation"
+    }
+  ],
+  "complete": true,
+  "cost": 6347821,
+  "distance": 6347821,
+  "duration": 12026280,
+  "feasible": true,
+  "instance": "PR17A.vrp",
+  "instance_sha256": "3ce0c8d46f28378c7389e72c891975987899db0b546095d7343130c96807d156",
+  "iterations_completed": 46038,
+  "mechanism_expert_ledger": [
+    {
+      "action_count": 0,
+      "applicable": false,
+      "expert": "depot_responsibility",
+      "phase_index": 1,
+      "queried": true,
+      "reason": "required_resetp_semantics_absent_from_v13"
+    },
+    {
+      "action_count": 0,
+      "applicable": false,
+      "expert": "fleet_charge",
+      "phase_index": 1,
+      "queried": true,
+      "reason": "required_resetp_semantics_absent_from_v13"
+    },
+    {
+      "action_count": 0,
+      "applicable": false,
+      "expert": "carbon_timing",
+      "phase_index": 1,
+      "queried": true,
+      "reason": "required_resetp_semantics_absent_from_v13"
+    },
+    {
+      "action_count": 0,
+      "applicable": false,
+      "expert": "fairness",
+      "phase_index": 1,
+      "queried": true,
+      "reason": "required_resetp_semantics_absent_from_v13"
+    },
+    {
+      "action_count": 0,
+      "applicable": false,
+      "expert": "dynamic_replanning",
+      "phase_index": 1,
+      "queried": true,
+      "reason": "required_resetp_semantics_absent_from_v13"
+    },
+    {
+      "action_count": 0,
+      "applicable": false,
+      "expert": "depot_responsibility",
+      "phase_index": 2,
+      "queried": true,
+      "reason": "required_resetp_semantics_absent_from_v13"
+    },
+    {
+      "action_count": 0,
+      "applicable": false,
+      "expert": "fleet_charge",
+      "phase_index": 2,
+      "queried": true,
+      "reason": "required_resetp_semantics_absent_from_v13"
+    },
+    {
+      "action_count": 0,
+      "applicable": false,
+      "expert": "carbon_timing",
+      "phase_index": 2,
+      "queried": true,
+      "reason": "required_resetp_semantics_absent_from_v13"
+    },
+    {
+      "action_count": 0,
+      "applicable": false,
+      "expert": "fairness",
+      "phase_index": 2,
+      "queried": true,
+      "reason": "required_resetp_semantics_absent_from_v13"
+    },
+    {
+      "action_count": 0,
+      "applicable": false,
+      "expert": "dynamic_replanning",
+      "phase_index": 2,
+      "queried": true,
+      "reason": "required_resetp_semantics_absent_from_v13"
+    }
+  ],
+  "mechanism_experts_expected": [
+    "depot_responsibility",
+    "fleet_charge",
+    "carbon_timing",
+    "fairness",
+    "dynamic_replanning"
+  ],
+  "num_clients": 360,
+  "num_routes": 29,
+  "phase_outputs": [
+    {
+      "best_cost_after_phase": 6357459,
+      "charged_elapsed_seconds": 42.001893124950584,
+      "cumulative_fraction": 0.7,
+      "iterations": 27767,
+      "phase_index": 1,
+      "phase_result_cost": 6357459,
+      "phase_wall_seconds": 42.00189070898341,
+      "regime": "wide",
+      "search_diagnostics": {
+        "calls": 27795,
+        "exhaustive_calls": 28,
+        "route_calls": 28,
+        "route_gain": 0,
+        "route_improvements": 0,
+        "route_operator_statistics": [
+          {
+            "applications": 0,
+            "evaluations": 406,
+            "operator": "SwapStar"
+          }
+        ],
+        "route_seconds": 0.018458294682204723
+      },
+      "solver_runtime_seconds": 41.94223204202717
+    },
+    {
+      "best_cost_after_phase": 6347821,
+      "charged_elapsed_seconds": 60.002494249958545,
+      "cumulative_fraction": 1.0,
+      "iterations": 18271,
+      "phase_index": 2,
+      "phase_result_cost": 6347821,
+      "phase_wall_seconds": 18.000483124982566,
+      "regime": "foundation",
+      "search_diagnostics": {
+        "calls": 18275,
+        "exhaustive_calls": 4,
+        "route_calls": 4,
+        "route_gain": 0,
+        "route_improvements": 0,
+        "route_operator_statistics": [
+          {
+            "applications": 0,
+            "evaluations": 406,
+            "operator": "SwapStar"
+          }
+        ],
+        "route_seconds": 0.001642584044020623
+      },
+      "solver_runtime_seconds": 17.981993624998722
+    }
+  ],
+  "pyvrp_version": "0.13.4",
+  "regime_payloads": {
+    "foundation": {
+      "history_length": 300,
+      "max_perturbations": 25,
+      "min_perturbations": 1,
+      "name": "foundation",
+      "num_iters_no_improvement": 150000,
+      "num_neighbours": 50,
+      "route_operators": [
+        "SwapStar"
+      ],
+      "symmetric_neighbours": false,
+      "weight_time_warp": 1.0,
+      "weight_wait_time": 0.2
+    },
+    "wide": {
+      "history_length": 100,
+      "max_perturbations": 25,
+      "min_perturbations": 5,
+      "name": "wide",
+      "num_iters_no_improvement": 150000,
+      "num_neighbours": 65,
+      "route_operators": [
+        "SwapStar"
+      ],
+      "symmetric_neighbours": false,
+      "weight_time_warp": 0.5,
+      "weight_wait_time": 0.5
+    }
+  },
+  "requested_iterations": null,
+  "requested_runtime_seconds": 60.0,
+  "rng_state": [
+    3470910652,
+    1131178048,
+    3077404022,
+    1698185110
+  ],
+  "round_func": "exact",
+  "routes": [
+    {
+      "distance": 209856,
+      "duration": 392700,
+      "end_depot": 0,
+      "feasible": true,
+      "start_depot": 0,
+      "vehicle_type": 0,
+      "visits": [
+        12,
+        64,
+        249,
+        263,
+        15,
+        74,
+        34,
+        272,
+        293,
+        112,
+        298,
+        201
+      ]
+    },
+    {
+      "distance": 248872,
+      "duration": 457870,
+      "end_depot": 0,
+      "feasible": true,
+      "start_depot": 0,
+      "vehicle_type": 0,
+      "visits": [
+        18,
+        8,
+        38,
+        303,
+        200,
+        335,
+        225,
+        202,
+        287,
+        235,
+        267,
+        30,
+        163
+      ]
+    },
+    {
+      "distance": 224670,
+      "duration": 454480,
+      "end_depot": 0,
+      "feasible": true,
+      "start_depot": 0,
+      "vehicle_type": 0,
+      "visits": [
+        127,
+        219,
+        193,
+        311,
+        62,
+        334,
+        252,
+        184,
+        147,
+        155,
+        220,
+        157,
+        40
+      ]
+    },
+    {
+      "distance": 222487,
+      "duration": 448858,
+      "end_depot": 0,
+      "feasible": true,
+      "start_depot": 0,
+      "vehicle_type": 0,
+      "visits": [
+        27,
+        234,
+        166,
+        215,
+        104,
+        325,
+        25,
+        23,
+        88,
+        349,
+        130,
+        204,
+        99
+      ]
+    },
+    {
+      "distance": 242796,
+      "duration": 413461,
+      "end_depot": 0,
+      "feasible": true,
+      "start_depot": 0,
+      "vehicle_type": 0,
+      "visits": [
+        259,
+        22,
+        96,
+        289,
+        362,
+        80,
+        95,
+        103,
+        284,
+        36,
+        218
+      ]
+    },
+    {
+      "distance": 229219,
+      "duration": 456389,
+      "end_depot": 0,
+      "feasible": true,
+      "start_depot": 0,
+      "vehicle_type": 0,
+      "visits": [
+        91,
+        291,
+        341,
+        133,
+        13,
+        76,
+        178,
+        282,
+        68,
+        330,
+        35,
+        47,
+        136,
+        309,
+        168,
+        356
+      ]
+    },
+    {
+      "distance": 167629,
+      "duration": 405022,
+      "end_depot": 1,
+      "feasible": true,
+      "start_depot": 1,
+      "vehicle_type": 1,
+      "visits": [
+        243,
+        353,
+        123,
+        31,
+        53,
+        161,
+        302,
+        194,
+        101,
+        172,
+        238,
+        321,
+        84
+      ]
+    },
+    {
+      "distance": 219321,
+      "duration": 446779,
+      "end_depot": 1,
+      "feasible": true,
+      "start_depot": 1,
+      "vehicle_type": 1,
+      "visits": [
+        131,
+        78,
+        59,
+        66,
+        89,
+        100,
+        300,
+        158,
+        152,
+        121,
+        294,
+        185,
+        197,
+        137,
+        345
+      ]
+    },
+    {
+      "distance": 227016,
+      "duration": 413034,
+      "end_depot": 2,
+      "feasible": true,
+      "start_depot": 2,
+      "vehicle_type": 2,
+      "visits": [
+        105,
+        79,
+        310,
+        277,
+        257,
+        61,
+        182,
+        255,
+        150,
+        237,
+        266,
+        7,
+        280,
+        199
+      ]
+    },
+    {
+      "distance": 309089,
+      "duration": 450089,
+      "end_depot": 2,
+      "feasible": true,
+      "start_depot": 2,
+      "vehicle_type": 2,
+      "visits": [
+        114,
+        98,
+        146,
+        102,
+        283,
+        290,
+        188,
+        333,
+        256,
+        236,
+        140,
+        69,
+        358
+      ]
+    },
+    {
+      "distance": 177424,
+      "duration": 421794,
+      "end_depot": 2,
+      "feasible": true,
+      "start_depot": 2,
+      "vehicle_type": 2,
+      "visits": [
+        71,
+        360,
+        313,
+        292,
+        357,
+        171,
+        217,
+        359,
+        138,
+        211,
+        134,
+        230,
+        151
+      ]
+    },
+    {
+      "distance": 231815,
+      "duration": 402815,
+      "end_depot": 2,
+      "feasible": true,
+      "start_depot": 2,
+      "vehicle_type": 2,
+      "visits": [
+        285,
+        170,
+        253,
+        229,
+        43,
+        58,
+        183,
+        32,
+        44,
+        106,
+        120,
+        281,
+        308
+      ]
+    },
+    {
+      "distance": 292051,
+      "duration": 458051,
+      "end_depot": 2,
+      "feasible": true,
+      "start_depot": 2,
+      "vehicle_type": 2,
+      "visits": [
+        304,
+        299,
+        115,
+        81,
+        224,
+        332,
+        60,
+        55,
+        240,
+        348,
+        198,
+        67,
+        86,
+        124
+      ]
+    },
+    {
+      "distance": 168851,
+      "duration": 338851,
+      "end_depot": 2,
+      "feasible": true,
+      "start_depot": 2,
+      "vehicle_type": 2,
+      "visits": [
+        344,
+        128,
+        318,
+        119,
+        70,
+        46,
+        48,
+        221,
+        190,
+        72,
+        175,
+        278,
+        28
+      ]
+    },
+    {
+      "distance": 277727,
+      "duration": 455954,
+      "end_depot": 2,
+      "feasible": true,
+      "start_depot": 2,
+      "vehicle_type": 2,
+      "visits": [
+        273,
+        228,
+        135,
+        312,
+        213,
+        145,
+        247,
+        118,
+        54,
+        162,
+        169,
+        286
+      ]
+    },
+    {
+      "distance": 229158,
+      "duration": 393158,
+      "end_depot": 3,
+      "feasible": true,
+      "start_depot": 3,
+      "vehicle_type": 3,
+      "visits": [
+        301,
+        279,
+        116,
+        306,
+        45,
+        110,
+        323,
+        82,
+        326,
+        177,
+        63,
+        339,
+        222,
+        276,
+        261
+      ]
+    },
+    {
+      "distance": 211432,
+      "duration": 441206,
+      "end_depot": 3,
+      "feasible": true,
+      "start_depot": 3,
+      "vehicle_type": 3,
+      "visits": [
+        327,
+        206,
+        132,
+        149,
+        296,
+        160,
+        180,
+        207,
+        122,
+        20,
+        187,
+        245,
+        258
+      ]
+    },
+    {
+      "distance": 246183,
+      "duration": 452183,
+      "end_depot": 3,
+      "feasible": true,
+      "start_depot": 3,
+      "vehicle_type": 3,
+      "visits": [
+        57,
+        94,
+        297,
+        125,
+        108,
+        270,
+        24,
+        17,
+        92,
+        196,
+        269,
+        322,
+        342
+      ]
+    },
+    {
+      "distance": 170000,
+      "duration": 343102,
+      "end_depot": 4,
+      "feasible": true,
+      "start_depot": 4,
+      "vehicle_type": 4,
+      "visits": [
+        347,
+        50,
+        254,
+        260,
+        109,
+        174,
+        232,
+        355,
+        338,
+        42,
+        129
+      ]
+    },
+    {
+      "distance": 309065,
+      "duration": 457050,
+      "end_depot": 4,
+      "feasible": true,
+      "start_depot": 4,
+      "vehicle_type": 4,
+      "visits": [
+        33,
+        251,
+        331,
+        179,
+        268,
+        167,
+        316,
+        153,
+        244,
+        83,
+        181,
+        203
+      ]
+    },
+    {
+      "distance": 258246,
+      "duration": 457451,
+      "end_depot": 4,
+      "feasible": true,
+      "start_depot": 4,
+      "vehicle_type": 4,
+      "visits": [
+        39,
+        231,
+        262,
+        113,
+        6,
+        26,
+        14,
+        216,
+        307,
+        214,
+        223,
+        9,
+        49,
+        226
+      ]
+    },
+    {
+      "distance": 171788,
+      "duration": 396288,
+      "end_depot": 4,
+      "feasible": true,
+      "start_depot": 4,
+      "vehicle_type": 4,
+      "visits": [
+        186,
+        233,
+        90,
+        350,
+        288,
+        51,
+        351,
+        319,
+        19,
+        210,
+        274,
+        314
+      ]
+    },
+    {
+      "distance": 191362,
+      "duration": 438689,
+      "end_depot": 4,
+      "feasible": true,
+      "start_depot": 4,
+      "vehicle_type": 4,
+      "visits": [
+        141,
+        264,
+        176,
+        227,
+        16,
+        75,
+        195,
+        246,
+        56,
+        165,
+        93,
+        191
+      ]
+    },
+    {
+      "distance": 261365,
+      "duration": 456480,
+      "end_depot": 4,
+      "feasible": true,
+      "start_depot": 4,
+      "vehicle_type": 4,
+      "visits": [
+        143,
+        97,
+        142,
+        352,
+        159,
+        363,
+        164,
+        154,
+        354,
+        52,
+        343,
+        189,
+        148
+      ]
+    },
+    {
+      "distance": 286950,
+      "duration": 454721,
+      "end_depot": 4,
+      "feasible": true,
+      "start_depot": 4,
+      "vehicle_type": 4,
+      "visits": [
+        317,
+        77,
+        208,
+        156,
+        73,
+        29,
+        37,
+        65,
+        250,
+        126,
+        337,
+        315,
+        173
+      ]
+    },
+    {
+      "distance": 206333,
+      "duration": 455424,
+      "end_depot": 5,
+      "feasible": true,
+      "start_depot": 5,
+      "vehicle_type": 5,
+      "visits": [
+        107,
+        87,
+        329,
+        242,
+        111,
+        192,
+        340,
+        10,
+        11,
+        324
+      ]
+    },
+    {
+      "distance": 140979,
+      "duration": 419230,
+      "end_depot": 5,
+      "feasible": true,
+      "start_depot": 5,
+      "vehicle_type": 5,
+      "visits": [
+        117,
+        41,
+        248,
+        364,
+        85,
+        328,
+        361,
+        365,
+        212,
+        320
+      ]
+    },
+    {
+      "distance": 178029,
+      "duration": 376043,
+      "end_depot": 5,
+      "feasible": true,
+      "start_depot": 5,
+      "vehicle_type": 5,
+      "visits": [
+        239,
+        21,
+        295,
+        241,
+        144,
+        275,
+        209,
+        305,
+        205,
+        139,
+        265
+      ]
+    },
+    {
+      "distance": 38108,
+      "duration": 69108,
+      "end_depot": 5,
+      "feasible": true,
+      "start_depot": 5,
+      "vehicle_type": 5,
+      "visits": [
+        346,
+        271,
+        336
+      ]
+    }
+  ],
+  "runtime_seconds": 60.00302824995015,
+  "schema": "resetp.mpd-ils-vns-dual-regime-worker.v1",
+  "seed": 7,
+  "working_name": "MPD-ILS-VNS"
+}
