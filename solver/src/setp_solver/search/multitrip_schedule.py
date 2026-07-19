@@ -20,7 +20,14 @@ from ..charging_curve import (
     curve_from_parameters,
     pack_trip_chain,
 )
-from ..cost import _arc_loads, carbon_profile_row_for_slot, charging_slot_breakdown, ev_arc_energy_kwh, _price
+from ..cost import (
+    _arc_loads,
+    _price,
+    best_charging_action_start,
+    carbon_profile_row_for_slot,
+    charging_slot_breakdown,
+    ev_arc_energy_kwh,
+)
 from ..instance_loader import Instance
 from ..prices import DEFAULT_PRICES, PriceParameters
 from ..solution import ChargingAction, Route, Solution, physical_vehicle_id, route_trip_vehicle_id
@@ -994,6 +1001,7 @@ def reschedule_between_trip_charging(
     carbon_profile: list[dict[str, Any]],
     *,
     strategy: str,
+    prices: PriceParameters | dict[str, Any] | Any = DEFAULT_PRICES,
     carbon_profiles_by_day_offset: Mapping[int, list[dict[str, Any]]] | None = None,
     intensity_field: str = "actual_gco2_per_kwh",
 ) -> Solution:
@@ -1010,11 +1018,7 @@ def reschedule_between_trip_charging(
 
     if strategy not in {"aware", "naive"}:
         raise ValueError(f"unknown between-trip charging strategy {strategy!r}")
-    if certificate.charging_curve_id != L100_CONTROL.curve_id:
-        raise ValueError(
-            f"{NONLINEAR_CONTRACT_ID}: carbon-aware nonlinear rescheduling "
-            "is blocked until the NL2 slot integrator is connected"
-        )
+    _certificate_curve(certificate, prices)
 
     def profile_for(day_offset: int) -> list[dict[str, Any]]:
         if carbon_profiles_by_day_offset is None:
@@ -1039,7 +1043,6 @@ def reschedule_between_trip_charging(
             ]
             if len(first_actions) == 1 and float(first_actions[0].energy_kwh) > _TOL:
                 action = first_actions[0]
-                energy = float(action.energy_kwh)
                 duration = float(action.occupancy_minutes) * 60.0
                 earliest = 0.0
                 latest = STATIC_PREHORIZON_SECONDS - duration
@@ -1048,26 +1051,35 @@ def reschedule_between_trip_charging(
                 selected_starts[first.route_id] = (
                     earliest
                     if strategy == "naive"
-                    else _lowest_carbon_gap_start(
-                        earliest,
-                        latest,
-                        duration,
-                        energy,
-                        instance,
-                        profile_for(int(action.charge_day_offset)),
+                    else best_charging_action_start(
+                        action,
+                        earliest_start_second=earliest,
+                        latest_start_second=latest,
+                        instance=instance,
+                        carbon_profile=profile_for(
+                            int(action.charge_day_offset)
+                        ),
+                        prices=prices,
                         intensity_field=intensity_field,
                     )
                 )
         for previous, current in zip(ordered, ordered[1:]):
-            energy = float(previous.charge_energy_kwh or 0.0)
-            if energy <= _TOL:
+            if float(previous.charge_energy_kwh or 0.0) <= _TOL:
                 continue
             if previous.charge_start_second is None:
                 raise ValueError(f"{CONTRACT_ID}: between-trip charge has no start")
-            duration = (
-                previous.recharge_end_second
-                - float(previous.charge_start_second)
-            )
+            gap_actions = [
+                action
+                for action in solution.charging_actions
+                if action.vehicle_id == current.route_id
+                and action.station_id == current.home_depot_id
+            ]
+            if len(gap_actions) != 1:
+                raise ValueError(
+                    f"{CONTRACT_ID}: {current.route_id} has no unique gap action"
+                )
+            action = gap_actions[0]
+            duration = float(action.occupancy_minutes) * 60.0
             earliest = float(previous.return_second)
             latest = float(current.departure_second) - duration
             if latest < earliest - _TOL:
@@ -1075,13 +1087,13 @@ def reschedule_between_trip_charging(
             selected_starts[current.route_id] = (
                 earliest
                 if strategy == "naive"
-                else _lowest_carbon_gap_start(
-                    earliest,
-                    latest,
-                    duration,
-                    energy,
-                    instance,
-                    profile_for(0),
+                else best_charging_action_start(
+                    action,
+                    earliest_start_second=earliest,
+                    latest_start_second=latest,
+                    instance=instance,
+                    carbon_profile=profile_for(0),
+                    prices=prices,
                     intensity_field=intensity_field,
                 )
             )
@@ -1120,6 +1132,15 @@ def _lowest_carbon_gap_start(
     *,
     intensity_field: str = "actual_gco2_per_kwh",
 ) -> float:
+    """Legacy L100 timing helper retained until the NL3 dynamic migration.
+
+    New static and multi-trip actions use :func:`best_charging_action_start`,
+    which integrates their physical charging curve.  The dynamic continuation
+    module still imports this historical uniform-rate helper; keeping it here
+    preserves that sealed L100 path without pretending it supports nonlinear
+    charging.
+    """
+
     if not carbon_profile or latest <= earliest + _TOL:
         return earliest
     candidates = {earliest, latest}
@@ -1142,10 +1163,19 @@ def _lowest_carbon_gap_start(
             n_slots=len(carbon_profile),
             cyclic=True,
         ):
-            row = carbon_profile_row_for_slot(carbon_profile, slot.slot_index)
+            row = carbon_profile_row_for_slot(
+                carbon_profile,
+                slot.slot_index,
+            )
             if intensity_field not in row:
-                raise ValueError(f"carbon profile is missing timing field {intensity_field!r}")
-            total += slot.y_skt_kwh * float(row[intensity_field])
+                raise ValueError(
+                    f"carbon profile is missing timing field "
+                    f"{intensity_field!r}"
+                )
+            total += (
+                slot.y_skt_kwh
+                * float(row[intensity_field])
+            )
         return total
 
     return min(candidates, key=lambda start: (emissions(start), start))

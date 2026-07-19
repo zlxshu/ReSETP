@@ -18,7 +18,12 @@ import json
 from types import MappingProxyType
 from typing import Literal
 
-from ..cost import _arc_loads, _price, ev_arc_energy_kwh
+from ..cost import (
+    _arc_loads,
+    _price,
+    charging_curve_for_action,
+    ev_arc_energy_kwh,
+)
 from ..instance_loader import Instance
 from ..prices import DEFAULT_PRICES, PriceParameters
 from ..solution import ChargingAction, Route, Solution, physical_vehicle_id, route_trip_vehicle_id
@@ -145,7 +150,13 @@ def build_certificate_execution_ledger(
         executions[route_id] = execution
 
     assets = _build_asset_map(executions, certificate)
-    _validate_charging_ledger(solution, certificate, trips_by_id, prices)
+    _validate_charging_ledger(
+        solution,
+        certificate,
+        trips_by_id,
+        instance,
+        prices,
+    )
     certificate_sha256 = _canonical_sha256(certificate.as_dict())
     return CertificateExecutionLedger(
         contract_id=EXECUTION_CLOCK_CONTRACT_ID,
@@ -311,6 +322,7 @@ def _validate_charging_ledger(
     solution: Solution,
     certificate: MultiTripCertificate,
     trips_by_id: Mapping[str, ScheduledTrip],
+    instance: Instance,
     prices: PriceParameters | dict[str, float] | object,
 ) -> None:
     actions_by_route: dict[str, list[ChargingAction]] = {}
@@ -329,7 +341,6 @@ def _validate_charging_ledger(
     for trip in certificate.trips:
         by_vehicle.setdefault(trip.physical_vehicle_id, []).append(trip)
     initial_battery = _price(prices, "initial_ev_battery_kwh")
-    power = float(certificate.depot_charge_power_kw)
     for chain in by_vehicle.values():
         ordered = sorted(chain, key=lambda item: item.trip_index)
         for index, trip in enumerate(ordered):
@@ -340,12 +351,16 @@ def _validate_charging_ledger(
                 continue
             if index == 0:
                 expected_energy = float(trip.start_battery_kwh or 0.0) - initial_battery
+                expected_action_start_energy = initial_battery
                 expected_start = None
                 expected_end = float(trip.departure_second)
                 expected_day_offset = int(certificate.first_trip_charge_day_offset)
             else:
                 previous = ordered[index - 1]
                 expected_energy = float(previous.charge_energy_kwh or 0.0)
+                expected_action_start_energy = float(
+                    previous.end_battery_kwh or 0.0
+                )
                 expected_start = previous.charge_start_second
                 expected_end = float(previous.recharge_end_second)
                 expected_day_offset = 0
@@ -364,9 +379,40 @@ def _validate_charging_ledger(
                 raise ValueError(f"{EXECUTION_CLOCK_CONTRACT_ID}: route {trip.route_id} charges away from home")
             if abs(float(action.energy_kwh) - expected_energy) > _TOL:
                 raise ValueError(f"{EXECUTION_CLOCK_CONTRACT_ID}: route {trip.route_id} charge energy does not close")
-            expected_minutes = expected_energy / power * 60.0
-            if abs(float(action.occupancy_minutes) - expected_minutes) > _TOL:
-                raise ValueError(f"{EXECUTION_CLOCK_CONTRACT_ID}: route {trip.route_id} charge duration does not close")
+            curve_state = charging_curve_for_action(action, instance, prices)
+            if curve_state is None:
+                expected_minutes = (
+                    expected_energy
+                    / float(certificate.depot_charge_power_kw)
+                    * 60.0
+                )
+                if abs(float(action.occupancy_minutes) - expected_minutes) > _TOL:
+                    raise ValueError(
+                        f"{EXECUTION_CLOCK_CONTRACT_ID}: route "
+                        f"{trip.route_id} charge duration does not close"
+                    )
+            else:
+                _, action_start_energy, action_end_energy = curve_state
+                if (
+                    abs(
+                        action_start_energy
+                        - expected_action_start_energy
+                    )
+                    > _TOL
+                    or abs(
+                        action_end_energy
+                        - (
+                            expected_action_start_energy
+                            + expected_energy
+                        )
+                    )
+                    > _TOL
+                ):
+                    raise ValueError(
+                        f"{EXECUTION_CLOCK_CONTRACT_ID}: route "
+                        f"{trip.route_id} charge energy states do not bind "
+                        "to the certificate"
+                    )
             if int(action.charge_day_offset) != expected_day_offset:
                 raise ValueError(f"{EXECUTION_CLOCK_CONTRACT_ID}: route {trip.route_id} charge day is inconsistent")
             absolute_start = float(action.charge_start_second) + expected_day_offset * _DAY_SECONDS

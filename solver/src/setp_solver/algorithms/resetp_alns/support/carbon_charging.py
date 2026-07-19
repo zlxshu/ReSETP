@@ -20,11 +20,14 @@ from typing import Iterable
 
 from setp_solver.cost import (
     CARBON_SLOT_SECONDS,
+    best_charging_action_start,
     carbon_profile_row_for_slot,
+    charging_action_emissions_kg,
     charging_slot_breakdown,
 )
 from setp_solver.instance_loader import Instance
 from setp_solver.prices import PriceParameters
+from setp_solver.solution import ChargingAction
 
 
 @dataclass(frozen=True)
@@ -43,14 +46,44 @@ class ChargeOption:
     energy_kwh: float
     power_kw: float
     detour_m: float = 0.0
+    occupancy_seconds_override: float | None = None
+    start_energy_kwh: float | None = None
+    end_energy_kwh: float | None = None
+    charging_curve_id: str | None = None
 
     @property
     def occupancy_seconds(self) -> float:
+        if self.occupancy_seconds_override is not None:
+            if self.occupancy_seconds_override < 0.0:
+                raise ValueError("charging duration must be non-negative")
+            return float(self.occupancy_seconds_override)
         if self.power_kw <= 0.0:
             raise ValueError("charge power must be positive")
         if self.energy_kwh < 0.0:
             raise ValueError("charge energy must be non-negative")
         return float(self.energy_kwh) / float(self.power_kw) * 3600.0
+
+    def action_at(self, start_second: float) -> ChargingAction:
+        return ChargingAction(
+            vehicle_id="CHARGE_OPTION",
+            station_id=self.station_id,
+            energy_kwh=float(self.energy_kwh),
+            occupancy_minutes=self.occupancy_seconds / 60.0,
+            charge_start_second=float(start_second),
+            start_energy_kwh=self.start_energy_kwh,
+            end_energy_kwh=self.end_energy_kwh,
+            charging_curve_id=self.charging_curve_id,
+        )
+
+    @property
+    def has_curve_metadata(self) -> bool:
+        values = (
+            self.occupancy_seconds_override,
+            self.start_energy_kwh,
+            self.end_energy_kwh,
+            self.charging_curve_id,
+        )
+        return all(value is not None for value in values)
 
 
 @dataclass(frozen=True)
@@ -191,7 +224,31 @@ def score_charge_option(
 ) -> ScoredChargeOption:
     """Score station and timing with the same monetary units as the model."""
 
-    if float(carbon_weight) <= 1e-12:
+    if option.has_curve_metadata:
+        template = option.action_at(option.earliest_start_second)
+        start = (
+            float(option.earliest_start_second)
+            if float(carbon_weight) <= 1e-12
+            else best_charging_action_start(
+                template,
+                earliest_start_second=option.earliest_start_second,
+                latest_start_second=option.latest_start_second,
+                instance=instance,
+                carbon_profile=carbon_profile,
+                prices=prices,
+            )
+        )
+        timing = ChargeTimingChoice(
+            start_second=start,
+            carbon_kg=charging_action_emissions_kg(
+                option.action_at(start),
+                instance,
+                carbon_profile,
+                prices,
+            ),
+            candidates_evaluated=-1,
+        )
+    elif float(carbon_weight) <= 1e-12:
         start = float(option.earliest_start_second)
         timing = ChargeTimingChoice(
             start_second=start,

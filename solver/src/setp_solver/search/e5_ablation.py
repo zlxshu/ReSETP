@@ -14,12 +14,23 @@ from pathlib import Path
 from typing import Any
 
 from ..check import check_solution
-from ..cost import _arc_loads, carbon_slot_index, charging_slot_breakdown, evaluate, ev_arc_energy_kwh, route_node_schedule
+from ..cost import (
+    _arc_loads,
+    carbon_slot_index,
+    charging_action_slot_breakdown,
+    evaluate,
+    ev_arc_energy_kwh,
+    route_node_schedule,
+)
 from ..instance_loader import Instance, Node
 from ..prices import DEFAULT_PRICES, PriceParameters
-from ..solution import ChargingAction, Route, Solution
+from ..solution import Route, Solution, charging_action_from_dict
 from .bundle import load_search_bundle
-from .charging import repair_route_charging, replay_fixed_route_charging
+from .charging import (
+    _curve_aware_action,
+    repair_route_charging,
+    replay_fixed_route_charging,
+)
 
 
 COST_DELTA_KEYS = (
@@ -143,13 +154,23 @@ def _scenario_payload(
         "mean_intensity_gco2_per_kwh": 0.0 if total_kwh <= 1e-12 else charge_carbon * 1000.0 / total_kwh,
         "depot_charging_kwh": float(metrics["depot_charging_kwh"]),
         "station_charging_kwh": float(metrics["station_charging_kwh"]),
-        "slot_y_skt": _slot_split_rows(solution, instance, carbon_profile),
+        "slot_y_skt": _slot_split_rows(
+            solution,
+            instance,
+            carbon_profile,
+            prices,
+        ),
         "charging_actions": [action.__dict__ for action in solution.charging_actions],
         "cost_metrics": metrics,
     }
 
 
-def _slot_split_rows(solution: Solution, instance: Instance, carbon_profile: list[dict[str, Any]]) -> list[dict[str, float]]:
+def _slot_split_rows(
+    solution: Solution,
+    instance: Instance,
+    carbon_profile: list[dict[str, Any]],
+    prices: PriceParameters | dict[str, Any] | Any,
+) -> list[dict[str, float]]:
     node_lookup = {node.node_id: node for node in instance.nodes}
     rows = [
         {
@@ -167,11 +188,10 @@ def _slot_split_rows(solution: Solution, instance: Instance, carbon_profile: lis
         node = node_lookup.get(action.station_id)
         node_type = node.node_type.lower() if node is not None else ""
         bucket = "depot_kwh" if node_type == "d" else "station_kwh" if node_type == "f" else "other_kwh"
-        for slot in charging_slot_breakdown(
-            action.charge_start_second,
-            action.occupancy_minutes * 60.0,
-            action.energy_kwh,
+        for slot in charging_action_slot_breakdown(
+            action,
             instance,
+            prices,
             n_slots=len(carbon_profile),
             cyclic=True,
         ):
@@ -378,7 +398,6 @@ def _station_insertion_row(
     prices: PriceParameters | dict[str, float] | Any,
 ) -> dict[str, Any]:
     battery_cap = _price(prices, "B_battery_kwh")
-    speed = _price(prices, "v_speed_ms")
     to_station_m = instance.distance(current, station.node_id)
     station_to_target_m = instance.distance(station.node_id, target)
     direct_m = instance.distance(current, target)
@@ -404,7 +423,17 @@ def _station_insertion_row(
     time_window_feasible = False
     if can_reach and covers_first_infeasible_arc and station.charge_power_kw and station.charge_power_kw > 0:
         energy_needed = max(0.0, energy_to_cover_failure - float(battery_at_station))
-        duration_sec = energy_needed / float(station.charge_power_kw) * 3600.0
+        duration_sec = (
+            _curve_aware_action(
+                vehicle_id=route.vehicle_id,
+                station_id=station.node_id,
+                start_energy_kwh=float(battery_at_station),
+                energy_kwh=energy_needed,
+                reference_power_kw=float(station.charge_power_kw),
+                prices=prices,
+            ).occupancy_minutes
+            * 60.0
+        )
         tw_break_node, late_by = _first_time_window_break_after_insert(
             route,
             arc_index,
@@ -531,13 +560,7 @@ def _solution_from_report(source_report: dict[str, Any], *, include_actions: boo
     actions = []
     if include_actions:
         actions = [
-            ChargingAction(
-                vehicle_id=str(row["vehicle_id"]),
-                station_id=str(row["station_id"]),
-                energy_kwh=float(row["energy_kwh"]),
-                occupancy_minutes=float(row["occupancy_minutes"]),
-                charge_start_second=float(row["charge_start_second"]),
-            )
+            charging_action_from_dict(row)
             for row in scenario["charging_actions"]
         ]
     return Solution(routes=routes, charging_actions=actions)

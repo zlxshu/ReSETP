@@ -9,18 +9,21 @@ from typing import Any
 import numpy as np
 
 from setp_solver.check import check_solution
-from setp_solver.cost import carbon_profile_row_for_slot, charging_slot_breakdown, evaluate
+from setp_solver.cost import (
+    carbon_profile_row_for_slot,
+    charging_action_emissions_kg,
+    charging_action_slot_breakdown,
+    evaluate,
+)
 from setp_solver.solution import Route, Solution
 from setp_solver.search.evaluation import BIG_M
 from setp_solver.algorithms.resetp_alns.operators.feasible_repair import enumerate_feasible_insertions
-from setp_solver.algorithms.resetp_alns.support.carbon_charging import integrated_charge_carbon_kg
 from setp_solver.algorithms.resetp_alns.support.charging import repair_route_charging
 
 
 def low_carbon_charging_share(solution: Solution, instance: Any, carbon_profile: list[dict[str, Any]], prices: Any) -> float:
     """Return charged energy share that lands in the lowest quartile gamma slots."""
 
-    del prices
     if not carbon_profile or not solution.charging_actions:
         return 0.0
     sorted_gamma = sorted(_gamma(row) for row in carbon_profile)
@@ -29,15 +32,13 @@ def low_carbon_charging_share(solution: Solution, instance: Any, carbon_profile:
     low_energy = 0.0
     total_energy = 0.0
     for action in solution.charging_actions:
-        duration = float(action.occupancy_minutes) * 60.0
         energy = float(action.energy_kwh)
-        if duration <= 1e-9 or energy <= 1e-9:
+        if float(action.occupancy_minutes) <= 1e-9 or energy <= 1e-9:
             continue
-        for slot in charging_slot_breakdown(
-            float(action.charge_start_second),
-            duration,
-            energy,
+        for slot in charging_action_slot_breakdown(
+            action,
             instance,
+            prices,
             n_slots=len(carbon_profile),
             cyclic=True,
         ):
@@ -351,12 +352,11 @@ def _solution_carbon_kg(solution: Solution, context: Any) -> float:
 
 def _action_carbon_kg(action: Any, context: Any) -> float:
     try:
-        return integrated_charge_carbon_kg(
-            float(action.charge_start_second),
-            float(action.occupancy_minutes) * 60.0,
-            float(action.energy_kwh),
+        return charging_action_emissions_kg(
+            action,
             context.instance,
             context.carbon_profile,
+            context.prices,
         )
     except Exception:
         return 0.0

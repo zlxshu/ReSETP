@@ -170,6 +170,9 @@ def build_concatenated_independent_seed(
                     occupancy_minutes=action.occupancy_minutes,
                     charge_start_second=action.charge_start_second,
                     charge_day_offset=action.charge_day_offset,
+                    start_energy_kwh=action.start_energy_kwh,
+                    end_energy_kwh=action.end_energy_kwh,
+                    charging_curve_id=action.charging_curve_id,
                 )
             )
     seed = Solution(routes=routes, charging_actions=actions, cross_site_services=[])

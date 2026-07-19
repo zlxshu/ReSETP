@@ -6,7 +6,8 @@ from typing import Any
 
 from .cost import (
     _arc_loads,
-    charging_slot_breakdown,
+    charging_action_slot_breakdown,
+    charging_curve_for_action,
     ev_arc_energy_kwh,
     route_next_day_departure_second,
     route_node_schedule,
@@ -105,7 +106,15 @@ def check_solution(
     violations.extend(_check_dynamic_context(solution, dynamic_context))
     violations.extend(_check_customer_service(solution, node_lookup))
     violations.extend(_check_vehicle_count(solution, instance))
-    violations.extend(_check_station_capacity(solution, node_lookup, instance, dynamic_context))
+    violations.extend(
+        _check_station_capacity(
+            solution,
+            node_lookup,
+            instance,
+            prices,
+            dynamic_context,
+        )
+    )
 
     for route in solution.routes:
         if not _route_nodes_valid(route, node_lookup):
@@ -302,6 +311,7 @@ def _check_station_capacity(
     solution: Solution,
     node_lookup: dict[str, Node],
     instance: Instance,
+    prices: PriceParameters | dict[str, Any] | Any,
     dynamic_context: DynamicCheckContext | None = None,
 ) -> list[Violation]:
     """Check paper C_s capacity by station/depot and half-hour slot.
@@ -314,6 +324,7 @@ def _check_station_capacity(
 
     customer_count = sum(1 for node in node_lookup.values() if node.node_type.lower() == "c")
     occupied: dict[tuple[str, int, int], set[str]] = defaultdict(set)
+    violations: list[Violation] = []
     actions = [*solution.charging_actions]
     if dynamic_context is not None:
         actions.extend(dynamic_context.reserved_charging_actions)
@@ -321,17 +332,27 @@ def _check_station_capacity(
         node = node_lookup.get(action.station_id)
         if node is None or node.node_type.lower() not in {"d", "f"}:
             continue
-        for slot in charging_slot_breakdown(
-            float(action.charge_start_second),
-            float(action.occupancy_minutes) * 60.0,
-            float(action.energy_kwh),
-            instance,
-            n_slots=48,
-            cyclic=True,
-        ):
+        try:
+            slots = charging_action_slot_breakdown(
+                action,
+                instance,
+                prices,
+                n_slots=48,
+                cyclic=True,
+            )
+        except ValueError as exc:
+            violations.append(
+                Violation(
+                    STATION_CAPACITY,
+                    action.vehicle_id,
+                    action.station_id,
+                    f"cannot place invalid charging action into slots: {exc}",
+                )
+            )
+            continue
+        for slot in slots:
             occupied[(action.station_id, int(action.charge_day_offset), slot.slot_index)].add(action.vehicle_id)
 
-    violations: list[Violation] = []
     for (station_id, day_offset, slot_index), vehicle_ids in sorted(occupied.items()):
         station = node_lookup[station_id]
         capacity = _station_chargers(station, customer_count)
@@ -587,7 +608,9 @@ def _check_charging_start_and_power(
                 )
             )
 
-        # v2026-06-11: CHARGING_POWER uses the uniform-rate B-full specialization, so one action yields one violation.
+        # NL2 validates the exact curve duration and energy states. Historical
+        # L100 records without appended metadata retain the sealed average-rate
+        # check below.
         energy_kwh = float(action.energy_kwh)
         if station_power_kw is None:
             violations.append(
@@ -609,6 +632,32 @@ def _check_charging_start_and_power(
                         f"positive energy {energy_kwh:.6f} kWh with zero occupancy",
                     )
             )
+            continue
+        try:
+            curve_state = charging_curve_for_action(action, instance, prices)
+        except ValueError as exc:
+            violations.append(
+                Violation(
+                    CHARGING_POWER,
+                    route.vehicle_id,
+                    action.station_id,
+                    str(exc),
+                )
+            )
+            continue
+        if curve_state is not None:
+            curve, _, _ = curve_state
+            maximum_power = max(curve.segment_powers_kw)
+            if maximum_power > float(station_power_kw) + FEASIBILITY_TOL:
+                violations.append(
+                    Violation(
+                        CHARGING_POWER,
+                        route.vehicle_id,
+                        action.station_id,
+                        f"curve power={maximum_power:.6f} kW exceeds "
+                        f"{power_symbol}={float(station_power_kw):.6f} kW",
+                    )
+                )
             continue
         rate_kw = energy_kwh / (occupancy_sec / 3600.0)
         if rate_kw > float(station_power_kw) + FEASIBILITY_TOL:

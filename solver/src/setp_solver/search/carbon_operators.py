@@ -9,7 +9,11 @@ from typing import Any
 import numpy as np
 
 from ..check import check_solution
-from ..cost import carbon_profile_row_for_slot, charging_slot_breakdown, evaluate
+from ..cost import (
+    carbon_profile_row_for_slot,
+    charging_action_slot_breakdown,
+    evaluate,
+)
 from ..solution import Route, Solution
 from .evaluation import BIG_M
 from .feasible_repair import enumerate_feasible_insertions
@@ -18,7 +22,6 @@ from .feasible_repair import enumerate_feasible_insertions
 def low_carbon_charging_share(solution: Solution, instance: Any, carbon_profile: list[dict[str, Any]], prices: Any) -> float:
     """Return charged energy share that lands in the lowest quartile gamma slots."""
 
-    del prices
     if not carbon_profile or not solution.charging_actions:
         return 0.0
     sorted_gamma = sorted(_gamma(row) for row in carbon_profile)
@@ -27,15 +30,13 @@ def low_carbon_charging_share(solution: Solution, instance: Any, carbon_profile:
     low_energy = 0.0
     total_energy = 0.0
     for action in solution.charging_actions:
-        duration = float(action.occupancy_minutes) * 60.0
         energy = float(action.energy_kwh)
-        if duration <= 1e-9 or energy <= 1e-9:
+        if float(action.occupancy_minutes) <= 1e-9 or energy <= 1e-9:
             continue
-        for slot in charging_slot_breakdown(
-            float(action.charge_start_second),
-            duration,
-            energy,
+        for slot in charging_action_slot_breakdown(
+            action,
             instance,
+            prices,
             n_slots=len(carbon_profile),
             cyclic=True,
         ):

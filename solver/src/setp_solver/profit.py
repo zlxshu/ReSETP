@@ -17,11 +17,11 @@ from .cost import (
     _evaluate_route,
     _price,
     carbon_profile_row_for_slot,
-    charging_slot_breakdown,
+    charging_action_slot_breakdown,
 )
 from .instance_loader import Instance, Node
 from .prices import DEFAULT_PRICES, PriceParameters
-from .solution import Route, Solution
+from .solution import ChargingAction, Route, Solution
 
 
 @dataclass(frozen=True)
@@ -127,7 +127,12 @@ def calculate_depot_profits(
             row["cost_electricity"] += float(action.energy_kwh) * _price(prices, "station_electricity_price")
             row["cost_occupancy"] += float(action.occupancy_minutes) * _price(prices, "occupancy_fee")
             row["station_charging_kwh"] += float(action.energy_kwh)
-        row["ev_indirect_emissions_kg"] += _charging_action_emissions(action, instance, carbon_profile)
+        row["ev_indirect_emissions_kg"] += _charging_action_emissions(
+            action,
+            instance,
+            carbon_profile,
+            prices,
+        )
 
     total_emissions = sum(row["cv_direct_emissions_kg"] + row["ev_indirect_emissions_kg"] for row in data.values())
     # v2026-06-12: W2a keeps depot-profit allocation numerically consistent
@@ -214,16 +219,16 @@ def _route_customer_ids(route: Route, node_lookup: dict[str, Node]) -> list[str]
 
 
 def _charging_action_emissions(
-    action: Any,
+    action: ChargingAction,
     instance: Instance,
     carbon_profile: list[dict[str, Any]],
+    prices: PriceParameters | dict[str, Any] | Any,
 ) -> float:
     emissions = 0.0
-    for slot in charging_slot_breakdown(
-        float(action.charge_start_second),
-        float(action.occupancy_minutes) * 60.0,
-        float(action.energy_kwh),
+    for slot in charging_action_slot_breakdown(
+        action,
         instance,
+        prices,
         n_slots=len(carbon_profile),
         cyclic=True,
     ):

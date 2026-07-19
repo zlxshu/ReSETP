@@ -2,12 +2,14 @@
 
 日期：2026-07-20
 
-状态：`NL1_PASS__NL2_COST_CHECK_AND_CHARGING_TIMING_AUTHORIZED`
+状态：`NL2_PASS__NL3_DYNAMIC_AND_CHINA_PROFILE_ADAPTER_AUTHORIZED`
 
-> 2026-07-20 执行更新：NL0 与 NL1 已依次通过。NL1 权威证据为
-> `baselines/model_verification/china81_nonlinear_schedule_nl1_20260720/`；
-> 新动作冻结起止电量与曲线身份，多趟排班按唯一非线性内核计算可达电量和持续时间，
-> 84 项相关回归全绿。正式搜索仍关闭；下一步只放行 NL2。
+> 2026-07-20 执行更新：NL0、NL1 与 NL2 已依次通过。NL2 权威证据为
+> `baselines/model_verification/china81_nonlinear_cost_check_nl2_20260720/`；
+> 静态充电构造、分时碳排、成本、利润、碳择时和独立检查器已共用同一非线性动作合同。
+> 缩短持续时间或缺少起止电量的非线性动作在成本端与检查端同时失败关闭，L100
+> 历史结果保持一致。正式搜索仍关闭；下一步只放行 NL3 的动态继承与 China81
+> 三套道路 profile 接线。
 
 ## 1. 授权与目标
 

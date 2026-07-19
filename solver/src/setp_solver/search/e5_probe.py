@@ -16,7 +16,7 @@ from ..cost import (
     CARBON_N_SLOTS,
     CARBON_SLOT_SECONDS,
     carbon_slot_index,
-    charging_slot_breakdown,
+    charging_action_slot_breakdown,
     evaluate,
     route_next_day_departure_second,
     route_node_schedule,
@@ -133,7 +133,12 @@ def run_e5_probe(
     )
 
 
-def slot_charge_table(solution: Solution, instance: Any, carbon_profile: list[dict[str, Any]]) -> list[SlotChargeRow]:
+def slot_charge_table(
+    solution: Solution,
+    instance: Any,
+    carbon_profile: list[dict[str, Any]],
+    prices: PriceParameters | dict[str, Any] | Any = DEFAULT_PRICES,
+) -> list[SlotChargeRow]:
     """Aggregate solution charging energy into the carbon-profile slots."""
 
     # v2026-06-12: Q1/Q3 24h bundles expose 48 rows; legacy fixtures still expose 18.
@@ -141,11 +146,10 @@ def slot_charge_table(solution: Solution, instance: Any, carbon_profile: list[di
     energy = [0.0] * n_slots
     gamma = [float(row["actual_gco2_per_kwh"]) for row in carbon_profile[:n_slots]]
     for action in solution.charging_actions:
-        for slot in charging_slot_breakdown(
-            action.charge_start_second,
-            action.occupancy_minutes * 60.0,
-            action.energy_kwh,
+        for slot in charging_action_slot_breakdown(
+            action,
             instance,
+            prices,
             n_slots=n_slots,
             cyclic=True,
         ):
@@ -159,10 +163,16 @@ def _scenario(
     solution: Solution,
     instance: Any,
     carbon_profile: list[dict[str, Any]],
+    prices: PriceParameters | dict[str, Any] | Any = DEFAULT_PRICES,
 ) -> E5ScenarioResult:
-    rows = slot_charge_table(solution, instance, carbon_profile)
+    rows = slot_charge_table(solution, instance, carbon_profile, prices)
     total_energy = sum(row.energy_kwh for row in rows)
-    charge_carbon = evaluate(solution, instance, carbon_profile)["E_ev_indirect"]
+    charge_carbon = evaluate(
+        solution,
+        instance,
+        carbon_profile,
+        prices,
+    )["E_ev_indirect"]
     mean_intensity = 0.0 if total_energy <= 1e-12 else charge_carbon * 1000.0 / total_energy
     ev_route_count = sum(1 for route in solution.routes if route.vehicle_type.lower() == "ev")
     return E5ScenarioResult(
@@ -172,7 +182,12 @@ def _scenario(
         total_energy,
         charge_carbon,
         mean_intensity,
-        charging_timing_diagnostics(solution, instance, carbon_profile),
+        charging_timing_diagnostics(
+            solution,
+            instance,
+            carbon_profile,
+            prices,
+        ),
         ev_route_count,
         len(solution.charging_actions),
     )

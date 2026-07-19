@@ -13,8 +13,11 @@ from dataclasses import replace
 import math
 from typing import Any
 
+from ..charging_curve import ChargingCurveError, curve_from_parameters
 from ..cost import (
     CARBON_SLOT_SECONDS,
+    best_charging_action_start,
+    charging_action_emissions_kg,
     ev_arc_energy_kwh,
     route_next_day_departure_second,
     route_return_arrival_without_charging,
@@ -22,6 +25,44 @@ from ..cost import (
 from ..instance_loader import Instance, Node
 from ..prices import DEFAULT_PRICES, PriceParameters
 from ..solution import ChargingAction, Route, Solution
+
+
+def _curve_aware_action(
+    *,
+    vehicle_id: str,
+    station_id: str,
+    start_energy_kwh: float,
+    energy_kwh: float,
+    reference_power_kw: float,
+    prices: PriceParameters | dict[str, Any] | Any,
+) -> ChargingAction:
+    """Build one action whose duration and energy ledger share one curve."""
+
+    try:
+        curve = curve_from_parameters(
+            prices,
+            capacity_kwh=_price(prices, "B_battery_kwh"),
+            reference_power_kw=float(reference_power_kw),
+        )
+    except ChargingCurveError as exc:
+        raise ValueError(f"invalid charging curve: {exc}") from exc
+    start = float(start_energy_kwh)
+    end = start + float(energy_kwh)
+    if start < -1e-7 or end > curve.capacity_kwh + 1e-7:
+        raise ValueError("charging action exceeds battery energy bounds")
+    start = min(curve.capacity_kwh, max(0.0, start))
+    end = min(curve.capacity_kwh, max(start, end))
+    duration = curve.duration_seconds(start, end)
+    return ChargingAction(
+        vehicle_id=vehicle_id,
+        station_id=station_id,
+        energy_kwh=end - start,
+        occupancy_minutes=duration / 60.0,
+        charge_start_second=0.0,
+        start_energy_kwh=start,
+        end_energy_kwh=end,
+        charging_curve_id=curve.curve_id,
+    )
 
 
 def solve_charging(
@@ -82,7 +123,15 @@ def solve_charging_fixed_route(
             energy_needed = max(0.0, segment_need - battery)
             if energy_needed > 1e-9:
                 power_kw = _charge_power_kw(node, prices)
-                occupancy_sec = energy_needed / power_kw * 3600.0
+                action = _curve_aware_action(
+                    vehicle_id=route.vehicle_id,
+                    station_id=node_id,
+                    start_energy_kwh=battery,
+                    energy_kwh=energy_needed,
+                    reference_power_kw=power_kw,
+                    prices=prices,
+                )
+                occupancy_sec = float(action.occupancy_minutes) * 60.0
                 earliest, latest = _fixed_charge_window(
                     idx,
                     route,
@@ -95,16 +144,25 @@ def solve_charging_fixed_route(
                 )
                 if latest + 1e-9 < earliest:
                     raise ValueError(f"No feasible fixed-route charging window for {route.vehicle_id} at {node_id}")
-                charge_start = _select_charge_start(earliest, latest, gamma_profile, strategy, node_type=node_type)
-                actions.append(
-                    ChargingAction(
-                        vehicle_id=route.vehicle_id,
-                        station_id=node_id,
-                        energy_kwh=energy_needed,
-                        occupancy_minutes=occupancy_sec / 60.0,
-                        charge_start_second=charge_start,
+                charge_start = (
+                    best_charging_action_start(
+                        action,
+                        earliest_start_second=earliest,
+                        latest_start_second=latest,
+                        instance=instance,
+                        carbon_profile=gamma_profile,
+                        prices=prices,
+                    )
+                    if strategy == "aware"
+                    else _select_charge_start(
+                        earliest,
+                        latest,
+                        gamma_profile,
+                        strategy,
+                        node_type=node_type,
                     )
                 )
+                actions.append(replace(action, charge_start_second=charge_start))
                 battery += energy_needed
                 if node_type != "d":
                     time_s = max(time_s, charge_start + occupancy_sec)
@@ -407,7 +465,15 @@ def _depot_precharge_action(
     power_kw = _price(prices, "depot_charge_power_kw")
     if power_kw <= 1e-9:
         raise ValueError("Depot charge power pi_d must be positive")
-    occupancy_sec = energy_needed / power_kw * 3600.0
+    action = _curve_aware_action(
+        vehicle_id=route.vehicle_id,
+        station_id=depot_id,
+        start_energy_kwh=initial_battery,
+        energy_kwh=energy_needed,
+        reference_power_kw=power_kw,
+        prices=prices,
+    )
+    occupancy_sec = float(action.occupancy_minutes) * 60.0
     # v2026-06-12: S0 depot charging belongs to the previous-return to
     # next-departure overnight window.
     period = float(len(gamma_profile)) * CARBON_SLOT_SECONDS
@@ -416,14 +482,15 @@ def _depot_precharge_action(
     latest = route_next_day_departure_second(synthetic_route, instance, prices, period_seconds=period) - occupancy_sec
     if latest + 1e-9 < earliest:
         raise ValueError(f"No feasible depot charging window for {route.vehicle_id} at {depot_id}")
-    charge_start, _ = _lowest_gamma_slot_start(earliest, latest, gamma_profile)
-    return ChargingAction(
-        vehicle_id=route.vehicle_id,
-        station_id=depot_id,
-        energy_kwh=energy_needed,
-        occupancy_minutes=occupancy_sec / 60.0,
-        charge_start_second=charge_start,
+    charge_start = best_charging_action_start(
+        action,
+        earliest_start_second=earliest,
+        latest_start_second=latest,
+        instance=instance,
+        carbon_profile=gamma_profile,
+        prices=prices,
     )
+    return replace(action, charge_start_second=charge_start)
 
 
 def _direct_route_energy_need(
@@ -542,7 +609,15 @@ def _best_station_insert(
             continue
         if station.charge_power_kw is None:
             continue
-        occupancy_sec = energy_needed / float(station.charge_power_kw) * 3600.0
+        action = _curve_aware_action(
+            vehicle_id=vehicle_id,
+            station_id=station.node_id,
+            start_energy_kwh=battery_at_station,
+            energy_kwh=energy_needed,
+            reference_power_kw=float(station.charge_power_kw),
+            prices=prices,
+        )
+        occupancy_sec = float(action.occupancy_minutes) * 60.0
         arrive = depart_current + to_station / _price(prices, "v_speed_ms")
         earliest = max(arrive, float(station.ready_time))
         target_node = node_lookup[target]
@@ -552,17 +627,32 @@ def _best_station_insert(
         )
         if latest + 1e-9 < earliest:
             continue
-        charge_start, gamma = _lowest_gamma_slot_start(earliest, latest, gamma_profile)
+        charge_start = best_charging_action_start(
+            action,
+            earliest_start_second=earliest,
+            latest_start_second=latest,
+            instance=instance,
+            carbon_profile=gamma_profile,
+            prices=prices,
+        )
         depart = charge_start + occupancy_sec
-        action = ChargingAction(
-            vehicle_id=vehicle_id,
-            station_id=station.node_id,
-            energy_kwh=energy_needed,
-            occupancy_minutes=occupancy_sec / 60.0,
-            charge_start_second=charge_start,
+        action = replace(action, charge_start_second=charge_start)
+        carbon_kg = charging_action_emissions_kg(
+            action,
+            instance,
+            gamma_profile,
+            prices,
         )
         detour = to_station + instance.distance(station.node_id, target) - instance.distance(current, target)
-        key = (gamma, detour, station.node_id, action, arrive, depart, battery_at_station + energy_needed)
+        key = (
+            carbon_kg,
+            detour,
+            station.node_id,
+            action,
+            arrive,
+            depart,
+            battery_at_station + energy_needed,
+        )
         if best is None or (key[0], key[1], key[2]) < (best[0], best[1], best[2]):
             best = key
     if best is None:

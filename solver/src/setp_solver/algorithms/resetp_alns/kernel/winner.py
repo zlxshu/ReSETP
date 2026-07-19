@@ -38,7 +38,6 @@ from setp_solver.algorithms.resetp_alns.kernel.alns_core import (
     regret3_insert_repair,
     route_elimination_removal,
     route_segment_removal,
-    run_alns_wouda,
     shaw_related_removal,
     vehicle_type_swap_destroy,
     whole_route_removal,
@@ -1312,6 +1311,7 @@ def _reschedule_staged_result(
             bundle.instance,
             bundle.carbon_profile,
             strategy=charging_strategy,
+            prices=prices,
         )
         rescheduled, _ = prepare_solution(rescheduled, context)
         violations = [*e3_hard_violations(rescheduled, context), *cross_depot_violations(rescheduled, context)]

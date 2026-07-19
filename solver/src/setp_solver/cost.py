@@ -10,20 +10,27 @@ the paper's time-window lower bound and service-time symbols, while ``v`` is
 example carbon-slot lookup at a charging station or hard TIME_WINDOW checks.
 
 v2026-06-11: Added B-full charging-slot construction for paper_main.tex
-lines 428-457. A ChargingAction still carries only start time, total energy,
-and occupancy; ``charging_slot_breakdown`` constructs the implied multi-period
-``g_skt`` and ``y_skt`` values with a uniform charging rate for shared cost and
-check semantics.
+lines 428-457. Historical actions without curve metadata retain the sealed
+uniform-rate interpretation under the explicit L100 control. Current actions
+carry start/end energy and a curve id; ``charging_action_slot_breakdown``
+integrates their true piecewise power over the same multi-period grid.
 """
 
 from __future__ import annotations
 
 from bisect import bisect_right
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from datetime import datetime, timezone
 import math
 from typing import Any
 
+from .charging_curve import (
+    ChargingCurveError,
+    L100_CONTROL,
+    PiecewiseChargingCurve,
+    spec_from_parameters,
+    slot_energy_kwh,
+)
 from .instance_loader import Instance, Node
 from .prices import DEFAULT_PRICES, PriceParameters
 from .solution import ChargingAction, Route, Solution, physical_vehicle_id
@@ -120,7 +127,6 @@ def evaluate(
     n_veh_cv = len({physical_vehicle_id(route.vehicle_id) for route in solution.routes if route.vehicle_type.lower() == "cv"})
     n_veh_ev = len({physical_vehicle_id(route.vehicle_id) for route in solution.routes if route.vehicle_type.lower() == "ev"})
     electricity_kwh = sum(float(action.energy_kwh) for action in solution.charging_actions)
-    occupancy_minutes = sum(float(action.occupancy_minutes) for action in solution.charging_actions)
 
     cost_fix = len(solution.routes) * _price(prices, "vehicle_fixed_cost")
     cost_km = (distance_total / 1000.0) * _price(prices, "c_km")
@@ -131,7 +137,12 @@ def evaluate(
     cost_transship = len(solution.cross_site_services) * _price(prices, "cross_site_cost")
 
     e_cv_direct = fuel_liters * _price(prices, "diesel_ef")
-    e_ev_indirect = _ev_indirect_emissions(solution, instance, carbon_profile)
+    e_ev_indirect = _ev_indirect_emissions(
+        solution,
+        instance,
+        carbon_profile,
+        prices,
+    )
     e_total = e_cv_direct + e_ev_indirect
     # v2026-06-12: Z0a keeps the buy/sell carbon-trading term for finite CE,
     # and treats CE=inf as the no-quota baseline with a zero carbon-cost term.
@@ -336,6 +347,251 @@ def charging_slot_breakdown(
     return rows
 
 
+def charging_curve_for_action(
+    action: ChargingAction,
+    instance: Instance,
+    prices: PriceParameters | dict[str, Any] | Any = DEFAULT_PRICES,
+) -> tuple[PiecewiseChargingCurve, float, float] | None:
+    """Validate and return the physical curve state for one charging action.
+
+    Historical L100 actions may omit the three appended metadata fields. A
+    nonlinear action may not: silently reconstructing it as uniform charging
+    would change both feasibility and time-slot carbon accounting.
+    """
+
+    metadata = (
+        action.start_energy_kwh,
+        action.end_energy_kwh,
+        action.charging_curve_id,
+    )
+    try:
+        spec = spec_from_parameters(prices)
+    except ChargingCurveError as exc:
+        raise ValueError(f"invalid charging curve parameters: {exc}") from exc
+    if all(value is None for value in metadata):
+        if spec.curve_id != L100_CONTROL.curve_id:
+            raise ValueError(
+                "nonlinear charging action is missing start/end energy "
+                "and curve id"
+            )
+        return None
+    if any(value is None for value in metadata):
+        raise ValueError("charging action has incomplete curve metadata")
+    nodes = {node.node_id: node for node in instance.nodes}
+    station = nodes.get(action.station_id)
+    if station is None or station.node_type.lower() not in {"d", "f"}:
+        raise ValueError(
+            f"charging action uses unknown or non-charging node "
+            f"{action.station_id!r}"
+        )
+    if station.node_type.lower() == "d":
+        reference_power_kw = _price(prices, "depot_charge_power_kw")
+    else:
+        if station.charge_power_kw is None:
+            raise ValueError(
+                f"charging station {station.node_id!r} has no charge power"
+            )
+        reference_power_kw = float(station.charge_power_kw)
+    curve = spec.scale(
+        capacity_kwh=_price(prices, "B_battery_kwh"),
+        reference_power_kw=reference_power_kw,
+    )
+    if action.charging_curve_id != curve.curve_id:
+        raise ValueError(
+            f"charging action curve {action.charging_curve_id!r} disagrees "
+            f"with prices curve {curve.curve_id!r}"
+        )
+
+    start_energy = float(action.start_energy_kwh)
+    end_energy = float(action.end_energy_kwh)
+    tolerance = 1e-7
+    if (
+        not math.isfinite(start_energy)
+        or not math.isfinite(end_energy)
+        or start_energy < -tolerance
+        or end_energy > curve.capacity_kwh + tolerance
+        or end_energy < start_energy - tolerance
+    ):
+        raise ValueError("charging action energy states violate battery bounds")
+    start_energy = min(curve.capacity_kwh, max(0.0, start_energy))
+    end_energy = min(curve.capacity_kwh, max(start_energy, end_energy))
+    recorded_energy = float(action.energy_kwh)
+    if abs((end_energy - start_energy) - recorded_energy) > tolerance:
+        raise ValueError(
+            "charging action energy disagrees with start/end energy states"
+        )
+    expected_duration = (
+        0.0
+        if end_energy - start_energy <= tolerance
+        else curve.duration_seconds(start_energy, end_energy)
+    )
+    recorded_duration = float(action.occupancy_minutes) * 60.0
+    if abs(expected_duration - recorded_duration) > tolerance:
+        raise ValueError(
+            "charging action occupancy disagrees with the charging curve"
+        )
+    return curve, start_energy, end_energy
+
+
+def charging_action_slot_breakdown(
+    action: ChargingAction,
+    instance: Instance,
+    prices: PriceParameters | dict[str, Any] | Any = DEFAULT_PRICES,
+    *,
+    n_slots: int | None = None,
+    cyclic: bool = False,
+) -> list[ChargingSlot]:
+    """Split one action using its exact curve, with L100 legacy compatibility."""
+
+    curve_state = charging_curve_for_action(action, instance, prices)
+    if curve_state is None:
+        return charging_slot_breakdown(
+            float(action.charge_start_second),
+            float(action.occupancy_minutes) * 60.0,
+            float(action.energy_kwh),
+            instance,
+            n_slots=n_slots,
+            cyclic=cyclic,
+        )
+    curve, start_energy, end_energy = curve_state
+    duration = float(action.occupancy_minutes) * 60.0
+    if duration <= 1e-12:
+        return []
+    start = float(action.charge_start_second)
+    if not math.isfinite(start) or start < 0.0:
+        raise ValueError(
+            "charge_start_second is before the first carbon profile slot"
+        )
+    end = start + duration
+    first_absolute_slot = math.floor(start / CARBON_SLOT_SECONDS)
+    final_boundary_slot = math.ceil(end / CARBON_SLOT_SECONDS)
+    if final_boundary_slot <= first_absolute_slot:
+        final_boundary_slot = first_absolute_slot + 1
+    boundaries = tuple(
+        float(slot) * CARBON_SLOT_SECONDS
+        for slot in range(first_absolute_slot, final_boundary_slot + 1)
+    )
+    energies = slot_energy_kwh(
+        curve,
+        start_energy_kwh=start_energy,
+        end_energy_kwh=end_energy,
+        charging_start_seconds=start,
+        slot_boundaries_seconds=boundaries,
+    )
+    slot_count = CARBON_N_SLOTS if n_slots is None else int(n_slots)
+    if slot_count <= 0:
+        raise ValueError("charging slot count must be positive")
+    rows: list[ChargingSlot] = []
+    for offset, energy in enumerate(energies):
+        absolute_slot = first_absolute_slot + offset
+        left = boundaries[offset]
+        right = boundaries[offset + 1]
+        overlap = max(0.0, min(end, right) - max(start, left))
+        if overlap <= 1e-12:
+            continue
+        if cyclic:
+            slot_index = absolute_slot % slot_count
+        else:
+            if not 0 <= absolute_slot < slot_count:
+                raise ValueError(
+                    "non-cyclic charging action exceeds the carbon horizon"
+                )
+            slot_index = absolute_slot
+        rows.append(ChargingSlot(slot_index, overlap, float(energy)))
+    if abs(sum(row.y_skt_kwh for row in rows) - float(action.energy_kwh)) > 1e-7:
+        raise ValueError("charging action slot energy does not close")
+    return rows
+
+
+def best_charging_action_start(
+    action: ChargingAction,
+    *,
+    earliest_start_second: float,
+    latest_start_second: float,
+    instance: Instance,
+    carbon_profile: list[dict[str, Any]],
+    prices: PriceParameters | dict[str, Any] | Any = DEFAULT_PRICES,
+    intensity_field: str = "actual_gco2_per_kwh",
+) -> float:
+    """Choose the exact minimum-carbon start for one fixed charging action."""
+
+    earliest = float(earliest_start_second)
+    latest = float(latest_start_second)
+    if latest < earliest - 1e-9:
+        raise ValueError("latest charging start precedes earliest start")
+    if not carbon_profile or latest <= earliest + 1e-9:
+        return earliest
+    curve_state = charging_curve_for_action(action, instance, prices)
+    duration = float(action.occupancy_minutes) * 60.0
+    phase_boundaries = {0.0, duration}
+    if curve_state is not None:
+        curve, start_energy, end_energy = curve_state
+        for phase in curve.phases(start_energy, end_energy):
+            phase_boundaries.add(float(phase.relative_start_seconds))
+            phase_boundaries.add(float(phase.relative_end_seconds))
+    candidates = {earliest, latest}
+    first_grid = math.floor(earliest / CARBON_SLOT_SECONDS) - 1
+    final_grid = math.ceil((latest + duration) / CARBON_SLOT_SECONDS) + 1
+    for index in range(first_grid, final_grid + 1):
+        boundary = float(index) * CARBON_SLOT_SECONDS
+        for phase_boundary in phase_boundaries:
+            candidate = boundary - phase_boundary
+            if earliest - 1e-9 <= candidate <= latest + 1e-9:
+                candidates.add(min(latest, max(earliest, candidate)))
+
+    def weighted_carbon(start: float) -> float:
+        total = 0.0
+        shifted = replace(action, charge_start_second=float(start))
+        for slot in charging_action_slot_breakdown(
+            shifted,
+            instance,
+            prices,
+            n_slots=len(carbon_profile),
+            cyclic=True,
+        ):
+            row = carbon_profile_row_for_slot(
+                carbon_profile,
+                slot.slot_index,
+            )
+            if intensity_field not in row:
+                raise ValueError(
+                    f"carbon profile is missing timing field "
+                    f"{intensity_field!r}"
+                )
+            total += float(slot.y_skt_kwh) * float(row[intensity_field])
+        return total
+
+    return min(
+        candidates,
+        key=lambda start: (weighted_carbon(float(start)), float(start)),
+    )
+
+
+def charging_action_emissions_kg(
+    action: ChargingAction,
+    instance: Instance,
+    carbon_profile: list[dict[str, Any]],
+    prices: PriceParameters | dict[str, Any] | Any = DEFAULT_PRICES,
+) -> float:
+    """Return exact indirect emissions for one validated charging action."""
+
+    total = 0.0
+    for slot in charging_action_slot_breakdown(
+        action,
+        instance,
+        prices,
+        n_slots=len(carbon_profile),
+        cyclic=True,
+    ):
+        row = carbon_profile_row_for_slot(carbon_profile, slot.slot_index)
+        total += (
+            float(slot.y_skt_kwh)
+            * float(row["actual_gco2_per_kwh"])
+            / GCO2_PER_KGCO2
+        )
+    return total
+
+
 def route_departure_second(
     route: Route,
     instance: Instance,
@@ -484,21 +740,16 @@ def _ev_indirect_emissions(
     solution: Solution,
     instance: Instance,
     carbon_profile: list[dict[str, Any]],
+    prices: PriceParameters | dict[str, Any] | Any,
 ) -> float:
     total = 0.0
     for action in solution.charging_actions:
-        # v2026-06-11: B-full carbon is sum_t gamma_t * y_skt from the shared slot split.
-        for slot in charging_slot_breakdown(
-            float(action.charge_start_second),
-            float(action.occupancy_minutes) * 60.0,
-            float(action.energy_kwh),
+        total += charging_action_emissions_kg(
+            action,
             instance,
-            n_slots=len(carbon_profile),
-            cyclic=True,
-        ):
-            row = carbon_profile_row_for_slot(carbon_profile, slot.slot_index)
-            # v2026-06-11: NESO gamma is gCO2/kWh and y_skt is kWh, so divide by 1000 to report kgCO2e.
-            total += slot.y_skt_kwh * float(row["actual_gco2_per_kwh"]) / GCO2_PER_KGCO2
+            carbon_profile,
+            prices,
+        )
     return total
 
 
