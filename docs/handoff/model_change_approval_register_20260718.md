@@ -1,5 +1,19 @@
 # 建模、单位与参数变更审批登记
 
+## MDA-ILS-VNS-P1-001：强母体有限参数竞速
+
+状态：`APPROVED_AUTONOMOUS_EXECUTION__PREREGISTERED_BEFORE_CODE`
+（2026-07-20）。
+
+用户明确授权代理在有依据时调整参数，以算法变强和后续实验方便为根本；同时要求避免
+执念、无用功和无边界枚举。本项据此批准一次有限、结果前冻结的逐轮参数竞速：16 个
+LatinHypercube 分层配置先在 A 组 seed5 短筛，前四用新 seed6 复赛，唯一候选才进入
+此前未打开的 PR16A/PR20A/PR24A 两种子确认。
+
+完整空间、16 个配置、排序、三段预算和二值门冻结于
+`docs/handoff/mda_ils_vns_parameter_race_contract_20260720.md`。确认失败后必须停止
+公开题调参并转 China81；不得在确认题救参数、换题、扩网格或打开完整 28 题。
+
 ## MDA-ILS-VNS-S2-001：后期分阶段路线精修
 
 状态：`STOP_LATE_STAGE_VNS_KEEP_FOUNDATION`
