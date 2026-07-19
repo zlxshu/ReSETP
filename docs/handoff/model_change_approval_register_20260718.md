@@ -1,5 +1,19 @@
 # 建模、单位与参数变更审批登记
 
+## MPD-ILS-VNS-D1-001：多阶段双节奏整机
+
+状态：`APPROVED_AUTONOMOUS_EXECUTION__PREREGISTERED_BEFORE_CODE`
+（2026-07-20）。
+
+用户授权以性能和后续实验便利为根本，自主决定算法母体、组合、结构与参数，并偏好有
+机制化分工的陈雨蝶式混合结构。本项依据参数竞速未见块的直接互补证据，批准一次固定
+双节奏整机门：基础快速搜索、冻结宽搜索，以及70/30和20/60/20两个分阶段组合。
+
+全部比例、同墙钟计费、A组选择和未见B组双单体门冻结于
+`docs/handoff/mpd_ils_vns_dual_regime_contract_20260720.md`。五个ReSETP机制只允许
+常驻问询和预留正式接口；公开题缺少语义时自然不适用，不得伪造机制收益。失败后停止
+公开架构开发并转China81，不得在B组救比例或打开完整28题。
+
 ## MDA-ILS-VNS-P1-001：强母体有限参数竞速
 
 状态：`EXECUTED__STOP_PARAMETER_RACE_KEEP_FOUNDATION`
