@@ -92,6 +92,7 @@ OUTPUT_FILES = (
     "archive_candidates.json",
     "solution_witnesses.json",
     "report.md",
+    "appledouble_seal.json",
 )
 PROTECTED_FILES = (
     "solver/src/setp_solver/cost.py",
@@ -382,6 +383,32 @@ def main() -> int:
                     "strength instance was run."
                 ),
             },
+            {
+                "attempt": 4,
+                "status": "INVALID_UNCOMMITTED_BEHAVIOUR_ATTEMPT",
+                "reason": (
+                    "The recorded component values were independently "
+                    "correct, but the gate did not yet require the fleet-"
+                    "charge and carbon mechanisms to produce their own "
+                    "strictly negative deltas, and it did not explicitly "
+                    "compare the responsibility decoder result with its "
+                    "independent replay. The scene was retained under an "
+                    "explicit invalid directory; no strength instance was "
+                    "run."
+                ),
+            },
+            {
+                "attempt": 5,
+                "status": "HASH_CONTAMINATED_APPLEDOUBLE",
+                "reason": (
+                    "The hardened gate correctly rejected AppleDouble "
+                    "sidecars created while writing evidence on the external "
+                    "volume. The raw scene was retained under an explicit "
+                    "invalid directory. A deterministic post-write clean, "
+                    "cleanliness check, and rehash seal was added before this "
+                    "rerun; no strength instance was run."
+                ),
+            },
         ],
         "formal_search_allowed": False,
         "stage2_activated": False,
@@ -401,24 +428,56 @@ def main() -> int:
     _write_json(output_dir / "metadata.json", metadata)
     _atomic_text(output_dir / "report.md", _report(decision, rows))
     output_appledouble = _appledouble_paths((output_dir,))
-    if output_appledouble:
-        failures.extend(
-            f"HASH_CONTAMINATED_APPLEDOUBLE:{path}"
-            for path in output_appledouble
+    first_cleanup = _clean_appledouble_output(output_dir)
+    after_first_cleanup = _appledouble_paths((output_dir,))
+    appledouble_seal = {
+        "schema_version": "resetp.appledouble-seal.v1",
+        "transient_status": (
+            "HASH_CONTAMINATED_APPLEDOUBLE"
+            if output_appledouble
+            else "NO_APPLEDOUBLE_DETECTED"
+        ),
+        "detected_paths": output_appledouble,
+        "cleanup_command": ["dot_clean", "-m", str(output_dir)],
+        "cleanup_returncode": first_cleanup["returncode"],
+        "cleanup_stdout": first_cleanup["stdout"],
+        "cleanup_stderr": first_cleanup["stderr"],
+        "remaining_after_first_cleanup": after_first_cleanup,
+        "raw_data_rewritten": False,
+        "final_status": "PENDING_FINAL_CLEAN_CHECK",
+    }
+    _write_json(output_dir / "appledouble_seal.json", appledouble_seal)
+    second_cleanup = _clean_appledouble_output(output_dir)
+    remaining_before_hash = _appledouble_paths((output_dir,))
+    if (
+        int(first_cleanup["returncode"]) != 0
+        or int(second_cleanup["returncode"]) != 0
+        or after_first_cleanup
+        or remaining_before_hash
+    ):
+        raise RuntimeError(
+            "HASH_CONTAMINATED_APPLEDOUBLE cleanup failed: "
+            + json.dumps(
+                {
+                    "first_cleanup": first_cleanup,
+                    "second_cleanup": second_cleanup,
+                    "after_first_cleanup": after_first_cleanup,
+                    "remaining_before_hash": remaining_before_hash,
+                },
+                ensure_ascii=False,
+                sort_keys=True,
+            )
         )
-        decision.update(
-            {
-                "verdict": "HASH_CONTAMINATED_APPLEDOUBLE",
-                "passed": False,
-                "failure_count": len(failures),
-                "failures": failures,
-                "old_three_instance_gate_allowed": False,
-            }
+    appledouble_seal["final_status"] = "CLEANED_AND_READY_TO_REHASH"
+    _write_json(output_dir / "appledouble_seal.json", appledouble_seal)
+    final_seal_cleanup = _clean_appledouble_output(output_dir)
+    if (
+        int(final_seal_cleanup["returncode"]) != 0
+        or _appledouble_paths((output_dir,))
+    ):
+        raise RuntimeError(
+            "HASH_CONTAMINATED_APPLEDOUBLE final seal cleanup failed"
         )
-        metadata["appledouble_contamination"] = output_appledouble
-        _write_json(output_dir / "decision.json", decision)
-        _write_json(output_dir / "metadata.json", metadata)
-        _atomic_text(output_dir / "report.md", _report(decision, rows))
     _write_json(
         output_dir / "artifact_hashes.json",
         {
@@ -426,6 +485,13 @@ def main() -> int:
             for name in OUTPUT_FILES
         },
     )
+    final_hash_cleanup = _clean_appledouble_output(output_dir)
+    final_appledouble = _appledouble_paths((output_dir,))
+    if int(final_hash_cleanup["returncode"]) != 0 or final_appledouble:
+        raise RuntimeError(
+            "HASH_CONTAMINATED_APPLEDOUBLE after artifact hash write: "
+            + ", ".join(final_appledouble)
+        )
     print(json.dumps(decision, ensure_ascii=False, indent=2))
     return 0 if not failures else 1
 
@@ -1727,6 +1793,26 @@ def _appledouble_paths(paths: tuple[Path, ...]) -> list[str]:
         except ValueError:
             rows.append(str(path))
     return rows
+
+
+def _clean_appledouble_output(output_dir: Path) -> dict[str, Any]:
+    completed = subprocess.run(
+        ["dot_clean", "-m", str(output_dir)],
+        cwd=REPO,
+        text=True,
+        capture_output=True,
+        check=False,
+    )
+    directory_companion = (
+        output_dir.parent / f"._{output_dir.name}"
+    )
+    if directory_companion.exists():
+        directory_companion.unlink()
+    return {
+        "returncode": int(completed.returncode),
+        "stdout": completed.stdout.strip(),
+        "stderr": completed.stderr.strip(),
+    }
 
 
 def _add_witness(
