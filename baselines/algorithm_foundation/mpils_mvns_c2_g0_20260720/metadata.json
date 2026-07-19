@@ -1,0 +1,45 @@
+{
+  "contract": "MPILS-MVNS-C2-R1",
+  "counts": {
+    "behaviour_probe_calls": 1,
+    "china81_calls": 0,
+    "equivalence_solver_calls": 9,
+    "overhead_solver_calls": 15,
+    "performance_search_calls": 0
+  },
+  "finished_at_utc": "2026-07-19T16:22:36.078896+00:00",
+  "host": {
+    "platform": "macOS-15.7.5-arm64-arm-64bit-Mach-O",
+    "python": "3.13.9",
+    "pyvrp": "0.13.4"
+  },
+  "input": {
+    "equivalence_iterations": [
+      5,
+      1000,
+      5000
+    ],
+    "instance": "baselines/algorithm_foundation/mdvrptw_v13_comparison_20260719/sources/normalised_instances/PR11A.vrp",
+    "instance_sha256": "1281263d625380305918ef37f72f7f6a309ad001c487333ba4ed27848334cbfa",
+    "overhead_iterations": 5000,
+    "overhead_repeats": 5,
+    "seed": 1
+  },
+  "purpose": "mother equivalence, overhead attribution, replacement behaviour, semantic and license G0",
+  "source_hashes": {
+    "LICENSE-PYVRP.md": "a8410e4be05ee141c21a81a9e4a69ed249fac110d379136f525d74a10d44c9ec",
+    "UPSTREAM.md": "a6fdfec62f1ad1037b76074946f6fdd295c42ebcb877ee890c412234a26f5ec0",
+    "c2_core.py": "78308a199b1cb9ff0a96ba74086ddc49ba476f821d16964f2f006a15672c3a9f",
+    "event_driven_ils.py": "8ade27abb8f00f19b4a249df1b34b06abb07590e5f7c19085eb1939656f47c5c",
+    "run_behavior_probe.py": "7dd3c57685bcac84441a00669424cdeb5cb5dedf62f265cc9ceb423bc86833d1",
+    "run_g0_gate.py": "1ec4a42a9e0390d30b601c2873992445841637d09aefe70dbb8c198359a34a1f",
+    "run_g0_worker.py": "5b70131a3791a7f1a3e878108eadef9e07572621621ac0f1bdea560c71cd5b18"
+  },
+  "started_at_utc": "2026-07-19T16:21:11.526518+00:00",
+  "thread_limits": {
+    "MKL_NUM_THREADS": "1",
+    "OMP_NUM_THREADS": "1",
+    "OPENBLAS_NUM_THREADS": "1",
+    "VECLIB_MAXIMUM_THREADS": "1"
+  }
+}

@@ -1,0 +1,66 @@
+{
+  "behaviour": {
+    "checks": {
+      "all_mechanisms_resident": true,
+      "distance_not_primary_veto": true,
+      "full_evaluation_cap_respected": true,
+      "input_complete_feasible": true,
+      "missing_mechanisms_naturally_inapplicable": true,
+      "no_mechanism_disable_constructor_switch": true,
+      "one_replacement_success": true,
+      "one_zero_perturbation_refinement": true,
+      "ordinary_native_call_replaced": true,
+      "output_complete_feasible": true,
+      "per_source_position_cap_declared": true,
+      "public_semantics_only": true,
+      "route_evaluation_cap_respected": true,
+      "solution_changed": true,
+      "source_cap_respected": true,
+      "wrong_depot_segment_reassigned": true
+    },
+    "pass": true
+  },
+  "china81_authorized": false,
+  "equivalence": {
+    "all_independent_validations_pass": true,
+    "iterations": {
+      "1000": true,
+      "5": true,
+      "5000": true
+    },
+    "pass": true
+  },
+  "full_28_authorized": false,
+  "honest_boundary": "G0 proves wiring, sparse-overhead, replacement behaviour, public semantics, and provenance only; it does not prove algorithm quality.",
+  "overhead": {
+    "all_deterministic_paths_equal": true,
+    "idle_hook_limit": 1.02,
+    "iterations_per_run": 5000,
+    "median_seconds": {
+      "clone_hooks": 4.17064779199427,
+      "clone_native": 4.157231958000921,
+      "official": 4.1370773750240915
+    },
+    "pass": true,
+    "ratios_to_official": {
+      "clone_hooks": 1.0081145248026653,
+      "clone_native": 1.004871695921982
+    },
+    "repeats": 5
+  },
+  "performance_claim_allowed": false,
+  "performance_gate_authorized": false,
+  "provenance": {
+    "checks": {
+      "installed_upstream_hash_matches_register": true,
+      "mit_license_preserved_exactly": false,
+      "modified_copy_notice_present": true,
+      "upstream_manifest_present": true
+    },
+    "local_license_sha256": "a8410e4be05ee141c21a81a9e4a69ed249fac110d379136f525d74a10d44c9ec",
+    "pass": false,
+    "upstream_ils_sha256": "f5c2979b2ea3d54a427fd4187c4dc6070fb9ee47886ccf3a0422dda7d83ddfcb"
+  },
+  "stage2_authorized": false,
+  "verdict": "FAIL_MPILS_MVNS_C2_G0_FOUNDATION"
+}

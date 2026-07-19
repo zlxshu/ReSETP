@@ -1,0 +1,168 @@
+{
+  "all_checks_pass": true,
+  "checks": {
+    "all_mechanisms_resident": true,
+    "distance_not_primary_veto": true,
+    "full_evaluation_cap_respected": true,
+    "input_complete_feasible": true,
+    "missing_mechanisms_naturally_inapplicable": true,
+    "no_mechanism_disable_constructor_switch": true,
+    "one_replacement_success": true,
+    "one_zero_perturbation_refinement": true,
+    "ordinary_native_call_replaced": true,
+    "output_complete_feasible": true,
+    "per_source_position_cap_declared": true,
+    "public_semantics_only": true,
+    "route_evaluation_cap_respected": true,
+    "solution_changed": true,
+    "source_cap_respected": true,
+    "wrong_depot_segment_reassigned": true
+  },
+  "controller": {
+    "accepted_replacements": 1,
+    "ails_ii_boundary": "feedback-control idea cited; exact rule is ReSETP design",
+    "allow_replacement": true,
+    "bank_seconds": 4.2083964217454195e-05,
+    "best_replacements": 1,
+    "cooldown": 128,
+    "edge_distances": [
+      0.8888888888888888
+    ],
+    "elite_bank": {
+      "best_objective": 252,
+      "limit": 8,
+      "policy": "ONE_BANK_THREE_LAZY_VIEWS",
+      "reasons": {
+        "ACCEPTED_REPLACEMENT": 1,
+        "GLOBAL_BEST": 1
+      },
+      "remember_calls": 2,
+      "size": 1,
+      "unique_insertions": 1,
+      "view_sizes": {
+        "depot": 1,
+        "edge": 1,
+        "quality": 1
+      }
+    },
+    "final_strength": 1,
+    "hook_seconds": 6.033398676663637e-05,
+    "mechanisms": {
+      "consultations": {
+        "carbon_tariff_timing": 2,
+        "dynamic_replanning": 2,
+        "fleet_charge": 2,
+        "multidepot_responsibility": 2,
+        "profit_fairness": 2
+      },
+      "context_source": "ORIGINAL_V13_SCHEMA_NO_SYNTHETIC_MECHANISMS",
+      "mechanism_order": [
+        "multidepot_responsibility",
+        "fleet_charge",
+        "carbon_tariff_timing",
+        "profit_fairness",
+        "dynamic_replanning"
+      ],
+      "policy": "ALWAYS_RESIDENT_EVENT_DRIVEN_SEMANTIC_DISPATCH",
+      "status_counts": {
+        "carbon_tariff_timing": {
+          "APPLICABLE_ACTION_AVAILABLE": 0,
+          "APPLICABLE_NO_ACTION": 0,
+          "NOT_APPLICABLE_MISSING_INSTANCE_SEMANTICS": 2
+        },
+        "dynamic_replanning": {
+          "APPLICABLE_ACTION_AVAILABLE": 0,
+          "APPLICABLE_NO_ACTION": 0,
+          "NOT_APPLICABLE_MISSING_INSTANCE_SEMANTICS": 2
+        },
+        "fleet_charge": {
+          "APPLICABLE_ACTION_AVAILABLE": 0,
+          "APPLICABLE_NO_ACTION": 0,
+          "NOT_APPLICABLE_MISSING_INSTANCE_SEMANTICS": 2
+        },
+        "multidepot_responsibility": {
+          "APPLICABLE_ACTION_AVAILABLE": 1,
+          "APPLICABLE_NO_ACTION": 1,
+          "NOT_APPLICABLE_MISSING_INSTANCE_SEMANTICS": 0
+        },
+        "profit_fairness": {
+          "APPLICABLE_ACTION_AVAILABLE": 0,
+          "APPLICABLE_NO_ACTION": 0,
+          "NOT_APPLICABLE_MISSING_INSTANCE_SEMANTICS": 2
+        }
+      }
+    },
+    "policy": "EVENT_DRIVEN_FEEDBACK_STRENGTH_PROJECT_RULE",
+    "replacement_events": 1,
+    "target_edge_distance": [
+      0.15,
+      0.35
+    ],
+    "trigger_after": 0,
+    "triggers": 1
+  },
+  "input_assignments": {
+    "2": 0,
+    "3": 1,
+    "4": 0,
+    "5": 0
+  },
+  "input_distance": 2045,
+  "output_assignments": {
+    "2": 0,
+    "3": 1,
+    "4": 1,
+    "5": 1
+  },
+  "output_distance": 252,
+  "routes": [
+    {
+      "distance": 100,
+      "duration": 100,
+      "end_depot": 0,
+      "feasible": true,
+      "start_depot": 0,
+      "vehicle_type": 0,
+      "visits": [
+        2
+      ]
+    },
+    {
+      "distance": 152,
+      "duration": 152,
+      "end_depot": 1,
+      "feasible": true,
+      "start_depot": 1,
+      "vehicle_type": 1,
+      "visits": [
+        4,
+        3,
+        5
+      ]
+    }
+  ],
+  "schema": "resetp.mpils-mvns-c2-behaviour.v1",
+  "search": {
+    "fallback_native_calls": 0,
+    "native_calls": 0,
+    "operator": {
+      "calls": 1,
+      "feasible_candidates": 8,
+      "full_evaluations": 8,
+      "max_full_evaluations_per_trigger": 12,
+      "max_positions_per_source": 6,
+      "max_route_evaluations_per_trigger": 48,
+      "max_source_segments_per_trigger": 64,
+      "positions_shortlisted": 8,
+      "proxy_policy": "DEPOT_ACCESS_RELIEF_PRIMARY_DISTANCE_DELTA_SECONDARY",
+      "public_semantics": "DEPOT_DISTANCE_LOAD_VEHICLE_TIME_WINDOW_ONLY",
+      "route_evaluations": 8,
+      "segment_moves_applied": 1,
+      "source_segments_considered": 2
+    },
+    "policy": "REPLACE_ONE_NATIVE_PERTURBATION_NOT_APPEND",
+    "replacement_attempts": 1,
+    "replacement_successes": 1,
+    "zero_search_calls": 1
+  }
+}
