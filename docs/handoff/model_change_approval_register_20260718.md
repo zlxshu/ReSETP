@@ -1,5 +1,20 @@
 # 建模、单位与参数变更审批登记
 
+## MDA-ILS-VNS-A1-001：自适应扰动与接受控制
+
+状态：`USER_AUTHORIZED_AUTONOMOUS_EXECUTION__PREREGISTERED_BEFORE_CODE`
+（2026-07-20）。
+
+授权来自用户2026-07-20的自主推进指示：算法母体、组合、结构和参数由代理按证据决定，
+参数可调整，优先最低成本验证，成功再扩，失败及时换路；最终仍以算法强、故事清楚、
+公开与China81两类算例表现好且便利后续E1--E7为目标。本单只覆盖
+`docs/handoff/mda_ils_vns_adaptive_contract_20260720.md`中的隔离实现、A组有限选择
+和未见确认小门，不覆盖完整28题、China81、阶段二或论文优胜结论。
+
+方法只借AILS-II公开论文和MIT代码快照中的实际距离反馈、自适应扰动强度与逐步收紧
+接受思想；本项目自行实现，不复制其Java代码。若A组没有自适应配置胜已通过的强母体，
+立即保留强母体并STOP；若未见确认门失败，也不得第二发救援。
+
 ## MDA-ILS-VNS-F0-001：强母体基础与选择性路线 VNS
 
 状态：`PASS_MDA_ILS_VNS_FOUNDATION_VALIDATED_GAIN`
