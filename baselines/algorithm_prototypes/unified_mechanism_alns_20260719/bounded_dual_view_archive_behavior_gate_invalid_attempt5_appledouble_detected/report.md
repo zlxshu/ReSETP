@@ -1,0 +1,33 @@
+# 有界双视图档案行为门
+
+判定：`HASH_CONTAMINATED_APPLEDOUBLE`
+
+本门只检查路线搜索不受档案影响、预算与复算闭合、档案容量、普通终局保底和三个现有机制夹具。它不证明算法更强。
+
+| 模式 | B | 开启 | 完整候选 | 原始成本 | 最终成本 | 预筛数 | 终局数 |
+|---|---:|---:|---:|---:|---:|---:|---:|
+| archive | 0 | False | 0 | 659.071798516 | 659.071798516 | 0 | 0 |
+| archive | 0 | True | 0 | 659.071798516 | 659.071798516 | 0 | 0 |
+| capture | 0 | False | 0 | 659.071798516 | 659.071798516 | 0 | 0 |
+| capture | 0 | True | 0 | 659.071798516 | 659.071798516 | 0 | 0 |
+| archive | 1 | False | 1 | 657.808039196 | 635.004731075 | 0 | 1 |
+| archive | 1 | True | 1 | 657.808039196 | 635.004731075 | 1 | 2 |
+| capture | 1 | False | 1 | 657.808039196 | 657.808039196 | 0 | 0 |
+| capture | 1 | True | 1 | 657.808039196 | 657.808039196 | 0 | 0 |
+| archive | 2 | False | 2 | 648.618603935 | 625.793415126 | 0 | 1 |
+| archive | 2 | True | 2 | 648.618603935 | 625.793415126 | 2 | 3 |
+| capture | 2 | False | 2 | 648.618603935 | 648.618603935 | 0 | 0 |
+| capture | 2 | True | 2 | 648.618603935 | 648.618603935 | 0 | 0 |
+| archive | 5 | False | 5 | 626.724038247 | 580.762310938 | 0 | 1 |
+| archive | 5 | True | 5 | 626.724038247 | 580.762310938 | 5 | 3 |
+| capture | 5 | False | 5 | 626.724038247 | 626.724038247 | 0 | 0 |
+| capture | 5 | True | 5 | 626.724038247 | 626.724038247 | 0 | 0 |
+
+失败项：
+- `HASH_CONTAMINATED_APPLEDOUBLE:baselines/algorithm_prototypes/unified_mechanism_alns_20260719/._bounded_dual_view_archive_behavior_gate`
+- `HASH_CONTAMINATED_APPLEDOUBLE:baselines/algorithm_prototypes/unified_mechanism_alns_20260719/bounded_dual_view_archive_behavior_gate/._archive_candidates.json`
+- `HASH_CONTAMINATED_APPLEDOUBLE:baselines/algorithm_prototypes/unified_mechanism_alns_20260719/bounded_dual_view_archive_behavior_gate/._decision.json`
+- `HASH_CONTAMINATED_APPLEDOUBLE:baselines/algorithm_prototypes/unified_mechanism_alns_20260719/bounded_dual_view_archive_behavior_gate/._metadata.json`
+- `HASH_CONTAMINATED_APPLEDOUBLE:baselines/algorithm_prototypes/unified_mechanism_alns_20260719/bounded_dual_view_archive_behavior_gate/._raw_runs.csv`
+- `HASH_CONTAMINATED_APPLEDOUBLE:baselines/algorithm_prototypes/unified_mechanism_alns_20260719/bounded_dual_view_archive_behavior_gate/._report.md`
+- `HASH_CONTAMINATED_APPLEDOUBLE:baselines/algorithm_prototypes/unified_mechanism_alns_20260719/bounded_dual_view_archive_behavior_gate/._solution_witnesses.json`
