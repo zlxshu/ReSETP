@@ -2,6 +2,7 @@
 
 E7正式结果终验
 
+- [MPILS-MVNS 第一候选收口（2026-07-19）](mpils_mvns_candidate1_closeout_20260719.md) — 陈雨蝶式工作名、机制常驻、同轨接线、多车场动作和独立验解均通过；三道已暴露开发题对PyVRP ILS母体为1胜0平2负，按逐题零负门判`STOP_ANY_LOSS_OR_INTEGRITY`。完整算法少跑17.1%--22.3%母体迭代，当前候选冻结，不开确认题、28题、China81或阶段二。
 - [ReMIX V13六题开发门收口（2026-07-19）](remix_v13_six_instance_development_closeout_20260719.md) — 陈雨蝶式公开/China81比较基础、同路径与行为接线均闭合，但首个HGS供料+缩短ILS+五轮外置增强+MILP会审候选对六题较强核心为0胜0平6负，新BKS为0。全部18解独立有效、墙钟合规、34件哈希闭合；权威判`STOP_CURRENT_REMIX_V13_CANDIDATE_ALL_LOSS`，停下复盘，不进确认块、28题、China81或阶段二。
 - [算法比较基础 v3：V13-MDVRPTW-28 + China81（2026-07-19）](algorithm_comparison_foundation_v3_20260719.md) — 先选经典强手、当前开源强手和最新相近混合体，再由其共同题反推公开主场。现行主场为28道大型多车场带时间窗题；28/28原题语义、当前BKS双检查和论文值抽取通过，当前可验BKS 28/28优于2026论文值。同路径母体/增强关闭/零预算三臂逐位一致。China81仍是唯一完整模型赛场；当前只完成基础，未跑性能。
 

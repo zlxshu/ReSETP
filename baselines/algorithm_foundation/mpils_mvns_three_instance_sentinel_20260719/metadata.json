@@ -1,0 +1,56 @@
+{
+  "contract": "EA-MPILS-MVNS-001",
+  "counts": {
+    "behaviour_test_functions": 5,
+    "china81_calls": 0,
+    "confirmation_instance_calls": 0,
+    "independent_validation_calls": 6,
+    "solver_arms": 6
+  },
+  "finished_at_utc": "2026-07-19T15:21:38.993152+00:00",
+  "host": {
+    "platform": "macOS-15.7.5-arm64-arm-64bit-Mach-O",
+    "pyvrp": "0.13.4",
+    "runner_python": "3.13.9",
+    "solver_python": "build/python_envs/pyvrp-0.13.4/bin/python"
+  },
+  "input": {
+    "arms": [
+      "mother",
+      "mpils_mvns"
+    ],
+    "end_to_end_limit_seconds": 10.0,
+    "instance_hashes": {
+      "PR11A": "1281263d625380305918ef37f72f7f6a309ad001c487333ba4ed27848334cbfa",
+      "PR17A": "3ce0c8d46f28378c7389e72c891975987899db0b546095d7343130c96807d156",
+      "PR21A": "39706474f564e75511b3ceef6e090885f78dec9e978f27796f12a7816805221f"
+    },
+    "instances": [
+      "PR11A",
+      "PR17A",
+      "PR21A"
+    ],
+    "internal_runtime_seconds": 8.5,
+    "seed": 1,
+    "target_table": "baselines/algorithm_foundation/mdvrptw_v13_comparison_20260719/opponent_targets.csv",
+    "target_table_sha256": "997dabc4ef4ea72375e7741dc18e4d3d5267e721d2a187cc6bc2931b247b6f2c"
+  },
+  "protected_hashes_after": {
+    "solver/src/setp_solver/check.py": "53f5cc27d3ac72bdd2bbec113eb8af11ad18a82490502f800941140495e8e142",
+    "solver/src/setp_solver/cost.py": "d8bfee1844c8f8e89bac1233a3cd862d7ac7d088039f97751b8274756c41dee4",
+    "solver/src/setp_solver/search/evaluation.py": "c7215263c39d1d5a1429b41ca8ac40d950dbdf2bdc288337e56fbe9733406fc3"
+  },
+  "protected_hashes_before": {
+    "solver/src/setp_solver/check.py": "53f5cc27d3ac72bdd2bbec113eb8af11ad18a82490502f800941140495e8e142",
+    "solver/src/setp_solver/cost.py": "d8bfee1844c8f8e89bac1233a3cd862d7ac7d088039f97751b8274756c41dee4",
+    "solver/src/setp_solver/search/evaluation.py": "c7215263c39d1d5a1429b41ca8ac40d950dbdf2bdc288337e56fbe9733406fc3"
+  },
+  "started_at_utc": "2026-07-19T15:20:46.566112+00:00",
+  "thread_limits": {
+    "MKL_NUM_THREADS": "1",
+    "OMP_NUM_THREADS": "1",
+    "OPENBLAS_NUM_THREADS": "1",
+    "VECLIB_MAXIMUM_THREADS": "1"
+  },
+  "working_name": "MPILS-MVNS"
+}
