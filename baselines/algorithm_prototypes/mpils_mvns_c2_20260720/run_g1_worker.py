@@ -137,8 +137,8 @@ def main() -> int:
         controller = C2EventController(
             MechanismContext.from_public_v13(data),
             allow_replacement=True,
-            trigger_after=128,
-            cooldown=128,
+            trigger_after=1666,
+            cooldown=1666,
             target_edge_distance=(0.15, 0.35),
             elite_limit=8,
         )
