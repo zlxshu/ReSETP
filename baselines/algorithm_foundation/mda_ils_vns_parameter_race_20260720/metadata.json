@@ -1,0 +1,174 @@
+{
+  "behaviour_checks": {
+    "all_equal": true,
+    "checks": [
+      {
+        "all_equal": true,
+        "field_equality": {
+          "cost": true,
+          "deterministic_search_diagnostics": true,
+          "distance": true,
+          "duration": true,
+          "iterations_completed": true,
+          "rng_state": true,
+          "routes": true
+        },
+        "iterations": 5
+      },
+      {
+        "all_equal": true,
+        "field_equality": {
+          "cost": true,
+          "deterministic_search_diagnostics": true,
+          "distance": true,
+          "duration": true,
+          "iterations_completed": true,
+          "rng_state": true,
+          "routes": true
+        },
+        "iterations": 100
+      },
+      {
+        "all_equal": true,
+        "field_equality": {
+          "cost": true,
+          "deterministic_search_diagnostics": true,
+          "distance": true,
+          "duration": true,
+          "iterations_completed": true,
+          "rng_state": true,
+          "routes": true
+        },
+        "iterations": 1000
+      }
+    ]
+  },
+  "configuration_names": [
+    "foundation",
+    "race_01",
+    "race_02",
+    "race_03",
+    "race_04",
+    "race_05",
+    "race_06",
+    "race_07",
+    "race_08",
+    "race_09",
+    "race_10",
+    "race_11",
+    "race_12",
+    "race_13",
+    "race_14",
+    "race_15",
+    "race_16"
+  ],
+  "confirmation": {
+    "instances": [
+      "PR16A",
+      "PR20A",
+      "PR24A"
+    ],
+    "runtime_seconds": 60.0,
+    "seeds": [
+      1,
+      2
+    ]
+  },
+  "contract": "MDA-ILS-VNS-P1-001",
+  "contract_path": "docs/handoff/mda_ils_vns_parameter_race_contract_20260720.md",
+  "contract_sha256": "a8e76c71d0e4b657dd09c51ef839822a3d57340d9ca3d07d2ad82c34ab09405d",
+  "finished_at_utc": "2026-07-19T19:49:16.647674+00:00",
+  "git_head": "f2a8b18f74cbada7cf383a4e7e3451f2512b1dac",
+  "host": "macOS-15.7.5-arm64-arm-64bit-Mach-O",
+  "protected_hashes_after": {
+    "docs/paper_submission_final/paper_main.tex": "6936bcf31d37c65c5f1100416a5406443c506c060c5b8823df696ac311d0f735",
+    "solver/src/setp_solver/check.py": "53f5cc27d3ac72bdd2bbec113eb8af11ad18a82490502f800941140495e8e142",
+    "solver/src/setp_solver/cost.py": "d8bfee1844c8f8e89bac1233a3cd862d7ac7d088039f97751b8274756c41dee4",
+    "solver/src/setp_solver/prices.py": "d6ad8d59ea555c0f91e98196a8ed3d704c62f1fef3ce4b5bd519ef218a911d3d",
+    "solver/src/setp_solver/search/evaluation.py": "c7215263c39d1d5a1429b41ca8ac40d950dbdf2bdc288337e56fbe9733406fc3"
+  },
+  "protected_hashes_before": {
+    "docs/paper_submission_final/paper_main.tex": "6936bcf31d37c65c5f1100416a5406443c506c060c5b8823df696ac311d0f735",
+    "solver/src/setp_solver/check.py": "53f5cc27d3ac72bdd2bbec113eb8af11ad18a82490502f800941140495e8e142",
+    "solver/src/setp_solver/cost.py": "d8bfee1844c8f8e89bac1233a3cd862d7ac7d088039f97751b8274756c41dee4",
+    "solver/src/setp_solver/prices.py": "d6ad8d59ea555c0f91e98196a8ed3d704c62f1fef3ce4b5bd519ef218a911d3d",
+    "solver/src/setp_solver/search/evaluation.py": "c7215263c39d1d5a1429b41ca8ac40d950dbdf2bdc288337e56fbe9733406fc3"
+  },
+  "python": "build/python_envs/pyvrp-0.13.4/bin/python",
+  "replay": {
+    "instances": [
+      "PR11A",
+      "PR17A",
+      "PR21A"
+    ],
+    "runtime_seconds": 30.0,
+    "seed": 6
+  },
+  "screen": {
+    "instances": [
+      "PR11A",
+      "PR17A",
+      "PR21A"
+    ],
+    "runtime_seconds": 12.0,
+    "seed": 5
+  },
+  "source_hashes": {
+    "baselines/algorithm_prototypes/mda_ils_vns_20260720/racing_configs.py": "70569dba2152877832fb058e29f9ec107024c3975b76d6d2786d203febc3e6da",
+    "baselines/algorithm_prototypes/mda_ils_vns_20260720/run_racing_worker.py": "3f6d4b6206303cb66fb380913651a733d3d300fcc3d75d9f00bebb7800c25a09",
+    "baselines/algorithm_prototypes/mda_ils_vns_20260720/selective_route_vns.py": "6a0711cd79570ce5256591c693ea5cd4791c1339a6038b4bcc85564705dc33ad"
+  },
+  "started_at_utc": "2026-07-19T19:43:49.486306+00:00",
+  "static_checks": {
+    "all_passed": true,
+    "audit": {
+      "command": [
+        "/Volumes/移动硬盘（512G）/ReSETP/build/python_envs/pyvrp-0.13.4/bin/python",
+        "/Users/zhouleixishu/.codex/skills/audit-code/scripts/audit_code.py",
+        "/Volumes/移动硬盘（512G）/ReSETP/baselines/algorithm_prototypes/mda_ils_vns_20260720"
+      ],
+      "returncode": 0,
+      "stderr": "",
+      "stdout": "Auditing code: /Volumes/移动硬盘（512G）/ReSETP/baselines/algorithm_prototypes/mda_ils_vns_20260720\n\n[*] Scanning source files for vulnerabilities...\n\n  Total files scanned: 112\n\n[*] Checking for .env files...\n    0 issue(s)\n[*] Checking file permissions on sensitive files...\n    0 issue(s)\n[*] Checking .gitignore coverage...\n    0 issue(s)\n\n## audit-code Report\n\n**Scanned:** /Volumes/移动硬盘（512G）/ReSETP/baselines/algorithm_prototypes/mda_ils_vns_20260720\n**Findings:** 0 critical, 0 high, 0 medium, 0 low, 0 info\n\nNo security issues detected.\n\n"
+    },
+    "format": {
+      "command": [
+        "ruff",
+        "format",
+        "--check",
+        "racing_configs.py",
+        "run_racing_worker.py",
+        "run_parameter_race_gate.py",
+        "test_racing_configs.py"
+      ],
+      "returncode": 0,
+      "stderr": "",
+      "stdout": "4 files already formatted\n"
+    },
+    "ruff": {
+      "command": [
+        "ruff",
+        "check",
+        "racing_configs.py",
+        "run_racing_worker.py",
+        "run_parameter_race_gate.py",
+        "test_racing_configs.py"
+      ],
+      "returncode": 0,
+      "stderr": "",
+      "stdout": "All checks passed!\n"
+    },
+    "unittest": {
+      "command": [
+        "/Volumes/移动硬盘（512G）/ReSETP/build/python_envs/pyvrp-0.13.4/bin/python",
+        "-m",
+        "unittest",
+        "-v",
+        "test_racing_configs.py"
+      ],
+      "returncode": 0,
+      "stderr": "test_all_race_payloads_are_unique_and_bounded (test_racing_configs.RacingConfigsTest.test_all_race_payloads_are_unique_and_bounded) ... ok\ntest_exact_configuration_count_and_names (test_racing_configs.RacingConfigsTest.test_exact_configuration_count_and_names) ... ok\ntest_foundation_matches_validated_configuration (test_racing_configs.RacingConfigsTest.test_foundation_matches_validated_configuration) ... ok\n\n----------------------------------------------------------------------\nRan 3 tests in 0.000s\n\nOK\n",
+      "stdout": ""
+    }
+  }
+}
