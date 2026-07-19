@@ -1,0 +1,24 @@
+{
+  "binding_case_count": 2,
+  "checks": {
+    "all_mechanism_candidates_change_membership": true,
+    "all_mechanism_candidates_feasible_and_improving": true,
+    "all_mechanism_candidates_present": true,
+    "all_mechanism_segments_length_at_least_two": true,
+    "distance_worse_model_better_witness_each_case": true,
+    "distance_worse_selected_witness_present": true,
+    "mechanism_terminal_better_than_distance": true,
+    "nonbinding_exact_noop": true,
+    "zero_complete_search_candidate_evaluations": true
+  },
+  "drift_checks": {
+    "inputs_unchanged": true,
+    "protected_unchanged": true,
+    "sources_unchanged": true
+  },
+  "formal_search_allowed": false,
+  "next_allowed_step": "result_blind_two_instance_one_seed_performance_warning_gate",
+  "passed": true,
+  "stage2_allowed": false,
+  "verdict": "PASS_SEGMENT_GENERATOR_BEHAVIOR"
+}

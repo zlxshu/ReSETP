@@ -1,0 +1,30 @@
+{
+  "checks": {
+    "all_drift_checks_pass": true,
+    "at_least_one_strict_win_vs_control": true,
+    "at_least_one_strict_win_vs_distance": true,
+    "distance_worse_generation_chain_present": true,
+    "maximum_wall_ratio_at_most_1_50": false,
+    "median_wall_ratio_at_most_1_25": false,
+    "no_execution_failures": true,
+    "same_start_all_arms": true,
+    "two_of_two_nonloss_vs_control": true
+  },
+  "distance_worse_generation_chain_count": 1,
+  "drift_checks": {
+    "inputs_unchanged": true,
+    "protected_unchanged": true,
+    "sources_unchanged": true
+  },
+  "execution_failures": [],
+  "formal_search_allowed": false,
+  "maximum_wall_ratio": 4.693813539738247,
+  "median_wall_ratio": 3.29833496722722,
+  "next_allowed_step": "freeze_SEG_GEN_01_without_rescue_tuning",
+  "nonloss_count_vs_control": 2,
+  "passed": false,
+  "stage2_allowed": false,
+  "strict_win_count_vs_control": 1,
+  "strict_win_count_vs_distance": 1,
+  "verdict": "STOP_SEGMENT_GENERATOR_NO_RESCUE"
+}

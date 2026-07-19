@@ -1,0 +1,43 @@
+{
+  "donor": "03",
+  "formal_l_main_activated": false,
+  "generator": "models/scripts/build_e2_benchmark_instances.py:build_full_source_threeshift",
+  "generator_method_changed": false,
+  "instances": [
+    {
+      "actual_customers": 54,
+      "bundle_files": {
+        "carbon_profile.csv": "f552d7b082593582369ab0dfd938983eeadd38a76a0b0a3e79d3410c00421433",
+        "depot_candidate_scores.csv": "5a8b68426dbd978eceaa6bb49dee44ed312bb36192a610e507adef980b9e59c7",
+        "distance_matrix.npy": "1b9bfd39088dab8c538ff48a41168b9b08c104d6cfd78bc9598ee85874599f23",
+        "instance.json": "7c41a0b9994a373a1bb3f474071932d6a415f598b1e39d3e7ee327aa004ae08c",
+        "instance_evrptwmf.txt": "634cf9811b3be5df9409ddb3412134e4f7eade1617e344e748d7ce285e177c0f",
+        "nodes.csv": "ab05b7216e82c54ab88760408169e045e58219bfec578a7aa74d933ab15a6561",
+        "scenario_manifest.json": "006218e67e759ad5165d0c8dbe557afb7f5848c3c87878429f04bea7f249088b",
+        "station_candidate_scores.csv": "c480afd83e4ca0c39b7cca49074537df2ed1e7171dde5b32f00b93271c70f1a3",
+        "three_shift_manifest.json": "b72b12b67e11f7496c77078cdc3a5f47847fa93dae6d6eed40b9b4cf68d78b40"
+      },
+      "instance_id": "DEV-seggen-donor03-25c",
+      "source_scale": 25
+    },
+    {
+      "actual_customers": 108,
+      "bundle_files": {
+        "carbon_profile.csv": "f552d7b082593582369ab0dfd938983eeadd38a76a0b0a3e79d3410c00421433",
+        "depot_candidate_scores.csv": "3f57b62ccb524b6e911be19e2b336d963763842bae87de723b5f4e13be303147",
+        "distance_matrix.npy": "e896436b393f01bc287c09ad838a0b01217f4ebfbe555700c5629715762c2c24",
+        "instance.json": "4e9f15cab6b7118c37e0569851de9be59f09a7b8a9b7ff5e9e686a216c20f7c2",
+        "instance_evrptwmf.txt": "47374cfd2e8f24d284373b192fa8dade83c04951631d9a4839ea6a95f78cdf44",
+        "nodes.csv": "c6ca380f225ba04884aece639576b3fec7df3e3518a899c267e0938e8396747b",
+        "scenario_manifest.json": "9d39efa853235ea67ee64afbe15ee31957c297f3f65025fce2fcdeccab1e7d9c",
+        "station_candidate_scores.csv": "876f1e6136e0c3e49dd99e9741e9f544721b71c9f76fe42d194b7c3b7660dbc7",
+        "three_shift_manifest.json": "b35c836cac85610fc0cb71d61554191920bd6cd2f51c611691fffceb9114a9ae"
+      },
+      "instance_id": "DEV-seggen-donor03-50c",
+      "source_scale": 50
+    }
+  ],
+  "purpose": "SEG-GEN-01 algorithm development only; not a formal benchmark",
+  "schema_version": "result-blind-seg-gen-dev-bundles.v1",
+  "selection_rule": "predeclared unused donor 03 and source scales 25,50"
+}

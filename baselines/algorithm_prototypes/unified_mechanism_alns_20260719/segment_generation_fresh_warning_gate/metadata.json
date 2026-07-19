@@ -1,0 +1,182 @@
+{
+  "arms": [
+    "control",
+    "mechanism",
+    "distance"
+  ],
+  "blind_lock": {
+    "arms": [
+      "control",
+      "mechanism",
+      "distance"
+    ],
+    "battery_kwh": 280.0,
+    "budget": 100,
+    "bundle_manifest_sha256": "bf51ec92b8c7f61ae2a5687e4d0ed0c8a08daeccb88af19a1a737027a09a7171",
+    "confirmed_result_disclosure_before_relock": false,
+    "formal_search_allowed": false,
+    "gate": {
+      "distance_worse_generation_chain_minimum": 1,
+      "maximum_wall_ratio_maximum": 1.5,
+      "median_wall_ratio_maximum": 1.25,
+      "nonloss_vs_control_required": 2,
+      "strict_wins_vs_control_minimum": 1,
+      "strict_wins_vs_distance_minimum": 1
+    },
+    "incident_record": "baselines/algorithm_prototypes/unified_mechanism_alns_20260719/segment_generation_fresh_warning_runner_incident_v1.md",
+    "lock_generation": 2,
+    "locked_at_local": "2026-07-19",
+    "no_rescue_tuning_after_results": true,
+    "reporting_only_repair": "Treat selected:null as an empty object in two normalization expressions.",
+    "schema_version": "resetp.seg-gen-01.fresh-warning-lock.v2",
+    "seed": 1,
+    "source_hashes": {
+      "baselines/algorithm_prototypes/unified_mechanism_alns_20260719/build_fresh_donor03_segment_bundles.py": "8219d4e581f92817b69656ef38e4226e6c30ac20a1c9483d3a366e3294082629",
+      "baselines/algorithm_prototypes/unified_mechanism_alns_20260719/mechanism_segment_generator.py": "26318a4a778a76e784a7a5e8efcee4a0d73aa41eb7233b6796c14f6f538d8adc",
+      "baselines/algorithm_prototypes/unified_mechanism_alns_20260719/run_mechanism_segment_behavior_gate.py": "c181324188e3df168264e0ab88de485a94c32571a139219f0fc667293b113e9c",
+      "baselines/algorithm_prototypes/unified_mechanism_alns_20260719/run_segment_generation_fresh_warning_gate.py": "3c7c6b4adb28c78907c70b3c68db9b963b63807469f5f6046bd2ea6b5c862d87",
+      "baselines/algorithm_prototypes/unified_mechanism_alns_20260719/segment_generation_alns.py": "0285ecbe4fd88bee7b6df0d3ac3dfe0c61bfe31ef09a8ce979a2c835fcbc81ad",
+      "docs/handoff/generation_side_segment_trial_contract_20260719.md": "777c9663b0376920fb91d447d43172f392fc7794d5cd1c2d95bea3c71e75be0c"
+    },
+    "stage2_allowed": false,
+    "status": "LOCKED_BEFORE_RESULTS",
+    "supersedes_failed_runner_sha256": "0b1ae97c5cdbd0d86d544934a8f51451a833d1201f3f4405ea94fe80c60943d4",
+    "tasks": [
+      "DEV-seggen-donor03-25c",
+      "DEV-seggen-donor03-50c"
+    ]
+  },
+  "claim_boundary": "Two-instance one-seed result-blind development warning only. It is not formal, benchmark, stage-two, or manuscript evidence.",
+  "complete_candidate_budget_per_arm": 100,
+  "created_at_utc": "2026-07-19T07:56:55.431444+00:00",
+  "fixed_environment": {
+    "PYTHONHASHSEED": "0",
+    "SETP_ALNS_CRUSH_TRACE_DIAGNOSTIC": "0",
+    "SETP_E2_ALNS_CHECKPOINT_PATH": "",
+    "SETP_E3_STRICT_MULTITRIP": "0"
+  },
+  "git_head": "af24eb3ab1cd170a9e0213923be39ba91a3d5ec6",
+  "git_status_short": "?? baselines/algorithm_prototypes/unified_mechanism_alns_20260719/build_fresh_donor03_segment_bundles.py\n?? baselines/algorithm_prototypes/unified_mechanism_alns_20260719/fresh_donor03_segment_bundles/\n?? baselines/algorithm_prototypes/unified_mechanism_alns_20260719/mechanism_segment_generation_behavior_gate/\n?? baselines/algorithm_prototypes/unified_mechanism_alns_20260719/mechanism_segment_generator.py\n?? baselines/algorithm_prototypes/unified_mechanism_alns_20260719/run_mechanism_segment_behavior_gate.py\n?? baselines/algorithm_prototypes/unified_mechanism_alns_20260719/run_segment_generation_fresh_warning_gate.py\n?? baselines/algorithm_prototypes/unified_mechanism_alns_20260719/segment_generation_alns.py\n?? baselines/algorithm_prototypes/unified_mechanism_alns_20260719/segment_generation_fresh_warning_blind_lock.json\n?? baselines/algorithm_prototypes/unified_mechanism_alns_20260719/segment_generation_fresh_warning_runner_incident_v1.md\n?? baselines/algorithm_prototypes/unified_mechanism_alns_20260719/test_mechanism_segment_generator.py\n?? docs/handoff/algorithm_forensics_and_generation_blueprint_20260719.md\n?? docs/handoff/generation_side_segment_trial_contract_20260719.md",
+  "input_hashes": {
+    "baselines/algorithm_prototypes/unified_mechanism_alns_20260719/fresh_donor03_segment_bundles/DEV-seggen-donor03-25c/._carbon_profile.csv": "80b3af840ea1c01d4bc3e27ed4cbc987a3ff7a4d888bc434d52a980bada61bcf",
+    "baselines/algorithm_prototypes/unified_mechanism_alns_20260719/fresh_donor03_segment_bundles/DEV-seggen-donor03-25c/._depot_candidate_scores.csv": "80b3af840ea1c01d4bc3e27ed4cbc987a3ff7a4d888bc434d52a980bada61bcf",
+    "baselines/algorithm_prototypes/unified_mechanism_alns_20260719/fresh_donor03_segment_bundles/DEV-seggen-donor03-25c/._distance_matrix.npy": "80b3af840ea1c01d4bc3e27ed4cbc987a3ff7a4d888bc434d52a980bada61bcf",
+    "baselines/algorithm_prototypes/unified_mechanism_alns_20260719/fresh_donor03_segment_bundles/DEV-seggen-donor03-25c/._instance.json": "80b3af840ea1c01d4bc3e27ed4cbc987a3ff7a4d888bc434d52a980bada61bcf",
+    "baselines/algorithm_prototypes/unified_mechanism_alns_20260719/fresh_donor03_segment_bundles/DEV-seggen-donor03-25c/._instance_evrptwmf.txt": "80b3af840ea1c01d4bc3e27ed4cbc987a3ff7a4d888bc434d52a980bada61bcf",
+    "baselines/algorithm_prototypes/unified_mechanism_alns_20260719/fresh_donor03_segment_bundles/DEV-seggen-donor03-25c/._nodes.csv": "80b3af840ea1c01d4bc3e27ed4cbc987a3ff7a4d888bc434d52a980bada61bcf",
+    "baselines/algorithm_prototypes/unified_mechanism_alns_20260719/fresh_donor03_segment_bundles/DEV-seggen-donor03-25c/._scenario_manifest.json": "80b3af840ea1c01d4bc3e27ed4cbc987a3ff7a4d888bc434d52a980bada61bcf",
+    "baselines/algorithm_prototypes/unified_mechanism_alns_20260719/fresh_donor03_segment_bundles/DEV-seggen-donor03-25c/._station_candidate_scores.csv": "80b3af840ea1c01d4bc3e27ed4cbc987a3ff7a4d888bc434d52a980bada61bcf",
+    "baselines/algorithm_prototypes/unified_mechanism_alns_20260719/fresh_donor03_segment_bundles/DEV-seggen-donor03-25c/._three_shift_manifest.json": "80b3af840ea1c01d4bc3e27ed4cbc987a3ff7a4d888bc434d52a980bada61bcf",
+    "baselines/algorithm_prototypes/unified_mechanism_alns_20260719/fresh_donor03_segment_bundles/DEV-seggen-donor03-25c/carbon_profile.csv": "f552d7b082593582369ab0dfd938983eeadd38a76a0b0a3e79d3410c00421433",
+    "baselines/algorithm_prototypes/unified_mechanism_alns_20260719/fresh_donor03_segment_bundles/DEV-seggen-donor03-25c/depot_candidate_scores.csv": "5a8b68426dbd978eceaa6bb49dee44ed312bb36192a610e507adef980b9e59c7",
+    "baselines/algorithm_prototypes/unified_mechanism_alns_20260719/fresh_donor03_segment_bundles/DEV-seggen-donor03-25c/distance_matrix.npy": "1b9bfd39088dab8c538ff48a41168b9b08c104d6cfd78bc9598ee85874599f23",
+    "baselines/algorithm_prototypes/unified_mechanism_alns_20260719/fresh_donor03_segment_bundles/DEV-seggen-donor03-25c/instance.json": "7c41a0b9994a373a1bb3f474071932d6a415f598b1e39d3e7ee327aa004ae08c",
+    "baselines/algorithm_prototypes/unified_mechanism_alns_20260719/fresh_donor03_segment_bundles/DEV-seggen-donor03-25c/instance_evrptwmf.txt": "634cf9811b3be5df9409ddb3412134e4f7eade1617e344e748d7ce285e177c0f",
+    "baselines/algorithm_prototypes/unified_mechanism_alns_20260719/fresh_donor03_segment_bundles/DEV-seggen-donor03-25c/nodes.csv": "ab05b7216e82c54ab88760408169e045e58219bfec578a7aa74d933ab15a6561",
+    "baselines/algorithm_prototypes/unified_mechanism_alns_20260719/fresh_donor03_segment_bundles/DEV-seggen-donor03-25c/scenario_manifest.json": "006218e67e759ad5165d0c8dbe557afb7f5848c3c87878429f04bea7f249088b",
+    "baselines/algorithm_prototypes/unified_mechanism_alns_20260719/fresh_donor03_segment_bundles/DEV-seggen-donor03-25c/station_candidate_scores.csv": "c480afd83e4ca0c39b7cca49074537df2ed1e7171dde5b32f00b93271c70f1a3",
+    "baselines/algorithm_prototypes/unified_mechanism_alns_20260719/fresh_donor03_segment_bundles/DEV-seggen-donor03-25c/three_shift_manifest.json": "b72b12b67e11f7496c77078cdc3a5f47847fa93dae6d6eed40b9b4cf68d78b40",
+    "baselines/algorithm_prototypes/unified_mechanism_alns_20260719/fresh_donor03_segment_bundles/DEV-seggen-donor03-50c/._carbon_profile.csv": "80b3af840ea1c01d4bc3e27ed4cbc987a3ff7a4d888bc434d52a980bada61bcf",
+    "baselines/algorithm_prototypes/unified_mechanism_alns_20260719/fresh_donor03_segment_bundles/DEV-seggen-donor03-50c/._depot_candidate_scores.csv": "80b3af840ea1c01d4bc3e27ed4cbc987a3ff7a4d888bc434d52a980bada61bcf",
+    "baselines/algorithm_prototypes/unified_mechanism_alns_20260719/fresh_donor03_segment_bundles/DEV-seggen-donor03-50c/._distance_matrix.npy": "80b3af840ea1c01d4bc3e27ed4cbc987a3ff7a4d888bc434d52a980bada61bcf",
+    "baselines/algorithm_prototypes/unified_mechanism_alns_20260719/fresh_donor03_segment_bundles/DEV-seggen-donor03-50c/._instance.json": "80b3af840ea1c01d4bc3e27ed4cbc987a3ff7a4d888bc434d52a980bada61bcf",
+    "baselines/algorithm_prototypes/unified_mechanism_alns_20260719/fresh_donor03_segment_bundles/DEV-seggen-donor03-50c/._instance_evrptwmf.txt": "80b3af840ea1c01d4bc3e27ed4cbc987a3ff7a4d888bc434d52a980bada61bcf",
+    "baselines/algorithm_prototypes/unified_mechanism_alns_20260719/fresh_donor03_segment_bundles/DEV-seggen-donor03-50c/._nodes.csv": "80b3af840ea1c01d4bc3e27ed4cbc987a3ff7a4d888bc434d52a980bada61bcf",
+    "baselines/algorithm_prototypes/unified_mechanism_alns_20260719/fresh_donor03_segment_bundles/DEV-seggen-donor03-50c/._scenario_manifest.json": "80b3af840ea1c01d4bc3e27ed4cbc987a3ff7a4d888bc434d52a980bada61bcf",
+    "baselines/algorithm_prototypes/unified_mechanism_alns_20260719/fresh_donor03_segment_bundles/DEV-seggen-donor03-50c/._station_candidate_scores.csv": "80b3af840ea1c01d4bc3e27ed4cbc987a3ff7a4d888bc434d52a980bada61bcf",
+    "baselines/algorithm_prototypes/unified_mechanism_alns_20260719/fresh_donor03_segment_bundles/DEV-seggen-donor03-50c/._three_shift_manifest.json": "80b3af840ea1c01d4bc3e27ed4cbc987a3ff7a4d888bc434d52a980bada61bcf",
+    "baselines/algorithm_prototypes/unified_mechanism_alns_20260719/fresh_donor03_segment_bundles/DEV-seggen-donor03-50c/carbon_profile.csv": "f552d7b082593582369ab0dfd938983eeadd38a76a0b0a3e79d3410c00421433",
+    "baselines/algorithm_prototypes/unified_mechanism_alns_20260719/fresh_donor03_segment_bundles/DEV-seggen-donor03-50c/depot_candidate_scores.csv": "3f57b62ccb524b6e911be19e2b336d963763842bae87de723b5f4e13be303147",
+    "baselines/algorithm_prototypes/unified_mechanism_alns_20260719/fresh_donor03_segment_bundles/DEV-seggen-donor03-50c/distance_matrix.npy": "e896436b393f01bc287c09ad838a0b01217f4ebfbe555700c5629715762c2c24",
+    "baselines/algorithm_prototypes/unified_mechanism_alns_20260719/fresh_donor03_segment_bundles/DEV-seggen-donor03-50c/instance.json": "4e9f15cab6b7118c37e0569851de9be59f09a7b8a9b7ff5e9e686a216c20f7c2",
+    "baselines/algorithm_prototypes/unified_mechanism_alns_20260719/fresh_donor03_segment_bundles/DEV-seggen-donor03-50c/instance_evrptwmf.txt": "47374cfd2e8f24d284373b192fa8dade83c04951631d9a4839ea6a95f78cdf44",
+    "baselines/algorithm_prototypes/unified_mechanism_alns_20260719/fresh_donor03_segment_bundles/DEV-seggen-donor03-50c/nodes.csv": "c6ca380f225ba04884aece639576b3fec7df3e3518a899c267e0938e8396747b",
+    "baselines/algorithm_prototypes/unified_mechanism_alns_20260719/fresh_donor03_segment_bundles/DEV-seggen-donor03-50c/scenario_manifest.json": "9d39efa853235ea67ee64afbe15ee31957c297f3f65025fce2fcdeccab1e7d9c",
+    "baselines/algorithm_prototypes/unified_mechanism_alns_20260719/fresh_donor03_segment_bundles/DEV-seggen-donor03-50c/station_candidate_scores.csv": "876f1e6136e0c3e49dd99e9741e9f544721b71c9f76fe42d194b7c3b7660dbc7",
+    "baselines/algorithm_prototypes/unified_mechanism_alns_20260719/fresh_donor03_segment_bundles/DEV-seggen-donor03-50c/three_shift_manifest.json": "b35c836cac85610fc0cb71d61554191920bd6cd2f51c611691fffceb9114a9ae"
+  },
+  "prices": {
+    "A_frontal": 3.912,
+    "B_battery_kwh": 280.0,
+    "D_displace": 5.0,
+    "N_engine": 33.0,
+    "Q_capacity": 3650.0,
+    "alpha_e": 1.317891660328,
+    "c_d": 0.7,
+    "c_km": 0.35,
+    "c_r": 0.01,
+    "carbon_price": 0.05034,
+    "carbon_price_low": 0.04184,
+    "cross_site_cost": 0.0,
+    "depot_charge_power_kw": 22.0,
+    "depot_electricity_price": 0.1853,
+    "diesel_ef": 2.57082,
+    "diesel_price": 1.4331,
+    "electricity_price": 0.82,
+    "eta_diesel": 0.9,
+    "eta_tf": 0.4,
+    "fairness_theta": 1.0,
+    "g0": 9.81,
+    "initial_ev_battery_kwh": 0.0,
+    "k_engine": 0.2,
+    "kappa_heat": 44.0,
+    "m_curb": 6350.0,
+    "m_unit": 1.0,
+    "occupancy_fee": 0.5,
+    "phi_d": 1.184692,
+    "psi_conv": 737.0,
+    "revenue_per_kg": 0.18936,
+    "rho_a": 1.2041,
+    "station_electricity_price": 0.82,
+    "v_speed_ms": 25.0,
+    "varphi_d": 1.112434,
+    "vehicle_fixed_cost": 80.0,
+    "xi_fuel_air": 1.0
+  },
+  "protected_hashes": {
+    "solver/src/setp_solver/algorithms/resetp_alns/kernel/winner.py": "b2cdcdad3842be4161008b7e940ade53a437536ad8e5f1adf4b214cdec871497",
+    "solver/src/setp_solver/check.py": "53f5cc27d3ac72bdd2bbec113eb8af11ad18a82490502f800941140495e8e142",
+    "solver/src/setp_solver/cost.py": "d8bfee1844c8f8e89bac1233a3cd862d7ac7d088039f97751b8274756c41dee4",
+    "solver/src/setp_solver/search/evaluation.py": "c7215263c39d1d5a1429b41ca8ac40d950dbdf2bdc288337e56fbe9733406fc3"
+  },
+  "run_order": [
+    {
+      "arm": "mechanism",
+      "task": "DEV-seggen-donor03-25c"
+    },
+    {
+      "arm": "control",
+      "task": "DEV-seggen-donor03-50c"
+    },
+    {
+      "arm": "control",
+      "task": "DEV-seggen-donor03-25c"
+    },
+    {
+      "arm": "mechanism",
+      "task": "DEV-seggen-donor03-50c"
+    },
+    {
+      "arm": "distance",
+      "task": "DEV-seggen-donor03-25c"
+    },
+    {
+      "arm": "distance",
+      "task": "DEV-seggen-donor03-50c"
+    }
+  ],
+  "schema_version": "resetp.seg-gen-01.fresh-warning.v1",
+  "seed": 1,
+  "source_hashes": {
+    "baselines/algorithm_prototypes/unified_mechanism_alns_20260719/build_fresh_donor03_segment_bundles.py": "8219d4e581f92817b69656ef38e4226e6c30ac20a1c9483d3a366e3294082629",
+    "baselines/algorithm_prototypes/unified_mechanism_alns_20260719/mechanism_segment_generator.py": "26318a4a778a76e784a7a5e8efcee4a0d73aa41eb7233b6796c14f6f538d8adc",
+    "baselines/algorithm_prototypes/unified_mechanism_alns_20260719/run_mechanism_segment_behavior_gate.py": "c181324188e3df168264e0ab88de485a94c32571a139219f0fc667293b113e9c",
+    "baselines/algorithm_prototypes/unified_mechanism_alns_20260719/run_segment_generation_fresh_warning_gate.py": "3c7c6b4adb28c78907c70b3c68db9b963b63807469f5f6046bd2ea6b5c862d87",
+    "baselines/algorithm_prototypes/unified_mechanism_alns_20260719/segment_generation_alns.py": "0285ecbe4fd88bee7b6df0d3ac3dfe0c61bfe31ef09a8ce979a2c835fcbc81ad",
+    "docs/handoff/generation_side_segment_trial_contract_20260719.md": "777c9663b0376920fb91d447d43172f392fc7794d5cd1c2d95bea3c71e75be0c"
+  },
+  "tasks": [
+    "DEV-seggen-donor03-25c",
+    "DEV-seggen-donor03-50c"
+  ]
+}

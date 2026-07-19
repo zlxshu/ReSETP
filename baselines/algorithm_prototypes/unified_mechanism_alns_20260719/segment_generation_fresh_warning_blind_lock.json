@@ -1,0 +1,42 @@
+{
+  "schema_version": "resetp.seg-gen-01.fresh-warning-lock.v2",
+  "status": "LOCKED_BEFORE_RESULTS",
+  "lock_generation": 2,
+  "locked_at_local": "2026-07-19",
+  "supersedes_failed_runner_sha256": "0b1ae97c5cdbd0d86d544934a8f51451a833d1201f3f4405ea94fe80c60943d4",
+  "reporting_only_repair": "Treat selected:null as an empty object in two normalization expressions.",
+  "incident_record": "baselines/algorithm_prototypes/unified_mechanism_alns_20260719/segment_generation_fresh_warning_runner_incident_v1.md",
+  "confirmed_result_disclosure_before_relock": false,
+  "tasks": [
+    "DEV-seggen-donor03-25c",
+    "DEV-seggen-donor03-50c"
+  ],
+  "arms": [
+    "control",
+    "mechanism",
+    "distance"
+  ],
+  "seed": 1,
+  "budget": 100,
+  "battery_kwh": 280.0,
+  "gate": {
+    "nonloss_vs_control_required": 2,
+    "strict_wins_vs_control_minimum": 1,
+    "strict_wins_vs_distance_minimum": 1,
+    "distance_worse_generation_chain_minimum": 1,
+    "median_wall_ratio_maximum": 1.25,
+    "maximum_wall_ratio_maximum": 1.5
+  },
+  "no_rescue_tuning_after_results": true,
+  "formal_search_allowed": false,
+  "stage2_allowed": false,
+  "bundle_manifest_sha256": "bf51ec92b8c7f61ae2a5687e4d0ed0c8a08daeccb88af19a1a737027a09a7171",
+  "source_hashes": {
+    "baselines/algorithm_prototypes/unified_mechanism_alns_20260719/run_segment_generation_fresh_warning_gate.py": "3c7c6b4adb28c78907c70b3c68db9b963b63807469f5f6046bd2ea6b5c862d87",
+    "baselines/algorithm_prototypes/unified_mechanism_alns_20260719/mechanism_segment_generator.py": "26318a4a778a76e784a7a5e8efcee4a0d73aa41eb7233b6796c14f6f538d8adc",
+    "baselines/algorithm_prototypes/unified_mechanism_alns_20260719/segment_generation_alns.py": "0285ecbe4fd88bee7b6df0d3ac3dfe0c61bfe31ef09a8ce979a2c835fcbc81ad",
+    "baselines/algorithm_prototypes/unified_mechanism_alns_20260719/build_fresh_donor03_segment_bundles.py": "8219d4e581f92817b69656ef38e4226e6c30ac20a1c9483d3a366e3294082629",
+    "baselines/algorithm_prototypes/unified_mechanism_alns_20260719/run_mechanism_segment_behavior_gate.py": "c181324188e3df168264e0ab88de485a94c32571a139219f0fc667293b113e9c",
+    "docs/handoff/generation_side_segment_trial_contract_20260719.md": "777c9663b0376920fb91d447d43172f392fc7794d5cd1c2d95bea3c71e75be0c"
+  }
+}
