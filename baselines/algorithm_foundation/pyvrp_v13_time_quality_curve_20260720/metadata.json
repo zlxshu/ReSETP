@@ -1,0 +1,38 @@
+{
+  "contract": "PYVRP-V13-TIME-QUALITY-CURVE",
+  "contract_path": "docs/handoff/pyvrp_v13_time_quality_curve_contract_20260720.md",
+  "contract_sha256": "f32f3a718358b2db8e859a37a79b075eff5ca80001298621943b271b08ace6fc",
+  "counts": {
+    "candidate_runs": 0,
+    "china81_runs": 0,
+    "full_v13_runs": 0,
+    "mother_runs": 9,
+    "post_run_appledouble_sidecars_removed": 15
+  },
+  "finished_at_utc": "2026-07-19T18:00:29.480757+00:00",
+  "git_head": "dcc787964721b93b626348cf4979d5ef99ec9486",
+  "host": {
+    "platform": "macOS-15.7.5-arm64-arm-64bit-Mach-O",
+    "solver_python": "build/python_envs/pyvrp-0.13.4/bin/python"
+  },
+  "input": {
+    "arm": "unmodified_pyvrp_0.13.4_ils_only",
+    "instance_hashes": {
+      "PR11B": "3d01ae5941af2819741824546a53eba3ecb9b45b9fcb2b74d9802d2fd5b2f70f",
+      "PR17B": "c2ba4022e18b6f37aee2df95b109fe60cb9d38010be09d843e6457eeeae5d280",
+      "PR21B": "644d7c02c63f5481a4e773ea5c75fb0a2474e52414af6af8bde52c4ba7a7cb1b"
+    },
+    "instances": [
+      "PR11B",
+      "PR17B",
+      "PR21B"
+    ],
+    "runtime_seconds": [
+      8.5,
+      60.0,
+      300.0
+    ],
+    "seed": 1
+  },
+  "started_at_utc": "2026-07-19T17:41:58.546651+00:00"
+}

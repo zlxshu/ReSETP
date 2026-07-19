@@ -511,3 +511,13 @@ E7正式结果终验
   同墙钟不输。当前候选冻结，不在已见六题救援。若继续须另批安全语义候选和全新留出题；
   修时间窗/固定费/路线数/完整可行有直接依据，但没有必胜HGS保证。
 - 权威尸检=`docs/handoff/hgs_aealns_03_forensics_and_next_decision_20260719.md`。
+
+# 2026-07-20 PyVRP V13 时间—质量曲线
+
+- 原装PyVRP 0.13.4 ILS在PR11B/PR17B/PR21B、seed1、单线程下从8.5秒延长到
+  60/300秒，三题gap均连续下降；300秒gap为0.215%/0.720%/1.007%。
+- 五分钟关闭原8.5秒BKS差距的89.86%/76.18%/71.30%，判
+  `TIME_CONTINUES_HELPING_ALL_THREE`。这否定“凭8.5秒短门立即换母体”，不撤销
+  C2 STOP，也不证明正式28题、新BKS或调参收益。
+- 证据=`baselines/algorithm_foundation/pyvrp_v13_time_quality_curve_20260720/`；
+  下一方向须另批受控配置/长预算研究，China81和阶段二未启动。
