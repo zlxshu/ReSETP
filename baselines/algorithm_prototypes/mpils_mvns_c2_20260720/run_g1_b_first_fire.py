@@ -242,8 +242,7 @@ def main() -> int:
     if git("status", "--porcelain"):
         raise RuntimeError("G1 must start from a clean committed worktree")
     head = git("rev-parse", "HEAD")
-    if not git("merge-base", "--is-ancestor", G0_FREEZE_COMMIT, head):
-        raise RuntimeError("current HEAD does not descend from frozen G0")
+    git("merge-base", "--is-ancestor", G0_FREEZE_COMMIT, head)
     observed_sources = {
         filename: sha256_file(HERE / filename)
         for filename in EXPECTED_SOURCE_HASHES
