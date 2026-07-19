@@ -110,10 +110,10 @@
 \Author{周雷习书, 干宏程, 邱莹莹}{上海理工大学 管理学院, 上海 200093}
 \newif\ifETwoPublicReady
 \ETwoPublicReadyfalse
-\IfFileExists{generated_tables/e2_solomon_benchmark.tex}{%
-\IfFileExists{generated_tables/e2_solomon_class_summary.tex}{%
-\IfFileExists{generated_tables/e2_solomon_interpretation.tex}{%
-\IfFileExists{generated_tables/e2_solomon_paper_evidence_manifest.json}{\ETwoPublicReadytrue}{}%
+\IfFileExists{generated_tables/e2_v13_mdvrptw_results.tex}{%
+\IfFileExists{generated_tables/e2_v13_mdvrptw_summary.tex}{%
+\IfFileExists{generated_tables/e2_v13_mdvrptw_interpretation.tex}{%
+\IfFileExists{generated_tables/e2_v13_mdvrptw_paper_evidence_manifest.json}{\ETwoPublicReadytrue}{}%
 }{}% interpretation
 }{}% class summary
 }{}% benchmark table
@@ -679,32 +679,32 @@ $CE$ & $0$ kgCO$_2$e & & \\
 
 \subsection{算法有效性分析}
 
-公开标准算例选取PyVRP 0.13.4作为现代强基线。该工具采用面向带时间窗车辆路径问题的混合遗传搜索；该类方法通过维护多个不同方案、交叉重组和局部改进兼顾搜索范围与精细改进\cite{ref:71,ref:72}，PyVRP进一步公开了建模接口、算法实现与基准结果\cite{ref:64}。PyVRP按同机单线程墙钟时间比较，本文ALNS、LNS及组件消融按相同完整候选评价次数比较，两类公平轴分表报告，不将跨语言迭代次数强行换算。
+公开标准算例采用Vidal等提出的28个大型多车场带时间窗算例（V13-MDVRPTW），其规模为360--960个客户，且原题、逐题最好值和对应路线均可公开复算\cite{ref:74}。外部对照按用途选择：VCGP/HGSADC代表提出该算例族的经典强方法，PyVRP 0.13.4代表可同机运行的现代开源强方法，MDFIHA及其GPU增强版本MDFIHA-ETGA代表近期与本文结构相近的多算法混合方法\cite{ref:64,ref:75}。需要说明的是，本文固定版本的PyVRP 0.13.4采用迭代局部搜索，而非早期版本的混合遗传搜索；异机论文结果只比较逐题目标值，不与同机运行时间混比。所有同机算法均采用相同单线程墙钟截止、同一原题和独立可行性复算，任何未计入的补全时间均计入本文算法总时间。
 
 \ifETwoPublicReady
-\subsubsection{Solomon标准算例实验}
+\subsubsection{V13大型多车场带时间窗算例实验}
 
-为区分基础路径搜索能力与完整模型求解能力，本文选取Solomon的56个100客户带时间窗车辆路径算例，按C1、C2、R1、R2、RC1和RC2六类进行测试。评价口径与SINTEF公开解一致：先最小化车辆数，再在车辆数相同的前提下最小化双精度欧氏距离，总距离保留2位小数。每个算例使用1--10号预先固定种子独立运行，共计560次。外部强基线的单次本机墙钟上限为391.943 s，4个任务并行且每个求解器限制为单线程；该时间由PyVRP的1000客户VRPTW基准时限按客户数和冻结CPU因子换算，属于本文预注册的规模外推口径。逐例表在结果产生前固定选取每类按名称排序的首、末各1例，共12例；分类表覆盖全部56例，完整560次结果及失败身份保留在正式证据中。表中CPU表示单次运行的进程CPU时间，RT表示实测墙钟时间，$T_{best}$表示首次达到本次最好解的墙钟时间，Runs表示独立运行次数；运行环境、线程数与停止条件同时披露，不将不同硬件上的原始用时直接解释为算法优劣。
+为区分公开路径搜索能力与完整模型求解能力，公开主表覆盖PR11A/B至PR24A/B全部28个V13-MDVRPTW算例，不按本文结果删题。逐题列出当前可独立复算的最好值、VCGP、PyVRP、MDFIHA、MDFIHA-ETGA和本文完整算法；其中论文未公开源码的对手只列原文目标值。主指标为总行驶距离及其相对当前逐题最小目标的偏差，同时报告命中逐题最好次数、可行率、同机算法的运行时间和随机重复分布。开发、确认与封存算例在结果产生前分开；正式表仅在算法、参数、重复次数、停止条件和独立检查器全部冻结后生成。PR17A另用于比较母体、独立破坏重建、部分混合和完整混合，以解释算法血缘，不替代28题外部竞争力表。
 
 \begin{table}[H]
 \centering
-\caption{Solomon标准算例上的路径搜索结果}
-\label{tab:e2-solomon}
+\caption{V13大型多车场带时间窗算例的逐题结果}
+\label{tab:e2-v13-mdvrptw}
 \setptabsetup
-\input{generated_tables/e2_solomon_benchmark.tex}
-\tabnote[0.96\linewidth]{注: BKS采用SINTEF公开的车辆数与总距离二元值; 先比较车辆数，仅当车辆数等于BKS时计算距离Gap; 超时、不可行或独立复算不一致均原样计入。}
+\input{generated_tables/e2_v13_mdvrptw_results.tex}
+\tabnote[0.96\linewidth]{注: BKS采用带路线证书且经独立检查的当前逐题最好值；论文对手只比较目标值，同机算法才比较运行时间；超时、不可行或独立复算不一致均原样计入。}
 \end{table}
 
 \begin{table}[H]
 \centering
-\caption{Solomon标准算例的分类统计}
-\label{tab:e2-solomon-class}
+\caption{V13大型多车场带时间窗算例的汇总结果}
+\label{tab:e2-v13-mdvrptw-summary}
 \setptabsetup
-\input{generated_tables/e2_solomon_class_summary.tex}
-\tabnote[0.96\linewidth]{注: 分类统计按C1、C2、R1、R2、RC1和RC2六类算例汇总; CPU为进程CPU时间，RT为墙钟时间，$T_{best}$为首次达到本次最好解的墙钟时间，Runs为独立运行次数; 处理器、内存、系统、语言、worker和单线程设置在实验环境中统一披露。}
+\input{generated_tables/e2_v13_mdvrptw_summary.tex}
+\tabnote[0.96\linewidth]{注: 汇总不替代逐题表；任何单题落后均保留。CPU为进程CPU时间，RT为墙钟时间，处理器、内存、系统、语言、worker和单线程设置同时披露。}
 \end{table}
 
-\input{generated_tables/e2_solomon_interpretation.tex}
+\input{generated_tables/e2_v13_mdvrptw_interpretation.tex}
 \fi
 
 \subsubsection{本文模型实验}
@@ -1000,6 +1000,7 @@ I^{\mathrm{dev}}=\frac{\sum_{i\in N}q_i\left(d_{i o_i}-d_{i d_i^*}\right)}{\sum_
 \bibitem{ref:13} 胡路, 乐诗彤, 朱娟秀. 考虑多充电桩排队和时间窗的电动货车路径规划[J]. 西南交通大学学报, 2025, 60(2): 299--307. Hu L, Le S T, Zhu J X. Electric truck route planning considering multiple charging pile queues and time windows[J]. Journal of Southwest Jiaotong University, 2025, 60(2): 299--307.
 \bibitem{ref:45} Keskin M, \c{C}atay B. Partial recharge strategies for the electric vehicle routing problem with time windows[J]. Transportation Research Part C: Emerging Technologies, 2016, 65: 111--127.
 \bibitem{ref:46} Diefenbach H, Emde S, Glock C H. Multi-depot electric vehicle scheduling in in-plant production logistics considering non-linear charging models[J]. European Journal of Operational Research, 2023, 306(2): 828--848.
+\bibitem{ref:73} Kullman N D, Froger A, Mendoza J E, Goodson J C. frvcpy: An open-source solver for the fixed route vehicle charging problem[J]. INFORMS Journal on Computing, 2021, 33(4): 1277--1283. DOI: 10.1287/ijoc.2020.1035.
 \bibitem{ref:7} Wang Y, Zhou J, Sun Y, Fan J, Wang Z, Wang H. Collaborative multidepot electric vehicle routing problem with time windows and shared charging stations[J]. Expert Systems with Applications, 2023, 219: 119654.
 \bibitem{ref:25} Wang Y, Wei Z, Luo S, Zhou J, Zhen L. Collaboration and resource sharing in the multidepot time-dependent vehicle routing problem with time windows[J]. Transportation Research Part E: Logistics and Transportation Review, 2024, 192: 103798.
 \bibitem{ref:49} Fern\'andez E, Roca-Riu M, Speranza M G. The shared customer collaboration vehicle routing problem[J]. European Journal of Operational Research, 2018, 265(3): 1078--1093.
@@ -1011,7 +1012,11 @@ I^{\mathrm{dev}}=\frac{\sum_{i\in N}q_i\left(d_{i o_i}-d_{i d_i^*}\right)}{\sum_
 \bibitem{ref:22} Gendreau M, Guertin F, Potvin J Y, et al. Parallel tabu search for real-time vehicle routing and dispatching[J]. Transportation Science, 1999, 33(4): 381--390. DOI: 10.1287/trsc.33.4.381.
 \bibitem{ref:44} Zhen L, Ma C, Wang K, Xiao L, Zhang W. Multi-depot multi-trip vehicle routing problem with time windows and release dates[J]. Transportation Research Part E: Logistics and Transportation Review, 2020, 135: 101866.
 \bibitem{ref:51} 姜广田, 纪皎月, 董佳伟. 绿色物流配送下的多车型动态车辆路径优化[J]. 系统工程理论与实践, 2024, 44(7): 2362--2380. Jiang G T, Ji J Y, Dong J W. Multi-vehicle dynamic vehicle routing optimization in green logistics distribution[J]. Systems Engineering --- Theory \& Practice, 2024, 44(7): 2362--2380.
+\bibitem{ref:66} Ropke S, Pisinger D. An adaptive large neighborhood search heuristic for the pickup and delivery problem with time windows[J]. Transportation Science, 2006, 40(4): 455--472. DOI: 10.1287/trsc.1050.0135.
 \bibitem{ref:36} Demir E, Bektas T, Laporte G. An adaptive large neighborhood search heuristic for the pollution-routing problem[J]. European Journal of Operational Research, 2012, 223(2): 346--359.
+\bibitem{ref:67} Shaw P. Using constraint programming and local search methods to solve vehicle routing problems[C]//Maher M, Puget J F. Principles and Practice of Constraint Programming---CP98. Berlin: Springer, 1998: 417--431. DOI: 10.1007/3-540-49481-2\_30.
+\bibitem{ref:68} Auer P, Cesa-Bianchi N, Fischer P. Finite-time analysis of the multiarmed bandit problem[J]. Machine Learning, 2002, 47(2--3): 235--256. DOI: 10.1023/A:1013689704352.
+\bibitem{ref:69} Kirkpatrick S, Gelatt C D, Vecchi M P. Optimization by simulated annealing[J]. Science, 1983, 220(4598): 671--680. DOI: 10.1126/science.220.4598.671.
 \bibitem{ref:28} Goeke D, Schneider M. EVRPTW-MF[DB/OL]. Mendeley Data, 2022, V1. DOI: 10.17632/bd7rm5fw6k.1. \href{https://data.mendeley.com/datasets/bd7rm5fw6k}{\nolinkurl{data.mendeley.com/datasets/bd7rm5fw6k}}.
 \bibitem{ref:47} Bektas T, Laporte G. The pollution-routing problem[J]. Transportation Research Part B: Methodological, 2011, 45(8): 1232--1250.
 \bibitem{ref:65} Zhang J. Pickup and delivery planning for the crowdsourced freight delivery routing problem[J]. PLOS ONE, 2025, 20(2): e0318432. DOI: 10.1371/journal.pone.0318432.
@@ -1030,15 +1035,9 @@ I^{\mathrm{dev}}=\frac{\sum_{i\in N}q_i\left(d_{i o_i}-d_{i d_i^*}\right)}{\sum_
 \bibitem{ref:59} 何美玲, 魏志秀, 武晓晖, 等. 基于改进蚁群算法求解带软时间窗的车辆路径问题[J]. 计算机集成制造系统, 2023, 29(3): 1029--1039. He M L, Wei Z X, Wu X H, et al. Improved ant colony optimization algorithm for solving vehicle routing problem with soft time windows[J]. Computer Integrated Manufacturing Systems, 2023, 29(3): 1029--1039.
 \bibitem{ref:60} 高娇娇, 郭秀萍. 考虑卡车无人机协同配送模式下的车辆路径问题研究[J]. 工业工程与管理, 2024, 29(3): 30--39. Gao J J, Guo X P. Research on vehicle routing problem considering truck-UAV cooperative distribution mode[J]. Industrial Engineering and Management, 2024, 29(3): 30--39.
 \bibitem{ref:61} 马祥丽, 马良, 张惠珍. 不确定车辆数的多约束车辆路径问题[J]. 计算机工程与应用, 2025, 61(6): 369--376. Ma X L, Ma L, Zhang H Z. Multi-constraint vehicle routing problem with variable fleets[J]. Computer Engineering and Applications, 2025, 61(6): 369--376.
+\bibitem{ref:74} Vidal T, Crainic T G, Gendreau M, Prins C. A hybrid genetic algorithm with adaptive diversity management for a large class of vehicle routing problems with time-windows[J]. Computers \& Operations Research, 2013, 40(1): 475--489. DOI: 10.1016/j.cor.2012.07.018.
 \bibitem{ref:64} Wouda N A, Lan L, Kool W. PyVRP: A high-performance VRP solver package[J]. INFORMS Journal on Computing, 2024, 36(4): 943--955. DOI: 10.1287/ijoc.2023.0055.
-\bibitem{ref:66} Ropke S, Pisinger D. An adaptive large neighborhood search heuristic for the pickup and delivery problem with time windows[J]. Transportation Science, 2006, 40(4): 455--472. DOI: 10.1287/trsc.1050.0135.
-\bibitem{ref:67} Shaw P. Using constraint programming and local search methods to solve vehicle routing problems[C]//Maher M, Puget J F. Principles and Practice of Constraint Programming---CP98. Berlin: Springer, 1998: 417--431. DOI: 10.1007/3-540-49481-2\_30.
-\bibitem{ref:68} Auer P, Cesa-Bianchi N, Fischer P. Finite-time analysis of the multiarmed bandit problem[J]. Machine Learning, 2002, 47(2--3): 235--256. DOI: 10.1023/A:1013689704352.
-\bibitem{ref:69} Kirkpatrick S, Gelatt C D, Vecchi M P. Optimization by simulated annealing[J]. Science, 1983, 220(4598): 671--680. DOI: 10.1126/science.220.4598.671.
-\bibitem{ref:70} Prins C. A simple and effective evolutionary algorithm for the vehicle routing problem[J]. Computers \& Operations Research, 2004, 31(12): 1985--2002. DOI: 10.1016/S0305-0548(03)00158-8.
-\bibitem{ref:71} Vidal T, Crainic T G, Gendreau M, Lahrichi N, Rei W. A hybrid genetic algorithm for multidepot and periodic vehicle routing problems[J]. Operations Research, 2012, 60(3): 611--624. DOI: 10.1287/opre.1120.1048.
-\bibitem{ref:72} Vidal T. Hybrid genetic search for the CVRP: Open-source implementation and SWAP* neighborhood[J]. Computers \& Operations Research, 2022, 140: 105643. DOI: 10.1016/j.cor.2021.105643.
-\bibitem{ref:73} Kullman N D, Froger A, Mendoza J E, Goodson J C. frvcpy: An open-source solver for the fixed route vehicle charging problem[J]. INFORMS Journal on Computing, 2021, 33(4): 1277--1283. DOI: 10.1287/ijoc.2020.1035.
+\bibitem{ref:75} Lei Z, Hao J K. A GPU-accelerated hybrid method for a class of multi-depot vehicle routing problems[EB/OL]. arXiv:2605.05208, 2026.
 \end{thebibliography}
 
 \end{document}

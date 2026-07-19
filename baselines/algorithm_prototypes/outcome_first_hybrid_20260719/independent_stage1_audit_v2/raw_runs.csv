@@ -1,0 +1,40 @@
+check,detail,passed,search_evaluations
+seg_gen_02_behavior.five_piece,baselines/algorithm_prototypes/outcome_first_hybrid_20260719/bounded_segment_behavior_gate_v3_china81_scope,True,0
+seg_gen_02_behavior.artifact_hashes,baselines/algorithm_prototypes/outcome_first_hybrid_20260719/bounded_segment_behavior_gate_v3_china81_scope,True,0
+public_core.five_piece,baselines/algorithm_prototypes/outcome_first_hybrid_20260719/public_bks_core_microgate,True,0
+public_core.artifact_hashes,baselines/algorithm_prototypes/outcome_first_hybrid_20260719/public_bks_core_microgate,True,0
+warm_hgs_01.five_piece,baselines/algorithm_prototypes/outcome_first_hybrid_20260719/public_bks_alns_warm_hgs_gate,True,0
+warm_hgs_01.artifact_hashes,baselines/algorithm_prototypes/outcome_first_hybrid_20260719/public_bks_alns_warm_hgs_gate,True,0
+dual_elite_02.five_piece,baselines/algorithm_prototypes/outcome_first_hybrid_20260719/public_bks_dual_elite_hgs_gate,True,0
+dual_elite_02.artifact_hashes,baselines/algorithm_prototypes/outcome_first_hybrid_20260719/public_bks_dual_elite_hgs_gate,True,0
+china81_preflight.five_piece,baselines/algorithm_prototypes/outcome_first_hybrid_20260719/china81_private_fair_gate_preflight,True,0
+china81_preflight.artifact_hashes,baselines/algorithm_prototypes/outcome_first_hybrid_20260719/china81_private_fair_gate_preflight,True,0
+seg_gen_02.behavior_verdict,PASS_SEG_GEN_02_BEHAVIOR,True,0
+seg_gen_02.private_scope,await_china81_physical_and_search_gate,True,0
+public_bks_core_microgate.row_count,rows=18,True,0
+public_bks_core_microgate.scope,instances/algorithms,True,0
+public_bks_core_microgate.feasible_recomputed,all rows,True,0
+public_bks_core_microgate.comparisons_recomputed,lexicographic vehicle/distance,True,0
+public_bks_core_microgate.decision_preserved,STRONG_POSITIVE_PUBLIC_CORE_SELECTED,True,0
+public_bks_core_microgate.no_scope_escalation,all escalation flags false,True,0
+public_bks_alns_warm_hgs_gate.row_count,rows=18,True,0
+public_bks_alns_warm_hgs_gate.scope,instances/algorithms,True,0
+public_bks_alns_warm_hgs_gate.feasible_recomputed,all rows,True,0
+public_bks_alns_warm_hgs_gate.comparisons_recomputed,lexicographic vehicle/distance,True,0
+public_bks_alns_warm_hgs_gate.decision_preserved,STOP_ALNS_WARM_HGS_NO_QUALITY_WIN,True,0
+public_bks_alns_warm_hgs_gate.no_scope_escalation,all escalation flags false,True,0
+public_bks_dual_elite_hgs_gate.row_count,rows=18,True,0
+public_bks_dual_elite_hgs_gate.scope,instances/algorithms,True,0
+public_bks_dual_elite_hgs_gate.feasible_recomputed,all rows,True,0
+public_bks_dual_elite_hgs_gate.comparisons_recomputed,lexicographic vehicle/distance,True,0
+public_bks_dual_elite_hgs_gate.decision_preserved,STOP_DUAL_ELITE_HGS_NO_QUALITY_WIN,True,0
+public_bks_dual_elite_hgs_gate.no_scope_escalation,all escalation flags false,True,0
+public.instance_sets_disjoint,unique_instances=18,True,0
+public.solver_inputs_bks_blind,instances=18,True,0
+china81.preflight_halted,HALT_CHINA81_PRIVATE_GATE_NOT_ARMED,True,0
+china81.zero_search,search_evaluations=0,True,0
+china81.only_private_scope,"{""fairness"": ""same frozen China81, seeds, complete-model checker, completion adapter, complete-evaluation ledger and wall time"", ""other_private_instances_allowed"": false, ""planned_arms"": [""final_mechanism_hybrid"", ""pure_pyvrp_hgs_with_common_resetp_completion"", ""pure_project_alns""], ""private_instances"": ""China81 only""}",True,0
+donor03.cancel_record,baselines/algorithm_prototypes/outcome_first_hybrid_20260719/fresh_segment_v2_bundles/CANCELLED_ZERO_SEARCH.md,True,0
+donor03.fail_closed_runner,baselines/algorithm_prototypes/outcome_first_hybrid_20260719/run_segment_v2_gate.py,True,0
+sources.licenses_and_citations,docs/handoff/algorithm_source_and_license_register_20260719.md,True,0
+contract.latest_scope,docs/handoff/outcome_first_multiengine_hybrid_contract_20260719.md,True,0

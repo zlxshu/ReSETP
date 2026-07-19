@@ -22,9 +22,6 @@ ROOT = Path(__file__).resolve().parents[2]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 from baselines.paper_story import build_20260715_formal_evidence as evidence_builder  # noqa: E402
-from baselines.paper_story import (  # noqa: E402
-    build_e2_solomon_sintef_paper_evidence_20260717 as e2_public_builder,
-)
 
 TEX = ROOT / "docs/paper_submission_final/paper_main.tex"
 PAPER_DIR = TEX.parent
@@ -51,36 +48,43 @@ E2_LEGACY_UNLISTED = {
     "baselines/e2_alns/e2_final_10seed_20260711/formal/baseline_parameter_appendix.md",
 }
 E2B = ROOT / "baselines/e2_alns/e2b_component_ablation_formal_20260715"
-E2_PUBLIC = ROOT / "baselines/e2_alns/e2_solomon_sintef_formal_20260717"
-E2_PUBLIC_REQUIRED_SOURCE_FILES = e2_public_builder.REQUIRED_SOURCE_FILES
-E2_PUBLIC_GENERATED_EXHIBITS = (
-    e2_public_builder.TABLE_NAME,
-    e2_public_builder.CLASS_TABLE_NAME,
-    e2_public_builder.INTERPRETATION_NAME,
+E2_PUBLIC = ROOT / "baselines/algorithm_foundation/remix_v13_formal"
+E2_PUBLIC_REQUIRED_SOURCE_FILES = (
+    "metadata.json",
+    "raw_runs.csv",
+    "decision.json",
+    "artifact_hashes.json",
+    "report.md",
 )
-E2_PUBLIC_MANIFEST = e2_public_builder.PROVENANCE_NAME
+E2_PUBLIC_GENERATED_EXHIBITS = (
+    "e2_v13_mdvrptw_results.tex",
+    "e2_v13_mdvrptw_summary.tex",
+    "e2_v13_mdvrptw_interpretation.tex",
+)
+E2_PUBLIC_MANIFEST = "e2_v13_mdvrptw_paper_evidence_manifest.json"
 E2_PUBLIC_EXHIBITS = (
     *E2_PUBLIC_GENERATED_EXHIBITS,
     E2_PUBLIC_MANIFEST,
 )
-E2_SOLOMON_MAIN_TABLE_FORBIDDEN_TERMS = (
+E2_V13_MAIN_TABLE_FORBIDDEN_TERMS = (
+    "Solomon",
+    "SINTEF公开解",
+    "先最小化车辆数",
+    "共计560次",
     "DIMACS",
     "PassMark",
     "截断至1位小数",
     "CPU标准化墙钟时间",
 )
-E2_SOLOMON_MAIN_TABLE_REQUIRED_TERMS = (
-    "SINTEF公开解",
-    "先最小化车辆数",
-    "双精度欧氏距离",
-    "总距离保留2位小数",
-    "共计560次",
-    "结果产生前固定选取每类按名称排序的首、末各1例",
-    "分类表覆盖全部56例",
-    "进程CPU时间",
-    "RT表示实测墙钟时间",
-    "$T_{best}$表示首次达到本次最好解的墙钟时间",
-    "Runs表示独立运行次数",
+E2_V13_MAIN_TABLE_REQUIRED_TERMS = (
+    "全部28个V13-MDVRPTW算例",
+    "不按本文结果删题",
+    "当前可独立复算的最好值",
+    "VCGP",
+    "PyVRP",
+    "MDFIHA-ETGA",
+    "同机算法才比较运行时间",
+    "任何单题落后均保留",
 )
 E3 = ROOT / "baselines/e3_ablation/e3_medium_paired_cost_formal_20260715"
 E4 = ROOT / "baselines/e4_e5/e4_forecast_timing_formal_20260713"
@@ -1131,23 +1135,23 @@ def audit(*, allow_pending_e7: bool) -> dict[str, Any]:
             failures.append(
                 "introduction first-citation order differs from bibliography numbering"
             )
-    solomon_heading = r"\subsubsection{Solomon标准算例实验}"
-    solomon_following_heading = r"\subsubsection{本文模型实验}"
-    solomon_start = text.find(solomon_heading)
-    solomon_end = text.find(solomon_following_heading, solomon_start)
-    if solomon_start < 0 or solomon_end < 0:
-        failures.append("manuscript Solomon benchmark section boundary is missing")
+    v13_heading = r"\subsubsection{V13大型多车场带时间窗算例实验}"
+    v13_following_heading = r"\subsubsection{本文模型实验}"
+    v13_start = text.find(v13_heading)
+    v13_end = text.find(v13_following_heading, v13_start)
+    if v13_start < 0 or v13_end < 0:
+        failures.append("manuscript V13 benchmark section boundary is missing")
     else:
-        solomon_section = text[solomon_start:solomon_end]
-        for forbidden in E2_SOLOMON_MAIN_TABLE_FORBIDDEN_TERMS:
-            if forbidden in solomon_section:
+        v13_section = text[v13_start:v13_end]
+        for forbidden in E2_V13_MAIN_TABLE_FORBIDDEN_TERMS:
+            if forbidden in v13_section:
                 failures.append(
-                    f"manuscript Solomon main table uses forbidden metric term: {forbidden}"
+                    f"manuscript V13 main table uses forbidden term: {forbidden}"
                 )
-        for required in E2_SOLOMON_MAIN_TABLE_REQUIRED_TERMS:
-            if required not in solomon_section:
+        for required in E2_V13_MAIN_TABLE_REQUIRED_TERMS:
+            if required not in v13_section:
                 failures.append(
-                    f"manuscript Solomon main table misses required metric term: {required}"
+                    f"manuscript V13 main table misses required term: {required}"
                 )
     quality_text = QUALITY_GATES.read_text(encoding="utf-8")
     completion_text = COMPLETION_MATRIX.read_text(encoding="utf-8")
@@ -1506,7 +1510,7 @@ def audit(*, allow_pending_e7: bool) -> dict[str, Any]:
             failures,
             f"atomic E2 public benchmark input {filename}",
         )
-    if e2_preamble.count(r"\IfFileExists{generated_tables/e2_solomon_") != len(
+    if e2_preamble.count(r"\IfFileExists{generated_tables/e2_v13_mdvrptw_") != len(
         E2_PUBLIC_EXHIBITS
     ):
         failures.append("atomic E2 public benchmark gate is not exact")
@@ -1540,62 +1544,13 @@ def audit(*, allow_pending_e7: bool) -> dict[str, Any]:
         ]
         if missing_exhibits:
             failures.append(
-                "sealed E2 Solomon benchmark exhibits missing: " + ", ".join(missing_exhibits)
+                "sealed E2 V13 benchmark exhibits missing: " + ", ".join(missing_exhibits)
             )
         else:
-            try:
-                rows, instances, classes, contracts = e2_public_builder.load_and_validate(
-                    E2_PUBLIC
-                )
-                provenance = read_json(TABLES / E2_PUBLIC_MANIFEST)
-                expected_exhibits = {
-                    e2_public_builder.TABLE_NAME: e2_public_builder.render_instance_table(
-                        instances
-                    ),
-                    e2_public_builder.CLASS_TABLE_NAME: e2_public_builder.render_class_table(
-                        classes
-                    ),
-                    e2_public_builder.INTERPRETATION_NAME: (
-                        e2_public_builder.render_interpretation(rows, instances)
-                    ),
-                }
-                if provenance.get("source_root") != str(E2_PUBLIC.relative_to(ROOT)):
-                    failures.append("E2 Solomon benchmark provenance source root differs")
-                if provenance.get("source_contract_sha256") != contracts["metadata"].get(
-                    "contract_sha256"
-                ):
-                    failures.append("E2 Solomon benchmark provenance contract differs")
-                if provenance.get("display_instances") != list(
-                    e2_public_builder.DISPLAY_INSTANCES
-                ):
-                    failures.append("E2 Solomon display-instance registration differs")
-                if provenance.get("full_test_coverage") != {"instances": 56, "runs": 560}:
-                    failures.append("E2 Solomon full-test coverage declaration differs")
-                if provenance.get("builder_sha256") != sha256(
-                    Path(e2_public_builder.__file__).resolve()
-                ):
-                    failures.append("E2 Solomon benchmark builder hash differs")
-                for filename in E2_PUBLIC_REQUIRED_SOURCE_FILES:
-                    if provenance.get("source_hashes", {}).get(filename) != sha256(
-                        E2_PUBLIC / filename
-                    ):
-                        failures.append(
-                            f"E2 Solomon benchmark provenance source hash differs: {filename}"
-                        )
-                for filename, expected_text in expected_exhibits.items():
-                    actual_text = (TABLES / filename).read_text(encoding="utf-8")
-                    if actual_text != expected_text:
-                        failures.append(
-                            f"E2 Solomon benchmark exhibit does not reproduce: {filename}"
-                        )
-                    if provenance.get("generated_hashes", {}).get(filename) != sha256(
-                        TABLES / filename
-                    ):
-                        failures.append(
-                            f"E2 Solomon benchmark provenance exhibit hash differs: {filename}"
-                        )
-            except Exception as exc:
-                failures.append(f"E2 Solomon formal evidence validation failed: {exc}")
+            failures.append(
+                "E2 V13 formal evidence exists but its dedicated paper builder "
+                "and reproduction audit are not yet implemented"
+            )
 
     for filename in E7_REQUIRED_PAPER_FILES:
         require(

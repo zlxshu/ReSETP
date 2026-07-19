@@ -1,0 +1,39 @@
+{
+  "allowed": false,
+  "blockers": [
+    "STAGE2_READINESS_HAS_OPEN_BLOCKERS",
+    "G1_FORMAL_FREEZE_MISSING",
+    "CHINA81_FINAL_FREEZE_MISSING",
+    "NO_PUBLIC_HYBRID_STRONG_POSITIVE",
+    "CHINA81_FINAL_DIRECTORY_NOT_PRESENT"
+  ],
+  "china_guard": {
+    "allowed": false,
+    "blockers": [
+      "STAGE2_READINESS_HAS_OPEN_BLOCKERS",
+      "G1_FORMAL_FREEZE_MISSING",
+      "CHINA81_FINAL_FREEZE_MISSING"
+    ],
+    "formal_search_allowed": false,
+    "schema": "resetp.china.formal-acceptance-guard.v1"
+  },
+  "formal_search_allowed": false,
+  "next_action": "user_review_public_hybrid_failure; do not run China81 or stage2",
+  "planned_scope": {
+    "fairness": "same frozen China81, seeds, complete-model checker, completion adapter, complete-evaluation ledger and wall time",
+    "other_private_instances_allowed": false,
+    "planned_arms": [
+      "final_mechanism_hybrid",
+      "pure_pyvrp_hgs_with_common_resetp_completion",
+      "pure_project_alns"
+    ],
+    "private_instances": "China81 only"
+  },
+  "public_candidate_verdicts": {
+    "baselines/algorithm_prototypes/outcome_first_hybrid_20260719/public_bks_alns_warm_hgs_gate/decision.json": "STOP_ALNS_WARM_HGS_NO_QUALITY_WIN",
+    "baselines/algorithm_prototypes/outcome_first_hybrid_20260719/public_bks_dual_elite_hgs_gate/decision.json": "STOP_DUAL_ELITE_HGS_NO_QUALITY_WIN"
+  },
+  "search_evaluations": 0,
+  "stage2_allowed": false,
+  "verdict": "HALT_CHINA81_PRIVATE_GATE_NOT_ARMED"
+}

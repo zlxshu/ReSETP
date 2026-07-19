@@ -1,0 +1,111 @@
+{
+  "additional_public_run_allowed": false,
+  "aggregate": {
+    "aggregate_best_algorithms": [
+      "pyvrp_0_12_2_hgs"
+    ],
+    "algorithms": {
+      "hgs_adaptive_elite_alns_03": {
+        "aggregate_best": false,
+        "aggregate_key": [
+          11,
+          -4,
+          8.35920253789771,
+          7735.12346125756
+        ],
+        "algorithm": "hgs_adaptive_elite_alns_03",
+        "best_count": 4,
+        "bks_vehicle_hit_count": 4,
+        "complete_bks_hit_count": 2,
+        "last_count": 4,
+        "sum_distance_gap_pct_on_vehicle_hits": 8.35920253789771,
+        "total_distance_double": 7735.12346125756,
+        "total_vehicle_excess_vs_bks": 11
+      },
+      "pyvrp_0_12_2_hgs": {
+        "aggregate_best": true,
+        "aggregate_key": [
+          3,
+          -4,
+          9.122863935029132,
+          6496.045600706434
+        ],
+        "algorithm": "pyvrp_0_12_2_hgs",
+        "best_count": 4,
+        "bks_vehicle_hit_count": 4,
+        "complete_bks_hit_count": 2,
+        "last_count": 4,
+        "sum_distance_gap_pct_on_vehicle_hits": 9.122863935029132,
+        "total_distance_double": 6496.045600706434,
+        "total_vehicle_excess_vs_bks": 3
+      }
+    }
+  },
+  "bks_vehicle_excess": {
+    "hgs_adaptive_elite_alns_03": 11,
+    "pyvrp_0_12_2_hgs": 3
+  },
+  "china81_run_allowed": false,
+  "drift_checks": {
+    "inputs_unchanged": true,
+    "protected_unchanged": true,
+    "sources_unchanged": true
+  },
+  "failures": [],
+  "formal_56_instance_run_allowed": false,
+  "integrity_pass": true,
+  "next_action": "freeze_candidate_without_parameter_or_instance_rescue",
+  "pairwise_vs_pure_hgs": {
+    "hybrid_losses": 2,
+    "hybrid_wins": 2,
+    "ties": 2
+  },
+  "promising_but_not_strong": false,
+  "reasons": {
+    "at_least_two_strict_wins": true,
+    "bks_vehicle_excess_not_worse": false,
+    "common_initial_pass": true,
+    "education_activation_pass": true,
+    "source_input_protected_drift_pass": true,
+    "time_fairness_pass": true,
+    "zero_losses_vs_pure_hgs": false
+  },
+  "stage2_allowed": false,
+  "strong_positive": false,
+  "time_checks": {
+    "absolute_limit_seconds": 5.4,
+    "absolute_search_time": {
+      "C106::hgs_adaptive_elite_alns_03": true,
+      "C106::pyvrp_0_12_2_hgs": true,
+      "C205::hgs_adaptive_elite_alns_03": true,
+      "C205::pyvrp_0_12_2_hgs": true,
+      "R109::hgs_adaptive_elite_alns_03": true,
+      "R109::pyvrp_0_12_2_hgs": true,
+      "R208::hgs_adaptive_elite_alns_03": true,
+      "R208::pyvrp_0_12_2_hgs": true,
+      "RC105::hgs_adaptive_elite_alns_03": true,
+      "RC105::pyvrp_0_12_2_hgs": true,
+      "RC205::hgs_adaptive_elite_alns_03": true,
+      "RC205::pyvrp_0_12_2_hgs": true
+    },
+    "hybrid_outer_relative_limit": 1.1,
+    "hybrid_outer_relative_pass": {
+      "C106": true,
+      "C205": true,
+      "R109": true,
+      "R208": true,
+      "RC105": true,
+      "RC205": true
+    },
+    "hybrid_outer_vs_pure_outer_ratio": {
+      "C106": 1.0028468371280757,
+      "C205": 1.0092916356731607,
+      "R109": 1.004536301809601,
+      "R208": 1.0013176345179455,
+      "RC105": 0.9987402085493333,
+      "RC205": 0.9983258842604712
+    },
+    "pass": true
+  },
+  "verdict": "STOP_HGS_AEALNS_03_ANY_LOSS"
+}

@@ -1,0 +1,37 @@
+{
+  "contract": "REMIX-V13-DEV-001-PREREQUISITE-BRIDGE",
+  "correction": "v1 stopped after two iterations before first feasibility; v2 stops at first feasible solution or five seconds",
+  "counts": {
+    "china81_calls": 0,
+    "hgs_identity_bridge_calls": 1,
+    "independent_validation_calls": 1,
+    "performance_search_calls": 0
+  },
+  "finished_at_utc": "2026-07-19T13:50:23.551085+00:00",
+  "host": {
+    "platform": "macOS-15.7.5-arm64-arm-64bit-Mach-O",
+    "runner_python": "3.13.9",
+    "source_pyvrp": "0.12.2",
+    "target_pyvrp": "0.13.4"
+  },
+  "input": {
+    "instance": "baselines/algorithm_foundation/mdvrptw_v13_comparison_20260719/sources/normalised_instances/PR17A.vrp",
+    "instance_sha256": "3ce0c8d46f28378c7389e72c891975987899db0b546095d7343130c96807d156",
+    "iterations_completed": 29,
+    "max_runtime_seconds": 5.0,
+    "seed": 1,
+    "stop_rule": "first_feasible_or_5_seconds"
+  },
+  "protected_hashes_after": {
+    "solver/src/setp_solver/check.py": "53f5cc27d3ac72bdd2bbec113eb8af11ad18a82490502f800941140495e8e142",
+    "solver/src/setp_solver/cost.py": "d8bfee1844c8f8e89bac1233a3cd862d7ac7d088039f97751b8274756c41dee4",
+    "solver/src/setp_solver/search/evaluation.py": "c7215263c39d1d5a1429b41ca8ac40d950dbdf2bdc288337e56fbe9733406fc3"
+  },
+  "protected_hashes_before": {
+    "solver/src/setp_solver/check.py": "53f5cc27d3ac72bdd2bbec113eb8af11ad18a82490502f800941140495e8e142",
+    "solver/src/setp_solver/cost.py": "d8bfee1844c8f8e89bac1233a3cd862d7ac7d088039f97751b8274756c41dee4",
+    "solver/src/setp_solver/search/evaluation.py": "c7215263c39d1d5a1429b41ca8ac40d950dbdf2bdc288337e56fbe9733406fc3"
+  },
+  "started_at_utc": "2026-07-19T13:50:22.324231+00:00",
+  "supersedes": "baselines/algorithm_foundation/remix_hgs_supplier_bridge_20260719"
+}

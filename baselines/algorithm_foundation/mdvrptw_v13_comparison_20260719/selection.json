@@ -1,0 +1,49 @@
+{
+  "china81_is_only_full_model_family": true,
+  "china81_search_performed": false,
+  "confirmation": [
+    "PR16A",
+    "PR16B",
+    "PR20A",
+    "PR20B",
+    "PR24A",
+    "PR24B"
+  ],
+  "confirmation_rule": "largest instance in every depot-count x A/B stratum",
+  "development": [
+    "PR11A",
+    "PR11B",
+    "PR17A",
+    "PR17B",
+    "PR21A",
+    "PR21B"
+  ],
+  "development_rule": "smallest instance in every depot-count x A/B stratum",
+  "final_public_table_requires_all_28": true,
+  "public_family": "V13_MDVRPTW_28",
+  "representative_instance": "PR17A",
+  "representative_rule": [
+    "select the median depot-count stratum (6 depots)",
+    "select the smallest client count in that stratum",
+    "break the A/B tie lexicographically"
+  ],
+  "sealed_holdout": [
+    "PR12A",
+    "PR12B",
+    "PR13A",
+    "PR13B",
+    "PR14A",
+    "PR14B",
+    "PR15A",
+    "PR15B",
+    "PR18A",
+    "PR18B",
+    "PR19A",
+    "PR19B",
+    "PR22A",
+    "PR22B",
+    "PR23A",
+    "PR23B"
+  ],
+  "selection_order": "algorithm_roles_then_common_benchmark_intersection"
+}

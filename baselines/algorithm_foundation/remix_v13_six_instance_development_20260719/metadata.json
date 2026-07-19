@@ -1,0 +1,56 @@
+{
+  "contract": "REMIX-V13-DEV-001",
+  "counts": {
+    "china81_calls": 0,
+    "formal_28_instance_calls": 0,
+    "independent_validation_calls": 18,
+    "solver_arms": 18
+  },
+  "finished_at_utc": "2026-07-19T13:58:58.572424+00:00",
+  "host": {
+    "hgs_python": "build/python_envs/pyvrp-hgs-0.12.2/bin/python",
+    "ils_pyvrp": "0.13.4",
+    "platform": "macOS-15.7.5-arm64-arm-64bit-Mach-O",
+    "runner_python": "3.13.9"
+  },
+  "input": {
+    "end_to_end_limit_seconds": 10.0,
+    "instance_hashes": {
+      "PR11A": "1281263d625380305918ef37f72f7f6a309ad001c487333ba4ed27848334cbfa",
+      "PR11B": "3d01ae5941af2819741824546a53eba3ecb9b45b9fcb2b74d9802d2fd5b2f70f",
+      "PR17A": "3ce0c8d46f28378c7389e72c891975987899db0b546095d7343130c96807d156",
+      "PR17B": "c2ba4022e18b6f37aee2df95b109fe60cb9d38010be09d843e6457eeeae5d280",
+      "PR21A": "39706474f564e75511b3ceef6e090885f78dec9e978f27796f12a7816805221f",
+      "PR21B": "644d7c02c63f5481a4e773ea5c75fb0a2474e52414af6af8bde52c4ba7a7cb1b"
+    },
+    "instances": [
+      "PR11A",
+      "PR11B",
+      "PR17A",
+      "PR17B",
+      "PR21A",
+      "PR21B"
+    ],
+    "internal_runtime_seconds": 8.5,
+    "seed": 1,
+    "target_table": "baselines/algorithm_foundation/mdvrptw_v13_comparison_20260719/opponent_targets.csv",
+    "target_table_sha256": "997dabc4ef4ea72375e7741dc18e4d3d5267e721d2a187cc6bc2931b247b6f2c"
+  },
+  "protected_hashes_after": {
+    "solver/src/setp_solver/check.py": "53f5cc27d3ac72bdd2bbec113eb8af11ad18a82490502f800941140495e8e142",
+    "solver/src/setp_solver/cost.py": "d8bfee1844c8f8e89bac1233a3cd862d7ac7d088039f97751b8274756c41dee4",
+    "solver/src/setp_solver/search/evaluation.py": "c7215263c39d1d5a1429b41ca8ac40d950dbdf2bdc288337e56fbe9733406fc3"
+  },
+  "protected_hashes_before": {
+    "solver/src/setp_solver/check.py": "53f5cc27d3ac72bdd2bbec113eb8af11ad18a82490502f800941140495e8e142",
+    "solver/src/setp_solver/cost.py": "d8bfee1844c8f8e89bac1233a3cd862d7ac7d088039f97751b8274756c41dee4",
+    "solver/src/setp_solver/search/evaluation.py": "c7215263c39d1d5a1429b41ca8ac40d950dbdf2bdc288337e56fbe9733406fc3"
+  },
+  "started_at_utc": "2026-07-19T13:56:23.804555+00:00",
+  "thread_limits": {
+    "MKL_NUM_THREADS": "1",
+    "OMP_NUM_THREADS": "1",
+    "OPENBLAS_NUM_THREADS": "1",
+    "VECLIB_MAXIMUM_THREADS": "1"
+  }
+}

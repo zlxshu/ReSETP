@@ -1,0 +1,34 @@
+{
+  "contract": "ALGO-COMPARE-FOUNDATION-003",
+  "counts": {
+    "china81_calls": 0,
+    "component_calls": 0,
+    "performance_search_calls": 0,
+    "solver_wiring_calls": 3
+  },
+  "finished_at_utc": "2026-07-19T13:15:58.715753+00:00",
+  "host": {
+    "platform": "macOS-15.7.5-arm64-arm-64bit-Mach-O",
+    "python": "3.13.9",
+    "pyvrp": "0.13.4"
+  },
+  "input": {
+    "instance": "baselines/algorithm_foundation/mdvrptw_v13_comparison_20260719/sources/normalised_instances/PR11A.vrp",
+    "instance_sha256": "1281263d625380305918ef37f72f7f6a309ad001c487333ba4ed27848334cbfa",
+    "iterations": 5,
+    "modes": [
+      "mother",
+      "hybrid_disabled",
+      "hybrid_zero_budget"
+    ],
+    "seed": 1
+  },
+  "purpose": "disabled and zero-budget same-path equivalence",
+  "started_at_utc": "2026-07-19T13:15:58.198966+00:00",
+  "thread_limits": {
+    "MKL_NUM_THREADS": "1",
+    "OMP_NUM_THREADS": "1",
+    "OPENBLAS_NUM_THREADS": "1",
+    "VECLIB_MAXIMUM_THREADS": "1"
+  }
+}

@@ -1,0 +1,565 @@
+{
+  "DEV-fullsource-donor02-25c": {
+    "arms": {
+      "distance": {
+        "activity": {
+          "candidate": "SEG-GEN-02",
+          "completion": [],
+          "ledger": {
+            "candidate_build_attempts": 16,
+            "cheap_position_scores": 598,
+            "cheap_source_scores": 3246,
+            "complete_candidate_evaluations_before_submission": 0,
+            "completion_candidates_screened": 0,
+            "distance_worse_model_better_candidates": 0,
+            "exact_candidates_shortlisted": 0,
+            "feasible_candidates": 0,
+            "full_feasibility_checks": 35,
+            "insertion_positions_scanned": 598,
+            "insertion_positions_shortlisted": 364,
+            "maximum_positions_for_one_source": 6,
+            "reciprocal_pairs_scanned": 0,
+            "reciprocal_pairs_shortlisted": 0,
+            "route_local_completion_calls": 1,
+            "route_local_exact_evaluations": 0,
+            "route_local_schedule_evaluations": 248,
+            "route_proxy_evaluations": 15,
+            "source_segments_eligible": 423,
+            "source_segments_scanned": 423,
+            "source_segments_shortlisted": 64
+          },
+          "mode": "distance",
+          "selected": null,
+          "source_completion": {
+            "carbon_updates": 1,
+            "complete_evaluations": 0,
+            "joint_updates": 1,
+            "label": "seg_gen_02_source",
+            "route_local_schedule_evaluations": 248,
+            "route_proxy_evaluations": 15
+          },
+          "stop_reason": "no_feasible_bounded_candidate",
+          "view_selection_counts": {
+            "position": {
+              "deterministic_diversity": 182,
+              "distance": 182
+            },
+            "source": {
+              "distance": 32,
+              "distance_diversity": 32
+            }
+          }
+        },
+        "candidate_cost": null,
+        "candidate_signature": null
+      },
+      "mechanism": {
+        "activity": {
+          "candidate": "SEG-GEN-02",
+          "completion": [
+            {
+              "carbon_updates": 1,
+              "completed_local_model_delta": -11.247629320852923,
+              "customers": [
+                "C016",
+                "C024",
+                "C047"
+              ],
+              "distance_delta": 115881.30010169168,
+              "joint_updates": 1,
+              "kind": "bounded_relocate_segment",
+              "precompletion_local_model_delta": 0.2824912319258601,
+              "return_customers": [],
+              "shortlist_index": 0
+            },
+            {
+              "carbon_updates": 1,
+              "completed_local_model_delta": -2.937996380269908,
+              "customers": [
+                "C010",
+                "C016",
+                "C024"
+              ],
+              "distance_delta": 132362.06234586763,
+              "joint_updates": 1,
+              "kind": "bounded_relocate_segment",
+              "precompletion_local_model_delta": 14.400281370278321,
+              "return_customers": [],
+              "shortlist_index": 1
+            },
+            {
+              "carbon_updates": 1,
+              "completed_local_model_delta": 0.35202068152250376,
+              "customers": [
+                "C010",
+                "C016",
+                "C024"
+              ],
+              "distance_delta": 142089.0961215343,
+              "joint_updates": 1,
+              "kind": "bounded_relocate_segment",
+              "precompletion_local_model_delta": 17.6598043098856,
+              "return_customers": [],
+              "shortlist_index": 2
+            },
+            {
+              "carbon_updates": 1,
+              "completed_local_model_delta": -0.861817398626954,
+              "customers": [
+                "C016",
+                "C024"
+              ],
+              "distance_delta": 137140.98269957764,
+              "joint_updates": 1,
+              "kind": "bounded_relocate_segment",
+              "precompletion_local_model_delta": 18.637101563515785,
+              "return_customers": [],
+              "shortlist_index": 3
+            },
+            {
+              "carbon_updates": 1,
+              "completed_local_model_delta": 3.826462687141941,
+              "customers": [
+                "C016",
+                "C024"
+              ],
+              "distance_delta": 149750.51490637677,
+              "joint_updates": 1,
+              "kind": "bounded_relocate_segment",
+              "precompletion_local_model_delta": 23.322987153793918,
+              "return_customers": [],
+              "shortlist_index": 4
+            }
+          ],
+          "ledger": {
+            "candidate_build_attempts": 372,
+            "cheap_position_scores": 614,
+            "cheap_source_scores": 3246,
+            "complete_candidate_evaluations_before_submission": 0,
+            "completion_candidates_screened": 5,
+            "distance_worse_model_better_candidates": 3,
+            "exact_candidates_shortlisted": 5,
+            "feasible_candidates": 5,
+            "full_feasibility_checks": 411,
+            "insertion_positions_scanned": 614,
+            "insertion_positions_shortlisted": 372,
+            "maximum_positions_for_one_source": 6,
+            "reciprocal_pairs_scanned": 0,
+            "reciprocal_pairs_shortlisted": 0,
+            "route_local_completion_calls": 6,
+            "route_local_exact_evaluations": 12,
+            "route_local_schedule_evaluations": 1292,
+            "route_proxy_evaluations": 95,
+            "source_segments_eligible": 423,
+            "source_segments_scanned": 423,
+            "source_segments_shortlisted": 64
+          },
+          "mode": "mechanism",
+          "selected": {
+            "customers": [
+              "C016",
+              "C024",
+              "C047"
+            ],
+            "distance_delta": 115881.30010169168,
+            "kind": "bounded_relocate_segment",
+            "local_model_delta": -11.247629320852923,
+            "responsibility_relief": -3,
+            "segment_length": 3,
+            "segment_start": 1,
+            "source_route_index": 2,
+            "target_position": 1,
+            "target_route_index": 8
+          },
+          "source_completion": {
+            "carbon_updates": 1,
+            "complete_evaluations": 0,
+            "joint_updates": 1,
+            "label": "seg_gen_02_source",
+            "route_local_schedule_evaluations": 248,
+            "route_proxy_evaluations": 15
+          },
+          "stop_reason": "proposal_generated",
+          "view_selection_counts": {
+            "exact": {
+              "capacity_breakpoint": 1,
+              "cv_breakpoint": 1,
+              "deterministic_diversity": 1,
+              "distance": 1,
+              "responsibility": 1
+            },
+            "position": {
+              "deterministic_diversity": 61,
+              "distance": 125,
+              "route_boundaries": 61,
+              "segment_endpoint_affinity": 125
+            },
+            "source": {
+              "capacity_breakpoint": 13,
+              "cv_breakpoint": 13,
+              "deterministic_diversity": 12,
+              "geometry": 13,
+              "responsibility": 13
+            }
+          }
+        },
+        "candidate_cost": 1568.8210172913134,
+        "candidate_signature": "68d9597acc9faa9dee26de60315e025d85c138e768fdc738842a3a0e2440870e"
+      }
+    },
+    "source_cost": 1698.390605863105,
+    "source_signature": "0ef3648d80904a42c15e6643ceaa642e320b3e1faa59718069d694208d6bd400"
+  },
+  "DEV-fullsource-donor02-50c": {
+    "arms": {
+      "distance": {
+        "activity": {
+          "candidate": "SEG-GEN-02",
+          "completion": [],
+          "ledger": {
+            "candidate_build_attempts": 72,
+            "cheap_position_scores": 495,
+            "cheap_source_scores": 11018,
+            "complete_candidate_evaluations_before_submission": 0,
+            "completion_candidates_screened": 0,
+            "distance_worse_model_better_candidates": 0,
+            "exact_candidates_shortlisted": 0,
+            "feasible_candidates": 0,
+            "full_feasibility_checks": 103,
+            "insertion_positions_scanned": 495,
+            "insertion_positions_shortlisted": 344,
+            "maximum_positions_for_one_source": 6,
+            "reciprocal_pairs_scanned": 0,
+            "reciprocal_pairs_shortlisted": 0,
+            "route_local_completion_calls": 1,
+            "route_local_exact_evaluations": 0,
+            "route_local_schedule_evaluations": 290,
+            "route_proxy_evaluations": 27,
+            "source_segments_eligible": 1390,
+            "source_segments_scanned": 1390,
+            "source_segments_shortlisted": 64
+          },
+          "mode": "distance",
+          "selected": null,
+          "source_completion": {
+            "carbon_updates": 1,
+            "complete_evaluations": 0,
+            "joint_updates": 1,
+            "label": "seg_gen_02_source",
+            "route_local_schedule_evaluations": 290,
+            "route_proxy_evaluations": 27
+          },
+          "stop_reason": "no_feasible_bounded_candidate",
+          "view_selection_counts": {
+            "position": {
+              "deterministic_diversity": 172,
+              "distance": 172
+            },
+            "source": {
+              "distance": 32,
+              "distance_diversity": 32
+            }
+          }
+        },
+        "candidate_cost": null,
+        "candidate_signature": null
+      },
+      "mechanism": {
+        "activity": {
+          "candidate": "SEG-GEN-02",
+          "completion": [
+            {
+              "carbon_updates": 1,
+              "completed_local_model_delta": -8.44745377070194,
+              "customers": [
+                "C066",
+                "C070",
+                "C074"
+              ],
+              "distance_delta": 84599.94607812364,
+              "joint_updates": 1,
+              "kind": "bounded_relocate_segment",
+              "precompletion_local_model_delta": 6.988322380480156,
+              "return_customers": [],
+              "shortlist_index": 0
+            },
+            {
+              "carbon_updates": 1,
+              "completed_local_model_delta": 17.308795092461366,
+              "customers": [
+                "C005",
+                "C091",
+                "C092"
+              ],
+              "distance_delta": 58676.9235967077,
+              "joint_updates": 0,
+              "kind": "bounded_relocate_segment",
+              "precompletion_local_model_delta": 17.574320241686564,
+              "return_customers": [],
+              "shortlist_index": 1
+            },
+            {
+              "carbon_updates": 1,
+              "completed_local_model_delta": 21.720125615817665,
+              "customers": [
+                "C025",
+                "C036"
+              ],
+              "distance_delta": 46326.65243171988,
+              "joint_updates": 0,
+              "kind": "bounded_relocate_segment",
+              "precompletion_local_model_delta": 22.127469657630968,
+              "return_customers": [],
+              "shortlist_index": 2
+            },
+            {
+              "carbon_updates": 1,
+              "completed_local_model_delta": 37.347476535338615,
+              "customers": [
+                "C012",
+                "C087"
+              ],
+              "distance_delta": 49068.814605773194,
+              "joint_updates": 0,
+              "kind": "bounded_relocate_segment",
+              "precompletion_local_model_delta": 37.442852465296596,
+              "return_customers": [],
+              "shortlist_index": 3
+            },
+            {
+              "carbon_updates": 1,
+              "completed_local_model_delta": 43.99481571104093,
+              "customers": [
+                "C066",
+                "C070",
+                "C074"
+              ],
+              "distance_delta": 130573.22808890673,
+              "joint_updates": 1,
+              "kind": "bounded_relocate_segment",
+              "precompletion_local_model_delta": 58.769503782799575,
+              "return_customers": [],
+              "shortlist_index": 4
+            },
+            {
+              "carbon_updates": 1,
+              "completed_local_model_delta": 76.39294960801453,
+              "customers": [
+                "C083",
+                "C086"
+              ],
+              "distance_delta": 110862.40938236786,
+              "joint_updates": 0,
+              "kind": "bounded_relocate_segment",
+              "precompletion_local_model_delta": 76.4102350591346,
+              "return_customers": [],
+              "shortlist_index": 5
+            },
+            {
+              "carbon_updates": 1,
+              "completed_local_model_delta": 80.22260183990647,
+              "customers": [
+                "C083",
+                "C086"
+              ],
+              "distance_delta": 117109.60863539716,
+              "joint_updates": 0,
+              "kind": "bounded_relocate_segment",
+              "precompletion_local_model_delta": 80.23988729102666,
+              "return_customers": [],
+              "shortlist_index": 6
+            },
+            {
+              "carbon_updates": 1,
+              "completed_local_model_delta": 80.3050201722225,
+              "customers": [
+                "C010",
+                "C009"
+              ],
+              "distance_delta": 116428.65912713914,
+              "joint_updates": 0,
+              "kind": "bounded_relocate_segment",
+              "precompletion_local_model_delta": 80.33197515925201,
+              "return_customers": [],
+              "shortlist_index": 7
+            },
+            {
+              "carbon_updates": 1,
+              "completed_local_model_delta": 89.29049475436324,
+              "customers": [
+                "C038",
+                "C050"
+              ],
+              "distance_delta": 129990.36739920685,
+              "joint_updates": 0,
+              "kind": "bounded_relocate_segment",
+              "precompletion_local_model_delta": 89.3499754885766,
+              "return_customers": [],
+              "shortlist_index": 8
+            },
+            {
+              "carbon_updates": 1,
+              "completed_local_model_delta": 110.90846356357042,
+              "customers": [
+                "C010",
+                "C009"
+              ],
+              "distance_delta": 160104.85492670047,
+              "joint_updates": 0,
+              "kind": "bounded_relocate_segment",
+              "precompletion_local_model_delta": 110.93541855059993,
+              "return_customers": [],
+              "shortlist_index": 9
+            },
+            {
+              "carbon_updates": 1,
+              "completed_local_model_delta": 119.14288123656871,
+              "customers": [
+                "C038",
+                "C050"
+              ],
+              "distance_delta": 172265.90527611296,
+              "joint_updates": 0,
+              "kind": "bounded_relocate_segment",
+              "precompletion_local_model_delta": 119.20236197078219,
+              "return_customers": [],
+              "shortlist_index": 10
+            },
+            {
+              "carbon_updates": 1,
+              "completed_local_model_delta": 122.13807231708859,
+              "customers": [
+                "C083",
+                "C086"
+              ],
+              "distance_delta": 182389.3680148432,
+              "joint_updates": 0,
+              "kind": "bounded_relocate_segment",
+              "precompletion_local_model_delta": 122.15535776820866,
+              "return_customers": [],
+              "shortlist_index": 11
+            }
+          ],
+          "ledger": {
+            "candidate_build_attempts": 368,
+            "cheap_position_scores": 510,
+            "cheap_source_scores": 11018,
+            "complete_candidate_evaluations_before_submission": 0,
+            "completion_candidates_screened": 12,
+            "distance_worse_model_better_candidates": 1,
+            "exact_candidates_shortlisted": 13,
+            "feasible_candidates": 13,
+            "full_feasibility_checks": 427,
+            "insertion_positions_scanned": 510,
+            "insertion_positions_shortlisted": 368,
+            "maximum_positions_for_one_source": 6,
+            "reciprocal_pairs_scanned": 0,
+            "reciprocal_pairs_shortlisted": 0,
+            "route_local_completion_calls": 13,
+            "route_local_exact_evaluations": 37,
+            "route_local_schedule_evaluations": 3592,
+            "route_proxy_evaluations": 353,
+            "source_segments_eligible": 1390,
+            "source_segments_scanned": 1390,
+            "source_segments_shortlisted": 64
+          },
+          "mode": "mechanism",
+          "selected": {
+            "customers": [
+              "C066",
+              "C070",
+              "C074"
+            ],
+            "distance_delta": 84599.94607812364,
+            "kind": "bounded_relocate_segment",
+            "local_model_delta": -8.44745377070194,
+            "responsibility_relief": -3,
+            "segment_length": 3,
+            "segment_start": 1,
+            "source_route_index": 5,
+            "target_position": 0,
+            "target_route_index": 15
+          },
+          "source_completion": {
+            "carbon_updates": 1,
+            "complete_evaluations": 0,
+            "joint_updates": 1,
+            "label": "seg_gen_02_source",
+            "route_local_schedule_evaluations": 290,
+            "route_proxy_evaluations": 27
+          },
+          "stop_reason": "proposal_generated",
+          "view_selection_counts": {
+            "exact": {
+              "capacity_breakpoint": 2,
+              "cv_breakpoint": 3,
+              "deterministic_diversity": 2,
+              "distance": 3,
+              "responsibility": 3
+            },
+            "position": {
+              "deterministic_diversity": 61,
+              "distance": 124,
+              "route_boundaries": 59,
+              "segment_endpoint_affinity": 124
+            },
+            "source": {
+              "capacity_breakpoint": 13,
+              "cv_breakpoint": 13,
+              "deterministic_diversity": 12,
+              "geometry": 13,
+              "responsibility": 13
+            }
+          }
+        },
+        "candidate_cost": 3306.8761006376462,
+        "candidate_signature": "84ac5d566caa9b4576e6a074cf6c4e143b1ec4de9ef69f6b135a9b26c8eb8be8"
+      }
+    },
+    "source_cost": 3713.42556562954,
+    "source_signature": "400948f96a2c0d5b4d60ffbbbe7656e7ed7eee6f2c74c405757a5f524bd532dd"
+  },
+  "L-main-vanilla-100c-01": {
+    "activity": {
+      "candidate": "SEG-GEN-02",
+      "completion": [],
+      "ledger": {
+        "candidate_build_attempts": 0,
+        "cheap_position_scores": 0,
+        "cheap_source_scores": 0,
+        "complete_candidate_evaluations_before_submission": 0,
+        "completion_candidates_screened": 0,
+        "distance_worse_model_better_candidates": 0,
+        "exact_candidates_shortlisted": 0,
+        "feasible_candidates": 0,
+        "full_feasibility_checks": 1,
+        "insertion_positions_scanned": 0,
+        "insertion_positions_shortlisted": 0,
+        "maximum_positions_for_one_source": 0,
+        "reciprocal_pairs_scanned": 0,
+        "reciprocal_pairs_shortlisted": 0,
+        "route_local_completion_calls": 1,
+        "route_local_exact_evaluations": 0,
+        "route_local_schedule_evaluations": 0,
+        "route_proxy_evaluations": 14,
+        "source_segments_eligible": 0,
+        "source_segments_scanned": 0,
+        "source_segments_shortlisted": 0
+      },
+      "mode": "mechanism",
+      "selected": null,
+      "source_completion": {
+        "carbon_updates": 0,
+        "complete_evaluations": 0,
+        "joint_updates": 0,
+        "label": "seg_gen_02_source",
+        "route_local_schedule_evaluations": 0,
+        "route_proxy_evaluations": 14
+      },
+      "stop_reason": "no_cross_depot_segment_source",
+      "view_selection_counts": {}
+    },
+    "candidate_present": false,
+    "source_signature": "254d4d1aa9a268ba6b8e5b4db8a3bf55724e01aa11d35dc5a64d494586ffe337"
+  }
+}
