@@ -1,0 +1,952 @@
+{
+  "binding": {
+    "candidate_count": 39,
+    "candidate_set_sha256": "19041c4771b74656ff411b91c25ae6f2acf8e20ac268db260dff0513ea86ad08",
+    "counterfactual_activity": {
+      "charge_repair_calls": 2,
+      "complete_route_search_evaluations": 0,
+      "generated_charge_starts": 0,
+      "independent_replays": 1,
+      "joint_complete_replays": 1,
+      "joint_feasibility_checks": 1,
+      "local_start_evaluations": 0,
+      "patterns_considered": 1,
+      "records": [
+        {
+          "complete_cost": 249.81140845994744,
+          "feasible": true,
+          "pattern": [
+            "cv",
+            "cv"
+          ],
+          "proxy_delta": 0.0,
+          "retime": {
+            "charge_actions_seen": 0,
+            "charge_actions_selected": 0,
+            "charge_actions_skipped": 0,
+            "generated_charge_starts": 0,
+            "joint_feasibility_checks": 1,
+            "last_violation_types": [],
+            "local_start_evaluations": 0,
+            "retained_charge_starts": 0,
+            "stop_reason": "no_improving_retime"
+          },
+          "solution_sha256": "dd4139c37bf975986bb9aff1e29e30f8c457d4fd48884292d1d613b06fa53e8d"
+        }
+      ],
+      "retained_charge_starts": 0,
+      "route_proxy_evaluations": 2,
+      "route_variant_calls": 2,
+      "route_variant_option_counts": [
+        1,
+        1
+      ],
+      "source_complete_replays": 1,
+      "source_feasibility_checks": 1
+    },
+    "counterfactual_cost": 249.81140845994744,
+    "distance_activity": {
+      "accepted_moves": 0,
+      "arm": "distance",
+      "candidate_set_sha256": "19041c4771b74656ff411b91c25ae6f2acf8e20ac268db260dff0513ea86ad08",
+      "complete_route_search_evaluations": 0,
+      "exact_candidate_capacity": 4,
+      "exact_candidates_completed": 4,
+      "generated_charge_starts": 0,
+      "independent_feasibility_checks": 0,
+      "independent_replays": 0,
+      "joint_complete_replays": 4,
+      "joint_feasibility_checks": 4,
+      "local_start_evaluations": 0,
+      "prepared_integrity_sha256": "4eb776bab397d63b02b80bbfc9a08c81939f3d54243d6383e678ef962ed6ccfd",
+      "ranking_score": "distance_score",
+      "records": [
+        {
+          "candidate_sha256": "de23e98a909be67018f1a1e74b1e37bdb25a72ed51147badd59635c51e85b988",
+          "complete_cost": 338.57573054748923,
+          "completion": {
+            "complete_route_search_evaluations": 0,
+            "generated_charge_starts": 0,
+            "joint_complete_replays": 1,
+            "joint_feasibility_checks": 1,
+            "local_start_evaluations": 0,
+            "records": [
+              {
+                "assembled": true,
+                "assembly_reason": "assembled",
+                "complete_cost": 338.57573054748923,
+                "feasible": true,
+                "invariants": {
+                  "boundary_changed_and_frozen": true,
+                  "nonpair_actions_unchanged": true,
+                  "nonpair_routes_unchanged": true,
+                  "pair_physical_ids_not_reused": true,
+                  "pair_physical_ids_unique": true,
+                  "route_count_unchanged": true
+                },
+                "pattern": [
+                  "cv",
+                  "cv"
+                ],
+                "retime": {
+                  "charge_actions_seen": 0,
+                  "charge_actions_selected": 0,
+                  "charge_actions_skipped": 0,
+                  "generated_charge_starts": 0,
+                  "joint_feasibility_checks": 1,
+                  "last_violation_types": [],
+                  "local_start_evaluations": 0,
+                  "retained_charge_starts": 0,
+                  "stop_reason": "no_improving_retime"
+                },
+                "solution_sha256": "9b386934ffbd9ca27c508c4d8398e2a225d1feff41130fd624335ee4737cc643"
+              }
+            ],
+            "retained_charge_starts": 0,
+            "vehicle_patterns": 1
+          },
+          "distance_score": 29172.98461164059,
+          "feasible": true,
+          "left_customers": [
+            "C5",
+            "C6"
+          ],
+          "left_route_index": 0,
+          "mechanism_score": 338.57573054748923,
+          "rank": 1,
+          "right_customers": [
+            "C1",
+            "C2",
+            "C3",
+            "C4"
+          ],
+          "right_route_index": 1,
+          "solution_sha256": "9b386934ffbd9ca27c508c4d8398e2a225d1feff41130fd624335ee4737cc643"
+        },
+        {
+          "candidate_sha256": "2e42f7d8796341623237ee87d7f8d4fe1305ee6ff03c57ca5f44090ce82534dc",
+          "complete_cost": 339.6279090598232,
+          "completion": {
+            "complete_route_search_evaluations": 0,
+            "generated_charge_starts": 0,
+            "joint_complete_replays": 1,
+            "joint_feasibility_checks": 1,
+            "local_start_evaluations": 0,
+            "records": [
+              {
+                "assembled": true,
+                "assembly_reason": "assembled",
+                "complete_cost": 339.6279090598232,
+                "feasible": true,
+                "invariants": {
+                  "boundary_changed_and_frozen": true,
+                  "nonpair_actions_unchanged": true,
+                  "nonpair_routes_unchanged": true,
+                  "pair_physical_ids_not_reused": true,
+                  "pair_physical_ids_unique": true,
+                  "route_count_unchanged": true
+                },
+                "pattern": [
+                  "cv",
+                  "cv"
+                ],
+                "retime": {
+                  "charge_actions_seen": 0,
+                  "charge_actions_selected": 0,
+                  "charge_actions_skipped": 0,
+                  "generated_charge_starts": 0,
+                  "joint_feasibility_checks": 1,
+                  "last_violation_types": [],
+                  "local_start_evaluations": 0,
+                  "retained_charge_starts": 0,
+                  "stop_reason": "no_improving_retime"
+                },
+                "solution_sha256": "0354109f854e415b83a3db2c74bc40f38b2182c39a5afc253c250550c09bda44"
+              }
+            ],
+            "retained_charge_starts": 0,
+            "vehicle_patterns": 1
+          },
+          "distance_score": 30810.148672775817,
+          "feasible": true,
+          "left_customers": [
+            "C5",
+            "C6"
+          ],
+          "left_route_index": 0,
+          "mechanism_score": 339.6279090598232,
+          "rank": 2,
+          "right_customers": [
+            "C1",
+            "C4",
+            "C3",
+            "C2"
+          ],
+          "right_route_index": 1,
+          "solution_sha256": "0354109f854e415b83a3db2c74bc40f38b2182c39a5afc253c250550c09bda44"
+        },
+        {
+          "candidate_sha256": "8c5f546c688969153becd3502dc4f33e3598cafe998786080659bb4eadefc648",
+          "complete_cost": 442.3956273634479,
+          "completion": {
+            "complete_route_search_evaluations": 0,
+            "generated_charge_starts": 0,
+            "joint_complete_replays": 1,
+            "joint_feasibility_checks": 1,
+            "local_start_evaluations": 0,
+            "records": [
+              {
+                "assembled": true,
+                "assembly_reason": "assembled",
+                "complete_cost": 442.3956273634479,
+                "feasible": true,
+                "invariants": {
+                  "boundary_changed_and_frozen": true,
+                  "nonpair_actions_unchanged": true,
+                  "nonpair_routes_unchanged": true,
+                  "pair_physical_ids_not_reused": true,
+                  "pair_physical_ids_unique": true,
+                  "route_count_unchanged": true
+                },
+                "pattern": [
+                  "cv",
+                  "cv"
+                ],
+                "retime": {
+                  "charge_actions_seen": 0,
+                  "charge_actions_selected": 0,
+                  "charge_actions_skipped": 0,
+                  "generated_charge_starts": 0,
+                  "joint_feasibility_checks": 1,
+                  "last_violation_types": [],
+                  "local_start_evaluations": 0,
+                  "retained_charge_starts": 0,
+                  "stop_reason": "no_improving_retime"
+                },
+                "solution_sha256": "5447d56cafb3d786257c450f6edc716cc29ebc31461ed42e9f203c19d507371d"
+              }
+            ],
+            "retained_charge_starts": 0,
+            "vehicle_patterns": 1
+          },
+          "distance_score": 35076.00281569198,
+          "feasible": true,
+          "left_customers": [
+            "C4",
+            "C3",
+            "C2",
+            "C5",
+            "C6"
+          ],
+          "left_route_index": 0,
+          "mechanism_score": 442.39562736344783,
+          "rank": 3,
+          "right_customers": [
+            "C1"
+          ],
+          "right_route_index": 1,
+          "solution_sha256": "5447d56cafb3d786257c450f6edc716cc29ebc31461ed42e9f203c19d507371d"
+        },
+        {
+          "candidate_sha256": "1cac6b2f4c9cc7b0b89bb4655d8fdfd10a92bb4425638f53142173333454d290",
+          "complete_cost": 442.58049186664886,
+          "completion": {
+            "complete_route_search_evaluations": 0,
+            "generated_charge_starts": 0,
+            "joint_complete_replays": 1,
+            "joint_feasibility_checks": 1,
+            "local_start_evaluations": 0,
+            "records": [
+              {
+                "assembled": true,
+                "assembly_reason": "assembled",
+                "complete_cost": 442.58049186664886,
+                "feasible": true,
+                "invariants": {
+                  "boundary_changed_and_frozen": true,
+                  "nonpair_actions_unchanged": true,
+                  "nonpair_routes_unchanged": true,
+                  "pair_physical_ids_not_reused": true,
+                  "pair_physical_ids_unique": true,
+                  "route_count_unchanged": true
+                },
+                "pattern": [
+                  "cv",
+                  "cv"
+                ],
+                "retime": {
+                  "charge_actions_seen": 0,
+                  "charge_actions_selected": 0,
+                  "charge_actions_skipped": 0,
+                  "generated_charge_starts": 0,
+                  "joint_feasibility_checks": 1,
+                  "last_violation_types": [],
+                  "local_start_evaluations": 0,
+                  "retained_charge_starts": 0,
+                  "stop_reason": "no_improving_retime"
+                },
+                "solution_sha256": "1251347c0054a34dc8ccc54e2cbbd797e72ae58597d7eff6782ab653d78d2ddc"
+              }
+            ],
+            "retained_charge_starts": 0,
+            "vehicle_patterns": 1
+          },
+          "distance_score": 35386.54454797787,
+          "feasible": true,
+          "left_customers": [
+            "C2",
+            "C3",
+            "C4",
+            "C5",
+            "C6"
+          ],
+          "left_route_index": 0,
+          "mechanism_score": 442.58049186664886,
+          "rank": 4,
+          "right_customers": [
+            "C1"
+          ],
+          "right_route_index": 1,
+          "solution_sha256": "1251347c0054a34dc8ccc54e2cbbd797e72ae58597d7eff6782ab653d78d2ddc"
+        }
+      ],
+      "retained_charge_starts": 0,
+      "vehicle_patterns": 4
+    },
+    "distance_cost": 249.81140845994744,
+    "mechanism_activity": {
+      "accepted_moves": 1,
+      "arm": "mechanism",
+      "candidate_set_sha256": "19041c4771b74656ff411b91c25ae6f2acf8e20ac268db260dff0513ea86ad08",
+      "complete_route_search_evaluations": 0,
+      "exact_candidate_capacity": 4,
+      "exact_candidates_completed": 4,
+      "generated_charge_starts": 0,
+      "independent_feasibility_checks": 1,
+      "independent_replays": 1,
+      "joint_complete_replays": 4,
+      "joint_feasibility_checks": 4,
+      "local_start_evaluations": 0,
+      "prepared_integrity_sha256": "4eb776bab397d63b02b80bbfc9a08c81939f3d54243d6383e678ef962ed6ccfd",
+      "ranking_score": "mechanism_score",
+      "records": [
+        {
+          "candidate_sha256": "faec7c8b05b93b4d65e14d68217a58fb950dc2c40be5892a5133ba16022ed9b8",
+          "complete_cost": 150.06492395356452,
+          "completion": {
+            "complete_route_search_evaluations": 0,
+            "generated_charge_starts": 0,
+            "joint_complete_replays": 1,
+            "joint_feasibility_checks": 1,
+            "local_start_evaluations": 0,
+            "records": [
+              {
+                "assembled": true,
+                "assembly_reason": "assembled",
+                "complete_cost": 150.06492395356452,
+                "feasible": true,
+                "invariants": {
+                  "boundary_changed_and_frozen": true,
+                  "nonpair_actions_unchanged": true,
+                  "nonpair_routes_unchanged": true,
+                  "pair_physical_ids_not_reused": true,
+                  "pair_physical_ids_unique": true,
+                  "route_count_unchanged": true
+                },
+                "pattern": [
+                  "cv",
+                  "cv"
+                ],
+                "retime": {
+                  "charge_actions_seen": 0,
+                  "charge_actions_selected": 0,
+                  "charge_actions_skipped": 0,
+                  "generated_charge_starts": 0,
+                  "joint_feasibility_checks": 1,
+                  "last_violation_types": [],
+                  "local_start_evaluations": 0,
+                  "retained_charge_starts": 0,
+                  "stop_reason": "no_improving_retime"
+                },
+                "solution_sha256": "e132707d57689e54b6852b6fe163fd4ba2ff23896da3eedf87d27ef166629cb8"
+              }
+            ],
+            "retained_charge_starts": 0,
+            "vehicle_patterns": 1
+          },
+          "distance_score": 47223.90867982195,
+          "feasible": true,
+          "left_customers": [
+            "C5",
+            "C6",
+            "C1",
+            "C2"
+          ],
+          "left_route_index": 0,
+          "mechanism_score": 150.06492395356452,
+          "rank": 1,
+          "right_customers": [
+            "C3",
+            "C4"
+          ],
+          "right_route_index": 1,
+          "solution_sha256": "e132707d57689e54b6852b6fe163fd4ba2ff23896da3eedf87d27ef166629cb8"
+        },
+        {
+          "candidate_sha256": "7e6f534a3be76cb1cd0cc6b266b91084b0ebf523a9b19447ad336a4c1e27689c",
+          "complete_cost": 156.52701553277933,
+          "completion": {
+            "complete_route_search_evaluations": 0,
+            "generated_charge_starts": 0,
+            "joint_complete_replays": 1,
+            "joint_feasibility_checks": 1,
+            "local_start_evaluations": 0,
+            "records": [
+              {
+                "assembled": true,
+                "assembly_reason": "assembled",
+                "complete_cost": 156.52701553277933,
+                "feasible": true,
+                "invariants": {
+                  "boundary_changed_and_frozen": true,
+                  "nonpair_actions_unchanged": true,
+                  "nonpair_routes_unchanged": true,
+                  "pair_physical_ids_not_reused": true,
+                  "pair_physical_ids_unique": true,
+                  "route_count_unchanged": true
+                },
+                "pattern": [
+                  "cv",
+                  "cv"
+                ],
+                "retime": {
+                  "charge_actions_seen": 0,
+                  "charge_actions_selected": 0,
+                  "charge_actions_skipped": 0,
+                  "generated_charge_starts": 0,
+                  "joint_feasibility_checks": 1,
+                  "last_violation_types": [],
+                  "local_start_evaluations": 0,
+                  "retained_charge_starts": 0,
+                  "stop_reason": "no_improving_retime"
+                },
+                "solution_sha256": "850a3eb43f6df46b553dcd6d4e0e0a627590079df7c83c9fb75b86112bb97f25"
+              }
+            ],
+            "retained_charge_starts": 0,
+            "vehicle_patterns": 1
+          },
+          "distance_score": 57306.3400570529,
+          "feasible": true,
+          "left_customers": [
+            "C1",
+            "C6"
+          ],
+          "left_route_index": 0,
+          "mechanism_score": 156.52701553277933,
+          "rank": 2,
+          "right_customers": [
+            "C5",
+            "C2",
+            "C3",
+            "C4"
+          ],
+          "right_route_index": 1,
+          "solution_sha256": "850a3eb43f6df46b553dcd6d4e0e0a627590079df7c83c9fb75b86112bb97f25"
+        },
+        {
+          "candidate_sha256": "9987c2ea43845aca512e86a765a80c7e5d6613aa8395b8e5ceba4fbc8373a8bb",
+          "complete_cost": 157.03448417943093,
+          "completion": {
+            "complete_route_search_evaluations": 0,
+            "generated_charge_starts": 0,
+            "joint_complete_replays": 1,
+            "joint_feasibility_checks": 1,
+            "local_start_evaluations": 0,
+            "records": [
+              {
+                "assembled": true,
+                "assembly_reason": "assembled",
+                "complete_cost": 157.03448417943093,
+                "feasible": true,
+                "invariants": {
+                  "boundary_changed_and_frozen": true,
+                  "nonpair_actions_unchanged": true,
+                  "nonpair_routes_unchanged": true,
+                  "pair_physical_ids_not_reused": true,
+                  "pair_physical_ids_unique": true,
+                  "route_count_unchanged": true
+                },
+                "pattern": [
+                  "cv",
+                  "cv"
+                ],
+                "retime": {
+                  "charge_actions_seen": 0,
+                  "charge_actions_selected": 0,
+                  "charge_actions_skipped": 0,
+                  "generated_charge_starts": 0,
+                  "joint_feasibility_checks": 1,
+                  "last_violation_types": [],
+                  "local_start_evaluations": 0,
+                  "retained_charge_starts": 0,
+                  "stop_reason": "no_improving_retime"
+                },
+                "solution_sha256": "ab1a6223581a24a448685d8b716bf60b6f70066873bcf0eea33d0b8d6a151cd1"
+              }
+            ],
+            "retained_charge_starts": 0,
+            "vehicle_patterns": 1
+          },
+          "distance_score": 58107.088109997036,
+          "feasible": true,
+          "left_customers": [
+            "C1",
+            "C6",
+            "C5",
+            "C2"
+          ],
+          "left_route_index": 0,
+          "mechanism_score": 157.03448417943093,
+          "rank": 3,
+          "right_customers": [
+            "C3",
+            "C4"
+          ],
+          "right_route_index": 1,
+          "solution_sha256": "ab1a6223581a24a448685d8b716bf60b6f70066873bcf0eea33d0b8d6a151cd1"
+        },
+        {
+          "candidate_sha256": "09c560e4944308b79dfe6a08674e71600d62a7ec3c1ca433a5ba0dc2c5a0c6ae",
+          "complete_cost": 157.83599803295806,
+          "completion": {
+            "complete_route_search_evaluations": 0,
+            "generated_charge_starts": 0,
+            "joint_complete_replays": 1,
+            "joint_feasibility_checks": 1,
+            "local_start_evaluations": 0,
+            "records": [
+              {
+                "assembled": true,
+                "assembly_reason": "assembled",
+                "complete_cost": 157.83599803295806,
+                "feasible": true,
+                "invariants": {
+                  "boundary_changed_and_frozen": true,
+                  "nonpair_actions_unchanged": true,
+                  "nonpair_routes_unchanged": true,
+                  "pair_physical_ids_not_reused": true,
+                  "pair_physical_ids_unique": true,
+                  "route_count_unchanged": true
+                },
+                "pattern": [
+                  "cv",
+                  "cv"
+                ],
+                "retime": {
+                  "charge_actions_seen": 0,
+                  "charge_actions_selected": 0,
+                  "charge_actions_skipped": 0,
+                  "generated_charge_starts": 0,
+                  "joint_feasibility_checks": 1,
+                  "last_violation_types": [],
+                  "local_start_evaluations": 0,
+                  "retained_charge_starts": 0,
+                  "stop_reason": "no_improving_retime"
+                },
+                "solution_sha256": "5ce5df3350fe21ed42fba49ed78b288a5ffb16012073264f8c96d3aa894761cc"
+              }
+            ],
+            "retained_charge_starts": 0,
+            "vehicle_patterns": 1
+          },
+          "distance_score": 59345.492990190294,
+          "feasible": true,
+          "left_customers": [
+            "C1",
+            "C6"
+          ],
+          "left_route_index": 0,
+          "mechanism_score": 157.83599803295806,
+          "rank": 4,
+          "right_customers": [
+            "C5",
+            "C4",
+            "C3",
+            "C2"
+          ],
+          "right_route_index": 1,
+          "solution_sha256": "5ce5df3350fe21ed42fba49ed78b288a5ffb16012073264f8c96d3aa894761cc"
+        }
+      ],
+      "retained_charge_starts": 0,
+      "vehicle_patterns": 4
+    },
+    "mechanism_cost": 150.06492395356452,
+    "oracle_distance_rank": 13,
+    "oracle_global_best": {
+      "complete_cost": 150.06492395356452,
+      "distance_score": 47223.90867982195,
+      "left_customers": [
+        "C5",
+        "C6",
+        "C1",
+        "C2"
+      ],
+      "mechanism_score": 150.06492395356452,
+      "right_customers": [
+        "C3",
+        "C4"
+      ],
+      "solution_sha256": "201633fb32d05b1767639562f2d7281eb6abf8cde93db0153f799c2b8b5dd07e"
+    },
+    "preparation_activity": {
+      "charge_repair_calls": 78,
+      "common_candidates": 39,
+      "common_local_feasibility_checks": 78,
+      "complete_route_search_evaluations": 0,
+      "cut_positions_considered": 40,
+      "distance_scores": 39,
+      "mechanism_scores": 39,
+      "route_pairs_considered": 1,
+      "route_proxy_evaluations": 78,
+      "route_variant_calls": 78,
+      "unique_sequences": 8
+    },
+    "prepared_integrity_sha256": "4eb776bab397d63b02b80bbfc9a08c81939f3d54243d6383e678ef962ed6ccfd",
+    "source_cost": 249.81140845994744
+  },
+  "checks": {
+    "all_outputs_feasible": true,
+    "all_tamper_checks_rejected": true,
+    "cap_zero_exact_noop": true,
+    "caps_exact_0_1_2_4": true,
+    "distance_arm_does_not_fake_improvement": true,
+    "joint_left_control_feasible": true,
+    "joint_public_station_actions_entered_completion": true,
+    "joint_public_station_conflict_rejected": true,
+    "joint_right_control_feasible": true,
+    "mechanism_field_really_changes": true,
+    "mechanism_matches_independent_oracle": true,
+    "mechanism_strictly_beats_counterfactual": true,
+    "mechanism_strictly_beats_distance_arm": true,
+    "mechanism_strictly_beats_source": true,
+    "nonbinding_distance_exact_noop": true,
+    "nonbinding_mechanism_exact_noop": true,
+    "oracle_best_in_mechanism_top4": true,
+    "oracle_best_not_in_distance_top4": true,
+    "oracle_candidate_count_at_least_6": true,
+    "protected_hashes_unchanged": true,
+    "public_station_retime_positive_control": true,
+    "same_candidate_pool_both_arms": true,
+    "same_exact_capacity_both_arms": true,
+    "same_joint_work_binding_fixture": true,
+    "solver_pool_matches_independent_oracle": true,
+    "solver_scores_match_independent_oracle": true,
+    "zero_complete_route_search_evaluations": true
+  },
+  "complete_route_search_evaluations": 0,
+  "formal_search_allowed": false,
+  "full_benchmark_allowed": false,
+  "joint_conflict": {
+    "joint": {
+      "complete_route_search_evaluations": 0,
+      "completion_activity": {
+        "charge_actions_seen": 2,
+        "charge_actions_selected": 2,
+        "charge_actions_skipped": 0,
+        "generated_charge_starts": 2,
+        "joint_feasibility_checks": 1,
+        "last_violation_types": [
+          "STATION_CAPACITY"
+        ],
+        "local_start_evaluations": 2,
+        "retained_charge_starts": 2,
+        "stop_reason": "base_joint_infeasible"
+      },
+      "feasible": false,
+      "input_solution_sha256": "2d8e8a5a254e48233a3d14cdd53d0ec29e9e0b1c14359dcc472837db38b28755",
+      "joint_feasibility_checks": 1,
+      "output_charging_actions": [],
+      "output_solution_sha256": null,
+      "violation_types": [
+        "STATION_CAPACITY"
+      ]
+    },
+    "left_only": {
+      "complete_route_search_evaluations": 0,
+      "completion_activity": {
+        "charge_actions_seen": 1,
+        "charge_actions_selected": 1,
+        "charge_actions_skipped": 0,
+        "generated_charge_starts": 1,
+        "joint_feasibility_checks": 1,
+        "last_violation_types": [],
+        "local_start_evaluations": 1,
+        "retained_charge_starts": 1,
+        "stop_reason": "no_improving_retime"
+      },
+      "feasible": true,
+      "input_solution_sha256": "9131953731318ea7ba059aac6757bf73e16216133bd8b76c1baa894530ef31f8",
+      "joint_feasibility_checks": 1,
+      "output_charging_actions": [
+        {
+          "charge_day_offset": 0,
+          "charge_start_second": 0.0,
+          "energy_kwh": 5.0,
+          "occupancy_minutes": 30.0,
+          "station_id": "F1",
+          "vehicle_id": "EV_CONFLICT_LEFT#T1"
+        }
+      ],
+      "output_solution_sha256": "9131953731318ea7ba059aac6757bf73e16216133bd8b76c1baa894530ef31f8",
+      "violation_types": []
+    },
+    "right_only": {
+      "complete_route_search_evaluations": 0,
+      "completion_activity": {
+        "charge_actions_seen": 1,
+        "charge_actions_selected": 1,
+        "charge_actions_skipped": 0,
+        "generated_charge_starts": 1,
+        "joint_feasibility_checks": 1,
+        "last_violation_types": [],
+        "local_start_evaluations": 1,
+        "retained_charge_starts": 1,
+        "stop_reason": "no_improving_retime"
+      },
+      "feasible": true,
+      "input_solution_sha256": "3a0b422df5a473de774abfdee7fd66798f5cb02c2d3e40d29f4de8905ee7ec7e",
+      "joint_feasibility_checks": 1,
+      "output_charging_actions": [
+        {
+          "charge_day_offset": 0,
+          "charge_start_second": 0.0,
+          "energy_kwh": 5.0,
+          "occupancy_minutes": 30.0,
+          "station_id": "F1",
+          "vehicle_id": "EV_CONFLICT_RIGHT#T1"
+        }
+      ],
+      "output_solution_sha256": "3a0b422df5a473de774abfdee7fd66798f5cb02c2d3e40d29f4de8905ee7ec7e",
+      "violation_types": []
+    },
+    "widened_resolvable_joint": {
+      "complete_route_search_evaluations": 0,
+      "completion_activity": {
+        "charge_actions_seen": 2,
+        "charge_actions_selected": 2,
+        "charge_actions_skipped": 0,
+        "generated_charge_starts": 6,
+        "joint_feasibility_checks": 4,
+        "last_violation_types": [
+          "STATION_CAPACITY"
+        ],
+        "local_start_evaluations": 6,
+        "retained_charge_starts": 6,
+        "stop_reason": "sequential_joint_retime"
+      },
+      "feasible": true,
+      "input_solution_sha256": "2d8e8a5a254e48233a3d14cdd53d0ec29e9e0b1c14359dcc472837db38b28755",
+      "joint_feasibility_checks": 4,
+      "output_charging_actions": [
+        {
+          "charge_day_offset": 0,
+          "charge_start_second": 3600.0,
+          "energy_kwh": 5.0,
+          "occupancy_minutes": 30.0,
+          "station_id": "F1",
+          "vehicle_id": "EV_CONFLICT_LEFT#T1"
+        },
+        {
+          "charge_day_offset": 0,
+          "charge_start_second": 0.0,
+          "energy_kwh": 5.0,
+          "occupancy_minutes": 30.0,
+          "station_id": "F1",
+          "vehicle_id": "EV_CONFLICT_RIGHT#T1"
+        }
+      ],
+      "output_solution_sha256": "d48ceb5753dc5e84db600e47dc81a887aacc5fd7c777e2f7a5f5e866e11e96e2",
+      "violation_types": [
+        "STATION_CAPACITY"
+      ]
+    }
+  },
+  "nonbinding": {
+    "distance_activity": {
+      "accepted_moves": 0,
+      "arm": "distance",
+      "candidate_set_sha256": "c77035f9508f8269bf2110a62a54ea036821bec15a7d71e063b607ebd68ba5dc",
+      "complete_route_search_evaluations": 0,
+      "exact_candidate_capacity": 4,
+      "exact_candidates_completed": 1,
+      "generated_charge_starts": 0,
+      "independent_feasibility_checks": 0,
+      "independent_replays": 0,
+      "joint_complete_replays": 1,
+      "joint_feasibility_checks": 1,
+      "local_start_evaluations": 0,
+      "prepared_integrity_sha256": "839d9808cfc9ba5743ab40935e6f4828b2c870645b7c9212423e8a346afc43eb",
+      "ranking_score": "distance_score",
+      "records": [
+        {
+          "candidate_sha256": "cade50badb25c688a7b249cafabaedc96819ff0ed0710ea6de064be6dc6a1fc9",
+          "complete_cost": 244.15093913993317,
+          "completion": {
+            "complete_route_search_evaluations": 0,
+            "generated_charge_starts": 0,
+            "joint_complete_replays": 1,
+            "joint_feasibility_checks": 1,
+            "local_start_evaluations": 0,
+            "records": [
+              {
+                "assembled": true,
+                "assembly_reason": "assembled",
+                "complete_cost": 244.15093913993317,
+                "feasible": true,
+                "invariants": {
+                  "boundary_changed_and_frozen": true,
+                  "nonpair_actions_unchanged": true,
+                  "nonpair_routes_unchanged": true,
+                  "pair_physical_ids_not_reused": true,
+                  "pair_physical_ids_unique": true,
+                  "route_count_unchanged": true
+                },
+                "pattern": [
+                  "cv",
+                  "cv"
+                ],
+                "retime": {
+                  "charge_actions_seen": 0,
+                  "charge_actions_selected": 0,
+                  "charge_actions_skipped": 0,
+                  "generated_charge_starts": 0,
+                  "joint_feasibility_checks": 1,
+                  "last_violation_types": [],
+                  "local_start_evaluations": 0,
+                  "retained_charge_starts": 0,
+                  "stop_reason": "no_improving_retime"
+                },
+                "solution_sha256": "ac8f4a9d21723c8a6cc0085d232e6ac88d5355feb02a05c0160a47201d4d3cc5"
+              }
+            ],
+            "retained_charge_starts": 0,
+            "vehicle_patterns": 1
+          },
+          "distance_score": 38000.0,
+          "feasible": true,
+          "left_customers": [
+            "C2"
+          ],
+          "left_route_index": 0,
+          "mechanism_score": 244.15093913993317,
+          "rank": 1,
+          "right_customers": [
+            "C1"
+          ],
+          "right_route_index": 1,
+          "solution_sha256": "ac8f4a9d21723c8a6cc0085d232e6ac88d5355feb02a05c0160a47201d4d3cc5"
+        }
+      ],
+      "retained_charge_starts": 0,
+      "vehicle_patterns": 1
+    },
+    "mechanism_activity": {
+      "accepted_moves": 0,
+      "arm": "mechanism",
+      "candidate_set_sha256": "c77035f9508f8269bf2110a62a54ea036821bec15a7d71e063b607ebd68ba5dc",
+      "complete_route_search_evaluations": 0,
+      "exact_candidate_capacity": 4,
+      "exact_candidates_completed": 1,
+      "generated_charge_starts": 0,
+      "independent_feasibility_checks": 0,
+      "independent_replays": 0,
+      "joint_complete_replays": 1,
+      "joint_feasibility_checks": 1,
+      "local_start_evaluations": 0,
+      "prepared_integrity_sha256": "839d9808cfc9ba5743ab40935e6f4828b2c870645b7c9212423e8a346afc43eb",
+      "ranking_score": "mechanism_score",
+      "records": [
+        {
+          "candidate_sha256": "cade50badb25c688a7b249cafabaedc96819ff0ed0710ea6de064be6dc6a1fc9",
+          "complete_cost": 244.15093913993317,
+          "completion": {
+            "complete_route_search_evaluations": 0,
+            "generated_charge_starts": 0,
+            "joint_complete_replays": 1,
+            "joint_feasibility_checks": 1,
+            "local_start_evaluations": 0,
+            "records": [
+              {
+                "assembled": true,
+                "assembly_reason": "assembled",
+                "complete_cost": 244.15093913993317,
+                "feasible": true,
+                "invariants": {
+                  "boundary_changed_and_frozen": true,
+                  "nonpair_actions_unchanged": true,
+                  "nonpair_routes_unchanged": true,
+                  "pair_physical_ids_not_reused": true,
+                  "pair_physical_ids_unique": true,
+                  "route_count_unchanged": true
+                },
+                "pattern": [
+                  "cv",
+                  "cv"
+                ],
+                "retime": {
+                  "charge_actions_seen": 0,
+                  "charge_actions_selected": 0,
+                  "charge_actions_skipped": 0,
+                  "generated_charge_starts": 0,
+                  "joint_feasibility_checks": 1,
+                  "last_violation_types": [],
+                  "local_start_evaluations": 0,
+                  "retained_charge_starts": 0,
+                  "stop_reason": "no_improving_retime"
+                },
+                "solution_sha256": "ac8f4a9d21723c8a6cc0085d232e6ac88d5355feb02a05c0160a47201d4d3cc5"
+              }
+            ],
+            "retained_charge_starts": 0,
+            "vehicle_patterns": 1
+          },
+          "distance_score": 38000.0,
+          "feasible": true,
+          "left_customers": [
+            "C2"
+          ],
+          "left_route_index": 0,
+          "mechanism_score": 244.15093913993317,
+          "rank": 1,
+          "right_customers": [
+            "C1"
+          ],
+          "right_route_index": 1,
+          "solution_sha256": "ac8f4a9d21723c8a6cc0085d232e6ac88d5355feb02a05c0160a47201d4d3cc5"
+        }
+      ],
+      "retained_charge_starts": 0,
+      "vehicle_patterns": 1
+    }
+  },
+  "passed": true,
+  "route_search_attempts": [],
+  "schema_version": 1,
+  "stage2_allowed": false,
+  "tamper_checks": {
+    "boolean_count": true,
+    "candidate_set_hash": true,
+    "context_hash": true,
+    "counterfactual_record": true,
+    "duplicate_customer": true,
+    "forged_arm_ledger": true,
+    "forged_completion_record": true,
+    "lost_customer": true,
+    "nonpair_drift": true,
+    "replay_cost_record": true,
+    "result_signature": true
+  },
+  "verdict": "PASS_MECHANISM_PRICED_PAIR_RESPLIT_BEHAVIOR"
+}
