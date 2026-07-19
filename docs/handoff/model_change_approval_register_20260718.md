@@ -1,5 +1,16 @@
 # 建模、单位与参数变更审批登记
 
+## MDA-ILS-VNS-S2-001：后期分阶段路线精修
+
+状态：`USER_AUTHORIZED_AUTONOMOUS_EXECUTION__PREREGISTERED_BEFORE_CODE`
+（2026-07-20）。
+
+用户授权代理在明确最终目标后自主决定算法结构和参数，优先最低成本、结果导向，并特别
+希望结构接近陈雨蝶“前期广搜—后期VNS精修”但不把形式置于性能之上。本单依据已通过
+强母体的320次SwapStar调用、84次真实改善和约0.225秒总耗时，只批准
+`mda_ils_vns_late_stage_contract_20260720.md`中的70%后500/250两档小门。它不恢复
+已停止的AILS-II强度反馈层，不覆盖完整28题、China81、阶段二或论文优胜结论。
+
 ## MDA-ILS-VNS-A1-001：自适应扰动与接受控制
 
 状态：`STOP_ADAPTIVE_LAYER_KEEP_FOUNDATION`
