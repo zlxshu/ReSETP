@@ -43,11 +43,12 @@ def apply_fast_route_local_completion(
     """Complete one fixed route skeleton without a full candidate replay."""
 
     owners = infer_customer_home_depots(bundle.instance)
+    completion_budget = EvalBudget(limit=0, target=0)
     context = EvaluationContext(
         bundle.instance,
         bundle.carbon_profile,
         prices=prices,
-        budget=EvalBudget(limit=0, target=0),
+        budget=completion_budget,
         customer_home_depot=owners,
         allow_cross_depot=True,
     )
@@ -69,16 +70,67 @@ def apply_fast_route_local_completion(
     )
     if not all(math.isfinite(value) for value in deltas):
         raise RuntimeError(
-            "fast route-local completion produced a non-finite delta: "
-            f"{deltas}"
+            f"fast route-local completion produced a non-finite delta: {deltas}"
         )
+    joint_complete = _strict_activity_count(
+        joint,
+        "complete_evaluations",
+        "joint",
+    )
+    carbon_complete = _strict_activity_count(
+        carbon,
+        "complete_evaluations",
+        "carbon",
+    )
+    complete_candidate_evaluations = joint_complete + carbon_complete
+    route_search_evaluations = _strict_nonnegative_int(
+        completion_budget.count,
+        "completion budget count",
+    )
+    score_candidate_calls = _strict_nonnegative_int(
+        context.score_counts.get("candidate", 0),
+        "completion candidate score count",
+    )
+    if not (
+        complete_candidate_evaluations
+        == route_search_evaluations
+        == score_candidate_calls
+    ):
+        raise RuntimeError(
+            "fast route-local completion search ledger drifted: "
+            f"components={complete_candidate_evaluations}, "
+            f"budget={route_search_evaluations}, "
+            f"scores={score_candidate_calls}"
+        )
+    if route_search_evaluations:
+        raise RuntimeError("fast route-local completion attempted route search")
+    route_proxy_evaluations = _strict_activity_count(
+        joint,
+        "route_proxy_evaluations",
+        "joint",
+    )
+    route_local_schedule_evaluations = _strict_activity_count(
+        carbon,
+        "route_local_schedule_evaluations",
+        "carbon",
+    )
+    full_feasibility_checks = (
+        _strict_activity_count(
+            joint,
+            "feasibility_checks",
+            "joint",
+        )
+        + _strict_activity_count(
+            carbon,
+            "feasibility_checks",
+            "carbon",
+        )
+        + 1
+    )
     completed = annotate_cross_site_services(completed, owners)
     violations = check_solution(completed, bundle.instance, prices)
     if violations:
-        raise ValueError(
-            "fast route-local completion is infeasible: "
-            f"{violations[:8]}"
-        )
+        raise ValueError(f"fast route-local completion is infeasible: {violations[:8]}")
     changed = (
         int(joint.get("exact_decoder_updates", 0)) > 0
         or int(carbon.get("exact_decoder_updates", 0)) > 0
@@ -90,24 +142,30 @@ def apply_fast_route_local_completion(
         activity={
             "joint": joint,
             "carbon": carbon,
-            "joint_objective_delta": float(
-                deltas[0]
-            ),
-            "carbon_objective_delta": float(
-                deltas[1]
-            ),
+            "joint_objective_delta": float(deltas[0]),
+            "carbon_objective_delta": float(deltas[1]),
             "projected_objective_delta": float(sum(deltas)),
-            "route_proxy_evaluations": int(
-                joint.get("route_proxy_evaluations", 0)
-            ),
-            "route_local_schedule_evaluations": int(
-                carbon.get("route_local_schedule_evaluations", 0)
-            ),
-            "full_feasibility_checks": (
-                int(joint.get("feasibility_checks", 0))
-                + int(carbon.get("feasibility_checks", 0))
-                + 1
-            ),
-            "complete_candidate_evaluations": 0,
+            "route_proxy_evaluations": route_proxy_evaluations,
+            "route_local_schedule_evaluations": (route_local_schedule_evaluations),
+            "full_feasibility_checks": full_feasibility_checks,
+            "complete_candidate_evaluations": (complete_candidate_evaluations),
+            "complete_route_search_evaluations": (route_search_evaluations),
+            "search_candidate_score_calls": score_candidate_calls,
         },
     )
+
+
+def _strict_activity_count(
+    activity: dict[str, Any],
+    key: str,
+    label: str,
+) -> int:
+    if key not in activity:
+        raise RuntimeError(f"{label} omitted {key}")
+    return _strict_nonnegative_int(activity[key], f"{label}.{key}")
+
+
+def _strict_nonnegative_int(value: Any, label: str) -> int:
+    if isinstance(value, bool) or not isinstance(value, int) or value < 0:
+        raise RuntimeError(f"{label} is not a nonnegative integer")
+    return value
