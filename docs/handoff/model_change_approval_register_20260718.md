@@ -1,5 +1,24 @@
 # 建模、单位与参数变更审批登记
 
+## G1-NL-CORE-001：China81 非线性充电核心分批实施
+
+状态：`NL0_PASS__NL1_SOLUTION_AND_MULTITRIP_WIRING_AUTHORIZED`（2026-07-20）。
+
+用户已授权以最终算法性能、China81 完整模型能力和后续 E1--E7 可用性为中心自主推进，
+允许按证据调整实现和参数，并要求避免无效公开题微调。公开参数竞速和分阶段混合均已按
+预登记止损，现转向 `G1-FREEZE-MERGE` 的真实物理阻断。
+
+批准分批合同 `docs/handoff/china81_nonlinear_core_g1_contract_20260720.md`。第一批 NL0
+只新增唯一纯数学曲线内核和回归，不修改 `cost.py`、`check.py`、`prices.py`、
+`search/evaluation.py`、主 TeX 或正式搜索入口。NL0 全绿并封存后，才允许依次接解结构/
+多趟排班、充电修复/成本/检查、动态继承和 China81 最终汇合；任一批失败即停在该批，
+不得用旧恒功率结果冒充非线性正式结果。
+
+NL0 执行终局：生产内核对冻结 264,600 行动作的持续时间和分时电量逐项零差异，
+L100 退化、24 项测试、Ruff、保护文件零变化与 10 件登记制品哈希全部通过，判
+`PASS_NL0_PRODUCTION_CHARGING_CURVE_CORE`。按分批合同只放行 NL1；正式搜索继续
+关闭。
+
 ## MPD-ILS-VNS-D1-001：多阶段双节奏整机
 
 状态：`EXECUTED__STOP_MPD_ILS_VNS_PUBLIC_ARCHITECTURE__PIVOT_CHINA81`
