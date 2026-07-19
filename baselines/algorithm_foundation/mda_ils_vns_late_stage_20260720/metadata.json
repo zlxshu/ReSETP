@@ -1,0 +1,116 @@
+{
+  "arms": {
+    "foundation": {
+      "period": null
+    },
+    "late_vns_250": {
+      "period": 250
+    },
+    "late_vns_500": {
+      "period": 500
+    }
+  },
+  "confirmation": {
+    "instances": [
+      "PR16A",
+      "PR20A",
+      "PR24A"
+    ],
+    "runtime_seconds": 60.0,
+    "seeds": [
+      1,
+      2
+    ]
+  },
+  "contract": "MDA-ILS-VNS-S2-001",
+  "contract_path": "docs/handoff/mda_ils_vns_late_stage_contract_20260720.md",
+  "contract_sha256": "f32d521bf799751221c54a135e68ea502ade0a3f45683a3750a1b7d2e74e77c7",
+  "development": {
+    "instances": [
+      "PR11A",
+      "PR17A",
+      "PR21A"
+    ],
+    "runtime_seconds": 30.0,
+    "seed": 4
+  },
+  "finished_at_utc": "2026-07-19T19:32:12.669227+00:00",
+  "git_head": "c65c75557e2a733129f8e8cfc91558f294ff5a3e",
+  "host": "macOS-15.7.5-arm64-arm-64bit-Mach-O",
+  "protected_hashes_after": {
+    "docs/paper_submission_final/paper_main.tex": "6936bcf31d37c65c5f1100416a5406443c506c060c5b8823df696ac311d0f735",
+    "solver/src/setp_solver/check.py": "53f5cc27d3ac72bdd2bbec113eb8af11ad18a82490502f800941140495e8e142",
+    "solver/src/setp_solver/cost.py": "d8bfee1844c8f8e89bac1233a3cd862d7ac7d088039f97751b8274756c41dee4",
+    "solver/src/setp_solver/prices.py": "d6ad8d59ea555c0f91e98196a8ed3d704c62f1fef3ce4b5bd519ef218a911d3d",
+    "solver/src/setp_solver/search/evaluation.py": "c7215263c39d1d5a1429b41ca8ac40d950dbdf2bdc288337e56fbe9733406fc3"
+  },
+  "protected_hashes_before": {
+    "docs/paper_submission_final/paper_main.tex": "6936bcf31d37c65c5f1100416a5406443c506c060c5b8823df696ac311d0f735",
+    "solver/src/setp_solver/check.py": "53f5cc27d3ac72bdd2bbec113eb8af11ad18a82490502f800941140495e8e142",
+    "solver/src/setp_solver/cost.py": "d8bfee1844c8f8e89bac1233a3cd862d7ac7d088039f97751b8274756c41dee4",
+    "solver/src/setp_solver/prices.py": "d6ad8d59ea555c0f91e98196a8ed3d704c62f1fef3ce4b5bd519ef218a911d3d",
+    "solver/src/setp_solver/search/evaluation.py": "c7215263c39d1d5a1429b41ca8ac40d950dbdf2bdc288337e56fbe9733406fc3"
+  },
+  "python": "build/python_envs/pyvrp-0.13.4/bin/python",
+  "source_hashes": {
+    "baselines/algorithm_prototypes/mda_ils_vns_20260720/run_late_stage_gate.py": "cacbab2ad7dba131c524960f1e657359114207bede3f43473ae4450eea471e54",
+    "baselines/algorithm_prototypes/mda_ils_vns_20260720/run_late_stage_worker.py": "94d1f4698179ddaf4fd11ed7984401868db9712a8af02bbbd126aaeaa5d16db8",
+    "baselines/algorithm_prototypes/mda_ils_vns_20260720/run_worker.py": "698fb2decc16ef4f0f79683905e9ee31e8654a5d27fcc2898d51b616360d6cda",
+    "baselines/algorithm_prototypes/mda_ils_vns_20260720/scheduled_route_vns.py": "c2fde52b7145bf3f6af863acd59222eb9da01acecae25141b935d048559bd1b4",
+    "baselines/algorithm_prototypes/mda_ils_vns_20260720/selective_route_vns.py": "6a0711cd79570ce5256591c693ea5cd4791c1339a6038b4bcc85564705dc33ad",
+    "baselines/algorithm_prototypes/mda_ils_vns_20260720/test_scheduled_route_vns.py": "95487e6337103a9a772681a2e6bb82f7452b5524da440b33c42a4d4d24e0cb66"
+  },
+  "started_at_utc": "2026-07-19T19:31:06.366088+00:00",
+  "static_checks": {
+    "all_passed": true,
+    "audit": {
+      "command": [
+        "/Volumes/移动硬盘（512G）/ReSETP/build/python_envs/pyvrp-0.13.4/bin/python",
+        "/Users/zhouleixishu/.codex/skills/audit-code/scripts/audit_code.py",
+        "/Volumes/移动硬盘（512G）/ReSETP/baselines/algorithm_prototypes/mda_ils_vns_20260720"
+      ],
+      "returncode": 0,
+      "stderr": "",
+      "stdout": "Auditing code: /Volumes/移动硬盘（512G）/ReSETP/baselines/algorithm_prototypes/mda_ils_vns_20260720\n\n[*] Scanning source files for vulnerabilities...\n\n  Total files scanned: 88\n\n[*] Checking for .env files...\n    0 issue(s)\n[*] Checking file permissions on sensitive files...\n    0 issue(s)\n[*] Checking .gitignore coverage...\n    0 issue(s)\n\n## audit-code Report\n\n**Scanned:** /Volumes/移动硬盘（512G）/ReSETP/baselines/algorithm_prototypes/mda_ils_vns_20260720\n**Findings:** 0 critical, 0 high, 0 medium, 0 low, 0 info\n\nNo security issues detected.\n\n"
+    },
+    "format": {
+      "command": [
+        "ruff",
+        "format",
+        "--check",
+        "scheduled_route_vns.py",
+        "run_late_stage_worker.py",
+        "run_late_stage_gate.py",
+        "test_scheduled_route_vns.py"
+      ],
+      "returncode": 0,
+      "stderr": "",
+      "stdout": "4 files already formatted\n"
+    },
+    "ruff": {
+      "command": [
+        "ruff",
+        "check",
+        "scheduled_route_vns.py",
+        "run_late_stage_worker.py",
+        "run_late_stage_gate.py",
+        "test_scheduled_route_vns.py"
+      ],
+      "returncode": 0,
+      "stderr": "",
+      "stdout": "All checks passed!\n"
+    },
+    "unittest": {
+      "command": [
+        "/Volumes/移动硬盘（512G）/ReSETP/build/python_envs/pyvrp-0.13.4/bin/python",
+        "-m",
+        "unittest",
+        "-v",
+        "test_scheduled_route_vns.py"
+      ],
+      "returncode": 0,
+      "stderr": "test_foundation_never_schedules (test_scheduled_route_vns.ScheduledRouteVNSTest.test_foundation_never_schedules) ... ok\ntest_schedule_requires_period_boundary (test_scheduled_route_vns.ScheduledRouteVNSTest.test_schedule_requires_period_boundary) ... ok\ntest_schedule_waits_until_seventy_percent (test_scheduled_route_vns.ScheduledRouteVNSTest.test_schedule_waits_until_seventy_percent) ... ok\n\n----------------------------------------------------------------------\nRan 3 tests in 0.000s\n\nOK\n",
+      "stdout": ""
+    }
+  }
+}

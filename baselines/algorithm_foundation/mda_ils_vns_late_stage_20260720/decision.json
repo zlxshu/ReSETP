@@ -1,0 +1,113 @@
+{
+  "behaviour": {
+    "equivalence": [
+      {
+        "all_equal": true,
+        "field_equality": {
+          "cost": true,
+          "distance": true,
+          "duration": true,
+          "iterations_completed": true,
+          "rng_state": true,
+          "routes": true
+        },
+        "iterations": 5
+      },
+      {
+        "all_equal": true,
+        "field_equality": {
+          "cost": true,
+          "distance": true,
+          "duration": true,
+          "iterations_completed": true,
+          "rng_state": true,
+          "routes": true
+        },
+        "iterations": 100
+      },
+      {
+        "all_equal": true,
+        "field_equality": {
+          "cost": true,
+          "distance": true,
+          "duration": true,
+          "iterations_completed": true,
+          "rng_state": true,
+          "routes": true
+        },
+        "iterations": 1000
+      }
+    ],
+    "foundation_all_equal": true,
+    "schedule": {
+      "late_vns_250": {
+        "expected_calls": 2,
+        "observed_calls": 2,
+        "passed": true
+      },
+      "late_vns_500": {
+        "expected_calls": 1,
+        "observed_calls": 1,
+        "passed": true
+      }
+    },
+    "schedule_all_passed": true
+  },
+  "china81_authorized": false,
+  "confirmation": {},
+  "development": {
+    "losses": 0,
+    "mean_gap_by_arm": {
+      "foundation": 1.381360183549898,
+      "late_vns_250": 1.381360183549898,
+      "late_vns_500": 1.3763067554425008
+    },
+    "pairs": [
+      {
+        "candidate": 6773831,
+        "candidate_gain": 1009,
+        "candidate_gain_percent": 0.014893340654539443,
+        "candidate_iterations": 29756,
+        "instance": "PR11A",
+        "iteration_ratio": 1.0050665405661015,
+        "mother": 6774840,
+        "mother_iterations": 29606,
+        "seed": 4
+      },
+      {
+        "candidate": 6378038,
+        "candidate_gain": 0,
+        "candidate_gain_percent": 0.0,
+        "candidate_iterations": 29945,
+        "instance": "PR17A",
+        "iteration_ratio": 1.007435069304266,
+        "mother": 6378038,
+        "mother_iterations": 29724,
+        "seed": 4
+      },
+      {
+        "candidate": 6291964,
+        "candidate_gain": 0,
+        "candidate_gain_percent": 0.0,
+        "candidate_iterations": 40607,
+        "instance": "PR21A",
+        "iteration_ratio": 0.9996307419624834,
+        "mother": 6291964,
+        "mother_iterations": 40622,
+        "seed": 4
+      }
+    ],
+    "passed": false,
+    "selected": "late_vns_500",
+    "total_candidate": 19443833,
+    "total_mother": 19444842,
+    "wins": 1
+  },
+  "execution_error": null,
+  "full_v13_authorized": false,
+  "new_bks_count": 0,
+  "selected": "late_vns_500",
+  "stage2_authorized": false,
+  "static_checks_passed": true,
+  "verdict": "STOP_LATE_STAGE_VNS_KEEP_FOUNDATION"
+}
