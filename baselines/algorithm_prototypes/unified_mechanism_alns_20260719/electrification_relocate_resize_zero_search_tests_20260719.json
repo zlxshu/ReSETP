@@ -1,0 +1,38 @@
+{
+  "schema_version": "resetp.electrification-relocate-resize-tests.v1",
+  "created_at_utc": "2026-07-19T02:06:51Z",
+  "passed": true,
+  "test_count": 7,
+  "scoring_started": false,
+  "route_search_started": false,
+  "command": [
+    "python3",
+    "-m",
+    "unittest",
+    "baselines/algorithm_prototypes/unified_mechanism_alns_20260719/test_electrification_relocate_resize_solver.py"
+  ],
+  "coverage": [
+    "duplicate JSON keys are rejected before witness selection",
+    "duplicate witness appends a use without overwriting content",
+    "top-level list reordering changes ordered full hash but not semantic hash",
+    "one-trillionth floating-point change creates a distinct witness",
+    "candidate exists but fails the joint cost-and-electrification test and returns the exact source",
+    "saved all-EV solution is an exact no-op",
+    "declared adjacent transfer is proved before and after terminal completion",
+    "formal entry rejects every non-frozen configuration",
+    "the behavior-time guard blocks a mature ALNS route-search entrypoint"
+  ],
+  "source_hashes": {
+    "baselines/algorithm_prototypes/unified_mechanism_alns_20260719/electrification_relocate_resize_solver.py": "4f5a4b239b37c63ac93c41d847cf21fdee04a57c8cd2a85a0672bd132143d898",
+    "baselines/algorithm_prototypes/unified_mechanism_alns_20260719/run_electrification_relocate_resize_behavior_gate.py": "4b6cc0bfb13868057318f594934aede7694e8c7c74865adb49fb3e53ea88db4d",
+    "baselines/algorithm_prototypes/unified_mechanism_alns_20260719/test_electrification_relocate_resize_solver.py": "23f631a028ecd051343239349cfa63bdac734d6889070d3c56b67ecb53bfdabf",
+    "baselines/algorithm_prototypes/unified_mechanism_alns_20260719/contextual_expert_fixtures.py": "5313b501968f190e9838858bc62d1dadbd4c32b010dd357d8ed06d4c61c97a78",
+    "docs/handoff/electrification_relocate_resize_contract_20260719.md": "91ba5c473a19ccc904eb45965f420d06f11e3ae3192ad647095a608a8bea30ed"
+  },
+  "protected_hashes": {
+    "solver/src/setp_solver/cost.py": "d8bfee1844c8f8e89bac1233a3cd862d7ac7d088039f97751b8274756c41dee4",
+    "solver/src/setp_solver/check.py": "53f5cc27d3ac72bdd2bbec113eb8af11ad18a82490502f800941140495e8e142",
+    "solver/src/setp_solver/search/evaluation.py": "c7215263c39d1d5a1429b41ca8ac40d950dbdf2bdc288337e56fbe9733406fc3",
+    "solver/src/setp_solver/algorithms/resetp_alns/kernel/winner.py": "b2cdcdad3842be4161008b7e940ade53a437536ad8e5f1adf4b214cdec871497"
+  }
+}

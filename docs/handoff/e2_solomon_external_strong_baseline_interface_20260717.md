@@ -16,7 +16,7 @@ E7步骤1--6完成证明不能人工手写。`baselines/e7_dynamic/build_e7_step
 
 官方`vidalt/HGS-CVRP`只支持CVRP，没有硬时间窗，不能直接参加Solomon VRPTW主表。若后续采用HGS，必须另行提供支持VRPTW的实现、精确版本/源码哈希和独立CLI适配器；当前v1 runner不会把HGS-CVRP冒充为HGS-VRPTW。
 
-PyVRP候选工具探针为`baselines/e2_alns/probe_pyvrp_0134_api_20260717.py`，当前权威证据在`baselines/e2_alns/pyvrp_0134_tool_probe_20260717_v3/`；v2与无bundle全链检查的更早目录仅保留为历史证据。其固定版本为0.13.4，官方macOS arm64 wheel SHA-256为`49b84319fcfcd2206c05f55e970d090ab054d577a1d82cbac276d376fe89970c`，解释器为独立环境`/Users/zhouleixishu/.codex/runtimes/resetp-pyvrp-0.13.4/bin/python`。v3探针分别用原生API和正式bundle适配器运行20次合成实例迭代，Solomon正式搜索评价为0；16项检查全部通过，bundle分支返回路线1--2--3和精确整数代理目标106000。0.13.4的`Statistics.runtimes`是逐迭代耗时增量，Tbest必须累加后与`Statistics.data`中的`best_feas/best_cost`对齐，不能把单个增量或总运行时间冒充首次最好时间。最终冻结文件现在还必须校验自身`freeze_payload_sha256`，任一字段被改写都会在搜索前停止；适配器与冻结构建器共32项接口测试通过。
+PyVRP候选工具探针为`baselines/e2_alns/probe_pyvrp_0134_api_20260717.py`，当前权威证据在`baselines/e2_alns/pyvrp_0134_tool_probe_20260717_v4_repo_runtime/`；v3及更早目录仅保留为历史证据。其固定版本为0.13.4，官方macOS arm64 wheel SHA-256为`49b84319fcfcd2206c05f55e970d090ab054d577a1d82cbac276d376fe89970c`，解释器已迁入仓库内独立环境`build/python_envs/pyvrp-ils-0.13.4/bin/python`，项目迁移不再依赖用户目录。v4探针分别用原生API和正式bundle适配器运行20次合成实例迭代，Solomon正式搜索评价为0；16项检查全部通过，bundle分支返回路线1--2--3和精确整数代理目标106000。0.13.4的`Statistics.runtimes`是逐迭代耗时增量，Tbest必须累加后与`Statistics.data`中的`best_feas/best_cost`对齐，不能把单个增量或总运行时间冒充首次最好时间。最终冻结文件现在还必须校验自身`freeze_payload_sha256`，任一字段被改写都会在搜索前停止；适配器与冻结构建器共32项接口测试通过。
 
 当前停止原因只剩两项：E7步骤1--6证明不存在；`final_external_baseline_freeze/external_baseline_freeze.json`不存在。候选工具探针不等于最终授权；E7完成后还须把精确解释器、wheel、安装环境、适配器、预检器、线程数、墙钟、种子和Tbest抽取器一起冻结。这两项未补齐前，只允许运行零搜索预检、合成工具探针和测试。
 

@@ -1,0 +1,7 @@
+# 精确路线仓库功能小门
+
+判定：`PASS_EXACT_ROUTE_POOL_FUNCTION_ACCOUNTING`。预算0不调用；只给HGS母解时人工总分50；同时给HGS与ALNS路线后，精确重组取两边各一条路线，人工总分20且客户恰好覆盖一次。本包不含真实性能主张。
+
+首次哈希清单误含macOS AppleDouble旁车，已标
+`HASH_CONTAMINATED_APPLEDOUBLE_CLEANED_BEFORE_FINAL_AUDIT`。原始行与判定未改；
+最终清单清理旁车后只对四个主体文件重算。

@@ -1,0 +1,32 @@
+{
+  "algorithms": {
+    "hgs_then_project_alns": "common start, one second HGS, then one second project ALNS",
+    "project_alns": "current project winner kernel from deterministic common start",
+    "pyvrp_0_12_2_hgs": "genuine population HGS",
+    "pyvrp_0_13_4_ils": "separate strong open-source ILS from the same common start"
+  },
+  "claim_boundary": "One-seed development screen only. It can stop a weak route-core combination or justify the approved 12x3 development gate; it cannot support a paper claim.",
+  "equal_total_wall_clock_seconds": 2.0,
+  "hybrid_split_seconds": [
+    1.0,
+    1.0
+  ],
+  "hygiene_event": "HASH_CONTAMINATED_APPLEDOUBLE_CLEANED_BEFORE_FINAL_AUDIT",
+  "instances": [
+    "C1_2_1",
+    "C2_2_1",
+    "R1_2_1",
+    "R2_2_1",
+    "RC1_2_1",
+    "RC2_2_1"
+  ],
+  "objective": "lexicographic vehicle count then double-precision distance",
+  "protected_files": [
+    "solver/src/setp_solver/cost.py",
+    "solver/src/setp_solver/check.py",
+    "solver/src/setp_solver/search/evaluation.py"
+  ],
+  "schema_version": "resetp.algo-reset.route-core-microgate.v1",
+  "seed": 1,
+  "selection_rule": "one BKS-blind _2_1 instance from each Homberger-200 family"
+}

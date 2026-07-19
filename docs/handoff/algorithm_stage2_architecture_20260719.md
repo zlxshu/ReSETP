@@ -1,5 +1,11 @@
 # 阶段二算法架构规格：机制增强的混合 ALNS（统一一套算法）
 
+> **2026-07-19执行校正：本文件仍是候选架构，不是已获阶段二放行的施工令。**
+> HGS内嵌教育、精确双源路线仓库、分段机制教育、多起点机制播种和候选级机制归一化
+> 均已在低成本门失败；其中新donor02完整模型题上的候选级归一化相对v7倒退
+> 7.207%/5.416%。因此“超HGS骨干”与“主动择优融合”均未被证明，当前只保留
+> v7后处理式机制驱动ALNS为阶段一候选。正式双赢、阶段二和全量benchmark仍冻结。
+
 - 编号：ALGO-STAGE2-ARCH-001
 - 日期：2026-07-19
 - 状态：`DRAFT_ARCHITECTURE_DIRECTION_APPROVED`（用户 2026-07-19 批准本架构方向并落盘；执行仍按"低成本先行 + 现有审批门"，`formal_search_allowed=false`、`stage2_runs_gated=true`，跨模型语义变更仍走 `model_change_approval_register`）
@@ -123,6 +129,23 @@
 | **C｜放大 + 统计** | 大公开 + 私有大算例（100–200c） | 骨干在大公开选定族超纯 HGS；混合体在私有算例超裸原装；Wilcoxon+Holm 显著；影响矩阵 | 放大后信号消失 → 退回 A/B 定位 |
 
 每里程碑产五件套（metadata/raw_runs/decision/artifact_hashes/report），预注册过门，保护文件零改动，独立复算。
+
+### 6.1 2026-07-19 A线首次实测
+
+正版PyVRP 0.12.2 HGS已在六个Homberger-200代表题上测试两种真正内嵌的子代教育：项目现有ALNS，以及成熟依据的成段移除+后悔插入。两者都位于“HGS路线改进—大邻域教育—HGS路线改进—进入群体”内部，不是先后串行。
+
+项目ALNS教育双赢0/6；成段移除+后悔修复最好双赢1/6，改为每2、4、8个子代偶发一次仍全部失败。判`STOP_CURRENT_GENERIC_EDUCATORS__GATE_NOT_FORMAL_DOUBLE_WIN_EVIDENCE`。A线尚未达到“超越纯HGS”，不得进入三种子、Homberger 12×3或正式benchmark；后续预算转向完整模型的机制专用教育器。详见`docs/handoff/algorithm_hgs_alns_fusion_reset_20260719.md`。
+
+红队随后确认该2秒门本身不能作公平双赢证据，只能淘汰当前教育器。另从官方压缩包2--7号成员按源文件SHA-256结果盲选六个新题，纯HGS从2秒延长到10秒仅2/6严格改善，未达到预设3题“仍有改进空间”门。因此短时Homberger严格胜HGS路线停止。精确路线仓库只完成了人工功能账：预算0不调用；同时给HGS与ALNS互补路线后，集合划分能从两边各取路线并精确覆盖，尚无真实性能资格。
+
+### 6.2 2026-07-19 完整模型融合门
+
+精确路线仓库在真实多车场25/50客户筛选中均未选任何HGS路线，逐位退回ALNS父解，
+判`STOP_ROUTE_POOL_FUSION_NO_STRONG_INCREMENTAL_SIGNAL`。随后把车型--补能与碳择时
+放进每个ALNS候选接受前，在源码先冻结、donor02结果盲新生成的60/112客户开发题上，
+完整评价100/100闭合但相对v7倒退7.207%/5.416%，判
+`STOP_MECHANISM_NORMALIZED_ACCEPTANCE_NO_STRONG_SIGNAL`。这两条不得再在已观测题上调参；
+没有强阳性，三种子确认和阶段二均不触发。
 
 ---
 

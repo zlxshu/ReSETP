@@ -1,9 +1,18 @@
 # 算法优化 PRD：机制优先 ALNS（官方 HGS 作为强开源对照）
 
+> **2026-07-19最新执行边界：** 官方HGS内嵌教育、精确HGS/ALNS路线仓库、
+> 分段机制教育、多起点机制播种和候选级机制归一化均未通过最低成本门。
+> 最后一项在源码冻结后新生成的donor02完整多车场题上相对v7倒退
+> 7.207%/5.416%。因此本PRD中的HGS融合、Split/路线仓库和搜索内机制教育
+> 仍是研究候选，不得写成已证路线；当前只保留v7后处理式机制驱动ALNS，
+> 正式双赢、全量benchmark和阶段二均未放行。
+
 - 编号：ALGO-OPT-PRD-001
 - 日期：2026-07-18
 - 状态：`PASS_STAGE1_ALGORITHM_INFRASTRUCTURE_DEVELOPMENT_CLOSEOUT`（2026-07-18；HGS 内嵌路线已止损，机制优先 ALNS 已通过统一隔离开发门；这不是正式性能证据，`formal_search_allowed=false`、`stage2_allowed=false`）
 - 目标读者：Codex、任何接手 ReSETP 算法线的代理（冷启动可读，自包含）
+
+> **2026-07-19证据校正：** 下文“9/9胜原装HGS/ALNS”只能保留为历史开发信号，不能再作为公平开源算法胜负证据。HGS控制臂是100次暖启动重启、内部迭代未与ReSETP完整评价同轴；中性适配也无法表达完整模型。新2秒融合门又存在跨批复用、墙钟超限、起点池不对称和开发题污染。当前可确认的是五个机制部件具备受限功能/绑定证据，不是候选已经公平打赢原装算法。
 - 关联：`docs/handoff/e2_alns_g1_stage1_closeout_20260718.md`、`docs/handoff/alns_mechanism_innovation_exploration_contract_20260718.md`、`docs/handoff/model_change_approval_register_20260718.md`、`docs/handoff/algorithm_exploration_20260718/fleet_charging/`、memory `baseline-algorithm-catalog`
 
 ---

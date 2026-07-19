@@ -29,7 +29,7 @@ from pyvrp.stop import MaxIterations
 
 
 REPO = Path(__file__).resolve().parents[2]
-OUT = REPO / "baselines/e2_alns/pyvrp_0134_tool_probe_20260717_v3"
+OUT = REPO / "baselines/e2_alns/pyvrp_0134_tool_probe_20260717_v4_repo_runtime"
 PROBE = Path(__file__).resolve()
 ADAPTER = REPO / "baselines/e2_alns/run_solomon_external_strong_baselines_20260717.py"
 WHEEL = (
@@ -39,7 +39,7 @@ WHEEL = (
 )
 EXPECTED_VERSION = "0.13.4"
 EXPECTED_WHEEL_SHA256 = "49b84319fcfcd2206c05f55e970d090ab054d577a1d82cbac276d376fe89970c"
-EXPECTED_PYTHON = Path("/Users/zhouleixishu/.codex/runtimes/resetp-pyvrp-0.13.4/bin/python")
+EXPECTED_PYTHON = REPO / "build/python_envs/pyvrp-ils-0.13.4/bin/python"
 THREAD_ENV = (
     "OMP_NUM_THREADS",
     "OPENBLAS_NUM_THREADS",

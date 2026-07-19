@@ -2,6 +2,12 @@
 
 E7正式结果终验
 
+- [结果盲Homberger改进空间与精确路线仓库功能门（2026-07-19）](../../baselines/algorithm_prototypes/algo_reset_20260719/homberger_headroom_audit/decision.json) — 官方压缩包每类在2--7号成员中按源SHA最小值盲选新题，未读BKS；纯HGS 2秒到10秒仅2/6严格改善，判`STOP_SHORT_HOMBERGER_STRICT_WIN_PURSUIT`。路线仓库集合划分人工预算0/1/2/5功能门通过，可混合HGS与ALNS互补路线，但无真实性能主张。
+
+- [算法对照证据公平性降级（2026-07-19）](../algorithm_hgs_alns_fusion_reset_20260719.md) — 旧机制v7的HGS臂为100次暖启动重启且每次内部算力未按ReSETP完整评价展开，中性适配又无法表达完整模型；旧“9/9胜原装”降为历史开发信号。新2秒六题门亦因旧基线复用、墙钟超限、起点池不对称、训练题污染和跨题big-M聚合而不能作公平双赢证据，只能淘汰当前教育器。
+
+- [HGS与ALNS真融合低成本复核及止损（2026-07-19）](../algorithm_hgs_alns_fusion_reset_20260719.md) — PyVRP 0.12.2正版HGS已归仓冻结；项目ALNS和成段移除+后悔修复均真正嵌入HGS子代教育，后者在4/6题产生接受但只胜纯HGS 1/6、双赢1/6，偶发频率2/4/8三档仍失败。判`STOP_CURRENT_GENERIC_EDUCATORS__GATE_NOT_FORMAL_DOUBLE_WIN_EVIDENCE`，不扩三种子或全量benchmark。
+
 - [阶段一非算法部分最终可移交，阶段二未启动（2026-07-18）](../phase1_parallel_status_and_user_gate_20260718.md) — MC-005候选A已重建81份/5805行位置分配且27格内零身份重叠；九城情景道路接入点及冻结路网CV/EV 18/18通过；OSRM完整功能门18/18通过。用户已批准MC-004方法并明确暂时不进入阶段二；最终独立审计判`PASS_PHASE1_NONALGORITHM_HANDOFF_READY`，待批0、错误0、搜索评价0。未建全矩阵、正式实例或运行搜索，算法优化不在本次范围。
 
 - [阶段一并行状态与用户终裁门（2026-07-18）](../phase1_parallel_status_and_user_gate_20260718.md) — 六线已推进到当前边界但整体未完成，阶段二未启动。G1a因RC类零触发停止完整G1；MC-002算力/功效包和重庆池27格门闭合；固定OSM 5/5通过；九主场0/9、两备选0/2及本地货运router/profile继续HALT。六项统计终裁、备选不替换决定、11点人工入口/准入/充电输入及MC-004重批仍是阶段一硬门。
@@ -284,7 +290,7 @@ E7正式结果终验
 
 # 2026-07-17 PyVRP 0.13.4候选强基线工具门
 
-- PyVRP 0.13.4已从官方macOS arm64 wheel安装到独立解释器`/Users/zhouleixishu/.codex/runtimes/resetp-pyvrp-0.13.4/bin/python`；本地wheel SHA-256=`49b84319fcfcd2206c05f55e970d090ab054d577a1d82cbac276d376fe89970c`，与PyPI官方文件哈希一致。冻结环境清单、API签名和源码哈希的权威版为`baselines/e2_alns/pyvrp_0134_tool_probe_20260717_v3/`；v2及早期同名目录只作历史记录。v3为适配器增加`freeze_payload_sha256`强校验后重建run，不读Solomon或BKS，正式搜索评价0为0；适配器与冻结构建器32项测试通过。
+- PyVRP 0.13.4当前使用仓库内独立解释器`build/python_envs/pyvrp-ils-0.13.4/bin/python`；旧用户目录解释器自2026-07-19起不再是当前合同依赖。官方wheel SHA-256=`49b84319fcfcd2206c05f55e970d090ab054d577a1d82cbac276d376fe89970c`。归仓复验权威版为`baselines/e2_alns/pyvrp_0134_tool_probe_20260717_v4_repo_runtime/`；v3及更早目录只作历史记录。v4不读Solomon或BKS，正式搜索评价为0，原生API和正式bundle适配器检查均通过。
 - 0.13.4将统计点放在`Statistics.data`，将逐迭代耗时增量放在`Statistics.runtimes`。外部基线适配器已改为累计增量后读取首次达到最终可行最好成本的Tbest；适配器与冻结构建器32项接口测试通过。3客户合成VRPTW的v3探针16/16通过，并真实走通正式bundle适配器的旧Model API分支；Solomon正式搜索评价为0，判定=`PASS_PYVRP_0134_CANDIDATE_TOOL_PROBE`。
 - 新零搜索预检不再报告`NO_COMPATIBLE_EXTERNAL_STRONG_BASELINE_INSTALLED`，只保留`E7_STEPS_1_TO_6_ATTESTATION_MISSING`与`EXTERNAL_BASELINE_TOOL_FREEZE_MISSING`，证据在`baselines/e2_alns/e2_solomon_external_baseline_preflight_pyvrp0134_20260717/`。这只是候选工具冻结；E7证明形成前不得创建最终授权冻结或启动56例×10种子正式搜索。
 - 最终冻结只允许由`build_final_external_baseline_freeze_20260717.py`在精确授权串和E7步骤1--6证明同时存在时创建，且拒绝覆盖。候选阶段已验证96个PyVRP安装文件可逐项哈希，最终冻结尚未生成。墙钟由PyVRP官方1000客户VRPTW两小时协议按客户数线性外推至100客户，再按冻结PassMark因子1.837换算为标准720 s/本机391.94338595536203 s；这只是本文预注册外推假设，不是官方Solomon协议。4个worker均单线程，计时公平轴与内部完整候选评价轴分表。
@@ -428,6 +434,12 @@ E7正式结果终验
 - 统一证据=`baselines/algorithm_prototypes/mechanism_hgs_alns_20260718/mechanism_v7_stage1_closeout_gate/`，判`PASS_STAGE1_ALGORITHM_INFRASTRUCTURE_DEVELOPMENT_CLOSEOUT`。静态九项9/9同时严格胜官方HGS中性适配、原装`alns 7.0.0`中性适配和当前项目ALNS；多车场十八项4项绑定改善`1.2652%--5.6731%`、14项精确不倒退；公平固定100%独立收益底线1项绑定修复、2项零动作；冻结E7单事件未来少1条路线并降成本`29.675379`。
 - 62行原始记录与六件展品哈希独立重算通过，15项回归通过，`cost.py/check.py/search/evaluation.py`零差异。边界：公平仅1个绑定任务、动态仅1个真实事件、三个多车场强对照为事后确认，非线性充电和分时电价未接；正式性能、正式合入、China81、E2--E7重跑和阶段二仍须用户另批。
 - 来源手册补齐Cheng等碳感知充电与Kullman等固定路线精确充电依据；主TeX只补方法来源与`frvcpy`参考文献，未写开发胜负或新公式。latexmk/XeLaTeX重编24页，无未定义引用、Overfull、Underfull或LaTeX错误。
+
+# 2026-07-19 完整模型融合两刀止损
+
+- 精确集合划分路线仓库在预登记多车场25/50客户筛选中分别选0条HGS路线，组合逐位退回ALNS+共享机制专家，判`STOP_ROUTE_POOL_FUSION_NO_STRONG_INCREMENTAL_SIGNAL`；人工互补路线功能通过不等于真实性能。
+- 候选源码先冻结，再用既有`build_full_source_threeshift`、donor02和25/50源规模生成60/112客户两道新结果盲开发题。把车型--补能和碳择时放到每个ALNS完整候选接受前，完整评价两臂均100/100且可行，但相对v7倒退7.207%/5.416%，另耗1456/2297次路线代理评价，判`STOP_MECHANISM_NORMALIZED_ACCEPTANCE_NO_STRONG_SIGNAL`。
+- 两条均按预登记纪律停止，不扩三种子、不调旧题、不跑全量、不进阶段二。v7仍是阶段一最强候选，但旧9/9开源对照证据已降级，尚未满足新结果盲、同批、对称预算/墙钟的纯HGS与纯ALNS正式双赢底线。
 
 # 2026-07-19 China81 G1 独立链失败关闭复核
 
