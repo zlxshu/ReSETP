@@ -2,6 +2,8 @@
 
 E7正式结果终验
 
+- [燃油长路线减负—电动化联动搬移零搜索行为门（2026-07-19）](../../baselines/algorithm_prototypes/unified_mechanism_alns_20260719/electrification_relocate_resize_behavior_gate_execution_recovery_v2/decision.json) — 恢复版只修验收程序并锁死算法/输入/阈值/预算。证据包独立审计通过，但20客户绑定场景3个完整候选均被通用收尾恢复为原解，成本不变、CV路线`1→1`、接受0；25客户全电对照逐位不变。判`STOP_ELECTRIFICATION_RELOCATE_RESIZE_BEHAVIOR`，禁止旧三题、新D3、正式、全量和阶段二；下一候选须固定搬移骨架并把真实电动化边界纳入联合筛选，用新鲜题验收。
+
 - [结果盲Homberger改进空间与精确路线仓库功能门（2026-07-19）](../../baselines/algorithm_prototypes/algo_reset_20260719/homberger_headroom_audit/decision.json) — 官方压缩包每类在2--7号成员中按源SHA最小值盲选新题，未读BKS；纯HGS 2秒到10秒仅2/6严格改善，判`STOP_SHORT_HOMBERGER_STRICT_WIN_PURSUIT`。路线仓库集合划分人工预算0/1/2/5功能门通过，可混合HGS与ALNS互补路线，但无真实性能主张。
 
 - [算法对照证据公平性降级（2026-07-19）](../algorithm_hgs_alns_fusion_reset_20260719.md) — 旧机制v7的HGS臂为100次暖启动重启且每次内部算力未按ReSETP完整评价展开，中性适配又无法表达完整模型；旧“9/9胜原装”降为历史开发信号。新2秒六题门亦因旧基线复用、墙钟超限、起点池不对称、训练题污染和跨题big-M聚合而不能作公平双赢证据，只能淘汰当前教育器。
@@ -449,3 +451,10 @@ E7正式结果终验
   对并集并加入回归后，六批计数、1,578,948 对、81/81 和 5805 条订单重新独立闭合。
 - 复核包判 `PASS_CHINA81_FAIL_CLOSED_REVIEW__FORMAL_G1_GATE_REMAINS`；未运行算法
   搜索，唯一开放项仍是 `G1-FREEZE-MERGE=HELD_BY_DESIGN`。
+
+# 2026-07-19 电动化联动搬移行为门止损
+
+- 首次行为门在场景成绩写入前因验收程序误读账本层级失败；原失败目录只读保留。恢复版只修验收程序，算法、输入、阈值和预算均由登记哈希锁死。
+- 恢复版证据包7件齐全，19个输入、130个源依赖、4个保护文件、账本和哈希独立闭合；ALNS/HGS/完整路线搜索均为0。
+- 20客户绑定场景构造44个中性搬移、10个可行唯一候选、完整收尾3个，但三者都恢复原解，成本`621.0831141941019`不变、燃油路线`1→1`、接受0。25客户全电对照成本`603.1548339805785`和完整内容逐位不变，收尾调用0。
+- 判`STOP_ELECTRIFICATION_RELOCATE_RESIZE_BEHAVIOR`，不触发旧三题、新D3、正式、全量或阶段二。当前证据否定的是“先搬移、再允许通用责任收尾撤回”的组合，不证明所有固定搬移—联合车型补能候选无效。
