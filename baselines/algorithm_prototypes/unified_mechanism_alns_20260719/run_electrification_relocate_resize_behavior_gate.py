@@ -74,6 +74,14 @@ TEST_MANIFEST = HERE / (
 CANONICAL_OUTPUT = (
     HERE / "electrification_relocate_resize_behavior_gate"
 )
+EXECUTION_RECOVERY_OUTPUT = (
+    HERE
+    / "electrification_relocate_resize_behavior_gate_execution_recovery_v2"
+)
+EXECUTION_RECOVERY_MANIFEST = HERE / (
+    "electrification_relocate_resize_execution_recovery_v2_20260719.json"
+)
+EXECUTION_RECOVERY_ACTIVE = False
 SCENARIOS = (
     (
         "binding_saved_v7_20c",
@@ -106,7 +114,21 @@ STATIC_SOURCE_FILES = (
     "baselines/algorithm_prototypes/unified_mechanism_alns_20260719/"
     "electrification_relocate_resize_zero_search_tests_20260719.json",
     "baselines/algorithm_prototypes/unified_mechanism_alns_20260719/"
+    "electrification_relocate_resize_execution_recovery_v2_20260719.json",
+    "baselines/algorithm_prototypes/unified_mechanism_alns_20260719/"
     "terminal_completion.py",
+    "baselines/algorithm_prototypes/unified_mechanism_alns_20260719/"
+    "electrification_relocate_resize_behavior_gate/artifact_hashes.json",
+    "baselines/algorithm_prototypes/unified_mechanism_alns_20260719/"
+    "electrification_relocate_resize_behavior_gate/decision.json",
+    "baselines/algorithm_prototypes/unified_mechanism_alns_20260719/"
+    "electrification_relocate_resize_behavior_gate/execution_failure.json",
+    "baselines/algorithm_prototypes/unified_mechanism_alns_20260719/"
+    "electrification_relocate_resize_behavior_gate/metadata.json",
+    "baselines/algorithm_prototypes/unified_mechanism_alns_20260719/"
+    "electrification_relocate_resize_behavior_gate/raw_runs.csv",
+    "baselines/algorithm_prototypes/unified_mechanism_alns_20260719/"
+    "electrification_relocate_resize_behavior_gate/report.md",
     "baselines/algorithm_prototypes/mechanism_hgs_alns_20260718/"
     "prototype.py",
     "baselines/algorithm_prototypes/mechanism_hgs_alns_20260718/"
@@ -136,6 +158,8 @@ TEST_SOURCE_FILES = (
     "test_electrification_relocate_resize_solver.py",
     "baselines/algorithm_prototypes/unified_mechanism_alns_20260719/"
     "contextual_expert_fixtures.py",
+    "baselines/algorithm_prototypes/unified_mechanism_alns_20260719/"
+    "electrification_relocate_resize_execution_recovery_v2_20260719.json",
     "docs/handoff/electrification_relocate_resize_contract_20260719.md",
 )
 EXPECTED_TEST_COVERAGE = (
@@ -148,6 +172,29 @@ EXPECTED_TEST_COVERAGE = (
     "declared adjacent transfer is proved before and after terminal completion",
     "formal entry rejects every non-frozen configuration",
     "the behavior-time guard blocks a mature ALNS route-search entrypoint",
+    "the runner reads per-round caps from the audited checks payload",
+    "prescore candidate and round ledgers close under the frozen caps",
+    "accepted move snapshots form one chain from scenario input to result",
+    "execution recovery rejects result exposure, evidence drift, and reused output",
+    "pre-row route-search activity survives execution-failure sealing",
+)
+EXPECTED_TEST_COUNT = 11
+EXPECTED_RECOVERY_HARNESS_CHANGES = (
+    "read per_round_caps_closed through the production audited-row helper",
+    "add the explicit execution-recovery-v2 entrypoint and immutable "
+    "parent-failure verification",
+    "require the current dependency set and all non-whitelisted dependency "
+    "hashes to match the parent failure",
+    "close prescore round ledgers and reject final fail-closed fallback",
+    "prove accepted rounds form one chain from scenario input to returned "
+    "result",
+    "preserve observed pre-row route-search activity in execution-failure "
+    "evidence",
+    "strictly reread the final artifact manifest on both success and failure "
+    "paths",
+    "record execution-recovery-v2 identity in decision metadata and report "
+    "text",
+    "add zero-search tests and update the frozen test manifest and contract",
 )
 ARTIFACT_FILES = (
     "metadata.json",
@@ -160,9 +207,23 @@ ARTIFACT_FILES = (
 
 
 def main() -> int:
+    global CANONICAL_OUTPUT, EXECUTION_RECOVERY_ACTIVE
+
     parser = argparse.ArgumentParser()
     parser.add_argument("--preflight-only", action="store_true")
+    parser.add_argument(
+        "--execution-recovery-v2",
+        action="store_true",
+        help=(
+            "use the single preregistered zero-result execution-recovery "
+            "directory"
+        ),
+    )
     args = parser.parse_args()
+    if args.execution_recovery_v2:
+        _require_execution_recovery_eligibility()
+        CANONICAL_OUTPUT = EXECUTION_RECOVERY_OUTPUT
+        EXECUTION_RECOVERY_ACTIVE = True
     _freeze_environment()
     _require_expected_module_origins()
     source_files = _all_source_files()
@@ -203,6 +264,14 @@ def main() -> int:
         "registered_input_manifest_sha256": _sha256(INPUT_MANIFEST),
         "zero_search_test_manifest_sha256": _sha256(TEST_MANIFEST),
         "zero_search_test_runtime_recheck": test_recheck,
+        "execution_recovery_v2": bool(
+            args.execution_recovery_v2
+        ),
+        "parent_failure_manifest_sha256": (
+            _sha256(EXECUTION_RECOVERY_MANIFEST)
+            if args.execution_recovery_v2
+            else None
+        ),
     }
     if args.preflight_only:
         if CANONICAL_OUTPUT.exists():
@@ -222,6 +291,7 @@ def main() -> int:
     rows: list[dict[str, Any]] = []
     witnesses: dict[str, Any] = {}
     all_route_search_attempts: list[str] = []
+    observed_complete_route_search_evaluations = 0
     try:
         for scenario, instance, arm in SCENARIOS:
             bundle_dir = ARCHIVE / instance
@@ -261,6 +331,17 @@ def main() -> int:
                     source,
                     prices=PRICES,
                 )
+            activity = result.activity
+            observed_route_search = int(
+                activity["complete_route_search_evaluations"]
+            )
+            if observed_route_search < 0:
+                raise RuntimeError(
+                    "negative observed complete route-search ledger"
+                )
+            observed_complete_route_search_evaluations += (
+                observed_route_search
+            )
             with _forbid_route_search(
                 all_route_search_attempts
             ) as final_validation_guard:
@@ -289,7 +370,6 @@ def main() -> int:
                     "arm": arm,
                 },
             )
-            activity = result.activity
             with _forbid_route_search(
                 all_route_search_attempts
             ) as proof_search_guard:
@@ -297,8 +377,12 @@ def main() -> int:
                     activity,
                     bundle_dir,
                     PRICES,
+                    source,
+                    result.solution,
                 )
-            ledger_audit = _audit_activity_ledgers(activity)
+            ledger_audit, ledger_row_fields = (
+                _ledger_audit_row_fields(activity)
+            )
             for summary in activity["round_summaries"]:
                 snapshot = summary.get(
                     "counterfactual_solution_snapshot"
@@ -535,18 +619,7 @@ def main() -> int:
                     and int(summary["exact_attempted"]) <= 3
                     for summary in activity["round_summaries"]
                 ),
-                "actual_round_caps_closed": bool(
-                    ledger_audit["per_round_caps_closed"]
-                ),
-                "activity_ledgers_reconciled": bool(
-                    ledger_audit["passed"]
-                ),
-                "activity_ledger_audit_json": json.dumps(
-                    ledger_audit,
-                    ensure_ascii=False,
-                    sort_keys=True,
-                    separators=(",", ":"),
-                ),
+                **ledger_row_fields,
                 "runner_proof_audit_passed": bool(
                     proof_audit["passed"]
                 ),
@@ -613,6 +686,13 @@ def main() -> int:
             raise RuntimeError(
                 "route-search guard attempt ledger did not close"
             )
+        if observed_complete_route_search_evaluations != sum(
+            int(row["complete_route_search_evaluations"])
+            for row in rows
+        ):
+            raise RuntimeError(
+                "observed route-search ledger did not close to rows"
+            )
         checks = _gate_checks(
             rows,
             source_solutions,
@@ -644,6 +724,9 @@ def main() -> int:
             "formal_search_allowed": False,
             "stage2_allowed": False,
             "full_experiment_allowed": False,
+            "execution_recovery_v2": bool(
+                args.execution_recovery_v2
+            ),
         }
         metadata = {
             "schema_version": (
@@ -690,6 +773,14 @@ def main() -> int:
             "scenario_count": len(rows),
             "formal_claim_allowed": False,
             "zero_search_test_runtime_recheck": test_recheck,
+            "execution_recovery_v2": bool(
+                args.execution_recovery_v2
+            ),
+            "parent_failure_manifest_sha256": (
+                _sha256(EXECUTION_RECOVERY_MANIFEST)
+                if args.execution_recovery_v2
+                else None
+            ),
         }
         _write_json(CANONICAL_OUTPUT / "metadata.json", metadata)
         _write_csv(CANONICAL_OUTPUT / "raw_runs.csv", rows)
@@ -725,15 +816,16 @@ def main() -> int:
             name: _sha256(CANONICAL_OUTPUT / name)
             for name in ARTIFACT_FILES
         }
+        artifact_manifest = {
+            "schema_version": (
+                "resetp.electrification-relocate-resize-"
+                "artifacts.v1"
+            ),
+            "artifacts": artifacts,
+        }
         _write_json(
             CANONICAL_OUTPUT / "artifact_hashes.json",
-            {
-                "schema_version": (
-                    "resetp.electrification-relocate-resize-"
-                    "artifacts.v1"
-                ),
-                "artifacts": artifacts,
-            },
+            artifact_manifest,
         )
         _clean_appledouble(CANONICAL_OUTPUT)
         if _appledouble_paths(CANONICAL_OUTPUT):
@@ -751,6 +843,10 @@ def main() -> int:
             input_hashes,
             frozen_git_head,
         )
+        _require_exact_json_payload(
+            CANONICAL_OUTPUT / "artifact_hashes.json",
+            artifact_manifest,
+        )
         return 0 if passed else 1
     except Exception as exc:
         _seal_execution_failure(
@@ -760,6 +856,9 @@ def main() -> int:
             protected_hashes=protected_hashes,
             input_hashes=input_hashes,
             route_search_attempts=all_route_search_attempts,
+            observed_complete_route_search_evaluations=(
+                observed_complete_route_search_evaluations
+            ),
         )
         return 2
 
@@ -794,6 +893,9 @@ def _audit_activity_ledgers(
     per_round_rows: list[dict[str, Any]] = []
     per_round_ok = unique_rounds
     for round_index, summary in sorted(summaries.items()):
+        unique_candidates = int(summary["unique_candidates"])
+        prescore_selected = int(summary["prescore_selected"])
+        exact_attempted = int(summary["exact_attempted"])
         candidate_count = sum(
             int(row["round"]) == round_index for row in candidate
         )
@@ -805,11 +907,12 @@ def _audit_activity_ledgers(
             bool(summary.get("counterfactual_started"))
         )
         row_ok = bool(
-            int(summary["prescore_selected"]) <= 12
-            and int(summary["exact_attempted"]) <= 3
+            unique_candidates >= 0
+            and prescore_selected == min(unique_candidates, 12)
+            and exact_attempted == min(prescore_selected, 3)
             and candidate_count <= 3
             and counterfactual_count <= 1
-            and candidate_count == int(summary["exact_attempted"])
+            and candidate_count == exact_attempted
             and counterfactual_count == expected_counterfactual
         )
         per_round_ok = per_round_ok and row_ok
@@ -818,6 +921,8 @@ def _audit_activity_ledgers(
                 "round": round_index,
                 "candidate_records": candidate_count,
                 "counterfactual_records": counterfactual_count,
+                "summary_unique_candidates": unique_candidates,
+                "summary_prescore_selected": prescore_selected,
                 "summary_exact_attempted": int(
                     summary["exact_attempted"]
                 ),
@@ -977,6 +1082,24 @@ def _audit_activity_ledgers(
             and len(counterfactual) <= 2
             and len(candidate) + len(counterfactual) <= 8
         ),
+        "prescore_round_summaries_close": (
+            sum(
+                int(summary["prescore_selected"])
+                for summary in summaries.values()
+            )
+            == int(activity["prescore_selected_moves"])
+            and int(activity["prescore_selected_moves"]) >= 0
+        ),
+        "prescore_candidate_summaries_close": (
+            sum(
+                int(summary["unique_candidates"])
+                for summary in summaries.values()
+            )
+            == int(activity["unique_neutral_moves"])
+            == int(activity["prescored_moves"])
+            and int(activity["unique_neutral_moves"]) >= 0
+            and int(activity["prescored_moves"]) >= 0
+        ),
         "per_round_caps_closed": per_round_ok,
     }
     return {
@@ -986,10 +1109,59 @@ def _audit_activity_ledgers(
     }
 
 
+def _ledger_per_round_caps_closed(
+    ledger_audit: dict[str, Any],
+) -> bool:
+    """Read the cap verdict from the audited checks payload."""
+
+    if set(ledger_audit) != {"passed", "checks", "per_round"}:
+        raise RuntimeError("unexpected activity-ledger audit shape")
+    if not isinstance(ledger_audit["passed"], bool):
+        raise RuntimeError("activity-ledger passed flag is not boolean")
+    if not isinstance(ledger_audit["checks"], dict):
+        raise RuntimeError("activity-ledger checks payload is not a map")
+    value = ledger_audit["checks"].get("per_round_caps_closed")
+    if not isinstance(value, bool):
+        raise RuntimeError(
+            "activity-ledger per-round cap verdict is missing or non-boolean"
+        )
+    if not isinstance(ledger_audit["per_round"], list):
+        raise RuntimeError("activity-ledger per-round payload is not a list")
+    return value
+
+
+def _ledger_audit_row_fields(
+    activity: dict[str, Any],
+) -> tuple[dict[str, Any], dict[str, Any]]:
+    """Build the exact audited fields consumed by the output row."""
+
+    ledger_audit = _audit_activity_ledgers(activity)
+    fields = {
+        "actual_round_caps_closed": (
+            _ledger_per_round_caps_closed(ledger_audit)
+        ),
+        "activity_ledgers_reconciled": bool(
+            ledger_audit["passed"]
+        ),
+        "activity_ledger_audit_json": json.dumps(
+            ledger_audit,
+            ensure_ascii=False,
+            sort_keys=True,
+            separators=(",", ":"),
+        ),
+        "final_validation_failed_closed": bool(
+            activity.get("final_fail_closed")
+        ),
+    }
+    return ledger_audit, fields
+
+
 def _audit_accepted_move_proofs(
     activity: dict[str, Any],
     bundle_dir: Path,
     prices: Any,
+    scenario_source: Solution,
+    scenario_final: Solution,
 ) -> dict[str, Any]:
     instance = _load_instance(bundle_dir)
     summaries = {
@@ -1186,14 +1358,131 @@ def _audit_accepted_move_proofs(
                     "message": str(exc),
                 }
             )
+    chain_audit = _audit_solution_chain(
+        activity,
+        scenario_source,
+        scenario_final,
+    )
     return {
-        "passed": all(row["passed"] for row in proof_rows),
+        "passed": (
+            all(row["passed"] for row in proof_rows)
+            and bool(chain_audit["passed"])
+        ),
         "accepted_move_count": len(activity["accepted_moves"]),
         "proof_row_count": len(proof_rows),
         "full_solution_replays": replay_count,
         "feasibility_checks": feasibility_count,
+        "solution_chain": chain_audit,
         "rows": proof_rows,
     }
+
+
+def _audit_solution_chain(
+    activity: dict[str, Any],
+    scenario_source: Solution,
+    scenario_final: Solution,
+) -> dict[str, Any]:
+    """Prove accepted rounds form one chain from input to returned result."""
+
+    try:
+        moves = list(activity["accepted_moves"])
+        rounds = [int(move["round"]) for move in moves]
+        summaries = list(activity["round_summaries"])
+        accepted_summary_rounds = [
+            int(summary["round"])
+            for summary in summaries
+            if bool(summary["accepted"])
+        ]
+        sources = [
+            _solution_from_payload(move["source_solution_snapshot"])
+            for move in moves
+        ]
+        completed = [
+            _solution_from_payload(
+                move["completed_solution_snapshot"]
+            )
+            for move in moves
+        ]
+        source_hash = _runner_full_content_hash(scenario_source)
+        final_hash = _runner_full_content_hash(scenario_final)
+        source_snapshot_hashes = [
+            _runner_full_content_hash(solution)
+            for solution in sources
+        ]
+        completed_snapshot_hashes = [
+            _runner_full_content_hash(solution)
+            for solution in completed
+        ]
+        if moves:
+            starts_at_scenario_source = (
+                source_snapshot_hashes[0] == source_hash
+            )
+            consecutive_snapshots = all(
+                completed_snapshot_hashes[index - 1]
+                == source_snapshot_hashes[index]
+                for index in range(1, len(moves))
+            )
+            ends_at_scenario_final = (
+                completed_snapshot_hashes[-1] == final_hash
+            )
+        else:
+            starts_at_scenario_source = True
+            consecutive_snapshots = True
+            ends_at_scenario_final = final_hash == source_hash
+        checks = {
+            "accepted_rounds_are_unique_and_consecutive": (
+                rounds == list(range(1, len(moves) + 1))
+                and len(set(rounds)) == len(rounds)
+            ),
+            "accepted_summaries_match_moves": (
+                accepted_summary_rounds == rounds
+            ),
+            "first_round_starts_at_scenario_source": (
+                starts_at_scenario_source
+            ),
+            "accepted_round_snapshots_are_consecutive": (
+                consecutive_snapshots
+            ),
+            "last_round_ends_at_scenario_final": (
+                ends_at_scenario_final
+            ),
+            "activity_source_cv_count_closes": (
+                int(activity["source_cv_route_count"])
+                == _runner_cv_count(scenario_source)
+            ),
+            "activity_final_cv_count_closes": (
+                int(activity["final_cv_route_count"])
+                == _runner_cv_count(scenario_final)
+            ),
+            "activity_changed_flag_closes": (
+                bool(activity["changed"]) == bool(moves)
+            ),
+        }
+        return {
+            "passed": all(checks.values()),
+            "checks": checks,
+            "accepted_rounds": rounds,
+            "scenario_source_full_content_sha256": source_hash,
+            "scenario_final_full_content_sha256": final_hash,
+            "accepted_source_full_content_sha256": (
+                source_snapshot_hashes
+            ),
+            "accepted_completed_full_content_sha256": (
+                completed_snapshot_hashes
+            ),
+        }
+    except (
+        IndexError,
+        KeyError,
+        TypeError,
+        ValueError,
+        RuntimeError,
+    ) as exc:
+        return {
+            "passed": False,
+            "exception_type": type(exc).__name__,
+            "message": str(exc),
+        }
 
 
 def _runner_declared_transfer_holds(
@@ -1445,6 +1734,7 @@ def _gate_checks(
             and int(row["enumeration_fail_closed_count"]) == 0
             and int(row["counterfactual_fail_closed_count"]) == 0
             and int(row["nonfinite_prescore_rejections"]) == 0
+            and not bool(row["final_validation_failed_closed"])
             for row in rows
         ),
         "source_and_final_ledgers_close": all(
@@ -1780,6 +2070,227 @@ def _require_registered_inputs() -> None:
         )
 
 
+def _require_execution_recovery_eligibility() -> None:
+    """Admit only the frozen zero-result repair of the first harness."""
+
+    payload = json.loads(
+        EXECUTION_RECOVERY_MANIFEST.read_text(encoding="utf-8"),
+        object_pairs_hook=_reject_duplicate_json_keys,
+    )
+    if payload.get("schema_version") != (
+        "resetp.electrification-relocate-resize-"
+        "execution-recovery.v1"
+    ):
+        raise RuntimeError("unexpected execution-recovery schema")
+    if payload.get("status") != (
+        "PRE_REGISTERED_EXECUTION_ONLY_RECOVERY"
+    ):
+        raise RuntimeError("execution recovery is not preregistered")
+    if tuple(
+        payload.get("allowed_execution_harness_changes", ())
+    ) != EXPECTED_RECOVERY_HARNESS_CHANGES:
+        raise RuntimeError(
+            "execution-recovery code-change whitelist drift"
+        )
+    frozen_false_keys = (
+        "algorithm_change_allowed",
+        "input_change_allowed",
+        "threshold_change_allowed",
+        "budget_change_allowed",
+        "result_exposure_before_registration",
+    )
+    if any(payload.get(key) is not False for key in frozen_false_keys):
+        raise RuntimeError("execution recovery expanded research scope")
+    if payload.get("parent_failure_directory") != _relative(
+        CANONICAL_OUTPUT
+    ):
+        raise RuntimeError("unexpected parent failure directory")
+    if payload.get("recovery_output_directory") != _relative(
+        EXECUTION_RECOVERY_OUTPUT
+    ):
+        raise RuntimeError("unexpected recovery output directory")
+    if EXECUTION_RECOVERY_OUTPUT.exists():
+        raise FileExistsError(
+            "execution-recovery output already exists"
+        )
+
+    parent_commit = str(payload["parent_failure_git_commit"])
+    ancestry = subprocess.run(
+        ["git", "merge-base", "--is-ancestor", parent_commit, "HEAD"],
+        cwd=REPO,
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    if ancestry.returncode != 0:
+        raise RuntimeError(
+            "sealed parent failure commit is not an ancestor"
+        )
+
+    expected_hashes = payload.get("parent_failure_artifact_hashes")
+    if not isinstance(expected_hashes, dict) or set(
+        expected_hashes
+    ) != {
+        "artifact_hashes.json",
+        "decision.json",
+        "execution_failure.json",
+        "metadata.json",
+        "raw_runs.csv",
+        "report.md",
+    }:
+        raise RuntimeError("unexpected parent failure artifact set")
+    actual_entries = [
+        path
+        for path in CANONICAL_OUTPUT.iterdir()
+        if not path.name.startswith("._")
+    ]
+    actual_names = {path.name for path in actual_entries}
+    if actual_names != set(expected_hashes):
+        raise RuntimeError("parent failure directory is not exact")
+    if any(
+        path.is_symlink() or not path.is_file()
+        for path in actual_entries
+    ):
+        raise RuntimeError(
+            "parent failure evidence contains a non-regular entry"
+        )
+    if _appledouble_paths(CANONICAL_OUTPUT):
+        raise RuntimeError("parent failure evidence has AppleDouble drift")
+    for name, expected in expected_hashes.items():
+        if _sha256(CANONICAL_OUTPUT / name) != str(expected):
+            raise RuntimeError(
+                f"parent failure artifact drift: {name}"
+            )
+
+    metadata = json.loads(
+        (CANONICAL_OUTPUT / "metadata.json").read_text(
+            encoding="utf-8"
+        ),
+        object_pairs_hook=_reject_duplicate_json_keys,
+    )
+    decision = json.loads(
+        (CANONICAL_OUTPUT / "decision.json").read_text(
+            encoding="utf-8"
+        ),
+        object_pairs_hook=_reject_duplicate_json_keys,
+    )
+    failure = json.loads(
+        (CANONICAL_OUTPUT / "execution_failure.json").read_text(
+            encoding="utf-8"
+        ),
+        object_pairs_hook=_reject_duplicate_json_keys,
+    )
+    internal_hashes = json.loads(
+        (CANONICAL_OUTPUT / "artifact_hashes.json").read_text(
+            encoding="utf-8"
+        ),
+        object_pairs_hook=_reject_duplicate_json_keys,
+    )
+    if internal_hashes.get("artifacts") != {
+        name: expected_hashes[name]
+        for name in expected_hashes
+        if name != "artifact_hashes.json"
+    }:
+        raise RuntimeError("parent failure internal hashes do not close")
+
+    expected = payload["parent_failure_expectations"]
+    if decision.get("verdict") != expected["verdict"]:
+        raise RuntimeError("parent failure verdict drift")
+    if failure.get("exception_type") != expected["exception_type"]:
+        raise RuntimeError("parent failure exception type drift")
+    if failure.get("message") != expected["message"]:
+        raise RuntimeError("parent failure message drift")
+    for key in (
+        "completed_scenario_count",
+        "complete_route_search_evaluations",
+        "route_search_guard_attempts",
+        "all_route_search_attempts",
+    ):
+        if metadata.get(key) != expected[key]:
+            raise RuntimeError(f"parent failure metadata drift: {key}")
+    if failure.get("completed_scenario_count") != 0:
+        raise RuntimeError("parent failure exposed a completed score row")
+
+    with (CANONICAL_OUTPUT / "raw_runs.csv").open(
+        encoding="utf-8",
+        newline="",
+    ) as handle:
+        rows = list(csv.DictReader(handle))
+    if (
+        len(rows) != 1
+        or set(rows[0]) != {"status", "exception_type", "message"}
+        or rows[0]["status"] != "INCONCLUSIVE_EXECUTION_FAILURE"
+    ):
+        raise RuntimeError("parent failure raw rows exposed results")
+
+    failed_runner = metadata["source_hashes"].get(
+        _relative(Path(__file__).resolve())
+    )
+    if failed_runner != payload["failed_runner_sha256"]:
+        raise RuntimeError("failed runner identity drift")
+    allowed_source_changes = {
+        _relative(Path(__file__).resolve()),
+        (
+            "baselines/algorithm_prototypes/"
+            "unified_mechanism_alns_20260719/"
+            "test_electrification_relocate_resize_solver.py"
+        ),
+        (
+            "baselines/algorithm_prototypes/"
+            "unified_mechanism_alns_20260719/"
+            "electrification_relocate_resize_zero_search_tests_"
+            "20260719.json"
+        ),
+        "docs/handoff/electrification_relocate_resize_contract_20260719.md",
+    }
+    parent_sources = metadata.get("source_hashes")
+    if not isinstance(parent_sources, dict):
+        raise RuntimeError("parent failure source ledger is missing")
+    recovery_only_sources = {
+        _relative(EXECUTION_RECOVERY_MANIFEST),
+        *{
+            _relative(CANONICAL_OUTPUT / name)
+            for name in expected_hashes
+        },
+    }
+    current_source_set = set(_all_source_files())
+    expected_source_set = set(parent_sources) | recovery_only_sources
+    if current_source_set != expected_source_set:
+        missing = sorted(expected_source_set - current_source_set)
+        extra = sorted(current_source_set - expected_source_set)
+        raise RuntimeError(
+            "execution recovery source set drift: "
+            f"missing={missing}, extra={extra}"
+        )
+    for path, expected_hash in parent_sources.items():
+        if path in allowed_source_changes:
+            continue
+        if _sha256(REPO / path) != str(expected_hash):
+            raise RuntimeError(
+                f"non-runner dependency changed for recovery: {path}"
+            )
+    parent_protected = metadata.get("protected_hashes")
+    if (
+        not isinstance(parent_protected, dict)
+        or set(parent_protected) != set(PROTECTED_FILES)
+    ):
+        raise RuntimeError("parent protected ledger is incomplete")
+    for path, expected_hash in parent_protected.items():
+        if _sha256(REPO / path) != str(expected_hash):
+            raise RuntimeError(
+                f"protected dependency changed for recovery: {path}"
+            )
+    solver_path = Path(str(solver.__file__)).resolve()
+    if _sha256(solver_path) != payload[
+        "frozen_algorithm_solver_sha256"
+    ]:
+        raise RuntimeError("algorithm solver changed for recovery")
+    if _sha256(INPUT_MANIFEST) != payload[
+        "frozen_input_manifest_sha256"
+    ]:
+        raise RuntimeError("input manifest changed for recovery")
+
+
 def _test_manifest_valid() -> bool:
     try:
         payload = json.loads(
@@ -1796,7 +2307,7 @@ def _test_manifest_valid() -> bool:
             return False
         if bool(payload.get("route_search_started")):
             return False
-        if int(payload.get("test_count", 0)) != 7:
+        if int(payload.get("test_count", 0)) != EXPECTED_TEST_COUNT:
             return False
         if tuple(payload.get("command", ())) != TEST_COMMAND:
             return False
@@ -2133,6 +2644,12 @@ def _report(
         "| 场景 | 原成本 | 新成本 | 改善 | 燃油路线变化 | 完整收尾调用 |",
         "|---|---:|---:|---:|---:|---:|",
     ]
+    if bool(decision.get("execution_recovery_v2")):
+        lines[6:6] = [
+            "执行身份：`execution_recovery_v2`。原失败现场保持封存，"
+            "本次只修复验收程序。",
+            "",
+        ]
     for row in rows:
         lines.append(
             f"| {row['scenario']} | {row['source_cost']:.9f} | "
@@ -2159,6 +2676,7 @@ def _seal_execution_failure(
     protected_hashes: dict[str, str],
     input_hashes: dict[str, str],
     route_search_attempts: list[str],
+    observed_complete_route_search_evaluations: int,
 ) -> None:
     """Turn a burned one-shot attempt into a complete sealed failure set."""
 
@@ -2177,6 +2695,9 @@ def _seal_execution_failure(
         "fresh_d3_allowed": False,
         "formal_search_allowed": False,
         "stage2_allowed": False,
+        "execution_recovery_v2": bool(
+            EXECUTION_RECOVERY_ACTIVE
+        ),
     }
     metadata = {
         "schema_version": (
@@ -2196,14 +2717,16 @@ def _seal_execution_failure(
         ),
         "route_search_guard_attempts": len(route_search_attempts),
         "all_route_search_attempts": list(route_search_attempts),
-        "complete_route_search_evaluations": sum(
-            int(
-                row.get(
-                    "complete_route_search_evaluations",
-                    0,
-                )
-            )
-            for row in rows
+        "complete_route_search_evaluations": int(
+            observed_complete_route_search_evaluations
+        ),
+        "execution_recovery_v2": bool(
+            EXECUTION_RECOVERY_ACTIVE
+        ),
+        "parent_failure_manifest_sha256": (
+            _sha256(EXECUTION_RECOVERY_MANIFEST)
+            if EXECUTION_RECOVERY_ACTIVE
+            else None
         ),
     }
     decision = {
@@ -2222,6 +2745,9 @@ def _seal_execution_failure(
         "formal_search_allowed": False,
         "stage2_allowed": False,
         "full_experiment_allowed": False,
+        "execution_recovery_v2": bool(
+            EXECUTION_RECOVERY_ACTIVE
+        ),
     }
     _write_json(CANONICAL_OUTPUT / "execution_failure.json", failure)
     _write_json(CANONICAL_OUTPUT / "metadata.json", metadata)
@@ -2237,9 +2763,16 @@ def _seal_execution_failure(
         ],
     )
     _write_json(CANONICAL_OUTPUT / "decision.json", decision)
+    recovery_identity = (
+        "执行身份：`execution_recovery_v2`。原失败现场保持封存，"
+        "本次只修复验收程序。\n\n"
+        if EXECUTION_RECOVERY_ACTIVE
+        else ""
+    )
     (CANONICAL_OUTPUT / "report.md").write_text(
         "# 燃油长路线减负—电动化联动搬移：执行失败封存\n\n"
         "判定：`INCONCLUSIVE_EXECUTION_FAILURE`。\n\n"
+        f"{recovery_identity}"
         "这次一次性行为门已经消耗，但没有形成可用成绩；不得从部分输出"
         "推断算法好坏，也不得在同一目录救援重跑。\n\n"
         f"失败类型：`{type(exc).__name__}`。信息：`{exc}`。\n",
@@ -2255,15 +2788,16 @@ def _seal_execution_failure(
         and path.name != "artifact_hashes.json"
         and not path.name.startswith("._")
     }
+    artifact_manifest = {
+        "schema_version": (
+            "resetp.electrification-relocate-resize-"
+            "failure-artifacts.v1"
+        ),
+        "artifacts": artifact_hashes,
+    }
     _write_json(
         CANONICAL_OUTPUT / "artifact_hashes.json",
-        {
-            "schema_version": (
-                "resetp.electrification-relocate-resize-"
-                "failure-artifacts.v1"
-            ),
-            "artifacts": artifact_hashes,
-        },
+        artifact_manifest,
     )
     _clean_appledouble(CANONICAL_OUTPUT)
     if _appledouble_paths(CANONICAL_OUTPUT):
@@ -2273,6 +2807,10 @@ def _seal_execution_failure(
             raise RuntimeError(
                 f"failure artifact drift after seal: {name}"
             )
+    _require_exact_json_payload(
+        CANONICAL_OUTPUT / "artifact_hashes.json",
+        artifact_manifest,
+    )
 
 
 def _write_csv(path: Path, rows: list[dict[str, Any]]) -> None:
@@ -2293,6 +2831,23 @@ def _write_json(path: Path, payload: Any) -> None:
         + "\n",
         encoding="utf-8",
     )
+
+
+def _require_exact_json_payload(
+    path: Path,
+    expected: dict[str, Any],
+) -> None:
+    if path.is_symlink() or not path.is_file():
+        raise RuntimeError(f"JSON seal is not a regular file: {path}")
+    try:
+        actual = json.loads(
+            path.read_text(encoding="utf-8"),
+            object_pairs_hook=_reject_duplicate_json_keys,
+        )
+    except (OSError, TypeError, ValueError, json.JSONDecodeError) as exc:
+        raise RuntimeError(f"JSON seal is unreadable: {path}") from exc
+    if actual != expected:
+        raise RuntimeError(f"JSON seal payload drift: {path}")
 
 
 def _appledouble_paths(output_dir: Path) -> list[str]:

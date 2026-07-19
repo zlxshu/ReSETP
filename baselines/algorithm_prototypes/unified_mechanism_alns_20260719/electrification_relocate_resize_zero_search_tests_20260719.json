@@ -1,8 +1,8 @@
 {
   "schema_version": "resetp.electrification-relocate-resize-tests.v1",
-  "created_at_utc": "2026-07-19T02:06:51Z",
+  "created_at_utc": "2026-07-19T03:31:09Z",
   "passed": true,
-  "test_count": 7,
+  "test_count": 11,
   "scoring_started": false,
   "route_search_started": false,
   "command": [
@@ -20,14 +20,20 @@
     "saved all-EV solution is an exact no-op",
     "declared adjacent transfer is proved before and after terminal completion",
     "formal entry rejects every non-frozen configuration",
-    "the behavior-time guard blocks a mature ALNS route-search entrypoint"
+    "the behavior-time guard blocks a mature ALNS route-search entrypoint",
+    "the runner reads per-round caps from the audited checks payload",
+    "prescore candidate and round ledgers close under the frozen caps",
+    "accepted move snapshots form one chain from scenario input to result",
+    "execution recovery rejects result exposure, evidence drift, and reused output",
+    "pre-row route-search activity survives execution-failure sealing"
   ],
   "source_hashes": {
     "baselines/algorithm_prototypes/unified_mechanism_alns_20260719/electrification_relocate_resize_solver.py": "4f5a4b239b37c63ac93c41d847cf21fdee04a57c8cd2a85a0672bd132143d898",
-    "baselines/algorithm_prototypes/unified_mechanism_alns_20260719/run_electrification_relocate_resize_behavior_gate.py": "4b6cc0bfb13868057318f594934aede7694e8c7c74865adb49fb3e53ea88db4d",
-    "baselines/algorithm_prototypes/unified_mechanism_alns_20260719/test_electrification_relocate_resize_solver.py": "23f631a028ecd051343239349cfa63bdac734d6889070d3c56b67ecb53bfdabf",
+    "baselines/algorithm_prototypes/unified_mechanism_alns_20260719/run_electrification_relocate_resize_behavior_gate.py": "0ebab5276ff3a98715a536ce617417ead7b0587dcce6253541b722da663900bd",
+    "baselines/algorithm_prototypes/unified_mechanism_alns_20260719/test_electrification_relocate_resize_solver.py": "b8b2551351e4ff692a9af785a61460b60923c592ad2143c17635a20797ae33dd",
     "baselines/algorithm_prototypes/unified_mechanism_alns_20260719/contextual_expert_fixtures.py": "5313b501968f190e9838858bc62d1dadbd4c32b010dd357d8ed06d4c61c97a78",
-    "docs/handoff/electrification_relocate_resize_contract_20260719.md": "91ba5c473a19ccc904eb45965f420d06f11e3ae3192ad647095a608a8bea30ed"
+    "baselines/algorithm_prototypes/unified_mechanism_alns_20260719/electrification_relocate_resize_execution_recovery_v2_20260719.json": "e6929f1efedd2114ef43fa9afd90f9cf15b5c2d43368c5a589e7299e5e652e46",
+    "docs/handoff/electrification_relocate_resize_contract_20260719.md": "f5bdd6ced39de57a06c6675dba5a67710f38b72bda6e1bb84f37f30c1c55f46d"
   },
   "protected_hashes": {
     "solver/src/setp_solver/cost.py": "d8bfee1844c8f8e89bac1233a3cd862d7ac7d088039f97751b8274756c41dee4",

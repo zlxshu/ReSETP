@@ -3,9 +3,13 @@
 from __future__ import annotations
 
 from dataclasses import asdict, replace
+import hashlib
 import json
 from pathlib import Path
+import shutil
 import sys
+import tempfile
+from types import SimpleNamespace
 import unittest
 from unittest.mock import patch
 
@@ -153,8 +157,34 @@ class ElectrificationRelocateResizeSolverTest(unittest.TestCase):
         )
         self.assertFalse(result.changed)
         self.assertEqual(asdict(result.solution), asdict(source))
+        audit, row_fields = gate._ledger_audit_row_fields(
+            result.activity
+        )
+        self.assertEqual(
+            set(audit),
+            {"passed", "checks", "per_round"},
+        )
+        self.assertTrue(audit["passed"])
         self.assertTrue(
-            gate._audit_activity_ledgers(result.activity)["passed"]
+            audit["checks"]["per_round_caps_closed"]
+        )
+        self.assertTrue(row_fields["actual_round_caps_closed"])
+        self.assertTrue(row_fields["activity_ledgers_reconciled"])
+        self.assertFalse(
+            row_fields["final_validation_failed_closed"]
+        )
+        inconsistent = dict(result.activity)
+        inconsistent["prescore_selected_moves"] = (
+            int(result.activity["prescore_selected_moves"]) + 1
+        )
+        inconsistent_audit = gate._audit_activity_ledgers(
+            inconsistent
+        )
+        self.assertFalse(inconsistent_audit["passed"])
+        self.assertFalse(
+            inconsistent_audit["checks"][
+                "prescore_round_summaries_close"
+            ]
         )
 
     def test_saved_all_ev_v7_solution_is_exact_noop(self) -> None:
@@ -189,6 +219,24 @@ class ElectrificationRelocateResizeSolverTest(unittest.TestCase):
         )
         self.assertEqual(asdict(result.solution), asdict(source))
         self.assertAlmostEqual(result.cost, result.source_cost, places=12)
+        audit, row_fields = gate._ledger_audit_row_fields(
+            result.activity
+        )
+        self.assertTrue(audit["passed"])
+        self.assertEqual(len(audit["per_round"]), 1)
+        self.assertEqual(
+            audit["per_round"][0]["summary_unique_candidates"],
+            0,
+        )
+        self.assertEqual(
+            audit["per_round"][0]["summary_exact_attempted"],
+            0,
+        )
+        self.assertTrue(row_fields["actual_round_caps_closed"])
+        self.assertTrue(row_fields["activity_ledgers_reconciled"])
+        self.assertFalse(
+            row_fields["final_validation_failed_closed"]
+        )
 
     def test_hashes_separate_order_from_semantics(self) -> None:
         source = plateau_solution()
@@ -425,6 +473,445 @@ class ElectrificationRelocateResizeSolverTest(unittest.TestCase):
         self.assertTrue(
             state["attempts"][0].endswith(".run_pure_alns")
         )
+
+    def test_ledger_consumer_rejects_malformed_audit_shape(
+        self,
+    ) -> None:
+        valid = {
+            "passed": True,
+            "checks": {"per_round_caps_closed": True},
+            "per_round": [],
+        }
+        self.assertTrue(gate._ledger_per_round_caps_closed(valid))
+        invalid = (
+            {
+                "passed": True,
+                "per_round": [],
+            },
+            {
+                "passed": True,
+                "checks": {},
+                "per_round": [],
+            },
+            {
+                "passed": True,
+                "checks": {"per_round_caps_closed": "true"},
+                "per_round": [],
+            },
+            {
+                "passed": "true",
+                "checks": {"per_round_caps_closed": True},
+                "per_round": [],
+            },
+            {
+                "passed": True,
+                "checks": {"per_round_caps_closed": True},
+                "per_round": {},
+            },
+        )
+        for payload in invalid:
+            with self.subTest(payload=payload):
+                with self.assertRaises(RuntimeError):
+                    gate._ledger_per_round_caps_closed(payload)
+
+    def test_solution_chain_closes_and_detects_detachment(
+        self,
+    ) -> None:
+        source = plateau_solution()
+        routes = list(source.routes)
+        routes[0] = replace(
+            routes[0],
+            vehicle_type=(
+                "ev"
+                if routes[0].vehicle_type.lower() == "cv"
+                else "cv"
+            ),
+        )
+        completed = Solution(
+            routes=routes,
+            charging_actions=list(source.charging_actions),
+            cross_site_services=list(source.cross_site_services),
+        )
+        cv_count = lambda solution: sum(  # noqa: E731
+            route.vehicle_type.lower() == "cv"
+            for route in solution.routes
+        )
+        activity = {
+            "accepted_moves": [
+                {
+                    "round": 1,
+                    "source_solution_snapshot": asdict(source),
+                    "completed_solution_snapshot": asdict(completed),
+                }
+            ],
+            "round_summaries": [
+                {"round": 1, "accepted": True}
+            ],
+            "source_cv_route_count": cv_count(source),
+            "final_cv_route_count": cv_count(completed),
+            "changed": True,
+        }
+        audit = gate._audit_solution_chain(
+            activity,
+            source,
+            completed,
+        )
+        self.assertTrue(audit["passed"])
+        detached = gate._audit_solution_chain(
+            activity,
+            source,
+            source,
+        )
+        self.assertFalse(detached["passed"])
+        self.assertFalse(
+            detached["checks"]["last_round_ends_at_scenario_final"]
+        )
+        bad_count = dict(activity)
+        bad_count["source_cv_route_count"] = cv_count(source) + 1
+        bad_count_audit = gate._audit_solution_chain(
+            bad_count,
+            source,
+            completed,
+        )
+        self.assertFalse(bad_count_audit["passed"])
+        self.assertFalse(
+            bad_count_audit["checks"][
+                "activity_source_cv_count_closes"
+            ]
+        )
+
+    def test_execution_recovery_fails_closed_on_evidence_changes(
+        self,
+    ) -> None:
+        original_parent = (
+            HERE / "electrification_relocate_resize_behavior_gate"
+        )
+        original_manifest = json.loads(
+            (
+                HERE
+                / "electrification_relocate_resize_execution_"
+                "recovery_v2_20260719.json"
+            ).read_text(encoding="utf-8")
+        )
+
+        def sha256(path: Path) -> str:
+            return hashlib.sha256(path.read_bytes()).hexdigest()
+
+        def sync_hashes(
+            parent: Path,
+            manifest: dict[str, object],
+            manifest_path: Path,
+        ) -> None:
+            internal_path = parent / "artifact_hashes.json"
+            internal = json.loads(
+                internal_path.read_text(encoding="utf-8")
+            )
+            internal["artifacts"] = {
+                path.name: sha256(path)
+                for path in sorted(parent.iterdir())
+                if path.is_file()
+                and path.name != "artifact_hashes.json"
+                and not path.name.startswith("._")
+            }
+            internal_path.write_text(
+                json.dumps(internal, indent=2, sort_keys=True)
+                + "\n",
+                encoding="utf-8",
+            )
+            manifest["parent_failure_artifact_hashes"] = {
+                path.name: sha256(path)
+                for path in sorted(parent.iterdir())
+                if path.is_file()
+                and not path.name.startswith("._")
+            }
+            manifest_path.write_text(
+                json.dumps(manifest, indent=2, sort_keys=True)
+                + "\n",
+                encoding="utf-8",
+            )
+
+        def clean_parent_appledouble(parent: Path) -> None:
+            for appledouble in parent.rglob("._*"):
+                appledouble.unlink()
+            (parent.parent / f"._{parent.name}").unlink(
+                missing_ok=True
+            )
+
+        with tempfile.TemporaryDirectory(
+            prefix=".relocate_recovery_test_",
+            dir=HERE,
+        ) as temp_name:
+            temp = Path(temp_name)
+            companion = temp.parent / f"._{temp.name}"
+            self.addCleanup(companion.unlink, missing_ok=True)
+            parent = temp / "parent"
+            recovery = temp / "recovery"
+            manifest_path = temp / "recovery.json"
+            shutil.copytree(original_parent, parent)
+            manifest = dict(original_manifest)
+            manifest["parent_failure_directory"] = gate._relative(
+                parent
+            )
+            manifest["recovery_output_directory"] = gate._relative(
+                recovery
+            )
+            sync_hashes(parent, manifest, manifest_path)
+            clean_parent_appledouble(parent)
+            self.assertEqual(gate._appledouble_paths(parent), [])
+            parent_metadata = json.loads(
+                (parent / "metadata.json").read_text(
+                    encoding="utf-8"
+                )
+            )
+            expected_sources = {
+                *parent_metadata["source_hashes"],
+                gate._relative(manifest_path),
+                *{
+                    gate._relative(parent / name)
+                    for name in manifest[
+                        "parent_failure_artifact_hashes"
+                    ]
+                },
+            }
+
+            with (
+                patch.object(gate, "CANONICAL_OUTPUT", parent),
+                patch.object(
+                    gate,
+                    "EXECUTION_RECOVERY_OUTPUT",
+                    recovery,
+                ),
+                patch.object(
+                    gate,
+                    "EXECUTION_RECOVERY_MANIFEST",
+                    manifest_path,
+                ),
+                patch.object(
+                    gate,
+                    "_all_source_files",
+                    return_value=tuple(sorted(expected_sources)),
+                ) as source_files_mock,
+                patch.object(
+                    gate.subprocess,
+                    "run",
+                    return_value=SimpleNamespace(returncode=0),
+                ),
+            ):
+                gate._require_execution_recovery_eligibility()
+
+                explicit_appledouble = parent / "._explicit_drift"
+                explicit_appledouble.write_text(
+                    "drift",
+                    encoding="utf-8",
+                )
+                with self.assertRaises(RuntimeError):
+                    gate._require_execution_recovery_eligibility()
+                clean_parent_appledouble(parent)
+                gate._require_execution_recovery_eligibility()
+
+                frozen_false = manifest.pop(
+                    "algorithm_change_allowed"
+                )
+                manifest_path.write_text(
+                    json.dumps(manifest, indent=2, sort_keys=True)
+                    + "\n",
+                    encoding="utf-8",
+                )
+                with self.assertRaises(RuntimeError):
+                    gate._require_execution_recovery_eligibility()
+                manifest["algorithm_change_allowed"] = frozen_false
+                manifest_path.write_text(
+                    json.dumps(manifest, indent=2, sort_keys=True)
+                    + "\n",
+                    encoding="utf-8",
+                )
+
+                allowed_changes = list(
+                    manifest["allowed_execution_harness_changes"]
+                )
+                manifest["allowed_execution_harness_changes"] = [
+                    *allowed_changes,
+                    "unregistered change",
+                ]
+                manifest_path.write_text(
+                    json.dumps(manifest, indent=2, sort_keys=True)
+                    + "\n",
+                    encoding="utf-8",
+                )
+                with self.assertRaises(RuntimeError):
+                    gate._require_execution_recovery_eligibility()
+                manifest["allowed_execution_harness_changes"] = (
+                    allowed_changes
+                )
+                manifest_path.write_text(
+                    json.dumps(manifest, indent=2, sort_keys=True)
+                    + "\n",
+                    encoding="utf-8",
+                )
+
+                hidden_results = parent / "extra_results"
+                hidden_results.mkdir()
+                with self.assertRaises(RuntimeError):
+                    gate._require_execution_recovery_eligibility()
+                hidden_results.rmdir()
+
+                report_path = parent / "report.md"
+                report_backup = temp / "report.backup"
+                report_path.rename(report_backup)
+                report_path.symlink_to(report_backup)
+                clean_parent_appledouble(parent)
+                with self.assertRaises(RuntimeError):
+                    gate._require_execution_recovery_eligibility()
+                report_path.unlink()
+                report_backup.rename(report_path)
+
+                source_files_mock.return_value = (
+                    *tuple(sorted(expected_sources)),
+                    "solver/src/unregistered_extra.py",
+                )
+                with self.assertRaises(RuntimeError):
+                    gate._require_execution_recovery_eligibility()
+                source_files_mock.return_value = tuple(
+                    sorted(expected_sources)
+                )
+
+                recovery.mkdir()
+                with self.assertRaises(FileExistsError):
+                    gate._require_execution_recovery_eligibility()
+                recovery.rmdir()
+
+                report_original = report_path.read_bytes()
+                report_path.write_bytes(report_original + b"drift")
+                clean_parent_appledouble(parent)
+                with self.assertRaises(RuntimeError):
+                    gate._require_execution_recovery_eligibility()
+                report_path.write_bytes(report_original)
+                sync_hashes(parent, manifest, manifest_path)
+                clean_parent_appledouble(parent)
+
+                metadata_path = parent / "metadata.json"
+                metadata_original = metadata_path.read_bytes()
+                metadata = json.loads(
+                    metadata_original.decode("utf-8")
+                )
+                metadata["completed_scenario_count"] = 1
+                metadata_path.write_text(
+                    json.dumps(metadata, indent=2, sort_keys=True)
+                    + "\n",
+                    encoding="utf-8",
+                )
+                sync_hashes(parent, manifest, manifest_path)
+                clean_parent_appledouble(parent)
+                with self.assertRaises(RuntimeError):
+                    gate._require_execution_recovery_eligibility()
+                metadata_path.write_bytes(metadata_original)
+
+                raw_path = parent / "raw_runs.csv"
+                raw_original = raw_path.read_bytes()
+                raw_path.write_text(
+                    "status,source_cost,final_cost\n"
+                    "PASS,10.0,9.0\n",
+                    encoding="utf-8",
+                )
+                sync_hashes(parent, manifest, manifest_path)
+                clean_parent_appledouble(parent)
+                with self.assertRaises(RuntimeError):
+                    gate._require_execution_recovery_eligibility()
+                raw_path.write_bytes(raw_original)
+
+                metadata = json.loads(
+                    metadata_original.decode("utf-8")
+                )
+                metadata["route_search_guard_attempts"] = 1
+                metadata_path.write_text(
+                    json.dumps(metadata, indent=2, sort_keys=True)
+                    + "\n",
+                    encoding="utf-8",
+                )
+                sync_hashes(parent, manifest, manifest_path)
+                clean_parent_appledouble(parent)
+                with self.assertRaises(RuntimeError):
+                    gate._require_execution_recovery_eligibility()
+
+    def test_failure_seal_preserves_pre_row_route_search_ledger(
+        self,
+    ) -> None:
+        with tempfile.TemporaryDirectory(
+            prefix=".relocate_failure_seal_test_",
+        ) as temp_name:
+            output = Path(temp_name) / "failure"
+            output.mkdir()
+            with (
+                patch.object(gate, "CANONICAL_OUTPUT", output),
+                patch.object(
+                    gate,
+                    "EXECUTION_RECOVERY_ACTIVE",
+                    True,
+                ),
+                patch.object(
+                    gate,
+                    "_clean_appledouble",
+                    return_value={
+                        "returncode": 0,
+                        "stdout": "",
+                        "stderr": "",
+                    },
+                ),
+                patch.object(
+                    gate,
+                    "_appledouble_paths",
+                    return_value=[],
+                ),
+                patch.object(
+                    gate,
+                    "_git",
+                    return_value="test-head",
+                ),
+            ):
+                gate._seal_execution_failure(
+                    RuntimeError("test failure"),
+                    rows=[],
+                    source_hashes={},
+                    protected_hashes={},
+                    input_hashes={},
+                    route_search_attempts=[],
+                    observed_complete_route_search_evaluations=7,
+                )
+            metadata = json.loads(
+                (output / "metadata.json").read_text(
+                    encoding="utf-8"
+                )
+            )
+            self.assertEqual(
+                metadata["complete_route_search_evaluations"],
+                7,
+            )
+            self.assertTrue(metadata["execution_recovery_v2"])
+            decision = json.loads(
+                (output / "decision.json").read_text(
+                    encoding="utf-8"
+                )
+            )
+            self.assertTrue(decision["execution_recovery_v2"])
+            self.assertIn(
+                "execution_recovery_v2",
+                (output / "report.md").read_text(encoding="utf-8"),
+            )
+            artifact_manifest = json.loads(
+                (output / "artifact_hashes.json").read_text(
+                    encoding="utf-8"
+                )
+            )
+            self.assertEqual(
+                set(artifact_manifest["artifacts"]),
+                {
+                    "decision.json",
+                    "execution_failure.json",
+                    "metadata.json",
+                    "raw_runs.csv",
+                    "report.md",
+                },
+            )
 
 
 if __name__ == "__main__":
