@@ -2,7 +2,7 @@
 
 ## MDA-ILS-VNS-P1-001：强母体有限参数竞速
 
-状态：`APPROVED_AUTONOMOUS_EXECUTION__PREREGISTERED_BEFORE_CODE`
+状态：`EXECUTED__STOP_PARAMETER_RACE_KEEP_FOUNDATION`
 （2026-07-20）。
 
 用户明确授权代理在有依据时调整参数，以算法变强和后续实验方便为根本；同时要求避免
@@ -13,6 +13,13 @@ LatinHypercube 分层配置先在 A 组 seed5 短筛，前四用新 seed6 复赛
 完整空间、16 个配置、排序、三段预算和二值门冻结于
 `docs/handoff/mda_ils_vns_parameter_race_contract_20260720.md`。确认失败后必须停止
 公开题调参并转 China81；不得在确认题救参数、换题、扩网格或打开完整 28 题。
+
+执行结果：第一轮保留`race_14/12/13/08`，换种子复赛选出`race_08`并以2胜1负、
+总目标更低进入未见确认。PR16A/20A/24A两种子确认是4胜0平2负，总目标
+`76,932,408→76,591,957`，平均BKS gap改善`0.441424478`个百分点；两处退步
+`0.1281%/0.1559%`，均很小，但负例数2超过最多1，且迭代中位比仅
+`0.68764153<0.95`。因此按预登记判`STOP_PARAMETER_RACE_KEEP_FOUNDATION`，
+新BKS为0，不救`race_08`。78个性能解全部独立有效，保护文件与证据哈希闭合。
 
 ## MDA-ILS-VNS-S2-001：后期分阶段路线精修
 
