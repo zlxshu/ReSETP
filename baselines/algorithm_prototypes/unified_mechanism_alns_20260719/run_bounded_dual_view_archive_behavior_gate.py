@@ -161,6 +161,20 @@ def main() -> int:
         raise FileExistsError(
             f"behaviour output directory must not exist: {output_dir}"
         )
+    preexisting_appledouble = _appledouble_paths(
+        tuple(REPO / path for path in SOURCE_FILES + PROTECTED_FILES)
+        + (
+            FIXTURE,
+            PLATEAU_BUNDLE,
+            RESPONSIBILITY_BUNDLE,
+            output_dir,
+        )
+    )
+    if preexisting_appledouble:
+        raise RuntimeError(
+            "HASH_CONTAMINATED_APPLEDOUBLE before behaviour gate: "
+            + ", ".join(preexisting_appledouble)
+        )
     _require_clean_sources()
     source_hashes_before = {
         path: _sha256(REPO / path) for path in SOURCE_FILES
@@ -386,6 +400,25 @@ def main() -> int:
     _write_json(output_dir / "solution_witnesses.json", witnesses)
     _write_json(output_dir / "metadata.json", metadata)
     _atomic_text(output_dir / "report.md", _report(decision, rows))
+    output_appledouble = _appledouble_paths((output_dir,))
+    if output_appledouble:
+        failures.extend(
+            f"HASH_CONTAMINATED_APPLEDOUBLE:{path}"
+            for path in output_appledouble
+        )
+        decision.update(
+            {
+                "verdict": "HASH_CONTAMINATED_APPLEDOUBLE",
+                "passed": False,
+                "failure_count": len(failures),
+                "failures": failures,
+                "old_three_instance_gate_allowed": False,
+            }
+        )
+        metadata["appledouble_contamination"] = output_appledouble
+        _write_json(output_dir / "decision.json", decision)
+        _write_json(output_dir / "metadata.json", metadata)
+        _atomic_text(output_dir / "report.md", _report(decision, rows))
     _write_json(
         output_dir / "artifact_hashes.json",
         {
@@ -1303,19 +1336,41 @@ def _gate_failures(
         if float(row["cost_closure_error"]) > 1.0e-7:
             failures.append(f"component:{label}:closure")
     fleet = probes["fleet_charge_binding"]
-    if int(
-        fleet["activity"]["joint"].get("exact_decoder_updates", 0)
-    ) < 1:
+    fleet_joint = dict(fleet["activity"]["joint"])
+    if int(fleet_joint.get("exact_decoder_updates", 0)) < 1:
         failures.append("component:fleet_charge_binding:joint_inactive")
+    if (
+        not _all_finite(fleet_joint.get("objective_delta"))
+        or float(fleet_joint["objective_delta"]) >= -solver.TOL
+    ):
+        failures.append(
+            "component:fleet_charge_binding:joint_not_improving"
+        )
+    if list(fleet_joint.get("selected_pattern", [])) == list(
+        fleet_joint.get("current_pattern", [])
+    ):
+        failures.append(
+            "component:fleet_charge_binding:vehicle_pattern_unchanged"
+        )
     carbon = probes["carbon_time_binding"]
     if int(
         carbon["activity"]["joint"].get("exact_decoder_updates", 0)
     ) != 0:
         failures.append("component:carbon_time_binding:joint_masquerade")
-    if int(
-        carbon["activity"]["carbon"].get("exact_decoder_updates", 0)
-    ) < 1:
+    carbon_activity = dict(carbon["activity"]["carbon"])
+    if int(carbon_activity.get("exact_decoder_updates", 0)) < 1:
         failures.append("component:carbon_time_binding:carbon_inactive")
+    if (
+        not _all_finite(carbon_activity.get("objective_delta"))
+        or float(carbon_activity["objective_delta"]) >= -solver.TOL
+    ):
+        failures.append(
+            "component:carbon_time_binding:carbon_not_improving"
+        )
+    if int(carbon_activity.get("actions_retimed", 0)) < 1:
+        failures.append(
+            "component:carbon_time_binding:no_action_retimed"
+        )
 
     fixed = probes["fast_nonbinding_fixed_point"]
     if not _all_finite(fixed["cost_difference"]):
@@ -1351,6 +1406,13 @@ def _gate_failures(
         > float(responsibility["source_cost"]) + solver.TOL
     ):
         failures.append("component:responsibility_binding:regressed")
+    if abs(
+        float(responsibility["completed_cost"])
+        - float(responsibility["replayed_cost"])
+    ) > 1.0e-7:
+        failures.append(
+            "component:responsibility_binding:replay_mismatch"
+        )
 
     nonbinding = probes["responsibility_nonbinding"]
     if not _all_finite(
@@ -1644,6 +1706,27 @@ def _input_hashes(bundle_dirs: tuple[Path, ...]) -> dict[str, str]:
         ):
             hashes[_relative(path)] = _sha256(path)
     return hashes
+
+
+def _appledouble_paths(paths: tuple[Path, ...]) -> list[str]:
+    found: set[Path] = set()
+    for path in paths:
+        companion = path.parent / f"._{path.name}"
+        if companion.exists():
+            found.add(companion.resolve())
+        if path.is_dir():
+            found.update(
+                item.resolve()
+                for item in path.rglob("._*")
+                if item.is_file()
+            )
+    rows: list[str] = []
+    for path in sorted(found, key=str):
+        try:
+            rows.append(str(path.relative_to(REPO)))
+        except ValueError:
+            rows.append(str(path))
+    return rows
 
 
 def _add_witness(

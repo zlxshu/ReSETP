@@ -1000,6 +1000,9 @@ def _verify_behaviour_gate() -> dict[str, Any]:
         return {"passed": False, "reason": "missing_behaviour_evidence"}
     decision = json.loads(decision_path.read_text(encoding="utf-8"))
     expected_hashes = json.loads(hashes_path.read_text(encoding="utf-8"))
+    appledouble_contamination = behaviour._appledouble_paths(
+        (BEHAVIOUR_DIR,)
+    )
     mismatches = [
         name
         for name, expected in expected_hashes.items()
@@ -1052,12 +1055,14 @@ def _verify_behaviour_gate() -> dict[str, Any]:
         "passed": bool(
             decision.get("passed")
             and not mismatches
+            and not appledouble_contamination
             and ancestor
             and evidence_tracked
             and evidence_clean
         ),
         "verdict": decision.get("verdict"),
         "artifact_hash_mismatches": mismatches,
+        "appledouble_contamination": appledouble_contamination,
         "source_commit": source_commit,
         "source_commit_is_ancestor": ancestor,
         "evidence_tracked": evidence_tracked,
