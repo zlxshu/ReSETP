@@ -1,0 +1,82 @@
+{
+  "schema_version": 1,
+  "name": "mda-ils-vns-foundation",
+  "objective": "完成冻结的强母体配置筛选、A组开发选择和B组两种子验收",
+  "workdir": "../../..",
+  "poll_seconds": 10,
+  "stale_seconds": 900,
+  "max_runtime_seconds": 1800,
+  "pause_on_anomaly": true,
+  "required_command_substrings": [
+    "run_foundation_gate.py"
+  ],
+  "forbidden_command_substrings": [
+    "--smoke",
+    "--debug",
+    "China81"
+  ],
+  "min_cpu_percent_when_active": 1,
+  "low_cpu_consecutive_checks": 4,
+  "max_rss_mb": 7500,
+  "min_system_free_memory_mb": 256,
+  "min_system_memory_free_percent": 5,
+  "logs": [],
+  "progress_files": [],
+  "result_files": [
+    "baselines/algorithm_foundation/mda_ils_vns_foundation_20260720/raw_runs.csv",
+    "baselines/algorithm_foundation/mda_ils_vns_foundation_20260720/decision.json",
+    "baselines/algorithm_foundation/mda_ils_vns_foundation_20260720/report.md"
+  ],
+  "completion_files": [
+    "baselines/algorithm_foundation/mda_ils_vns_foundation_20260720/artifact_hashes.json"
+  ],
+  "checkpoint_paths": [],
+  "protected_files": [
+    {
+      "path": "docs/handoff/mda_ils_vns_foundation_contract_20260720.md",
+      "kind": "experiment_contract"
+    },
+    {
+      "path": "baselines/algorithm_prototypes/mda_ils_vns_20260720/selective_route_vns.py",
+      "kind": "primary_config"
+    },
+    {
+      "path": "baselines/algorithm_prototypes/mda_ils_vns_20260720/run_worker.py",
+      "kind": "primary_config"
+    },
+    {
+      "path": "baselines/algorithm_prototypes/mda_ils_vns_20260720/run_foundation_gate.py",
+      "kind": "primary_config"
+    },
+    {
+      "path": "solver/src/setp_solver/cost.py",
+      "kind": "cost_function"
+    },
+    {
+      "path": "solver/src/setp_solver/check.py",
+      "kind": "evaluator"
+    },
+    {
+      "path": "solver/src/setp_solver/search/evaluation.py",
+      "kind": "evaluator"
+    },
+    {
+      "path": "solver/src/setp_solver/prices.py",
+      "kind": "model"
+    },
+    {
+      "path": "docs/paper_submission_final/paper_main.tex",
+      "kind": "paper_conclusion"
+    },
+    {
+      "path": "baselines/algorithm_foundation/mdvrptw_v13_comparison_20260719/opponent_targets.csv",
+      "kind": "core_data"
+    }
+  ],
+  "csv_rules": [],
+  "milestones": [],
+  "ai": {
+    "enabled": false,
+    "timeout_seconds": 180
+  }
+}
