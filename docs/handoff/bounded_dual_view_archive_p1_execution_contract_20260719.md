@@ -1,6 +1,6 @@
 # 有界双视图档案旧三题 P1 执行合同
 
-状态：`FROZEN_BEFORE_FIRST_SCORE`
+状态：`BURNED_INCONCLUSIVE_EXECUTION_FAILURE_NO_RERUN`
 
 本文件只加固 `bounded_dual_view_archive_contract_20260719.md` 已批准的旧三题一次性小门，不改变算法、预算、候选容量、排序规则或通过阈值。
 
@@ -89,3 +89,19 @@ STOP 后不得调整 12 个预筛候选、3 个终局候选、排序规则、预
 外置盘写盘若生成 AppleDouble，必须先登记瞬时 `HASH_CONTAMINATED_APPLEDOUBLE`，再只清理本次唯一正式目录，确认零边车后重算并再次逐件核验哈希。不得重写原始 CSV。
 
 PASS 只允许锁定候选并进入一次新鲜 D3 最小门，以完成当前目标模式中的低成本新鲜验证；STOP 不允许进入 D3。无论 PASS 或 STOP，都不授权 HGS/纯 ALNS 正式对比、阶段二或全量实验。
+
+## 6. 2026-07-19 执行结果
+
+唯一一次尝试已经消耗。六个固定工作进程在证据汇总前均已返回，但运行器
+将“列表顺序不同、业务内容相同”的两份方案误报为完整内容哈希碰撞，未写出
+任何可用的 `raw_runs.csv`、`decision.json` 或方案证明。因此本门状态是
+`INCONCLUSIVE_EXECUTION_FAILURE`，既不是 PASS，也不是算法性能 STOP。
+
+原失败目录和监控异常现场原样保留，不覆盖、不改名、不换目录重跑。证明记录器
+只允许用零评分回归测试修复；旧三题、新鲜 D3、正式对比、阶段二和全量实验继续
+禁止。权威失败审计位于：
+
+`baselines/algorithm_prototypes/unified_mechanism_alns_20260719/bounded_dual_view_archive_p1_failure_audit`
+
+算法开发按原合同的结果盲后路，转向“燃油长路线减负—电动化联动搬移”的
+跨路线机制算子。

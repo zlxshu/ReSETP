@@ -1,0 +1,103 @@
+{
+  "arms": [
+    "control",
+    "candidate"
+  ],
+  "behaviour_decision_sha256": "06cdc0298c3a609bcaa1c959f90f6054b95645cd65cd84de90e36e45d72c09d7",
+  "canonical_output_dir": "baselines/algorithm_prototypes/unified_mechanism_alns_20260719/bounded_dual_view_archive_p1_training_gate",
+  "complete_candidate_budget_per_arm": 100,
+  "git_head": "e4723bcb72ae9da4cc288414b10f2b0be9115bf0",
+  "historical_p1_metadata_sha256": "f14358a4ff2e38a58aec1c8f779626b5c7349663608d752e3d63d54b8491aeff",
+  "input_hashes": {
+    "models/data_bundle/generated_instances/L-main_size_preserving_v2_archive_20260710/L-main-threeshift-20c-01/carbon_profile.csv": "f552d7b082593582369ab0dfd938983eeadd38a76a0b0a3e79d3410c00421433",
+    "models/data_bundle/generated_instances/L-main_size_preserving_v2_archive_20260710/L-main-threeshift-20c-01/depot_candidate_scores.csv": "4dcdc58eff3d679499af10d53c4f5939b11d2d9b490ff4c0b1af1fc73e090388",
+    "models/data_bundle/generated_instances/L-main_size_preserving_v2_archive_20260710/L-main-threeshift-20c-01/distance_matrix.npy": "235ddf4ad433f67e01e174881ab8c69b049ccdbf1ce45b5d3f27f064044aac5d",
+    "models/data_bundle/generated_instances/L-main_size_preserving_v2_archive_20260710/L-main-threeshift-20c-01/instance.json": "4b91f4befe645e1fb8e654a62d5ea16a787ac4332b7366bf1a7908d1fae7c0dd",
+    "models/data_bundle/generated_instances/L-main_size_preserving_v2_archive_20260710/L-main-threeshift-20c-01/instance_evrptwmf.txt": "f78c4f49cc0e7847accf6d93f10957b74c8fe3730ac6bf4ab01f6a6f127192ca",
+    "models/data_bundle/generated_instances/L-main_size_preserving_v2_archive_20260710/L-main-threeshift-20c-01/nodes.csv": "c56f541746b723ec992bec137d2aebea92250ed43c77c54a16bfe93d9399ac32",
+    "models/data_bundle/generated_instances/L-main_size_preserving_v2_archive_20260710/L-main-threeshift-20c-01/scenario_manifest.json": "83fd294b9ec5bb28b73149466c91e1ec12ec2d31dc476edf0f2ec0479fd71c74",
+    "models/data_bundle/generated_instances/L-main_size_preserving_v2_archive_20260710/L-main-threeshift-20c-01/station_candidate_scores.csv": "1080ad83640caa487aa7545ffd0cfe2902d61ba2891dde9c986452bd5830e778",
+    "models/data_bundle/generated_instances/L-main_size_preserving_v2_archive_20260710/L-main-threeshift-20c-01/three_shift_manifest.json": "9e8a92a85b39584f784d154055871d871ad17b26dfd0ac0dc24fe1086c20a546",
+    "models/data_bundle/generated_instances/L-main_size_preserving_v2_archive_20260710/L-main-threeshift-25c-01/carbon_profile.csv": "f552d7b082593582369ab0dfd938983eeadd38a76a0b0a3e79d3410c00421433",
+    "models/data_bundle/generated_instances/L-main_size_preserving_v2_archive_20260710/L-main-threeshift-25c-01/depot_candidate_scores.csv": "9dbd56e6399158054538e1cd421db9417fcedbdbaa81a78c806a7e048f148918",
+    "models/data_bundle/generated_instances/L-main_size_preserving_v2_archive_20260710/L-main-threeshift-25c-01/distance_matrix.npy": "f22eaf26ada52de484c74a8893eb423f9a6ece69e463d6b65e8472eaf1bb0b1e",
+    "models/data_bundle/generated_instances/L-main_size_preserving_v2_archive_20260710/L-main-threeshift-25c-01/instance.json": "74592c35e8630088f50d0fd34349771769ad4b3b42d5195cab31da341ec726f0",
+    "models/data_bundle/generated_instances/L-main_size_preserving_v2_archive_20260710/L-main-threeshift-25c-01/instance_evrptwmf.txt": "def52203929592689a11f2b1c8dc847d6e8ae881eb6ce74c066194d29b0789d7",
+    "models/data_bundle/generated_instances/L-main_size_preserving_v2_archive_20260710/L-main-threeshift-25c-01/nodes.csv": "9bcc9a2595846d5fba7409c4ab796f2dc3aadb171ffb6bd30badaf72ffb53e34",
+    "models/data_bundle/generated_instances/L-main_size_preserving_v2_archive_20260710/L-main-threeshift-25c-01/scenario_manifest.json": "e5d7133c0c8483ed88e69a803c1d4de1a6b8329ec8da5c4798fa2f76e4c76952",
+    "models/data_bundle/generated_instances/L-main_size_preserving_v2_archive_20260710/L-main-threeshift-25c-01/station_candidate_scores.csv": "fc189ca03aee2ac22d741a192633b31bd6c18c613183c998e25a9803ca2150e6",
+    "models/data_bundle/generated_instances/L-main_size_preserving_v2_archive_20260710/L-main-threeshift-25c-01/three_shift_manifest.json": "2ea0c5a0ff0dcde634b5b359786df086cc28723c6528b34f72b7fdf268e8ebca",
+    "models/data_bundle/generated_instances/L-main_size_preserving_v2_archive_20260710/L-main-threeshift-50c-01/carbon_profile.csv": "f552d7b082593582369ab0dfd938983eeadd38a76a0b0a3e79d3410c00421433",
+    "models/data_bundle/generated_instances/L-main_size_preserving_v2_archive_20260710/L-main-threeshift-50c-01/depot_candidate_scores.csv": "57da2b1cd2bdff7bc0b1d62cf31d2f1da6905e634fa250ebdc63bb4b4dd82845",
+    "models/data_bundle/generated_instances/L-main_size_preserving_v2_archive_20260710/L-main-threeshift-50c-01/distance_matrix.npy": "b9cb3855b5f9525a044628b75d6f035d0ceb850675dd047757873a35208df20a",
+    "models/data_bundle/generated_instances/L-main_size_preserving_v2_archive_20260710/L-main-threeshift-50c-01/instance.json": "bd534bbb23032426b70361a3950cb0af5feeca9be1e7676461e2f9697d85c50e",
+    "models/data_bundle/generated_instances/L-main_size_preserving_v2_archive_20260710/L-main-threeshift-50c-01/instance_evrptwmf.txt": "aab7a5d3428262a05b3f3d0c9af43bfea798271aa76c34f0c363a4672538ffac",
+    "models/data_bundle/generated_instances/L-main_size_preserving_v2_archive_20260710/L-main-threeshift-50c-01/nodes.csv": "bbebe5b4b780241c1f04b3c4c54e4774fe2616b609db32bd2e7212b4993e4d7b",
+    "models/data_bundle/generated_instances/L-main_size_preserving_v2_archive_20260710/L-main-threeshift-50c-01/scenario_manifest.json": "27a60dced15d228745c43fc564dbda8cc1af768f5ddd11dfa653fd29f5d256ea",
+    "models/data_bundle/generated_instances/L-main_size_preserving_v2_archive_20260710/L-main-threeshift-50c-01/station_candidate_scores.csv": "63251990e70e1a24f02993a6736db0ca91acafe7d6ae4ebf336e3d432beb2198",
+    "models/data_bundle/generated_instances/L-main_size_preserving_v2_archive_20260710/L-main-threeshift-50c-01/three_shift_manifest.json": "cca13bd8cb668cae22ea2dcc30696dac1cca5947e757f0e5c88f37bdf880bad7"
+  },
+  "instances": [
+    "L-main-threeshift-20c-01",
+    "L-main-threeshift-25c-01",
+    "L-main-threeshift-50c-01"
+  ],
+  "one_shot": true,
+  "protected_file_hashes": {
+    "solver/src/setp_solver/check.py": "53f5cc27d3ac72bdd2bbec113eb8af11ad18a82490502f800941140495e8e142",
+    "solver/src/setp_solver/cost.py": "d8bfee1844c8f8e89bac1233a3cd862d7ac7d088039f97751b8274756c41dee4",
+    "solver/src/setp_solver/search/evaluation.py": "c7215263c39d1d5a1429b41ca8ac40d950dbdf2bdc288337e56fbe9733406fc3"
+  },
+  "run_order": [
+    {
+      "arm": "control",
+      "instance": "L-main-threeshift-25c-01"
+    },
+    {
+      "arm": "candidate",
+      "instance": "L-main-threeshift-20c-01"
+    },
+    {
+      "arm": "candidate",
+      "instance": "L-main-threeshift-50c-01"
+    },
+    {
+      "arm": "control",
+      "instance": "L-main-threeshift-20c-01"
+    },
+    {
+      "arm": "candidate",
+      "instance": "L-main-threeshift-25c-01"
+    },
+    {
+      "arm": "control",
+      "instance": "L-main-threeshift-50c-01"
+    }
+  ],
+  "schema_version": "resetp.bounded-dual-view-archive-p1-attempt.v1",
+  "scoring_started": true,
+  "seed": 1,
+  "source_hashes": {
+    "baselines/algorithm_prototypes/mechanism_hgs_alns_20260718/prototype.py": "6d8e7452041b45b4c2ecbabd9b0100c7b6f5fe5ada0882aa49e2410de338f795",
+    "baselines/algorithm_prototypes/mechanism_hgs_alns_20260718/v4_mechanism_alns_solver.py": "83c51675906b81fb6e99e1c42f66f7fb1d696329444d73b5c2d2a86b90f5c2f8",
+    "baselines/algorithm_prototypes/mechanism_hgs_alns_20260718/v5_carbon_retiming_solver.py": "ab652bc58f3704c3cf113f12ee517ce806f121014cbb9f8966ff72e5f2fe35f2",
+    "baselines/algorithm_prototypes/mechanism_hgs_alns_20260718/v6_monotone_mechanism_solver.py": "5ba5bbe3d92c45460a4870e393255d8e1e4c1d5676ba3d770e4465eeec0b66fd",
+    "baselines/algorithm_prototypes/mechanism_hgs_alns_20260718/v7_responsibility_solver.py": "35a6071f19bb19dee82e5ccb6672287c7785fdd76b5acdb5bd3e494370dd1499",
+    "baselines/algorithm_prototypes/unified_mechanism_alns_20260719/bounded_dual_view_archive_solver.py": "5a964428fa0a2d9d806d1343ba4e5fed0d402596b6d4e7e51ae9059c12462108",
+    "baselines/algorithm_prototypes/unified_mechanism_alns_20260719/contextual_expert_p1_training_gate/metadata.json": "f14358a4ff2e38a58aec1c8f779626b5c7349663608d752e3d63d54b8491aeff",
+    "baselines/algorithm_prototypes/unified_mechanism_alns_20260719/fast_mechanism_completion.py": "83d0d27cf6b1f9d6708b42a33ecf050e5cc80783ac14147d196ad721f08e2d64",
+    "baselines/algorithm_prototypes/unified_mechanism_alns_20260719/initial_pool.py": "064806e5182ebb0fed7b91a7661c8da46b69f6478b2f1b8752b7b167a38ae720",
+    "baselines/algorithm_prototypes/unified_mechanism_alns_20260719/run_bounded_dual_view_archive_behavior_gate.py": "1be863a868e58d5d9cc6fd6ade66a085a55c8c9d68c37f5e0f045888182dd999",
+    "baselines/algorithm_prototypes/unified_mechanism_alns_20260719/run_bounded_dual_view_archive_p1_training_gate.py": "5cb73f95581034c307c9b0c86fb0904b088ca6ec5b00472e0c45b6f281634f09",
+    "baselines/algorithm_prototypes/unified_mechanism_alns_20260719/terminal_completion.py": "0e27599f5d0ea20124b4f82cdd8e81521745e310ae1e1982bb6b8ac05d614a7a",
+    "baselines/algorithm_prototypes/unified_mechanism_alns_20260719/test_bounded_dual_view_archive_solver.py": "0c39892702c1da2738e0bfd7d48728fe9ba34f90142ac7e903343b41440dd4a7",
+    "docs/handoff/bounded_dual_view_archive_contract_20260719.md": "6934bb18a03a365af080ab9d353a0ad3014aed271e83b09d476b1130ff77f20e",
+    "docs/handoff/bounded_dual_view_archive_p1_execution_contract_20260719.md": "1977f089ef056b063092fa3bfb746ae77987af88139ec462f3223ed21920e7c8",
+    "solver/src/setp_solver/algorithms/resetp_alns/kernel/winner.py": "b2cdcdad3842be4161008b7e940ade53a437536ad8e5f1adf4b214cdec871497",
+    "solver/src/setp_solver/algorithms/resetp_alns/runtime/budgeted_scoring.py": "a429e29b0127674b0fba842cc6ea5cd73b19589b0f4b4eb27dd48d0ff982cd76",
+    "solver/src/setp_solver/algorithms/resetp_alns/support/construction.py": "a605bd59beaa053367e6392bff5bc60452194f4f4ff7aedaef6cb5b7471b68ca",
+    "solver/src/setp_solver/search/e3_multitrip_runtime.py": "ecbe21559e56f71e3ed9681bcac188b1d68f082eff5f4794a9c49d2aa762ad6a"
+  },
+  "started_at_utc": "2026-07-19T00:44:59.866888+00:00",
+  "status": "SCORING_STARTED"
+}

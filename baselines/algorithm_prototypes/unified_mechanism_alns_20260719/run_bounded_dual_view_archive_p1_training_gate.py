@@ -111,6 +111,8 @@ SOURCE_FILES = (
     "baselines/algorithm_prototypes/unified_mechanism_alns_20260719/"
     "test_bounded_dual_view_archive_solver.py",
     "baselines/algorithm_prototypes/unified_mechanism_alns_20260719/"
+    "test_bounded_dual_view_archive_p1_witness.py",
+    "baselines/algorithm_prototypes/unified_mechanism_alns_20260719/"
     "fast_mechanism_completion.py",
     "baselines/algorithm_prototypes/unified_mechanism_alns_20260719/"
     "terminal_completion.py",
@@ -1695,16 +1697,29 @@ def _add_witness(
     solution: Solution,
     metadata: dict[str, Any],
 ) -> None:
-    exact = solver._exact_solution_hash(solution)
     snapshot = asdict(solution)
-    if exact in witnesses and witnesses[exact]["solution"] != snapshot:
+    semantic_exact = solver._exact_solution_hash(solution)
+    full_content = _sha_text(
+        json.dumps(
+            snapshot,
+            ensure_ascii=False,
+            sort_keys=True,
+            separators=(",", ":"),
+            default=_json_default,
+        )
+    )
+    if (
+        full_content in witnesses
+        and witnesses[full_content]["solution"] != snapshot
+    ):
         raise RuntimeError(
             "full-content witness hash collision with unequal payloads"
         )
     row = witnesses.setdefault(
-        exact,
+        full_content,
         {
-            "full_content_sha256": exact,
+            "full_content_sha256": full_content,
+            "semantic_exact_sha256": semantic_exact,
             "algorithm_signature": solution_signature_hash(solution),
             "solution": snapshot,
             "uses": [],

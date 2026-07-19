@@ -1,0 +1,13 @@
+{
+  "exception_type": "RuntimeError",
+  "exit_code": 2,
+  "failed_at_utc": "2026-07-19T00:45:07.605645+00:00",
+  "formal_search_allowed": false,
+  "fresh_d3_allowed": false,
+  "message": "full-content witness hash collision with unequal payloads",
+  "schema_version": "resetp.bounded-dual-view-archive-p1-failure.v1",
+  "scoring_may_have_started": true,
+  "stage2_allowed": false,
+  "status": "EXECUTION_FAILURE",
+  "traceback": "Traceback (most recent call last):\n  File \"/Volumes/移动硬盘（512G）/ReSETP/baselines/algorithm_prototypes/unified_mechanism_alns_20260719/run_bounded_dual_view_archive_p1_training_gate.py\", line 1925, in _entrypoint\n    return main()\n  File \"/Volumes/移动硬盘（512G）/ReSETP/baselines/algorithm_prototypes/unified_mechanism_alns_20260719/run_bounded_dual_view_archive_p1_training_gate.py\", line 413, in main\n    _add_witness(\n    ~~~~~~~~~~~~^\n        witnesses,\n        ^^^^^^^^^^\n    ...<8 lines>...\n        },\n        ^^\n    )\n    ^\n  File \"/Volumes/移动硬盘（512G）/ReSETP/baselines/algorithm_prototypes/unified_mechanism_alns_20260719/run_bounded_dual_view_archive_p1_training_gate.py\", line 1701, in _add_witness\n    raise RuntimeError(\n        \"full-content witness hash collision with unequal payloads\"\n    )\nRuntimeError: full-content witness hash collision with unequal payloads\n"
+}
