@@ -2,7 +2,12 @@
 
 日期：2026-07-20
 
-状态：`APPROVED_AUTONOMOUS_EXECUTION__NL0_PURE_CORE_FIRST`
+状态：`NL1_PASS__NL2_COST_CHECK_AND_CHARGING_TIMING_AUTHORIZED`
+
+> 2026-07-20 执行更新：NL0 与 NL1 已依次通过。NL1 权威证据为
+> `baselines/model_verification/china81_nonlinear_schedule_nl1_20260720/`；
+> 新动作冻结起止电量与曲线身份，多趟排班按唯一非线性内核计算可达电量和持续时间，
+> 84 项相关回归全绿。正式搜索仍关闭；下一步只放行 NL2。
 
 ## 1. 授权与目标
 

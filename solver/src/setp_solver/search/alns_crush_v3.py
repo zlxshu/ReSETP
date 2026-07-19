@@ -13,7 +13,12 @@ from typing import Any
 from ..check import check_solution
 from ..cost import evaluate, route_node_schedule
 from ..prices import DEFAULT_PRICES, PriceParameters
-from ..solution import ChargingAction, CrossSiteService, Route, Solution
+from ..solution import (
+    CrossSiteService,
+    Route,
+    Solution,
+    charging_action_from_dict,
+)
 from .alns_crush import INSTANCE_DIRS
 from .bundle import SearchBundle, load_search_bundle
 from .winner_operators import (
@@ -47,14 +52,7 @@ def solution_from_dict(payload: dict[str, Any]) -> Solution:
             for row in payload.get("routes", [])
         ],
         charging_actions=[
-            ChargingAction(
-                str(row["vehicle_id"]),
-                str(row["station_id"]),
-                float(row["energy_kwh"]),
-                float(row["occupancy_minutes"]),
-                float(row["charge_start_second"]),
-                int(row.get("charge_day_offset", 0)),
-            )
+            charging_action_from_dict(row)
             for row in payload.get("charging_actions", [])
         ],
         cross_site_services=[

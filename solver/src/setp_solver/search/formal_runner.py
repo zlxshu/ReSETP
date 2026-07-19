@@ -25,7 +25,12 @@ from ..check import check_solution
 from ..cost import evaluate
 from ..prices import DEFAULT_PRICES, PriceParameters
 from ..profit import calculate_depot_profits
-from ..solution import ChargingAction, CrossSiteService, Route, Solution
+from ..solution import (
+    CrossSiteService,
+    Route,
+    Solution,
+    charging_action_from_dict,
+)
 from .alns_wouda import SearchPolicy, run_alns_wouda
 from .alns_crush import ALNS_DEFAULT_INSTANCE_ORDER, INSTANCE_DIRS
 from .bundle import load_search_bundle
@@ -1410,14 +1415,7 @@ def _solution_from_dict(payload: dict[str, Any]) -> Solution:
             for row in payload.get("routes", [])
         ],
         charging_actions=[
-            ChargingAction(
-                vehicle_id=str(row["vehicle_id"]),
-                station_id=str(row["station_id"]),
-                energy_kwh=float(row["energy_kwh"]),
-                occupancy_minutes=float(row["occupancy_minutes"]),
-                charge_start_second=float(row["charge_start_second"]),
-                charge_day_offset=int(row.get("charge_day_offset", 0)),
-            )
+            charging_action_from_dict(row)
             for row in payload.get("charging_actions", [])
         ],
         cross_site_services=[

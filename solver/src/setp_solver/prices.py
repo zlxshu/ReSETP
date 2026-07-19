@@ -2,6 +2,8 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
+from .charging_curve import L100_CONTROL
+
 
 # ---------------------------------------------------------------------------
 # 区块A: Goeke 物理与能耗参数
@@ -54,6 +56,12 @@ station_electricity_price = electricity_price  # £/kWh, public station charging
 depot_electricity_price = 0.1853  # £/kWh, DESNZ Quarterly Energy Prices June 2025, manufacturing non-domestic electricity 18.53 p/kWh. https://assets.publishing.service.gov.uk/media/685a9f35db207fc18744d608/quarterly-energy-prices-june-2025.pdf
 depot_charge_power_kw = 22.0  # kW, depot overnight AC proxy, Mer UK fast AC depot charging 7-22 kW. https://uk.mer.eco/chargers/commercial-ev-chargers/
 initial_ev_battery_kwh = 0.0  # kWh, paper bbar default for fresh static Q2/Q3 solver probes before depot precharge.
+# Every new run names its charging law explicitly.  L100 is the historical
+# constant-power control; nonlinear scenarios replace these three fields
+# together and are validated by the shared charging kernel.
+charging_curve_id = L100_CONTROL.curve_id
+charging_soc_breakpoints = L100_CONTROL.soc_breakpoints
+charging_relative_powers = L100_CONTROL.relative_powers
 carbon_price = 0.05034  # £/kgCO2e, 主值, 折合 £50.34/tCO2e, UK ETS 2025 二级市场约 £50/t。参考文献: International Carbon Action Partnership. UK Emissions Trading System[EB/OL]. [2026-06-11]. https://icapcarbonaction.com/en/ets/uk-emissions-trading-scheme-uk-ets.
 carbon_price_low = 0.04184  # £/kgCO2e, 敏感性低值, 折合 £41.84/tCO2e, UK ETS 2025 民事处罚碳价官方真值。参考文献: 英国能源安全与净零部. UK ETS civil penalty carbon price 2025[EB/OL]. (2025)[2026-06-11]. https://www.gov.uk/government/publications/participating-in-the-uk-ets/how-to-comply-with-the-uk-ets.
 diesel_ef = 2.57082  # kgCO2e/L, 英国 2025 温室气体转换因子, 零售柴油(含约 3% 生物柴油混合)真值。参考文献: 英国环境食品与乡村事务部, 能源安全与净零部. 2025 government greenhouse gas conversion factors for company reporting[DB/OL]. (2025)[2026-06-11]. https://www.gov.uk/government/publications/greenhouse-gas-reporting-conversion-factors-2025.
@@ -122,6 +130,9 @@ class PriceParameters:
     revenue_per_kg: float = revenue_per_kg
     fairness_theta: float = fairness_theta
     c_km: float = c_km
+    charging_curve_id: str = charging_curve_id
+    charging_soc_breakpoints: tuple[float, ...] = charging_soc_breakpoints
+    charging_relative_powers: tuple[float, ...] = charging_relative_powers
 
     @property
     def charging_occupancy_fee(self) -> float:

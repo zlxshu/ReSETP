@@ -8,6 +8,7 @@ this module instead of reimplementing ``energy / power`` arithmetic.
 
 from __future__ import annotations
 
+from collections.abc import Mapping
 from dataclasses import asdict, dataclass
 from hashlib import sha256
 import json
@@ -83,6 +84,67 @@ NL80_STRESS = ChargingCurveSpec(
 CURVE_SPECS: dict[str, ChargingCurveSpec] = {
     spec.curve_id: spec for spec in (L100_CONTROL, NL90_MILD, NL80_STRESS)
 }
+
+
+def spec_from_parameters(parameters: object) -> ChargingCurveSpec:
+    """Read one explicit normalized curve from shared parameters.
+
+    There is deliberately no implicit linear fallback.  Any code creating new
+    evidence must carry all three curve fields, including the L100 control.
+    """
+
+    names = (
+        "charging_curve_id",
+        "charging_soc_breakpoints",
+        "charging_relative_powers",
+    )
+    if isinstance(parameters, Mapping):
+        missing = [name for name in names if name not in parameters]
+        if missing:
+            raise ChargingCurveError(
+                "charging parameters are missing explicit fields: "
+                + ", ".join(missing)
+            )
+        curve_id = parameters[names[0]]
+        soc = parameters[names[1]]
+        powers = parameters[names[2]]
+    else:
+        missing = [name for name in names if not hasattr(parameters, name)]
+        if missing:
+            raise ChargingCurveError(
+                "charging parameters are missing explicit fields: "
+                + ", ".join(missing)
+            )
+        curve_id = getattr(parameters, names[0])
+        soc = getattr(parameters, names[1])
+        powers = getattr(parameters, names[2])
+    if isinstance(soc, (str, bytes)) or isinstance(powers, (str, bytes)):
+        raise ChargingCurveError("charging curve arrays must be numeric sequences")
+    spec = ChargingCurveSpec(
+        str(curve_id),
+        tuple(float(value) for value in soc),  # type: ignore[arg-type]
+        tuple(float(value) for value in powers),  # type: ignore[arg-type]
+    )
+    registered = CURVE_SPECS.get(spec.curve_id)
+    if registered is not None and spec.parameter_sha256 != registered.parameter_sha256:
+        raise ChargingCurveError(
+            f"registered curve {spec.curve_id} disagrees with its frozen parameters"
+        )
+    return spec
+
+
+def curve_from_parameters(
+    parameters: object,
+    *,
+    capacity_kwh: float,
+    reference_power_kw: float,
+) -> PiecewiseChargingCurve:
+    """Scale the explicit curve carried by the shared parameter object."""
+
+    return spec_from_parameters(parameters).scale(
+        capacity_kwh=capacity_kwh,
+        reference_power_kw=reference_power_kw,
+    )
 
 
 @dataclass(frozen=True)

@@ -1,0 +1,13 @@
+check,status,observed,expected,detail
+short_gap_physics,PASS,L100=1;NL90=2,L100=1;NL90=2,same two routes; nonlinear taper alone requires one extra vehicle
+curve_identity_and_hash,PASS,605f66b161bb16e9383ceec724d10ec09c6033eb9e600f11b64e5af9b8fd1e54,605f66b161bb16e9383ceec724d10ec09c6033eb9e600f11b64e5af9b8fd1e54,NL90_mild
+action_energy_duration_and_roundtrip,PASS,duration=3.97903932026e-13;energy=0;roundtrip=0,all<=1e-7;roundtrip=0,actions=2
+linear_degeneracy,PASS,3.126388037344441e-13,<=1e-07,actions=2
+legacy_formula_scan,PASS,"{""depot_power_times_gap"": 0, ""energy_divided_by_depot_power"": 0, ""gap_times_depot_power"": 0}",all zero,solver/src/setp_solver/search/multitrip_schedule.py
+target_tests,PASS,0,0,"........................................................................ [ 85%]
+............                                                             [100%]
+84 passed in 0.67s
+"
+ruff,PASS,0,0,"All checks passed!
+"
+change_boundary,PASS,[],[],cost/check/evaluation/TeX unchanged during NL1

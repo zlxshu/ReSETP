@@ -21,7 +21,7 @@ from ..cost import evaluate
 from ..instance_loader import Instance, Node
 from ..prices import DEFAULT_PRICES, PriceParameters
 from ..profit import calculate_depot_profits, infer_customer_home_depots
-from ..solution import ChargingAction, Route, Solution
+from ..solution import ChargingAction, Route, Solution, charging_action_from_dict
 from .alns_wouda import SearchPolicy, run_alns_wouda
 from .bundle import load_search_bundle
 
@@ -503,6 +503,9 @@ def _solution_to_dict(solution: Solution) -> dict[str, Any]:
                 "occupancy_minutes": float(action.occupancy_minutes),
                 "charge_start_second": float(action.charge_start_second),
                 "charge_day_offset": int(action.charge_day_offset),
+                "start_energy_kwh": action.start_energy_kwh,
+                "end_energy_kwh": action.end_energy_kwh,
+                "charging_curve_id": action.charging_curve_id,
             }
             for action in solution.charging_actions
         ],
@@ -521,14 +524,7 @@ def _solution_from_dict(payload: dict[str, Any]) -> Solution:
             for row in payload.get("routes", [])
         ],
         charging_actions=[
-            ChargingAction(
-                vehicle_id=str(row["vehicle_id"]),
-                station_id=str(row["station_id"]),
-                energy_kwh=float(row["energy_kwh"]),
-                occupancy_minutes=float(row["occupancy_minutes"]),
-                charge_start_second=float(row["charge_start_second"]),
-                charge_day_offset=int(row.get("charge_day_offset", 0)),
-            )
+            charging_action_from_dict(row)
             for row in payload.get("charging_actions", [])
         ],
     )

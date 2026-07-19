@@ -25,14 +25,34 @@ LOADERS = (
 )
 
 
-def _payload(*, include_day_offset: bool) -> dict[str, object]:
+def _payload(
+    *,
+    include_day_offset: bool,
+    include_curve_metadata: bool = True,
+) -> dict[str, object]:
     solution = Solution(
         routes=[Route("EV1#T1", "ev", "D0", ["D0", "C1", "D0"])],
-        charging_actions=[ChargingAction("EV1#T1", "D0", 8.0, 30.0, 3_600.0, -1)],
+        charging_actions=[
+            ChargingAction(
+                "EV1#T1",
+                "D0",
+                8.0,
+                30.0,
+                3_600.0,
+                -1,
+                20.0,
+                28.0,
+                "NL90_mild",
+            )
+        ],
     )
     action = asdict(solution.charging_actions[0])
     if not include_day_offset:
         action.pop("charge_day_offset")
+    if not include_curve_metadata:
+        action.pop("start_energy_kwh")
+        action.pop("end_energy_kwh")
+        action.pop("charging_curve_id")
     return {
         "routes": [asdict(solution.routes[0])],
         "charging_actions": [action],
@@ -49,6 +69,21 @@ def test_solution_loaders_preserve_pre_horizon_charge_day(loader) -> None:
 
 @pytest.mark.parametrize("loader", LOADERS)
 def test_solution_loaders_keep_legacy_default(loader) -> None:
-    loaded = loader(_payload(include_day_offset=False))
+    loaded = loader(
+        _payload(include_day_offset=False, include_curve_metadata=False)
+    )
 
     assert loaded.charging_actions[0].charge_day_offset == 0
+    assert loaded.charging_actions[0].start_energy_kwh is None
+    assert loaded.charging_actions[0].end_energy_kwh is None
+    assert loaded.charging_actions[0].charging_curve_id is None
+
+
+@pytest.mark.parametrize("loader", LOADERS)
+def test_solution_loaders_preserve_curve_metadata(loader) -> None:
+    loaded = loader(_payload(include_day_offset=True))
+    action = loaded.charging_actions[0]
+
+    assert action.start_energy_kwh == 20.0
+    assert action.end_energy_kwh == 28.0
+    assert action.charging_curve_id == "NL90_mild"

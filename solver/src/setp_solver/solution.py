@@ -1,6 +1,8 @@
 from __future__ import annotations
 
+from collections.abc import Mapping
 from dataclasses import dataclass, field
+from typing import Any
 
 
 VEHICLE_TRIP_SEPARATOR = "#T"
@@ -39,6 +41,37 @@ class ChargingAction:
     occupancy_minutes: float
     charge_start_second: float
     charge_day_offset: int = 0
+    start_energy_kwh: float | None = None
+    end_energy_kwh: float | None = None
+    charging_curve_id: str | None = None
+
+
+def charging_action_from_dict(row: Mapping[str, Any]) -> ChargingAction:
+    """Load both historical six-field and current curve-aware actions."""
+
+    return ChargingAction(
+        vehicle_id=str(row["vehicle_id"]),
+        station_id=str(row["station_id"]),
+        energy_kwh=float(row["energy_kwh"]),
+        occupancy_minutes=float(row["occupancy_minutes"]),
+        charge_start_second=float(row["charge_start_second"]),
+        charge_day_offset=int(row.get("charge_day_offset", 0)),
+        start_energy_kwh=(
+            None
+            if row.get("start_energy_kwh") is None
+            else float(row["start_energy_kwh"])
+        ),
+        end_energy_kwh=(
+            None
+            if row.get("end_energy_kwh") is None
+            else float(row["end_energy_kwh"])
+        ),
+        charging_curve_id=(
+            None
+            if row.get("charging_curve_id") is None
+            else str(row["charging_curve_id"])
+        ),
+    )
 
 
 @dataclass(frozen=True)

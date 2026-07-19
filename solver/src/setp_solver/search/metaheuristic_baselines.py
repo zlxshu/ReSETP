@@ -24,7 +24,12 @@ from ..check import check_solution
 from ..cost import evaluate, route_node_schedule
 from ..instance_loader import Instance, Node
 from ..prices import DEFAULT_PRICES, PriceParameters
-from ..solution import ChargingAction, CrossSiteService, Route, Solution
+from ..solution import (
+    CrossSiteService,
+    Route,
+    Solution,
+    charging_action_from_dict,
+)
 from .bundle import SearchBundle, load_search_bundle
 from .charging import repair_route_charging
 from .candidates import (
@@ -597,7 +602,10 @@ def solution_to_dict(solution: Solution) -> dict[str, Any]:
 def solution_from_dict(payload: dict[str, Any]) -> Solution:
     return Solution(
         routes=[Route(str(row["vehicle_id"]), str(row["vehicle_type"]), str(row["home_depot_id"]), [str(node) for node in row["node_sequence"]]) for row in payload.get("routes", [])],
-        charging_actions=[ChargingAction(str(row["vehicle_id"]), str(row["station_id"]), float(row["energy_kwh"]), float(row["occupancy_minutes"]), float(row["charge_start_second"]), int(row.get("charge_day_offset", 0))) for row in payload.get("charging_actions", [])],
+        charging_actions=[
+            charging_action_from_dict(row)
+            for row in payload.get("charging_actions", [])
+        ],
         cross_site_services=[CrossSiteService(str(row["customer_id"]), str(row["served_by_depot_id"])) for row in payload.get("cross_site_services", [])],
     )
 

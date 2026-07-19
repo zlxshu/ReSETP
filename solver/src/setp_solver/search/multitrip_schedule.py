@@ -13,6 +13,13 @@ from dataclasses import asdict, dataclass, replace
 import heapq
 from typing import Any
 
+from ..charging_curve import (
+    ChargingCurveError,
+    L100_CONTROL,
+    PiecewiseChargingCurve,
+    curve_from_parameters,
+    pack_trip_chain,
+)
 from ..cost import _arc_loads, carbon_profile_row_for_slot, charging_slot_breakdown, ev_arc_energy_kwh, _price
 from ..instance_loader import Instance
 from ..prices import DEFAULT_PRICES, PriceParameters
@@ -21,6 +28,7 @@ from ..solution import ChargingAction, Route, Solution, physical_vehicle_id, rou
 
 LEGACY_CONTRACT_ID = "E3_STRICT_MULTITRIP_V1"
 CONTRACT_ID = "E3_STRICT_MULTITRIP_V2"
+NONLINEAR_CONTRACT_ID = "E3_STRICT_MULTITRIP_V3_NL"
 CHARGE_MODE_FULL = "full"
 CHARGE_MODE_PARTIAL = "partial"
 CHARGE_MODE_ON_DEMAND = "on_demand"
@@ -64,9 +72,156 @@ class MultiTripCertificate:
     recharge_mode: str
     depot_charge_power_kw: float
     first_trip_charge_day_offset: int = STATIC_FIRST_TRIP_CHARGE_DAY_OFFSET
+    charging_curve_id: str = L100_CONTROL.curve_id
+    charging_curve_parameter_sha256: str = L100_CONTROL.parameter_sha256
 
     def as_dict(self) -> dict[str, Any]:
         return asdict(self)
+
+
+def multitrip_certificate_from_dict(
+    payload: Mapping[str, Any],
+) -> MultiTripCertificate:
+    """Load historical V2 and current curve-aware certificate JSON."""
+
+    return MultiTripCertificate(
+        contract_id=str(payload["contract_id"]),
+        status=str(payload["status"]),
+        vehicle_counts={
+            str(key): int(value)
+            for key, value in dict(payload["vehicle_counts"]).items()
+        },
+        trips=tuple(
+            ScheduledTrip(**dict(row)) for row in payload.get("trips", ())
+        ),
+        recharge_mode=str(payload["recharge_mode"]),
+        depot_charge_power_kw=float(payload["depot_charge_power_kw"]),
+        first_trip_charge_day_offset=int(
+            payload.get(
+                "first_trip_charge_day_offset",
+                STATIC_FIRST_TRIP_CHARGE_DAY_OFFSET,
+            )
+        ),
+        charging_curve_id=str(
+            payload.get("charging_curve_id", L100_CONTROL.curve_id)
+        ),
+        charging_curve_parameter_sha256=str(
+            payload.get(
+                "charging_curve_parameter_sha256",
+                L100_CONTROL.parameter_sha256,
+            )
+        ),
+    )
+
+
+def _curve_for_prices(
+    prices: PriceParameters | dict[str, Any] | Any,
+) -> PiecewiseChargingCurve:
+    try:
+        return curve_from_parameters(
+            prices,
+            capacity_kwh=_price(prices, "B_battery_kwh"),
+            reference_power_kw=_price(prices, "depot_charge_power_kw"),
+        )
+    except ChargingCurveError as exc:
+        raise ValueError(f"{NONLINEAR_CONTRACT_ID}: {exc}") from exc
+
+
+def _certificate_curve(
+    certificate: MultiTripCertificate,
+    prices: PriceParameters | dict[str, Any] | Any,
+) -> PiecewiseChargingCurve:
+    curve = _curve_for_prices(prices)
+    if certificate.contract_id == CONTRACT_ID:
+        if curve.curve_id != L100_CONTROL.curve_id:
+            raise ValueError(
+                f"{NONLINEAR_CONTRACT_ID}: V2 certificates are linear-only"
+            )
+    elif certificate.contract_id != NONLINEAR_CONTRACT_ID:
+        raise ValueError("unknown multi-trip contract")
+    if certificate.charging_curve_id != curve.curve_id:
+        raise ValueError(
+            f"{NONLINEAR_CONTRACT_ID}: certificate curve id disagrees with prices"
+        )
+    if certificate.charging_curve_parameter_sha256 != curve.parameter_sha256:
+        raise ValueError(
+            f"{NONLINEAR_CONTRACT_ID}: certificate curve hash disagrees with prices"
+        )
+    return curve
+
+
+def _canonical_curve_energy(
+    curve: PiecewiseChargingCurve,
+    value: float,
+    *,
+    label: str,
+) -> float:
+    """Clamp floating-point dust while rejecting real battery-bound violations."""
+
+    energy = float(value)
+    if energy < -_TOL or energy > curve.capacity_kwh + _TOL:
+        raise ValueError(
+            f"{NONLINEAR_CONTRACT_ID}: {label} lies outside battery bounds"
+        )
+    return min(curve.capacity_kwh, max(0.0, energy))
+
+
+def _validate_action_curve_metadata(
+    action: ChargingAction,
+    *,
+    start_energy_kwh: float,
+    end_energy_kwh: float,
+    curve: PiecewiseChargingCurve,
+    require_explicit: bool,
+) -> None:
+    values = (
+        action.start_energy_kwh,
+        action.end_energy_kwh,
+        action.charging_curve_id,
+    )
+    if not require_explicit and all(value is None for value in values):
+        return
+    if any(value is None for value in values):
+        raise ValueError(
+            f"{NONLINEAR_CONTRACT_ID}: charging action has incomplete curve metadata"
+        )
+    if action.charging_curve_id != curve.curve_id:
+        raise ValueError(
+            f"{NONLINEAR_CONTRACT_ID}: charging action curve id disagrees"
+        )
+    expected_start = _canonical_curve_energy(
+        curve,
+        start_energy_kwh,
+        label="expected charging start energy",
+    )
+    expected_end = _canonical_curve_energy(
+        curve,
+        end_energy_kwh,
+        label="expected charging end energy",
+    )
+    actual_start = _canonical_curve_energy(
+        curve,
+        float(action.start_energy_kwh),
+        label="recorded charging start energy",
+    )
+    actual_end = _canonical_curve_energy(
+        curve,
+        float(action.end_energy_kwh),
+        label="recorded charging end energy",
+    )
+    if abs(actual_start - expected_start) > _TOL:
+        raise ValueError(
+            f"{NONLINEAR_CONTRACT_ID}: charging action start energy disagrees"
+        )
+    if abs(actual_end - expected_end) > _TOL:
+        raise ValueError(
+            f"{NONLINEAR_CONTRACT_ID}: charging action end energy disagrees"
+        )
+    duration = curve.duration_seconds(expected_start, expected_end)
+    if abs(float(action.occupancy_minutes) * 60.0 - duration) > _TOL:
+        raise ValueError(
+            f"{NONLINEAR_CONTRACT_ID}: charging action duration disagrees with curve"
+        )
 
 
 def route_timing(
@@ -157,6 +312,8 @@ def build_multitrip_certificate(
     depot_charge_power_kw = _price(prices, "depot_charge_power_kw")
     if depot_charge_power_kw <= 0:
         raise ValueError("depot_charge_power_kw must be positive")
+    battery_kwh = _price(prices, "B_battery_kwh")
+    charging_curve = _curve_for_prices(prices)
     timings = [route_timing(route, instance, prices) for route in routes]
     scheduled: list[ScheduledTrip] = []
     counts = {"cv": 0, "ev": 0}
@@ -171,20 +328,27 @@ def build_multitrip_certificate(
             group_trips, group_count = _schedule_ev_group(
                 group,
                 depot,
-                battery_kwh=_price(prices, "B_battery_kwh"),
-                depot_charge_power_kw=depot_charge_power_kw,
+                battery_kwh=battery_kwh,
+                charging_curve=charging_curve,
                 recharge_mode=recharge_mode,
                 initial_departure_battery_by_route=initial_departure_battery_by_route or {},
             )
         scheduled.extend(group_trips)
         counts[vehicle_type] += group_count
     certificate = MultiTripCertificate(
-        CONTRACT_ID,
+        (
+            CONTRACT_ID
+            if charging_curve.curve_id == L100_CONTROL.curve_id
+            else NONLINEAR_CONTRACT_ID
+        ),
         "PASS",
         counts,
         tuple(sorted(scheduled, key=lambda x: x.route_id)),
         recharge_mode,
         depot_charge_power_kw,
+        STATIC_FIRST_TRIP_CHARGE_DAY_OFFSET,
+        charging_curve.curve_id,
+        charging_curve.parameter_sha256,
     )
     validate_multitrip_certificate(certificate, routes, prices)
     return certificate
@@ -225,7 +389,7 @@ def _schedule_ev_group(
     depot: str,
     *,
     battery_kwh: float,
-    depot_charge_power_kw: float,
+    charging_curve: PiecewiseChargingCurve,
     recharge_mode: str,
     initial_departure_battery_by_route: dict[str, float],
 ) -> tuple[list[ScheduledTrip], int]:
@@ -246,11 +410,11 @@ def _schedule_ev_group(
                 departure_battery = battery_kwh
                 charge_energy = 0.0
             else:
-                charge_energy = min(
-                    battery_kwh - state.battery_kwh,
-                    max(0.0, gap_seconds) * depot_charge_power_kw / 3600.0,
+                departure_battery = charging_curve.reachable_energy_kwh(
+                    state.battery_kwh,
+                    max(0.0, gap_seconds),
                 )
-                departure_battery = state.battery_kwh + charge_energy
+                charge_energy = departure_battery - state.battery_kwh
             if departure_battery + _TOL < timing.drive_energy_kwh:
                 continue
             candidates.append((departure_battery, -state.available_second, state, charge_energy))
@@ -258,7 +422,13 @@ def _schedule_ev_group(
             _, _, state, charge_energy = max(candidates, key=lambda item: (item[0], item[1], -item[2].local_id))
             if recharge_mode in {CHARGE_MODE_PARTIAL, CHARGE_MODE_ON_DEMAND} and state.previous_route_id is not None:
                 previous = scheduled[state.previous_route_id]
-                charge_seconds = charge_energy / depot_charge_power_kw * 3600.0
+                charge_seconds = (
+                    charging_curve.duration_seconds(
+                        state.battery_kwh, state.battery_kwh + charge_energy
+                    )
+                    if charge_energy > _TOL
+                    else 0.0
+                )
                 charge_start = timing.earliest_departure_second - charge_seconds
                 scheduled[state.previous_route_id] = replace(
                     previous,
@@ -283,7 +453,11 @@ def _schedule_ev_group(
         end_battery = start_battery - timing.drive_energy_kwh
         physical_id = f"EV_{depot}_{state.local_id}"
         charge_energy_after = timing.drive_energy_kwh if recharge_mode == CHARGE_MODE_FULL else 0.0
-        charge_seconds_after = charge_energy_after / depot_charge_power_kw * 3600.0
+        charge_seconds_after = (
+            charging_curve.duration_seconds(end_battery, battery_kwh)
+            if charge_energy_after > _TOL
+            else 0.0
+        )
         scheduled[timing.route_id] = ScheduledTrip(
             timing.route_id,
             physical_id,
@@ -305,14 +479,13 @@ def _schedule_ev_group(
             states.append(state)
     result = list(scheduled.values())
     if recharge_mode in {CHARGE_MODE_PARTIAL, CHARGE_MODE_ON_DEMAND}:
-        result = _minimize_ev_chain_charging(result, battery_kwh, depot_charge_power_kw)
+        result = _minimize_ev_chain_charging(result, charging_curve)
     return result, next_local_id
 
 
 def _minimize_ev_chain_charging(
     trips: list[ScheduledTrip],
-    battery_kwh: float,
-    depot_charge_power_kw: float,
+    charging_curve: PiecewiseChargingCurve,
 ) -> list[ScheduledTrip]:
     """Remove surplus energy after max-charge feasibility packing.
 
@@ -328,34 +501,44 @@ def _minimize_ev_chain_charging(
     for chain in by_vehicle.values():
         ordered = sorted(chain, key=lambda item: item.trip_index)
         energies = [float(trip.start_battery_kwh or 0.0) - float(trip.end_battery_kwh or 0.0) for trip in ordered]
-        required = [0.0] * len(ordered)
-        required[-1] = energies[-1]
-        for index in range(len(ordered) - 2, -1, -1):
-            gap_capacity = max(0.0, ordered[index + 1].departure_second - ordered[index].return_second) * depot_charge_power_kw / 3600.0
-            required[index] = energies[index] + max(0.0, required[index + 1] - gap_capacity)
-            if required[index] > battery_kwh + _TOL:
-                raise ValueError(f"{CONTRACT_ID}: packed EV chain cannot be supported by partial charging")
-        departure = required[0]
-        for index, trip in enumerate(ordered):
-            end_battery = departure - energies[index]
-            charge_energy = 0.0
-            charge_start = None
-            recharge_end = trip.return_second
-            if index < len(ordered) - 1:
-                charge_energy = max(0.0, required[index + 1] - end_battery)
-                duration = charge_energy / depot_charge_power_kw * 3600.0
-                charge_start = ordered[index + 1].departure_second - duration if charge_energy > _TOL else None
-                recharge_end = charge_start + duration if charge_start is not None else trip.return_second
+        gaps = [
+            max(
+                0.0,
+                ordered[index + 1].departure_second
+                - ordered[index].return_second,
+            )
+            for index in range(len(ordered) - 1)
+        ]
+        try:
+            packed = pack_trip_chain(charging_curve, energies, gaps)
+        except ChargingCurveError as exc:
+            raise ValueError(
+                f"{NONLINEAR_CONTRACT_ID}: packed EV chain cannot be supported"
+            ) from exc
+        for index, (trip, row) in enumerate(zip(ordered, packed, strict=True)):
+            charge_start = (
+                ordered[index + 1].departure_second
+                - row.charge_duration_seconds
+                if row.charge_energy_kwh > _TOL
+                else None
+            )
+            recharge_end = (
+                charge_start + row.charge_duration_seconds
+                if charge_start is not None
+                else trip.return_second
+            )
             updated[trip.route_id] = replace(
                 trip,
-                start_battery_kwh=departure,
-                end_battery_kwh=end_battery,
-                charge_energy_kwh=charge_energy if charge_energy > _TOL else None,
+                start_battery_kwh=row.departure_energy_kwh,
+                end_battery_kwh=row.return_energy_kwh,
+                charge_energy_kwh=(
+                    row.charge_energy_kwh
+                    if row.charge_energy_kwh > _TOL
+                    else None
+                ),
                 charge_start_second=charge_start,
                 recharge_end_second=recharge_end,
             )
-            if index < len(ordered) - 1:
-                departure = end_battery + charge_energy
     return [updated[trip.route_id] for trip in trips]
 
 
@@ -364,8 +547,7 @@ def validate_multitrip_certificate(
     routes: list[Route],
     prices: PriceParameters | dict[str, float] | Any = DEFAULT_PRICES,
 ) -> None:
-    if certificate.contract_id != CONTRACT_ID:
-        raise ValueError("unknown multi-trip contract")
+    charging_curve = _certificate_curve(certificate, prices)
     if certificate.recharge_mode not in {CHARGE_MODE_FULL, CHARGE_MODE_PARTIAL, CHARGE_MODE_ON_DEMAND}:
         raise ValueError(f"{CONTRACT_ID}: unknown recharge mode")
     expected_power_kw = _price(prices, "depot_charge_power_kw")
@@ -418,9 +600,25 @@ def validate_multitrip_certificate(
             if energy > _TOL:
                 if trip.charge_start_second is None:
                     raise ValueError(f"{CONTRACT_ID}: {vehicle_id} charge has no start time")
-                expected_end = float(trip.charge_start_second) + energy / certificate.depot_charge_power_kw * 3600.0
+                start_energy = min(
+                    charging_curve.capacity_kwh,
+                    max(0.0, float(trip.end_battery_kwh or 0.0)),
+                )
+                end_energy = min(
+                    charging_curve.capacity_kwh,
+                    max(0.0, start_energy + energy),
+                )
+                expected_end = (
+                    float(trip.charge_start_second)
+                    + charging_curve.duration_seconds(
+                        start_energy, end_energy
+                    )
+                )
                 if abs(expected_end - trip.recharge_end_second) > _TOL:
-                    raise ValueError(f"{CONTRACT_ID}: {vehicle_id} charge duration disagrees with depot power")
+                    raise ValueError(
+                        f"{NONLINEAR_CONTRACT_ID}: {vehicle_id} charge duration "
+                        "disagrees with charging curve"
+                    )
 
 
 def strict_multitrip_violations(
@@ -459,18 +657,27 @@ def certificate_charging_actions(certificate: MultiTripCertificate) -> list[Char
     for trips in by_vehicle.values():
         ordered = sorted(trips, key=lambda item: item.trip_index)
         for previous, current in zip(ordered, ordered[1:]):
-            energy = float(previous.charge_energy_kwh or 0.0)
-            if energy <= _TOL:
+            recorded_energy = float(previous.charge_energy_kwh or 0.0)
+            if recorded_energy <= _TOL:
                 continue
             if previous.charge_start_second is None:
                 raise ValueError(f"{CONTRACT_ID}: between-trip charge has no start")
+            start_energy = float(previous.end_battery_kwh or 0.0)
+            end_energy = start_energy + recorded_energy
             actions.append(
                 ChargingAction(
                     vehicle_id=current.route_id,
                     station_id=current.home_depot_id,
-                    energy_kwh=energy,
-                    occupancy_minutes=energy / certificate.depot_charge_power_kw * 60.0,
+                    energy_kwh=recorded_energy,
+                    occupancy_minutes=(
+                        previous.recharge_end_second
+                        - float(previous.charge_start_second)
+                    )
+                    / 60.0,
                     charge_start_second=float(previous.charge_start_second),
+                    start_energy_kwh=start_energy,
+                    end_energy_kwh=end_energy,
+                    charging_curve_id=certificate.charging_curve_id,
                 )
             )
     return actions
@@ -500,13 +707,13 @@ def prepare_multitrip_solution(
         certificate = None
 
     battery_cap = _price(prices, "B_battery_kwh")
-    inherited = _price(prices, "initial_ev_battery_kwh")
+    charging_curve = _curve_for_prices(prices)
+    inherited = _canonical_curve_energy(
+        charging_curve,
+        _price(prices, "initial_ev_battery_kwh"),
+        label="initial EV battery",
+    )
     initial_departure: dict[str, float] = {}
-    route_energy = {
-        route.vehicle_id: route_timing(route, instance, prices).drive_energy_kwh
-        for route in solution.routes
-        if route.vehicle_type.lower() == "ev"
-    }
     for route in solution.routes:
         if route.vehicle_type.lower() != "ev":
             continue
@@ -553,10 +760,15 @@ def prepare_multitrip_solution(
     for trip in certificate.trips:
         if trip.vehicle_type != "ev" or trip.trip_index != 1:
             continue
-        energy = max(0.0, float(trip.start_battery_kwh or 0.0) - inherited)
+        target_energy = _canonical_curve_energy(
+            charging_curve,
+            float(trip.start_battery_kwh or 0.0),
+            label="first-trip departure energy",
+        )
+        energy = max(0.0, target_energy - inherited)
         if energy <= _TOL:
             continue
-        duration = energy / certificate.depot_charge_power_kw * 3600.0
+        duration = charging_curve.duration_seconds(inherited, target_energy)
         latest_start = STATIC_PREHORIZON_SECONDS - duration
         if latest_start < -_TOL:
             raise ValueError(f"{CONTRACT_ID}: first-trip depot precharge exceeds the pre-horizon day")
@@ -580,6 +792,9 @@ def prepare_multitrip_solution(
                 occupancy_minutes=duration / 60.0,
                 charge_start_second=start,
                 charge_day_offset=STATIC_FIRST_TRIP_CHARGE_DAY_OFFSET,
+                start_energy_kwh=inherited,
+                end_energy_kwh=target_energy,
+                charging_curve_id=certificate.charging_curve_id,
             )
         )
 
@@ -613,6 +828,8 @@ def _certificate_from_prepared_solution(
     power = _price(prices, "depot_charge_power_kw")
     battery_cap = _price(prices, "B_battery_kwh")
     inherited = _price(prices, "initial_ev_battery_kwh")
+    charging_curve = _curve_for_prices(prices)
+    require_explicit = charging_curve.curve_id != L100_CONTROL.curve_id
     timings = {route.vehicle_id: route_timing(route, instance, prices) for route in solution.routes}
     routes = {route.vehicle_id: route for route in solution.routes}
     actions: dict[str, list[ChargingAction]] = {}
@@ -639,6 +856,21 @@ def _certificate_from_prepared_solution(
                 if start_battery > battery_cap + _TOL or start_battery + _TOL < timing.drive_energy_kwh:
                     raise ValueError(f"{CONTRACT_ID}: prepared route {route.vehicle_id} has a broken battery ledger")
                 end_battery = start_battery - timing.drive_energy_kwh
+                if depot_energy > _TOL:
+                    if require_explicit and len(depot_actions) != 1:
+                        raise ValueError(
+                            f"{NONLINEAR_CONTRACT_ID}: prepared route "
+                            f"{route.vehicle_id} must have one explicit depot action"
+                        )
+                    action_start = inherited if position == 0 else float(previous_end or 0.0)
+                    for action in depot_actions:
+                        _validate_action_curve_metadata(
+                            action,
+                            start_energy_kwh=action_start,
+                            end_energy_kwh=start_battery,
+                            curve=charging_curve,
+                            require_explicit=require_explicit,
+                        )
             else:
                 start_battery = end_battery = None
             chain.append(
@@ -670,12 +902,19 @@ def _certificate_from_prepared_solution(
             previous_end = end_battery
         scheduled.extend(chain)
     certificate = MultiTripCertificate(
-        CONTRACT_ID,
+        (
+            CONTRACT_ID
+            if charging_curve.curve_id == L100_CONTROL.curve_id
+            else NONLINEAR_CONTRACT_ID
+        ),
         "PASS",
         counts,
         tuple(scheduled),
         CHARGE_MODE_ON_DEMAND,
         power,
+        STATIC_FIRST_TRIP_CHARGE_DAY_OFFSET,
+        charging_curve.curve_id,
+        charging_curve.parameter_sha256,
     )
     validate_multitrip_certificate(certificate, list(routes.values()), prices)
     return certificate
@@ -688,6 +927,8 @@ def _reuse_existing_between_trip_times(
 ) -> MultiTripCertificate:
     """Keep an already-valid aware/naive gap placement on repeated scoring."""
 
+    charging_curve = _certificate_curve(certificate, prices)
+    require_explicit = charging_curve.curve_id != L100_CONTROL.curve_id
     actions_by_route: dict[str, list[ChargingAction]] = {}
     for action in solution.charging_actions:
         actions_by_route.setdefault(action.vehicle_id, []).append(action)
@@ -711,6 +952,21 @@ def _reuse_existing_between_trip_times(
             action = depot_actions[0]
             if abs(float(action.energy_kwh) - expected) > _TOL:
                 continue
+            if require_explicit and (
+                action.start_energy_kwh is None
+                or action.end_energy_kwh is None
+                or action.charging_curve_id is None
+            ):
+                continue
+            _validate_action_curve_metadata(
+                action,
+                start_energy_kwh=float(previous.end_battery_kwh or 0.0),
+                end_energy_kwh=(
+                    float(previous.end_battery_kwh or 0.0) + expected
+                ),
+                curve=charging_curve,
+                require_explicit=require_explicit,
+            )
             duration = float(action.occupancy_minutes) * 60.0
             start = float(action.charge_start_second)
             end = start + duration
@@ -754,6 +1010,11 @@ def reschedule_between_trip_charging(
 
     if strategy not in {"aware", "naive"}:
         raise ValueError(f"unknown between-trip charging strategy {strategy!r}")
+    if certificate.charging_curve_id != L100_CONTROL.curve_id:
+        raise ValueError(
+            f"{NONLINEAR_CONTRACT_ID}: carbon-aware nonlinear rescheduling "
+            "is blocked until the NL2 slot integrator is connected"
+        )
 
     def profile_for(day_offset: int) -> list[dict[str, Any]]:
         if carbon_profiles_by_day_offset is None:
@@ -801,7 +1062,12 @@ def reschedule_between_trip_charging(
             energy = float(previous.charge_energy_kwh or 0.0)
             if energy <= _TOL:
                 continue
-            duration = energy / certificate.depot_charge_power_kw * 3600.0
+            if previous.charge_start_second is None:
+                raise ValueError(f"{CONTRACT_ID}: between-trip charge has no start")
+            duration = (
+                previous.recharge_end_second
+                - float(previous.charge_start_second)
+            )
             earliest = float(previous.return_second)
             latest = float(current.departure_second) - duration
             if latest < earliest - _TOL:
