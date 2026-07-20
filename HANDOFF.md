@@ -1085,3 +1085,5 @@ LaDe-P重庆取件表已真实下载并登记SHA-256=`d58248d1...b056`，共1,17
   `docs/handoff/mv_hgs_sp_stage1_closeout_20260720.md`，裁决
   `PASS_PRIVATE_DIRECTIONAL_ARCHITECTURE_FREEZE`。按 H6 合同停止加零件，
   `formal_search_allowed=false`、`stage2_allowed=false`，等待用户复盘。
+
+- [2026-07-20 Claude] E2 终局算法实验施工图落盘：`docs/handoff/e2_final_algorithm_experiment_construction_20260720.md`（E2-FINAL-CAMPAIGN-001，用户令"完全模仿陈雨蝶设计/私有=China81/跑完即关算法实验/中途零询问"）。表4/表5/表6/图4 表头字段逐字对齐陈雨蝶(2025)原文（已逐页读 PDF 核验），版式细节沿用 SETP 视觉合同；公开=V13-28 全 28 题（对手按 v3 合同，"PyVRP"列裁定由 0.12.2 真 HGS 母体同机填充，登记合同修订，理由=引擎身份纠正）；私有=China81 当前 V2-LOCATIONS 全 81 题三臂+BKS-v0 协议；P0 等算力保险丝(四臂含多重启对照)→P1 公开→P2 代表题→P3 全量→P4 BKS 冲刺→P5 收官，约 31h@6workers；预注册 A/B/C/D 主张阶梯锁死措辞，任何结局照实入表并写 ALGORITHM_EXPERIMENTS_CLOSED 标记。Codex 按施工图 §6 清单独立执行。

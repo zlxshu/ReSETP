@@ -572,3 +572,4 @@ E7正式结果终验
 - H0 早期适配器哈希因后续扩展而漂移；H6 当前源码和证据哈希全匹配。裁决
   `PASS_PRIVATE_DIRECTIONAL_ARCHITECTURE_FREEZE`，正式搜索和阶段二继续关闭。
   详见 `docs/handoff/memory/mv_hgs_sp_stage1_closeout_20260720.md`。
+- [E2终局战役施工图](../e2_final_algorithm_experiment_construction_20260720.md) — 07-20: 陈雨蝶表4/5/6/图4逐字段模仿+China81全量+跑完即关算法实验; P0-P5自动推进零询问; A/B/C/D主张阶梯预注册; PyVRP列=0.12.2真HGS母体(已裁定登记)
