@@ -22,6 +22,7 @@ from ..check import (
     check_solution,
 )
 from ..cost import evaluate
+from ..instance_loader import Instance
 from ..solution import Solution
 from .evaluation import (
     BIG_M,
@@ -86,7 +87,12 @@ def _hard_violations_prepared(
     context: EvaluationContext,
 ) -> list[Any]:
     prices = _prices_with_carbon_weight(context.prices, context.carbon_weight)
-    dynamic_states = _dynamic_states(prepared, certificate, prices)
+    dynamic_states = _dynamic_states(
+        prepared,
+        certificate,
+        context.instance,
+        prices,
+    )
     violations = check_solution(
         prepared,
         context.instance,
@@ -256,6 +262,7 @@ def _solution_signature(solution: Solution) -> tuple[Any, ...]:
 def _dynamic_states(
     solution: Solution,
     certificate: MultiTripCertificate,
+    instance: Instance,
     prices: Any,
 ) -> dict[str, DynamicVehicleState]:
     by_vehicle: dict[str, list[Any]] = {}
@@ -263,12 +270,20 @@ def _dynamic_states(
         by_vehicle.setdefault(trip.physical_vehicle_id, []).append(trip)
     routes = {route.vehicle_id: route for route in solution.routes}
     initial_battery = float(getattr(prices, "initial_ev_battery_kwh", 0.0) if not isinstance(prices, dict) else prices.get("initial_ev_battery_kwh", 0.0))
-    capacity = float(getattr(prices, "Q_capacity", 0.0) if not isinstance(prices, dict) else prices.get("Q_capacity", 0.0))
+    fallback_capacity = float(
+        getattr(prices, "Q_capacity", 0.0)
+        if not isinstance(prices, dict)
+        else prices.get("Q_capacity", 0.0)
+    )
     states: dict[str, DynamicVehicleState] = {}
     for trips in by_vehicle.values():
         ordered = sorted(trips, key=lambda item: item.trip_index)
         for index, trip in enumerate(ordered):
             route = routes[trip.route_id]
+            capacity = instance.payload_capacity_kg(
+                trip.vehicle_type,
+                fallback=fallback_capacity,
+            )
             before_charge = initial_battery if index == 0 else float(ordered[index - 1].end_battery_kwh or 0.0)
             states[trip.route_id] = DynamicVehicleState(
                 vehicle_id=trip.route_id,

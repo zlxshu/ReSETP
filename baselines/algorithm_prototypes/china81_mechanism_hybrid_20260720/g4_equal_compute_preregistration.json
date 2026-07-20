@@ -1,0 +1,26 @@
+{
+  "schema_version": "resetp.china81-g4-equal-compute-preregistration.v1",
+  "created_before_g4_results": true,
+  "cases": [
+    "cn-jjj-25c-01-V2-LOCATIONS",
+    "cn-prd-75c-01-V2-LOCATIONS",
+    "cn-cy-150c-01-V2-LOCATIONS"
+  ],
+  "base_seed": 1,
+  "population_count": 3,
+  "population_seconds": 1.8,
+  "alns_seconds": 0.2,
+  "workers": 3,
+  "candidate": "MVHGS-ALNS: one CV-only, one naive-EV, and one mechanism-EV HGS population followed by exact elite migration and mechanism ALNS.",
+  "equal_compute_controls": [
+    "three CV-only HGS populations plus the same mechanism ALNS",
+    "three naive-EV HGS populations plus the same mechanism ALNS",
+    "three mechanism-EV HGS populations plus the same mechanism ALNS"
+  ],
+  "gate": "Against every equal-compute homogeneous control, MVHGS-ALNS must have zero strict losses and at least one strict win across the three frozen cases.",
+  "no_rescue": [
+    "Do not change cases, seeds, seconds, workers, or view definitions.",
+    "Do not replace a failed homogeneous control.",
+    "Do not call one-seed evidence formal."
+  ]
+}

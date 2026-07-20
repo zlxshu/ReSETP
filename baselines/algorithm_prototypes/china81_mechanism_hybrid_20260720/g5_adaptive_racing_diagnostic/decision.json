@@ -1,0 +1,134 @@
+{
+  "schema_version": "resetp.china81-g5-decision.v1",
+  "decision": "HOLD_G5_AMV_HGS_ALNS",
+  "passed": false,
+  "performance_passed": false,
+  "all_feasible": true,
+  "tests_passed": true,
+  "comparisons": {
+    "by_control": {
+      "homogeneous_cv_only": {
+        "wins": 1,
+        "ties": 2,
+        "losses": 0,
+        "details": [
+          {
+            "instance_id": "cn-jjj-25c-01-V2-LOCATIONS",
+            "candidate_cost": 1253.672412632888,
+            "control_cost": 1253.672412632888,
+            "candidate_minus_control": 0.0,
+            "result": "tie"
+          },
+          {
+            "instance_id": "cn-prd-75c-01-V2-LOCATIONS",
+            "candidate_cost": 3593.385330358217,
+            "control_cost": 3625.9502374323624,
+            "candidate_minus_control": -32.564907074145594,
+            "result": "win"
+          },
+          {
+            "instance_id": "cn-cy-150c-01-V2-LOCATIONS",
+            "candidate_cost": 7582.779542223795,
+            "control_cost": 7582.779542223795,
+            "candidate_minus_control": 0.0,
+            "result": "tie"
+          }
+        ]
+      },
+      "homogeneous_naive_ev": {
+        "wins": 2,
+        "ties": 0,
+        "losses": 1,
+        "details": [
+          {
+            "instance_id": "cn-jjj-25c-01-V2-LOCATIONS",
+            "candidate_cost": 1253.672412632888,
+            "control_cost": 1217.5293306722904,
+            "candidate_minus_control": 36.143081960597556,
+            "result": "loss"
+          },
+          {
+            "instance_id": "cn-prd-75c-01-V2-LOCATIONS",
+            "candidate_cost": 3593.385330358217,
+            "control_cost": 3822.8831222833023,
+            "candidate_minus_control": -229.4977919250855,
+            "result": "win"
+          },
+          {
+            "instance_id": "cn-cy-150c-01-V2-LOCATIONS",
+            "candidate_cost": 7582.779542223795,
+            "control_cost": 8415.881190547478,
+            "candidate_minus_control": -833.1016483236826,
+            "result": "win"
+          }
+        ]
+      },
+      "homogeneous_mechanism_ev": {
+        "wins": 2,
+        "ties": 0,
+        "losses": 1,
+        "details": [
+          {
+            "instance_id": "cn-jjj-25c-01-V2-LOCATIONS",
+            "candidate_cost": 1253.672412632888,
+            "control_cost": 1217.5293306722904,
+            "candidate_minus_control": 36.143081960597556,
+            "result": "loss"
+          },
+          {
+            "instance_id": "cn-prd-75c-01-V2-LOCATIONS",
+            "candidate_cost": 3593.385330358217,
+            "control_cost": 3822.8831222833023,
+            "candidate_minus_control": -229.4977919250855,
+            "result": "win"
+          },
+          {
+            "instance_id": "cn-cy-150c-01-V2-LOCATIONS",
+            "candidate_cost": 7582.779542223795,
+            "control_cost": 8415.881190547478,
+            "candidate_minus_control": -833.1016483236826,
+            "result": "win"
+          }
+        ]
+      }
+    },
+    "versus_best_control": {
+      "wins": 1,
+      "ties": 1,
+      "losses": 1,
+      "details": [
+        {
+          "instance_id": "cn-jjj-25c-01-V2-LOCATIONS",
+          "candidate_cost": 1253.672412632888,
+          "control_cost": 1217.5293306722904,
+          "candidate_minus_control": 36.143081960597556,
+          "result": "loss"
+        },
+        {
+          "instance_id": "cn-prd-75c-01-V2-LOCATIONS",
+          "candidate_cost": 3593.385330358217,
+          "control_cost": 3625.9502374323624,
+          "candidate_minus_control": -32.564907074145594,
+          "result": "win"
+        },
+        {
+          "instance_id": "cn-cy-150c-01-V2-LOCATIONS",
+          "candidate_cost": 7582.779542223795,
+          "control_cost": 7582.779542223795,
+          "candidate_minus_control": 0.0,
+          "result": "tie"
+        }
+      ]
+    }
+  },
+  "case_count": 3,
+  "base_seed": 1,
+  "population_count": 3,
+  "population_seconds": 1.8,
+  "scout_share": 0.2,
+  "alns_seconds": 0.2,
+  "worker_count": 3,
+  "equal_hgs_cpu_seconds": 5.4,
+  "claim_boundary": "Seen-case structural diagnostic only.",
+  "next_gate": "stop_or_pivot"
+}

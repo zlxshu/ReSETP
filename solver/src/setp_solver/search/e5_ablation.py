@@ -19,7 +19,7 @@ from ..cost import (
     carbon_slot_index,
     charging_action_slot_breakdown,
     evaluate,
-    ev_arc_energy_kwh,
+    ev_instance_arc_energy_kwh,
     route_node_schedule,
 )
 from ..instance_loader import Instance, Node
@@ -317,12 +317,20 @@ def _full_battery_trajectory(
 ) -> list[dict[str, Any]]:
     node_lookup = {node.node_id: node for node in instance.nodes}
     loads = _arc_loads(route.node_sequence, node_lookup)
-    battery_cap = _price(prices, "B_battery_kwh")
+    battery_cap = instance.battery_capacity_kwh(
+        fallback=_price(prices, "B_battery_kwh"),
+    )
     battery = battery_cap
     rows: list[dict[str, Any]] = []
     first_seen = False
     for idx, ((from_node_id, to_node_id), load_kg) in enumerate(zip(zip(route.node_sequence, route.node_sequence[1:]), loads)):
-        use_kwh = ev_arc_energy_kwh(instance.distance(from_node_id, to_node_id), load_kg, prices)
+        use_kwh = ev_instance_arc_energy_kwh(
+            instance,
+            from_node_id,
+            to_node_id,
+            load_kg,
+            prices,
+        )
         before = battery
         after = before - use_kwh
         infeasible = after < -1e-9 and not first_seen
@@ -397,14 +405,43 @@ def _station_insertion_row(
     node_lookup: dict[str, Node],
     prices: PriceParameters | dict[str, float] | Any,
 ) -> dict[str, Any]:
-    battery_cap = _price(prices, "B_battery_kwh")
-    to_station_m = instance.distance(current, station.node_id)
-    station_to_target_m = instance.distance(station.node_id, target)
-    direct_m = instance.distance(current, target)
-    energy_to_station = ev_arc_energy_kwh(to_station_m, load_kg, prices)
+    battery_cap = instance.battery_capacity_kwh(
+        fallback=_price(prices, "B_battery_kwh"),
+    )
+    to_station_m, _, _ = _ev_arc_metrics(
+        instance,
+        current,
+        station.node_id,
+        prices,
+    )
+    station_to_target_m, _, _ = _ev_arc_metrics(
+        instance,
+        station.node_id,
+        target,
+        prices,
+    )
+    direct_m, _, _ = _ev_arc_metrics(
+        instance,
+        current,
+        target,
+        prices,
+    )
+    energy_to_station = ev_instance_arc_energy_kwh(
+        instance,
+        current,
+        station.node_id,
+        load_kg,
+        prices,
+    )
     can_reach = energy_to_station <= battery_before + 1e-9
     battery_at_station = battery_before - energy_to_station if can_reach else None
-    energy_station_to_target = ev_arc_energy_kwh(station_to_target_m, load_kg, prices)
+    energy_station_to_target = ev_instance_arc_energy_kwh(
+        instance,
+        station.node_id,
+        target,
+        load_kg,
+        prices,
+    )
     station_to_target_within_battery = energy_station_to_target <= battery_cap + 1e-9
     energy_to_cover_failure = _energy_from_station_through_arc(
         station.node_id,
@@ -431,6 +468,7 @@ def _station_insertion_row(
                 energy_kwh=energy_needed,
                 reference_power_kw=float(station.charge_power_kw),
                 prices=prices,
+                instance=instance,
             ).occupancy_minutes
             * 60.0
         )
@@ -485,7 +523,13 @@ def _energy_from_station_through_arc(
     total = 0.0
     for from_node_id, to_node_id in zip(path, path[1:]):
         load_kg = sum(float(node_lookup[node_id].demand) for node_id in remaining_customers)
-        total += ev_arc_energy_kwh(instance.distance(from_node_id, to_node_id), load_kg, prices)
+        total += ev_instance_arc_energy_kwh(
+            instance,
+            from_node_id,
+            to_node_id,
+            load_kg,
+            prices,
+        )
         if node_lookup[to_node_id].node_type.lower() == "c" and to_node_id in remaining_customers:
             remaining_customers.remove(to_node_id)
     return total
@@ -501,15 +545,26 @@ def _first_time_window_break_after_insert(
     node_lookup: dict[str, Node],
     prices: PriceParameters | dict[str, float] | Any,
 ) -> tuple[str | None, float]:
-    speed = _price(prices, "v_speed_ms")
     current = route.node_sequence[arc_index]
     target = route.node_sequence[arc_index + 1]
-    arrive_station = depart_current + instance.distance(current, station.node_id) / speed
+    _, time_to_station, _ = _ev_arc_metrics(
+        instance,
+        current,
+        station.node_id,
+        prices,
+    )
+    arrive_station = depart_current + time_to_station
     charge_start = max(arrive_station, float(station.ready_time))
     if charge_start > float(station.due_time) + 1e-9:
         return station.node_id, charge_start - float(station.due_time)
     depart_station = charge_start + charge_duration_sec
-    arrive = depart_station + instance.distance(station.node_id, target) / speed
+    _, time_to_target, _ = _ev_arc_metrics(
+        instance,
+        station.node_id,
+        target,
+        prices,
+    )
+    arrive = depart_station + time_to_target
     for idx in range(arc_index + 1, len(route.node_sequence)):
         node_id = route.node_sequence[idx]
         node = node_lookup[node_id]
@@ -519,7 +574,13 @@ def _first_time_window_break_after_insert(
         depart = start + float(node.service_time)
         if idx + 1 >= len(route.node_sequence):
             break
-        arrive = depart + instance.distance(node_id, route.node_sequence[idx + 1]) / speed
+        _, travel, _ = _ev_arc_metrics(
+            instance,
+            node_id,
+            route.node_sequence[idx + 1],
+            prices,
+        )
+        arrive = depart + travel
     return None, 0.0
 
 
@@ -536,6 +597,20 @@ def _vehicle_type_swap_counts(source_report: dict[str, Any]) -> dict[str, Any]:
     }
 
 
+def _ev_arc_metrics(
+    instance: Instance,
+    from_node_id: str,
+    to_node_id: str,
+    prices: PriceParameters | dict[str, float] | Any,
+) -> tuple[float, float, float]:
+    return instance.arc_metrics(
+        from_node_id,
+        to_node_id,
+        "ev",
+        fallback_speed_mps=_price(prices, "v_speed_ms"),
+    )
+
+
 def _price(prices: PriceParameters | dict[str, float] | Any, name: str) -> float:
     if isinstance(prices, dict):
         return float(prices[name])
@@ -543,7 +618,18 @@ def _price(prices: PriceParameters | dict[str, float] | Any, name: str) -> float
 
 
 def _route_distance(route: Route, instance: Instance) -> float:
-    return sum(instance.distance(left, right) for left, right in zip(route.node_sequence, route.node_sequence[1:]))
+    return sum(
+        instance.arc_metrics(
+            left,
+            right,
+            route.vehicle_type,
+            fallback_speed_mps=_price(DEFAULT_PRICES, "v_speed_ms"),
+        )[0]
+        for left, right in zip(
+            route.node_sequence,
+            route.node_sequence[1:],
+        )
+    )
 
 
 def _solution_from_report(source_report: dict[str, Any], *, include_actions: bool) -> Solution:

@@ -22,8 +22,10 @@ from setp_solver.cost import (
     CARBON_SLOT_SECONDS,
     best_charging_action_start,
     carbon_profile_row_for_slot,
+    charging_action_electricity_cost,
     charging_action_emissions_kg,
     charging_slot_breakdown,
+    time_profile_rows_for_node,
 )
 from setp_solver.instance_loader import Instance
 from setp_solver.prices import PriceParameters
@@ -124,21 +126,43 @@ def integrated_charge_carbon_kg(
     energy_kwh: float,
     instance: Instance,
     carbon_profile: list[dict[str, object]],
+    *,
+    station_id: str | None = None,
 ) -> float:
     """Return emissions for the whole constant-power charging interval."""
 
     if not carbon_profile:
         raise ValueError("carbon_profile must be non-empty")
+    has_city_rows = any(
+        row.get("city") not in {None, ""}
+        for row in carbon_profile
+    )
+    if has_city_rows and station_id is None:
+        raise ValueError(
+            "city-specific charging carbon requires a station id"
+        )
+    node_profile = (
+        carbon_profile
+        if station_id is None
+        else time_profile_rows_for_node(
+            instance,
+            station_id,
+            carbon_profile,
+        )
+    )
     total = 0.0
     for slot in charging_slot_breakdown(
         float(start_second),
         float(occupancy_seconds),
         float(energy_kwh),
         instance,
-        n_slots=len(carbon_profile),
+        n_slots=len(node_profile),
         cyclic=True,
     ):
-        row = carbon_profile_row_for_slot(carbon_profile, slot.slot_index)
+        row = carbon_profile_row_for_slot(
+            node_profile,
+            slot.slot_index,
+        )
         total += float(slot.y_skt_kwh) * float(row["actual_gco2_per_kwh"]) / 1000.0
     return float(total)
 
@@ -185,6 +209,8 @@ def select_integrated_carbon_start(
     energy_kwh: float,
     instance: Instance,
     carbon_profile: list[dict[str, object]],
+    *,
+    station_id: str | None = None,
 ) -> ChargeTimingChoice:
     """Choose the feasible start with minimum full-interval emissions."""
 
@@ -201,6 +227,7 @@ def select_integrated_carbon_start(
                 energy_kwh,
                 instance,
                 carbon_profile,
+                station_id=station_id,
             ),
             start,
         )
@@ -258,6 +285,7 @@ def score_charge_option(
                 option.energy_kwh,
                 instance,
                 carbon_profile,
+                station_id=option.station_id,
             ),
             candidates_evaluated=1,
         )
@@ -269,10 +297,15 @@ def score_charge_option(
             option.energy_kwh,
             instance,
             carbon_profile,
+            station_id=option.station_id,
         )
     is_depot = option.node_type.lower() == "d"
-    electricity_price = prices.depot_electricity_price if is_depot else prices.station_electricity_price
-    electricity_cost = float(option.energy_kwh) * float(electricity_price)
+    electricity_cost = charging_action_electricity_cost(
+        option.action_at(timing.start_second),
+        instance,
+        carbon_profile,
+        prices,
+    )
     occupancy_cost = 0.0 if is_depot else option.occupancy_seconds / 60.0 * float(prices.occupancy_fee)
     detour_cost = float(option.detour_m) / 1000.0 * float(prices.c_km)
     carbon_cost = float(timing.carbon_kg) * float(prices.carbon_price) * float(carbon_weight)
@@ -409,6 +442,7 @@ def schedule_charge_requests_exact(
                 request.energy_kwh,
                 instance,
                 carbon_profile,
+                station_id=request.station_id,
             )
             candidates.append((carbon_kg, start))
         for carbon_kg, start in sorted(candidates, key=lambda item: (item[0], item[1])):

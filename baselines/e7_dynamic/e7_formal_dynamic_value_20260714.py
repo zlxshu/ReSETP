@@ -677,6 +677,14 @@ def _project_asset_chain(
     )
     power = float(prices.depot_charge_power_kw)
     battery_cap = float(prices.B_battery_kwh)
+    try:
+        charging_curve = dynamic_schedule.curve_from_parameters(
+            prices,
+            capacity_kwh=battery_cap,
+            reference_power_kw=power,
+        )
+    except dynamic_schedule.ChargingCurveError:
+        return None
     minimum_slack = math.inf
     for route in routes:
         try:
@@ -689,8 +697,7 @@ def _project_asset_chain(
             instance,
             prices,
             float(stage_start_second),
-            power,
-            battery_cap,
+            charging_curve,
         )
         if not candidates:
             return None

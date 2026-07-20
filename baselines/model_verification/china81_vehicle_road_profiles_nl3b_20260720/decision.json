@@ -1,0 +1,78 @@
+{
+  "verdict": "PASS_NL3B_CHINA81_81_OF_81_RUNTIME_JOIN",
+  "passed": true,
+  "checks": {
+    "instance_count_81": true,
+    "all_instance_rows_pass": true,
+    "total_orders_5805": true,
+    "region_balance_27_each": true,
+    "size_balance_9_each": true,
+    "source_hashes_close": true,
+    "independent_formulas_close": true,
+    "cv_ev_road_profiles_loaded_all": true,
+    "target_tests": true,
+    "ruff": true
+  },
+  "instance_count": 81,
+  "customer_order_count": 5805,
+  "region_counts": {
+    "cy": 27,
+    "jjj": 27,
+    "prd": 27
+  },
+  "size_counts": {
+    "100": 9,
+    "10": 9,
+    "150": 9,
+    "15": 9,
+    "200": 9,
+    "20": 9,
+    "25": 9,
+    "50": 9,
+    "75": 9
+  },
+  "instances_with_cv_ev_road_profile_difference": 47,
+  "max_errors": {
+    "cv_formula_abs_error": 0.0,
+    "ev_formula_abs_error": 0.0,
+    "charging_cost_abs_error": 0.0,
+    "charging_emissions_abs_error": 0.0
+  },
+  "source_hash_audit": {
+    "static": {
+      "checked_file_count": 83,
+      "missing": [],
+      "mismatches": [],
+      "passed": true
+    },
+    "matrices": {
+      "checked_file_count": 648,
+      "missing": [],
+      "mismatches": [],
+      "passed": true
+    },
+    "orders": {
+      "checked_file_count": 1,
+      "missing": [],
+      "mismatches": [],
+      "passed": true
+    }
+  },
+  "target_tests": {
+    "command": "/opt/anaconda3/bin/python3.13 -m pytest -q solver/tests/test_china81_bundle_20260720.py solver/tests/test_china81_profiled_road_matrices_nl3b_20260720.py solver/tests/test_nonlinear_multitrip_schedule_20260720.py solver/tests/test_nonlinear_dynamic_multitrip_nl3_20260720.py solver/tests/test_multitrip_schedule.py solver/tests/test_dynamic_multitrip_schedule.py solver/tests/test_execution_accounting.py solver/tests/test_profit.py",
+    "returncode": 0,
+    "stdout_tail": "..............................................................           [100%]\n62 passed in 0.64s\n",
+    "stderr_tail": ""
+  },
+  "ruff": {
+    "command": "/opt/anaconda3/bin/ruff check solver/src/setp_solver/china81.py solver/tests/test_china81_bundle_20260720.py solver/tests/test_china81_profiled_road_matrices_nl3b_20260720.py baselines/model_verification/verify_china81_vehicle_road_profiles_nl3b_20260720.py",
+    "returncode": 0,
+    "stdout_tail": "All checks passed!\n",
+    "stderr_tail": ""
+  },
+  "search_evaluations": 0,
+  "diagnostic_probe_allowed": true,
+  "formal_search_allowed": false,
+  "honest_boundary": "All 81 static runtime bundles close under the frozen orders, roads, vehicle facts, city tariffs/carbon, and NL90 charging. Fleet counts remain non-observed loose algorithmic ceilings; new dynamic nodes remain fail-closed without frozen roads. This gate permits only the user-authorized low-cost diagnostic algorithm probe, not a formal China81 result.",
+  "next_gate": "CHINA81_MINIMUM_COST_THREE_ARM_DIAGNOSTIC_PROBE"
+}

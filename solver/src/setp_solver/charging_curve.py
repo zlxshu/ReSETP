@@ -244,6 +244,22 @@ class PiecewiseChargingCurve:
         return self.energy_breakpoints_kwh[-1]
 
     @property
+    def physical_parameter_sha256(self) -> str:
+        """Hash the normalized curve together with its physical scaling."""
+
+        payload = json.dumps(
+            {
+                "curve_parameter_sha256": self.parameter_sha256,
+                "energy_breakpoints_kwh": self.energy_breakpoints_kwh,
+                "cumulative_seconds": self.cumulative_seconds,
+            },
+            ensure_ascii=True,
+            sort_keys=True,
+            separators=(",", ":"),
+        ).encode("utf-8")
+        return sha256(payload).hexdigest()
+
+    @property
     def segment_powers_kw(self) -> tuple[float, ...]:
         return tuple(
             3600.0 * (energy_right - energy_left) / (time_right - time_left)

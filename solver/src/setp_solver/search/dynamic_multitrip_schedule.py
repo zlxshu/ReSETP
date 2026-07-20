@@ -21,7 +21,21 @@ import json
 from types import MappingProxyType
 from typing import Any
 
-from ..cost import _arc_loads, _price, charging_slot_breakdown, ev_arc_energy_kwh
+from ..charging_curve import (
+    ChargingCurveError,
+    L100_CONTROL,
+    PiecewiseChargingCurve,
+    curve_from_parameters,
+    minimum_departure_energies_kwh,
+)
+from ..cost import (
+    _arc_loads,
+    _price,
+    best_charging_action_start,
+    charging_action_slot_breakdown,
+    charging_curve_for_action,
+    ev_instance_arc_energy_kwh,
+)
 from ..instance_loader import Instance
 from ..prices import DEFAULT_PRICES, PriceParameters
 from ..solution import (
@@ -41,7 +55,6 @@ from .multitrip_schedule import (
     CHARGE_MODE_ON_DEMAND,
     MultiTripCertificate,
     ScheduledTrip,
-    _lowest_carbon_gap_start,
 )
 
 
@@ -157,7 +170,9 @@ def cut_certificate_at_trigger(
         if start <= trigger:
             locked_actions.append(action)
 
-    battery_cap = _price(prices, "B_battery_kwh")
+    battery_cap = instance.battery_capacity_kwh(
+        fallback=_price(prices, "B_battery_kwh"),
+    )
     initial_battery = _price(prices, "initial_ev_battery_kwh")
     states: dict[str, DynamicAssetState] = {}
     for asset_id, asset in ledger.assets.items():
@@ -246,7 +261,9 @@ def cut_dynamic_certificate_at_trigger(
         stage_start_second=previous_stage_start,
         locked_charging_actions=inherited_locked_charging_actions,
     )
-    battery_cap = _price(prices, "B_battery_kwh")
+    battery_cap = instance.battery_capacity_kwh(
+        fallback=_price(prices, "B_battery_kwh"),
+    )
     inherited = _validate_asset_states(inherited_asset_states, battery_cap)
     trip_by_id = {trip.route_id: trip for trip in certificate.trips}
 
@@ -357,9 +374,19 @@ def prepare_dynamic_multitrip_solution(
         raise ValueError(f"{DYNAMIC_CONTRACT_ID}: open route ids are not unique")
 
     power = _price(prices, "depot_charge_power_kw")
-    battery_cap = _price(prices, "B_battery_kwh")
+    battery_cap = instance.battery_capacity_kwh(
+        fallback=_price(prices, "B_battery_kwh"),
+    )
     if power <= 0.0:
         raise ValueError(f"{DYNAMIC_CONTRACT_ID}: depot charge power must be positive")
+    try:
+        charging_curve = curve_from_parameters(
+            prices,
+            capacity_kwh=battery_cap,
+            reference_power_kw=power,
+        )
+    except ChargingCurveError as exc:
+        raise ValueError(f"{DYNAMIC_CONTRACT_ID}: {exc}") from exc
 
     normalized_states = _validate_asset_states(asset_states, battery_cap)
     working = {
@@ -434,8 +461,7 @@ def prepare_dynamic_multitrip_solution(
                 instance,
                 prices,
                 stage_start,
-                power,
-                battery_cap,
+                charging_curve,
             )
             if not candidates:
                 last_failure = (
@@ -557,7 +583,9 @@ def reschedule_dynamic_charging(
 
     normalized_states = _validate_asset_states(
         asset_states,
-        _price(prices, "B_battery_kwh"),
+        instance.battery_capacity_kwh(
+            fallback=_price(prices, "B_battery_kwh"),
+        ),
     )
     actions_by_route: dict[str, list[ChargingAction]] = {}
     for action in solution.charging_actions:
@@ -599,13 +627,13 @@ def reschedule_dynamic_charging(
                 selected = (
                     earliest
                     if strategy == "naive"
-                    else _lowest_carbon_gap_start(
-                        earliest,
-                        latest,
-                        duration,
-                        float(action.energy_kwh),
-                        instance,
-                        carbon_profile,
+                    else best_charging_action_start(
+                        action,
+                        earliest_start_second=earliest,
+                        latest_start_second=latest,
+                        instance=instance,
+                        carbon_profile=carbon_profile,
+                        prices=prices,
                         intensity_field=intensity_field,
                     )
                 )
@@ -677,8 +705,7 @@ def _dynamic_assignment_candidates(
     instance: Instance,
     prices: PriceParameters | dict[str, float] | Any,
     stage_start: float,
-    power: float,
-    battery_cap: float,
+    charging_curve: PiecewiseChargingCurve,
 ) -> list[tuple[float, float, str]]:
     route = profile.route
     candidates: list[tuple[float, float, str]] = []
@@ -691,17 +718,25 @@ def _dynamic_assignment_candidates(
             continue
         boundary = max(stage_start, asset.available_second)
         if route.vehicle_type.lower() == "ev":
-            latest_charge_hours = max(
-                0.0, profile.latest_departure_second - boundary
-            ) / 3600.0
-            possible_battery = min(
-                battery_cap,
-                asset.battery_kwh + latest_charge_hours * power,
+            available_seconds = max(
+                0.0,
+                profile.latest_departure_second - boundary,
+            )
+            possible_battery = charging_curve.reachable_energy_kwh(
+                asset.battery_kwh,
+                available_seconds,
             )
             if possible_battery + _TOL < profile.drive_energy_kwh:
                 continue
             needed = max(0.0, profile.drive_energy_kwh - asset.battery_kwh)
-            energy_ready = boundary + needed / power * 3600.0
+            energy_ready = boundary + (
+                charging_curve.duration_seconds(
+                    asset.battery_kwh,
+                    asset.battery_kwh + needed,
+                )
+                if needed > _TOL
+                else 0.0
+            )
             departure = max(profile.preferred_departure_second, energy_ready)
         else:
             departure = max(profile.preferred_departure_second, boundary)
@@ -725,8 +760,18 @@ def validate_dynamic_multitrip_certificate(
     """Validate the dynamic continuation contract against inherited assets."""
 
     stage_start = float(stage_start_second)
-    battery_cap = _price(prices, "B_battery_kwh")
+    battery_cap = instance.battery_capacity_kwh(
+        fallback=_price(prices, "B_battery_kwh"),
+    )
     power = _price(prices, "depot_charge_power_kw")
+    try:
+        charging_curve = curve_from_parameters(
+            prices,
+            capacity_kwh=battery_cap,
+            reference_power_kw=power,
+        )
+    except ChargingCurveError as exc:
+        raise ValueError(f"{DYNAMIC_CONTRACT_ID}: {exc}") from exc
     states = _validate_asset_states(asset_states, battery_cap)
     if certificate.contract_id != DYNAMIC_CONTRACT_ID or certificate.status != "PASS":
         raise ValueError(f"{DYNAMIC_CONTRACT_ID}: unknown or failed certificate")
@@ -736,6 +781,40 @@ def validate_dynamic_multitrip_certificate(
         raise ValueError(f"{DYNAMIC_CONTRACT_ID}: dynamic charging cannot use a pre-horizon day")
     if abs(float(certificate.depot_charge_power_kw) - power) > _TOL:
         raise ValueError(f"{DYNAMIC_CONTRACT_ID}: depot charge power disagrees with prices")
+    if certificate.charging_curve_id != charging_curve.curve_id:
+        raise ValueError(f"{DYNAMIC_CONTRACT_ID}: certificate curve id disagrees with prices")
+    if (
+        certificate.charging_curve_parameter_sha256
+        != charging_curve.parameter_sha256
+    ):
+        raise ValueError(f"{DYNAMIC_CONTRACT_ID}: certificate curve hash disagrees with prices")
+    physical_identity_required = (
+        instance.vehicle_parameters is not None
+        or charging_curve.curve_id != L100_CONTROL.curve_id
+        or certificate.battery_capacity_kwh is not None
+        or certificate.charging_curve_physical_sha256 is not None
+    )
+    if physical_identity_required:
+        if (
+            certificate.battery_capacity_kwh is None
+            or abs(
+                float(certificate.battery_capacity_kwh)
+                - charging_curve.capacity_kwh
+            )
+            > _TOL
+        ):
+            raise ValueError(
+                f"{DYNAMIC_CONTRACT_ID}: certificate battery capacity "
+                "disagrees"
+            )
+        if (
+            certificate.charging_curve_physical_sha256
+            != charging_curve.physical_parameter_sha256
+        ):
+            raise ValueError(
+                f"{DYNAMIC_CONTRACT_ID}: certificate physical curve hash "
+                "disagrees"
+            )
     route_by_id = {route.vehicle_id: route for route in solution.routes}
     trip_by_id = {trip.route_id: trip for trip in certificate.trips}
     if len(route_by_id) != len(solution.routes) or len(trip_by_id) != len(certificate.trips):
@@ -817,8 +896,49 @@ def validate_dynamic_multitrip_certificate(
                     charge_end = charge_start + float(action.occupancy_minutes) * 60.0
                     if charge_energy <= _TOL:
                         raise ValueError(f"{DYNAMIC_CONTRACT_ID}: zero-energy charge is recorded")
-                    if abs(float(action.occupancy_minutes) * 60.0 - charge_energy / power * 3600.0) > _TOL:
-                        raise ValueError(f"{DYNAMIC_CONTRACT_ID}: charge duration disagrees with energy")
+                    curve_state = charging_curve_for_action(
+                        action,
+                        instance,
+                        prices,
+                    )
+                    if curve_state is None:
+                        if charging_curve.curve_id != L100_CONTROL.curve_id:
+                            raise ValueError(
+                                f"{DYNAMIC_CONTRACT_ID}: nonlinear charge "
+                                "is missing curve metadata"
+                            )
+                        if (
+                            abs(
+                                float(action.occupancy_minutes) * 60.0
+                                - charging_curve.duration_seconds(
+                                    battery,
+                                    battery + charge_energy,
+                                )
+                            )
+                            > _TOL
+                        ):
+                            raise ValueError(
+                                f"{DYNAMIC_CONTRACT_ID}: charge duration "
+                                "disagrees with energy"
+                            )
+                    else:
+                        _, action_start_energy, action_end_energy = curve_state
+                        if abs(action_start_energy - battery) > _TOL:
+                            raise ValueError(
+                                f"{DYNAMIC_CONTRACT_ID}: charge start "
+                                "battery does not close"
+                            )
+                        if (
+                            abs(
+                                action_end_energy
+                                - (battery + charge_energy)
+                            )
+                            > _TOL
+                        ):
+                            raise ValueError(
+                                f"{DYNAMIC_CONTRACT_ID}: charge end "
+                                "battery does not close"
+                            )
                     if charge_start < boundary - _TOL or charge_end > float(trip.departure_second) + _TOL:
                         raise ValueError(f"{DYNAMIC_CONTRACT_ID}: charge falls outside the legal gap")
                 start_battery = battery + charge_energy
@@ -864,6 +984,7 @@ def validate_dynamic_multitrip_certificate(
     _validate_depot_charger_capacity(
         instance,
         [*locked_charging_actions, *solution.charging_actions],
+        prices,
     )
 
 
@@ -876,7 +997,17 @@ def _close_dynamic_battery_ledger(
     stage_start: float,
 ) -> tuple[Solution, MultiTripCertificate]:
     power = _price(prices, "depot_charge_power_kw")
-    battery_cap = _price(prices, "B_battery_kwh")
+    battery_cap = instance.battery_capacity_kwh(
+        fallback=_price(prices, "B_battery_kwh"),
+    )
+    try:
+        charging_curve = curve_from_parameters(
+            prices,
+            capacity_kwh=battery_cap,
+            reference_power_kw=power,
+        )
+    except ChargingCurveError as exc:
+        raise ValueError(f"{DYNAMIC_CONTRACT_ID}: {exc}") from exc
     by_asset: dict[str, list[_Assignment]] = {}
     for assignment in assignments:
         by_asset.setdefault(assignment.physical_vehicle_id, []).append(assignment)
@@ -908,13 +1039,25 @@ def _close_dynamic_battery_ledger(
             continue
 
         energies = [item.drive_energy_kwh for item in ordered]
-        required = [0.0] * len(ordered)
-        required[-1] = energies[-1]
-        for index in range(len(ordered) - 2, -1, -1):
-            gap = max(0.0, ordered[index + 1].departure_second - ordered[index].return_second)
-            required[index] = energies[index] + max(0.0, required[index + 1] - gap * power / 3600.0)
-            if required[index] > battery_cap + _TOL:
-                raise ValueError(f"{DYNAMIC_CONTRACT_ID}: {asset_id} chain exceeds battery capacity")
+        gaps = [
+            max(
+                0.0,
+                ordered[index + 1].departure_second
+                - ordered[index].return_second,
+            )
+            for index in range(len(ordered) - 1)
+        ]
+        try:
+            required = minimum_departure_energies_kwh(
+                charging_curve,
+                energies,
+                gaps,
+            )
+        except ChargingCurveError as exc:
+            raise ValueError(
+                f"{DYNAMIC_CONTRACT_ID}: {asset_id} chain exceeds "
+                "nonlinear charging capacity"
+            ) from exc
 
         battery = float(state.remaining_battery_kwh)
         boundary = max(stage_start, float(state.available_second))
@@ -923,7 +1066,12 @@ def _close_dynamic_battery_ledger(
             needed = max(0.0, required[index] - battery)
             if battery + needed > battery_cap + _TOL:
                 raise ValueError(f"{DYNAMIC_CONTRACT_ID}: {asset_id} cannot store the required energy")
-            duration = needed / power * 3600.0
+            target_battery = battery + needed
+            duration = (
+                charging_curve.duration_seconds(battery, target_battery)
+                if needed > _TOL
+                else 0.0
+            )
             charge_start = item.departure_second - duration
             if charge_start < boundary - _TOL:
                 raise ValueError(f"{DYNAMIC_CONTRACT_ID}: {asset_id} cannot charge before its next trip")
@@ -937,6 +1085,9 @@ def _close_dynamic_battery_ledger(
                         occupancy_minutes=duration / 60.0,
                         charge_start_second=charge_start,
                         charge_day_offset=0,
+                        start_energy_kwh=battery,
+                        end_energy_kwh=target_battery,
+                        charging_curve_id=charging_curve.curve_id,
                     )
                 )
                 if chain_trips:
@@ -947,7 +1098,7 @@ def _close_dynamic_battery_ledger(
                         charge_energy_kwh=needed,
                         recharge_end_second=item.departure_second,
                     )
-            start_battery = battery + needed
+            start_battery = target_battery
             end_battery = start_battery - item.drive_energy_kwh
             chain_trips.append(
                 ScheduledTrip(
@@ -997,6 +1148,12 @@ def _close_dynamic_battery_ledger(
         recharge_mode=CHARGE_MODE_ON_DEMAND,
         depot_charge_power_kw=power,
         first_trip_charge_day_offset=0,
+        charging_curve_id=charging_curve.curve_id,
+        charging_curve_parameter_sha256=charging_curve.parameter_sha256,
+        battery_capacity_kwh=battery_cap,
+        charging_curve_physical_sha256=(
+            charging_curve.physical_parameter_sha256
+        ),
     )
     return prepared, certificate
 
@@ -1052,7 +1209,11 @@ def _route_profile(
         for node_id in route.node_sequence
         if nodes[node_id].node_type.lower() == "c"
     )
-    if load > _price(prices, "Q_capacity") + _TOL:
+    capacity = instance.payload_capacity_kg(
+        route.vehicle_type,
+        fallback=_price(prices, "Q_capacity"),
+    )
+    if load > capacity + _TOL:
         raise ValueError(f"{DYNAMIC_CONTRACT_ID}: route {route.vehicle_id} exceeds capacity")
     speed = _price(prices, "v_speed_ms")
     if speed <= 0.0:
@@ -1062,7 +1223,13 @@ def _route_profile(
     elapsed = float(origin.service_time)
     departure_candidates = [float(origin.ready_time) + float(origin.service_time)]
     for from_id, to_id in zip(route.node_sequence, route.node_sequence[1:]):
-        elapsed += instance.distance(from_id, to_id) / speed
+        _, travel, _ = instance.arc_metrics(
+            from_id,
+            to_id,
+            route.vehicle_type,
+            fallback_speed_mps=speed,
+        )
+        elapsed += travel
         departure_candidates.append(float(nodes[to_id].ready_time) - elapsed)
         elapsed += float(nodes[to_id].service_time)
     preferred = max(departure_candidates)
@@ -1071,7 +1238,12 @@ def _route_profile(
     for index in range(len(route.node_sequence) - 2, -1, -1):
         node = nodes[route.node_sequence[index]]
         next_id = route.node_sequence[index + 1]
-        travel = instance.distance(route.node_sequence[index], next_id) / speed
+        _, travel, _ = instance.arc_metrics(
+            route.node_sequence[index],
+            next_id,
+            route.vehicle_type,
+            fallback_speed_mps=speed,
+        )
         latest_start = min(float(node.due_time), latest_start - float(node.service_time) - travel)
     if latest_start < float(origin.ready_time) - _TOL:
         raise ValueError(f"{DYNAMIC_CONTRACT_ID}: route {route.vehicle_id} has no feasible clock")
@@ -1082,12 +1254,21 @@ def _route_profile(
     energy = 0.0
     if route.vehicle_type.lower() == "ev":
         energy = sum(
-            ev_arc_energy_kwh(instance.distance(from_id, to_id), loads[index], prices)
+            ev_instance_arc_energy_kwh(
+                instance,
+                from_id,
+                to_id,
+                loads[index],
+                prices,
+            )
             for index, (from_id, to_id) in enumerate(
                 zip(route.node_sequence, route.node_sequence[1:])
             )
         )
-        if energy > _price(prices, "B_battery_kwh") + _TOL:
+        battery_cap = instance.battery_capacity_kwh(
+            fallback=_price(prices, "B_battery_kwh"),
+        )
+        if energy > battery_cap + _TOL:
             raise ValueError(f"{DYNAMIC_CONTRACT_ID}: route {route.vehicle_id} exceeds one battery")
     _return_at_departure(route, instance, prices, preferred)
     return _RouteProfile(route, float(preferred), float(latest), float(energy))
@@ -1103,7 +1284,13 @@ def _return_at_departure(
     speed = _price(prices, "v_speed_ms")
     clock = float(departure_second)
     for from_id, to_id in zip(route.node_sequence, route.node_sequence[1:]):
-        arrival = clock + instance.distance(from_id, to_id) / speed
+        _, travel, _ = instance.arc_metrics(
+            from_id,
+            to_id,
+            route.vehicle_type,
+            fallback_speed_mps=speed,
+        )
+        arrival = clock + travel
         node = nodes[to_id]
         service_start = max(arrival, float(node.ready_time))
         if service_start > float(node.due_time) + _TOL:
@@ -1135,6 +1322,17 @@ def _deduplicated_actions(actions: Sequence[ChargingAction]) -> list[ChargingAct
             float(action.occupancy_minutes),
             float(action.charge_start_second),
             int(action.charge_day_offset),
+            (
+                None
+                if action.start_energy_kwh is None
+                else float(action.start_energy_kwh)
+            ),
+            (
+                None
+                if action.end_energy_kwh is None
+                else float(action.end_energy_kwh)
+            ),
+            action.charging_curve_id,
         )
         if key in seen:
             continue
@@ -1154,6 +1352,7 @@ def _deduplicated_actions(actions: Sequence[ChargingAction]) -> list[ChargingAct
 def _validate_depot_charger_capacity(
     instance: Instance,
     actions: Sequence[ChargingAction],
+    prices: PriceParameters | dict[str, float] | Any,
 ) -> None:
     """Apply the same 48-slot charger-capacity contract as the paper checker."""
 
@@ -1179,11 +1378,10 @@ def _validate_depot_charger_capacity(
             raise ValueError(f"{DYNAMIC_CONTRACT_ID}: charge has a negative field")
         if float(action.energy_kwh) <= _TOL:
             continue
-        for slot in charging_slot_breakdown(
-            float(action.charge_start_second),
-            float(action.occupancy_minutes) * 60.0,
-            float(action.energy_kwh),
+        for slot in charging_action_slot_breakdown(
+            action,
             instance,
+            prices,
             n_slots=48,
             cyclic=True,
         ):

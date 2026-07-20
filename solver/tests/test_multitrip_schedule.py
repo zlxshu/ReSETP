@@ -218,8 +218,22 @@ def test_first_trip_aware_replay_uses_only_the_pre_horizon_day(monkeypatch: pyte
         {"slot_index": i, "horizon_second_start": i * 1800.0, "actual_gco2_per_kwh": 300.0 if i < 4 else 50.0}
         for i in range(48)
     ]
-    naive = reschedule_between_trip_charging(prepared, certificate, _instance(), profile, strategy="naive")
-    aware = reschedule_between_trip_charging(prepared, certificate, _instance(), profile, strategy="aware")
+    naive = reschedule_between_trip_charging(
+        prepared,
+        certificate,
+        _instance(),
+        profile,
+        strategy="naive",
+        prices=prices,
+    )
+    aware = reschedule_between_trip_charging(
+        prepared,
+        certificate,
+        _instance(),
+        profile,
+        strategy="aware",
+        prices=prices,
+    )
     naive_first = next(action for action in naive.charging_actions if "#T1" in action.vehicle_id)
     aware_first = next(action for action in aware.charging_actions if "#T1" in action.vehicle_id)
     assert naive_first.charge_start_second == pytest.approx(0.0)
@@ -260,6 +274,7 @@ def test_calendar_aware_replay_uses_previous_day_forecast_for_first_trip() -> No
         _instance(),
         operating_day,
         strategy="aware",
+        prices=prices,
         carbon_profiles_by_day_offset={-1: previous_day, 0: operating_day},
         intensity_field="forecast_gco2_per_kwh",
     )
@@ -269,6 +284,7 @@ def test_calendar_aware_replay_uses_previous_day_forecast_for_first_trip() -> No
         _instance(),
         operating_day,
         strategy="aware",
+        prices=prices,
         carbon_profiles_by_day_offset={-1: previous_day, 0: operating_day},
         intensity_field="actual_gco2_per_kwh",
     )
@@ -297,8 +313,9 @@ def test_calendar_aware_replay_rejects_missing_previous_day_profile() -> None:
             certificate,
             _instance(),
             profile,
-            strategy="aware",
-            carbon_profiles_by_day_offset={0: profile},
+                strategy="aware",
+                prices=prices,
+                carbon_profiles_by_day_offset={0: profile},
             intensity_field="forecast_gco2_per_kwh",
         )
 
@@ -310,8 +327,22 @@ def test_between_trip_aware_replay_moves_only_within_the_legal_gap() -> None:
         {"slot_index": i, "horizon_second_start": i * 1800.0, "actual_gco2_per_kwh": 300.0 if i == 0 else 50.0}
         for i in range(48)
     ]
-    naive = reschedule_between_trip_charging(prepared, certificate, _instance(), profile, strategy="naive")
-    aware = reschedule_between_trip_charging(prepared, certificate, _instance(), profile, strategy="aware")
+    naive = reschedule_between_trip_charging(
+        prepared,
+        certificate,
+        _instance(),
+        profile,
+        strategy="naive",
+        prices=prices,
+    )
+    aware = reschedule_between_trip_charging(
+        prepared,
+        certificate,
+        _instance(),
+        profile,
+        strategy="aware",
+        prices=prices,
+    )
     naive_gap = [action for action in naive.charging_actions if "#T2" in action.vehicle_id][0]
     aware_gap = [action for action in aware.charging_actions if "#T2" in action.vehicle_id][0]
     previous = min(certificate.trips, key=lambda trip: trip.trip_index)

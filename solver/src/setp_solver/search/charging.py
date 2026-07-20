@@ -18,9 +18,10 @@ from ..cost import (
     CARBON_SLOT_SECONDS,
     best_charging_action_start,
     charging_action_emissions_kg,
-    ev_arc_energy_kwh,
+    ev_instance_arc_energy_kwh,
     route_next_day_departure_second,
     route_return_arrival_without_charging,
+    time_profile_rows_for_node,
 )
 from ..instance_loader import Instance, Node
 from ..prices import DEFAULT_PRICES, PriceParameters
@@ -35,13 +36,20 @@ def _curve_aware_action(
     energy_kwh: float,
     reference_power_kw: float,
     prices: PriceParameters | dict[str, Any] | Any,
+    instance: Instance | None = None,
 ) -> ChargingAction:
     """Build one action whose duration and energy ledger share one curve."""
 
     try:
         curve = curve_from_parameters(
             prices,
-            capacity_kwh=_price(prices, "B_battery_kwh"),
+            capacity_kwh=(
+                _price(prices, "B_battery_kwh")
+                if instance is None
+                else instance.battery_capacity_kwh(
+                    fallback=_price(prices, "B_battery_kwh"),
+                )
+            ),
             reference_power_kw=float(reference_power_kw),
         )
     except ChargingCurveError as exc:
@@ -107,7 +115,9 @@ def solve_charging_fixed_route(
     if not route.node_sequence:
         return []
 
-    battery_cap = _price(prices, "B_battery_kwh")
+    battery_cap = instance.battery_capacity_kwh(
+        fallback=_price(prices, "B_battery_kwh"),
+    )
     battery = _price(prices, "initial_ev_battery_kwh")
     time_s = float(node_lookup[route.node_sequence[0]].ready_time)
     remaining_customers = [node_id for node_id in route.node_sequence if node_lookup[node_id].node_type.lower() == "c"]
@@ -130,8 +140,14 @@ def solve_charging_fixed_route(
                     energy_kwh=energy_needed,
                     reference_power_kw=power_kw,
                     prices=prices,
+                    instance=instance,
                 )
                 occupancy_sec = float(action.occupancy_minutes) * 60.0
+                node_profile = time_profile_rows_for_node(
+                    instance,
+                    node_id,
+                    gamma_profile,
+                )
                 earliest, latest = _fixed_charge_window(
                     idx,
                     route,
@@ -140,7 +156,7 @@ def solve_charging_fixed_route(
                     prices,
                     occupancy_sec,
                     time_s,
-                    len(gamma_profile),
+                    len(node_profile),
                 )
                 if latest + 1e-9 < earliest:
                     raise ValueError(f"No feasible fixed-route charging window for {route.vehicle_id} at {node_id}")
@@ -157,7 +173,7 @@ def solve_charging_fixed_route(
                     else _select_charge_start(
                         earliest,
                         latest,
-                        gamma_profile,
+                        node_profile,
                         strategy,
                         node_type=node_type,
                     )
@@ -169,11 +185,21 @@ def solve_charging_fixed_route(
 
         next_id = route.node_sequence[idx + 1]
         load_kg = sum(float(node_lookup[customer_id].demand) for customer_id in remaining_customers)
-        distance = instance.distance(node_id, next_id)
-        battery -= ev_arc_energy_kwh(distance, load_kg, prices)
+        battery -= ev_instance_arc_energy_kwh(
+            instance,
+            node_id,
+            next_id,
+            load_kg,
+            prices,
+        )
         if battery < -1e-7:
             raise ValueError(f"Fixed route battery below zero after {node_id}->{next_id}: {battery:.6f} kWh")
-        travel = distance / _price(prices, "v_speed_ms")
+        _, travel, _ = instance.arc_metrics(
+            node_id,
+            next_id,
+            "ev",
+            fallback_speed_mps=_price(prices, "v_speed_ms"),
+        )
         next_node = node_lookup[next_id]
         time_s = max(time_s + travel, float(next_node.ready_time)) + float(next_node.service_time)
         if next_node.node_type.lower() == "c":
@@ -230,7 +256,13 @@ def repair_route_charging(
     current = route.node_sequence[0]
     for target_idx, target in enumerate(original_targets):
         load_kg = sum(float(node_lookup[node_id].demand) for node_id in remaining_customers)
-        needed_direct = ev_arc_energy_kwh(instance.distance(current, target), load_kg, prices)
+        needed_direct = ev_instance_arc_energy_kwh(
+            instance,
+            current,
+            target,
+            load_kg,
+            prices,
+        )
         future_targets = original_targets[target_idx:]
         failure_offset = _first_direct_infeasible_offset(
             current,
@@ -273,8 +305,19 @@ def repair_route_charging(
                 time_s = depart_station
                 current = station_id
 
-        travel = instance.distance(current, target) / _price(prices, "v_speed_ms")
-        battery -= ev_arc_energy_kwh(instance.distance(current, target), load_kg, prices)
+        _, travel, _ = instance.arc_metrics(
+            current,
+            target,
+            "ev",
+            fallback_speed_mps=_price(prices, "v_speed_ms"),
+        )
+        battery -= ev_instance_arc_energy_kwh(
+            instance,
+            current,
+            target,
+            load_kg,
+            prices,
+        )
         time_s = max(time_s + travel, float(node_lookup[target].ready_time)) + float(node_lookup[target].service_time)
         repaired.append(target)
         if node_lookup[target].node_type.lower() == "c":
@@ -298,7 +341,13 @@ def _energy_to_next_chargeable(
         from_node_id = node_sequence[idx]
         to_node_id = node_sequence[idx + 1]
         load_kg = sum(float(node_lookup[customer_id].demand) for customer_id in local_remaining)
-        total += ev_arc_energy_kwh(instance.distance(from_node_id, to_node_id), load_kg, prices)
+        total += ev_instance_arc_energy_kwh(
+            instance,
+            from_node_id,
+            to_node_id,
+            load_kg,
+            prices,
+        )
         to_node = node_lookup[to_node_id]
         if to_node.node_type.lower() == "c":
             local_remaining.remove(to_node_id)
@@ -323,7 +372,13 @@ def _first_direct_infeasible_offset(
     local_remaining = list(remaining_customers)
     for offset, target in enumerate(future_targets):
         load_kg = sum(float(node_lookup[node_id].demand) for node_id in local_remaining)
-        local_battery -= ev_arc_energy_kwh(instance.distance(local_current, target), load_kg, prices)
+        local_battery -= ev_instance_arc_energy_kwh(
+            instance,
+            local_current,
+            target,
+            load_kg,
+            prices,
+        )
         if local_battery < -1e-9:
             return offset
         if node_lookup[target].node_type.lower() == "c" and target in local_remaining:
@@ -404,15 +459,26 @@ def _fixed_charge_latest(
         for pos in range(len(node_sequence) - 2, idx, -1):
             current_id = node_sequence[pos]
             current = node_lookup[current_id]
-            travel_to_successor = instance.distance(current_id, successor_id) / speed
+            _, travel_to_successor, _ = instance.arc_metrics(
+                current_id,
+                successor_id,
+                "ev",
+                fallback_speed_mps=speed,
+            )
             latest_successor_start = min(
                 float(current.due_time),
                 latest_successor_start - float(current.service_time) - travel_to_successor,
             )
             successor_id = current_id
+        _, travel_to_successor, _ = instance.arc_metrics(
+            node_id,
+            successor_id,
+            "ev",
+            fallback_speed_mps=speed,
+        )
         latest = min(
             latest,
-            latest_successor_start - occupancy_sec - instance.distance(node_id, successor_id) / speed,
+            latest_successor_start - occupancy_sec - travel_to_successor,
         )
     return latest
 
@@ -456,7 +522,9 @@ def _depot_precharge_action(
     depot = node_lookup[depot_id]
     if depot.node_type.lower() != "d":
         return None
-    battery_cap = _price(prices, "B_battery_kwh")
+    battery_cap = instance.battery_capacity_kwh(
+        fallback=_price(prices, "B_battery_kwh"),
+    )
     initial_battery = _price(prices, "initial_ev_battery_kwh")
     route_need = _direct_route_energy_need(depot_id, original_targets, node_lookup, instance, prices)
     energy_needed = min(max(0.0, battery_cap - initial_battery), max(0.0, route_need - initial_battery))
@@ -472,11 +540,17 @@ def _depot_precharge_action(
         energy_kwh=energy_needed,
         reference_power_kw=power_kw,
         prices=prices,
+        instance=instance,
     )
     occupancy_sec = float(action.occupancy_minutes) * 60.0
     # v2026-06-12: S0 depot charging belongs to the previous-return to
     # next-departure overnight window.
-    period = float(len(gamma_profile)) * CARBON_SLOT_SECONDS
+    depot_profile = time_profile_rows_for_node(
+        instance,
+        depot_id,
+        gamma_profile,
+    )
+    period = float(len(depot_profile)) * CARBON_SLOT_SECONDS
     synthetic_route = Route(route.vehicle_id, route.vehicle_type, route.home_depot_id, [route.node_sequence[0], *original_targets])
     earliest = route_return_arrival_without_charging(synthetic_route, instance, prices)
     latest = route_next_day_departure_second(synthetic_route, instance, prices, period_seconds=period) - occupancy_sec
@@ -511,7 +585,13 @@ def _direct_route_energy_need(
     )
     for target in original_targets:
         load_kg = sum(float(node_lookup[node_id].demand) for node_id in local_remaining)
-        total += ev_arc_energy_kwh(instance.distance(current, target), load_kg, prices)
+        total += ev_instance_arc_energy_kwh(
+            instance,
+            current,
+            target,
+            load_kg,
+            prices,
+        )
         if node_lookup[target].node_type.lower() == "c" and target in local_remaining:
             local_remaining.remove(target)
         current = target
@@ -526,41 +606,75 @@ def _route_travel_lower_bound(
     prices: PriceParameters | dict[str, float] | Any,
 ) -> float:
     stations = [node for node in node_lookup.values() if node.node_type.lower() == "f"]
-    speed = _price(prices, "v_speed_ms")
-    battery_cap = _price(prices, "B_battery_kwh")
+    battery_cap = instance.battery_capacity_kwh(
+        fallback=_price(prices, "B_battery_kwh"),
+    )
     battery = min(battery_cap, _price(prices, "initial_ev_battery_kwh") + battery_cap)
     total = 0.0
     current = depot_id
     remaining_customers = [node_id for node_id in original_targets if node_lookup[node_id].node_type.lower() == "c"]
     for target in original_targets:
         load_kg = sum(float(node_lookup[node_id].demand) for node_id in remaining_customers)
-        direct_distance = instance.distance(current, target)
-        direct_energy = ev_arc_energy_kwh(direct_distance, load_kg, prices)
+        direct_distance, direct_time, _ = instance.arc_metrics(
+            current,
+            target,
+            "ev",
+            fallback_speed_mps=_price(prices, "v_speed_ms"),
+        )
+        direct_energy = ev_instance_arc_energy_kwh(
+            instance,
+            current,
+            target,
+            load_kg,
+            prices,
+        )
         if direct_energy <= battery + 1e-9:
-            best_distance = direct_distance
+            best_time = direct_time
             battery -= direct_energy
         else:
             best_candidate: tuple[float, float] | None = None
             for station in stations:
-                to_station = instance.distance(current, station.node_id)
-                energy_to_station = ev_arc_energy_kwh(to_station, load_kg, prices)
+                _, time_to_station, _ = instance.arc_metrics(
+                    current,
+                    station.node_id,
+                    "ev",
+                    fallback_speed_mps=_price(prices, "v_speed_ms"),
+                )
+                energy_to_station = ev_instance_arc_energy_kwh(
+                    instance,
+                    current,
+                    station.node_id,
+                    load_kg,
+                    prices,
+                )
                 if energy_to_station > battery + 1e-9:
                     continue
-                station_to_target = instance.distance(station.node_id, target)
-                energy_station_to_target = ev_arc_energy_kwh(station_to_target, load_kg, prices)
+                _, time_to_target, _ = instance.arc_metrics(
+                    station.node_id,
+                    target,
+                    "ev",
+                    fallback_speed_mps=_price(prices, "v_speed_ms"),
+                )
+                energy_station_to_target = ev_instance_arc_energy_kwh(
+                    instance,
+                    station.node_id,
+                    target,
+                    load_kg,
+                    prices,
+                )
                 if energy_station_to_target > battery_cap + 1e-9:
                     continue
-                distance = to_station + station_to_target
+                travel_time = time_to_station + time_to_target
                 battery_after_target = battery_cap - energy_station_to_target
-                candidate = (distance, battery_after_target)
+                candidate = (travel_time, battery_after_target)
                 if best_candidate is None or candidate[0] < best_candidate[0]:
                     best_candidate = candidate
             if best_candidate is None:
-                best_distance = direct_distance
+                best_time = direct_time
                 battery = max(0.0, battery - direct_energy)
             else:
-                best_distance, battery = best_candidate
-        total += best_distance / speed
+                best_time, battery = best_candidate
+        total += best_time
         total += float(node_lookup[target].service_time)
         if node_lookup[target].node_type.lower() == "c":
             remaining_customers.remove(target)
@@ -585,13 +699,39 @@ def _best_station_insert(
 ) -> tuple[str, ChargingAction, float, float, float] | None:
     best: tuple[float, float, str, ChargingAction, float, float, float] | None = None
     for station in stations:
-        to_station = instance.distance(current, station.node_id)
-        energy_to_station = ev_arc_energy_kwh(to_station, load_kg, prices)
+        to_station, time_to_station, _ = instance.arc_metrics(
+            current,
+            station.node_id,
+            "ev",
+            fallback_speed_mps=_price(prices, "v_speed_ms"),
+        )
+        energy_to_station = ev_instance_arc_energy_kwh(
+            instance,
+            current,
+            station.node_id,
+            load_kg,
+            prices,
+        )
         if battery + 1e-9 < energy_to_station:
             continue
         battery_at_station = battery - energy_to_station
-        energy_to_target = ev_arc_energy_kwh(instance.distance(station.node_id, target), load_kg, prices)
-        if energy_to_target > _price(prices, "B_battery_kwh") + 1e-9:
+        station_to_target, time_to_target, _ = instance.arc_metrics(
+            station.node_id,
+            target,
+            "ev",
+            fallback_speed_mps=_price(prices, "v_speed_ms"),
+        )
+        energy_to_target = ev_instance_arc_energy_kwh(
+            instance,
+            station.node_id,
+            target,
+            load_kg,
+            prices,
+        )
+        battery_cap = instance.battery_capacity_kwh(
+            fallback=_price(prices, "B_battery_kwh"),
+        )
+        if energy_to_target > battery_cap + 1e-9:
             continue
         segment_need_from_station = _direct_route_energy_need(
             station.node_id,
@@ -601,7 +741,7 @@ def _best_station_insert(
             prices,
             remaining_customers=remaining_customers,
         )
-        if segment_need_from_station > _price(prices, "B_battery_kwh") + 1e-9:
+        if segment_need_from_station > battery_cap + 1e-9:
             continue
         target_charge_level = segment_need_from_station
         energy_needed = max(0.0, target_charge_level - battery_at_station)
@@ -616,14 +756,15 @@ def _best_station_insert(
             energy_kwh=energy_needed,
             reference_power_kw=float(station.charge_power_kw),
             prices=prices,
+            instance=instance,
         )
         occupancy_sec = float(action.occupancy_minutes) * 60.0
-        arrive = depart_current + to_station / _price(prices, "v_speed_ms")
+        arrive = depart_current + time_to_station
         earliest = max(arrive, float(station.ready_time))
         target_node = node_lookup[target]
         latest = min(
             float(station.due_time),
-            float(target_node.due_time) - occupancy_sec - instance.distance(station.node_id, target) / _price(prices, "v_speed_ms"),
+            float(target_node.due_time) - occupancy_sec - time_to_target,
         )
         if latest + 1e-9 < earliest:
             continue
@@ -643,7 +784,13 @@ def _best_station_insert(
             gamma_profile,
             prices,
         )
-        detour = to_station + instance.distance(station.node_id, target) - instance.distance(current, target)
+        direct_distance, _, _ = instance.arc_metrics(
+            current,
+            target,
+            "ev",
+            fallback_speed_mps=_price(prices, "v_speed_ms"),
+        )
+        detour = to_station + station_to_target - direct_distance
         key = (
             carbon_kg,
             detour,

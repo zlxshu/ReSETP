@@ -1,0 +1,62 @@
+{
+  "schema_version": "resetp.china81-h5-fresh-route-pool-decision.v1",
+  "decision": "PASS_FRESH_MV_HGS_SP_ARCHITECTURE",
+  "passed": true,
+  "wins": 2,
+  "ties": 1,
+  "losses": 0,
+  "all_feasible": true,
+  "tests_passed": true,
+  "details": [
+    {
+      "instance_id": "cn-jjj-25c-03-V2-LOCATIONS",
+      "seed": 1,
+      "best_parent_objective": 1464.352359919282,
+      "final_objective": 1464.352359919282,
+      "final_minus_parent": 0.0,
+      "relative_improvement_percent": 0.0,
+      "result": "tie",
+      "feasible": true,
+      "violation_count": 0,
+      "route_pool_size": 43,
+      "selected_source": "best_exact_hgs_parent",
+      "sp_success": true,
+      "sp_mip_gap": 0.0,
+      "elapsed_seconds": 8.492577542026993
+    },
+    {
+      "instance_id": "cn-prd-75c-03-V2-LOCATIONS",
+      "seed": 1,
+      "best_parent_objective": 3909.873746936919,
+      "final_objective": 3904.797552532043,
+      "final_minus_parent": -5.076194404875878,
+      "relative_improvement_percent": 0.12983013604602145,
+      "result": "win",
+      "feasible": true,
+      "violation_count": 0,
+      "route_pool_size": 211,
+      "selected_source": "set_partitioning_recombination",
+      "sp_success": true,
+      "sp_mip_gap": 0.0,
+      "elapsed_seconds": 15.44797550002113
+    },
+    {
+      "instance_id": "cn-cy-150c-03-V2-LOCATIONS",
+      "seed": 1,
+      "best_parent_objective": 7618.914452289948,
+      "final_objective": 7573.340141852353,
+      "final_minus_parent": -45.57431043759516,
+      "relative_improvement_percent": 0.5981732794479311,
+      "result": "win",
+      "feasible": true,
+      "violation_count": 0,
+      "route_pool_size": 515,
+      "selected_source": "set_partitioning_recombination",
+      "sp_success": true,
+      "sp_mip_gap": 0.0,
+      "elapsed_seconds": 37.325906041951384
+    }
+  ],
+  "claim_boundary": "Fresh replicate-03 cases and one seed. Passing freezes the architecture and permits multi-seed confirmation, not a full China81 claim.",
+  "next_gate": "freeze_architecture_and_multiseed_confirmation"
+}

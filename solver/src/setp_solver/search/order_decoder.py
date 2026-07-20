@@ -214,7 +214,17 @@ def route_customer_plan_feasible_cached(depot_id: str, customer_ids: tuple[str, 
     if cached is not None:
         return cached
     node_lookup = context.node_lookup or {}
-    feasible = sum(float(node_lookup[customer_id].demand) for customer_id in customer_ids) <= _price(context.prices, "Q_capacity") + 1e-9
+    cv_capacity = context.instance.payload_capacity_kg(
+        "cv",
+        fallback=_price(context.prices, "Q_capacity"),
+    )
+    feasible = (
+        sum(
+            float(node_lookup[customer_id].demand)
+            for customer_id in customer_ids
+        )
+        <= cv_capacity + 1e-9
+    )
     if feasible:
         route = Route("TMP", "cv", depot_id, [depot_id, *customer_ids, depot_id])
         for row in route_node_schedule(route, context.instance, context.prices):

@@ -26,7 +26,7 @@ from ..cost import (
     best_charging_action_start,
     carbon_profile_row_for_slot,
     charging_slot_breakdown,
-    ev_arc_energy_kwh,
+    ev_instance_arc_energy_kwh,
 )
 from ..instance_loader import Instance
 from ..prices import DEFAULT_PRICES, PriceParameters
@@ -81,6 +81,8 @@ class MultiTripCertificate:
     first_trip_charge_day_offset: int = STATIC_FIRST_TRIP_CHARGE_DAY_OFFSET
     charging_curve_id: str = L100_CONTROL.curve_id
     charging_curve_parameter_sha256: str = L100_CONTROL.parameter_sha256
+    battery_capacity_kwh: float | None = None
+    charging_curve_physical_sha256: str | None = None
 
     def as_dict(self) -> dict[str, Any]:
         return asdict(self)
@@ -118,16 +120,33 @@ def multitrip_certificate_from_dict(
                 L100_CONTROL.parameter_sha256,
             )
         ),
+        battery_capacity_kwh=(
+            None
+            if payload.get("battery_capacity_kwh") is None
+            else float(payload["battery_capacity_kwh"])
+        ),
+        charging_curve_physical_sha256=(
+            None
+            if payload.get("charging_curve_physical_sha256") is None
+            else str(payload["charging_curve_physical_sha256"])
+        ),
     )
 
 
 def _curve_for_prices(
     prices: PriceParameters | dict[str, Any] | Any,
+    instance: Instance | None = None,
 ) -> PiecewiseChargingCurve:
     try:
         return curve_from_parameters(
             prices,
-            capacity_kwh=_price(prices, "B_battery_kwh"),
+            capacity_kwh=(
+                _price(prices, "B_battery_kwh")
+                if instance is None
+                else instance.battery_capacity_kwh(
+                    fallback=_price(prices, "B_battery_kwh"),
+                )
+            ),
             reference_power_kw=_price(prices, "depot_charge_power_kw"),
         )
     except ChargingCurveError as exc:
@@ -137,8 +156,9 @@ def _curve_for_prices(
 def _certificate_curve(
     certificate: MultiTripCertificate,
     prices: PriceParameters | dict[str, Any] | Any,
+    instance: Instance | None = None,
 ) -> PiecewiseChargingCurve:
-    curve = _curve_for_prices(prices)
+    curve = _curve_for_prices(prices, instance)
     if certificate.contract_id == CONTRACT_ID:
         if curve.curve_id != L100_CONTROL.curve_id:
             raise ValueError(
@@ -154,6 +174,34 @@ def _certificate_curve(
         raise ValueError(
             f"{NONLINEAR_CONTRACT_ID}: certificate curve hash disagrees with prices"
         )
+    if (
+        certificate.contract_id == NONLINEAR_CONTRACT_ID
+        or (
+            instance is not None
+            and instance.vehicle_parameters is not None
+        )
+        or certificate.battery_capacity_kwh is not None
+        or certificate.charging_curve_physical_sha256 is not None
+    ):
+        if certificate.battery_capacity_kwh is None or (
+            abs(
+                float(certificate.battery_capacity_kwh)
+                - curve.capacity_kwh
+            )
+            > _TOL
+        ):
+            raise ValueError(
+                f"{NONLINEAR_CONTRACT_ID}: certificate battery capacity "
+                "disagrees with the scaled curve"
+            )
+        if (
+            certificate.charging_curve_physical_sha256
+            != curve.physical_parameter_sha256
+        ):
+            raise ValueError(
+                f"{NONLINEAR_CONTRACT_ID}: certificate physical curve hash "
+                "disagrees with the scaled curve"
+            )
     return curve
 
 
@@ -262,7 +310,13 @@ def route_timing(
     elapsed = float(origin.service_time)
     departure_candidates = [float(origin.ready_time) + float(origin.service_time)]
     for from_id, to_id in zip(route.node_sequence, route.node_sequence[1:]):
-        elapsed += instance.distance(from_id, to_id) / _price(prices, "v_speed_ms")
+        _, travel, _ = instance.arc_metrics(
+            from_id,
+            to_id,
+            route.vehicle_type,
+            fallback_speed_mps=_price(prices, "v_speed_ms"),
+        )
+        elapsed += travel
         departure_candidates.append(float(nodes[to_id].ready_time) - elapsed)
         elapsed += float(nodes[to_id].service_time)
     preferred_departure = max(departure_candidates)
@@ -271,7 +325,12 @@ def route_timing(
     for index in range(len(route.node_sequence) - 2, -1, -1):
         node = nodes[route.node_sequence[index]]
         next_id = route.node_sequence[index + 1]
-        travel = instance.distance(route.node_sequence[index], next_id) / _price(prices, "v_speed_ms")
+        _, travel, _ = instance.arc_metrics(
+            route.node_sequence[index],
+            next_id,
+            route.vehicle_type,
+            fallback_speed_mps=_price(prices, "v_speed_ms"),
+        )
         latest_start = min(float(node.due_time), latest_start - float(node.service_time) - travel)
     if latest_start < float(origin.ready_time) - _TOL:
         raise ValueError(f"{CONTRACT_ID}: route {route.vehicle_id} has no feasible departure time")
@@ -281,16 +340,29 @@ def route_timing(
     loads = _arc_loads(route.node_sequence, nodes)
     energy = 0.0
     for idx, (from_id, to_id) in enumerate(zip(route.node_sequence, route.node_sequence[1:])):
-        distance = instance.distance(from_id, to_id)
-        arrive = depart + distance / _price(prices, "v_speed_ms")
+        _, travel, _ = instance.arc_metrics(
+            from_id,
+            to_id,
+            route.vehicle_type,
+            fallback_speed_mps=_price(prices, "v_speed_ms"),
+        )
+        arrive = depart + travel
         node = nodes[to_id]
         start = max(arrive, float(node.ready_time))
         if start > float(node.due_time) + 1e-6:
             raise ValueError(f"{CONTRACT_ID}: route {route.vehicle_id} misses {to_id}'s time window")
         depart = start + float(node.service_time)
         if route.vehicle_type.lower() == "ev":
-            energy += ev_arc_energy_kwh(distance, loads[idx], prices)
-    battery = _price(prices, "B_battery_kwh")
+            energy += ev_instance_arc_energy_kwh(
+                instance,
+                from_id,
+                to_id,
+                loads[idx],
+                prices,
+            )
+    battery = instance.battery_capacity_kwh(
+        fallback=_price(prices, "B_battery_kwh"),
+    )
     if route.vehicle_type.lower() == "ev" and energy > battery + 1e-6:
         raise ValueError(f"{CONTRACT_ID}: route {route.vehicle_id} exceeds one full battery")
     return TripTiming(route.vehicle_id, route.vehicle_type.lower(), route.home_depot_id, earliest_departure, depart, energy)
@@ -319,8 +391,10 @@ def build_multitrip_certificate(
     depot_charge_power_kw = _price(prices, "depot_charge_power_kw")
     if depot_charge_power_kw <= 0:
         raise ValueError("depot_charge_power_kw must be positive")
-    battery_kwh = _price(prices, "B_battery_kwh")
-    charging_curve = _curve_for_prices(prices)
+    battery_kwh = instance.battery_capacity_kwh(
+        fallback=_price(prices, "B_battery_kwh"),
+    )
+    charging_curve = _curve_for_prices(prices, instance)
     timings = [route_timing(route, instance, prices) for route in routes]
     scheduled: list[ScheduledTrip] = []
     counts = {"cv": 0, "ev": 0}
@@ -356,8 +430,15 @@ def build_multitrip_certificate(
         STATIC_FIRST_TRIP_CHARGE_DAY_OFFSET,
         charging_curve.curve_id,
         charging_curve.parameter_sha256,
+        battery_kwh,
+        charging_curve.physical_parameter_sha256,
     )
-    validate_multitrip_certificate(certificate, routes, prices)
+    validate_multitrip_certificate(
+        certificate,
+        routes,
+        prices,
+        instance=instance,
+    )
     return certificate
 
 
@@ -553,8 +634,17 @@ def validate_multitrip_certificate(
     certificate: MultiTripCertificate,
     routes: list[Route],
     prices: PriceParameters | dict[str, float] | Any = DEFAULT_PRICES,
+    *,
+    instance: Instance | None = None,
 ) -> None:
-    charging_curve = _certificate_curve(certificate, prices)
+    charging_curve = _certificate_curve(certificate, prices, instance)
+    battery_kwh = (
+        _price(prices, "B_battery_kwh")
+        if instance is None
+        else instance.battery_capacity_kwh(
+            fallback=_price(prices, "B_battery_kwh"),
+        )
+    )
     if certificate.recharge_mode not in {CHARGE_MODE_FULL, CHARGE_MODE_PARTIAL, CHARGE_MODE_ON_DEMAND}:
         raise ValueError(f"{CONTRACT_ID}: unknown recharge mode")
     expected_power_kw = _price(prices, "depot_charge_power_kw")
@@ -578,20 +668,19 @@ def validate_multitrip_certificate(
                 raise ValueError(f"{CONTRACT_ID}: {vehicle_id} has overlap or incomplete recharge")
             if current.vehicle_type == "ev":
                 if certificate.recharge_mode == CHARGE_MODE_FULL:
-                    if abs(float(current.start_battery_kwh or 0.0) - _price(prices, "B_battery_kwh")) > _TOL:
+                    if abs(float(current.start_battery_kwh or 0.0) - battery_kwh) > _TOL:
                         raise ValueError(f"{CONTRACT_ID}: {vehicle_id} does not depart full")
                 elif abs(float(current.start_battery_kwh or 0.0) - (float(previous.end_battery_kwh or 0.0) + float(previous.charge_energy_kwh or 0.0))) > _TOL:
                     raise ValueError(f"{CONTRACT_ID}: {vehicle_id} battery ledger is discontinuous")
         if ordered and ordered[0].vehicle_type == "ev":
             first_start = float(ordered[0].start_battery_kwh or 0.0)
-            if certificate.recharge_mode == CHARGE_MODE_FULL and abs(first_start - _price(prices, "B_battery_kwh")) > _TOL:
+            if certificate.recharge_mode == CHARGE_MODE_FULL and abs(first_start - battery_kwh) > _TOL:
                 raise ValueError(f"{CONTRACT_ID}: {vehicle_id} first trip does not depart full")
-            if certificate.recharge_mode != CHARGE_MODE_FULL and not (-_TOL <= first_start <= _price(prices, "B_battery_kwh") + _TOL):
+            if certificate.recharge_mode != CHARGE_MODE_FULL and not (-_TOL <= first_start <= battery_kwh + _TOL):
                 raise ValueError(f"{CONTRACT_ID}: {vehicle_id} first-trip departure battery is outside capacity")
         for trip in ordered:
             if trip.vehicle_type != "ev":
                 continue
-            battery_kwh = _price(prices, "B_battery_kwh")
             start_battery = float(trip.start_battery_kwh or 0.0)
             if float(trip.end_battery_kwh or 0.0) < -_TOL:
                 raise ValueError(f"{CONTRACT_ID}: {vehicle_id} has negative battery")
@@ -713,8 +802,10 @@ def prepare_multitrip_solution(
     else:
         certificate = None
 
-    battery_cap = _price(prices, "B_battery_kwh")
-    charging_curve = _curve_for_prices(prices)
+    battery_cap = instance.battery_capacity_kwh(
+        fallback=_price(prices, "B_battery_kwh"),
+    )
+    charging_curve = _curve_for_prices(prices, instance)
     inherited = _canonical_curve_energy(
         charging_curve,
         _price(prices, "initial_ev_battery_kwh"),
@@ -742,7 +833,12 @@ def prepare_multitrip_solution(
             recharge_mode=CHARGE_MODE_ON_DEMAND,
             initial_departure_battery_by_route=initial_departure,
         )
-        certificate = _reuse_existing_between_trip_times(certificate, solution, prices)
+        certificate = _reuse_existing_between_trip_times(
+            certificate,
+            solution,
+            instance,
+            prices,
+        )
     scheduled_by_old_id = {trip.route_id: trip for trip in certificate.trips}
     id_map = {
         old_id: route_trip_vehicle_id(trip.physical_vehicle_id, trip.trip_index)
@@ -833,9 +929,11 @@ def _certificate_from_prepared_solution(
     prices: PriceParameters | dict[str, float] | Any,
 ) -> MultiTripCertificate:
     power = _price(prices, "depot_charge_power_kw")
-    battery_cap = _price(prices, "B_battery_kwh")
+    battery_cap = instance.battery_capacity_kwh(
+        fallback=_price(prices, "B_battery_kwh"),
+    )
     inherited = _price(prices, "initial_ev_battery_kwh")
-    charging_curve = _curve_for_prices(prices)
+    charging_curve = _curve_for_prices(prices, instance)
     require_explicit = charging_curve.curve_id != L100_CONTROL.curve_id
     timings = {route.vehicle_id: route_timing(route, instance, prices) for route in solution.routes}
     routes = {route.vehicle_id: route for route in solution.routes}
@@ -922,19 +1020,27 @@ def _certificate_from_prepared_solution(
         STATIC_FIRST_TRIP_CHARGE_DAY_OFFSET,
         charging_curve.curve_id,
         charging_curve.parameter_sha256,
+        battery_cap,
+        charging_curve.physical_parameter_sha256,
     )
-    validate_multitrip_certificate(certificate, list(routes.values()), prices)
+    validate_multitrip_certificate(
+        certificate,
+        list(routes.values()),
+        prices,
+        instance=instance,
+    )
     return certificate
 
 
 def _reuse_existing_between_trip_times(
     certificate: MultiTripCertificate,
     solution: Solution,
+    instance: Instance,
     prices: PriceParameters | dict[str, float] | Any,
 ) -> MultiTripCertificate:
     """Keep an already-valid aware/naive gap placement on repeated scoring."""
 
-    charging_curve = _certificate_curve(certificate, prices)
+    charging_curve = _certificate_curve(certificate, prices, instance)
     require_explicit = charging_curve.curve_id != L100_CONTROL.curve_id
     actions_by_route: dict[str, list[ChargingAction]] = {}
     for action in solution.charging_actions:
@@ -990,7 +1096,12 @@ def _reuse_existing_between_trip_times(
         certificate,
         trips=tuple(replacements.get(trip.route_id, trip) for trip in certificate.trips),
     )
-    validate_multitrip_certificate(updated, list(solution.routes), prices)
+    validate_multitrip_certificate(
+        updated,
+        list(solution.routes),
+        prices,
+        instance=instance,
+    )
     return updated
 
 
@@ -1018,7 +1129,7 @@ def reschedule_between_trip_charging(
 
     if strategy not in {"aware", "naive"}:
         raise ValueError(f"unknown between-trip charging strategy {strategy!r}")
-    _certificate_curve(certificate, prices)
+    _certificate_curve(certificate, prices, instance)
 
     def profile_for(day_offset: int) -> list[dict[str, Any]]:
         if carbon_profiles_by_day_offset is None:

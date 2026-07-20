@@ -187,7 +187,6 @@ def _ranked_true_swapstar_moves(
         _route_customers(route, instance) for route in solution.routes
     ]
     global_centroid = _global_customer_centroid(instance)
-    capacity = _capacity(context)
     route_loads = [
         sum(float(node_lookup[node_id].demand) for node_id in customers)
         for customers in customers_by_route
@@ -213,6 +212,10 @@ def _ranked_true_swapstar_moves(
                 != right_route.vehicle_type.lower()
             ):
                 continue
+            capacity = _capacity(
+                context,
+                left_route.vehicle_type,
+            )
             if not _routes_overlap(
                 left_customers,
                 right_customers,
@@ -427,8 +430,16 @@ def _routes_overlap(
     )
 
 
-def _capacity(context: EvaluationContext) -> float:
+def _capacity(
+    context: EvaluationContext,
+    vehicle_type: str,
+) -> float:
     prices = context.prices
     if isinstance(prices, Mapping):
-        return float(prices.get("Q_capacity", math.inf))
-    return float(getattr(prices, "Q_capacity", math.inf))
+        fallback = float(prices.get("Q_capacity", math.inf))
+    else:
+        fallback = float(getattr(prices, "Q_capacity", math.inf))
+    return context.instance.payload_capacity_kg(
+        vehicle_type,
+        fallback=fallback,
+    )

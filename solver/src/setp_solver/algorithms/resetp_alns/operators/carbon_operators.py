@@ -14,6 +14,7 @@ from setp_solver.cost import (
     charging_action_emissions_kg,
     charging_action_slot_breakdown,
     evaluate,
+    time_profile_rows_for_node,
 )
 from setp_solver.solution import Route, Solution
 from setp_solver.search.evaluation import BIG_M
@@ -26,23 +27,28 @@ def low_carbon_charging_share(solution: Solution, instance: Any, carbon_profile:
 
     if not carbon_profile or not solution.charging_actions:
         return 0.0
-    sorted_gamma = sorted(_gamma(row) for row in carbon_profile)
-    low_count = max(1, math.ceil(len(sorted_gamma) * 0.25))
-    low_cutoff = sorted_gamma[low_count - 1]
     low_energy = 0.0
     total_energy = 0.0
     for action in solution.charging_actions:
         energy = float(action.energy_kwh)
         if float(action.occupancy_minutes) <= 1e-9 or energy <= 1e-9:
             continue
+        node_profile = time_profile_rows_for_node(
+            instance,
+            action.station_id,
+            carbon_profile,
+        )
+        sorted_gamma = sorted(_gamma(row) for row in node_profile)
+        low_count = max(1, math.ceil(len(sorted_gamma) * 0.25))
+        low_cutoff = sorted_gamma[low_count - 1]
         for slot in charging_action_slot_breakdown(
             action,
             instance,
             prices,
-            n_slots=len(carbon_profile),
+            n_slots=len(node_profile),
             cyclic=True,
         ):
-            gamma = _slot_gamma(carbon_profile, slot.slot_index)
+            gamma = _slot_gamma(node_profile, slot.slot_index)
             total_energy += float(slot.y_skt_kwh)
             if gamma <= low_cutoff + 1e-12:
                 low_energy += float(slot.y_skt_kwh)

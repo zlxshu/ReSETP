@@ -2,14 +2,14 @@
 
 日期：2026-07-20
 
-状态：`NL2_PASS__NL3_DYNAMIC_AND_CHINA_PROFILE_ADAPTER_AUTHORIZED`
+状态：`NL3A_PASS__NL3B_CHINA_PROFILE_ADAPTER_IN_PROGRESS`
 
-> 2026-07-20 执行更新：NL0、NL1 与 NL2 已依次通过。NL2 权威证据为
-> `baselines/model_verification/china81_nonlinear_cost_check_nl2_20260720/`；
-> 静态充电构造、分时碳排、成本、利润、碳择时和独立检查器已共用同一非线性动作合同。
-> 缩短持续时间或缺少起止电量的非线性动作在成本端与检查端同时失败关闭，L100
-> 历史结果保持一致。正式搜索仍关闭；下一步只放行 NL3 的动态继承与 China81
-> 三套道路 profile 接线。
+> 2026-07-20 执行更新：NL0、NL1、NL2 与 NL3a 已依次通过。NL3a 权威证据为
+> `baselines/model_verification/china81_nonlinear_dynamic_nl3a_20260720/`；
+> 动态候选筛选、最终电池账、动作验证、低碳择时和滚动切割已经共用同一非线性曲线。
+> 22 项相关回归和 Ruff 通过，动态残留恒功率公式为 0。正式搜索仍关闭；下一步只
+> 放行 NL3b：接入 China81 的 CV/EV 两类车辆道路 profile，每类严格包含距离、
+> 时长和 Σ(v²d) 三个有向矩阵。这里的“三”始终指三矩阵，不是三种车辆。
 
 ## 1. 授权与目标
 

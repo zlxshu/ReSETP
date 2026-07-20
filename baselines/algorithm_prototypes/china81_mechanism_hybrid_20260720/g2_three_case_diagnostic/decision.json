@@ -1,0 +1,127 @@
+{
+  "schema_version": "resetp.china81-g2-decision.v1",
+  "decision": "PASS_G2_DIAGNOSTIC",
+  "pipeline_passed": true,
+  "time_carbon_proxy_decision": "STOP_TIME_CARBON_PROXY_NO_INCREMENTAL_VALUE",
+  "broad_mother_signal_passed": false,
+  "mechanism_split_decision": "STOP_MECHANISM_SPLIT_NO_INCREMENTAL_VALUE",
+  "comparisons": {
+    "hybrid_vs_cv_only": {
+      "wins": 1,
+      "ties": 1,
+      "losses": 1,
+      "details": [
+        {
+          "instance_id": "cn-jjj-25c-01-V2-LOCATIONS",
+          "candidate_cost": 1217.5293306722904,
+          "control_cost": 1253.672412632888,
+          "candidate_minus_control": -36.143081960597556,
+          "result": "win"
+        },
+        {
+          "instance_id": "cn-prd-75c-01-V2-LOCATIONS",
+          "candidate_cost": 3822.8831222833023,
+          "control_cost": 3626.548585731854,
+          "candidate_minus_control": 196.3345365514483,
+          "result": "loss"
+        },
+        {
+          "instance_id": "cn-cy-150c-01-V2-LOCATIONS",
+          "candidate_cost": 8415.881190547478,
+          "control_cost": 8415.881190547478,
+          "candidate_minus_control": 0.0,
+          "result": "tie"
+        }
+      ]
+    },
+    "hybrid_vs_naive_ev": {
+      "wins": 0,
+      "ties": 2,
+      "losses": 1,
+      "details": [
+        {
+          "instance_id": "cn-jjj-25c-01-V2-LOCATIONS",
+          "candidate_cost": 1217.5293306722904,
+          "control_cost": 1217.5293306722904,
+          "candidate_minus_control": 0.0,
+          "result": "tie"
+        },
+        {
+          "instance_id": "cn-prd-75c-01-V2-LOCATIONS",
+          "candidate_cost": 3822.8831222833023,
+          "control_cost": 3756.0515559253913,
+          "candidate_minus_control": 66.83156635791102,
+          "result": "loss"
+        },
+        {
+          "instance_id": "cn-cy-150c-01-V2-LOCATIONS",
+          "candidate_cost": 8415.881190547478,
+          "control_cost": 8415.881190547478,
+          "candidate_minus_control": 0.0,
+          "result": "tie"
+        }
+      ]
+    },
+    "hybrid_vs_project_alns": {
+      "wins": 1,
+      "ties": 1,
+      "losses": 1,
+      "details": [
+        {
+          "instance_id": "cn-jjj-25c-01-V2-LOCATIONS",
+          "candidate_cost": 1217.5293306722904,
+          "control_cost": 1255.9591275844373,
+          "candidate_minus_control": -38.42979691214691,
+          "result": "win"
+        },
+        {
+          "instance_id": "cn-prd-75c-01-V2-LOCATIONS",
+          "candidate_cost": 3822.8831222833023,
+          "control_cost": 3796.876171565738,
+          "candidate_minus_control": 26.00695071756445,
+          "result": "loss"
+        },
+        {
+          "instance_id": "cn-cy-150c-01-V2-LOCATIONS",
+          "candidate_cost": 8415.881190547478,
+          "control_cost": 8415.881190547478,
+          "candidate_minus_control": 0.0,
+          "result": "tie"
+        }
+      ]
+    },
+    "split_vs_hybrid": {
+      "wins": 0,
+      "ties": 3,
+      "losses": 0,
+      "details": [
+        {
+          "instance_id": "cn-jjj-25c-01-V2-LOCATIONS",
+          "candidate_cost": 1217.5293306722904,
+          "control_cost": 1217.5293306722904,
+          "candidate_minus_control": 0.0,
+          "result": "tie"
+        },
+        {
+          "instance_id": "cn-prd-75c-01-V2-LOCATIONS",
+          "candidate_cost": 3822.8831222833023,
+          "control_cost": 3822.8831222833023,
+          "candidate_minus_control": 0.0,
+          "result": "tie"
+        },
+        {
+          "instance_id": "cn-cy-150c-01-V2-LOCATIONS",
+          "candidate_cost": 8415.881190547478,
+          "control_cost": 8415.881190547478,
+          "candidate_minus_control": 0.0,
+          "result": "tie"
+        }
+      ]
+    }
+  },
+  "case_count": 3,
+  "seed": 1,
+  "search_seconds_per_primary_arm": 2.0,
+  "claim_boundary": "Three pre-registered cases, one seed, two seconds. This diagnoses components; it is not a formal China81 result.",
+  "next_action": "keep_only_components_with_incremental_value_and_redesign"
+}

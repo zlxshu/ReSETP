@@ -245,11 +245,17 @@ def charging_timing_diagnostics(
                 successor = node_lookup[route.node_sequence[station_idx + 1]]
                 occupancy_sec = float(action.occupancy_minutes) * 60.0
                 earliest = max(float(schedule[action.station_id].t_arrive), float(station.ready_time))
+                _, travel_to_successor, _ = instance.arc_metrics(
+                    action.station_id,
+                    successor.node_id,
+                    "ev",
+                    fallback_speed_mps=_price(prices, "v_speed_ms"),
+                )
                 latest = min(
                     float(station.due_time),
                     float(successor.due_time)
                     - occupancy_sec
-                    - instance.distance(action.station_id, successor.node_id) / _price(prices, "v_speed_ms"),
+                    - travel_to_successor,
                 )
             if station_idx >= len(route.node_sequence) - 1:
                 continue

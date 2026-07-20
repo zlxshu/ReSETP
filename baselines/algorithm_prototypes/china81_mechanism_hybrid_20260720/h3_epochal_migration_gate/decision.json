@@ -1,0 +1,62 @@
+{
+  "schema_version": "resetp.china81-h3-epochal-migration-decision.v1",
+  "decision": "STOP_EXACT_ELITE_MIGRATION_NO_SIGNAL",
+  "passed": false,
+  "wins": 1,
+  "ties": 1,
+  "losses": 1,
+  "all_feasible": true,
+  "tests_passed": true,
+  "details": [
+    {
+      "instance_id": "cn-jjj-25c-01-V2-LOCATIONS",
+      "route_proxy_mode": "naive_ev",
+      "base_seed": 1,
+      "total_hgs_seconds": 2.0,
+      "control_objective": 1214.6067800693247,
+      "candidate_objective": 1214.6067800693247,
+      "candidate_minus_control": 0.0,
+      "result": "tie",
+      "control_elapsed_seconds": 2.731369209010154,
+      "candidate_elapsed_seconds": 3.3828596670064144,
+      "control_feasible": true,
+      "candidate_feasible": true,
+      "control_archive_completions": 24,
+      "candidate_archive_completions": 48
+    },
+    {
+      "instance_id": "cn-prd-75c-01-V2-LOCATIONS",
+      "route_proxy_mode": "cv_only",
+      "base_seed": 1,
+      "total_hgs_seconds": 2.0,
+      "control_objective": 3587.883755035436,
+      "candidate_objective": 3595.278917947818,
+      "candidate_minus_control": 7.395162912382148,
+      "result": "loss",
+      "control_elapsed_seconds": 4.2749544169637375,
+      "candidate_elapsed_seconds": 6.59142370801419,
+      "control_feasible": true,
+      "candidate_feasible": true,
+      "control_archive_completions": 24,
+      "candidate_archive_completions": 48
+    },
+    {
+      "instance_id": "cn-cy-150c-01-V2-LOCATIONS",
+      "route_proxy_mode": "cv_only",
+      "base_seed": 1,
+      "total_hgs_seconds": 2.0,
+      "control_objective": 7422.230890412822,
+      "candidate_objective": 7403.887656748209,
+      "candidate_minus_control": -18.343233664612853,
+      "result": "win",
+      "control_elapsed_seconds": 14.166937583009712,
+      "candidate_elapsed_seconds": 13.430494000029285,
+      "control_feasible": true,
+      "candidate_feasible": true,
+      "control_archive_completions": 24,
+      "candidate_archive_completions": 48
+    }
+  ],
+  "claim_boundary": "Seen development cases and views selected from H1. Passing only authorizes a separately preregistered fresh-case test.",
+  "next_gate": "stop_epochal_migration"
+}

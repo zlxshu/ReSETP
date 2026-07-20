@@ -15,10 +15,10 @@ import json
 from pathlib import Path
 from typing import Any
 
-from setp_solver.cost import _arc_loads, ev_arc_energy_kwh
+from setp_solver.cost import _arc_loads, ev_instance_arc_energy_kwh
 from setp_solver.instance_loader import Instance
 from setp_solver.prices import DEFAULT_PRICES, PriceParameters
-from setp_solver.solution import ChargingAction, Route, Solution, route_trip_vehicle_id
+from setp_solver.solution import Route, Solution, route_trip_vehicle_id
 
 UNBOUNDED_FLEET = 1_000_000
 
@@ -222,10 +222,18 @@ def route_ev_energy_summary(
     node_lookup = {node.node_id: node for node in instance.nodes}
     loads = _arc_loads(route.node_sequence, node_lookup)
     ev_kwh = sum(
-        ev_arc_energy_kwh(instance.distance(from_node, to_node), load_kg, prices)
+        ev_instance_arc_energy_kwh(
+            instance,
+            from_node,
+            to_node,
+            load_kg,
+            prices,
+        )
         for (from_node, to_node), load_kg in zip(zip(route.node_sequence, route.node_sequence[1:]), loads)
     )
-    battery = _price(prices, "B_battery_kwh")
+    battery = instance.battery_capacity_kwh(
+        fallback=_price(prices, "B_battery_kwh"),
+    )
     return RouteEnergySummary(
         route.vehicle_id,
         route.vehicle_type.lower(),
@@ -271,7 +279,9 @@ def fleet_probe_diagnostic(
     return FleetProbeDiagnostic(
         infer_fleet_limits(bundle_dir),
         customer_count,
-        _price(prices, "B_battery_kwh"),
+        instance.battery_capacity_kwh(
+            fallback=_price(prices, "B_battery_kwh"),
+        ),
         summaries,
         sum(1 for row in summaries if row.needs_charge),
         vehicle_type_semantics_report(),

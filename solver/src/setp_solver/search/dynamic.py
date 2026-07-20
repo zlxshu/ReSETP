@@ -19,8 +19,8 @@ from typing import Any, Callable
 import numpy as np
 
 from ..check import ROUTE_STRUCTURE, DynamicCheckContext, Violation, check_solution
-from ..cost import _arc_loads, ev_arc_energy_kwh, evaluate, route_node_schedule
-from ..instance_loader import Instance, Node
+from ..cost import _arc_loads, ev_instance_arc_energy_kwh, evaluate, route_node_schedule
+from ..instance_loader import Instance, Node, RoadProfileMatrices
 from ..prices import DEFAULT_PRICES, PriceParameters
 from ..solution import ChargingAction, Route, Solution, physical_vehicle_id, route_trip_vehicle_id
 from ..algorithms.resetp_alns import WinnerKernelConfig, run_resetp_alns
@@ -1341,6 +1341,9 @@ def _instance_with_stage_clock(instance: Instance, stage_start_time: float) -> I
         unit_distance_cost_per_meter=instance.unit_distance_cost_per_meter,
         num_cv=instance.num_cv,
         num_ev=instance.num_ev,
+        road_profiles=instance.road_profiles,
+        vehicle_parameters=instance.vehicle_parameters,
+        demand_mass_per_unit_kg=instance.demand_mass_per_unit_kg,
     )
 
 
@@ -1360,6 +1363,9 @@ def _instance_with_available_fleet(
         unit_distance_cost_per_meter=instance.unit_distance_cost_per_meter,
         num_cv=available_cv,
         num_ev=available_ev,
+        road_profiles=instance.road_profiles,
+        vehicle_parameters=instance.vehicle_parameters,
+        demand_mass_per_unit_kg=instance.demand_mass_per_unit_kg,
     )
 
 
@@ -1766,7 +1772,13 @@ def _vehicle_state_at_time(
                 fraction = 1.0
             else:
                 fraction = (trigger_time - depart) / (arrive - depart)
-            remaining_battery -= fraction * ev_arc_energy_kwh(instance.distance(from_id, to_id), loads[index], prices)
+            remaining_battery -= fraction * ev_instance_arc_energy_kwh(
+                instance,
+                from_id,
+                to_id,
+                loads[index],
+                prices,
+            )
         for action in charging_actions:
             if action.vehicle_id != route.vehicle_id:
                 continue
@@ -1779,7 +1791,12 @@ def _vehicle_state_at_time(
             else:
                 fraction = (trigger_time - start) / (end - start)
             remaining_battery += fraction * float(action.energy_kwh)
-        remaining_battery = min(_price(prices, "B_battery_kwh"), remaining_battery)
+        remaining_battery = min(
+            instance.battery_capacity_kwh(
+                fallback=_price(prices, "B_battery_kwh"),
+            ),
+            remaining_battery,
+        )
     ongoing = [
         asdict(action)
         for action in charging_actions
@@ -1917,7 +1934,13 @@ def _solution_for_customer_subset(
             continue
         if route.home_depot_id not in node_lookup:
             continue
-        for group in _capacity_feasible_groups(customers, node_lookup, prices):
+        for group in _capacity_feasible_groups(
+            customers,
+            route.vehicle_type,
+            instance,
+            node_lookup,
+            prices,
+        ):
             vehicle_id = f"{prefix}{len(routes) + 1}_{route.vehicle_id}"
             base_route = Route(vehicle_id, route.vehicle_type.lower(), route.home_depot_id, [route.home_depot_id, *group, route.home_depot_id])
             if base_route.vehicle_type == "ev":
@@ -1931,10 +1954,15 @@ def _solution_for_customer_subset(
 
 def _capacity_feasible_groups(
     customer_ids: list[str],
+    vehicle_type: str,
+    instance: Instance,
     node_lookup: dict[str, Node],
     prices: PriceParameters | dict[str, float] | Any,
 ) -> list[list[str]]:
-    capacity = _price(prices, "Q_capacity")
+    capacity = instance.payload_capacity_kg(
+        vehicle_type,
+        fallback=_price(prices, "Q_capacity"),
+    )
     groups: list[list[str]] = []
     current: list[str] = []
     current_load = 0.0
@@ -1967,7 +1995,17 @@ def _classify_defer_eligibility(
     reasons: dict[str, str] = {}
     pending = {str(customer_id) for customer_id in (pending_customer_ids or set())}
     ages = {str(customer_id): int(age) for customer_id, age in (pending_age_by_customer or {}).items()}
-    capacity = _price(prices, "Q_capacity")
+    fallback_capacity = _price(prices, "Q_capacity")
+    capacity = max(
+        instance.payload_capacity_kg(
+            "cv",
+            fallback=fallback_capacity,
+        ),
+        instance.payload_capacity_kg(
+            "ev",
+            fallback=fallback_capacity,
+        ),
+    )
     for customer_id in sorted(str(customer_id) for customer_id in active_ids):
         node = node_lookup.get(customer_id)
         if node is None or node.node_type.lower() != "c":
@@ -2003,10 +2041,27 @@ def _direct_depot_service_feasible(
     if not depots:
         return False
     speed = max(1e-9, _price(prices, "v_speed_ms"))
+    vehicle_types = ("cv", "ev") if instance.road_profiles is not None else ("cv",)
     for depot in depots:
         try:
-            out = instance.distance(depot.node_id, customer.node_id) / speed
-            back = instance.distance(customer.node_id, depot.node_id) / speed
+            out = min(
+                instance.arc_metrics(
+                    depot.node_id,
+                    customer.node_id,
+                    vehicle_type,
+                    fallback_speed_mps=speed,
+                )[1]
+                for vehicle_type in vehicle_types
+            )
+            back = min(
+                instance.arc_metrics(
+                    customer.node_id,
+                    depot.node_id,
+                    vehicle_type,
+                    fallback_speed_mps=speed,
+                )[1]
+                for vehicle_type in vehicle_types
+            )
         except KeyError:
             continue
         service_start = max(float(trigger_time) + out, float(customer.ready_time))
@@ -2033,6 +2088,17 @@ def _frozen_route_sequences_from_routes(routes: list[Route]) -> dict[str, list[s
 
 def _rebuild_instance_matrix(source: Instance, nodes: list[Node]) -> Instance:
     source_index = source.node_index
+    missing_profiled_nodes = [
+        node.node_id
+        for node in nodes
+        if node.node_id not in source_index
+    ]
+    if source.road_profiles is not None and missing_profiled_nodes:
+        raise ValueError(
+            "profiled dynamic customers require precomputed CV/EV road "
+            "metrics; missing nodes: "
+            + ", ".join(sorted(missing_profiled_nodes))
+        )
     matrix: list[list[float]] = []
     for from_node in nodes:
         row: list[float] = []
@@ -2042,6 +2108,35 @@ def _rebuild_instance_matrix(source: Instance, nodes: list[Node]) -> Instance:
             else:
                 row.append(float(((from_node.x - to_node.x) ** 2 + (from_node.y - to_node.y) ** 2) ** 0.5))
         matrix.append(row)
+    road_profiles = None
+    if source.road_profiles is not None:
+        indices = [source_index[node.node_id] for node in nodes]
+        road_profiles = {
+            profile: RoadProfileMatrices(
+                distance_m=tuple(
+                    tuple(
+                        float(matrices.distance_m[left][right])
+                        for right in indices
+                    )
+                    for left in indices
+                ),
+                duration_s=tuple(
+                    tuple(
+                        float(matrices.duration_s[left][right])
+                        for right in indices
+                    )
+                    for left in indices
+                ),
+                sum_v2d_m3_s2=tuple(
+                    tuple(
+                        float(matrices.sum_v2d_m3_s2[left][right])
+                        for right in indices
+                    )
+                    for left in indices
+                ),
+            )
+            for profile, matrices in source.road_profiles.items()
+        }
     return Instance(
         nodes=nodes,
         distance_matrix=matrix,
@@ -2050,6 +2145,9 @@ def _rebuild_instance_matrix(source: Instance, nodes: list[Node]) -> Instance:
         unit_distance_cost_per_meter=source.unit_distance_cost_per_meter,
         num_cv=source.num_cv,
         num_ev=source.num_ev,
+        road_profiles=road_profiles,
+        vehicle_parameters=source.vehicle_parameters,
+        demand_mass_per_unit_kg=source.demand_mass_per_unit_kg,
     )
 
 

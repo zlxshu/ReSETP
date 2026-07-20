@@ -13,11 +13,10 @@ import math
 from typing import Any
 
 from .cost import (
-    GCO2_PER_KGCO2,
     _evaluate_route,
     _price,
-    carbon_profile_row_for_slot,
-    charging_action_slot_breakdown,
+    charging_action_electricity_cost,
+    charging_action_emissions_kg,
 )
 from .instance_loader import Instance, Node
 from .prices import DEFAULT_PRICES, PriceParameters
@@ -97,7 +96,14 @@ def calculate_depot_profits(
         row = data[depot_id]
         route_energy = _evaluate_route(route, instance, node_lookup, prices)
         row["cost_fixed"] += _price(prices, "vehicle_fixed_cost")
-        row["cost_km"] += route_energy.distance_m / 1000.0 * _price(prices, "c_km")
+        row["cost_km"] += (
+            route_energy.distance_m
+            / 1000.0
+            * instance.non_energy_distance_cost_per_km(
+                route.vehicle_type,
+                fallback=_price(prices, "c_km"),
+            )
+        )
         if route.vehicle_type.lower() == "cv":
             row["cost_fuel"] += route_energy.fuel_liters * _price(prices, "diesel_price")
             row["cv_direct_emissions_kg"] += route_energy.fuel_liters * _price(prices, "diesel_ef")
@@ -120,11 +126,15 @@ def calculate_depot_profits(
         row = data[depot_id]
         station = node_lookup.get(action.station_id)
         station_type = station.node_type.lower() if station is not None else ""
+        row["cost_electricity"] += charging_action_electricity_cost(
+            action,
+            instance,
+            carbon_profile,
+            prices,
+        )
         if station_type == "d":
-            row["cost_electricity"] += float(action.energy_kwh) * _price(prices, "depot_electricity_price")
             row["depot_charging_kwh"] += float(action.energy_kwh)
         else:
-            row["cost_electricity"] += float(action.energy_kwh) * _price(prices, "station_electricity_price")
             row["cost_occupancy"] += float(action.occupancy_minutes) * _price(prices, "occupancy_fee")
             row["station_charging_kwh"] += float(action.energy_kwh)
         row["ev_indirect_emissions_kg"] += _charging_action_emissions(
@@ -224,14 +234,9 @@ def _charging_action_emissions(
     carbon_profile: list[dict[str, Any]],
     prices: PriceParameters | dict[str, Any] | Any,
 ) -> float:
-    emissions = 0.0
-    for slot in charging_action_slot_breakdown(
+    return charging_action_emissions_kg(
         action,
         instance,
+        carbon_profile,
         prices,
-        n_slots=len(carbon_profile),
-        cyclic=True,
-    ):
-        row = carbon_profile_row_for_slot(carbon_profile, slot.slot_index)
-        emissions += slot.y_skt_kwh * float(row["actual_gco2_per_kwh"]) / GCO2_PER_KGCO2
-    return emissions
+    )

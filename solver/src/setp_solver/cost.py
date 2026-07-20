@@ -107,6 +107,43 @@ def carbon_profile_row_for_slot(carbon_profile: list[dict[str, Any]], slot_index
     return _previous_hold_carbon_row(carbon_profile, float(canonical_slot) * CARBON_SLOT_SECONDS)
 
 
+def time_profile_rows_for_node(
+    instance: Instance,
+    node_id: str,
+    time_profile: list[dict[str, Any]],
+) -> list[dict[str, Any]]:
+    """Return one node's city-specific rows or the historical shared rows."""
+
+    profile_cities = {
+        str(row["city"]).strip().lower()
+        for row in time_profile
+        if row.get("city") not in {None, ""}
+    }
+    if not profile_cities:
+        return time_profile
+    try:
+        node = instance.nodes[instance.node_index[node_id]]
+    except KeyError as exc:
+        raise ValueError(
+            f"time profile requested for unknown node {node_id!r}"
+        ) from exc
+    if node.city is None or not str(node.city).strip():
+        raise ValueError(
+            f"node {node_id!r} has no city for a city-specific time profile"
+        )
+    city = str(node.city).strip().lower()
+    rows = [
+        row
+        for row in time_profile
+        if str(row.get("city", "")).strip().lower() == city
+    ]
+    if not rows:
+        raise ValueError(
+            f"time profile has no rows for node {node_id!r} city {city!r}"
+        )
+    return rows
+
+
 def evaluate(
     solution: Solution,
     instance: Instance,
@@ -129,10 +166,23 @@ def evaluate(
     electricity_kwh = sum(float(action.energy_kwh) for action in solution.charging_actions)
 
     cost_fix = len(solution.routes) * _price(prices, "vehicle_fixed_cost")
-    cost_km = (distance_total / 1000.0) * _price(prices, "c_km")
+    cost_km = sum(
+        item.distance_m
+        / 1000.0
+        * instance.non_energy_distance_cost_per_km(
+            item.vehicle_type,
+            fallback=_price(prices, "c_km"),
+        )
+        for item in route_energy
+    )
     cost_fuel = fuel_liters * _price(prices, "diesel_price")
     # v2026-06-12: Q2 depot precharge has depot electricity price and no public occupancy fee.
-    cost_elec = _charging_electricity_cost(solution, node_lookup, prices)
+    cost_elec = _charging_electricity_cost(
+        solution,
+        instance,
+        carbon_profile,
+        prices,
+    )
     cost_occ = _charging_occupancy_cost(solution, node_lookup, prices)
     cost_transship = len(solution.cross_site_services) * _price(prices, "cross_site_cost")
 
@@ -194,14 +244,42 @@ def _evaluate_route(
     ev_drive_kwh = 0.0
 
     for (from_node_id, to_node_id), load_kg in zip(zip(route.node_sequence, route.node_sequence[1:]), loads):
-        leg_distance_m = instance.distance(from_node_id, to_node_id)
-        time_s = leg_distance_m / _price(prices, "v_speed_ms")
-        power_w = _mechanical_power_w(load_kg, prices)
+        leg_distance_m, time_s, sum_v2d = instance.arc_metrics(
+            from_node_id,
+            to_node_id,
+            vehicle_type,
+            fallback_speed_mps=_price(prices, "v_speed_ms"),
+        )
         distance_m += leg_distance_m
-        if vehicle_type == "cv":
-            fuel_liters += _fuel_liters(power_w, time_s, prices)
+        if instance.road_profiles is None:
+            power_w = _mechanical_power_w(load_kg, prices)
+            if vehicle_type == "cv":
+                fuel_liters += _fuel_liters(power_w, time_s, prices)
+            else:
+                ev_drive_kwh += _ev_drive_kwh(power_w, time_s, prices)
+        elif vehicle_type == "cv":
+            fuel_liters += _profile_arc_fuel_liters(
+                leg_distance_m,
+                time_s,
+                sum_v2d,
+                load_kg,
+                prices,
+                instance=instance,
+                vehicle_type="cv",
+            )
         else:
-            ev_drive_kwh += _ev_drive_kwh(power_w, time_s, prices)
+            ev_drive_kwh += (
+                _price(prices, "alpha_e")
+                * _profile_mechanical_energy_j(
+                    leg_distance_m,
+                    sum_v2d,
+                    load_kg,
+                    prices,
+                    instance=instance,
+                    vehicle_type="ev",
+                )
+                / 3_600_000.0
+            )
 
     return RouteEnergy(route.vehicle_id, vehicle_type, distance_m, fuel_liters, ev_drive_kwh)
 
@@ -267,7 +345,12 @@ def route_node_schedule(
 
     for from_node_id, to_node_id in zip(route.node_sequence, route.node_sequence[1:]):
         to_node = node_lookup[to_node_id]
-        travel_time = instance.distance(from_node_id, to_node_id) / _price(prices, "v_speed_ms")
+        _, travel_time, _ = instance.arc_metrics(
+            from_node_id,
+            to_node_id,
+            route.vehicle_type,
+            fallback_speed_mps=_price(prices, "v_speed_ms"),
+        )
         arrive = schedule[-1].t_depart + travel_time
         # v2026-06-11: charging stations use the action's charge_start and occupancy to push downstream time.
         station_actions = charging_by_node.get(to_node_id, [])
@@ -393,7 +476,9 @@ def charging_curve_for_action(
             )
         reference_power_kw = float(station.charge_power_kw)
     curve = spec.scale(
-        capacity_kwh=_price(prices, "B_battery_kwh"),
+        capacity_kwh=instance.battery_capacity_kwh(
+            fallback=_price(prices, "B_battery_kwh"),
+        ),
         reference_power_kw=reference_power_kw,
     )
     if action.charging_curve_id != curve.curve_id:
@@ -521,6 +606,11 @@ def best_charging_action_start(
         raise ValueError("latest charging start precedes earliest start")
     if not carbon_profile or latest <= earliest + 1e-9:
         return earliest
+    node_profile = time_profile_rows_for_node(
+        instance,
+        action.station_id,
+        carbon_profile,
+    )
     curve_state = charging_curve_for_action(action, instance, prices)
     duration = float(action.occupancy_minutes) * 60.0
     phase_boundaries = {0.0, duration}
@@ -546,11 +636,11 @@ def best_charging_action_start(
             shifted,
             instance,
             prices,
-            n_slots=len(carbon_profile),
+            n_slots=len(node_profile),
             cyclic=True,
         ):
             row = carbon_profile_row_for_slot(
-                carbon_profile,
+                node_profile,
                 slot.slot_index,
             )
             if intensity_field not in row:
@@ -576,14 +666,22 @@ def charging_action_emissions_kg(
     """Return exact indirect emissions for one validated charging action."""
 
     total = 0.0
+    node_profile = time_profile_rows_for_node(
+        instance,
+        action.station_id,
+        carbon_profile,
+    )
     for slot in charging_action_slot_breakdown(
         action,
         instance,
         prices,
-        n_slots=len(carbon_profile),
+        n_slots=len(node_profile),
         cyclic=True,
     ):
-        row = carbon_profile_row_for_slot(carbon_profile, slot.slot_index)
+        row = carbon_profile_row_for_slot(
+            node_profile,
+            slot.slot_index,
+        )
         total += (
             float(slot.y_skt_kwh)
             * float(row["actual_gco2_per_kwh"])
@@ -619,7 +717,12 @@ def route_departure_second(
         successor_id = route.node_sequence[1]
     if successor_id is not None:
         successor = node_lookup[successor_id]
-        travel = instance.distance(route.node_sequence[0], successor_id) / _price(prices, "v_speed_ms")
+        _, travel, _ = instance.arc_metrics(
+            route.node_sequence[0],
+            successor_id,
+            route.vehicle_type,
+            fallback_speed_mps=_price(prices, "v_speed_ms"),
+        )
         departure = max(departure, float(successor.ready_time) - travel)
     return max(0.0, departure)
 
@@ -726,6 +829,177 @@ def _ev_drive_kwh(power_w: float, time_s: float, prices: PriceParameters | dict[
     return _price(prices, "alpha_e") * power_w * time_s / 3_600_000.0
 
 
+def _profile_mechanical_energy_j(
+    distance_m: float,
+    sum_v2d_m3_s2: float,
+    load_kg: float,
+    prices: PriceParameters | dict[str, float] | Any,
+    *,
+    instance: Instance | None = None,
+    vehicle_type: str | None = None,
+) -> float:
+    vehicle = (
+        None
+        if instance is None or vehicle_type is None
+        else instance.vehicle_profile(vehicle_type)
+    )
+    drag = (
+        _price(prices, "c_d")
+        if vehicle is None
+        else float(vehicle.drag_coefficient)
+    )
+    frontal_area = (
+        _price(prices, "A_frontal")
+        if vehicle is None
+        else float(vehicle.frontal_area_m2)
+    )
+    curb_mass = (
+        _price(prices, "m_curb")
+        if vehicle is None
+        else float(vehicle.curb_mass_kg)
+    )
+    rolling_resistance = (
+        _price(prices, "c_r")
+        if vehicle is None
+        else float(vehicle.rolling_resistance_coefficient)
+    )
+    load_mass_kg = (
+        _price(prices, "m_unit") * float(load_kg)
+        if instance is None
+        else instance.load_mass_kg(
+            load_kg,
+            fallback_mass_per_unit_kg=_price(prices, "m_unit"),
+        )
+    )
+    drag_coefficient = (
+        0.5
+        * drag
+        * _price(prices, "rho_a")
+        * frontal_area
+    )
+    rolling_force = (
+        curb_mass
+        + load_mass_kg
+    ) * _price(prices, "g0") * rolling_resistance
+    return (
+        drag_coefficient * float(sum_v2d_m3_s2)
+        + rolling_force * float(distance_m)
+    )
+
+
+def _profile_arc_fuel_liters(
+    distance_m: float,
+    duration_s: float,
+    sum_v2d_m3_s2: float,
+    load_kg: float,
+    prices: PriceParameters | dict[str, float] | Any,
+    *,
+    instance: Instance | None = None,
+    vehicle_type: str = "cv",
+) -> float:
+    vehicle = (
+        None
+        if instance is None
+        else instance.vehicle_profile(vehicle_type)
+    )
+    engine_friction = (
+        _price(prices, "k_engine")
+        if vehicle is None
+        else float(vehicle.engine_friction_kj_per_rev_l)
+    )
+    engine_speed = (
+        _price(prices, "N_engine")
+        if vehicle is None
+        else float(vehicle.engine_speed_rev_per_s)
+    )
+    engine_displacement = (
+        _price(prices, "D_displace")
+        if vehicle is None
+        else float(vehicle.engine_displacement_l)
+    )
+    mechanical_energy_kj = (
+        _profile_mechanical_energy_j(
+            distance_m,
+            sum_v2d_m3_s2,
+            load_kg,
+            prices,
+            instance=instance,
+            vehicle_type=vehicle_type,
+        )
+        / 1000.0
+    )
+    fuel = (
+        _price(prices, "xi_fuel_air")
+        / (_price(prices, "kappa_heat") * _price(prices, "psi_conv"))
+        * (
+            engine_friction
+            * engine_speed
+            * engine_displacement
+            * float(duration_s)
+            + mechanical_energy_kj
+            / (
+                _price(prices, "eta_diesel")
+                * _price(prices, "eta_tf")
+            )
+        )
+    )
+    return max(fuel, 0.0)
+
+
+def cv_instance_arc_fuel_liters(
+    instance: Instance,
+    from_node_id: str,
+    to_node_id: str,
+    load_kg: float,
+    prices: PriceParameters | dict[str, float] | Any = DEFAULT_PRICES,
+) -> float:
+    """Return CV fuel for one arc under the instance's frozen road profile."""
+
+    if instance.road_profiles is None:
+        distance_m = instance.distance(from_node_id, to_node_id)
+        duration_s = distance_m / _price(prices, "v_speed_ms")
+        return _fuel_liters(
+            _mechanical_power_w(load_kg, prices),
+            duration_s,
+            prices,
+        )
+    distance_m, duration_s, sum_v2d = instance.arc_metrics(
+        from_node_id,
+        to_node_id,
+        "cv",
+        fallback_speed_mps=_price(prices, "v_speed_ms"),
+    )
+    return _profile_arc_fuel_liters(
+        distance_m,
+        duration_s,
+        sum_v2d,
+        load_kg,
+        prices,
+        instance=instance,
+        vehicle_type="cv",
+    )
+
+
+def ev_profile_arc_energy_kwh(
+    distance_m: float,
+    sum_v2d_m3_s2: float,
+    load_kg: float,
+    prices: PriceParameters | dict[str, float] | Any = DEFAULT_PRICES,
+) -> float:
+    """Return exact EV traction energy from distance and sum(v^2 d)."""
+
+    return (
+        _price(prices, "alpha_e")
+        * _profile_mechanical_energy_j(
+            distance_m,
+            sum_v2d_m3_s2,
+            load_kg,
+            prices,
+        )
+        / 3_600_000.0
+    )
+
+
 def ev_arc_energy_kwh(
     distance_m: float,
     load_kg: float,
@@ -734,6 +1008,41 @@ def ev_arc_energy_kwh(
     time_s = float(distance_m) / _price(prices, "v_speed_ms")
     power_w = _mechanical_power_w(float(load_kg), prices)
     return _ev_drive_kwh(power_w, time_s, prices)
+
+
+def ev_instance_arc_energy_kwh(
+    instance: Instance,
+    from_node_id: str,
+    to_node_id: str,
+    load_kg: float,
+    prices: PriceParameters | dict[str, float] | Any = DEFAULT_PRICES,
+) -> float:
+    """Return EV energy using a frozen EV road profile when one exists."""
+
+    if instance.road_profiles is None:
+        return ev_arc_energy_kwh(
+            instance.distance(from_node_id, to_node_id),
+            load_kg,
+            prices,
+        )
+    distance, _, sum_v2d = instance.arc_metrics(
+        from_node_id,
+        to_node_id,
+        "ev",
+        fallback_speed_mps=_price(prices, "v_speed_ms"),
+    )
+    return (
+        _price(prices, "alpha_e")
+        * _profile_mechanical_energy_j(
+            distance,
+            sum_v2d,
+            load_kg,
+            prices,
+            instance=instance,
+            vehicle_type="ev",
+        )
+        / 3_600_000.0
+    )
 
 
 def _ev_indirect_emissions(
@@ -755,18 +1064,68 @@ def _ev_indirect_emissions(
 
 def _charging_electricity_cost(
     solution: Solution,
-    node_lookup: dict[str, Node],
+    instance: Instance,
+    time_profile: list[dict[str, Any]],
     prices: PriceParameters | dict[str, float] | Any,
 ) -> float:
-    total = 0.0
-    for action in solution.charging_actions:
-        node = node_lookup.get(action.station_id)
-        if node and node.node_type.lower() == "d":
-            unit_price = _price(prices, "depot_electricity_price")
-        else:
-            unit_price = _price(prices, "station_electricity_price")
-        total += float(action.energy_kwh) * unit_price
-    return total
+    return sum(
+        charging_action_electricity_cost(
+            action,
+            instance,
+            time_profile,
+            prices,
+        )
+        for action in solution.charging_actions
+    )
+
+
+def charging_action_electricity_cost(
+    action: ChargingAction,
+    instance: Instance,
+    time_profile: list[dict[str, Any]],
+    prices: PriceParameters | dict[str, float] | Any = DEFAULT_PRICES,
+) -> float:
+    """Settle one charge against city-specific time-of-use prices."""
+
+    node_lookup = {node.node_id: node for node in instance.nodes}
+    node = node_lookup.get(action.station_id)
+    node_profile = time_profile_rows_for_node(
+        instance,
+        action.station_id,
+        time_profile,
+    )
+    if node_profile and all(
+        "depot_energy_cny_per_kwh" in row
+        and "public_total_cny_per_kwh" in row
+        for row in node_profile
+    ):
+        price_field = (
+            "depot_energy_cny_per_kwh"
+            if node is not None and node.node_type.lower() == "d"
+            else "public_total_cny_per_kwh"
+        )
+        return sum(
+            float(slot.y_skt_kwh)
+            * float(
+                carbon_profile_row_for_slot(
+                    node_profile,
+                    slot.slot_index,
+                )[price_field]
+            )
+            for slot in charging_action_slot_breakdown(
+                action,
+                instance,
+                prices,
+                n_slots=len(node_profile),
+                cyclic=True,
+            )
+        )
+    unit_price = (
+        _price(prices, "depot_electricity_price")
+        if node is not None and node.node_type.lower() == "d"
+        else _price(prices, "station_electricity_price")
+    )
+    return float(action.energy_kwh) * unit_price
 
 
 def _charging_occupancy_cost(

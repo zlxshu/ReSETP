@@ -1927,7 +1927,17 @@ def _route_customer_plan_feasible(
     prices: PriceParameters | dict[str, float] | Any,
 ) -> bool:
     node_lookup = {node.node_id: node for node in instance.nodes}
-    if sum(float(node_lookup[customer_id].demand) for customer_id in customer_ids) > _price(prices, "Q_capacity") + 1e-9:
+    cv_capacity = instance.payload_capacity_kg(
+        "cv",
+        fallback=_price(prices, "Q_capacity"),
+    )
+    if (
+        sum(
+            float(node_lookup[customer_id].demand)
+            for customer_id in customer_ids
+        )
+        > cv_capacity + 1e-9
+    ):
         return False
     route = Route("TMP", "cv", depot_id, [depot_id, *customer_ids, depot_id])
     for row in route_node_schedule(route, instance, prices):

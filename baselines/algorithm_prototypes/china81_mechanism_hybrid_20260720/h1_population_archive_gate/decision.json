@@ -1,0 +1,26 @@
+{
+  "schema_version": "resetp.china81-h1-population-archive-decision.v1",
+  "decision": "PASS_HGS_EXACT_POPULATION_RERANKING_SIGNAL",
+  "passed": true,
+  "strict_improvement_count": 6,
+  "pair_count": 9,
+  "all_archive_pairs_not_worse": true,
+  "all_feasible": true,
+  "tests_passed": true,
+  "per_case_best_across_views": {
+    "cn-jjj-25c-01-V2-LOCATIONS": {
+      "best_proxy_objective": 1216.9518531614328,
+      "best_archive_objective": 1214.6067800693247
+    },
+    "cn-prd-75c-01-V2-LOCATIONS": {
+      "best_proxy_objective": 3596.64786706864,
+      "best_archive_objective": 3587.883755035436
+    },
+    "cn-cy-150c-01-V2-LOCATIONS": {
+      "best_proxy_objective": 7422.230890412822,
+      "best_archive_objective": 7422.230890412822
+    }
+  },
+  "claim_boundary": "Seen development cases and one seed only. This isolates population re-ranking, not a final algorithm.",
+  "next_gate": "fresh_case_multiview_population_migration"
+}

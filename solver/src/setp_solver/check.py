@@ -9,6 +9,7 @@ from .cost import (
     charging_action_slot_breakdown,
     charging_curve_for_action,
     ev_arc_energy_kwh,
+    ev_instance_arc_energy_kwh,
     route_next_day_departure_second,
     route_node_schedule,
     route_return_arrival_without_charging,
@@ -124,6 +125,7 @@ def check_solution(
         violations.extend(
             _check_capacity(
                 route,
+                instance,
                 node_lookup,
                 prices,
                 dynamic_state=dynamic_state,
@@ -400,6 +402,7 @@ def _check_route_flow(route: Route, node_lookup: dict[str, Node], dynamic_contex
 
 def _check_capacity(
     route: Route,
+    instance: Instance,
     node_lookup: dict[str, Node],
     prices: PriceParameters | dict[str, float] | Any,
     *,
@@ -407,11 +410,28 @@ def _check_capacity(
     allow_open_start: bool = False,
 ) -> list[Violation]:
     if allow_open_start and dynamic_state is not None:
-        return _check_inherited_capacity(route, node_lookup, prices, dynamic_state)
+        return _check_inherited_capacity(
+            route,
+            instance,
+            node_lookup,
+            prices,
+            dynamic_state,
+        )
     loads = _arc_loads(route.node_sequence, node_lookup)
     violations: list[Violation] = []
-    if loads and loads[0] > _price(prices, "Q_capacity"):
-        violations.append(Violation(CAPACITY, route.vehicle_id, route.node_sequence[0], f"initial load {loads[0]:.6f} exceeds Q={_price(prices, 'Q_capacity'):.6f}"))
+    capacity = instance.payload_capacity_kg(
+        route.vehicle_type,
+        fallback=_price(prices, "Q_capacity"),
+    )
+    if loads and loads[0] > capacity:
+        violations.append(
+            Violation(
+                CAPACITY,
+                route.vehicle_id,
+                route.node_sequence[0],
+                f"initial load {loads[0]:.6f} exceeds Q={capacity:.6f}",
+            )
+        )
     for idx, load in enumerate(loads):
         arc = f"{route.node_sequence[idx]}->{route.node_sequence[idx + 1]}"
         if load < -1e-9:
@@ -430,11 +450,15 @@ def _check_capacity(
 
 def _check_inherited_capacity(
     route: Route,
+    instance: Instance,
     node_lookup: dict[str, Node],
     prices: PriceParameters | dict[str, float] | Any,
     dynamic_state: DynamicVehicleState,
 ) -> list[Violation]:
-    capacity = _price(prices, "Q_capacity")
+    capacity = instance.payload_capacity_kg(
+        route.vehicle_type,
+        fallback=_price(prices, "Q_capacity"),
+    )
     remaining = float(dynamic_state.remaining_load_kg)
     violations: list[Violation] = []
     if remaining < -1e-9:
@@ -685,7 +709,9 @@ def _check_battery(
 ) -> list[Violation]:
     # v2026-06-12: Q2 aligns EV departure energy with paper line 391:
     # b_departure = bbar + depot charging <= B, rather than implicit full B.
-    battery_cap = _price(prices, "B_battery_kwh")
+    battery_cap = instance.battery_capacity_kwh(
+        fallback=_price(prices, "B_battery_kwh"),
+    )
     battery = (
         float(dynamic_state.remaining_battery_kwh)
         if allow_open_start and dynamic_state is not None
@@ -718,8 +744,13 @@ def _check_battery(
                 )
 
     for idx, ((from_node_id, to_node_id), load_kg) in enumerate(zip(zip(route.node_sequence, route.node_sequence[1:]), loads)):
-        distance_m = instance.distance(from_node_id, to_node_id)
-        use_kwh = ev_arc_energy_kwh(distance_m, load_kg, prices)
+        use_kwh = ev_instance_arc_energy_kwh(
+            instance,
+            from_node_id,
+            to_node_id,
+            load_kg,
+            prices,
+        )
         battery -= use_kwh
         arc = f"{from_node_id}->{to_node_id}"
         if battery < -1e-9:

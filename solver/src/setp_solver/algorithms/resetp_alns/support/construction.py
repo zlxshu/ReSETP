@@ -187,7 +187,10 @@ def introduce_ev_routes(
             ev_id = _next_vehicle_id(solution, "EV")
             base_route = Route(ev_id, "ev", depot_id, [depot_id, customer_id, depot_id])
             energy = route_ev_energy_summary(base_route, instance, prices).ev_kwh
-            if require_charging_signal and energy <= _price(prices, "B_battery_kwh") + 1e-9:
+            battery_cap = instance.battery_capacity_kwh(
+                fallback=_price(prices, "B_battery_kwh"),
+            )
+            if require_charging_signal and energy <= battery_cap + 1e-9:
                 continue
             try:
                 repaired_route, actions = repair_route_charging(base_route, instance, carbon_profile, prices)
@@ -479,7 +482,17 @@ def _route_plan_feasible(
     prices: PriceParameters | dict[str, float] | Any,
 ) -> bool:
     node_lookup = {node.node_id: node for node in instance.nodes}
-    if sum(float(node_lookup[node_id].demand) for node_id in customer_ids) > _price(prices, "Q_capacity") + 1e-9:
+    cv_capacity = instance.payload_capacity_kg(
+        "cv",
+        fallback=_price(prices, "Q_capacity"),
+    )
+    if (
+        sum(
+            float(node_lookup[node_id].demand)
+            for node_id in customer_ids
+        )
+        > cv_capacity + 1e-9
+    ):
         return False
     route = Route("CV_TMP", "cv", depot_id, [depot_id, *customer_ids, depot_id])
     for row in route_node_schedule(route, instance, prices):
@@ -490,8 +503,15 @@ def _route_plan_feasible(
 
 def _seed_route_budget(instance: Instance, prices: PriceParameters | dict[str, float] | Any, *, max_cv: int) -> int:
     total_demand = sum(float(node.demand) for node in instance.nodes if node.node_type.lower() == "c")
-    demand_bound = int((total_demand + _price(prices, "Q_capacity") - 1e-9) // _price(prices, "Q_capacity"))
-    if total_demand > demand_bound * _price(prices, "Q_capacity") + 1e-9:
+    cv_capacity = instance.payload_capacity_kg(
+        "cv",
+        fallback=_price(prices, "Q_capacity"),
+    )
+    demand_bound = int(
+        (total_demand + cv_capacity - 1e-9)
+        // cv_capacity
+    )
+    if total_demand > demand_bound * cv_capacity + 1e-9:
         demand_bound += 1
     if max_cv >= UNBOUNDED_FLEET:
         return max(1, demand_bound)

@@ -7,7 +7,7 @@ import os
 from typing import Any
 
 from ..check import check_solution
-from ..cost import _arc_loads, ev_arc_energy_kwh, evaluate, route_node_schedule
+from ..cost import _arc_loads, ev_instance_arc_energy_kwh, evaluate, route_node_schedule
 from ..instance_loader import Instance, Node
 from ..solution import ChargingAction, Route, Solution
 from .charging import repair_route_charging
@@ -279,7 +279,14 @@ def _route_locally_feasible_uncached(route: Route, actions: list[ChargingAction]
     if any(node_id not in node_lookup for node_id in route.node_sequence):
         return False
     loads = _arc_loads(route.node_sequence, node_lookup)
-    if any(load < -1e-9 or load > _price(context.prices, "Q_capacity") + 1e-9 for load in loads):
+    capacity = context.instance.payload_capacity_kg(
+        route.vehicle_type,
+        fallback=_price(context.prices, "Q_capacity"),
+    )
+    if any(
+        load < -1e-9 or load > capacity + 1e-9
+        for load in loads
+    ):
         return False
     for row in route_node_schedule(route, context.instance, context.prices, charging_actions=actions):
         if row.t_start > float(node_lookup[row.node_id].due_time) + 1e-9:
@@ -297,7 +304,9 @@ def _ev_battery_locally_feasible(
     loads: list[float],
 ) -> bool:
     battery = _price(context.prices, "initial_ev_battery_kwh")
-    cap = _price(context.prices, "B_battery_kwh")
+    cap = context.instance.battery_capacity_kwh(
+        fallback=_price(context.prices, "B_battery_kwh"),
+    )
     charging_by_node: dict[str, float] = {}
     for action in actions:
         if action.vehicle_id == route.vehicle_id:
@@ -308,7 +317,13 @@ def _ev_battery_locally_feasible(
     if battery > cap + 1e-9:
         return False
     for (from_node, to_node), load in zip(zip(route.node_sequence, route.node_sequence[1:]), loads):
-        battery -= ev_arc_energy_kwh(context.instance.distance(from_node, to_node), load, context.prices)
+        battery -= ev_instance_arc_energy_kwh(
+            context.instance,
+            from_node,
+            to_node,
+            load,
+            context.prices,
+        )
         if battery < -1e-9:
             return False
         if node_lookup[to_node].node_type.lower() == "f":

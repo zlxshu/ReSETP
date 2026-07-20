@@ -147,7 +147,13 @@ class SimulatedAnnealing:
         return self._method
 
     def __call__(self, rng: object, best: object, current: object, candidate: object) -> bool:
-        probability = np.exp((current.objective() - candidate.objective()) / self._temperature)
+        # Better candidates have acceptance probability one.  Clamping their
+        # positive exponent preserves that exact behaviour without overflowing
+        # NumPy when a penalised candidate differs by a large BIG_M value.
+        exponent = (
+            current.objective() - candidate.objective()
+        ) / self._temperature
+        probability = np.exp(min(0.0, float(exponent)))
         self._temperature = max(
             self.end_temperature,
             update(self._temperature, self.step, self.method),

@@ -62,3 +62,21 @@ HGS（Vidal 等，2012）、ALNS（Ropke、Pisinger，2006）以及路线会审
 `STOP_CURRENT_REMIX_V13_CANDIDATE_ALL_LOSS`。停止候选不取消许可证和引用义务，
 也不能把组合结构写成来源论文已经证明有效。权威尸检为
 `docs/handoff/remix_v13_development_forensics_20260719.md`。
+
+## MV-HGS-SP 来源与许可证登记
+
+`MV-HGS-SP` 使用仓库内 PyVRP 0.12.2 的真正 HGS 种群、项目独立实现的 China81
+完整模型精英重排，以及 SciPy 1.16.3 `optimize.milp` 对 HiGHS 的公共接口做精确
+路线池重组。PyVRP 0.12.2 为 MIT 许可，其许可证保存在
+`build/python_envs/pyvrp-hgs-0.12.2/lib/python3.13/site-packages/pyvrp-0.12.2.dist-info/licenses/LICENSE.md`；
+SciPy 为 BSD-3-Clause。本项目没有复制或修改二者源码，调用代码与全部证据留在
+ReSETP 仓库。
+
+学术引用必须包括：HGS 的种群、多样性和教育框架——Vidal 等（2012），DOI
+`10.1287/opre.1120.1048`；PyVRP——Wouda、Lan、Kool（2024），DOI
+`10.1287/ijoc.2023.0055`；多属性问题专用评价——Vidal 等（2014），DOI
+`10.1016/j.ejor.2013.09.045`；隐式车型/车场选择——Vidal 等（2014），DOI
+`10.1016/j.ejor.2013.12.044`。集合划分路线重组属于已有混合求解思想，本项目的
+贡献候选只能表述为“三机制视角 HGS 精英经完整非线性 ReSETP 模型重排后再精确
+重组”的具体接线；是否构成文献意义上的新方法仍需投稿前新颖性检索，不能由本次
+性能门直接推出。

@@ -771,6 +771,57 @@ def run_winner_kernel(
     return _run_winner_variant(bundle_dir, cfg, initial_solution=initial_solution, prices=prices)
 
 
+def run_winner_kernel_in_memory(
+    initial_solution: Solution,
+    instance: Any,
+    carbon_profile: list[dict[str, Any]],
+    *,
+    config: WinnerKernelConfig | None = None,
+    prices: PriceParameters | None = None,
+    variant_flags: dict[str, str] | None = None,
+    policy: SearchPolicy | None = None,
+    carbon_weight: float = 1.0,
+    carbon_quota_kg: float = 0.0,
+    fairness_enabled: bool = False,
+    independent_profit: dict[str, float] | None = None,
+    fairness_theta: float | None = None,
+    customer_home_depot: dict[str, str] | None = None,
+    mechanism_controller: Any | None = None,
+) -> AlnsRunResult:
+    """Run the winner loop against an already loaded instance.
+
+    China81 uses this neutral entry point instead of being serialised into the
+    historical L-main bundle layout.  The search loop, evaluator, checker, and
+    budget accounting remain exactly the same as the file-backed runner.
+    """
+
+    cfg = config or WinnerKernelConfig()
+    if cfg.algorithm != "ALNS-Wouda":
+        raise ValueError(
+            "the in-memory winner kernel currently supports ALNS-Wouda only"
+        )
+    flags = variant_flags or winner_variant_flags(
+        include_route_elimination=cfg.include_route_elimination,
+    )
+    with _temporary_flags(flags):
+        return _run_winner_kernel_loop(
+            initial_solution,
+            instance,
+            carbon_profile,
+            config=cfg,
+            prices=prices,
+            variant_flags=flags,
+            policy=policy,
+            carbon_weight=carbon_weight,
+            carbon_quota_kg=carbon_quota_kg,
+            fairness_enabled=fairness_enabled,
+            independent_profit=independent_profit,
+            fairness_theta=fairness_theta,
+            customer_home_depot=customer_home_depot,
+            mechanism_controller=mechanism_controller,
+        )
+
+
 def run_staged_alns_lns_hybrid(
     bundle_dir: str | Path,
     *,
@@ -975,7 +1026,9 @@ def run_true_lns_middle_alns_hybrid(
         ),
         "feasible": len(violations) == 0,
         "violation_count": len(violations),
-        "battery_kwh": float(getattr(prices, "B_battery_kwh")),
+        "battery_kwh": context.instance.battery_capacity_kwh(
+            fallback=float(getattr(prices, "B_battery_kwh")),
+        ),
         "carbon_aware_operators": False,
         "history": history,
         "operator_counts": {
@@ -1104,7 +1157,9 @@ def _run_staged_hybrid_entry(
         ),
         "feasible": len(violations) == 0,
         "violation_count": len(violations),
-        "battery_kwh": float(getattr(prices, "B_battery_kwh")),
+        "battery_kwh": context.instance.battery_capacity_kwh(
+            fallback=float(getattr(prices, "B_battery_kwh")),
+        ),
         "carbon_aware_operators": bool(cfg.carbon_aware_operators),
         "refined_carbon_operators": bool(cfg.refined_carbon_operators),
         "refined_carbon_weight": float(cfg.refined_carbon_weight),
@@ -1549,6 +1604,7 @@ def write_winner_manifest(output_dir: str | Path) -> Path:
             "winner_variant_flags",
             "run_e2_alns_final",
             "run_winner_kernel",
+            "run_winner_kernel_in_memory",
             "run_winner_kernel_plus_route_elimination",
             "write_winner_manifest",
         ],
@@ -3441,7 +3497,10 @@ def _append_scan_customer(
 
 
 def _scan_route_plan_feasible(instance: Any, node_lookup: dict[str, Any], depot_id: str, customer_ids: list[str], prices: PriceParameters) -> bool:
-    capacity = _price(prices, "Q_capacity")
+    capacity = instance.payload_capacity_kg(
+        "cv",
+        fallback=_price(prices, "Q_capacity"),
+    )
     if sum(float(node_lookup[customer_id].demand) for customer_id in customer_ids) > capacity + 1e-9:
         return False
     route = Route("SCAN", "cv", depot_id, [depot_id, *customer_ids, depot_id])

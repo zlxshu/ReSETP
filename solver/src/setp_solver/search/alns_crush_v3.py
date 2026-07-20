@@ -442,7 +442,21 @@ def _ordered_time_feasible(
     start_left = float(left.ready_time)
     if start_left > float(left.due_time) + 1e-9:
         return False
-    travel = bundle.instance.distance(left.node_id, right.node_id) / _price(prices, "v_speed_ms")
+    speed = _price(prices, "v_speed_ms")
+    vehicle_types = (
+        ("cv", "ev")
+        if bundle.instance.road_profiles is not None
+        else ("cv",)
+    )
+    travel = min(
+        bundle.instance.arc_metrics(
+            left.node_id,
+            right.node_id,
+            vehicle_type,
+            fallback_speed_mps=speed,
+        )[1]
+        for vehicle_type in vehicle_types
+    )
     arrival_right = start_left + float(left.service_time) + travel
     start_right = max(arrival_right, float(right.ready_time))
     return start_right <= float(right.due_time) + 1e-9

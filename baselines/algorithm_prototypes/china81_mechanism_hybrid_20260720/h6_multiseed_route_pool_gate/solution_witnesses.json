@@ -1,0 +1,3239 @@
+{
+  "cn-jjj-25c-03-V2-LOCATIONS::seed-1": {
+    "stats": {
+      "algorithm": "MV-HGS-SP",
+      "algorithm_name_en": "Multi-View Hybrid Genetic Search with Exact Route-Pool Recombination",
+      "algorithm_name_zh": "多视角混合遗传搜索—精确路线池重组算法",
+      "story": "three genuine HGS populations generate complementary routes; the full nonlinear ReSETP model selects elites; an exact set-partitioning layer recombines routes across views",
+      "seed": 1,
+      "hgs_seconds_per_view": 2.0,
+      "view_count": 3,
+      "exact_elites_per_view": 8,
+      "archive_candidates_per_view": 24,
+      "parent_solution_count": 24,
+      "route_pool_size": 43,
+      "best_parent_objective": 1464.352359919282,
+      "selected_source": "best_exact_hgs_parent",
+      "final_objective": 1464.352359919282,
+      "strict_recombination_improvement": false,
+      "improvement_over_best_parent": 0.0,
+      "set_partitioning": {
+        "solver": "scipy.optimize.milp/HiGHS",
+        "success": true,
+        "status": 0,
+        "message": "Optimization terminated successfully. (HiGHS Status 7: Optimal)",
+        "objective": 1464.352359919282,
+        "mip_gap": 0.0,
+        "selected_route_count": 5,
+        "independent_violation_count": 0,
+        "recombined_exact_objective": 1464.352359919282
+      },
+      "measured_elapsed_seconds": 8.563470833993051
+    },
+    "solution": {
+      "routes": [
+        {
+          "vehicle_id": "CH81-0001",
+          "vehicle_type": "cv",
+          "home_depot_id": "D_beijing",
+          "node_sequence": [
+            "D_beijing",
+            "C007",
+            "C016",
+            "C022",
+            "C003",
+            "C001",
+            "C018",
+            "D_beijing"
+          ]
+        },
+        {
+          "vehicle_id": "CH81-0002",
+          "vehicle_type": "cv",
+          "home_depot_id": "D_beijing",
+          "node_sequence": [
+            "D_beijing",
+            "C004",
+            "C014",
+            "C013",
+            "C011",
+            "C017",
+            "D_beijing"
+          ]
+        },
+        {
+          "vehicle_id": "CH81-0003",
+          "vehicle_type": "cv",
+          "home_depot_id": "D_beijing",
+          "node_sequence": [
+            "D_beijing",
+            "C012",
+            "C025",
+            "C002",
+            "C024",
+            "C010",
+            "C023",
+            "C019",
+            "D_beijing"
+          ]
+        },
+        {
+          "vehicle_id": "CH81-0004",
+          "vehicle_type": "ev",
+          "home_depot_id": "D_beijing",
+          "node_sequence": [
+            "D_beijing",
+            "C005",
+            "C008",
+            "C006",
+            "D_beijing"
+          ]
+        },
+        {
+          "vehicle_id": "CH81-0005",
+          "vehicle_type": "ev",
+          "home_depot_id": "D_beijing",
+          "node_sequence": [
+            "D_beijing",
+            "C021",
+            "C015",
+            "C009",
+            "C020",
+            "D_beijing"
+          ]
+        }
+      ],
+      "charging_actions": [
+        {
+          "vehicle_id": "CH81-0004",
+          "station_id": "D_beijing",
+          "energy_kwh": 43.36617591739606,
+          "occupancy_minutes": 118.27138886562562,
+          "charge_start_second": 118800.0,
+          "charge_day_offset": 0,
+          "start_energy_kwh": 0.0,
+          "end_energy_kwh": 43.36617591739606,
+          "charging_curve_id": "NL90_mild"
+        },
+        {
+          "vehicle_id": "CH81-0005",
+          "station_id": "D_beijing",
+          "energy_kwh": 31.20254420268107,
+          "occupancy_minutes": 85.09784782549383,
+          "charge_start_second": 59384.82768,
+          "charge_day_offset": 0,
+          "start_energy_kwh": 0.0,
+          "end_energy_kwh": 31.20254420268107,
+          "charging_curve_id": "NL90_mild"
+        }
+      ],
+      "cross_site_services": []
+    },
+    "independent_breakdown": {
+      "total_cost": 1464.352359919282,
+      "cost_fix": 850.0,
+      "cost_km": 308.9653906494079,
+      "cost_fuel": 221.73708081998535,
+      "cost_elec": 75.32040164595094,
+      "cost_occ": 0.0,
+      "cost_transship": 0.0,
+      "cost_carbon": 8.329486803937806,
+      "E_total": 111.03021599490543,
+      "E_cv_direct": 87.30067544074352,
+      "E_ev_indirect": 23.729540554161908,
+      "n_veh_cv": 3,
+      "n_veh_ev": 2,
+      "distance_total": 421671.612945569,
+      "distance_cv": 240412.817962515,
+      "distance_ev": 181258.794983054,
+      "fuel_liters": 32.27613985734867,
+      "electricity_kwh": 74.56872012007713,
+      "depot_charging_kwh": 74.56872012007713,
+      "station_charging_kwh": 0,
+      "carbon_quota_kg": 0.0,
+      "ev_drive_kwh": 74.56872012007713
+    },
+    "view_epochs": {
+      "cv_only": {
+        "seed": 1,
+        "runtime_seconds": 2.0,
+        "warm_elite_count": 0,
+        "population_size": 76,
+        "unique_feasible_population_size": 31,
+        "archive_candidates_completed": 24,
+        "archive_completion_failures": [],
+        "hgs_iterations": 1739,
+        "proxy_best_exact_objective": 1556.6689034506212,
+        "selected_exact_objectives": [
+          1516.485439390713,
+          1518.7147683026326,
+          1519.2989074434322,
+          1519.9436748638525,
+          1520.1915921995242,
+          1521.4785272465406,
+          1522.4089233810805,
+          1522.6801112039748
+        ]
+      },
+      "naive_ev": {
+        "seed": 1,
+        "runtime_seconds": 2.0,
+        "warm_elite_count": 0,
+        "population_size": 123,
+        "unique_feasible_population_size": 43,
+        "archive_candidates_completed": 24,
+        "archive_completion_failures": [],
+        "hgs_iterations": 1761,
+        "proxy_best_exact_objective": 1464.352359919282,
+        "selected_exact_objectives": [
+          1464.352359919282,
+          1464.5266079409732,
+          1465.441558782389,
+          1465.8453036815408,
+          1467.0031247418262,
+          1467.8568157632237,
+          1468.9507720215847,
+          1468.959517937527
+        ]
+      },
+      "mechanism_ev": {
+        "seed": 1,
+        "runtime_seconds": 2.0,
+        "warm_elite_count": 0,
+        "population_size": 108,
+        "unique_feasible_population_size": 50,
+        "archive_candidates_completed": 24,
+        "archive_completion_failures": [],
+        "hgs_iterations": 1787,
+        "proxy_best_exact_objective": 1464.352359919282,
+        "selected_exact_objectives": [
+          1464.352359919282,
+          1464.5266079409732,
+          1465.441558782389,
+          1465.8453036815408,
+          1467.0031247418262,
+          1467.8568157632237,
+          1468.3427282347604,
+          1468.9507720215847
+        ]
+      }
+    }
+  },
+  "cn-jjj-25c-03-V2-LOCATIONS::seed-2": {
+    "stats": {
+      "algorithm": "MV-HGS-SP",
+      "algorithm_name_en": "Multi-View Hybrid Genetic Search with Exact Route-Pool Recombination",
+      "algorithm_name_zh": "多视角混合遗传搜索—精确路线池重组算法",
+      "story": "three genuine HGS populations generate complementary routes; the full nonlinear ReSETP model selects elites; an exact set-partitioning layer recombines routes across views",
+      "seed": 2,
+      "hgs_seconds_per_view": 2.0,
+      "view_count": 3,
+      "exact_elites_per_view": 8,
+      "archive_candidates_per_view": 24,
+      "parent_solution_count": 24,
+      "route_pool_size": 44,
+      "best_parent_objective": 1464.352359919282,
+      "selected_source": "best_exact_hgs_parent",
+      "final_objective": 1464.352359919282,
+      "strict_recombination_improvement": false,
+      "improvement_over_best_parent": 0.0,
+      "set_partitioning": {
+        "solver": "scipy.optimize.milp/HiGHS",
+        "success": true,
+        "status": 0,
+        "message": "Optimization terminated successfully. (HiGHS Status 7: Optimal)",
+        "objective": 1464.352359919282,
+        "mip_gap": 0.0,
+        "selected_route_count": 5,
+        "independent_violation_count": 0,
+        "recombined_exact_objective": 1464.352359919282
+      },
+      "measured_elapsed_seconds": 8.419779292016756
+    },
+    "solution": {
+      "routes": [
+        {
+          "vehicle_id": "CH81-0001",
+          "vehicle_type": "cv",
+          "home_depot_id": "D_beijing",
+          "node_sequence": [
+            "D_beijing",
+            "C007",
+            "C016",
+            "C022",
+            "C003",
+            "C001",
+            "C018",
+            "D_beijing"
+          ]
+        },
+        {
+          "vehicle_id": "CH81-0002",
+          "vehicle_type": "cv",
+          "home_depot_id": "D_beijing",
+          "node_sequence": [
+            "D_beijing",
+            "C012",
+            "C025",
+            "C002",
+            "C024",
+            "C010",
+            "C023",
+            "C019",
+            "D_beijing"
+          ]
+        },
+        {
+          "vehicle_id": "CH81-0003",
+          "vehicle_type": "cv",
+          "home_depot_id": "D_beijing",
+          "node_sequence": [
+            "D_beijing",
+            "C004",
+            "C014",
+            "C013",
+            "C011",
+            "C017",
+            "D_beijing"
+          ]
+        },
+        {
+          "vehicle_id": "CH81-0004",
+          "vehicle_type": "ev",
+          "home_depot_id": "D_beijing",
+          "node_sequence": [
+            "D_beijing",
+            "C005",
+            "C008",
+            "C006",
+            "D_beijing"
+          ]
+        },
+        {
+          "vehicle_id": "CH81-0005",
+          "vehicle_type": "ev",
+          "home_depot_id": "D_beijing",
+          "node_sequence": [
+            "D_beijing",
+            "C021",
+            "C015",
+            "C009",
+            "C020",
+            "D_beijing"
+          ]
+        }
+      ],
+      "charging_actions": [
+        {
+          "vehicle_id": "CH81-0004",
+          "station_id": "D_beijing",
+          "energy_kwh": 43.36617591739606,
+          "occupancy_minutes": 118.27138886562562,
+          "charge_start_second": 118800.0,
+          "charge_day_offset": 0,
+          "start_energy_kwh": 0.0,
+          "end_energy_kwh": 43.36617591739606,
+          "charging_curve_id": "NL90_mild"
+        },
+        {
+          "vehicle_id": "CH81-0005",
+          "station_id": "D_beijing",
+          "energy_kwh": 31.20254420268107,
+          "occupancy_minutes": 85.09784782549383,
+          "charge_start_second": 59384.82768,
+          "charge_day_offset": 0,
+          "start_energy_kwh": 0.0,
+          "end_energy_kwh": 31.20254420268107,
+          "charging_curve_id": "NL90_mild"
+        }
+      ],
+      "cross_site_services": []
+    },
+    "independent_breakdown": {
+      "total_cost": 1464.352359919282,
+      "cost_fix": 850.0,
+      "cost_km": 308.9653906494079,
+      "cost_fuel": 221.73708081998535,
+      "cost_elec": 75.32040164595094,
+      "cost_occ": 0.0,
+      "cost_transship": 0.0,
+      "cost_carbon": 8.329486803937806,
+      "E_total": 111.03021599490543,
+      "E_cv_direct": 87.30067544074352,
+      "E_ev_indirect": 23.729540554161908,
+      "n_veh_cv": 3,
+      "n_veh_ev": 2,
+      "distance_total": 421671.612945569,
+      "distance_cv": 240412.817962515,
+      "distance_ev": 181258.794983054,
+      "fuel_liters": 32.27613985734867,
+      "electricity_kwh": 74.56872012007713,
+      "depot_charging_kwh": 74.56872012007713,
+      "station_charging_kwh": 0,
+      "carbon_quota_kg": 0.0,
+      "ev_drive_kwh": 74.56872012007713
+    },
+    "view_epochs": {
+      "cv_only": {
+        "seed": 2,
+        "runtime_seconds": 2.0,
+        "warm_elite_count": 0,
+        "population_size": 103,
+        "unique_feasible_population_size": 40,
+        "archive_candidates_completed": 24,
+        "archive_completion_failures": [],
+        "hgs_iterations": 1961,
+        "proxy_best_exact_objective": 1556.6689034506212,
+        "selected_exact_objectives": [
+          1518.7147683026326,
+          1519.2989074434322,
+          1519.8212252047365,
+          1521.4785272465406,
+          1521.5432206178127,
+          1522.6801112039748,
+          1523.491155609223,
+          1523.8942475976253
+        ]
+      },
+      "naive_ev": {
+        "seed": 2,
+        "runtime_seconds": 2.0,
+        "warm_elite_count": 0,
+        "population_size": 103,
+        "unique_feasible_population_size": 34,
+        "archive_candidates_completed": 24,
+        "archive_completion_failures": [],
+        "hgs_iterations": 1802,
+        "proxy_best_exact_objective": 1464.352359919282,
+        "selected_exact_objectives": [
+          1464.352359919282,
+          1465.441558782389,
+          1465.8453036815408,
+          1467.0031247418262,
+          1467.8568157632237,
+          1468.9507720215847,
+          1468.959517937527,
+          1469.8869717146945
+        ]
+      },
+      "mechanism_ev": {
+        "seed": 2,
+        "runtime_seconds": 2.0,
+        "warm_elite_count": 0,
+        "population_size": 62,
+        "unique_feasible_population_size": 28,
+        "archive_candidates_completed": 24,
+        "archive_completion_failures": [],
+        "hgs_iterations": 1752,
+        "proxy_best_exact_objective": 1464.352359919282,
+        "selected_exact_objectives": [
+          1464.352359919282,
+          1465.441558782389,
+          1465.8453036815408,
+          1467.0031247418262,
+          1467.8568157632237,
+          1468.9507720215847,
+          1469.9973639993898,
+          1470.0487168006334
+        ]
+      }
+    }
+  },
+  "cn-jjj-25c-03-V2-LOCATIONS::seed-3": {
+    "stats": {
+      "algorithm": "MV-HGS-SP",
+      "algorithm_name_en": "Multi-View Hybrid Genetic Search with Exact Route-Pool Recombination",
+      "algorithm_name_zh": "多视角混合遗传搜索—精确路线池重组算法",
+      "story": "three genuine HGS populations generate complementary routes; the full nonlinear ReSETP model selects elites; an exact set-partitioning layer recombines routes across views",
+      "seed": 3,
+      "hgs_seconds_per_view": 2.0,
+      "view_count": 3,
+      "exact_elites_per_view": 8,
+      "archive_candidates_per_view": 24,
+      "parent_solution_count": 24,
+      "route_pool_size": 46,
+      "best_parent_objective": 1464.352359919282,
+      "selected_source": "best_exact_hgs_parent",
+      "final_objective": 1464.352359919282,
+      "strict_recombination_improvement": false,
+      "improvement_over_best_parent": 0.0,
+      "set_partitioning": {
+        "solver": "scipy.optimize.milp/HiGHS",
+        "success": true,
+        "status": 0,
+        "message": "Optimization terminated successfully. (HiGHS Status 7: Optimal)",
+        "objective": 1464.352359919282,
+        "mip_gap": 0.0,
+        "selected_route_count": 5,
+        "independent_violation_count": 0,
+        "recombined_exact_objective": 1464.352359919282
+      },
+      "measured_elapsed_seconds": 8.431862541998271
+    },
+    "solution": {
+      "routes": [
+        {
+          "vehicle_id": "CH81-0001",
+          "vehicle_type": "cv",
+          "home_depot_id": "D_beijing",
+          "node_sequence": [
+            "D_beijing",
+            "C007",
+            "C016",
+            "C022",
+            "C003",
+            "C001",
+            "C018",
+            "D_beijing"
+          ]
+        },
+        {
+          "vehicle_id": "CH81-0002",
+          "vehicle_type": "cv",
+          "home_depot_id": "D_beijing",
+          "node_sequence": [
+            "D_beijing",
+            "C004",
+            "C014",
+            "C013",
+            "C011",
+            "C017",
+            "D_beijing"
+          ]
+        },
+        {
+          "vehicle_id": "CH81-0003",
+          "vehicle_type": "cv",
+          "home_depot_id": "D_beijing",
+          "node_sequence": [
+            "D_beijing",
+            "C012",
+            "C025",
+            "C002",
+            "C024",
+            "C010",
+            "C023",
+            "C019",
+            "D_beijing"
+          ]
+        },
+        {
+          "vehicle_id": "CH81-0004",
+          "vehicle_type": "ev",
+          "home_depot_id": "D_beijing",
+          "node_sequence": [
+            "D_beijing",
+            "C005",
+            "C008",
+            "C006",
+            "D_beijing"
+          ]
+        },
+        {
+          "vehicle_id": "CH81-0005",
+          "vehicle_type": "ev",
+          "home_depot_id": "D_beijing",
+          "node_sequence": [
+            "D_beijing",
+            "C021",
+            "C015",
+            "C009",
+            "C020",
+            "D_beijing"
+          ]
+        }
+      ],
+      "charging_actions": [
+        {
+          "vehicle_id": "CH81-0004",
+          "station_id": "D_beijing",
+          "energy_kwh": 43.36617591739606,
+          "occupancy_minutes": 118.27138886562562,
+          "charge_start_second": 118800.0,
+          "charge_day_offset": 0,
+          "start_energy_kwh": 0.0,
+          "end_energy_kwh": 43.36617591739606,
+          "charging_curve_id": "NL90_mild"
+        },
+        {
+          "vehicle_id": "CH81-0005",
+          "station_id": "D_beijing",
+          "energy_kwh": 31.20254420268107,
+          "occupancy_minutes": 85.09784782549383,
+          "charge_start_second": 59384.82768,
+          "charge_day_offset": 0,
+          "start_energy_kwh": 0.0,
+          "end_energy_kwh": 31.20254420268107,
+          "charging_curve_id": "NL90_mild"
+        }
+      ],
+      "cross_site_services": []
+    },
+    "independent_breakdown": {
+      "total_cost": 1464.352359919282,
+      "cost_fix": 850.0,
+      "cost_km": 308.9653906494079,
+      "cost_fuel": 221.73708081998535,
+      "cost_elec": 75.32040164595094,
+      "cost_occ": 0.0,
+      "cost_transship": 0.0,
+      "cost_carbon": 8.329486803937806,
+      "E_total": 111.03021599490543,
+      "E_cv_direct": 87.30067544074352,
+      "E_ev_indirect": 23.729540554161908,
+      "n_veh_cv": 3,
+      "n_veh_ev": 2,
+      "distance_total": 421671.612945569,
+      "distance_cv": 240412.817962515,
+      "distance_ev": 181258.794983054,
+      "fuel_liters": 32.27613985734867,
+      "electricity_kwh": 74.56872012007713,
+      "depot_charging_kwh": 74.56872012007713,
+      "station_charging_kwh": 0,
+      "carbon_quota_kg": 0.0,
+      "ev_drive_kwh": 74.56872012007713
+    },
+    "view_epochs": {
+      "cv_only": {
+        "seed": 3,
+        "runtime_seconds": 2.0,
+        "warm_elite_count": 0,
+        "population_size": 116,
+        "unique_feasible_population_size": 42,
+        "archive_candidates_completed": 24,
+        "archive_completion_failures": [],
+        "hgs_iterations": 1939,
+        "proxy_best_exact_objective": 1556.6689034506212,
+        "selected_exact_objectives": [
+          1518.7147683026326,
+          1519.2989074434322,
+          1519.8212252047365,
+          1519.9436748638525,
+          1520.1915921995242,
+          1521.2126319919785,
+          1521.3388752811152,
+          1522.0962145909423
+        ]
+      },
+      "naive_ev": {
+        "seed": 3,
+        "runtime_seconds": 2.0,
+        "warm_elite_count": 0,
+        "population_size": 85,
+        "unique_feasible_population_size": 29,
+        "archive_candidates_completed": 24,
+        "archive_completion_failures": [],
+        "hgs_iterations": 1783,
+        "proxy_best_exact_objective": 1464.352359919282,
+        "selected_exact_objectives": [
+          1464.352359919282,
+          1464.5266079409732,
+          1465.441558782389,
+          1465.8453036815408,
+          1467.0031247418262,
+          1467.8568157632237,
+          1468.9507720215847,
+          1468.959517937527
+        ]
+      },
+      "mechanism_ev": {
+        "seed": 3,
+        "runtime_seconds": 2.0,
+        "warm_elite_count": 0,
+        "population_size": 89,
+        "unique_feasible_population_size": 37,
+        "archive_candidates_completed": 24,
+        "archive_completion_failures": [],
+        "hgs_iterations": 1767,
+        "proxy_best_exact_objective": 1464.352359919282,
+        "selected_exact_objectives": [
+          1464.352359919282,
+          1464.5266079409732,
+          1465.441558782389,
+          1465.8453036815408,
+          1467.0031247418262,
+          1467.8568157632237,
+          1468.9507720215847,
+          1469.3684155572973
+        ]
+      }
+    }
+  },
+  "cn-prd-75c-03-V2-LOCATIONS::seed-1": {
+    "stats": {
+      "algorithm": "MV-HGS-SP",
+      "algorithm_name_en": "Multi-View Hybrid Genetic Search with Exact Route-Pool Recombination",
+      "algorithm_name_zh": "多视角混合遗传搜索—精确路线池重组算法",
+      "story": "three genuine HGS populations generate complementary routes; the full nonlinear ReSETP model selects elites; an exact set-partitioning layer recombines routes across views",
+      "seed": 1,
+      "hgs_seconds_per_view": 2.0,
+      "view_count": 3,
+      "exact_elites_per_view": 8,
+      "archive_candidates_per_view": 24,
+      "parent_solution_count": 24,
+      "route_pool_size": 214,
+      "best_parent_objective": 3909.873746936919,
+      "selected_source": "set_partitioning_recombination",
+      "final_objective": 3904.797552532043,
+      "strict_recombination_improvement": true,
+      "improvement_over_best_parent": 5.076194404875878,
+      "set_partitioning": {
+        "solver": "scipy.optimize.milp/HiGHS",
+        "success": true,
+        "status": 0,
+        "message": "Optimization terminated successfully. (HiGHS Status 7: Optimal)",
+        "objective": 3904.7975525320285,
+        "mip_gap": 0.0,
+        "selected_route_count": 14,
+        "independent_violation_count": 0,
+        "recombined_exact_objective": 3904.797552532043
+      },
+      "measured_elapsed_seconds": 15.489238834008574
+    },
+    "solution": {
+      "routes": [
+        {
+          "vehicle_id": "CH81-0001",
+          "vehicle_type": "cv",
+          "home_depot_id": "D_guangzhou",
+          "node_sequence": [
+            "D_guangzhou",
+            "C002",
+            "C015",
+            "C019",
+            "C026",
+            "C013",
+            "D_guangzhou"
+          ]
+        },
+        {
+          "vehicle_id": "CH81-0002",
+          "vehicle_type": "cv",
+          "home_depot_id": "D_shenzhen",
+          "node_sequence": [
+            "D_shenzhen",
+            "C052",
+            "C053",
+            "C072",
+            "C043",
+            "C042",
+            "D_shenzhen"
+          ]
+        },
+        {
+          "vehicle_id": "CH81-0003",
+          "vehicle_type": "ev",
+          "home_depot_id": "D_shenzhen",
+          "node_sequence": [
+            "D_shenzhen",
+            "C040",
+            "C045",
+            "C073",
+            "D_shenzhen"
+          ]
+        },
+        {
+          "vehicle_id": "CH81-0004",
+          "vehicle_type": "cv",
+          "home_depot_id": "D_guangzhou",
+          "node_sequence": [
+            "D_guangzhou",
+            "C017",
+            "C008",
+            "C024",
+            "C025",
+            "C007",
+            "C031",
+            "D_guangzhou"
+          ]
+        },
+        {
+          "vehicle_id": "CH81-0005",
+          "vehicle_type": "cv",
+          "home_depot_id": "D_guangzhou",
+          "node_sequence": [
+            "D_guangzhou",
+            "C020",
+            "C003",
+            "C014",
+            "C028",
+            "C004",
+            "C023",
+            "D_guangzhou"
+          ]
+        },
+        {
+          "vehicle_id": "CH81-0006",
+          "vehicle_type": "cv",
+          "home_depot_id": "D_guangzhou",
+          "node_sequence": [
+            "D_guangzhou",
+            "C021",
+            "C034",
+            "C009",
+            "C018",
+            "C001",
+            "C022",
+            "D_guangzhou"
+          ]
+        },
+        {
+          "vehicle_id": "CH81-0007",
+          "vehicle_type": "cv",
+          "home_depot_id": "D_shenzhen",
+          "node_sequence": [
+            "D_shenzhen",
+            "C057",
+            "C047",
+            "C049",
+            "C044",
+            "C066",
+            "D_shenzhen"
+          ]
+        },
+        {
+          "vehicle_id": "CH81-0008",
+          "vehicle_type": "cv",
+          "home_depot_id": "D_shenzhen",
+          "node_sequence": [
+            "D_shenzhen",
+            "C071",
+            "C039",
+            "C070",
+            "C064",
+            "C060",
+            "D_shenzhen"
+          ]
+        },
+        {
+          "vehicle_id": "CH81-0009",
+          "vehicle_type": "cv",
+          "home_depot_id": "D_guangzhou",
+          "node_sequence": [
+            "D_guangzhou",
+            "C029",
+            "C033",
+            "C011",
+            "C030",
+            "C032",
+            "C006",
+            "D_guangzhou"
+          ]
+        },
+        {
+          "vehicle_id": "CH81-0010",
+          "vehicle_type": "cv",
+          "home_depot_id": "D_guangzhou",
+          "node_sequence": [
+            "D_guangzhou",
+            "C010",
+            "C005",
+            "C016",
+            "C012",
+            "C027",
+            "D_guangzhou"
+          ]
+        },
+        {
+          "vehicle_id": "CH81-0011",
+          "vehicle_type": "cv",
+          "home_depot_id": "D_shenzhen",
+          "node_sequence": [
+            "D_shenzhen",
+            "C069",
+            "C051",
+            "C036",
+            "C054",
+            "C059",
+            "C035",
+            "D_shenzhen"
+          ]
+        },
+        {
+          "vehicle_id": "CH81-0012",
+          "vehicle_type": "cv",
+          "home_depot_id": "D_shenzhen",
+          "node_sequence": [
+            "D_shenzhen",
+            "C063",
+            "C062",
+            "C055",
+            "C068",
+            "C048",
+            "C056",
+            "D_shenzhen"
+          ]
+        },
+        {
+          "vehicle_id": "CH81-0013",
+          "vehicle_type": "cv",
+          "home_depot_id": "D_shenzhen",
+          "node_sequence": [
+            "D_shenzhen",
+            "C037",
+            "C038",
+            "C050",
+            "C067",
+            "C058",
+            "D_shenzhen"
+          ]
+        },
+        {
+          "vehicle_id": "CH81-0014",
+          "vehicle_type": "cv",
+          "home_depot_id": "D_shenzhen",
+          "node_sequence": [
+            "D_shenzhen",
+            "C061",
+            "C075",
+            "C065",
+            "C041",
+            "C074",
+            "C046",
+            "D_shenzhen"
+          ]
+        }
+      ],
+      "charging_actions": [
+        {
+          "vehicle_id": "CH81-0003",
+          "station_id": "D_shenzhen",
+          "energy_kwh": 18.447970531017006,
+          "occupancy_minutes": 50.31264690277365,
+          "charge_start_second": 129600.0,
+          "charge_day_offset": 0,
+          "start_energy_kwh": 0.0,
+          "end_energy_kwh": 18.447970531017006,
+          "charging_curve_id": "NL90_mild"
+        }
+      ],
+      "cross_site_services": []
+    },
+    "independent_breakdown": {
+      "total_cost": 3904.797552532043,
+      "cost_fix": 2380.0,
+      "cost_km": 709.8420861771697,
+      "cost_fuel": 777.8366065749293,
+      "cost_elec": 13.97929556932558,
+      "cost_occ": 0.0,
+      "cost_transship": 0.0,
+      "cost_carbon": 23.13956421061836,
+      "E_total": 308.4452707360485,
+      "E_cv_direct": 308.037570587313,
+      "E_ev_indirect": 0.40770014873547544,
+      "n_veh_cv": 13,
+      "n_veh_ev": 1,
+      "distance_total": 918178.283562551,
+      "distance_cv": 860569.419911459,
+      "distance_ev": 57608.863651092,
+      "fuel_liters": 113.88530110906724,
+      "electricity_kwh": 18.447970531017006,
+      "depot_charging_kwh": 18.447970531017006,
+      "station_charging_kwh": 0,
+      "carbon_quota_kg": 0.0,
+      "ev_drive_kwh": 18.447970531017006
+    },
+    "view_epochs": {
+      "cv_only": {
+        "seed": 1,
+        "runtime_seconds": 2.0,
+        "warm_elite_count": 0,
+        "population_size": 95,
+        "unique_feasible_population_size": 36,
+        "archive_candidates_completed": 24,
+        "archive_completion_failures": [],
+        "hgs_iterations": 523,
+        "proxy_best_exact_objective": 3945.5212123231818,
+        "selected_exact_objectives": [
+          3913.379402630132,
+          3945.5212123231818,
+          3949.2557420658673,
+          3949.837457749877,
+          3950.145163987509,
+          3950.2571647051636,
+          3950.3364550256015,
+          3950.5423190334823
+        ]
+      },
+      "naive_ev": {
+        "seed": 1,
+        "runtime_seconds": 2.0,
+        "warm_elite_count": 0,
+        "population_size": 101,
+        "unique_feasible_population_size": 47,
+        "archive_candidates_completed": 24,
+        "archive_completion_failures": [],
+        "hgs_iterations": 430,
+        "proxy_best_exact_objective": 3909.873746936919,
+        "selected_exact_objectives": [
+          3909.873746936919,
+          3915.20019679697,
+          3917.4413306292445,
+          3918.4879724298376,
+          3918.934709148967,
+          3919.926865373457,
+          3920.1118601261833,
+          3920.615204211002
+        ]
+      },
+      "mechanism_ev": {
+        "seed": 1,
+        "runtime_seconds": 2.0,
+        "warm_elite_count": 0,
+        "population_size": 101,
+        "unique_feasible_population_size": 40,
+        "archive_candidates_completed": 24,
+        "archive_completion_failures": [],
+        "hgs_iterations": 391,
+        "proxy_best_exact_objective": 4120.188635155384,
+        "selected_exact_objectives": [
+          4112.402076567019,
+          4120.188635155384,
+          4120.351815182012,
+          4121.223567318266,
+          4121.950675639872,
+          4125.963268684689,
+          4150.48331695832,
+          4157.672671805529
+        ]
+      }
+    }
+  },
+  "cn-prd-75c-03-V2-LOCATIONS::seed-2": {
+    "stats": {
+      "algorithm": "MV-HGS-SP",
+      "algorithm_name_en": "Multi-View Hybrid Genetic Search with Exact Route-Pool Recombination",
+      "algorithm_name_zh": "多视角混合遗传搜索—精确路线池重组算法",
+      "story": "three genuine HGS populations generate complementary routes; the full nonlinear ReSETP model selects elites; an exact set-partitioning layer recombines routes across views",
+      "seed": 2,
+      "hgs_seconds_per_view": 2.0,
+      "view_count": 3,
+      "exact_elites_per_view": 8,
+      "archive_candidates_per_view": 24,
+      "parent_solution_count": 24,
+      "route_pool_size": 252,
+      "best_parent_objective": 3908.8177925188397,
+      "selected_source": "set_partitioning_recombination",
+      "final_objective": 3907.7466905952183,
+      "strict_recombination_improvement": true,
+      "improvement_over_best_parent": 1.071101923621427,
+      "set_partitioning": {
+        "solver": "scipy.optimize.milp/HiGHS",
+        "success": true,
+        "status": 0,
+        "message": "Optimization terminated successfully. (HiGHS Status 7: Optimal)",
+        "objective": 3907.746690595209,
+        "mip_gap": 0.0,
+        "selected_route_count": 14,
+        "independent_violation_count": 0,
+        "recombined_exact_objective": 3907.7466905952183
+      },
+      "measured_elapsed_seconds": 17.39559533301508
+    },
+    "solution": {
+      "routes": [
+        {
+          "vehicle_id": "CH81-0001",
+          "vehicle_type": "cv",
+          "home_depot_id": "D_guangzhou",
+          "node_sequence": [
+            "D_guangzhou",
+            "C002",
+            "C015",
+            "C032",
+            "C016",
+            "C012",
+            "C013",
+            "D_guangzhou"
+          ]
+        },
+        {
+          "vehicle_id": "CH81-0002",
+          "vehicle_type": "cv",
+          "home_depot_id": "D_guangzhou",
+          "node_sequence": [
+            "D_guangzhou",
+            "C010",
+            "C021",
+            "C004",
+            "C023",
+            "C005",
+            "C027",
+            "D_guangzhou"
+          ]
+        },
+        {
+          "vehicle_id": "CH81-0003",
+          "vehicle_type": "cv",
+          "home_depot_id": "D_guangzhou",
+          "node_sequence": [
+            "D_guangzhou",
+            "C008",
+            "C003",
+            "C014",
+            "C024",
+            "C025",
+            "C026",
+            "D_guangzhou"
+          ]
+        },
+        {
+          "vehicle_id": "CH81-0004",
+          "vehicle_type": "cv",
+          "home_depot_id": "D_guangzhou",
+          "node_sequence": [
+            "D_guangzhou",
+            "C028",
+            "C034",
+            "C009",
+            "C018",
+            "C001",
+            "C022",
+            "D_guangzhou"
+          ]
+        },
+        {
+          "vehicle_id": "CH81-0005",
+          "vehicle_type": "cv",
+          "home_depot_id": "D_shenzhen",
+          "node_sequence": [
+            "D_shenzhen",
+            "C052",
+            "C053",
+            "C072",
+            "C056",
+            "C066",
+            "D_shenzhen"
+          ]
+        },
+        {
+          "vehicle_id": "CH81-0006",
+          "vehicle_type": "ev",
+          "home_depot_id": "D_shenzhen",
+          "node_sequence": [
+            "D_shenzhen",
+            "C040",
+            "C045",
+            "C073",
+            "D_shenzhen"
+          ]
+        },
+        {
+          "vehicle_id": "CH81-0007",
+          "vehicle_type": "cv",
+          "home_depot_id": "D_shenzhen",
+          "node_sequence": [
+            "D_shenzhen",
+            "C051",
+            "C057",
+            "C075",
+            "C047",
+            "C041",
+            "C046",
+            "D_shenzhen"
+          ]
+        },
+        {
+          "vehicle_id": "CH81-0008",
+          "vehicle_type": "cv",
+          "home_depot_id": "D_shenzhen",
+          "node_sequence": [
+            "D_shenzhen",
+            "C071",
+            "C039",
+            "C070",
+            "C064",
+            "D_shenzhen"
+          ]
+        },
+        {
+          "vehicle_id": "CH81-0009",
+          "vehicle_type": "cv",
+          "home_depot_id": "D_shenzhen",
+          "node_sequence": [
+            "D_shenzhen",
+            "C069",
+            "C036",
+            "C054",
+            "C059",
+            "C035",
+            "C060",
+            "D_shenzhen"
+          ]
+        },
+        {
+          "vehicle_id": "CH81-0010",
+          "vehicle_type": "cv",
+          "home_depot_id": "D_shenzhen",
+          "node_sequence": [
+            "D_shenzhen",
+            "C074",
+            "C044",
+            "C048",
+            "C055",
+            "C068",
+            "C050",
+            "D_shenzhen"
+          ]
+        },
+        {
+          "vehicle_id": "CH81-0011",
+          "vehicle_type": "cv",
+          "home_depot_id": "D_shenzhen",
+          "node_sequence": [
+            "D_shenzhen",
+            "C061",
+            "C063",
+            "C065",
+            "C062",
+            "C067",
+            "C058",
+            "D_shenzhen"
+          ]
+        },
+        {
+          "vehicle_id": "CH81-0012",
+          "vehicle_type": "cv",
+          "home_depot_id": "D_shenzhen",
+          "node_sequence": [
+            "D_shenzhen",
+            "C037",
+            "C038",
+            "C049",
+            "C043",
+            "C042",
+            "D_shenzhen"
+          ]
+        },
+        {
+          "vehicle_id": "CH81-0013",
+          "vehicle_type": "cv",
+          "home_depot_id": "D_guangzhou",
+          "node_sequence": [
+            "D_guangzhou",
+            "C029",
+            "C033",
+            "C011",
+            "C019",
+            "C006",
+            "D_guangzhou"
+          ]
+        },
+        {
+          "vehicle_id": "CH81-0014",
+          "vehicle_type": "cv",
+          "home_depot_id": "D_guangzhou",
+          "node_sequence": [
+            "D_guangzhou",
+            "C017",
+            "C020",
+            "C007",
+            "C030",
+            "C031",
+            "D_guangzhou"
+          ]
+        }
+      ],
+      "charging_actions": [
+        {
+          "vehicle_id": "CH81-0006",
+          "station_id": "D_shenzhen",
+          "energy_kwh": 18.447970531017006,
+          "occupancy_minutes": 50.31264690277365,
+          "charge_start_second": 129600.0,
+          "charge_day_offset": 0,
+          "start_energy_kwh": 0.0,
+          "end_energy_kwh": 18.447970531017006,
+          "charging_curve_id": "NL90_mild"
+        }
+      ],
+      "cross_site_services": []
+    },
+    "independent_breakdown": {
+      "total_cost": 3907.7466905952183,
+      "cost_fix": 2380.0,
+      "cost_km": 710.2771729351069,
+      "cost_fuel": 780.2781221689353,
+      "cost_elec": 13.97929556932558,
+      "cost_occ": 0.0,
+      "cost_transship": 0.0,
+      "cost_carbon": 23.212099921850477,
+      "E_total": 309.41215571648195,
+      "E_cv_direct": 309.00445556774645,
+      "E_ev_indirect": 0.40770014873547544,
+      "n_veh_cv": 13,
+      "n_veh_ev": 1,
+      "distance_total": 918736.087098368,
+      "distance_cv": 861127.223447276,
+      "distance_ev": 57608.863651092,
+      "fuel_liters": 114.24277044933166,
+      "electricity_kwh": 18.447970531017006,
+      "depot_charging_kwh": 18.447970531017006,
+      "station_charging_kwh": 0,
+      "carbon_quota_kg": 0.0,
+      "ev_drive_kwh": 18.447970531017006
+    },
+    "view_epochs": {
+      "cv_only": {
+        "seed": 2,
+        "runtime_seconds": 2.0,
+        "warm_elite_count": 0,
+        "population_size": 89,
+        "unique_feasible_population_size": 40,
+        "archive_candidates_completed": 24,
+        "archive_completion_failures": [],
+        "hgs_iterations": 506,
+        "proxy_best_exact_objective": 3949.5707384753096,
+        "selected_exact_objectives": [
+          3908.8177925188397,
+          3916.811500670854,
+          3949.5707384753096,
+          3949.978947458406,
+          3950.994137102793,
+          3951.4583768171333,
+          3951.533847372558,
+          3951.6855825364564
+        ]
+      },
+      "naive_ev": {
+        "seed": 2,
+        "runtime_seconds": 2.0,
+        "warm_elite_count": 0,
+        "population_size": 93,
+        "unique_feasible_population_size": 60,
+        "archive_candidates_completed": 24,
+        "archive_completion_failures": [],
+        "hgs_iterations": 414,
+        "proxy_best_exact_objective": 3935.1666291803613,
+        "selected_exact_objectives": [
+          3928.8490232031572,
+          3931.181579072639,
+          3932.294351144216,
+          3934.1693707520194,
+          3935.1666291803613,
+          3941.6787977269123,
+          3942.287274515522,
+          3944.5712295272483
+        ]
+      },
+      "mechanism_ev": {
+        "seed": 2,
+        "runtime_seconds": 2.0,
+        "warm_elite_count": 0,
+        "population_size": 101,
+        "unique_feasible_population_size": 39,
+        "archive_candidates_completed": 24,
+        "archive_completion_failures": [],
+        "hgs_iterations": 394,
+        "proxy_best_exact_objective": 4077.8224930272067,
+        "selected_exact_objectives": [
+          4077.8224930272067,
+          4081.393530438045,
+          4081.6239612491995,
+          4086.637846311166,
+          4092.762862138732,
+          4092.92654371856,
+          4094.6039845801097,
+          4099.0657788370545
+        ]
+      }
+    }
+  },
+  "cn-prd-75c-03-V2-LOCATIONS::seed-3": {
+    "stats": {
+      "algorithm": "MV-HGS-SP",
+      "algorithm_name_en": "Multi-View Hybrid Genetic Search with Exact Route-Pool Recombination",
+      "algorithm_name_zh": "多视角混合遗传搜索—精确路线池重组算法",
+      "story": "three genuine HGS populations generate complementary routes; the full nonlinear ReSETP model selects elites; an exact set-partitioning layer recombines routes across views",
+      "seed": 3,
+      "hgs_seconds_per_view": 2.0,
+      "view_count": 3,
+      "exact_elites_per_view": 8,
+      "archive_candidates_per_view": 24,
+      "parent_solution_count": 24,
+      "route_pool_size": 271,
+      "best_parent_objective": 3912.946300479351,
+      "selected_source": "set_partitioning_recombination",
+      "final_objective": 3904.0469122356967,
+      "strict_recombination_improvement": true,
+      "improvement_over_best_parent": 8.899388243654357,
+      "set_partitioning": {
+        "solver": "scipy.optimize.milp/HiGHS",
+        "success": true,
+        "status": 0,
+        "message": "Optimization terminated successfully. (HiGHS Status 7: Optimal)",
+        "objective": 3904.0469122357167,
+        "mip_gap": 0.0,
+        "selected_route_count": 14,
+        "independent_violation_count": 0,
+        "recombined_exact_objective": 3904.0469122356967
+      },
+      "measured_elapsed_seconds": 17.705372750002425
+    },
+    "solution": {
+      "routes": [
+        {
+          "vehicle_id": "CH81-0001",
+          "vehicle_type": "ev",
+          "home_depot_id": "D_shenzhen",
+          "node_sequence": [
+            "D_shenzhen",
+            "C040",
+            "C045",
+            "C073",
+            "D_shenzhen"
+          ]
+        },
+        {
+          "vehicle_id": "CH81-0002",
+          "vehicle_type": "cv",
+          "home_depot_id": "D_guangzhou",
+          "node_sequence": [
+            "D_guangzhou",
+            "C020",
+            "C017",
+            "C003",
+            "C014",
+            "C023",
+            "D_guangzhou"
+          ]
+        },
+        {
+          "vehicle_id": "CH81-0003",
+          "vehicle_type": "cv",
+          "home_depot_id": "D_guangzhou",
+          "node_sequence": [
+            "D_guangzhou",
+            "C029",
+            "C010",
+            "C021",
+            "C004",
+            "C033",
+            "D_guangzhou"
+          ]
+        },
+        {
+          "vehicle_id": "CH81-0004",
+          "vehicle_type": "cv",
+          "home_depot_id": "D_guangzhou",
+          "node_sequence": [
+            "D_guangzhou",
+            "C008",
+            "C024",
+            "C025",
+            "C026",
+            "C013",
+            "D_guangzhou"
+          ]
+        },
+        {
+          "vehicle_id": "CH81-0005",
+          "vehicle_type": "cv",
+          "home_depot_id": "D_guangzhou",
+          "node_sequence": [
+            "D_guangzhou",
+            "C028",
+            "C034",
+            "C009",
+            "C018",
+            "C001",
+            "C022",
+            "D_guangzhou"
+          ]
+        },
+        {
+          "vehicle_id": "CH81-0006",
+          "vehicle_type": "cv",
+          "home_depot_id": "D_shenzhen",
+          "node_sequence": [
+            "D_shenzhen",
+            "C051",
+            "C057",
+            "C075",
+            "C047",
+            "C049",
+            "C044",
+            "D_shenzhen"
+          ]
+        },
+        {
+          "vehicle_id": "CH81-0007",
+          "vehicle_type": "cv",
+          "home_depot_id": "D_guangzhou",
+          "node_sequence": [
+            "D_guangzhou",
+            "C011",
+            "C030",
+            "C007",
+            "C031",
+            "C032",
+            "C006",
+            "C019",
+            "D_guangzhou"
+          ]
+        },
+        {
+          "vehicle_id": "CH81-0008",
+          "vehicle_type": "cv",
+          "home_depot_id": "D_guangzhou",
+          "node_sequence": [
+            "D_guangzhou",
+            "C002",
+            "C015",
+            "C005",
+            "C016",
+            "C012",
+            "C027",
+            "D_guangzhou"
+          ]
+        },
+        {
+          "vehicle_id": "CH81-0009",
+          "vehicle_type": "cv",
+          "home_depot_id": "D_shenzhen",
+          "node_sequence": [
+            "D_shenzhen",
+            "C052",
+            "C053",
+            "C072",
+            "C043",
+            "C042",
+            "D_shenzhen"
+          ]
+        },
+        {
+          "vehicle_id": "CH81-0010",
+          "vehicle_type": "cv",
+          "home_depot_id": "D_shenzhen",
+          "node_sequence": [
+            "D_shenzhen",
+            "C037",
+            "C038",
+            "C074",
+            "C041",
+            "C046",
+            "D_shenzhen"
+          ]
+        },
+        {
+          "vehicle_id": "CH81-0011",
+          "vehicle_type": "cv",
+          "home_depot_id": "D_shenzhen",
+          "node_sequence": [
+            "D_shenzhen",
+            "C069",
+            "C036",
+            "C054",
+            "C059",
+            "C067",
+            "C058",
+            "D_shenzhen"
+          ]
+        },
+        {
+          "vehicle_id": "CH81-0012",
+          "vehicle_type": "cv",
+          "home_depot_id": "D_shenzhen",
+          "node_sequence": [
+            "D_shenzhen",
+            "C071",
+            "C039",
+            "C070",
+            "C064",
+            "C060",
+            "D_shenzhen"
+          ]
+        },
+        {
+          "vehicle_id": "CH81-0013",
+          "vehicle_type": "cv",
+          "home_depot_id": "D_shenzhen",
+          "node_sequence": [
+            "D_shenzhen",
+            "C061",
+            "C062",
+            "C035",
+            "C056",
+            "C066",
+            "D_shenzhen"
+          ]
+        },
+        {
+          "vehicle_id": "CH81-0014",
+          "vehicle_type": "cv",
+          "home_depot_id": "D_shenzhen",
+          "node_sequence": [
+            "D_shenzhen",
+            "C063",
+            "C065",
+            "C068",
+            "C055",
+            "C048",
+            "C050",
+            "D_shenzhen"
+          ]
+        }
+      ],
+      "charging_actions": [
+        {
+          "vehicle_id": "CH81-0001",
+          "station_id": "D_shenzhen",
+          "energy_kwh": 18.447970531017006,
+          "occupancy_minutes": 50.31264690277365,
+          "charge_start_second": 129600.0,
+          "charge_day_offset": 0,
+          "start_energy_kwh": 0.0,
+          "end_energy_kwh": 18.447970531017006,
+          "charging_curve_id": "NL90_mild"
+        }
+      ],
+      "cross_site_services": []
+    },
+    "independent_breakdown": {
+      "total_cost": 3904.0469122356967,
+      "cost_fix": 2380.0,
+      "cost_km": 708.7793426728747,
+      "cost_fuel": 778.1397049435101,
+      "cost_elec": 13.97929556932558,
+      "cost_occ": 0.0,
+      "cost_transship": 0.0,
+      "cost_carbon": 23.148569049986286,
+      "E_total": 308.5653032522832,
+      "E_cv_direct": 308.1576031035477,
+      "E_ev_indirect": 0.40770014873547544,
+      "n_veh_cv": 13,
+      "n_veh_ev": 1,
+      "distance_total": 916815.791890378,
+      "distance_cv": 859206.928239286,
+      "distance_ev": 57608.863651092,
+      "fuel_liters": 113.92967861544804,
+      "electricity_kwh": 18.447970531017006,
+      "depot_charging_kwh": 18.447970531017006,
+      "station_charging_kwh": 0,
+      "carbon_quota_kg": 0.0,
+      "ev_drive_kwh": 18.447970531017006
+    },
+    "view_epochs": {
+      "cv_only": {
+        "seed": 3,
+        "runtime_seconds": 2.0,
+        "warm_elite_count": 0,
+        "population_size": 72,
+        "unique_feasible_population_size": 44,
+        "archive_candidates_completed": 24,
+        "archive_completion_failures": [],
+        "hgs_iterations": 535,
+        "proxy_best_exact_objective": 3947.9238429725465,
+        "selected_exact_objectives": [
+          3912.946300479351,
+          3918.8057200270196,
+          3947.9238429725465,
+          3948.804808786144,
+          3949.0541271384996,
+          3949.0587914570324,
+          3949.997368467748,
+          3950.5348907020543
+        ]
+      },
+      "naive_ev": {
+        "seed": 3,
+        "runtime_seconds": 2.0,
+        "warm_elite_count": 0,
+        "population_size": 67,
+        "unique_feasible_population_size": 34,
+        "archive_candidates_completed": 24,
+        "archive_completion_failures": [],
+        "hgs_iterations": 405,
+        "proxy_best_exact_objective": 3932.6396650220227,
+        "selected_exact_objectives": [
+          3932.6396650220227,
+          3939.276061447463,
+          3944.3306021931094,
+          3950.044757686439,
+          4083.993616153255,
+          4087.614301753849,
+          4098.998127586028,
+          4099.738776451858
+        ]
+      },
+      "mechanism_ev": {
+        "seed": 3,
+        "runtime_seconds": 2.0,
+        "warm_elite_count": 0,
+        "population_size": 103,
+        "unique_feasible_population_size": 65,
+        "archive_candidates_completed": 24,
+        "archive_completion_failures": [],
+        "hgs_iterations": 367,
+        "proxy_best_exact_objective": 3936.0460864407532,
+        "selected_exact_objectives": [
+          3936.0460864407532,
+          4088.225800054501,
+          4089.9656015034807,
+          4095.2424033775856,
+          4129.2167394442085,
+          4180.043017471069,
+          4195.190333046164,
+          4197.135850016936
+        ]
+      }
+    }
+  },
+  "cn-cy-150c-03-V2-LOCATIONS::seed-1": {
+    "stats": {
+      "algorithm": "MV-HGS-SP",
+      "algorithm_name_en": "Multi-View Hybrid Genetic Search with Exact Route-Pool Recombination",
+      "algorithm_name_zh": "多视角混合遗传搜索—精确路线池重组算法",
+      "story": "three genuine HGS populations generate complementary routes; the full nonlinear ReSETP model selects elites; an exact set-partitioning layer recombines routes across views",
+      "seed": 1,
+      "hgs_seconds_per_view": 2.0,
+      "view_count": 3,
+      "exact_elites_per_view": 8,
+      "archive_candidates_per_view": 24,
+      "parent_solution_count": 24,
+      "route_pool_size": 517,
+      "best_parent_objective": 7648.988030509895,
+      "selected_source": "set_partitioning_recombination",
+      "final_objective": 7599.127931111891,
+      "strict_recombination_improvement": true,
+      "improvement_over_best_parent": 49.86009939800442,
+      "set_partitioning": {
+        "solver": "scipy.optimize.milp/HiGHS",
+        "success": true,
+        "status": 0,
+        "message": "Optimization terminated successfully. (HiGHS Status 7: Optimal)",
+        "objective": 7599.1279311149765,
+        "mip_gap": 0.0,
+        "selected_route_count": 26,
+        "independent_violation_count": 0,
+        "recombined_exact_objective": 7599.127931111891
+      },
+      "measured_elapsed_seconds": 36.96680383302737
+    },
+    "solution": {
+      "routes": [
+        {
+          "vehicle_id": "CH81-0001",
+          "vehicle_type": "cv",
+          "home_depot_id": "D_chengdu",
+          "node_sequence": [
+            "D_chengdu",
+            "C003",
+            "C063",
+            "C051",
+            "C025",
+            "C034",
+            "C049",
+            "D_chengdu"
+          ]
+        },
+        {
+          "vehicle_id": "CH81-0002",
+          "vehicle_type": "cv",
+          "home_depot_id": "D_chongqing",
+          "node_sequence": [
+            "D_chongqing",
+            "C116",
+            "C134",
+            "C079",
+            "C149",
+            "D_chongqing"
+          ]
+        },
+        {
+          "vehicle_id": "CH81-0003",
+          "vehicle_type": "cv",
+          "home_depot_id": "D_chengdu",
+          "node_sequence": [
+            "D_chengdu",
+            "C040",
+            "C048",
+            "C023",
+            "C046",
+            "C029",
+            "C039",
+            "D_chengdu"
+          ]
+        },
+        {
+          "vehicle_id": "CH81-0004",
+          "vehicle_type": "cv",
+          "home_depot_id": "D_chongqing",
+          "node_sequence": [
+            "D_chongqing",
+            "C071",
+            "C113",
+            "C123",
+            "C143",
+            "C131",
+            "C120",
+            "D_chongqing"
+          ]
+        },
+        {
+          "vehicle_id": "CH81-0005",
+          "vehicle_type": "cv",
+          "home_depot_id": "D_chongqing",
+          "node_sequence": [
+            "D_chongqing",
+            "C109",
+            "C091",
+            "C075",
+            "C065",
+            "C133",
+            "C148",
+            "C115",
+            "D_chongqing"
+          ]
+        },
+        {
+          "vehicle_id": "CH81-0006",
+          "vehicle_type": "cv",
+          "home_depot_id": "D_chongqing",
+          "node_sequence": [
+            "D_chongqing",
+            "C092",
+            "C130",
+            "C104",
+            "C102",
+            "C077",
+            "C141",
+            "D_chongqing"
+          ]
+        },
+        {
+          "vehicle_id": "CH81-0007",
+          "vehicle_type": "cv",
+          "home_depot_id": "D_chongqing",
+          "node_sequence": [
+            "D_chongqing",
+            "C135",
+            "C097",
+            "C088",
+            "C090",
+            "C111",
+            "D_chongqing"
+          ]
+        },
+        {
+          "vehicle_id": "CH81-0008",
+          "vehicle_type": "cv",
+          "home_depot_id": "D_chongqing",
+          "node_sequence": [
+            "D_chongqing",
+            "C112",
+            "C073",
+            "C087",
+            "C108",
+            "C103",
+            "D_chongqing"
+          ]
+        },
+        {
+          "vehicle_id": "CH81-0009",
+          "vehicle_type": "cv",
+          "home_depot_id": "D_chongqing",
+          "node_sequence": [
+            "D_chongqing",
+            "C067",
+            "C069",
+            "C066",
+            "C146",
+            "C098",
+            "D_chongqing"
+          ]
+        },
+        {
+          "vehicle_id": "CH81-0010",
+          "vehicle_type": "cv",
+          "home_depot_id": "D_chongqing",
+          "node_sequence": [
+            "D_chongqing",
+            "C125",
+            "C144",
+            "C072",
+            "C100",
+            "C140",
+            "D_chongqing"
+          ]
+        },
+        {
+          "vehicle_id": "CH81-0011",
+          "vehicle_type": "cv",
+          "home_depot_id": "D_chongqing",
+          "node_sequence": [
+            "D_chongqing",
+            "C074",
+            "C070",
+            "C086",
+            "C138",
+            "C124",
+            "D_chongqing"
+          ]
+        },
+        {
+          "vehicle_id": "CH81-0012",
+          "vehicle_type": "cv",
+          "home_depot_id": "D_chongqing",
+          "node_sequence": [
+            "D_chongqing",
+            "C132",
+            "C145",
+            "C093",
+            "C136",
+            "C083",
+            "C114",
+            "C122",
+            "D_chongqing"
+          ]
+        },
+        {
+          "vehicle_id": "CH81-0013",
+          "vehicle_type": "cv",
+          "home_depot_id": "D_chongqing",
+          "node_sequence": [
+            "D_chongqing",
+            "C101",
+            "C110",
+            "C142",
+            "C089",
+            "C139",
+            "D_chongqing"
+          ]
+        },
+        {
+          "vehicle_id": "CH81-0014",
+          "vehicle_type": "cv",
+          "home_depot_id": "D_chongqing",
+          "node_sequence": [
+            "D_chongqing",
+            "C127",
+            "C121",
+            "C082",
+            "C117",
+            "C099",
+            "C118",
+            "C096",
+            "D_chongqing"
+          ]
+        },
+        {
+          "vehicle_id": "CH81-0015",
+          "vehicle_type": "cv",
+          "home_depot_id": "D_chongqing",
+          "node_sequence": [
+            "D_chongqing",
+            "C150",
+            "C107",
+            "C147",
+            "C084",
+            "C080",
+            "C126",
+            "C064",
+            "C128",
+            "D_chongqing"
+          ]
+        },
+        {
+          "vehicle_id": "CH81-0016",
+          "vehicle_type": "cv",
+          "home_depot_id": "D_chongqing",
+          "node_sequence": [
+            "D_chongqing",
+            "C105",
+            "C094",
+            "C137",
+            "C106",
+            "C119",
+            "C095",
+            "D_chongqing"
+          ]
+        },
+        {
+          "vehicle_id": "CH81-0017",
+          "vehicle_type": "cv",
+          "home_depot_id": "D_chongqing",
+          "node_sequence": [
+            "D_chongqing",
+            "C085",
+            "C068",
+            "C081",
+            "C076",
+            "C129",
+            "C078",
+            "D_chongqing"
+          ]
+        },
+        {
+          "vehicle_id": "CH81-0018",
+          "vehicle_type": "cv",
+          "home_depot_id": "D_chengdu",
+          "node_sequence": [
+            "D_chengdu",
+            "C017",
+            "C007",
+            "C008",
+            "C004",
+            "C062",
+            "C018",
+            "C058",
+            "D_chengdu"
+          ]
+        },
+        {
+          "vehicle_id": "CH81-0019",
+          "vehicle_type": "cv",
+          "home_depot_id": "D_chengdu",
+          "node_sequence": [
+            "D_chengdu",
+            "C054",
+            "C061",
+            "C036",
+            "C056",
+            "C047",
+            "C060",
+            "C026",
+            "D_chengdu"
+          ]
+        },
+        {
+          "vehicle_id": "CH81-0020",
+          "vehicle_type": "cv",
+          "home_depot_id": "D_chengdu",
+          "node_sequence": [
+            "D_chengdu",
+            "C052",
+            "C021",
+            "C050",
+            "C011",
+            "C010",
+            "C035",
+            "D_chengdu"
+          ]
+        },
+        {
+          "vehicle_id": "CH81-0021",
+          "vehicle_type": "cv",
+          "home_depot_id": "D_chengdu",
+          "node_sequence": [
+            "D_chengdu",
+            "C031",
+            "C042",
+            "C028",
+            "C057",
+            "C002",
+            "D_chengdu"
+          ]
+        },
+        {
+          "vehicle_id": "CH81-0022",
+          "vehicle_type": "cv",
+          "home_depot_id": "D_chengdu",
+          "node_sequence": [
+            "D_chengdu",
+            "C059",
+            "C016",
+            "C055",
+            "C032",
+            "C009",
+            "D_chengdu"
+          ]
+        },
+        {
+          "vehicle_id": "CH81-0023",
+          "vehicle_type": "cv",
+          "home_depot_id": "D_chengdu",
+          "node_sequence": [
+            "D_chengdu",
+            "C053",
+            "C005",
+            "C019",
+            "C014",
+            "C037",
+            "C015",
+            "D_chengdu"
+          ]
+        },
+        {
+          "vehicle_id": "CH81-0024",
+          "vehicle_type": "cv",
+          "home_depot_id": "D_chengdu",
+          "node_sequence": [
+            "D_chengdu",
+            "C020",
+            "C022",
+            "C033",
+            "C041",
+            "C043",
+            "D_chengdu"
+          ]
+        },
+        {
+          "vehicle_id": "CH81-0025",
+          "vehicle_type": "cv",
+          "home_depot_id": "D_chengdu",
+          "node_sequence": [
+            "D_chengdu",
+            "C013",
+            "C030",
+            "C001",
+            "C044",
+            "C027",
+            "C006",
+            "D_chengdu"
+          ]
+        },
+        {
+          "vehicle_id": "CH81-0026",
+          "vehicle_type": "ev",
+          "home_depot_id": "D_chengdu",
+          "node_sequence": [
+            "D_chengdu",
+            "C012",
+            "C038",
+            "C024",
+            "C045",
+            "D_chengdu"
+          ]
+        }
+      ],
+      "charging_actions": [
+        {
+          "vehicle_id": "CH81-0026",
+          "station_id": "D_chengdu",
+          "energy_kwh": 28.34600813608104,
+          "occupancy_minutes": 77.30729491658465,
+          "charge_start_second": 75600.0,
+          "charge_day_offset": 0,
+          "start_energy_kwh": 0.0,
+          "end_energy_kwh": 28.34600813608104,
+          "charging_curve_id": "NL90_mild"
+        }
+      ],
+      "cross_site_services": []
+    },
+    "independent_breakdown": {
+      "total_cost": 7599.127931111891,
+      "cost_fix": 4420.0,
+      "cost_km": 1461.6530092166504,
+      "cost_fuel": 1646.701266947045,
+      "cost_elec": 22.338015019622404,
+      "cost_occ": 0.0,
+      "cost_transship": 0.0,
+      "cost_carbon": 48.43563992857295,
+      "E_total": 645.6363626842568,
+      "E_cv_direct": 645.5081710468309,
+      "E_ev_indirect": 0.12819163742597287,
+      "n_veh_cv": 25,
+      "n_veh_ev": 1,
+      "distance_total": 1884247.253939187,
+      "distance_cv": 1810975.9007035901,
+      "distance_ev": 73271.353235597,
+      "fuel_liters": 238.65235752855725,
+      "electricity_kwh": 28.34600813608104,
+      "depot_charging_kwh": 28.34600813608104,
+      "station_charging_kwh": 0,
+      "carbon_quota_kg": 0.0,
+      "ev_drive_kwh": 28.34600813608104
+    },
+    "view_epochs": {
+      "cv_only": {
+        "seed": 1,
+        "runtime_seconds": 2.0,
+        "warm_elite_count": 0,
+        "population_size": 66,
+        "unique_feasible_population_size": 39,
+        "archive_candidates_completed": 24,
+        "archive_completion_failures": [],
+        "hgs_iterations": 243,
+        "proxy_best_exact_objective": 7648.988030509895,
+        "selected_exact_objectives": [
+          7648.988030509895,
+          7658.307180025079,
+          7659.170398641031,
+          7660.898403615461,
+          7663.644673385141,
+          7665.68798552099,
+          7672.122355441942,
+          7675.988234879076
+        ]
+      },
+      "naive_ev": {
+        "seed": 1,
+        "runtime_seconds": 2.0,
+        "warm_elite_count": 0,
+        "population_size": 72,
+        "unique_feasible_population_size": 29,
+        "archive_candidates_completed": 24,
+        "archive_completion_failures": [],
+        "hgs_iterations": 168,
+        "proxy_best_exact_objective": 8709.64491322947,
+        "selected_exact_objectives": [
+          8395.609007297659,
+          8709.64491322947,
+          8741.75553371229,
+          9605.263560007472,
+          9656.360925472709,
+          10095.839424601589,
+          10097.059484548505,
+          10145.273376682613
+        ]
+      },
+      "mechanism_ev": {
+        "seed": 1,
+        "runtime_seconds": 2.0,
+        "warm_elite_count": 0,
+        "population_size": 71,
+        "unique_feasible_population_size": 41,
+        "archive_candidates_completed": 24,
+        "archive_completion_failures": [],
+        "hgs_iterations": 153,
+        "proxy_best_exact_objective": 9023.63904224126,
+        "selected_exact_objectives": [
+          8395.609007297659,
+          9023.63904224126,
+          9232.734103143735,
+          9241.896911785088,
+          9266.886829878735,
+          9307.97786564668,
+          9336.423324035604,
+          9348.054294425181
+        ]
+      }
+    }
+  },
+  "cn-cy-150c-03-V2-LOCATIONS::seed-2": {
+    "stats": {
+      "algorithm": "MV-HGS-SP",
+      "algorithm_name_en": "Multi-View Hybrid Genetic Search with Exact Route-Pool Recombination",
+      "algorithm_name_zh": "多视角混合遗传搜索—精确路线池重组算法",
+      "story": "three genuine HGS populations generate complementary routes; the full nonlinear ReSETP model selects elites; an exact set-partitioning layer recombines routes across views",
+      "seed": 2,
+      "hgs_seconds_per_view": 2.0,
+      "view_count": 3,
+      "exact_elites_per_view": 8,
+      "archive_candidates_per_view": 24,
+      "parent_solution_count": 24,
+      "route_pool_size": 557,
+      "best_parent_objective": 7653.743105998148,
+      "selected_source": "set_partitioning_recombination",
+      "final_objective": 7599.544839811517,
+      "strict_recombination_improvement": true,
+      "improvement_over_best_parent": 54.19826618663137,
+      "set_partitioning": {
+        "solver": "scipy.optimize.milp/HiGHS",
+        "success": true,
+        "status": 0,
+        "message": "Optimization terminated successfully. (HiGHS Status 7: Optimal)",
+        "objective": 7599.544839811496,
+        "mip_gap": 0.0,
+        "selected_route_count": 26,
+        "independent_violation_count": 0,
+        "recombined_exact_objective": 7599.544839811517
+      },
+      "measured_elapsed_seconds": 40.102347459003795
+    },
+    "solution": {
+      "routes": [
+        {
+          "vehicle_id": "CH81-0001",
+          "vehicle_type": "cv",
+          "home_depot_id": "D_chongqing",
+          "node_sequence": [
+            "D_chongqing",
+            "C071",
+            "C135",
+            "C075",
+            "C065",
+            "C133",
+            "C148",
+            "C120",
+            "D_chongqing"
+          ]
+        },
+        {
+          "vehicle_id": "CH81-0002",
+          "vehicle_type": "cv",
+          "home_depot_id": "D_chongqing",
+          "node_sequence": [
+            "D_chongqing",
+            "C109",
+            "C091",
+            "C123",
+            "C143",
+            "C131",
+            "D_chongqing"
+          ]
+        },
+        {
+          "vehicle_id": "CH81-0003",
+          "vehicle_type": "cv",
+          "home_depot_id": "D_chongqing",
+          "node_sequence": [
+            "D_chongqing",
+            "C092",
+            "C130",
+            "C113",
+            "C090",
+            "C111",
+            "D_chongqing"
+          ]
+        },
+        {
+          "vehicle_id": "CH81-0004",
+          "vehicle_type": "cv",
+          "home_depot_id": "D_chongqing",
+          "node_sequence": [
+            "D_chongqing",
+            "C112",
+            "C073",
+            "C097",
+            "C088",
+            "C115",
+            "D_chongqing"
+          ]
+        },
+        {
+          "vehicle_id": "CH81-0005",
+          "vehicle_type": "cv",
+          "home_depot_id": "D_chongqing",
+          "node_sequence": [
+            "D_chongqing",
+            "C087",
+            "C104",
+            "C102",
+            "C144",
+            "C077",
+            "C141",
+            "D_chongqing"
+          ]
+        },
+        {
+          "vehicle_id": "CH81-0006",
+          "vehicle_type": "cv",
+          "home_depot_id": "D_chengdu",
+          "node_sequence": [
+            "D_chengdu",
+            "C059",
+            "C054",
+            "C061",
+            "C056",
+            "C053",
+            "C005",
+            "C058",
+            "D_chengdu"
+          ]
+        },
+        {
+          "vehicle_id": "CH81-0007",
+          "vehicle_type": "cv",
+          "home_depot_id": "D_chengdu",
+          "node_sequence": [
+            "D_chengdu",
+            "C040",
+            "C048",
+            "C023",
+            "C046",
+            "C029",
+            "C039",
+            "D_chengdu"
+          ]
+        },
+        {
+          "vehicle_id": "CH81-0008",
+          "vehicle_type": "cv",
+          "home_depot_id": "D_chongqing",
+          "node_sequence": [
+            "D_chongqing",
+            "C116",
+            "C134",
+            "C079",
+            "C122",
+            "C149",
+            "D_chongqing"
+          ]
+        },
+        {
+          "vehicle_id": "CH81-0009",
+          "vehicle_type": "cv",
+          "home_depot_id": "D_chongqing",
+          "node_sequence": [
+            "D_chongqing",
+            "C125",
+            "C107",
+            "C126",
+            "C129",
+            "C103",
+            "D_chongqing"
+          ]
+        },
+        {
+          "vehicle_id": "CH81-0010",
+          "vehicle_type": "cv",
+          "home_depot_id": "D_chongqing",
+          "node_sequence": [
+            "D_chongqing",
+            "C069",
+            "C101",
+            "C066",
+            "C146",
+            "C098",
+            "D_chongqing"
+          ]
+        },
+        {
+          "vehicle_id": "CH81-0011",
+          "vehicle_type": "cv",
+          "home_depot_id": "D_chongqing",
+          "node_sequence": [
+            "D_chongqing",
+            "C067",
+            "C110",
+            "C072",
+            "C108",
+            "C083",
+            "D_chongqing"
+          ]
+        },
+        {
+          "vehicle_id": "CH81-0012",
+          "vehicle_type": "cv",
+          "home_depot_id": "D_chongqing",
+          "node_sequence": [
+            "D_chongqing",
+            "C074",
+            "C132",
+            "C139",
+            "C100",
+            "C140",
+            "D_chongqing"
+          ]
+        },
+        {
+          "vehicle_id": "CH81-0013",
+          "vehicle_type": "cv",
+          "home_depot_id": "D_chongqing",
+          "node_sequence": [
+            "D_chongqing",
+            "C096",
+            "C118",
+            "C117",
+            "C136",
+            "C138",
+            "C124",
+            "C114",
+            "D_chongqing"
+          ]
+        },
+        {
+          "vehicle_id": "CH81-0014",
+          "vehicle_type": "cv",
+          "home_depot_id": "D_chongqing",
+          "node_sequence": [
+            "D_chongqing",
+            "C127",
+            "C121",
+            "C082",
+            "C145",
+            "C093",
+            "C089",
+            "C099",
+            "D_chongqing"
+          ]
+        },
+        {
+          "vehicle_id": "CH81-0015",
+          "vehicle_type": "cv",
+          "home_depot_id": "D_chongqing",
+          "node_sequence": [
+            "D_chongqing",
+            "C070",
+            "C086",
+            "C081",
+            "C106",
+            "C119",
+            "D_chongqing"
+          ]
+        },
+        {
+          "vehicle_id": "CH81-0016",
+          "vehicle_type": "cv",
+          "home_depot_id": "D_chongqing",
+          "node_sequence": [
+            "D_chongqing",
+            "C142",
+            "C150",
+            "C147",
+            "C064",
+            "C084",
+            "C080",
+            "C095",
+            "D_chongqing"
+          ]
+        },
+        {
+          "vehicle_id": "CH81-0017",
+          "vehicle_type": "cv",
+          "home_depot_id": "D_chongqing",
+          "node_sequence": [
+            "D_chongqing",
+            "C105",
+            "C085",
+            "C068",
+            "C137",
+            "C094",
+            "C076",
+            "C128",
+            "C078",
+            "D_chongqing"
+          ]
+        },
+        {
+          "vehicle_id": "CH81-0018",
+          "vehicle_type": "cv",
+          "home_depot_id": "D_chengdu",
+          "node_sequence": [
+            "D_chengdu",
+            "C016",
+            "C036",
+            "C014",
+            "C037",
+            "C015",
+            "D_chengdu"
+          ]
+        },
+        {
+          "vehicle_id": "CH81-0019",
+          "vehicle_type": "cv",
+          "home_depot_id": "D_chengdu",
+          "node_sequence": [
+            "D_chengdu",
+            "C031",
+            "C042",
+            "C019",
+            "C051",
+            "C025",
+            "C034",
+            "D_chengdu"
+          ]
+        },
+        {
+          "vehicle_id": "CH81-0020",
+          "vehicle_type": "cv",
+          "home_depot_id": "D_chengdu",
+          "node_sequence": [
+            "D_chengdu",
+            "C003",
+            "C063",
+            "C027",
+            "C006",
+            "C049",
+            "C009",
+            "D_chengdu"
+          ]
+        },
+        {
+          "vehicle_id": "CH81-0021",
+          "vehicle_type": "cv",
+          "home_depot_id": "D_chengdu",
+          "node_sequence": [
+            "D_chengdu",
+            "C004",
+            "C007",
+            "C008",
+            "C055",
+            "C032",
+            "C018",
+            "C062",
+            "D_chengdu"
+          ]
+        },
+        {
+          "vehicle_id": "CH81-0022",
+          "vehicle_type": "cv",
+          "home_depot_id": "D_chengdu",
+          "node_sequence": [
+            "D_chengdu",
+            "C038",
+            "C013",
+            "C030",
+            "C001",
+            "C044",
+            "C047",
+            "D_chengdu"
+          ]
+        },
+        {
+          "vehicle_id": "CH81-0023",
+          "vehicle_type": "cv",
+          "home_depot_id": "D_chengdu",
+          "node_sequence": [
+            "D_chengdu",
+            "C012",
+            "C017",
+            "C057",
+            "C002",
+            "C043",
+            "D_chengdu"
+          ]
+        },
+        {
+          "vehicle_id": "CH81-0024",
+          "vehicle_type": "cv",
+          "home_depot_id": "D_chengdu",
+          "node_sequence": [
+            "D_chengdu",
+            "C020",
+            "C022",
+            "C033",
+            "C045",
+            "D_chengdu"
+          ]
+        },
+        {
+          "vehicle_id": "CH81-0025",
+          "vehicle_type": "cv",
+          "home_depot_id": "D_chengdu",
+          "node_sequence": [
+            "D_chengdu",
+            "C011",
+            "C050",
+            "C010",
+            "C060",
+            "C035",
+            "C026",
+            "D_chengdu"
+          ]
+        },
+        {
+          "vehicle_id": "CH81-0026",
+          "vehicle_type": "ev",
+          "home_depot_id": "D_chengdu",
+          "node_sequence": [
+            "D_chengdu",
+            "C052",
+            "C021",
+            "C024",
+            "C028",
+            "C041",
+            "D_chengdu"
+          ]
+        }
+      ],
+      "charging_actions": [
+        {
+          "vehicle_id": "CH81-0026",
+          "station_id": "D_chengdu",
+          "energy_kwh": 30.202741344288853,
+          "occupancy_minutes": 82.37111275715142,
+          "charge_start_second": 75600.0,
+          "charge_day_offset": 0,
+          "start_energy_kwh": 0.0,
+          "end_energy_kwh": 30.202741344288853,
+          "charging_curve_id": "NL90_mild"
+        }
+      ],
+      "cross_site_services": []
+    },
+    "independent_breakdown": {
+      "total_cost": 7599.544839811517,
+      "cost_fix": 4420.0,
+      "cost_km": 1466.4346263001607,
+      "cost_fuel": 1641.0392314896594,
+      "cost_elec": 23.801209910884143,
+      "cost_occ": 0.0,
+      "cost_transship": 0.0,
+      "cost_carbon": 48.269772110812234,
+      "E_total": 643.4253813757962,
+      "E_cv_direct": 643.2886487656125,
+      "E_ev_indirect": 0.13673261018372873,
+      "n_veh_cv": 25,
+      "n_veh_ev": 1,
+      "distance_total": 1891523.379025256,
+      "distance_cv": 1810126.930483992,
+      "distance_ev": 81396.44854126399,
+      "fuel_liters": 237.83177267966076,
+      "electricity_kwh": 30.202741344288853,
+      "depot_charging_kwh": 30.202741344288853,
+      "station_charging_kwh": 0,
+      "carbon_quota_kg": 0.0,
+      "ev_drive_kwh": 30.202741344288853
+    },
+    "view_epochs": {
+      "cv_only": {
+        "seed": 2,
+        "runtime_seconds": 2.0,
+        "warm_elite_count": 0,
+        "population_size": 87,
+        "unique_feasible_population_size": 47,
+        "archive_candidates_completed": 24,
+        "archive_completion_failures": [],
+        "hgs_iterations": 254,
+        "proxy_best_exact_objective": 7653.743105998148,
+        "selected_exact_objectives": [
+          7653.743105998148,
+          7662.498736979026,
+          7664.793767590945,
+          8395.609007297659,
+          8500.064481774583,
+          8508.530478267272,
+          8515.692389342837,
+          8526.90641833132
+        ]
+      },
+      "naive_ev": {
+        "seed": 2,
+        "runtime_seconds": 2.0,
+        "warm_elite_count": 0,
+        "population_size": 79,
+        "unique_feasible_population_size": 39,
+        "archive_candidates_completed": 24,
+        "archive_completion_failures": [],
+        "hgs_iterations": 165,
+        "proxy_best_exact_objective": 9538.740424027987,
+        "selected_exact_objectives": [
+          8395.609007297659,
+          9338.740813896778,
+          9353.950999231918,
+          9385.901771651157,
+          9538.740424027987,
+          9566.299622422146,
+          9736.469573924234,
+          9751.601828263301
+        ]
+      },
+      "mechanism_ev": {
+        "seed": 2,
+        "runtime_seconds": 2.0,
+        "warm_elite_count": 0,
+        "population_size": 68,
+        "unique_feasible_population_size": 37,
+        "archive_candidates_completed": 24,
+        "archive_completion_failures": [],
+        "hgs_iterations": 154,
+        "proxy_best_exact_objective": 8651.017958633418,
+        "selected_exact_objectives": [
+          8395.609007297659,
+          8651.017958633418,
+          8821.70670057163,
+          8876.571453351891,
+          9145.848279663263,
+          9441.388646903031,
+          9481.033958004693,
+          9574.285316137224
+        ]
+      }
+    }
+  },
+  "cn-cy-150c-03-V2-LOCATIONS::seed-3": {
+    "stats": {
+      "algorithm": "MV-HGS-SP",
+      "algorithm_name_en": "Multi-View Hybrid Genetic Search with Exact Route-Pool Recombination",
+      "algorithm_name_zh": "多视角混合遗传搜索—精确路线池重组算法",
+      "story": "three genuine HGS populations generate complementary routes; the full nonlinear ReSETP model selects elites; an exact set-partitioning layer recombines routes across views",
+      "seed": 3,
+      "hgs_seconds_per_view": 2.0,
+      "view_count": 3,
+      "exact_elites_per_view": 8,
+      "archive_candidates_per_view": 24,
+      "parent_solution_count": 24,
+      "route_pool_size": 573,
+      "best_parent_objective": 7657.770090268823,
+      "selected_source": "best_exact_hgs_parent",
+      "final_objective": 7657.770090268823,
+      "strict_recombination_improvement": false,
+      "improvement_over_best_parent": 0.0,
+      "set_partitioning": {
+        "solver": "scipy.optimize.milp/HiGHS",
+        "success": false,
+        "status": 1,
+        "message": "Time limit reached. (HiGHS Status 13: Time limit reached)",
+        "objective": 8197.206373327315,
+        "mip_gap": 0.09702063001363126,
+        "selected_route_count": 29,
+        "independent_violation_count": 0,
+        "recombined_exact_objective": 8197.206373327315
+      },
+      "measured_elapsed_seconds": 38.974269291968085
+    },
+    "solution": {
+      "routes": [
+        {
+          "vehicle_id": "CH81-0001",
+          "vehicle_type": "cv",
+          "home_depot_id": "D_chengdu",
+          "node_sequence": [
+            "D_chengdu",
+            "C016",
+            "C054",
+            "C061",
+            "C036",
+            "C056",
+            "C053",
+            "D_chengdu"
+          ]
+        },
+        {
+          "vehicle_id": "CH81-0002",
+          "vehicle_type": "cv",
+          "home_depot_id": "D_chengdu",
+          "node_sequence": [
+            "D_chengdu",
+            "C042",
+            "C031",
+            "C037",
+            "C015",
+            "C009",
+            "D_chengdu"
+          ]
+        },
+        {
+          "vehicle_id": "CH81-0003",
+          "vehicle_type": "cv",
+          "home_depot_id": "D_chengdu",
+          "node_sequence": [
+            "D_chengdu",
+            "C055",
+            "C032",
+            "C019",
+            "C047",
+            "C014",
+            "D_chengdu"
+          ]
+        },
+        {
+          "vehicle_id": "CH81-0004",
+          "vehicle_type": "cv",
+          "home_depot_id": "D_chengdu",
+          "node_sequence": [
+            "D_chengdu",
+            "C059",
+            "C003",
+            "C063",
+            "C025",
+            "C034",
+            "C049",
+            "D_chengdu"
+          ]
+        },
+        {
+          "vehicle_id": "CH81-0005",
+          "vehicle_type": "cv",
+          "home_depot_id": "D_chengdu",
+          "node_sequence": [
+            "D_chengdu",
+            "C020",
+            "C048",
+            "C023",
+            "C046",
+            "C043",
+            "D_chengdu"
+          ]
+        },
+        {
+          "vehicle_id": "CH81-0006",
+          "vehicle_type": "cv",
+          "home_depot_id": "D_chengdu",
+          "node_sequence": [
+            "D_chengdu",
+            "C052",
+            "C013",
+            "C021",
+            "C030",
+            "C001",
+            "C044",
+            "C027",
+            "D_chengdu"
+          ]
+        },
+        {
+          "vehicle_id": "CH81-0007",
+          "vehicle_type": "cv",
+          "home_depot_id": "D_chengdu",
+          "node_sequence": [
+            "D_chengdu",
+            "C045",
+            "C028",
+            "C057",
+            "C018",
+            "C058",
+            "D_chengdu"
+          ]
+        },
+        {
+          "vehicle_id": "CH81-0008",
+          "vehicle_type": "cv",
+          "home_depot_id": "D_chengdu",
+          "node_sequence": [
+            "D_chengdu",
+            "C038",
+            "C012",
+            "C017",
+            "C007",
+            "C008",
+            "C004",
+            "C062",
+            "D_chengdu"
+          ]
+        },
+        {
+          "vehicle_id": "CH81-0009",
+          "vehicle_type": "cv",
+          "home_depot_id": "D_chengdu",
+          "node_sequence": [
+            "D_chengdu",
+            "C010",
+            "C050",
+            "C011",
+            "C005",
+            "C051",
+            "C006",
+            "D_chengdu"
+          ]
+        },
+        {
+          "vehicle_id": "CH81-0010",
+          "vehicle_type": "cv",
+          "home_depot_id": "D_chengdu",
+          "node_sequence": [
+            "D_chengdu",
+            "C040",
+            "C024",
+            "C022",
+            "C033",
+            "C002",
+            "C041",
+            "D_chengdu"
+          ]
+        },
+        {
+          "vehicle_id": "CH81-0011",
+          "vehicle_type": "cv",
+          "home_depot_id": "D_chengdu",
+          "node_sequence": [
+            "D_chengdu",
+            "C029",
+            "C039",
+            "C060",
+            "C035",
+            "C026",
+            "D_chengdu"
+          ]
+        },
+        {
+          "vehicle_id": "CH81-0012",
+          "vehicle_type": "cv",
+          "home_depot_id": "D_chongqing",
+          "node_sequence": [
+            "D_chongqing",
+            "C109",
+            "C135",
+            "C075",
+            "C065",
+            "C133",
+            "C148",
+            "C115",
+            "C120",
+            "D_chongqing"
+          ]
+        },
+        {
+          "vehicle_id": "CH81-0013",
+          "vehicle_type": "cv",
+          "home_depot_id": "D_chongqing",
+          "node_sequence": [
+            "D_chongqing",
+            "C092",
+            "C130",
+            "C090",
+            "C111",
+            "D_chongqing"
+          ]
+        },
+        {
+          "vehicle_id": "CH81-0014",
+          "vehicle_type": "cv",
+          "home_depot_id": "D_chongqing",
+          "node_sequence": [
+            "D_chongqing",
+            "C074",
+            "C070",
+            "C086",
+            "C138",
+            "C103",
+            "D_chongqing"
+          ]
+        },
+        {
+          "vehicle_id": "CH81-0015",
+          "vehicle_type": "cv",
+          "home_depot_id": "D_chongqing",
+          "node_sequence": [
+            "D_chongqing",
+            "C125",
+            "C102",
+            "C144",
+            "C128",
+            "C083",
+            "C124",
+            "D_chongqing"
+          ]
+        },
+        {
+          "vehicle_id": "CH81-0016",
+          "vehicle_type": "cv",
+          "home_depot_id": "D_chongqing",
+          "node_sequence": [
+            "D_chongqing",
+            "C112",
+            "C073",
+            "C088",
+            "C097",
+            "C113",
+            "D_chongqing"
+          ]
+        },
+        {
+          "vehicle_id": "CH81-0017",
+          "vehicle_type": "cv",
+          "home_depot_id": "D_chongqing",
+          "node_sequence": [
+            "D_chongqing",
+            "C067",
+            "C110",
+            "C132",
+            "C139",
+            "C136",
+            "D_chongqing"
+          ]
+        },
+        {
+          "vehicle_id": "CH81-0018",
+          "vehicle_type": "cv",
+          "home_depot_id": "D_chongqing",
+          "node_sequence": [
+            "D_chongqing",
+            "C069",
+            "C087",
+            "C104",
+            "C077",
+            "C141",
+            "D_chongqing"
+          ]
+        },
+        {
+          "vehicle_id": "CH81-0019",
+          "vehicle_type": "cv",
+          "home_depot_id": "D_chongqing",
+          "node_sequence": [
+            "D_chongqing",
+            "C142",
+            "C150",
+            "C107",
+            "C147",
+            "C084",
+            "C080",
+            "C126",
+            "C098",
+            "D_chongqing"
+          ]
+        },
+        {
+          "vehicle_id": "CH81-0020",
+          "vehicle_type": "cv",
+          "home_depot_id": "D_chongqing",
+          "node_sequence": [
+            "D_chongqing",
+            "C116",
+            "C134",
+            "C079",
+            "C122",
+            "C149",
+            "D_chongqing"
+          ]
+        },
+        {
+          "vehicle_id": "CH81-0021",
+          "vehicle_type": "cv",
+          "home_depot_id": "D_chongqing",
+          "node_sequence": [
+            "D_chongqing",
+            "C118",
+            "C106",
+            "C119",
+            "C095",
+            "C140",
+            "C078",
+            "D_chongqing"
+          ]
+        },
+        {
+          "vehicle_id": "CH81-0022",
+          "vehicle_type": "cv",
+          "home_depot_id": "D_chongqing",
+          "node_sequence": [
+            "D_chongqing",
+            "C089",
+            "C121",
+            "C101",
+            "C066",
+            "C146",
+            "C100",
+            "D_chongqing"
+          ]
+        },
+        {
+          "vehicle_id": "CH81-0023",
+          "vehicle_type": "cv",
+          "home_depot_id": "D_chongqing",
+          "node_sequence": [
+            "D_chongqing",
+            "C085",
+            "C068",
+            "C081",
+            "C076",
+            "C129",
+            "C114",
+            "D_chongqing"
+          ]
+        },
+        {
+          "vehicle_id": "CH81-0024",
+          "vehicle_type": "cv",
+          "home_depot_id": "D_chongqing",
+          "node_sequence": [
+            "D_chongqing",
+            "C127",
+            "C093",
+            "C082",
+            "C145",
+            "C117",
+            "C099",
+            "C096",
+            "D_chongqing"
+          ]
+        },
+        {
+          "vehicle_id": "CH81-0025",
+          "vehicle_type": "cv",
+          "home_depot_id": "D_chongqing",
+          "node_sequence": [
+            "D_chongqing",
+            "C105",
+            "C094",
+            "C137",
+            "C064",
+            "C072",
+            "C108",
+            "D_chongqing"
+          ]
+        },
+        {
+          "vehicle_id": "CH81-0026",
+          "vehicle_type": "cv",
+          "home_depot_id": "D_chongqing",
+          "node_sequence": [
+            "D_chongqing",
+            "C071",
+            "C091",
+            "C123",
+            "C143",
+            "C131",
+            "D_chongqing"
+          ]
+        }
+      ],
+      "charging_actions": [],
+      "cross_site_services": []
+    },
+    "independent_breakdown": {
+      "total_cost": 7657.770090268823,
+      "cost_fix": 4420.0,
+      "cost_km": 1473.8791627000678,
+      "cost_fuel": 1713.500480125258,
+      "cost_elec": 0,
+      "cost_occ": 0.0,
+      "cost_transship": 0.0,
+      "cost_carbon": 50.39044744349664,
+      "E_total": 671.6935143094727,
+      "E_cv_direct": 671.6935143094727,
+      "E_ev_indirect": 0.0,
+      "n_veh_cv": 26,
+      "n_veh_ev": 0,
+      "distance_total": 1889588.670128292,
+      "distance_cv": 1889588.670128292,
+      "distance_ev": 0,
+      "fuel_liters": 248.33340291670405,
+      "electricity_kwh": 0,
+      "depot_charging_kwh": 0,
+      "station_charging_kwh": 0,
+      "carbon_quota_kg": 0.0,
+      "ev_drive_kwh": 0
+    },
+    "view_epochs": {
+      "cv_only": {
+        "seed": 3,
+        "runtime_seconds": 2.0,
+        "warm_elite_count": 0,
+        "population_size": 76,
+        "unique_feasible_population_size": 47,
+        "archive_candidates_completed": 24,
+        "archive_completion_failures": [],
+        "hgs_iterations": 243,
+        "proxy_best_exact_objective": 7657.770090268823,
+        "selected_exact_objectives": [
+          7657.770090268823,
+          7667.428476156947,
+          8395.609007297659,
+          8482.65279220602,
+          8494.259939482095,
+          8498.792424789246,
+          8505.109555480783,
+          8514.551549324908
+        ]
+      },
+      "naive_ev": {
+        "seed": 3,
+        "runtime_seconds": 2.0,
+        "warm_elite_count": 0,
+        "population_size": 74,
+        "unique_feasible_population_size": 37,
+        "archive_candidates_completed": 24,
+        "archive_completion_failures": [],
+        "hgs_iterations": 161,
+        "proxy_best_exact_objective": 8762.543414481459,
+        "selected_exact_objectives": [
+          8395.609007297659,
+          8686.273190748014,
+          8762.543414481459,
+          8778.764701867553,
+          8798.528502925445,
+          8841.14492989248,
+          9502.432884140127,
+          9951.141014863924
+        ]
+      },
+      "mechanism_ev": {
+        "seed": 3,
+        "runtime_seconds": 2.0,
+        "warm_elite_count": 0,
+        "population_size": 81,
+        "unique_feasible_population_size": 49,
+        "archive_candidates_completed": 24,
+        "archive_completion_failures": [],
+        "hgs_iterations": 154,
+        "proxy_best_exact_objective": 8416.579113653412,
+        "selected_exact_objectives": [
+          8352.004906959219,
+          8387.820981734436,
+          8395.609007297659,
+          8416.579113653412,
+          8487.854909824058,
+          8528.823761184733,
+          8587.18185763691,
+          8607.049132781181
+        ]
+      }
+    }
+  }
+}

@@ -1,0 +1,36 @@
+{
+  "schema_version": "resetp.china81-h6-multiseed-route-pool-metadata.v1",
+  "created_at_utc": "2026-07-20T00:17:50.577108+00:00",
+  "python_executable": "/Volumes/移动硬盘（512G）/ReSETP/build/python_envs/pyvrp-hgs-0.12.2/bin/python",
+  "preregistration": "baselines/algorithm_prototypes/china81_mechanism_hybrid_20260720/h6_multiseed_route_pool_preregistration.json",
+  "preregistration_sha256": "8752805fd65304f370867fc3b1b87ff6939492eef20002c40c1e7db6ac7af967",
+  "formal_search_allowed": false,
+  "test_commands": [
+    {
+      "command": [
+        "/opt/anaconda3/bin/python3.13",
+        "-m",
+        "pytest",
+        "-q",
+        "solver/tests/test_china81_bundle_20260720.py",
+        "solver/tests/test_china81_profiled_road_matrices_nl3b_20260720.py",
+        "solver/tests/test_china81_shared_completion_20260720.py"
+      ],
+      "returncode": 0,
+      "stdout": ".....................                                                    [100%]\n21 passed in 0.66s\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/opt/anaconda3/bin/ruff",
+        "check",
+        "solver/src/setp_solver/china81.py",
+        "solver/src/setp_solver/china81_completion.py",
+        "baselines/algorithm_prototypes/china81_mechanism_hybrid_20260720"
+      ],
+      "returncode": 0,
+      "stdout": "All checks passed!\n",
+      "stderr": ""
+    }
+  ]
+}

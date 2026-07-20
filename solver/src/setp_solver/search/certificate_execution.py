@@ -22,7 +22,7 @@ from ..cost import (
     _arc_loads,
     _price,
     charging_curve_for_action,
-    ev_arc_energy_kwh,
+    ev_instance_arc_energy_kwh,
 )
 from ..instance_loader import Instance
 from ..prices import DEFAULT_PRICES, PriceParameters
@@ -121,7 +121,12 @@ def build_certificate_execution_ledger(
 
     if certificate.status != "PASS":
         raise ValueError(f"{EXECUTION_CLOCK_CONTRACT_ID}: certificate status is not PASS")
-    validate_multitrip_certificate(certificate, list(solution.routes), prices)
+    validate_multitrip_certificate(
+        certificate,
+        list(solution.routes),
+        prices,
+        instance=instance,
+    )
 
     route_ids = [route.vehicle_id for route in solution.routes]
     certificate_ids = [trip.route_id for trip in certificate.trips]
@@ -212,7 +217,13 @@ def _replay_trip(
         zip(route.node_sequence, route.node_sequence[1:]),
         start=1,
     ):
-        arrival = clock + instance.distance(from_id, to_id) / speed
+        _, travel, _ = instance.arc_metrics(
+            from_id,
+            to_id,
+            route.vehicle_type,
+            fallback_speed_mps=speed,
+        )
+        arrival = clock + travel
         node = nodes[to_id]
         service_start = max(arrival, float(node.ready_time))
         if service_start > float(node.due_time) + _TOL:
@@ -272,7 +283,13 @@ def _validated_trip_energy(
     nodes = {node.node_id: node for node in instance.nodes}
     loads = _arc_loads(route.node_sequence, nodes)
     drive_energy = sum(
-        ev_arc_energy_kwh(instance.distance(from_id, to_id), loads[index], prices)
+        ev_instance_arc_energy_kwh(
+            instance,
+            from_id,
+            to_id,
+            loads[index],
+            prices,
+        )
         for index, (from_id, to_id) in enumerate(zip(route.node_sequence, route.node_sequence[1:]))
     )
     certificate_energy = float(trip.start_battery_kwh or 0.0) - float(trip.end_battery_kwh or 0.0)
