@@ -8,12 +8,16 @@ Targets (pre-registered before any sprint run, from P1 formal results):
   new-BKS hunt set (nearest to current verified BKS): PR17B PR21B PR21A
   PR11B PR12B
 
-Fresh seeds 11-12 (never used in G-DEV/G-CONFIRM/P1). Engine identical to
-the frozen convergence engine plus one added final stage: a deep final
-intensification run (long NoImprovement threshold, warm-started from the
-global best and elites). This stage borrows only the *idea* of deep
-multi-action refinement from MDFIHA-ETGA (2026); it is a CPU-only long
-polish, no GPU machinery, and is labeled as such.
+Fresh seeds 11-12 (never used in G-DEV/G-CONFIRM/P1). The engine is the
+IDENTICAL frozen MV-HGS-SP procedure used by the official public table
+(P1) and the China81 experiment (P3): mother HGS to convergence, then
+repeated exact set-partitioning recombination epochs until stall. The
+ONLY differences here are (a) larger per-run compute budgets (higher
+NoImprovement patience + longer MaxRuntime caps + a higher epoch ceiling)
+and (b) fresh seeds. Running the same method with a larger budget is the
+standard, honest way to chase a best-known solution; it is NOT an
+algorithm change, so any solution found here is attributable to the same
+MV-HGS-SP presented in the tables. No extra stage, no imported mechanism.
 
 Every unit saves a route witness (vehicle_type + visits + raw cost) so a
 strict new-BKS candidate can be independently verified route-by-route.
@@ -72,6 +76,10 @@ TARGETS = (
     "PR22A", "PR23A", "PR24A",
     "PR17B", "PR21B", "PR21A", "PR11B", "PR12B",
 )
+# Same knobs as P1's frozen engine (K_MOTHER=4000/CAP=240, K_EPOCH=2000/
+# CAP=60, MAX_EPOCHS=4, STALL=2, SP_TIME=10), scaled UP for a longer run of
+# the IDENTICAL procedure. STALL_EPOCHS is the real stop; MAX_EPOCHS is just
+# a raised ceiling so it may keep going while it keeps improving.
 K_MOTHER = 8000
 CAP_MOTHER = 600.0
 K_EPOCH = 4000
@@ -79,8 +87,6 @@ CAP_EPOCH = 180.0
 MAX_EPOCHS = 8
 STALL_EPOCHS = 3
 SP_TIME = 15.0
-K_FINAL = 8000
-CAP_FINAL = 300.0
 WORKERS = 2
 EPS = 1.0e-6
 
@@ -146,34 +152,6 @@ def _run_unit(args: tuple[str, int]) -> dict[str, Any]:
         stall = 0 if improved else stall + 1
         if stall >= STALL_EPOCHS:
             break
-
-    # deep final intensification (ETGA-inspired idea, CPU-only long polish)
-    warm = [best_solution, *elites]
-    unique_warm = {}
-    for native in warm:
-        unique_warm.setdefault(_solution_key(native), native)
-    warm_list = list(unique_warm.values())
-    final_rng = RandomNumberGenerator(seed=int(seed) + 777_777)
-    random_fill = [
-        NativeSolution.make_random(data, final_rng)
-        for _ in range(max(0, params.population.min_pop_size - len(warm_list)))
-    ]
-    algorithm, population, penalty_manager = _build_algorithm(
-        data, final_rng, params, [*warm_list, *random_fill]
-    )
-    final_stop = MultipleCriteria([NoImprovement(K_FINAL), MaxRuntime(CAP_FINAL)])
-    final_result = algorithm.run(final_stop, collect_stats=False, display=False)
-    final_cost_raw = _solution_cost(final_result.best)
-    if final_cost_raw < global_best_raw - EPS:
-        global_best_raw = final_cost_raw
-        best_solution = final_result.best
-    _pool_add(pool, _harvest_elites(population, penalty_manager, final_result.best))
-    sp_solution, _stats = _solve_sp(data, pool, SP_TIME)
-    if sp_solution is not None:
-        sp_cost_raw = _solution_cost(sp_solution)
-        if sp_cost_raw < global_best_raw - EPS:
-            global_best_raw = sp_cost_raw
-            best_solution = sp_solution
 
     elapsed = perf_counter() - started
     witness = {
@@ -297,11 +275,13 @@ def _finalize(csv_path: Path) -> None:
         "beats_strongest_literature": beats_lit,
         "summary": summary,
         "claim_boundary": (
-            "Sprint uses fresh seeds 11-12 and long budgets; final deep "
-            "intensification stage borrows only the deep-refinement idea from "
-            "MDFIHA-ETGA (CPU-only, disclosed). new_bks_candidate requires "
-            "independent route-certificate verification (witness JSONs saved "
-            "per unit) before any formal new-BKS claim."
+            "Sprint uses the IDENTICAL frozen MV-HGS-SP procedure as P1/P3, "
+            "differing only in larger compute budget and fresh seeds 11-12 "
+            "(no extra stage, no imported mechanism), so any solution is "
+            "attributable to the same algorithm in the tables. "
+            "new_bks_candidate still requires independent route-certificate "
+            "verification (witness JSONs saved per unit) before any formal "
+            "new-BKS claim."
         ),
     }
     metadata = {
@@ -313,14 +293,20 @@ def _finalize(csv_path: Path) -> None:
             "K_MOTHER": K_MOTHER, "CAP_MOTHER": CAP_MOTHER,
             "K_EPOCH": K_EPOCH, "CAP_EPOCH": CAP_EPOCH,
             "MAX_EPOCHS": MAX_EPOCHS, "STALL_EPOCHS": STALL_EPOCHS,
-            "SP_TIME": SP_TIME, "K_FINAL": K_FINAL, "CAP_FINAL": CAP_FINAL,
+            "SP_TIME": SP_TIME,
         },
+        "engine_note": (
+            "Identical frozen MV-HGS-SP procedure as P1/P3; only per-run "
+            "compute budget and seeds differ. No extra stage."
+        ),
     }
     (OUT / "metadata.json").write_text(json.dumps(metadata, ensure_ascii=False, indent=2), encoding="utf-8")
     (OUT / "decision.json").write_text(json.dumps(decision, ensure_ascii=False, indent=2), encoding="utf-8")
     (OUT / "report.md").write_text(
         "\n".join([
-            "# P4 BKS 冲刺（预注册目标题，新种子，长预算+深度末段精修）",
+            "# P4 BKS 冲刺（预注册目标题，新种子，同一算法长预算版）",
+            "",
+            "引擎与 P1/P3 完全同构（母体收敛→SP重组轮次），只放大算力预算与种子，非算法改动。",
             "",
             f"机器结论：`{decision['decision']}`。",
             f"压过最强文献值的题：{beats_lit if beats_lit else '无新增'}",
