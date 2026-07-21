@@ -1,0 +1,45 @@
+[REBAL] 15 units across 5 workers
+[REBAL] cn-jjj-25c-03-V2-LOCATIONS seed=4 C2=1464.35 A=1464.35 vs_A=tie vs_B=tie src=best_exact_hgs_parent
+[REBAL] cn-jjj-25c-03-V2-LOCATIONS seed=1 C2=1464.35 A=1464.35 vs_A=tie vs_B=tie src=best_exact_hgs_parent
+[REBAL] cn-jjj-25c-03-V2-LOCATIONS seed=2 C2=1464.35 A=1464.35 vs_A=tie vs_B=tie src=best_exact_hgs_parent
+[REBAL] cn-jjj-25c-03-V2-LOCATIONS seed=3 C2=1464.35 A=1464.35 vs_A=tie vs_B=tie src=best_exact_hgs_parent
+[REBAL] cn-jjj-25c-03-V2-LOCATIONS seed=5 C2=1464.35 A=1464.35 vs_A=tie vs_B=tie src=best_exact_hgs_parent
+[REBAL] cn-prd-75c-03-V2-LOCATIONS seed=4 C2=3897.50 A=3897.50 vs_A=win vs_B=tie src=best_exact_hgs_parent
+[REBAL] cn-prd-75c-03-V2-LOCATIONS seed=2 C2=3897.50 A=3897.50 vs_A=win vs_B=tie src=best_exact_hgs_parent
+[REBAL] cn-prd-75c-03-V2-LOCATIONS seed=3 C2=3897.50 A=3897.50 vs_A=tie vs_B=tie src=best_exact_hgs_parent
+[REBAL] cn-prd-75c-03-V2-LOCATIONS seed=5 C2=3897.50 A=3897.50 vs_A=tie vs_B=tie src=best_exact_hgs_parent
+[REBAL] cn-prd-75c-03-V2-LOCATIONS seed=1 C2=3897.50 A=3897.50 vs_A=win vs_B=tie src=best_exact_hgs_parent
+[REBAL] cn-cy-150c-03-V2-LOCATIONS seed=4 C2=7306.96 A=7302.95 vs_A=loss vs_B=win src=set_partitioning_recombination
+[REBAL] cn-cy-150c-03-V2-LOCATIONS seed=3 C2=7338.94 A=7305.31 vs_A=loss vs_B=loss src=set_partitioning_recombination
+[REBAL] cn-cy-150c-03-V2-LOCATIONS seed=1 C2=7437.00 A=7434.56 vs_A=loss vs_B=loss src=set_partitioning_recombination
+[REBAL] cn-cy-150c-03-V2-LOCATIONS seed=2 C2=7460.40 A=7454.17 vs_A=loss vs_B=loss src=set_partitioning_recombination
+[REBAL] cn-cy-150c-03-V2-LOCATIONS seed=5 C2=7440.06 A=7434.61 vs_A=loss vs_B=win src=set_partitioning_recombination
+{
+  "schema_version": "resetp.e2-final-campaign.c-rebalance-validation.v1",
+  "decision": "FAIL_C_REBALANCE_CLAIM_LADDER_D",
+  "passed": false,
+  "pass_rule": "zero losses vs recorded A across 15 units AND >=2 strict wins vs A in cy-150 stratum; single pre-registered revision, no rescue",
+  "view_shares": {
+    "mechanism_ev": 0.7,
+    "cv_only": 0.125,
+    "naive_ev": 0.125
+  },
+  "sp_share": 0.05,
+  "tally_C2_vs_A": {
+    "wins": 3,
+    "ties": 7,
+    "losses": 5
+  },
+  "tally_C2_vs_B": {
+    "wins": 2,
+    "ties": 10,
+    "losses": 3
+  },
+  "tally_C2_vs_C1_equal_split": {
+    "wins": 2,
+    "ties": 10,
+    "losses": 3
+  },
+  "cy150_wins_vs_A": 0,
+  "claim_boundary": "Training-set validation on already-seen P0 units against recorded P0 objectives (same wall clocks, same machine class, same common start). Adoption gates campaign config only; fresh-instance evidence still comes from P2/P3."
+}

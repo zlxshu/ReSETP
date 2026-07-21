@@ -13,7 +13,6 @@ per docs/handoff/e2_final_algorithm_experiment_construction_20260720.md P0.
 
 from __future__ import annotations
 
-from dataclasses import asdict
 from datetime import datetime, timezone
 import csv
 import hashlib
@@ -22,6 +21,7 @@ from pathlib import Path
 import sys
 from time import perf_counter
 from typing import Any
+from typing import Optional
 
 ROOT = Path(__file__).resolve().parents[3]
 HYBRID_PKG = ROOT / "baselines/algorithm_prototypes/china81_mechanism_hybrid_20260720"
@@ -44,13 +44,44 @@ from setp_solver.china81_completion import (  # noqa: E402
 )
 
 # Wall clock per instance, seconds. Pre-registered before any P0 result seen.
-CASES = {
+_DEFAULT_CASES = {
     "cn-jjj-25c-03-V2-LOCATIONS": 60.0,
     "cn-prd-75c-03-V2-LOCATIONS": 180.0,
     "cn-cy-150c-03-V2-LOCATIONS": 360.0,
 }
-SEEDS = (1, 2, 3, 4, 5)
+_DEFAULT_SEEDS = (1, 2, 3, 4, 5)
 SP_SHARE = 0.10  # fraction of T given to set-partitioning inside arm C
+
+
+def _coerce_cases(payload: Optional[str]) -> dict[str, float]:
+    if not payload:
+        return _DEFAULT_CASES
+    try:
+        raw = json.loads(payload)
+    except json.JSONDecodeError as exc:
+        raise ValueError(
+            "P0_CASES must be JSON dict like '{\"cn-cy-150c...\": 360.0}'"
+        ) from exc
+    if not isinstance(raw, dict):
+        raise ValueError("P0_CASES JSON must be a dict")
+    out: dict[str, float] = {}
+    for key, value in raw.items():
+        out[str(key)] = float(value)
+    return out
+
+
+def _coerce_seeds(payload: Optional[str]) -> tuple[int, ...]:
+    if not payload:
+        return _DEFAULT_SEEDS
+    try:
+        raw = json.loads(payload)
+    except json.JSONDecodeError as exc:
+        raise ValueError(
+            "P0_SEEDS must be JSON list like '[1,2,3,4,5]'"
+        ) from exc
+    if not isinstance(raw, list):
+        raise ValueError("P0_SEEDS JSON must be a list")
+    return tuple(int(v) for v in raw)
 
 
 def _route_view_histogram(solution, view_epochs) -> dict[str, int]:
@@ -122,12 +153,47 @@ def run_arm_d(bundle, common, seed: int, runtime: float):
     return run.completion.objective, perf_counter() - started
 
 
+def _load_existing_rows(path: Path) -> list[dict[str, Any]]:
+    if not path.exists():
+        return []
+    with path.open("r", encoding="utf-8") as handle:
+        reader = csv.DictReader(handle)
+        rows: list[dict[str, Any]] = []
+        for row in reader:
+            parsed = dict(row)
+            parsed["seed"] = int(float(parsed["seed"]))
+            parsed["wall_clock_T"] = float(parsed["wall_clock_T"])
+            parsed["A_single_view_hgs"] = float(parsed["A_single_view_hgs"])
+            parsed["A_elapsed"] = float(parsed["A_elapsed"])
+            parsed["B_multi_restart"] = float(parsed["B_multi_restart"])
+            parsed["B_elapsed"] = float(parsed["B_elapsed"])
+            parsed["C_mv_hgs_sp"] = float(parsed["C_mv_hgs_sp"])
+            parsed["C_elapsed"] = float(parsed["C_elapsed"])
+            parsed["D_independent_alns"] = float(parsed["D_independent_alns"])
+            parsed["D_elapsed"] = float(parsed["D_elapsed"])
+            rows.append(parsed)
+    return rows
+
+
 def main() -> int:
     OUT.mkdir(parents=True, exist_ok=True)
     _remove_appledouble(HYBRID_PKG)
+
+    # Runtime can be overridden for recovery; keep pre-registration by default.
+    cases: dict[str, float] = _coerce_cases(sys.argv[1] if len(sys.argv) > 1 else None)
+    seeds: tuple[int, ...] = _coerce_seeds(sys.argv[2] if len(sys.argv) > 2 else None)
     rows: list[dict[str, Any]] = []
+    done = {
+        (row["instance_id"], row["seed"])
+        for row in _load_existing_rows(OUT / "raw_runs.csv")
+    }
+    rows.extend(_load_existing_rows(OUT / "raw_runs.csv"))
     attribution: dict[str, Any] = {}
-    for instance_id, T in CASES.items():
+    if (OUT / "attribution.json").exists():
+        with (OUT / "attribution.json").open("r", encoding="utf-8") as handle:
+            attribution = json.load(handle)
+
+    for instance_id, T in cases.items():
         bundle = load_china81_bundle(ROOT, instance_id)
         common = complete_china81_route_skeleton(
             build_initial_solution(
@@ -136,7 +202,9 @@ def main() -> int:
             ),
             bundle,
         )
-        for seed in SEEDS:
+        for seed in seeds:
+            if (instance_id, seed) in done:
+                continue
             a_obj, a_t = run_arm_a(bundle, common, seed, T)
             b_obj, b_t = run_arm_b(bundle, common, seed, T)
             c_obj, c_t, c_stats, c_hist = run_arm_c(bundle, common, seed, T)
@@ -158,14 +226,46 @@ def main() -> int:
                 "C_vs_B": "win" if c_obj < b_obj - 1e-9 else ("loss" if c_obj > b_obj + 1e-9 else "tie"),
                 "C_vs_D": "win" if c_obj < d_obj - 1e-9 else ("loss" if c_obj > d_obj + 1e-9 else "tie"),
             }
-            rows.append(row)
             attribution[f"{instance_id}::seed-{seed}"] = {
                 "route_view_histogram": c_hist,
                 "cross_view_recombination": len([v for v in c_hist.values() if v > 0]) > 1,
                 "sp_selected_source": c_stats["selected_source"],
             }
+            raw_csv = OUT / "raw_runs.csv"
+            exists = raw_csv.exists()
+            with raw_csv.open("a", newline="", encoding="utf-8") as handle:
+                writer = csv.DictWriter(handle, fieldnames=list(row.keys()))
+                if not exists:
+                    writer.writeheader()
+                writer.writerow(row)
+            with (OUT / "attribution.json").open("w", encoding="utf-8") as handle:
+                json.dump(attribution, handle, ensure_ascii=False, indent=2)
             print(json.dumps(row, ensure_ascii=False))
+            rows.append(row)
 
+    expected = len(cases) * len(seeds)
+    if len(rows) < expected:
+        done_pairs = {(r["instance_id"], r["seed"]) for r in rows}
+        remaining = [
+            (instance_id, seed)
+            for instance_id in cases
+            for seed in seeds
+            if (instance_id, seed) not in done_pairs
+        ]
+        decision = {
+            "schema_version": "resetp.e2-final-campaign.p0-equal-compute-fuse.resume-partial.v1",
+            "decision": "P0_PARTIAL",
+            "rows_seen": len(rows),
+            "rows_expected": expected,
+            "remaining": remaining,
+            "next_step": "rerun with same params",
+        }
+        (OUT / "decision.json").write_text(json.dumps(decision, ensure_ascii=False, indent=2), encoding="utf-8")
+        return 2
+
+    # Keep only required file footprint for completed run
+    if not rows:
+        raise RuntimeError("No rows were produced. Check runtime parameters.")
     def _tally(key: str) -> dict[str, int]:
         return {
             "wins": sum(r[key] == "win" for r in rows),
@@ -203,15 +303,10 @@ def main() -> int:
     metadata = {
         "created_at_utc": datetime.now(timezone.utc).isoformat(),
         "python_executable": sys.executable,
-        "cases": CASES,
-        "seeds": list(SEEDS),
+        "cases": cases,
+        "seeds": list(seeds),
         "sp_share": SP_SHARE,
     }
-    (OUT / "raw_runs.csv").write_text("", encoding="utf-8")
-    with (OUT / "raw_runs.csv").open("w", newline="", encoding="utf-8") as handle:
-        writer = csv.DictWriter(handle, fieldnames=list(rows[0]))
-        writer.writeheader()
-        writer.writerows(rows)
     (OUT / "metadata.json").write_text(json.dumps(metadata, ensure_ascii=False, indent=2), encoding="utf-8")
     (OUT / "decision.json").write_text(json.dumps(decision, ensure_ascii=False, indent=2), encoding="utf-8")
     (OUT / "attribution.json").write_text(json.dumps(attribution, ensure_ascii=False, indent=2), encoding="utf-8")
