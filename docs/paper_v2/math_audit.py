@@ -208,7 +208,7 @@ def audit_tex():
     tab = m.group(0) if m else ""
     for tok in ["A_{ikp}", "O_{skpt}", "a_q^{\\mathrm{ch}}", "y_{qt}", "E_q^{\\mathrm{ch}}",
                 "\\Delta_q", "p_{s,t}^{e}", "\\rho$ & 单位货量收入", "\\Pi_d^0", "\\theta_d",
-                "\\kappa_l", "\\Omega_k", "\\overline W,T^{\\mathrm{int}}"]:
+                "\\kappa_l", "\\Omega_k", "\\overline W", "T^{\\mathrm{int}}"]:
         check(tok in tab, f"C5 符号表[{tok.split('$')[0]}]", "关键符号在表2登记")
     n_ph = len(re.findall(r"DATA_PLACEHOLDER", src))
     check(True, "C6 占位符盘点", f"共 {n_ph} 处 DATA_PLACEHOLDER 待实验回填")

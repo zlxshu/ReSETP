@@ -1,34 +1,47 @@
-% MV-HGS-SP 算法流程图 (陈雨蝶图1式黑白流程图: 主循环+判断菱形+侧支重规划)
-% 2026-07-20 排版版: 学术化措辞, 统一栅格, 细线, 无色彩装饰
+% MV-HGS-SP 算法流程图 (陈雨蝶图1式: 操作级主干+虚线机制分组框+判断菱形+是/否回边)
+% 2026-07-22 重绘: 两个虚线机制框(多视角并行进化 / 精确重组与单调接受), 收敛式双层循环
 \begin{figure}[H]
 \centering
 \begin{tikzpicture}[
-    node distance=9mm and 13mm,
-    every node/.style={font=\fontsize{8}{9.5}\selectfont},
-    block/.style={rectangle,draw,thin,minimum width=4.55cm,minimum height=8mm,align=center,inner sep=2.2pt},
-    decision/.style={diamond,draw,thin,aspect=2.4,align=center,inner sep=1pt},
-    arrow/.style={-{Stealth[length=1.8mm]},thin}
+    node distance=7mm and 12mm,
+    every node/.style={font=\fontsize{7.5}{9}\selectfont},
+    block/.style={rectangle,draw,thin,minimum width=4.9cm,minimum height=7mm,align=center,inner sep=2pt},
+    decision/.style={diamond,draw,thin,aspect=2.6,align=center,inner sep=0.5pt},
+    grp/.style={rectangle,draw,dashed,thin,inner sep=3.5mm},
+    grplab/.style={font=\fontsize{7.5}{9}\selectfont,fill=white,inner sep=1.5pt},
+    arrow/.style={-{Stealth[length=1.7mm]},thin}
 ]
-\node[block] (init) {初始化三视角种群\\(燃油车视角/简化电动车视角/机制视角)};
-\node[block,below=of init] (evolve) {三视角混合遗传搜索并行进化\\(选择、有序交叉、教育局部搜索、多样性管理)};
-\node[decision,below=9mm of evolve] (budget) {各视角搜索\\预算是否耗尽};
-\node[block,below=9mm of budget] (judge) {完整模型裁判\\(补全复算: 车型指派、趟间衔接、非线性充电、\\分时电价与分时碳排、时间窗与站容核验; 各视角留8个精英)};
+\node[block] (init) {以共同初始解初始化三视角种群\\(HGS-F、HGS-E、HGS-M)};
+\node[block,below=of init] (evolve) {三视角混合遗传搜索并行进化\\(二元锦标赛选择、有序交叉、粒度邻域教育、多样性管理)};
+\node[decision,below=6mm of evolve] (conv) {各视角是否连续\\$K$次迭代无改进};
+\node[block,below=7mm of conv] (judge) {完整模型裁判\\(候选补全复算: 车型指派、趟间衔接、非线性充电、分时电价\\与分时碳排放核算, 时间窗、载重、电量与站容核验; 各视角保留8个精英)};
 \node[block,below=of judge] (pool) {精英路线合并去重入池\\(池容量600, 当前最好父方案的路线常驻)};
-\node[block,below=of pool] (sp) {路线池上的集合划分重组\\(HiGHS求解, 时间盒不超过总时限的10\%)};
+\node[block,below=of pool] (sp) {集合划分精确重组\\(HiGHS求解式(\ref{eq:sp-recombination}), 时间盒不超过总时限的10\%)};
 \node[block,below=of sp] (mono) {单调保护接受\\(重组方案严格改善时替换最好父方案, 否则保留原方案)};
-\node[block,below=of mono] (output) {输出经独立检查器复核的最好可行方案};
-\node[block,right=17mm of judge,minimum width=3.2cm] (dyn) {触发滚动重规划:\\冻结已执行路径前缀,\\继承实体车状态};
+\node[decision,below=6mm of mono] (stall) {重组轮是否连续\\2轮无改进};
+\node[block,below=7mm of stall] (output) {输出经独立检查器复核的最好可行方案};
+\node[block,right=13mm of judge,minimum width=2.9cm] (dyn) {滚动重规划:\\冻结已执行路径前缀,\\继承实体车状态,\\更新待服务客户集};
+
+\begin{scope}[on background layer]
+\node[grp,fit=(evolve)(conv)] (g1) {};
+\node[grp,fit=(judge)(pool)(sp)(mono)] (g2) {};
+\end{scope}
+\node[grplab,anchor=south west,xshift=1mm,yshift=-0.6mm] at (g1.north west) {多视角并行进化};
+\node[grplab,anchor=south west,xshift=1mm,yshift=-0.6mm] at (g2.north west) {精确路线池重组与单调接受};
 
 \draw[arrow] (init) -- (evolve);
-\draw[arrow] (evolve) -- (budget);
-\draw[arrow] (budget) -- node[right,xshift=1pt]{是} (judge);
-\draw[arrow] (budget.west) -- ++(-11mm,0) node[pos=0,above,xshift=-2mm]{否} |- (evolve.west);
+\draw[arrow] (evolve) -- (conv);
+\draw[arrow] (conv) -- node[right,xshift=1pt]{是} (judge);
+\draw[arrow] (conv.west) -- ++(-9mm,0) node[pos=0.4,above]{否} |- (evolve.west);
 \draw[arrow] (judge) -- (pool);
 \draw[arrow] (pool) -- (sp);
 \draw[arrow] (sp) -- (mono);
-\draw[arrow] (mono) -- (output);
-\draw[arrow,dashed] (output.east) -| (dyn.south);
+\draw[arrow] (mono) -- (stall);
+\draw[arrow] (stall) -- node[right,xshift=1pt]{是} (output);
+\draw[arrow] (stall.west) -- ++(-12mm,0) node[pos=0.4,above]{否}
+    node[pos=0.15,below,align=center,xshift=-2mm]{\fontsize{7}{8}\selectfont 以当前最好\\方案热启动} |- (evolve.west);
 \draw[arrow,dashed] (dyn.north) |- (init.east);
+\draw[arrow,dashed] (output.east) -| node[pos=0.28,above]{动态事件触发} (dyn.south);
 \end{tikzpicture}
 \caption{MV-HGS-SP算法流程}
 \label{fig:algorithm-flow}

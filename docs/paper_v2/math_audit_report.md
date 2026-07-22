@@ -1,6 +1,6 @@
 # 论文V2 数学审计报告 (China81 重写版)
 
-- 通过: 35
+- 通过: 36
 - 警告: 1
 - 错误: 0
 
@@ -34,8 +34,9 @@
 - PASS C5 符号表[\theta_d]: 关键符号在表2登记
 - PASS C5 符号表[\kappa_l]: 关键符号在表2登记
 - PASS C5 符号表[\Omega_k]: 关键符号在表2登记
-- PASS C5 符号表[\overline W,T^{\mathrm{int}}]: 关键符号在表2登记
-- PASS C6 占位符盘点: 共 39 处 DATA_PLACEHOLDER 待实验回填
+- PASS C5 符号表[\overline W]: 关键符号在表2登记
+- PASS C5 符号表[T^{\mathrm{int}}]: 关键符号在表2登记
+- PASS C6 占位符盘点: 共 23 处 DATA_PLACEHOLDER 待实验回填
 - PASS D1 载重传播: 初始500.0→服务后0.0 (递减到0)
 - PASS D2 电量传播: ε_j=45.0 ∈ [0,100.0]
 - PASS D3 超容检测: 补电至超过B的方案应不可行(80+30>100)
@@ -44,4 +45,4 @@
 
 ## 警告项
 
-- WARN C3 公式标签使用: 未被引用的公式标签: ['eq:F2', 'eq:F3', 'eq:F4', 'eq:F6', 'eq:charge_window', 'eq:charging-candidates', 'eq:charging-rule', 'eq:linear_energy', 'eq:sp-recombination']
+- WARN C3 公式标签使用: 未被引用的公式标签: ['eq:F2', 'eq:F3', 'eq:F4', 'eq:F6', 'eq:charge_window', 'eq:charging-candidates', 'eq:charging-rule', 'eq:linear_energy']
