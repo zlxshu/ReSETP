@@ -740,3 +740,33 @@ H4 开发门 2 胜 1 平 0 负，H5 新题门 2 胜 1 平 0 负，H6 三题三�
 公开 BKS 比较；公平和动态机制没有独立贡献，ALNS 后接探针无增益。H0 早期适配器
 源码哈希因后续扩展而漂移，H6 当前源码和证据哈希闭合。按预登记停止加零件，
 `formal_search_allowed=false`、`stage2_allowed=false`，等待用户复盘。
+
+## E2-CHINA81-VIEW-ABLATION-001：China81 私有表对比协议 = 三视角子算法 + 收敛式
+
+状态：`APPROVED_BY_USER_2026-07-22`。
+
+用户 2026-07-22 明确拍板 E2 两张表的对手选择与目的，覆盖施工图 §1.2/§1.5 中
+"PyVRP-HGS / ReSETP-ALNS / MV-HGS-SP" 的旧映射：
+
+1. **对比协议变更（须登记）**：China81 私有表不再声称对比外部独立 ALNS。经核对，
+   `paper_main.tex` 行958 的 "ReSETP-ALNS…\cite{ref:66}" 是撰写时编造的算法名
+   （ref:66 实为 Ropke-Pisinger 2006 ALNS 开山论文），用户从未命名过 ReSETP-ALNS；
+   用户实际持有第三方开源 ALNS 与自产加强版 ALNS 两者，**均不进任何对比表**（MV-HGS-SP
+   内部为 HGS 非 ALNS）。China81 主表改为 **MV-HGS-SP 的三个视角子算法
+   （`cv_only`/`naive_ev`/`mechanism_ev`）各自单独收敛 vs MV-HGS-SP 三视角+SP 融合体**，
+   证 1+1+1>3。去 SP 消融（旧 ablation 臂）退出主表，降为附录组件消融证据。
+   P0 的 D 臂自产 project_alns（15:0 输给 MV-HGS-SP）留在 P0 保险丝内当历史，不进主表。
+
+2. **方法变更（须登记）**：私有表采用**收敛式**终止（各臂 NoImprovement 跑到自身收敛，
+   报各自 CPU），偏离施工图 §P2 规定的"等墙钟 T"。理由：表6 需报 CPU 对比，等墙钟下
+   各臂 CPU≈T 无对比意义；收敛式与已通过的 P3/G-CHINA-REP 及母版陈2025 表6（各算法
+   收敛 CPU）一致。诚实边界：收敛式下完整体使用算力多于任一单视角，私有表判读为
+   "质量结果 + CPU 全披露"（陈的框法），不得暗示等算力优越。
+
+3. **保护边界不变**：`cost.py`/`check.py`/`search/evaluation.py`/`prices.py` 默认值、
+   主 TeX 语义段零改；补跑仅换 `route_proxy_mode` 复用 P3 收敛式 runner，不新增算法机制。
+   本变更只改"对比对象与终止准则"，不改目标函数、约束、算例或评价器。
+
+执行路径见任务 S1–S7 与 `docs/handoff/memory/e2_final_campaign_p3_p4_complete_20260722.md`。
+预注册停止条件：S1 preflight 若三视角不可行或塌成同值即 HALT 报用户，不得推全量；
+任一阶段数据质量门失败照实 HALT，不得为救 1+1+1>3 故事改方向。

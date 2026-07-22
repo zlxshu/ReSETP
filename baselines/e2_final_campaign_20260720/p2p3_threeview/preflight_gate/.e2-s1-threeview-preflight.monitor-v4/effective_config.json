@@ -1,0 +1,109 @@
+{
+  "ai": {
+    "enabled": false,
+    "timeout_seconds": 180
+  },
+  "checkpoint_paths": [],
+  "completion_files": [
+    "/Volumes/移动硬盘（512G）/ReSETP/baselines/e2_final_campaign_20260720/p2p3_threeview/preflight_gate/done.json"
+  ],
+  "config_path": "/Volumes/移动硬盘（512G）/ReSETP/baselines/e2_final_campaign_20260720/p2p3_threeview/preflight_gate/monitor.json",
+  "csv_rules": [
+    {
+      "duplicate_key_fields": [
+        "instance_id",
+        "seed",
+        "route_proxy_mode"
+      ],
+      "feasible_field": "status",
+      "max_duplicate_fraction": 0,
+      "max_regressions": 0,
+      "max_violation_total": 0,
+      "metric_direction": "minimize",
+      "metric_field": "cost",
+      "min_feasible_rate": 1.0,
+      "path": "/Volumes/移动硬盘（512G）/ReSETP/baselines/e2_final_campaign_20260720/p2p3_threeview/preflight_gate/raw_runs.csv",
+      "required": false,
+      "required_fields": [
+        "instance_id",
+        "seed",
+        "route_proxy_mode",
+        "status",
+        "violation_count"
+      ],
+      "truthy": [
+        "OK"
+      ],
+      "violation_field": "violation_count"
+    }
+  ],
+  "forbidden_command_substrings": [
+    "--debug",
+    "--smoke",
+    "--tune"
+  ],
+  "logs": [],
+  "low_cpu_consecutive_checks": 4,
+  "max_rss_mb": 7000,
+  "max_runtime_seconds": 5400,
+  "min_cpu_percent_when_active": 1,
+  "min_system_memory_free_percent": 5,
+  "monitor_dir": "/Volumes/移动硬盘（512G）/ReSETP/baselines/e2_final_campaign_20260720/p2p3_threeview/preflight_gate/.e2-s1-threeview-preflight.monitor-v4",
+  "name": "e2-s1-threeview-preflight",
+  "objective": "Run the frozen three-view China81 S1 feasibility and discrimination gate.",
+  "pause_on_anomaly": true,
+  "poll_seconds": 20,
+  "progress_files": [],
+  "protected_files": [
+    {
+      "kind": "cost_function",
+      "path": "/Volumes/移动硬盘（512G）/ReSETP/solver/src/setp_solver/cost.py"
+    },
+    {
+      "kind": "evaluator",
+      "path": "/Volumes/移动硬盘（512G）/ReSETP/solver/src/setp_solver/check.py"
+    },
+    {
+      "kind": "evaluator",
+      "path": "/Volumes/移动硬盘（512G）/ReSETP/solver/src/setp_solver/search/evaluation.py"
+    },
+    {
+      "kind": "primary_config",
+      "path": "/Volumes/移动硬盘（512G）/ReSETP/solver/src/setp_solver/prices.py"
+    },
+    {
+      "kind": "paper_conclusion",
+      "path": "/Volumes/移动硬盘（512G）/ReSETP/docs/paper_submission_final/paper_main.tex"
+    },
+    {
+      "kind": "experiment_contract",
+      "path": "/Volumes/移动硬盘（512G）/ReSETP/docs/handoff/e2_final_algorithm_experiment_construction_20260720.md"
+    },
+    {
+      "kind": "experiment_contract",
+      "path": "/Volumes/移动硬盘（512G）/ReSETP/docs/handoff/model_change_approval_register_20260718.md"
+    },
+    {
+      "kind": "primary_config",
+      "path": "/Volumes/移动硬盘（512G）/ReSETP/baselines/e2_final_campaign_20260720/mv_hgs_sp_final/run_p3_china81_formal.py"
+    },
+    {
+      "kind": "core_data",
+      "path": "/Volumes/移动硬盘（512G）/ReSETP/data/ChinaInstances/china81_g1_independent_frozen_v2_20260718"
+    }
+  ],
+  "required_command_substrings": [
+    "run_s1_threeview_preflight.py",
+    "build/python_envs/pyvrp-hgs-0.12.2/bin/python"
+  ],
+  "result_files": [
+    "/Volumes/移动硬盘（512G）/ReSETP/baselines/e2_final_campaign_20260720/p2p3_threeview/preflight_gate/raw_runs.csv",
+    "/Volumes/移动硬盘（512G）/ReSETP/baselines/e2_final_campaign_20260720/p2p3_threeview/preflight_gate/metadata.json",
+    "/Volumes/移动硬盘（512G）/ReSETP/baselines/e2_final_campaign_20260720/p2p3_threeview/preflight_gate/decision.json",
+    "/Volumes/移动硬盘（512G）/ReSETP/baselines/e2_final_campaign_20260720/p2p3_threeview/preflight_gate/artifact_hashes.json",
+    "/Volumes/移动硬盘（512G）/ReSETP/baselines/e2_final_campaign_20260720/p2p3_threeview/preflight_gate/report.md"
+  ],
+  "schema_version": 1,
+  "stale_seconds": 900,
+  "workdir": "/Volumes/移动硬盘（512G）/ReSETP"
+}

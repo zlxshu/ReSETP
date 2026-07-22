@@ -1,6 +1,7 @@
 # Memory Index
 
-- [E2终局战役P3/P4收官,P2缺口（2026-07-22）](e2_final_campaign_p3_p4_complete_20260722.md) — P1/P3/P4已完成(P3零负+15题刷新项目内部最优,P4新BKS候选0但12/15压过文献值)；施工图规定的P2(China81代表题三臂×10种子,产表6/图4/表4)尚未执行,不能跳过直接进P5。
+- [算法命名映射（2026-07-22）](../algorithm_naming_map_20260722.md) — 工程代号↔论文学名单一事实源:主算法MV-HGS-SP;三视角子算法 cv_only=HGS-F(燃油成本导向)/naive_ev=HGS-E(简化电动)/mechanism_ev=HGS-M(机制感知);ReSETP-ALNS是tex编的废名已删,ALNS不进表。代码保留代号,论文用学名,S5脚本按此映射。
+- [E2终局战役最终决定（2026-07-22）](e2_final_campaign_p3_p4_complete_20260722.md) — 用户拍板:公开表证"优于已知算法"(P1已完成,0.905%全场第一);China81证"三视角融合1+1+1>3",对手=三视角子算法(cv_only/naive_ev/mechanism_ev)非ALNS;两个ALNS都不进表,ReSETP-ALNS是tex编的名字。S1 preflight已PASS，S2全量补跑正在运行，S3-S5由PASS-only链监督器自动推进；S6/S7仍待Claude收官。
 
 E7正式结果终验
 

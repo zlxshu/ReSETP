@@ -664,10 +664,10 @@ $n_{kp}^{\mathrm{tr}}=\sum_{i\in N}A_{ikp}\mathbf 1_{d(k)\neq d_i^0}$为跨场�
 算法使用路线序列编码, 每个个体是一组以车场为起讫的客户序列,
 代表若干配送趟; 解码时按公式(\ref{eq:trip_flow})--(\ref{eq:trip_linkage})
 将配送趟装入有限实体车并生成充电会话, 得到完整排班模式.
-为覆盖模型中相互耦合的机制结构, 构造三个搜索视角:
-燃油车视角以纯燃油车代理成本引导搜索, 提供稳健的传统路线骨架;
-简化电动车视角以线性电耗和恒功率充电近似引导搜索, 提供电动车倾向的路线形态;
-机制视角在候选形成中引入车型差异、补能可行性和多车场责任信息.
+为覆盖模型中相互耦合的机制结构, 构造三个成本视角, 各由一个混合遗传搜索独立求解:
+燃油成本导向混合遗传搜索(HGS-F)以纯燃油车代理成本引导搜索, 提供稳健的传统路线骨架;
+简化电动混合遗传搜索(HGS-E)以线性电耗和恒功率充电近似引导搜索, 提供电动车倾向的路线形态;
+机制感知混合遗传搜索(HGS-M)以车型差异、补能可行性和多车场责任信息引导候选形成.
 三个视角互补地看见不同的路线结构, 是后续精确重组的候选来源.
 
 \textbf{步骤2：混合遗传搜索进化.}
@@ -720,9 +720,9 @@ $\hat a_{ir}$为路线$r$是否服务客户$i$, $k(r)$为路线的实体车归�
     pool/.style={rectangle,draw,thin,minimum width=8.4cm,minimum height=8mm,align=center,inner sep=2pt},
     arrow/.style={-{Stealth[length=1.8mm]},thin}
 ]
-\node[lane] (v1) {燃油车视角\\混合遗传搜索种群};
-\node[lane,right=6mm of v1] (v2) {简化电动车视角\\混合遗传搜索种群};
-\node[lane,right=6mm of v2] (v3) {机制视角\\混合遗传搜索种群};
+\node[lane] (v1) {HGS-F\\燃油成本视角种群};
+\node[lane,right=6mm of v1] (v2) {HGS-E\\简化电动视角种群};
+\node[lane,right=6mm of v2] (v3) {HGS-M\\机制感知视角种群};
 \node[pool,below=8mm of v2] (judge) {完整模型裁判(每视角至多24个候选方案补全, 各保留8个精英)};
 \node[pool,below=6mm of judge] (pool) {精英路线合并去重入池(池容量600, 父方案的路线常驻)};
 \node[pool,below=6mm of pool] (sp) {路线池上的集合划分重组(HiGHS求解, 时间盒不超过总时限的10\%)};
@@ -952,13 +952,12 @@ CVRP风格的误差百分比以带路线证书且经独立检查的当前逐题�
 
 \subsubsection{本文模型实验}
 
-用PyVRP-HGS、ReSETP-ALNS和MV-HGS-SP对China81代表算例进行求解,
-对比三种算法的求解效果和时间, 验证MV-HGS-SP求解复杂模型的有效性.
-PyVRP-HGS为母体混合遗传搜索加公共完成器;
-ReSETP-ALNS为本项目独立实现的自适应大邻域搜索\cite{ref:66}加同一完成器;
-MV-HGS-SP为完整混合结构.
-三种算法均采用等墙钟终止$T=\max\{60,2.4n\}$秒, 独立运行10次;
-MV-HGS-SP实验参数为: 三视角等分搜索预算,
+MV-HGS-SP由HGS-F(燃油成本视角)、HGS-E(简化电动视角)、HGS-M(机制感知视角)三个混合遗传搜索经集合划分精确重组融合而成.
+为验证融合增益, 将HGS-F、HGS-E、HGS-M三个子算法各自单独求解与完整MV-HGS-SP在China81代表算例上对比,
+四者均以完整非线性ReSETP模型评价并经独立检查器复算,
+以此检验单一成本视角均不及三视角融合的效果.
+四种算法均以无改进停滞为收敛准则独立运行10次, 报告各自实际CPU时间;
+MV-HGS-SP的融合参数为三视角等分搜索预算,
 每视角至多24个候选补全并保留8个精英, 路线池上限600条,
 集合划分时间盒不超过总时限的10\%.
 实验结果如表\ref{tab:algorithm-comparison}和图\ref{fig:convergence}所示.
@@ -969,10 +968,10 @@ MV-HGS-SP实验参数为: 三视角等分搜索预算,
 \caption{不同算法对比表}
 \label{tab:algorithm-comparison}
 \setptabsetup
-\begin{tabular}{@{}c cc cc cc@{}}
+\begin{tabular}{@{}c cc cc cc cc@{}}
 \toprule
-\multirow{2}{*}{序号} & \multicolumn{2}{c}{PyVRP-HGS} & \multicolumn{2}{c}{ReSETP-ALNS} & \multicolumn{2}{c}{MV-HGS-SP}\\
-& 值 & CPU & 值 & CPU & 值 & CPU\\
+\multirow{2}{*}{序号} & \multicolumn{2}{c}{HGS-F} & \multicolumn{2}{c}{HGS-E} & \multicolumn{2}{c}{HGS-M} & \multicolumn{2}{c}{MV-HGS-SP}\\
+& 值 & CPU & 值 & CPU & 值 & CPU & 值 & CPU\\
 \midrule
 %% DATA_PLACEHOLDER: 行1--10 + Min/Avg/Max, 值为总成本(元), CPU单位min, 逐行最优加粗
 \bottomrule
@@ -981,16 +980,15 @@ MV-HGS-SP实验参数为: 三视角等分搜索预算,
 
 \begin{figure}[H]
 \centering
-\fbox{\parbox[c][4.0cm][c]{0.86\linewidth}{\centering 待实验数据生成:\\不同算法迭代图(横轴时间/min, 纵轴成本/元, 三条曲线)}}
+\fbox{\parbox[c][4.0cm][c]{0.86\linewidth}{\centering 待实验数据生成:\\不同算法迭代图(横轴时间/min, 纵轴成本/元, 四条曲线)}}
 \caption{不同算法迭代图}
 \label{fig:convergence}
 \end{figure}
 %% DATA_PLACEHOLDER: 图 - 由P2收敛轨迹CSV脚本生成后替换占位框(fig:convergence)
 
-进一步在China81全量81个算例上以5个种子进行等墙钟对比,
+进一步在China81全量81个算例上以5个种子进行收敛式对比,
 以配对Wilcoxon符号秩检验和Holm校正评估显著性,
-按城市群与规模层汇总的结果如表\ref{tab:china81-summary}所示,
-逐题结果见附录A.
+按城市群与规模层汇总的结果如表\ref{tab:china81-summary}所示.
 %% DATA_PLACEHOLDER: 全量汇总数值与显著性结论
 
 \begin{table}[H]
@@ -998,10 +996,10 @@ MV-HGS-SP实验参数为: 三视角等分搜索预算,
 \caption{China81全量算例分层汇总结果}
 \label{tab:china81-summary}
 \setptabsetup
-\begin{tabular}{@{}cc cc cc cc@{}}
+\begin{tabular}{@{}cc cc cc cc cc@{}}
 \toprule
-\multirow{2}{*}{城市群} & \multirow{2}{*}{规模} & \multicolumn{2}{c}{PyVRP-HGS} & \multicolumn{2}{c}{ReSETP-ALNS} & \multicolumn{2}{c}{MV-HGS-SP}\\
-& & Best. & avg. & Best. & avg. & Best. & avg.\\
+\multirow{2}{*}{城市群} & \multirow{2}{*}{规模} & \multicolumn{2}{c}{HGS-F} & \multicolumn{2}{c}{HGS-E} & \multicolumn{2}{c}{HGS-M} & \multicolumn{2}{c}{MV-HGS-SP}\\
+& & Best. & avg. & Best. & avg. & Best. & avg. & Best. & avg.\\
 \midrule
 %% DATA_PLACEHOLDER: 3城市群×3规模=9行 + Avg行(相对最好臂平均成本的误差%)
 \bottomrule
@@ -1379,14 +1377,6 @@ Zhen等\cite{ref:44}在多车场多趟场景中验证两层结构的有效性,
 优化算法的求解精度和求解速度, 以应对更复杂的实际物流场景.
 
 % ================================================================
-% 附录
-% ================================================================
-
-\section*{附录A\quad China81全量算例逐题结果}
-
-%% DATA_PLACEHOLDER: 附录表A1 - 81行逐题结果(instances | n | BKS-v0 | PyVRP-HGS Best. avg. | ReSETP-ALNS Best. avg. | MV-HGS-SP Best. avg.), 由P3封存CSV脚本生成
-
-% ================================================================
 % 参考文献
 % ================================================================
 
@@ -1448,8 +1438,6 @@ Zhen等\cite{ref:44}在多车场多趟场景中验证两层结构的有效性,
 \bibitem{ref:36} Demir E, Bektas T, Laporte G. An adaptive large neighborhood search heuristic for the pollution-routing problem[J]. European Journal of Operational Research, 2012, 223(2): 346--359.
 
 \bibitem{ref:47} Bektas T, Laporte G. The pollution-routing problem[J]. Transportation Research Part B: Methodological, 2011, 45(8): 1232--1250.
-
-\bibitem{ref:66} Ropke S, Pisinger D. An adaptive large neighborhood search heuristic for the pickup and delivery problem with time windows[J]. Transportation Science, 2006, 40(4): 455--472.
 
 \bibitem{ref:76} Vidal T, Crainic T G, Gendreau M, Lahrichi N, Rei W. A hybrid genetic algorithm for multidepot and periodic vehicle routing problems[J]. Operations Research, 2012, 60(3): 611--624.
 
