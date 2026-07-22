@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Redraw figure3 (carbon) and figure4 (convergence, broken axis) in Chinese.
+"""Redraw figure3 and figure4 in the final Chinese presentation style.
 
 Pure presentation from sealed CSVs; no data change, no optimization.
 """
@@ -14,6 +14,9 @@ import matplotlib.pyplot as plt
 plt.rcParams.update({
     "font.family": ["Songti SC", "Times New Roman"],
     "font.size": 9,
+    # Publisher-safe embedded TrueType outlines; avoid Matplotlib Type-3 text.
+    "pdf.fonttype": 42,
+    "ps.fonttype": 42,
     "axes.linewidth": 0.6,
     "lines.linewidth": 0.9,
     "xtick.direction": "in",
@@ -26,13 +29,15 @@ OUT = Path(__file__).parent
 
 ALGOS = ["HGS-F", "HGS-E", "HGS-M", "MV-HGS-SP"]
 STYLES = {
-    "HGS-F": dict(color="#1f77b4", linestyle="-"),
-    "HGS-E": dict(color="#d62728", linestyle="--"),
-    "HGS-M": dict(color="#2ca02c", linestyle=":"),
-    "MV-HGS-SP": dict(color="#9467bd", linestyle="-."),
+    # Chen et al. (2025), Fig. 4 shell: thin colour lines with distinct
+    # line styles and the proposed method in red dash-dot.
+    "HGS-F": dict(color="#7b2cbf", linestyle="-"),
+    "HGS-E": dict(color="#2ca02c", linestyle="--"),
+    "HGS-M": dict(color="#1f77b4", linestyle=":"),
+    "MV-HGS-SP": dict(color="#d62728", linestyle="-."),
 }
 
-# ---------- Figure 4: broken-axis convergence ----------
+# ---------- Figure 4: incumbent trajectory on sealed wall-clock time ----------
 curves = defaultdict(list)
 with (ART / "figure4_convergence_v4.csv").open() as f:
     for r in csv.DictReader(f):
@@ -60,53 +65,43 @@ for name in ALGOS:
     last_cost = curves[name][-1][1]
     curves[name].append((cpu_end[name], last_cost))
 
-fig = plt.figure(figsize=(4.6, 3.2))
-gs = fig.add_gridspec(2, 1, height_ratios=[1, 4], hspace=0.06)
-ax_top = fig.add_subplot(gs[0])
-ax_bot = fig.add_subplot(gs[1], sharex=ax_top)
-
+fig, ax = plt.subplots(figsize=(4.30, 2.80))
+fig.subplots_adjust(left=0.14, right=0.98, bottom=0.18, top=0.98)
+xmax_data = max(p[0] for pts in curves.values() for p in pts)
+xmax = xmax_data * 1.16
 for name in ALGOS:
     pts = curves[name]
     xs = [p[0] for p in pts]
     ys = [p[1] for p in pts]
-    # extend each curve horizontally to its own end (step-post best-so-far)
-    for ax in (ax_top, ax_bot):
-        ax.step(xs, ys, where="post", label=name, **STYLES[name])
+    style = dict(STYLES[name])
+    if name == "MV-HGS-SP":
+        style.update(linewidth=1.00, alpha=1.0, zorder=5)
+    else:
+        style.update(linewidth=0.78, alpha=0.96, zorder=3)
+    # Chen et al. (2025, Fig. 4) joins recorded incumbent observations with
+    # thin lines.  We follow that shell while retaining the sealed timestamps
+    # and costs exactly; no smoothing or interpolation points are introduced.
+    ax.plot(xs, ys, label=name, **style)
 
-ax_top.set_ylim(2510, 2620)
-ax_top.set_yticks([2550, 2600])
-ax_bot.set_ylim(2345, 2500)
-ax_bot.set_yticks([2350, 2400, 2450, 2500])
-xmax = max(p[0] for pts in curves.values() for p in pts) * 1.04
-for ax in (ax_top, ax_bot):
-    ax.set_xlim(0, xmax)
-    ax.grid(False)
+ax.set_xlim(0, xmax)
+ax.set_ylim(2345, 2620)
+ax.set_yticks([2350, 2400, 2450, 2500, 2550, 2600])
+ax.set_xlabel("时间(min)")
+ax.set_ylabel("成本(元)")
+ax.grid(False)
+ax.legend(loc="upper right", fontsize=6.8, frameon=False,
+          handlelength=2.25, handletextpad=0.55, labelspacing=0.28,
+          borderaxespad=0.55)
 
-# broken-axis cosmetics
-ax_top.spines["bottom"].set_visible(False)
-ax_bot.spines["top"].set_visible(False)
-ax_top.tick_params(labelbottom=False, bottom=False)
-d = 0.012
-kw = dict(transform=ax_top.transAxes, color="k", clip_on=False, linewidth=0.6)
-ax_top.plot((-d, +d), (-d * 4, +d * 4), **kw)
-ax_top.plot((1 - d, 1 + d), (-d * 4, +d * 4), **kw)
-kw = dict(transform=ax_bot.transAxes, color="k", clip_on=False, linewidth=0.6)
-ax_bot.plot((-d, +d), (1 - d, 1 + d), **kw)
-ax_bot.plot((1 - d, 1 + d), (1 - d, 1 + d), **kw)
-
-ax_bot.legend(loc="upper right", fontsize=8, frameon=True, edgecolor="0.4",
-              handlelength=2.4)
-ax_bot.set_xlabel("时间(min)")
-fig.supylabel("成本(元)", fontsize=9, x=0.02)
-fig.savefig(OUT / "figure4_convergence_v5.pdf", bbox_inches="tight")
-fig.savefig(OUT / "figure4_convergence_v5.png", dpi=300, bbox_inches="tight")
+fig.savefig(OUT / "figure4_convergence_v11.pdf", bbox_inches="tight", pad_inches=0.02)
+fig.savefig(OUT / "figure4_convergence_v11.png", dpi=300, bbox_inches="tight", pad_inches=0.02)
 plt.close(fig)
 
 # ---------- Figure 3: carbon intensity, urban-agglomeration legend ----------
 REGION_LABEL = {
-    "Beijing": "京津冀(北京电网)",
-    "Guangdong": "珠三角(广东电网)",
-    "Chongqing": "成渝(重庆电网)",
+    "Beijing": "京津冀",
+    "Guangdong": "珠三角",
+    "Chongqing": "成渝",
 }
 R_STYLE = {
     "Beijing": dict(color="#1f77b4", linestyle="-"),
@@ -119,18 +114,23 @@ with (ART / "figure3_carbon_profile_v4.csv").open() as f:
         series[r["region"]].append(
             (float(r["time_hour"]), float(r["carbon_intensity_gCO2_per_kWh"]))
         )
-fig, ax = plt.subplots(figsize=(4.6, 2.9))
+fig, ax = plt.subplots(figsize=(4.30, 2.80))
+fig.subplots_adjust(left=0.14, right=0.98, bottom=0.18, top=0.98)
 for reg in ["Beijing", "Guangdong", "Chongqing"]:
     pts = sorted(series[reg])
     ax.plot([p[0] for p in pts], [p[1] for p in pts],
             label=REGION_LABEL[reg], **R_STYLE[reg])
 ax.set_xlim(0, 24)
 ax.set_xticks(range(0, 25, 4))
+all_y = [value for pts in series.values() for _, value in pts]
+ax.set_ylim(0, max(all_y) * 1.05)
 ax.set_xlabel("时刻(h)")
 ax.set_ylabel("碳强度(gCO$_2$/kWh)")
 ax.grid(False)
-ax.legend(loc="upper right", fontsize=8, frameon=True, edgecolor="0.4")
-fig.savefig(OUT / "figure3_carbon_profile_v5.pdf", bbox_inches="tight")
-fig.savefig(OUT / "figure3_carbon_profile_v5.png", dpi=300, bbox_inches="tight")
+ax.legend(loc="lower left", fontsize=6.8, frameon=False,
+          handlelength=2.15, handletextpad=0.55, labelspacing=0.28,
+          borderaxespad=0.55)
+fig.savefig(OUT / "figure3_carbon_profile_v11.pdf", bbox_inches="tight", pad_inches=0.02)
+fig.savefig(OUT / "figure3_carbon_profile_v11.png", dpi=300, bbox_inches="tight", pad_inches=0.02)
 plt.close(fig)
-print("done: v5 figures written")
+print("done: v11 figures written")

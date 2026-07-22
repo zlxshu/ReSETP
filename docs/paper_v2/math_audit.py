@@ -204,7 +204,12 @@ def audit_tex():
                     ("9个网络", "旧UK实验口径残留"), ("UCB", "旧ALNS内部机制残留")]:
         check(kw not in src, f"C4 旧口径[{kw}]", why)
     # 符号表覆盖: 关键符号须出现在符号表环境内
-    m = re.search(r"\\caption\{符号说明\}.*?\\end\{tabular\}", src, re.S)
+    # The official manuscript uses tabularx for the full-width symbol table.
+    # Accept the standard tabular family instead of coupling the audit to one
+    # environment spelling; the symbol-content checks below remain unchanged.
+    m = re.search(
+        r"\\caption\{符号说明\}.*?\\end\{tabular(?:x|\*)?\}", src, re.S
+    )
     tab = m.group(0) if m else ""
     for tok in ["A_{ikp}", "O_{skpt}", "a_q^{\\mathrm{ch}}", "y_{qt}", "E_q^{\\mathrm{ch}}",
                 "\\Delta_q", "p_{s,t}^{e}", "\\rho$ & 单位货量收入", "\\Pi_d^0", "\\theta_d",

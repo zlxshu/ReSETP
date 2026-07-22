@@ -45,4 +45,4 @@
 
 ## 警告项
 
-- WARN C3 公式标签使用: 未被引用的公式标签: ['eq:F2', 'eq:F3', 'eq:F4', 'eq:F6', 'eq:charge_window', 'eq:charging-candidates', 'eq:charging-rule', 'eq:linear_energy']
+- WARN C3 公式标签使用: 未被引用的公式标签: ['eq:F2', 'eq:F3', 'eq:F4', 'eq:F6', 'eq:charge_window', 'eq:charging-candidates', 'eq:charging-rule', 'eq:linear_energy', 'eq:sp-recombination']

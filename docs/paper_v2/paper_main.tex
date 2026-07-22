@@ -297,7 +297,7 @@ Gendreau等\cite{ref:22}采用并行禁忌搜索进行实时路径与调度.
 \caption{动态协同混合车队相关文献比较}
 \label{tab:literature-comparison}
 \setptabsetup
-\begin{tabular*}{0.96\linewidth}{@{\extracolsep{\fill}}lcccccc@{}}
+\begin{tabular*}{\linewidth}{@{\extracolsep{\fill}}lcccccc@{}}
 \toprule
 文献 & 多车场 & 混合车队 & 实体车多趟 & 动态事件 & 分时充电排放 & 成员收益条件\\
 \midrule
@@ -359,7 +359,7 @@ Li等\cite{ref:52} & --- & --- & --- & --- & $\checkmark$ & ---\\
 \caption{符号说明}
 \label{tab:symbols}
 \setpsymtabsetup
-\begin{tabularx}{\linewidth}{@{}lX|lX@{}}
+\begin{tabularx}{\linewidth}{@{}cX|cX@{}}
 \toprule
 符号 & 说明 & 符号 & 说明\\
 \midrule
@@ -657,9 +657,9 @@ N^\tau=(N^{\tau-1}\setminus N_{\mathrm{ser}}^\tau\setminus N_{\mathrm{can}}^\tau
 解空间表现出高度的组合性和机制耦合性.
 为应对这些挑战, 设计一种多视角混合遗传搜索—精确路线池重组算法
 (Multi-View Hybrid Genetic Search with Exact Route-Pool Recombination, MV-HGS-SP),
-算法流程如图\ref{fig:algorithm-flow}所示.
+算法主流程如图\ref{fig:algorithm-flow}所示.
 该算法以混合遗传搜索(Hybrid Genetic Search, HGS)\cite{ref:76,ref:77}为主体,
-通过机制视角分解维护三个互补的搜索种群, 增强候选路线对不同机制结构的覆盖能力.
+通过机制视角分解维护三个互补的搜索档案, 增强候选路线对不同机制结构的覆盖能力.
 同时, 采用完整模型裁判对候选方案进行补全复算,
 并借鉴自适应记忆与路线池重组思想\cite{ref:79,ref:80},
 利用集合划分模型对跨种群的精英路线进行精确重组, 以提升全局拼装能力.
@@ -682,9 +682,12 @@ N^\tau=(N^{\tau-1}\setminus N_{\mathrm{ser}}^\tau\setminus N_{\mathrm{can}}^\tau
 简化电动混合遗传搜索(HGS-E)以线性电耗和恒功率充电近似引导搜索, 提供电动车倾向的路线形态;
 机制感知混合遗传搜索(HGS-M)以车型差异、补能可行性和多车场责任信息引导候选形成.
 三个视角互补地看见不同的路线结构, 是后续精确重组的候选来源.
+正式求解先以HGS-M完成机制感知母体阶段,
+再按HGS-F、HGS-E、HGS-M的次序轮换执行延续搜索,
+从而使不同代理视角在同一当前最好方案上逐步补充路线档案.
 
 \textbf{步骤2：混合遗传搜索进化.}
-每个视角由混合遗传搜索\cite{ref:76}独立维护种群,
+每个视角由混合遗传搜索\cite{ref:76}维护独立档案,
 基于PyVRP求解框架\cite{ref:64}实现.
 进化过程包括二元锦标赛选择、有序交叉和教育操作.
 教育操作在粒度邻域上执行局部搜索: 每个客户仅考虑其最近的40个客户作为候选邻居,
@@ -695,7 +698,9 @@ N^\tau=(N^{\tau-1}\setminus N_{\mathrm{ser}}^\tau\setminus N_{\mathrm{can}}^\tau
 直至所有算子均无改进.
 种群管理同时考虑目标值和解间差异度, 以保持多样性\cite{ref:77};
 车场归属与车型倾向在视角代理评价中隐式处理\cite{ref:78}.
-三个视角在等分预算内并行进化, 彼此不交换个体.
+机制感知母体收敛后, 每个重组轮按预定次序选取一个视角,
+以当前最好方案及上一搜索期精英为热启动执行一个延续搜索期;
+视角之间不直接交换种群个体, 只通过当前最好方案和路线池传递可复用结构.
 
 \textbf{步骤3：完整模型裁判.}
 视角内的代理评价只用于引导搜索, 不用于宣布胜负.
@@ -709,7 +714,7 @@ N^\tau=(N^{\tau-1}\setminus N_{\mathrm{ser}}^\tau\setminus N_{\mathrm{can}}^\tau
 从实证上印证了该裁判环节的必要性.
 
 \textbf{步骤4：精确路线池重组.}
-三个视角的精英方案拆解为路线后合并去重, 形成路线池,
+当前已形成的各视角精英方案拆解为路线后合并去重, 形成路线池,
 池上限为600条, 最好父方案的路线始终保留在池中.
 以历史精英路线组建记忆池的思想可追溯至Rochat和Taillard\cite{ref:79}的
 概率多样化--强化框架, Wang等\cite{ref:80}也在异构电动车队问题中
@@ -719,14 +724,22 @@ N^\tau=(N^{\tau-1}\setminus N_{\mathrm{ser}}^\tau\setminus N_{\mathrm{can}}^\tau
 且重组结果仅在严格改善时被采纳.
 在路线池上求解集合划分模型:
 \begin{equation}
-\min\sum_{r\in\mathcal P}\hat c_r\lambda_r,\quad
-\text{s.t.}\;\sum_{r\in\mathcal P}\hat a_{ir}\lambda_r=1,\;i\in N;\quad
-\sum_{r\in\mathcal P}\mathbf 1_{k(r)=k}\lambda_r\le 1,\;k\in K;\quad
-\lambda_r\in\{0,1\},
+\begin{aligned}
+\min_{\boldsymbol\lambda}\quad
+& \sum_{r\in\mathcal P}\hat c_r\lambda_r,\\
+\mathrm{s.t.}\quad
+& \sum_{r\in\mathcal P}\hat a_{ir}\lambda_r=1,
+  \quad \forall i\in N,\\
+& \sum_{r\in\mathcal P}\mathbf 1_{\{v(r)=u\}}\lambda_r\le \bar K_u,
+  \quad \forall u\in\{\mathrm{CV},\mathrm{EV}\},\\
+& \lambda_r\in\{0,1\},
+  \quad \forall r\in\mathcal P.
+\end{aligned}
 \label{eq:sp-recombination}
 \end{equation}
 其中$\mathcal P$为路线池, $\hat c_r$为路线$r$经完整模型核算的成本,
-$\hat a_{ir}$为路线$r$是否服务客户$i$, $k(r)$为路线的实体车归属.
+$\hat a_{ir}$为路线$r$是否服务客户$i$, $v(r)$为路线车型,
+$\bar K_u$为车型$u$的可用车辆数.
 该模型即第二层模式选择结构在路线池上的显式形式,
 调用开源精确求解器HiGHS\cite{ref:81}求解,
 求解时间盒不超过总时限的10\%, 超时则返回在职最优组合.
@@ -740,48 +753,90 @@ $\hat a_{ir}$为路线$r$是否服务客户$i$, $k(r)$为路线的实体车归�
 
 \begin{figure}[H]
 \centering
-\begin{tikzpicture}[
-    every node/.style={font=\fontsize{7.5}{9}\selectfont},
-    cell/.style={rectangle,draw,thin,minimum width=5.2mm,minimum height=3.6mm,inner sep=0pt},
-    elite/.style={cell,fill=black!22},
-    pick/.style={cell,very thick,fill=black!8},
-    arrow/.style={-{Stealth[length=1.7mm]},thin},
-    lbl/.style={font=\fontsize{7.5}{9}\selectfont}
+\begin{tikzpicture}[x=1.40cm,y=1.15cm,
+    every node/.style={font=\fontsize{8.2}{9.6}\selectfont},
+    cell/.style={rectangle,draw,thin,minimum width=10.5mm,minimum height=6.3mm,
+        align=center,inner sep=0.6pt},
+    route/.style={rectangle,draw,thin,minimum width=2.80cm,minimum height=6.3mm,
+        align=center,inner sep=0.8pt},
+    chosen/.style={route,very thick,fill=black!15},
+    check/.style={rectangle,draw,thin,text width=3.80cm,minimum height=13.0mm,
+        align=center,inner xsep=2pt,inner ysep=1.5pt},
+    decision/.style={diamond,draw,thin,aspect=2.8,text width=2.30cm,
+        align=center,inner sep=0.7pt},
+    result/.style={rectangle,draw,thin,text width=2.20cm,minimum height=6.6mm,
+        align=center,inner sep=1pt},
+    arrow/.style={-{Latex[length=2.0mm,width=1.4mm]},line width=0.45pt,
+        shorten >=1.0pt,line join=miter},
+    panel/.style={font=\fontsize{8.6}{10.0}\selectfont,align=center},
+    tinylabel/.style={font=\fontsize{7.1}{8.2}\selectfont,align=center,inner sep=0.5pt}
 ]
-% ---- three view populations: stacks of individuals, top cells = elites ----
-\foreach \vx/\vname in {0/HGS-F, 2.9/HGS-E, 5.8/HGS-M} {
-  \node[lbl] at (\vx, 2.35) {\vname};
-  \foreach \i in {0,1,2,3,4} {
-    \pgfmathparse{\i<2 ? 1 : 0}
-    \ifnum\pgfmathresult=1
-      \node[elite] at (\vx, 1.9-\i*0.4) {};
-    \else
-      \node[cell]  at (\vx, 1.9-\i*0.4) {};
-    \fi
-  }
+% Clockwise reading order: archive -> route pool -> exact SP -> full adjudication.
+% (a) Three full-model-scored elite archives (upper left).
+\node[panel] at (-3.20,2.15) {(a) 机制视角精英档案};
+\foreach \x/\tag in {-4.20/F,-3.20/E,-2.20/M} {
+  \node[tinylabel] at (\x,1.70) {HGS-\tag};
+  \node[cell] at (\x,1.20) {$r_{\tag,1}$};
+  \node[cell] at (\x,0.56) {$r_{\tag,2}$};
+  \node[cell] at (\x,-0.08) {$r_{\tag,3}$};
+  \node[cell] at (\x,-0.72) {$\vdots$};
 }
-\node[lbl,anchor=west] at (7.0, 1.7) {灰色: 经完整模型裁判};
-\node[lbl,anchor=west] at (7.0, 1.3) {核算后的视角精英};
-% ---- arrows into route pool ----
-\foreach \vx in {0, 2.9, 5.8} {\draw[arrow] (\vx,-0.1) -- (\vx,-0.75);}
-\node[lbl] at (2.9,-1.0) {精英方案拆解为路线, 合并去重入池};
-% ---- route pool: one row of route cells; picked routes = thick border ----
-\foreach \i/\st in {0/pick,1/cell,2/cell,3/pick,4/cell,5/cell,6/cell,7/pick,8/cell,9/cell,10/pick,11/cell} {
-  \node[\st] at (-0.35+\i*0.59, -1.7) {};
-}
-\node[lbl,anchor=west] at (7.0,-1.55) {粗框: 集合划分};
-\node[lbl,anchor=west] at (7.0,-1.95) {选中的跨视角路线};
-% ---- SP recombination to a candidate solution ----
-\draw[arrow] (2.9,-2.0) -- (2.9,-2.6);
-\node[lbl] at (2.9,-2.85) {集合划分重组(式(\ref{eq:sp-recombination}), HiGHS求解)};
-\node[draw,thin,minimum width=2.55cm,minimum height=6mm,align=center] (cand) at (1.2,-3.6) {重组方案\\成本$\hat F'$};
-\node[draw,thin,minimum width=2.55cm,minimum height=6mm,align=center] (par) at (4.6,-3.6) {最好父方案\\成本$F^{*}$};
-\node[diamond,draw,thin,aspect=2.2,inner sep=0.5pt,align=center] (cmp) at (2.9,-4.75) {$\hat F'<F^{*}$?};
-\draw[arrow] (cand.south) |- ++(0.6,-0.42) -- (cmp.west);
-\draw[arrow] (par.south) |- ++(-0.6,-0.42) -- (cmp.east);
-\node[draw,thin,minimum width=2.9cm,minimum height=6mm,align=center] (out) at (2.9,-5.9) {更新当前最好方案};
-\draw[arrow] (cmp.south) -- node[right,xshift=1pt]{是: 采纳重组方案} (out.north);
-\draw[arrow] (cmp.east) -| node[pos=0.25,above]{否: 保留父方案} (6.2,-5.9) -- (out.east);
+
+% (b) Deduplicated route pool (upper right); heavy rules indicate SP selection.
+\node[panel] at (2.10,2.40) {(b) 完整成本路线池$\mathcal P$};
+\node[chosen] (p1) at (2.10,1.78) {$r_{F,1}$};
+\node[route]  (p2) at (2.10,1.20) {$r_{F,2}$};
+\node[chosen] (p3) at (2.10,0.62) {$r_{E,2}$};
+\node[route]  (p4) at (2.10,0.04) {$r_{M,2}$};
+\node[chosen] (p5) at (2.10,-0.54) {$r_{M,1}$};
+
+% (c) Customer-route incidence matrix and exact set partitioning (lower right).
+\node[panel] at (2.10,-1.40) {(c) 精确集合划分};
+\begin{scope}[shift={(0.80,-3.77)}]
+  \fill[black!15] (0,0) rectangle (0.52,2.08);
+  \fill[black!15] (1.04,0) rectangle (1.56,2.08);
+  \fill[black!15] (2.08,0) rectangle (2.60,2.08);
+  \draw[thin] (0,0) grid[xstep=0.52,ystep=0.52] (2.60,2.08);
+  \draw[very thick] (0,0) rectangle (0.52,2.08);
+  \draw[very thick] (1.04,0) rectangle (1.56,2.08);
+  \draw[very thick] (2.08,0) rectangle (2.60,2.08);
+  \node[tinylabel] at (0.26,1.82) {1}; \node[tinylabel] at (0.78,1.82) {1};
+  \node[tinylabel] at (1.30,1.82) {0}; \node[tinylabel] at (1.82,1.82) {0};
+  \node[tinylabel] at (2.34,1.82) {0};
+  \node[tinylabel] at (0.26,1.30) {0}; \node[tinylabel] at (0.78,1.30) {0};
+  \node[tinylabel] at (1.30,1.30) {1}; \node[tinylabel] at (1.82,1.30) {1};
+  \node[tinylabel] at (2.34,1.30) {0};
+  \node[tinylabel] at (0.26,0.78) {0}; \node[tinylabel] at (0.78,0.78) {1};
+  \node[tinylabel] at (1.30,0.78) {1}; \node[tinylabel] at (1.82,0.78) {0};
+  \node[tinylabel] at (2.34,0.78) {0};
+  \node[tinylabel] at (0.26,0.26) {0}; \node[tinylabel] at (0.78,0.26) {0};
+  \node[tinylabel] at (1.30,0.26) {0}; \node[tinylabel] at (1.82,0.26) {1};
+  \node[tinylabel] at (2.34,0.26) {1};
+\end{scope}
+\coordinate (matrixeast) at (3.40,-2.73);
+\coordinate (matrixwest) at (0.80,-2.73);
+\node[tinylabel,text width=3.75cm] at (2.10,-4.17)
+    {$\min\ \hat{\boldsymbol c}^{\mathsf T}\boldsymbol\lambda$，\quad$\hat A\boldsymbol\lambda=\boldsymbol1$};
+\node[tinylabel] at (2.10,-4.55) {灰底粗框：$\lambda_r=1$};
+
+% (d) Full-model adjudication and monotone acceptance (lower left).
+\node[panel] at (-3.20,-1.40) {(d) 完整模型裁决与单调接受};
+\node[check] (fullcheck) at (-3.20,-2.18) {路线拼装与车型指派\\完整约束补全和独立核验};
+\node[decision] (compare) at (-3.20,-3.62) {$F(\boldsymbol\lambda)<F^*$};
+\coordinate (branch) at (-3.20,-4.28);
+\node[result] (accept) at (-4.30,-5.00) {更新$F^*$};
+\node[result] (keep) at (-2.10,-5.00) {保留$F^*$};
+
+% Stage arrows stay in the central or outer whitespace and never cross text.
+\draw[arrow] (-1.82,1.20) -- (p2.west);
+\draw[arrow] (p5.east) -- (3.78,-0.54) |- (matrixeast);
+\draw[arrow] (matrixwest) -- (-1.05,-2.73) |- (fullcheck.east);
+\draw[arrow] (fullcheck.south) -- (compare.north);
+\draw[semithick] (compare.south) -- (branch);
+\draw[arrow] (branch) -| (accept.north);
+\draw[arrow] (branch) -| (keep.north);
+\node[tinylabel,above] at (-3.78,-4.28) {是};
+\node[tinylabel,above] at (-2.62,-4.28) {否};
 \end{tikzpicture}
 \caption{三视角路线池与集合划分重组示意}
 \label{fig:route-pool}
@@ -817,7 +872,7 @@ a_q^{\mathrm{ch}}&=\arg\min_{a\in\mathcal A_q}\sum_{t\in T}\widehat\gamma_t y_{q
 \textbf{步骤8：终止条件.}
 在标准算例实验中, 搜索达到给定墙钟时限时算法停止;
 在本文模型实验中, 各视角搜索连续$K$次迭代无改进即视为收敛,
-随后的重组轮次在连续2轮无改进时停止.
+随后的延续重组最多执行4轮, 并在连续2轮无改进时提前停止.
 算法输出经独立检查器复核的总体最好可行方案.
 
 % ================================================================
@@ -852,46 +907,25 @@ a_q^{\mathrm{ch}}&=\arg\min_{a\in\mathcal A_q}\sum_{t\in T}\widehat\gamma_t y_{q
 按客户数、车场数、需求离散度、时间窗紧度和充电可达率五项特征,
 取距全体81个算例特征中位向量最近者为仿真算例并在实验前登记,
 选出的仿真算例为珠三角50客户算例(广州、深圳双车场).
-仿真算例的客户点和车场详细信息如表\ref{tab:instance-detail}所示,
-其中1--50为客户点, 51、52分别为广州、深圳车场.
+仿真算例的节点信息如表\ref{tab:instance-detail}所示,
+其中1--50为客户点, 51、52为广州和深圳车场, 53、54为两地公共充电站.
 
 \begin{table}[H]
 \centering
-\caption{仿真算例客户点和车场详细信息表}
+\caption{仿真算例节点信息表}
 \label{tab:instance-detail}
-\setptabsetup
-\begin{tabularx}{\linewidth}{@{}rXXlrr|rXXlrr@{}}
+{\fontsize{7.3pt}{8.5pt}\selectfont
+\renewcommand{\arraystretch}{0.92}
+\setlength{\tabcolsep}{1.3pt}
+\begin{tabular*}{\linewidth}{@{\extracolsep{\fill}}ccrrcrr@{\hspace{5pt}}ccrrcrr@{}}
 \toprule
-编号 & 经度 & 纬度 & 时间窗 & \makecell{需求\\(kg)} & \makecell{服务\\(min)} & 编号 & 经度 & 纬度 & 时间窗 & \makecell{需求\\(kg)} & \makecell{服务\\(min)}\\
+编号 & 类型 & 经度/$^\circ$E & 纬度/$^\circ$N & $[ET,LT]$ & $q_i$/kg & $s_i$/min &
+编号 & 类型 & 经度/$^\circ$E & 纬度/$^\circ$N & $[ET,LT]$ & $q_i$/kg & $s_i$/min\\
 \midrule
-1 & 113.2777 & 23.1265 & 15:51--16:45 & 208 & 9 & 27 & 114.0305 & 22.5677 & 16:52--17:27 & 208 & 9 \\
-2 & 113.2753 & 23.1409 & 12:49--13:25 & 278 & 12 & 28 & 114.0465 & 22.5059 & 11:59--12:32 & 278 & 12 \\
-3 & 113.2489 & 23.1427 & 14:00--14:57 & 139 & 6 & 29 & 114.0528 & 22.5385 & 17:09--17:39 & 417 & 18 \\
-4 & 113.2305 & 23.0865 & 15:51--16:45 & 208 & 9 & 30 & 114.0638 & 22.5592 & 14:00--14:40 & 208 & 9 \\
-5 & 113.2088 & 23.0783 & 14:57--15:52 & 278 & 12 & 31 & 114.0612 & 22.5389 & 16:59--17:37 & 278 & 12 \\
-6 & 113.2699 & 23.0916 & 17:08--17:59 & 278 & 12 & 32 & 114.0210 & 22.5411 & 13:26--14:18 & 278 & 12 \\
-7 & 113.2716 & 23.1205 & 14:51--15:41 & 208 & 9 & 33 & 114.0598 & 22.5387 & 16:53--17:44 & 208 & 9 \\
-8 & 113.2766 & 23.1392 & 12:44--13:22 & 208 & 9 & 34 & 114.0481 & 22.5371 & 15:37--16:22 & 208 & 9 \\
-9 & 113.2897 & 23.1236 & 12:42--13:39 & 208 & 9 & 35 & 114.0218 & 22.5308 & 13:07--13:47 & 139 & 6 \\
-10 & 113.2902 & 23.1241 & 16:19--17:08 & 208 & 9 & 36 & 114.0416 & 22.5447 & 12:54--13:40 & 139 & 6 \\
-11 & 113.2648 & 23.1252 & 13:28--14:21 & 208 & 9 & 37 & 114.0242 & 22.5299 & 13:23--13:56 & 417 & 18 \\
-12 & 113.2684 & 23.0978 & 15:47--16:40 & 278 & 12 & 38 & 114.0638 & 22.5662 & 15:45--16:36 & 278 & 12 \\
-13 & 113.2645 & 23.1230 & 15:44--16:41 & 347 & 15 & 39 & 114.0580 & 22.5257 & 13:16--14:05 & 347 & 15 \\
-14 & 113.2484 & 23.1241 & 13:27--14:01 & 278 & 12 & 40 & 114.0430 & 22.5509 & 15:15--16:01 & 417 & 18 \\
-15 & 113.2476 & 23.1291 & 12:53--13:30 & 417 & 18 & 41 & 114.0575 & 22.5253 & 12:49--13:31 & 417 & 18 \\
-16 & 113.2796 & 23.1364 & 12:01--12:48 & 139 & 6 & 42 & 114.0683 & 22.5191 & 17:00--17:53 & 139 & 6 \\
-17 & 113.2411 & 23.1291 & 16:10--17:03 & 278 & 12 & 43 & 114.0608 & 22.5382 & 12:02--12:57 & 139 & 6 \\
-18 & 113.2367 & 23.1191 & 16:13--17:03 & 139 & 6 & 44 & 114.0492 & 22.4953 & 15:56--16:42 & 278 & 12 \\
-19 & 113.2708 & 23.1418 & 17:22--17:53 & 347 & 15 & 45 & 114.0194 & 22.5339 & 15:44--16:41 & 347 & 15 \\
-20 & 113.2669 & 23.1289 & 12:25--13:05 & 139 & 6 & 46 & 114.0466 & 22.5308 & 12:47--13:32 & 139 & 6 \\
-21 & 113.2756 & 23.1341 & 13:23--14:11 & 139 & 6 & 47 & 114.0598 & 22.5344 & 13:01--13:37 & 208 & 9 \\
-22 & 113.2633 & 23.1299 & 11:58--12:40 & 278 & 12 & 48 & 114.0160 & 22.5433 & 16:33--17:21 & 139 & 6 \\
-23 & 113.2300 & 23.0846 & 14:20--14:52 & 139 & 6 & 49 & 114.0506 & 22.5485 & 16:11--16:50 & 139 & 6 \\
-24 & 114.0475 & 22.5379 & 17:48--18:29 & 208 & 9 & 50 & 114.0463 & 22.5398 & 12:56--13:43 & 417 & 18 \\
-25 & 114.0219 & 22.5370 & 17:33--18:27 & 208 & 9 & 51 & 113.5226 & 23.0789 & 06:00--22:00 & - & - \\
-26 & 114.0600 & 22.5388 & 16:45--17:23 & 278 & 12 & 52 & 114.0134 & 22.7177 & 06:00--22:00 & - & - \\
-\bottomrule
-\end{tabularx}
+\input{../../baselines/e2_final_campaign_20260720/p2p3_threeview/s6_support/s6_sup_01_instance_details/instance_details_table_body.tex}
+\end{tabular*}
+}
+\tabnote{注：时间窗统一按$[ET,LT]$表示，ET和LT分别为节点允许服务的最早和最晚本地时刻；车场与充电站在运营时域06:00--22:00内开放，其需求量和服务时间不适用。}
 \end{table}
 
 \begin{table}[H]
@@ -899,7 +933,7 @@ a_q^{\mathrm{ch}}&=\arg\min_{a\in\mathcal A_q}\sum_{t\in T}\widehat\gamma_t y_{q
 \caption{车型参数}
 \label{tab:vehicle}
 \setptabsetup
-\begin{tabular}{@{}lcc@{}}
+\begin{tabular*}{\linewidth}{@{\extracolsep{\fill}}lcc@{}}
 \toprule
 参数 & 燃油车(CV) & 电动车(EV)\\
 \midrule
@@ -914,8 +948,8 @@ a_q^{\mathrm{ch}}&=\arg\min_{a\in\mathcal A_q}\sum_{t\in T}\widehat\gamma_t y_{q
 电机额定/峰值功率(kW) & --- & 75/167\\
 里程费率(元/km)  & 0.78 & 0.67\\
 \bottomrule
-\end{tabular}
-\tabnote[0.92\linewidth]{注: 质量、载重与电池为厂家官方厢式车型数据; 空气阻力系数、迎风面积投影因子和能耗系数为公开情景代理与文献迁移值.}
+\end{tabular*}
+\tabnote{注：质量、载重与电池为厂家官方厢式车型数据；空气阻力系数、迎风面积投影因子和能耗系数为公开情景代理与文献迁移值。}
 \end{table}
 
 参考现实数据与相关文献设置以下参数.
@@ -937,7 +971,7 @@ $g_0$=9.81~m/s$^2$, $\rho^a$=1.2041~kg/m$^3$, $c_R$=0.01, 空阻系数与迎风�
 \caption{车场1--10~kV单一制分时目录电价(2025年2月, 元/kWh)}
 \label{tab:tou}
 \setptabsetup
-\begin{tabular}{@{}lcccc@{}}
+\begin{tabular*}{\linewidth}{@{\extracolsep{\fill}}lcccc@{}}
 \toprule
 价区(代表城市) & 尖峰 & 峰 & 平 & 谷\\
 \midrule
@@ -948,8 +982,8 @@ $g_0$=9.81~m/s$^2$, $\rho^a$=1.2041~kg/m$^3$, $c_R$=0.01, 空阻系数与迎风�
 四川(成都)          & ---    & 1.1952 & 0.7880 & 0.3809\\
 重庆(重庆)          & ---    & 1.2278 & 0.8215 & 0.4017\\
 \bottomrule
-\end{tabular}
-\tabnote[0.94\linewidth]{注: 为2025年2月各价区1--10~kV单一制用户分时目录电价; 深圳价区目录行以官方闭合为准; 公共站电价在上述电能费基础上叠加运营商分时服务费.}
+\end{tabular*}
+\tabnote{注：表中为2025年2月各价区1--10~kV单一制用户分时目录电价；深圳价区目录行以官方闭合为准；公共站电价在上述电能费基础上叠加运营商分时服务费。}
 \end{table}
 %% DATA_PLACEHOLDER: 深圳价区目录行待官方闭合后补入表tab:tou
 
@@ -970,7 +1004,7 @@ $g_0$=9.81~m/s$^2$, $\rho^a$=1.2041~kg/m$^3$, $c_R$=0.01, 空阻系数与迎风�
 
 \begin{figure}[H]
 \centering
-\includegraphics[width=0.74\linewidth]{generated_figures/figure3_carbon_profile_v5.pdf}
+\includegraphics[width=0.74\linewidth]{generated_figures/figure3_carbon_profile_v11.pdf}
 \caption{三大城市群典型日电网碳强度曲线}
 \label{fig:carbon-profile}
 \end{figure}
@@ -999,7 +1033,7 @@ $g_0$=9.81~m/s$^2$, $\rho^a$=1.2041~kg/m$^3$, $c_R$=0.01, 空阻系数与迎风�
 \setptabsetup
 \begin{tabular*}{\linewidth}{@{\extracolsep{\fill}}lrrrrrrrr@{}}
 \toprule
-路径 & 距离/km & 成本/元 & 时间/h & 油耗/L & 电耗/kWh & 碳排放/kg & num & 装载率/\%\\
+路径 & \multicolumn{1}{c}{距离/km} & \multicolumn{1}{c}{成本/元} & \multicolumn{1}{c}{时间/h} & \multicolumn{1}{c}{油耗/L} & \multicolumn{1}{c}{电耗/kWh} & \multicolumn{1}{c}{碳排放/kg} & \multicolumn{1}{c}{num} & \multicolumn{1}{c}{装载率/\%}\\
 \midrule
 {[}51, 2, 8, 21, 9, 7, 13, 19, 51{]} & 68.884 & 290.306 & 12.001 & 9.466 & 0.000 & 25.605 & 7 & 100.00 \\
 {[}51, 16, 20, 22, 15, 14, 11, 1, 51{]} & 68.536 & 288.342 & 10.423 & 9.226 & 0.000 & 24.954 & 7 & 96.08 \\
@@ -1014,7 +1048,7 @@ $g_0$=9.81~m/s$^2$, $\rho^a$=1.2041~kg/m$^3$, $c_R$=0.01, 空阻系数与迎风�
 合计 & 613.198 & 2357.118 & 100.730 & 42.145 & 109.175 & 116.406 & 50 & - \\
 \bottomrule
 \end{tabular*}
-\tabnote[0.9\linewidth]{注: 路径列中1--50为客户编号, 51、52分别为广州、深圳车场.}
+\tabnote{注：路径列中1--50为客户编号，51、52分别为广州、深圳车场。}
 \end{table}
 
 \subsection{算法有效性分析}
@@ -1045,10 +1079,11 @@ MDFIHA-ETGA 0.99\%; 本文算法平均Best误差为0.90\%, 为全部对比算法
 \caption{MDVRPTW标准算例结果表}
 \label{tab:v13-results}
 \setptabsetup
-\begin{tabular*}{\linewidth}{@{\extracolsep{\fill}}lllrrrrrrr@{}}
+\begin{tabular*}{\linewidth}{@{\extracolsep{\fill}}cccrrrrrrr@{}}
 \toprule
-instances & $n$ & BKS & VCGP & MDFIHA & MDFIHA-ETGA & \multicolumn{2}{c}{PyVRP-HGS} & \multicolumn{2}{c}{MV-HGS-SP}\\
- &  &  & Best. & Best. & Best. & Best. & avg. & Best. & avg.\\
+\multirow{2}{*}{instances} & \multirow{2}{*}{$n$} & \multirow{2}{*}{BKS} & \multicolumn{1}{c}{VCGP} & \multicolumn{1}{c}{MDFIHA} & \multicolumn{1}{c}{MDFIHA-ETGA} & \multicolumn{2}{c}{PyVRP-HGS} & \multicolumn{2}{c}{MV-HGS-SP}\\
+\cmidrule(lr){4-4}\cmidrule(lr){5-5}\cmidrule(lr){6-6}\cmidrule(lr){7-8}\cmidrule(lr){9-10}
+ &  &  & \multicolumn{1}{c}{Best.} & \multicolumn{1}{c}{Best.} & \multicolumn{1}{c}{Best.} & \multicolumn{1}{c}{Best.} & \multicolumn{1}{c}{avg.} & \multicolumn{1}{c}{Best.} & \multicolumn{1}{c}{avg.}\\
 \midrule
 PR11A & 360 & 6655.548 & 0.98 & 0.45 & 0.41 & \textbf{0.26} & 0.90 & \textbf{0.26} & 0.77 \\
 PR11B & 360 & 4814.803 & 0.51 & 0.38 & 0.35 & 0.11 & 0.56 & \textbf{0.04} & 0.46 \\
@@ -1081,7 +1116,7 @@ PR24B & 960 & 10486.450 & 3.85 & 2.24 & 1.70 & 2.24 & 3.01 & \textbf{1.48} & 1.9
 Avg & -- & -- & 1.60 & 1.37 & 0.99 & 1.47 & 2.06 & \textbf{0.90} & 1.39 \\
 \bottomrule
 \end{tabular*}
-\tabnote[0.96\linewidth]{注: 表中数值为相对BKS的误差百分比; 文献列取原论文报告的最好值; PyVRP-HGS与MV-HGS-SP为同机、相同时间上限、种子1--10的结果.}
+\tabnote{注：表中数值为相对BKS的误差百分比；文献列取原论文报告的最好值；PyVRP-HGS与MV-HGS-SP为同机、相同时间上限、种子1--10的结果。}
 \end{table}
 
 \subsubsection{本文模型实验}
@@ -1094,10 +1129,46 @@ MV-HGS-SP由HGS-F(燃油成本视角)、HGS-E(简化电动视角)、HGS-M(机制
 MV-HGS-SP的融合参数为三视角等分搜索预算,
 每视角至多24个候选补全并保留8个精英, 路线池上限600条,
 集合划分时间盒不超过总时限的10\%.
-实验结果如表\ref{tab:algorithm-comparison}和图\ref{fig:convergence}所示,
-其中表\ref{tab:algorithm-comparison}的(a)段为仿真算例上的重复运行结果,
-(b)段为算例集全量的分层汇总结果, 两段共用同一算法列结构, 由算例级细察递进到全量泛化.
-分析可知:
+仿真算例的重复运行结果及其迭代过程分别见表\ref{tab:algorithm-comparison}和图\ref{fig:convergence};
+全量算例的分层结果见表\ref{tab:china81-summary}, 由算例级细察递进到全量泛化.
+
+\begin{table}[H]
+\centering
+\caption{不同算法对比表}
+\label{tab:algorithm-comparison}
+\setptabsetup
+\begin{tabular*}{\linewidth}{@{\extracolsep{\fill}}crrrrrrrr@{}}
+\toprule
+\multirow{2}{*}{序号} & \multicolumn{2}{c}{HGS-F} & \multicolumn{2}{c}{HGS-E} & \multicolumn{2}{c}{HGS-M} & \multicolumn{2}{c}{MV-HGS-SP}\\
+\cmidrule(lr){2-3}\cmidrule(lr){4-5}\cmidrule(lr){6-7}\cmidrule(lr){8-9}
+ & \multicolumn{1}{c}{值} & \multicolumn{1}{c}{CPU} & \multicolumn{1}{c}{值} & \multicolumn{1}{c}{CPU} & \multicolumn{1}{c}{值} & \multicolumn{1}{c}{CPU} & \multicolumn{1}{c}{值} & \multicolumn{1}{c}{CPU}\\
+\midrule
+1 & 2482.447 & 0.20 & \textbf{2357.499} & 0.49 & 2364.049 & 0.28 & 2357.499 & 1.02 \\
+2 & 2481.660 & 0.20 & 2358.731 & 0.38 & 2358.731 & 0.23 & 2358.731 & 0.65 \\
+3 & 2480.060 & 0.21 & 2358.731 & 0.36 & 2362.121 & 0.25 & 2362.121 & 0.62 \\
+4 & \textbf{2473.740} & 0.21 & 2357.641 & 0.24 & 2364.375 & 0.38 & \textbf{2357.118} & 1.16 \\
+5 & 2480.060 & 0.26 & 2364.049 & 0.32 & 2358.731 & 0.27 & \textbf{2357.118} & 0.70 \\
+6 & 2480.060 & 0.21 & 2364.049 & \textbf{0.23} & 2364.287 & 0.38 & \textbf{2357.118} & 1.04 \\
+7 & 2480.060 & 0.20 & 2364.049 & 0.28 & 2358.731 & 0.26 & \textbf{2357.118} & 0.98 \\
+8 & 2481.200 & 0.21 & 2357.641 & 0.32 & 2357.763 & 0.38 & 2357.499 & 0.98 \\
+9 & 2480.060 & 0.19 & 2359.195 & 0.41 & \textbf{2357.641} & 0.28 & 2357.641 & \textbf{0.58} \\
+10 & 2480.060 & \textbf{0.19} & 2358.731 & 0.29 & 2365.878 & \textbf{0.22} & \textbf{2357.118} & 0.70 \\
+Min & 2473.740 & 0.19 & 2357.499 & 0.23 & 2357.641 & 0.22 & 2357.118 & 0.58 \\
+Avg & 2479.377 & 0.20 & 2359.801 & 0.32 & 2360.904 & 0.29 & 2357.836 & 0.82 \\
+Max & 2482.447 & 0.26 & 2364.049 & 0.49 & 2365.878 & 0.38 & 2362.121 & 1.16 \\
+\bottomrule
+\end{tabular*}
+\tabnote{注：值为总成本(元)，CPU为实际运行时间(min)；各算法的值列和CPU列分别以黑体标出10次运行中的最小值。}
+\end{table}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.74\linewidth]{generated_figures/figure4_convergence_v11.pdf}
+\caption{不同算法迭代图}
+\label{fig:convergence}
+\end{figure}
+
+由表\ref{tab:algorithm-comparison}和图\ref{fig:convergence}可知:
 1) 在求解精度上, MV-HGS-SP的平均成本为2357.836元, 最优成本为2357.118元,
 均为四种算法中最低; 其最差一次结果2362.121元亦低于其余三种算法的最差值,
 体现出融合结构的稳定性.
@@ -1105,41 +1176,33 @@ MV-HGS-SP的融合参数为三视角等分搜索预算,
 HGS-E与HGS-M平均成本分别为2359.801元与2360.904元, 各有所长但均逊于融合体,
 说明重组增量来自跨视角路线的互补而非单一视角的延伸.
 3) 在求解时间上, 三个单视角平均CPU为0.20--0.32 min, MV-HGS-SP为0.82 min;
-融合体以可承受的额外精确重组开销换取更低且更稳定的成本, 各算法实际CPU已在表中完整披露.
-由图\ref{fig:convergence}可见, 各算法在起始阶段均快速下降;
-HGS-F收敛于约2480元的高位平台, HGS-E与HGS-M降至2360--2375元区间后改善放缓,
-MV-HGS-SP则在约0.05 min后基本保持四者最低并收敛于最低成本.
-图中曲线为运行过程中历史种群最优骨架经完整模型评分的最好值,
-个别种子的曲线终点可略优于最终采纳解, 源于代理评价与完整模型评价的排序差异.
-综上所述, MV-HGS-SP在复杂机制约束下兼具有效性和稳定性.
+融合体以额外的精确重组时间换取更低且更稳定的成本, 各算法实际CPU均已在表中披露.
+图中各曲线在起始阶段均快速下降; HGS-F随后稳定在约2480元,
+HGS-E与HGS-M降至2360--2375元区间后改善放缓,
+MV-HGS-SP在约0.05~min后进入2365元以内, 并于约0.27~min达到该次运行的最低复核成本.
+需要说明的是, 代理目标用于搜索引导, 完整模型用于候选复核;
+因此图中只在代理目标刷新时保存骨架, 再于搜索后离线执行完整模型评分.
+折线表示这些已观察骨架的累计最低复核成本,
+并非对搜索期间全部候选持续执行完整评分所得的逐时最优.
+个别种子的曲线终点可能略优于最终采纳解, 这是代理评价与完整模型评价排序不一致的结果;
+表\ref{tab:algorithm-comparison}仍严格按算法实际输出统计.
+
+为检验上述规律能否推广到不同区域和规模,
+进一步在中国三大城市群算例集全部81个算例上以5个种子进行收敛式对比,
+并以配对Wilcoxon符号秩检验和Holm校正评估显著性,
+按城市群与规模层汇总的结果如表\ref{tab:china81-summary}所示.
 
 \begin{table}[H]
 \centering
-\caption{不同算法对比表}
-\label{tab:algorithm-comparison}
+\caption{中国三大城市群算例集分层结果}
+\label{tab:china81-summary}
 \setptabsetup
-\begin{tabular*}{\linewidth}{@{\extracolsep{\fill}}ll rr rr rr rr@{}}
+\begin{tabular*}{\linewidth}{@{\extracolsep{\fill}}ccrrrrrrrr@{}}
 \toprule
-& & \multicolumn{2}{c}{HGS-F} & \multicolumn{2}{c}{HGS-E} & \multicolumn{2}{c}{HGS-M} & \multicolumn{2}{c}{MV-HGS-SP}\\
+\multirow{2}{*}{城市群} & \multirow{2}{*}{规模层} & \multicolumn{2}{c}{HGS-F} & \multicolumn{2}{c}{HGS-E} & \multicolumn{2}{c}{HGS-M} & \multicolumn{2}{c}{MV-HGS-SP}\\
+\cmidrule(lr){3-4}\cmidrule(lr){5-6}\cmidrule(lr){7-8}\cmidrule(lr){9-10}
+ & & \multicolumn{1}{c}{Best.} & \multicolumn{1}{c}{avg.} & \multicolumn{1}{c}{Best.} & \multicolumn{1}{c}{avg.} & \multicolumn{1}{c}{Best.} & \multicolumn{1}{c}{avg.} & \multicolumn{1}{c}{Best.} & \multicolumn{1}{c}{avg.}\\
 \midrule
-\multicolumn{10}{@{}l}{(a) 仿真算例上10次独立运行(值为总成本/元, CPU单位为min)}\\
-\multicolumn{2}{@{}l}{序号} & 值 & CPU & 值 & CPU & 值 & CPU & 值 & CPU\\
-\multicolumn{2}{@{}l}{1} & 2482.447 & 0.20 & \textbf{2357.499} & 0.49 & 2364.049 & 0.28 & 2357.499 & 1.02 \\
-\multicolumn{2}{@{}l}{2} & 2481.660 & 0.20 & 2358.731 & 0.38 & 2358.731 & 0.23 & 2358.731 & 0.65 \\
-\multicolumn{2}{@{}l}{3} & 2480.060 & 0.21 & 2358.731 & 0.36 & 2362.121 & 0.25 & 2362.121 & 0.62 \\
-\multicolumn{2}{@{}l}{4} & \textbf{2473.740} & 0.21 & 2357.641 & 0.24 & 2364.375 & 0.38 & \textbf{2357.118} & 1.16 \\
-\multicolumn{2}{@{}l}{5} & 2480.060 & 0.26 & 2364.049 & 0.32 & 2358.731 & 0.27 & \textbf{2357.118} & 0.70 \\
-\multicolumn{2}{@{}l}{6} & 2480.060 & 0.21 & 2364.049 & \textbf{0.23} & 2364.287 & 0.38 & \textbf{2357.118} & 1.04 \\
-\multicolumn{2}{@{}l}{7} & 2480.060 & 0.20 & 2364.049 & 0.28 & 2358.731 & 0.26 & \textbf{2357.118} & 0.98 \\
-\multicolumn{2}{@{}l}{8} & 2481.200 & 0.21 & 2357.641 & 0.32 & 2357.763 & 0.38 & 2357.499 & 0.98 \\
-\multicolumn{2}{@{}l}{9} & 2480.060 & 0.19 & 2359.195 & 0.41 & \textbf{2357.641} & 0.28 & 2357.641 & \textbf{0.58} \\
-\multicolumn{2}{@{}l}{10} & 2480.060 & \textbf{0.19} & 2358.731 & 0.29 & 2365.878 & \textbf{0.22} & \textbf{2357.118} & 0.70 \\
-\multicolumn{2}{@{}l}{Min} & \textbf{2473.740} & \textbf{0.19} & \textbf{2357.499} & \textbf{0.23} & \textbf{2357.641} & \textbf{0.22} & \textbf{2357.118} & \textbf{0.58} \\
-\multicolumn{2}{@{}l}{Avg} & 2479.377 & 0.20 & 2359.801 & 0.32 & 2360.904 & 0.29 & 2357.836 & 0.82 \\
-\multicolumn{2}{@{}l}{Max} & 2482.447 & 0.26 & 2364.049 & 0.49 & 2365.878 & 0.38 & 2362.121 & 1.16 \\
-\midrule
-\multicolumn{10}{@{}l}{(b) 中国三大城市群算例集81个算例分层结果(元)}\\
-城市群 & 规模层 & Best. & avg. & Best. & avg. & Best. & avg. & Best. & avg.\\
 成渝 & 10/15/20 & 919.43 & 922.62 & 908.99 & 909.00 & \textbf{908.61} & 908.67 & \textbf{908.61} & \textbf{908.61} \\
 成渝 & 25/50/75 & 2575.24 & 2583.28 & 2550.52 & 2553.06 & 2541.86 & 2552.16 & \textbf{2540.86} & \textbf{2542.49} \\
 成渝 & 100/150/200 & 7272.32 & 7303.87 & 7249.56 & 7272.93 & 7248.95 & 7287.72 & \textbf{7233.90} & \textbf{7257.63} \\
@@ -1152,19 +1215,9 @@ MV-HGS-SP则在约0.05 min后基本保持四者最低并收敛于最低成本.
 总体 & 全部9层 & 3531.49 & 3539.59 & 3511.60 & 3519.84 & 3510.95 & 3522.00 & \textbf{3506.33} & \textbf{3511.49} \\
 \bottomrule
 \end{tabular*}
-\tabnote[0.96\linewidth]{注: (a)段各算法的值列与CPU列分别按列加粗最小值; (b)段每算例5种子收敛式运行, 数值为层内各算例Best与5种子平均成本的均值, 每行Best与avg分别加粗最小值; HGS-E在1个算例的1个种子上无完整模型可行解, 该算例其Best/avg按其余4个可行种子计(可行率404/405, 其余算法均为405/405); 显著性由配对Wilcoxon符号秩检验与Holm校正给出, 三组对比均$p<0.001$.}
+\tabnote{注：成本单位为元；每个算例按5个种子收敛式运行，表中数值为层内各算例Best和5种子平均成本的均值，每行Best和avg分别以黑体标出最小值。HGS-E在1个算例的1个种子上无完整模型可行解，该算例按其余4个可行种子统计(可行率404/405，其余算法均为405/405)；配对Wilcoxon符号秩检验经Holm校正后三组对比均$p<0.001$。}
 \end{table}
 
-\begin{figure}[H]
-\centering
-\includegraphics[width=0.74\linewidth]{generated_figures/figure4_convergence_v5.pdf}
-\caption{不同算法迭代图}
-\label{fig:convergence}
-\end{figure}
-
-进一步在中国三大城市群算例集全部81个算例上以5个种子进行收敛式对比,
-以配对Wilcoxon符号秩检验和Holm校正评估显著性,
-按城市群与规模层汇总的结果如表\ref{tab:algorithm-comparison}(b)段所示.
 在全部9个城市群--规模层及总体上, MV-HGS-SP的Best与avg均为四种算法最低,
 总体平均成本3511.49元, 低于HGS-F的3539.59元、HGS-E的3519.84元和HGS-M的3522.00元.
 配对检验显示, MV-HGS-SP对HGS-F、HGS-E、HGS-M的逐单元平均改善分别为
@@ -1191,13 +1244,13 @@ MV-HGS-SP则在约0.05 min后基本保持四者最低并收敛于最低成本.
 \caption{碳配额变化结果表}
 \label{tab:carbon-trading}
 \setptabsetup
-\begin{tabular}{@{}cccccc@{}}
+\begin{tabular*}{\linewidth}{@{\extracolsep{\fill}}cccccc@{}}
 \toprule
 碳价格(元/kg) & 碳配额(kg) & 碳排放量(kg) & 碳成本(元) & 总成本(元) & 碳成本占比(\%)\\
 \midrule
 %% DATA_PLACEHOLDER: 两种碳价×六档配额共12行(碳价档位与配额档位按预注册实验设定)
 \bottomrule
-\end{tabular}
+\end{tabular*}
 \end{table}
 
 \subsection{不同决策目标对比分析}
@@ -1214,7 +1267,7 @@ MV-HGS-SP则在约0.05 min后基本保持四者最低并收敛于最低成本.
 \caption{不同决策目标对比表}
 \label{tab:objective-comparison}
 \setptabsetup
-\begin{tabular}{@{}ccccc@{}}
+\begin{tabular*}{\linewidth}{@{\extracolsep{\fill}}ccccc@{}}
 \toprule
  & 距离 & $F-F_1$ & $F-F_6$ & $F$(本文)\\
 \midrule
@@ -1234,8 +1287,8 @@ MV-HGS-SP则在约0.05 min后基本保持四者最低并收敛于最低成本.
 碳排放量(kg)      & --- & --- & --- & ---\\
 满足时间窗客户数    & --- & --- & --- & ---\\
 \bottomrule
-\end{tabular}
-\tabnote[0.80\linewidth]{注: 逐行最优加粗.}
+\end{tabular*}
+\tabnote{注：逐行最优值以黑体表示。}
 %% DATA_PLACEHOLDER: 填数后按行加粗
 \end{table}
 
@@ -1256,7 +1309,7 @@ MV-HGS-SP则在约0.05 min后基本保持四者最低并收敛于最低成本.
 \caption{充电时机与运营排放变化}
 \label{tab:charging-emissions}
 \setptabsetup
-\begin{tabular}{@{}cccc@{}}
+\begin{tabular*}{\linewidth}{@{\extracolsep{\fill}}cccc@{}}
 \toprule
 情境 & 充电排放降幅(\%) & 运营总排放降幅(\%) & 改善电网日数/28\\
 \midrule
@@ -1265,8 +1318,8 @@ MV-HGS-SP则在约0.05 min后基本保持四者最低并收敛于最低成本.
 空间交错$\,\times\,$固定分工 & --- & --- & ---\\
 空间交错$\,\times\,$跨场协同 & --- & --- & ---\\
 \bottomrule
-\end{tabular}
-\tabnote[0.88\linewidth]{注: 各降幅按全部算例和电网日的排放量汇总计算; 路径、车辆、客户服务关系和充电量在两种充电安排间保持不变.}
+\end{tabular*}
+\tabnote{注：各降幅按全部算例和电网日的排放量汇总计算；路径、车辆、客户服务关系和充电量在两种充电安排间保持不变。}
 \end{table}
 
 进一步分析减排来源的窗口结构与电网日异质性:
@@ -1289,7 +1342,7 @@ MV-HGS-SP则在约0.05 min后基本保持四者最低并收敛于最低成本.
 \caption{不同配送模式对比表}
 \label{tab:mode-comparison}
 \setptabsetup
-\begin{tabular}{@{}ccccccc@{}}
+\begin{tabular*}{\linewidth}{@{\extracolsep{\fill}}ccccccc@{}}
 \toprule
  & 独立配送 & 固定责任协同 & 跨场重组协同 & \makecell{跨场重组vs\\独立配送} & \makecell{固定责任vs\\独立配送} & \makecell{跨场重组vs\\固定责任}\\
 \midrule
@@ -1309,8 +1362,8 @@ MV-HGS-SP则在约0.05 min后基本保持四者最低并收敛于最低成本.
 满足时间窗客户数   & --- & --- & --- & --- & --- & ---\\
 平均装载率(\%)   & --- & --- & --- & --- & --- & ---\\
 \bottomrule
-\end{tabular}
-\tabnote[0.97\linewidth]{注: 后三列为相对变化百分比; 逐行最优加粗.}
+\end{tabular*}
+\tabnote{注：后三列为相对变化百分比；逐行最优值以黑体表示。}
 %% DATA_PLACEHOLDER: 填数后按行加粗
 \end{table}
 
@@ -1335,15 +1388,15 @@ MV-HGS-SP则在约0.05 min后基本保持四者最低并收敛于最低成本.
 \caption{不同客户责任结构下的协同节省}
 \label{tab:responsibility-effect}
 \setptabsetup
-\begin{tabular}{@{}cccc@{}}
+\begin{tabular*}{\linewidth}{@{\extracolsep{\fill}}cccc@{}}
 \toprule
 责任结构 & 平均协同节省(\%) & 正向算例数 & 符号检验$p$\\
 \midrule
 地理聚集 & --- & --- & ---\\
 空间交错 & --- & --- & ---\\
 \bottomrule
-\end{tabular}
-\tabnote[0.86\linewidth]{注: 协同节省=(固定责任成本$-$跨场重组成本)/固定责任成本$\times$100\%.}
+\end{tabular*}
+\tabnote{注：协同节省=(固定责任成本$-$跨场重组成本)/固定责任成本$\times$100\%。}
 \end{table}
 
 \subsection{参与保障分析}
@@ -1361,7 +1414,7 @@ MV-HGS-SP则在约0.05 min后基本保持四者最低并收敛于最低成本.
 \caption{五档参与保障的系统成本与最低收益比}
 \label{tab:fairness-frontier}
 \setptabsetup
-\begin{tabular}{@{}ccccc@{}}
+\begin{tabular*}{\linewidth}{@{\extracolsep{\fill}}ccccc@{}}
 \toprule
 保障推进比例 & \makecell{最低收益比\\(地理聚集)} & \makecell{成本增幅(\%)\\(地理聚集)} & \makecell{最低收益比\\(空间交错)} & \makecell{成本增幅(\%)\\(空间交错)}\\
 \midrule
@@ -1371,8 +1424,8 @@ MV-HGS-SP则在约0.05 min后基本保持四者最低并收敛于最低成本.
 0.75 & --- & --- & --- & ---\\
 1.00 & --- & --- & --- & ---\\
 \bottomrule
-\end{tabular}
-\tabnote[0.90\linewidth]{注: 保障推进比例0为无约束起点, 1为双方均不低于各自独立经营; 最低收益比为各车场收益比的最小值.}
+\end{tabular*}
+\tabnote{注：保障推进比例0为无约束起点，1为双方均不低于各自独立经营；最低收益比为各车场收益比的最小值。}
 \end{table}
 
 \subsection{动态订单分析}
@@ -1390,13 +1443,13 @@ MV-HGS-SP则在约0.05 min后基本保持四者最低并收敛于最低成本.
 \caption{动态需求信息表}
 \label{tab:dynamic-events}
 \setptabsetup
-\begin{tabular}{@{}cccccc@{}}
+\begin{tabular*}{\linewidth}{@{\extracolsep{\fill}}cccccc@{}}
 \toprule
 ID & 需求类型 & 城市 & 需求(kg) & 时间窗 & 出现时刻\\
 \midrule
 %% DATA_PLACEHOLDER: 代表订单流逐事件行(新增/取消/改量)
 \bottomrule
-\end{tabular}
+\end{tabular*}
 \end{table}
 
 每次重规划冻结已执行路径前缀、继承车辆状态并重新优化剩余任务,
@@ -1409,14 +1462,14 @@ ID & 需求类型 & 城市 & 需求(kg) & 时间窗 & 出现时刻\\
 \caption{动态更新各项成本对比表}
 \label{tab:dynamic-costs}
 \setptabsetup
-\begin{tabular}{@{}cccccccc@{}}
+\begin{tabular*}{\linewidth}{@{\extracolsep{\fill}}cccccccc@{}}
 \toprule
 配送方案 & 派遣成本(元) & 里程成本(元) & 油耗成本(元) & 充电成本(元) & 碳排放成本(元) & 跨场成本(元) & 总成本(元)\\
 \midrule
 初始路径 & --- & --- & --- & --- & --- & --- & ---\\
 %% DATA_PLACEHOLDER: 各更新时刻行
 \bottomrule
-\end{tabular}
+\end{tabular*}
 \end{table}
 
 \begin{figure}[H]
@@ -1441,7 +1494,7 @@ ID & 需求类型 & 城市 & 需求(kg) & 时间窗 & 出现时刻\\
 \caption{完整动态机制相对三类对照的全日经济结果}
 \label{tab:dynamic-economics}
 \setptabsetup
-\begin{tabular}{@{}cccccc@{}}
+\begin{tabular*}{\linewidth}{@{\extracolsep{\fill}}cccccc@{}}
 \toprule
 对照 & 净收益差(元) & 收入差(元) & 成本差(元) & 完成客户差 & 完成货量差(kg)\\
 \midrule
@@ -1449,8 +1502,8 @@ ID & 需求类型 & 城市 & 需求(kg) & 时间窗 & 出现时刻\\
 完整$-$无底线    & --- & --- & --- & --- & ---\\
 完整$-$顺序插入  & --- & --- & --- & --- & ---\\
 \bottomrule
-\end{tabular}
-\tabnote[0.97\linewidth]{注: 各差值均为完整机制减去相应对照, 仅对四种机制均完成全日执行的同算例--责任--订单流单元取平均.}
+\end{tabular*}
+\tabnote{注：各差值均为完整机制减去相应对照，仅对四种机制均完成全日执行的同算例--责任--订单流单元取平均。}
 \end{table}
 
 \begin{table}[H]
@@ -1458,7 +1511,7 @@ ID & 需求类型 & 城市 & 需求(kg) & 时间窗 & 出现时刻\\
 \caption{动态机制的可执行性与计算时限}
 \label{tab:dynamic-diagnostics}
 \setptabsetup
-\begin{tabular}{@{}ccccc@{}}
+\begin{tabular*}{\linewidth}{@{\extracolsep{\fill}}ccccc@{}}
 \toprule
 机制 & 可执行率 & 跨场服务流数 & 满足参与流数 & 超时阶段数\\
 \midrule
@@ -1467,8 +1520,8 @@ ID & 需求类型 & 城市 & 需求(kg) & 时间窗 & 出现时刻\\
 无参与底线    & --- & --- & --- & ---\\
 顺序插入基线  & --- & --- & --- & ---\\
 \bottomrule
-\end{tabular}
-\tabnote[0.94\linewidth]{注: 订单流构成与数量按动态机制实验预注册设定; 超时阶段按阶段实际计算时间超过下一触发间隔计数.}
+\end{tabular*}
+\tabnote{注：订单流构成与数量按动态机制实验预注册设定；超时阶段按阶段实际计算时间超过下一触发间隔计数。}
 \end{table}
 
 \subsection{数值实验分析讨论}
