@@ -1,0 +1,39 @@
+{
+  "construction": "China81 V2-LOCATIONS frozen static nodes joined to MC001 order attributes",
+  "created_at_utc": "2026-07-22T13:57:10.435973+00:00",
+  "instance_id": "cn-prd-50c-01-V2-LOCATIONS",
+  "output": {
+    "coordinate_display_decimals": 4,
+    "coordinate_order": "longitude, latitude",
+    "customer_numbering": "C001--C050 -> 1--50",
+    "customers": 50,
+    "depot_numbering": "source depots sorted by city: Guangzhou -> 51, Shenzhen -> 52",
+    "depot_time_contract": "06:00--22:00 from solver CHINA81 horizon constants",
+    "depots": 2,
+    "rows": 52,
+    "time_display": "local HH:MM rounded to nearest minute; raw fractional source values are preserved in source_extract.csv",
+    "time_source_unit": "minutes from midnight"
+  },
+  "protected_scope": {
+    "evaluator_modified": false,
+    "main_tex_modified": false,
+    "sealed_inputs_modified": false
+  },
+  "schema_version": "resetp.e2.s6-sup-01-instance-details.v1",
+  "source_files": {
+    "china81_loader_contract": "solver/src/setp_solver/china81.py",
+    "instance_catalog": "data/ChinaInstances/china81_stage2_static_inputs_v1_20260718/instance_catalog.csv",
+    "nodes": "data/ChinaInstances/china81_stage2_static_inputs_v1_20260718/instances/cn-prd-50c-01-V2-LOCATIONS/nodes.csv",
+    "orders": "data/ChinaInstances/china81_order_attributes_mc001_v1_20260718/orders.csv",
+    "script": "baselines/e2_final_campaign_20260720/p2p3_threeview/s6_support/s6_sup_01_instance_details/run_s6_sup_01.py",
+    "static_input_manifest": "data/ChinaInstances/china81_stage2_static_inputs_v1_20260718/artifact_hashes.json"
+  },
+  "source_sha256": {
+    "baselines/e2_final_campaign_20260720/p2p3_threeview/s6_support/s6_sup_01_instance_details/run_s6_sup_01.py": "bbdfbe1c63cbce86d6caa4c3cb03b22e9bc4ac448186b1ba9acd874d7922b276",
+    "data/ChinaInstances/china81_order_attributes_mc001_v1_20260718/orders.csv": "01362bcffbbebd460f502dbc909b1a1f06250114dd28cacc94b8c580e283138e",
+    "data/ChinaInstances/china81_stage2_static_inputs_v1_20260718/artifact_hashes.json": "5fad87099052f9deee152c21e0e520183943831500391a155c816ecfd8b3bf2a",
+    "data/ChinaInstances/china81_stage2_static_inputs_v1_20260718/instance_catalog.csv": "82e82493b2da5e84f8cc3f7c8cf1ab89f1de9404c8569bbff3520e8da4415201",
+    "data/ChinaInstances/china81_stage2_static_inputs_v1_20260718/instances/cn-prd-50c-01-V2-LOCATIONS/nodes.csv": "9491a191be1f00287c46ca8b11ee6e414b379e20d63870d22b15853d7fd40521",
+    "solver/src/setp_solver/china81.py": "0587d493b7a9af189ef83ffd5ad9bfe0228b854b4378471346f3af7e25adb1a7"
+  }
+}

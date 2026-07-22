@@ -66,3 +66,40 @@ metadata:
 2026-07-22 Codex S3-TRAJ-CURVE-DEF-001 与 S5-REV-V4 收口：
 - 用户批准将图4定义为历史快照骨架经完整模型离线评分后的单调 best-so-far；原 S3-TRAJ v1/v2 HALT 证据不改写。离线物化完成 40/40，最终成本逐位匹配封存 S3，完整解违约 0；HGS-M/seed10 的 `2364.589958517462` 低于封存最终 `2365.8780971446868`，仅保留为轨迹观测，不进入表格。
 - S5-REV-V4 判定 `PASS_S5_ARTIFACTS_V4`。输出表4/表5/表6/China81 汇总、图3碳强度曲线、图4收敛曲线的 v4 CSV/TeX/PDF/PNG；47项哈希独立复核无缺失/不匹配，图3为144点，图4为29点，表4客户1--50恰好覆盖一次。v3产物和manifest保留，主TeX及保护文件未改。
+
+2026-07-22 S6-SUP-01/02/03 支撑产物收口：
+- `S6-SUP-01` 判定 `PASS_S6_SUP_01_INSTANCE_DETAILS`。从冻结
+  `cn-prd-50c-01-V2-LOCATIONS` 节点/订单源程序化导出 50 客户+广州/深圳车场共 52
+  行；坐标四位小数，ET/LT 以本地 06:00--22:00 展示，精确源值保存在
+  `source_extract.csv`，TeX 表体、CSV 和五件套已生成并绑定源文件哈希。
+- `S6-SUP-02` 判定 `PASS_S6_SUP_02_FIGURES_V5`。图3使用封存碳强度 v4 CSV 的 144
+  点，图4使用 `S3-TRAJ-CURVE-DEF-001` 批准的当前 v4 轨迹 29 点；v5 CSV 与相应
+  v4 CSV 字节一致。图4采用中文标签和 2350--2500/2580--2610 断轴；旧
+  `figure4_curve_data_v2.csv` 不作为当前图源。
+- `S6-SUP-03` 判定 `PASS_S6_SUP_03_PYVRP_NEIGHBORHOOD_AUDIT`。PyVRP 0.12.2
+  默认 9 个教育邻域中本代表题实际加入 8 个，唯一被 `supports(data)` 排除的是
+  `RelocateWithDepot`；项目没有自定义删除算子类型，但使用默认 40 客户 granular
+  neighbourhood。英文原名、中文释义、项目裁剪边界和源码哈希已写入清单。
+- 三个 S6 支撑目录的 artifact manifest 共 30 项逐文件重算通过，42 个本轮 S6 目录
+  AppleDouble 侧车已清理。主 TeX、封存 raw/witness、评价器、价格和搜索代码均未改；
+  产物交 Claude 嵌入，仍不能据此写终局标记。
+
+2026-07-22 S6-SUP-02 v6 图形渲染修订：
+- v5 图形与 manifest 原样保留。v6 只改呈现层：图3缩小右上图例并降低遮挡；图4
+  上段改为 `2510--2610`、下段保持 `2350--2500`，早期下降轨迹可见，图例移至下段
+  右上空白区。中文标签、颜色、线型和断轴语义保留。
+- 图3/图4 v6 CSV 与批准 v4 源逐字节一致（144/29 行），单调 best-so-far 不变；
+  300 dpi PNG 和矢量 PDF 均生成，PDF 经 `pdftoppm` 实际栅格化复核通过。
+- v5 旧生成器脚本哈希已恢复并与 v5 manifest 一致；v6 目录自带生成器、任务卡和
+  13 项 `artifact_hashes_v6.json`，AppleDouble=0。主 TeX、封存数据、评价器和保护
+  文件未改，当前交 Claude 的图为 v6。
+
+2026-07-22 S6-SUP-02 v7 恢复连续单轴：
+- 用户要求放弃断轴并恢复原样；v5/v6 原产物保留。v7 图3图例移至左下角空白区并
+  保持缩小字号；v7 图4取消断轴和上下分离坐标轴，恢复单一连续纵轴，四条曲线连续
+  绘制，图例回到右上角。
+- v7 仍使用批准 v4 源，图3/图4为 144/29 行，CSV 逐字节一致，数据、种子和
+  best-so-far 口径未变；300 dpi PNG 和矢量 PDF 生成，图4 PDF 经 `pdftoppm` 实际
+  栅格化复核通过。
+- `s6_sup_02_figure_v7/` 自带生成器、任务卡和 13 项 `artifact_hashes_v7.json`，
+  AppleDouble=0。主 TeX、封存数据、评价器和保护文件未改；当前交 Claude 的图为 v7。

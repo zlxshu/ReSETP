@@ -1132,3 +1132,46 @@ LaDe-P重庆取件表已真实下载并登记SHA-256=`d58248d1...b056`，共1,17
 - 用户批准的新观察口径已执行：S3-TRAJ 只读现有快照并离线完整评分，40/40 封存最终成本逐位一致，完整解违约 0；原 `decision.json` HALT 与 `*_halt_v1`/`*_halt_v2` 证据均保留。HGS-M/seed10 的历史观测 `2364.589958517462` 只存在于轨迹数据，表内成绩保持 `2365.8780971446868`。
 - S5-REV-V4 判定 `PASS_S5_ARTIFACTS_V4`：表5两位误差/`instances`/`Best.`-`avg.`表头，表6 CPU 转 min 且值/CPU 分列内最优加粗，表4路径改方括号编号、均值 `num` 与合计装载率为 `-`，China81 汇总 Best/avg 独立加粗；图3由封存 2025-02 48槽碳强度 CSV 生成，图4使用预注册 Avg 最近种子 HGS-F=3/HGS-E=9/HGS-M=3/MV-HGS-SP=9。
 - v4 产物目录为 `baselines/e2_final_campaign_20260720/p2p3_threeview/artifacts/`，含 `artifact_hashes_v4.json`；独立核验 47 个哈希文件无缺失/不匹配、图3 144点、图4 29点、路径客户 1--50 恰好覆盖一次、AppleDouble=0。算法、raw/witness、评价器、统计输入和主 TeX 未改；当前只待用户重嵌 v4 表图并重新编译论文。
+
+# 2026-07-22 S6-SUP-01/02/03 支撑产物收口
+
+- `S6-SUP-01` 判定 `PASS_S6_SUP_01_INSTANCE_DETAILS`。从冻结的
+  `cn-prd-50c-01-V2-LOCATIONS` 节点/订单源导出 50 个客户和广州、深圳两个车场，
+  共 52 行；坐标四位小数，ET/LT 按本地 06:00--22:00 口径展示，原始分钟小数保留在
+  `source_extract.csv`。CSV、TeX 表体、metadata/raw/decision/hash/report 位于
+  `baselines/e2_final_campaign_20260720/p2p3_threeview/s6_support/s6_sup_01_instance_details/`，
+  输入文件 SHA-256 已绑定。
+- `S6-SUP-02` 判定 `PASS_S6_SUP_02_FIGURES_V5`。图3为 144 点中文碳强度曲线；图4
+  使用 `S3-TRAJ-CURVE-DEF-001` 批准的当前 v4 轨迹源，29 点、四算法、中文标签和
+  2350--2500/2580--2610 断轴。v5 CSV 与相应 v4 CSV 逐字节一致，PDF/PNG 均已生成；
+  旧 `figure4_curve_data_v2.csv` 仅留作历史记录，未越过批准口径重新作图。
+- `S6-SUP-03` 判定 `PASS_S6_SUP_03_PYVRP_NEIGHBORHOOD_AUDIT`。PyVRP 0.12.2 默认
+  9 个 HGS 教育邻域中，本代表题实际加入 8 个；`RelocateWithDepot` 仅因
+  `supports(data)` 返回 False 被过滤，项目没有自定义删减算子类型；默认 40 客户
+  granular neighbourhood 属于候选边裁剪。论文引用清单和源码/环境哈希位于
+  `s6_sup_03_pyvrp_education_neighborhoods/`。
+- 三个目录的 artifact manifest 共 30 个文件逐项 SHA-256 复核通过；本轮清理了 42 个
+  仅属于 `s6_support/` 的 AppleDouble 侧车文件。主 TeX、封存 raw/witness、评价器、
+  价格文件和搜索代码均未改；这些产物交 Claude 嵌入，尚不写
+  `ALGORITHM_EXPERIMENTS_CLOSED_20260720`。
+
+# 2026-07-22 S6-SUP-02 v6 图形渲染修订
+
+- v5 图形与 manifest 原样保留；v6 只修呈现层。图3右上图例缩小并降低遮挡，图4上段
+  改为 `2510--2610` 以显示早期下降轨迹，主区仍为 `2350--2500`，图例移至下段右上
+  空白区，断轴和中文标签保留。
+- v6 数据 CSV 与批准的 v4 源逐字节一致：图3 144 行、图4 29 行、四条曲线单调
+  best-so-far 不变。PNG 300 dpi，PDF 用 `pdftoppm` 实际栅格化复核通过。
+- v5 旧生成器哈希已恢复并与旧 manifest 一致；v6 独立生成器、任务卡和 13 项
+  `artifact_hashes_v6.json` 已闭合，S6 目录 AppleDouble=0。主 TeX、封存数据、评价器
+  和保护文件未改；当前交 Claude 的图为 v6。
+
+# 2026-07-22 S6-SUP-02 v7 恢复连续单轴
+
+- 用户要求放弃断轴并恢复原样；v5/v6 图形与 manifest 原样保留。v7 图3图例移至左下
+  角空白区并沿用缩小字号；v7 图4恢复单一连续纵轴、取消上下轴和断轴标记，四条曲线
+  在同一坐标轴连续绘制，图例回到右上角。
+- v7 仍只读取批准 v4 源：图3 144 行、图4 29 行，CSV 与源逐字节一致，曲线数据和
+  预注册种子不变。PNG 300 dpi；图4 PDF 经 `pdftoppm` 实际栅格化复核通过。
+- `s6_sup_02_figure_v7/` 自带生成器、任务卡和 13 项 `artifact_hashes_v7.json`，
+  AppleDouble=0。主 TeX、封存数据、评价器和保护文件未改；当前交 Claude 的版本为 v7。
