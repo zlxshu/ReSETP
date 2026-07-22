@@ -1,0 +1,138 @@
+{
+  "china81_summary_rows": 10,
+  "claim_boundary": "S5 v4 is presentation and registered observation materialization only; it authorizes no new superiority, equal-compute, or algorithm claim.",
+  "curve_approval_register_id": "S3-TRAJ-CURVE-DEF-001",
+  "data_values_changed": false,
+  "decision": "PASS_S5_ARTIFACTS_V4",
+  "figure3_audit": {
+    "registered_days": {
+      "Beijing": "2025-02-20",
+      "Chongqing": "2025-02-24",
+      "Guangdong": "2025-02-16"
+    },
+    "rows": 144,
+    "rows_per_region": {
+      "Beijing": 48,
+      "Chongqing": 48,
+      "Guangdong": 48
+    },
+    "source": "baselines/e4_e5/china_2025_formal_month_selection_20260718/tvci_2025_february_48slot_wide.csv",
+    "unit_conversion": "raw CSV values multiplied by 1000 to report gCO2/kWh"
+  },
+  "figure3_rows": 144,
+  "figure4_audit": {
+    "curve_rows": 29,
+    "definition": "historical snapshot offline exact score best-so-far, monotone non-increasing",
+    "lower_historical_observation": {
+      "arm": "mechanism_ev",
+      "cost": 2364.589958517462,
+      "sealed_table_cost": 2365.8780971446868,
+      "seed": 10
+    },
+    "selected_seeds": {
+      "MV-HGS-SP": 9,
+      "cv_only": 3,
+      "mechanism_ev": 3,
+      "naive_ev": 9
+    },
+    "source": "baselines/e2_final_campaign_20260720/p2p3_threeview/representative_gate/s3_traj_v4/curve_data_v4.csv"
+  },
+  "figure4_rows": 29,
+  "integrity_flags": [
+    "HASH_CONTAMINATED_APPLEDOUBLE"
+  ],
+  "observation_layer_only": true,
+  "presentation_only": true,
+  "revision": "S5-REV-V4",
+  "s2_registered_exception_id": "S2-INFEASIBLE-UNIT-001",
+  "s3_complete_solution_violations": 0,
+  "s3_final_cost_exact_matches": 40,
+  "s3_table_costs_unchanged": true,
+  "schema_version": "resetp.e2-final-campaign.s5-artifacts.v4",
+  "source_decision_v3": "decision_v3.json",
+  "source_s3_trajectory_decision": "representative_gate/s3_traj_v4/decision_v2.json",
+  "summary_audit": {
+    "registered_exception_id": "S2-INFEASIBLE-UNIT-001",
+    "rows": 10,
+    "source": "S2 full_gate raw_runs.csv"
+  },
+  "table4_audit": {
+    "changed_fields": [
+      {
+        "field": "路径",
+        "row": "CH81-0001"
+      },
+      {
+        "field": "路径",
+        "row": "CH81-0002"
+      },
+      {
+        "field": "路径",
+        "row": "CH81-0003"
+      },
+      {
+        "field": "路径",
+        "row": "CH81-0004"
+      },
+      {
+        "field": "路径",
+        "row": "CH81-0005"
+      },
+      {
+        "field": "路径",
+        "row": "CH81-0006"
+      },
+      {
+        "field": "路径",
+        "row": "CH81-0007"
+      },
+      {
+        "field": "路径",
+        "row": "CH81-0008"
+      },
+      {
+        "field": "路径",
+        "row": "CH81-0009"
+      },
+      {
+        "field": "num",
+        "row": "均值"
+      },
+      {
+        "field": "装载率(%)",
+        "row": "合计"
+      }
+    ],
+    "customer_coverage": "1--50 exactly once",
+    "mean_num": "-",
+    "num_field": "num(满足时窗客户数)",
+    "route_count": 9,
+    "source": "baselines/e2_final_campaign_20260720/p2p3_threeview/artifacts/table4_route_details_v3.csv",
+    "source_total_load_rate": "96.43392504930966",
+    "total_load_rate": "-"
+  },
+  "table4_rows": 11,
+  "table5_audit": {
+    "avg_best_errors_source": "P1 decision.json avg_row_error_pct",
+    "avg_row": {
+      "BKS": "",
+      "MDFIHA-ETGA_Best_error_pct": 0.9903830846575365,
+      "MDFIHA_Best_error_pct": 1.374901112156534,
+      "MV-HGS-SP_Best_error_pct": 0.9048706160882664,
+      "MV-HGS-SP_avg_error_pct": 1.3865968892271103,
+      "PyVRP-HGS_Best_error_pct": 1.4717640813681043,
+      "PyVRP-HGS_avg_error_pct": 2.062587938968439,
+      "VCGP_Best_error_pct": 1.6040966226509423,
+      "instance": "Avg",
+      "n": ""
+    },
+    "avg_seed_average_errors_source": "P1 raw_runs.csv, mean of per-instance ten-seed average errors",
+    "p1_best_error_recheck": {
+      "MV-HGS-SP": 0.9048706160882664,
+      "PyVRP-HGS": 1.4717640813681043
+    }
+  },
+  "table5_rows": 29,
+  "table6_rows": 13,
+  "v3_outputs_preserved": true
+}

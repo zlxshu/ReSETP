@@ -1,0 +1,53 @@
+{
+  "approval_register_id": "S3-TRAJ-CURVE-DEF-001",
+  "arm": "mechanism_ev",
+  "cost_definition": "exact_china81_score objective",
+  "curve_best_below_final": false,
+  "curve_best_cost": 2364.2867491773877,
+  "curve_definition": "best-so-far over historical snapshot skeletons after offline complete-model scoring; monotone non-increasing",
+  "instance_id": "cn-prd-50c-01-V2-LOCATIONS",
+  "observation_only": true,
+  "offline_snapshot_audit": {
+    "errors": 0,
+    "infeasible": 0,
+    "total": 11,
+    "valid": 11
+  },
+  "points": [
+    {
+      "cost": 2599.0986351907086,
+      "elapsed_seconds": 0.0,
+      "snapshot_order": 0,
+      "source": "common_initial"
+    },
+    {
+      "cost": 2560.2267325938683,
+      "elapsed_seconds": 0.22028458299973863,
+      "snapshot_order": 2,
+      "source": "hgs_new_population_best"
+    },
+    {
+      "cost": 2547.096417496169,
+      "elapsed_seconds": 0.3625818749987957,
+      "snapshot_order": 3,
+      "source": "hgs_new_population_best"
+    },
+    {
+      "cost": 2393.01533910187,
+      "elapsed_seconds": 0.41860929199901875,
+      "snapshot_order": 4,
+      "source": "hgs_new_population_best"
+    },
+    {
+      "cost": 2364.2867491773877,
+      "elapsed_seconds": 1.179234291999819,
+      "snapshot_order": 5,
+      "source": "hgs_new_population_best"
+    }
+  ],
+  "rerun_final_cost": 2364.2867491773877,
+  "schema_version": "resetp.e2-final-campaign.s3-materialized-trajectory.v2",
+  "sealed_final_cost": 2364.2867491773877,
+  "seed": 6,
+  "time_definition": "elapsed wall seconds from the arm runner start"
+}

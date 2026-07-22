@@ -1,0 +1,95 @@
+{
+  "approval_register_id": "S3-TRAJ-CURVE-DEF-001",
+  "arm": "naive_ev",
+  "cost_definition": "exact_china81_score objective",
+  "curve_best_below_final": false,
+  "curve_best_cost": 2358.7308493232913,
+  "curve_definition": "best-so-far over historical snapshot skeletons after offline complete-model scoring; monotone non-increasing",
+  "instance_id": "cn-prd-50c-01-V2-LOCATIONS",
+  "observation_only": true,
+  "offline_snapshot_audit": {
+    "errors": 0,
+    "infeasible": 0,
+    "total": 16,
+    "valid": 16
+  },
+  "points": [
+    {
+      "cost": 2599.0986351907086,
+      "elapsed_seconds": 0.0,
+      "snapshot_order": 0,
+      "source": "common_initial"
+    },
+    {
+      "cost": 2450.8433422272515,
+      "elapsed_seconds": 0.09090141599881463,
+      "snapshot_order": 3,
+      "source": "hgs_new_population_best"
+    },
+    {
+      "cost": 2402.33525769057,
+      "elapsed_seconds": 0.15336683299938159,
+      "snapshot_order": 4,
+      "source": "hgs_new_population_best"
+    },
+    {
+      "cost": 2399.6858112281993,
+      "elapsed_seconds": 0.5594025829996099,
+      "snapshot_order": 5,
+      "source": "hgs_new_population_best"
+    },
+    {
+      "cost": 2396.897564097852,
+      "elapsed_seconds": 0.6004490409995924,
+      "snapshot_order": 6,
+      "source": "hgs_new_population_best"
+    },
+    {
+      "cost": 2390.6754823349265,
+      "elapsed_seconds": 1.095391707998715,
+      "snapshot_order": 7,
+      "source": "hgs_new_population_best"
+    },
+    {
+      "cost": 2390.0956933225984,
+      "elapsed_seconds": 1.2652588749988354,
+      "snapshot_order": 8,
+      "source": "hgs_new_population_best"
+    },
+    {
+      "cost": 2388.8748730613615,
+      "elapsed_seconds": 1.2872764999992796,
+      "snapshot_order": 9,
+      "source": "hgs_new_population_best"
+    },
+    {
+      "cost": 2388.1059670783643,
+      "elapsed_seconds": 1.6053137079998123,
+      "snapshot_order": 10,
+      "source": "hgs_new_population_best"
+    },
+    {
+      "cost": 2378.263573156588,
+      "elapsed_seconds": 1.9613345409998146,
+      "snapshot_order": 11,
+      "source": "hgs_new_population_best"
+    },
+    {
+      "cost": 2371.475770638232,
+      "elapsed_seconds": 5.029450415999236,
+      "snapshot_order": 12,
+      "source": "hgs_new_population_best"
+    },
+    {
+      "cost": 2358.7308493232913,
+      "elapsed_seconds": 16.83144687499953,
+      "snapshot_order": 15,
+      "source": "final_rerun_solution"
+    }
+  ],
+  "rerun_final_cost": 2358.7308493232913,
+  "schema_version": "resetp.e2-final-campaign.s3-materialized-trajectory.v2",
+  "sealed_final_cost": 2358.7308493232913,
+  "seed": 10,
+  "time_definition": "elapsed wall seconds from the arm runner start"
+}

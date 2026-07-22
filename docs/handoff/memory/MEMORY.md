@@ -1,5 +1,6 @@
 # Memory Index
 
+- [E2 S3-TRAJ-CURVE-DEF-001 与 S5-REV-V4 收口（2026-07-22）](e2_final_campaign_p3_p4_complete_20260722.md) — 用户批准历史快照离线完整评分的单调 best-so-far 曲线定义；40/40 封存最终成本逐位一致、完整解零违约，HGS-M/seed10 的较低历史观测仅保留在轨迹、不替换表内成绩。S5 v4 产物与47项哈希已独立闭合，主TeX尚待重嵌编译。
 - [E2 S3-TRAJ-V4 观察层硬门 HALT（2026-07-22）](e2_final_campaign_p3_p4_complete_20260722.md) — 40/40 观察重跑最终成本与封存 S3 逐位相等、完整解零违约；首次 HALT 是 snapshot_file 写回 bug，v1/v2 证据均保留。修复后离线完整评分发现 mechanism_ev/seed10 历史代理新最优骨架为2364.589958517462，低于封存最终2365.8780971446868，按预注册终点硬门判 HALT；不得删除该点或手工抬高终点，Figure4 v4/S5 PASS/终局标记待用户决定。
 - [E2 S5-REV-V3 收口（2026-07-22）](e2_final_campaign_p3_p4_complete_20260722.md) — S5 v3 只做封存证据的版式/完整性修订：表5补PyVRP-HGS母体误差列并统一BKS相对误差、表6和China81汇总逐行加粗最低值、表4合计装载率按路线最大实际装载量/总容量改为96.433925%；v2文件与manifest保留，v3 manifest 19项零不匹配。S6需嵌入v3表体并重编译，S7仍未收官。
 

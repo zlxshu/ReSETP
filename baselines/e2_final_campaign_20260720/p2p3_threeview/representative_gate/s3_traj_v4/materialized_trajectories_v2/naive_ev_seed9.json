@@ -1,0 +1,71 @@
+{
+  "approval_register_id": "S3-TRAJ-CURVE-DEF-001",
+  "arm": "naive_ev",
+  "cost_definition": "exact_china81_score objective",
+  "curve_best_below_final": false,
+  "curve_best_cost": 2359.19514463484,
+  "curve_definition": "best-so-far over historical snapshot skeletons after offline complete-model scoring; monotone non-increasing",
+  "instance_id": "cn-prd-50c-01-V2-LOCATIONS",
+  "observation_only": true,
+  "offline_snapshot_audit": {
+    "errors": 0,
+    "infeasible": 0,
+    "total": 18,
+    "valid": 18
+  },
+  "points": [
+    {
+      "cost": 2599.0986351907086,
+      "elapsed_seconds": 0.0,
+      "snapshot_order": 0,
+      "source": "common_initial"
+    },
+    {
+      "cost": 2444.2639252511444,
+      "elapsed_seconds": 0.05190887499884411,
+      "snapshot_order": 3,
+      "source": "hgs_new_population_best"
+    },
+    {
+      "cost": 2389.091190312187,
+      "elapsed_seconds": 0.3784763749990816,
+      "snapshot_order": 4,
+      "source": "hgs_new_population_best"
+    },
+    {
+      "cost": 2379.480702572609,
+      "elapsed_seconds": 0.7750443339991762,
+      "snapshot_order": 5,
+      "source": "hgs_new_population_best"
+    },
+    {
+      "cost": 2376.0766186904507,
+      "elapsed_seconds": 0.9541357919988513,
+      "snapshot_order": 6,
+      "source": "hgs_new_population_best"
+    },
+    {
+      "cost": 2371.4194755554404,
+      "elapsed_seconds": 5.371332291999352,
+      "snapshot_order": 12,
+      "source": "hgs_new_population_best"
+    },
+    {
+      "cost": 2364.048690580053,
+      "elapsed_seconds": 7.371031916998618,
+      "snapshot_order": 14,
+      "source": "hgs_new_population_best"
+    },
+    {
+      "cost": 2359.19514463484,
+      "elapsed_seconds": 23.922139791999143,
+      "snapshot_order": 17,
+      "source": "final_rerun_solution"
+    }
+  ],
+  "rerun_final_cost": 2359.19514463484,
+  "schema_version": "resetp.e2-final-campaign.s3-materialized-trajectory.v2",
+  "sealed_final_cost": 2359.19514463484,
+  "seed": 9,
+  "time_definition": "elapsed wall seconds from the arm runner start"
+}

@@ -62,3 +62,7 @@ metadata:
 - The first HALT was a runner artifact bug: `snapshot_file` was left blank because a temporary row copy was passed to the snapshot writer. Its v1 decision/report/metadata/hash/offline evidence was preserved as `*_halt_v1`; the repair then resumed offline without another solver run.
 - The repaired offline materialization hit the registered hard gate on `mechanism_ev`/seed10: a historical proxy-best skeleton scored `2364.589958517462` under the complete model, below the sealed and rerun final cost `2365.8780971446868`. An independent read-only replay confirmed the point. Final decision is `HALT_S3_TRAJ_OFFLINE_CURVE_GATE`; v2 evidence is preserved as `*_halt_v2`.
 - This is a real boundary between historical offline-completed incumbents and the sealed runner's final candidate, not an evaluator or algorithm change. Do not discard the lower historical point or raise it by hand. Figure 4 v4 and S5-REV-V4 PASS remain blocked pending a user decision on the trajectory acceptance contract; no closure marker is authorized.
+
+2026-07-22 Codex S3-TRAJ-CURVE-DEF-001 与 S5-REV-V4 收口：
+- 用户批准将图4定义为历史快照骨架经完整模型离线评分后的单调 best-so-far；原 S3-TRAJ v1/v2 HALT 证据不改写。离线物化完成 40/40，最终成本逐位匹配封存 S3，完整解违约 0；HGS-M/seed10 的 `2364.589958517462` 低于封存最终 `2365.8780971446868`，仅保留为轨迹观测，不进入表格。
+- S5-REV-V4 判定 `PASS_S5_ARTIFACTS_V4`。输出表4/表5/表6/China81 汇总、图3碳强度曲线、图4收敛曲线的 v4 CSV/TeX/PDF/PNG；47项哈希独立复核无缺失/不匹配，图3为144点，图4为29点，表4客户1--50恰好覆盖一次。v3产物和manifest保留，主TeX及保护文件未改。
