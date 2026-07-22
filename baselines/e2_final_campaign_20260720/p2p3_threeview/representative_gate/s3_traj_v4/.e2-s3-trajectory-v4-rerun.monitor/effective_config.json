@@ -1,0 +1,138 @@
+{
+  "ai": {
+    "enabled": false,
+    "timeout_seconds": 180
+  },
+  "checkpoint_paths": [
+    "/Volumes/移动硬盘（512G）/ReSETP/baselines/e2_final_campaign_20260720/p2p3_threeview/representative_gate/s3_traj_v4/snapshots",
+    "/Volumes/移动硬盘（512G）/ReSETP/baselines/e2_final_campaign_20260720/p2p3_threeview/representative_gate/s3_traj_v4/materialized_trajectories"
+  ],
+  "completion_files": [
+    "/Volumes/移动硬盘（512G）/ReSETP/baselines/e2_final_campaign_20260720/p2p3_threeview/representative_gate/s3_traj_v4/done.json"
+  ],
+  "config_path": "/Volumes/移动硬盘（512G）/ReSETP/baselines/e2_final_campaign_20260720/p2p3_threeview/representative_gate/s3_traj_v4/monitor_s3_traj_v4.json",
+  "csv_rules": [
+    {
+      "duplicate_key_fields": [
+        "instance_id",
+        "seed",
+        "arm"
+      ],
+      "feasible_field": "status",
+      "max_duplicate_fraction": 0,
+      "max_regressions": 0,
+      "max_violation_total": 0,
+      "min_feasible_rate": 1.0,
+      "path": "/Volumes/移动硬盘（512G）/ReSETP/baselines/e2_final_campaign_20260720/p2p3_threeview/representative_gate/s3_traj_v4/raw_runs.csv",
+      "required": false,
+      "required_after_seconds": 300,
+      "required_fields": [
+        "instance_id",
+        "seed",
+        "arm",
+        "status",
+        "cost_equal",
+        "violation_count"
+      ],
+      "truthy": [
+        "OK"
+      ],
+      "violation_field": "violation_count"
+    }
+  ],
+  "forbidden_command_substrings": [
+    "--unit",
+    "--debug",
+    "--smoke",
+    "--tune"
+  ],
+  "logs": [],
+  "low_cpu_consecutive_checks": 6,
+  "max_rss_mb": 7000,
+  "max_runtime_seconds": 172800,
+  "milestones": [
+    {
+      "min_size": 1024,
+      "path": "/Volumes/移动硬盘（512G）/ReSETP/baselines/e2_final_campaign_20260720/p2p3_threeview/representative_gate/s3_traj_v4/raw_runs.csv"
+    }
+  ],
+  "min_cpu_percent_when_active": 1,
+  "min_system_memory_free_percent": 5,
+  "monitor_dir": "/Volumes/移动硬盘（512G）/ReSETP/baselines/e2_final_campaign_20260720/p2p3_threeview/representative_gate/s3_traj_v4/.e2-s3-trajectory-v4.monitor",
+  "name": "e2-s3-trajectory-v4",
+  "objective": "Add observation-only full trajectories to the sealed S3 representative China81 batch.",
+  "pause_on_anomaly": true,
+  "poll_seconds": 30,
+  "progress_files": [
+    "/Volumes/移动硬盘（512G）/ReSETP/baselines/e2_final_campaign_20260720/p2p3_threeview/representative_gate/s3_traj_v4/raw_runs.csv",
+    "/Volumes/移动硬盘（512G）/ReSETP/baselines/e2_final_campaign_20260720/p2p3_threeview/representative_gate/s3_traj_v4/status.json"
+  ],
+  "protected_files": [
+    {
+      "kind": "cost_function",
+      "path": "/Volumes/移动硬盘（512G）/ReSETP/solver/src/setp_solver/cost.py"
+    },
+    {
+      "kind": "evaluator",
+      "path": "/Volumes/移动硬盘（512G）/ReSETP/solver/src/setp_solver/check.py"
+    },
+    {
+      "kind": "evaluator",
+      "path": "/Volumes/移动硬盘（512G）/ReSETP/solver/src/setp_solver/search/evaluation.py"
+    },
+    {
+      "kind": "primary_config",
+      "path": "/Volumes/移动硬盘（512G）/ReSETP/solver/src/setp_solver/prices.py"
+    },
+    {
+      "kind": "paper_conclusion",
+      "path": "/Volumes/移动硬盘（512G）/ReSETP/docs/paper_submission_final/paper_main.tex"
+    },
+    {
+      "kind": "primary_config",
+      "path": "/Volumes/移动硬盘（512G）/ReSETP/baselines/e2_final_campaign_20260720/mv_hgs_sp_final/run_p3_china81_formal.py"
+    },
+    {
+      "kind": "core_data",
+      "path": "/Volumes/移动硬盘（512G）/ReSETP/baselines/e2_final_campaign_20260720/mv_hgs_sp_final/p3_china81_gate/raw_runs.csv"
+    },
+    {
+      "kind": "core_data",
+      "path": "/Volumes/移动硬盘（512G）/ReSETP/baselines/e2_final_campaign_20260720/p2p3_threeview/representative_gate/raw_runs.csv"
+    },
+    {
+      "kind": "experiment_contract",
+      "path": "/Volumes/移动硬盘（512G）/ReSETP/baselines/e2_final_campaign_20260720/p2p3_threeview/representative_gate/decision.json"
+    },
+    {
+      "kind": "experiment_contract",
+      "path": "/Volumes/移动硬盘（512G）/ReSETP/baselines/e2_final_campaign_20260720/p2p3_threeview/representative_gate/representative_registration.json"
+    },
+    {
+      "kind": "primary_config",
+      "path": "/Volumes/移动硬盘（512G）/ReSETP/baselines/e2_final_campaign_20260720/p2p3_threeview/representative_gate/run_s3_representative.py"
+    },
+    {
+      "kind": "primary_config",
+      "path": "/Volumes/移动硬盘（512G）/ReSETP/baselines/e2_final_campaign_20260720/p2p3_threeview/representative_gate/s3_traj_v4/run_s3_trajectory_v4.py"
+    }
+  ],
+  "required_command_substrings": [
+    "run_s3_trajectory_v4.py",
+    "--workers",
+    "6",
+    "build/python_envs/pyvrp-hgs-0.12.2/bin/python"
+  ],
+  "result_files": [
+    "/Volumes/移动硬盘（512G）/ReSETP/baselines/e2_final_campaign_20260720/p2p3_threeview/representative_gate/s3_traj_v4/raw_runs.csv",
+    "/Volumes/移动硬盘（512G）/ReSETP/baselines/e2_final_campaign_20260720/p2p3_threeview/representative_gate/s3_traj_v4/offline_recheck.json",
+    "/Volumes/移动硬盘（512G）/ReSETP/baselines/e2_final_campaign_20260720/p2p3_threeview/representative_gate/s3_traj_v4/curve_data_v4.csv",
+    "/Volumes/移动硬盘（512G）/ReSETP/baselines/e2_final_campaign_20260720/p2p3_threeview/representative_gate/s3_traj_v4/metadata.json",
+    "/Volumes/移动硬盘（512G）/ReSETP/baselines/e2_final_campaign_20260720/p2p3_threeview/representative_gate/s3_traj_v4/decision.json",
+    "/Volumes/移动硬盘（512G）/ReSETP/baselines/e2_final_campaign_20260720/p2p3_threeview/representative_gate/s3_traj_v4/artifact_hashes.json",
+    "/Volumes/移动硬盘（512G）/ReSETP/baselines/e2_final_campaign_20260720/p2p3_threeview/representative_gate/s3_traj_v4/report.md"
+  ],
+  "schema_version": 1,
+  "stale_seconds": 1800,
+  "workdir": "/Volumes/移动硬盘（512G）/ReSETP"
+}

@@ -1,5 +1,6 @@
 # Memory Index
 
+- [E2 S3-TRAJ-V4 观察层硬门 HALT（2026-07-22）](e2_final_campaign_p3_p4_complete_20260722.md) — 40/40 观察重跑最终成本与封存 S3 逐位相等、完整解零违约；首次 HALT 是 snapshot_file 写回 bug，v1/v2 证据均保留。修复后离线完整评分发现 mechanism_ev/seed10 历史代理新最优骨架为2364.589958517462，低于封存最终2365.8780971446868，按预注册终点硬门判 HALT；不得删除该点或手工抬高终点，Figure4 v4/S5 PASS/终局标记待用户决定。
 - [E2 S5-REV-V3 收口（2026-07-22）](e2_final_campaign_p3_p4_complete_20260722.md) — S5 v3 只做封存证据的版式/完整性修订：表5补PyVRP-HGS母体误差列并统一BKS相对误差、表6和China81汇总逐行加粗最低值、表4合计装载率按路线最大实际装载量/总容量改为96.433925%；v2文件与manifest保留，v3 manifest 19项零不匹配。S6需嵌入v3表体并重编译，S7仍未收官。
 
 - [算法命名映射（2026-07-22）](../algorithm_naming_map_20260722.md) — 工程代号↔论文学名单一事实源:主算法MV-HGS-SP;三视角子算法 cv_only=HGS-F(燃油成本导向)/naive_ev=HGS-E(简化电动)/mechanism_ev=HGS-M(机制感知);ReSETP-ALNS是tex编的废名已删,ALNS不进表。代码保留代号,论文用学名,S5脚本按此映射。

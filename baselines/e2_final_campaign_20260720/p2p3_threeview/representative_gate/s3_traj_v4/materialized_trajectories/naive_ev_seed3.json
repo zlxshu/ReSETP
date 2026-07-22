@@ -1,0 +1,82 @@
+{
+  "arm": "naive_ev",
+  "cost_definition": "exact_china81_score objective",
+  "curve_rule": "monotone running minimum over offline-completed snapshots",
+  "instance_id": "cn-prd-50c-01-V2-LOCATIONS",
+  "offline_snapshot_audit": {
+    "errors": 0,
+    "infeasible": 0,
+    "total": 25,
+    "valid": 25
+  },
+  "points": [
+    {
+      "cost": 2599.0986351907086,
+      "elapsed_seconds": 0.0,
+      "source": "common_initial"
+    },
+    {
+      "cost": 2579.5978039446427,
+      "elapsed_seconds": 0.14546679199884238,
+      "source": "hgs_new_population_best"
+    },
+    {
+      "cost": 2531.9233257410797,
+      "elapsed_seconds": 0.1898115419990063,
+      "source": "hgs_new_population_best"
+    },
+    {
+      "cost": 2474.1553921709137,
+      "elapsed_seconds": 0.314298166998924,
+      "source": "hgs_new_population_best"
+    },
+    {
+      "cost": 2444.6476815798596,
+      "elapsed_seconds": 0.4284448329999577,
+      "source": "hgs_new_population_best"
+    },
+    {
+      "cost": 2433.770771711281,
+      "elapsed_seconds": 0.5085187080003379,
+      "source": "hgs_new_population_best"
+    },
+    {
+      "cost": 2425.462247923771,
+      "elapsed_seconds": 0.5462519579996297,
+      "source": "hgs_new_population_best"
+    },
+    {
+      "cost": 2416.046428916043,
+      "elapsed_seconds": 0.7317695829988224,
+      "source": "hgs_new_population_best"
+    },
+    {
+      "cost": 2409.3852268501946,
+      "elapsed_seconds": 2.5669334169997455,
+      "source": "hgs_new_population_best"
+    },
+    {
+      "cost": 2380.7800473669336,
+      "elapsed_seconds": 2.679119124999488,
+      "source": "hgs_new_population_best"
+    },
+    {
+      "cost": 2366.3529898525767,
+      "elapsed_seconds": 3.3364707919990906,
+      "source": "hgs_new_population_best"
+    },
+    {
+      "cost": 2362.656202699076,
+      "elapsed_seconds": 3.7396960829992167,
+      "source": "hgs_new_population_best"
+    },
+    {
+      "cost": 2358.7308493232913,
+      "elapsed_seconds": 20.482369082999867,
+      "source": "final_rerun_solution"
+    }
+  ],
+  "schema_version": "resetp.e2-final-campaign.s3-materialized-trajectory.v1",
+  "seed": 3,
+  "time_definition": "elapsed wall seconds from the arm runner start"
+}

@@ -1,0 +1,5767 @@
+{
+  "arm": "MV-HGS-SP",
+  "callback_contract": "new proxy global best only; no scoring, repair, mutation, or RNG draw",
+  "instance_id": "cn-prd-50c-01-V2-LOCATIONS",
+  "observation_only": true,
+  "points": [
+    {
+      "arm": "MV-HGS-SP",
+      "elapsed_seconds": 0.0,
+      "epoch": "initial",
+      "exact_cost_at_initialization": 2599.0986351907086,
+      "iteration": 0,
+      "proxy_cost": null,
+      "skeleton": {
+        "routes": [
+          {
+            "home_depot_id": "D_guangzhou",
+            "node_sequence": [
+              "D_guangzhou",
+              "C022",
+              "C015",
+              "C014",
+              "C023",
+              "C005",
+              "C010",
+              "D_guangzhou"
+            ],
+            "vehicle_id": "CH81-0001",
+            "vehicle_type": "cv"
+          },
+          {
+            "home_depot_id": "D_guangzhou",
+            "node_sequence": [
+              "D_guangzhou",
+              "C016",
+              "C009",
+              "C011",
+              "C007",
+              "C004",
+              "C018",
+              "C012",
+              "C006",
+              "D_guangzhou"
+            ],
+            "vehicle_id": "CH81-0002",
+            "vehicle_type": "cv"
+          },
+          {
+            "home_depot_id": "D_guangzhou",
+            "node_sequence": [
+              "D_guangzhou",
+              "C002",
+              "C008",
+              "C021",
+              "C003",
+              "C017",
+              "C001",
+              "C019",
+              "D_guangzhou"
+            ],
+            "vehicle_id": "CH81-0003",
+            "vehicle_type": "cv"
+          },
+          {
+            "home_depot_id": "D_guangzhou",
+            "node_sequence": [
+              "D_guangzhou",
+              "C020",
+              "C013",
+              "D_guangzhou"
+            ],
+            "vehicle_id": "CH81-0004",
+            "vehicle_type": "ev"
+          },
+          {
+            "home_depot_id": "D_shenzhen",
+            "node_sequence": [
+              "D_shenzhen",
+              "C028",
+              "C041",
+              "C039",
+              "C030",
+              "C038",
+              "C042",
+              "D_shenzhen"
+            ],
+            "vehicle_id": "CH81-0005",
+            "vehicle_type": "cv"
+          },
+          {
+            "home_depot_id": "D_shenzhen",
+            "node_sequence": [
+              "D_shenzhen",
+              "C043",
+              "C050",
+              "C034",
+              "C044",
+              "C027",
+              "C024",
+              "C025",
+              "D_shenzhen"
+            ],
+            "vehicle_id": "CH81-0006",
+            "vehicle_type": "cv"
+          },
+          {
+            "home_depot_id": "D_shenzhen",
+            "node_sequence": [
+              "D_shenzhen",
+              "C047",
+              "C046",
+              "C032",
+              "C040",
+              "C049",
+              "C045",
+              "C048",
+              "D_shenzhen"
+            ],
+            "vehicle_id": "CH81-0007",
+            "vehicle_type": "cv"
+          },
+          {
+            "home_depot_id": "D_shenzhen",
+            "node_sequence": [
+              "D_shenzhen",
+              "C036",
+              "C035",
+              "C037",
+              "C026",
+              "C031",
+              "C029",
+              "D_shenzhen"
+            ],
+            "vehicle_id": "CH81-0008",
+            "vehicle_type": "cv"
+          },
+          {
+            "home_depot_id": "D_shenzhen",
+            "node_sequence": [
+              "D_shenzhen",
+              "C033",
+              "D_shenzhen"
+            ],
+            "vehicle_id": "CH81-0009",
+            "vehicle_type": "ev"
+          }
+        ]
+      },
+      "source": "common_initial"
+    },
+    {
+      "arm": "MV-HGS-SP",
+      "elapsed_seconds": 0.2303919579990179,
+      "epoch": "mechanism_ev_mother",
+      "iteration": 12,
+      "proxy_cost": 2596034,
+      "skeleton": {
+        "routes": [
+          {
+            "home_depot_id": "D_guangzhou",
+            "node_sequence": [
+              "D_guangzhou",
+              "C050",
+              "C036",
+              "C035",
+              "C037",
+              "C045",
+              "C027",
+              "D_guangzhou"
+            ],
+            "vehicle_id": "PYVRP-0001",
+            "vehicle_type": "cv"
+          },
+          {
+            "home_depot_id": "D_guangzhou",
+            "node_sequence": [
+              "D_guangzhou",
+              "C020",
+              "C022",
+              "C015",
+              "C014",
+              "C017",
+              "C012",
+              "D_guangzhou"
+            ],
+            "vehicle_id": "PYVRP-0002",
+            "vehicle_type": "cv"
+          },
+          {
+            "home_depot_id": "D_guangzhou",
+            "node_sequence": [
+              "D_guangzhou",
+              "C002",
+              "C008",
+              "C021",
+              "C011",
+              "C013",
+              "C001",
+              "C019",
+              "D_guangzhou"
+            ],
+            "vehicle_id": "PYVRP-0003",
+            "vehicle_type": "cv"
+          },
+          {
+            "home_depot_id": "D_guangzhou",
+            "node_sequence": [
+              "D_guangzhou",
+              "C009",
+              "C007",
+              "C018",
+              "C004",
+              "C010",
+              "D_guangzhou"
+            ],
+            "vehicle_id": "PYVRP-0004",
+            "vehicle_type": "ev"
+          },
+          {
+            "home_depot_id": "D_guangzhou",
+            "node_sequence": [
+              "D_guangzhou",
+              "C016",
+              "C003",
+              "C023",
+              "C005",
+              "C006",
+              "D_guangzhou"
+            ],
+            "vehicle_id": "PYVRP-0005",
+            "vehicle_type": "ev"
+          },
+          {
+            "home_depot_id": "D_shenzhen",
+            "node_sequence": [
+              "D_shenzhen",
+              "C043",
+              "C041",
+              "C039",
+              "C033",
+              "C026",
+              "C031",
+              "D_shenzhen"
+            ],
+            "vehicle_id": "PYVRP-0006",
+            "vehicle_type": "cv"
+          },
+          {
+            "home_depot_id": "D_shenzhen",
+            "node_sequence": [
+              "D_shenzhen",
+              "C032",
+              "C040",
+              "C049",
+              "C029",
+              "C024",
+              "C025",
+              "D_shenzhen"
+            ],
+            "vehicle_id": "PYVRP-0007",
+            "vehicle_type": "cv"
+          },
+          {
+            "home_depot_id": "D_shenzhen",
+            "node_sequence": [
+              "D_shenzhen",
+              "C028",
+              "C047",
+              "C030",
+              "C038",
+              "D_shenzhen"
+            ],
+            "vehicle_id": "PYVRP-0008",
+            "vehicle_type": "ev"
+          },
+          {
+            "home_depot_id": "D_shenzhen",
+            "node_sequence": [
+              "D_shenzhen",
+              "C046",
+              "C034",
+              "C044",
+              "C042",
+              "C048",
+              "D_shenzhen"
+            ],
+            "vehicle_id": "PYVRP-0009",
+            "vehicle_type": "ev"
+          }
+        ]
+      },
+      "source": "hgs_new_population_best"
+    },
+    {
+      "arm": "MV-HGS-SP",
+      "elapsed_seconds": 0.2738715420000517,
+      "epoch": "mechanism_ev_mother",
+      "iteration": 23,
+      "proxy_cost": 2462112,
+      "skeleton": {
+        "routes": [
+          {
+            "home_depot_id": "D_guangzhou",
+            "node_sequence": [
+              "D_guangzhou",
+              "C002",
+              "C008",
+              "C021",
+              "C011",
+              "C007",
+              "C013",
+              "C019",
+              "D_guangzhou"
+            ],
+            "vehicle_id": "PYVRP-0001",
+            "vehicle_type": "cv"
+          },
+          {
+            "home_depot_id": "D_guangzhou",
+            "node_sequence": [
+              "D_guangzhou",
+              "C016",
+              "C020",
+              "C022",
+              "C015",
+              "C018",
+              "C012",
+              "C006",
+              "D_guangzhou"
+            ],
+            "vehicle_id": "PYVRP-0002",
+            "vehicle_type": "cv"
+          },
+          {
+            "home_depot_id": "D_guangzhou",
+            "node_sequence": [
+              "D_guangzhou",
+              "C003",
+              "C023",
+              "C005",
+              "C004",
+              "C010",
+              "D_guangzhou"
+            ],
+            "vehicle_id": "PYVRP-0003",
+            "vehicle_type": "ev"
+          },
+          {
+            "home_depot_id": "D_guangzhou",
+            "node_sequence": [
+              "D_guangzhou",
+              "C009",
+              "C014",
+              "C017",
+              "C001",
+              "D_guangzhou"
+            ],
+            "vehicle_id": "PYVRP-0004",
+            "vehicle_type": "ev"
+          },
+          {
+            "home_depot_id": "D_shenzhen",
+            "node_sequence": [
+              "D_shenzhen",
+              "C043",
+              "C041",
+              "C039",
+              "C050",
+              "C032",
+              "D_shenzhen"
+            ],
+            "vehicle_id": "PYVRP-0005",
+            "vehicle_type": "cv"
+          },
+          {
+            "home_depot_id": "D_shenzhen",
+            "node_sequence": [
+              "D_shenzhen",
+              "C047",
+              "C033",
+              "C026",
+              "C031",
+              "C029",
+              "C024",
+              "D_shenzhen"
+            ],
+            "vehicle_id": "PYVRP-0006",
+            "vehicle_type": "cv"
+          },
+          {
+            "home_depot_id": "D_shenzhen",
+            "node_sequence": [
+              "D_shenzhen",
+              "C036",
+              "C046",
+              "C034",
+              "C049",
+              "C038",
+              "D_shenzhen"
+            ],
+            "vehicle_id": "PYVRP-0007",
+            "vehicle_type": "ev"
+          },
+          {
+            "home_depot_id": "D_shenzhen",
+            "node_sequence": [
+              "D_shenzhen",
+              "C028",
+              "C044",
+              "C042",
+              "C027",
+              "D_shenzhen"
+            ],
+            "vehicle_id": "PYVRP-0008",
+            "vehicle_type": "ev"
+          },
+          {
+            "home_depot_id": "D_shenzhen",
+            "node_sequence": [
+              "D_shenzhen",
+              "C037",
+              "C035",
+              "C045",
+              "D_shenzhen"
+            ],
+            "vehicle_id": "PYVRP-0009",
+            "vehicle_type": "ev"
+          },
+          {
+            "home_depot_id": "D_shenzhen",
+            "node_sequence": [
+              "D_shenzhen",
+              "C030",
+              "C040",
+              "C048",
+              "C025",
+              "D_shenzhen"
+            ],
+            "vehicle_id": "PYVRP-0010",
+            "vehicle_type": "ev"
+          }
+        ]
+      },
+      "source": "hgs_new_population_best"
+    },
+    {
+      "arm": "MV-HGS-SP",
+      "elapsed_seconds": 0.2918118749985297,
+      "epoch": "mechanism_ev_mother",
+      "iteration": 28,
+      "proxy_cost": 2459468,
+      "skeleton": {
+        "routes": [
+          {
+            "home_depot_id": "D_guangzhou",
+            "node_sequence": [
+              "D_guangzhou",
+              "C002",
+              "C008",
+              "C021",
+              "C011",
+              "C007",
+              "C013",
+              "C019",
+              "D_guangzhou"
+            ],
+            "vehicle_id": "PYVRP-0001",
+            "vehicle_type": "cv"
+          },
+          {
+            "home_depot_id": "D_guangzhou",
+            "node_sequence": [
+              "D_guangzhou",
+              "C016",
+              "C020",
+              "C022",
+              "C015",
+              "C014",
+              "C017",
+              "C018",
+              "D_guangzhou"
+            ],
+            "vehicle_id": "PYVRP-0002",
+            "vehicle_type": "cv"
+          },
+          {
+            "home_depot_id": "D_guangzhou",
+            "node_sequence": [
+              "D_guangzhou",
+              "C009",
+              "C001",
+              "C012",
+              "C006",
+              "D_guangzhou"
+            ],
+            "vehicle_id": "PYVRP-0003",
+            "vehicle_type": "ev"
+          },
+          {
+            "home_depot_id": "D_guangzhou",
+            "node_sequence": [
+              "D_guangzhou",
+              "C003",
+              "C023",
+              "C005",
+              "C004",
+              "C010",
+              "D_guangzhou"
+            ],
+            "vehicle_id": "PYVRP-0004",
+            "vehicle_type": "ev"
+          },
+          {
+            "home_depot_id": "D_shenzhen",
+            "node_sequence": [
+              "D_shenzhen",
+              "C041",
+              "C039",
+              "C047",
+              "C034",
+              "C045",
+              "D_shenzhen"
+            ],
+            "vehicle_id": "PYVRP-0005",
+            "vehicle_type": "cv"
+          },
+          {
+            "home_depot_id": "D_shenzhen",
+            "node_sequence": [
+              "D_shenzhen",
+              "C030",
+              "C033",
+              "C026",
+              "C031",
+              "C029",
+              "C024",
+              "D_shenzhen"
+            ],
+            "vehicle_id": "PYVRP-0006",
+            "vehicle_type": "cv"
+          },
+          {
+            "home_depot_id": "D_shenzhen",
+            "node_sequence": [
+              "D_shenzhen",
+              "C028",
+              "C037",
+              "C035",
+              "C048",
+              "D_shenzhen"
+            ],
+            "vehicle_id": "PYVRP-0007",
+            "vehicle_type": "ev"
+          },
+          {
+            "home_depot_id": "D_shenzhen",
+            "node_sequence": [
+              "D_shenzhen",
+              "C032",
+              "C044",
+              "C042",
+              "C025",
+              "D_shenzhen"
+            ],
+            "vehicle_id": "PYVRP-0008",
+            "vehicle_type": "ev"
+          },
+          {
+            "home_depot_id": "D_shenzhen",
+            "node_sequence": [
+              "D_shenzhen",
+              "C043",
+              "C046",
+              "C050",
+              "C027",
+              "D_shenzhen"
+            ],
+            "vehicle_id": "PYVRP-0009",
+            "vehicle_type": "ev"
+          },
+          {
+            "home_depot_id": "D_shenzhen",
+            "node_sequence": [
+              "D_shenzhen",
+              "C036",
+              "C040",
+              "C049",
+              "C038",
+              "D_shenzhen"
+            ],
+            "vehicle_id": "PYVRP-0010",
+            "vehicle_type": "ev"
+          }
+        ]
+      },
+      "source": "hgs_new_population_best"
+    },
+    {
+      "arm": "MV-HGS-SP",
+      "elapsed_seconds": 0.32167083300009836,
+      "epoch": "mechanism_ev_mother",
+      "iteration": 36,
+      "proxy_cost": 2453593,
+      "skeleton": {
+        "routes": [
+          {
+            "home_depot_id": "D_guangzhou",
+            "node_sequence": [
+              "D_guangzhou",
+              "C002",
+              "C008",
+              "C021",
+              "C011",
+              "C007",
+              "C013",
+              "C019",
+              "D_guangzhou"
+            ],
+            "vehicle_id": "PYVRP-0001",
+            "vehicle_type": "cv"
+          },
+          {
+            "home_depot_id": "D_guangzhou",
+            "node_sequence": [
+              "D_guangzhou",
+              "C016",
+              "C020",
+              "C022",
+              "C015",
+              "C014",
+              "C017",
+              "C018",
+              "D_guangzhou"
+            ],
+            "vehicle_id": "PYVRP-0002",
+            "vehicle_type": "cv"
+          },
+          {
+            "home_depot_id": "D_guangzhou",
+            "node_sequence": [
+              "D_guangzhou",
+              "C009",
+              "C001",
+              "C012",
+              "C006",
+              "D_guangzhou"
+            ],
+            "vehicle_id": "PYVRP-0003",
+            "vehicle_type": "ev"
+          },
+          {
+            "home_depot_id": "D_guangzhou",
+            "node_sequence": [
+              "D_guangzhou",
+              "C003",
+              "C023",
+              "C005",
+              "C004",
+              "C010",
+              "D_guangzhou"
+            ],
+            "vehicle_id": "PYVRP-0004",
+            "vehicle_type": "ev"
+          },
+          {
+            "home_depot_id": "D_shenzhen",
+            "node_sequence": [
+              "D_shenzhen",
+              "C041",
+              "C039",
+              "C047",
+              "C034",
+              "C040",
+              "D_shenzhen"
+            ],
+            "vehicle_id": "PYVRP-0005",
+            "vehicle_type": "cv"
+          },
+          {
+            "home_depot_id": "D_shenzhen",
+            "node_sequence": [
+              "D_shenzhen",
+              "C030",
+              "C033",
+              "C026",
+              "C031",
+              "C029",
+              "C024",
+              "D_shenzhen"
+            ],
+            "vehicle_id": "PYVRP-0006",
+            "vehicle_type": "cv"
+          },
+          {
+            "home_depot_id": "D_shenzhen",
+            "node_sequence": [
+              "D_shenzhen",
+              "C032",
+              "C045",
+              "C025",
+              "D_shenzhen"
+            ],
+            "vehicle_id": "PYVRP-0007",
+            "vehicle_type": "ev"
+          },
+          {
+            "home_depot_id": "D_shenzhen",
+            "node_sequence": [
+              "D_shenzhen",
+              "C028",
+              "C037",
+              "C035",
+              "C048",
+              "D_shenzhen"
+            ],
+            "vehicle_id": "PYVRP-0008",
+            "vehicle_type": "ev"
+          },
+          {
+            "home_depot_id": "D_shenzhen",
+            "node_sequence": [
+              "D_shenzhen",
+              "C036",
+              "C050",
+              "C049",
+              "C038",
+              "D_shenzhen"
+            ],
+            "vehicle_id": "PYVRP-0009",
+            "vehicle_type": "ev"
+          },
+          {
+            "home_depot_id": "D_shenzhen",
+            "node_sequence": [
+              "D_shenzhen",
+              "C043",
+              "C046",
+              "C044",
+              "C042",
+              "C027",
+              "D_shenzhen"
+            ],
+            "vehicle_id": "PYVRP-0010",
+            "vehicle_type": "ev"
+          }
+        ]
+      },
+      "source": "hgs_new_population_best"
+    },
+    {
+      "arm": "MV-HGS-SP",
+      "elapsed_seconds": 0.336882333000176,
+      "epoch": "mechanism_ev_mother",
+      "iteration": 42,
+      "proxy_cost": 2366295,
+      "skeleton": {
+        "routes": [
+          {
+            "home_depot_id": "D_guangzhou",
+            "node_sequence": [
+              "D_guangzhou",
+              "C016",
+              "C002",
+              "C008",
+              "C021",
+              "C007",
+              "C013",
+              "C001",
+              "C010",
+              "D_guangzhou"
+            ],
+            "vehicle_id": "PYVRP-0001",
+            "vehicle_type": "cv"
+          },
+          {
+            "home_depot_id": "D_guangzhou",
+            "node_sequence": [
+              "D_guangzhou",
+              "C020",
+              "C022",
+              "C015",
+              "C014",
+              "C011",
+              "C019",
+              "D_guangzhou"
+            ],
+            "vehicle_id": "PYVRP-0002",
+            "vehicle_type": "cv"
+          },
+          {
+            "home_depot_id": "D_guangzhou",
+            "node_sequence": [
+              "D_guangzhou",
+              "C003",
+              "C023",
+              "C005",
+              "C018",
+              "C017",
+              "D_guangzhou"
+            ],
+            "vehicle_id": "PYVRP-0003",
+            "vehicle_type": "ev"
+          },
+          {
+            "home_depot_id": "D_guangzhou",
+            "node_sequence": [
+              "D_guangzhou",
+              "C009",
+              "C012",
+              "C004",
+              "C006",
+              "D_guangzhou"
+            ],
+            "vehicle_id": "PYVRP-0004",
+            "vehicle_type": "ev"
+          },
+          {
+            "home_depot_id": "D_shenzhen",
+            "node_sequence": [
+              "D_shenzhen",
+              "C041",
+              "C039",
+              "C042",
+              "C029",
+              "C024",
+              "D_shenzhen"
+            ],
+            "vehicle_id": "PYVRP-0005",
+            "vehicle_type": "cv"
+          },
+          {
+            "home_depot_id": "D_shenzhen",
+            "node_sequence": [
+              "D_shenzhen",
+              "C032",
+              "C035",
+              "C037",
+              "C045",
+              "C048",
+              "C025",
+              "D_shenzhen"
+            ],
+            "vehicle_id": "PYVRP-0006",
+            "vehicle_type": "cv"
+          },
+          {
+            "home_depot_id": "D_shenzhen",
+            "node_sequence": [
+              "D_shenzhen",
+              "C043",
+              "C047",
+              "C050",
+              "C034",
+              "C040",
+              "C027",
+              "D_shenzhen"
+            ],
+            "vehicle_id": "PYVRP-0007",
+            "vehicle_type": "cv"
+          },
+          {
+            "home_depot_id": "D_shenzhen",
+            "node_sequence": [
+              "D_shenzhen",
+              "C030",
+              "C038",
+              "C033",
+              "C026",
+              "C031",
+              "D_shenzhen"
+            ],
+            "vehicle_id": "PYVRP-0008",
+            "vehicle_type": "cv"
+          },
+          {
+            "home_depot_id": "D_shenzhen",
+            "node_sequence": [
+              "D_shenzhen",
+              "C028",
+              "C046",
+              "C036",
+              "C049",
+              "C044",
+              "D_shenzhen"
+            ],
+            "vehicle_id": "PYVRP-0009",
+            "vehicle_type": "ev"
+          }
+        ]
+      },
+      "source": "hgs_new_population_best"
+    },
+    {
+      "arm": "MV-HGS-SP",
+      "elapsed_seconds": 0.43305624999993597,
+      "epoch": "mechanism_ev_mother",
+      "iteration": 63,
+      "proxy_cost": 2365377,
+      "skeleton": {
+        "routes": [
+          {
+            "home_depot_id": "D_guangzhou",
+            "node_sequence": [
+              "D_guangzhou",
+              "C016",
+              "C002",
+              "C008",
+              "C021",
+              "C011",
+              "C007",
+              "C001",
+              "C019",
+              "D_guangzhou"
+            ],
+            "vehicle_id": "PYVRP-0001",
+            "vehicle_type": "cv"
+          },
+          {
+            "home_depot_id": "D_guangzhou",
+            "node_sequence": [
+              "D_guangzhou",
+              "C022",
+              "C015",
+              "C017",
+              "C018",
+              "C012",
+              "C006",
+              "D_guangzhou"
+            ],
+            "vehicle_id": "PYVRP-0002",
+            "vehicle_type": "cv"
+          },
+          {
+            "home_depot_id": "D_guangzhou",
+            "node_sequence": [
+              "D_guangzhou",
+              "C003",
+              "C023",
+              "C005",
+              "C004",
+              "C010",
+              "D_guangzhou"
+            ],
+            "vehicle_id": "PYVRP-0003",
+            "vehicle_type": "ev"
+          },
+          {
+            "home_depot_id": "D_guangzhou",
+            "node_sequence": [
+              "D_guangzhou",
+              "C009",
+              "C020",
+              "C014",
+              "C013",
+              "D_guangzhou"
+            ],
+            "vehicle_id": "PYVRP-0004",
+            "vehicle_type": "ev"
+          },
+          {
+            "home_depot_id": "D_shenzhen",
+            "node_sequence": [
+              "D_shenzhen",
+              "C032",
+              "C035",
+              "C037",
+              "C045",
+              "C048",
+              "D_shenzhen"
+            ],
+            "vehicle_id": "PYVRP-0005",
+            "vehicle_type": "cv"
+          },
+          {
+            "home_depot_id": "D_shenzhen",
+            "node_sequence": [
+              "D_shenzhen",
+              "C041",
+              "C039",
+              "C042",
+              "C033",
+              "C026",
+              "C031",
+              "D_shenzhen"
+            ],
+            "vehicle_id": "PYVRP-0006",
+            "vehicle_type": "cv"
+          },
+          {
+            "home_depot_id": "D_shenzhen",
+            "node_sequence": [
+              "D_shenzhen",
+              "C043",
+              "C047",
+              "C050",
+              "C040",
+              "C027",
+              "D_shenzhen"
+            ],
+            "vehicle_id": "PYVRP-0007",
+            "vehicle_type": "cv"
+          },
+          {
+            "home_depot_id": "D_shenzhen",
+            "node_sequence": [
+              "D_shenzhen",
+              "C030",
+              "C038",
+              "C034",
+              "C029",
+              "C024",
+              "C025",
+              "D_shenzhen"
+            ],
+            "vehicle_id": "PYVRP-0008",
+            "vehicle_type": "cv"
+          },
+          {
+            "home_depot_id": "D_shenzhen",
+            "node_sequence": [
+              "D_shenzhen",
+              "C028",
+              "C046",
+              "C036",
+              "C049",
+              "C044",
+              "D_shenzhen"
+            ],
+            "vehicle_id": "PYVRP-0009",
+            "vehicle_type": "ev"
+          }
+        ]
+      },
+      "source": "hgs_new_population_best"
+    },
+    {
+      "arm": "MV-HGS-SP",
+      "elapsed_seconds": 0.4546672500000568,
+      "epoch": "mechanism_ev_mother",
+      "iteration": 70,
+      "proxy_cost": 2322538,
+      "skeleton": {
+        "routes": [
+          {
+            "home_depot_id": "D_guangzhou",
+            "node_sequence": [
+              "D_guangzhou",
+              "C002",
+              "C008",
+              "C021",
+              "C009",
+              "C007",
+              "C013",
+              "C019",
+              "D_guangzhou"
+            ],
+            "vehicle_id": "PYVRP-0001",
+            "vehicle_type": "cv"
+          },
+          {
+            "home_depot_id": "D_guangzhou",
+            "node_sequence": [
+              "D_guangzhou",
+              "C022",
+              "C015",
+              "C014",
+              "C017",
+              "C001",
+              "C010",
+              "D_guangzhou"
+            ],
+            "vehicle_id": "PYVRP-0002",
+            "vehicle_type": "cv"
+          },
+          {
+            "home_depot_id": "D_guangzhou",
+            "node_sequence": [
+              "D_guangzhou",
+              "C016",
+              "C020",
+              "C011",
+              "C003",
+              "C018",
+              "C004",
+              "D_guangzhou"
+            ],
+            "vehicle_id": "PYVRP-0003",
+            "vehicle_type": "ev"
+          },
+          {
+            "home_depot_id": "D_guangzhou",
+            "node_sequence": [
+              "D_guangzhou",
+              "C023",
+              "C005",
+              "C012",
+              "C006",
+              "D_guangzhou"
+            ],
+            "vehicle_id": "PYVRP-0004",
+            "vehicle_type": "ev"
+          },
+          {
+            "home_depot_id": "D_shenzhen",
+            "node_sequence": [
+              "D_shenzhen",
+              "C043",
+              "C028",
+              "C041",
+              "C039",
+              "C030",
+              "C038",
+              "D_shenzhen"
+            ],
+            "vehicle_id": "PYVRP-0005",
+            "vehicle_type": "cv"
+          },
+          {
+            "home_depot_id": "D_shenzhen",
+            "node_sequence": [
+              "D_shenzhen",
+              "C032",
+              "C048",
+              "C033",
+              "C026",
+              "C031",
+              "C029",
+              "D_shenzhen"
+            ],
+            "vehicle_id": "PYVRP-0006",
+            "vehicle_type": "cv"
+          },
+          {
+            "home_depot_id": "D_shenzhen",
+            "node_sequence": [
+              "D_shenzhen",
+              "C036",
+              "C050",
+              "C040",
+              "C049",
+              "C034",
+              "C045",
+              "D_shenzhen"
+            ],
+            "vehicle_id": "PYVRP-0007",
+            "vehicle_type": "cv"
+          },
+          {
+            "home_depot_id": "D_shenzhen",
+            "node_sequence": [
+              "D_shenzhen",
+              "C046",
+              "C047",
+              "C044",
+              "C042",
+              "C027",
+              "D_shenzhen"
+            ],
+            "vehicle_id": "PYVRP-0008",
+            "vehicle_type": "ev"
+          },
+          {
+            "home_depot_id": "D_shenzhen",
+            "node_sequence": [
+              "D_shenzhen",
+              "C037",
+              "C035",
+              "C024",
+              "C025",
+              "D_shenzhen"
+            ],
+            "vehicle_id": "PYVRP-0009",
+            "vehicle_type": "ev"
+          }
+        ]
+      },
+      "source": "hgs_new_population_best"
+    },
+    {
+      "arm": "MV-HGS-SP",
+      "elapsed_seconds": 0.9094552499991551,
+      "epoch": "mechanism_ev_mother",
+      "iteration": 197,
+      "proxy_cost": 2317876,
+      "skeleton": {
+        "routes": [
+          {
+            "home_depot_id": "D_guangzhou",
+            "node_sequence": [
+              "D_guangzhou",
+              "C016",
+              "C002",
+              "C008",
+              "C021",
+              "C011",
+              "C007",
+              "C013",
+              "C001",
+              "D_guangzhou"
+            ],
+            "vehicle_id": "PYVRP-0001",
+            "vehicle_type": "cv"
+          },
+          {
+            "home_depot_id": "D_guangzhou",
+            "node_sequence": [
+              "D_guangzhou",
+              "C009",
+              "C020",
+              "C015",
+              "C014",
+              "C017",
+              "C019",
+              "D_guangzhou"
+            ],
+            "vehicle_id": "PYVRP-0002",
+            "vehicle_type": "cv"
+          },
+          {
+            "home_depot_id": "D_guangzhou",
+            "node_sequence": [
+              "D_guangzhou",
+              "C022",
+              "C003",
+              "C018",
+              "C004",
+              "C010",
+              "D_guangzhou"
+            ],
+            "vehicle_id": "PYVRP-0003",
+            "vehicle_type": "ev"
+          },
+          {
+            "home_depot_id": "D_guangzhou",
+            "node_sequence": [
+              "D_guangzhou",
+              "C023",
+              "C005",
+              "C012",
+              "C006",
+              "D_guangzhou"
+            ],
+            "vehicle_id": "PYVRP-0004",
+            "vehicle_type": "ev"
+          },
+          {
+            "home_depot_id": "D_shenzhen",
+            "node_sequence": [
+              "D_shenzhen",
+              "C043",
+              "C041",
+              "C039",
+              "C047",
+              "C030",
+              "C038",
+              "D_shenzhen"
+            ],
+            "vehicle_id": "PYVRP-0005",
+            "vehicle_type": "cv"
+          },
+          {
+            "home_depot_id": "D_shenzhen",
+            "node_sequence": [
+              "D_shenzhen",
+              "C036",
+              "C050",
+              "C040",
+              "C045",
+              "C048",
+              "C027",
+              "D_shenzhen"
+            ],
+            "vehicle_id": "PYVRP-0006",
+            "vehicle_type": "cv"
+          },
+          {
+            "home_depot_id": "D_shenzhen",
+            "node_sequence": [
+              "D_shenzhen",
+              "C032",
+              "C034",
+              "C033",
+              "C026",
+              "C031",
+              "C029",
+              "D_shenzhen"
+            ],
+            "vehicle_id": "PYVRP-0007",
+            "vehicle_type": "cv"
+          },
+          {
+            "home_depot_id": "D_shenzhen",
+            "node_sequence": [
+              "D_shenzhen",
+              "C028",
+              "C046",
+              "C037",
+              "C035",
+              "D_shenzhen"
+            ],
+            "vehicle_id": "PYVRP-0008",
+            "vehicle_type": "ev"
+          },
+          {
+            "home_depot_id": "D_shenzhen",
+            "node_sequence": [
+              "D_shenzhen",
+              "C049",
+              "C044",
+              "C042",
+              "C024",
+              "C025",
+              "D_shenzhen"
+            ],
+            "vehicle_id": "PYVRP-0009",
+            "vehicle_type": "ev"
+          }
+        ]
+      },
+      "source": "hgs_new_population_best"
+    },
+    {
+      "arm": "MV-HGS-SP",
+      "elapsed_seconds": 1.0453862079993996,
+      "epoch": "mechanism_ev_mother",
+      "iteration": 236,
+      "proxy_cost": 2316910,
+      "skeleton": {
+        "routes": [
+          {
+            "home_depot_id": "D_guangzhou",
+            "node_sequence": [
+              "D_guangzhou",
+              "C020",
+              "C022",
+              "C015",
+              "C014",
+              "C011",
+              "C019",
+              "D_guangzhou"
+            ],
+            "vehicle_id": "PYVRP-0001",
+            "vehicle_type": "cv"
+          },
+          {
+            "home_depot_id": "D_guangzhou",
+            "node_sequence": [
+              "D_guangzhou",
+              "C016",
+              "C002",
+              "C008",
+              "C021",
+              "C007",
+              "C013",
+              "C001",
+              "C010",
+              "D_guangzhou"
+            ],
+            "vehicle_id": "PYVRP-0002",
+            "vehicle_type": "cv"
+          },
+          {
+            "home_depot_id": "D_guangzhou",
+            "node_sequence": [
+              "D_guangzhou",
+              "C009",
+              "C023",
+              "C005",
+              "C004",
+              "C018",
+              "D_guangzhou"
+            ],
+            "vehicle_id": "PYVRP-0003",
+            "vehicle_type": "ev"
+          },
+          {
+            "home_depot_id": "D_guangzhou",
+            "node_sequence": [
+              "D_guangzhou",
+              "C003",
+              "C017",
+              "C012",
+              "C006",
+              "D_guangzhou"
+            ],
+            "vehicle_id": "PYVRP-0004",
+            "vehicle_type": "ev"
+          },
+          {
+            "home_depot_id": "D_shenzhen",
+            "node_sequence": [
+              "D_shenzhen",
+              "C028",
+              "C037",
+              "C035",
+              "C032",
+              "C045",
+              "C025",
+              "D_shenzhen"
+            ],
+            "vehicle_id": "PYVRP-0005",
+            "vehicle_type": "cv"
+          },
+          {
+            "home_depot_id": "D_shenzhen",
+            "node_sequence": [
+              "D_shenzhen",
+              "C038",
+              "C033",
+              "C026",
+              "C031",
+              "C029",
+              "C024",
+              "D_shenzhen"
+            ],
+            "vehicle_id": "PYVRP-0006",
+            "vehicle_type": "cv"
+          },
+          {
+            "home_depot_id": "D_shenzhen",
+            "node_sequence": [
+              "D_shenzhen",
+              "C043",
+              "C046",
+              "C041",
+              "C039",
+              "C050",
+              "C027",
+              "D_shenzhen"
+            ],
+            "vehicle_id": "PYVRP-0007",
+            "vehicle_type": "cv"
+          },
+          {
+            "home_depot_id": "D_shenzhen",
+            "node_sequence": [
+              "D_shenzhen",
+              "C047",
+              "C036",
+              "C040",
+              "C048",
+              "D_shenzhen"
+            ],
+            "vehicle_id": "PYVRP-0008",
+            "vehicle_type": "ev"
+          },
+          {
+            "home_depot_id": "D_shenzhen",
+            "node_sequence": [
+              "D_shenzhen",
+              "C030",
+              "C034",
+              "C049",
+              "C044",
+              "C042",
+              "D_shenzhen"
+            ],
+            "vehicle_id": "PYVRP-0009",
+            "vehicle_type": "ev"
+          }
+        ]
+      },
+      "source": "hgs_new_population_best"
+    },
+    {
+      "arm": "MV-HGS-SP",
+      "elapsed_seconds": 1.0511693749995175,
+      "epoch": "mechanism_ev_mother",
+      "iteration": 239,
+      "proxy_cost": 2313366,
+      "skeleton": {
+        "routes": [
+          {
+            "home_depot_id": "D_guangzhou",
+            "node_sequence": [
+              "D_guangzhou",
+              "C016",
+              "C002",
+              "C008",
+              "C021",
+              "C007",
+              "C013",
+              "C001",
+              "C010",
+              "D_guangzhou"
+            ],
+            "vehicle_id": "PYVRP-0001",
+            "vehicle_type": "cv"
+          },
+          {
+            "home_depot_id": "D_guangzhou",
+            "node_sequence": [
+              "D_guangzhou",
+              "C020",
+              "C022",
+              "C015",
+              "C014",
+              "C011",
+              "C019",
+              "D_guangzhou"
+            ],
+            "vehicle_id": "PYVRP-0002",
+            "vehicle_type": "cv"
+          },
+          {
+            "home_depot_id": "D_guangzhou",
+            "node_sequence": [
+              "D_guangzhou",
+              "C003",
+              "C017",
+              "C012",
+              "C006",
+              "D_guangzhou"
+            ],
+            "vehicle_id": "PYVRP-0003",
+            "vehicle_type": "ev"
+          },
+          {
+            "home_depot_id": "D_guangzhou",
+            "node_sequence": [
+              "D_guangzhou",
+              "C009",
+              "C023",
+              "C005",
+              "C004",
+              "C018",
+              "D_guangzhou"
+            ],
+            "vehicle_id": "PYVRP-0004",
+            "vehicle_type": "ev"
+          },
+          {
+            "home_depot_id": "D_shenzhen",
+            "node_sequence": [
+              "D_shenzhen",
+              "C028",
+              "C037",
+              "C035",
+              "C032",
+              "C045",
+              "C025",
+              "D_shenzhen"
+            ],
+            "vehicle_id": "PYVRP-0005",
+            "vehicle_type": "cv"
+          },
+          {
+            "home_depot_id": "D_shenzhen",
+            "node_sequence": [
+              "D_shenzhen",
+              "C043",
+              "C041",
+              "C039",
+              "C047",
+              "C040",
+              "C048",
+              "D_shenzhen"
+            ],
+            "vehicle_id": "PYVRP-0006",
+            "vehicle_type": "cv"
+          },
+          {
+            "home_depot_id": "D_shenzhen",
+            "node_sequence": [
+              "D_shenzhen",
+              "C038",
+              "C033",
+              "C026",
+              "C031",
+              "C029",
+              "C024",
+              "D_shenzhen"
+            ],
+            "vehicle_id": "PYVRP-0007",
+            "vehicle_type": "cv"
+          },
+          {
+            "home_depot_id": "D_shenzhen",
+            "node_sequence": [
+              "D_shenzhen",
+              "C036",
+              "C046",
+              "C050",
+              "C027",
+              "D_shenzhen"
+            ],
+            "vehicle_id": "PYVRP-0008",
+            "vehicle_type": "ev"
+          },
+          {
+            "home_depot_id": "D_shenzhen",
+            "node_sequence": [
+              "D_shenzhen",
+              "C030",
+              "C034",
+              "C049",
+              "C044",
+              "C042",
+              "D_shenzhen"
+            ],
+            "vehicle_id": "PYVRP-0009",
+            "vehicle_type": "ev"
+          }
+        ]
+      },
+      "source": "hgs_new_population_best"
+    },
+    {
+      "arm": "MV-HGS-SP",
+      "elapsed_seconds": 1.1150252919997001,
+      "epoch": "mechanism_ev_mother",
+      "iteration": 259,
+      "proxy_cost": 2311146,
+      "skeleton": {
+        "routes": [
+          {
+            "home_depot_id": "D_guangzhou",
+            "node_sequence": [
+              "D_guangzhou",
+              "C016",
+              "C020",
+              "C022",
+              "C015",
+              "C014",
+              "C001",
+              "C010",
+              "D_guangzhou"
+            ],
+            "vehicle_id": "PYVRP-0001",
+            "vehicle_type": "cv"
+          },
+          {
+            "home_depot_id": "D_guangzhou",
+            "node_sequence": [
+              "D_guangzhou",
+              "C002",
+              "C008",
+              "C021",
+              "C011",
+              "C007",
+              "C013",
+              "C019",
+              "D_guangzhou"
+            ],
+            "vehicle_id": "PYVRP-0002",
+            "vehicle_type": "cv"
+          },
+          {
+            "home_depot_id": "D_guangzhou",
+            "node_sequence": [
+              "D_guangzhou",
+              "C003",
+              "C017",
+              "C012",
+              "C006",
+              "D_guangzhou"
+            ],
+            "vehicle_id": "PYVRP-0003",
+            "vehicle_type": "ev"
+          },
+          {
+            "home_depot_id": "D_guangzhou",
+            "node_sequence": [
+              "D_guangzhou",
+              "C009",
+              "C023",
+              "C005",
+              "C004",
+              "C018",
+              "D_guangzhou"
+            ],
+            "vehicle_id": "PYVRP-0004",
+            "vehicle_type": "ev"
+          },
+          {
+            "home_depot_id": "D_shenzhen",
+            "node_sequence": [
+              "D_shenzhen",
+              "C028",
+              "C037",
+              "C035",
+              "C032",
+              "C045",
+              "C025",
+              "D_shenzhen"
+            ],
+            "vehicle_id": "PYVRP-0005",
+            "vehicle_type": "cv"
+          },
+          {
+            "home_depot_id": "D_shenzhen",
+            "node_sequence": [
+              "D_shenzhen",
+              "C043",
+              "C041",
+              "C039",
+              "C047",
+              "C040",
+              "C048",
+              "D_shenzhen"
+            ],
+            "vehicle_id": "PYVRP-0006",
+            "vehicle_type": "cv"
+          },
+          {
+            "home_depot_id": "D_shenzhen",
+            "node_sequence": [
+              "D_shenzhen",
+              "C036",
+              "C050",
+              "C046",
+              "C034",
+              "C033",
+              "C026",
+              "C031",
+              "D_shenzhen"
+            ],
+            "vehicle_id": "PYVRP-0007",
+            "vehicle_type": "cv"
+          },
+          {
+            "home_depot_id": "D_shenzhen",
+            "node_sequence": [
+              "D_shenzhen",
+              "C030",
+              "C049",
+              "C029",
+              "C024",
+              "D_shenzhen"
+            ],
+            "vehicle_id": "PYVRP-0008",
+            "vehicle_type": "ev"
+          },
+          {
+            "home_depot_id": "D_shenzhen",
+            "node_sequence": [
+              "D_shenzhen",
+              "C038",
+              "C044",
+              "C042",
+              "C027",
+              "D_shenzhen"
+            ],
+            "vehicle_id": "PYVRP-0009",
+            "vehicle_type": "ev"
+          }
+        ]
+      },
+      "source": "hgs_new_population_best"
+    },
+    {
+      "arm": "MV-HGS-SP",
+      "elapsed_seconds": 1.2100107079986628,
+      "epoch": "mechanism_ev_mother",
+      "iteration": 291,
+      "proxy_cost": 2309848,
+      "skeleton": {
+        "routes": [
+          {
+            "home_depot_id": "D_guangzhou",
+            "node_sequence": [
+              "D_guangzhou",
+              "C002",
+              "C008",
+              "C021",
+              "C011",
+              "C007",
+              "C013",
+              "C019",
+              "D_guangzhou"
+            ],
+            "vehicle_id": "PYVRP-0001",
+            "vehicle_type": "cv"
+          },
+          {
+            "home_depot_id": "D_guangzhou",
+            "node_sequence": [
+              "D_guangzhou",
+              "C020",
+              "C022",
+              "C015",
+              "C014",
+              "C012",
+              "C006",
+              "D_guangzhou"
+            ],
+            "vehicle_id": "PYVRP-0002",
+            "vehicle_type": "cv"
+          },
+          {
+            "home_depot_id": "D_guangzhou",
+            "node_sequence": [
+              "D_guangzhou",
+              "C016",
+              "C003",
+              "C017",
+              "C001",
+              "C010",
+              "D_guangzhou"
+            ],
+            "vehicle_id": "PYVRP-0003",
+            "vehicle_type": "ev"
+          },
+          {
+            "home_depot_id": "D_guangzhou",
+            "node_sequence": [
+              "D_guangzhou",
+              "C009",
+              "C023",
+              "C005",
+              "C004",
+              "C018",
+              "D_guangzhou"
+            ],
+            "vehicle_id": "PYVRP-0004",
+            "vehicle_type": "ev"
+          },
+          {
+            "home_depot_id": "D_shenzhen",
+            "node_sequence": [
+              "D_shenzhen",
+              "C030",
+              "C038",
+              "C033",
+              "C026",
+              "C031",
+              "C029",
+              "D_shenzhen"
+            ],
+            "vehicle_id": "PYVRP-0005",
+            "vehicle_type": "cv"
+          },
+          {
+            "home_depot_id": "D_shenzhen",
+            "node_sequence": [
+              "D_shenzhen",
+              "C036",
+              "C046",
+              "C050",
+              "C040",
+              "C045",
+              "C025",
+              "D_shenzhen"
+            ],
+            "vehicle_id": "PYVRP-0006",
+            "vehicle_type": "cv"
+          },
+          {
+            "home_depot_id": "D_shenzhen",
+            "node_sequence": [
+              "D_shenzhen",
+              "C043",
+              "C041",
+              "C039",
+              "C047",
+              "C034",
+              "C049",
+              "C027",
+              "D_shenzhen"
+            ],
+            "vehicle_id": "PYVRP-0007",
+            "vehicle_type": "cv"
+          },
+          {
+            "home_depot_id": "D_shenzhen",
+            "node_sequence": [
+              "D_shenzhen",
+              "C037",
+              "C035",
+              "C032",
+              "C048",
+              "D_shenzhen"
+            ],
+            "vehicle_id": "PYVRP-0008",
+            "vehicle_type": "ev"
+          },
+          {
+            "home_depot_id": "D_shenzhen",
+            "node_sequence": [
+              "D_shenzhen",
+              "C028",
+              "C044",
+              "C042",
+              "C024",
+              "D_shenzhen"
+            ],
+            "vehicle_id": "PYVRP-0009",
+            "vehicle_type": "ev"
+          }
+        ]
+      },
+      "source": "hgs_new_population_best"
+    },
+    {
+      "arm": "MV-HGS-SP",
+      "elapsed_seconds": 1.356375166998987,
+      "epoch": "mechanism_ev_mother",
+      "iteration": 343,
+      "proxy_cost": 2309572,
+      "skeleton": {
+        "routes": [
+          {
+            "home_depot_id": "D_guangzhou",
+            "node_sequence": [
+              "D_guangzhou",
+              "C016",
+              "C002",
+              "C008",
+              "C021",
+              "C011",
+              "C007",
+              "C013",
+              "C001",
+              "D_guangzhou"
+            ],
+            "vehicle_id": "PYVRP-0001",
+            "vehicle_type": "cv"
+          },
+          {
+            "home_depot_id": "D_guangzhou",
+            "node_sequence": [
+              "D_guangzhou",
+              "C009",
+              "C020",
+              "C015",
+              "C014",
+              "C017",
+              "C019",
+              "D_guangzhou"
+            ],
+            "vehicle_id": "PYVRP-0002",
+            "vehicle_type": "cv"
+          },
+          {
+            "home_depot_id": "D_guangzhou",
+            "node_sequence": [
+              "D_guangzhou",
+              "C023",
+              "C005",
+              "C004",
+              "C018",
+              "C010",
+              "D_guangzhou"
+            ],
+            "vehicle_id": "PYVRP-0003",
+            "vehicle_type": "ev"
+          },
+          {
+            "home_depot_id": "D_guangzhou",
+            "node_sequence": [
+              "D_guangzhou",
+              "C022",
+              "C003",
+              "C012",
+              "C006",
+              "D_guangzhou"
+            ],
+            "vehicle_id": "PYVRP-0004",
+            "vehicle_type": "ev"
+          },
+          {
+            "home_depot_id": "D_shenzhen",
+            "node_sequence": [
+              "D_shenzhen",
+              "C036",
+              "C050",
+              "C040",
+              "C049",
+              "C045",
+              "C025",
+              "D_shenzhen"
+            ],
+            "vehicle_id": "PYVRP-0005",
+            "vehicle_type": "cv"
+          },
+          {
+            "home_depot_id": "D_shenzhen",
+            "node_sequence": [
+              "D_shenzhen",
+              "C038",
+              "C033",
+              "C026",
+              "C031",
+              "C029",
+              "C024",
+              "D_shenzhen"
+            ],
+            "vehicle_id": "PYVRP-0006",
+            "vehicle_type": "cv"
+          },
+          {
+            "home_depot_id": "D_shenzhen",
+            "node_sequence": [
+              "D_shenzhen",
+              "C043",
+              "C028",
+              "C041",
+              "C039",
+              "C047",
+              "C030",
+              "D_shenzhen"
+            ],
+            "vehicle_id": "PYVRP-0007",
+            "vehicle_type": "cv"
+          },
+          {
+            "home_depot_id": "D_shenzhen",
+            "node_sequence": [
+              "D_shenzhen",
+              "C037",
+              "C035",
+              "C032",
+              "C048",
+              "D_shenzhen"
+            ],
+            "vehicle_id": "PYVRP-0008",
+            "vehicle_type": "ev"
+          },
+          {
+            "home_depot_id": "D_shenzhen",
+            "node_sequence": [
+              "D_shenzhen",
+              "C046",
+              "C034",
+              "C044",
+              "C042",
+              "C027",
+              "D_shenzhen"
+            ],
+            "vehicle_id": "PYVRP-0009",
+            "vehicle_type": "ev"
+          }
+        ]
+      },
+      "source": "hgs_new_population_best"
+    },
+    {
+      "arm": "MV-HGS-SP",
+      "elapsed_seconds": 1.5144559999989724,
+      "epoch": "mechanism_ev_mother",
+      "iteration": 399,
+      "proxy_cost": 2309337,
+      "skeleton": {
+        "routes": [
+          {
+            "home_depot_id": "D_guangzhou",
+            "node_sequence": [
+              "D_guangzhou",
+              "C002",
+              "C008",
+              "C021",
+              "C011",
+              "C007",
+              "C013",
+              "C019",
+              "D_guangzhou"
+            ],
+            "vehicle_id": "PYVRP-0001",
+            "vehicle_type": "cv"
+          },
+          {
+            "home_depot_id": "D_guangzhou",
+            "node_sequence": [
+              "D_guangzhou",
+              "C020",
+              "C022",
+              "C015",
+              "C014",
+              "C012",
+              "C006",
+              "D_guangzhou"
+            ],
+            "vehicle_id": "PYVRP-0002",
+            "vehicle_type": "cv"
+          },
+          {
+            "home_depot_id": "D_guangzhou",
+            "node_sequence": [
+              "D_guangzhou",
+              "C009",
+              "C023",
+              "C005",
+              "C004",
+              "C018",
+              "D_guangzhou"
+            ],
+            "vehicle_id": "PYVRP-0003",
+            "vehicle_type": "ev"
+          },
+          {
+            "home_depot_id": "D_guangzhou",
+            "node_sequence": [
+              "D_guangzhou",
+              "C016",
+              "C003",
+              "C017",
+              "C001",
+              "C010",
+              "D_guangzhou"
+            ],
+            "vehicle_id": "PYVRP-0004",
+            "vehicle_type": "ev"
+          },
+          {
+            "home_depot_id": "D_shenzhen",
+            "node_sequence": [
+              "D_shenzhen",
+              "C032",
+              "C035",
+              "C037",
+              "C034",
+              "C040",
+              "C027",
+              "D_shenzhen"
+            ],
+            "vehicle_id": "PYVRP-0005",
+            "vehicle_type": "cv"
+          },
+          {
+            "home_depot_id": "D_shenzhen",
+            "node_sequence": [
+              "D_shenzhen",
+              "C043",
+              "C041",
+              "C039",
+              "C047",
+              "C045",
+              "C048",
+              "D_shenzhen"
+            ],
+            "vehicle_id": "PYVRP-0006",
+            "vehicle_type": "cv"
+          },
+          {
+            "home_depot_id": "D_shenzhen",
+            "node_sequence": [
+              "D_shenzhen",
+              "C038",
+              "C026",
+              "C031",
+              "C029",
+              "C024",
+              "C025",
+              "D_shenzhen"
+            ],
+            "vehicle_id": "PYVRP-0007",
+            "vehicle_type": "cv"
+          },
+          {
+            "home_depot_id": "D_shenzhen",
+            "node_sequence": [
+              "D_shenzhen",
+              "C028",
+              "C046",
+              "C050",
+              "C036",
+              "D_shenzhen"
+            ],
+            "vehicle_id": "PYVRP-0008",
+            "vehicle_type": "ev"
+          },
+          {
+            "home_depot_id": "D_shenzhen",
+            "node_sequence": [
+              "D_shenzhen",
+              "C030",
+              "C049",
+              "C044",
+              "C042",
+              "C033",
+              "D_shenzhen"
+            ],
+            "vehicle_id": "PYVRP-0009",
+            "vehicle_type": "ev"
+          }
+        ]
+      },
+      "source": "hgs_new_population_best"
+    },
+    {
+      "arm": "MV-HGS-SP",
+      "elapsed_seconds": 1.5728955419999693,
+      "epoch": "mechanism_ev_mother",
+      "iteration": 407,
+      "proxy_cost": 2306049,
+      "skeleton": {
+        "routes": [
+          {
+            "home_depot_id": "D_guangzhou",
+            "node_sequence": [
+              "D_guangzhou",
+              "C002",
+              "C008",
+              "C021",
+              "C011",
+              "C007",
+              "C013",
+              "C019",
+              "D_guangzhou"
+            ],
+            "vehicle_id": "PYVRP-0001",
+            "vehicle_type": "cv"
+          },
+          {
+            "home_depot_id": "D_guangzhou",
+            "node_sequence": [
+              "D_guangzhou",
+              "C016",
+              "C020",
+              "C022",
+              "C015",
+              "C014",
+              "C001",
+              "C010",
+              "D_guangzhou"
+            ],
+            "vehicle_id": "PYVRP-0002",
+            "vehicle_type": "cv"
+          },
+          {
+            "home_depot_id": "D_guangzhou",
+            "node_sequence": [
+              "D_guangzhou",
+              "C003",
+              "C017",
+              "C012",
+              "C006",
+              "D_guangzhou"
+            ],
+            "vehicle_id": "PYVRP-0003",
+            "vehicle_type": "ev"
+          },
+          {
+            "home_depot_id": "D_guangzhou",
+            "node_sequence": [
+              "D_guangzhou",
+              "C009",
+              "C023",
+              "C005",
+              "C004",
+              "C018",
+              "D_guangzhou"
+            ],
+            "vehicle_id": "PYVRP-0004",
+            "vehicle_type": "ev"
+          },
+          {
+            "home_depot_id": "D_shenzhen",
+            "node_sequence": [
+              "D_shenzhen",
+              "C030",
+              "C038",
+              "C033",
+              "C026",
+              "C031",
+              "C029",
+              "D_shenzhen"
+            ],
+            "vehicle_id": "PYVRP-0005",
+            "vehicle_type": "cv"
+          },
+          {
+            "home_depot_id": "D_shenzhen",
+            "node_sequence": [
+              "D_shenzhen",
+              "C043",
+              "C041",
+              "C039",
+              "C047",
+              "C034",
+              "C049",
+              "C027",
+              "D_shenzhen"
+            ],
+            "vehicle_id": "PYVRP-0006",
+            "vehicle_type": "cv"
+          },
+          {
+            "home_depot_id": "D_shenzhen",
+            "node_sequence": [
+              "D_shenzhen",
+              "C036",
+              "C046",
+              "C050",
+              "C040",
+              "C045",
+              "C025",
+              "D_shenzhen"
+            ],
+            "vehicle_id": "PYVRP-0007",
+            "vehicle_type": "cv"
+          },
+          {
+            "home_depot_id": "D_shenzhen",
+            "node_sequence": [
+              "D_shenzhen",
+              "C028",
+              "C044",
+              "C042",
+              "C024",
+              "D_shenzhen"
+            ],
+            "vehicle_id": "PYVRP-0008",
+            "vehicle_type": "ev"
+          },
+          {
+            "home_depot_id": "D_shenzhen",
+            "node_sequence": [
+              "D_shenzhen",
+              "C037",
+              "C035",
+              "C032",
+              "C048",
+              "D_shenzhen"
+            ],
+            "vehicle_id": "PYVRP-0009",
+            "vehicle_type": "ev"
+          }
+        ]
+      },
+      "source": "hgs_new_population_best"
+    },
+    {
+      "arm": "MV-HGS-SP",
+      "elapsed_seconds": 2.114994707999358,
+      "epoch": "mechanism_ev_mother",
+      "iteration": 600,
+      "proxy_cost": 2305935,
+      "skeleton": {
+        "routes": [
+          {
+            "home_depot_id": "D_guangzhou",
+            "node_sequence": [
+              "D_guangzhou",
+              "C002",
+              "C008",
+              "C021",
+              "C009",
+              "C007",
+              "C013",
+              "C019",
+              "D_guangzhou"
+            ],
+            "vehicle_id": "PYVRP-0001",
+            "vehicle_type": "cv"
+          },
+          {
+            "home_depot_id": "D_guangzhou",
+            "node_sequence": [
+              "D_guangzhou",
+              "C016",
+              "C020",
+              "C022",
+              "C015",
+              "C014",
+              "C011",
+              "C001",
+              "D_guangzhou"
+            ],
+            "vehicle_id": "PYVRP-0002",
+            "vehicle_type": "cv"
+          },
+          {
+            "home_depot_id": "D_guangzhou",
+            "node_sequence": [
+              "D_guangzhou",
+              "C003",
+              "C017",
+              "C012",
+              "C006",
+              "D_guangzhou"
+            ],
+            "vehicle_id": "PYVRP-0003",
+            "vehicle_type": "ev"
+          },
+          {
+            "home_depot_id": "D_guangzhou",
+            "node_sequence": [
+              "D_guangzhou",
+              "C023",
+              "C005",
+              "C004",
+              "C018",
+              "C010",
+              "D_guangzhou"
+            ],
+            "vehicle_id": "PYVRP-0004",
+            "vehicle_type": "ev"
+          },
+          {
+            "home_depot_id": "D_shenzhen",
+            "node_sequence": [
+              "D_shenzhen",
+              "C036",
+              "C050",
+              "C040",
+              "C049",
+              "C045",
+              "C025",
+              "D_shenzhen"
+            ],
+            "vehicle_id": "PYVRP-0005",
+            "vehicle_type": "cv"
+          },
+          {
+            "home_depot_id": "D_shenzhen",
+            "node_sequence": [
+              "D_shenzhen",
+              "C043",
+              "C028",
+              "C041",
+              "C039",
+              "C047",
+              "C030",
+              "D_shenzhen"
+            ],
+            "vehicle_id": "PYVRP-0006",
+            "vehicle_type": "cv"
+          },
+          {
+            "home_depot_id": "D_shenzhen",
+            "node_sequence": [
+              "D_shenzhen",
+              "C038",
+              "C033",
+              "C026",
+              "C031",
+              "C029",
+              "C024",
+              "D_shenzhen"
+            ],
+            "vehicle_id": "PYVRP-0007",
+            "vehicle_type": "cv"
+          },
+          {
+            "home_depot_id": "D_shenzhen",
+            "node_sequence": [
+              "D_shenzhen",
+              "C037",
+              "C035",
+              "C032",
+              "C048",
+              "D_shenzhen"
+            ],
+            "vehicle_id": "PYVRP-0008",
+            "vehicle_type": "ev"
+          },
+          {
+            "home_depot_id": "D_shenzhen",
+            "node_sequence": [
+              "D_shenzhen",
+              "C046",
+              "C034",
+              "C044",
+              "C042",
+              "C027",
+              "D_shenzhen"
+            ],
+            "vehicle_id": "PYVRP-0009",
+            "vehicle_type": "ev"
+          }
+        ]
+      },
+      "source": "hgs_new_population_best"
+    },
+    {
+      "arm": "MV-HGS-SP",
+      "elapsed_seconds": 2.4184605829996144,
+      "epoch": "mechanism_ev_mother",
+      "iteration": 701,
+      "proxy_cost": 2305538,
+      "skeleton": {
+        "routes": [
+          {
+            "home_depot_id": "D_guangzhou",
+            "node_sequence": [
+              "D_guangzhou",
+              "C002",
+              "C008",
+              "C021",
+              "C011",
+              "C007",
+              "C013",
+              "C019",
+              "D_guangzhou"
+            ],
+            "vehicle_id": "PYVRP-0001",
+            "vehicle_type": "cv"
+          },
+          {
+            "home_depot_id": "D_guangzhou",
+            "node_sequence": [
+              "D_guangzhou",
+              "C016",
+              "C020",
+              "C022",
+              "C015",
+              "C014",
+              "C001",
+              "C010",
+              "D_guangzhou"
+            ],
+            "vehicle_id": "PYVRP-0002",
+            "vehicle_type": "cv"
+          },
+          {
+            "home_depot_id": "D_guangzhou",
+            "node_sequence": [
+              "D_guangzhou",
+              "C003",
+              "C017",
+              "C012",
+              "C006",
+              "D_guangzhou"
+            ],
+            "vehicle_id": "PYVRP-0003",
+            "vehicle_type": "ev"
+          },
+          {
+            "home_depot_id": "D_guangzhou",
+            "node_sequence": [
+              "D_guangzhou",
+              "C009",
+              "C023",
+              "C005",
+              "C004",
+              "C018",
+              "D_guangzhou"
+            ],
+            "vehicle_id": "PYVRP-0004",
+            "vehicle_type": "ev"
+          },
+          {
+            "home_depot_id": "D_shenzhen",
+            "node_sequence": [
+              "D_shenzhen",
+              "C032",
+              "C035",
+              "C037",
+              "C034",
+              "C040",
+              "C027",
+              "D_shenzhen"
+            ],
+            "vehicle_id": "PYVRP-0005",
+            "vehicle_type": "cv"
+          },
+          {
+            "home_depot_id": "D_shenzhen",
+            "node_sequence": [
+              "D_shenzhen",
+              "C043",
+              "C041",
+              "C039",
+              "C047",
+              "C045",
+              "C048",
+              "D_shenzhen"
+            ],
+            "vehicle_id": "PYVRP-0006",
+            "vehicle_type": "cv"
+          },
+          {
+            "home_depot_id": "D_shenzhen",
+            "node_sequence": [
+              "D_shenzhen",
+              "C038",
+              "C026",
+              "C031",
+              "C029",
+              "C024",
+              "C025",
+              "D_shenzhen"
+            ],
+            "vehicle_id": "PYVRP-0007",
+            "vehicle_type": "cv"
+          },
+          {
+            "home_depot_id": "D_shenzhen",
+            "node_sequence": [
+              "D_shenzhen",
+              "C028",
+              "C046",
+              "C050",
+              "C036",
+              "D_shenzhen"
+            ],
+            "vehicle_id": "PYVRP-0008",
+            "vehicle_type": "ev"
+          },
+          {
+            "home_depot_id": "D_shenzhen",
+            "node_sequence": [
+              "D_shenzhen",
+              "C030",
+              "C049",
+              "C044",
+              "C042",
+              "C033",
+              "D_shenzhen"
+            ],
+            "vehicle_id": "PYVRP-0009",
+            "vehicle_type": "ev"
+          }
+        ]
+      },
+      "source": "hgs_new_population_best"
+    },
+    {
+      "arm": "MV-HGS-SP",
+      "elapsed_seconds": 3.997242749999714,
+      "epoch": "mechanism_ev_mother",
+      "iteration": 1078,
+      "proxy_cost": 2304444,
+      "skeleton": {
+        "routes": [
+          {
+            "home_depot_id": "D_guangzhou",
+            "node_sequence": [
+              "D_guangzhou",
+              "C002",
+              "C008",
+              "C021",
+              "C011",
+              "C007",
+              "C013",
+              "C019",
+              "D_guangzhou"
+            ],
+            "vehicle_id": "PYVRP-0001",
+            "vehicle_type": "cv"
+          },
+          {
+            "home_depot_id": "D_guangzhou",
+            "node_sequence": [
+              "D_guangzhou",
+              "C016",
+              "C020",
+              "C022",
+              "C015",
+              "C014",
+              "C001",
+              "C010",
+              "D_guangzhou"
+            ],
+            "vehicle_id": "PYVRP-0002",
+            "vehicle_type": "cv"
+          },
+          {
+            "home_depot_id": "D_guangzhou",
+            "node_sequence": [
+              "D_guangzhou",
+              "C003",
+              "C017",
+              "C012",
+              "C006",
+              "D_guangzhou"
+            ],
+            "vehicle_id": "PYVRP-0003",
+            "vehicle_type": "ev"
+          },
+          {
+            "home_depot_id": "D_guangzhou",
+            "node_sequence": [
+              "D_guangzhou",
+              "C009",
+              "C023",
+              "C005",
+              "C004",
+              "C018",
+              "D_guangzhou"
+            ],
+            "vehicle_id": "PYVRP-0004",
+            "vehicle_type": "ev"
+          },
+          {
+            "home_depot_id": "D_shenzhen",
+            "node_sequence": [
+              "D_shenzhen",
+              "C032",
+              "C035",
+              "C037",
+              "C034",
+              "C040",
+              "C027",
+              "D_shenzhen"
+            ],
+            "vehicle_id": "PYVRP-0005",
+            "vehicle_type": "cv"
+          },
+          {
+            "home_depot_id": "D_shenzhen",
+            "node_sequence": [
+              "D_shenzhen",
+              "C043",
+              "C041",
+              "C039",
+              "C047",
+              "C045",
+              "C025",
+              "D_shenzhen"
+            ],
+            "vehicle_id": "PYVRP-0006",
+            "vehicle_type": "cv"
+          },
+          {
+            "home_depot_id": "D_shenzhen",
+            "node_sequence": [
+              "D_shenzhen",
+              "C038",
+              "C033",
+              "C026",
+              "C031",
+              "C029",
+              "C024",
+              "D_shenzhen"
+            ],
+            "vehicle_id": "PYVRP-0007",
+            "vehicle_type": "cv"
+          },
+          {
+            "home_depot_id": "D_shenzhen",
+            "node_sequence": [
+              "D_shenzhen",
+              "C028",
+              "C046",
+              "C050",
+              "C036",
+              "D_shenzhen"
+            ],
+            "vehicle_id": "PYVRP-0008",
+            "vehicle_type": "ev"
+          },
+          {
+            "home_depot_id": "D_shenzhen",
+            "node_sequence": [
+              "D_shenzhen",
+              "C030",
+              "C049",
+              "C044",
+              "C042",
+              "C048",
+              "D_shenzhen"
+            ],
+            "vehicle_id": "PYVRP-0009",
+            "vehicle_type": "ev"
+          }
+        ]
+      },
+      "source": "hgs_new_population_best"
+    },
+    {
+      "arm": "MV-HGS-SP",
+      "elapsed_seconds": 16.23357537499942,
+      "epoch": "sp_round_1",
+      "iteration": null,
+      "proxy_cost": null,
+      "skeleton": {
+        "routes": [
+          {
+            "home_depot_id": "D_guangzhou",
+            "node_sequence": [
+              "D_guangzhou",
+              "C002",
+              "C008",
+              "C021",
+              "C009",
+              "C007",
+              "C013",
+              "C019",
+              "D_guangzhou"
+            ],
+            "vehicle_id": "SP-CV-0001",
+            "vehicle_type": "cv"
+          },
+          {
+            "home_depot_id": "D_guangzhou",
+            "node_sequence": [
+              "D_guangzhou",
+              "C016",
+              "C020",
+              "C022",
+              "C015",
+              "C014",
+              "C011",
+              "C001",
+              "D_guangzhou"
+            ],
+            "vehicle_id": "SP-CV-0002",
+            "vehicle_type": "cv"
+          },
+          {
+            "home_depot_id": "D_guangzhou",
+            "node_sequence": [
+              "D_guangzhou",
+              "C003",
+              "C017",
+              "C012",
+              "C006",
+              "D_guangzhou"
+            ],
+            "vehicle_id": "SP-EV-0003",
+            "vehicle_type": "ev"
+          },
+          {
+            "home_depot_id": "D_guangzhou",
+            "node_sequence": [
+              "D_guangzhou",
+              "C023",
+              "C005",
+              "C004",
+              "C018",
+              "C010",
+              "D_guangzhou"
+            ],
+            "vehicle_id": "SP-EV-0004",
+            "vehicle_type": "ev"
+          },
+          {
+            "home_depot_id": "D_shenzhen",
+            "node_sequence": [
+              "D_shenzhen",
+              "C043",
+              "C028",
+              "C041",
+              "C039",
+              "C047",
+              "C030",
+              "D_shenzhen"
+            ],
+            "vehicle_id": "SP-CV-0005",
+            "vehicle_type": "cv"
+          },
+          {
+            "home_depot_id": "D_shenzhen",
+            "node_sequence": [
+              "D_shenzhen",
+              "C036",
+              "C050",
+              "C046",
+              "C034",
+              "C040",
+              "C049",
+              "C027",
+              "D_shenzhen"
+            ],
+            "vehicle_id": "SP-CV-0006",
+            "vehicle_type": "cv"
+          },
+          {
+            "home_depot_id": "D_shenzhen",
+            "node_sequence": [
+              "D_shenzhen",
+              "C038",
+              "C033",
+              "C026",
+              "C031",
+              "C029",
+              "C024",
+              "D_shenzhen"
+            ],
+            "vehicle_id": "SP-CV-0007",
+            "vehicle_type": "cv"
+          },
+          {
+            "home_depot_id": "D_shenzhen",
+            "node_sequence": [
+              "D_shenzhen",
+              "C037",
+              "C035",
+              "C032",
+              "C048",
+              "D_shenzhen"
+            ],
+            "vehicle_id": "SP-EV-0008",
+            "vehicle_type": "ev"
+          },
+          {
+            "home_depot_id": "D_shenzhen",
+            "node_sequence": [
+              "D_shenzhen",
+              "C045",
+              "C044",
+              "C042",
+              "C025",
+              "D_shenzhen"
+            ],
+            "vehicle_id": "SP-EV-0009",
+            "vehicle_type": "ev"
+          }
+        ]
+      },
+      "source": "set_partitioning_candidate"
+    },
+    {
+      "arm": "MV-HGS-SP",
+      "elapsed_seconds": 16.273028832998534,
+      "epoch": "cv_only_continuation_1",
+      "iteration": 5,
+      "proxy_cost": 2560599,
+      "skeleton": {
+        "routes": [
+          {
+            "home_depot_id": "D_guangzhou",
+            "node_sequence": [
+              "D_guangzhou",
+              "C016",
+              "C021",
+              "C003",
+              "C023",
+              "C005",
+              "C004",
+              "C012",
+              "C006",
+              "D_guangzhou"
+            ],
+            "vehicle_id": "PYVRP-0001",
+            "vehicle_type": "cv"
+          },
+          {
+            "home_depot_id": "D_guangzhou",
+            "node_sequence": [
+              "D_guangzhou",
+              "C009",
+              "C020",
+              "C015",
+              "C011",
+              "C007",
+              "C001",
+              "C010",
+              "D_guangzhou"
+            ],
+            "vehicle_id": "PYVRP-0002",
+            "vehicle_type": "cv"
+          },
+          {
+            "home_depot_id": "D_guangzhou",
+            "node_sequence": [
+              "D_guangzhou",
+              "C022",
+              "C014",
+              "C017",
+              "C018",
+              "C013",
+              "C019",
+              "D_guangzhou"
+            ],
+            "vehicle_id": "PYVRP-0003",
+            "vehicle_type": "cv"
+          },
+          {
+            "home_depot_id": "D_guangzhou",
+            "node_sequence": [
+              "D_guangzhou",
+              "C008",
+              "C002",
+              "D_guangzhou"
+            ],
+            "vehicle_id": "PYVRP-0004",
+            "vehicle_type": "cv"
+          },
+          {
+            "home_depot_id": "D_shenzhen",
+            "node_sequence": [
+              "D_shenzhen",
+              "C036",
+              "C050",
+              "C040",
+              "C027",
+              "D_shenzhen"
+            ],
+            "vehicle_id": "PYVRP-0005",
+            "vehicle_type": "cv"
+          },
+          {
+            "home_depot_id": "D_shenzhen",
+            "node_sequence": [
+              "D_shenzhen",
+              "C032",
+              "C035",
+              "C037",
+              "C045",
+              "C048",
+              "D_shenzhen"
+            ],
+            "vehicle_id": "PYVRP-0006",
+            "vehicle_type": "cv"
+          },
+          {
+            "home_depot_id": "D_shenzhen",
+            "node_sequence": [
+              "D_shenzhen",
+              "C043",
+              "C044",
+              "C042",
+              "C033",
+              "C026",
+              "C031",
+              "D_shenzhen"
+            ],
+            "vehicle_id": "PYVRP-0007",
+            "vehicle_type": "cv"
+          },
+          {
+            "home_depot_id": "D_shenzhen",
+            "node_sequence": [
+              "D_shenzhen",
+              "C038",
+              "C049",
+              "C034",
+              "C029",
+              "C024",
+              "C025",
+              "D_shenzhen"
+            ],
+            "vehicle_id": "PYVRP-0008",
+            "vehicle_type": "cv"
+          },
+          {
+            "home_depot_id": "D_shenzhen",
+            "node_sequence": [
+              "D_shenzhen",
+              "C028",
+              "C046",
+              "C041",
+              "C039",
+              "C047",
+              "C030",
+              "D_shenzhen"
+            ],
+            "vehicle_id": "PYVRP-0009",
+            "vehicle_type": "cv"
+          }
+        ]
+      },
+      "source": "hgs_new_population_best"
+    },
+    {
+      "arm": "MV-HGS-SP",
+      "elapsed_seconds": 16.32167991699862,
+      "epoch": "cv_only_continuation_1",
+      "iteration": 22,
+      "proxy_cost": 2555601,
+      "skeleton": {
+        "routes": [
+          {
+            "home_depot_id": "D_guangzhou",
+            "node_sequence": [
+              "D_guangzhou",
+              "C002",
+              "C008",
+              "C019",
+              "D_guangzhou"
+            ],
+            "vehicle_id": "PYVRP-0001",
+            "vehicle_type": "cv"
+          },
+          {
+            "home_depot_id": "D_guangzhou",
+            "node_sequence": [
+              "D_guangzhou",
+              "C022",
+              "C015",
+              "C014",
+              "C017",
+              "C018",
+              "C010",
+              "D_guangzhou"
+            ],
+            "vehicle_id": "PYVRP-0002",
+            "vehicle_type": "cv"
+          },
+          {
+            "home_depot_id": "D_guangzhou",
+            "node_sequence": [
+              "D_guangzhou",
+              "C016",
+              "C021",
+              "C003",
+              "C023",
+              "C005",
+              "C004",
+              "C012",
+              "C006",
+              "D_guangzhou"
+            ],
+            "vehicle_id": "PYVRP-0003",
+            "vehicle_type": "cv"
+          },
+          {
+            "home_depot_id": "D_guangzhou",
+            "node_sequence": [
+              "D_guangzhou",
+              "C009",
+              "C020",
+              "C011",
+              "C007",
+              "C013",
+              "C001",
+              "D_guangzhou"
+            ],
+            "vehicle_id": "PYVRP-0004",
+            "vehicle_type": "cv"
+          },
+          {
+            "home_depot_id": "D_shenzhen",
+            "node_sequence": [
+              "D_shenzhen",
+              "C044",
+              "C042",
+              "C033",
+              "C026",
+              "C031",
+              "D_shenzhen"
+            ],
+            "vehicle_id": "PYVRP-0005",
+            "vehicle_type": "cv"
+          },
+          {
+            "home_depot_id": "D_shenzhen",
+            "node_sequence": [
+              "D_shenzhen",
+              "C043",
+              "C028",
+              "C041",
+              "C039",
+              "C047",
+              "C030",
+              "D_shenzhen"
+            ],
+            "vehicle_id": "PYVRP-0006",
+            "vehicle_type": "cv"
+          },
+          {
+            "home_depot_id": "D_shenzhen",
+            "node_sequence": [
+              "D_shenzhen",
+              "C036",
+              "C046",
+              "C050",
+              "C040",
+              "C027",
+              "D_shenzhen"
+            ],
+            "vehicle_id": "PYVRP-0007",
+            "vehicle_type": "cv"
+          },
+          {
+            "home_depot_id": "D_shenzhen",
+            "node_sequence": [
+              "D_shenzhen",
+              "C038",
+              "C049",
+              "C034",
+              "C029",
+              "C024",
+              "C025",
+              "D_shenzhen"
+            ],
+            "vehicle_id": "PYVRP-0008",
+            "vehicle_type": "cv"
+          },
+          {
+            "home_depot_id": "D_shenzhen",
+            "node_sequence": [
+              "D_shenzhen",
+              "C032",
+              "C035",
+              "C037",
+              "C045",
+              "C048",
+              "D_shenzhen"
+            ],
+            "vehicle_id": "PYVRP-0009",
+            "vehicle_type": "cv"
+          }
+        ]
+      },
+      "source": "hgs_new_population_best"
+    },
+    {
+      "arm": "MV-HGS-SP",
+      "elapsed_seconds": 16.683963124998627,
+      "epoch": "cv_only_continuation_1",
+      "iteration": 141,
+      "proxy_cost": 2555066,
+      "skeleton": {
+        "routes": [
+          {
+            "home_depot_id": "D_guangzhou",
+            "node_sequence": [
+              "D_guangzhou",
+              "C002",
+              "C008",
+              "C019",
+              "D_guangzhou"
+            ],
+            "vehicle_id": "PYVRP-0001",
+            "vehicle_type": "cv"
+          },
+          {
+            "home_depot_id": "D_guangzhou",
+            "node_sequence": [
+              "D_guangzhou",
+              "C009",
+              "C020",
+              "C011",
+              "C007",
+              "C013",
+              "C001",
+              "D_guangzhou"
+            ],
+            "vehicle_id": "PYVRP-0002",
+            "vehicle_type": "cv"
+          },
+          {
+            "home_depot_id": "D_guangzhou",
+            "node_sequence": [
+              "D_guangzhou",
+              "C022",
+              "C015",
+              "C014",
+              "C017",
+              "C018",
+              "C010",
+              "D_guangzhou"
+            ],
+            "vehicle_id": "PYVRP-0003",
+            "vehicle_type": "cv"
+          },
+          {
+            "home_depot_id": "D_guangzhou",
+            "node_sequence": [
+              "D_guangzhou",
+              "C016",
+              "C021",
+              "C003",
+              "C023",
+              "C005",
+              "C004",
+              "C012",
+              "C006",
+              "D_guangzhou"
+            ],
+            "vehicle_id": "PYVRP-0004",
+            "vehicle_type": "cv"
+          },
+          {
+            "home_depot_id": "D_shenzhen",
+            "node_sequence": [
+              "D_shenzhen",
+              "C032",
+              "C035",
+              "C037",
+              "C045",
+              "C048",
+              "D_shenzhen"
+            ],
+            "vehicle_id": "PYVRP-0005",
+            "vehicle_type": "cv"
+          },
+          {
+            "home_depot_id": "D_shenzhen",
+            "node_sequence": [
+              "D_shenzhen",
+              "C043",
+              "C044",
+              "C042",
+              "C033",
+              "C026",
+              "C031",
+              "D_shenzhen"
+            ],
+            "vehicle_id": "PYVRP-0006",
+            "vehicle_type": "cv"
+          },
+          {
+            "home_depot_id": "D_shenzhen",
+            "node_sequence": [
+              "D_shenzhen",
+              "C036",
+              "C050",
+              "C040",
+              "C027",
+              "D_shenzhen"
+            ],
+            "vehicle_id": "PYVRP-0007",
+            "vehicle_type": "cv"
+          },
+          {
+            "home_depot_id": "D_shenzhen",
+            "node_sequence": [
+              "D_shenzhen",
+              "C038",
+              "C049",
+              "C034",
+              "C029",
+              "C024",
+              "C025",
+              "D_shenzhen"
+            ],
+            "vehicle_id": "PYVRP-0008",
+            "vehicle_type": "cv"
+          },
+          {
+            "home_depot_id": "D_shenzhen",
+            "node_sequence": [
+              "D_shenzhen",
+              "C028",
+              "C046",
+              "C041",
+              "C039",
+              "C047",
+              "C030",
+              "D_shenzhen"
+            ],
+            "vehicle_id": "PYVRP-0009",
+            "vehicle_type": "cv"
+          }
+        ]
+      },
+      "source": "hgs_new_population_best"
+    },
+    {
+      "arm": "MV-HGS-SP",
+      "elapsed_seconds": 23.183173291999992,
+      "epoch": "sp_round_2",
+      "iteration": null,
+      "proxy_cost": null,
+      "skeleton": {
+        "routes": [
+          {
+            "home_depot_id": "D_guangzhou",
+            "node_sequence": [
+              "D_guangzhou",
+              "C002",
+              "C008",
+              "C021",
+              "C009",
+              "C007",
+              "C013",
+              "C019",
+              "D_guangzhou"
+            ],
+            "vehicle_id": "SP-CV-0001",
+            "vehicle_type": "cv"
+          },
+          {
+            "home_depot_id": "D_guangzhou",
+            "node_sequence": [
+              "D_guangzhou",
+              "C016",
+              "C020",
+              "C022",
+              "C015",
+              "C014",
+              "C011",
+              "C001",
+              "D_guangzhou"
+            ],
+            "vehicle_id": "SP-CV-0002",
+            "vehicle_type": "cv"
+          },
+          {
+            "home_depot_id": "D_guangzhou",
+            "node_sequence": [
+              "D_guangzhou",
+              "C003",
+              "C017",
+              "C012",
+              "C006",
+              "D_guangzhou"
+            ],
+            "vehicle_id": "SP-EV-0003",
+            "vehicle_type": "ev"
+          },
+          {
+            "home_depot_id": "D_guangzhou",
+            "node_sequence": [
+              "D_guangzhou",
+              "C023",
+              "C005",
+              "C004",
+              "C018",
+              "C010",
+              "D_guangzhou"
+            ],
+            "vehicle_id": "SP-EV-0004",
+            "vehicle_type": "ev"
+          },
+          {
+            "home_depot_id": "D_shenzhen",
+            "node_sequence": [
+              "D_shenzhen",
+              "C043",
+              "C028",
+              "C041",
+              "C039",
+              "C047",
+              "C030",
+              "D_shenzhen"
+            ],
+            "vehicle_id": "SP-CV-0005",
+            "vehicle_type": "cv"
+          },
+          {
+            "home_depot_id": "D_shenzhen",
+            "node_sequence": [
+              "D_shenzhen",
+              "C036",
+              "C050",
+              "C046",
+              "C034",
+              "C040",
+              "C049",
+              "C027",
+              "D_shenzhen"
+            ],
+            "vehicle_id": "SP-CV-0006",
+            "vehicle_type": "cv"
+          },
+          {
+            "home_depot_id": "D_shenzhen",
+            "node_sequence": [
+              "D_shenzhen",
+              "C038",
+              "C033",
+              "C026",
+              "C031",
+              "C029",
+              "C024",
+              "D_shenzhen"
+            ],
+            "vehicle_id": "SP-CV-0007",
+            "vehicle_type": "cv"
+          },
+          {
+            "home_depot_id": "D_shenzhen",
+            "node_sequence": [
+              "D_shenzhen",
+              "C037",
+              "C035",
+              "C032",
+              "C048",
+              "D_shenzhen"
+            ],
+            "vehicle_id": "SP-EV-0008",
+            "vehicle_type": "ev"
+          },
+          {
+            "home_depot_id": "D_shenzhen",
+            "node_sequence": [
+              "D_shenzhen",
+              "C045",
+              "C044",
+              "C042",
+              "C025",
+              "D_shenzhen"
+            ],
+            "vehicle_id": "SP-EV-0009",
+            "vehicle_type": "ev"
+          }
+        ]
+      },
+      "source": "set_partitioning_candidate"
+    },
+    {
+      "arm": "MV-HGS-SP",
+      "elapsed_seconds": 23.222280999998475,
+      "epoch": "naive_ev_continuation_2",
+      "iteration": 3,
+      "proxy_cost": 2455966,
+      "skeleton": {
+        "routes": [
+          {
+            "home_depot_id": "D_guangzhou",
+            "node_sequence": [
+              "D_guangzhou",
+              "C016",
+              "C020",
+              "C022",
+              "C015",
+              "C014",
+              "C011",
+              "C001",
+              "D_guangzhou"
+            ],
+            "vehicle_id": "PYVRP-0001",
+            "vehicle_type": "cv"
+          },
+          {
+            "home_depot_id": "D_guangzhou",
+            "node_sequence": [
+              "D_guangzhou",
+              "C002",
+              "C008",
+              "C021",
+              "C003",
+              "C019",
+              "D_guangzhou"
+            ],
+            "vehicle_id": "PYVRP-0002",
+            "vehicle_type": "cv"
+          },
+          {
+            "home_depot_id": "D_guangzhou",
+            "node_sequence": [
+              "D_guangzhou",
+              "C023",
+              "C005",
+              "C004",
+              "C017",
+              "C018",
+              "C012",
+              "C006",
+              "D_guangzhou"
+            ],
+            "vehicle_id": "PYVRP-0003",
+            "vehicle_type": "cv"
+          },
+          {
+            "home_depot_id": "D_guangzhou",
+            "node_sequence": [
+              "D_guangzhou",
+              "C009",
+              "C007",
+              "C013",
+              "C010",
+              "D_guangzhou"
+            ],
+            "vehicle_id": "PYVRP-0004",
+            "vehicle_type": "ev"
+          },
+          {
+            "home_depot_id": "D_shenzhen",
+            "node_sequence": [
+              "D_shenzhen",
+              "C037",
+              "C035",
+              "C034",
+              "C029",
+              "C024",
+              "C025",
+              "D_shenzhen"
+            ],
+            "vehicle_id": "PYVRP-0005",
+            "vehicle_type": "cv"
+          },
+          {
+            "home_depot_id": "D_shenzhen",
+            "node_sequence": [
+              "D_shenzhen",
+              "C043",
+              "C041",
+              "C039",
+              "C047",
+              "C030",
+              "C038",
+              "D_shenzhen"
+            ],
+            "vehicle_id": "PYVRP-0006",
+            "vehicle_type": "cv"
+          },
+          {
+            "home_depot_id": "D_shenzhen",
+            "node_sequence": [
+              "D_shenzhen",
+              "C036",
+              "C050",
+              "C040",
+              "C027",
+              "D_shenzhen"
+            ],
+            "vehicle_id": "PYVRP-0007",
+            "vehicle_type": "cv"
+          },
+          {
+            "home_depot_id": "D_shenzhen",
+            "node_sequence": [
+              "D_shenzhen",
+              "C032",
+              "C045",
+              "C049",
+              "C033",
+              "C026",
+              "C031",
+              "D_shenzhen"
+            ],
+            "vehicle_id": "PYVRP-0008",
+            "vehicle_type": "cv"
+          },
+          {
+            "home_depot_id": "D_shenzhen",
+            "node_sequence": [
+              "D_shenzhen",
+              "C028",
+              "C046",
+              "C044",
+              "C042",
+              "C048",
+              "D_shenzhen"
+            ],
+            "vehicle_id": "PYVRP-0009",
+            "vehicle_type": "ev"
+          }
+        ]
+      },
+      "source": "hgs_new_population_best"
+    },
+    {
+      "arm": "MV-HGS-SP",
+      "elapsed_seconds": 23.4061167079999,
+      "epoch": "naive_ev_continuation_2",
+      "iteration": 53,
+      "proxy_cost": 2449019,
+      "skeleton": {
+        "routes": [
+          {
+            "home_depot_id": "D_guangzhou",
+            "node_sequence": [
+              "D_guangzhou",
+              "C009",
+              "C011",
+              "C007",
+              "C013",
+              "C001",
+              "D_guangzhou"
+            ],
+            "vehicle_id": "PYVRP-0001",
+            "vehicle_type": "cv"
+          },
+          {
+            "home_depot_id": "D_guangzhou",
+            "node_sequence": [
+              "D_guangzhou",
+              "C002",
+              "C008",
+              "C021",
+              "C017",
+              "C018",
+              "C012",
+              "C006",
+              "D_guangzhou"
+            ],
+            "vehicle_id": "PYVRP-0002",
+            "vehicle_type": "cv"
+          },
+          {
+            "home_depot_id": "D_guangzhou",
+            "node_sequence": [
+              "D_guangzhou",
+              "C016",
+              "C020",
+              "C022",
+              "C015",
+              "C014",
+              "C019",
+              "D_guangzhou"
+            ],
+            "vehicle_id": "PYVRP-0003",
+            "vehicle_type": "cv"
+          },
+          {
+            "home_depot_id": "D_guangzhou",
+            "node_sequence": [
+              "D_guangzhou",
+              "C003",
+              "C023",
+              "C005",
+              "C004",
+              "C010",
+              "D_guangzhou"
+            ],
+            "vehicle_id": "PYVRP-0004",
+            "vehicle_type": "ev"
+          },
+          {
+            "home_depot_id": "D_shenzhen",
+            "node_sequence": [
+              "D_shenzhen",
+              "C032",
+              "C035",
+              "C037",
+              "C045",
+              "C027",
+              "D_shenzhen"
+            ],
+            "vehicle_id": "PYVRP-0005",
+            "vehicle_type": "cv"
+          },
+          {
+            "home_depot_id": "D_shenzhen",
+            "node_sequence": [
+              "D_shenzhen",
+              "C038",
+              "C033",
+              "C031",
+              "C029",
+              "C024",
+              "C025",
+              "D_shenzhen"
+            ],
+            "vehicle_id": "PYVRP-0006",
+            "vehicle_type": "cv"
+          },
+          {
+            "home_depot_id": "D_shenzhen",
+            "node_sequence": [
+              "D_shenzhen",
+              "C043",
+              "C041",
+              "C039",
+              "C047",
+              "C030",
+              "D_shenzhen"
+            ],
+            "vehicle_id": "PYVRP-0007",
+            "vehicle_type": "cv"
+          },
+          {
+            "home_depot_id": "D_shenzhen",
+            "node_sequence": [
+              "D_shenzhen",
+              "C036",
+              "C050",
+              "C040",
+              "C049",
+              "C034",
+              "C026",
+              "D_shenzhen"
+            ],
+            "vehicle_id": "PYVRP-0008",
+            "vehicle_type": "cv"
+          },
+          {
+            "home_depot_id": "D_shenzhen",
+            "node_sequence": [
+              "D_shenzhen",
+              "C028",
+              "C046",
+              "C044",
+              "C042",
+              "C048",
+              "D_shenzhen"
+            ],
+            "vehicle_id": "PYVRP-0009",
+            "vehicle_type": "ev"
+          }
+        ]
+      },
+      "source": "hgs_new_population_best"
+    },
+    {
+      "arm": "MV-HGS-SP",
+      "elapsed_seconds": 23.705185416998575,
+      "epoch": "naive_ev_continuation_2",
+      "iteration": 140,
+      "proxy_cost": 2376652,
+      "skeleton": {
+        "routes": [
+          {
+            "home_depot_id": "D_guangzhou",
+            "node_sequence": [
+              "D_guangzhou",
+              "C002",
+              "C008",
+              "C007",
+              "C001",
+              "C013",
+              "C012",
+              "C010",
+              "D_guangzhou"
+            ],
+            "vehicle_id": "PYVRP-0001",
+            "vehicle_type": "cv"
+          },
+          {
+            "home_depot_id": "D_guangzhou",
+            "node_sequence": [
+              "D_guangzhou",
+              "C020",
+              "C022",
+              "C015",
+              "C014",
+              "C011",
+              "C019",
+              "D_guangzhou"
+            ],
+            "vehicle_id": "PYVRP-0002",
+            "vehicle_type": "cv"
+          },
+          {
+            "home_depot_id": "D_guangzhou",
+            "node_sequence": [
+              "D_guangzhou",
+              "C021",
+              "C003",
+              "C017",
+              "C018",
+              "C006",
+              "D_guangzhou"
+            ],
+            "vehicle_id": "PYVRP-0003",
+            "vehicle_type": "ev"
+          },
+          {
+            "home_depot_id": "D_guangzhou",
+            "node_sequence": [
+              "D_guangzhou",
+              "C016",
+              "C009",
+              "C023",
+              "C005",
+              "C004",
+              "D_guangzhou"
+            ],
+            "vehicle_id": "PYVRP-0004",
+            "vehicle_type": "ev"
+          },
+          {
+            "home_depot_id": "D_shenzhen",
+            "node_sequence": [
+              "D_shenzhen",
+              "C028",
+              "C046",
+              "C050",
+              "C029",
+              "C024",
+              "C025",
+              "D_shenzhen"
+            ],
+            "vehicle_id": "PYVRP-0005",
+            "vehicle_type": "cv"
+          },
+          {
+            "home_depot_id": "D_shenzhen",
+            "node_sequence": [
+              "D_shenzhen",
+              "C032",
+              "C035",
+              "C037",
+              "C034",
+              "C040",
+              "C027",
+              "D_shenzhen"
+            ],
+            "vehicle_id": "PYVRP-0006",
+            "vehicle_type": "cv"
+          },
+          {
+            "home_depot_id": "D_shenzhen",
+            "node_sequence": [
+              "D_shenzhen",
+              "C043",
+              "C047",
+              "C041",
+              "C042",
+              "C033",
+              "C026",
+              "C031",
+              "D_shenzhen"
+            ],
+            "vehicle_id": "PYVRP-0007",
+            "vehicle_type": "cv"
+          },
+          {
+            "home_depot_id": "D_shenzhen",
+            "node_sequence": [
+              "D_shenzhen",
+              "C044",
+              "C049",
+              "C045",
+              "C048",
+              "D_shenzhen"
+            ],
+            "vehicle_id": "PYVRP-0008",
+            "vehicle_type": "ev"
+          },
+          {
+            "home_depot_id": "D_shenzhen",
+            "node_sequence": [
+              "D_shenzhen",
+              "C036",
+              "C039",
+              "C030",
+              "C038",
+              "D_shenzhen"
+            ],
+            "vehicle_id": "PYVRP-0009",
+            "vehicle_type": "ev"
+          }
+        ]
+      },
+      "source": "hgs_new_population_best"
+    },
+    {
+      "arm": "MV-HGS-SP",
+      "elapsed_seconds": 23.96845966699948,
+      "epoch": "naive_ev_continuation_2",
+      "iteration": 214,
+      "proxy_cost": 2367635,
+      "skeleton": {
+        "routes": [
+          {
+            "home_depot_id": "D_guangzhou",
+            "node_sequence": [
+              "D_guangzhou",
+              "C002",
+              "C008",
+              "C007",
+              "C001",
+              "C013",
+              "C012",
+              "C010",
+              "D_guangzhou"
+            ],
+            "vehicle_id": "PYVRP-0001",
+            "vehicle_type": "cv"
+          },
+          {
+            "home_depot_id": "D_guangzhou",
+            "node_sequence": [
+              "D_guangzhou",
+              "C020",
+              "C022",
+              "C015",
+              "C014",
+              "C011",
+              "C019",
+              "D_guangzhou"
+            ],
+            "vehicle_id": "PYVRP-0002",
+            "vehicle_type": "cv"
+          },
+          {
+            "home_depot_id": "D_guangzhou",
+            "node_sequence": [
+              "D_guangzhou",
+              "C021",
+              "C003",
+              "C017",
+              "C018",
+              "C006",
+              "D_guangzhou"
+            ],
+            "vehicle_id": "PYVRP-0003",
+            "vehicle_type": "ev"
+          },
+          {
+            "home_depot_id": "D_guangzhou",
+            "node_sequence": [
+              "D_guangzhou",
+              "C016",
+              "C009",
+              "C023",
+              "C005",
+              "C004",
+              "D_guangzhou"
+            ],
+            "vehicle_id": "PYVRP-0004",
+            "vehicle_type": "ev"
+          },
+          {
+            "home_depot_id": "D_shenzhen",
+            "node_sequence": [
+              "D_shenzhen",
+              "C045",
+              "C049",
+              "C033",
+              "C026",
+              "C031",
+              "C029",
+              "D_shenzhen"
+            ],
+            "vehicle_id": "PYVRP-0005",
+            "vehicle_type": "cv"
+          },
+          {
+            "home_depot_id": "D_shenzhen",
+            "node_sequence": [
+              "D_shenzhen",
+              "C032",
+              "C035",
+              "C037",
+              "C034",
+              "C040",
+              "C027",
+              "D_shenzhen"
+            ],
+            "vehicle_id": "PYVRP-0006",
+            "vehicle_type": "cv"
+          },
+          {
+            "home_depot_id": "D_shenzhen",
+            "node_sequence": [
+              "D_shenzhen",
+              "C046",
+              "C041",
+              "C039",
+              "C047",
+              "C030",
+              "C038",
+              "D_shenzhen"
+            ],
+            "vehicle_id": "PYVRP-0007",
+            "vehicle_type": "cv"
+          },
+          {
+            "home_depot_id": "D_shenzhen",
+            "node_sequence": [
+              "D_shenzhen",
+              "C043",
+              "C028",
+              "C044",
+              "C042",
+              "C048",
+              "D_shenzhen"
+            ],
+            "vehicle_id": "PYVRP-0008",
+            "vehicle_type": "ev"
+          },
+          {
+            "home_depot_id": "D_shenzhen",
+            "node_sequence": [
+              "D_shenzhen",
+              "C036",
+              "C050",
+              "C024",
+              "C025",
+              "D_shenzhen"
+            ],
+            "vehicle_id": "PYVRP-0009",
+            "vehicle_type": "ev"
+          }
+        ]
+      },
+      "source": "hgs_new_population_best"
+    },
+    {
+      "arm": "MV-HGS-SP",
+      "elapsed_seconds": 23.993294500000047,
+      "epoch": "naive_ev_continuation_2",
+      "iteration": 223,
+      "proxy_cost": 2365709,
+      "skeleton": {
+        "routes": [
+          {
+            "home_depot_id": "D_guangzhou",
+            "node_sequence": [
+              "D_guangzhou",
+              "C009",
+              "C011",
+              "C007",
+              "C001",
+              "C013",
+              "C012",
+              "C006",
+              "D_guangzhou"
+            ],
+            "vehicle_id": "PYVRP-0001",
+            "vehicle_type": "cv"
+          },
+          {
+            "home_depot_id": "D_guangzhou",
+            "node_sequence": [
+              "D_guangzhou",
+              "C016",
+              "C020",
+              "C022",
+              "C015",
+              "C014",
+              "C017",
+              "C018",
+              "D_guangzhou"
+            ],
+            "vehicle_id": "PYVRP-0002",
+            "vehicle_type": "cv"
+          },
+          {
+            "home_depot_id": "D_guangzhou",
+            "node_sequence": [
+              "D_guangzhou",
+              "C002",
+              "C008",
+              "C021",
+              "C019",
+              "D_guangzhou"
+            ],
+            "vehicle_id": "PYVRP-0003",
+            "vehicle_type": "ev"
+          },
+          {
+            "home_depot_id": "D_guangzhou",
+            "node_sequence": [
+              "D_guangzhou",
+              "C003",
+              "C023",
+              "C005",
+              "C004",
+              "C010",
+              "D_guangzhou"
+            ],
+            "vehicle_id": "PYVRP-0004",
+            "vehicle_type": "ev"
+          },
+          {
+            "home_depot_id": "D_shenzhen",
+            "node_sequence": [
+              "D_shenzhen",
+              "C036",
+              "C049",
+              "C033",
+              "C026",
+              "C031",
+              "C029",
+              "C024",
+              "D_shenzhen"
+            ],
+            "vehicle_id": "PYVRP-0005",
+            "vehicle_type": "cv"
+          },
+          {
+            "home_depot_id": "D_shenzhen",
+            "node_sequence": [
+              "D_shenzhen",
+              "C032",
+              "C035",
+              "C037",
+              "C034",
+              "C040",
+              "C027",
+              "D_shenzhen"
+            ],
+            "vehicle_id": "PYVRP-0006",
+            "vehicle_type": "cv"
+          },
+          {
+            "home_depot_id": "D_shenzhen",
+            "node_sequence": [
+              "D_shenzhen",
+              "C043",
+              "C041",
+              "C039",
+              "C047",
+              "C045",
+              "C025",
+              "D_shenzhen"
+            ],
+            "vehicle_id": "PYVRP-0007",
+            "vehicle_type": "cv"
+          },
+          {
+            "home_depot_id": "D_shenzhen",
+            "node_sequence": [
+              "D_shenzhen",
+              "C028",
+              "C046",
+              "C050",
+              "C048",
+              "D_shenzhen"
+            ],
+            "vehicle_id": "PYVRP-0008",
+            "vehicle_type": "ev"
+          },
+          {
+            "home_depot_id": "D_shenzhen",
+            "node_sequence": [
+              "D_shenzhen",
+              "C030",
+              "C038",
+              "C044",
+              "C042",
+              "D_shenzhen"
+            ],
+            "vehicle_id": "PYVRP-0009",
+            "vehicle_type": "ev"
+          }
+        ]
+      },
+      "source": "hgs_new_population_best"
+    },
+    {
+      "arm": "MV-HGS-SP",
+      "elapsed_seconds": 24.335721499999636,
+      "epoch": "naive_ev_continuation_2",
+      "iteration": 327,
+      "proxy_cost": 2363163,
+      "skeleton": {
+        "routes": [
+          {
+            "home_depot_id": "D_guangzhou",
+            "node_sequence": [
+              "D_guangzhou",
+              "C015",
+              "C014",
+              "C017",
+              "C018",
+              "C012",
+              "C006",
+              "D_guangzhou"
+            ],
+            "vehicle_id": "PYVRP-0001",
+            "vehicle_type": "cv"
+          },
+          {
+            "home_depot_id": "D_guangzhou",
+            "node_sequence": [
+              "D_guangzhou",
+              "C016",
+              "C020",
+              "C022",
+              "C011",
+              "C007",
+              "C013",
+              "C001",
+              "C010",
+              "D_guangzhou"
+            ],
+            "vehicle_id": "PYVRP-0002",
+            "vehicle_type": "cv"
+          },
+          {
+            "home_depot_id": "D_guangzhou",
+            "node_sequence": [
+              "D_guangzhou",
+              "C002",
+              "C008",
+              "C021",
+              "C019",
+              "D_guangzhou"
+            ],
+            "vehicle_id": "PYVRP-0003",
+            "vehicle_type": "ev"
+          },
+          {
+            "home_depot_id": "D_guangzhou",
+            "node_sequence": [
+              "D_guangzhou",
+              "C009",
+              "C003",
+              "C023",
+              "C005",
+              "C004",
+              "D_guangzhou"
+            ],
+            "vehicle_id": "PYVRP-0004",
+            "vehicle_type": "ev"
+          },
+          {
+            "home_depot_id": "D_shenzhen",
+            "node_sequence": [
+              "D_shenzhen",
+              "C032",
+              "C035",
+              "C037",
+              "C034",
+              "C040",
+              "C027",
+              "D_shenzhen"
+            ],
+            "vehicle_id": "PYVRP-0005",
+            "vehicle_type": "cv"
+          },
+          {
+            "home_depot_id": "D_shenzhen",
+            "node_sequence": [
+              "D_shenzhen",
+              "C043",
+              "C041",
+              "C039",
+              "C047",
+              "C045",
+              "C025",
+              "D_shenzhen"
+            ],
+            "vehicle_id": "PYVRP-0006",
+            "vehicle_type": "cv"
+          },
+          {
+            "home_depot_id": "D_shenzhen",
+            "node_sequence": [
+              "D_shenzhen",
+              "C036",
+              "C049",
+              "C033",
+              "C026",
+              "C031",
+              "C029",
+              "C024",
+              "D_shenzhen"
+            ],
+            "vehicle_id": "PYVRP-0007",
+            "vehicle_type": "cv"
+          },
+          {
+            "home_depot_id": "D_shenzhen",
+            "node_sequence": [
+              "D_shenzhen",
+              "C028",
+              "C046",
+              "C050",
+              "C048",
+              "D_shenzhen"
+            ],
+            "vehicle_id": "PYVRP-0008",
+            "vehicle_type": "ev"
+          },
+          {
+            "home_depot_id": "D_shenzhen",
+            "node_sequence": [
+              "D_shenzhen",
+              "C030",
+              "C038",
+              "C044",
+              "C042",
+              "D_shenzhen"
+            ],
+            "vehicle_id": "PYVRP-0009",
+            "vehicle_type": "ev"
+          }
+        ]
+      },
+      "source": "hgs_new_population_best"
+    },
+    {
+      "arm": "MV-HGS-SP",
+      "elapsed_seconds": 24.827317916999164,
+      "epoch": "naive_ev_continuation_2",
+      "iteration": 496,
+      "proxy_cost": 2362840,
+      "skeleton": {
+        "routes": [
+          {
+            "home_depot_id": "D_guangzhou",
+            "node_sequence": [
+              "D_guangzhou",
+              "C016",
+              "C020",
+              "C022",
+              "C011",
+              "C007",
+              "C013",
+              "C001",
+              "C010",
+              "D_guangzhou"
+            ],
+            "vehicle_id": "PYVRP-0001",
+            "vehicle_type": "cv"
+          },
+          {
+            "home_depot_id": "D_guangzhou",
+            "node_sequence": [
+              "D_guangzhou",
+              "C015",
+              "C014",
+              "C017",
+              "C018",
+              "C012",
+              "C006",
+              "D_guangzhou"
+            ],
+            "vehicle_id": "PYVRP-0002",
+            "vehicle_type": "cv"
+          },
+          {
+            "home_depot_id": "D_guangzhou",
+            "node_sequence": [
+              "D_guangzhou",
+              "C002",
+              "C008",
+              "C021",
+              "C019",
+              "D_guangzhou"
+            ],
+            "vehicle_id": "PYVRP-0003",
+            "vehicle_type": "ev"
+          },
+          {
+            "home_depot_id": "D_guangzhou",
+            "node_sequence": [
+              "D_guangzhou",
+              "C009",
+              "C003",
+              "C023",
+              "C005",
+              "C004",
+              "D_guangzhou"
+            ],
+            "vehicle_id": "PYVRP-0004",
+            "vehicle_type": "ev"
+          },
+          {
+            "home_depot_id": "D_shenzhen",
+            "node_sequence": [
+              "D_shenzhen",
+              "C043",
+              "C046",
+              "C041",
+              "C039",
+              "C047",
+              "C030",
+              "C027",
+              "D_shenzhen"
+            ],
+            "vehicle_id": "PYVRP-0005",
+            "vehicle_type": "cv"
+          },
+          {
+            "home_depot_id": "D_shenzhen",
+            "node_sequence": [
+              "D_shenzhen",
+              "C036",
+              "C050",
+              "C040",
+              "C049",
+              "C034",
+              "C045",
+              "D_shenzhen"
+            ],
+            "vehicle_id": "PYVRP-0006",
+            "vehicle_type": "cv"
+          },
+          {
+            "home_depot_id": "D_shenzhen",
+            "node_sequence": [
+              "D_shenzhen",
+              "C038",
+              "C026",
+              "C031",
+              "C029",
+              "C024",
+              "C025",
+              "D_shenzhen"
+            ],
+            "vehicle_id": "PYVRP-0007",
+            "vehicle_type": "cv"
+          },
+          {
+            "home_depot_id": "D_shenzhen",
+            "node_sequence": [
+              "D_shenzhen",
+              "C037",
+              "C035",
+              "C032",
+              "C048",
+              "D_shenzhen"
+            ],
+            "vehicle_id": "PYVRP-0008",
+            "vehicle_type": "ev"
+          },
+          {
+            "home_depot_id": "D_shenzhen",
+            "node_sequence": [
+              "D_shenzhen",
+              "C028",
+              "C044",
+              "C042",
+              "C033",
+              "D_shenzhen"
+            ],
+            "vehicle_id": "PYVRP-0009",
+            "vehicle_type": "ev"
+          }
+        ]
+      },
+      "source": "hgs_new_population_best"
+    },
+    {
+      "arm": "MV-HGS-SP",
+      "elapsed_seconds": 25.06207195800016,
+      "epoch": "naive_ev_continuation_2",
+      "iteration": 578,
+      "proxy_cost": 2358979,
+      "skeleton": {
+        "routes": [
+          {
+            "home_depot_id": "D_guangzhou",
+            "node_sequence": [
+              "D_guangzhou",
+              "C016",
+              "C002",
+              "C008",
+              "C021",
+              "C007",
+              "C013",
+              "C001",
+              "C010",
+              "D_guangzhou"
+            ],
+            "vehicle_id": "PYVRP-0001",
+            "vehicle_type": "cv"
+          },
+          {
+            "home_depot_id": "D_guangzhou",
+            "node_sequence": [
+              "D_guangzhou",
+              "C020",
+              "C022",
+              "C015",
+              "C014",
+              "C011",
+              "C019",
+              "D_guangzhou"
+            ],
+            "vehicle_id": "PYVRP-0002",
+            "vehicle_type": "cv"
+          },
+          {
+            "home_depot_id": "D_guangzhou",
+            "node_sequence": [
+              "D_guangzhou",
+              "C003",
+              "C017",
+              "C012",
+              "C006",
+              "D_guangzhou"
+            ],
+            "vehicle_id": "PYVRP-0003",
+            "vehicle_type": "ev"
+          },
+          {
+            "home_depot_id": "D_guangzhou",
+            "node_sequence": [
+              "D_guangzhou",
+              "C009",
+              "C023",
+              "C005",
+              "C004",
+              "C018",
+              "D_guangzhou"
+            ],
+            "vehicle_id": "PYVRP-0004",
+            "vehicle_type": "ev"
+          },
+          {
+            "home_depot_id": "D_shenzhen",
+            "node_sequence": [
+              "D_shenzhen",
+              "C036",
+              "C050",
+              "C040",
+              "C049",
+              "C045",
+              "C025",
+              "D_shenzhen"
+            ],
+            "vehicle_id": "PYVRP-0005",
+            "vehicle_type": "cv"
+          },
+          {
+            "home_depot_id": "D_shenzhen",
+            "node_sequence": [
+              "D_shenzhen",
+              "C032",
+              "C033",
+              "C026",
+              "C031",
+              "C029",
+              "C024",
+              "D_shenzhen"
+            ],
+            "vehicle_id": "PYVRP-0006",
+            "vehicle_type": "cv"
+          },
+          {
+            "home_depot_id": "D_shenzhen",
+            "node_sequence": [
+              "D_shenzhen",
+              "C043",
+              "C041",
+              "C039",
+              "C047",
+              "C030",
+              "C038",
+              "D_shenzhen"
+            ],
+            "vehicle_id": "PYVRP-0007",
+            "vehicle_type": "cv"
+          },
+          {
+            "home_depot_id": "D_shenzhen",
+            "node_sequence": [
+              "D_shenzhen",
+              "C028",
+              "C037",
+              "C035",
+              "C048",
+              "D_shenzhen"
+            ],
+            "vehicle_id": "PYVRP-0008",
+            "vehicle_type": "ev"
+          },
+          {
+            "home_depot_id": "D_shenzhen",
+            "node_sequence": [
+              "D_shenzhen",
+              "C046",
+              "C034",
+              "C044",
+              "C042",
+              "C027",
+              "D_shenzhen"
+            ],
+            "vehicle_id": "PYVRP-0009",
+            "vehicle_type": "ev"
+          }
+        ]
+      },
+      "source": "hgs_new_population_best"
+    },
+    {
+      "arm": "MV-HGS-SP",
+      "elapsed_seconds": 25.21315783299906,
+      "epoch": "naive_ev_continuation_2",
+      "iteration": 634,
+      "proxy_cost": 2352734,
+      "skeleton": {
+        "routes": [
+          {
+            "home_depot_id": "D_guangzhou",
+            "node_sequence": [
+              "D_guangzhou",
+              "C002",
+              "C008",
+              "C021",
+              "C011",
+              "C007",
+              "C013",
+              "C019",
+              "D_guangzhou"
+            ],
+            "vehicle_id": "PYVRP-0001",
+            "vehicle_type": "cv"
+          },
+          {
+            "home_depot_id": "D_guangzhou",
+            "node_sequence": [
+              "D_guangzhou",
+              "C016",
+              "C020",
+              "C022",
+              "C015",
+              "C014",
+              "C001",
+              "C010",
+              "D_guangzhou"
+            ],
+            "vehicle_id": "PYVRP-0002",
+            "vehicle_type": "cv"
+          },
+          {
+            "home_depot_id": "D_guangzhou",
+            "node_sequence": [
+              "D_guangzhou",
+              "C003",
+              "C017",
+              "C012",
+              "C006",
+              "D_guangzhou"
+            ],
+            "vehicle_id": "PYVRP-0003",
+            "vehicle_type": "ev"
+          },
+          {
+            "home_depot_id": "D_guangzhou",
+            "node_sequence": [
+              "D_guangzhou",
+              "C009",
+              "C023",
+              "C005",
+              "C004",
+              "C018",
+              "D_guangzhou"
+            ],
+            "vehicle_id": "PYVRP-0004",
+            "vehicle_type": "ev"
+          },
+          {
+            "home_depot_id": "D_shenzhen",
+            "node_sequence": [
+              "D_shenzhen",
+              "C036",
+              "C050",
+              "C040",
+              "C049",
+              "C045",
+              "C025",
+              "D_shenzhen"
+            ],
+            "vehicle_id": "PYVRP-0005",
+            "vehicle_type": "cv"
+          },
+          {
+            "home_depot_id": "D_shenzhen",
+            "node_sequence": [
+              "D_shenzhen",
+              "C043",
+              "C028",
+              "C041",
+              "C039",
+              "C047",
+              "C030",
+              "D_shenzhen"
+            ],
+            "vehicle_id": "PYVRP-0006",
+            "vehicle_type": "cv"
+          },
+          {
+            "home_depot_id": "D_shenzhen",
+            "node_sequence": [
+              "D_shenzhen",
+              "C038",
+              "C033",
+              "C026",
+              "C031",
+              "C029",
+              "C024",
+              "D_shenzhen"
+            ],
+            "vehicle_id": "PYVRP-0007",
+            "vehicle_type": "cv"
+          },
+          {
+            "home_depot_id": "D_shenzhen",
+            "node_sequence": [
+              "D_shenzhen",
+              "C037",
+              "C035",
+              "C032",
+              "C048",
+              "D_shenzhen"
+            ],
+            "vehicle_id": "PYVRP-0008",
+            "vehicle_type": "ev"
+          },
+          {
+            "home_depot_id": "D_shenzhen",
+            "node_sequence": [
+              "D_shenzhen",
+              "C046",
+              "C034",
+              "C044",
+              "C042",
+              "C027",
+              "D_shenzhen"
+            ],
+            "vehicle_id": "PYVRP-0009",
+            "vehicle_type": "ev"
+          }
+        ]
+      },
+      "source": "hgs_new_population_best"
+    },
+    {
+      "arm": "MV-HGS-SP",
+      "elapsed_seconds": 32.943800249999185,
+      "epoch": "sp_round_3",
+      "iteration": null,
+      "proxy_cost": null,
+      "skeleton": {
+        "routes": [
+          {
+            "home_depot_id": "D_guangzhou",
+            "node_sequence": [
+              "D_guangzhou",
+              "C002",
+              "C008",
+              "C021",
+              "C009",
+              "C007",
+              "C013",
+              "C019",
+              "D_guangzhou"
+            ],
+            "vehicle_id": "SP-CV-0001",
+            "vehicle_type": "cv"
+          },
+          {
+            "home_depot_id": "D_guangzhou",
+            "node_sequence": [
+              "D_guangzhou",
+              "C016",
+              "C020",
+              "C022",
+              "C015",
+              "C014",
+              "C011",
+              "C001",
+              "D_guangzhou"
+            ],
+            "vehicle_id": "SP-CV-0002",
+            "vehicle_type": "cv"
+          },
+          {
+            "home_depot_id": "D_guangzhou",
+            "node_sequence": [
+              "D_guangzhou",
+              "C003",
+              "C017",
+              "C012",
+              "C006",
+              "D_guangzhou"
+            ],
+            "vehicle_id": "SP-EV-0003",
+            "vehicle_type": "ev"
+          },
+          {
+            "home_depot_id": "D_guangzhou",
+            "node_sequence": [
+              "D_guangzhou",
+              "C023",
+              "C005",
+              "C004",
+              "C018",
+              "C010",
+              "D_guangzhou"
+            ],
+            "vehicle_id": "SP-EV-0004",
+            "vehicle_type": "ev"
+          },
+          {
+            "home_depot_id": "D_shenzhen",
+            "node_sequence": [
+              "D_shenzhen",
+              "C043",
+              "C028",
+              "C041",
+              "C039",
+              "C047",
+              "C030",
+              "D_shenzhen"
+            ],
+            "vehicle_id": "SP-CV-0005",
+            "vehicle_type": "cv"
+          },
+          {
+            "home_depot_id": "D_shenzhen",
+            "node_sequence": [
+              "D_shenzhen",
+              "C036",
+              "C050",
+              "C046",
+              "C034",
+              "C040",
+              "C049",
+              "C027",
+              "D_shenzhen"
+            ],
+            "vehicle_id": "SP-CV-0006",
+            "vehicle_type": "cv"
+          },
+          {
+            "home_depot_id": "D_shenzhen",
+            "node_sequence": [
+              "D_shenzhen",
+              "C038",
+              "C033",
+              "C026",
+              "C031",
+              "C029",
+              "C024",
+              "D_shenzhen"
+            ],
+            "vehicle_id": "SP-CV-0007",
+            "vehicle_type": "cv"
+          },
+          {
+            "home_depot_id": "D_shenzhen",
+            "node_sequence": [
+              "D_shenzhen",
+              "C037",
+              "C035",
+              "C032",
+              "C048",
+              "D_shenzhen"
+            ],
+            "vehicle_id": "SP-EV-0008",
+            "vehicle_type": "ev"
+          },
+          {
+            "home_depot_id": "D_shenzhen",
+            "node_sequence": [
+              "D_shenzhen",
+              "C045",
+              "C044",
+              "C042",
+              "C025",
+              "D_shenzhen"
+            ],
+            "vehicle_id": "SP-EV-0009",
+            "vehicle_type": "ev"
+          }
+        ]
+      },
+      "source": "set_partitioning_candidate"
+    },
+    {
+      "arm": "MV-HGS-SP",
+      "elapsed_seconds": 33.189710041999206,
+      "epoch": "mechanism_ev_continuation_3",
+      "iteration": 11,
+      "proxy_cost": 2476283,
+      "skeleton": {
+        "routes": [
+          {
+            "home_depot_id": "D_guangzhou",
+            "node_sequence": [
+              "D_guangzhou",
+              "C020",
+              "C022",
+              "C015",
+              "C017",
+              "C018",
+              "C010",
+              "D_guangzhou"
+            ],
+            "vehicle_id": "PYVRP-0001",
+            "vehicle_type": "cv"
+          },
+          {
+            "home_depot_id": "D_guangzhou",
+            "node_sequence": [
+              "D_guangzhou",
+              "C016",
+              "C014",
+              "C012",
+              "C006",
+              "D_guangzhou"
+            ],
+            "vehicle_id": "PYVRP-0002",
+            "vehicle_type": "ev"
+          },
+          {
+            "home_depot_id": "D_guangzhou",
+            "node_sequence": [
+              "D_guangzhou",
+              "C021",
+              "C011",
+              "C023",
+              "C005",
+              "C004",
+              "D_guangzhou"
+            ],
+            "vehicle_id": "PYVRP-0003",
+            "vehicle_type": "ev"
+          },
+          {
+            "home_depot_id": "D_guangzhou",
+            "node_sequence": [
+              "D_guangzhou",
+              "C002",
+              "C008",
+              "C003",
+              "C019",
+              "D_guangzhou"
+            ],
+            "vehicle_id": "PYVRP-0004",
+            "vehicle_type": "ev"
+          },
+          {
+            "home_depot_id": "D_guangzhou",
+            "node_sequence": [
+              "D_guangzhou",
+              "C009",
+              "C007",
+              "C013",
+              "C001",
+              "D_guangzhou"
+            ],
+            "vehicle_id": "PYVRP-0005",
+            "vehicle_type": "ev"
+          },
+          {
+            "home_depot_id": "D_shenzhen",
+            "node_sequence": [
+              "D_shenzhen",
+              "C032",
+              "C049",
+              "C033",
+              "C026",
+              "C031",
+              "C024",
+              "C025",
+              "D_shenzhen"
+            ],
+            "vehicle_id": "PYVRP-0006",
+            "vehicle_type": "cv"
+          },
+          {
+            "home_depot_id": "D_shenzhen",
+            "node_sequence": [
+              "D_shenzhen",
+              "C028",
+              "C046",
+              "C050",
+              "C036",
+              "C040",
+              "C038",
+              "D_shenzhen"
+            ],
+            "vehicle_id": "PYVRP-0007",
+            "vehicle_type": "cv"
+          },
+          {
+            "home_depot_id": "D_shenzhen",
+            "node_sequence": [
+              "D_shenzhen",
+              "C043",
+              "C047",
+              "C041",
+              "C039",
+              "C042",
+              "C029",
+              "D_shenzhen"
+            ],
+            "vehicle_id": "PYVRP-0008",
+            "vehicle_type": "cv"
+          },
+          {
+            "home_depot_id": "D_shenzhen",
+            "node_sequence": [
+              "D_shenzhen",
+              "C030",
+              "C044",
+              "C045",
+              "C048",
+              "D_shenzhen"
+            ],
+            "vehicle_id": "PYVRP-0009",
+            "vehicle_type": "ev"
+          },
+          {
+            "home_depot_id": "D_shenzhen",
+            "node_sequence": [
+              "D_shenzhen",
+              "C037",
+              "C035",
+              "C034",
+              "C027",
+              "D_shenzhen"
+            ],
+            "vehicle_id": "PYVRP-0010",
+            "vehicle_type": "ev"
+          }
+        ]
+      },
+      "source": "hgs_new_population_best"
+    },
+    {
+      "arm": "MV-HGS-SP",
+      "elapsed_seconds": 33.34211858299932,
+      "epoch": "mechanism_ev_continuation_3",
+      "iteration": 49,
+      "proxy_cost": 2315021,
+      "skeleton": {
+        "routes": [
+          {
+            "home_depot_id": "D_guangzhou",
+            "node_sequence": [
+              "D_guangzhou",
+              "C002",
+              "C008",
+              "C021",
+              "C011",
+              "C007",
+              "C013",
+              "C019",
+              "D_guangzhou"
+            ],
+            "vehicle_id": "PYVRP-0001",
+            "vehicle_type": "cv"
+          },
+          {
+            "home_depot_id": "D_guangzhou",
+            "node_sequence": [
+              "D_guangzhou",
+              "C016",
+              "C020",
+              "C022",
+              "C015",
+              "C014",
+              "C001",
+              "C010",
+              "D_guangzhou"
+            ],
+            "vehicle_id": "PYVRP-0002",
+            "vehicle_type": "cv"
+          },
+          {
+            "home_depot_id": "D_guangzhou",
+            "node_sequence": [
+              "D_guangzhou",
+              "C003",
+              "C017",
+              "C012",
+              "C006",
+              "D_guangzhou"
+            ],
+            "vehicle_id": "PYVRP-0003",
+            "vehicle_type": "ev"
+          },
+          {
+            "home_depot_id": "D_guangzhou",
+            "node_sequence": [
+              "D_guangzhou",
+              "C009",
+              "C023",
+              "C005",
+              "C004",
+              "C018",
+              "D_guangzhou"
+            ],
+            "vehicle_id": "PYVRP-0004",
+            "vehicle_type": "ev"
+          },
+          {
+            "home_depot_id": "D_shenzhen",
+            "node_sequence": [
+              "D_shenzhen",
+              "C032",
+              "C048",
+              "C049",
+              "C029",
+              "C031",
+              "C024",
+              "C025",
+              "D_shenzhen"
+            ],
+            "vehicle_id": "PYVRP-0005",
+            "vehicle_type": "cv"
+          },
+          {
+            "home_depot_id": "D_shenzhen",
+            "node_sequence": [
+              "D_shenzhen",
+              "C043",
+              "C046",
+              "C041",
+              "C039",
+              "C042",
+              "C033",
+              "C026",
+              "D_shenzhen"
+            ],
+            "vehicle_id": "PYVRP-0006",
+            "vehicle_type": "cv"
+          },
+          {
+            "home_depot_id": "D_shenzhen",
+            "node_sequence": [
+              "D_shenzhen",
+              "C028",
+              "C047",
+              "C050",
+              "C036",
+              "C040",
+              "C027",
+              "D_shenzhen"
+            ],
+            "vehicle_id": "PYVRP-0007",
+            "vehicle_type": "cv"
+          },
+          {
+            "home_depot_id": "D_shenzhen",
+            "node_sequence": [
+              "D_shenzhen",
+              "C030",
+              "C034",
+              "C044",
+              "C038",
+              "D_shenzhen"
+            ],
+            "vehicle_id": "PYVRP-0008",
+            "vehicle_type": "ev"
+          },
+          {
+            "home_depot_id": "D_shenzhen",
+            "node_sequence": [
+              "D_shenzhen",
+              "C037",
+              "C035",
+              "C045",
+              "D_shenzhen"
+            ],
+            "vehicle_id": "PYVRP-0009",
+            "vehicle_type": "ev"
+          }
+        ]
+      },
+      "source": "hgs_new_population_best"
+    },
+    {
+      "arm": "MV-HGS-SP",
+      "elapsed_seconds": 33.73346154199862,
+      "epoch": "mechanism_ev_continuation_3",
+      "iteration": 169,
+      "proxy_cost": 2313988,
+      "skeleton": {
+        "routes": [
+          {
+            "home_depot_id": "D_guangzhou",
+            "node_sequence": [
+              "D_guangzhou",
+              "C002",
+              "C008",
+              "C021",
+              "C011",
+              "C007",
+              "C013",
+              "C019",
+              "D_guangzhou"
+            ],
+            "vehicle_id": "PYVRP-0001",
+            "vehicle_type": "cv"
+          },
+          {
+            "home_depot_id": "D_guangzhou",
+            "node_sequence": [
+              "D_guangzhou",
+              "C016",
+              "C020",
+              "C022",
+              "C015",
+              "C014",
+              "C001",
+              "C010",
+              "D_guangzhou"
+            ],
+            "vehicle_id": "PYVRP-0002",
+            "vehicle_type": "cv"
+          },
+          {
+            "home_depot_id": "D_guangzhou",
+            "node_sequence": [
+              "D_guangzhou",
+              "C003",
+              "C017",
+              "C012",
+              "C006",
+              "D_guangzhou"
+            ],
+            "vehicle_id": "PYVRP-0003",
+            "vehicle_type": "ev"
+          },
+          {
+            "home_depot_id": "D_guangzhou",
+            "node_sequence": [
+              "D_guangzhou",
+              "C009",
+              "C023",
+              "C005",
+              "C004",
+              "C018",
+              "D_guangzhou"
+            ],
+            "vehicle_id": "PYVRP-0004",
+            "vehicle_type": "ev"
+          },
+          {
+            "home_depot_id": "D_shenzhen",
+            "node_sequence": [
+              "D_shenzhen",
+              "C030",
+              "C040",
+              "C049",
+              "C029",
+              "C031",
+              "C033",
+              "D_shenzhen"
+            ],
+            "vehicle_id": "PYVRP-0005",
+            "vehicle_type": "cv"
+          },
+          {
+            "home_depot_id": "D_shenzhen",
+            "node_sequence": [
+              "D_shenzhen",
+              "C028",
+              "C046",
+              "C050",
+              "C036",
+              "C032",
+              "C045",
+              "D_shenzhen"
+            ],
+            "vehicle_id": "PYVRP-0006",
+            "vehicle_type": "cv"
+          },
+          {
+            "home_depot_id": "D_shenzhen",
+            "node_sequence": [
+              "D_shenzhen",
+              "C043",
+              "C041",
+              "C039",
+              "C047",
+              "C034",
+              "C024",
+              "C025",
+              "D_shenzhen"
+            ],
+            "vehicle_id": "PYVRP-0007",
+            "vehicle_type": "cv"
+          },
+          {
+            "home_depot_id": "D_shenzhen",
+            "node_sequence": [
+              "D_shenzhen",
+              "C037",
+              "C035",
+              "C048",
+              "C027",
+              "D_shenzhen"
+            ],
+            "vehicle_id": "PYVRP-0008",
+            "vehicle_type": "ev"
+          },
+          {
+            "home_depot_id": "D_shenzhen",
+            "node_sequence": [
+              "D_shenzhen",
+              "C038",
+              "C044",
+              "C042",
+              "C026",
+              "D_shenzhen"
+            ],
+            "vehicle_id": "PYVRP-0009",
+            "vehicle_type": "ev"
+          }
+        ]
+      },
+      "source": "hgs_new_population_best"
+    },
+    {
+      "arm": "MV-HGS-SP",
+      "elapsed_seconds": 33.98450979199879,
+      "epoch": "mechanism_ev_continuation_3",
+      "iteration": 236,
+      "proxy_cost": 2305173,
+      "skeleton": {
+        "routes": [
+          {
+            "home_depot_id": "D_guangzhou",
+            "node_sequence": [
+              "D_guangzhou",
+              "C002",
+              "C008",
+              "C021",
+              "C011",
+              "C007",
+              "C013",
+              "C019",
+              "D_guangzhou"
+            ],
+            "vehicle_id": "PYVRP-0001",
+            "vehicle_type": "cv"
+          },
+          {
+            "home_depot_id": "D_guangzhou",
+            "node_sequence": [
+              "D_guangzhou",
+              "C016",
+              "C020",
+              "C022",
+              "C015",
+              "C014",
+              "C001",
+              "C010",
+              "D_guangzhou"
+            ],
+            "vehicle_id": "PYVRP-0002",
+            "vehicle_type": "cv"
+          },
+          {
+            "home_depot_id": "D_guangzhou",
+            "node_sequence": [
+              "D_guangzhou",
+              "C003",
+              "C017",
+              "C012",
+              "C006",
+              "D_guangzhou"
+            ],
+            "vehicle_id": "PYVRP-0003",
+            "vehicle_type": "ev"
+          },
+          {
+            "home_depot_id": "D_guangzhou",
+            "node_sequence": [
+              "D_guangzhou",
+              "C009",
+              "C023",
+              "C005",
+              "C004",
+              "C018",
+              "D_guangzhou"
+            ],
+            "vehicle_id": "PYVRP-0004",
+            "vehicle_type": "ev"
+          },
+          {
+            "home_depot_id": "D_shenzhen",
+            "node_sequence": [
+              "D_shenzhen",
+              "C032",
+              "C035",
+              "C037",
+              "C034",
+              "C040",
+              "C027",
+              "D_shenzhen"
+            ],
+            "vehicle_id": "PYVRP-0005",
+            "vehicle_type": "cv"
+          },
+          {
+            "home_depot_id": "D_shenzhen",
+            "node_sequence": [
+              "D_shenzhen",
+              "C036",
+              "C049",
+              "C033",
+              "C026",
+              "C031",
+              "C029",
+              "C024",
+              "D_shenzhen"
+            ],
+            "vehicle_id": "PYVRP-0006",
+            "vehicle_type": "cv"
+          },
+          {
+            "home_depot_id": "D_shenzhen",
+            "node_sequence": [
+              "D_shenzhen",
+              "C043",
+              "C041",
+              "C039",
+              "C047",
+              "C030",
+              "C038",
+              "D_shenzhen"
+            ],
+            "vehicle_id": "PYVRP-0007",
+            "vehicle_type": "cv"
+          },
+          {
+            "home_depot_id": "D_shenzhen",
+            "node_sequence": [
+              "D_shenzhen",
+              "C028",
+              "C046",
+              "C045",
+              "C025",
+              "D_shenzhen"
+            ],
+            "vehicle_id": "PYVRP-0008",
+            "vehicle_type": "ev"
+          },
+          {
+            "home_depot_id": "D_shenzhen",
+            "node_sequence": [
+              "D_shenzhen",
+              "C050",
+              "C044",
+              "C042",
+              "C048",
+              "D_shenzhen"
+            ],
+            "vehicle_id": "PYVRP-0009",
+            "vehicle_type": "ev"
+          }
+        ]
+      },
+      "source": "hgs_new_population_best"
+    },
+    {
+      "arm": "MV-HGS-SP",
+      "elapsed_seconds": 34.59667399999853,
+      "epoch": "mechanism_ev_continuation_3",
+      "iteration": 428,
+      "proxy_cost": 2304337,
+      "skeleton": {
+        "routes": [
+          {
+            "home_depot_id": "D_guangzhou",
+            "node_sequence": [
+              "D_guangzhou",
+              "C002",
+              "C008",
+              "C021",
+              "C011",
+              "C007",
+              "C013",
+              "C019",
+              "D_guangzhou"
+            ],
+            "vehicle_id": "PYVRP-0001",
+            "vehicle_type": "cv"
+          },
+          {
+            "home_depot_id": "D_guangzhou",
+            "node_sequence": [
+              "D_guangzhou",
+              "C016",
+              "C020",
+              "C022",
+              "C015",
+              "C014",
+              "C001",
+              "C010",
+              "D_guangzhou"
+            ],
+            "vehicle_id": "PYVRP-0002",
+            "vehicle_type": "cv"
+          },
+          {
+            "home_depot_id": "D_guangzhou",
+            "node_sequence": [
+              "D_guangzhou",
+              "C003",
+              "C017",
+              "C012",
+              "C006",
+              "D_guangzhou"
+            ],
+            "vehicle_id": "PYVRP-0003",
+            "vehicle_type": "ev"
+          },
+          {
+            "home_depot_id": "D_guangzhou",
+            "node_sequence": [
+              "D_guangzhou",
+              "C009",
+              "C023",
+              "C005",
+              "C004",
+              "C018",
+              "D_guangzhou"
+            ],
+            "vehicle_id": "PYVRP-0004",
+            "vehicle_type": "ev"
+          },
+          {
+            "home_depot_id": "D_shenzhen",
+            "node_sequence": [
+              "D_shenzhen",
+              "C041",
+              "C039",
+              "C047",
+              "C034",
+              "C040",
+              "D_shenzhen"
+            ],
+            "vehicle_id": "PYVRP-0005",
+            "vehicle_type": "cv"
+          },
+          {
+            "home_depot_id": "D_shenzhen",
+            "node_sequence": [
+              "D_shenzhen",
+              "C043",
+              "C046",
+              "C050",
+              "C036",
+              "C032",
+              "C045",
+              "C025",
+              "D_shenzhen"
+            ],
+            "vehicle_id": "PYVRP-0006",
+            "vehicle_type": "cv"
+          },
+          {
+            "home_depot_id": "D_shenzhen",
+            "node_sequence": [
+              "D_shenzhen",
+              "C038",
+              "C033",
+              "C026",
+              "C031",
+              "C029",
+              "C024",
+              "D_shenzhen"
+            ],
+            "vehicle_id": "PYVRP-0007",
+            "vehicle_type": "cv"
+          },
+          {
+            "home_depot_id": "D_shenzhen",
+            "node_sequence": [
+              "D_shenzhen",
+              "C028",
+              "C037",
+              "C035",
+              "C048",
+              "D_shenzhen"
+            ],
+            "vehicle_id": "PYVRP-0008",
+            "vehicle_type": "ev"
+          },
+          {
+            "home_depot_id": "D_shenzhen",
+            "node_sequence": [
+              "D_shenzhen",
+              "C030",
+              "C049",
+              "C044",
+              "C042",
+              "C027",
+              "D_shenzhen"
+            ],
+            "vehicle_id": "PYVRP-0009",
+            "vehicle_type": "ev"
+          }
+        ]
+      },
+      "source": "hgs_new_population_best"
+    },
+    {
+      "arm": "MV-HGS-SP",
+      "elapsed_seconds": 41.626049417000104,
+      "epoch": "final",
+      "iteration": null,
+      "proxy_cost": null,
+      "skeleton": {
+        "routes": [
+          {
+            "home_depot_id": "D_guangzhou",
+            "node_sequence": [
+              "D_guangzhou",
+              "C002",
+              "C008",
+              "C021",
+              "C009",
+              "C007",
+              "C013",
+              "C019",
+              "D_guangzhou"
+            ],
+            "vehicle_id": "CH81-0001",
+            "vehicle_type": "cv"
+          },
+          {
+            "home_depot_id": "D_guangzhou",
+            "node_sequence": [
+              "D_guangzhou",
+              "C016",
+              "C020",
+              "C022",
+              "C015",
+              "C014",
+              "C011",
+              "C001",
+              "D_guangzhou"
+            ],
+            "vehicle_id": "CH81-0002",
+            "vehicle_type": "cv"
+          },
+          {
+            "home_depot_id": "D_guangzhou",
+            "node_sequence": [
+              "D_guangzhou",
+              "C003",
+              "C017",
+              "C012",
+              "C006",
+              "D_guangzhou"
+            ],
+            "vehicle_id": "CH81-0003",
+            "vehicle_type": "ev"
+          },
+          {
+            "home_depot_id": "D_guangzhou",
+            "node_sequence": [
+              "D_guangzhou",
+              "C023",
+              "C005",
+              "C004",
+              "C018",
+              "C010",
+              "D_guangzhou"
+            ],
+            "vehicle_id": "CH81-0004",
+            "vehicle_type": "ev"
+          },
+          {
+            "home_depot_id": "D_shenzhen",
+            "node_sequence": [
+              "D_shenzhen",
+              "C043",
+              "C028",
+              "C041",
+              "C039",
+              "C047",
+              "C030",
+              "D_shenzhen"
+            ],
+            "vehicle_id": "CH81-0005",
+            "vehicle_type": "cv"
+          },
+          {
+            "home_depot_id": "D_shenzhen",
+            "node_sequence": [
+              "D_shenzhen",
+              "C036",
+              "C050",
+              "C046",
+              "C034",
+              "C040",
+              "C049",
+              "C027",
+              "D_shenzhen"
+            ],
+            "vehicle_id": "CH81-0006",
+            "vehicle_type": "cv"
+          },
+          {
+            "home_depot_id": "D_shenzhen",
+            "node_sequence": [
+              "D_shenzhen",
+              "C038",
+              "C033",
+              "C026",
+              "C031",
+              "C029",
+              "C024",
+              "D_shenzhen"
+            ],
+            "vehicle_id": "CH81-0007",
+            "vehicle_type": "cv"
+          },
+          {
+            "home_depot_id": "D_shenzhen",
+            "node_sequence": [
+              "D_shenzhen",
+              "C037",
+              "C035",
+              "C032",
+              "C048",
+              "D_shenzhen"
+            ],
+            "vehicle_id": "CH81-0008",
+            "vehicle_type": "ev"
+          },
+          {
+            "home_depot_id": "D_shenzhen",
+            "node_sequence": [
+              "D_shenzhen",
+              "C045",
+              "C044",
+              "C042",
+              "C025",
+              "D_shenzhen"
+            ],
+            "vehicle_id": "CH81-0009",
+            "vehicle_type": "ev"
+          }
+        ]
+      },
+      "source": "final_rerun_solution"
+    }
+  ],
+  "schema_version": "resetp.e2-final-campaign.s3-trajectory-snapshots.v1",
+  "seed": 5
+}

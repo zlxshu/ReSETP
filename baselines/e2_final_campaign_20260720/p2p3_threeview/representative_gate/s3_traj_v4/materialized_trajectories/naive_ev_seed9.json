@@ -1,0 +1,57 @@
+{
+  "arm": "naive_ev",
+  "cost_definition": "exact_china81_score objective",
+  "curve_rule": "monotone running minimum over offline-completed snapshots",
+  "instance_id": "cn-prd-50c-01-V2-LOCATIONS",
+  "offline_snapshot_audit": {
+    "errors": 0,
+    "infeasible": 0,
+    "total": 18,
+    "valid": 18
+  },
+  "points": [
+    {
+      "cost": 2599.0986351907086,
+      "elapsed_seconds": 0.0,
+      "source": "common_initial"
+    },
+    {
+      "cost": 2444.2639252511444,
+      "elapsed_seconds": 0.05190887499884411,
+      "source": "hgs_new_population_best"
+    },
+    {
+      "cost": 2389.091190312187,
+      "elapsed_seconds": 0.3784763749990816,
+      "source": "hgs_new_population_best"
+    },
+    {
+      "cost": 2379.480702572609,
+      "elapsed_seconds": 0.7750443339991762,
+      "source": "hgs_new_population_best"
+    },
+    {
+      "cost": 2376.0766186904507,
+      "elapsed_seconds": 0.9541357919988513,
+      "source": "hgs_new_population_best"
+    },
+    {
+      "cost": 2371.4194755554404,
+      "elapsed_seconds": 5.371332291999352,
+      "source": "hgs_new_population_best"
+    },
+    {
+      "cost": 2364.048690580053,
+      "elapsed_seconds": 7.371031916998618,
+      "source": "hgs_new_population_best"
+    },
+    {
+      "cost": 2359.19514463484,
+      "elapsed_seconds": 23.922139791999143,
+      "source": "final_rerun_solution"
+    }
+  ],
+  "schema_version": "resetp.e2-final-campaign.s3-materialized-trajectory.v1",
+  "seed": 9,
+  "time_definition": "elapsed wall seconds from the arm runner start"
+}

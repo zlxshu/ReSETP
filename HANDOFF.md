@@ -1117,3 +1117,10 @@ LaDe-P重庆取件表已真实下载并登记SHA-256=`d58248d1...b056`，共1,17
 - 表5补入 PyVRP-HGS 母体 Best/avg 误差列，算法指标统一为相对 BKS 的误差百分比，追加 Avg 行并逐行加粗最小误差；表6仅加粗每行（含 Min/Avg/Max）的最低成本，CPU 不加粗；China81汇总表分别逐行加粗最低 Best/avg。
 - 表4合计装载率改为九条路线最大实际装载量之和/九条路线车辆容量之和，12223/12675=96.433925%；除此之外表4仅由 v2 原值复制。v3 hash 清单独立复核 19 个文件、0 mismatch；根目录 AppleDouble 已清理并标记 HASH_CONTAMINATED_APPLEDOUBLE。
 - v3 监控 .e2-s5-artifacts-v4.monitor 为 COMPLETED，findings=0；保护文件哈希未漂移。S6 还需把 v3 表体嵌回 TeX 并重新编译，S7 引用/终局标记仍未完成，不能写入 ALGORITHM_EXPERIMENTS_CLOSED_20260720。
+
+# 2026-07-22 Codex S3-TRAJ-V4 观察层重跑 HALT
+
+- 用户授权的 S3 轨迹观察重跑实际完成代表题 `cn-prd-50c-01-V2-LOCATIONS` 四臂×种子1--10，共 40/40 单元；最终 `rerun_cost` 与封存 S3 raw 逐位相等，40/40 可行，完整评分违约总数为 0。封存 S3 `raw_runs.csv` 未改，SHA-256 仍为 `da7ebb85f29b166c0f386f30c354d3d844b2c9026e9fd9d69a3e05fc67891afa`，保护文件哈希无漂移。
+- 首次监控 HALT 的根因是 runner 将带有 `_common_skeleton` 的临时 row 展开后传给快照写入函数，`snapshot_file` 未回写原 row，离线阶段因空路径读到输出目录而触发 `IsADirectoryError`；原 v1 五件证据已归档为 `s3_traj_v4/*_halt_v1`，未重写。
+- 修复后只做离线恢复，不重新求解。`mechanism_ev`/seed10 的历史代理新最优骨架在完整模型下评分为 `2364.589958517462`，而封存/重跑最终成本为 `2365.8780971446868`；独立只读复核确认不是浮点误差。按用户预注册的物化轨迹最终成本逐位等于封存最终值硬门，判 `HALT_S3_TRAJ_OFFLINE_CURVE_GATE`；v2 五件证据归档为 `s3_traj_v4/*_halt_v2`。
+- 该 HALT 是观测协议与封存最终解之间的真实边界，不是算法或评价器失败；不得删除更好的历史点，也不得把曲线终点手工抬回。Figure 4 v4、S5-REV-V4 PASS 与 `ALGORITHM_EXPERIMENTS_CLOSED_20260720` 暂停，等待用户决定是否调整轨迹验收口径；主 TeX 未改。
