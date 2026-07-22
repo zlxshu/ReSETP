@@ -1,0 +1,129 @@
+{
+  "branch": "codex/reporting-pipeline",
+  "command": "/Volumes/移动硬盘（512G）/ReSETP/build/python_envs/pyvrp-hgs-0.12.2/bin/python baselines/e2_final_campaign_20260720/p2p3_threeview/artifacts/run_s5_artifacts_v3.py",
+  "created_at_utc": "2026-07-22T08:08:03.126690+00:00",
+  "git_head": "cc56d8d75add36658ef3ef89e0ebe9e61797555a",
+  "integrity_flags": [
+    "HASH_CONTAMINATED_APPLEDOUBLE"
+  ],
+  "platform": "macOS-15.7.5-arm64-arm-64bit-Mach-O",
+  "presentation_repairs": [
+    "Table 5 adds PyVRP-HGS mother Best/avg error columns and uses BKS-relative errors for every algorithm metric.",
+    "Table 5 appends the P1 decision-based Avg row and bolds the minimum error in each row.",
+    "Table 6 bolds only row-wise minimum costs, including Min/Avg/Max; CPU cells are never bold.",
+    "China81 summary bolds row-wise minimum Best and avg costs independently.",
+    "Table 4 replaces the invalid total load-rate maximum with sum(route maximum actual loads)/sum(route capacities)."
+  ],
+  "python": "3.13.9 | packaged by Anaconda, Inc. | (main, Oct 21 2025, 19:11:29) [Clang 20.1.8 ]",
+  "python_executable": "/Volumes/移动硬盘（512G）/ReSETP/build/python_envs/pyvrp-hgs-0.12.2/bin/python",
+  "s2_registered_exception_id": "S2-INFEASIBLE-UNIT-001",
+  "schema_version": "resetp.e2-final-campaign.s5-artifacts-metadata.v3",
+  "source_sha256": {
+    "p1_decision": "e828ecce0acbc9b4d1b7e8533a380822909ced21b90ff255684c783868a757a6",
+    "p1_raw": "fd5352a606d4c233477f0e641799f271ddffab913244182e260d3c872c765cfb",
+    "s2_raw": "e97f76b05144cd358671ab2b12651598731f6ad8856492c44338b4cbc21e44be",
+    "s3_raw": "da7ebb85f29b166c0f386f30c354d3d844b2c9026e9fd9d69a3e05fc67891afa",
+    "s4_route_details_v2": "dd9235d876f4b8d9dd83bec5693049d4c13f2bccd0525cbb16c0fab605e082b8",
+    "v2_decision": "51b4a081b46aa4b280322843deb29634a4f83fca6a5725635e6cb07d26e5bd0f",
+    "v2_manifest_archive": "5fd05f57c30ff7e114d2ec860857fa8b61cb916216096e78f679eed2fe6fa115"
+  },
+  "table4_load_rate_audit": {
+    "changed_field": "装载率(%)",
+    "changed_row": "合计",
+    "load_audit": {
+      "aggregate_load_rate_pct": 96.43392504930966,
+      "definition": "sum of route maximum actual loads / sum of route vehicle capacities",
+      "route_count": 9,
+      "routes": [
+        {
+          "capacity_kg": 1735.0,
+          "max_actual_load_kg": 1735.0,
+          "route_load_rate_pct": 100.0,
+          "vehicle_id": "CH81-0001",
+          "vehicle_type": "cv"
+        },
+        {
+          "capacity_kg": 1735.0,
+          "max_actual_load_kg": 1667.0,
+          "route_load_rate_pct": 96.0806916426513,
+          "vehicle_id": "CH81-0002",
+          "vehicle_type": "cv"
+        },
+        {
+          "capacity_kg": 1000.0,
+          "max_actual_load_kg": 973.0,
+          "route_load_rate_pct": 97.3,
+          "vehicle_id": "CH81-0003",
+          "vehicle_type": "ev"
+        },
+        {
+          "capacity_kg": 1000.0,
+          "max_actual_load_kg": 972.0,
+          "route_load_rate_pct": 97.2,
+          "vehicle_id": "CH81-0004",
+          "vehicle_type": "ev"
+        },
+        {
+          "capacity_kg": 1000.0,
+          "max_actual_load_kg": 973.0,
+          "route_load_rate_pct": 97.3,
+          "vehicle_id": "CH81-0005",
+          "vehicle_type": "ev"
+        },
+        {
+          "capacity_kg": 1735.0,
+          "max_actual_load_kg": 1667.0,
+          "route_load_rate_pct": 96.0806916426513,
+          "vehicle_id": "CH81-0006",
+          "vehicle_type": "cv"
+        },
+        {
+          "capacity_kg": 1735.0,
+          "max_actual_load_kg": 1597.0,
+          "route_load_rate_pct": 92.04610951008645,
+          "vehicle_id": "CH81-0007",
+          "vehicle_type": "cv"
+        },
+        {
+          "capacity_kg": 1735.0,
+          "max_actual_load_kg": 1667.0,
+          "route_load_rate_pct": 96.0806916426513,
+          "vehicle_id": "CH81-0008",
+          "vehicle_type": "cv"
+        },
+        {
+          "capacity_kg": 1000.0,
+          "max_actual_load_kg": 972.0,
+          "route_load_rate_pct": 97.2,
+          "vehicle_id": "CH81-0009",
+          "vehicle_type": "ev"
+        }
+      ],
+      "total_actual_load_kg": 12223.0,
+      "total_capacity_kg": 12675.0
+    },
+    "source": "baselines/e2_final_campaign_20260720/p2p3_threeview/table4_gate/route_details_v2.csv",
+    "source_value": 100.0,
+    "v3_value": 96.43392504930966
+  },
+  "table5_average_row_audit": {
+    "avg_best_errors_source": "P1 decision.json avg_row_error_pct",
+    "avg_row": {
+      "BKS": "",
+      "MDFIHA-ETGA_Best_error_pct": 0.9903830846575365,
+      "MDFIHA_Best_error_pct": 1.374901112156534,
+      "MV-HGS-SP_Best_error_pct": 0.9048706160882664,
+      "MV-HGS-SP_avg_error_pct": 1.3865968892271103,
+      "PyVRP-HGS_Best_error_pct": 1.4717640813681043,
+      "PyVRP-HGS_avg_error_pct": 2.062587938968439,
+      "VCGP_Best_error_pct": 1.6040966226509423,
+      "instance": "Avg",
+      "n": ""
+    },
+    "avg_seed_average_errors_source": "P1 raw_runs.csv, mean of per-instance ten-seed average errors",
+    "p1_best_error_recheck": {
+      "MV-HGS-SP": 0.9048706160882664,
+      "PyVRP-HGS": 1.4717640813681043
+    }
+  }
+}

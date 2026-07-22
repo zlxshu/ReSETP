@@ -1,0 +1,30 @@
+{
+  "instance_id": "cn-prd-50c-01-V2-LOCATIONS",
+  "seed": 7,
+  "arm": "MV-HGS-SP",
+  "points": [
+    {
+      "elapsed_seconds": 0.0,
+      "cost": 2599.0986351907086,
+      "source": "common_initial"
+    },
+    {
+      "elapsed_seconds": 15.17582775000028,
+      "cost": 2358.7308493232913,
+      "source": "mechanism_ev_mother_epoch_end"
+    },
+    {
+      "elapsed_seconds": 15.474291209000057,
+      "cost": 2357.8517851337288,
+      "source": "set_partitioning"
+    },
+    {
+      "elapsed_seconds": 33.168743624999934,
+      "cost": 2357.11786239211,
+      "source": "set_partitioning"
+    }
+  ],
+  "cost_definition": "exact_china81_score objective",
+  "time_definition": "elapsed wall seconds measured by the runner",
+  "resolution": "common initial and exact archive/epoch boundary observations"
+}

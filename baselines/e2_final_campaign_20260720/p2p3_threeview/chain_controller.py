@@ -29,9 +29,23 @@ READY_NOTICE_SECONDS = 300
 APPLEDOUBLE_FLAG = "HASH_CONTAMINATED_APPLEDOUBLE"
 
 
-def _stage(name: str, directory: Path, expected: str) -> dict[str, Any]:
-    config = directory / "monitor.json"
+def _stage(
+    name: str,
+    directory: Path,
+    expected: str,
+    *,
+    config_file: str = "monitor.json",
+    decision_file: str = "decision.json",
+    metadata_file: str = "metadata.json",
+    report_file: str = "report.md",
+    done_file: str = "done.json",
+) -> dict[str, Any]:
+    config = directory / config_file
     config_payload = json.loads(config.read_text(encoding="utf-8"))
+    decision_path = directory / decision_file
+    metadata_path = directory / metadata_file
+    report_path = directory / report_file
+    done_path = directory / done_file
     return {
         "name": name,
         "dir": directory,
@@ -39,21 +53,40 @@ def _stage(name: str, directory: Path, expected: str) -> dict[str, Any]:
         "config": config,
         "runner": directory / config_payload["required_command_substrings"][0],
         "monitor_dir": Path(config_payload["monitor_dir"]),
+        "decision_path": decision_path,
+        "metadata_path": metadata_path,
+        "report_path": report_path,
+        "done_path": done_path,
         "required_files": [
-            directory / "decision.json",
-            directory / "metadata.json",
+            decision_path,
+            metadata_path,
             directory / "artifact_hashes.json",
-            directory / "report.md",
-            directory / "done.json",
+            report_path,
+            done_path,
         ],
     }
 
 
 STAGES = [
-    _stage("S2", BASE / "full_gate", "PASS_S2_FULL_THREEVIEW"),
+    _stage(
+        "S2", BASE / "full_gate",
+        "PASS_S2_FULL_THREEVIEW_WITH_REGISTERED_INFEASIBLE_UNIT",
+        decision_file="decision_v2.json", metadata_file="metadata_v2.json",
+        report_file="report_v2.md", done_file="done_v2.json",
+    ),
     _stage("S3", BASE / "representative_gate", "PASS_S3_REPRESENTATIVE"),
-    _stage("S4", BASE / "table4_gate", "PASS_S4_ROUTE_DETAIL"),
-    _stage("S5", BASE / "artifacts", "PASS_S5_ARTIFACTS"),
+    _stage(
+        "S4", BASE / "table4_gate", "PASS_S4_ROUTE_DETAIL",
+        config_file="monitor_v3.json", decision_file="decision_v2.json",
+        metadata_file="metadata_v2.json", report_file="report_v2.md",
+        done_file="done_v2.json",
+    ),
+    _stage(
+        "S5", BASE / "artifacts", "PASS_S5_ARTIFACTS",
+        config_file="monitor_v3.json", decision_file="decision_v2.json",
+        metadata_file="metadata_v2.json", report_file="report_v2.md",
+        done_file="done_v2.json",
+    ),
 ]
 
 
@@ -73,7 +106,7 @@ def _write_json(path: Path, payload: Any) -> None:
 
 
 def _decision(stage: dict[str, Any]) -> dict[str, Any] | None:
-    path = stage["dir"] / "decision.json"
+    path = stage["decision_path"]
     if not path.is_file():
         return None
     try:
@@ -113,15 +146,14 @@ def _sanitize(stage: dict[str, Any]) -> list[str]:
     for path in sidecars:
         path.unlink()
     flags = [APPLEDOUBLE_FLAG]
-    for name in ("decision.json", "metadata.json"):
-        path = stage["dir"] / name
+    for path in (stage["decision_path"], stage["metadata_path"]):
         payload = json.loads(path.read_text(encoding="utf-8"))
         integrity_flags = list(payload.get("integrity_flags", []))
         if APPLEDOUBLE_FLAG not in integrity_flags:
             integrity_flags.append(APPLEDOUBLE_FLAG)
         payload["integrity_flags"] = integrity_flags
         _write_json(path, payload)
-    report = stage["dir"] / "report.md"
+    report = stage["report_path"]
     report.write_text(
         report.read_text(encoding="utf-8")
         + "\nIntegrity flag: " + APPLEDOUBLE_FLAG
@@ -206,7 +238,7 @@ def _wait_pass(stage: dict[str, Any]) -> dict[str, Any]:
 def main() -> int:
     print(
         f"[CHAIN] started {datetime.now(timezone.utc).isoformat()}; "
-        "S2->S5 PASS-only progression",
+        "S2 registered-exception rule then S3->S5 gate progression",
         flush=True,
     )
     previous = STAGES[0]
@@ -223,15 +255,15 @@ def main() -> int:
             )
         _wait_pass(current)
         _sanitize(current)
-    done = BASE / "chain_done.json"
+    done = BASE / "chain_done_v2.json"
     _write_json(
         done,
         {
-            "decision": "PASS_S2_TO_S5_CHAIN",
+            "decision": "PASS_S2_TO_S5_CHAIN_V2",
             "completed_at_utc": datetime.now(timezone.utc).isoformat(),
             "stage_decisions": {
                 stage["name"]: json.loads(
-                    (stage["dir"] / "decision.json").read_text(encoding="utf-8")
+                    stage["decision_path"].read_text(encoding="utf-8")
                 )["decision"]
                 for stage in STAGES
             },

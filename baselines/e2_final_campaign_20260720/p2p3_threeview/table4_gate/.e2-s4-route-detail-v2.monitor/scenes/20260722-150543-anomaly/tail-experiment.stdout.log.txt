@@ -1,0 +1,8 @@
+Traceback (most recent call last):
+  File "/Volumes/移动硬盘（512G）/ReSETP/baselines/e2_final_campaign_20260720/p2p3_threeview/table4_gate/run_s4_route_detail_v2.py", line 401, in <module>
+    raise SystemExit(main())
+                     ~~~~^^
+  File "/Volumes/移动硬盘（512G）/ReSETP/baselines/e2_final_campaign_20260720/p2p3_threeview/table4_gate/run_s4_route_detail_v2.py", line 280, in main
+    mean_row = {field: fmean(float(row[field]) for row in route_rows) for field in numeric}
+                       ^^^^^
+NameError: name 'fmean' is not defined

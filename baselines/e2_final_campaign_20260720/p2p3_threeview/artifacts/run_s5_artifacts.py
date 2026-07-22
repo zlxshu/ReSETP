@@ -27,8 +27,16 @@ ROOT = Path(__file__).resolve().parents[4]
 OUT = Path(__file__).resolve().parent
 S1 = ROOT / "baselines/e2_final_campaign_20260720/p2p3_threeview/preflight_gate"
 S2 = ROOT / "baselines/e2_final_campaign_20260720/p2p3_threeview/full_gate"
+S2_DECISION_V1 = S2 / "decision.json"
+S2_DECISION_V2 = S2 / "decision_v2.json"
+S2_ALLOWED_DECISIONS = {
+    "PASS_S2_FULL_THREEVIEW",
+    "PASS_S2_FULL_THREEVIEW_WITH_REGISTERED_INFEASIBLE_UNIT",
+}
 S3 = ROOT / "baselines/e2_final_campaign_20260720/p2p3_threeview/representative_gate"
 S4 = ROOT / "baselines/e2_final_campaign_20260720/p2p3_threeview/table4_gate"
+S4_DECISION_V2 = S4 / "decision_v2.json"
+S4_ROUTE_DETAILS_V2 = S4 / "route_details_v2.csv"
 P1 = ROOT / "baselines/e2_final_campaign_20260720/mv_hgs_sp_final/p1_formal_gate"
 VISUAL_CONTRACT = ROOT / "docs/paper_submission_final/e2_e3_preview_20260714/SETP_VISUAL_CONTRACT.md"
 P1_DECISION = P1 / "decision.json"
@@ -129,21 +137,40 @@ def _build_table6(s3_rows: list[dict[str, str]]) -> tuple[list[dict[str, Any]], 
     for seed in range(1, 11):
         row: dict[str, Any] = {"row": str(seed)}
         for arm in ARMS:
-            match = [item for item in s3_rows if int(item["seed"]) == seed and item["arm"] == arm and item["status"] == "OK"]
+            match = [item for item in s3_rows if int(item["seed"]) == seed and item["arm"] == arm]
             if len(match) != 1:
                 raise RuntimeError(f"S3 table6 row missing/duplicated seed={seed}, arm={arm}")
-            row[f"{arm}_cost"] = float(match[0]["cost"])
-            row[f"{arm}_cpu_seconds"] = float(match[0]["cpu_seconds"])
+            item = match[0]
+            row[f"{arm}_status"] = item["status"]
+            if item["status"] == "OK" and int(item["violation_count"] or 0) == 0:
+                row[f"{arm}_cost"] = float(item["cost"])
+                row[f"{arm}_cpu_seconds"] = float(item["cpu_seconds"])
+            else:
+                row[f"{arm}_cost"] = math.nan
+                row[f"{arm}_cpu_seconds"] = math.nan
         rows.append(row)
     for label, fn in (("Min", min), ("Avg", statistics.fmean), ("Max", max)):
         row = {"row": label}
         for arm in ARMS:
-            values = [float(item[f"{arm}_cost"]) for item in rows[:10]]
-            cpus = [float(item[f"{arm}_cpu_seconds"]) for item in rows[:10]]
+            values = [
+                float(item[f"{arm}_cost"]) for item in rows[:10]
+                if math.isfinite(float(item[f"{arm}_cost"]))
+            ]
+            cpus = [
+                float(item[f"{arm}_cpu_seconds"]) for item in rows[:10]
+                if math.isfinite(float(item[f"{arm}_cpu_seconds"]))
+            ]
+            if not values or not cpus:
+                raise RuntimeError(f"S3 table6 arm {arm} has no feasible values")
             row[f"{arm}_cost"] = fn(values)
             row[f"{arm}_cpu_seconds"] = fn(cpus)
+            row[f"{arm}_status"] = f"{len(values)}/{len(rows[:10])} feasible"
         rows.append(row)
-    fields = ["row"] + [f"{arm}_{metric}" for arm in ARMS for metric in ("cost", "cpu_seconds")]
+    fields = ["row"] + [
+        field for arm in ARMS for field in (
+            f"{arm}_cost", f"{arm}_cpu_seconds", f"{arm}_status"
+        )
+    ]
     return rows, fields
 
 
@@ -154,7 +181,11 @@ def _tex_table6(rows: list[dict[str, Any]]) -> str:
         r"\midrule",
     ]
     for row in rows:
-        cells = [f"{row[f'{arm}_cost']:.3f}/{row[f'{arm}_cpu_seconds']:.2f}" for arm in ARMS]
+        cells = [
+            "--/--" if not math.isfinite(float(row[f"{arm}_cost"]))
+            else f"{row[f'{arm}_cost']:.3f}/{row[f'{arm}_cpu_seconds']:.2f}"
+            for arm in ARMS
+        ]
         lines.append(str(row["row"]) + " & " + " & ".join(cells) + r" \\")
     lines.extend([r"\bottomrule", r"\end{tabular}"])
     return "\n".join(lines) + "\n"
@@ -237,21 +268,26 @@ def main() -> int:
     OUT.mkdir(parents=True, exist_ok=True)
     try:
         _require_pass(S1 / "decision.json", "PASS_S1_THREEVIEW_PREFLIGHT")
-        _require_pass(S2 / "decision.json", "PASS_S2_FULL_THREEVIEW")
+        s2_decision = json.loads(S2_DECISION_V2.read_text(encoding="utf-8"))
+        if s2_decision.get("decision") not in S2_ALLOWED_DECISIONS:
+            raise RuntimeError(
+                f"{S2_DECISION_V2} decision is {s2_decision.get('decision')!r}, "
+                f"expected one of {sorted(S2_ALLOWED_DECISIONS)}"
+            )
         _require_pass(S3 / "decision.json", "PASS_S3_REPRESENTATIVE")
-        _require_pass(S4 / "decision.json", "PASS_S4_ROUTE_DETAIL")
+        _require_pass(S4_DECISION_V2, "PASS_S4_ROUTE_DETAIL")
         p1_decision = json.loads(P1_DECISION.read_text(encoding="utf-8"))
         if p1_decision.get("decision") != "P1_FORMAL_PUBLIC_COMPLETE":
             raise RuntimeError(f"P1 decision is {p1_decision.get('decision')!r}")
         s3_rows = _read_csv(S3 / "raw_runs.csv")
         if len(s3_rows) != 40:
             raise RuntimeError(f"S3 raw row count is {len(s3_rows)}, expected 40")
-        s4_rows = _read_csv(S4 / "route_details.csv")
+        s4_rows = _read_csv(S4_ROUTE_DETAILS_V2)
         if len(s4_rows) < 3:
             raise RuntimeError("S4 route detail CSV is too short")
         table5, table5_fields = _build_table5()
         table6, table6_fields = _build_table6(s3_rows)
-        shutil.copyfile(S4 / "route_details.csv", OUT / "table4_route_details.csv")
+        shutil.copyfile(S4_ROUTE_DETAILS_V2, OUT / "table4_route_details.csv")
         shutil.copyfile(S2 / "appendix_a1.csv", OUT / "appendix_a1.csv")
         shutil.copyfile(S2 / "appendix_a1_numeric.csv", OUT / "appendix_a1_numeric.csv")
         _write_csv(OUT / "table5_public.csv", table5, table5_fields)
@@ -264,7 +300,7 @@ def main() -> int:
             "schema_version": "resetp.e2-final-campaign.s5-artifacts.v1",
             "decision": "PASS_S5_ARTIFACTS",
             "input_decisions": {
-                "s1": "PASS_S1_THREEVIEW_PREFLIGHT", "s2": "PASS_S2_FULL_THREEVIEW",
+                "s1": "PASS_S1_THREEVIEW_PREFLIGHT", "s2": s2_decision["decision"],
                 "s3": "PASS_S3_REPRESENTATIVE", "s4": "PASS_S4_ROUTE_DETAIL",
                 "p1": "P1_FORMAL_PUBLIC_COMPLETE",
             },
@@ -290,10 +326,15 @@ def main() -> int:
         "numpy_version": np.__version__, "matplotlib_version": matplotlib.__version__,
         "visual_contract_sha256": _sha256(VISUAL_CONTRACT),
         "input_sha256": {
-            "s1_decision": _sha256(S1 / "decision.json"), "s2_raw": _sha256(S2 / "raw_runs.csv"),
-            "s3_raw": _sha256(S3 / "raw_runs.csv"), "s4_route_details": _sha256(S4 / "route_details.csv"),
+            "s1_decision": _sha256(S1 / "decision.json"),
+            "s2_decision_v1": _sha256(S2_DECISION_V1),
+            "s2_decision_v2": _sha256(S2_DECISION_V2),
+            "s2_raw": _sha256(S2 / "raw_runs.csv"),
+            "s3_raw": _sha256(S3 / "raw_runs.csv"), "s4_decision_v2": _sha256(S4_DECISION_V2),
+            "s4_route_details_v2": _sha256(S4_ROUTE_DETAILS_V2),
             "p1_decision": _sha256(P1_DECISION),
         },
+        "s2_registered_exception_id": s2_decision.get("approval_register_id"),
         "integrity_flags": [],
     }
     _write_json(OUT / "metadata.json", metadata)
@@ -301,6 +342,7 @@ def main() -> int:
         "# S5 Unified artifacts\n\n"
         "Decision: `PASS_S5_ARTIFACTS`.\n\n"
         f"Generated Table 4 ({decision['table4_rows']} rows), Table 5 ({decision['table5_rows']} rows), Table 6 ({decision['table6_rows']} rows), Figure 4 (4 median exact-incumbent curves), and Appendix A1 ({decision['appendix_a1_rows']} rows) from sealed inputs.\n\n"
+        "S2 v2 retains the raw registered infeasible unit and applies its disclosed feasible-seed statistic; no failed row is rerun or silently removed from the ledger.\n\n"
         "No TeX semantic section was edited and no value was manually filled. Figure 4 uses step-wise medians over ten seeds and exact-cost trajectory observations.\n",
         encoding="utf-8",
     )

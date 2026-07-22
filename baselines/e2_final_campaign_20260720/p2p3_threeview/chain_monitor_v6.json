@@ -1,0 +1,34 @@
+{
+  "schema_version": 1,
+  "name": "e2-s2-to-s5-chain-v6",
+  "objective": "Close the S2 registered-exception through corrected S4 and corrected S5 v2 reporting gates without relaunching sealed stages.",
+  "workdir": "/Volumes/移动硬盘（512G）/ReSETP",
+  "monitor_dir": "/Volumes/移动硬盘（512G）/ReSETP/baselines/e2_final_campaign_20260720/p2p3_threeview/.e2-s2-to-s5-chain-v6.monitor",
+  "poll_seconds": 10,
+  "stale_seconds": 3600,
+  "max_runtime_seconds": 3600,
+  "pause_on_anomaly": true,
+  "required_command_substrings": ["chain_controller.py"],
+  "forbidden_command_substrings": ["--debug", "--smoke", "--tune"],
+  "min_cpu_percent_when_active": 0,
+  "low_cpu_consecutive_checks": 1000000,
+  "max_rss_mb": 1000,
+  "min_system_memory_free_percent": 5,
+  "logs": [],
+  "progress_files": [],
+  "result_files": [
+    "/Volumes/移动硬盘（512G）/ReSETP/baselines/e2_final_campaign_20260720/p2p3_threeview/chain_done_v2.json"
+  ],
+  "completion_files": [
+    "/Volumes/移动硬盘（512G）/ReSETP/baselines/e2_final_campaign_20260720/p2p3_threeview/chain_done_v2.json"
+  ],
+  "checkpoint_paths": [],
+  "protected_files": [
+    {"path": "/Volumes/移动硬盘（512G）/ReSETP/solver/src/setp_solver/cost.py", "kind": "cost_function"},
+    {"path": "/Volumes/移动硬盘（512G）/ReSETP/solver/src/setp_solver/check.py", "kind": "evaluator"},
+    {"path": "/Volumes/移动硬盘（512G）/ReSETP/docs/paper_submission_final/paper_main.tex", "kind": "paper_conclusion"},
+    {"path": "/Volumes/移动硬盘（512G）/ReSETP/baselines/e2_final_campaign_20260720/mv_hgs_sp_final/p3_china81_gate/raw_runs.csv", "kind": "core_data"}
+  ],
+  "csv_rules": [],
+  "ai": {"enabled": false, "timeout_seconds": 180}
+}

@@ -1,0 +1,41 @@
+{
+  "branch": "codex/reporting-pipeline",
+  "command": "/Volumes/移动硬盘（512G）/ReSETP/build/python_envs/pyvrp-hgs-0.12.2/bin/python /Volumes/移动硬盘（512G）/ReSETP/baselines/e2_final_campaign_20260720/p2p3_threeview/full_gate/run_s2_full_threeview.py",
+  "created_at_utc": "2026-07-22T04:22:40.765829+00:00",
+  "git_head": "cc56d8d75add36658ef3ef89e0ebe9e61797555a",
+  "instance_count": 81,
+  "integrity_flags": [],
+  "new_unit_count": 810,
+  "numpy_version": "2.5.1",
+  "p3_raw_runs_sha256": "d8b2869314f1d2889e4286b859af9539e7ef973945ab5fe77a72d7e0e6cd60d0",
+  "platform": "macOS-15.7.5-arm64-arm-64bit-Mach-O",
+  "protected_file_sha256": {
+    "baselines/e2_final_campaign_20260720/mv_hgs_sp_final/run_p3_china81_formal.py": "64e05abd5ee666f47e293c04196cc34d495e36363b9867868f0daaafc3ca5ea7",
+    "docs/paper_submission_final/paper_main.tex": "6936bcf31d37c65c5f1100416a5406443c506c060c5b8823df696ac311d0f735",
+    "solver/src/setp_solver/check.py": "4d692f4c97f992c88c86d7aae35b5d0ef787af2157f9165fb7685864a2a58bde",
+    "solver/src/setp_solver/cost.py": "74864076280f31770700c87dd1bb8e572ae9bf65109e7201c0d257e3e5ff7507",
+    "solver/src/setp_solver/prices.py": "110fd0c9da5e78406bb721be0f22df71a2052e314c01aa73904fd10fcea8bad8",
+    "solver/src/setp_solver/search/evaluation.py": "c7215263c39d1d5a1429b41ca8ac40d950dbdf2bdc288337e56fbe9733406fc3"
+  },
+  "python": "3.13.9 | packaged by Anaconda, Inc. | (main, Oct 21 2025, 19:11:29) [Clang 20.1.8 ]",
+  "python_executable": "/Volumes/移动硬盘（512G）/ReSETP/build/python_envs/pyvrp-hgs-0.12.2/bin/python",
+  "pythonhashseed": "UNSET",
+  "pyvrp_version": "unknown",
+  "raw_runs_sha256": "e97f76b05144cd358671ab2b12651598731f6ad8856492c44338b4cbc21e44be",
+  "route_proxy_modes": [
+    "cv_only",
+    "naive_ev"
+  ],
+  "runner_reused": "baselines/e2_final_campaign_20260720/mv_hgs_sp_final/run_p3_china81_formal.py",
+  "s1_decision_sha256": "e00d0754838fbf367106c2a81b9f4e2b98072edbcf5b8673b474bebf0f777fab",
+  "schema_version": "resetp.e2-final-campaign.s2-full-threeview-metadata.v1",
+  "seeds": [
+    1,
+    2,
+    3,
+    4,
+    5
+  ],
+  "stop_rule": "NoImprovement(K_M) OR MaxRuntime(CAP_M), copied from P3 mother",
+  "workers": 6
+}

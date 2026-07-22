@@ -1,0 +1,127 @@
+{
+  "created_at": "2026-07-22T07:06:53+00:00",
+  "current_status": {
+    "checked_at": "2026-07-22T07:06:53+00:00",
+    "checkpoint_inventory": [],
+    "csv_summaries": [],
+    "files": {
+      "/Volumes/移动硬盘（512G）/ReSETP/baselines/e2_final_campaign_20260720/p2p3_threeview/.e2-s4-v2-to-s5-chain-v4.monitor/experiment.stdout.log": {
+        "age_seconds": 73.90183997154236,
+        "exists": true,
+        "mtime": 1784703939.93,
+        "path": "/Volumes/移动硬盘（512G）/ReSETP/baselines/e2_final_campaign_20260720/p2p3_threeview/.e2-s4-v2-to-s5-chain-v4.monitor/experiment.stdout.log",
+        "size": 534
+      },
+      "/Volumes/移动硬盘（512G）/ReSETP/baselines/e2_final_campaign_20260720/p2p3_threeview/chain_done.json": {
+        "exists": false,
+        "path": "/Volumes/移动硬盘（512G）/ReSETP/baselines/e2_final_campaign_20260720/p2p3_threeview/chain_done.json"
+      }
+    },
+    "findings": [
+      {
+        "code": "PROCESS_EXITED_WITHOUT_COMPLETION",
+        "details": {},
+        "message": "process ended without completion evidence",
+        "severity": "critical"
+      }
+    ],
+    "log_paths": [
+      "/Volumes/移动硬盘（512G）/ReSETP/baselines/e2_final_campaign_20260720/p2p3_threeview/.e2-s4-v2-to-s5-chain-v4.monitor/experiment.stdout.log"
+    ],
+    "name": "e2-s4-v2-to-s5-chain-v4",
+    "paused": false,
+    "process": {
+      "alive": false,
+      "cpu_percent": 0,
+      "members": [],
+      "pgid": 29876,
+      "root_pid": 29876,
+      "rss_mb": 0.0
+    },
+    "protected_files": {
+      "/Volumes/移动硬盘（512G）/ReSETP/baselines/e2_final_campaign_20260720/mv_hgs_sp_final/p3_china81_gate/raw_runs.csv": {
+        "age_seconds": 35985.513285160065,
+        "exists": true,
+        "kind": "core_data",
+        "mtime": 1784668028.33,
+        "path": "/Volumes/移动硬盘（512G）/ReSETP/baselines/e2_final_campaign_20260720/mv_hgs_sp_final/p3_china81_gate/raw_runs.csv",
+        "sha256": "d8b2869314f1d2889e4286b859af9539e7ef973945ab5fe77a72d7e0e6cd60d0",
+        "size": 68532
+      },
+      "/Volumes/移动硬盘（512G）/ReSETP/docs/paper_submission_final/paper_main.tex": {
+        "age_seconds": 232989.4325211048,
+        "exists": true,
+        "kind": "paper_conclusion",
+        "mtime": 1784471024.41,
+        "path": "/Volumes/移动硬盘（512G）/ReSETP/docs/paper_submission_final/paper_main.tex",
+        "sha256": "6936bcf31d37c65c5f1100416a5406443c506c060c5b8823df696ac311d0f735",
+        "size": 93762
+      },
+      "/Volumes/移动硬盘（512G）/ReSETP/solver/src/setp_solver/check.py": {
+        "age_seconds": 205023.27187299728,
+        "exists": true,
+        "kind": "evaluator",
+        "mtime": 1784498990.57,
+        "path": "/Volumes/移动硬盘（512G）/ReSETP/solver/src/setp_solver/check.py",
+        "sha256": "4d692f4c97f992c88c86d7aae35b5d0ef787af2157f9165fb7685864a2a58bde",
+        "size": 33802
+      },
+      "/Volumes/移动硬盘（512G）/ReSETP/solver/src/setp_solver/cost.py": {
+        "age_seconds": 201691.74187731743,
+        "exists": true,
+        "kind": "cost_function",
+        "mtime": 1784502322.09,
+        "path": "/Volumes/移动硬盘（512G）/ReSETP/solver/src/setp_solver/cost.py",
+        "sha256": "74864076280f31770700c87dd1bb8e572ae9bf65109e7201c0d257e3e5ff7507",
+        "size": 42643
+      }
+    },
+    "runtime_seconds": 90.4476158618927,
+    "scene_path": "/Volumes/移动硬盘（512G）/ReSETP/baselines/e2_final_campaign_20260720/p2p3_threeview/.e2-s4-v2-to-s5-chain-v4.monitor/scenes/20260722-150653-anomaly",
+    "schema_version": 1,
+    "state": "ANOMALY",
+    "system": {
+      "free_memory_mb": 70.640625,
+      "load_average_15m": 2.3837890625,
+      "load_average_1m": 1.962890625,
+      "load_average_5m": 1.85107421875,
+      "logical_cpus": 8,
+      "memory_pressure_free_percent": 38.0,
+      "swapouts": 120544
+    }
+  },
+  "experiment": {
+    "allowed_ai_actions": [
+      "continue",
+      "pause_for_read_only_diagnosis",
+      "keep_paused_and_preserve_scene",
+      "recommend_safe_stop",
+      "recommend_checkpoint_restart",
+      "escalate_research_contract_change_to_user"
+    ],
+    "expected_contract": {},
+    "forbidden_ai_actions": [
+      "change_model_or_research_question",
+      "change_evaluator_or_cost_function",
+      "change_experiment_contract_or_core_data",
+      "change_primary_config_or_paper_conclusion",
+      "resume_paused_job_without_explicit_human_command"
+    ],
+    "name": "e2-s4-v2-to-s5-chain-v4",
+    "objective": "Run the approved S4 arithmetic-closure recheck, then materialize S5 artifacts only after PASS gates."
+  },
+  "minimal_log_tails": {
+    "/Volumes/移动硬盘（512G）/ReSETP/baselines/e2_final_campaign_20260720/p2p3_threeview/.e2-s4-v2-to-s5-chain-v4.monitor/experiment.stdout.log": [
+      "[CHAIN] started 2026-07-22T07:05:23.386618+00:00; S2 registered-exception rule then S3->S5 gate progression",
+      "[CHAIN] S2 PASS",
+      "[CHAIN] S3 already has a decision; resuming without overwriting it",
+      "[CHAIN] S3 PASS",
+      "[CHAIN] S3 removed 4 AppleDouble sidecars; flagged HASH_CONTAMINATED_APPLEDOUBLE and refreshed hashes",
+      "{\"monitor_pid\": 29949, \"run_dir\": \"/Volumes/移动硬盘（512G）/ReSETP/baselines/e2_final_campaign_20260720/p2p3_threeview/table4_gate/.e2-s4-route-detail-v2.monitor\"}",
+      "[CHAIN] launched S4",
+      "[CHAIN] waiting for S4 completion"
+    ]
+  },
+  "reason": "ANOMALY",
+  "schema_version": 1
+}

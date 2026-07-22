@@ -1,7 +1,9 @@
 # Memory Index
 
+- [E2 S5-REV-V3 收口（2026-07-22）](e2_final_campaign_p3_p4_complete_20260722.md) — S5 v3 只做封存证据的版式/完整性修订：表5补PyVRP-HGS母体误差列并统一BKS相对误差、表6和China81汇总逐行加粗最低值、表4合计装载率按路线最大实际装载量/总容量改为96.433925%；v2文件与manifest保留，v3 manifest 19项零不匹配。S6需嵌入v3表体并重编译，S7仍未收官。
+
 - [算法命名映射（2026-07-22）](../algorithm_naming_map_20260722.md) — 工程代号↔论文学名单一事实源:主算法MV-HGS-SP;三视角子算法 cv_only=HGS-F(燃油成本导向)/naive_ev=HGS-E(简化电动)/mechanism_ev=HGS-M(机制感知);ReSETP-ALNS是tex编的废名已删,ALNS不进表。代码保留代号,论文用学名,S5脚本按此映射。
-- [E2终局战役最终决定（2026-07-22）](e2_final_campaign_p3_p4_complete_20260722.md) — 用户拍板:公开表证"优于已知算法"(P1已完成,0.905%全场第一);China81证"三视角融合1+1+1>3",对手=三视角子算法(cv_only/naive_ev/mechanism_ev)非ALNS;两个ALNS都不进表,ReSETP-ALNS是tex编的名字。S1 preflight已PASS，S2全量补跑正在运行，S3-S5由PASS-only链监督器自动推进；S6/S7仍待Claude收官。
+- [E2终局战役最终决定（2026-07-22）](e2_final_campaign_p3_p4_complete_20260722.md) — 用户拍板:公开表证"优于已知算法"(P1已完成,0.905%全场第一);China81证"三视角融合1+1+1>3",对手=三视角子算法(cv_only/naive_ev/mechanism_ev)非ALNS;两个ALNS都不进表,ReSETP-ALNS是tex编的名字。S1 preflight已PASS；S2 v1 HALT 原样保留、按登记条目收口为 v2 `PASS_S2_FULL_THREEVIEW_WITH_REGISTERED_INFEASIBLE_UNIT`（810/810，1 个已登记不可行单元）；S3 PASS；S4 v1 伪覆盖 HALT 原样保留、v2 `PASS_S4_ROUTE_DETAIL`；S5 v1 A1/工程代号产物保留、v2 `PASS_S5_ARTIFACTS` 改为正文10行分层汇总+论文命名；链 `PASS_S2_TO_S5_CHAIN_V2`。**S6/S7已收官(2026-07-22 Claude)**:表5/表6/表4/汇总表/图4 v3脚本产物全嵌入tex(表4路径列转G/S编号简写并表注,序列零改动),五段分析+ETGA诚实注(19/28)+0.388s裁判必要性动机句+Rochat-Taillard/Wang2025先引后异novelty句,20页编译0错误0未定义0overfull零悬空文献;终局标记=`baselines/e2_final_campaign_20260720/ALGORITHM_EXPERIMENTS_CLOSED_20260720.md`,**算法冻结只引用不改动**。剩Git提交。
 
 E7正式结果终验
 

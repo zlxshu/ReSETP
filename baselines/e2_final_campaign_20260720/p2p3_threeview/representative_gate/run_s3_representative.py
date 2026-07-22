@@ -20,7 +20,9 @@ from typing import Any
 ROOT = Path(__file__).resolve().parents[4]
 PACKAGE = ROOT / "baselines/e2_final_campaign_20260720/mv_hgs_sp_final"
 OUT = Path(__file__).resolve().parent
-S2_DECISION = ROOT / "baselines/e2_final_campaign_20260720/p2p3_threeview/full_gate/decision.json"
+S2_DECISION_V1 = ROOT / "baselines/e2_final_campaign_20260720/p2p3_threeview/full_gate/decision.json"
+S2_DECISION_V2 = ROOT / "baselines/e2_final_campaign_20260720/p2p3_threeview/full_gate/decision_v2.json"
+S2_DECISION = S2_DECISION_V2
 S2_RAW = ROOT / "baselines/e2_final_campaign_20260720/p2p3_threeview/full_gate/raw_runs.csv"
 P3_RAW = PACKAGE / "p3_china81_gate/raw_runs.csv"
 P3_RUNNER = PACKAGE / "run_p3_china81_formal.py"
@@ -32,6 +34,12 @@ MAX_EPOCHS = 4
 STALL_EPOCHS = 2
 SP_TIME = 10.0
 EPS = 1.0e-6
+REGISTERED_EXCEPTION_ID = "S2-INFEASIBLE-UNIT-001"
+S2_ALLOWED_DECISIONS = {
+    "PASS_S2_FULL_THREEVIEW",
+    "PASS_S2_FULL_THREEVIEW_WITH_REGISTERED_INFEASIBLE_UNIT",
+}
+SINGLE_ARM_FAILURE_RATE_LIMIT = 0.05
 FEATURES = (
     "customer_count", "depot_count", "demand_dispersion",
     "time_window_tightness", "ev_reachability",
@@ -89,6 +97,14 @@ def _write_json(path: Path, payload: Any) -> None:
         json.dumps(payload, ensure_ascii=False, indent=2, sort_keys=True) + "\n",
         encoding="utf-8",
     )
+
+
+def _is_registered_infeasible(row: dict[str, str]) -> bool:
+    """Recognize only the approved proxy-to-exact time-window failure class."""
+    if row.get("arm") != "naive_ev" or row.get("status") not in {"ERROR", "INFEASIBLE"}:
+        return False
+    evidence = " ".join((row.get("error", ""), row.get("violations", ""))).lower()
+    return "time_window" in evidence and "late by" in evidence
 
 
 def _instance_features(instance_id: str) -> dict[str, float]:
@@ -358,8 +374,10 @@ def _existing_ok(raw_path: Path) -> set[tuple[str, int, str]]:
     keys: set[tuple[str, int, str]] = set()
     for row in rows:
         key = (row["instance_id"], int(row["seed"]), row["arm"])
-        if row["status"] != "OK" or key in keys:
+        if key in keys:
             raise RuntimeError(f"existing S3 raw cannot be resumed safely: {key}")
+        if row["status"] != "OK" and not _is_registered_infeasible(row):
+            raise RuntimeError(f"existing S3 raw has unregistered non-OK row: {key}")
         keys.add(key)
     return keys
 
@@ -375,7 +393,7 @@ def _append_raw(path: Path, row: dict[str, Any], first: bool) -> None:
 
 def _artifact_paths() -> list[Path]:
     paths: list[Path] = [
-        P3_RUNNER, P3_RAW, S2_RAW, S2_DECISION,
+        P3_RUNNER, P3_RAW, S2_RAW, S2_DECISION_V1, S2_DECISION_V2,
         OUT / "task_card.md", OUT / "run_s3_representative.py",
         OUT / "representative_registration.json", OUT / "raw_runs.csv",
         OUT / "metadata.json", OUT / "decision.json", OUT / "report.md",
@@ -399,11 +417,11 @@ def main() -> int:
     if not S2_DECISION.exists():
         raise SystemExit(f"missing S2 decision: {S2_DECISION}")
     s2 = json.loads(S2_DECISION.read_text(encoding="utf-8"))
-    if s2.get("decision") != "PASS_S2_FULL_THREEVIEW":
+    if s2.get("decision") not in S2_ALLOWED_DECISIONS:
         _write_json(OUT / "decision.json", {
             "schema_version": "resetp.e2-final-campaign.s3-representative.v1",
             "decision": "HALT_S3_S2_NOT_PASS",
-            "reason": f"S2 decision is {s2.get('decision')!r}",
+            "reason": f"S2 v2 decision is {s2.get('decision')!r}",
         })
         return 2
     registration = _registration()
@@ -455,13 +473,46 @@ def main() -> int:
     keys = [(row["instance_id"], int(row["seed"]), row["arm"]) for row in rows]
     non_ok = [row for row in rows if row["status"] != "OK"]
     violation_rows = [row for row in rows if int(row["violation_count"] or 0) != 0]
+    failed_rows = [
+        row for row in rows
+        if row["status"] != "OK" or int(row["violation_count"] or 0) != 0
+    ]
+    registered_rows = [row for row in failed_rows if _is_registered_infeasible(row)]
+    unregistered_rows = [row for row in failed_rows if not _is_registered_infeasible(row)]
+    failure_count_by_arm = {
+        arm: sum(
+            1 for row in failed_rows
+            if row["arm"] == arm
+        )
+        for arm in ARMS
+    }
+    failure_rate_by_arm = {
+        arm: failure_count_by_arm[arm] / len(SEEDS)
+        for arm in ARMS
+    }
+    rate_exceeded_arms = [
+        arm for arm in ARMS
+        if failure_rate_by_arm[arm] > SINGLE_ARM_FAILURE_RATE_LIMIT
+    ]
     duplicates = len(keys) - len(set(keys))
     if len(rows) != expected or duplicates:
         verdict = "HALT_S3_INCOMPLETE_OR_DUPLICATE_RAW"
         reason = f"expected {expected} unique rows, observed {len(rows)}, duplicates {duplicates}"
-    elif non_ok or violation_rows:
-        verdict = "HALT_S3_VIEW_INFEASIBLE_OR_ERROR"
-        reason = f"non-OK rows={len(non_ok)}, violation rows={len(violation_rows)}"
+    elif unregistered_rows:
+        verdict = "HALT_S3_UNREGISTERED_INFEASIBLE_OR_ERROR"
+        reason = f"unregistered failed rows={len(unregistered_rows)}; registered rows={len(registered_rows)}"
+    elif rate_exceeded_arms:
+        verdict = "HALT_S3_REGISTERED_INFEASIBLE_RATE_EXCEEDED"
+        reason = (
+            f"registered failed rows={len(registered_rows)}; failure rate exceeds "
+            f"{SINGLE_ARM_FAILURE_RATE_LIMIT:.1%} for arms={rate_exceeded_arms}"
+        )
+    elif failed_rows:
+        verdict = "PASS_S3_REPRESENTATIVE"
+        reason = (
+            f"40 four-arm rows complete with {len(registered_rows)} registered "
+            "infeasible row(s); all single-arm failure rates are within 5%"
+        )
     else:
         verdict = "PASS_S3_REPRESENTATIVE"
         reason = "40 four-arm exact-feasible rows complete"
@@ -472,6 +523,20 @@ def main() -> int:
         "expected_rows": expected, "observed_rows": len(rows),
         "duplicate_row_count": duplicates, "non_ok_rows": len(non_ok),
         "violation_rows": len(violation_rows),
+        "registered_exception_id": REGISTERED_EXCEPTION_ID,
+        "registered_exception_applied": bool(registered_rows),
+        "registered_infeasible_rows": [
+            {
+                "instance_id": row["instance_id"], "seed": int(row["seed"]),
+                "arm": row["arm"], "status": row["status"],
+                "error_type": row.get("error_type", ""), "error": row.get("error", ""),
+            }
+            for row in registered_rows
+        ],
+        "failure_count_by_arm": failure_count_by_arm,
+        "failure_rate_by_arm": failure_rate_by_arm,
+        "single_arm_failure_rate_limit": SINGLE_ARM_FAILURE_RATE_LIMIT,
+        "rate_exceeded_arms": rate_exceeded_arms,
         "arms": list(ARMS), "seeds": list(SEEDS),
         "registration_result_blind": registration.get("result_blind", False),
         "claim_boundary": "S3 supplies representative descriptive values and exact-incumbent trajectory evidence; it does not establish equal-compute superiority.",
@@ -499,7 +564,11 @@ def main() -> int:
         "max_epochs": MAX_EPOCHS, "stall_epochs": STALL_EPOCHS, "sp_time_seconds": SP_TIME,
         "trajectory_resolution": "common initial plus exact archive/epoch-boundary incumbent observations",
         "runner_reused": str(P3_RUNNER.relative_to(ROOT)),
-        "s2_decision_sha256": _sha256(S2_DECISION), "s2_raw_sha256": _sha256(S2_RAW),
+        "s2_decision_sha256": _sha256(S2_DECISION),
+        "s2_decision_v1_sha256": _sha256(S2_DECISION_V1),
+        "s2_decision_v2_sha256": _sha256(S2_DECISION_V2),
+        "s2_registered_exception_id": REGISTERED_EXCEPTION_ID,
+        "s2_raw_sha256": _sha256(S2_RAW),
         "p3_raw_sha256": _sha256(P3_RAW), "protected_file_sha256": _protected_hashes(),
         "integrity_flags": [],
         "summary": summary,
@@ -509,11 +578,22 @@ def main() -> int:
         "# S3 Representative four-arm batch", "",
         f"Decision: `{verdict}`.", f"Representative: `{instance_id}`.",
         f"Rows: {len(rows)}/{expected}; non-OK: {len(non_ok)}; violation rows: {len(violation_rows)}.",
+        f"Failure rates by arm: {json.dumps(failure_rate_by_arm, ensure_ascii=False, sort_keys=True)}; limit={SINGLE_ARM_FAILURE_RATE_LIMIT:.1%}.",
         "", "Arm summaries (cost):",
     ]
     for arm in ARMS:
         item = summary[arm]
         report_lines.append(f"- `{arm}` min={item['min']:.6f}, avg={item['avg']:.6f}, max={item['max']:.6f}")
+    if registered_rows:
+        report_lines.extend(["", f"Registered exception `{REGISTERED_EXCEPTION_ID}` rows:"])
+        report_lines.extend(
+            f"- `{row['instance_id']}`, seed {row['seed']}, `{row['arm']}`: {row.get('error', '')}"
+            for row in registered_rows
+        )
+        report_lines.append(
+            "These rows remain in raw_runs.csv; they are not filtered or rerun. "
+            "The registered exception is admissible only while every single-arm failure rate is at most 5%."
+        )
     report_lines.extend([
         "", "The representative was registered from input-only features before this batch. Trajectories record exact-cost incumbent observations at available epoch boundaries; they do not expose PyVRP proxy costs as if they were exact costs.",
     ])

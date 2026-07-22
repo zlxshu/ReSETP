@@ -1,0 +1,110 @@
+{
+  "china81_summary_rows": 10,
+  "claim_boundary": "S5 v3 is deterministic presentation materialization from sealed evidence; it authorizes no superiority, equal-compute, or model claim.",
+  "data_values_changed": false,
+  "decision": "PASS_S5_ARTIFACTS",
+  "figure4_copied_without_value_change": true,
+  "integrity_flags": [
+    "HASH_CONTAMINATED_APPLEDOUBLE"
+  ],
+  "pairwise_tests_copied_without_value_change": true,
+  "revision": "S5-REV-V3",
+  "s2_registered_exception_id": "S2-INFEASIBLE-UNIT-001",
+  "schema_version": "resetp.e2-final-campaign.s5-artifacts.v3",
+  "source_decision_v2": "decision_v2.json",
+  "table4_load_rate_revision": {
+    "changed_field": "装载率(%)",
+    "changed_row": "合计",
+    "load_audit": {
+      "aggregate_load_rate_pct": 96.43392504930966,
+      "definition": "sum of route maximum actual loads / sum of route vehicle capacities",
+      "route_count": 9,
+      "routes": [
+        {
+          "capacity_kg": 1735.0,
+          "max_actual_load_kg": 1735.0,
+          "route_load_rate_pct": 100.0,
+          "vehicle_id": "CH81-0001",
+          "vehicle_type": "cv"
+        },
+        {
+          "capacity_kg": 1735.0,
+          "max_actual_load_kg": 1667.0,
+          "route_load_rate_pct": 96.0806916426513,
+          "vehicle_id": "CH81-0002",
+          "vehicle_type": "cv"
+        },
+        {
+          "capacity_kg": 1000.0,
+          "max_actual_load_kg": 973.0,
+          "route_load_rate_pct": 97.3,
+          "vehicle_id": "CH81-0003",
+          "vehicle_type": "ev"
+        },
+        {
+          "capacity_kg": 1000.0,
+          "max_actual_load_kg": 972.0,
+          "route_load_rate_pct": 97.2,
+          "vehicle_id": "CH81-0004",
+          "vehicle_type": "ev"
+        },
+        {
+          "capacity_kg": 1000.0,
+          "max_actual_load_kg": 973.0,
+          "route_load_rate_pct": 97.3,
+          "vehicle_id": "CH81-0005",
+          "vehicle_type": "ev"
+        },
+        {
+          "capacity_kg": 1735.0,
+          "max_actual_load_kg": 1667.0,
+          "route_load_rate_pct": 96.0806916426513,
+          "vehicle_id": "CH81-0006",
+          "vehicle_type": "cv"
+        },
+        {
+          "capacity_kg": 1735.0,
+          "max_actual_load_kg": 1597.0,
+          "route_load_rate_pct": 92.04610951008645,
+          "vehicle_id": "CH81-0007",
+          "vehicle_type": "cv"
+        },
+        {
+          "capacity_kg": 1735.0,
+          "max_actual_load_kg": 1667.0,
+          "route_load_rate_pct": 96.0806916426513,
+          "vehicle_id": "CH81-0008",
+          "vehicle_type": "cv"
+        },
+        {
+          "capacity_kg": 1000.0,
+          "max_actual_load_kg": 972.0,
+          "route_load_rate_pct": 97.2,
+          "vehicle_id": "CH81-0009",
+          "vehicle_type": "ev"
+        }
+      ],
+      "total_actual_load_kg": 12223.0,
+      "total_capacity_kg": 12675.0
+    },
+    "source": "baselines/e2_final_campaign_20260720/p2p3_threeview/table4_gate/route_details_v2.csv",
+    "source_value": 100.0,
+    "v3_value": 96.43392504930966
+  },
+  "table4_rows": 11,
+  "table5_columns": [
+    "instance",
+    "n",
+    "BKS",
+    "VCGP_Best_error_pct",
+    "MDFIHA_Best_error_pct",
+    "MDFIHA-ETGA_Best_error_pct",
+    "PyVRP-HGS_Best_error_pct",
+    "PyVRP-HGS_avg_error_pct",
+    "MV-HGS-SP_Best_error_pct",
+    "MV-HGS-SP_avg_error_pct"
+  ],
+  "table5_rows": 29,
+  "table6_rows": 13,
+  "v2_outputs_preserved": true
+}

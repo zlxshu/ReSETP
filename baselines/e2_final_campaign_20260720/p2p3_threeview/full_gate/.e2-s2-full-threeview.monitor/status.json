@@ -1,150 +1,92 @@
 {
-  "checked_at": "2026-07-22T02:39:51+00:00",
+  "ai_diagnosis": {
+    "invoked": false,
+    "reason": "disabled"
+  },
+  "checked_at": "2026-07-22T04:22:44+00:00",
   "checkpoint_inventory": [],
   "csv_summaries": [
     {
       "duplicate_rows": 0,
       "exists": true,
-      "feasible_rate": 1.0,
-      "metric_last": 9661.396573051206,
-      "metric_max": 9661.396573051206,
-      "metric_min": 579.2642466516072,
-      "metric_regressions": 61,
+      "feasible_rate": 0.9987654320987654,
+      "metric_last": 3897.499527282721,
+      "metric_max": 9863.890745264373,
+      "metric_min": 501.003602296064,
+      "metric_regressions": 316,
       "path": "/Volumes/移动硬盘（512G）/ReSETP/baselines/e2_final_campaign_20260720/p2p3_threeview/full_gate/raw_runs.csv",
-      "rows": 143,
+      "rows": 810,
       "violation_total": 0.0
     }
   ],
   "files": {
     "/Volumes/移动硬盘（512G）/ReSETP/baselines/e2_final_campaign_20260720/p2p3_threeview/full_gate/.e2-s2-full-threeview.monitor/experiment.stdout.log": {
-      "age_seconds": 107.2426221370697,
+      "age_seconds": 3.7104129791259766,
       "exists": true,
-      "mtime": 1784687884.03,
+      "mtime": 1784694161.0,
       "path": "/Volumes/移动硬盘（512G）/ReSETP/baselines/e2_final_campaign_20260720/p2p3_threeview/full_gate/.e2-s2-full-threeview.monitor/experiment.stdout.log",
-      "size": 12203
+      "size": 69519
     },
     "/Volumes/移动硬盘（512G）/ReSETP/baselines/e2_final_campaign_20260720/p2p3_threeview/full_gate/artifact_hashes.json": {
-      "exists": false,
-      "path": "/Volumes/移动硬盘（512G）/ReSETP/baselines/e2_final_campaign_20260720/p2p3_threeview/full_gate/artifact_hashes.json"
+      "age_seconds": 3.8404700756073,
+      "exists": true,
+      "mtime": 1784694160.87,
+      "path": "/Volumes/移动硬盘（512G）/ReSETP/baselines/e2_final_campaign_20260720/p2p3_threeview/full_gate/artifact_hashes.json",
+      "size": 1817
     },
     "/Volumes/移动硬盘（512G）/ReSETP/baselines/e2_final_campaign_20260720/p2p3_threeview/full_gate/decision.json": {
-      "exists": false,
-      "path": "/Volumes/移动硬盘（512G）/ReSETP/baselines/e2_final_campaign_20260720/p2p3_threeview/full_gate/decision.json"
+      "age_seconds": 3.950453996658325,
+      "exists": true,
+      "mtime": 1784694160.76,
+      "path": "/Volumes/移动硬盘（512G）/ReSETP/baselines/e2_final_campaign_20260720/p2p3_threeview/full_gate/decision.json",
+      "size": 549
     },
     "/Volumes/移动硬盘（512G）/ReSETP/baselines/e2_final_campaign_20260720/p2p3_threeview/full_gate/metadata.json": {
-      "exists": false,
-      "path": "/Volumes/移动硬盘（512G）/ReSETP/baselines/e2_final_campaign_20260720/p2p3_threeview/full_gate/metadata.json"
+      "age_seconds": 3.850443124771118,
+      "exists": true,
+      "mtime": 1784694160.86,
+      "path": "/Volumes/移动硬盘（512G）/ReSETP/baselines/e2_final_campaign_20260720/p2p3_threeview/full_gate/metadata.json",
+      "size": 2212
     },
     "/Volumes/移动硬盘（512G）/ReSETP/baselines/e2_final_campaign_20260720/p2p3_threeview/full_gate/raw_runs.csv": {
-      "age_seconds": 109.61296892166138,
+      "age_seconds": 4.280429840087891,
       "exists": true,
-      "mtime": 1784687881.66,
+      "mtime": 1784694160.43,
       "path": "/Volumes/移动硬盘（512G）/ReSETP/baselines/e2_final_campaign_20260720/p2p3_threeview/full_gate/raw_runs.csv",
-      "size": 26665
+      "size": 150523
     },
     "/Volumes/移动硬盘（512G）/ReSETP/baselines/e2_final_campaign_20260720/p2p3_threeview/full_gate/report.md": {
-      "exists": false,
-      "path": "/Volumes/移动硬盘（512G）/ReSETP/baselines/e2_final_campaign_20260720/p2p3_threeview/full_gate/report.md"
+      "age_seconds": 3.840484142303467,
+      "exists": true,
+      "mtime": 1784694160.87,
+      "path": "/Volumes/移动硬盘（512G）/ReSETP/baselines/e2_final_campaign_20260720/p2p3_threeview/full_gate/report.md",
+      "size": 409
     }
   },
-  "findings": [],
+  "findings": [
+    {
+      "code": "FEASIBILITY_RATE_LOW",
+      "details": {},
+      "message": "/Volumes/移动硬盘（512G）/ReSETP/baselines/e2_final_campaign_20260720/p2p3_threeview/full_gate/raw_runs.csv: feasible rate 0.9988",
+      "severity": "warning"
+    }
+  ],
   "log_paths": [
     "/Volumes/移动硬盘（512G）/ReSETP/baselines/e2_final_campaign_20260720/p2p3_threeview/full_gate/.e2-s2-full-threeview.monitor/experiment.stdout.log"
   ],
   "name": "e2-s2-full-threeview",
   "paused": false,
   "process": {
-    "alive": true,
-    "cpu_percent": 433.0,
-    "members": [
-      {
-        "command": "/Volumes/移动硬盘（512G）/ReSETP/build/python_envs/pyvrp-hgs-0.12.2/bin/python /Volumes/移动硬盘（512G）/ReSETP/baselines/e2_final_campaign_20260720/p2p3_threeview/full_gate/run_s2_full_threeview.py",
-        "cpu_percent": 0.0,
-        "elapsed": "37:40",
-        "pgid": 4217,
-        "pid": 4217,
-        "ppid": 1,
-        "rss_kb": 3936,
-        "state": "Ss"
-      },
-      {
-        "command": "/Volumes/移动硬盘（512G）/ReSETP/build/python_envs/pyvrp-hgs-0.12.2/bin/python -c from multiprocessing.resource_tracker import main;main(6)",
-        "cpu_percent": 0.0,
-        "elapsed": "37:39",
-        "pgid": 4217,
-        "pid": 4301,
-        "ppid": 4217,
-        "rss_kb": 1760,
-        "state": "S"
-      },
-      {
-        "command": "/Volumes/移动硬盘（512G）/ReSETP/build/python_envs/pyvrp-hgs-0.12.2/bin/python -c from multiprocessing.spawn import spawn_main; spawn_main(tracker_fd=7, pipe_handle=18) --multiprocessing-fork",
-        "cpu_percent": 71.7,
-        "elapsed": "37:39",
-        "pgid": 4217,
-        "pid": 4302,
-        "ppid": 4217,
-        "rss_kb": 22608,
-        "state": "R"
-      },
-      {
-        "command": "/Volumes/移动硬盘（512G）/ReSETP/build/python_envs/pyvrp-hgs-0.12.2/bin/python -c from multiprocessing.spawn import spawn_main; spawn_main(tracker_fd=7, pipe_handle=20) --multiprocessing-fork",
-        "cpu_percent": 71.8,
-        "elapsed": "37:39",
-        "pgid": 4217,
-        "pid": 4303,
-        "ppid": 4217,
-        "rss_kb": 24112,
-        "state": "R"
-      },
-      {
-        "command": "/Volumes/移动硬盘（512G）/ReSETP/build/python_envs/pyvrp-hgs-0.12.2/bin/python -c from multiprocessing.spawn import spawn_main; spawn_main(tracker_fd=7, pipe_handle=22) --multiprocessing-fork",
-        "cpu_percent": 71.8,
-        "elapsed": "37:39",
-        "pgid": 4217,
-        "pid": 4304,
-        "ppid": 4217,
-        "rss_kb": 22128,
-        "state": "R"
-      },
-      {
-        "command": "/Volumes/移动硬盘（512G）/ReSETP/build/python_envs/pyvrp-hgs-0.12.2/bin/python -c from multiprocessing.spawn import spawn_main; spawn_main(tracker_fd=7, pipe_handle=24) --multiprocessing-fork",
-        "cpu_percent": 71.9,
-        "elapsed": "37:39",
-        "pgid": 4217,
-        "pid": 4305,
-        "ppid": 4217,
-        "rss_kb": 24928,
-        "state": "R"
-      },
-      {
-        "command": "/Volumes/移动硬盘（512G）/ReSETP/build/python_envs/pyvrp-hgs-0.12.2/bin/python -c from multiprocessing.spawn import spawn_main; spawn_main(tracker_fd=7, pipe_handle=26) --multiprocessing-fork",
-        "cpu_percent": 72.6,
-        "elapsed": "37:39",
-        "pgid": 4217,
-        "pid": 4306,
-        "ppid": 4217,
-        "rss_kb": 24272,
-        "state": "R"
-      },
-      {
-        "command": "/Volumes/移动硬盘（512G）/ReSETP/build/python_envs/pyvrp-hgs-0.12.2/bin/python -c from multiprocessing.spawn import spawn_main; spawn_main(tracker_fd=7, pipe_handle=28) --multiprocessing-fork",
-        "cpu_percent": 73.2,
-        "elapsed": "37:39",
-        "pgid": 4217,
-        "pid": 4307,
-        "ppid": 4217,
-        "rss_kb": 23472,
-        "state": "R"
-      }
-    ],
+    "alive": false,
+    "cpu_percent": 0,
+    "members": [],
     "pgid": 4217,
     "root_pid": 4217,
-    "rss_mb": 143.765625
+    "rss_mb": 0.0
   },
   "protected_files": {
     "/Volumes/移动硬盘（512G）/ReSETP/baselines/e2_final_campaign_20260720/mv_hgs_sp_final/p3_china81_gate/raw_runs.csv": {
-      "age_seconds": 19962.94894719124,
+      "age_seconds": 26136.38120698929,
       "exists": true,
       "kind": "core_data",
       "mtime": 1784668028.33,
@@ -153,7 +95,7 @@
       "size": 68532
     },
     "/Volumes/移动硬盘（512G）/ReSETP/baselines/e2_final_campaign_20260720/mv_hgs_sp_final/run_p3_china81_formal.py": {
-      "age_seconds": 41179.948471069336,
+      "age_seconds": 47353.38111805916,
       "exists": true,
       "kind": "primary_config",
       "mtime": 1784646811.33,
@@ -162,7 +104,7 @@
       "size": 14194
     },
     "/Volumes/移动硬盘（512G）/ReSETP/data/ChinaInstances/china81_g1_independent_frozen_v2_20260718": {
-      "age_seconds": 292029.2799859047,
+      "age_seconds": 298202.7123179436,
       "exists": true,
       "kind": "core_data",
       "mtime": 1784395962.0,
@@ -170,7 +112,7 @@
       "size": 131072
     },
     "/Volumes/移动硬盘（512G）/ReSETP/docs/paper_submission_final/paper_main.tex": {
-      "age_seconds": 216966.86760401726,
+      "age_seconds": 223140.30094981194,
       "exists": true,
       "kind": "paper_conclusion",
       "mtime": 1784471024.41,
@@ -179,7 +121,7 @@
       "size": 93762
     },
     "/Volumes/移动硬盘（512G）/ReSETP/solver/src/setp_solver/check.py": {
-      "age_seconds": 189000.70358014107,
+      "age_seconds": 195174.1406519413,
       "exists": true,
       "kind": "evaluator",
       "mtime": 1784498990.57,
@@ -188,7 +130,7 @@
       "size": 33802
     },
     "/Volumes/移动硬盘（512G）/ReSETP/solver/src/setp_solver/cost.py": {
-      "age_seconds": 185669.18306016922,
+      "age_seconds": 191842.6205060482,
       "exists": true,
       "kind": "cost_function",
       "mtime": 1784502322.09,
@@ -197,7 +139,7 @@
       "size": 42643
     },
     "/Volumes/移动硬盘（512G）/ReSETP/solver/src/setp_solver/prices.py": {
-      "age_seconds": 194760.8370938301,
+      "age_seconds": 200934.27083992958,
       "exists": true,
       "kind": "primary_config",
       "mtime": 1784493230.44,
@@ -206,7 +148,7 @@
       "size": 17781
     },
     "/Volumes/移动硬盘（512G）/ReSETP/solver/src/setp_solver/search/evaluation.py": {
-      "age_seconds": 683845.975725174,
+      "age_seconds": 690019.4107630253,
       "exists": true,
       "kind": "evaluator",
       "mtime": 1784004145.3,
@@ -215,16 +157,16 @@
       "size": 7609
     }
   },
-  "runtime_seconds": 2259.5796360969543,
+  "runtime_seconds": 8433.12169289589,
   "schema_version": 1,
-  "state": "RUNNING",
+  "state": "COMPLETED",
   "system": {
-    "free_memory_mb": 148.875,
-    "load_average_15m": 9.86474609375,
-    "load_average_1m": 14.05810546875,
-    "load_average_5m": 10.7236328125,
+    "free_memory_mb": 3180.265625,
+    "load_average_15m": 7.88671875,
+    "load_average_1m": 6.01318359375,
+    "load_average_5m": 7.45556640625,
     "logical_cpus": 8,
-    "memory_pressure_free_percent": 29.0,
-    "swapouts": 65857343
+    "memory_pressure_free_percent": 69.0,
+    "swapouts": 66543716
   }
 }
