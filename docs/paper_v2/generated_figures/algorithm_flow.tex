@@ -6,7 +6,7 @@
 \begin{figure}[H]
 \centering
 \begin{tikzpicture}[
-    every node/.style={font=\fontsize{7.8}{9.3}\selectfont},
+    every node/.style={font=\fontsize{8.2}{9.6}\selectfont},
     block/.style={rectangle,draw,thin,text width=5.75cm,minimum height=7.6mm,
         align=center,inner xsep=3pt,inner ysep=2pt},
     compact/.style={rectangle,draw,thin,text width=3.15cm,minimum height=6.0mm,
@@ -17,7 +17,7 @@
     return/.style={-{Stealth[length=1.80mm,width=1.20mm]},line width=0.45pt,
         line join=miter},
     groupedge/.style={dashed,thin,line cap=butt,line join=miter},
-    labeltext/.style={font=\fontsize{6.8}{8.0}\selectfont,inner sep=1pt}
+    labeltext/.style={font=\fontsize{8.1}{9.4}\selectfont,inner sep=1pt}
 ]
 \node[block] (init) at (0,0) {\mbox{构造共同初始可行解}};
 \node[block] (mother) at (0,-1.10) {\mbox{HGS-M机制感知母体搜索}};
@@ -28,12 +28,12 @@
 \node[block] (pool) at (0,-4.60)
     {\mbox{汇集精英路线并去重，建立完整成本路线池}};
 \node[block] (sp) at (0,-5.68)
-    {\mbox{HiGHS精确求解集合划分；完整复核并单调接受}};
+    {\shortstack[c]{HiGHS精确求解集合划分；完整复核\\并单调接受}};
 
 \node[block] (view) at (0,-7.50)
     {\mbox{轮换三视角HGS-F/E/M，执行热启动延续搜索}};
 \node[block] (viewjudge) at (0,-8.58)
-    {\mbox{完整模型裁判：更新视角档案、$F^*$与停滞计数$s$}};
+    {\shortstack[c]{完整模型裁判：更新视角档案、$F^*$\\与停滞计数$s$}};
 
 \node[decision] (stop) at (0,-10.30)
     {\shortstack[c]{连续2轮无改进\\或已完成4轮}};

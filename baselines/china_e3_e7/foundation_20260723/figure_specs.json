@@ -1,0 +1,62 @@
+{
+  "families": {
+    "E3": {
+      "caption": "责任错配与跨场协同的配对成本变化",
+      "form": "paired_slope_or_dot_interval",
+      "output_stem": "e3_responsibility",
+      "x": "27个地区—规模统计单元",
+      "y": "总成本改善(%)"
+    },
+    "E4": {
+      "calendar_panel_days": 28,
+      "caption": "碳感知充电择时的充电侧排放变化",
+      "diagnostic_record_type": "daily_replay",
+      "form": "paired_effect_with_day_distribution",
+      "output_stem": "e4_charging",
+      "x": "地区/电网日",
+      "y": "充电侧排放变化(%)"
+    },
+    "E5": {
+      "caption": "非线性充电物理对可行性与成本的影响",
+      "form": "feasibility_and_cost_two_panel",
+      "output_stem": "e5_physics",
+      "x": "运行臂",
+      "y": "可行率与完整模型成本"
+    },
+    "E6": {
+      "caption": "公平参与约束的系统成本—成员收益边界",
+      "form": "cost_fairness_frontier",
+      "output_stem": "e6_fairness",
+      "x": "最低成员收益/公平约束",
+      "y": "系统成本变化"
+    },
+    "E7": {
+      "calendar_panel_days": 28,
+      "caption": "动态需求下协同、公平与时变碳机制的交互诊断",
+      "diagnostic_record_type": "stage_diagnostic",
+      "form": "dynamic_interaction_panel",
+      "output_stem": "e7_interaction",
+      "x": "滚动阶段",
+      "y": "成本、排放、协同与公平诊断"
+    }
+  },
+  "global": {
+    "caption_policy": "中文学术图题，不写内部 F/E 编号，不根据结果改变坐标轴范围。",
+    "figure_policy": "只从正式 raw_runs 和独立复算结果生成；无结果时不生成 PDF/PNG。",
+    "font_family": "STIXGeneral",
+    "palette": {
+      "control": "#6B7280",
+      "secondary": "#C77C2B",
+      "treatment": "#1F5A85",
+      "warning": "#9A3412"
+    }
+  },
+  "schema": "resetp.china.e3-e7-figure-specs.v1",
+  "source_families": [
+    "E3",
+    "E4",
+    "E5",
+    "E6",
+    "E7"
+  ]
+}

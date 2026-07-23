@@ -591,3 +591,15 @@ E7正式结果终验
   详见 `docs/handoff/memory/mv_hgs_sp_stage1_closeout_20260720.md`。
 - [E2终局战役施工图](../e2_final_algorithm_experiment_construction_20260720.md) — 07-20: 陈雨蝶表4/5/6/图4逐字段模仿+China81全量+跑完即关算法实验; P0-P5自动推进零询问; A/B/C/D主张阶梯预注册; PyVRP列=0.12.2真HGS母体(已裁定登记)
 - [论文V2全面重写](paper-v2-rewrite-20260720.md) — 07-20: 陈模板逐段对齐+邱基座+全切China81+MV-HGS-SP算法章; 择时候选集δ_l修正; 新增碳价×配额与决策目标两节(批准待排期); 数据全占位待封存CSV回填
+
+# 2026-07-23 中国 E3–E7 适配底座
+
+- 新增 `baselines/china_e3_e7/` 与
+  `data/ChinaInstances/china_e3_e7_foundation_contract_v1_20260723.json`；本轮只做 planning、
+  证据、统计、图表和论文接线，不启动正式搜索。
+- 预检 81/81 bundle、27 个 primary cell、5805 个订单通过；E3–E6 生成 3240 条 planning-only
+  任务，E7 只登记 2025 条全量投影和 75 条结果盲接线门。合同继续
+  `formal_search_allowed=false`、`search_evaluations=0`，E2 未改，UK 只读归档。
+- 中国主日历明确为 2025 年 2 月完整 28 日；2025-02-12 仅为共同解释日。raw schema 区分
+  `formal_run`、`daily_replay`、`stage_diagnostic`；表格还要求绑定 raw SHA 的独立复算证书。
+- 适配交接说明见 `docs/handoff/china_e3_e7_foundation_adapter_contract_20260723.md`。

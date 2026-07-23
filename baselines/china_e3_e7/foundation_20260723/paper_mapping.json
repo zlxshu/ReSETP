@@ -1,0 +1,131 @@
+{
+  "families": {
+    "E3": {
+      "arms": [
+        "status_quo_responsibility",
+        "optimized_responsibility_cooperation"
+      ],
+      "figure_keys": [
+        "e3_paired_effect",
+        "e3_responsibility_map",
+        "e3_summary_table"
+      ],
+      "primary_contrast": {
+        "control": "status_quo_responsibility",
+        "treatment": "optimized_responsibility_cooperation"
+      },
+      "primary_metric": "total_cost",
+      "result_sentence": "DATA_PLACEHOLDER",
+      "secondary_contrasts": [],
+      "table_key": "e3_summary_table",
+      "title_zh": "责任错配与跨场协同"
+    },
+    "E4": {
+      "arms": [
+        "immediate_charging",
+        "carbon_aware_charging"
+      ],
+      "figure_keys": [
+        "e4_charging_effect",
+        "e4_day_distribution",
+        "e4_summary_table"
+      ],
+      "primary_contrast": {
+        "control": "immediate_charging",
+        "treatment": "carbon_aware_charging"
+      },
+      "primary_metric": "charging_emissions",
+      "result_sentence": "DATA_PLACEHOLDER",
+      "secondary_contrasts": [],
+      "table_key": "e4_summary_table",
+      "title_zh": "固定路线下的碳感知充电择时"
+    },
+    "E5": {
+      "arms": [
+        "linear_plan_replay_nonlinear",
+        "integrated_nonlinear_search"
+      ],
+      "figure_keys": [
+        "e5_feasibility_cost",
+        "e5_physics_diagnostic",
+        "e5_summary_table"
+      ],
+      "primary_contrast": {
+        "control": "linear_plan_replay_nonlinear",
+        "treatment": "integrated_nonlinear_search"
+      },
+      "primary_metric": "feasible",
+      "result_sentence": "DATA_PLACEHOLDER",
+      "secondary_contrasts": [],
+      "table_key": "e5_summary_table",
+      "title_zh": "非线性充电物理的内生决策"
+    },
+    "E6": {
+      "arms": [
+        "independent_operation",
+        "fair_cooperation"
+      ],
+      "figure_keys": [
+        "e6_fairness_frontier",
+        "e6_member_benefit",
+        "e6_summary_table"
+      ],
+      "primary_contrast": {
+        "control": "independent_operation",
+        "treatment": "fair_cooperation"
+      },
+      "primary_metric": "member_min_benefit",
+      "result_sentence": "DATA_PLACEHOLDER",
+      "secondary_contrasts": [],
+      "table_key": "e6_summary_table",
+      "title_zh": "公平参与约束与协同溢价"
+    },
+    "E7": {
+      "arms": [
+        "static_no_replan",
+        "simple_insertion",
+        "full_dynamic",
+        "full_dynamic_fair",
+        "full_dynamic_carbon_blind"
+      ],
+      "figure_keys": [
+        "e7_interaction_panel",
+        "e7_stage_diagnostics",
+        "e7_summary_table"
+      ],
+      "primary_contrast": {
+        "control": "static_no_replan",
+        "treatment": "full_dynamic"
+      },
+      "primary_metric": "total_cost",
+      "result_sentence": "DATA_PLACEHOLDER",
+      "secondary_contrasts": [
+        {
+          "control": "simple_insertion",
+          "direction": "lower_is_better",
+          "id": "dynamic_vs_simple_insertion",
+          "treatment": "full_dynamic"
+        },
+        {
+          "control": "full_dynamic_carbon_blind",
+          "direction": "lower_is_better",
+          "id": "carbon_awareness",
+          "treatment": "full_dynamic"
+        }
+      ],
+      "table_key": "e7_summary_table",
+      "title_zh": "动态需求下的协同—公平—碳交互"
+    }
+  },
+  "generation_rule": "只有 formal raw_runs + independent recalc certificate + aggregate decision 可用时才替换 DATA_PLACEHOLDER。",
+  "paper_tex": "docs/paper_v2/paper_main.tex",
+  "schema": "resetp.china.e3-e7-paper-mapping.v1",
+  "source_policy": {
+    "e2_policy": "E2 China81 tables and figures remain unchanged and are not recomputed by this adapter.",
+    "figure_style": "Chinese academic three-line tables, restrained line/point figures, no internal F/E numbering in captions, and no result-driven axis changes.",
+    "paper_tex": "docs/paper_v2/paper_main.tex",
+    "result_policy": "E3-E7 tables and figures remain DATA_PLACEHOLDER until a sealed raw_runs.csv and independent recalc certificate exist.",
+    "uk_policy": "UK series are archive-only and are excluded from China mainline manifests, aggregates, tables and figures."
+  },
+  "status": "PLACEHOLDER_ONLY_UNTIL_SEALED_RESULTS"
+}

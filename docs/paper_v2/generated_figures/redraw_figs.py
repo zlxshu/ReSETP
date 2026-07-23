@@ -4,6 +4,7 @@
 Pure presentation from sealed CSVs; no data change, no optimization.
 """
 import csv
+import math
 from collections import defaultdict
 from pathlib import Path
 
@@ -12,8 +13,14 @@ matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 
 plt.rcParams.update({
-    "font.family": ["Songti SC", "Times New Roman"],
+    # Journal contract: English letters/digits use Times New Roman, while
+    # Chinese glyphs fall back to Songti SC.
+    "font.family": ["Times New Roman", "Songti SC"],
     "font.size": 9,
+    "mathtext.fontset": "custom",
+    "mathtext.rm": "Times New Roman",
+    "mathtext.it": "Times New Roman:italic",
+    "mathtext.bf": "Times New Roman:bold",
     # Publisher-safe embedded TrueType outlines; avoid Matplotlib Type-3 text.
     "pdf.fonttype": 42,
     "ps.fonttype": 42,
@@ -33,7 +40,12 @@ STYLES = {
     # line styles and the proposed method in red dash-dot.
     "HGS-F": dict(color="#7b2cbf", linestyle="-"),
     "HGS-E": dict(color="#2ca02c", linestyle="--"),
-    "HGS-M": dict(color="#1f77b4", linestyle=":"),
+    # A darker blue and a deliberately coarse round-dot pattern keep HGS-M
+    # distinct from the proposed method's dash-dot line in monochrome print.
+    # The pattern is coarser and thicker than Matplotlib's default dotted line
+    # so it remains visible at final journal size.
+    "HGS-M": dict(color="#0057a6", linestyle=(0, (1.1, 1.55)),
+                  dash_capstyle="round"),
     "MV-HGS-SP": dict(color="#d62728", linestyle="-."),
 }
 
@@ -68,7 +80,7 @@ for name in ALGOS:
 fig, ax = plt.subplots(figsize=(4.30, 2.80))
 fig.subplots_adjust(left=0.14, right=0.98, bottom=0.18, top=0.98)
 xmax_data = max(p[0] for pts in curves.values() for p in pts)
-xmax = xmax_data * 1.16
+xmax = xmax_data * 1.08
 for name in ALGOS:
     pts = curves[name]
     xs = [p[0] for p in pts]
@@ -76,6 +88,8 @@ for name in ALGOS:
     style = dict(STYLES[name])
     if name == "MV-HGS-SP":
         style.update(linewidth=1.00, alpha=1.0, zorder=5)
+    elif name == "HGS-M":
+        style.update(linewidth=1.02, alpha=1.0, zorder=4)
     else:
         style.update(linewidth=0.78, alpha=0.96, zorder=3)
     # Chen et al. (2025, Fig. 4) joins recorded incumbent observations with
@@ -83,18 +97,24 @@ for name in ALGOS:
     # and costs exactly; no smoothing or interpolation points are introduced.
     ax.plot(xs, ys, label=name, **style)
 
-ax.set_xlim(0, xmax)
+# Leave a small optical margin before time zero, as in the Chen et al. shell,
+# without changing any timestamp, tick value, or result.
+xpad = xmax_data * 0.025
+tick_step = 0.1 if xmax <= 0.8 else 0.2
+tick_stop = math.floor(xmax / tick_step) * tick_step
+ax.set_xticks([i * tick_step for i in range(round(tick_stop / tick_step) + 1)])
+ax.set_xlim(-xpad, xmax)
 ax.set_ylim(2345, 2620)
 ax.set_yticks([2350, 2400, 2450, 2500, 2550, 2600])
 ax.set_xlabel("时间(min)")
 ax.set_ylabel("成本(元)")
 ax.grid(False)
-ax.legend(loc="upper right", fontsize=6.8, frameon=False,
+ax.legend(loc="upper right", fontsize=6.9, frameon=False,
           handlelength=2.25, handletextpad=0.55, labelspacing=0.28,
           borderaxespad=0.55)
 
-fig.savefig(OUT / "figure4_convergence_v11.pdf", bbox_inches="tight", pad_inches=0.02)
-fig.savefig(OUT / "figure4_convergence_v11.png", dpi=300, bbox_inches="tight", pad_inches=0.02)
+fig.savefig(OUT / "figure4_convergence_v12.pdf", bbox_inches="tight", pad_inches=0.02)
+fig.savefig(OUT / "figure4_convergence_v12.png", dpi=300, bbox_inches="tight", pad_inches=0.02)
 plt.close(fig)
 
 # ---------- Figure 3: carbon intensity, urban-agglomeration legend ----------
@@ -125,12 +145,12 @@ ax.set_xticks(range(0, 25, 4))
 all_y = [value for pts in series.values() for _, value in pts]
 ax.set_ylim(0, max(all_y) * 1.05)
 ax.set_xlabel("时刻(h)")
-ax.set_ylabel("碳强度(gCO$_2$/kWh)")
+ax.set_ylabel("碳强度(g CO₂/kWh)")
 ax.grid(False)
-ax.legend(loc="lower left", fontsize=6.8, frameon=False,
+ax.legend(loc="lower left", fontsize=6.9, frameon=False,
           handlelength=2.15, handletextpad=0.55, labelspacing=0.28,
           borderaxespad=0.55)
-fig.savefig(OUT / "figure3_carbon_profile_v11.pdf", bbox_inches="tight", pad_inches=0.02)
-fig.savefig(OUT / "figure3_carbon_profile_v11.png", dpi=300, bbox_inches="tight", pad_inches=0.02)
+fig.savefig(OUT / "figure3_carbon_profile_v12.pdf", bbox_inches="tight", pad_inches=0.02)
+fig.savefig(OUT / "figure3_carbon_profile_v12.png", dpi=300, bbox_inches="tight", pad_inches=0.02)
 plt.close(fig)
-print("done: v11 figures written")
+print("done: v12 figures written")
