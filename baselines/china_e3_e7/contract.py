@@ -12,7 +12,9 @@ from typing import Any, Iterable
 
 ROOT = Path(__file__).resolve().parents[2]
 CONTRACT_PATH = (
-    ROOT / "data/ChinaInstances/china_e3_e7_foundation_contract_v1_20260723.json"
+    ROOT
+    / "data/ChinaInstances/"
+    "china_e3_formal_release_contract_v4_20260723.json"
 )
 
 

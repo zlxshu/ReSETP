@@ -1,0 +1,17 @@
+{
+  "algorithm_or_score_changed": false,
+  "all_final_costs_equal": true,
+  "curve_definition": "monotone running minimum of complete-model scores obtained by offline completion of copy-only HGS proxy-best snapshots",
+  "observation_only": true,
+  "official_score_definition": "sealed final exact-elite/MIP output in corrected S3; trajectory observations never replace table scores",
+  "representative_instance_id": "cn-prd-50c-01-V2-LOCATIONS",
+  "schema": "resetp.d6-corrected-s3-trajectories.decision.v1",
+  "selected_seed_by_arm": {
+    "HGS-E": 10,
+    "HGS-F": 1,
+    "HGS-M": 5,
+    "MV-HGS-SP": 1
+  },
+  "shape_based_selection": false,
+  "verdict": "PASS_D6_CORRECTED_S3_TRAJECTORIES"
+}

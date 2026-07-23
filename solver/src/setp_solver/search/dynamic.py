@@ -1500,14 +1500,35 @@ def _filter_initial_plan(
 ) -> Solution | None:
     if plan is None:
         return None
-    node_ids = {node.node_id for node in instance.nodes}
+    node_lookup = {node.node_id: node for node in instance.nodes}
+    node_ids = set(node_lookup)
     routes: list[Route] = []
     vehicle_map: dict[str, str] = {}
     for route in plan.routes:
-        customers = [node_id for node_id in route.node_sequence if node_id in active_ids]
+        customers = [
+            node_id
+            for node_id in route.node_sequence
+            if node_id in active_ids
+        ]
         if not customers or route.home_depot_id not in node_ids:
             continue
-        seq = [route.home_depot_id, *customers, route.home_depot_id]
+        # Keep public-station visits in their original position.  Rebuilding a
+        # route from customer ids alone used to detach retained charging
+        # actions from their station visit, after which the stage silently
+        # discarded the supplied plan and constructed an unrelated fallback.
+        # Other depots are not legal static-route interior nodes.
+        interior = [
+            node_id
+            for node_id in route.node_sequence[1:-1]
+            if (
+                node_id in active_ids
+                or (
+                    node_id in node_lookup
+                    and node_lookup[node_id].node_type.lower() == "f"
+                )
+            )
+        ]
+        seq = [route.home_depot_id, *interior, route.home_depot_id]
         if all(node_id in node_ids for node_id in seq):
             vehicle_id = route.vehicle_id
             vehicle_map[route.vehicle_id] = vehicle_id

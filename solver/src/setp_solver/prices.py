@@ -117,6 +117,10 @@ class PriceParameters:
     B_battery_kwh: float = B_battery_kwh
     initial_ev_battery_kwh: float = initial_ev_battery_kwh
     diesel_price: float = diesel_price
+    # Optional route-origin city overrides. The empty tuple preserves every
+    # historical/default scenario; China81 formal bundles provide a complete
+    # nine-city tuple and fail closed when a route-origin city is absent.
+    diesel_price_by_city: tuple[tuple[str, float], ...] = ()
     electricity_price: float = electricity_price
     station_electricity_price: float = station_electricity_price
     depot_electricity_price: float = depot_electricity_price

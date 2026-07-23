@@ -76,3 +76,38 @@ def test_pyvrp_result_passes_shared_full_completion() -> None:
     assert run.stats["shared_completion_schema"] == (
         "resetp.china81-shared-completion.v1"
     )
+
+
+def test_hard_home_depot_lock_is_encoded_in_capacity_dimensions() -> None:
+    bundle = load_china81_bundle(
+        ROOT,
+        "cn-prd-50c-01-V2-LOCATIONS",
+    )
+    unlocked = build_pyvrp_problem(
+        bundle,
+        hard_home_depot_lock=False,
+    ).model.data()
+    locked = build_pyvrp_problem(
+        bundle,
+        hard_home_depot_lock=True,
+    ).model.data()
+    depots = list(locked.depots())
+    depot_index = {
+        depot.name: index
+        for index, depot in enumerate(depots)
+    }
+
+    assert unlocked.num_load_dimensions == 1
+    assert locked.num_load_dimensions == 1 + len(depots)
+    for client in locked.clients():
+        owner = bundle.customer_home_depot[client.name]
+        owner_dimension = 1 + depot_index[owner]
+        assert client.delivery[owner_dimension] == 1
+        assert sum(client.delivery[1:]) == 1
+
+    for vehicle_type in locked.vehicle_types():
+        home_depot = depots[vehicle_type.start_depot].name
+        assert vehicle_type.start_depot == vehicle_type.end_depot
+        for depot_id, index in depot_index.items():
+            capacity = vehicle_type.capacity[1 + index]
+            assert (capacity > 0) == (depot_id == home_depot)

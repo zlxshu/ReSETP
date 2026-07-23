@@ -83,6 +83,17 @@ def render_tables(
     else:
         for family in contract["families"]:
             family_rows = [row for row in usable if row.get("family") == family["id"]]
+            if not family_rows:
+                statuses.append(
+                    {
+                        "family": family["id"],
+                        "status": "NO_FORMAL_RESULTS_NO_TABLE",
+                        "reason": (
+                            "该 family 尚无完成且独立复算通过的统计行"
+                        ),
+                    }
+                )
+                continue
             path = output_dir / f"{family['id'].lower()}_summary.tex"
             lines = [
                 r"\begin{table}[H]",

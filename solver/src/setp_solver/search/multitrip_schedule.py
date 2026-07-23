@@ -25,6 +25,7 @@ from ..cost import (
     _price,
     best_charging_action_start,
     carbon_profile_row_for_slot,
+    charging_curve_for_action,
     charging_slot_breakdown,
     ev_instance_arc_energy_kwh,
 )
@@ -52,6 +53,8 @@ class TripTiming:
     earliest_departure_second: float
     return_second: float
     drive_energy_kwh: float
+    public_charge_energy_kwh: float = 0.0
+    required_departure_battery_kwh: float | None = None
 
 
 @dataclass(frozen=True)
@@ -68,6 +71,8 @@ class ScheduledTrip:
     end_battery_kwh: float | None
     charge_start_second: float | None = None
     charge_energy_kwh: float | None = None
+    in_route_charge_energy_kwh: float = 0.0
+    fixed_departure_battery_kwh: float | None = None
 
 
 @dataclass(frozen=True)
@@ -283,6 +288,8 @@ def route_timing(
     route: Route,
     instance: Instance,
     prices: PriceParameters | dict[str, float] | Any = DEFAULT_PRICES,
+    *,
+    charging_actions: list[ChargingAction] | None = None,
 ) -> TripTiming:
     """Compute one legal route-to-trip interval without changing route schema.
 
@@ -299,46 +306,96 @@ def route_timing(
     nodes = {node.node_id: node for node in instance.nodes}
     if any(node_id not in nodes for node_id in route.node_sequence):
         raise ValueError(f"{CONTRACT_ID}: route {route.vehicle_id} references an unknown node")
-    if any(nodes[node_id].node_type.lower() == "f" for node_id in route.node_sequence):
-        raise ValueError(f"{CONTRACT_ID}: public-station trips are unsupported by the V1 structural gate")
+    route_actions = [
+        action
+        for action in (charging_actions or [])
+        if action.vehicle_id == route.vehicle_id
+    ]
+    public_actions: dict[str, list[ChargingAction]] = {}
+    for action in route_actions:
+        station = nodes.get(action.station_id)
+        if (
+            station is None
+            or station.node_type.lower() != "f"
+            or action.station_id not in route.node_sequence
+        ):
+            continue
+        if route.node_sequence.count(action.station_id) != 1:
+            raise ValueError(
+                f"{CONTRACT_ID}: route {route.vehicle_id} repeats public "
+                "station without an occurrence index"
+            )
+        if int(action.charge_day_offset) != 0:
+            raise ValueError(
+                f"{CONTRACT_ID}: in-route public charging must use day 0"
+            )
+        public_actions.setdefault(action.station_id, []).append(action)
+    for actions in public_actions.values():
+        actions.sort(
+            key=lambda action: (
+                float(action.charge_start_second),
+                float(action.occupancy_minutes),
+            )
+        )
 
     origin = nodes[route.home_depot_id]
     # A trip has no departure field in the frozen Route schema. Compute the
     # latest feasible origin service time by the standard backward time-window
     # recursion, then replay forward. The former "remove all waiting" shortcut
     # could push an early-due customer past its deadline on mixed-shift routes.
-    elapsed = float(origin.service_time)
-    departure_candidates = [float(origin.ready_time) + float(origin.service_time)]
-    for from_id, to_id in zip(route.node_sequence, route.node_sequence[1:]):
-        _, travel, _ = instance.arc_metrics(
-            from_id,
-            to_id,
-            route.vehicle_type,
-            fallback_speed_mps=_price(prices, "v_speed_ms"),
-        )
-        elapsed += travel
-        departure_candidates.append(float(nodes[to_id].ready_time) - elapsed)
-        elapsed += float(nodes[to_id].service_time)
-    preferred_departure = max(departure_candidates)
+    if public_actions:
+        # Existing public-charge clocks are part of the solution witness.
+        # Keep the canonical earliest depot departure and verify those clocks;
+        # do not move or recreate a station action inside the certificate.
+        depart = float(origin.ready_time) + float(origin.service_time)
+    else:
+        elapsed = float(origin.service_time)
+        departure_candidates = [
+            float(origin.ready_time) + float(origin.service_time)
+        ]
+        for from_id, to_id in zip(
+            route.node_sequence,
+            route.node_sequence[1:],
+        ):
+            _, travel, _ = instance.arc_metrics(
+                from_id,
+                to_id,
+                route.vehicle_type,
+                fallback_speed_mps=_price(prices, "v_speed_ms"),
+            )
+            elapsed += travel
+            departure_candidates.append(
+                float(nodes[to_id].ready_time) - elapsed
+            )
+            elapsed += float(nodes[to_id].service_time)
+        preferred_departure = max(departure_candidates)
 
-    latest_start = float(nodes[route.node_sequence[-1]].due_time)
-    for index in range(len(route.node_sequence) - 2, -1, -1):
-        node = nodes[route.node_sequence[index]]
-        next_id = route.node_sequence[index + 1]
-        _, travel, _ = instance.arc_metrics(
-            route.node_sequence[index],
-            next_id,
-            route.vehicle_type,
-            fallback_speed_mps=_price(prices, "v_speed_ms"),
-        )
-        latest_start = min(float(node.due_time), latest_start - float(node.service_time) - travel)
-    if latest_start < float(origin.ready_time) - _TOL:
-        raise ValueError(f"{CONTRACT_ID}: route {route.vehicle_id} has no feasible departure time")
-    latest_departure = latest_start + float(origin.service_time)
-    depart = min(preferred_departure, latest_departure)
+        latest_start = float(nodes[route.node_sequence[-1]].due_time)
+        for index in range(len(route.node_sequence) - 2, -1, -1):
+            node = nodes[route.node_sequence[index]]
+            next_id = route.node_sequence[index + 1]
+            _, travel, _ = instance.arc_metrics(
+                route.node_sequence[index],
+                next_id,
+                route.vehicle_type,
+                fallback_speed_mps=_price(prices, "v_speed_ms"),
+            )
+            latest_start = min(
+                float(node.due_time),
+                latest_start - float(node.service_time) - travel,
+            )
+        if latest_start < float(origin.ready_time) - _TOL:
+            raise ValueError(
+                f"{CONTRACT_ID}: route {route.vehicle_id} has no feasible "
+                "departure time"
+            )
+        latest_departure = latest_start + float(origin.service_time)
+        depart = min(preferred_departure, latest_departure)
     earliest_departure = depart
     loads = _arc_loads(route.node_sequence, nodes)
     energy = 0.0
+    public_energy = 0.0
+    required_departure: float | None = None
     for idx, (from_id, to_id) in enumerate(zip(route.node_sequence, route.node_sequence[1:])):
         _, travel, _ = instance.arc_metrics(
             from_id,
@@ -351,7 +408,6 @@ def route_timing(
         start = max(arrive, float(node.ready_time))
         if start > float(node.due_time) + 1e-6:
             raise ValueError(f"{CONTRACT_ID}: route {route.vehicle_id} misses {to_id}'s time window")
-        depart = start + float(node.service_time)
         if route.vehicle_type.lower() == "ev":
             energy += ev_instance_arc_energy_kwh(
                 instance,
@@ -360,12 +416,123 @@ def route_timing(
                 loads[idx],
                 prices,
             )
+        station_actions = public_actions.get(to_id, [])
+        if station_actions:
+            previous_end = start
+            for action in station_actions:
+                action_start = float(action.charge_start_second)
+                action_end = (
+                    action_start
+                    + float(action.occupancy_minutes) * 60.0
+                )
+                if action_start < previous_end - _TOL:
+                    raise ValueError(
+                        f"{CONTRACT_ID}: public charge for {route.vehicle_id} "
+                        f"starts before arrival or a prior session ends"
+                    )
+                curve_state = charging_curve_for_action(
+                    action,
+                    instance,
+                    prices,
+                )
+                if curve_state is None:
+                    raise ValueError(
+                        f"{CONTRACT_ID}: strict public charging requires "
+                        "explicit nonlinear energy-state metadata"
+                    )
+                _, action_start_energy, _ = curve_state
+                candidate_departure = (
+                    action_start_energy + energy - public_energy
+                )
+                if required_departure is None:
+                    required_departure = candidate_departure
+                elif abs(required_departure - candidate_departure) > _TOL:
+                    raise ValueError(
+                        f"{CONTRACT_ID}: public charging SOC metadata does "
+                        "not close to one departure battery"
+                    )
+                public_energy += float(action.energy_kwh)
+                previous_end = action_end
+            depart = previous_end
+        else:
+            depart = start + float(node.service_time)
     battery = instance.battery_capacity_kwh(
         fallback=_price(prices, "B_battery_kwh"),
     )
-    if route.vehicle_type.lower() == "ev" and energy > battery + 1e-6:
-        raise ValueError(f"{CONTRACT_ID}: route {route.vehicle_id} exceeds one full battery")
-    return TripTiming(route.vehicle_id, route.vehicle_type.lower(), route.home_depot_id, earliest_departure, depart, energy)
+    if route.vehicle_type.lower() == "ev":
+        if required_departure is None:
+            if energy > battery + 1e-6:
+                raise ValueError(
+                    f"{CONTRACT_ID}: route {route.vehicle_id} exceeds one "
+                    "full battery"
+                )
+        else:
+            if (
+                required_departure < -_TOL
+                or required_departure > battery + _TOL
+            ):
+                raise ValueError(
+                    f"{CONTRACT_ID}: route {route.vehicle_id} has an invalid "
+                    "public-charge departure battery"
+                )
+            route_battery = required_departure
+            for idx, (from_id, to_id) in enumerate(
+                zip(route.node_sequence, route.node_sequence[1:])
+            ):
+                route_battery -= ev_instance_arc_energy_kwh(
+                    instance,
+                    from_id,
+                    to_id,
+                    loads[idx],
+                    prices,
+                )
+                if route_battery < -_TOL:
+                    raise ValueError(
+                        f"{CONTRACT_ID}: route {route.vehicle_id} runs out "
+                        f"of battery before {to_id}"
+                    )
+                for action in public_actions.get(to_id, []):
+                    if (
+                        action.start_energy_kwh is None
+                        or action.end_energy_kwh is None
+                    ):
+                        raise ValueError(
+                            f"{CONTRACT_ID}: public charging has incomplete "
+                            "energy-state metadata"
+                        )
+                    if (
+                        abs(
+                            route_battery
+                            - float(action.start_energy_kwh)
+                        )
+                        > _TOL
+                    ):
+                        raise ValueError(
+                            f"{CONTRACT_ID}: public charging SOC start does "
+                            "not match the route battery"
+                        )
+                    route_battery += float(action.energy_kwh)
+                    if route_battery > battery + _TOL:
+                        raise ValueError(
+                            f"{CONTRACT_ID}: public charging exceeds battery "
+                            "capacity"
+                        )
+            expected_end = required_departure + public_energy - energy
+            if abs(route_battery - expected_end) > _TOL:
+                raise ValueError(
+                    f"{CONTRACT_ID}: public charging battery ledger does not "
+                    "close"
+                )
+    return TripTiming(
+        route.vehicle_id,
+        route.vehicle_type.lower(),
+        route.home_depot_id,
+        earliest_departure,
+        depart,
+        energy,
+        public_energy,
+        required_departure,
+    )
 
 
 def build_multitrip_certificate(
@@ -375,6 +542,7 @@ def build_multitrip_certificate(
     *,
     recharge_mode: str = CHARGE_MODE_ON_DEMAND,
     initial_departure_battery_by_route: dict[str, float] | None = None,
+    charging_actions: list[ChargingAction] | None = None,
 ) -> MultiTripCertificate:
     """Build a reproducible physical-vehicle schedule for one fixed route set.
 
@@ -395,7 +563,15 @@ def build_multitrip_certificate(
         fallback=_price(prices, "B_battery_kwh"),
     )
     charging_curve = _curve_for_prices(prices, instance)
-    timings = [route_timing(route, instance, prices) for route in routes]
+    timings = [
+        route_timing(
+            route,
+            instance,
+            prices,
+            charging_actions=charging_actions,
+        )
+        for route in routes
+    ]
     scheduled: list[ScheduledTrip] = []
     counts = {"cv": 0, "ev": 0}
     for (depot, vehicle_type) in sorted({(t.home_depot_id, t.vehicle_type) for t in timings}):
@@ -492,7 +668,20 @@ def _schedule_ev_group(
             gap_seconds = timing.earliest_departure_second - state.available_second
             if gap_seconds < -_TOL:
                 continue
-            if recharge_mode == CHARGE_MODE_FULL:
+            fixed_departure = timing.required_departure_battery_kwh
+            if fixed_departure is not None:
+                maximum_departure = charging_curve.reachable_energy_kwh(
+                    state.battery_kwh,
+                    max(0.0, gap_seconds),
+                )
+                if (
+                    state.battery_kwh > fixed_departure + _TOL
+                    or maximum_departure + _TOL < fixed_departure
+                ):
+                    continue
+                departure_battery = fixed_departure
+                charge_energy = departure_battery - state.battery_kwh
+            elif recharge_mode == CHARGE_MODE_FULL:
                 # Under the V1 contract the previous trip was replenished to
                 # full before the vehicle became available again.
                 departure_battery = battery_kwh
@@ -503,7 +692,11 @@ def _schedule_ev_group(
                     max(0.0, gap_seconds),
                 )
                 charge_energy = departure_battery - state.battery_kwh
-            if departure_battery + _TOL < timing.drive_energy_kwh:
+            required_net_energy = (
+                timing.drive_energy_kwh
+                - timing.public_charge_energy_kwh
+            )
+            if departure_battery + _TOL < required_net_energy:
                 continue
             candidates.append((departure_battery, -state.available_second, state, charge_energy))
         if candidates:
@@ -528,19 +721,40 @@ def _schedule_ev_group(
             start_battery = battery_kwh if recharge_mode == CHARGE_MODE_FULL else state.battery_kwh + charge_energy
         else:
             next_local_id += 1
-            start_battery = (
-                battery_kwh
-                if recharge_mode == CHARGE_MODE_FULL
-                else float(initial_departure_battery_by_route.get(timing.route_id, battery_kwh))
-            )
+            if timing.required_departure_battery_kwh is not None:
+                start_battery = timing.required_departure_battery_kwh
+            else:
+                start_battery = (
+                    battery_kwh
+                    if recharge_mode == CHARGE_MODE_FULL
+                    else float(
+                        initial_departure_battery_by_route.get(
+                            timing.route_id,
+                            battery_kwh,
+                        )
+                    )
+                )
             if start_battery > battery_kwh + _TOL:
                 raise ValueError(f"{CONTRACT_ID}: route {timing.route_id} starts above battery capacity")
-            if start_battery + _TOL < timing.drive_energy_kwh:
+            if (
+                start_battery
+                + timing.public_charge_energy_kwh
+                + _TOL
+                < timing.drive_energy_kwh
+            ):
                 raise ValueError(f"{CONTRACT_ID}: route {timing.route_id} has insufficient first-trip departure battery")
             state = _EVVehicleState(next_local_id, 1, timing.earliest_departure_second, start_battery, None)
-        end_battery = start_battery - timing.drive_energy_kwh
+        end_battery = (
+            start_battery
+            + timing.public_charge_energy_kwh
+            - timing.drive_energy_kwh
+        )
         physical_id = f"EV_{depot}_{state.local_id}"
-        charge_energy_after = timing.drive_energy_kwh if recharge_mode == CHARGE_MODE_FULL else 0.0
+        charge_energy_after = (
+            battery_kwh - end_battery
+            if recharge_mode == CHARGE_MODE_FULL
+            else 0.0
+        )
         charge_seconds_after = (
             charging_curve.duration_seconds(end_battery, battery_kwh)
             if charge_energy_after > _TOL
@@ -559,6 +773,8 @@ def _schedule_ev_group(
             end_battery,
             timing.return_second if charge_energy_after > _TOL else None,
             charge_energy_after if charge_energy_after > _TOL else None,
+            timing.public_charge_energy_kwh,
+            timing.required_departure_battery_kwh,
         )
         state.available_second = timing.return_second + charge_seconds_after if recharge_mode == CHARGE_MODE_FULL else timing.return_second
         state.battery_kwh = battery_kwh if recharge_mode == CHARGE_MODE_FULL else end_battery
@@ -566,7 +782,13 @@ def _schedule_ev_group(
         if state not in states:
             states.append(state)
     result = list(scheduled.values())
-    if recharge_mode in {CHARGE_MODE_PARTIAL, CHARGE_MODE_ON_DEMAND}:
+    if (
+        recharge_mode in {CHARGE_MODE_PARTIAL, CHARGE_MODE_ON_DEMAND}
+        and all(
+            trip.fixed_departure_battery_kwh is None
+            for trip in result
+        )
+    ):
         result = _minimize_ev_chain_charging(result, charging_curve)
     return result, next_local_id
 
@@ -682,16 +904,37 @@ def validate_multitrip_certificate(
             if trip.vehicle_type != "ev":
                 continue
             start_battery = float(trip.start_battery_kwh or 0.0)
-            if float(trip.end_battery_kwh or 0.0) < -_TOL:
+            end_battery = float(trip.end_battery_kwh or 0.0)
+            if end_battery < -_TOL:
                 raise ValueError(f"{CONTRACT_ID}: {vehicle_id} has negative battery")
+            if end_battery > battery_kwh + _TOL:
+                raise ValueError(
+                    f"{CONTRACT_ID}: {vehicle_id} returns above battery capacity"
+                )
             if start_battery > battery_kwh + _TOL:
                 raise ValueError(f"{CONTRACT_ID}: {vehicle_id} exceeds battery capacity at departure")
+            if (
+                trip.fixed_departure_battery_kwh is not None
+                and abs(
+                    start_battery
+                    - float(trip.fixed_departure_battery_kwh)
+                )
+                > _TOL
+            ):
+                raise ValueError(
+                    f"{CONTRACT_ID}: {vehicle_id} public-charge departure "
+                    "battery is not preserved"
+                )
+            if float(trip.in_route_charge_energy_kwh) < -_TOL:
+                raise ValueError(
+                    f"{CONTRACT_ID}: {vehicle_id} has negative in-route charge"
+                )
             energy = float(trip.charge_energy_kwh or 0.0)
             if certificate.recharge_mode == CHARGE_MODE_FULL:
-                needed = battery_kwh - float(trip.end_battery_kwh or 0.0)
+                needed = battery_kwh - end_battery
                 if abs(energy - needed) > _TOL:
                     raise ValueError(f"{CONTRACT_ID}: {vehicle_id} full recharge does not replenish used energy")
-            elif float(trip.end_battery_kwh or 0.0) + energy > battery_kwh + _TOL:
+            elif end_battery + energy > battery_kwh + _TOL:
                 raise ValueError(f"{CONTRACT_ID}: {vehicle_id} partial recharge exceeds battery capacity")
             if energy > _TOL:
                 if trip.charge_start_second is None:
@@ -832,6 +1075,7 @@ def prepare_multitrip_solution(
             prices,
             recharge_mode=CHARGE_MODE_ON_DEMAND,
             initial_departure_battery_by_route=initial_departure,
+            charging_actions=list(solution.charging_actions),
         )
         certificate = _reuse_existing_between_trip_times(
             certificate,
@@ -935,7 +1179,15 @@ def _certificate_from_prepared_solution(
     inherited = _price(prices, "initial_ev_battery_kwh")
     charging_curve = _curve_for_prices(prices, instance)
     require_explicit = charging_curve.curve_id != L100_CONTROL.curve_id
-    timings = {route.vehicle_id: route_timing(route, instance, prices) for route in solution.routes}
+    timings = {
+        route.vehicle_id: route_timing(
+            route,
+            instance,
+            prices,
+            charging_actions=list(solution.charging_actions),
+        )
+        for route in solution.routes
+    }
     routes = {route.vehicle_id: route for route in solution.routes}
     actions: dict[str, list[ChargingAction]] = {}
     for action in solution.charging_actions:
@@ -955,12 +1207,41 @@ def _certificate_from_prepared_solution(
             trip_index = int(route.vehicle_id.rsplit("#T", 1)[1])
             timing = timings[route.vehicle_id]
             depot_actions = [action for action in actions.get(route.vehicle_id, []) if action.station_id == route.home_depot_id]
+            public_actions = [
+                action
+                for action in actions.get(route.vehicle_id, [])
+                if action.station_id != route.home_depot_id
+            ]
             depot_energy = sum(float(action.energy_kwh) for action in depot_actions)
+            public_energy = sum(
+                float(action.energy_kwh)
+                for action in public_actions
+            )
             if vehicle_type == "ev":
                 start_battery = inherited + depot_energy if position == 0 else float(previous_end or 0.0) + depot_energy
-                if start_battery > battery_cap + _TOL or start_battery + _TOL < timing.drive_energy_kwh:
+                if (
+                    start_battery > battery_cap + _TOL
+                    or start_battery + public_energy + _TOL
+                    < timing.drive_energy_kwh
+                ):
                     raise ValueError(f"{CONTRACT_ID}: prepared route {route.vehicle_id} has a broken battery ledger")
-                end_battery = start_battery - timing.drive_energy_kwh
+                if (
+                    timing.required_departure_battery_kwh is not None
+                    and abs(
+                        start_battery
+                        - timing.required_departure_battery_kwh
+                    )
+                    > _TOL
+                ):
+                    raise ValueError(
+                        f"{CONTRACT_ID}: prepared public-charge route "
+                        f"{route.vehicle_id} has a shifted departure battery"
+                    )
+                end_battery = (
+                    start_battery
+                    + public_energy
+                    - timing.drive_energy_kwh
+                )
                 if depot_energy > _TOL:
                     if require_explicit and len(depot_actions) != 1:
                         raise ValueError(
@@ -990,6 +1271,10 @@ def _certificate_from_prepared_solution(
                     timing.return_second,
                     start_battery,
                     end_battery,
+                    in_route_charge_energy_kwh=public_energy,
+                    fixed_departure_battery_kwh=(
+                        timing.required_departure_battery_kwh
+                    ),
                 )
             )
             if position > 0 and vehicle_type == "ev" and depot_energy > _TOL:

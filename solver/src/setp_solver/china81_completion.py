@@ -146,6 +146,7 @@ def complete_china81_route_skeleton(
                     bundle.prices,
                     strategy=strategy,
                     carbon_weight=carbon_weight,
+                    depot_charge_window_mode="same_day_predeparture",
                 )
                 route_cost = _single_route_cost(
                     repaired,

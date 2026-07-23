@@ -956,13 +956,16 @@ $g_0$=9.81~m/s$^2$, $\rho^a$=1.2041~kg/m$^3$, $c_R$=0.01, 空阻系数与迎风�
 敏感性低值0.05632~元/kg(56.32元/tCO$_2$e);
 需要说明的是, 道路物流当前未被全国碳市场直接覆盖, 该碳价在本文仅作为企业内部碳影子价与政策情景, 不代表当期法定履约成本.
 分时电价采用2025年2月各价区工商业分时目录电价:
-车场按1--10~kV单一制目录电价结算,
+除深圳外, 车场按1--10~kV单一制目录电价情景结算;
+深圳按独立计量电动汽车充电设施专项规则, 采用大量用电101--3000~kVA、
+10~kV高供高计且月用电量不超过250~kWh/(kVA$\cdot$月)档的电能量价格,
+并免收基本电费\cite{ref:88}.
 公共站按含服务费的分时总价结算, 输配电价依据国家发展改革委第三监管周期核定\cite{ref:83}.
-车场分时目录电价的峰谷平取值如表\ref{tab:tou}所示.
+车场充电电能价格情景的分时取值如表\ref{tab:tou}所示.
 
 \begin{table}[H]
 \centering
-\caption{车场1--10~kV单一制分时目录电价(2025年2月, 元/kWh)}
+\caption{车场充电设施分时电能价格情景(2025年2月, 元/kWh)}
 \label{tab:tou}
 \setptabsetup
 \begin{tabular*}{\linewidth}{@{\extracolsep{\fill}}lcccc@{}}
@@ -973,13 +976,13 @@ $g_0$=9.81~m/s$^2$, $\rho^a$=1.2041~kg/m$^3$, $c_R$=0.01, 空阻系数与迎风�
 天津(天津)          & ---    & 1.1286 & 0.7975 & 0.4400\\
 河北南网(石家庄)     & 1.1348 & 0.9949 & 0.7068 & 0.3982\\
 广东珠三角(广州、东莞、佛山) & 1.6521 & 1.3272 & 0.7921 & 0.3182\\
+深圳(深圳)          & 1.4372 & 1.1553 & 0.7578 & 0.2572\\
 四川(成都)          & ---    & 1.1952 & 0.7880 & 0.3809\\
 重庆(重庆)          & ---    & 1.2278 & 0.8215 & 0.4017\\
 \bottomrule
 \end{tabular*}
-\tabnote{注：表中为2025年2月各价区1--10~kV单一制用户分时目录电价；深圳价区目录行以官方闭合为准；公共站电价在上述电能费基础上叠加运营商分时服务费。}
+\tabnote{注：除深圳外，表中为各价区1--10~kV单一制情景；深圳行为独立计量充电设施大量用电101--3000~kVA、10~kV高供高计、月用电量不超过250~kWh/(kVA$\cdot$月)档的电能量价，按专项政策免收基本电费。以上均为构造情景，非命名车场合同观测；公共站在电能费基础上叠加运营商分时服务费。}
 \end{table}
-%% DATA_PLACEHOLDER: 深圳价区目录行待官方闭合后补入表tab:tou
 
 其余参数按公开来源设置: 柴油排放因子$\lambda^g$=2.7048~kgCO$_2$e/L(中国官方低位热值、含碳量、氧化率与密度独立复算);
 每趟派遣费$c^{\mathrm{fix}}$=170~元, 公共站占用费$c^{\mathrm{occ}}$=0.5~元/min, 单位货量收入$\rho$=1.5~元/kg,
@@ -1890,6 +1893,9 @@ Hu L, Le S T, Zhu J X. Electric truck route planning considering multiple chargi
 
 \bibitem{ref:83} 国家发展改革委. 关于第三监管周期省级电网输配电价及有关事项的通知(发改价格〔2023〕526号)[EB/OL]. (2023-05-15)[2026-07-23].
 \url{https://www.ndrc.gov.cn/xxgk/zcfb/tz/202305/t20230515_1355747.html}.
+
+\bibitem{ref:88} 广东省发展改革委. 关于我省新能源汽车用电价格有关问题的通知(粤发改价格〔2018〕313号)[EB/OL]. (2018-07-02)[2026-07-23].
+\url{https://drc.gd.gov.cn/ywtz/content/post_833857.html}.
 
 \bibitem{ref:82} Li Y, Zhang S, Li W, Liu Y, Qin Y, Wei H, Kang C, Zhang N, Du E. High temporal and spatial resolution projected electricity carbon emission factors of China from 2025--2060[J]. Scientific Data, 2026, 13: 926. Dataset DOI: 10.6084/m9.figshare.28953545.
 

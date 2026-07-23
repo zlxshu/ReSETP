@@ -17,6 +17,7 @@ from setp_solver.cost import (
     CARBON_SLOT_SECONDS,
     best_charging_action_start,
     ev_instance_arc_energy_kwh,
+    route_departure_second,
     route_next_day_departure_second,
     route_return_arrival_without_charging,
     time_profile_rows_for_node,
@@ -190,6 +191,7 @@ def repair_route_charging(
     *,
     strategy: str = "legacy",
     carbon_weight: float = 1.0,
+    depot_charge_window_mode: str = "cyclic_overnight",
 ) -> tuple[Route, list[ChargingAction]]:
     """Insert station visits and actions sufficient for battery feasibility.
 
@@ -200,6 +202,14 @@ def repair_route_charging(
 
     if strategy not in {"legacy", "integrated"}:
         raise ValueError(f"unknown charging-repair strategy: {strategy}")
+    if depot_charge_window_mode not in {
+        "cyclic_overnight",
+        "same_day_predeparture",
+    }:
+        raise ValueError(
+            "unknown depot charging window mode: "
+            f"{depot_charge_window_mode}"
+        )
 
     if route.vehicle_type.lower() != "ev":
         return route, []
@@ -223,6 +233,7 @@ def repair_route_charging(
         prices,
         strategy=strategy,
         carbon_weight=carbon_weight,
+        depot_charge_window_mode=depot_charge_window_mode,
     )
     if depot_action is not None:
         actions.append(depot_action)
@@ -483,6 +494,7 @@ def _depot_precharge_action(
     *,
     strategy: str = "legacy",
     carbon_weight: float = 1.0,
+    depot_charge_window_mode: str = "cyclic_overnight",
 ) -> ChargingAction | None:
     depot_id = route.node_sequence[0]
     depot = node_lookup[depot_id]
@@ -509,8 +521,6 @@ def _depot_precharge_action(
         instance=instance,
     )
     occupancy_sec = float(action.occupancy_minutes) * 60.0
-    # v2026-06-12: S0 depot charging belongs to the previous-return to
-    # next-departure overnight window.
     depot_profile = time_profile_rows_for_node(
         instance,
         depot_id,
@@ -518,8 +528,30 @@ def _depot_precharge_action(
     )
     period = float(len(depot_profile)) * CARBON_SLOT_SECONDS
     synthetic_route = Route(route.vehicle_id, route.vehicle_type, route.home_depot_id, [route.node_sequence[0], *original_targets])
-    earliest = route_return_arrival_without_charging(synthetic_route, instance, prices)
-    latest = route_next_day_departure_second(synthetic_route, instance, prices, period_seconds=period) - occupancy_sec
+    if depot_charge_window_mode == "same_day_predeparture":
+        # The fixed-date China81 scenario may only use energy charged on the
+        # registered date before the route actually departs.
+        earliest = 0.0
+        latest = (
+            route_departure_second(synthetic_route, instance, prices)
+            - occupancy_sec
+        )
+    else:
+        # Historical multi-day scenarios retain the cyclic overnight window.
+        earliest = route_return_arrival_without_charging(
+            synthetic_route,
+            instance,
+            prices,
+        )
+        latest = (
+            route_next_day_departure_second(
+                synthetic_route,
+                instance,
+                prices,
+                period_seconds=period,
+            )
+            - occupancy_sec
+        )
     if latest + 1e-9 < earliest:
         raise ValueError(f"No feasible depot charging window for {route.vehicle_id} at {depot_id}")
     if strategy == "integrated":
@@ -541,7 +573,11 @@ def _depot_precharge_action(
             latest,
             depot_profile,
         )
-    return replace(action, charge_start_second=charge_start)
+    return replace(
+        action,
+        charge_start_second=charge_start,
+        charge_day_offset=0,
+    )
 
 
 def _direct_route_energy_need(

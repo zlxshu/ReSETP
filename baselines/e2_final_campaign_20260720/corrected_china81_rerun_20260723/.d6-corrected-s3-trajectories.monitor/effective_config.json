@@ -1,0 +1,94 @@
+{
+  "ai": {
+    "enabled": false,
+    "timeout_seconds": 180
+  },
+  "checkpoint_paths": [
+    "/Volumes/移动硬盘（512G）/ReSETP/baselines/e2_final_campaign_20260720/corrected_china81_rerun_20260723/representative_gate/trajectories"
+  ],
+  "completion_files": [
+    "/Volumes/移动硬盘（512G）/ReSETP/baselines/e2_final_campaign_20260720/corrected_china81_rerun_20260723/representative_gate/trajectories/decision.json"
+  ],
+  "config_path": "/Volumes/移动硬盘（512G）/ReSETP/baselines/e2_final_campaign_20260720/corrected_china81_rerun_20260723/monitor_d6_s3_trajectories.json",
+  "cpu_grace_seconds": 180,
+  "forbidden_command_substrings": [
+    "--smoke",
+    "--debug"
+  ],
+  "logs": [],
+  "low_cpu_consecutive_checks": 5,
+  "max_rss_mb": 6000,
+  "max_runtime_seconds": 7200,
+  "milestones": [
+    {
+      "min_size": 1,
+      "path": "/Volumes/移动硬盘（512G）/ReSETP/baselines/e2_final_campaign_20260720/corrected_china81_rerun_20260723/representative_gate/trajectories"
+    }
+  ],
+  "min_cpu_percent_when_active": 1,
+  "min_system_free_memory_mb": 256,
+  "min_system_memory_free_percent": 5,
+  "name": "d6-corrected-s3-trajectories",
+  "objective": "按预注册十种子均值最近规则生成修正后仿真算例的四算法观测轨迹",
+  "pause_on_anomaly": true,
+  "poll_seconds": 20,
+  "progress_files": [
+    "/Volumes/移动硬盘（512G）/ReSETP/baselines/e2_final_campaign_20260720/corrected_china81_rerun_20260723/.d6-corrected-s3-trajectories.monitor/experiment.stdout.log"
+  ],
+  "protected_files": [
+    {
+      "kind": "experiment_contract",
+      "path": "/Volumes/移动硬盘（512G）/ReSETP/baselines/e2_final_campaign_20260720/corrected_china81_rerun_20260723/run_corrected_s3_trajectories.py"
+    },
+    {
+      "kind": "experiment_contract",
+      "path": "/Volumes/移动硬盘（512G）/ReSETP/baselines/e2_final_campaign_20260720/corrected_china81_rerun_20260723/run_corrected_s3.py"
+    },
+    {
+      "kind": "experiment_contract",
+      "path": "/Volumes/移动硬盘（512G）/ReSETP/baselines/e2_final_campaign_20260720/run_corrected_china81_d6.py"
+    },
+    {
+      "kind": "model",
+      "path": "/Volumes/移动硬盘（512G）/ReSETP/baselines/algorithm_prototypes/china81_mechanism_hybrid_20260720/pyvrp_adapter.py"
+    },
+    {
+      "kind": "model",
+      "path": "/Volumes/移动硬盘（512G）/ReSETP/baselines/algorithm_prototypes/china81_mechanism_hybrid_20260720/epochal_hgs.py"
+    },
+    {
+      "kind": "model",
+      "path": "/Volumes/移动硬盘（512G）/ReSETP/baselines/algorithm_prototypes/china81_mechanism_hybrid_20260720/route_pool_sp.py"
+    },
+    {
+      "kind": "core_data",
+      "path": "/Volumes/移动硬盘（512G）/ReSETP/solver/src/setp_solver/china81.py"
+    },
+    {
+      "kind": "evaluator",
+      "path": "/Volumes/移动硬盘（512G）/ReSETP/solver/src/setp_solver/china81_completion.py"
+    },
+    {
+      "kind": "cost_function",
+      "path": "/Volumes/移动硬盘（512G）/ReSETP/solver/src/setp_solver/cost.py"
+    },
+    {
+      "kind": "evaluator",
+      "path": "/Volumes/移动硬盘（512G）/ReSETP/solver/src/setp_solver/check.py"
+    },
+    {
+      "kind": "model",
+      "path": "/Volumes/移动硬盘（512G）/ReSETP/solver/src/setp_solver/prices.py"
+    }
+  ],
+  "required_command_substrings": [
+    "run_corrected_s3_trajectories.py"
+  ],
+  "result_files": [
+    "/Volumes/移动硬盘（512G）/ReSETP/baselines/e2_final_campaign_20260720/corrected_china81_rerun_20260723/representative_gate/trajectories/raw_runs.csv",
+    "/Volumes/移动硬盘（512G）/ReSETP/baselines/e2_final_campaign_20260720/corrected_china81_rerun_20260723/representative_gate/trajectories/decision.json"
+  ],
+  "schema_version": 1,
+  "stale_seconds": 3600,
+  "workdir": "/Volumes/移动硬盘（512G）/ReSETP"
+}

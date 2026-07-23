@@ -32,6 +32,7 @@ from setp_solver.china81_completion import (
 )
 from setp_solver.cost import (
     cv_instance_arc_fuel_liters,
+    diesel_price_for_route,
     ev_instance_arc_energy_kwh,
     time_profile_rows_for_node,
 )
@@ -54,6 +55,7 @@ class China81PyVRPProblem:
     cv_proxy_load_kg: float
     ev_proxy_load_kg: float
     route_proxy_mode: str
+    hard_home_depot_lock: bool
 
 
 @dataclass(frozen=True)
@@ -80,6 +82,7 @@ def build_pyvrp_problem(
     bundle: China81Bundle,
     *,
     route_proxy_mode: str = "mechanism_ev",
+    hard_home_depot_lock: bool = False,
 ) -> China81PyVRPProblem:
     """Build the common CV route-skeleton problem with explicit scaling."""
 
@@ -102,6 +105,10 @@ def build_pyvrp_problem(
     ]
     if not depots or not customers:
         raise ValueError("China81 PyVRP adapter requires depots and customers")
+    depot_dimension = {
+        depot.node_id: index
+        for index, depot in enumerate(depots)
+    }
     cv_vehicle = instance.vehicle_profile("cv")
     ev_vehicle = instance.vehicle_profile("ev")
     cv_proxy_load = 0.5 * float(cv_vehicle.payload_capacity_kg)
@@ -131,10 +138,27 @@ def build_pyvrp_problem(
         location_by_node_id[node.node_id] = location_index
         location_index += 1
     for node in customers:
+        if hard_home_depot_lock:
+            owner = bundle.customer_home_depot.get(node.node_id)
+            if owner not in depot_dimension:
+                raise ValueError(
+                    f"China81 customer {node.node_id!r} has no valid "
+                    "home-depot lock"
+                )
+            ownership_delivery = [
+                1 if depot.node_id == owner else 0
+                for depot in depots
+            ]
+            delivery: int | list[int] = [
+                round(node.demand),
+                *ownership_delivery,
+            ]
+        else:
+            delivery = round(node.demand)
         location_object[node.node_id] = model.add_client(
             node.x,
             node.y,
-            delivery=round(node.demand),
+            delivery=delivery,
             service_duration=round(node.service_time),
             tw_early=round(node.ready_time),
             tw_late=round(node.due_time),
@@ -144,7 +168,12 @@ def build_pyvrp_problem(
         location_by_node_id[node.node_id] = location_index
         location_index += 1
 
-    cv_road_profile = model.add_profile(name="china81-cv-profile")
+    cv_road_profiles = {
+        depot.node_id: model.add_profile(
+            name=f"china81-cv-profile@{depot.node_id}"
+        )
+        for depot in depots
+    }
     ev_road_profiles = (
         {
             depot.node_id: model.add_profile(
@@ -166,19 +195,21 @@ def build_pyvrp_problem(
                 "cv",
                 fallback_speed_mps=float(bundle.prices.v_speed_ms),
             )
-            model.add_edge(
-                location_object[left.node_id],
-                location_object[right.node_id],
-                distance=_proxy_arc_cost(
-                    bundle,
-                    left.node_id,
-                    right.node_id,
-                    cv_proxy_load,
-                    vehicle_type="cv",
-                ),
-                duration=max(0, round(duration_s)),
-                profile=cv_road_profile,
-            )
+            for depot in depots:
+                model.add_edge(
+                    location_object[left.node_id],
+                    location_object[right.node_id],
+                    distance=_proxy_arc_cost(
+                        bundle,
+                        left.node_id,
+                        right.node_id,
+                        cv_proxy_load,
+                        vehicle_type="cv",
+                        fueling_depot_id=depot.node_id,
+                    ),
+                    duration=max(0, round(duration_s)),
+                    profile=cv_road_profiles[depot.node_id],
+                )
             for depot in depots if include_ev else []:
                 _, ev_duration_s, _ = instance.arc_metrics(
                     left.node_id,
@@ -206,9 +237,33 @@ def build_pyvrp_problem(
     route_type_by_vehicle_type: dict[int, str] = {}
     vehicle_type_index = 0
     for depot in depots:
+        depot_caps = bundle.fleet_caps_by_depot.get(depot.node_id)
+        if depot_caps is None:
+            raise ValueError(
+                f"China81 finite fleet has no depot {depot.node_id!r}"
+            )
+        cv_available = int(depot_caps["num_cv"])
+        ev_available = int(depot_caps["num_ev"])
+        if cv_available < 1 or ev_available < 1:
+            raise ValueError(
+                f"China81 finite fleet has invalid caps at "
+                f"{depot.node_id!r}"
+            )
         model.add_vehicle_type(
-            num_available=len(customers),
-            capacity=round(cv_vehicle.payload_capacity_kg),
+            num_available=cv_available,
+            capacity=(
+                [
+                    round(cv_vehicle.payload_capacity_kg),
+                    *[
+                        len(customers)
+                        if item.node_id == depot.node_id
+                        else 0
+                        for item in depots
+                    ],
+                ]
+                if hard_home_depot_lock
+                else round(cv_vehicle.payload_capacity_kg)
+            ),
             start_depot=location_object[depot.node_id],
             end_depot=location_object[depot.node_id],
             fixed_cost=round(
@@ -218,7 +273,7 @@ def build_pyvrp_problem(
             tw_late=round(depot.due_time),
             unit_distance_cost=1,
             unit_duration_cost=0,
-            profile=cv_road_profile,
+            profile=cv_road_profiles[depot.node_id],
             name=f"CV@{depot.node_id}",
         )
         cv_vehicle_type_by_depot[depot.node_id] = vehicle_type_index
@@ -226,8 +281,20 @@ def build_pyvrp_problem(
         vehicle_type_index += 1
         if include_ev:
             model.add_vehicle_type(
-                num_available=len(customers),
-                capacity=round(ev_vehicle.payload_capacity_kg),
+                num_available=ev_available,
+                capacity=(
+                    [
+                        round(ev_vehicle.payload_capacity_kg),
+                        *[
+                            len(customers)
+                            if item.node_id == depot.node_id
+                            else 0
+                            for item in depots
+                        ],
+                    ]
+                    if hard_home_depot_lock
+                    else round(ev_vehicle.payload_capacity_kg)
+                ),
                 start_depot=location_object[depot.node_id],
                 end_depot=location_object[depot.node_id],
                 fixed_cost=round(
@@ -252,6 +319,7 @@ def build_pyvrp_problem(
         cv_proxy_load_kg=cv_proxy_load,
         ev_proxy_load_kg=ev_proxy_load,
         route_proxy_mode=normalized_mode,
+        hard_home_depot_lock=bool(hard_home_depot_lock),
     )
 
 
@@ -594,6 +662,7 @@ def _proxy_arc_cost(
     load_kg: float,
     *,
     vehicle_type: str,
+    fueling_depot_id: str | None = None,
     charging_depot_id: str | None = None,
     time_varying: bool = True,
 ) -> int:
@@ -614,6 +683,8 @@ def _proxy_arc_cost(
         )
     )
     if normalized_type == "cv":
+        if fueling_depot_id is None:
+            raise ValueError("CV proxy requires a fueling depot")
         fuel_liters = cv_instance_arc_fuel_liters(
             instance,
             left,
@@ -622,7 +693,20 @@ def _proxy_arc_cost(
             prices,
         )
         energy_cost = (
-            fuel_liters * float(prices.diesel_price)
+            fuel_liters
+            * diesel_price_for_route(
+                Route(
+                    vehicle_id="CV-PROXY",
+                    vehicle_type="cv",
+                    home_depot_id=fueling_depot_id,
+                    node_sequence=[
+                        fueling_depot_id,
+                        fueling_depot_id,
+                    ],
+                ),
+                instance,
+                prices,
+            )
             + fuel_liters
             * float(prices.diesel_ef)
             * float(prices.carbon_price)

@@ -18,6 +18,7 @@ from setp_solver.algorithms.resetp_alns.support.carbon_charging import (
 )
 from setp_solver.algorithms.resetp_alns.support.charging import repair_route_charging
 from setp_solver.check import check_solution
+from setp_solver.cost import evaluate
 from setp_solver.instance_loader import Instance, Node
 from setp_solver.prices import PriceParameters
 from setp_solver.search.evaluation import EvalBudget, EvaluationContext
@@ -227,6 +228,14 @@ def test_refined_reset_and_reconstruction_consumes_one_candidate_evaluation() ->
         context,
         rng=np.random.default_rng(7),
         operator_set=operators,
+        current_obj=float(
+            evaluate(
+                legacy_solution,
+                instance,
+                profile,
+                prices,
+            )["total_cost"]
+        ),
     )
 
     assert result["actual_evals_added"] == 1

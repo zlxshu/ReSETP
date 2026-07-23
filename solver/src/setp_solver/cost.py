@@ -175,7 +175,12 @@ def evaluate(
         )
         for item in route_energy
     )
-    cost_fuel = fuel_liters * _price(prices, "diesel_price")
+    cost_fuel = sum(
+        item.fuel_liters
+        * diesel_price_for_route(route, instance, prices)
+        for route, item in zip(solution.routes, route_energy)
+        if item.vehicle_type == "cv"
+    )
     # v2026-06-12: Q2 depot precharge has depot electricity price and no public occupancy fee.
     cost_elec = _charging_electricity_cost(
         solution,
@@ -224,6 +229,54 @@ def evaluate(
         "carbon_quota_kg": quota,
         "ev_drive_kwh": ev_drive_kwh,
     }
+
+
+def diesel_price_for_route(
+    route: Route,
+    instance: Instance,
+    prices: PriceParameters | dict[str, float] | Any = DEFAULT_PRICES,
+) -> float:
+    """Return the diesel price for a route's origin-depot city.
+
+    Historical scenarios have no city map and retain ``diesel_price``. A
+    China81 formal bundle supplies a non-empty city map, in which case a
+    missing depot city or missing city price is a hard data error.
+    """
+
+    raw_mapping = (
+        prices.get("diesel_price_by_city", ())
+        if isinstance(prices, dict)
+        else getattr(prices, "diesel_price_by_city", ())
+    )
+    if not raw_mapping:
+        return _price(prices, "diesel_price")
+    mapping = {
+        str(city).strip().lower(): float(value)
+        for city, value in raw_mapping
+    }
+    try:
+        depot = instance.nodes[instance.node_index[route.home_depot_id]]
+    except KeyError as exc:
+        raise ValueError(
+            f"diesel settlement requested for unknown depot "
+            f"{route.home_depot_id!r}"
+        ) from exc
+    if depot.node_type.lower() != "d":
+        raise ValueError(
+            f"diesel settlement origin is not a depot: "
+            f"{route.home_depot_id!r}"
+        )
+    city = "" if depot.city is None else str(depot.city).strip().lower()
+    if not city:
+        raise ValueError(
+            f"diesel settlement depot {route.home_depot_id!r} has no city"
+        )
+    try:
+        return mapping[city]
+    except KeyError as exc:
+        raise ValueError(
+            f"diesel price map has no route-origin city {city!r}"
+        ) from exc
 
 
 def _evaluate_route(
@@ -1094,11 +1147,21 @@ def charging_action_electricity_cost(
         action.station_id,
         time_profile,
     )
-    if node_profile and all(
+    has_time_varying_price = any(
+        "depot_energy_cny_per_kwh" in row
+        or "public_total_cny_per_kwh" in row
+        for row in node_profile
+    )
+    has_complete_time_varying_price = bool(node_profile) and all(
         "depot_energy_cny_per_kwh" in row
         and "public_total_cny_per_kwh" in row
         for row in node_profile
-    ):
+    )
+    if has_time_varying_price and not has_complete_time_varying_price:
+        raise ValueError(
+            "time-varying charging profile has partial price fields"
+        )
+    if has_complete_time_varying_price:
         price_field = (
             "depot_energy_cny_per_kwh"
             if node is not None and node.node_type.lower() == "d"

@@ -143,6 +143,7 @@ class SisrStringRemovalTests(unittest.TestCase):
         initial = build_initial_solution(
             bundle.instance,
             bundle.carbon_profile,
+            require_charging_signal=False,
         )
         signatures: dict[int, tuple[float, tuple[tuple[str, ...], ...]]] = {}
         for target in (0, 1, 2, 5):

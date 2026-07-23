@@ -10,6 +10,7 @@ from setp_solver.china81_completion import (
     complete_china81_route_skeleton,
     exact_china81_score,
 )
+from setp_solver.cost import route_departure_second
 
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -50,6 +51,22 @@ def test_shared_completion_is_feasible_monotone_and_complete() -> None:
         "time_varying_electricity_and_carbon",
         "multi_depot_responsibility_accounting",
     ]
+    routes = {
+        route.vehicle_id: route
+        for route in result.solution.routes
+    }
+    for action in result.solution.charging_actions:
+        end = (
+            float(action.charge_start_second)
+            + float(action.occupancy_minutes) * 60.0
+        )
+        assert action.charge_day_offset == 0
+        assert 0.0 <= action.charge_start_second < 86_400.0
+        assert end <= route_departure_second(
+            routes[action.vehicle_id],
+            bundle.instance,
+            bundle.prices,
+        ) + 1.0e-9
 
 
 def test_shared_completion_is_deterministic() -> None:

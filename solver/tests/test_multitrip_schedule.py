@@ -367,10 +367,21 @@ def test_e3_runtime_carries_previous_trip_battery_without_changing_legacy_checke
     assert e3_hard_violations(prepared, context) == []
 
 
-def test_v1_stops_instead_of_silently_ignoring_public_charging() -> None:
+def test_strict_schedule_stops_instead_of_ignoring_unbound_public_charge() -> None:
     route = Route("EV_A", "ev", "D0", ["D0", "F1", "C1", "D0"])
-    with pytest.raises(ValueError, match="public-station trips are unsupported"):
-        route_timing(route, _instance())
+    action = ChargingAction(
+        "EV_A",
+        "F1",
+        1.0,
+        1.0,
+        1_000.0,
+    )
+    with pytest.raises(ValueError, match="charging"):
+        route_timing(
+            route,
+            _instance(),
+            charging_actions=[action],
+        )
 
 
 def test_route_must_return_to_same_home_depot() -> None:

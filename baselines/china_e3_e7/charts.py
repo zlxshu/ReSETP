@@ -13,8 +13,10 @@ from typing import Any
 
 try:
     from .contract import ROOT, load_contract, read_csv
+    from .statistics import _normalise_formal_row
 except ImportError:  # pragma: no cover - direct script compatibility
     from contract import ROOT, load_contract, read_csv
+    from statistics import _normalise_formal_row
 
 
 def _sha256(path: Path) -> str:
@@ -123,7 +125,15 @@ def _plot_if_data(
     output_dir: Path,
     spec: dict[str, Any],
 ) -> dict[str, Any]:
-    complete = [row for row in rows if row.get("record_type") == "formal_run" and row.get("status") == "complete" and row.get("family") == family_id]
+    complete = [
+        row
+        for row in (
+            _normalise_formal_row(source) for source in rows
+        )
+        if row.get("record_type") == "formal_run"
+        and row.get("status") == "complete"
+        and row.get("family") == family_id
+    ]
     if not complete:
         return {
             "family": family_id,

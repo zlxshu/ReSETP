@@ -144,13 +144,29 @@ def build_certificate_execution_ledger(
 
     routes_by_id = {route.vehicle_id: route for route in solution.routes}
     trips_by_id = {trip.route_id: trip for trip in certificate.trips}
+    actions_by_route: dict[str, list[ChargingAction]] = {}
+    for action in solution.charging_actions:
+        actions_by_route.setdefault(action.vehicle_id, []).append(action)
     executions: dict[str, TripExecution] = {}
     for route_id in sorted(routes_by_id):
         route = routes_by_id[route_id]
         trip = trips_by_id[route_id]
         _validate_route_binding(route, trip)
-        execution = _replay_trip(route, trip, instance, prices)
-        drive_energy = _validated_trip_energy(trip, route, instance, prices)
+        route_actions = actions_by_route.get(route_id, [])
+        execution = _replay_trip(
+            route,
+            trip,
+            instance,
+            prices,
+            route_actions,
+        )
+        drive_energy = _validated_trip_energy(
+            trip,
+            route,
+            instance,
+            prices,
+            route_actions,
+        )
         execution = replace(execution, drive_energy_kwh=drive_energy)
         executions[route_id] = execution
 
@@ -161,6 +177,8 @@ def build_certificate_execution_ledger(
         trips_by_id,
         instance,
         prices,
+        routes_by_id,
+        executions,
     )
     certificate_sha256 = _canonical_sha256(certificate.as_dict())
     return CertificateExecutionLedger(
@@ -195,6 +213,7 @@ def _replay_trip(
     trip: ScheduledTrip,
     instance: Instance,
     prices: PriceParameters | dict[str, float] | object,
+    charging_actions: list[ChargingAction],
 ) -> TripExecution:
     nodes = {node.node_id: node for node in instance.nodes}
     unknown = [node_id for node_id in route.node_sequence if node_id not in nodes]
@@ -210,6 +229,21 @@ def _replay_trip(
     # make a later trip "in progress".
     clock = float(trip.departure_second)
     events = [NodeExecution(0, route.node_sequence[0], clock, clock, clock)]
+    public_actions_by_station: dict[str, list[ChargingAction]] = {}
+    for action in charging_actions:
+        station = nodes.get(action.station_id)
+        if station is not None and station.node_type.lower() == "f":
+            public_actions_by_station.setdefault(
+                action.station_id,
+                [],
+            ).append(action)
+    for actions in public_actions_by_station.values():
+        actions.sort(
+            key=lambda action: (
+                float(action.charge_start_second),
+                float(action.occupancy_minutes),
+            )
+        )
     speed = _price(prices, "v_speed_ms")
     if speed <= 0:
         raise ValueError(f"{EXECUTION_CLOCK_CONTRACT_ID}: vehicle speed must be positive")
@@ -231,7 +265,31 @@ def _replay_trip(
                 f"{EXECUTION_CLOCK_CONTRACT_ID}: route {route.vehicle_id} misses "
                 f"{to_id}'s time window"
             )
-        clock = service_start + float(node.service_time)
+        station_actions = public_actions_by_station.get(to_id, [])
+        if station_actions:
+            session_end = service_start
+            for action in station_actions:
+                if int(action.charge_day_offset) != 0:
+                    raise ValueError(
+                        f"{EXECUTION_CLOCK_CONTRACT_ID}: public charge for "
+                        f"{route.vehicle_id} is not on day 0"
+                    )
+                action_start = float(action.charge_start_second)
+                if action_start < session_end - _TOL:
+                    raise ValueError(
+                        f"{EXECUTION_CLOCK_CONTRACT_ID}: public charge for "
+                        f"{route.vehicle_id} starts before arrival or overlaps"
+                    )
+                session_end = (
+                    action_start
+                    + float(action.occupancy_minutes) * 60.0
+                )
+            service_start = float(
+                station_actions[0].charge_start_second
+            )
+            clock = session_end
+        else:
+            clock = service_start + float(node.service_time)
         events.append(NodeExecution(position, to_id, arrival, service_start, clock))
 
     if abs(clock - float(trip.return_second)) > _TOL:
@@ -266,6 +324,7 @@ def _validated_trip_energy(
     route: Route,
     instance: Instance,
     prices: PriceParameters | dict[str, float] | object,
+    charging_actions: list[ChargingAction],
 ) -> float:
     if route.vehicle_type.lower() == "cv":
         if any(
@@ -292,7 +351,26 @@ def _validated_trip_energy(
         )
         for index, (from_id, to_id) in enumerate(zip(route.node_sequence, route.node_sequence[1:]))
     )
-    certificate_energy = float(trip.start_battery_kwh or 0.0) - float(trip.end_battery_kwh or 0.0)
+    node_lookup = {node.node_id: node for node in instance.nodes}
+    public_energy = sum(
+        float(action.energy_kwh)
+        for action in charging_actions
+        if action.station_id in node_lookup
+        and node_lookup[action.station_id].node_type.lower() == "f"
+    )
+    if (
+        abs(public_energy - float(trip.in_route_charge_energy_kwh))
+        > _TOL
+    ):
+        raise ValueError(
+            f"{EXECUTION_CLOCK_CONTRACT_ID}: route {route.vehicle_id} "
+            "public-charge energy disagrees with its certificate"
+        )
+    certificate_energy = (
+        float(trip.start_battery_kwh or 0.0)
+        + public_energy
+        - float(trip.end_battery_kwh or 0.0)
+    )
     if abs(drive_energy - certificate_energy) > _TOL:
         raise ValueError(
             f"{EXECUTION_CLOCK_CONTRACT_ID}: route {route.vehicle_id} drive energy "
@@ -341,6 +419,8 @@ def _validate_charging_ledger(
     trips_by_id: Mapping[str, ScheduledTrip],
     instance: Instance,
     prices: PriceParameters | dict[str, float] | object,
+    routes_by_id: Mapping[str, Route],
+    executions: Mapping[str, TripExecution],
 ) -> None:
     actions_by_route: dict[str, list[ChargingAction]] = {}
     for action in solution.charging_actions:
@@ -366,6 +446,16 @@ def _validate_charging_ledger(
                 if actions:
                     raise ValueError(f"{EXECUTION_CLOCK_CONTRACT_ID}: CV route {trip.route_id} has charging")
                 continue
+            depot_actions = [
+                action
+                for action in actions
+                if action.station_id == trip.home_depot_id
+            ]
+            public_actions = [
+                action
+                for action in actions
+                if action.station_id != trip.home_depot_id
+            ]
             if index == 0:
                 expected_energy = float(trip.start_battery_kwh or 0.0) - initial_battery
                 expected_action_start_energy = initial_battery
@@ -384,63 +474,195 @@ def _validate_charging_ledger(
             if expected_energy < -_TOL:
                 raise ValueError(f"{EXECUTION_CLOCK_CONTRACT_ID}: route {trip.route_id} loses battery before departure")
             if expected_energy <= _TOL:
-                if any(float(action.energy_kwh) > _TOL for action in actions):
-                    raise ValueError(f"{EXECUTION_CLOCK_CONTRACT_ID}: unexpected charging for {trip.route_id}")
-                continue
-            if len(actions) != 1:
-                raise ValueError(
-                    f"{EXECUTION_CLOCK_CONTRACT_ID}: route {trip.route_id} must have exactly one depot charge"
-                )
-            action = actions[0]
-            if action.station_id != trip.home_depot_id:
-                raise ValueError(f"{EXECUTION_CLOCK_CONTRACT_ID}: route {trip.route_id} charges away from home")
-            if abs(float(action.energy_kwh) - expected_energy) > _TOL:
-                raise ValueError(f"{EXECUTION_CLOCK_CONTRACT_ID}: route {trip.route_id} charge energy does not close")
-            curve_state = charging_curve_for_action(action, instance, prices)
-            if curve_state is None:
-                expected_minutes = (
-                    expected_energy
-                    / float(certificate.depot_charge_power_kw)
-                    * 60.0
-                )
-                if abs(float(action.occupancy_minutes) - expected_minutes) > _TOL:
-                    raise ValueError(
-                        f"{EXECUTION_CLOCK_CONTRACT_ID}: route "
-                        f"{trip.route_id} charge duration does not close"
-                    )
-            else:
-                _, action_start_energy, action_end_energy = curve_state
-                if (
-                    abs(
-                        action_start_energy
-                        - expected_action_start_energy
-                    )
-                    > _TOL
-                    or abs(
-                        action_end_energy
-                        - (
-                            expected_action_start_energy
-                            + expected_energy
-                        )
-                    )
-                    > _TOL
+                if any(
+                    float(action.energy_kwh) > _TOL
+                    for action in depot_actions
                 ):
+                    raise ValueError(f"{EXECUTION_CLOCK_CONTRACT_ID}: unexpected charging for {trip.route_id}")
+            else:
+                if len(depot_actions) != 1:
                     raise ValueError(
                         f"{EXECUTION_CLOCK_CONTRACT_ID}: route "
-                        f"{trip.route_id} charge energy states do not bind "
-                        "to the certificate"
+                        f"{trip.route_id} must have exactly one depot charge"
                     )
-            if int(action.charge_day_offset) != expected_day_offset:
-                raise ValueError(f"{EXECUTION_CLOCK_CONTRACT_ID}: route {trip.route_id} charge day is inconsistent")
-            absolute_start = float(action.charge_start_second) + expected_day_offset * _DAY_SECONDS
-            absolute_end = absolute_start + float(action.occupancy_minutes) * 60.0
-            if expected_start is not None:
-                if abs(float(action.charge_start_second) - float(expected_start)) > _TOL:
-                    raise ValueError(f"{EXECUTION_CLOCK_CONTRACT_ID}: route {trip.route_id} charge start drifted")
-                if abs(absolute_end - expected_end) > _TOL:
-                    raise ValueError(f"{EXECUTION_CLOCK_CONTRACT_ID}: route {trip.route_id} charge end drifted")
-            elif absolute_end > expected_end + _TOL:
-                raise ValueError(f"{EXECUTION_CLOCK_CONTRACT_ID}: first-trip charge ends after departure")
+                action = depot_actions[0]
+                if abs(float(action.energy_kwh) - expected_energy) > _TOL:
+                    raise ValueError(f"{EXECUTION_CLOCK_CONTRACT_ID}: route {trip.route_id} charge energy does not close")
+                curve_state = charging_curve_for_action(action, instance, prices)
+                if curve_state is None:
+                    expected_minutes = (
+                        expected_energy
+                        / float(certificate.depot_charge_power_kw)
+                        * 60.0
+                    )
+                    if (
+                        abs(
+                            float(action.occupancy_minutes)
+                            - expected_minutes
+                        )
+                        > _TOL
+                    ):
+                        raise ValueError(
+                            f"{EXECUTION_CLOCK_CONTRACT_ID}: route "
+                            f"{trip.route_id} charge duration does not close"
+                        )
+                else:
+                    _, action_start_energy, action_end_energy = curve_state
+                    if (
+                        abs(
+                            action_start_energy
+                            - expected_action_start_energy
+                        )
+                        > _TOL
+                        or abs(
+                            action_end_energy
+                            - (
+                                expected_action_start_energy
+                                + expected_energy
+                            )
+                        )
+                        > _TOL
+                    ):
+                        raise ValueError(
+                            f"{EXECUTION_CLOCK_CONTRACT_ID}: route "
+                            f"{trip.route_id} charge energy states do not bind "
+                            "to the certificate"
+                        )
+                if int(action.charge_day_offset) != expected_day_offset:
+                    raise ValueError(f"{EXECUTION_CLOCK_CONTRACT_ID}: route {trip.route_id} charge day is inconsistent")
+                absolute_start = float(action.charge_start_second) + expected_day_offset * _DAY_SECONDS
+                absolute_end = absolute_start + float(action.occupancy_minutes) * 60.0
+                if expected_start is not None:
+                    if abs(float(action.charge_start_second) - float(expected_start)) > _TOL:
+                        raise ValueError(f"{EXECUTION_CLOCK_CONTRACT_ID}: route {trip.route_id} charge start drifted")
+                    if abs(absolute_end - expected_end) > _TOL:
+                        raise ValueError(f"{EXECUTION_CLOCK_CONTRACT_ID}: route {trip.route_id} charge end drifted")
+                elif absolute_end > expected_end + _TOL:
+                    raise ValueError(f"{EXECUTION_CLOCK_CONTRACT_ID}: first-trip charge ends after departure")
+            _validate_public_charging_ledger(
+                trip,
+                routes_by_id[trip.route_id],
+                executions[trip.route_id],
+                public_actions,
+                instance,
+                prices,
+            )
+
+
+def _validate_public_charging_ledger(
+    trip: ScheduledTrip,
+    route: Route,
+    execution: TripExecution,
+    actions: list[ChargingAction],
+    instance: Instance,
+    prices: PriceParameters | dict[str, float] | object,
+) -> None:
+    node_lookup = {node.node_id: node for node in instance.nodes}
+    by_station: dict[str, list[ChargingAction]] = {}
+    for action in actions:
+        station = node_lookup.get(action.station_id)
+        if station is None or station.node_type.lower() != "f":
+            raise ValueError(
+                f"{EXECUTION_CLOCK_CONTRACT_ID}: route {trip.route_id} "
+                "has a non-public in-route charge"
+            )
+        if (
+            route.node_sequence.count(action.station_id) != 1
+            or int(action.charge_day_offset) != 0
+        ):
+            raise ValueError(
+                f"{EXECUTION_CLOCK_CONTRACT_ID}: route {trip.route_id} "
+                "has an ambiguous public charging action"
+            )
+        by_station.setdefault(action.station_id, []).append(action)
+    for station_actions in by_station.values():
+        station_actions.sort(
+            key=lambda action: float(action.charge_start_second)
+        )
+
+    loads = _arc_loads(route.node_sequence, node_lookup)
+    battery = float(trip.start_battery_kwh or 0.0)
+    capacity = instance.battery_capacity_kwh(
+        fallback=_price(prices, "B_battery_kwh"),
+    )
+    execution_by_node = {
+        event.node_id: event
+        for event in execution.nodes
+    }
+    for index, (from_id, to_id) in enumerate(
+        zip(route.node_sequence, route.node_sequence[1:])
+    ):
+        battery -= ev_instance_arc_energy_kwh(
+            instance,
+            from_id,
+            to_id,
+            loads[index],
+            prices,
+        )
+        if battery < -_TOL:
+            raise ValueError(
+                f"{EXECUTION_CLOCK_CONTRACT_ID}: route {trip.route_id} "
+                f"runs out of battery before {to_id}"
+            )
+        station_actions = by_station.get(to_id, [])
+        if not station_actions:
+            continue
+        event = execution_by_node[to_id]
+        session_end = max(
+            event.arrival_second,
+            float(node_lookup[to_id].ready_time),
+        )
+        for action in station_actions:
+            action_start = float(action.charge_start_second)
+            action_end = (
+                action_start
+                + float(action.occupancy_minutes) * 60.0
+            )
+            if action_start < session_end - _TOL:
+                raise ValueError(
+                    f"{EXECUTION_CLOCK_CONTRACT_ID}: route {trip.route_id} "
+                    "public charging clock is inconsistent"
+                )
+            curve_state = charging_curve_for_action(
+                action,
+                instance,
+                prices,
+            )
+            if curve_state is None:
+                raise ValueError(
+                    f"{EXECUTION_CLOCK_CONTRACT_ID}: strict public charging "
+                    "requires explicit energy states"
+                )
+            _, start_energy, end_energy = curve_state
+            if (
+                abs(start_energy - battery) > _TOL
+                or abs(
+                    end_energy
+                    - (battery + float(action.energy_kwh))
+                )
+                > _TOL
+            ):
+                raise ValueError(
+                    f"{EXECUTION_CLOCK_CONTRACT_ID}: route {trip.route_id} "
+                    "public charging SOC does not bind to route execution"
+                )
+            battery = end_energy
+            if battery > capacity + _TOL:
+                raise ValueError(
+                    f"{EXECUTION_CLOCK_CONTRACT_ID}: route {trip.route_id} "
+                    "public charging exceeds battery capacity"
+                )
+            session_end = action_end
+        if abs(session_end - event.departure_second) > _TOL:
+            raise ValueError(
+                f"{EXECUTION_CLOCK_CONTRACT_ID}: route {trip.route_id} "
+                "public charging does not close to node departure"
+            )
+    if abs(battery - float(trip.end_battery_kwh or 0.0)) > _TOL:
+        raise ValueError(
+            f"{EXECUTION_CLOCK_CONTRACT_ID}: route {trip.route_id} public "
+            "charging battery ledger does not close"
+        )
 
 
 def _canonical_sha256(payload: object) -> str:

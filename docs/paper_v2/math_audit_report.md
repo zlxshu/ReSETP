@@ -36,7 +36,7 @@
 - PASS C5 符号表[\Omega_k]: 关键符号在表2登记
 - PASS C5 符号表[\overline W]: 关键符号在表2登记
 - PASS C5 符号表[T^{\mathrm{int}}]: 关键符号在表2登记
-- PASS C6 占位符盘点: 共 28 处 DATA_PLACEHOLDER 待实验回填
+- PASS C6 占位符盘点: 共 27 处 DATA_PLACEHOLDER 待实验回填
 - PASS D1 载重传播: 初始500.0→服务后0.0 (递减到0)
 - PASS D2 电量传播: ε_j=45.0 ∈ [0,100.0]
 - PASS D3 超容检测: 补电至超过B的方案应不可行(80+30>100)

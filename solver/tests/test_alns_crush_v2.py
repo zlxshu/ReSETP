@@ -74,6 +74,7 @@ class AlnsCrushV2Tests(unittest.TestCase):
                 "winner_variant_flags",
                 "run_e2_alns_final",
                 "run_winner_kernel",
+                "run_winner_kernel_in_memory",
                 "run_winner_kernel_plus_route_elimination",
                 "write_winner_manifest",
             ],
@@ -169,7 +170,11 @@ class AlnsCrushV2Tests(unittest.TestCase):
         from setp_solver.search.evaluation import EvaluationContext, score_reference
         from setp_solver.search.alns_wouda import AlnsState
 
-        solution = build_initial_solution(bundle.instance, bundle.carbon_profile)
+        solution = build_initial_solution(
+            bundle.instance,
+            bundle.carbon_profile,
+            require_charging_signal=False,
+        )
         context = EvaluationContext(bundle.instance, bundle.carbon_profile)
         state = AlnsState(solution, context, objective_value=score_reference(solution, context))
 

@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from collections import Counter, defaultdict
 from dataclasses import dataclass, field
+import math
 from typing import Any
 
 from .cost import (
@@ -104,6 +105,12 @@ def check_solution(
     charging_by_vehicle_node = _charging_index(solution.charging_actions)
 
     violations.extend(_check_structure(solution, node_lookup))
+    violations.extend(
+        _check_charging_action_structure(
+            solution,
+            node_lookup,
+        )
+    )
     violations.extend(_check_dynamic_context(solution, dynamic_context))
     violations.extend(_check_customer_service(solution, node_lookup))
     violations.extend(_check_vehicle_count(solution, instance))
@@ -218,6 +225,174 @@ def _check_structure(solution: Solution, node_lookup: dict[str, Node]) -> list[V
         for node_id in route.node_sequence:
             if node_id not in node_lookup:
                 violations.append(Violation(ROUTE_STRUCTURE, route.vehicle_id, node_id, f"unknown node id {node_id}"))
+    return violations
+
+
+def _check_charging_action_structure(
+    solution: Solution,
+    node_lookup: dict[str, Node],
+) -> list[Violation]:
+    """Bind every charging action to one legal EV route and clock interval."""
+
+    routes_by_id: dict[str, list[Route]] = defaultdict(list)
+    for route in solution.routes:
+        routes_by_id[route.vehicle_id].append(route)
+
+    violations: list[Violation] = []
+    sessions: dict[
+        str,
+        list[tuple[float, float, ChargingAction]],
+    ] = defaultdict(list)
+    for action in solution.charging_actions:
+        matches = routes_by_id.get(action.vehicle_id, [])
+        if len(matches) != 1:
+            violations.append(
+                Violation(
+                    ROUTE_STRUCTURE,
+                    action.vehicle_id,
+                    action.station_id,
+                    (
+                        "charging action must bind to exactly one route; "
+                        f"matching routes={len(matches)}"
+                    ),
+                )
+            )
+            continue
+        route = matches[0]
+        if route.vehicle_type.lower() != "ev":
+            violations.append(
+                Violation(
+                    ROUTE_STRUCTURE,
+                    action.vehicle_id,
+                    action.station_id,
+                    "combustion-vehicle route cannot own charging actions",
+                )
+            )
+        station = node_lookup.get(action.station_id)
+        if station is None:
+            violations.append(
+                Violation(
+                    ROUTE_STRUCTURE,
+                    action.vehicle_id,
+                    action.station_id,
+                    "charging action references an unknown node",
+                )
+            )
+        elif station.node_type.lower() not in {"d", "f"}:
+            violations.append(
+                Violation(
+                    ROUTE_STRUCTURE,
+                    action.vehicle_id,
+                    action.station_id,
+                    "charging is allowed only at a depot or charging station",
+                )
+            )
+        elif action.station_id not in route.node_sequence:
+            violations.append(
+                Violation(
+                    ROUTE_STRUCTURE,
+                    action.vehicle_id,
+                    action.station_id,
+                    "charging station is not visited by the bound route",
+                )
+            )
+        elif (
+            station.node_type.lower() == "d"
+            and action.station_id != route.home_depot_id
+        ):
+            violations.append(
+                Violation(
+                    ROUTE_STRUCTURE,
+                    action.vehicle_id,
+                    action.station_id,
+                    "depot charging must use the route home depot",
+                )
+            )
+        elif (
+            station.node_type.lower() == "f"
+            and route.node_sequence.count(action.station_id) != 1
+        ):
+            violations.append(
+                Violation(
+                    ROUTE_STRUCTURE,
+                    action.vehicle_id,
+                    action.station_id,
+                    (
+                        "charging action cannot be assigned to a repeated "
+                        "station visit without an occurrence index"
+                    ),
+                )
+            )
+
+        numeric = (
+            float(action.energy_kwh),
+            float(action.occupancy_minutes),
+            float(action.charge_start_second),
+        )
+        if not all(math.isfinite(value) for value in numeric):
+            violations.append(
+                Violation(
+                    ROUTE_STRUCTURE,
+                    action.vehicle_id,
+                    action.station_id,
+                    "charging action has a non-finite numeric field",
+                )
+            )
+            continue
+        if (
+            float(action.energy_kwh) < -FEASIBILITY_TOL
+            or float(action.occupancy_minutes) < -FEASIBILITY_TOL
+        ):
+            violations.append(
+                Violation(
+                    ROUTE_STRUCTURE,
+                    action.vehicle_id,
+                    action.station_id,
+                    "charging energy and occupancy must be nonnegative",
+                )
+            )
+            continue
+        start = (
+            int(action.charge_day_offset) * 86_400.0
+            + float(action.charge_start_second)
+        )
+        end = start + float(action.occupancy_minutes) * 60.0
+        sessions[physical_vehicle_id(action.vehicle_id)].append(
+            (start, end, action)
+        )
+
+    for physical_id, items in sessions.items():
+        ordered = sorted(
+            items,
+            key=lambda item: (
+                item[0],
+                item[1],
+                item[2].vehicle_id,
+                item[2].station_id,
+            ),
+        )
+        for previous, current in zip(ordered, ordered[1:]):
+            if (
+                current[0] < previous[1] - FEASIBILITY_TOL
+                and current[1] > current[0] + FEASIBILITY_TOL
+                and previous[1] > previous[0] + FEASIBILITY_TOL
+            ):
+                violations.append(
+                    Violation(
+                        STATION_CAPACITY,
+                        physical_id,
+                        (
+                            f"{previous[2].station_id}->"
+                            f"{current[2].station_id}"
+                        ),
+                        (
+                            "one physical vehicle has overlapping charging "
+                            f"sessions [{previous[0]:.3f},"
+                            f"{previous[1]:.3f}) and "
+                            f"[{current[0]:.3f},{current[1]:.3f})"
+                        ),
+                    )
+                )
     return violations
 
 
@@ -397,6 +572,17 @@ def _check_route_flow(route: Route, node_lookup: dict[str, Node], dynamic_contex
         violations.append(Violation(FLOW_BALANCE, route.vehicle_id, route.home_depot_id, "home_depot_id is not a valid depot"))
     elif (not open_start_allowed and route.node_sequence[0] != route.home_depot_id) or route.node_sequence[-1] != route.home_depot_id:
         violations.append(Violation(FLOW_BALANCE, route.vehicle_id, route.home_depot_id, "route endpoints do not match home_depot_id"))
+    if not open_start_allowed:
+        for node_id in route.node_sequence[1:-1]:
+            if node_lookup[node_id].node_type.lower() == "d":
+                violations.append(
+                    Violation(
+                        ROUTE_STRUCTURE,
+                        route.vehicle_id,
+                        node_id,
+                        "a static trip cannot contain an intermediate depot",
+                    )
+                )
     return violations
 
 
@@ -730,9 +916,20 @@ def _check_battery(
             )
         )
     if node_lookup[start_node_id].node_type.lower() == "d":
-        depot_energy = _charging_energy(route.vehicle_id, start_node_id, charging_by_vehicle_node)
-        if depot_energy > FEASIBILITY_TOL:
-            battery += depot_energy
+        depot_actions = _charging_actions(
+            route.vehicle_id,
+            start_node_id,
+            charging_by_vehicle_node,
+        )
+        for action in depot_actions:
+            violations.extend(
+                _check_action_energy_state(
+                    action,
+                    battery,
+                    battery_cap,
+                )
+            )
+            battery += float(action.energy_kwh)
             if battery > battery_cap + 1e-9:
                 violations.append(
                     Violation(
@@ -758,9 +955,21 @@ def _check_battery(
 
         to_node = node_lookup[to_node_id]
         if to_node.node_type.lower() == "f":
-            battery += _charging_energy(route.vehicle_id, to_node_id, charging_by_vehicle_node)
-            if battery > battery_cap + 1e-9:
-                violations.append(Violation(BATTERY, route.vehicle_id, to_node_id, f"battery after charging is {battery:.6f} kWh > B={battery_cap:.6f}"))
+            for action in _charging_actions(
+                route.vehicle_id,
+                to_node_id,
+                charging_by_vehicle_node,
+            ):
+                violations.extend(
+                    _check_action_energy_state(
+                        action,
+                        battery,
+                        battery_cap,
+                    )
+                )
+                battery += float(action.energy_kwh)
+                if battery > battery_cap + 1e-9:
+                    violations.append(Violation(BATTERY, route.vehicle_id, to_node_id, f"battery after charging is {battery:.6f} kWh > B={battery_cap:.6f}"))
     return violations
 
 
@@ -768,8 +977,104 @@ def _route_nodes_valid(route: Route, node_lookup: dict[str, Node]) -> bool:
     return bool(route.node_sequence) and all(node_id in node_lookup for node_id in route.node_sequence)
 
 
-def _charging_energy(vehicle_id: str, node_id: str, charging_by_vehicle_node: dict[tuple[str, str], list[ChargingAction]]) -> float:
-    return sum(float(action.energy_kwh) for action in charging_by_vehicle_node.get((vehicle_id, node_id), []))
+def _charging_actions(
+    vehicle_id: str,
+    node_id: str,
+    charging_by_vehicle_node: dict[
+        tuple[str, str],
+        list[ChargingAction],
+    ],
+) -> list[ChargingAction]:
+    return sorted(
+        charging_by_vehicle_node.get((vehicle_id, node_id), []),
+        key=lambda action: (
+            int(action.charge_day_offset),
+            float(action.charge_start_second),
+            float(action.occupancy_minutes),
+        ),
+    )
+
+
+def _check_action_energy_state(
+    action: ChargingAction,
+    battery_before_kwh: float,
+    battery_cap_kwh: float,
+) -> list[Violation]:
+    """Bind optional nonlinear SOC metadata to the actual route ledger."""
+
+    fields = (
+        action.start_energy_kwh,
+        action.end_energy_kwh,
+        action.charging_curve_id,
+    )
+    if all(value is None for value in fields):
+        return []
+    if action.start_energy_kwh is None or action.end_energy_kwh is None:
+        return [
+            Violation(
+                BATTERY,
+                action.vehicle_id,
+                action.station_id,
+                "charging action has incomplete start/end energy metadata",
+            )
+        ]
+    actual_start = float(action.start_energy_kwh)
+    actual_end = float(action.end_energy_kwh)
+    expected_start = float(battery_before_kwh)
+    expected_end = expected_start + float(action.energy_kwh)
+    violations: list[Violation] = []
+    if not all(
+        math.isfinite(value)
+        for value in (actual_start, actual_end)
+    ):
+        violations.append(
+            Violation(
+                BATTERY,
+                action.vehicle_id,
+                action.station_id,
+                "charging action has non-finite energy-state metadata",
+            )
+        )
+        return violations
+    if abs(actual_start - expected_start) > 1.0e-6:
+        violations.append(
+            Violation(
+                BATTERY,
+                action.vehicle_id,
+                action.station_id,
+                (
+                    f"recorded charging start energy {actual_start:.6f} "
+                    f"does not match route battery {expected_start:.6f}"
+                ),
+            )
+        )
+    if abs(actual_end - expected_end) > 1.0e-6:
+        violations.append(
+            Violation(
+                BATTERY,
+                action.vehicle_id,
+                action.station_id,
+                (
+                    f"recorded charging end energy {actual_end:.6f} "
+                    f"does not match route ledger {expected_end:.6f}"
+                ),
+            )
+        )
+    if (
+        actual_start < -1.0e-6
+        or actual_end < -1.0e-6
+        or actual_start > battery_cap_kwh + 1.0e-6
+        or actual_end > battery_cap_kwh + 1.0e-6
+    ):
+        violations.append(
+            Violation(
+                BATTERY,
+                action.vehicle_id,
+                action.station_id,
+                "charging action energy states lie outside battery bounds",
+            )
+        )
+    return violations
 
 
 def _price(prices: PriceParameters | dict[str, float] | Any, name: str) -> float:

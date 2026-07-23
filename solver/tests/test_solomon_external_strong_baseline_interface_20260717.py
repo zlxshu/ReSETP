@@ -27,7 +27,7 @@ PREFLIGHT = load("test_external_preflight", PREFLIGHT_PATH)
 RUNNER = load("test_external_runner", RUNNER_PATH)
 
 
-def test_current_preflight_is_zero_search_and_halts_without_attestations():
+def test_current_preflight_is_zero_search_and_halts_on_missing_tool_freeze():
     metadata, rows, decision = PREFLIGHT.build_preflight()
     assert metadata["search_performed"] is False
     assert metadata["search_evaluations"] == 0
@@ -35,7 +35,7 @@ def test_current_preflight_is_zero_search_and_halts_without_attestations():
     assert metadata["tool_freeze_content_read"] is False
     assert decision["formal_search_authorized"] is False
     assert decision["verdict"] == "HALT_EXTERNAL_BASELINE_PREREQUISITES"
-    assert "E7_STEPS_1_TO_6_ATTESTATION_MISSING" in decision["failures"]
+    assert "E7_STEPS_1_TO_6_ATTESTATION_MISSING" not in decision["failures"]
     assert "EXTERNAL_BASELINE_TOOL_FREEZE_MISSING" in decision["failures"]
     assert all(row["search_evaluations"] == 0 for row in rows)
 

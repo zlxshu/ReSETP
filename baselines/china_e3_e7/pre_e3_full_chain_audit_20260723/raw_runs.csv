@@ -1,0 +1,10 @@
+record_type,record_id,status,checks,passed,failed,skipped,search_evaluations,evidence
+audit,main_chain,HOLD,94,67,27,0,0,machine_checks.csv
+audit,corrected_authority,PASS,86,86,0,0,0,corrected_authority_acceptance_findings.json
+audit,runtime_boundaries,PASS,10,10,0,0,0,runtime_boundary_findings.json
+audit,objective_checker,PASS,29,29,0,0,0,objective_checker_findings.json
+audit,interface_reproducibility,HOLD,24,11,13,0,0,interface_reproducibility_findings.json
+test,targeted_regression,PASS,117,117,0,0,0,targeted_regression_summary.json
+test,full_regression,REGISTERED_FAILURES,888,878,9,1,0,regression_test_summary.json
+audit,paper_claims,HOLD,12,2,9,0,0,paper_claim_audit.csv
+audit,formal_search,NOT_RUN,0,0,0,0,0,task_contract.md

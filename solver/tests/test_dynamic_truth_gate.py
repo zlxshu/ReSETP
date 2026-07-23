@@ -683,11 +683,14 @@ def _run_charger_rolling_scenario(root: Path) -> ChargerRollingEvidence:
             Route("EV_ANCHOR", "ev", "D0", ["D0", "C_ANCHOR", "D0"]),
             Route("EV_PAST", "ev", "D0", ["D0", "F1", "C_PAST", "D0"]),
         ],
-        charging_actions=[ChargingAction("EV_PAST", "F1", 1.0, 30.0, 0.0)],
+        # A 60 kW charger delivers 30 kWh in 30 minutes.  Keep the
+        # deliberately overlapping clock interval physically consistent so
+        # the fixture halts only on cross-stage station capacity.
+        charging_actions=[ChargingAction("EV_PAST", "F1", 30.0, 30.0, 0.0)],
     )
     next_plan = Solution(
         routes=[Route("EV_NEXT", "ev", "D0", ["D0", "F1", "C_NEXT", "D0"])],
-        charging_actions=[ChargingAction("EV_NEXT", "F1", 1.0, 10.0, 900.0)],
+        charging_actions=[ChargingAction("EV_NEXT", "F1", 10.0, 10.0, 900.0)],
     )
     contexts: list[RollingPolicyContext] = []
 
@@ -727,6 +730,10 @@ def _run_charger_rolling_scenario(root: Path) -> ChargerRollingEvidence:
         stage_eval_budget=0,
         stage_max_runtime_seconds=2.0,
         params=RollingParameters(delta_t_seconds=600.0, q_bar=8, stages=3),
+        prices=PriceParameters(
+            initial_ev_battery_kwh=0.0,
+            B_battery_kwh=80.0,
+        ),
         policy_callback=policy,
     )
     gate = report.get("gate")

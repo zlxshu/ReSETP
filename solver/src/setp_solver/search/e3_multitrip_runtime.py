@@ -39,6 +39,10 @@ from .multitrip_schedule import (
     drop_multitrip_identity,
     prepare_multitrip_solution,
 )
+from .certificate_execution import (
+    EXECUTION_CLOCK_CONTRACT_ID,
+    build_certificate_execution_ledger,
+)
 
 
 def enabled() -> bool:
@@ -87,6 +91,28 @@ def _hard_violations_prepared(
     context: EvaluationContext,
 ) -> list[Any]:
     prices = _prices_with_carbon_weight(context.prices, context.carbon_weight)
+    try:
+        build_certificate_execution_ledger(
+            prepared,
+            certificate,
+            context.instance,
+            prices,
+        )
+    except ValueError as exc:
+        context.score_counts["strict_execution_certificate_failures"] = int(
+            context.score_counts.get(
+                "strict_execution_certificate_failures",
+                0,
+            )
+        ) + 1
+        return [
+            Violation(
+                ROUTE_STRUCTURE,
+                "",
+                EXECUTION_CLOCK_CONTRACT_ID,
+                str(exc),
+            )
+        ]
     dynamic_states = _dynamic_states(
         prepared,
         certificate,

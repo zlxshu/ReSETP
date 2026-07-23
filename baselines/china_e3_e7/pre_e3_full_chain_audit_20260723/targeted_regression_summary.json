@@ -1,0 +1,17 @@
+{
+  "command": "PYTHONPATH=solver/src build/python_envs/pre-e3-audit-20260723/bin/python -m pytest -q solver/tests/test_multitrip_schedule.py solver/tests/test_public_station_multitrip_20260723.py solver/tests/test_dynamic_truth_gate.py solver/tests/test_china81_bundle_20260720.py solver/tests/test_alns_crush_v2.py solver/tests/test_sisr_string_removal_20260718.py solver/tests/test_refined_carbon_charging.py solver/tests/test_native_channel_autopsy.py solver/tests/test_solomon_external_strong_baseline_interface_20260717.py baselines/china_e3_e7/test_adapter.py",
+  "passed": 117,
+  "failed": 0,
+  "duration_seconds": 14.58,
+  "covered_repairs": [
+    "strict public-station and multitrip certificate replay",
+    "dynamic-stage preservation of public charging stations",
+    "China81 city, tariff and carbon runtime boundaries",
+    "shared decoder and explicit no-charge-signal test contracts",
+    "candidate objective pre-scoring without hidden budget use",
+    "foundation adapter fail-closed behavior"
+  ],
+  "formal_search_performed": false,
+  "search_evaluations": 0,
+  "verdict": "PASS_TARGETED_PRE_E3_REPAIRS"
+}

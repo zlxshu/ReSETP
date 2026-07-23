@@ -1238,3 +1238,49 @@ LaDe-P重庆取件表已真实下载并登记SHA-256=`d58248d1...b056`，共1,17
   `paper_main.pdf=e0c5ae90b044092cafa8228eb6773362d0dbf52bcacf9eea47bf0ec61a7b16b0`；
   图3/图4 PDF分别为`ff0ccf09109f9f785a7990daf706c61f8486fc71f8c2cdb7425d8fbae9807d65`和
   `72a1cc2fba1095c093738cdc04dafe41e7449889b79376914f564c187c36dbd0`。
+
+# 2026-07-23 深圳独立价区充电电价情景闭合
+
+- 判定为 `PASS_SHENZHEN_2025_02_EV_CHARGING_SCENARIO_ROW_CLOSED`。官方专项规则
+  `粤发改价格〔2018〕313号` 明确深圳独立计量 EV 充电设施按报装容量执行大量用电
+  或高需求用电电价，并免收基本电费；深圳供电局 2026 年公开答复交叉确认。
+- 论文和未来 E3--E7 的预注册情景行固定为
+  `101--3000 kVA / 10 kV高供高计 / ≤250 kWh/(kVA·月)`，尖/峰/平/谷
+  `1.43716875/1.15526875/0.75776875/0.25716875 元/kWh`，基本费为 0。该数值在
+  2026-07-18 零搜索静态输入中已提前选定，本次数值变化为 0，未改封存 CSV、算法、
+  评价器、种子或 E2 成绩。
+- 证据包：
+  `baselines/e4_e5/shenzhen_2025_02_tariff_closure_20260723/`；机器覆盖登记：
+  `data/ChinaPrices/china_2025_02_tariff_register_v3.json`；旧 v2 HALT 保留。
+  主稿表已补深圳行并改为“构造情景”披露。真实命名深圳车场合同仍未知，不能写成
+  实测容量、计量方式、利用小时或账单。`formal_search_allowed=false` 保持不变。
+- 最终论文验收：XeLaTeX 连续两遍通过，21 页，未定义引用/交叉引用、LaTeX 错误、
+  overfull 均为 0；`math_audit` 为 36 通过、0 错误。终态哈希：
+  `paper_main.tex=f68e35f51e195db7068296e1818bc109bc74000778d4e0f3df8866cfbd5578bb`，
+  `paper_main.pdf=c906707444be560978eee0f439c05c916c2d62314119d0ce0de8e7f691689f9a`。
+# 2026-07-23 Codex — China E3 正式实验前全链路审计
+
+- 按用户批准的 reviewer 口径完成输入—映射—运行时—评价器—证书—算法接口—
+  实验任务—统计—环境—论文全链审计；允许修复的确定性接线缺陷已直接修复，
+  正式优化搜索未启动，`search_evaluations=0`。
+- 新建版本化 China81 权威并验收：地理/订单/运行参数/静态输入/有向矩阵 86/86
+  PASS，价格与碳边界故障注入 10/10 PASS，目标与检查器独立复算 29/29 PASS。
+  深圳由显式 `price_area_id`/合同情景属性选价，经纬度只做区域验证；成都碳列改为
+  四川、重庆保持重庆。动态初始方案过滤误删公共充电站的生产 bug 已修复，定向回归
+  117/117 PASS。
+- 修正影响 54/81 个实例和 2221 个客户位置；历史成都碳列影响 15 个实例；日期
+  对齐柴油候选若启用影响 81/81。预登记仿真算例 `cn-prd-50c-01` 受影响。因此旧
+  E2 China81 私有分层表、仿真算例算法表、路径表、迭代图及对应统计改判为
+  `HISTORICAL_ONLY_PENDING_CORRECTED_AUTHORITY_RERUN`；公开 benchmark 输入未受
+  此批中国修正影响，但旧批次缺当前增强检查器所需完整 witness，不补写重验结论。
+- 全量相关回归 888 collected / 878 passed / 1 skipped / 9 registered failed；
+  失败分类为 4 个历史哈希报警、3 个旧环境硬门、2 个历史 E5 真实证据缺陷，无新增
+  实现回归。冻结 PyVRP 环境仍未绑定 SciPy/HiGHS 和线程设置。
+- 最终判定：
+  `HOLD_E3_DECISIONS_AND_EXECUTION_BINDINGS_OPEN`、`formal_search_allowed=false`。
+  开跑前必须显式决定 D1 日期对齐柴油价、D2 有限车队/车场桩构造规则、D3 可执行
+  所属车场锁控制臂、D4 确定性成对预算、D5 限时 MIP 命名/最优性门、D6 修正后
+  E2 重跑范围，并闭合正式 runner、逐任务哈希/证书、81 bundle 对抗门及新保护语义
+  版本。权威包：
+  `baselines/china_e3_e7/pre_e3_full_chain_audit_20260723/`；长期说明：
+  `docs/handoff/memory/china_e3_full_chain_audit_20260723.md`。

@@ -1,0 +1,134 @@
+{
+  "created_at": "2026-07-23T13:57:19+00:00",
+  "current_status": {
+    "checked_at": "2026-07-23T13:57:19+00:00",
+    "checkpoint_inventory": [],
+    "csv_summaries": [],
+    "files": {
+      "/Volumes/移动硬盘（512G）/ReSETP/baselines/china_e3_e7/.e3-arm-semantics-v3.monitor/experiment.stdout.log": {
+        "age_seconds": 20.350064039230347,
+        "exists": true,
+        "mtime": 1784815019.44,
+        "path": "/Volumes/移动硬盘（512G）/ReSETP/baselines/china_e3_e7/.e3-arm-semantics-v3.monitor/experiment.stdout.log",
+        "size": 0
+      },
+      "/Volumes/移动硬盘（512G）/ReSETP/baselines/china_e3_e7/e3_arm_semantics_gate_v3_20260723/decision.json": {
+        "exists": false,
+        "path": "/Volumes/移动硬盘（512G）/ReSETP/baselines/china_e3_e7/e3_arm_semantics_gate_v3_20260723/decision.json"
+      },
+      "/Volumes/移动硬盘（512G）/ReSETP/baselines/china_e3_e7/e3_arm_semantics_gate_v3_20260723/raw_runs.csv": {
+        "exists": false,
+        "path": "/Volumes/移动硬盘（512G）/ReSETP/baselines/china_e3_e7/e3_arm_semantics_gate_v3_20260723/raw_runs.csv"
+      }
+    },
+    "findings": [],
+    "log_paths": [
+      "/Volumes/移动硬盘（512G）/ReSETP/baselines/china_e3_e7/.e3-arm-semantics-v3.monitor/experiment.stdout.log"
+    ],
+    "name": "e3-arm-semantics-v3",
+    "paused": false,
+    "process": {
+      "alive": true,
+      "cpu_percent": 100.0,
+      "members": [
+        {
+          "command": "/Volumes/移动硬盘（512G）/ReSETP/build/python_envs/pyvrp-hgs-0.12.2/bin/python /Volumes/移动硬盘（512G）/ReSETP/baselines/china_e3_e7/verify_e3_arm_semantics.py",
+          "cpu_percent": 100.0,
+          "elapsed": "00:20",
+          "pgid": 42057,
+          "pid": 42057,
+          "ppid": 1,
+          "rss_kb": 135520,
+          "state": "Rs"
+        }
+      ],
+      "pgid": 42057,
+      "root_pid": 42057,
+      "rss_mb": 132.34375
+    },
+    "protected_files": {
+      "/Volumes/移动硬盘（512G）/ReSETP/baselines/algorithm_prototypes/china81_mechanism_hybrid_20260720/pyvrp_adapter.py": {
+        "age_seconds": 12161.24964594841,
+        "exists": true,
+        "kind": "model",
+        "mtime": 1784802878.55,
+        "path": "/Volumes/移动硬盘（512G）/ReSETP/baselines/algorithm_prototypes/china81_mechanism_hybrid_20260720/pyvrp_adapter.py",
+        "sha256": "58c2947e94552dc49d7fbd83f7ff22b67315f67854d022e0de73256ab83a7cf8",
+        "size": 27321
+      },
+      "/Volumes/移动硬盘（512G）/ReSETP/baselines/china_e3_e7/verify_e3_arm_semantics.py": {
+        "age_seconds": 2516.401204109192,
+        "exists": true,
+        "kind": "experiment_contract",
+        "mtime": 1784812523.39,
+        "path": "/Volumes/移动硬盘（512G）/ReSETP/baselines/china_e3_e7/verify_e3_arm_semantics.py",
+        "sha256": "484552a886502ca288b518890a40085cb4305ff91b83759c246afee26b981c72",
+        "size": 10413
+      },
+      "/Volumes/移动硬盘（512G）/ReSETP/data/ChinaInstances/china_e3_formal_release_contract_v3_20260723.json": {
+        "age_seconds": 2525.131183862686,
+        "exists": true,
+        "kind": "experiment_contract",
+        "mtime": 1784812514.67,
+        "path": "/Volumes/移动硬盘（512G）/ReSETP/data/ChinaInstances/china_e3_formal_release_contract_v3_20260723.json",
+        "sha256": "2bfb74cd9ca98ddc6276f3dc6409ef2be6ba3b79fdf6cee8d285b1de7a55e942",
+        "size": 19118
+      },
+      "/Volumes/移动硬盘（512G）/ReSETP/solver/src/setp_solver/china81.py": {
+        "age_seconds": 11869.4300699234,
+        "exists": true,
+        "kind": "core_data",
+        "mtime": 1784803170.37,
+        "path": "/Volumes/移动硬盘（512G）/ReSETP/solver/src/setp_solver/china81.py",
+        "sha256": "df082b6a0e108aa5462b74048fcca7a63fdb7eaafb9e61f2dcdd787e3d9fcedd",
+        "size": 33679
+      },
+      "/Volumes/移动硬盘（512G）/ReSETP/solver/src/setp_solver/china81_completion.py": {
+        "age_seconds": 312979.4301402569,
+        "exists": true,
+        "kind": "evaluator",
+        "mtime": 1784502060.37,
+        "path": "/Volumes/移动硬盘（512G）/ReSETP/solver/src/setp_solver/china81_completion.py",
+        "sha256": "510fd958ab5fe519fd6c57124e639c776cd579af00758b9dd84e81654904957e",
+        "size": 11600
+      }
+    },
+    "runtime_seconds": 20.29854393005371,
+    "schema_version": 1,
+    "state": "RUNNING",
+    "system": {
+      "free_memory_mb": 87.796875,
+      "load_average_15m": 6.5439453125,
+      "load_average_1m": 3.45556640625,
+      "load_average_5m": 4.52490234375,
+      "logical_cpus": 8,
+      "memory_pressure_free_percent": 64.0,
+      "swapouts": 2866855
+    }
+  },
+  "experiment": {
+    "allowed_ai_actions": [
+      "continue",
+      "pause_for_read_only_diagnosis",
+      "keep_paused_and_preserve_scene",
+      "recommend_safe_stop",
+      "recommend_checkpoint_restart",
+      "escalate_research_contract_change_to_user"
+    ],
+    "expected_contract": {},
+    "forbidden_ai_actions": [
+      "change_model_or_research_question",
+      "change_evaluator_or_cost_function",
+      "change_experiment_contract_or_core_data",
+      "change_primary_config_or_paper_conclusion",
+      "resume_paused_job_without_explicit_human_command"
+    ],
+    "name": "e3-arm-semantics-v3",
+    "objective": "以最终 v3 合同零搜索验证控制臂车场硬锁与处理臂双向跨场邻域"
+  },
+  "minimal_log_tails": {
+    "/Volumes/移动硬盘（512G）/ReSETP/baselines/china_e3_e7/.e3-arm-semantics-v3.monitor/experiment.stdout.log": []
+  },
+  "reason": "MILESTONE",
+  "schema_version": 1
+}

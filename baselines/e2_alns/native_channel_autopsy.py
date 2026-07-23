@@ -39,6 +39,7 @@ from setp_solver.search.candidates import make_shared_initial_solution, solution
 from setp_solver.search.charging import repair_route_charging
 from setp_solver.search.fleet import normalize_solution_vehicle_trips
 from setp_solver.search import metaheuristic_baselines as mb
+from setp_solver.search import order_decoder
 from setp_solver.search.metaheuristic_baselines import run_metaheuristic_baseline, solution_to_dict
 from setp_solver.solution import Route, Solution
 
@@ -190,8 +191,15 @@ def static_fact_checks() -> dict[str, dict[str, Any]]:
     source_fast_flags = inspect.getsource(mb._baseline_fast_repair_flags)
     source_repair = inspect.getsource(__import__("setp_solver.search.repair_scoring", fromlist=["route_model_cost_delta"]).route_model_cost_delta)
     source_winner_flags = inspect.getsource(__import__("setp_solver.search.winner_operators", fromlist=["e2_alns_variant_flags"]).e2_alns_variant_flags)
-    source_decode = inspect.getsource(mb._decode_order_like_random_key)
-    source_route_plan = inspect.getsource(mb._route_customer_plan_feasible_cached)
+    # The decoder implementation was extracted into a shared module.  Inspect
+    # the implementation rather than the thin compatibility wrappers in
+    # metaheuristic_baselines.
+    source_decode = inspect.getsource(
+        order_decoder.decode_order_like_random_key
+    )
+    source_route_plan = inspect.getsource(
+        order_decoder.route_customer_plan_feasible_cached
+    )
     source_check = inspect.getsource(check_solution)
     checks = {
         "A1_baseline_no_longer_forces_true_repair_zero": {
@@ -207,8 +215,8 @@ def static_fact_checks() -> dict[str, dict[str, Any]]:
             "evidence": "winner_operators.e2_alns_variant_flags sets TRUE_REPAIR to 1",
         },
         "A4_decode_fallback_to_all_cv_on_violations": {
-            "pass": "if check_solution(solution" in source_decode and "_all_cv_solution_for_session" in source_decode and "return violations" in source_check,
-            "evidence": "check_solution returns violation list; _decode_order_like_random_key falls back to all-CV when violations are present",
+            "pass": "if check_solution(solution" in source_decode and "all_cv_solution_for_order" in source_decode and "return violations" in source_check,
+            "evidence": "check_solution returns a violation list; order_decoder.decode_order_like_random_key falls back to the shared all-CV decoder when violations are present",
         },
         "A5_route_plan_feasible_uses_cv_temp_route": {
             "pass": 'Route("TMP", "cv"' in source_route_plan and "route_node_schedule" in source_route_plan,

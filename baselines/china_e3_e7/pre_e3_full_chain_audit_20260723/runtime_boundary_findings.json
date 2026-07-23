@@ -1,0 +1,105 @@
+{
+  "checks": 10,
+  "created_at_utc": "2026-07-23T09:34:16.373032+00:00",
+  "formal_search_allowed": false,
+  "results": [
+    {
+      "check_id": "A4R-LEGACY-01",
+      "evidence": "china81.py::_load_time_profile",
+      "expected": "production loader fails closed on the frozen v1 mismatch",
+      "observed": "China81 calendar city-carbon mapping disagrees for 'chengdu': observed='Chongqing', expected='Sichuan'",
+      "severity": "P0",
+      "status": "PASS",
+      "subject": "legacy Chengdu-to-Chongqing carbon contamination is rejected"
+    },
+    {
+      "check_id": "A4R-01",
+      "evidence": "production China81 loader and cost.py functions",
+      "expected": "9 cities x 48 slots match independent one-slot arithmetic",
+      "observed": "errors=0",
+      "severity": "P0",
+      "status": "PASS",
+      "subject": "48-slot city-specific exact-boundary price/carbon readback"
+    },
+    {
+      "check_id": "A4R-02",
+      "evidence": "one 1 kWh action per city, starting 30 seconds before transition",
+      "expected": "energy-weighted settlement closes across both slots",
+      "observed": "errors=[]",
+      "severity": "P0",
+      "status": "PASS",
+      "subject": "charging action crossing a TOU/carbon boundary"
+    },
+    {
+      "check_id": "A4R-03",
+      "evidence": "one 1 kWh cyclic action per city",
+      "expected": "23:59:30--00:00:30 splits exactly over slots 48 and 1",
+      "observed": "errors=[]",
+      "severity": "P0",
+      "status": "PASS",
+      "subject": "charging action crossing 24:00"
+    },
+    {
+      "check_id": "A4R-04",
+      "evidence": "one 0.1 kWh depot/public pair per city at 06:00",
+      "expected": "same-city public minus depot cost equals 0.4 CNY/kWh proxy",
+      "observed": "errors=[]",
+      "severity": "P0",
+      "status": "PASS",
+      "subject": "depot/public price-field selection"
+    },
+    {
+      "check_id": "A4R-FI-01",
+      "evidence": "china81.py::_load_time_profile on a temporary malformed calendar",
+      "expected": "formal China81 settlement fails closed",
+      "observed": "rejected",
+      "severity": "P0",
+      "status": "PASS",
+      "subject": "fault injection: one missing time-varying price field"
+    },
+    {
+      "check_id": "A4R-FI-02",
+      "evidence": "china81.py::_load_time_profile on a temporary malformed calendar",
+      "expected": "formal China81 profile cannot downgrade to shared-profile mode",
+      "observed": "rejected",
+      "severity": "P0",
+      "status": "PASS",
+      "subject": "fault injection: city labels removed from formal profile"
+    },
+    {
+      "check_id": "A4R-FI-03",
+      "evidence": "china81.py::_load_time_profile; cost.py profile lookup",
+      "expected": "half_hour_slot s starts at exactly (s-1)*1800 seconds",
+      "observed": "rejected",
+      "severity": "P0",
+      "status": "PASS",
+      "subject": "fault injection: slot id and local-time start disagree"
+    },
+    {
+      "check_id": "A4R-HARD-01",
+      "evidence": "cost.py::charging_action_electricity_cost",
+      "expected": "formal caller must validate first; preferably expose an explicit strict mode instead of silently using the historical fallback",
+      "observed": "rejected",
+      "severity": "P2",
+      "status": "PASS",
+      "subject": "hardening: low-level settlement receives partial price rows"
+    },
+    {
+      "check_id": "A4R-FI-04",
+      "evidence": "china81.py::_load_time_profile",
+      "expected": "loader fails closed",
+      "observed": "rejected",
+      "severity": "P0",
+      "status": "PASS",
+      "subject": "fault injection: requested date absent from calendar"
+    }
+  ],
+  "schema": "resetp.pre-e3-runtime-boundary-audit.v1",
+  "script": "baselines/china_e3_e7/pre_e3_full_chain_audit_20260723/run_runtime_price_carbon_boundary_audit.py",
+  "script_sha256": "f6d90740be8c42e01ed076c0b0bba8cfd597077956e27c76e7a3f9a82402b4bd",
+  "search_evaluations": 0,
+  "statuses": {
+    "PASS": 10
+  },
+  "verdict": "PASS_RUNTIME_BOUNDARIES"
+}

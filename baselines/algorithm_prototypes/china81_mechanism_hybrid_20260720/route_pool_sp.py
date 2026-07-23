@@ -1,4 +1,4 @@
-"""Exact set-partitioning recombination of genuine-HGS mechanism elites."""
+"""Time-limited MIP route-pool recombination of genuine-HGS elites."""
 
 from __future__ import annotations
 
@@ -57,15 +57,28 @@ def run_hgs_route_pool_recombination(
     common_initial_solution: Solution,
     *,
     seed: int,
-    hgs_seconds_per_view: float,
+    hgs_seconds_per_view: float | None,
     exact_elites_per_view: int = 8,
     max_archive_candidates_per_view: int = 24,
     sp_time_limit_seconds: float = 5.0,
+    hard_home_depot_lock: bool = False,
+    max_hgs_iterations_per_view: int | None = None,
+    wallclock_safety_seconds_per_view: float | None = None,
 ) -> HgsRoutePoolRun:
     """Generate mechanism-diverse HGS elites and recombine their routes."""
 
-    if hgs_seconds_per_view <= 0.0 or sp_time_limit_seconds <= 0.0:
-        raise ValueError("HGS and set-partitioning times must be positive")
+    if sp_time_limit_seconds <= 0.0:
+        raise ValueError("MIP route-pool time limit must be positive")
+    if max_hgs_iterations_per_view is None:
+        if hgs_seconds_per_view is None or hgs_seconds_per_view <= 0.0:
+            raise ValueError("legacy HGS runtime must be positive")
+    elif (
+        wallclock_safety_seconds_per_view is None
+        or wallclock_safety_seconds_per_view <= 0.0
+    ):
+        raise ValueError(
+            "deterministic HGS mode requires a wallclock safety cap"
+        )
     if exact_elites_per_view < 1:
         raise ValueError("exact_elites_per_view must be positive")
     started = perf_counter()
@@ -75,17 +88,26 @@ def run_hgs_route_pool_recombination(
         problem = build_pyvrp_problem(
             bundle,
             route_proxy_mode=mode,
+            hard_home_depot_lock=hard_home_depot_lock,
         )
         view_epochs[mode] = _run_exact_epoch(
             bundle,
             problem,
             common_initial_solution,
             seed=int(seed),
-            runtime_seconds=float(hgs_seconds_per_view),
+            runtime_seconds=(
+                None
+                if hgs_seconds_per_view is None
+                else float(hgs_seconds_per_view)
+            ),
             warm_elites=(),
             exact_elite_count=int(exact_elites_per_view),
             max_archive_candidates=int(
                 max_archive_candidates_per_view
+            ),
+            max_hgs_iterations=max_hgs_iterations_per_view,
+            wallclock_safety_seconds=(
+                wallclock_safety_seconds_per_view
             ),
         )
     parent_completions = [
@@ -97,15 +119,35 @@ def run_hgs_route_pool_recombination(
         parent_completions,
         key=lambda item: item.objective,
     )
-    records = _route_pool_records(bundle, view_epochs)
+    records = _route_pool_records(
+        bundle,
+        view_epochs,
+        hard_home_depot_lock=hard_home_depot_lock,
+    )
     recombined, sp_stats = _solve_set_partitioning(
         bundle,
         records,
         time_limit_seconds=sp_time_limit_seconds,
+        hard_home_depot_lock=hard_home_depot_lock,
     )
     if recombined is None:
-        completion = parent_completion
+        parent_objective, _, parent_violations = exact_china81_score(
+            parent_completion.solution,
+            bundle,
+        )
+        if parent_violations:
+            raise ValueError(
+                "best exact HGS parent failed final independent recheck"
+            )
+        completion = complete_china81_route_skeleton(
+            parent_completion.solution,
+            bundle,
+        )
         selected_source = "best_exact_hgs_parent"
+        sp_stats["fallback_parent_independent_objective"] = float(
+            parent_objective
+        )
+        sp_stats["fallback_parent_independent_violation_count"] = 0
     else:
         recombined_completion = complete_china81_route_skeleton(
             recombined,
@@ -116,7 +158,7 @@ def run_hgs_route_pool_recombination(
             < parent_completion.objective - 1.0e-9
         ):
             completion = recombined_completion
-            selected_source = "set_partitioning_recombination"
+            selected_source = "time_limited_mip_recombination"
         else:
             completion = parent_completion
             selected_source = "best_exact_hgs_parent"
@@ -124,6 +166,18 @@ def run_hgs_route_pool_recombination(
             recombined_completion.objective
         )
     elapsed = perf_counter() - started
+    epoch_attempts = sum(
+        int(epoch.stats["complete_candidate_evaluation_attempts"])
+        for epoch in view_epochs.values()
+    )
+    total_complete_attempts = epoch_attempts + 2
+    expected_complete_attempts = (
+        len(modes) * (int(max_archive_candidates_per_view) + 2) + 2
+    )
+    safety_triggered = any(
+        bool(epoch.stats["wallclock_safety_triggered"])
+        for epoch in view_epochs.values()
+    )
     return HgsRoutePoolRun(
         solution=completion.solution,
         completion=completion,
@@ -133,19 +187,47 @@ def run_hgs_route_pool_recombination(
         stats={
             "algorithm": "MV-HGS-SP",
             "algorithm_name_en": (
-                "Multi-View Hybrid Genetic Search with Exact Route-Pool "
+                "Multi-View Hybrid Genetic Search with Time-Limited MIP "
+                "Route-Pool "
                 "Recombination"
             ),
             "algorithm_name_zh": (
-                "多视角混合遗传搜索—精确路线池重组算法"
+                "多视角混合遗传搜索—限时MIP路线池重组算法"
             ),
             "story": (
                 "three genuine HGS populations generate complementary "
                 "routes; the full nonlinear ReSETP model selects elites; an "
-                "exact set-partitioning layer recombines routes across views"
+                "audited time-limited MIP layer recombines routes across views"
             ),
             "seed": int(seed),
-            "hgs_seconds_per_view": float(hgs_seconds_per_view),
+            "hgs_seconds_per_view": (
+                None
+                if hgs_seconds_per_view is None
+                else float(hgs_seconds_per_view)
+            ),
+            "max_hgs_iterations_per_view": (
+                None
+                if max_hgs_iterations_per_view is None
+                else int(max_hgs_iterations_per_view)
+            ),
+            "wallclock_safety_seconds_per_view": (
+                None
+                if wallclock_safety_seconds_per_view is None
+                else float(wallclock_safety_seconds_per_view)
+            ),
+            "wallclock_safety_triggered": safety_triggered,
+            "primary_budget_unit": (
+                "complete_candidate_evaluation_attempt"
+            ),
+            "complete_candidate_evaluation_attempts": (
+                total_complete_attempts
+            ),
+            "complete_candidate_budget_expected": (
+                expected_complete_attempts
+            ),
+            "complete_candidate_budget_exactly_consumed": (
+                total_complete_attempts == expected_complete_attempts
+            ),
             "view_count": len(modes),
             "exact_elites_per_view": int(exact_elites_per_view),
             "archive_candidates_per_view": int(
@@ -165,7 +247,12 @@ def run_hgs_route_pool_recombination(
             "improvement_over_best_parent": float(
                 parent_completion.objective - completion.objective
             ),
-            "set_partitioning": sp_stats,
+            "route_pool_mip": sp_stats,
+            "set_partitioning": {
+                **sp_stats,
+                "legacy_key_name_only": True,
+            },
+            "hard_home_depot_lock": bool(hard_home_depot_lock),
             "measured_elapsed_seconds": elapsed,
         },
     )
@@ -174,6 +261,8 @@ def run_hgs_route_pool_recombination(
 def _route_pool_records(
     bundle: China81Bundle,
     view_epochs: dict[str, HgsExactEpoch],
+    *,
+    hard_home_depot_lock: bool = False,
 ) -> tuple[RoutePoolRecord, ...]:
     unique: dict[tuple[Any, ...], RoutePoolRecord] = {}
     customer_ids = {
@@ -196,6 +285,12 @@ def _route_pool_records(
                     if node_id in customer_ids
                 )
                 if not customers:
+                    continue
+                if hard_home_depot_lock and any(
+                    bundle.customer_home_depot[customer_id]
+                    != route.home_depot_id
+                    for customer_id in customers
+                ):
                     continue
                 actions = tuple(
                     actions_by_vehicle.get(route.vehicle_id, ())
@@ -243,7 +338,20 @@ def _solve_set_partitioning(
     records: tuple[RoutePoolRecord, ...],
     *,
     time_limit_seconds: float,
+    hard_home_depot_lock: bool = False,
 ) -> tuple[Solution | None, dict[str, Any]]:
+    if time_limit_seconds <= 0.0:
+        raise ValueError("MIP route-pool time limit must be positive")
+    if hard_home_depot_lock:
+        records = tuple(
+            record
+            for record in records
+            if all(
+                bundle.customer_home_depot[customer_id]
+                == record.route.home_depot_id
+                for customer_id in record.customers
+            )
+        )
     customers = tuple(
         node.node_id
         for node in bundle.instance.nodes
@@ -253,6 +361,25 @@ def _solve_set_partitioning(
         customer_id: index
         for index, customer_id in enumerate(customers)
     }
+    if not records:
+        return None, {
+            "solver": "scipy.optimize.milp/HiGHS",
+            "component": "time-limited MIP route-pool recombination",
+            "success": False,
+            "status": None,
+            "status_class": "NO_COLUMNS",
+            "message": "route pool is empty after mechanism filtering",
+            "incumbent_available": False,
+            "objective": None,
+            "dual_bound": None,
+            "mip_gap": None,
+            "mip_node_count": None,
+            "time_limit_seconds": float(time_limit_seconds),
+            "optimality_proven": False,
+            "selected_route_count": 0,
+            "independent_violation_count": None,
+            "independent_complete_candidate_evaluation_attempts": 0,
+        }
     matrix = np.zeros((len(customers), len(records)), dtype=float)
     for column, record in enumerate(records):
         for customer_id in record.customers:
@@ -289,6 +416,26 @@ def _solve_set_partitioning(
                 ub=float(limit),
             )
         )
+    for depot_id, caps in sorted(bundle.fleet_caps_by_depot.items()):
+        for vehicle_type in ("cv", "ev"):
+            row = np.array(
+                [
+                    1.0
+                    if (
+                        record.route.vehicle_type.lower() == vehicle_type
+                        and record.route.home_depot_id == depot_id
+                    )
+                    else 0.0
+                    for record in records
+                ]
+            )
+            constraints.append(
+                LinearConstraint(
+                    row,
+                    lb=-np.inf,
+                    ub=float(caps[f"num_{vehicle_type}"]),
+                )
+            )
     result = milp(
         c=costs,
         integrality=np.ones(len(records)),
@@ -301,25 +448,81 @@ def _solve_set_partitioning(
     )
     stats: dict[str, Any] = {
         "solver": "scipy.optimize.milp/HiGHS",
+        "component": "time-limited MIP route-pool recombination",
         "success": bool(result.success),
         "status": int(result.status),
+        "status_class": (
+            "OPTIMAL"
+            if bool(result.success) and int(result.status) == 0
+            else (
+                "LIMIT_WITH_INCUMBENT"
+                if result.x is not None
+                else "NO_INCUMBENT"
+            )
+        ),
         "message": str(result.message),
+        "incumbent_available": result.x is not None,
         "objective": (
             None if result.fun is None else float(result.fun)
+        ),
+        "dual_bound": (
+            None
+            if getattr(result, "mip_dual_bound", None) is None
+            else float(result.mip_dual_bound)
         ),
         "mip_gap": (
             None
             if getattr(result, "mip_gap", None) is None
             else float(result.mip_gap)
         ),
+        "mip_node_count": (
+            None
+            if getattr(result, "mip_node_count", None) is None
+            else int(result.mip_node_count)
+        ),
+        "time_limit_seconds": float(time_limit_seconds),
+        "optimality_proven": bool(
+            result.success and int(result.status) == 0
+        ),
+        "incumbent_vector_integral": None,
+        "incumbent_cover_exact": None,
         "selected_route_count": 0,
         "independent_violation_count": None,
+        "independent_complete_candidate_evaluation_attempts": 0,
     }
     if result.x is None:
         return None, stats
+    vector = np.asarray(result.x, dtype=float)
+    integral = bool(
+        np.all(
+            np.isclose(
+                vector,
+                np.rint(vector),
+                rtol=0.0,
+                atol=1e-7,
+            )
+        )
+    )
+    stats["incumbent_vector_integral"] = integral
+    if not integral:
+        stats["status_class"] = "REJECTED_NONINTEGRAL_INCUMBENT"
+        return None, stats
+    selected_vector = np.rint(vector)
+    cover_exact = bool(
+        np.allclose(
+            matrix @ selected_vector,
+            np.ones(len(customers)),
+            rtol=0.0,
+            atol=1e-7,
+        )
+    )
+    stats["incumbent_cover_exact"] = cover_exact
+    if not cover_exact:
+        stats["status_class"] = "REJECTED_INEXACT_COVER"
+        return None, stats
     selected = [
         records[index]
-        for index, value in enumerate(result.x)
+        for index, value in enumerate(selected_vector)
         if value > 0.5
     ]
     stats["selected_route_count"] = len(selected)
@@ -340,7 +543,9 @@ def _solve_set_partitioning(
         bundle.customer_home_depot,
     )
     _, _, violations = exact_china81_score(solution, bundle)
+    stats["independent_complete_candidate_evaluation_attempts"] = 1
     stats["independent_violation_count"] = len(violations)
     if violations:
+        stats["status_class"] = "REJECTED_COMPLETE_MODEL_VIOLATIONS"
         return None, stats
     return solution, stats

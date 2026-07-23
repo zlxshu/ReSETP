@@ -1,0 +1,63 @@
+{
+  "schema": "resetp.pre-e3-full-chain-reviewer-audit.v1",
+  "audit_id": "PRE-E3-FULL-CHAIN-REVIEWER-AUDIT-001",
+  "created_at_utc": "2026-07-23T09:35:44Z",
+  "git_head": "8875cdc66f4c8d8c10d5131df5ab7c7503428dbf",
+  "git_branch": "codex/reporting-pipeline",
+  "formal_search_allowed": false,
+  "formal_search_performed": false,
+  "search_evaluations": 0,
+  "scope": [
+    "input provenance and immutable authority",
+    "GIS and city/price/carbon/diesel mapping",
+    "runtime price and carbon boundaries",
+    "objective and independent checker arithmetic",
+    "strict physical-vehicle, SOC and charging certificate",
+    "algorithm and route-pool reproducibility",
+    "paired task, statistics and witness interfaces",
+    "regression, dependency, environment and security review",
+    "E2 impact and manuscript claim audit"
+  ],
+  "environment": {
+    "audit_python": "build/python_envs/pre-e3-audit-20260723/bin/python",
+    "python_version": "3.13.9",
+    "numpy_version": "2.5.1",
+    "scipy_version": "1.16.3",
+    "pyvrp_version": "0.12.2",
+    "frozen_pyvrp_python": "build/python_envs/pyvrp-hgs-0.12.2/bin/python",
+    "frozen_pyvrp_scipy_bound": false,
+    "thread_controls_bound": false,
+    "pip_check_audit_environment": "PASS",
+    "pip_check_frozen_pyvrp_environment": "PASS"
+  },
+  "evidence_counts": {
+    "china81_instances": 81,
+    "orders": 5805,
+    "corrected_authority_checks": 86,
+    "runtime_boundary_checks": 10,
+    "objective_checker_checks": 29,
+    "interface_reproducibility_checks": 24,
+    "targeted_regression_tests": 117,
+    "full_regression_tests_collected": 888,
+    "full_regression_passed": 878,
+    "full_regression_failed_registered": 9,
+    "paper_claims_reviewed": 12
+  },
+  "corrected_authorities": {
+    "runtime_parameters": "data/ChinaInstances/china81_runtime_parameter_authority_v3_20260723",
+    "customer_assignments": "data/ChinaInstances/china81_customer_location_assignments_gis_v3_20260723",
+    "order_attributes": "data/ChinaInstances/china81_order_attributes_gis_v2_20260723",
+    "static_inputs": "data/ChinaInstances/china81_stage2_static_inputs_corrected_v3_20260723",
+    "directed_matrices": "data/ChinaInstances/china81_local_directed_matrices_corrected_v10_20260723",
+    "acceptance_verdict": "PASS_CORRECTED_AUTHORITIES__FORMAL_E3_STILL_HELD"
+  },
+  "e2_exposure": {
+    "geography_resampled_instances": 54,
+    "geography_resampled_customer_rows": 2221,
+    "chengdu_carbon_affected_instances": 15,
+    "diesel_affected_instances_if_activated": 81,
+    "representative_instance_affected": true,
+    "public_standard_benchmark_inputs_affected": false
+  },
+  "historical_evidence_policy": "Old PASS/HALT/raw/hash artifacts are retained and never overwritten. Resolution is expressed through new versioned authorities and this audit ledger."
+}

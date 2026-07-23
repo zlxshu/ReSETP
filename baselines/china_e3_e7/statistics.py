@@ -11,7 +11,8 @@ import hashlib
 import json
 import math
 import random
-from collections import defaultdict
+import re
+from collections import Counter, defaultdict
 from pathlib import Path
 from typing import Any, Iterable
 
@@ -135,10 +136,175 @@ def _bool(value: Any) -> float | None:
     return _float(value)
 
 
+def _normalise_formal_row(
+    source: dict[str, str],
+) -> dict[str, str]:
+    """Map a sealed E3 task row onto the common E3--E7 raw schema.
+
+    The formal E3 runner deliberately keeps detailed task fields such as
+    ``arm_id`` and ``elapsed_seconds``.  This adapter adds only deterministic
+    aliases; it never changes a metric value or drops an unsuccessful row.
+    """
+
+    row = dict(source)
+    arm_id = str(row.get("arm_id", "")).strip()
+    task_id = str(row.get("task_id", "")).strip()
+    if arm_id:
+        row.setdefault("family", "E3")
+        row.setdefault("arm", arm_id)
+    if task_id.startswith("E3__"):
+        row.setdefault("record_type", "formal_run")
+        row.setdefault(
+            "experiment_id",
+            "CHINA-E3-FORMAL-RELEASE-001",
+        )
+    if (
+        str(row.get("status", "")).strip().upper() == "PASS"
+    ):
+        row["formal_task_status"] = "PASS"
+        row["status"] = "complete"
+        row.setdefault("feasible", "true")
+    aliases = {
+        "customer_size": "customer_count",
+        "total_emissions": "total_emissions_kg",
+        "runtime_seconds": "elapsed_seconds",
+        "search_evaluations": "complete_candidate_attempts",
+    }
+    for target, source_field in aliases.items():
+        if not str(row.get(target, "")).strip():
+            value = row.get(source_field)
+            if value is not None and str(value).strip():
+                row[target] = str(value)
+    if not str(row.get("map_index", "")).strip():
+        match = re.search(
+            r"-(\d\d)-V2-LOCATIONS$",
+            str(row.get("instance_id", "")),
+        )
+        if match is not None:
+            row["map_index"] = str(int(match.group(1)))
+    return row
+
+
 def _metric_value(row: dict[str, str], metric: str) -> float | None:
     if metric == "feasible":
         return _bool(row.get(metric))
     return _float(row.get(metric))
+
+
+def _raw_primary_cell_id(row: dict[str, str]) -> str:
+    """Return the raw-result cell id without using catalog-only field names."""
+
+    raw_size = row.get("customer_size")
+    if raw_size is None or str(raw_size).strip() == "":
+        # Retain compatibility with catalog rows used by older unit helpers,
+        # but formal RAW_FIELDS uses customer_size.
+        raw_size = row.get("customer_count")
+    if raw_size is None or str(raw_size).strip() == "":
+        raise ValueError("raw row has no customer_size")
+    region = str(row.get("region", "")).strip().lower()
+    if not region:
+        raise ValueError("raw row has no region")
+    return f"{region}__{int(float(raw_size))}"
+
+
+def _expected_pair_id(
+    family_id: str,
+    instance_id: str,
+    seed: str,
+) -> str:
+    return f"{family_id}__{instance_id}__seed{int(float(seed))}"
+
+
+def _pairing_violations(
+    rows: list[dict[str, str]],
+    *,
+    family_id: str,
+    control: str,
+    treatment: str,
+) -> list[str]:
+    """Fail closed unless the two arms share byte-bound pair identities."""
+
+    rows = [_normalise_formal_row(row) for row in rows]
+    selected = [
+        row
+        for row in rows
+        if row.get("family") == family_id
+        and row.get("arm") in {control, treatment}
+        and row.get("status") == "complete"
+    ]
+    if not selected:
+        return []
+    grouped: dict[
+        tuple[str, str],
+        dict[str, list[dict[str, str]]],
+    ] = defaultdict(lambda: defaultdict(list))
+    violations: list[str] = []
+    for row in selected:
+        instance_id = str(row.get("instance_id", "")).strip()
+        seed = str(row.get("seed", "")).strip()
+        if not instance_id or not seed:
+            violations.append(
+                f"{family_id}:row_missing_instance_or_seed"
+            )
+            continue
+        grouped[(instance_id, seed)][row["arm"]].append(row)
+
+    paired_identity_fields = (
+        "region",
+        "customer_size",
+        "map_index",
+        "pair_id",
+        "input_manifest_sha256",
+        "contract_sha256",
+    )
+    if any(row.get("arm_id") for row in selected):
+        paired_identity_fields += (
+            "spatiotemporal_crosswalk_sha256",
+            "responsibility_map_sha256",
+            "initial_solution_sha256",
+            "algorithm_source_sha256",
+            "evaluator_source_sha256",
+            "go_decision_sha256",
+        )
+    for (instance_id, seed), by_arm in sorted(grouped.items()):
+        label = f"{family_id}:{instance_id}:seed{seed}"
+        if set(by_arm) != {control, treatment}:
+            violations.append(
+                f"{label}:arms={sorted(by_arm)}"
+            )
+            continue
+        if any(len(by_arm[arm]) != 1 for arm in (control, treatment)):
+            violations.append(
+                f"{label}:duplicate_arm_rows="
+                f"{ {arm: len(by_arm[arm]) for arm in (control, treatment)} }"
+            )
+            continue
+        control_row = by_arm[control][0]
+        treatment_row = by_arm[treatment][0]
+        expected_pair = _expected_pair_id(
+            family_id,
+            instance_id,
+            seed,
+        )
+        if (
+            control_row.get("pair_id") != expected_pair
+            or treatment_row.get("pair_id") != expected_pair
+        ):
+            violations.append(
+                f"{label}:pair_id_not_canonical"
+            )
+        for field in paired_identity_fields:
+            left = str(control_row.get(field, "")).strip()
+            right = str(treatment_row.get(field, "")).strip()
+            if not left or not right:
+                violations.append(
+                    f"{label}:{field}=missing"
+                )
+            elif left != right:
+                violations.append(
+                    f"{label}:{field}=mismatch"
+                )
+    return violations
 
 
 def _exact_sign_test(values: list[float]) -> float | None:
@@ -216,7 +382,9 @@ def _cell_map_means(
     metric: str,
     family_id: str,
     arm_id: str,
+    expected_seeds: set[str] | None = None,
 ) -> tuple[dict[str, float], list[str]]:
+    rows = [_normalise_formal_row(row) for row in rows]
     selected = [
         row
         for row in rows
@@ -227,13 +395,35 @@ def _cell_map_means(
     by_map: dict[str, dict[str, dict[str, list[float]]]] = defaultdict(
         lambda: defaultdict(lambda: defaultdict(list))
     )
+    missing: list[str] = []
+    seen_rows: Counter[tuple[str, str, str]] = Counter()
     for row in selected:
+        cell = _raw_primary_cell_id(row)
+        instance_id = row["instance_id"]
+        seed = row["seed"]
+        seen_key = (cell, instance_id, seed)
+        seen_rows[seen_key] += 1
+        if seen_rows[seen_key] > 1:
+            missing.append(
+                f"{family_id}:{arm_id}:{instance_id}:"
+                f"seed{seed}:duplicate_formal_row"
+            )
+            continue
+        if metric != "feasible" and _bool(row.get("feasible")) != 1.0:
+            missing.append(
+                f"{family_id}:{arm_id}:{instance_id}:"
+                f"seed{seed}:{metric}=infeasible_without_registered_rule"
+            )
+            continue
         value = _metric_value(row, metric)
         if value is None:
+            missing.append(
+                f"{family_id}:{arm_id}:{instance_id}:"
+                f"seed{seed}:{metric}=missing"
+            )
             continue
-        by_map[primary_cell_id(row)][row["instance_id"]][row["seed"]].append(value)
+        by_map[cell][instance_id][seed].append(value)
     means: dict[str, float] = {}
-    missing: list[str] = []
     for cell, instances in by_map.items():
         if len(instances) != 3:
             missing.append(f"{family_id}:{arm_id}:{cell}:maps={len(instances)}")
@@ -241,6 +431,16 @@ def _cell_map_means(
         seed_sets = [set(seeds) for seeds in instances.values()]
         if len({tuple(sorted(seeds)) for seeds in seed_sets}) != 1:
             missing.append(f"{family_id}:{arm_id}:{cell}:non_common_seeds")
+            continue
+        if (
+            expected_seeds is not None
+            and any(seeds != expected_seeds for seeds in seed_sets)
+        ):
+            observed = sorted(set().union(*seed_sets))
+            missing.append(
+                f"{family_id}:{arm_id}:{cell}:"
+                f"seeds={observed}:expected={sorted(expected_seeds)}"
+            )
             continue
         if any(
             len(values) != 1
@@ -268,6 +468,7 @@ def _contrast_rows(
     contrast: dict[str, Any],
     contrast_role: str,
     repo_root: Path,
+    expected_seeds: set[str] | None = None,
 ) -> tuple[list[dict[str, Any]], list[str]]:
     control = contrast["control"]
     treatment = contrast["treatment"]
@@ -277,10 +478,18 @@ def _contrast_rows(
     missing: list[str] = []
     for metric_index, metric in enumerate(metrics):
         controls, control_missing = _cell_map_means(
-            rows, metric=metric, family_id=family["id"], arm_id=control
+            rows,
+            metric=metric,
+            family_id=family["id"],
+            arm_id=control,
+            expected_seeds=expected_seeds,
         )
         treatments, treatment_missing = _cell_map_means(
-            rows, metric=metric, family_id=family["id"], arm_id=treatment
+            rows,
+            metric=metric,
+            family_id=family["id"],
+            arm_id=treatment,
+            expected_seeds=expected_seeds,
         )
         missing.extend(control_missing + treatment_missing)
         cells = sorted(set(controls) & set(treatments))
@@ -347,7 +556,14 @@ def aggregate_raw(
     """Aggregate a future raw-runs file without treating placeholders as data."""
 
     contract = load_contract(repo_root)
-    rows = read_csv(raw_path) if raw_path.is_file() else []
+    rows = (
+        [
+            _normalise_formal_row(row)
+            for row in read_csv(raw_path)
+        ]
+        if raw_path.is_file()
+        else []
+    )
     data_rows = [row for row in rows if row.get("record_type") == "formal_run"]
     certificate_path = out_dir / "independent_recalc_certificate.json"
     certificate: dict[str, Any] = {}
@@ -356,15 +572,32 @@ def aggregate_raw(
             certificate = json.loads(certificate_path.read_text(encoding="utf-8"))
         except (OSError, json.JSONDecodeError):
             certificate = {}
+    accepted_contract_ids = {
+        str(contract["contract_id"]),
+        str(contract["experiment_id"]),
+    }
     certificate_valid = bool(
         data_rows
         and certificate.get("status") == "PASS_INDEPENDENT_RECALC"
-        and certificate.get("contract_id") == contract["contract_id"]
+        and certificate.get("contract_id") in accepted_contract_ids
         and certificate.get("raw_runs_sha256") == _sha256(raw_path)
     )
     summaries: list[dict[str, Any]] = []
     missing: list[str] = []
+    active_families = {
+        str(row.get("family", "")).strip()
+        for row in data_rows
+        if str(row.get("family", "")).strip()
+    }
+    expected_seeds = {
+        str(seed)
+        for seed in contract["paired_sampling"][
+            "initial_common_seeds"
+        ]
+    }
     for family in contract["families"]:
+        if family["id"] not in active_families:
+            continue
         primary_contrast = family.get(
             "primary_contrast",
             {
@@ -378,16 +611,27 @@ def aggregate_raw(
             for contrast in family.get("secondary_contrasts", [])
         )
         for contrast_role, contrast in contrast_specs:
+            if contrast_role == "primary":
+                missing.extend(
+                    _pairing_violations(
+                        data_rows,
+                        family_id=family["id"],
+                        control=contrast["control"],
+                        treatment=contrast["treatment"],
+                    )
+                )
             family_summary, family_missing = _contrast_rows(
                 data_rows,
                 family,
                 contrast=contrast,
                 contrast_role=contrast_role,
                 repo_root=repo_root,
+                expected_seeds=expected_seeds,
             )
             summaries.extend(family_summary)
             if contrast_role == "primary":
                 missing.extend(family_missing)
+    missing = list(dict.fromkeys(missing))
     primary = [
         row
         for row in summaries
@@ -406,6 +650,7 @@ def aggregate_raw(
         "schema": "resetp.china.e3-e7-aggregate-decision.v1",
         "raw_path": str(raw_path),
         "formal_rows": len(data_rows),
+        "active_families": sorted(active_families),
         "search_evaluations": sum(int(float(row.get("search_evaluations") or 0)) for row in data_rows),
         "formal_search_allowed": False,
         "independent_recalc_complete": certificate_valid,
