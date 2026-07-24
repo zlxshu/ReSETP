@@ -1052,7 +1052,7 @@ v6 预登记与运行器：baselines/e2_final_campaign_20260720/corrected_china8
 
 ## E2-STAGED-PORTFOLIO-SMALL-ARCHIVE-LEDGER-001：v6 HALT 后的小档案验收修复
 
-状态：`USER_DIRECTED_REPAIR__V7_PREFLIGHT_PASS__FORMAL_READY`
+状态：`USER_DIRECTED_REPAIR__V7_PREFLIGHT_PASS__FORMAL_RUNNING`
 （2026-07-24）。
 
 v6 retry 在 `cn-cy-10c-01-V2-LOCATIONS/seed1` 触发
@@ -1090,3 +1090,27 @@ v7 不复用 v5/v6 任务；先在预登记的 10/100/200 客户三任务上通�
 四份哈希清单共 40 个条目已独立复核一致，30 个 AppleDouble 附属文件已按规程清理，
 定向回归为 16 passed。该预检只授权从零启动 v7 的 405 个正式任务，不进入论文统计，
 也不授权改变强度门、种子、参数或图形口径。
+
+预检证据和后续冻结合同已提交为 `9b80ca59`，并建立开跑前回退标签
+`safety/e2-v7-preflight-pass-before-formal-20260724`。随后以 3 个单线程任务并行、
+每任务内部线程锁为 1，从空的 `full_gate/` 启动 405 个正式任务；启动后监控状态为
+RUNNING，受保护文件指纹无变化。正式完成前不得据中间结果改代码、参数、论文结论或
+后续合同。
+
+## E2-S4-WITNESS-LOOKUP-001：S4 解指纹接线修复
+
+状态：`REGISTERED_AFTER_FORMAL_START_BEFORE_ANY_RESULT_ROW_READ`（2026-07-24）。
+
+在不读取正式结果行的下游静态接线检查中发现：S3 的论文汇总
+`s3_trajectory_gate/raw_runs.csv`按设计只保存种子、四种方法成本和 CPU，不包含
+`witness_sha256`；S4 v2 却试图直接从该汇总行读取此字段，因此将来必然在零搜索验收
+开始前报字段缺失。该问题不影响正在运行的 405 个正式任务，也不涉及算法、评分、
+算例、种子、选择规则或任何成绩。
+
+S4 v2 登记和脚本保留不改。另立 v3，只把解指纹来源改为固定选择规则命中的那个
+封存任务自身 `raw_runs.csv`，并先要求 S3 成本与任务成本在绝对容差 `1e-9` 内一致，
+再核对任务记录中的 `witness_sha256`。迭代展示算例、十种子中最低主方法成本、同值
+取较小种子、整解全局验解、完整评分、逐路线算术闭合和失败即停规则全部不变，搜索
+次数仍为 0。登记为 `s4_route_detail_preregistration_v3.json`，入口为
+`run_e2_staged_s4_route_detail_v3.py`；9 项源指纹一致，最小模拟接线测试、编译和
+代码检查均通过。正式批和 S3 通过后只准执行 v3。
