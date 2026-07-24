@@ -43,13 +43,29 @@ from setp_solver.china81_completion import (  # noqa: E402
     exact_china81_score,
 )
 from setp_solver.cost import route_departure_second  # noqa: E402
-from setp_solver.solution import Route, Solution  # noqa: E402
+from setp_solver.solution import (  # noqa: E402
+    Route,
+    Solution,
+    physical_vehicle_id,
+)
 
 
+CAMPAIGN_NAME = os.environ.get(
+    "RESET_D6_CAMPAIGN_NAME",
+    "corrected_china81_rerun_v3_20260724",
+)
+if (
+    not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9._-]*", CAMPAIGN_NAME)
+    or not CAMPAIGN_NAME.startswith("corrected_china81_rerun_")
+):
+    raise RuntimeError(
+        f"invalid RESET_D6_CAMPAIGN_NAME: {CAMPAIGN_NAME!r}"
+    )
 OUT = (
     REPO
-    / "baselines/e2_final_campaign_20260720/"
-    "corrected_china81_rerun_v2_20260723/full_gate"
+    / "baselines/e2_final_campaign_20260720"
+    / CAMPAIGN_NAME
+    / "full_gate"
 )
 FLEET = (
     REPO
@@ -70,7 +86,7 @@ CATALOG = (
 CONTRACT = (
     REPO
     / "data/ChinaInstances/"
-    "china_e3_formal_release_contract_v4_20260723.json"
+    "china_e3_formal_release_contract_v5_20260724.json"
 )
 SEEDS = (1, 2, 3, 4, 5)
 VIEWS = {
@@ -236,6 +252,39 @@ def _require_same_day_charging(
             )
 
 
+def _require_depot_fleet_caps(
+    solution: Solution,
+    bundle: Any,
+) -> None:
+    used: dict[tuple[str, str], set[str]] = {}
+    for route in solution.routes:
+        depot_id = str(route.home_depot_id)
+        vehicle_type = str(route.vehicle_type).strip().lower()
+        if depot_id not in bundle.fleet_caps_by_depot:
+            raise RuntimeError(
+                f"HALT_D6_UNKNOWN_FLEET_DEPOT:{depot_id}"
+            )
+        if vehicle_type not in {"cv", "ev"}:
+            raise RuntimeError(
+                f"HALT_D6_UNKNOWN_FLEET_TYPE:{vehicle_type}"
+            )
+        used.setdefault((depot_id, vehicle_type), set()).add(
+            physical_vehicle_id(route.vehicle_id)
+        )
+    for (depot_id, vehicle_type), vehicle_ids in used.items():
+        cap = int(
+            bundle.fleet_caps_by_depot[depot_id][
+                f"num_{vehicle_type}"
+            ]
+        )
+        if len(vehicle_ids) > cap:
+            raise RuntimeError(
+                "HALT_D6_DEPOT_FLEET_CAP:"
+                f"{depot_id}:{vehicle_type}:"
+                f"{len(vehicle_ids)}>{cap}"
+            )
+
+
 def _source_hashes() -> dict[str, str]:
     paths = (
         CONTRACT,
@@ -333,6 +382,7 @@ def _run_unit(args: tuple[str, int]) -> dict[str, Any]:
     breakdowns: dict[str, dict[str, float]] = {}
     for label, solution in solutions.items():
         _require_same_day_charging(solution, bundle)
+        _require_depot_fleet_caps(solution, bundle)
         objective, breakdown, violations = exact_china81_score(
             solution,
             bundle,
@@ -376,6 +426,7 @@ def _run_unit(args: tuple[str, int]) -> dict[str, Any]:
         "wallclock_safety_triggered": False,
         "all_charging_on_registered_date": True,
         "all_depot_charging_finishes_before_departure": True,
+        "all_depot_fleet_caps_respected": True,
         "mip_status": mip["status"],
         "mip_status_class": mip["status_class"],
         "mip_message": mip["message"],
@@ -474,11 +525,18 @@ def _finalize() -> dict[str, Any]:
         "full_model_feasible_solution_count": len(rows) * 4,
         "protected_historical_e2_artifacts_overwritten": False,
         "public_p1_reused_as_search": False,
+        "campaign_name": CAMPAIGN_NAME,
+        "algorithm_repair_register_id": (
+            "E2-ALGORITHM-REPAIR-ARCHIVE-ROUTE-001"
+        ),
         "claim_boundary": (
             "descriptive private comparison; no equal-compute claim between "
             "single-view and three-view algorithms"
         ),
-        "next_gate": "S3 representative seeds 6-10 and S4-S5 rebuild",
+        "next_gate": (
+            "independent replay of all 1,620 witnesses before any "
+            "S3-S5 rebuild"
+        ),
     }
     write_json(OUT / "decision.json", decision)
     write_json(
@@ -486,6 +544,10 @@ def _finalize() -> dict[str, Any]:
         {
             "schema": "resetp.d6-e2-corrected.metadata.v1",
             "created_at_utc": datetime.now(UTC).isoformat(),
+            "campaign_name": CAMPAIGN_NAME,
+            "algorithm_repair_register_id": (
+                "E2-ALGORITHM-REPAIR-ARCHIVE-ROUTE-001"
+            ),
             "source_hashes": _source_hashes(),
             "thread_environment": REQUIRED_THREAD_ENV,
         },

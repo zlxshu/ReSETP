@@ -9,6 +9,8 @@ import numpy as np
 import route_pool_sp
 from route_pool_sp import (
     RoutePoolRecord,
+    _accepted_mip_completion,
+    _route_pool_records,
     _solve_set_partitioning,
     run_hgs_route_pool_recombination,
 )
@@ -79,6 +81,20 @@ def test_time_limited_mip_reports_status_bound_gap_and_incumbent() -> None:
     assert stats["incumbent_vector_integral"] is True
     assert stats["incumbent_cover_exact"] is True
     assert stats["independent_violation_count"] == 0
+    assert stats["objective_closes_under_complete_model"] is True
+
+    completion = _accepted_mip_completion(
+        solution,
+        bundle,
+        stats,
+    )
+    assert completion.solution.routes == solution.routes
+    assert (
+        completion.solution.charging_actions
+        == solution.charging_actions
+    )
+    assert completion.objective == stats["independent_exact_objective"]
+    assert completion.activity["complete_model_recheck"] == "PASS"
 
 
 def test_time_limit_incumbent_is_accepted_without_optimality_claim(
@@ -190,3 +206,40 @@ def test_paired_arms_consume_the_same_complete_candidate_budget() -> None:
             run.stats["complete_candidate_evaluation_attempts"]
         )
     assert observed == [80, 80]
+
+
+def test_route_pool_uses_all_already_scored_archive_completions() -> None:
+    bundle, records = _fixture()
+    routes_a = [record.route for record in records]
+    routes_b = list(routes_a)
+    first = routes_b[0]
+    routes_b[0] = Route(
+        vehicle_id=first.vehicle_id,
+        vehicle_type=first.vehicle_type,
+        home_depot_id=first.home_depot_id,
+        node_sequence=[
+            first.node_sequence[0],
+            *reversed(first.node_sequence[1:-1]),
+            first.node_sequence[-1],
+        ],
+    )
+    epoch = SimpleNamespace(
+        elite_completions=(
+            SimpleNamespace(solution=Solution(routes=routes_a)),
+        ),
+        archive_completions=(
+            SimpleNamespace(solution=Solution(routes=routes_a)),
+            SimpleNamespace(solution=Solution(routes=routes_b)),
+        ),
+    )
+
+    pooled = _route_pool_records(
+        bundle,
+        {"mechanism_ev": epoch},
+    )
+
+    route_sequences = {
+        tuple(record.route.node_sequence) for record in pooled
+    }
+    assert tuple(first.node_sequence) in route_sequences
+    assert tuple(routes_b[0].node_sequence) in route_sequences

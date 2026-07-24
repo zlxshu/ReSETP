@@ -2,11 +2,13 @@
 
 Every algorithm arm may propose customer groups and visit order, but no arm is
 allowed to use a cheaper physical model.  This module converts the common
-route skeleton into a feasible all-CV reference, then greedily tests EV and
+route skeleton into an all-CV reference, first assigns any EV routes required
+by the registered depot fleet caps, and then greedily tests additional EV and
 nonlinear charging variants under the same project evaluator and checker.
 
-The decoder is deliberately monotone: a variant is accepted only when the
-complete solution remains feasible and its exact model cost strictly falls.
+After the mandatory finite-fleet assignment, the decoder is deliberately
+monotone: an optional variant is accepted only when the complete solution
+remains feasible and its exact model cost strictly falls.
 """
 
 from __future__ import annotations
@@ -17,7 +19,7 @@ from typing import Any
 from setp_solver.algorithms.resetp_alns.support.charging import (
     repair_route_charging,
 )
-from setp_solver.check import Violation, check_solution
+from setp_solver.check import FLEET_SIZE, Violation, check_solution
 from setp_solver.china81 import China81Bundle
 from setp_solver.cost import evaluate
 from setp_solver.solution import (
@@ -117,10 +119,15 @@ def complete_china81_route_skeleton(
         baseline,
         bundle,
     )
-    if baseline_violations:
+    baseline_nonfleet_violations = [
+        violation
+        for violation in baseline_violations
+        if violation.type != FLEET_SIZE
+    ]
+    if baseline_nonfleet_violations:
         raise ValueError(
             "China81 route skeleton has no feasible all-CV completion: "
-            + _violation_summary(baseline_violations)
+            + _violation_summary(baseline_nonfleet_violations)
         )
 
     all_variants: list[RouteCompletionVariant] = []
@@ -188,9 +195,99 @@ def complete_china81_route_skeleton(
     attempted = 0
     rejected_infeasible = 0
     rejected_non_improving = 0
+    mandatory_fleet_assignments: list[dict[str, Any]] = []
     accepted: list[dict[str, Any]] = []
+
+    routes_by_depot: dict[str, list[int]] = {}
+    for route_index, route in enumerate(current.routes):
+        routes_by_depot.setdefault(
+            route.home_depot_id,
+            [],
+        ).append(route_index)
+    for depot_id in sorted(routes_by_depot):
+        try:
+            caps = bundle.fleet_caps_by_depot[depot_id]
+        except KeyError as exc:
+            raise ValueError(
+                f"China81 completion has no finite fleet for "
+                f"{depot_id!r}"
+            ) from exc
+        route_count = len(routes_by_depot[depot_id])
+        cv_cap = int(caps["num_cv"])
+        ev_cap = int(caps["num_ev"])
+        required_ev = max(0, route_count - cv_cap)
+        if route_count > cv_cap + ev_cap:
+            raise ValueError(
+                "China81 route skeleton exceeds the registered total "
+                f"fleet at {depot_id!r}: routes={route_count}, "
+                f"num_cv={cv_cap}, num_ev={ev_cap}"
+            )
+        while _depot_ev_route_count(current, depot_id) < required_ev:
+            assigned = False
+            for variant in ranked:
+                route = current.routes[variant.route_index]
+                if (
+                    route.home_depot_id != depot_id
+                    or variant.route_index in accepted_route_indices
+                ):
+                    continue
+                attempted += 1
+                candidate = _replace_route_variant(
+                    current,
+                    route_index=variant.route_index,
+                    route=variant.route,
+                    actions=variant.actions,
+                    customer_home_depot=bundle.customer_home_depot,
+                )
+                candidate_obj, _, candidate_violations = (
+                    exact_china81_score(candidate, bundle)
+                )
+                candidate_nonfleet_violations = [
+                    violation
+                    for violation in candidate_violations
+                    if violation.type != FLEET_SIZE
+                ]
+                if candidate_nonfleet_violations:
+                    rejected_infeasible += 1
+                    continue
+                mandatory_fleet_assignments.append(
+                    {
+                        "depot_id": depot_id,
+                        "route_index": variant.route_index,
+                        "label": variant.label,
+                        "before_cost": float(current_obj),
+                        "after_cost": float(candidate_obj),
+                        "cost_change": float(
+                            candidate_obj - current_obj
+                        ),
+                        "charging_action_count": len(
+                            variant.actions
+                        ),
+                    }
+                )
+                current = candidate
+                current_obj = candidate_obj
+                accepted_route_indices.add(variant.route_index)
+                assigned = True
+                break
+            if not assigned:
+                raise ValueError(
+                    "China81 route skeleton cannot satisfy the "
+                    f"registered CV cap at {depot_id!r}: "
+                    f"required_ev={required_ev}"
+                )
+
+    finite_fleet_reference_obj = current_obj
     for variant in ranked:
         if variant.route_index in accepted_route_indices:
+            continue
+        depot_id = current.routes[
+            variant.route_index
+        ].home_depot_id
+        ev_cap = int(
+            bundle.fleet_caps_by_depot[depot_id]["num_ev"]
+        )
+        if _depot_ev_route_count(current, depot_id) >= ev_cap:
             continue
         attempted += 1
         candidate = _replace_route_variant(
@@ -233,17 +330,26 @@ def complete_china81_route_skeleton(
             "shared China81 completion returned an infeasible solution: "
             + _violation_summary(final_violations)
         )
-    if final_obj > baseline_obj + TOL:
+    _require_finite_depot_fleet(current, bundle)
+    if final_obj > finite_fleet_reference_obj + TOL:
         raise RuntimeError(
-            "shared China81 completion violated its monotone contract"
+            "shared China81 completion violated its post-fleet "
+            "monotone contract"
         )
 
     activity: dict[str, Any] = {
         "schema_version": "resetp.china81-shared-completion.v1",
         "baseline_all_cv_cost": float(baseline_obj),
+        "finite_fleet_reference_cost": float(
+            finite_fleet_reference_obj
+        ),
         "final_cost": float(final_obj),
-        "strict_improvement": bool(final_obj < baseline_obj - TOL),
-        "improvement": float(baseline_obj - final_obj),
+        "strict_improvement": bool(
+            final_obj < finite_fleet_reference_obj - TOL
+        ),
+        "improvement": float(
+            finite_fleet_reference_obj - final_obj
+        ),
         "route_count": len(current.routes),
         "ev_route_count": sum(
             route.vehicle_type.lower() == "ev"
@@ -259,6 +365,12 @@ def complete_china81_route_skeleton(
         "variant_count": len(all_variants),
         "variant_attempts": attempted,
         "variant_generation_failures": generation_failures,
+        "mandatory_fleet_assignment_count": len(
+            mandatory_fleet_assignments
+        ),
+        "mandatory_fleet_assignments": (
+            mandatory_fleet_assignments
+        ),
         "rejected_infeasible": rejected_infeasible,
         "rejected_non_improving": rejected_non_improving,
         "accepted_variants": accepted,
@@ -271,6 +383,50 @@ def complete_china81_route_skeleton(
         breakdown=final_breakdown,
         activity=activity,
     )
+
+
+def _depot_ev_route_count(
+    solution: Solution,
+    depot_id: str,
+) -> int:
+    return sum(
+        route.home_depot_id == depot_id
+        and route.vehicle_type.lower() == "ev"
+        for route in solution.routes
+    )
+
+
+def _require_finite_depot_fleet(
+    solution: Solution,
+    bundle: China81Bundle,
+) -> None:
+    used: dict[tuple[str, str], int] = {}
+    for route in solution.routes:
+        key = (
+            route.home_depot_id,
+            route.vehicle_type.lower(),
+        )
+        used[key] = used.get(key, 0) + 1
+    for (depot_id, vehicle_type), count in used.items():
+        if vehicle_type not in {"cv", "ev"}:
+            raise RuntimeError(
+                f"unsupported China81 vehicle type {vehicle_type!r}"
+            )
+        try:
+            cap = int(
+                bundle.fleet_caps_by_depot[depot_id][
+                    f"num_{vehicle_type}"
+                ]
+            )
+        except KeyError as exc:
+            raise RuntimeError(
+                f"missing China81 fleet cap for {depot_id!r}"
+            ) from exc
+        if count > cap:
+            raise RuntimeError(
+                "shared China81 completion exceeded the registered "
+                f"fleet cap: {depot_id}:{vehicle_type}:{count}>{cap}"
+            )
 
 
 def _canonical_all_cv_solution(

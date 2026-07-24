@@ -11,6 +11,7 @@ from .cost import (
     charging_curve_for_action,
     ev_arc_energy_kwh,
     ev_instance_arc_energy_kwh,
+    route_departure_second,
     route_next_day_departure_second,
     route_node_schedule,
     route_return_arrival_without_charging,
@@ -735,8 +736,11 @@ def _check_charging_start_and_power(
         if station_type not in {"d", "f"}:
             continue
 
-        # v2026-06-12: S0 depot charge is allowed only at the origin depot and
-        # must lie in the overnight window from route return to next departure.
+        # A depot action may either charge the vehicle before its current
+        # departure or after it returns for a later departure.  These are
+        # disjoint physical windows: charging during the active route is not
+        # allowed.  China81 uses the first window; multi-day execution may use
+        # the second.
         charge_start = float(action.charge_start_second)
         occupancy_sec = float(action.occupancy_minutes) * 60.0
         if station_type == "d":
@@ -772,27 +776,55 @@ def _check_charging_start_and_power(
                         )
                     )
             else:
-                completion = charge_start + occupancy_sec
-                earliest = route_return_arrival_without_charging(route, instance, prices)
-                departure_deadline = route_next_day_departure_second(route, instance, prices)
-                if charge_start < earliest - FEASIBILITY_TOL:
-                    early = earliest - charge_start
+                absolute_start = (
+                    day_offset * 86_400.0 + charge_start
+                )
+                absolute_completion = absolute_start + occupancy_sec
+                current_departure = route_departure_second(
+                    route,
+                    instance,
+                    prices,
+                )
+                current_return = route_return_arrival_without_charging(
+                    route,
+                    instance,
+                    prices,
+                )
+                next_departure = route_next_day_departure_second(
+                    route,
+                    instance,
+                    prices,
+                )
+                is_current_precharge = (
+                    day_offset == 0
+                    and absolute_start >= -FEASIBILITY_TOL
+                    and absolute_completion
+                    <= current_departure + FEASIBILITY_TOL
+                )
+                is_postroute_charge = (
+                    absolute_start
+                    >= current_return - FEASIBILITY_TOL
+                    and absolute_completion
+                    <= next_departure + FEASIBILITY_TOL
+                )
+                if not (
+                    is_current_precharge or is_postroute_charge
+                ):
                     violations.append(
                         Violation(
                             CHARGING_START,
                             route.vehicle_id,
                             action.station_id,
-                            f"depot charging starts before return by {early:.3f} s (return={earliest:.3f}, start={charge_start:.3f})",
-                        )
-                    )
-                if completion > departure_deadline + FEASIBILITY_TOL:
-                    late = completion - departure_deadline
-                    violations.append(
-                        Violation(
-                            CHARGING_START,
-                            route.vehicle_id,
-                            action.station_id,
-                            f"depot charging completion={completion:.3f} misses departure deadline={departure_deadline:.3f} by {late:.3f} s",
+                            (
+                                "depot charging must finish before current "
+                                "departure or lie between route return and "
+                                "the next departure "
+                                f"(start={absolute_start:.3f}, "
+                                f"completion={absolute_completion:.3f}, "
+                                f"departure={current_departure:.3f}, "
+                                f"return={current_return:.3f}, "
+                                f"next_departure={next_departure:.3f})"
+                            ),
                         )
                     )
             station_power_kw = _price(prices, "depot_charge_power_kw")

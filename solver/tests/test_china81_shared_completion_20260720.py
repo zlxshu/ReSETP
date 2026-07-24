@@ -11,6 +11,7 @@ from setp_solver.china81_completion import (
     exact_china81_score,
 )
 from setp_solver.cost import route_departure_second
+from setp_solver.solution import Route, Solution
 
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -78,3 +79,47 @@ def test_shared_completion_is_deterministic() -> None:
     assert left.solution == right.solution
     assert left.objective == right.objective
     assert left.activity == right.activity
+
+
+def test_shared_completion_enforces_depot_vehicle_type_caps() -> None:
+    bundle = load_china81_bundle(ROOT, INSTANCE_ID)
+    customer_groups = [
+        ["C004", "C006"],
+        ["C002", "C001", "C009"],
+        ["C005", "C010", "C007", "C003", "C008"],
+    ]
+    skeleton = Solution(
+        routes=[
+            Route(
+                vehicle_id=f"R{index}",
+                vehicle_type="cv",
+                home_depot_id="D_beijing",
+                node_sequence=[
+                    "D_beijing",
+                    *customers,
+                    "D_beijing",
+                ],
+            )
+            for index, customers in enumerate(
+                customer_groups,
+                start=1,
+            )
+        ]
+    )
+
+    result = complete_china81_route_skeleton(skeleton, bundle)
+    _, _, violations = exact_china81_score(
+        result.solution,
+        bundle,
+    )
+
+    assert not violations
+    assert sum(
+        route.vehicle_type == "cv"
+        for route in result.solution.routes
+    ) == 2
+    assert sum(
+        route.vehicle_type == "ev"
+        for route in result.solution.routes
+    ) == 1
+    assert result.activity["mandatory_fleet_assignment_count"] == 1

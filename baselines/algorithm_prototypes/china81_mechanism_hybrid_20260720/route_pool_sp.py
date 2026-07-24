@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, replace
+import math
 from pathlib import Path
 import sys
 from time import perf_counter
@@ -64,6 +65,8 @@ def run_hgs_route_pool_recombination(
     hard_home_depot_lock: bool = False,
     max_hgs_iterations_per_view: int | None = None,
     wallclock_safety_seconds_per_view: float | None = None,
+    exact_checkpoint_interval_iterations: int | None = None,
+    preserve_base_pool_recombination: bool = False,
 ) -> HgsRoutePoolRun:
     """Generate mechanism-diverse HGS elites and recombine their routes."""
 
@@ -109,6 +112,9 @@ def run_hgs_route_pool_recombination(
             wallclock_safety_seconds=(
                 wallclock_safety_seconds_per_view
             ),
+            exact_checkpoint_interval_iterations=(
+                exact_checkpoint_interval_iterations
+            ),
         )
     parent_completions = [
         completion
@@ -119,6 +125,27 @@ def run_hgs_route_pool_recombination(
         parent_completions,
         key=lambda item: item.objective,
     )
+    base_recombined_completion: China81CompletionResult | None = None
+    base_sp_stats: dict[str, Any] | None = None
+    if preserve_base_pool_recombination:
+        base_records = _route_pool_records(
+            bundle,
+            view_epochs,
+            hard_home_depot_lock=hard_home_depot_lock,
+            use_base_archive=True,
+        )
+        base_recombined, base_sp_stats = _solve_set_partitioning(
+            bundle,
+            base_records,
+            time_limit_seconds=sp_time_limit_seconds,
+            hard_home_depot_lock=hard_home_depot_lock,
+        )
+        if base_recombined is not None:
+            base_recombined_completion = _accepted_mip_completion(
+                base_recombined,
+                bundle,
+                base_sp_stats,
+            )
     records = _route_pool_records(
         bundle,
         view_epochs,
@@ -130,7 +157,7 @@ def run_hgs_route_pool_recombination(
         time_limit_seconds=sp_time_limit_seconds,
         hard_home_depot_lock=hard_home_depot_lock,
     )
-    if recombined is None:
+    if recombined is None and base_recombined_completion is None:
         parent_objective, _, parent_violations = exact_china81_score(
             parent_completion.solution,
             bundle,
@@ -149,21 +176,34 @@ def run_hgs_route_pool_recombination(
         )
         sp_stats["fallback_parent_independent_violation_count"] = 0
     else:
-        recombined_completion = complete_china81_route_skeleton(
-            recombined,
-            bundle,
-        )
-        if (
-            recombined_completion.objective
-            < parent_completion.objective - 1.0e-9
-        ):
-            completion = recombined_completion
-            selected_source = "time_limited_mip_recombination"
-        else:
-            completion = parent_completion
-            selected_source = "best_exact_hgs_parent"
-        sp_stats["recombined_exact_objective"] = float(
-            recombined_completion.objective
+        candidates: list[
+            tuple[str, China81CompletionResult]
+        ] = [("best_exact_hgs_parent", parent_completion)]
+        if base_recombined_completion is not None:
+            candidates.append(
+                (
+                    "base_pool_time_limited_mip_recombination",
+                    base_recombined_completion,
+                )
+            )
+        if recombined is not None:
+            recombined_completion = _accepted_mip_completion(
+                recombined,
+                bundle,
+                sp_stats,
+            )
+            candidates.append(
+                (
+                    "history_expanded_time_limited_mip_recombination",
+                    recombined_completion,
+                )
+            )
+            sp_stats["recombined_exact_objective"] = float(
+                recombined_completion.objective
+            )
+        selected_source, completion = min(
+            candidates,
+            key=lambda item: item[1].objective,
         )
     elapsed = perf_counter() - started
     epoch_attempts = sum(
@@ -174,6 +214,18 @@ def run_hgs_route_pool_recombination(
     expected_complete_attempts = (
         len(modes) * (int(max_archive_candidates_per_view) + 2) + 2
     )
+    if exact_checkpoint_interval_iterations is not None:
+        if max_hgs_iterations_per_view is None:
+            raise ValueError(
+                "exact checkpoints require an HGS iteration budget"
+            )
+        expected_complete_attempts += len(modes) * (
+            int(max_hgs_iterations_per_view)
+            // int(exact_checkpoint_interval_iterations)
+        )
+    if preserve_base_pool_recombination:
+        total_complete_attempts += 2
+        expected_complete_attempts += 2
     safety_triggered = any(
         bool(epoch.stats["wallclock_safety_triggered"])
         for epoch in view_epochs.values()
@@ -233,7 +285,28 @@ def run_hgs_route_pool_recombination(
             "archive_candidates_per_view": int(
                 max_archive_candidates_per_view
             ),
+            "exact_checkpoint_interval_iterations": (
+                exact_checkpoint_interval_iterations
+            ),
+            "exact_checkpoint_attempts_by_view": {
+                mode: int(
+                    epoch.stats["exact_checkpoint_attempts"]
+                )
+                for mode, epoch in view_epochs.items()
+            },
+            "preserve_base_pool_recombination": bool(
+                preserve_base_pool_recombination
+            ),
+            "base_route_pool_mip": base_sp_stats,
             "parent_solution_count": len(parent_completions),
+            "route_pool_candidate_solution_count": sum(
+                len(
+                    epoch.archive_completions
+                    if epoch.archive_completions
+                    else epoch.elite_completions
+                )
+                for epoch in view_epochs.values()
+            ),
             "route_pool_size": len(records),
             "best_parent_objective": float(
                 parent_completion.objective
@@ -263,6 +336,7 @@ def _route_pool_records(
     view_epochs: dict[str, HgsExactEpoch],
     *,
     hard_home_depot_lock: bool = False,
+    use_base_archive: bool = False,
 ) -> tuple[RoutePoolRecord, ...]:
     unique: dict[tuple[Any, ...], RoutePoolRecord] = {}
     customer_ids = {
@@ -271,7 +345,17 @@ def _route_pool_records(
         if node.node_type.lower() == "c"
     }
     for mode, epoch in view_epochs.items():
-        for rank, completion in enumerate(epoch.elite_completions):
+        if use_base_archive and epoch.base_archive_completions:
+            route_pool_completions = (
+                epoch.base_archive_completions
+            )
+        else:
+            route_pool_completions = (
+                epoch.archive_completions
+                if epoch.archive_completions
+                else epoch.elite_completions
+            )
+        for rank, completion in enumerate(route_pool_completions):
             actions_by_vehicle: dict[str, list[ChargingAction]] = {}
             for action in completion.solution.charging_actions:
                 actions_by_vehicle.setdefault(
@@ -331,6 +415,66 @@ def _route_pool_records(
                 ):
                     unique[key] = record
     return tuple(unique.values())
+
+
+def _accepted_mip_completion(
+    solution: Solution,
+    bundle: China81Bundle,
+    mip_stats: dict[str, Any],
+) -> China81CompletionResult:
+    """Retain an independently checked MIP incumbent without re-decoding it."""
+
+    annotated = annotate_cross_site_services(
+        solution,
+        bundle.customer_home_depot,
+    )
+    objective, breakdown, violations = exact_china81_score(
+        annotated,
+        bundle,
+    )
+    if violations:
+        raise ValueError(
+            "accepted route-pool incumbent failed complete-model recheck"
+        )
+    mip_objective = mip_stats.get("objective")
+    if (
+        mip_objective is None
+        or not math.isclose(
+            float(mip_objective),
+            float(objective),
+            rel_tol=1.0e-9,
+            abs_tol=1.0e-6,
+        )
+    ):
+        raise ValueError(
+            "route-pool incumbent objective does not close under the "
+            "complete model: "
+            f"mip={mip_objective!r}, exact={objective!r}"
+        )
+    return China81CompletionResult(
+        solution=annotated,
+        objective=float(objective),
+        breakdown=breakdown,
+        activity={
+            "schema_version": (
+                "resetp.china81-accepted-mip-completion.v1"
+            ),
+            "source": "time_limited_mip_route_pool_incumbent",
+            "route_count": len(annotated.routes),
+            "ev_route_count": sum(
+                route.vehicle_type.lower() == "ev"
+                for route in annotated.routes
+            ),
+            "charging_action_count": len(
+                annotated.charging_actions
+            ),
+            "mip_status_class": mip_stats.get("status_class"),
+            "mip_objective": float(mip_objective),
+            "mip_dual_bound": mip_stats.get("dual_bound"),
+            "mip_gap": mip_stats.get("mip_gap"),
+            "complete_model_recheck": "PASS",
+        },
+    )
 
 
 def _solve_set_partitioning(
@@ -542,10 +686,26 @@ def _solve_set_partitioning(
         Solution(routes=routes, charging_actions=actions),
         bundle.customer_home_depot,
     )
-    _, _, violations = exact_china81_score(solution, bundle)
+    exact_objective, _, violations = exact_china81_score(
+        solution,
+        bundle,
+    )
     stats["independent_complete_candidate_evaluation_attempts"] = 1
     stats["independent_violation_count"] = len(violations)
+    stats["independent_exact_objective"] = float(exact_objective)
+    stats["objective_closes_under_complete_model"] = bool(
+        stats["objective"] is not None
+        and math.isclose(
+            float(stats["objective"]),
+            float(exact_objective),
+            rel_tol=1.0e-9,
+            abs_tol=1.0e-6,
+        )
+    )
     if violations:
         stats["status_class"] = "REJECTED_COMPLETE_MODEL_VIOLATIONS"
+        return None, stats
+    if not stats["objective_closes_under_complete_model"]:
+        stats["status_class"] = "REJECTED_OBJECTIVE_MISMATCH"
         return None, stats
     return solution, stats

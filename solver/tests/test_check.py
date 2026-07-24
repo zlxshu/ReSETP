@@ -385,6 +385,50 @@ class CheckSolutionTests(unittest.TestCase):
         self.assertIn("CHARGING_START", _types(violations))
         self.assertTrue(any(v.location == "D0" and "return" in v.detail for v in violations))
 
+    def test_depot_charging_before_current_departure_is_valid(self) -> None:
+        instance = Instance(
+            nodes=[
+                Node(
+                    "D0",
+                    "d",
+                    0.0,
+                    0.0,
+                    service_time=0.0,
+                    due_time=100_000.0,
+                ),
+                Node(
+                    "C1",
+                    "c",
+                    0.0,
+                    0.0,
+                    ready_time=1_000.0,
+                    due_time=10_000.0,
+                ),
+            ],
+            distance_matrix=[
+                [0.0, 100.0],
+                [100.0, 0.0],
+            ],
+        )
+        solution = Solution(
+            routes=[
+                Route("EV1", "ev", "D0", ["D0", "C1", "D0"])
+            ],
+            charging_actions=[
+                ChargingAction(
+                    "EV1",
+                    "D0",
+                    energy_kwh=0.1,
+                    occupancy_minutes=1.0,
+                    charge_start_second=0.0,
+                )
+            ],
+        )
+
+        violations = check_solution(solution, instance)
+
+        self.assertNotIn("CHARGING_START", _types(violations))
+
     # v2026-06-12: Q2 depot precharge uses pi_d=22 kW and start battery bbar + depot charge <= B.
     def test_depot_charging_power_and_battery_upper_bound(self) -> None:
         instance = Instance(

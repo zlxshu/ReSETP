@@ -16,6 +16,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from importlib.metadata import version
 import inspect
+import math
 from time import perf_counter
 from typing import Any
 
@@ -51,6 +52,10 @@ class China81PyVRPProblem:
     node_id_by_location: dict[int, str]
     location_by_node_id: dict[str, int]
     cv_vehicle_type_by_depot: dict[str, int]
+    vehicle_type_by_depot_and_route_type: dict[
+        tuple[str, str],
+        int,
+    ]
     route_type_by_vehicle_type: dict[int, str]
     cv_proxy_load_kg: float
     ev_proxy_load_kg: float
@@ -63,7 +68,7 @@ class PyVRPSkeletonRun:
     skeleton: Solution
     completion: China81CompletionResult
     elapsed_seconds: float
-    pyvrp_objective: int
+    pyvrp_objective: int | None
     pyvrp_feasible: bool
     stats: dict[str, Any]
 
@@ -234,6 +239,10 @@ def build_pyvrp_problem(
                 )
 
     cv_vehicle_type_by_depot: dict[str, int] = {}
+    vehicle_type_by_depot_and_route_type: dict[
+        tuple[str, str],
+        int,
+    ] = {}
     route_type_by_vehicle_type: dict[int, str] = {}
     vehicle_type_index = 0
     for depot in depots:
@@ -277,6 +286,9 @@ def build_pyvrp_problem(
             name=f"CV@{depot.node_id}",
         )
         cv_vehicle_type_by_depot[depot.node_id] = vehicle_type_index
+        vehicle_type_by_depot_and_route_type[
+            (depot.node_id, "cv")
+        ] = vehicle_type_index
         route_type_by_vehicle_type[vehicle_type_index] = "cv"
         vehicle_type_index += 1
         if include_ev:
@@ -307,6 +319,9 @@ def build_pyvrp_problem(
                 profile=ev_road_profiles[depot.node_id],
                 name=f"EV@{depot.node_id}",
             )
+            vehicle_type_by_depot_and_route_type[
+                (depot.node_id, "ev")
+            ] = vehicle_type_index
             route_type_by_vehicle_type[vehicle_type_index] = "ev"
             vehicle_type_index += 1
 
@@ -315,6 +330,9 @@ def build_pyvrp_problem(
         node_id_by_location=node_id_by_location,
         location_by_node_id=location_by_node_id,
         cv_vehicle_type_by_depot=cv_vehicle_type_by_depot,
+        vehicle_type_by_depot_and_route_type=(
+            vehicle_type_by_depot_and_route_type
+        ),
         route_type_by_vehicle_type=route_type_by_vehicle_type,
         cv_proxy_load_kg=cv_proxy_load,
         ev_proxy_load_kg=ev_proxy_load,
@@ -364,17 +382,23 @@ def run_pyvrp_hgs_skeleton(
         MaxRuntime(float(runtime_seconds)),
         **solve_kwargs,
     )
-    searched_skeleton = _translate_solution(result.best, problem)
-    searched_completion = complete_china81_route_skeleton(
-        searched_skeleton,
-        bundle,
-    )
     initial_completion = complete_china81_route_skeleton(
         initial_skeleton,
         bundle,
     )
+    searched_skeleton = _translate_solution(result.best, problem)
+    searched_completion_failure: str | None = None
+    try:
+        searched_completion = complete_china81_route_skeleton(
+            searched_skeleton,
+            bundle,
+        )
+    except (IndexError, KeyError, RuntimeError, TypeError, ValueError) as exc:
+        searched_completion_failure = str(exc)
+        searched_completion = None
     if (
-        searched_completion.objective
+        searched_completion is not None
+        and searched_completion.objective
         < initial_completion.objective - 1.0e-9
     ):
         selected_source = "pyvrp_search"
@@ -390,11 +414,17 @@ def run_pyvrp_hgs_skeleton(
         else "ILS"
     )
     pyvrp_version = version("pyvrp")
+    raw_pyvrp_objective = float(result.cost())
+    pyvrp_objective = (
+        int(raw_pyvrp_objective)
+        if math.isfinite(raw_pyvrp_objective)
+        else None
+    )
     return PyVRPSkeletonRun(
         skeleton=skeleton,
         completion=completion,
         elapsed_seconds=perf_counter() - started,
-        pyvrp_objective=int(result.cost()),
+        pyvrp_objective=pyvrp_objective,
         pyvrp_feasible=bool(result.best.is_feasible()),
         stats={
             "algorithm": (
@@ -423,14 +453,27 @@ def run_pyvrp_hgs_skeleton(
             "cv_proxy_load_kg": problem.cv_proxy_load_kg,
             "ev_proxy_load_kg": problem.ev_proxy_load_kg,
             "route_proxy_mode": problem.route_proxy_mode,
+            "pyvrp_objective_finite": (
+                pyvrp_objective is not None
+            ),
             "route_count": len(skeleton.routes),
             "searched_route_count": len(searched_skeleton.routes),
             "searched_ev_skeleton_route_count": sum(
                 route.vehicle_type.lower() == "ev"
                 for route in searched_skeleton.routes
             ),
-            "searched_exact_objective": float(
-                searched_completion.objective
+            "searched_complete_model_status": (
+                "PASS"
+                if searched_completion is not None
+                else "INFEASIBLE_OR_ERROR"
+            ),
+            "searched_complete_model_failure": (
+                searched_completion_failure
+            ),
+            "searched_exact_objective": (
+                None
+                if searched_completion is None
+                else float(searched_completion.objective)
             ),
             "initial_exact_objective": float(
                 initial_completion.objective
@@ -750,6 +793,21 @@ def _project_initial_solution(
 ) -> PyVRPSolution:
     routes: list[PyVRPRoute] = []
     for route in initial_skeleton.routes:
+        route_type = str(route.vehicle_type).strip().lower()
+        if problem.route_proxy_mode == "cv_only":
+            route_type = "cv"
+        vehicle_type = (
+            problem.vehicle_type_by_depot_and_route_type.get(
+                (route.home_depot_id, route_type)
+            )
+        )
+        if vehicle_type is None:
+            raise ValueError(
+                "no PyVRP vehicle type for warm-start route "
+                f"{route.vehicle_id!r}: depot={route.home_depot_id!r}, "
+                f"route_type={route_type!r}, "
+                f"proxy_mode={problem.route_proxy_mode!r}"
+            )
         visits = [
             problem.location_by_node_id[node_id]
             for node_id in route.node_sequence
@@ -762,7 +820,7 @@ def _project_initial_solution(
             PyVRPRoute(
                 data,
                 visits,
-                problem.cv_vehicle_type_by_depot[route.home_depot_id],
+                vehicle_type,
             )
         )
     return PyVRPSolution(data, routes)
