@@ -1,0 +1,36 @@
+{
+  "schema": "resetp.v7-paper-integration-registration.v1",
+  "registered_at": "2026-07-24",
+  "status": "FROZEN_WHILE_FORMAL_E2_IS_RUNNING",
+  "operation": "FAIL_CLOSED_V7_PAPER_CANDIDATE_INTEGRATION",
+  "overwrites_main_tex": false,
+  "protected_main_tex_sha256": "f4882979a3096b952f334ef11b750d7dbf6ebc2e0ec21babdd09da5c364415ad",
+  "required_upstream_verdicts": {
+    "release_chain": "PASS_E2_STAGED_V7_RELEASE_CHAIN",
+    "paper_text_gate": "PASS_E2_V7_PAPER_TEXT_MATERIALIZATION",
+    "route_text_gate": "PASS_E2_V7_ROUTE_TEXT_MATERIALIZATION"
+  },
+  "source_hashes": {
+    "docs/paper_v2/candidates/build_v7_integrated_paper.py": "c3a58e3bbc243b172dbc311df088bd7dad12f97dad438dffa9b6ffdd4b90bd93",
+    "docs/paper_v2/candidates/frontmatter_v7_candidate.tex": "e3f60c6a38ca9ca1588ab1b5de5fe08dafdbe2284ee932bb5ad30cdfcb248ca4",
+    "docs/paper_v2/candidates/introduction_v7_candidate.tex": "97ec870b7d3e373ae7deea8ac99b179cc815c74851f5f797234c6e08487df7ca",
+    "docs/paper_v2/candidates/model_problem_dynamic_v7_candidate.tex": "9f9c087d76720b5a886150d72e8bb192cb4df9efdf3b75d481cd96f1e8c3bd43",
+    "docs/paper_v2/candidates/algorithm_section_v7_candidate.tex": "70213553d011b4e37ac69cde54be8a2f4011b0e6fa40f6180832a701c104805c",
+    "docs/paper_v2/candidates/e2_experiment_protocol_v7_candidate.tex": "49d7ac899e704feb11615a6192e744a79b942391cff2dc7cd8e7b5bccd8f7d63",
+    "docs/paper_v2/candidates/references_v7_candidate.tex": "3168ba694a74c61e14e6c3d777b11a7e71a4e6903e510bde82f68d441080dd2b",
+    "baselines/e2_final_campaign_20260720/materialize_e2_v7_paper_text.py": "a9f127b099ef4c590853ba60375a468c8d383e601c147d3724b7ac3cf2171508",
+    "baselines/e2_final_campaign_20260720/materialize_e2_v7_route_text.py": "7571f24144ba10443772dedc67ff05eb8db788792f97bb2699988707554f1752",
+    "baselines/e2_final_campaign_20260720/corrected_china81_rerun_v7_small_archive_ledger_20260724/paper_text_preregistration_v1.json": "ff6ff52dc67b597ae4476cb78e058cf75a6ba15ecbc9b6171ec09c5bc57f875d",
+    "baselines/e2_final_campaign_20260720/corrected_china81_rerun_v7_small_archive_ledger_20260724/route_text_preregistration_v1.json": "1872862dd93c63d819a6cc7996ee769e96a8b257f73e432dd4df7ac9faab476f",
+    "docs/paper_v2/setp-new.cls": "66d2f99056efe522ab91afa2fd05c105ba7bc8d42e3a9c5cdc29c6cc0ec2efa5"
+  },
+  "frozen_rules": {
+    "use_old_v4_e2_results": false,
+    "manual_result_entry": false,
+    "overwrite_protected_main_tex": false,
+    "route_fusion_superadditivity_claim": false,
+    "equal_compute_advantage_claim": false,
+    "pseudocode": false
+  },
+  "release_rule": "The builder may validate structure while formal E2 runs, but it may write a result-bearing integrated candidate only after every required PASS verdict and artifact manifest verifies. It must never overwrite paper_main.tex."
+}
