@@ -1,0 +1,93 @@
+% V7 E2 experiment protocol and exhibit integration candidate.
+% PRE-RESULT ONLY: do not insert into paper_main.tex before the complete
+% V7 release chain has passed. Missing sealed artifacts deliberately fail.
+
+\newcommand{\VSevenArtifactRoot}{../../baselines/e2_final_campaign_20260720/corrected_china81_rerun_v7_small_archive_ledger_20260724/artifacts}
+\newcommand{\VSevenRequireInput}[1]{%
+  \IfFileExists{#1}{\input{#1}}{%
+    \PackageError{ReSETP}{Missing sealed V7 artifact: #1}%
+      {Do not insert this candidate before the V7 release chain passes.}}}
+\newcommand{\VSevenRequireFigure}[2]{%
+  \IfFileExists{#1}{\includegraphics[width=#2\linewidth]{#1}}{%
+    \PackageError{ReSETP}{Missing sealed V7 figure: #1}%
+      {Do not insert this candidate before the V7 release chain passes.}}}
+
+\subsubsection{本文模型实验}
+
+为检验三种搜索视角及限时路线组合对解质量的作用,
+将燃油成本视角HGS-F、简化电动视角HGS-E、机制感知视角HGS-M
+与完整方法MV-HGS-SP进行配对比较.
+四种方法使用相同算例、固定种子和共同可行初解,
+返回解均按同一完整模型重新完成车型指派、实体车排班、非线性充电、
+分时电价与碳排放核算, 并由独立检查器复算.
+HGS-F、HGS-E和HGS-M分别表示三个独立搜索视角;
+MV-HGS-SP同时运行三个视角, 并增加两次限时路线池组合,
+因此该对比用于说明解质量增量和计算代价,
+不作等计算量优越性主张.
+
+每个视角先运行5000次混合遗传搜索迭代,
+经完整模型检查建立本视角精英档案并执行第一次30~s限时MIP路线组合;
+随后仅以本视角完整可行精英热启动, 再运行20000次迭代,
+合并两阶段档案并执行第二次30~s限时MIP路线组合.
+每个实例--种子任务登记280次完整模型调用,
+其中搜索产生的候选核查与候选空间穷尽后的固定可行解重复核查分别记账;
+后者不产生新候选、不进入路线池、不消耗随机数且不改变返回解.
+程序同时保存两次限时MIP的当前可行解、下界、相对间隙和求解状态,
+墙钟仅作为异常失控的安全上限.
+
+全文统计以中国三大城市群81个算例、固定种子1--5的405个任务为主体.
+每个任务返回HGS-F、HGS-E、HGS-M和MV-HGS-SP共4个解,
+形成1620个待复算解; 只有全部解通过成本、排放、客户覆盖、时间窗、
+有限车队、日期--城市--半小时价格与碳强度映射以及出发前充电检查后,
+才进入表格和统计检验.
+算法间比较先在每个算例内计算5种子最低成本Best.和平均成本avg.,
+再按城市群与规模层等权汇总;
+推断统计以81个算例的5种子平均成本为配对单位,
+采用单侧Wilcoxon符号秩检验并对三组比较进行Holm校正.
+
+为展示不同算法的迭代过程,
+仅在9个100客户算例中按客户数、车场数、需求离散度、
+时间窗紧度和充电可达率五项输入特征,
+选择距该组中位向量最近的算例, 并在读取正式结果前登记.
+种子1--5直接复用正式批, 种子6--10按同一冻结程序补跑;
+每种算法的展示种子按“最终成本最接近该算法10种子平均值”的固定规则确定.
+图中只连接运行时已经执行完整模型核算的真实观测点和正式终点,
+采用单一连续坐标, 不平滑、不插值、不断轴,
+也不根据曲线形态更换算例或种子.
+
+\begin{table}[H]
+\centering
+\caption{不同算法对比表}
+\label{tab:algorithm-comparison}
+\setptabsetup
+\VSevenRequireInput{\VSevenArtifactRoot/table_iteration_case.tex}
+\tabnote{注：迭代展示算例按输入特征规则在读取结果前登记；值为总成本(元)，CPU为实际运行时间(min)；黑体仅标出各算法10次运行中相应列的最小值。该算例只用于展示搜索过程，不作为81个算例的统计代表。}
+\end{table}
+
+\begin{figure}[H]
+\centering
+\VSevenRequireFigure{\VSevenArtifactRoot/figure4_iteration.pdf}{0.74}
+\caption{不同算法迭代图}
+\label{fig:convergence}
+\end{figure}
+
+% RESULT_TEXT_GATE:
+% Insert only the independently materialized V7 ten-seed cost/CPU,
+% win-tie-loss and genuine-trajectory paragraph here.
+
+\Needspace{4\baselineskip}
+为考察上述结果在不同区域与规模下是否保持一致,
+进一步报告全部81个算例的分层统计, 结果见表\ref{tab:china81-summary}.
+
+\begin{table}[H]
+\centering
+\caption{中国三大城市群算例集分层结果}
+\label{tab:china81-summary}
+\setptabsetup
+\VSevenRequireInput{\VSevenArtifactRoot/table_china81_summary_compact.tex}
+\tabnote{注：成本单位为元；每个算例使用固定种子1--5。Best.为同一算例5次运行的最低成本，avg.为5次运行平均成本；层内先按算例计算，再等权汇总。每行Best.和avg.分别以黑体标出最小值；全部405个任务及1620个解均须通过独立复算。}
+\end{table}
+
+% RESULT_TEXT_GATE:
+% Insert only the independently materialized V7 405-task, 81-instance,
+% 27-layer, overall-reduction and Holm-adjusted inference paragraph here.

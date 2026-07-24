@@ -1,0 +1,34 @@
+{
+  "schema": "resetp.e2-v7-paper-text-preregistration.v1",
+  "registered_at": "2026-07-24",
+  "status": "FROZEN_WHILE_FORMAL_RUNNING_BEFORE_RESULT_ROW_READ",
+  "campaign_name": "corrected_china81_rerun_v7_small_archive_ledger_20260724",
+  "operation": "ZERO_SEARCH_SEALED_RESULT_TEXT_MATERIALIZATION",
+  "result_rows_read_before_freeze": 0,
+  "search_executions": 0,
+  "output_directory": "baselines/e2_final_campaign_20260720/corrected_china81_rerun_v7_small_archive_ledger_20260724/paper_text_gate",
+  "required_upstream_verdicts": {
+    "full_gate": "PASS_D6_CORRECTED_CHINA81_E2_STAGED_V7_SMALL_ARCHIVE_LEDGER",
+    "full_witness_replay": "PASS_D6_STAGED_FULL_WITNESS_REPLAY",
+    "result_strength_gate": "PASS_E2_STAGED_PORTFOLIO_PAPER_STRENGTH",
+    "s3_trajectory_gate": "PASS_S3_STAGED_GENUINE_ITERATION_CURVES",
+    "table4_gate": "PASS_D6_CORRECTED_S4_ROUTE_DETAIL",
+    "artifacts": "PASS_E2_STAGED_V7_S5_ARTIFACTS"
+  },
+  "frozen_claim_boundaries": {
+    "route_fusion_superadditivity": false,
+    "equal_compute_advantage": false,
+    "mip_guaranteed_improvement": false,
+    "manual_result_selection": false,
+    "manual_number_entry": false
+  },
+  "source_hashes": {
+    "baselines/e2_final_campaign_20260720/materialize_e2_v7_paper_text.py": "a9f127b099ef4c590853ba60375a468c8d383e601c147d3724b7ac3cf2171508",
+    "docs/paper_v2/candidates/e2_experiment_protocol_v7_candidate.tex": "49d7ac899e704feb11615a6192e744a79b942391cff2dc7cd8e7b5bccd8f7d63",
+    "baselines/e2_final_campaign_20260720/run_e2_staged_result_strength_audit.py": "184a2a8802f1defcee38d1c88ddb56719e33c7acda07ba80346bba838f2c6fbc",
+    "baselines/e2_final_campaign_20260720/run_e2_staged_s3_trajectory_gate.py": "ae899864239945de9c725a8442d787abfe3405f51750da3ae0daee879368d287",
+    "baselines/e2_final_campaign_20260720/run_e2_staged_s5_artifacts.py": "4fe1cb79d629203fdcd84a6f45d545d660688e3fcf3ff0d69b3a0fd8df71d2c3",
+    "docs/paper_v2/setp-new.cls": "66d2f99056efe522ab91afa2fd05c105ba7bc8d42e3a9c5cdc29c6cc0ec2efa5"
+  },
+  "release_rule": "Run only after every required upstream decision and artifact manifest passes. Any missing file, failed verdict, hash drift or inconsistent statistic must stop materialization; do not hand-repair the prose."
+}
