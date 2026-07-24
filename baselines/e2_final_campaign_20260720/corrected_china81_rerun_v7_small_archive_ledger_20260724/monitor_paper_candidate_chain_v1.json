@@ -1,0 +1,91 @@
+{
+  "schema_version": 1,
+  "name": "e2-v7-paper-candidate-chain",
+  "objective": "等待E2发布链通过后零搜索生成结果文字、表4说明和独立整稿候选，并完成出版社格式编译检查",
+  "workdir": "../../..",
+  "poll_seconds": 10,
+  "stale_seconds": 600,
+  "max_runtime_seconds": 172800,
+  "pause_on_anomaly": true,
+  "required_command_substrings": [
+    "run_e2_v7_paper_candidate_chain.py"
+  ],
+  "forbidden_command_substrings": [
+    "--smoke",
+    "--debug"
+  ],
+  "min_cpu_percent_when_active": 0,
+  "low_cpu_consecutive_checks": 100000,
+  "max_rss_mb": 3000,
+  "min_system_free_memory_mb": 128,
+  "min_system_memory_free_percent": 3,
+  "logs": [
+    "paper_candidate_chain/paper_text.log",
+    "paper_candidate_chain/route_text.log",
+    "paper_candidate_chain/paper_integration.log",
+    "paper_candidate_chain/latexmk.log"
+  ],
+  "progress_files": [
+    "paper_candidate_chain/progress.json"
+  ],
+  "result_files": [
+    "paper_candidate_chain/decision.json",
+    "paper_candidate_chain/artifact_hashes.json",
+    "paper_candidate_chain/build/paper_main_v7_integrated.pdf"
+  ],
+  "completion_files": [
+    "paper_candidate_chain/done.json"
+  ],
+  "checkpoint_paths": [],
+  "protected_files": [
+    {
+      "path": "release_chain_registration_v1.json",
+      "kind": "release_contract"
+    },
+    {
+      "path": "paper_text_preregistration_v1.json",
+      "kind": "paper_text_contract"
+    },
+    {
+      "path": "route_text_preregistration_v1.json",
+      "kind": "route_text_contract"
+    },
+    {
+      "path": "paper_candidate_chain_preregistration_v1.json",
+      "kind": "paper_candidate_contract"
+    },
+    {
+      "path": "../run_e2_v7_paper_candidate_chain.py",
+      "kind": "paper_candidate_runner"
+    },
+    {
+      "path": "../materialize_e2_v7_paper_text.py",
+      "kind": "paper_text_runner"
+    },
+    {
+      "path": "../materialize_e2_v7_route_text.py",
+      "kind": "route_text_runner"
+    },
+    {
+      "path": "../../../docs/paper_v2/candidates/build_v7_integrated_paper.py",
+      "kind": "paper_integration_runner"
+    },
+    {
+      "path": "../../../docs/paper_v2/candidates/v7_paper_integration_registration.json",
+      "kind": "paper_integration_contract"
+    },
+    {
+      "path": "../../../docs/paper_v2/setp-new.cls",
+      "kind": "publisher_format"
+    },
+    {
+      "path": "../../../docs/paper_v2/paper_main.tex",
+      "kind": "protected_main_paper"
+    }
+  ],
+  "milestones": [],
+  "ai": {
+    "enabled": false,
+    "timeout_seconds": 180
+  }
+}

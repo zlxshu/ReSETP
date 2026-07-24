@@ -1212,3 +1212,19 @@ S5 零搜索表图”执行。每阶段只接受冻结的唯一 PASS，任何异
 摘要、引言、模型结构、算法章、V7图表、路线说明和新增参考文献；旧v4结果路径、
 5000次/80次/一次5秒口径、稳定超加性、等计算量优势和伪代码均为硬拒绝项。
 当前只执行了不读取结果的结构检查，判定通过；正式结果候选尚未生成。
+
+## E2-V7-PAPER-CANDIDATE-CHAIN-001：发布后论文候选自动接力
+
+状态：`FROZEN_WHILE_FORMAL_RUNNING_BEFORE_RESULT_ROW_READ`（2026-07-24）。
+
+为避免正式E2与S3--S5夜间完成后停在“有数据、未接论文”状态，新增等待式
+`run_e2_v7_paper_candidate_chain.py`。它不启动第二份E2，也不启动E3；只等待既有
+发布链精确判为`PASS_E2_STAGED_V7_RELEASE_CHAIN`并复核其完成文件和哈希清单，随后
+依次运行E2结果文字物化、表4文字物化、独立整稿候选合并和XeLaTeX编译检查。
+
+候选链禁止覆盖`paper_main.tex`，输出位于独立
+`paper_candidate_chain/`。TeX错误、未定义引用、overfull/underfull、Type 3字体、
+任一上游判定或哈希异常均立即HALT；即使PASS，也只表示封存证据候选稿编译通过，
+仍须逐页视觉检查和显式主稿合并后才能放行E3。登记文件为
+`paper_candidate_chain_preregistration_v1.json`，监控为
+`monitor_paper_candidate_chain_v1.json`。

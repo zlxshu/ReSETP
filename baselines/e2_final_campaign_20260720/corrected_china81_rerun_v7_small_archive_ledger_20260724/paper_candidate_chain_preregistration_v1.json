@@ -1,0 +1,33 @@
+{
+  "schema": "resetp.e2-v7-paper-candidate-chain-preregistration.v1",
+  "registered_at": "2026-07-24",
+  "status": "FROZEN_WHILE_FORMAL_RUNNING_BEFORE_RESULT_ROW_READ",
+  "operation": "WAIT_THEN_ZERO_SEARCH_V7_PAPER_CANDIDATE_BUILD",
+  "overwrites_main_tex": false,
+  "starts_e3": false,
+  "result_rows_read_before_freeze": 0,
+  "stage_order": [
+    "wait_for_release_chain",
+    "materialize_e2_result_text",
+    "materialize_route_detail_text",
+    "build_independent_integrated_tex",
+    "compile_and_check_independent_pdf"
+  ],
+  "required_upstream_verdict": "PASS_E2_STAGED_V7_RELEASE_CHAIN",
+  "output_verdict": "PASS_E2_V7_PAPER_CANDIDATE_BUILD",
+  "source_hashes": {
+    "baselines/e2_final_campaign_20260720/run_e2_v7_paper_candidate_chain.py": "1199710a3258fe9c64d588be6cbac82f0efe86b068cb5c7a5deb3235287a6c83",
+    "baselines/e2_final_campaign_20260720/corrected_china81_rerun_v7_small_archive_ledger_20260724/monitor_paper_candidate_chain_v1.json": "738783ccc3a8e3dcff8d683a60cace939aa51e3209c539468fd52ac9b7b55b42",
+    "baselines/e2_final_campaign_20260720/corrected_china81_rerun_v7_small_archive_ledger_20260724/release_chain_registration_v1.json": "0b4c298aa47c43c3264324b534be28c98061d2854d8264733900c3f4c8365525",
+    "baselines/e2_final_campaign_20260720/corrected_china81_rerun_v7_small_archive_ledger_20260724/paper_text_preregistration_v1.json": "ff6ff52dc67b597ae4476cb78e058cf75a6ba15ecbc9b6171ec09c5bc57f875d",
+    "baselines/e2_final_campaign_20260720/corrected_china81_rerun_v7_small_archive_ledger_20260724/route_text_preregistration_v1.json": "1872862dd93c63d819a6cc7996ee769e96a8b257f73e432dd4df7ac9faab476f",
+    "baselines/e2_final_campaign_20260720/materialize_e2_v7_paper_text.py": "a9f127b099ef4c590853ba60375a468c8d383e601c147d3724b7ac3cf2171508",
+    "baselines/e2_final_campaign_20260720/materialize_e2_v7_route_text.py": "7571f24144ba10443772dedc67ff05eb8db788792f97bb2699988707554f1752",
+    "docs/paper_v2/candidates/build_v7_integrated_paper.py": "c3a58e3bbc243b172dbc311df088bd7dad12f97dad438dffa9b6ffdd4b90bd93",
+    "docs/paper_v2/candidates/v7_paper_integration_registration.json": "89a3c2ad87c7a065f32e8e29f87d375d0d796b196b3304314b8ab42f6401e3ba",
+    "docs/paper_v2/setp-new.cls": "66d2f99056efe522ab91afa2fd05c105ba7bc8d42e3a9c5cdc29c6cc0ec2efa5",
+    "docs/paper_v2/paper_main.tex": "f4882979a3096b952f334ef11b750d7dbf6ebc2e0ec21babdd09da5c364415ad"
+  },
+  "failure_rule": "Any failed verdict, missing completion marker, stale monitor, manifest drift, text-generation error, integration error, TeX error, undefined reference, overfull or underfull box, or Type 3 font must stop the chain. Do not overwrite paper_main.tex and do not start E3.",
+  "release_rule": "A PASS only means that an independent E2 V7 paper candidate was built and compiled from sealed evidence. Page-by-page visual review and an explicit main-paper merge remain required."
+}
