@@ -22,6 +22,10 @@ from contracts import (
     HybridLineageLedger,
     TransferDirection,
 )
+from fleet_assignment_dp import (
+    AssignmentOption,
+    solve_finite_fleet_assignment_dp,
+)
 from hybrid_orchestrator import make_arm_budget_plan
 from operator_effects import verify_operator_effect
 from operator_plans import (
@@ -34,6 +38,7 @@ from operator_plans import (
     vehicle_type_flip_plan,
 )
 from recreate import remove_customers_from_skeleton
+from reference_decoder import RouteAssignment
 from rr_engine import (
     _bidirectional_exchange_skeleton,
     _select_plan,
@@ -43,7 +48,7 @@ from rr_engine import (
 
 ROOT = Path(__file__).resolve().parents[3]
 PACKAGE = Path(__file__).resolve().parent
-OUT = PACKAGE / "g0_static_semantics_gate_v10"
+OUT = PACKAGE / "g0_static_semantics_gate_v12"
 CONTRACT = ROOT / "docs/handoff/e2_genuine_hybrid_hgs_rr_contract_20260724.md"
 
 
@@ -430,6 +435,39 @@ def _checks() -> list[tuple[str, Callable[[], None]]]:
             first.digest() != DecoderCacheKey(**{**base, "date": "2025-02-13"}).digest()
         )
 
+    def charger_capacity_assignment() -> None:
+        options = {
+            route_index: (
+                AssignmentOption(
+                    route_index=route_index,
+                    assignment=RouteAssignment("D_GZ", "ev"),
+                    route_local_cost=1.0,
+                    route_local_signature=(route_index, "ev"),
+                    charger_slot_keys=(("S1", 0, 8),),
+                ),
+                AssignmentOption(
+                    route_index=route_index,
+                    assignment=RouteAssignment("D_GZ", "cv"),
+                    route_local_cost=5.0,
+                    route_local_signature=(route_index, "cv"),
+                ),
+            )
+            for route_index in (0, 1)
+        }
+        fleet_caps = {"D_GZ": {"num_cv": 2, "num_ev": 2}}
+        one_charger = solve_finite_fleet_assignment_dp(
+            options,
+            fleet_caps,
+            station_charger_caps={"S1": 1},
+        )
+        two_chargers = solve_finite_fleet_assignment_dp(
+            options,
+            fleet_caps,
+            station_charger_caps={"S1": 2},
+        )
+        assert one_charger[0].route_local_cost == 6.0
+        assert two_chargers[0].route_local_cost == 2.0
+
     return [
         ("budget_split_80_280", budgets),
         ("duplicate_and_infeasible_budget", budget_ledger),
@@ -447,6 +485,7 @@ def _checks() -> list[tuple[str, Callable[[], None]]]:
         ("dynamic_frozen_prefix_effect", dynamic_tail_effect),
         ("bidirectional_lineage", bidirectional_lineage),
         ("cache_city_date_dynamic_identity", cache_identity),
+        ("shared_charger_capacity_assignment", charger_capacity_assignment),
     ]
 
 

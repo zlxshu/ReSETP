@@ -29,11 +29,11 @@ from typing import Any, Callable
 
 REPO = Path(__file__).resolve().parents[3]
 PACKAGE = Path(__file__).resolve().parent
-PREREGISTRATION = PACKAGE / "g1_micro_preregistration_v1.json"
+PREREGISTRATION = PACKAGE / "g1_micro_preregistration_v2.json"
 G0_PREREGISTRATION = PACKAGE / "g0_real_bundle_preregistration_v1.json"
 G0_GATE = PACKAGE / "g0_real_bundle_gate_v1"
-WORK = PACKAGE / "g1_micro_work_v1"
-OUT = PACKAGE / "g1_micro_gate_v1"
+WORK = PACKAGE / "g1_micro_work_v2"
+OUT = PACKAGE / "g1_micro_gate_v2"
 FORMAL_CAMPAIGN = (
     REPO / "baselines/e2_final_campaign_20260720/"
     "corrected_china81_rerun_v7_small_archive_ledger_20260724"
@@ -140,7 +140,7 @@ def _clean_appledouble(root: Path) -> int:
 
 def load_preregistration() -> dict[str, Any]:
     payload = read_json(PREREGISTRATION)
-    if payload.get("schema") != "resetp.coop-hgs-rr-g1-preregistration.v1":
+    if payload.get("schema") != "resetp.coop-hgs-rr-g1-preregistration.v2":
         raise RuntimeError("unexpected G1 preregistration schema")
     if payload.get("status") != "FROZEN_BEFORE_G0_REAL_AND_G1_RESULTS":
         raise RuntimeError("G1 preregistration status drift")

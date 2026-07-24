@@ -964,6 +964,72 @@ def test_finite_fleet_dp_jointly_assigns_routes_without_overflow() -> None:
     assert all(candidate.fleet_use == (1, 0, 0, 1) for candidate in candidates)
 
 
+def test_assignment_dp_prunes_shared_single_charger_conflicts() -> None:
+    shared_slot = (("S1", 0, 12),)
+    options = {
+        0: (
+            AssignmentOption(
+                0,
+                RouteAssignment("D_GZ", "ev"),
+                1.0,
+                ("D_GZ", "ev", 0),
+                shared_slot,
+            ),
+            AssignmentOption(
+                0,
+                RouteAssignment("D_GZ", "cv"),
+                5.0,
+                ("D_GZ", "cv", 0),
+            ),
+        ),
+        1: (
+            AssignmentOption(
+                1,
+                RouteAssignment("D_GZ", "ev"),
+                1.0,
+                ("D_GZ", "ev", 1),
+                shared_slot,
+            ),
+            AssignmentOption(
+                1,
+                RouteAssignment("D_GZ", "cv"),
+                5.0,
+                ("D_GZ", "cv", 1),
+            ),
+        ),
+    }
+    fleet = {
+        "D_GZ": {
+            "num_cv": 2,
+            "num_ev": 2,
+        }
+    }
+    single_charger = solve_finite_fleet_assignment_dp(
+        options,
+        fleet,
+        beam_per_state=4,
+        max_candidates=8,
+        station_charger_caps={"S1": 1},
+    )
+    assert single_charger[0].route_local_cost == 6.0
+    assert all(
+        count <= 1
+        for candidate in single_charger
+        for station, _, _, count in candidate.charger_slot_use
+        if station == "S1"
+    )
+
+    two_chargers = solve_finite_fleet_assignment_dp(
+        options,
+        fleet,
+        beam_per_state=4,
+        max_candidates=8,
+        station_charger_caps={"S1": 2},
+    )
+    assert two_chargers[0].route_local_cost == 2.0
+    assert two_chargers[0].charger_slot_use == (("S1", 0, 12, 2),)
+
+
 def test_recreate_restores_each_removed_customer_exactly_once() -> None:
     class Profile:
         payload_capacity_kg = 10.0

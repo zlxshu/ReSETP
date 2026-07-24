@@ -11,7 +11,8 @@ from setp_solver.algorithms.resetp_alns.support.charging import (
 )
 from setp_solver.china81 import China81Bundle
 from setp_solver.china81_completion import _single_route_cost
-from setp_solver.solution import Route, Solution
+from setp_solver.cost import charging_action_slot_breakdown
+from setp_solver.solution import ChargingAction, Route, Solution
 
 from contracts import CandidateSource, DecoderCacheKey
 from decoder_cache import (
@@ -37,6 +38,7 @@ class AssignmentOption:
     assignment: RouteAssignment
     route_local_cost: float
     route_local_signature: tuple[Any, ...]
+    charger_slot_keys: tuple[tuple[str, int, int], ...] = ()
 
 
 @dataclass(frozen=True)
@@ -44,6 +46,7 @@ class AssignmentCandidate:
     assignments: tuple[tuple[int, RouteAssignment], ...]
     route_local_cost: float
     fleet_use: tuple[int, ...]
+    charger_slot_use: tuple[tuple[str, int, int, int], ...] = ()
 
     def as_mapping(self) -> dict[int, RouteAssignment]:
         return dict(self.assignments)
@@ -112,18 +115,26 @@ def build_route_assignment_options(
                 node_sequence=[depot_id, *customers, depot_id],
             )
             if "cv" in permitted_types:
-                cv_cost = _cached_route_local_cost(
+                cv_result = _cached_route_local_result(
                     cv_route,
                     bundle,
                     charge_strategy="not_applicable",
                     carbon_weight=0.0,
                     dynamic_state_hash=dynamic_state_hash,
                     cache=route_local_cache,
-                    compute=lambda: _single_route_cost(
-                        cv_route,
+                    compute=lambda route=cv_route: (
+                        _single_route_cost(
+                            route,
+                            (),
+                            bundle,
+                        ),
                         (),
-                        bundle,
                     ),
+                )
+                cv_cost = (
+                    float(cv_result.route_local_cost)
+                    if cv_result.feasible
+                    else math.inf
                 )
                 if math.isfinite(cv_cost):
                     route_options.append(
@@ -139,6 +150,7 @@ def build_route_assignment_options(
                                 "cv",
                                 customers,
                             ),
+                            charger_slot_keys=cv_result.charger_slot_keys,
                         )
                     )
             if "ev" not in permitted_types:
@@ -154,17 +166,15 @@ def build_route_assignment_options(
                     home_depot_id=depot_id,
                     node_sequence=[depot_id, *customers, depot_id],
                 )
-                ev_cost = _cached_route_local_cost(
+                ev_result = _cached_route_local_result(
                     ev_route,
                     bundle,
                     charge_strategy=strategy,
                     carbon_weight=carbon_weight,
                     dynamic_state_hash=dynamic_state_hash,
                     cache=route_local_cache,
-                    compute=lambda route=ev_route,
-                    selected_strategy=strategy,
-                    selected_weight=carbon_weight: (
-                        _repaired_route_local_cost(
+                    compute=lambda route=ev_route, selected_strategy=strategy, selected_weight=carbon_weight: (
+                        _repaired_route_local_result(
                             route,
                             bundle,
                             charge_repair_function=(charge_repair_function),
@@ -172,6 +182,11 @@ def build_route_assignment_options(
                             carbon_weight=selected_weight,
                         )
                     ),
+                )
+                ev_cost = (
+                    float(ev_result.route_local_cost)
+                    if ev_result.feasible
+                    else math.inf
                 )
                 if not math.isfinite(ev_cost):
                     continue
@@ -191,6 +206,7 @@ def build_route_assignment_options(
                             label,
                             customers,
                         ),
+                        charger_slot_keys=ev_result.charger_slot_keys,
                     )
                 )
         if not route_options:
@@ -227,8 +243,9 @@ def solve_finite_fleet_assignment_dp(
     *,
     beam_per_state: int = 3,
     max_candidates: int = 12,
+    station_charger_caps: Mapping[str, int] | None = None,
 ) -> tuple[AssignmentCandidate, ...]:
-    """Jointly shortlist route assignments under exact finite fleet caps."""
+    """Jointly shortlist assignments under fleet and fixed-slot charger caps."""
 
     if beam_per_state < 1 or max_candidates < 1:
         raise ValueError("DP beam and candidate count must be positive")
@@ -244,6 +261,10 @@ def solve_finite_fleet_assignment_dp(
         for vehicle_type in ("cv", "ev")
     )
     zero = tuple(0 for _ in caps)
+    charger_caps = {
+        str(station_id): int(capacity)
+        for station_id, capacity in dict(station_charger_caps or {}).items()
+    }
     states: dict[
         tuple[int, ...],
         list[AssignmentCandidate],
@@ -253,6 +274,7 @@ def solve_finite_fleet_assignment_dp(
                 assignments=(),
                 route_local_cost=0.0,
                 fleet_use=zero,
+                charger_slot_use=(),
             )
         ]
     }
@@ -285,6 +307,15 @@ def solve_finite_fleet_assignment_dp(
                     if updated[position] > caps[position]:
                         continue
                     fleet_use = tuple(updated)
+                    charger_slot_use = _merge_charger_slot_use(
+                        partial.charger_slot_use,
+                        option.charger_slot_keys,
+                    )
+                    if not _charger_slot_use_within_caps(
+                        charger_slot_use,
+                        charger_caps,
+                    ):
+                        continue
                     candidate = AssignmentCandidate(
                         assignments=(
                             *partial.assignments,
@@ -294,14 +325,17 @@ def solve_finite_fleet_assignment_dp(
                             partial.route_local_cost + option.route_local_cost
                         ),
                         fleet_use=fleet_use,
+                        charger_slot_use=charger_slot_use,
                     )
                     bucket = next_states.setdefault(
                         fleet_use,
                         [],
                     )
                     bucket.append(candidate)
-                    bucket.sort(key=_candidate_key)
-                    del bucket[beam_per_state:]
+                    next_states[fleet_use] = _prune_assignment_bucket(
+                        bucket,
+                        beam_per_state=beam_per_state,
+                    )
         states = next_states
         if not states:
             raise NoFeasibleAssignmentError(
@@ -360,6 +394,7 @@ def decode_assignment_shortlist(
         bundle.fleet_caps_by_depot,
         beam_per_state=beam_per_state,
         max_candidates=max_candidates,
+        station_charger_caps=_station_charger_caps(bundle),
     )
     decoded: list[ExplicitDecodeResult] = []
     infeasible = 0
@@ -377,6 +412,18 @@ def decode_assignment_shortlist(
                 "assignment_dp_rank": rank,
                 "route_local_cost": candidate.route_local_cost,
                 "fleet_use": list(candidate.fleet_use),
+                "charger_slot_use": [
+                    {
+                        "station_id": station_id,
+                        "day_offset": day_offset,
+                        "slot_index": slot_index,
+                        "route_count": count,
+                    }
+                    for station_id, day_offset, slot_index, count in (
+                        candidate.charger_slot_use
+                    )
+                ],
+                "capacity_aware_assignment_dp": True,
             },
             charge_repair_function=charge_repair_function,
         )
@@ -409,10 +456,11 @@ def _candidate_key(
             )
             for route_index, assignment in candidate.assignments
         ),
+        candidate.charger_slot_use,
     )
 
 
-def _cached_route_local_cost(
+def _cached_route_local_result(
     route: Route,
     bundle: China81Bundle,
     *,
@@ -420,8 +468,14 @@ def _cached_route_local_cost(
     carbon_weight: float,
     dynamic_state_hash: str,
     cache: RouteLocalDecoderCache | None,
-    compute: Callable[[], float],
-) -> float:
+    compute: Callable[
+        [],
+        tuple[
+            float,
+            tuple[tuple[str, int, int], ...],
+        ],
+    ],
+) -> CachedRouteLocalResult:
     key = _route_cache_key(
         route,
         bundle,
@@ -432,31 +486,40 @@ def _cached_route_local_cost(
     if cache is not None:
         cached = cache.get(key)
         if cached is not None:
-            return float(cached.route_local_cost) if cached.feasible else math.inf
+            return cached
     try:
-        value = float(compute())
+        value, charger_slot_keys = compute()
+        value = float(value)
+        charger_slot_keys = tuple(
+            sorted(
+                {
+                    (str(station), int(day), int(slot))
+                    for station, day, slot in charger_slot_keys
+                }
+            )
+        )
     except (KeyError, RuntimeError, TypeError, ValueError):
         value = math.inf
+        charger_slot_keys = ()
     feasible = math.isfinite(value)
+    result = CachedRouteLocalResult(
+        feasible=feasible,
+        route_local_cost=value if feasible else None,
+        charger_slot_keys=charger_slot_keys if feasible else (),
+    )
     if cache is not None:
-        cache.put(
-            key,
-            CachedRouteLocalResult(
-                feasible=feasible,
-                route_local_cost=value if feasible else None,
-            ),
-        )
-    return value
+        cache.put(key, result)
+    return result
 
 
-def _repaired_route_local_cost(
+def _repaired_route_local_result(
     route: Route,
     bundle: China81Bundle,
     *,
     charge_repair_function: ChargeRepairFunction,
     strategy: str,
     carbon_weight: float,
-) -> float:
+) -> tuple[float, tuple[tuple[str, int, int], ...]]:
     repaired, actions = charge_repair_function(
         route,
         bundle.instance,
@@ -466,13 +529,112 @@ def _repaired_route_local_cost(
         carbon_weight=carbon_weight,
         depot_charge_window_mode="same_day_predeparture",
     )
-    return float(
-        _single_route_cost(
-            repaired,
-            tuple(actions),
+    return (
+        float(
+            _single_route_cost(
+                repaired,
+                tuple(actions),
+                bundle,
+            )
+        ),
+        _charger_slot_keys(
+            actions,
             bundle,
+        ),
+    )
+
+
+def _charger_slot_keys(
+    actions: list[ChargingAction],
+    bundle: China81Bundle,
+) -> tuple[tuple[str, int, int], ...]:
+    return tuple(
+        sorted(
+            {
+                (
+                    action.station_id,
+                    int(action.charge_day_offset),
+                    int(slot.slot_index),
+                )
+                for action in actions
+                for slot in charging_action_slot_breakdown(
+                    action,
+                    bundle.instance,
+                    bundle.prices,
+                    n_slots=48,
+                    cyclic=True,
+                )
+            }
         )
     )
+
+
+def _station_charger_caps(bundle: China81Bundle) -> dict[str, int]:
+    customer_count = sum(
+        node.node_type.lower() == "c" for node in bundle.instance.nodes
+    )
+    caps: dict[str, int] = {}
+    for node in bundle.instance.nodes:
+        node_type = node.node_type.lower()
+        if node_type not in {"d", "f"}:
+            continue
+        raw = node.station_chargers
+        if raw is not None:
+            caps[node.node_id] = max(0, int(raw))
+        elif node_type == "d":
+            caps[node.node_id] = max(1, customer_count)
+        else:
+            caps[node.node_id] = 1
+    return caps
+
+
+def _merge_charger_slot_use(
+    current: tuple[tuple[str, int, int, int], ...],
+    added: tuple[tuple[str, int, int], ...],
+) -> tuple[tuple[str, int, int, int], ...]:
+    counts = {(station, day, slot): int(count) for station, day, slot, count in current}
+    for key in added:
+        counts[key] = counts.get(key, 0) + 1
+    return tuple(
+        (station, day, slot, count)
+        for (station, day, slot), count in sorted(counts.items())
+    )
+
+
+def _charger_slot_use_within_caps(
+    use: tuple[tuple[str, int, int, int], ...],
+    station_caps: Mapping[str, int],
+) -> bool:
+    return all(
+        count <= int(station_caps.get(station, 1)) for station, _, _, count in use
+    )
+
+
+def _prune_assignment_bucket(
+    candidates: list[AssignmentCandidate],
+    *,
+    beam_per_state: int,
+) -> list[AssignmentCandidate]:
+    ranked = sorted(candidates, key=_candidate_key)
+    selected: list[AssignmentCandidate] = []
+    seen_charger_use: set[tuple[tuple[str, int, int, int], ...]] = set()
+
+    for candidate in ranked:
+        if candidate.charger_slot_use in seen_charger_use:
+            continue
+        selected.append(candidate)
+        seen_charger_use.add(candidate.charger_slot_use)
+        if len(selected) >= beam_per_state:
+            return selected
+
+    for candidate in ranked:
+        if candidate in selected:
+            continue
+        selected.append(candidate)
+        if len(selected) >= beam_per_state:
+            break
+
+    return selected
 
 
 def _route_cache_key(

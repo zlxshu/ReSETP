@@ -12,6 +12,7 @@ from contracts import DecoderCacheKey
 class CachedRouteLocalResult:
     feasible: bool
     route_local_cost: float | None
+    charger_slot_keys: tuple[tuple[str, int, int], ...] = ()
 
     def __post_init__(self) -> None:
         if self.feasible:
@@ -19,8 +20,22 @@ class CachedRouteLocalResult:
                 float(self.route_local_cost)
             ):
                 raise ValueError("feasible cached route requires a finite cost")
-        elif self.route_local_cost is not None:
-            raise ValueError("infeasible cached route cannot carry a cost")
+        elif self.route_local_cost is not None or self.charger_slot_keys:
+            raise ValueError(
+                "infeasible cached route cannot carry cost or charger slots"
+            )
+        normalized = tuple(
+            sorted(
+                {
+                    (str(station), int(day), int(slot))
+                    for station, day, slot in self.charger_slot_keys
+                }
+            )
+        )
+        if normalized != self.charger_slot_keys:
+            raise ValueError(
+                "cached charger slots must be unique and canonically sorted"
+            )
 
 
 class RouteLocalDecoderCache:
