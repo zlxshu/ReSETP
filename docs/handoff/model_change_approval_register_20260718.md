@@ -1139,3 +1139,15 @@ S4 v2 登记和脚本保留不改。另立 v3，只把解指纹来源改为固�
 写入带决定文件和关键产物指纹的 `done.json`，并把对应监控的 `completion_files`
 指向该文件。该修订不改变算法、解、成本、路线选择、统计或绘图规则；S4/S5 入口
 指纹已同步更新。
+
+## E2-STAGED-V7-RELEASE-CHAIN-001：E2 失败即停自动接力
+
+状态：`FROZEN_AFTER_FORMAL_START_BEFORE_RESULT_ROW_READ`（2026-07-24）。
+
+用户已授权在安全前提下持续推进至 E2 完成。现冻结
+`run_e2_staged_release_chain.py`：它只等待既有正式批，不启动第二份正式批；正式
+判定必须为 `PASS_D6_CORRECTED_CHINA81_E2_STAGED_V7_SMALL_ARCHIVE_LEDGER`，之后
+固定按“1620 解独立复算 → 结果强度门 → S3 真实迭代数据 → S4 v3 路线明细 →
+S5 零搜索表图”执行。每阶段只接受冻结的唯一 PASS，任何异常、缺文件、错误判定或
+监控失败均写 HALT 并停止，不重采样、不改参数、不跨越失败门。S3 仍为 3 workers；
+其余阶段不新增搜索并行。登记为 `release_chain_registration_v1.json`。
