@@ -1,0 +1,35 @@
+\documentclass{setp-new}
+\usepackage{fontspec}
+\setmainfont{Times New Roman}
+\IfFontExistsTF{Songti SC}
+  {\newcommand{\previewSong}{Songti SC}}
+  {\newcommand{\previewSong}{SimSun}}
+\setCJKmainfont{\previewSong}
+\setCJKsansfont{\previewSong}
+\setCJKfamilyfont{zhsong}{\previewSong}
+\setCJKfamilyfont{zhhei}{\previewSong}
+\setCJKfamilyfont{zhfs}{\previewSong}
+\providecommand{\songti}{}
+\providecommand{\heiti}{}
+\providecommand{\fangsong}{}
+\renewcommand{\songti}{\CJKfamily{zhsong}}
+\renewcommand{\heiti}{\CJKfamily{zhhei}}
+\renewcommand{\fangsong}{\CJKfamily{zhfs}}
+\usepackage{float}
+\usepackage{booktabs}
+\setlength{\headheight}{32pt}
+\raggedbottom
+\jolname{系统工程理论与实践}{Systems Engineering --- Theory \& Practice}
+\Volume{2026}{5}{0}{0}
+\PageNum{1}
+\PaperDOI{}
+\Category{U492.3}{A}
+\input{candidates/frontmatter_v7_candidate.tex}
+\begin{document}
+\maketitle
+\clearpage
+\input{candidates/introduction_v7_candidate.tex}
+\begin{thebibliography}{99}
+\input{candidates/references_v7_candidate.tex}
+\end{thebibliography}
+\end{document}
