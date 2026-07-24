@@ -8,7 +8,9 @@ authorising any formal search:
 
 - exact complete-candidate budget accounting, including infeasible and
   duplicate candidates;
-- bidirectional HGS-to-RR and RR-to-HGS lineage proof;
+- bidirectional HGS-to-RR and RR-to-HGS transfer records, with direct
+  warm-start local-search evidence kept separate from ordinary population
+  output;
 - fail-closed decoder cache identity across instance, city/depot, date,
   vehicle type, parameter authority, fleet authority, and dynamic state;
 - six model-specific destroy plans corresponding to cross-depot assignment,
@@ -26,15 +28,17 @@ authorising any formal search:
   and dynamic state, and an independent regret reconstruction;
 - five static China81 RR operations with semantic effect checks, plus the
   frozen-prefix structural contract for the dynamic operation;
-- a proxy-only PyVRP 0.12.2 HGS archive generator that excludes unchanged
-  initial solutions from descendant evidence;
+- a proxy-only PyVRP 0.12.2 HGS archive generator that gives the first warm
+  solution one explicit, tracked local-search pass and excludes ordinary
+  random population output from direct descendant evidence;
 - an A/B/A+B orchestrator with one shared complete-evaluation ledger per arm,
-  a frozen 60/40 A+B evaluation allocation, and a hard bidirectional
-  post-injection-gain gate.
+  a frozen 60/40 A+B evaluation allocation, a hard structural
+  bidirectional-transfer gate, and separately counted direct
+  post-injection-gain evidence.
 
-The current zero-search gate in `g0_static_semantics_gate_v5/` is deliberately labelled
+The current zero-search gate in `g0_static_semantics_gate_v10/` is deliberately labelled
 `REAL_BUNDLE_PREFLIGHT_PENDING`: it does not prove real China81 feasibility,
-algorithm quality, or 1+1>2.  Twenty-three lightweight tests currently pass.
+algorithm quality, or 1+1>2.  Thirty-three lightweight tests currently pass.
 The real-bundle gate is preregistered in
 `g0_real_bundle_preregistration_v1.json`; its runner verifies 55 pinned input
 files in contract-only mode and refuses execution while the existing E2 v7

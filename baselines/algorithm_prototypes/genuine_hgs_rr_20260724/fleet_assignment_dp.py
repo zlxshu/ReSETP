@@ -27,6 +27,10 @@ from reference_decoder import (
 )
 
 
+class NoFeasibleAssignmentError(ValueError):
+    """A route skeleton has no admissible finite-fleet decode state."""
+
+
 @dataclass(frozen=True)
 class AssignmentOption:
     route_index: int
@@ -190,7 +194,9 @@ def build_route_assignment_options(
                     )
                 )
         if not route_options:
-            raise ValueError(f"route {route_index} has no depot/type assignment")
+            raise NoFeasibleAssignmentError(
+                f"route {route_index} has no depot/type assignment"
+            )
         unique: dict[tuple[Any, ...], AssignmentOption] = {}
         for option in route_options:
             key = option.route_local_signature
@@ -253,7 +259,9 @@ def solve_finite_fleet_assignment_dp(
     for route_index in sorted(options_by_route):
         route_options = options_by_route[route_index]
         if not route_options:
-            raise ValueError(f"route {route_index} has no assignment options")
+            raise NoFeasibleAssignmentError(
+                f"route {route_index} has no assignment options"
+            )
         next_states: dict[
             tuple[int, ...],
             list[AssignmentCandidate],
@@ -296,7 +304,7 @@ def solve_finite_fleet_assignment_dp(
                     del bucket[beam_per_state:]
         states = next_states
         if not states:
-            raise ValueError(
+            raise NoFeasibleAssignmentError(
                 "finite fleet DP has no feasible partial assignment "
                 f"after route {route_index}"
             )

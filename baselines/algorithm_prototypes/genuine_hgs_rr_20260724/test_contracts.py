@@ -5,6 +5,7 @@ import random
 import pytest
 import hybrid_orchestrator as orchestration
 import run_g0_real_bundle_preflight as real_bundle_gate
+import rr_engine as rr_runtime
 
 from setp_solver.instance_loader import Instance, Node
 from setp_solver.solution import ChargingAction, Route, Solution
@@ -29,6 +30,7 @@ from fleet_assignment_dp import (
 )
 from hybrid_orchestrator import (
     CooperativeConfig,
+    DirectWarmDescendantEvaluation,
     HgsEpochResult,
     make_arm_budget_plan,
 )
@@ -41,12 +43,13 @@ from operator_plans import (
     time_window_pressure_string_plan,
     vehicle_type_flip_plan,
 )
-from operator_effects import verify_operator_effect
+from operator_effects import OperatorEffect, verify_operator_effect
 from reference_decoder import (
     RouteAssignment,
     decode_explicit_assignments,
 )
 from recreate import (
+    _route_time_window_feasible,
     recreate_removed_customers,
     remove_customers_from_skeleton,
 )
@@ -55,6 +58,9 @@ from rr_engine import (
     RrRunResult,
     _accept_candidate,
     _bidirectional_exchange_skeleton,
+    _decode_assignment_only_plan,
+    _related_cross_depot_pairs,
+    _select_plan,
     _temperature,
     _whole_route_reassignment_skeleton,
 )
@@ -201,8 +207,39 @@ def test_lineage_accepts_bidirectional_post_injection_gain() -> None:
         descendant_objective=98.0,
         complete_evaluation_index=20,
     )
-    lineage.assert_genuine_cooperation()
+    lineage.assert_genuine_cooperation(
+        require_post_injection_gain=True,
+    )
     assert lineage.cooperative_gain_evidence_count() == 1
+
+
+def test_structural_cooperation_does_not_fake_a_gain() -> None:
+    lineage = HybridLineageLedger()
+    lineage.add_transfer(
+        direction=TransferDirection.HGS_TO_RR,
+        parent_signature="hgs0",
+        child_signature="hgs1",
+        parent_objective=100.0,
+        child_objective=99.5,
+        complete_evaluation_index=10,
+        accepted_into_next_hgs_epoch=False,
+        next_hgs_epoch=None,
+    )
+    lineage.add_transfer(
+        direction=TransferDirection.RR_TO_HGS,
+        parent_signature="hgs1",
+        child_signature="rr1",
+        parent_objective=99.5,
+        child_objective=99.0,
+        complete_evaluation_index=11,
+        accepted_into_next_hgs_epoch=True,
+        next_hgs_epoch=2,
+    )
+    lineage.assert_genuine_cooperation()
+    with pytest.raises(RuntimeError, match="no post-injection"):
+        lineage.assert_genuine_cooperation(
+            require_post_injection_gain=True,
+        )
 
 
 def test_hgs_to_rr_handoff_may_keep_the_same_signature() -> None:
@@ -323,6 +360,23 @@ def test_cooperative_orchestrator_requires_real_two_way_gain(
             (),
             record,
         )
+        warm_signatures = tuple(
+            orchestration.solution_signature_hash(item)
+            for item in kwargs["warm_solutions"]
+        )
+        direct = (
+            (
+                DirectWarmDescendantEvaluation(
+                    parent_signature=warm_signatures[0],
+                    generated_signature=(
+                        orchestration.solution_signature_hash(solution)
+                    ),
+                    scored=scored,
+                ),
+            )
+            if epoch > 1
+            else ()
+        )
         hgs_calls += 2
         return HgsEpochResult(
             epoch=epoch,
@@ -336,6 +390,8 @@ def test_cooperative_orchestrator_requires_real_two_way_gain(
             padding_rechecks=0,
             elapsed_seconds=0.0,
             decode_failures=(),
+            warm_signatures=warm_signatures,
+            direct_warm_descendants=direct,
         )
 
     rr_calls = 0
@@ -859,11 +915,34 @@ def test_recreate_restores_each_removed_customer_exactly_once() -> None:
         def distance(self, left, right):
             return self._base.distance(left, right)
 
+        def arc_metrics(
+            self,
+            left,
+            right,
+            vehicle_type,
+            *,
+            fallback_speed_mps,
+        ):
+            distance = self.distance(left, right)
+            return (
+                distance,
+                distance / fallback_speed_mps,
+                0.0,
+            )
+
         def vehicle_profile(self, vehicle_type):
             return Profile()
 
+    class Prices:
+        c_km = 0.35
+        vehicle_fixed_cost = 80.0
+        cross_site_cost = 0.0
+        v_speed_ms = 1.0
+
     class Bundle:
         instance = RecreateInstance()
+        prices = Prices()
+
         customer_home_depot = {
             "C1": "D_GZ",
             "C2": "D_GZ",
@@ -905,6 +984,75 @@ def test_recreate_restores_each_removed_customer_exactly_once() -> None:
     assert len(customers) == len(set(customers))
     assert {step.customer_id for step in result.steps} == set(removed)
 
+    class SingleDepotBundle(Bundle):
+        customer_home_depot = {
+            "C1": "D_GZ",
+            "C2": "D_GZ",
+            "C3": "D_GZ",
+        }
+        fleet_caps_by_depot = {
+            "D_GZ": {"num_cv": 2, "num_ev": 1},
+        }
+
+    single = Solution(routes=[_solution().routes[0]])
+    single_partial = remove_customers_from_skeleton(
+        single,
+        ("C2",),
+        known_customer_ids=_customer_ids(),
+    )
+    single_result = recreate_removed_customers(
+        single_partial,
+        ("C2",),
+        SingleDepotBundle(),
+        rng=random.Random(19),
+    )
+    assert sorted(single_result.skeleton.routes[0].node_sequence[1:-1]) == [
+        "C1",
+        "C2",
+        "C3",
+    ]
+
+
+def test_recreate_window_screen_accepts_either_vehicle_type() -> None:
+    instance = _instance()
+
+    class VehicleSpecificInstance:
+        nodes = instance.nodes
+
+        def arc_metrics(
+            self,
+            left,
+            right,
+            vehicle_type,
+            *,
+            fallback_speed_mps,
+        ):
+            del left, right, fallback_speed_mps
+            return (
+                1.0,
+                200.0 if vehicle_type == "cv" else 1.0,
+                0.0,
+            )
+
+    class Prices:
+        v_speed_ms = 1.0
+
+    class Bundle:
+        instance = VehicleSpecificInstance()
+        prices = Prices()
+
+    route = Route(
+        vehicle_id="CV1",
+        vehicle_type="cv",
+        home_depot_id="D_GZ",
+        node_sequence=["D_GZ", "C1", "D_GZ"],
+    )
+    assert _route_time_window_feasible(
+        route,
+        Bundle(),
+        node_by_id={node.node_id: node for node in instance.nodes},
+    )
+
 
 def test_rr_temperature_is_result_independent_and_cools() -> None:
     config = RrConfig()
@@ -932,6 +1080,366 @@ def test_rr_temperature_is_result_independent_and_cools() -> None:
         temperature=end,
         rng=random.Random(1),
     )
+
+
+def test_rr_tries_other_registered_operators_before_stopping(
+    monkeypatch,
+) -> None:
+    ledger = CompleteEvaluationLedger(
+        arm=AlgorithmArm.RUIN_RECREATE,
+        limit=1,
+    )
+    changed = Solution(
+        routes=[
+            Route(
+                "EV1",
+                "ev",
+                "D_GZ",
+                ["D_GZ", "C1", "C2", "C3", "D_GZ"],
+            ),
+            _solution().routes[1],
+        ]
+    )
+
+    def fake_propose(
+        current,
+        bundle,
+        *,
+        operator,
+        evaluator,
+        **kwargs,
+    ):
+        del current, bundle, kwargs
+        if operator != OperatorKind.VEHICLE_TYPE_FLIP:
+            return None
+        record = evaluator.ledger.register(
+            signature="changed",
+            source=CandidateSource.RUIN_RECREATE,
+            feasible=True,
+            objective=9.0,
+            violation_count=0,
+        )
+        return rr_runtime._CandidateProposal(
+            solution=changed,
+            objective=9.0,
+            record_index=record.index,
+            effect=OperatorEffect(
+                passed=True,
+                changed_decisions=("vehicle_type",),
+                detail="vehicle type changed",
+            ),
+        )
+
+    monkeypatch.setattr(rr_runtime, "_propose_candidate", fake_propose)
+    result = rr_runtime.run_mechanism_aware_rr(
+        bundle=object(),
+        initial_solution=_solution(),
+        initial_objective=10.0,
+        seed=1,
+        ledger=ledger,
+        max_additional_evaluations=1,
+    )
+    assert result.best_objective == 9.0
+    assert (
+        result.operator_attempts[OperatorKind.BIDIRECTIONAL_CROSS_DEPOT_SEGMENT.value]
+        == 1
+    )
+    assert (
+        result.operator_attempts[OperatorKind.CROSS_DEPOT_ROUTE_REASSIGNMENT.value] == 1
+    )
+    assert result.operator_attempts[OperatorKind.VEHICLE_TYPE_FLIP.value] == 1
+    assert "skipped_nonapplicable=" in result.trace[0].detail
+
+
+def test_time_window_plan_diversifies_within_fixed_pressure_pool() -> None:
+    groups = {
+        time_window_pressure_string_plan(
+            _solution(),
+            _instance(),
+            radius=0,
+            rng=random.Random(seed),
+            candidate_pool_size=6,
+        ).removed_customer_ids
+        for seed in range(1, 20)
+    }
+    assert len(groups) > 1
+    assert all(len(group) == 1 for group in groups)
+
+
+def test_time_window_plan_uses_residual_slack_not_window_width() -> None:
+    instance = Instance(
+        nodes=[
+            Node("D0", "d", 0, 0, 0, 0, 1_000, 0),
+            Node("C_WIDE", "c", 0, 1, 1, 0, 100, 0),
+            Node("C_NARROW", "c", 1, 0, 1, 0, 10, 0),
+        ],
+        distance_matrix=[
+            [0.0, 99.0, 1.0],
+            [99.0, 0.0, 98.0],
+            [1.0, 98.0, 0.0],
+        ],
+    )
+    solution = Solution(
+        routes=[
+            Route("CV1", "cv", "D0", ["D0", "C_WIDE", "D0"]),
+            Route("CV2", "cv", "D0", ["D0", "C_NARROW", "D0"]),
+        ]
+    )
+
+    class Prices:
+        v_speed_ms = 1.0
+
+    plan = time_window_pressure_string_plan(
+        solution,
+        instance,
+        radius=0,
+        candidate_pool_size=1,
+        prices=Prices(),
+    )
+    assert plan.removed_customer_ids == ("C_WIDE",)
+
+
+def test_single_depot_rr_disables_cross_depot_operator() -> None:
+    class Bundle:
+        instance = _instance()
+        fleet_caps_by_depot = {
+            "D_GZ": {"num_cv": 2, "num_ev": 1},
+        }
+
+    plan = _select_plan(
+        Solution(routes=[_solution().routes[0]]),
+        Bundle(),
+        operator=OperatorKind.CROSS_DEPOT_ROUTE_REASSIGNMENT,
+        rng=random.Random(1),
+        max_segment_length=4,
+        time_window_candidate_pool=8,
+        cross_depot_pair_pool=12,
+    )
+    assert plan is None
+
+
+def test_vehicle_flip_skips_routes_without_target_fleet_capacity() -> None:
+    class Bundle:
+        instance = _instance()
+        fleet_caps_by_depot = {
+            "D_GZ": {"num_cv": 2, "num_ev": 0},
+        }
+
+    plan = _select_plan(
+        Solution(routes=[_solution().routes[0]]),
+        Bundle(),
+        operator=OperatorKind.VEHICLE_TYPE_FLIP,
+        rng=random.Random(1),
+        max_segment_length=4,
+        time_window_candidate_pool=8,
+        cross_depot_pair_pool=12,
+    )
+    assert plan is None
+
+
+def test_cross_depot_pair_neighbourhood_is_bounded() -> None:
+    class Bundle:
+        instance = _instance()
+
+    pairs = _related_cross_depot_pairs(
+        _solution(),
+        Bundle(),
+        customer_ids=_customer_ids(),
+        limit=1,
+    )
+    assert pairs == ((0, 1),)
+
+
+def test_assignment_only_repair_preserves_unselected_route_and_charge(
+    monkeypatch,
+) -> None:
+    current = Solution(
+        routes=[
+            Route(
+                "EV1",
+                "ev",
+                "D_GZ",
+                ["D_GZ", "C1", "C2", "C3", "D_GZ"],
+            ),
+            Route(
+                "EV2",
+                "ev",
+                "D_SZ",
+                ["D_SZ", "C4", "C5", "C6", "D_SZ"],
+            ),
+        ],
+        charging_actions=[
+            ChargingAction(
+                "EV1",
+                "D_GZ",
+                5.0,
+                10.0,
+                1_000.0,
+            ),
+            ChargingAction(
+                "EV2",
+                "D_SZ",
+                7.0,
+                12.0,
+                2_000.0,
+            ),
+        ],
+    )
+
+    class Bundle:
+        instance = _instance()
+        time_profile = []
+        prices = object()
+        customer_home_depot = {
+            "C1": "D_GZ",
+            "C2": "D_GZ",
+            "C3": "D_GZ",
+            "C4": "D_SZ",
+            "C5": "D_SZ",
+            "C6": "D_SZ",
+        }
+
+    def fake_repair(route, instance, time_profile, prices, **kwargs):
+        assert route.vehicle_id == "EV1"
+        return route, [
+            ChargingAction(
+                "EV1",
+                "D_GZ",
+                9.0,
+                15.0,
+                3_000.0,
+            )
+        ]
+
+    monkeypatch.setattr(
+        rr_runtime,
+        "repair_route_charging",
+        fake_repair,
+    )
+    ledger = CompleteEvaluationLedger(
+        arm=AlgorithmArm.RUIN_RECREATE,
+        limit=1,
+    )
+    evaluator = BudgetedCompleteEvaluator(
+        bundle=Bundle(),
+        ledger=ledger,
+        score_function=lambda solution, bundle: (
+            10.0,
+            {"total_cost": 10.0},
+            [],
+        ),
+    )
+    plan = charge_departure_retiming_plan(
+        current,
+        route_index=0,
+        customer_ids=_customer_ids(),
+    )
+    result = _decode_assignment_only_plan(
+        current,
+        plan,
+        Bundle(),
+        evaluator=evaluator,
+        rng=random.Random(1),
+        metadata={},
+    )
+    assert result is not None and result.feasible
+    assert result.solution.routes[1] == current.routes[1]
+    assert [
+        action
+        for action in result.solution.charging_actions
+        if action.vehicle_id == "EV2"
+    ] == [current.charging_actions[1]]
+    assert [
+        action.charge_start_second
+        for action in result.solution.charging_actions
+        if action.vehicle_id == "EV1"
+    ] == [3_000.0]
+
+
+def test_charge_retiming_retries_a_second_registered_strategy_on_noop(
+    monkeypatch,
+) -> None:
+    current = Solution(
+        routes=[
+            Route(
+                "EV1",
+                "ev",
+                "D_GZ",
+                ["D_GZ", "C1", "C2", "C3", "D_GZ"],
+            )
+        ],
+        charging_actions=[
+            ChargingAction(
+                "EV1",
+                "D_GZ",
+                5.0,
+                10.0,
+                1_000.0,
+            )
+        ],
+    )
+
+    class Bundle:
+        instance = _instance()
+        time_profile = []
+        prices = object()
+        customer_home_depot = {
+            "C1": "D_GZ",
+            "C2": "D_GZ",
+            "C3": "D_GZ",
+        }
+
+    calls = 0
+
+    def fake_repair(route, instance, time_profile, prices, **kwargs):
+        nonlocal calls
+        del instance, time_profile, prices, kwargs
+        calls += 1
+        start = 1_000.0 if calls == 1 else 2_000.0
+        return route, [
+            ChargingAction(
+                "EV1",
+                "D_GZ",
+                5.0,
+                10.0,
+                start,
+            )
+        ]
+
+    monkeypatch.setattr(
+        rr_runtime,
+        "repair_route_charging",
+        fake_repair,
+    )
+    ledger = CompleteEvaluationLedger(
+        arm=AlgorithmArm.RUIN_RECREATE,
+        limit=1,
+    )
+    evaluator = BudgetedCompleteEvaluator(
+        bundle=Bundle(),
+        ledger=ledger,
+        score_function=lambda solution, bundle: (
+            10.0,
+            {"total_cost": 10.0},
+            [],
+        ),
+    )
+    plan = charge_departure_retiming_plan(
+        current,
+        route_index=0,
+        customer_ids=_customer_ids(),
+    )
+    result = _decode_assignment_only_plan(
+        current,
+        plan,
+        Bundle(),
+        evaluator=evaluator,
+        rng=random.Random(1),
+        metadata={},
+    )
+    assert calls == 2
+    assert result is not None and result.feasible
+    assert result.solution.charging_actions[0].charge_start_second == 2_000.0
 
 
 def test_real_bundle_preregistration_is_result_blind() -> None:

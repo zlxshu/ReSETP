@@ -11,6 +11,10 @@ from setp_solver.china81 import China81Bundle
 from setp_solver.solution import Route, Solution
 
 
+class NoReconstructionInsertionError(ValueError):
+    """A selected destroy move has no admissible regret insertion."""
+
+
 @dataclass(frozen=True)
 class RecreateStep:
     customer_id: str
@@ -69,7 +73,7 @@ def recreate_removed_customers(
     *,
     rng: random.Random,
 ) -> RecreateResult:
-    """Regret-2 reconstruction over all routes and both depots.
+    """Regret-2 reconstruction over a bounded route neighbourhood and depots.
 
     The method uses distance, time-window pressure, capacity lower bounds, and
     depot ownership only for cheap ranking.  It does not decide vehicle type
@@ -87,8 +91,8 @@ def recreate_removed_customers(
         )
     node_by_id = {node.node_id: node for node in bundle.instance.nodes}
     depots = tuple(sorted(bundle.fleet_caps_by_depot))
-    if len(depots) < 2:
-        raise ValueError("mechanism-aware reconstruction requires two depots")
+    if not depots:
+        raise ValueError("mechanism-aware reconstruction requires a depot")
     max_payload = max(
         _profile_payload_capacity(bundle, vehicle_type) for vehicle_type in ("cv", "ev")
     )
@@ -113,7 +117,9 @@ def recreate_removed_customers(
                 node_by_id=node_by_id,
             )
             if not options:
-                raise ValueError(f"no reconstruction insertion for {customer_id}")
+                raise NoReconstructionInsertionError(
+                    f"no reconstruction insertion for {customer_id}"
+                )
             options.sort(key=lambda item: item.sort_key)
             best = options[0].score
             second = options[1].score if len(options) > 1 else best
@@ -185,7 +191,14 @@ def _enumerate_insertions(
     node_by_id: dict[str, Any],
 ) -> list[_Insertion]:
     options: list[_Insertion] = []
-    for route_index, route in enumerate(solution.routes):
+    route_indices = _candidate_route_indices(
+        solution,
+        customer_id,
+        bundle,
+        limit=12,
+    )
+    for route_index in route_indices:
+        route = solution.routes[route_index]
         customers = list(route.node_sequence[1:-1])
         route_demand = sum(float(node_by_id[customer].demand) for customer in customers)
         demand = float(node_by_id[customer_id].demand)
@@ -207,12 +220,17 @@ def _enumerate_insertions(
                 route.home_depot_id,
                 sequence,
             )
+            if not _route_time_window_feasible(
+                candidate.routes[route_index],
+                bundle,
+                node_by_id=node_by_id,
+            ):
+                continue
             score = _insertion_score(
                 route,
                 customer_id,
                 position,
                 bundle,
-                node_by_id=node_by_id,
             )
             options.append(
                 _Insertion(
@@ -240,11 +258,27 @@ def _enumerate_insertions(
             candidate = Solution(
                 routes=[*solution.routes, route],
             )
-            depot_bias = 0.0 if depot_id == owner else 1.0e-6
+            if not _route_time_window_feasible(
+                route,
+                bundle,
+                node_by_id=node_by_id,
+            ):
+                continue
+            distance_cost = (
+                (
+                    _distance(bundle, depot_id, customer_id)
+                    + _distance(bundle, customer_id, depot_id)
+                )
+                / 1_000.0
+                * float(bundle.prices.c_km)
+            )
+            cross_site_cost = (
+                0.0 if depot_id == owner else float(bundle.prices.cross_site_cost)
+            )
             score = (
-                _distance(bundle, depot_id, customer_id)
-                + _distance(bundle, customer_id, depot_id)
-                + depot_bias
+                float(bundle.prices.vehicle_fixed_cost)
+                + distance_cost
+                + cross_site_cost
             )
             options.append(
                 _Insertion(
@@ -287,8 +321,6 @@ def _insertion_score(
     customer_id: str,
     position: int,
     bundle: China81Bundle,
-    *,
-    node_by_id: dict[str, Any],
 ) -> float:
     customers = list(route.node_sequence[1:-1])
     left = route.home_depot_id if position == 0 else customers[position - 1]
@@ -298,15 +330,11 @@ def _insertion_score(
         + _distance(bundle, customer_id, right)
         - _distance(bundle, left, right)
     )
-    customer = node_by_id[customer_id]
-    window_width = max(
-        1.0,
-        float(customer.due_time) - float(customer.ready_time),
-    )
-    time_pressure = 1.0 / window_width
     owner = bundle.customer_home_depot.get(customer_id)
-    cross_site_tiebreak = 0.0 if owner == route.home_depot_id else 1.0e-6
-    score = distance_delta + time_pressure + cross_site_tiebreak
+    cross_site_cost = (
+        0.0 if owner == route.home_depot_id else float(bundle.prices.cross_site_cost)
+    )
+    score = distance_delta / 1_000.0 * float(bundle.prices.c_km) + cross_site_cost
     if not math.isfinite(score):
         raise ValueError("non-finite reconstruction score")
     return float(score)
@@ -335,6 +363,78 @@ def _distance(
     right: str,
 ) -> float:
     return float(bundle.instance.distance(left, right))
+
+
+def _candidate_route_indices(
+    solution: Solution,
+    customer_id: str,
+    bundle: China81Bundle,
+    *,
+    limit: int,
+) -> tuple[int, ...]:
+    """Return a small result-blind route-neighbourhood for reconstruction."""
+
+    if limit < 1:
+        raise ValueError("route-neighbourhood limit must be positive")
+    scored: list[tuple[float, int]] = []
+    owner = bundle.customer_home_depot.get(customer_id)
+    owner_scored: list[tuple[float, int]] = []
+    for route_index, route in enumerate(solution.routes):
+        anchors = tuple(route.node_sequence)
+        relatedness = min(
+            _distance(bundle, customer_id, anchor)
+            + _distance(bundle, anchor, customer_id)
+            for anchor in anchors
+        )
+        row = (relatedness, route_index)
+        scored.append(row)
+        if route.home_depot_id == owner:
+            owner_scored.append(row)
+    selected = {
+        route_index for _, route_index in sorted(scored)[: min(limit, len(scored))]
+    }
+    if owner_scored:
+        selected.add(min(owner_scored)[1])
+    return tuple(sorted(selected))
+
+
+def _route_time_window_feasible(
+    route: Route,
+    bundle: China81Bundle,
+    *,
+    node_by_id: dict[str, Any],
+) -> bool:
+    """Keep a skeleton if either registered vehicle type can meet its windows."""
+
+    try:
+        depot = node_by_id[route.home_depot_id]
+    except KeyError as exc:
+        raise ValueError(f"route uses unknown depot {route.home_depot_id!r}") from exc
+    for vehicle_type in ("cv", "ev"):
+        current_time = float(depot.ready_time)
+        previous = route.home_depot_id
+        feasible = True
+        for node_id in route.node_sequence[1:]:
+            try:
+                node = node_by_id[node_id]
+            except KeyError as exc:
+                raise ValueError(f"route uses unknown node {node_id!r}") from exc
+            _, duration_s, _ = bundle.instance.arc_metrics(
+                previous,
+                node_id,
+                vehicle_type,
+                fallback_speed_mps=float(bundle.prices.v_speed_ms),
+            )
+            arrival = current_time + float(duration_s)
+            service_start = max(arrival, float(node.ready_time))
+            if service_start > float(node.due_time) + 1.0e-9:
+                feasible = False
+                break
+            current_time = service_start + float(node.service_time)
+            previous = node_id
+        if feasible:
+            return True
+    return False
 
 
 def _profile_payload_capacity(

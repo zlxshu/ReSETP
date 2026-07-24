@@ -10,7 +10,9 @@ from __future__ import annotations
 from dataclasses import dataclass
 from enum import Enum
 import random
+from typing import Any
 
+from setp_solver.cost import route_node_schedule
 from setp_solver.instance_loader import Instance
 from setp_solver.solution import Route, Solution
 
@@ -162,28 +164,62 @@ def time_window_pressure_string_plan(
     instance: Instance,
     *,
     radius: int = 1,
+    rng: random.Random | None = None,
+    candidate_pool_size: int = 8,
+    prices: Any | None = None,
 ) -> DestroyPlan:
     if radius < 0:
         raise ValueError("time-window radius must be non-negative")
+    if candidate_pool_size < 1:
+        raise ValueError("time-window candidate pool must be positive")
     node_by_id = {node.node_id: node for node in instance.nodes}
     customer_ids = frozenset(
         node_id for node_id, node in node_by_id.items() if node.node_type.lower() == "c"
     )
-    candidates: list[tuple[float, int, int]] = []
+    candidates: list[tuple[float, float, int, int]] = []
     for route_index, route in enumerate(solution.routes):
         customers = _route_customers(
             route,
             customer_ids,
         )
+        schedule = route_node_schedule(
+            route,
+            instance,
+            charging_actions=list(solution.charging_actions),
+            **({} if prices is None else {"prices": prices}),
+        )
+        start_by_customer: dict[str, float] = {}
+        for node_id, row in zip(route.node_sequence, schedule):
+            if node_id in customer_ids:
+                start_by_customer[node_id] = float(row.t_start)
         for position, customer_id in enumerate(customers):
             node = node_by_id.get(customer_id)
             if node is None:
                 raise ValueError(f"customer {customer_id!r} missing from instance")
             width = float(node.due_time) - float(node.ready_time)
-            candidates.append((width, route_index, position))
+            try:
+                service_start = start_by_customer[customer_id]
+            except KeyError as exc:
+                raise ValueError(
+                    f"customer {customer_id!r} missing from route schedule"
+                ) from exc
+            residual_slack = float(node.due_time) - service_start
+            candidates.append(
+                (
+                    residual_slack,
+                    width,
+                    route_index,
+                    position,
+                )
+            )
     if not candidates:
         raise ValueError("solution has no customer to stress")
-    _, route_index, position = min(candidates)
+    ranked = sorted(candidates)
+    pool = ranked[: min(len(ranked), int(candidate_pool_size))]
+    if rng is None or len(pool) == 1:
+        _, _, route_index, position = pool[0]
+    else:
+        _, _, route_index, position = pool[rng.randrange(len(pool))]
     customers = _route_customers(
         solution.routes[route_index],
         customer_ids,
@@ -197,7 +233,8 @@ def time_window_pressure_string_plan(
         target_vehicle_types=("cv", "ev"),
         source_customer_groups=(customers[left:right],),
         reason=(
-            "remove the narrowest-window customer and adjacent string, "
+            "remove a result-blind customer with low residual time-window "
+            "slack under the shared route schedule and its adjacent string, "
             "then rebuild across depots, types, and charge schedules"
         ),
     )

@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from collections import Counter
 from dataclasses import dataclass
 import math
 import random
@@ -9,7 +10,11 @@ from time import perf_counter
 from typing import Any
 
 from setp_solver.china81 import China81Bundle
+from setp_solver.china81_completion import annotate_cross_site_services
 from setp_solver.solution import Route, Solution
+from setp_solver.algorithms.resetp_alns.support.charging import (
+    repair_route_charging,
+)
 from setp_solver.algorithms.resetp_alns.operators.strong_bridge import (
     solution_signature_hash,
 )
@@ -17,7 +22,10 @@ from setp_solver.algorithms.resetp_alns.operators.strong_bridge import (
 from contracts import CandidateSource, CompleteEvaluationLedger
 from decoder_cache import RouteLocalDecoderCache
 from evaluation import BudgetedCompleteEvaluator
-from fleet_assignment_dp import decode_assignment_shortlist
+from fleet_assignment_dp import (
+    NoFeasibleAssignmentError,
+    decode_assignment_shortlist,
+)
 from operator_plans import (
     DestroyPlan,
     OperatorKind,
@@ -29,12 +37,9 @@ from operator_plans import (
 )
 from operator_effects import OperatorEffect, verify_operator_effect
 from recreate import (
+    NoReconstructionInsertionError,
     recreate_removed_customers,
     remove_customers_from_skeleton,
-)
-from reference_decoder import (
-    RouteAssignment,
-    decode_explicit_assignments,
 )
 
 
@@ -43,6 +48,8 @@ class RrConfig:
     assignment_beam_per_state: int = 2
     assignment_shortlist_size: int = 3
     max_segment_length: int = 4
+    time_window_candidate_pool: int = 8
+    cross_depot_pair_pool: int = 12
     start_worsening_fraction: float = 0.01
     start_acceptance_probability: float = 0.50
     end_worsening_fraction: float = 0.001
@@ -56,6 +63,8 @@ class RrConfig:
             raise ValueError("assignment shortlist must be positive")
         if self.max_segment_length < 1:
             raise ValueError("segment length must be positive")
+        if self.time_window_candidate_pool < 1 or self.cross_depot_pair_pool < 1:
+            raise ValueError("result-blind candidate pools must be positive")
         for value in (
             self.start_acceptance_probability,
             self.end_acceptance_probability,
@@ -175,9 +184,6 @@ def run_mechanism_aware_rr(
             stop_reason = "WALLCLOCK_SAFETY_CAP"
             break
         iteration += 1
-        operator = operator_order[(iteration - 1 + int(seed)) % len(operator_order)]
-        operator_name = operator.value
-        attempts[operator_name] = attempts.get(operator_name, 0) + 1
         before = ledger.consumed
         temperature = _temperature(
             initial_objective=float(initial_objective),
@@ -185,17 +191,30 @@ def run_mechanism_aware_rr(
             limit=max(1, phase_stop - phase_start),
             config=config,
         )
-        candidate = _propose_candidate(
-            current,
-            bundle,
-            operator=operator,
-            rng=rng,
-            evaluator=evaluator,
-            config=config,
-            iteration=iteration,
-            evaluation_allowance=(phase_stop - ledger.consumed),
-            route_local_cache=local_cache,
-        )
+        candidate = None
+        skipped_nonapplicable: list[str] = []
+        start_index = (iteration - 1 + int(seed)) % len(operator_order)
+        for offset in range(len(operator_order)):
+            operator = operator_order[(start_index + offset) % len(operator_order)]
+            operator_name = operator.value
+            attempts[operator_name] = attempts.get(operator_name, 0) + 1
+            attempt_before = ledger.consumed
+            candidate = _propose_candidate(
+                current,
+                bundle,
+                operator=operator,
+                rng=rng,
+                evaluator=evaluator,
+                config=config,
+                iteration=iteration,
+                evaluation_allowance=(phase_stop - ledger.consumed),
+                route_local_cache=local_cache,
+            )
+            if candidate is not None:
+                break
+            skipped_nonapplicable.append(operator_name)
+            if ledger.consumed > attempt_before:
+                break
         if candidate is None:
             trace.append(
                 RrTraceRow(
@@ -212,29 +231,16 @@ def run_mechanism_aware_rr(
                     current_objective=current_objective,
                     best_objective=best_objective,
                     temperature=temperature,
-                    detail="no_feasible_candidate",
+                    detail=(
+                        "no_feasible_candidate;attempted="
+                        + ",".join(skipped_nonapplicable)
+                    ),
                 )
             )
             if ledger.consumed == before:
-                # A non-applicable operator must not cause an infinite loop.
-                operator = OperatorKind.TIME_WINDOW_PRESSURE_STRING
-                candidate = _propose_candidate(
-                    current,
-                    bundle,
-                    operator=operator,
-                    rng=rng,
-                    evaluator=evaluator,
-                    config=config,
-                    iteration=iteration,
-                    evaluation_allowance=(phase_stop - ledger.consumed),
-                    route_local_cache=local_cache,
-                )
-                if candidate is None and ledger.consumed == before:
-                    stop_reason = "NO_APPLICABLE_OPERATOR"
-                    break
-            if candidate is None:
-                continue
-            operator_name = operator.value
+                stop_reason = "NO_APPLICABLE_OPERATOR"
+                break
+            continue
         candidate_solution = candidate.solution
         candidate_objective = candidate.objective
         delta = candidate_objective - current_objective
@@ -286,6 +292,13 @@ def run_mechanism_aware_rr(
                         if delta < -1.0e-9
                         else ("equal" if abs(delta) <= 1.0e-9 else "worsening")
                     )
+                    + (
+                        ""
+                        if not skipped_nonapplicable
+                        else (
+                            ";skipped_nonapplicable=" + ",".join(skipped_nonapplicable)
+                        )
+                    )
                 ),
             )
         )
@@ -333,6 +346,8 @@ def _propose_candidate(
         operator=operator,
         rng=rng,
         max_segment_length=config.max_segment_length,
+        time_window_candidate_pool=config.time_window_candidate_pool,
+        cross_depot_pair_pool=config.cross_depot_pair_pool,
     )
     if plan is None:
         return None
@@ -357,18 +372,18 @@ def _propose_candidate(
             rng=rng,
             metadata=metadata,
         )
-        if result is None or not result.scored.feasible:
+        if result is None or not result.feasible:
             return None
         effect = verify_operator_effect(
             current,
-            result.scored.solution,
+            result.solution,
             plan,
             customer_ids=customer_ids,
         )
         return _CandidateProposal(
-            solution=result.scored.solution,
-            objective=result.scored.objective,
-            record_index=result.scored.record.index,
+            solution=result.solution,
+            objective=result.objective,
+            record_index=result.record.index,
             effect=effect,
         )
 
@@ -404,12 +419,15 @@ def _propose_candidate(
             plan.removed_customer_ids,
             known_customer_ids=customer_ids,
         )
-        recreated = recreate_removed_customers(
-            partial,
-            plan.removed_customer_ids,
-            bundle,
-            rng=rng,
-        )
+        try:
+            recreated = recreate_removed_customers(
+                partial,
+                plan.removed_customer_ids,
+                bundle,
+                rng=rng,
+            )
+        except NoReconstructionInsertionError:
+            return None
         recreated_skeleton = recreated.skeleton
 
     shortlist_size = min(
@@ -419,30 +437,33 @@ def _propose_candidate(
     )
     if shortlist_size < 1:
         return None
-    result = decode_assignment_shortlist(
-        recreated_skeleton,
-        bundle,
-        evaluator=evaluator,
-        source=CandidateSource.RUIN_RECREATE,
-        beam_per_state=config.assignment_beam_per_state,
-        max_candidates=shortlist_size,
-        source_metadata={
-            **metadata,
-            "recreate_step_count": (
-                len(recreated.steps)
-                if operator == OperatorKind.TIME_WINDOW_PRESSURE_STRING
-                else 0
-            ),
-            "opened_route_count": (
-                recreated.opened_route_count
-                if operator == OperatorKind.TIME_WINDOW_PRESSURE_STRING
-                else 0
-            ),
-        },
-        allowed_depots_by_route=allowed_depots_by_route,
-        route_local_cache=route_local_cache,
-        dynamic_state_hash="STATIC",
-    )
+    try:
+        result = decode_assignment_shortlist(
+            recreated_skeleton,
+            bundle,
+            evaluator=evaluator,
+            source=CandidateSource.RUIN_RECREATE,
+            beam_per_state=config.assignment_beam_per_state,
+            max_candidates=shortlist_size,
+            source_metadata={
+                **metadata,
+                "recreate_step_count": (
+                    len(recreated.steps)
+                    if operator == OperatorKind.TIME_WINDOW_PRESSURE_STRING
+                    else 0
+                ),
+                "opened_route_count": (
+                    recreated.opened_route_count
+                    if operator == OperatorKind.TIME_WINDOW_PRESSURE_STRING
+                    else 0
+                ),
+            },
+            allowed_depots_by_route=allowed_depots_by_route,
+            route_local_cache=route_local_cache,
+            dynamic_state_hash="STATIC",
+        )
+    except NoFeasibleAssignmentError:
+        return None
     if not result.decoded:
         return None
     checked = [
@@ -477,6 +498,8 @@ def _select_plan(
     operator: OperatorKind,
     rng: random.Random,
     max_segment_length: int,
+    time_window_candidate_pool: int,
+    cross_depot_pair_pool: int,
 ) -> DestroyPlan | None:
     if not solution.routes:
         return None
@@ -488,22 +511,34 @@ def _select_plan(
             solution,
             bundle.instance,
             radius=1,
+            rng=rng,
+            candidate_pool_size=time_window_candidate_pool,
+            prices=bundle.prices,
         )
     if operator == OperatorKind.CROSS_DEPOT_ROUTE_REASSIGNMENT:
         route_index = rng.randrange(len(solution.routes))
+        current_depot = solution.routes[route_index].home_depot_id
+        targets = tuple(
+            depot_id
+            for depot_id in sorted(bundle.fleet_caps_by_depot)
+            if depot_id != current_depot
+        )
+        if not targets:
+            return None
+        target_depot = targets[rng.randrange(len(targets))]
         return cross_depot_route_reassignment_plan(
             solution,
             route_index=route_index,
-            depot_ids=tuple(sorted(bundle.fleet_caps_by_depot)),
+            depot_ids=(current_depot, target_depot),
             customer_ids=customer_ids,
         )
     if operator == OperatorKind.BIDIRECTIONAL_CROSS_DEPOT_SEGMENT:
-        pairs = [
-            (left, right)
-            for left, left_route in enumerate(solution.routes)
-            for right, right_route in enumerate(solution.routes)
-            if left < right and left_route.home_depot_id != right_route.home_depot_id
-        ]
+        pairs = _related_cross_depot_pairs(
+            solution,
+            bundle,
+            customer_ids=customer_ids,
+            limit=cross_depot_pair_pool,
+        )
         if not pairs:
             return None
         left, right = pairs[rng.randrange(len(pairs))]
@@ -516,16 +551,44 @@ def _select_plan(
             max_segment_length=max_segment_length,
         )
     if operator == OperatorKind.VEHICLE_TYPE_FLIP:
+        usage = Counter(
+            (
+                route.home_depot_id,
+                route.vehicle_type.strip().lower(),
+            )
+            for route in solution.routes
+        )
+        eligible: list[int] = []
+        for route_index, route in enumerate(solution.routes):
+            current_type = route.vehicle_type.strip().lower()
+            target_type = "ev" if current_type == "cv" else "cv"
+            try:
+                target_cap = int(
+                    bundle.fleet_caps_by_depot[route.home_depot_id][
+                        f"num_{target_type}"
+                    ]
+                )
+            except KeyError as exc:
+                raise ValueError(
+                    "vehicle flip lacks a finite target fleet cap for "
+                    f"{route.home_depot_id}:{target_type}"
+                ) from exc
+            if usage[(route.home_depot_id, target_type)] < target_cap:
+                eligible.append(route_index)
+        if not eligible:
+            return None
         return vehicle_type_flip_plan(
             solution,
-            route_index=rng.randrange(len(solution.routes)),
+            route_index=eligible[rng.randrange(len(eligible))],
             customer_ids=customer_ids,
         )
     if operator == OperatorKind.CHARGE_DEPARTURE_RETIMING:
+        action_vehicle_ids = {action.vehicle_id for action in solution.charging_actions}
         ev_routes = [
             index
             for index, route in enumerate(solution.routes)
             if route.vehicle_type.strip().lower() == "ev"
+            and route.vehicle_id in action_vehicle_ids
         ]
         if not ev_routes:
             return None
@@ -546,50 +609,189 @@ def _decode_assignment_only_plan(
     rng: random.Random,
     metadata: dict[str, Any],
 ):
-    assignments = {
-        route_index: RouteAssignment(
-            route.home_depot_id,
-            route.vehicle_type,
-        )
-        for route_index, route in enumerate(current.routes)
-    }
     route_index = plan.route_indices[0]
+    route = current.routes[route_index]
+    node_type = {node.node_id: node.node_type.lower() for node in bundle.instance.nodes}
+    customers = [
+        node_id for node_id in route.node_sequence if node_type.get(node_id) == "c"
+    ]
+    charge_strategy = "integrated"
+    carbon_weight = 1.0
     if plan.kind == OperatorKind.VEHICLE_TYPE_FLIP:
-        assignments[route_index] = RouteAssignment(
-            current.routes[route_index].home_depot_id,
-            plan.target_vehicle_types[0],
-        )
+        vehicle_type = plan.target_vehicle_types[0]
     elif plan.kind == OperatorKind.CHARGE_DEPARTURE_RETIMING:
-        choices = (
-            RouteAssignment(
-                current.routes[route_index].home_depot_id,
-                "ev",
-                charge_strategy="integrated",
-                carbon_weight=0.0,
-            ),
-            RouteAssignment(
-                current.routes[route_index].home_depot_id,
-                "ev",
-                charge_strategy="legacy",
-                carbon_weight=1.0,
-            ),
+        registered_choices = (
+            ("integrated", 0.0),
+            ("legacy", 1.0),
         )
-        assignments[route_index] = choices[rng.randrange(len(choices))]
+        first = rng.randrange(len(registered_choices))
+        choices = (
+            registered_choices[first],
+            registered_choices[1 - first],
+        )
+        vehicle_type = "ev"
     else:
         raise ValueError(f"assignment-only decoder cannot apply {plan.kind.value}")
     if evaluator.ledger.remaining < 1:
         return None
+    rebuilt = Route(
+        vehicle_id=route.vehicle_id,
+        vehicle_type=vehicle_type,
+        home_depot_id=route.home_depot_id,
+        node_sequence=[
+            route.home_depot_id,
+            *customers,
+            route.home_depot_id,
+        ],
+    )
+    target_actions = []
     try:
-        return decode_explicit_assignments(
-            current,
-            bundle,
-            assignments=assignments,
-            evaluator=evaluator,
-            source=CandidateSource.RUIN_RECREATE,
-            source_metadata=metadata,
+        if vehicle_type == "ev":
+            if plan.kind == OperatorKind.CHARGE_DEPARTURE_RETIMING:
+                old_signature = _charging_action_signature(
+                    [
+                        action
+                        for action in current.charging_actions
+                        if action.vehicle_id == route.vehicle_id
+                    ]
+                )
+                changed = None
+                for selected_strategy, selected_weight in choices:
+                    try:
+                        repaired, actions = repair_route_charging(
+                            rebuilt,
+                            bundle.instance,
+                            bundle.time_profile,
+                            bundle.prices,
+                            strategy=selected_strategy,
+                            carbon_weight=float(selected_weight),
+                            depot_charge_window_mode="same_day_predeparture",
+                        )
+                    except (KeyError, RuntimeError, TypeError, ValueError):
+                        continue
+                    if _charging_action_signature(actions) == old_signature:
+                        continue
+                    changed = (
+                        repaired,
+                        actions,
+                        selected_strategy,
+                        selected_weight,
+                    )
+                    break
+                if changed is None:
+                    return None
+                (
+                    rebuilt,
+                    target_actions,
+                    charge_strategy,
+                    carbon_weight,
+                ) = changed
+            else:
+                rebuilt, target_actions = repair_route_charging(
+                    rebuilt,
+                    bundle.instance,
+                    bundle.time_profile,
+                    bundle.prices,
+                    strategy=charge_strategy,
+                    carbon_weight=float(carbon_weight),
+                    depot_charge_window_mode="same_day_predeparture",
+                )
+        routes = list(current.routes)
+        routes[route_index] = rebuilt
+        candidate = annotate_cross_site_services(
+            Solution(
+                routes=routes,
+                charging_actions=[
+                    action
+                    for action in current.charging_actions
+                    if action.vehicle_id != route.vehicle_id
+                ]
+                + list(target_actions),
+            ),
+            bundle.customer_home_depot,
         )
-    except (KeyError, TypeError, ValueError):
+        return evaluator.score(
+            candidate,
+            source=CandidateSource.RUIN_RECREATE,
+            metadata={
+                **metadata,
+                "assignment_only_target_route": route_index,
+                "target_vehicle_type": vehicle_type,
+                "target_charge_strategy": (
+                    charge_strategy if vehicle_type == "ev" else "not_applicable"
+                ),
+                "target_carbon_weight": (
+                    float(carbon_weight) if vehicle_type == "ev" else 0.0
+                ),
+                "unselected_routes_preserved": True,
+            },
+        )
+    except (KeyError, RuntimeError, TypeError, ValueError):
         return None
+
+
+def _charging_action_signature(actions) -> tuple[tuple[Any, ...], ...]:
+    return tuple(
+        sorted(
+            (
+                action.station_id,
+                round(float(action.energy_kwh), 9),
+                round(float(action.occupancy_minutes), 9),
+                round(float(action.charge_start_second), 9),
+                int(action.charge_day_offset),
+                (
+                    ""
+                    if action.start_energy_kwh is None
+                    else f"{float(action.start_energy_kwh):.9f}"
+                ),
+                (
+                    ""
+                    if action.end_energy_kwh is None
+                    else f"{float(action.end_energy_kwh):.9f}"
+                ),
+                str(action.charging_curve_id or ""),
+            )
+            for action in actions
+        )
+    )
+
+
+def _related_cross_depot_pairs(
+    solution: Solution,
+    bundle: China81Bundle,
+    *,
+    customer_ids: frozenset[str],
+    limit: int,
+) -> tuple[tuple[int, int], ...]:
+    """Keep a small nearest-route pool instead of enumerating every pair."""
+
+    if limit < 1:
+        raise ValueError("cross-depot pair pool must be positive")
+    customer_sequences = [
+        tuple(node_id for node_id in route.node_sequence if node_id in customer_ids)
+        for route in solution.routes
+    ]
+    scored: list[tuple[float, int, int]] = []
+    for left, left_route in enumerate(solution.routes):
+        if not customer_sequences[left]:
+            continue
+        for right in range(left + 1, len(solution.routes)):
+            right_route = solution.routes[right]
+            if (
+                left_route.home_depot_id == right_route.home_depot_id
+                or not customer_sequences[right]
+            ):
+                continue
+            relatedness = min(
+                float(bundle.instance.distance(first, second))
+                + float(bundle.instance.distance(second, first))
+                for first in customer_sequences[left]
+                for second in customer_sequences[right]
+            )
+            scored.append((relatedness, left, right))
+    return tuple(
+        (left, right) for _, left, right in sorted(scored)[: min(limit, len(scored))]
+    )
 
 
 def _whole_route_reassignment_skeleton(

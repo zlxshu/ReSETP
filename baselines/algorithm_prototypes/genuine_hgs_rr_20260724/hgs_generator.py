@@ -42,6 +42,8 @@ class HgsArchiveCandidate:
     proxy_cost: int
     signature: str
     proxy_rank: int
+    generation_kind: str = "population_archive"
+    warm_parent_signature: str | None = None
 
 
 @dataclass(frozen=True)
@@ -109,12 +111,28 @@ def generate_hgs_archive(
     warm_native = [
         _project_initial_solution(item, data, problem) for item in warm_solutions
     ]
+    direct_warm_descendants: list[
+        tuple[
+            str,
+            Any,
+        ]
+    ] = []
+    if warm_native:
+        parent_signature = solution_signature_hash(warm_solutions[0])
+        educated = local_search.search(
+            warm_native[0],
+            penalty_manager.cost_evaluator(),
+        )
+        if _native_solution_key(educated) != _native_solution_key(warm_native[0]):
+            direct_warm_descendants.append((parent_signature, educated))
+    injected_native = [native for _, native in direct_warm_descendants]
     random_count = max(
         0,
-        int(params.population.min_pop_size) - len(warm_native),
+        int(params.population.min_pop_size) - len(warm_native) - len(injected_native),
     )
     initial_solutions = [
         *warm_native,
+        *injected_native,
         *[NativeSolution.make_random(data, rng) for _ in range(random_count)],
     ]
     crossover = selective_route_exchange if data.num_vehicles > 1 else ordered_crossover
@@ -160,6 +178,29 @@ def generate_hgs_archive(
     archive: list[HgsArchiveCandidate] = []
     translation_failures: list[str] = []
     seen_project_signatures: set[str] = set()
+    for parent_signature, native in direct_warm_descendants:
+        try:
+            skeleton = annotate_cross_site_services(
+                _translate_solution(native, problem),
+                bundle.customer_home_depot,
+            )
+        except (IndexError, KeyError, TypeError, ValueError) as exc:
+            translation_failures.append(f"direct_warm_local_search:{exc}")
+            continue
+        signature = solution_signature_hash(skeleton)
+        if signature == parent_signature or signature in seen_project_signatures:
+            continue
+        seen_project_signatures.add(signature)
+        archive.append(
+            HgsArchiveCandidate(
+                skeleton=skeleton,
+                proxy_cost=int(cost_evaluator.cost(native)),
+                signature=signature,
+                proxy_rank=len(archive) + 1,
+                generation_kind="direct_warm_local_search",
+                warm_parent_signature=parent_signature,
+            )
+        )
     for native in proxy_ranked:
         if len(archive) >= max_archive_candidates:
             break
@@ -205,6 +246,12 @@ def generate_hgs_archive(
             "wallclock_safety_seconds": float(wallclock_safety_seconds),
             "elapsed_seconds": elapsed,
             "warm_solution_count": len(warm_solutions),
+            "direct_warm_local_search_attempts": (1 if warm_native else 0),
+            "direct_warm_local_search_changed": len(direct_warm_descendants),
+            "direct_warm_descendant_archive_count": sum(
+                candidate.generation_kind == "direct_warm_local_search"
+                for candidate in archive
+            ),
             "warm_route_type_counts": [
                 dict(
                     sorted(

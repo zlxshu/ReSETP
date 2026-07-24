@@ -25,6 +25,7 @@ from contracts import (
 from hybrid_orchestrator import make_arm_budget_plan
 from operator_effects import verify_operator_effect
 from operator_plans import (
+    OperatorKind,
     bidirectional_cross_depot_segment_plan,
     charge_departure_retiming_plan,
     cross_depot_route_reassignment_plan,
@@ -35,13 +36,14 @@ from operator_plans import (
 from recreate import remove_customers_from_skeleton
 from rr_engine import (
     _bidirectional_exchange_skeleton,
+    _select_plan,
     _whole_route_reassignment_skeleton,
 )
 
 
 ROOT = Path(__file__).resolve().parents[3]
 PACKAGE = Path(__file__).resolve().parent
-OUT = PACKAGE / "g0_static_semantics_gate_v5"
+OUT = PACKAGE / "g0_static_semantics_gate_v10"
 CONTRACT = ROOT / "docs/handoff/e2_genuine_hybrid_hgs_rr_contract_20260724.md"
 
 
@@ -279,17 +281,24 @@ def _checks() -> list[tuple[str, Callable[[], None]]]:
             instance,
             radius=1,
         )
-        route = solution.routes[0]
-        candidate = Solution(
-            routes=[
-                Route(
-                    route.vehicle_id,
-                    route.vehicle_type,
-                    route.home_depot_id,
-                    ["D_GZ", "C2", "C1", "C3", "D_GZ"],
-                ),
-                solution.routes[1],
+        route_index = plan.route_indices[0]
+        route = solution.routes[route_index]
+        route_customers = [
+            node_id for node_id in route.node_sequence if node_id in customers
+        ]
+        routes = list(solution.routes)
+        routes[route_index] = Route(
+            route.vehicle_id,
+            route.vehicle_type,
+            route.home_depot_id,
+            [
+                route.home_depot_id,
+                *reversed(route_customers),
+                route.home_depot_id,
             ],
+        )
+        candidate = Solution(
+            routes=routes,
             charging_actions=list(solution.charging_actions),
         )
         assert verify_operator_effect(
@@ -298,6 +307,40 @@ def _checks() -> list[tuple[str, Callable[[], None]]]:
             plan,
             customer_ids=customers,
         ).passed
+
+    def time_window_pool_diversifies() -> None:
+        selected = {
+            time_window_pressure_string_plan(
+                solution,
+                instance,
+                radius=0,
+                rng=random.Random(seed),
+                candidate_pool_size=6,
+            ).removed_customer_ids
+            for seed in range(1, 20)
+        }
+        assert len(selected) > 1
+
+    def single_depot_disables_cross_depot_move() -> None:
+        class Bundle:
+            fleet_caps_by_depot = {
+                "D_GZ": {"num_cv": 2, "num_ev": 1},
+            }
+
+        bundle = Bundle()
+        bundle.instance = instance
+        assert (
+            _select_plan(
+                Solution(routes=[solution.routes[0]]),
+                bundle,
+                operator=OperatorKind.CROSS_DEPOT_ROUTE_REASSIGNMENT,
+                rng=random.Random(1),
+                max_segment_length=4,
+                time_window_candidate_pool=8,
+                cross_depot_pair_pool=12,
+            )
+            is None
+        )
 
     def dynamic_tail_effect() -> None:
         plan = dynamic_unexecuted_tail_plan(
@@ -356,7 +399,9 @@ def _checks() -> list[tuple[str, Callable[[], None]]]:
             descendant_objective=98.0,
             complete_evaluation_index=30,
         )
-        lineage.assert_genuine_cooperation()
+        lineage.assert_genuine_cooperation(
+            require_post_injection_gain=True,
+        )
 
     def cache_identity() -> None:
         base = dict(
@@ -394,6 +439,11 @@ def _checks() -> list[tuple[str, Callable[[], None]]]:
         ("vehicle_type_flip_effect", type_flip_effect),
         ("charge_schedule_effect", charge_effect),
         ("time_window_structure_effect", time_window_effect),
+        ("time_window_result_blind_diversity", time_window_pool_diversifies),
+        (
+            "single_depot_cross_depot_operator_disabled",
+            single_depot_disables_cross_depot_move,
+        ),
         ("dynamic_frozen_prefix_effect", dynamic_tail_effect),
         ("bidirectional_lineage", bidirectional_lineage),
         ("cache_city_date_dynamic_identity", cache_identity),

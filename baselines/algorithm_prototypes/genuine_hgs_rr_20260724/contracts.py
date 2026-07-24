@@ -163,6 +163,7 @@ class HgsDescendantRecord:
     injected_objective: float
     descendant_objective: float
     complete_evaluation_index: int
+    evidence_kind: str = "direct_warm_local_search"
 
 
 class HybridLineageLedger:
@@ -229,11 +230,17 @@ class HybridLineageLedger:
         injected_objective: float,
         descendant_objective: float,
         complete_evaluation_index: int,
+        evidence_kind: str = "direct_warm_local_search",
     ) -> HgsDescendantRecord:
         if epoch < 1 or complete_evaluation_index < 1:
             raise ValueError("epoch and evaluation index must be positive")
         if injected_rr_signature == descendant_signature:
             raise ValueError("HGS descendant must differ from injected RR solution")
+        if evidence_kind != "direct_warm_local_search":
+            raise ValueError(
+                "HGS descendant evidence must come from the tracked direct "
+                "warm-start local-search path"
+            )
         record = HgsDescendantRecord(
             epoch=int(epoch),
             injected_rr_signature=injected_rr_signature,
@@ -241,6 +248,7 @@ class HybridLineageLedger:
             injected_objective=float(injected_objective),
             descendant_objective=float(descendant_objective),
             complete_evaluation_index=int(complete_evaluation_index),
+            evidence_kind=evidence_kind,
         )
         self._descendants.append(record)
         return record
@@ -269,6 +277,7 @@ class HybridLineageLedger:
         self,
         *,
         tolerance: float = 1.0e-9,
+        require_post_injection_gain: bool = False,
     ) -> None:
         directions = {row.direction for row in self._transfers}
         if TransferDirection.HGS_TO_RR not in directions:
@@ -281,7 +290,10 @@ class HybridLineageLedger:
             for row in self._transfers
         ):
             raise RuntimeError("RR solution was never injected into a later HGS epoch")
-        if self.cooperative_gain_evidence_count(tolerance=tolerance) < 1:
+        if (
+            require_post_injection_gain
+            and self.cooperative_gain_evidence_count(tolerance=tolerance) < 1
+        ):
             raise RuntimeError(
                 "no post-injection HGS descendant improved its RR parent"
             )

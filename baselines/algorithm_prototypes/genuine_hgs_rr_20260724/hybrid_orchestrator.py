@@ -154,6 +154,18 @@ class HgsEpochResult:
     padding_rechecks: int
     elapsed_seconds: float
     decode_failures: tuple[str, ...]
+    warm_signatures: tuple[str, ...] = ()
+    direct_warm_descendants: tuple[
+        "DirectWarmDescendantEvaluation",
+        ...,
+    ] = ()
+
+
+@dataclass(frozen=True)
+class DirectWarmDescendantEvaluation:
+    parent_signature: str
+    generated_signature: str
+    scored: ScoredCandidate
 
 
 @dataclass(frozen=True)
@@ -343,11 +355,7 @@ def run_cooperative_arm(
             iteration_allowance=hgs_iterations[epoch - 1],
             evaluation_allowance=plan.hgs_epoch_evaluations[epoch - 1],
             ledger=ledger,
-            candidate_source=(
-                CandidateSource.HGS_ARCHIVE
-                if epoch == 1
-                else CandidateSource.HGS_DESCENDANT
-            ),
+            candidate_source=CandidateSource.HGS_ARCHIVE,
             config=config,
             route_local_cache=route_local_cache,
         )
@@ -355,24 +363,38 @@ def run_cooperative_arm(
         hgs_candidate = hgs.best_novel_generated
         if hgs_candidate is None:
             raise RuntimeError(f"HGS epoch {epoch} produced no novel complete solution")
-        if (
-            pending_rr_injection is not None
-            and hgs_candidate.record.source == CandidateSource.HGS_DESCENDANT
-        ):
+        if pending_rr_injection is not None:
             injected_solution, injected_objective, _ = pending_rr_injection
             injected_signature = solution_signature_hash(injected_solution)
-            descendant_signature = solution_signature_hash(hgs_candidate.solution)
-            if (
-                descendant_signature != injected_signature
-                and hgs_candidate.objective < injected_objective - 1.0e-9
-            ):
+            if injected_signature not in hgs.warm_signatures:
+                raise RuntimeError(
+                    "registered RR injection was absent from the next HGS "
+                    f"epoch {epoch}"
+                )
+            improving_direct = [
+                row
+                for row in hgs.direct_warm_descendants
+                if (
+                    row.parent_signature == injected_signature
+                    and row.generated_signature != injected_signature
+                    and row.scored.objective < injected_objective - 1.0e-9
+                )
+            ]
+            if improving_direct:
+                direct = min(
+                    improving_direct,
+                    key=lambda row: (
+                        row.scored.objective,
+                        row.scored.record.index,
+                    ),
+                )
                 lineage.add_hgs_descendant(
                     epoch=epoch,
                     injected_rr_signature=injected_signature,
-                    descendant_signature=descendant_signature,
+                    descendant_signature=direct.generated_signature,
                     injected_objective=injected_objective,
-                    descendant_objective=hgs_candidate.objective,
-                    complete_evaluation_index=(hgs_candidate.record.index),
+                    descendant_objective=direct.scored.objective,
+                    complete_evaluation_index=direct.scored.record.index,
                 )
         if hgs_candidate.objective < incumbent.objective:
             incumbent = hgs_candidate
@@ -507,6 +529,7 @@ def _run_hgs_epoch(
     )
     candidates = _round_robin_archive_candidates(archives)
     feasible: list[ScoredCandidate] = []
+    direct_warm_descendants: list[DirectWarmDescendantEvaluation] = []
     decode_failures: list[str] = []
     for archive, candidate in candidates:
         if ledger.consumed >= phase_stop:
@@ -531,6 +554,8 @@ def _run_hgs_epoch(
                     "hgs_seed": archive.seed,
                     "proxy_rank": candidate.proxy_rank,
                     "proxy_cost": candidate.proxy_cost,
+                    "generation_kind": candidate.generation_kind,
+                    "warm_parent_signature": (candidate.warm_parent_signature),
                     "warm_signatures": list(archive.warm_signatures),
                 },
                 route_local_cache=route_local_cache,
@@ -542,6 +567,18 @@ def _run_hgs_epoch(
             )
             continue
         feasible.extend(item.scored for item in decoded.decoded)
+        if (
+            candidate.generation_kind == "direct_warm_local_search"
+            and candidate.warm_parent_signature is not None
+        ):
+            direct_warm_descendants.extend(
+                DirectWarmDescendantEvaluation(
+                    parent_signature=candidate.warm_parent_signature,
+                    generated_signature=solution_signature_hash(item.scored.solution),
+                    scored=item.scored,
+                )
+                for item in decoded.decoded
+            )
     padding_rechecks = 0
     if ledger.consumed < phase_stop:
         if not feasible:
@@ -599,6 +636,14 @@ def _run_hgs_epoch(
         else None
     )
     phase_records = ledger.records[phase_start:phase_stop]
+    warm_signatures = tuple(
+        solution_signature_hash(solution) for solution in warm_solutions
+    )
+    for archive in archives:
+        if archive.warm_signatures != warm_signatures:
+            raise RuntimeError(
+                "HGS archive did not register the supplied warm solutions"
+            )
     return HgsEpochResult(
         epoch=epoch,
         best_generated=best_generated,
@@ -613,6 +658,8 @@ def _run_hgs_epoch(
         padding_rechecks=padding_rechecks,
         elapsed_seconds=perf_counter() - started,
         decode_failures=tuple(decode_failures),
+        warm_signatures=warm_signatures,
+        direct_warm_descendants=tuple(direct_warm_descendants),
     )
 
 
