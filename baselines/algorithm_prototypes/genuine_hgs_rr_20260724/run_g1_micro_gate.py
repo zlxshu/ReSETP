@@ -29,11 +29,12 @@ from typing import Any, Callable
 
 REPO = Path(__file__).resolve().parents[3]
 PACKAGE = Path(__file__).resolve().parent
-PREREGISTRATION = PACKAGE / "g1_micro_preregistration_v2.json"
+PREREGISTRATION = PACKAGE / "g1_micro_preregistration_v3.json"
 G0_PREREGISTRATION = PACKAGE / "g0_real_bundle_preregistration_v1.json"
 G0_GATE = PACKAGE / "g0_real_bundle_gate_v1"
-WORK = PACKAGE / "g1_micro_work_v2"
-OUT = PACKAGE / "g1_micro_gate_v2"
+WORKER_PROBE = PACKAGE / "g1_six_worker_resource_probe_v1"
+WORK = PACKAGE / "g1_micro_work_v3"
+OUT = PACKAGE / "g1_micro_gate_v3"
 FORMAL_CAMPAIGN = (
     REPO / "baselines/e2_final_campaign_20260720/"
     "corrected_china81_rerun_v7_small_archive_ledger_20260724"
@@ -140,7 +141,7 @@ def _clean_appledouble(root: Path) -> int:
 
 def load_preregistration() -> dict[str, Any]:
     payload = read_json(PREREGISTRATION)
-    if payload.get("schema") != "resetp.coop-hgs-rr-g1-preregistration.v2":
+    if payload.get("schema") != "resetp.coop-hgs-rr-g1-preregistration.v3":
         raise RuntimeError("unexpected G1 preregistration schema")
     if payload.get("status") != "FROZEN_BEFORE_G0_REAL_AND_G1_RESULTS":
         raise RuntimeError("G1 preregistration status drift")
@@ -194,6 +195,13 @@ def readiness(preregistration: dict[str, Any]) -> dict[str, Any]:
     if (G0_GATE / "decision.json").is_file():
         g0_hashes_verified = len(_verify_artifact_hashes(G0_GATE))
         g0_state = str(read_json(G0_GATE / "decision.json").get("decision", "UNKNOWN"))
+    worker_probe_state = "MISSING"
+    worker_probe_hashes_verified = 0
+    if (WORKER_PROBE / "decision.json").is_file():
+        worker_probe_hashes_verified = len(_verify_artifact_hashes(WORKER_PROBE))
+        worker_probe_state = str(
+            read_json(WORKER_PROBE / "decision.json").get("decision", "UNKNOWN")
+        )
     reasons = []
     if resource_state["formal_running"]:
         reasons.append("protected_v7_or_release_chain_running")
@@ -208,8 +216,27 @@ def readiness(preregistration: dict[str, Any]) -> dict[str, Any]:
         "release_chain_verdict": release_state,
         "g0_decision": g0_state,
         "g0_artifacts_verified": g0_hashes_verified,
+        "worker_probe_decision": worker_probe_state,
+        "worker_probe_artifacts_verified": worker_probe_hashes_verified,
         "verified_inputs": input_verification,
     }
+
+
+def require_worker_count(workers: int) -> None:
+    if not 1 <= int(workers) <= 6:
+        raise ValueError("G1 workers must be between 1 and 6")
+    if int(workers) <= 3:
+        return
+    if not (WORKER_PROBE / "decision.json").is_file():
+        raise RuntimeError("six-worker G1 requires the registered resource probe")
+    _verify_artifact_hashes(WORKER_PROBE)
+    decision = str(
+        read_json(WORKER_PROBE / "decision.json").get("decision", "UNKNOWN")
+    )
+    if decision != "PASS_G1_SIX_WORKERS_RESOURCE_PROBE":
+        raise RuntimeError(
+            f"six-worker G1 is not released by the resource probe: {decision}"
+        )
 
 
 def require_ready(preregistration: dict[str, Any]) -> dict[str, Any]:
@@ -793,6 +820,7 @@ def check_contract() -> int:
 
 
 def execute(workers: int) -> int:
+    require_worker_count(workers)
     preregistration = load_preregistration()
     verify_source_hashes(preregistration)
     readiness_state = require_ready(preregistration)
@@ -840,8 +868,7 @@ def main() -> int:
     args = parser.parse_args()
     if args.check_contract:
         return check_contract()
-    if not 1 <= int(args.workers) <= 3:
-        raise ValueError("G1 workers must be between 1 and 3 on this 8 GB host")
+    require_worker_count(int(args.workers))
     return execute(int(args.workers))
 
 

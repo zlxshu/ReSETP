@@ -1,0 +1,36 @@
+{
+  "schema": "resetp.genuine-hybrid-g1-worker-probe-registration.v1",
+  "registered_at": "2026-07-25",
+  "status": "FROZEN_BEFORE_G1_RESULTS",
+  "purpose": "在旧E2释放资源且真实bundle G0通过后，用六个同时运行的零搜索真实输入接线任务判断G1能否安全使用6 workers",
+  "instances": [
+    {
+      "instance_id": "cn-jjj-25c-02-V2-LOCATIONS"
+    },
+    {
+      "instance_id": "cn-prd-100c-03-V2-LOCATIONS"
+    },
+    {
+      "instance_id": "cn-cy-150c-03-V2-LOCATIONS"
+    }
+  ],
+  "replicates_per_instance": 2,
+  "workers": 6,
+  "search_iterations": 0,
+  "minimum_memory_free_percent": 10,
+  "maximum_aggregate_peak_rss_mb": 4096.0,
+  "pass_decision": "PASS_G1_SIX_WORKERS_RESOURCE_PROBE",
+  "fallback_decision": "FALLBACK_G1_THREE_WORKERS",
+  "selection_rule": "六项全部通过、运行期间最低系统空闲内存比例不低于10%、六个工作进程峰值内存合计不超过4096MB时使用6 workers，否则使用3 workers",
+  "fairness_boundary": "并行数只改变九个独立任务的同时运行数量。每个任务仍为单线程，算法、种子、初解、完整评价预算、墙钟安全上限和验收门均不改变。",
+  "source_hashes": {
+    "baselines/algorithm_prototypes/genuine_hgs_rr_20260724/g0_real_bundle_preregistration_v1.json": "ae8db30839da5e3bf5367b71a39d5997fcac09f31dce0ca47336d860a5c33698",
+    "baselines/algorithm_prototypes/genuine_hgs_rr_20260724/run_g0_real_bundle_preflight.py": "8252c29fdb3c5125be98403443a7ad06406bc96345d57d4e73d1e2b7fb485696",
+    "baselines/e2_final_campaign_20260720/run_g1_six_worker_resource_probe.py": "6bb202f8236639707170202070219184a3801310f4b4a0e5fd10595c078d9877",
+    "solver/src/setp_solver/check.py": "9c81e254e05591667c8225965bb9d0ba4e8bbfc53eb0f8c61ffdb4325a1403a8",
+    "solver/src/setp_solver/china81_completion.py": "c0b72db82e324981442f357bc3bb336eac5dae033a44a3ab16fa2cbe4db91653",
+    "solver/src/setp_solver/cost.py": "2717b4b4de39bb4c2a9a1bda602f4420cb3e3b1e87faa83678dfa64f88fc80be",
+    "solver/src/setp_solver/prices.py": "fe13a721fc63e79c44f5c7faf8bf4802155a28cb4c081d010d09d8dc4804d157"
+  },
+  "claim_boundary": "该门只决定G1使用6或3个并行任务，不产生算法性能结论，不授权China81、1+1>2、BKS或SOTA主张。"
+}

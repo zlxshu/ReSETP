@@ -607,7 +607,7 @@ E7正式结果终验
 
 # 2026-07-24 E2 算法排雷与机制展示算例
 
-- [E2算法修复与机制图](e2_algorithm_repair_and_mechanism_case_20260724.md) — 档案路线全复用开发门通过；两段三视角交换与重组回馈均按预登记HALT；100客户机制展示算例十种子主方法对三单视角均10胜0平0负，83点真实轨迹通过终点一致门。该算例不称代表，正式E2全量仍待按通过版本重跑。
+- [E2算法修复与机制图](e2_algorithm_repair_and_mechanism_case_20260724.md) — 档案路线全复用开发门通过；两段三视角交换与重组回馈均按预登记HALT；100客户机制展示算例十种子主方法对三单视角均10胜0平0负。真混合 A/B/A+B 另立低成本递进门：旧 E2 不动，真实 G0 后先做六进程零搜索资源门，通过用6 workers、否则3，再运行三题单种子G1；未过G1不得扩大长跑。
 - 中国主日历明确为 2025 年 2 月完整 28 日；2025-02-12 仅为共同解释日。raw schema 区分
   `formal_run`、`daily_replay`、`stage_diagnostic`；表格还要求绑定 raw SHA 的独立复算证书。
 - 适配交接说明见 `docs/handoff/china_e3_e7_foundation_adapter_contract_20260723.md`。

@@ -37,7 +37,7 @@ authorising any formal search:
   bidirectional-transfer gate, and separately counted direct
   post-injection-gain evidence.
 
-The current zero-search gate in `g0_static_semantics_gate_v12/` is deliberately labelled
+The current zero-search gate in `g0_static_semantics_gate_v13/` is deliberately labelled
 `REAL_BUNDLE_PREFLIGHT_PENDING`: it does not prove real China81 feasibility,
 algorithm quality, or 1+1>2. Thirty-five lightweight tests currently pass.
 The assignment DP now rejects combinations whose already-repaired route
@@ -48,12 +48,13 @@ The real-bundle gate is preregistered in
 files in contract-only mode and refuses execution while the existing E2 v7
 campaign is running.
 
-`g1_micro_preregistration_v2.json` and `run_g1_micro_gate.py` freeze the next
+`g1_micro_preregistration_v3.json` and `run_g1_micro_gate.py` freeze the next
 three-instance, seed-1 A/B/A+B gate. Every arm receives 80 visible complete
 evaluations from the same completed witness; A receives 75,000 total HGS
 iterations across the three proxy modes and A+B receives 60% of that count.
-The runner verifies 31 source fingerprints and refuses to execute until both
-the protected v7 release chain and real-bundle G0 pass. On this 8 GB host it
-also refuses more than three workers. The never-executed v1 registration is
-preserved and explicitly superseded before any result by v2. No G1 search has
-run.
+The runner verifies frozen source fingerprints and refuses to execute until
+both the protected v7 release chain and real-bundle G0 pass. A preregistered
+zero-search six-worker probe then selects six workers only if all six tasks
+pass and memory stays above the fixed safety floor; otherwise G1 uses three.
+The never-executed v1 and v2 registrations are preserved and explicitly
+superseded before any result. No G1 search has run.

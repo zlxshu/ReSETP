@@ -48,7 +48,7 @@ from rr_engine import (
 
 ROOT = Path(__file__).resolve().parents[3]
 PACKAGE = Path(__file__).resolve().parent
-OUT = PACKAGE / "g0_static_semantics_gate_v12"
+OUT = PACKAGE / "g0_static_semantics_gate_v13"
 CONTRACT = ROOT / "docs/handoff/e2_genuine_hybrid_hgs_rr_contract_20260724.md"
 
 
