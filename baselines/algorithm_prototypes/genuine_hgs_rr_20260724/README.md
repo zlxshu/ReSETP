@@ -34,7 +34,10 @@ authorising any formal search:
 
 The current zero-search gate in `g0_static_semantics_gate_v5/` is deliberately labelled
 `REAL_BUNDLE_PREFLIGHT_PENDING`: it does not prove real China81 feasibility,
-algorithm quality, or 1+1>2.  Nineteen lightweight tests currently pass.
-The next mandatory step is a no-search real-bundle decode/replay gate after
-the existing E2 v7 campaign releases memory, followed by preregistered G1.
-G1 search is forbidden while that campaign is running.
+algorithm quality, or 1+1>2.  Twenty-three lightweight tests currently pass.
+The real-bundle gate is preregistered in
+`g0_real_bundle_preregistration_v1.json`; its runner verifies 55 pinned input
+files in contract-only mode and refuses execution while the existing E2 v7
+campaign is running.  The next mandatory step is that no-search decode/replay
+after v7 releases memory, followed by preregistered G1.  G1 search is
+forbidden while that campaign is running.

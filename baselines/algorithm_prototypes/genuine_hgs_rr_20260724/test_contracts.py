@@ -4,6 +4,7 @@ import random
 
 import pytest
 import hybrid_orchestrator as orchestration
+import run_g0_real_bundle_preflight as real_bundle_gate
 
 from setp_solver.instance_loader import Instance, Node
 from setp_solver.solution import ChargingAction, Route, Solution
@@ -931,3 +932,71 @@ def test_rr_temperature_is_result_independent_and_cools() -> None:
         temperature=end,
         rng=random.Random(1),
     )
+
+
+def test_real_bundle_preregistration_is_result_blind() -> None:
+    preregistration = real_bundle_gate.load_preregistration()
+    assert preregistration["status"] == "REGISTERED_NOT_EXECUTED"
+    assert [row["stratum"] for row in preregistration["instances"]] == [
+        "small",
+        "medium",
+        "large",
+    ]
+    serialized = str(preregistration).lower()
+    for forbidden in ("best_cost", "winning_arm", "hybrid_gain"):
+        assert forbidden not in serialized
+
+
+def test_real_bundle_preregistration_inputs_are_hash_closed() -> None:
+    preregistration = real_bundle_gate.load_preregistration()
+    verified = real_bundle_gate.verify_preregistration_inputs(
+        preregistration,
+    )
+    assert verified["verified_file_count"] == 55
+    assert verified["authority_selected_file_counts"] == {
+        "static_inputs": 7,
+        "road_matrices": 30,
+        "runtime_parameters": 6,
+        "finite_fleet": 7,
+    }
+
+
+def test_real_bundle_manifest_selection_is_instance_scoped() -> None:
+    selected = real_bundle_gate._selected_manifest_paths(
+        "road_matrices",
+        ("registered",),
+        {
+            "instances/registered/cv/road.csv": "a",
+            "instances/other/cv/road.csv": "b",
+        },
+    )
+    assert selected == ("instances/registered/cv/road.csv",)
+
+
+def test_real_bundle_gate_refuses_to_overlap_formal_e2(
+    monkeypatch,
+) -> None:
+    monkeypatch.setattr(
+        real_bundle_gate,
+        "formal_resource_state",
+        lambda: {
+            "progress_status": "RUNNING",
+            "completed_tasks": 68,
+            "updated_at_utc": "registered",
+            "blocking_processes": [
+                {
+                    "pid": "123",
+                    "token": (
+                        "run_corrected_china81_d6_staged_portfolio_"
+                        "v7_small_archive_ledger.py"
+                    ),
+                }
+            ],
+            "formal_running": True,
+        },
+    )
+    with pytest.raises(
+        RuntimeError,
+        match="HALT_G0_RESOURCE_ISOLATION_FORMAL_E2_RUNNING",
+    ):
+        real_bundle_gate.require_resource_isolation()
