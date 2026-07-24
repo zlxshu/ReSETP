@@ -134,7 +134,7 @@ def refresh_v3_records(module: Any) -> None:
         for path in sorted(module.OUT.rglob("*"))
         if (
             path.is_file()
-            and path.name != "artifact_hashes.json"
+            and path.name not in {"artifact_hashes.json", "done.json"}
             and not path.name.startswith("._")
         )
     }
@@ -142,8 +142,26 @@ def refresh_v3_records(module: Any) -> None:
         module.OUT / "artifact_hashes.json",
         {
             "schema": "resetp.artifact-hashes.v1",
-            "exclusions": ["artifact_hashes.json", "._*", "*.tmp"],
+            "exclusions": [
+                "artifact_hashes.json",
+                "done.json",
+                "._*",
+                "*.tmp",
+            ],
             "artifacts": artifacts,
+        },
+    )
+    module.write_json(
+        module.OUT / "done.json",
+        {
+            "schema": "resetp.e2-staged-v7-s4-done.v1",
+            "verdict": json.loads(
+                (module.OUT / "decision.json").read_text(encoding="utf-8")
+            )["verdict"],
+            "decision_sha256": module.sha256(module.OUT / "decision.json"),
+            "route_details_sha256": module.sha256(
+                module.OUT / "route_details.csv"
+            ),
         },
     )
 

@@ -1080,11 +1080,22 @@ def main() -> int:
             "schema": "resetp.artifact-hashes.v1",
             "exclusions": [
                 "artifact_hashes.json",
+                "done.json",
                 "._*",
                 "__pycache__",
                 "*.tmp",
             ],
             "artifacts": artifacts,
+        },
+    )
+    write_json(
+        OUT / "done.json",
+        {
+            "schema": "resetp.e2-staged-v7-s5-artifacts-done.v1",
+            "verdict": decision["verdict"],
+            "decision_sha256": sha256(OUT / "decision.json"),
+            "figure3_sha256": sha256(OUT / "figure3_carbon_profile.pdf"),
+            "figure4_sha256": sha256(OUT / "figure4_iteration.pdf"),
         },
     )
     print(json.dumps(decision, ensure_ascii=False, sort_keys=True))

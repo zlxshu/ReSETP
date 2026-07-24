@@ -23,7 +23,7 @@
   "route_detail_rule": "Each route is recomputed with the same evaluator for distance, cost, time, fuel, electricity, emissions, on-time customers and load rate. Additive route columns must close to the complete-solution totals within relative and absolute tolerance 1e-6. A route fragment is never passed to the global coverage checker.",
   "failure_rule": "Any upstream, hash, feasibility, coverage, date, charging-order, cost, settlement-key or arithmetic mismatch yields HALT. Do not rerun search, change the selected seed, repair the witness, hand-fill a route value or relax a tolerance.",
   "source_hashes": {
-    "baselines/e2_final_campaign_20260720/run_e2_staged_s4_route_detail_v3.py": "76ad1d2f9729acd538756c2ed8828679c7161f5dec2d11e65086b6226e5145a4",
+    "baselines/e2_final_campaign_20260720/run_e2_staged_s4_route_detail_v3.py": "df5dcba7507ffc1b81d34b91fdf361114625e95cf273fbe588ce972ac5874fd6",
     "baselines/e2_final_campaign_20260720/run_e2_staged_s4_route_detail.py": "ddcdc1531591dca1eeef10d36c0bcc5f8ca642b390b11cea40fb91e1f273cc78",
     "baselines/e2_final_campaign_20260720/corrected_china81_rerun_20260723/run_corrected_s4.py": "9ef4b6a529990217be3d91b8de16cf23853ee64dac491ed13d3ab897edda1a6d",
     "solver/src/setp_solver/china81.py": "df082b6a0e108aa5462b74048fcca7a63fdb7eaafb9e61f2dcdd787e3d9fcedd",
