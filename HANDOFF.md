@@ -1380,3 +1380,29 @@ LaDe-P重庆取件表已真实下载并登记SHA-256=`d58248d1...b056`，共1,17
 - v6 的明确口径是：每任务先记录真实搜索产生的完整模型核查次数；若少于280，只对预先固定的 HGS-F 已保存解重复调用完整模型评价器补足差额，不生成新候选、不消耗随机数、不改变解或成绩。search_complete_candidate_attempts、budget_padding_rechecks 和 complete_candidate_attempts 三列同时保存，任何超过280、重复核查不可行、哈希漂移或其他机械门失败立即 HALT。
 - v6 运行器与监控配置为 run_corrected_china81_d6_staged_portfolio_v6_budget_recheck.py 和 monitor_d6_e2_staged_v6.json；运行前15项源哈希、编译和登记校验已通过。只有 v6 完成405任务、1620方案、独立重放和继承的论文强度门后，才可恢复 S3--S5 与 E3；在此之前 formal_search_allowed=false。
 - 首次 v6 监控启动在任务初始化前因继承的 v5 模块仍指向 formal_preregistration_v2.json 而退出；监控异常现场原样保留，未产生任务、搜索、成绩或结果文件。v6 wrapper 已改为显式绑定 v3 登记文件，重新校验源哈希后再启动新的 retry 监控现场。
+
+# 2026-07-24 E2 v6 二次 HALT 与 v7 小档案账本修复
+
+- v6 retry 在已报告 13 个通过任务后，于
+  `cn-cy-10c-01-V2-LOCATIONS/seed1` 触发
+  `HALT_HISTORY_ARCHIVE_LEDGER` 并退出；V6 目录、进度、日志和 15 个已生成任务目录
+  均保留，不能改判或并入后续正式批。安全点为
+  `safety/e2-v6-halt-before-ledger-fix-20260724`（提交 `cecf30c8`）。
+- 隔离复现没有改变搜索、评价器或正式目录。六个阶段全部跑满规定迭代并各保存
+  20 个快照，历史候选引用均为正，四个返回解均为 0 违约；唯一失败是
+  `cv_only` 第二阶段只有 20 个不同候选，程序已把 20 个全部选入档案，但旧验收仍
+  强制要求至少 1 个额外“差异候选”。判
+  `CONFIRM_SMALL_ARCHIVE_LEGACY_GATE_BUG`，证据在
+  `algorithm_repair_diagnostic_20260724/history_archive_small_instance_v1/`。
+- 新立 v7，只修账本定义：每阶段实际选入数必须等于
+  `min(24, 不同候选数)`；当不同候选数超过 24 时仍强制 12 个质量候选加 12 个
+  差异候选；不超过 24 时必须全部选入，允许差异余量为 0。120 个快照、历史引用、
+  完整可行性、280 次登记核查、迭代、车型、源和输入哈希等门全部保留。
+- v7 预登记为
+  `corrected_china81_rerun_v7_small_archive_ledger_20260724/formal_preregistration_v4.json`。
+  10/100/200 客户三题预检已判 `PASS_D6_E2_STAGED_V7_PREFLIGHT`：3/3 任务、
+  12 个返回解均通过完整模型检查；每任务总核查 280、历史快照 120、档案选择闭合。
+  10 客户题为 276 次真实搜索核查加 4 次固定解重复核算，100/200 客户题均为
+  280 次真实核查、0 补足；四份哈希清单共 40 项独立复核一致，清理 AppleDouble
+  30 项，定向回归 16 项通过。该预检只授权从零启动 405 个正式任务，预检结果不得
+  复用；正式批完成和独立重放、强度门、S3--S5 通过前仍不得启动 E3 或替换论文结果。

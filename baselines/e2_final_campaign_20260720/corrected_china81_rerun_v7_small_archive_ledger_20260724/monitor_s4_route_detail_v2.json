@@ -1,0 +1,78 @@
+{
+  "schema_version": 1,
+  "name": "e2-staged-v7-s4-route-detail",
+  "objective": "从预登记迭代展示算例的十次封存结果中按固定规则选取主方法最佳解，独立复算整解和逐路线明细",
+  "workdir": "../../..",
+  "poll_seconds": 5,
+  "stale_seconds": 300,
+  "max_runtime_seconds": 1800,
+  "pause_on_anomaly": true,
+  "required_command_substrings": [
+    "run_e2_staged_s4_route_detail.py"
+  ],
+  "forbidden_command_substrings": [
+    "--smoke",
+    "--debug"
+  ],
+  "min_cpu_percent_when_active": 0,
+  "low_cpu_consecutive_checks": 20,
+  "max_rss_mb": 3000,
+  "min_system_free_memory_mb": 128,
+  "min_system_memory_free_percent": 3,
+  "logs": [],
+  "progress_files": [],
+  "result_files": [
+    "table4_gate/route_details.csv",
+    "table4_gate/decision.json",
+    "table4_gate/artifact_hashes.json"
+  ],
+  "completion_files": [],
+  "checkpoint_paths": [],
+  "protected_files": [
+    {
+      "path": "s4_route_detail_preregistration_v2.json",
+      "kind": "validation_contract"
+    },
+    {
+      "path": "s3_trajectory_gate/raw_runs.csv",
+      "kind": "core_data"
+    },
+    {
+      "path": "s3_trajectory_gate/decision.json",
+      "kind": "experiment_decision"
+    },
+    {
+      "path": "s3_trajectory_gate/artifact_hashes.json",
+      "kind": "artifact_manifest"
+    },
+    {
+      "path": "../run_e2_staged_s4_route_detail.py",
+      "kind": "validation_runner"
+    },
+    {
+      "path": "../corrected_china81_rerun_20260723/run_corrected_s4.py",
+      "kind": "validation_dependency"
+    },
+    {
+      "path": "../../../solver/src/setp_solver/cost.py",
+      "kind": "cost_function"
+    },
+    {
+      "path": "../../../solver/src/setp_solver/check.py",
+      "kind": "evaluator"
+    },
+    {
+      "path": "../../../solver/src/setp_solver/china81_completion.py",
+      "kind": "evaluator"
+    },
+    {
+      "path": "../../../docs/paper_v2/paper_main.tex",
+      "kind": "paper_conclusion"
+    }
+  ],
+  "milestones": [],
+  "ai": {
+    "enabled": false,
+    "timeout_seconds": 180
+  }
+}

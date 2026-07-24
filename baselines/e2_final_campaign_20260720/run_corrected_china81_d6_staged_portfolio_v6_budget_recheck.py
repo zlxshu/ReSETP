@@ -1,11 +1,16 @@
 #!/usr/bin/env python3
-"""V6 formal runner with preregistered budget recheck accounting.
+"""Registered formal runner with budget recheck accounting.
 
-This wrapper keeps the frozen V5 staged search unchanged.  When a small
+The V6 historical entry keeps the frozen V5 staged search unchanged. When a small
 instance produces fewer than 280 genuine complete-model candidate checks, it
 rechecks one fixed, already retained HGS-F solution enough times to close the
 registered accounting budget.  No new search, seed, candidate, parameter, or
 score is introduced by the padding step.
+
+V7 retains that search and accounting rule, but corrects the independently
+confirmed small-archive ledger gate: when fewer than 24 distinct candidates
+exist, selecting every available candidate is complete and does not require a
+non-existent diversity remainder.
 """
 
 from __future__ import annotations
@@ -20,11 +25,24 @@ CAMPAIGN_NAME = os.environ.setdefault(
     "RESET_D6_CAMPAIGN_NAME",
     "corrected_china81_rerun_v6_budget_recheck_20260724",
 )
-if CAMPAIGN_NAME != "corrected_china81_rerun_v6_budget_recheck_20260724":
+SUPPORTED_CAMPAIGNS = {
+    "corrected_china81_rerun_v6_budget_recheck_20260724": (
+        "formal_preregistration_v3.json",
+        "v6",
+    ),
+    "corrected_china81_rerun_v7_small_archive_ledger_20260724": (
+        "formal_preregistration_v4.json",
+        "v7",
+    ),
+}
+if CAMPAIGN_NAME not in SUPPORTED_CAMPAIGNS:
     raise RuntimeError(
-        "v6 runner must use the registered campaign name; "
+        "registered runner received an unsupported campaign name; "
         f"got {CAMPAIGN_NAME!r}"
     )
+PREREGISTRATION_FILENAME, CAMPAIGN_VERSION = SUPPORTED_CAMPAIGNS[
+    CAMPAIGN_NAME
+]
 
 from run_corrected_china81_d6_staged_portfolio import (  # noqa: E402
     _history_integrity,
@@ -38,7 +56,7 @@ OUT = frozen.OUT
 PREREGISTRATION = (
     frozen.CAMPAIGN_ROOT
     / CAMPAIGN_NAME
-    / "formal_preregistration_v3.json"
+    / PREREGISTRATION_FILENAME
 )
 frozen.PREREGISTRATION = PREREGISTRATION
 COMPLETE_CANDIDATE_BUDGET = frozen.COMPLETE_CANDIDATE_BUDGET
@@ -56,6 +74,11 @@ def _source_paths_v6() -> tuple[Path, ...]:
     wrapper = Path(__file__).resolve()
     if wrapper not in paths:
         paths.append(wrapper)
+    launcher_source = os.environ.get("RESET_D6_LAUNCHER_SOURCE")
+    if launcher_source:
+        launcher = Path(launcher_source).resolve()
+        if launcher not in paths:
+            paths.append(launcher)
     return tuple(paths)
 
 
@@ -268,6 +291,13 @@ def _run_unit_v6(instance_id: str, seed: int) -> dict[str, Any]:
         "historical_population_candidate_references": history["reference_count"],
         "historical_quality_selected_count": history["quality_selected_count"],
         "historical_diversity_selected_count": history["diversity_selected_count"],
+        "historical_selected_count": history["selected_count"],
+        "historical_capacity_exhausted_stage_count": history[
+            "capacity_exhausted_stage_count"
+        ],
+        "historical_archive_selection_complete": history[
+            "archive_use_gate"
+        ],
         "base_route_pool_size": int(run.stats["base_route_pool_size"]),
         "expanded_route_pool_size": int(run.stats["expanded_route_pool_size"]),
         "base_mip_status": base_mip["status_class"],
@@ -310,7 +340,10 @@ def _run_unit_v6(instance_id: str, seed: int) -> dict[str, Any]:
     frozen.corrected_base.write_json(
         task_dir / "metadata.json",
         {
-            "schema": "resetp.d6-e2-staged-portfolio-task-v6.metadata.v1",
+            "schema": (
+                "resetp.d6-e2-staged-portfolio-task-"
+                f"{CAMPAIGN_VERSION}.metadata.v1"
+            ),
             "created_at_utc": frozen.datetime.now(frozen.UTC).isoformat(),
             "task_id": task_id,
             "campaign_name": CAMPAIGN_NAME,
@@ -342,7 +375,10 @@ def _run_unit_v6(instance_id: str, seed: int) -> dict[str, Any]:
     frozen.corrected_base.write_json(
         task_dir / "decision.json",
         {
-            "schema": "resetp.d6-e2-staged-portfolio-task-v6.decision.v1",
+            "schema": (
+                "resetp.d6-e2-staged-portfolio-task-"
+                f"{CAMPAIGN_VERSION}.decision.v1"
+            ),
             "verdict": "PASS_D6_E2_STAGED_PORTFOLIO_TASK",
             "raw_row": raw_row,
         },
@@ -373,12 +409,23 @@ frozen._run_unit = _run_unit_v6
 _original_finalize = frozen._finalize
 
 
-def _finalize_v6() -> dict[str, Any]:
+def _finalize_registered() -> dict[str, Any]:
     decision = _original_finalize()
+    is_v7 = CAMPAIGN_VERSION == "v7"
     decision.update(
         {
-            "schema": "resetp.d6-e2-staged-portfolio-v6.decision.v1",
-            "verdict": "PASS_D6_CORRECTED_CHINA81_E2_STAGED_RAW_WITH_REGISTERED_RECHECK_PADDING",
+            "schema": (
+                "resetp.d6-e2-staged-portfolio-"
+                f"{CAMPAIGN_VERSION}.decision.v1"
+            ),
+            "verdict": (
+                "PASS_D6_CORRECTED_CHINA81_E2_STAGED_V7_"
+                "SMALL_ARCHIVE_LEDGER"
+                if is_v7
+                else
+                "PASS_D6_CORRECTED_CHINA81_E2_STAGED_RAW_WITH_"
+                "REGISTERED_RECHECK_PADDING"
+            ),
             "budget_accounting": {
                 "registered_total_checks_per_task": COMPLETE_CANDIDATE_BUDGET,
                 "search_checks_are_not_padded": True,
@@ -388,11 +435,26 @@ def _finalize_v6() -> dict[str, Any]:
             },
             "v5_halt_preserved": True,
             "v5_halt_reason": "small-instance archive supplied 276 genuine checks, below the frozen 280 count",
+            "v6_halt_preserved": is_v7,
+            "v6_halt_reason": (
+                "legacy ledger required a positive diversity remainder "
+                "even when a stage selected all 20 available candidates"
+                if is_v7
+                else None
+            ),
+            "small_archive_ledger_rule": (
+                "select every available distinct candidate up to the frozen "
+                "limit; require a positive diversity remainder only when "
+                "the distinct candidate count exceeds that limit"
+                if is_v7
+                else "legacy v6 rule"
+            ),
         }
     )
     frozen.corrected_base.write_json(OUT / "decision.json", decision)
     (OUT / "report.md").write_text(
-        "# Corrected China81 staged-portfolio E2 rerun v6\n\n"
+        "# Corrected China81 staged-portfolio E2 rerun "
+        f"{CAMPAIGN_VERSION}\n\n"
         "This campaign keeps the frozen V5 staged search and all input, "
         "objective, constraint, seed and evaluator settings unchanged. "
         "The earlier V5 HALT is preserved in its original directory. V6 "
@@ -402,14 +464,30 @@ def _finalize_v6() -> dict[str, Any]:
         "are separately recorded and do not create candidates, perform "
         "search, or consume random numbers. No comparative outcomes are "
         "reported here before independent replay and the registered strength "
-        "gate.\n",
+        "gate.\n"
+        + (
+            "\nV7 additionally applies the registered small-archive ledger "
+            "repair confirmed on cn-cy-10c-01 seed 1: a stage with fewer "
+            "than 24 distinct candidates passes only when every available "
+            "candidate is selected and all checkpoint/history gates pass. "
+            "The V6 HALT remains unchanged.\n"
+            if is_v7
+            else ""
+        ),
         encoding="utf-8",
     )
     metadata_path = OUT / "metadata.json"
     metadata = json.loads(metadata_path.read_text(encoding="utf-8"))
-    metadata["schema"] = "resetp.d6-e2-staged-portfolio-v6.metadata.v1"
+    metadata["schema"] = (
+        "resetp.d6-e2-staged-portfolio-"
+        f"{CAMPAIGN_VERSION}.metadata.v1"
+    )
     metadata["budget_accounting"] = decision["budget_accounting"]
     metadata["v5_halt_preserved"] = True
+    metadata["v6_halt_preserved"] = is_v7
+    metadata["small_archive_ledger_rule"] = decision[
+        "small_archive_ledger_rule"
+    ]
     frozen.corrected_base.write_json(metadata_path, metadata)
     artifacts = {
         str(path.relative_to(OUT)): frozen.corrected_base.file_sha256(path)
@@ -447,7 +525,7 @@ def _finalize_v6() -> dict[str, Any]:
     return decision
 
 
-frozen._finalize = _finalize_v6
+frozen._finalize = _finalize_registered
 
 
 def main() -> int:

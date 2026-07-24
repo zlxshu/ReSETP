@@ -347,6 +347,44 @@ def _history_integrity(run: Any) -> dict[str, Any]:
         for stage_pair in run.stages.values()
         for stage in stage_pair
     ]
+    stage_rows: list[dict[str, Any]] = []
+    for stage in stages:
+        stats = stage.stats
+        unique_count = int(stats["archive_unique_native_candidates"])
+        archive_limit = int(stats["archive_candidate_limit"])
+        quality_count = int(stats["archive_quality_selected_count"])
+        diversity_count = int(
+            stats["archive_diversity_selected_count"]
+        )
+        selected_count = quality_count + diversity_count
+        expected_selected_count = min(archive_limit, unique_count)
+        candidate_space_exhausted = unique_count <= archive_limit
+        stage_rows.append(
+            {
+                "snapshot_count": int(
+                    stats["historical_population_snapshot_count"]
+                ),
+                "historical_candidate_references": int(
+                    stats[
+                        "historical_population_candidate_references"
+                    ]
+                ),
+                "archive_unique_native_candidates": unique_count,
+                "archive_candidate_limit": archive_limit,
+                "quality_selected_count": quality_count,
+                "diversity_selected_count": diversity_count,
+                "selected_count": selected_count,
+                "expected_selected_count": expected_selected_count,
+                "candidate_space_exhausted": candidate_space_exhausted,
+                "selection_complete": (
+                    selected_count == expected_selected_count
+                ),
+                "diversity_requirement_satisfied": (
+                    candidate_space_exhausted
+                    or diversity_count > 0
+                ),
+            }
+        )
     snapshot_count = sum(
         int(stage.stats["historical_population_snapshot_count"])
         for stage in stages
@@ -372,21 +410,25 @@ def _history_integrity(run: Any) -> dict[str, Any]:
         "reference_count": reference_count,
         "diversity_selected_count": diversity_count,
         "quality_selected_count": quality_count,
+        "selected_count": sum(
+            int(row["selected_count"]) for row in stage_rows
+        ),
+        "capacity_exhausted_stage_count": sum(
+            bool(row["candidate_space_exhausted"])
+            for row in stage_rows
+        ),
+        "stage_rows": stage_rows,
         "snapshot_gate": all(
             int(stage.stats["historical_population_snapshot_count"])
             == HISTORICAL_SNAPSHOTS_PER_STAGE
             for stage in stages
         ),
         "archive_use_gate": all(
-            int(
-                stage.stats[
-                    "historical_population_candidate_references"
-                ]
-            )
-            > 0
-            and int(stage.stats["archive_diversity_selected_count"]) > 0
-            and int(stage.stats["archive_quality_selected_count"]) > 0
-            for stage in stages
+            int(row["historical_candidate_references"]) > 0
+            and int(row["quality_selected_count"]) > 0
+            and bool(row["selection_complete"])
+            and bool(row["diversity_requirement_satisfied"])
+            for row in stage_rows
         ),
     }
 

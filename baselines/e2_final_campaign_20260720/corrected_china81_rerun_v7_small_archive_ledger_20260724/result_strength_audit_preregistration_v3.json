@@ -1,0 +1,22 @@
+{
+  "schema": "resetp.e2-staged-result-strength-audit-preregistration.v3",
+  "registered_at": "2026-07-24T16:54:00+08:00",
+  "status": "FROZEN_BEFORE_FORMAL_V7_COMPLETION",
+  "campaign_name": "corrected_china81_rerun_v7_small_archive_ledger_20260724",
+  "operation": "ZERO_SEARCH_RESULT_STRENGTH_AUDIT",
+  "formal_preregistration_sha256": "3806bf3500417c49836be2cdcbee303bf8d29e3b84a7ff539ddc6f0593811f27",
+  "analysis_order": [
+    "verify full-gate and independent-replay manifests",
+    "verify all mechanical invariants including the V7 budget and archive ledgers",
+    "compute 405 task-level descriptive outcomes",
+    "compute 81 five-seed instance means",
+    "compute one-sided paired Wilcoxon tests and three-way Holm adjustment",
+    "compute 27 region-by-exact-size layers",
+    "apply only the thresholds frozen in formal_preregistration_v4.json",
+    "count route-fusion-only improvements descriptively without using them as a pass condition"
+  ],
+  "failure_rule": "No result-dependent threshold, test, analysis unit, tolerance, grouping, or claim change is permitted. A failed criterion yields HOLD and blocks S3--S5, manuscript replacement and E3.",
+  "source_hashes": {
+    "baselines/e2_final_campaign_20260720/run_e2_staged_result_strength_audit.py": "184a2a8802f1defcee38d1c88ddb56719e33c7acda07ba80346bba838f2c6fbc"
+  }
+}

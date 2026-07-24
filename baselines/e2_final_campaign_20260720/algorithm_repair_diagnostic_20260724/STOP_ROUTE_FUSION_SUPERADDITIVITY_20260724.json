@@ -1,0 +1,54 @@
+{
+  "schema": "resetp.route-fusion-superadditivity-stop.v1",
+  "recorded_at": "2026-07-24",
+  "verdict": "STOP_STABLE_ROUTE_FUSION_SUPERADDITIVITY_CLAIM",
+  "rejected_claim": "MV-HGS-SP consistently achieves 1+1+1>3 because set-partitioning route recombination is strictly better than the best of HGS-F, HGS-E, and HGS-M.",
+  "evidence": [
+    {
+      "gate": "staged_deepening_v2_gate",
+      "raw_runs_sha256": "fd5c5dca3ba30cd0779e0c48c2a1cd6e4bf9995f498d3dc5e843d53a44e68991",
+      "strict_route_fusion_improvements": 1,
+      "tasks": 6,
+      "note": "Five tasks selected a current two-stage single-view answer; one protected stage-1 MIP answer was lower."
+    },
+    {
+      "gate": "type_preserving_staged_gate",
+      "raw_runs_sha256": "7254f0956ca46fe0c9f78fd3ccd2418c7e44ba104e5cfb17852e688b4f28ba36",
+      "strict_route_fusion_improvements": 1,
+      "tasks": 6,
+      "note": "Correct CV/EV warm-start transfer fixed the large-instance crash but did not make route fusion stable."
+    },
+    {
+      "gate": "mip_integrity_staged_gate",
+      "raw_runs_sha256": "f216cff28e9eb74852f18f3f986075041bc3c004eff67129743747c5c7d925b7",
+      "strict_route_fusion_improvements": 1,
+      "tasks": 6,
+      "note": "All six tasks obtained checked MIP incumbents and all six trajectories passed; route fusion remained one of six."
+    },
+    {
+      "gate": "history_diverse_route_pool_gate",
+      "raw_runs_sha256": "d7fe55333819ecf7fd73254c349bcdc43e3ed6d67ae5b3738946e24907ceb9d9",
+      "strict_route_fusion_improvements": 1,
+      "tasks": 6,
+      "largest_fusion_improvement_cny": 0.00034463855445210356,
+      "note": "All six history archives, MIP incumbents, and trajectories passed. The sole strict route-fusion gain was materially negligible."
+    }
+  ],
+  "repairs_exhausted_before_stop": [
+    "deepen each HGS view from 5000 to 25000 fixed iterations",
+    "evaluate complete-model incumbents at fixed checkpoints",
+    "preserve CV/EV route types across warm-start stages",
+    "retain exact checked MIP routes, vehicle types, and charging actions without greedy re-decoding",
+    "increase the fixed MIP safety cap from 5 to 30 seconds",
+    "collect feasible HGS populations throughout search and select a fixed 12 quality plus 12 broken-pairs-diverse exact archive"
+  ],
+  "retained_algorithm_boundary": {
+    "name": "MV-HGS-SP",
+    "primary_supported_mechanism": "complete-model best-incumbent retention across three complementary HGS views",
+    "secondary_mechanism": "audited time-limited MIP route-pool recombination",
+    "allowed_claim": "The multi-view method is assessed as a portfolio that retains the best complete-model incumbent and may receive additional route-pool improvements.",
+    "forbidden_claim": "Route-pool recombination consistently or materially outperforms the best current single view."
+  },
+  "next_gate": "A fresh portfolio confirmation must show zero losses, at least three strict wins, and at least 0.05 percent mean reduction against each single view, plus complete feasibility, provenance, budget, MIP, and trajectory gates.",
+  "claim_boundary": "Development evidence only. No row in this stop record is formal paper evidence."
+}

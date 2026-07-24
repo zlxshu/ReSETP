@@ -1049,3 +1049,44 @@ v5 正式批在第13个任务因小规模算例可产生的真实候选不足而
 v6 预登记与运行器：baselines/e2_final_campaign_20260720/corrected_china81_rerun_v6_budget_recheck_20260724/formal_preregistration_v3.json、baselines/e2_final_campaign_20260720/run_corrected_china81_d6_staged_portfolio_v6_budget_recheck.py。v5 与 v6 不共享结果目录；v6 只有在完成405任务、1620方案、独立重放及继承的强度门后，才可放行 S3--S5 与 E3。
 
 首次 v6 启动异常属于任务初始化前的登记文件名接线错误：继承的 v5 模块仍寻找 formal_preregistration_v2.json。异常现场保留且未产生任何任务或成绩；v6 wrapper 已显式绑定 v3 文件，源码哈希更新并重新做静态校验后，才允许 retry 监控启动。
+
+## E2-STAGED-PORTFOLIO-SMALL-ARCHIVE-LEDGER-001：v6 HALT 后的小档案验收修复
+
+状态：`USER_DIRECTED_REPAIR__V7_PREFLIGHT_PASS__FORMAL_READY`
+（2026-07-24）。
+
+v6 retry 在 `cn-cy-10c-01-V2-LOCATIONS/seed1` 触发
+`HALT_HISTORY_ARCHIVE_LEDGER`。该 HALT、已报告通过任务、监控日志和任务目录原样
+保留；安全源码点为提交 `cecf30c8`、标签
+`safety/e2-v6-halt-before-ledger-fix-20260724`。
+
+用户随后要求按既有意见直接修复并保留回退点。隔离复现固定同一算例、种子、搜索、
+迭代、档案上限、MIP 时限、评价器和线程环境，不写入 v5/v6 正式目录。六个阶段均
+达到规定迭代和 20 个快照，历史候选引用均为正，四个返回解完整模型违约均为 0。
+唯一触发项是 `cv_only` 第二阶段只有 20 个不同候选：旧选择器已将 20 个全部选入，
+但旧验收仍要求 `archive_diversity_selected_count>0`。因此这是把“候选空间已穷尽”
+误判为“档案没有使用”的验收错误，不是算法结果或解的错误。证据判
+`CONFIRM_SMALL_ARCHIVE_LEGACY_GATE_BUG`。
+
+v7 的唯一语义修订为：每阶段选入候选数必须等于
+`min(archive_limit, unique_candidates)`；当 `unique_candidates>24` 时继续要求
+12 个质量候选和正数差异候选（当前实现为 12）；当 `unique_candidates<=24` 时必须
+选入全部可用候选，允许差异余量为 0。快照数、历史引用、质量候选正数、完整可行性、
+280 次登记核查、搜索随机流、种子 1--5、5000+20000 次迭代、两次 30 秒限时 MIP、
+输入、目标、约束和评价器均不变。
+
+v7 不复用 v5/v6 任务；先在预登记的 10/100/200 客户三任务上通过机械预检，才允许
+从零启动 405 个正式任务。任何预检或正式门失败均保留证据并 HALT，禁止降门、换种子、
+调参数、删失败或以图形外观救援。合同与入口为
+`corrected_china81_rerun_v7_small_archive_ledger_20260724/formal_preregistration_v4.json`
+和 `run_corrected_china81_d6_staged_portfolio_v7_small_archive_ledger.py`。
+
+三题机械预检已按预登记完成并判
+`PASS_D6_E2_STAGED_V7_PREFLIGHT`：10/100/200 客户任务均为 PASS，四个返回解均
+通过完整模型独立可行性检查，每任务总核查数均为 280、历史快照数均为 120、档案
+选择均闭合。10 客户任务为 276 次真实搜索核查加 4 次已登记固定解重复核算，选入
+140 个历史候选（质量 80、差异 60），其中 1 个阶段穷尽可用候选；100/200 客户任务
+均为 280 次真实搜索核查、0 次补足，分别选入 144 个历史候选（质量 72、差异 72）。
+四份哈希清单共 40 个条目已独立复核一致，30 个 AppleDouble 附属文件已按规程清理，
+定向回归为 16 passed。该预检只授权从零启动 v7 的 405 个正式任务，不进入论文统计，
+也不授权改变强度门、种子、参数或图形口径。

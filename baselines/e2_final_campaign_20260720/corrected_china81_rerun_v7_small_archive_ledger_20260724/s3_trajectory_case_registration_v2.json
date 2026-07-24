@@ -1,0 +1,42 @@
+{
+  "schema": "resetp.d6-e2-staged-s3-trajectory-case-registration.v2",
+  "registered_at": "2026-07-24T16:52:00+08:00",
+  "status": "FROZEN_BEFORE_FORMAL_V7_RESULTS",
+  "campaign_name": "corrected_china81_rerun_v7_small_archive_ledger_20260724",
+  "case_role": "iteration_display_case",
+  "may_be_called_statistically_representative": false,
+  "selected_instance_id": "cn-prd-100c-01-V2-LOCATIONS",
+  "seeds": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9,
+    10
+  ],
+  "result_rows_read_for_this_selection": 0,
+  "selection_origin": {
+    "path": "baselines/e2_final_campaign_20260720/corrected_china81_rerun_v5_staged_portfolio_20260724/s3_trajectory_case_registration.json",
+    "sha256": "0735d2514ffbd111d3b5e459773bfa4a7eed8090c1ca311e5fb9f8c941a7f511",
+    "rule": "The input-only case and ten fixed seeds were frozen before the V5 formal results. V7 changes only an acceptance-ledger bug and therefore reuses that result-blind case without reading any V7 outcome."
+  },
+  "selection_boundary": "The 100-customer case is used only to display the search process. It is not claimed to statistically represent all 81 instances. Generality must come from the complete 81-instance matrix.",
+  "trajectory_contract": {
+    "source": "actual online complete-model checkpoint observations plus the returned endpoint",
+    "minimum_points_per_algorithm": 12,
+    "minimum_strict_decreases_per_algorithm": 8,
+    "display_seed_rule": "For each algorithm, choose the seed whose final cost is closest to that algorithm's ten-seed mean; break an exact tie by smaller seed.",
+    "axes": "same time(min)-cost(CNY) single-axis convention as Chen et al. (2025)",
+    "forbidden": [
+      "smoothing",
+      "interpolation",
+      "broken axis",
+      "changing the instance or seed after seeing curve shape",
+      "offline scoring of discarded candidates that the algorithm did not retain as online complete checkpoints"
+    ]
+  }
+}
