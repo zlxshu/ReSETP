@@ -1,0 +1,119 @@
+{
+  "schema_version": 1,
+  "name": "genuine-hybrid-g0-g1-release-chain-v1",
+  "objective": "等待受保护E2 v7发布链完成，随后严格按真实bundle零搜索G0和三题G1顺序执行，任一门失败即保留证据并停止",
+  "workdir": "../../..",
+  "poll_seconds": 30,
+  "stale_seconds": 300,
+  "max_runtime_seconds": 259200,
+  "pause_on_anomaly": true,
+  "required_command_substrings": [
+    "run_genuine_hybrid_g0_g1_release_chain.py",
+    "--poll-seconds",
+    "30"
+  ],
+  "forbidden_command_substrings": [
+    "--smoke",
+    "--debug"
+  ],
+  "min_cpu_percent_when_active": 0,
+  "low_cpu_consecutive_checks": 20,
+  "max_rss_mb": 7000,
+  "min_system_free_memory_mb": 128,
+  "min_system_memory_free_percent": 3,
+  "logs": [],
+  "progress_files": [
+    "g0_g1_release_chain_v1/progress.json"
+  ],
+  "result_files": [
+    "g0_g1_release_chain_v1/metadata.json",
+    "g0_g1_release_chain_v1/raw_runs.csv",
+    "g0_g1_release_chain_v1/decision.json",
+    "g0_g1_release_chain_v1/artifact_hashes.json",
+    "g0_g1_release_chain_v1/report.md"
+  ],
+  "completion_files": [
+    "g0_g1_release_chain_v1/done.json"
+  ],
+  "checkpoint_paths": [
+    "g0_real_bundle_gate_v1",
+    "g1_micro_work_v2/tasks",
+    "g1_micro_gate_v2"
+  ],
+  "protected_files": [
+    {
+      "path": "monitor_g0_g1_release_chain_v1.json",
+      "kind": "monitor_contract"
+    },
+    {
+      "path": "g0_g1_release_chain_registration_v1.json",
+      "kind": "release_contract"
+    },
+    {
+      "path": "g0_real_bundle_preregistration_v1.json",
+      "kind": "experiment_contract"
+    },
+    {
+      "path": "g1_micro_preregistration_v2.json",
+      "kind": "experiment_contract"
+    },
+    {
+      "path": "run_g0_real_bundle_preflight.py",
+      "kind": "validation_runner"
+    },
+    {
+      "path": "run_g1_micro_gate.py",
+      "kind": "primary_config"
+    },
+    {
+      "path": "fleet_assignment_dp.py",
+      "kind": "model"
+    },
+    {
+      "path": "decoder_cache.py",
+      "kind": "model"
+    },
+    {
+      "path": "../../e2_final_campaign_20260720/run_genuine_hybrid_g0_g1_release_chain.py",
+      "kind": "release_runner"
+    },
+    {
+      "path": "../../../docs/handoff/e2_genuine_hybrid_hgs_rr_contract_20260724.md",
+      "kind": "research_question"
+    },
+    {
+      "path": "../../../docs/handoff/e2_genuine_hybrid_implementation_gap_audit_20260724.md",
+      "kind": "analysis_contract"
+    },
+    {
+      "path": "../../../solver/src/setp_solver/check.py",
+      "kind": "evaluator"
+    },
+    {
+      "path": "../../../solver/src/setp_solver/china81_completion.py",
+      "kind": "evaluator"
+    },
+    {
+      "path": "../../../solver/src/setp_solver/cost.py",
+      "kind": "cost_function"
+    },
+    {
+      "path": "../../../solver/src/setp_solver/prices.py",
+      "kind": "primary_config"
+    },
+    {
+      "path": "../../../docs/paper_v2/paper_main.tex",
+      "kind": "paper_conclusion"
+    }
+  ],
+  "milestones": [
+    {
+      "path": "g0_g1_release_chain_v1/progress.json",
+      "min_size": 128
+    }
+  ],
+  "ai": {
+    "enabled": false,
+    "timeout_seconds": 180
+  }
+}
