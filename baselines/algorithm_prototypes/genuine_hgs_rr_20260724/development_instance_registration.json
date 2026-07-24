@@ -1,0 +1,49 @@
+{
+  "schema": "resetp.coop-hgs-rr-development-instances.v1",
+  "registered_at": "2026-07-24",
+  "selection_reads_experiment_results": false,
+  "catalog": {
+    "path": "data/ChinaInstances/china81_stage2_static_inputs_corrected_v3_20260723/instance_catalog.csv",
+    "sha256": "886354a6a6a5fd3e63512caa800f9541637fd5e99e432b6843b235ef96300655"
+  },
+  "salt": "COOP-HGS-RR-DEV-20260724",
+  "ranking_key": "sha256(salt|instance_id|nodes_sha256)",
+  "strata": [
+    {
+      "label": "small",
+      "region": "jjj",
+      "customer_count_min": 10,
+      "customer_count_max": 30,
+      "instance_id": "cn-jjj-25c-02-V2-LOCATIONS",
+      "customer_count": 25,
+      "nodes_sha256": "29e91674a43db8ed7bd4d628a674d633a2e5750cb2498b75886bb7ffc0096646",
+      "ranking_sha256": "027867a9650cad228ba9f6b6d780867a1cc0066b6e052e537035cae9ba3a2b85"
+    },
+    {
+      "label": "medium",
+      "region": "prd",
+      "customer_count_min": 50,
+      "customer_count_max": 100,
+      "instance_id": "cn-prd-100c-03-V2-LOCATIONS",
+      "customer_count": 100,
+      "nodes_sha256": "193cdf31f223d09ef102acc9e04cdfcd6d9afa54fad75708d7172309648698df",
+      "ranking_sha256": "195887ee44878e9dc8def1bc2098d32c19fa49f7a7b9ce0e7f268fb6f50251aa"
+    },
+    {
+      "label": "large",
+      "region": "cy",
+      "customer_count_min": 150,
+      "customer_count_max": 200,
+      "instance_id": "cn-cy-150c-03-V2-LOCATIONS",
+      "customer_count": 150,
+      "nodes_sha256": "e59fc665a4db696f0c6f77dfc1f05eeb2110880c9d83963b91fcae14a4b1c4df",
+      "ranking_sha256": "102e6f93d6a835ae5d85bf2f5a50997eb7ae7971af3ef2fd157bef895a10b8b2"
+    }
+  ],
+  "claim_boundary": {
+    "development_instances": 3,
+    "fresh_confirmatory_instances": 78,
+    "all_81_may_be_reported_descriptively": true,
+    "development_instances_must_be_disclosed": true
+  }
+}
