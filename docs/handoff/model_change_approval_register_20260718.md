@@ -1379,7 +1379,8 @@ HGS 比例、破坏修复算子、接受规则、墙钟安全上限和全部性�
 原 `g1_micro_preregistration_v1.json`、v2 及
 `g0_g1_release_chain_registration_v1.json` 均保留。v1 等待链接近三小时仍只读取
 旧 E2 进度，没有执行真实 G0、资源门或 G1；为修改其受保护配置，已按监控规程先
-暂停，保留 `PROTECTED_FILE_DRIFT` 异常现场，不覆盖、不续跑。权威新登记为
+暂停，保留 `PROTECTED_FILE_DRIFT` 异常现场，不覆盖、不续跑。v2 监控确认正常
+等待后，v1 等待进程已用监控器安全终止；旧 E2 正式进程和发布链未受影响。权威新登记为
 `g1_micro_preregistration_v3.json`、
 `g1_six_worker_resource_probe_registration_v1.json` 和
 `g0_g1_release_chain_registration_v2.json`。
