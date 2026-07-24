@@ -3,8 +3,8 @@
 This directory is an isolated development area for the contract in
 `docs/handoff/e2_genuine_hybrid_hgs_rr_contract_20260724.md`.
 
-Current contents implement only the parts that can be verified without
-running search:
+Current contents implement the isolated A/B/A+B execution bridge without
+authorising any formal search:
 
 - exact complete-candidate budget accounting, including infeasible and
   duplicate candidates;
@@ -21,8 +21,20 @@ running search:
   outer call;
 - result-blind registration of one small, one medium, and one large
   development instance across the three regions.
+- a reference depot--vehicle--charge decoder, finite-fleet assignment DP,
+  route-local cache whose identity includes city/date/tariff/carbon/diesel
+  and dynamic state, and an independent regret reconstruction;
+- five static China81 RR operations with semantic effect checks, plus the
+  frozen-prefix structural contract for the dynamic operation;
+- a proxy-only PyVRP 0.12.2 HGS archive generator that excludes unchanged
+  initial solutions from descendant evidence;
+- an A/B/A+B orchestrator with one shared complete-evaluation ledger per arm,
+  a frozen 60/40 A+B evaluation allocation, and a hard bidirectional
+  post-injection-gain gate.
 
-This is not yet a runnable algorithm and must not be cited as one.  Seven
-lightweight contract tests currently pass.  The next implementation step is
-the model-aware repair/decoder and the epoch bridge.  G1 search is forbidden
-while the existing E2 v7 formal campaign is running.
+The current zero-search gate in `g0_static_semantics_gate_v5/` is deliberately labelled
+`REAL_BUNDLE_PREFLIGHT_PENDING`: it does not prove real China81 feasibility,
+algorithm quality, or 1+1>2.  Nineteen lightweight tests currently pass.
+The next mandatory step is a no-search real-bundle decode/replay gate after
+the existing E2 v7 campaign releases memory, followed by preregistered G1.
+G1 search is forbidden while that campaign is running.

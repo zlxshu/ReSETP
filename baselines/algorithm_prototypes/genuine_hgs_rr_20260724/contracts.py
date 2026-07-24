@@ -87,30 +87,20 @@ class CompleteEvaluationLedger:
             raise ValueError("candidate signature must be non-empty")
         if feasible:
             if objective is None or not math.isfinite(float(objective)):
-                raise ValueError(
-                    "feasible candidate requires a finite objective"
-                )
+                raise ValueError("feasible candidate requires a finite objective")
             if int(violation_count) != 0:
-                raise ValueError(
-                    "feasible candidate cannot carry violations"
-                )
+                raise ValueError("feasible candidate cannot carry violations")
         elif int(violation_count) < 1:
-            raise ValueError(
-                "infeasible candidate must report at least one violation"
-            )
+            raise ValueError("infeasible candidate must report at least one violation")
         index = self.consumed + 1
-        duplicate = self._first_index_by_signature.get(
-            normalized_signature
-        )
+        duplicate = self._first_index_by_signature.get(normalized_signature)
         record = CompleteEvaluationRecord(
             index=index,
             arm=self.arm,
             signature=normalized_signature,
             source=source,
             feasible=bool(feasible),
-            objective=(
-                None if objective is None else float(objective)
-            ),
+            objective=(None if objective is None else float(objective)),
             violation_count=int(violation_count),
             duplicate_of_index=duplicate,
             metadata=dict(metadata or {}),
@@ -137,12 +127,9 @@ class CompleteEvaluationLedger:
             "consumed": self.consumed,
             "remaining": self.remaining,
             "feasible": sum(row.feasible for row in self._records),
-            "infeasible": sum(
-                not row.feasible for row in self._records
-            ),
+            "infeasible": sum(not row.feasible for row in self._records),
             "duplicates": sum(
-                row.duplicate_of_index is not None
-                for row in self._records
+                row.duplicate_of_index is not None for row in self._records
             ),
             "records": [
                 {
@@ -205,21 +192,20 @@ class HybridLineageLedger:
         accepted_into_next_hgs_epoch: bool,
         next_hgs_epoch: int | None,
     ) -> TransferRecord:
-        if parent_signature == child_signature:
-            raise ValueError("transfer must change the solution signature")
+        if (
+            direction == TransferDirection.RR_TO_HGS
+            and parent_signature == child_signature
+        ):
+            raise ValueError("RR-to-HGS transfer must change the solution signature")
         if complete_evaluation_index < 1:
             raise ValueError("complete evaluation index must be positive")
         if direction == TransferDirection.RR_TO_HGS:
             if accepted_into_next_hgs_epoch and (
                 next_hgs_epoch is None or next_hgs_epoch < 1
             ):
-                raise ValueError(
-                    "accepted RR-to-HGS transfer requires a next epoch"
-                )
+                raise ValueError("accepted RR-to-HGS transfer requires a next epoch")
         elif accepted_into_next_hgs_epoch:
-            raise ValueError(
-                "HGS-to-RR transfer cannot be marked as HGS injection"
-            )
+            raise ValueError("HGS-to-RR transfer cannot be marked as HGS injection")
         record = TransferRecord(
             sequence=len(self._transfers) + 1,
             direction=direction,
@@ -227,12 +213,8 @@ class HybridLineageLedger:
             child_signature=child_signature,
             parent_objective=float(parent_objective),
             child_objective=float(child_objective),
-            complete_evaluation_index=int(
-                complete_evaluation_index
-            ),
-            accepted_into_next_hgs_epoch=bool(
-                accepted_into_next_hgs_epoch
-            ),
+            complete_evaluation_index=int(complete_evaluation_index),
+            accepted_into_next_hgs_epoch=bool(accepted_into_next_hgs_epoch),
             next_hgs_epoch=next_hgs_epoch,
         )
         self._transfers.append(record)
@@ -251,18 +233,14 @@ class HybridLineageLedger:
         if epoch < 1 or complete_evaluation_index < 1:
             raise ValueError("epoch and evaluation index must be positive")
         if injected_rr_signature == descendant_signature:
-            raise ValueError(
-                "HGS descendant must differ from injected RR solution"
-            )
+            raise ValueError("HGS descendant must differ from injected RR solution")
         record = HgsDescendantRecord(
             epoch=int(epoch),
             injected_rr_signature=injected_rr_signature,
             descendant_signature=descendant_signature,
             injected_objective=float(injected_objective),
             descendant_objective=float(descendant_objective),
-            complete_evaluation_index=int(
-                complete_evaluation_index
-            ),
+            complete_evaluation_index=int(complete_evaluation_index),
         )
         self._descendants.append(record)
         return record
@@ -283,8 +261,7 @@ class HybridLineageLedger:
         }
         return sum(
             (row.injected_rr_signature, row.epoch) in accepted
-            and row.descendant_objective
-            < row.injected_objective - tolerance
+            and row.descendant_objective < row.injected_objective - tolerance
             for row in self._descendants
         )
 
@@ -303,12 +280,8 @@ class HybridLineageLedger:
             and row.accepted_into_next_hgs_epoch
             for row in self._transfers
         ):
-            raise RuntimeError(
-                "RR solution was never injected into a later HGS epoch"
-            )
-        if self.cooperative_gain_evidence_count(
-            tolerance=tolerance
-        ) < 1:
+            raise RuntimeError("RR solution was never injected into a later HGS epoch")
+        if self.cooperative_gain_evidence_count(tolerance=tolerance) < 1:
             raise RuntimeError(
                 "no post-injection HGS descendant improved its RR parent"
             )
@@ -322,12 +295,8 @@ class HybridLineageLedger:
                 }
                 for row in self._transfers
             ],
-            "descendants": [
-                row.__dict__ for row in self._descendants
-            ],
-            "cooperative_gain_evidence_count": (
-                self.cooperative_gain_evidence_count()
-            ),
+            "descendants": [row.__dict__ for row in self._descendants],
+            "cooperative_gain_evidence_count": (self.cooperative_gain_evidence_count()),
         }
 
 
@@ -338,12 +307,41 @@ class DecoderCacheKey:
     instance_id: str
     date: str
     region: str
+    city: str
+    price_area_id: str
+    carbon_source_column: str
+    diesel_zone: str
     home_depot_id: str
     vehicle_type: str
+    charge_strategy: str
+    carbon_weight: float
     node_sequence: tuple[str, ...]
     dynamic_state_hash: str
     runtime_parameter_authority: str
     fleet_authority: str
+
+    def __post_init__(self) -> None:
+        string_fields = (
+            self.instance_id,
+            self.date,
+            self.region,
+            self.city,
+            self.price_area_id,
+            self.carbon_source_column,
+            self.diesel_zone,
+            self.home_depot_id,
+            self.vehicle_type,
+            self.charge_strategy,
+            self.dynamic_state_hash,
+            self.runtime_parameter_authority,
+            self.fleet_authority,
+        )
+        if any(not str(value).strip() for value in string_fields):
+            raise ValueError("decoder cache identity cannot be blank")
+        if not self.node_sequence:
+            raise ValueError("decoder cache identity requires a node sequence")
+        if not math.isfinite(float(self.carbon_weight)):
+            raise ValueError("decoder cache carbon weight must be finite")
 
     def digest(self) -> str:
         payload = json.dumps(

@@ -29,7 +29,7 @@ from setp_solver.china81_completion import (
 from setp_solver.solution import Route, Solution
 
 from contracts import CandidateSource
-from evaluation import BudgetedCompleteEvaluator, ScoredCandidate
+from evaluation import BudgetedCompleteEvaluator
 
 
 TOL = 1.0e-9
@@ -74,8 +74,8 @@ def complete_skeleton_with_visible_budget(
             + _violation_summary(list(baseline_nonfleet))
         )
 
-    variants, generation_failures, route_local_rankings = (
-        _generate_route_variants(baseline, bundle)
+    variants, generation_failures, route_local_rankings = _generate_route_variants(
+        baseline, bundle
     )
     ranked = sorted(
         variants,
@@ -147,9 +147,7 @@ def complete_skeleton_with_visible_budget(
                     source=source,
                     metadata={
                         **dict(source_metadata or {}),
-                        "completion_stage": (
-                            "mandatory_fleet_assignment"
-                        ),
+                        "completion_stage": ("mandatory_fleet_assignment"),
                         "route_index": variant.route_index,
                         "variant_label": variant.label,
                     },
@@ -169,13 +167,8 @@ def complete_skeleton_with_visible_budget(
                         "label": variant.label,
                         "before_cost": current_scored.objective,
                         "after_cost": scored.objective,
-                        "cost_change": (
-                            scored.objective
-                            - current_scored.objective
-                        ),
-                        "complete_evaluation_index": (
-                            scored.record.index
-                        ),
+                        "cost_change": (scored.objective - current_scored.objective),
+                        "complete_evaluation_index": (scored.record.index),
                     }
                 )
                 current = candidate
@@ -199,12 +192,8 @@ def complete_skeleton_with_visible_budget(
     for variant in ranked:
         if variant.route_index in accepted_route_indices:
             continue
-        depot_id = current.routes[
-            variant.route_index
-        ].home_depot_id
-        ev_cap = int(
-            bundle.fleet_caps_by_depot[depot_id]["num_ev"]
-        )
+        depot_id = current.routes[variant.route_index].home_depot_id
+        ev_cap = int(bundle.fleet_caps_by_depot[depot_id]["num_ev"])
         if _depot_ev_route_count(current, depot_id) >= ev_cap:
             continue
         if evaluator.ledger.remaining <= 0:
@@ -240,9 +229,7 @@ def complete_skeleton_with_visible_budget(
                 "label": variant.label,
                 "before_cost": current_scored.objective,
                 "after_cost": scored.objective,
-                "improvement": (
-                    current_scored.objective - scored.objective
-                ),
+                "improvement": (current_scored.objective - scored.objective),
                 "complete_evaluation_index": scored.record.index,
             }
         )
@@ -256,26 +243,17 @@ def complete_skeleton_with_visible_budget(
             + _violation_summary(list(current_scored.violations))
         )
     _require_finite_depot_fleet(current, bundle)
-    if (
-        current_scored.objective
-        > finite_fleet_reference.objective + TOL
-    ):
+    if current_scored.objective > finite_fleet_reference.objective + TOL:
         raise RuntimeError(
             "budgeted completion violated post-fleet monotone protection"
         )
 
     activity: dict[str, Any] = {
-        "schema_version": (
-            "resetp.coop-hgs-rr-budgeted-completion.v1"
-        ),
+        "schema_version": ("resetp.coop-hgs-rr-budgeted-completion.v1"),
         "baseline_all_cv_cost": baseline_scored.objective,
-        "finite_fleet_reference_cost": (
-            finite_fleet_reference.objective
-        ),
+        "finite_fleet_reference_cost": (finite_fleet_reference.objective),
         "final_cost": current_scored.objective,
-        "complete_evaluations_used": (
-            evaluator.ledger.consumed - before
-        ),
+        "complete_evaluations_used": (evaluator.ledger.consumed - before),
         "route_local_rankings": route_local_rankings,
         "stopped_on_budget": stopped_on_budget,
         "variant_count": len(variants),
@@ -285,9 +263,7 @@ def complete_skeleton_with_visible_budget(
         "rejected_infeasible": rejected_infeasible,
         "rejected_non_improving": rejected_non_improving,
         "accepted_variants": accepted,
-        "final_complete_evaluation_index": (
-            current_scored.record.index
-        ),
+        "final_complete_evaluation_index": (current_scored.record.index),
     }
     completion = China81CompletionResult(
         solution=current,
@@ -297,9 +273,7 @@ def complete_skeleton_with_visible_budget(
     )
     return BudgetedCompletionResult(
         completion=completion,
-        complete_evaluations_used=(
-            evaluator.ledger.consumed - before
-        ),
+        complete_evaluations_used=(evaluator.ledger.consumed - before),
         route_local_rankings=route_local_rankings,
         stopped_on_budget=stopped_on_budget,
     )
@@ -338,9 +312,7 @@ def _generate_route_variants(
                     bundle.prices,
                     strategy=strategy,
                     carbon_weight=carbon_weight,
-                    depot_charge_window_mode=(
-                        "same_day_predeparture"
-                    ),
+                    depot_charge_window_mode=("same_day_predeparture"),
                 )
                 route_cost = _single_route_cost(
                     repaired,

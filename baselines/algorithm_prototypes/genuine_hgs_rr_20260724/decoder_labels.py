@@ -73,45 +73,35 @@ def dominates(
 
     if left.state_identity != right.state_identity:
         return False
-    if (left.remaining_energy_kwh is None) != (
-        right.remaining_energy_kwh is None
-    ):
+    if (left.remaining_energy_kwh is None) != (right.remaining_energy_kwh is None):
         return False
     no_worse = (
         left.time_second <= right.time_second + tolerance
-        and left.remaining_capacity_kg
-        >= right.remaining_capacity_kg - tolerance
+        and left.remaining_capacity_kg >= right.remaining_capacity_kg - tolerance
         and left.cv_fleet_used <= right.cv_fleet_used
         and left.ev_fleet_used <= right.ev_fleet_used
-        and left.variable_cost_cny
-        <= right.variable_cost_cny + tolerance
+        and left.variable_cost_cny <= right.variable_cost_cny + tolerance
         and left.carbon_kg <= right.carbon_kg + tolerance
-        and left.objective_cost_cny
-        <= right.objective_cost_cny + tolerance
+        and left.objective_cost_cny <= right.objective_cost_cny + tolerance
     )
     if left.remaining_energy_kwh is not None:
         no_worse = no_worse and (
-            left.remaining_energy_kwh
-            >= right.remaining_energy_kwh - tolerance
+            left.remaining_energy_kwh >= right.remaining_energy_kwh - tolerance
         )
     if not no_worse:
         return False
     strict = (
         left.time_second < right.time_second - tolerance
-        or left.remaining_capacity_kg
-        > right.remaining_capacity_kg + tolerance
+        or left.remaining_capacity_kg > right.remaining_capacity_kg + tolerance
         or left.cv_fleet_used < right.cv_fleet_used
         or left.ev_fleet_used < right.ev_fleet_used
-        or left.variable_cost_cny
-        < right.variable_cost_cny - tolerance
+        or left.variable_cost_cny < right.variable_cost_cny - tolerance
         or left.carbon_kg < right.carbon_kg - tolerance
-        or left.objective_cost_cny
-        < right.objective_cost_cny - tolerance
+        or left.objective_cost_cny < right.objective_cost_cny - tolerance
     )
     if left.remaining_energy_kwh is not None:
         strict = strict or (
-            left.remaining_energy_kwh
-            > right.remaining_energy_kwh + tolerance
+            left.remaining_energy_kwh > right.remaining_energy_kwh + tolerance
         )
     return strict
 
@@ -129,11 +119,7 @@ class DominanceFrontier:
     def add(self, candidate: DecoderLabel) -> bool:
         if any(dominates(row, candidate) for row in self._labels):
             return False
-        self._labels = [
-            row
-            for row in self._labels
-            if not dominates(candidate, row)
-        ]
+        self._labels = [row for row in self._labels if not dominates(candidate, row)]
         if candidate not in self._labels:
             self._labels.append(candidate)
             self._labels.sort(

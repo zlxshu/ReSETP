@@ -22,9 +22,7 @@ def _sha256(path: Path) -> str:
 
 
 def main() -> None:
-    registration = json.loads(
-        REGISTRATION.read_text(encoding="utf-8")
-    )
+    registration = json.loads(REGISTRATION.read_text(encoding="utf-8"))
     catalog = ROOT / registration["catalog"]["path"]
     if _sha256(catalog) != registration["catalog"]["sha256"]:
         raise SystemExit("HALT_DEVELOPMENT_CATALOG_HASH_DRIFT")
@@ -44,10 +42,9 @@ def main() -> None:
         ranked = sorted(
             (
                 hashlib.sha256(
-                    (
-                        f"{salt}|{row['instance_id']}|"
-                        f"{row['nodes_sha256']}"
-                    ).encode("utf-8")
+                    (f"{salt}|{row['instance_id']}|{row['nodes_sha256']}").encode(
+                        "utf-8"
+                    )
                 ).hexdigest(),
                 row,
             )
@@ -60,20 +57,14 @@ def main() -> None:
             "nodes_sha256": selected["nodes_sha256"],
             "ranking_sha256": ranking_hash,
         }
-        observed = {
-            key: stratum[key]
-            for key in expected
-        }
+        observed = {key: stratum[key] for key in expected}
         if observed != expected:
             raise SystemExit(
                 "HALT_DEVELOPMENT_INSTANCE_REGISTRATION_DRIFT: "
                 f"{stratum['label']}: {observed!r} != {expected!r}"
             )
         verified.append(selected["instance_id"])
-    print(
-        "PASS_RESULT_BLIND_DEVELOPMENT_INSTANCE_REGISTRATION "
-        + ",".join(verified)
-    )
+    print("PASS_RESULT_BLIND_DEVELOPMENT_INSTANCE_REGISTRATION " + ",".join(verified))
 
 
 if __name__ == "__main__":
