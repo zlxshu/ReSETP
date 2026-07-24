@@ -5,6 +5,7 @@ import random
 import pytest
 import hybrid_orchestrator as orchestration
 import run_g0_real_bundle_preflight as real_bundle_gate
+import run_g1_micro_gate as g1_gate
 import rr_engine as rr_runtime
 
 from setp_solver.instance_loader import Instance, Node
@@ -159,6 +160,69 @@ def test_budget_counts_infeasible_and_duplicate_candidates() -> None:
             objective=9.0,
             violation_count=0,
         )
+
+
+def _g1_decision_row(
+    *,
+    instance_id: str,
+    arm: AlgorithmArm,
+    objective: float,
+    cooperative_gain_count: int = 0,
+) -> dict[str, object]:
+    return {
+        "status": "PASS",
+        "detail": "",
+        "instance_id": instance_id,
+        "seed": 1,
+        "arm": arm.value,
+        "best_objective": float(objective),
+        "complete_evaluations_consumed": 80,
+        "direct_violation_count": 0,
+        "exact_violation_count": 0,
+        "wallclock_safety_triggered": False,
+        "cooperative_gain_evidence_count": int(cooperative_gain_count),
+    }
+
+
+def test_g1_decision_requires_strict_two_case_superadditivity() -> None:
+    rows = []
+    for index, (a, b, ab) in enumerate(
+        (
+            (100.0, 101.0, 99.0),
+            (200.0, 201.0, 199.0),
+            (300.0, 301.0, 300.0),
+        ),
+        start=1,
+    ):
+        instance_id = f"instance-{index}"
+        rows.extend(
+            (
+                _g1_decision_row(
+                    instance_id=instance_id,
+                    arm=AlgorithmArm.HGS,
+                    objective=a,
+                ),
+                _g1_decision_row(
+                    instance_id=instance_id,
+                    arm=AlgorithmArm.RUIN_RECREATE,
+                    objective=b,
+                ),
+                _g1_decision_row(
+                    instance_id=instance_id,
+                    arm=AlgorithmArm.COOPERATIVE,
+                    objective=ab,
+                    cooperative_gain_count=(1 if index == 1 else 0),
+                ),
+            )
+        )
+    decision = g1_gate._decide(rows)
+    assert decision["decision"] == "PASS_G1_COOPERATIVE_HYBRID_GAIN"
+    assert decision["strict_over_both_instances"] == 2
+
+    rows[-1]["best_objective"] = 302.0
+    failed = g1_gate._decide(rows)
+    assert failed["decision"] == "STOP_G1_NO_HYBRID_GAIN"
+    assert not failed["gates"]["ab_no_loss_against_a_or_b"]
 
 
 def test_lineage_rejects_final_selection_pseudohybrid() -> None:

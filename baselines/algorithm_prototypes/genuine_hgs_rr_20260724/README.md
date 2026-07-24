@@ -38,10 +38,16 @@ authorising any formal search:
 
 The current zero-search gate in `g0_static_semantics_gate_v10/` is deliberately labelled
 `REAL_BUNDLE_PREFLIGHT_PENDING`: it does not prove real China81 feasibility,
-algorithm quality, or 1+1>2.  Thirty-three lightweight tests currently pass.
+algorithm quality, or 1+1>2. Thirty-four lightweight tests currently pass.
 The real-bundle gate is preregistered in
 `g0_real_bundle_preregistration_v1.json`; its runner verifies 55 pinned input
 files in contract-only mode and refuses execution while the existing E2 v7
-campaign is running.  The next mandatory step is that no-search decode/replay
-after v7 releases memory, followed by preregistered G1.  G1 search is
-forbidden while that campaign is running.
+campaign is running.
+
+`g1_micro_preregistration_v1.json` and `run_g1_micro_gate.py` freeze the next
+three-instance, seed-1 A/B/A+B gate. Every arm receives 80 visible complete
+evaluations from the same completed witness; A receives 75,000 total HGS
+iterations across the three proxy modes and A+B receives 60% of that count.
+The runner verifies 31 source fingerprints and refuses to execute until both
+the protected v7 release chain and real-bundle G0 pass. On this 8 GB host it
+also refuses more than three workers. No G1 search has run.
