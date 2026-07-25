@@ -1958,3 +1958,28 @@ V4六进程身份冒烟6/6通过且为6个不同PID，所有worker均闭合到
 `FINAL_STOP_NO_RESCUE`。不得修改标签/弧/候选/状态/时间上限、阈值、题、起点或
 选择逻辑后重跑；不得扩大China81、启动E3、公开BKS/SOTA或写入论文性能与
 `1+1>2`。本条是已排除工程歧义后的低成本效果结论。
+
+## E2-RCE-HGS-MISRANK-001：资源耦合 HGS 的代理误判零搜索因果门
+
+状态：`USER_APPROVED__ZERO_SEARCH_CAUSAL_GATE_ONLY`（2026-07-25）。
+
+用户批准在保留三视角 HGS 作为受保护备份、永久排除全部已停止候选的前提下，验证
+一个新的、更加基础的因果问题：现有 HGS 的半载重和最低时段能源成本代理，是否会
+把完整 China81 模型下更好的客户顺序排到后面。用户同时明确指出，三视角已有改善
+可能只是微小代理误差或多重启效应，不能未经同算力因果隔离就当作“视角互补”。
+
+本门只做零搜索排序审计。冻结 v7 的
+`cn-jjj-50c-02`、`cn-cy-100c-01`、`cn-prd-200c-02`，每题 seed 1、2 的 HGS-M
+witness，共六任务，资源安全时固定 6 workers。每任务最多 96 个相对原 witness
+独立生成的固定动作候选；不得连续接受、不得迭代、不得改变任何封存成绩。旧排序
+复用 `mechanism_ev` 代理，完整排序复用共同完成器、完整检查和精确评分。
+
+必须至少 5/6 存在严格排序逆转、4/6 存在完整严格改善、4/6 的完整最优改善候选不在
+旧代理前八名，且覆盖至少两个规模，才判
+`PASS_RCE_HGS_PROXY_MISRANK_CAUSAL_GATE`。否则判
+`STOP_RCE_HGS_NO_VERIFIED_PROXY_MISRANK_HEADROOM`，不得在已见任务增加候选、换
+动作、换种子、换 witness、放宽门槛或直接转入搜索。通过也只授权另立 6 客户资源
+评价等价性工程门，不授权性能实验、China81 全量、E3、公开 BKS/SOTA 或论文主张。
+
+权威合同：
+`docs/handoff/e2_resource_coupled_hgs_misranking_audit_contract_20260725.md`。

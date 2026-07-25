@@ -1,0 +1,89 @@
+{
+  "schema_version": 1,
+  "name": "rce-hgs-misrank-formal",
+  "objective": "Score the frozen 576-candidate zero-search panel and decide whether the HGS proxy demonstrably misses full-model improvements",
+  "workdir": "/Volumes/移动硬盘（512G）/ReSETP",
+  "poll_seconds": 10,
+  "stale_seconds": 600,
+  "max_runtime_seconds": 3600,
+  "pause_on_anomaly": true,
+  "required_command_substrings": [
+    "rce_hgs_misrank_20260725.run_gate",
+    "--mode",
+    "formal",
+    "--workers",
+    "6"
+  ],
+  "forbidden_command_substrings": [
+    "--mode engineering",
+    "--workers 1",
+    "--workers 2",
+    "--workers 3"
+  ],
+  "min_cpu_percent_when_active": 1,
+  "low_cpu_consecutive_checks": 6,
+  "max_rss_mb": 6500,
+  "min_system_free_memory_mb": 256,
+  "min_system_memory_free_percent": 5,
+  "logs": [],
+  "progress_files": [],
+  "result_files": [
+    "/Volumes/移动硬盘（512G）/ReSETP/baselines/e2_final_campaign_20260720/rce_hgs_proxy_misrank_gate_20260725/formal/metadata.json",
+    "/Volumes/移动硬盘（512G）/ReSETP/baselines/e2_final_campaign_20260720/rce_hgs_proxy_misrank_gate_20260725/formal/raw_runs.csv",
+    "/Volumes/移动硬盘（512G）/ReSETP/baselines/e2_final_campaign_20260720/rce_hgs_proxy_misrank_gate_20260725/formal/decision.json",
+    "/Volumes/移动硬盘（512G）/ReSETP/baselines/e2_final_campaign_20260720/rce_hgs_proxy_misrank_gate_20260725/formal/artifact_hashes.json",
+    "/Volumes/移动硬盘（512G）/ReSETP/baselines/e2_final_campaign_20260720/rce_hgs_proxy_misrank_gate_20260725/formal/report.md"
+  ],
+  "completion_files": [
+    "/Volumes/移动硬盘（512G）/ReSETP/baselines/e2_final_campaign_20260720/rce_hgs_proxy_misrank_gate_20260725/formal/done.json"
+  ],
+  "checkpoint_paths": [],
+  "protected_files": [
+    {
+      "path": "/Volumes/移动硬盘（512G）/ReSETP/docs/handoff/e2_resource_coupled_hgs_misranking_audit_contract_20260725.md",
+      "kind": "experiment_contract"
+    },
+    {
+      "path": "/Volumes/移动硬盘（512G）/ReSETP/baselines/algorithm_prototypes/rce_hgs_misrank_20260725/audit_core.py",
+      "kind": "algorithm"
+    },
+    {
+      "path": "/Volumes/移动硬盘（512G）/ReSETP/baselines/algorithm_prototypes/rce_hgs_misrank_20260725/run_gate.py",
+      "kind": "experiment_runner"
+    },
+    {
+      "path": "/Volumes/移动硬盘（512G）/ReSETP/solver/src/setp_solver/cost.py",
+      "kind": "cost_function"
+    },
+    {
+      "path": "/Volumes/移动硬盘（512G）/ReSETP/solver/src/setp_solver/check.py",
+      "kind": "evaluator"
+    },
+    {
+      "path": "/Volumes/移动硬盘（512G）/ReSETP/solver/src/setp_solver/search/evaluation.py",
+      "kind": "evaluator"
+    },
+    {
+      "path": "/Volumes/移动硬盘（512G）/ReSETP/solver/src/setp_solver/prices.py",
+      "kind": "model"
+    },
+    {
+      "path": "/Volumes/移动硬盘（512G）/ReSETP/solver/src/setp_solver/china81_completion.py",
+      "kind": "evaluator"
+    },
+    {
+      "path": "/Volumes/移动硬盘（512G）/ReSETP/baselines/algorithm_prototypes/china81_mechanism_hybrid_20260720/pyvrp_adapter.py",
+      "kind": "algorithm"
+    },
+    {
+      "path": "/Volumes/移动硬盘（512G）/ReSETP/baselines/e2_final_campaign_20260720/corrected_china81_rerun_v7_small_archive_ledger_20260724/full_gate/tasks",
+      "kind": "core_data"
+    }
+  ],
+  "csv_rules": [],
+  "milestones": [],
+  "ai": {
+    "enabled": false,
+    "timeout_seconds": 180
+  }
+}
