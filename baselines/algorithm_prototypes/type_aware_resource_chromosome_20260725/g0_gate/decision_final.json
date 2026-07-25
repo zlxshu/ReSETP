@@ -1,0 +1,27 @@
+{
+  "decision": "FINAL_STOP_TARC_TYPED_CHROMOSOME_LOSES_MEDIUM_LARGE_FEASIBILITY",
+  "supersedes_for_direction_only": "decision.json remains the immutable first terminal record",
+  "contract_id": "E2-TARC-001",
+  "formal_run_repeated": false,
+  "completed_worker_tasks": 2,
+  "typed_split_failures": 4,
+  "failed_instances": [
+    "cn-jjj-100c-02-V2-LOCATIONS",
+    "cn-prd-200c-01-V2-LOCATIONS"
+  ],
+  "failed_arms": [
+    "ORDER_ONLY",
+    "ORDER_PLUS_TYPE"
+  ],
+  "protected_or_registered_drift": 0,
+  "performance_claim_available": false,
+  "root_cause": "After order crossover, grouping customers by frozen or jointly inherited depot-powertrain labels cannot be split into time-window-feasible routes under the registered finite fleet on the locked 100- and 200-customer cases. The failure occurs even in ORDER_ONLY, so it precedes any causal performance comparison.",
+  "no_rescue_boundary": [
+    "do not add a repair algorithm",
+    "do not enlarge the fleet, state limit, candidate count, or time limit",
+    "do not change labels, parents, instances, seeds, or crossover masks",
+    "do not rerun G0 or rename this mechanism",
+    "do not use the two completed 50-customer worker results"
+  ],
+  "next_action": "CURRENT_CHINA81_ALGORITHM_EXPLORATION_REQUIRES_SCOPE_DECISION"
+}

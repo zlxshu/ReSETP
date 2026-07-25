@@ -1,0 +1,32 @@
+{
+  "decision": "PASS_TARC_ZERO_OBJECTIVE_REPRESENTATION_AND_DECODER_GATE",
+  "contract_id": "E2-TARC-001",
+  "synthetic_equivalence": {
+    "customer_count": 6,
+    "max_routes": 3,
+    "enumerated_partitions": 16,
+    "feasible_partitions": 8,
+    "best_cost": 15.75,
+    "best_cuts": [
+      2,
+      4,
+      6
+    ],
+    "equivalent": true
+  },
+  "six_worker_smoke": {
+    "workers": 6,
+    "distinct_pids": 6,
+    "module": "__mp_main__",
+    "file": "/Volumes/移动硬盘（512G）/ReSETP/baselines/algorithm_prototypes/type_aware_resource_chromosome_20260725/t0_engineering_gate/run_t0.py"
+  },
+  "real_parent_tasks": 6,
+  "resource_label_rows": 24,
+  "all_original_partitions_enumerable": true,
+  "max_states_per_label": 3160,
+  "objective_evaluations": 0,
+  "completion_calls": 0,
+  "scorer_calls": 0,
+  "search_calls": 0,
+  "next_action": "T0 authorizes only the frozen 3-instance x 2-arm G0 in the contract. It does not authorize any broader run or claim."
+}

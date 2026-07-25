@@ -1,0 +1,56 @@
+{
+  "decision": "EVIDENCE_ONLY_RESOURCE_TYPE_ACTIVITY_AUDIT",
+  "task_id": "E2-TARC-RESOURCE-ACTIVITY-AUDIT-001",
+  "input_integrity": "PASS_405_SEALED_WITNESS_FILES",
+  "summary_by_arm": {
+    "HGS-M": {
+      "solutions": 405,
+      "routes": 4953,
+      "customers": 29025,
+      "solutions_using_both_vehicle_classes": 322,
+      "solutions_with_at_least_three_resource_labels": 193,
+      "mean_distinct_resource_labels": 2.819753086419753,
+      "ev_routes": 520,
+      "ev_route_share": 0.10498687664041995,
+      "ev_customers": 2272,
+      "ev_customer_share": 0.07827734711455642,
+      "charging_actions": 520,
+      "public_charging_actions": 0,
+      "zero_start_charging_actions": 497,
+      "vehicles_with_multiple_charging_actions": 0,
+      "solutions_with_cross_site_service": 28,
+      "cross_site_services": 155
+    },
+    "MV-HGS-SP": {
+      "solutions": 405,
+      "routes": 4932,
+      "customers": 29025,
+      "solutions_using_both_vehicle_classes": 314,
+      "solutions_with_at_least_three_resource_labels": 188,
+      "mean_distinct_resource_labels": 2.765432098765432,
+      "ev_routes": 477,
+      "ev_route_share": 0.09671532846715329,
+      "ev_customers": 2079,
+      "ev_customer_share": 0.07162790697674419,
+      "charging_actions": 477,
+      "public_charging_actions": 0,
+      "zero_start_charging_actions": 457,
+      "vehicles_with_multiple_charging_actions": 0,
+      "solutions_with_cross_site_service": 28,
+      "cross_site_services": 115
+    }
+  },
+  "hard_interpretation": {
+    "supported": [
+      "depot and powertrain labels are directly observable for every customer in the sealed witnesses",
+      "the audit quantifies whether low-cardinality resource labels are active enough to justify a representation gate"
+    ],
+    "not_supported": [
+      "algorithmic improvement",
+      "causal benefit from a type-aware chromosome",
+      "public BKS or SOTA performance",
+      "shared-public-charger search value"
+    ]
+  },
+  "next_action_boundary": "Use these descriptive facts only to freeze or reject a separate zero-objective representability/decoder contract. Do not launch performance search from this audit alone."
+}

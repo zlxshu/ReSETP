@@ -2000,3 +2000,70 @@ witness，共六任务，资源安全时固定 6 workers。每任务最多 96 �
 
 权威终局：
 `docs/handoff/e2_resource_coupled_hgs_misranking_audit_final_stop_20260725.md`。
+
+## E2-TARC-EVIDENCE-035：资源类型感知染色体唯一候选与活动审计
+
+状态：`EVIDENCE_COMPLETE__ZERO_OBJECTIVE_GATE_AUTHORIZED`
+（2026-07-25）。
+
+在复核全部封存失败和陈雨蝶等（2025）、HGA-TAC、模式感知 HGS、HGS-IRP 等一手
+文献后，唯一未被直接覆盖的机制是假设每个客户同时携带客户顺序与
+“车场 × 燃油/电动车”低基数标签，并在同一次交叉中共同遗传。它不是 HGS 后接
+ALNS/ILS/VNS、固定次序 Split、路线池/MIP、资源价格标签、JRC 穷举或代理误排救援。
+
+405 份 corrected China81 v7 封存 witness 的只读活动审计完成：HGS-M 中 322/405
+解同时使用两类车、193/405 至少三种资源标签，EV 客户占 7.8277%；520 次充电全部
+发生在车场，公共站 0。该结果只支持最低成本表示门，不支持性能、创新、公共充电
+协同、BKS/SOTA、论文或 E3。
+
+权威证据与合同：
+`docs/handoff/e2_type_aware_resource_chromosome_evidence_review_20260725.md`，
+`docs/handoff/e2_type_aware_resource_chromosome_contract_20260725.md`。
+
+## E2-TARC-T0-PASS-036：零目标表示与解码门
+
+状态：`PASS_TARC_ZERO_OBJECTIVE_REPRESENTATION_AND_DECODER_GATE`
+（2026-07-25）。
+
+六客户人工夹具穷举与 DP 逐位一致；六进程身份冒烟为 6 个不同 PID 且文件身份正确；
+三道冻结 50/100/200 客户题、seed 3/4 共六父解全部保留原路线切分的可枚举性，
+24 个资源标签子序列闭合。200 客户单标签最大状态数 3160，远低于 200000；搜索、
+完成、评分和目标评价均为 0。只放行合同中的一次六任务 G0。
+
+证据：
+`baselines/algorithm_prototypes/type_aware_resource_chromosome_20260725/`
+`t0_engineering_gate/`。
+
+## E2-TARC-G0-FINAL-STOP-037：中大规模资源分组切分不可行
+
+状态：`FINAL_STOP_TARC_TYPED_CHROMOSOME_LOSES_MEDIUM_LARGE_FEASIBILITY`
+（2026-07-25）。
+
+G0 注册先于结果冻结三题、seed 3/4 父代、`ORDER_ONLY/ORDER_PLUS_TYPE` 两臂、
+每任务 32 次完整评价上限、90 秒安全上限和 6 workers，保护/注册哈希漂移 0。正式
+只启动一次：50 客户两臂 worker 完成，但父进程在合同终止条件触发后未释放其候选
+成绩，禁止重跑恢复或使用。100 客户两臂均在 `D_beijing|cv` 无法按有限车队切分；
+200 客户的 ORDER_ONLY 在 `D_foshan|cv`、ORDER_PLUS_TYPE 在 `D_guangzhou|cv`
+无法切分。失败发生在成绩比较前，且 ORDER_ONLY 固定较强父代资源标签也失败，说明
+客户顺序交叉会破坏中大题所需的路线边界—车场—时间窗组合。
+
+禁止添加修复器、扩大车队/状态/候选/时间、改变标签/父代/题/seed/交叉掩码、重跑或
+改名复活。该候选无性能结论，不授权全量、公开 BKS/SOTA、论文或 E3。
+
+证据：
+`baselines/algorithm_prototypes/type_aware_resource_chromosome_20260725/g0_gate/`。
+
+## E2-CURRENT-SETTING-NO-CREDIBLE-PATH-038：当前设定算法探索终止
+
+状态：`FINAL_STOP_PENDING_SCOPE_DECISION`（2026-07-25）。
+
+结合全部封存路径、资源活动审计和 TARC 最终停止，当前冻结 China81 已无一个有一手
+依据、与旧方案实质不同、命中活跃矛盾且能低成本证伪的新候选。三视角 HGS 与 v7
+继续保护，但 P0 等算力证据和 v7 效果门不支持视角协同、真混合、`1+1>2` 或 SOTA。
+
+继续算法强创新必须由用户另批范围变更：用外部运营证据重建一个真正激活公共/沿途
+补能、有限车队或共享时隙的新正式 China81，并从全部算法臂重新跑 E2。若不批准，
+则论文必须转为模型/情景/管理机制贡献并删除算法强创新主张。代理不得自行选择。
+
+权威报告：
+`docs/handoff/e2_algorithm_exploration_current_setting_final_stop_20260725.md`。
