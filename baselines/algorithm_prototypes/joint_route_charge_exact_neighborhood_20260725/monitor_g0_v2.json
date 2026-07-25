@@ -1,0 +1,229 @@
+{
+  "ai": {
+    "enabled": false,
+    "timeout_seconds": 300
+  },
+  "checkpoint_paths": [
+    "/Volumes/移动硬盘（512G）/ReSETP/baselines/algorithm_prototypes/joint_route_charge_exact_neighborhood_20260725/g0_gate_v2"
+  ],
+  "completion_files": [
+    "/Volumes/移动硬盘（512G）/ReSETP/baselines/algorithm_prototypes/joint_route_charge_exact_neighborhood_20260725/g0_gate_v2/done.json"
+  ],
+  "cpu_grace_seconds": 120,
+  "csv_rules": [
+    {
+      "duplicate_key_fields": [
+        "task_id"
+      ],
+      "max_duplicate_fraction": 0,
+      "path": "/Volumes/移动硬盘（512G）/ReSETP/baselines/algorithm_prototypes/joint_route_charge_exact_neighborhood_20260725/g0_gate_v2/raw_runs.csv",
+      "required": true,
+      "required_after_seconds": 480,
+      "required_fields": [
+        "task_id",
+        "instance_id",
+        "arm",
+        "start_cost",
+        "final_cost",
+        "complete_candidate_scores",
+        "optimality_proven"
+      ]
+    }
+  ],
+  "forbidden_command_substrings": [
+    "--tune",
+    "--rescue",
+    "--full"
+  ],
+  "logs": [],
+  "low_cpu_consecutive_checks": 10,
+  "max_rss_mb": 4096,
+  "max_runtime_seconds": 600,
+  "milestones": [],
+  "min_cpu_percent_when_active": 0.1,
+  "min_system_memory_free_percent": 5,
+  "monitor_dir": "/Volumes/移动硬盘（512G）/ReSETP/baselines/algorithm_prototypes/joint_route_charge_exact_neighborhood_20260725/.jrc-exact-neighborhood-g0-v2.monitor",
+  "name": "jrc-exact-neighborhood-g0-v2",
+  "objective": "Run the frozen six-task exact-neighborhood G0 with six workers",
+  "pause_on_anomaly": true,
+  "poll_seconds": 5,
+  "progress_files": [],
+  "protected_files": [
+    {
+      "kind": "experiment_contract",
+      "path": "/Users/zhouleixishu/.codex/plugins/cache/personal/codex-experiment-monitor/0.1.1+codex.20260714203900/scripts/experiment_monitor.py"
+    },
+    {
+      "kind": "experiment_contract",
+      "path": "/Volumes/移动硬盘（512G）/ReSETP/baselines/algorithm_prototypes/genuine_hgs_rr_20260724/decoder_cache.py"
+    },
+    {
+      "kind": "experiment_contract",
+      "path": "/Volumes/移动硬盘（512G）/ReSETP/baselines/algorithm_prototypes/genuine_hgs_rr_20260724/fleet_assignment_dp.py"
+    },
+    {
+      "kind": "experiment_contract",
+      "path": "/Volumes/移动硬盘（512G）/ReSETP/baselines/algorithm_prototypes/genuine_hgs_rr_20260724/reference_decoder.py"
+    },
+    {
+      "kind": "experiment_contract",
+      "path": "/Volumes/移动硬盘（512G）/ReSETP/baselines/algorithm_prototypes/joint_route_charge_exact_neighborhood_20260725/__init__.py"
+    },
+    {
+      "kind": "experiment_contract",
+      "path": "/Volumes/移动硬盘（512G）/ReSETP/baselines/algorithm_prototypes/joint_route_charge_exact_neighborhood_20260725/build_monitor_configs_v2.py"
+    },
+    {
+      "kind": "experiment_contract",
+      "path": "/Volumes/移动硬盘（512G）/ReSETP/baselines/algorithm_prototypes/joint_route_charge_exact_neighborhood_20260725/build_registration.py"
+    },
+    {
+      "kind": "experiment_contract",
+      "path": "/Volumes/移动硬盘（512G）/ReSETP/baselines/algorithm_prototypes/joint_route_charge_exact_neighborhood_20260725/build_registration_v2.py"
+    },
+    {
+      "kind": "experiment_contract",
+      "path": "/Volumes/移动硬盘（512G）/ReSETP/baselines/algorithm_prototypes/joint_route_charge_exact_neighborhood_20260725/common.py"
+    },
+    {
+      "kind": "experiment_contract",
+      "path": "/Volumes/移动硬盘（512G）/ReSETP/baselines/algorithm_prototypes/joint_route_charge_exact_neighborhood_20260725/engineering_worker_v2.py"
+    },
+    {
+      "kind": "experiment_contract",
+      "path": "/Volumes/移动硬盘（512G）/ReSETP/baselines/algorithm_prototypes/joint_route_charge_exact_neighborhood_20260725/exact_neighborhood.py"
+    },
+    {
+      "kind": "experiment_contract",
+      "path": "/Volumes/移动硬盘（512G）/ReSETP/baselines/algorithm_prototypes/joint_route_charge_exact_neighborhood_20260725/g0_registration_v1.json"
+    },
+    {
+      "kind": "experiment_contract",
+      "path": "/Volumes/移动硬盘（512G）/ReSETP/baselines/algorithm_prototypes/joint_route_charge_exact_neighborhood_20260725/independent_replay.py"
+    },
+    {
+      "kind": "experiment_contract",
+      "path": "/Volumes/移动硬盘（512G）/ReSETP/baselines/algorithm_prototypes/joint_route_charge_exact_neighborhood_20260725/independent_replay_v2.py"
+    },
+    {
+      "kind": "experiment_contract",
+      "path": "/Volumes/移动硬盘（512G）/ReSETP/baselines/algorithm_prototypes/joint_route_charge_exact_neighborhood_20260725/run_engineering_gate.py"
+    },
+    {
+      "kind": "experiment_contract",
+      "path": "/Volumes/移动硬盘（512G）/ReSETP/baselines/algorithm_prototypes/joint_route_charge_exact_neighborhood_20260725/run_engineering_gate_v2.py"
+    },
+    {
+      "kind": "experiment_contract",
+      "path": "/Volumes/移动硬盘（512G）/ReSETP/baselines/algorithm_prototypes/joint_route_charge_exact_neighborhood_20260725/run_g0.py"
+    },
+    {
+      "kind": "experiment_contract",
+      "path": "/Volumes/移动硬盘（512G）/ReSETP/baselines/algorithm_prototypes/joint_route_charge_exact_neighborhood_20260725/run_g0_v2.py"
+    },
+    {
+      "kind": "experiment_contract",
+      "path": "/Volumes/移动硬盘（512G）/ReSETP/baselines/algorithm_prototypes/joint_route_charge_exact_neighborhood_20260725/v2_common.py"
+    },
+    {
+      "kind": "experiment_contract",
+      "path": "/Volumes/移动硬盘（512G）/ReSETP/baselines/algorithm_prototypes/joint_route_charge_exact_neighborhood_20260725/worker_entry.py"
+    },
+    {
+      "kind": "experiment_contract",
+      "path": "/Volumes/移动硬盘（512G）/ReSETP/baselines/e2_final_campaign_20260720/corrected_china81_rerun_v7_small_archive_ledger_20260724/full_gate/decision.json"
+    },
+    {
+      "kind": "experiment_contract",
+      "path": "/Volumes/移动硬盘（512G）/ReSETP/baselines/e2_final_campaign_20260720/corrected_china81_rerun_v7_small_archive_ledger_20260724/full_gate/raw_runs.csv"
+    },
+    {
+      "kind": "experiment_contract",
+      "path": "/Volumes/移动硬盘（512G）/ReSETP/baselines/e2_final_campaign_20260720/corrected_china81_rerun_v7_small_archive_ledger_20260724/full_gate/tasks/D6-E2-STAGED__cn-cy-25c-01-V2-LOCATIONS__seed1/solution_witnesses.json"
+    },
+    {
+      "kind": "experiment_contract",
+      "path": "/Volumes/移动硬盘（512G）/ReSETP/baselines/e2_final_campaign_20260720/corrected_china81_rerun_v7_small_archive_ledger_20260724/full_gate/tasks/D6-E2-STAGED__cn-jjj-150c-03-V2-LOCATIONS__seed1/solution_witnesses.json"
+    },
+    {
+      "kind": "experiment_contract",
+      "path": "/Volumes/移动硬盘（512G）/ReSETP/baselines/e2_final_campaign_20260720/corrected_china81_rerun_v7_small_archive_ledger_20260724/full_gate/tasks/D6-E2-STAGED__cn-prd-75c-03-V2-LOCATIONS__seed1/solution_witnesses.json"
+    },
+    {
+      "kind": "experiment_contract",
+      "path": "/Volumes/移动硬盘（512G）/ReSETP/baselines/experiment_infrastructure/absolute_execution_harness_20260725/.absolute-execution-harness-v2.monitor/status.json"
+    },
+    {
+      "kind": "experiment_contract",
+      "path": "/Volumes/移动硬盘（512G）/ReSETP/baselines/experiment_infrastructure/absolute_execution_harness_20260725/integration_gate_v2/decision.json"
+    },
+    {
+      "kind": "experiment_contract",
+      "path": "/Volumes/移动硬盘（512G）/ReSETP/data/ChinaInstances/china81_finite_fleet_authority_v1_20260723/artifact_hashes.json"
+    },
+    {
+      "kind": "experiment_contract",
+      "path": "/Volumes/移动硬盘（512G）/ReSETP/data/ChinaInstances/china81_finite_fleet_authority_v1_20260723/witnesses/cn-cy-25c-01-V2-LOCATIONS.json"
+    },
+    {
+      "kind": "experiment_contract",
+      "path": "/Volumes/移动硬盘（512G）/ReSETP/data/ChinaInstances/china81_finite_fleet_authority_v1_20260723/witnesses/cn-jjj-150c-03-V2-LOCATIONS.json"
+    },
+    {
+      "kind": "experiment_contract",
+      "path": "/Volumes/移动硬盘（512G）/ReSETP/data/ChinaInstances/china81_finite_fleet_authority_v1_20260723/witnesses/cn-prd-75c-03-V2-LOCATIONS.json"
+    },
+    {
+      "kind": "experiment_contract",
+      "path": "/Volumes/移动硬盘（512G）/ReSETP/data/ChinaInstances/china81_local_directed_matrices_corrected_v10_20260723/artifact_hashes.json"
+    },
+    {
+      "kind": "experiment_contract",
+      "path": "/Volumes/移动硬盘（512G）/ReSETP/data/ChinaInstances/china81_runtime_parameter_authority_v4_20260723/artifact_hashes.json"
+    },
+    {
+      "kind": "experiment_contract",
+      "path": "/Volumes/移动硬盘（512G）/ReSETP/data/ChinaInstances/china81_stage2_static_inputs_corrected_v3_20260723/artifact_hashes.json"
+    },
+    {
+      "kind": "experiment_contract",
+      "path": "/Volumes/移动硬盘（512G）/ReSETP/docs/handoff/e2_joint_route_charge_exact_neighborhood_contract_20260725.md"
+    },
+    {
+      "kind": "experiment_contract",
+      "path": "/Volumes/移动硬盘（512G）/ReSETP/docs/handoff/e2_joint_route_charge_exact_neighborhood_v2_execution_authorization_20260725.md"
+    },
+    {
+      "kind": "experiment_contract",
+      "path": "/Volumes/移动硬盘（512G）/ReSETP/solver/src/setp_solver/check.py"
+    },
+    {
+      "kind": "experiment_contract",
+      "path": "/Volumes/移动硬盘（512G）/ReSETP/solver/src/setp_solver/china81_completion.py"
+    },
+    {
+      "kind": "experiment_contract",
+      "path": "/Volumes/移动硬盘（512G）/ReSETP/solver/src/setp_solver/cost.py"
+    },
+    {
+      "kind": "experiment_contract",
+      "path": "/Volumes/移动硬盘（512G）/ReSETP/solver/src/setp_solver/prices.py"
+    },
+    {
+      "kind": "primary_config",
+      "path": "/Volumes/移动硬盘（512G）/ReSETP/baselines/algorithm_prototypes/joint_route_charge_exact_neighborhood_20260725/g0_registration_v2.json"
+    }
+  ],
+  "required_command_substrings": [
+    "/Volumes/移动硬盘（512G）/ReSETP/build/python_envs/pyvrp-hgs-0.12.2/bin/python",
+    "/Volumes/移动硬盘（512G）/ReSETP/baselines/algorithm_prototypes/joint_route_charge_exact_neighborhood_20260725/run_g0_v2.py --workers 6"
+  ],
+  "result_files": [
+    "/Volumes/移动硬盘（512G）/ReSETP/baselines/algorithm_prototypes/joint_route_charge_exact_neighborhood_20260725/g0_gate_v2/raw_runs.csv",
+    "/Volumes/移动硬盘（512G）/ReSETP/baselines/algorithm_prototypes/joint_route_charge_exact_neighborhood_20260725/g0_gate_v2/decision.json",
+    "/Volumes/移动硬盘（512G）/ReSETP/baselines/algorithm_prototypes/joint_route_charge_exact_neighborhood_20260725/g0_gate_v2/artifact_hashes.json"
+  ],
+  "schema_version": 1,
+  "stale_seconds": 300,
+  "workdir": "/Volumes/移动硬盘（512G）/ReSETP"
+}

@@ -1,0 +1,47 @@
+{
+  "schema": "resetp.staged-deepening-confirmation-preregistration.v1",
+  "registered_at": "2026-07-24T08:18:19+08:00",
+  "formal_evidence": false,
+  "development_gate": "staged_deepening_v2_gate/decision.json",
+  "development_gate_verdict": "PASS_STAGED_DEEPENING_DEVELOPMENT_GATE",
+  "scientific_hold": "The development gate showed genuine search deepening but omitted a direct route-fusion gate. Five of six final answers equalled the best current two-stage single-view answer; one protected stage-1 route-pool answer was strictly better. Confirmation therefore adds a stricter, claim-aligned gate without changing the algorithm.",
+  "candidate_parameters_changed_from_development": false,
+  "frozen_design": {
+    "stage_1_iterations_per_view": 5000,
+    "stage_2_iterations_per_view": 20000,
+    "total_iterations_per_view": 25000,
+    "stage_2_seed_offset": 1009,
+    "exact_elites_migrated_within_same_view": 8,
+    "final_population_candidate_cap_per_stage_per_view": 24,
+    "online_checkpoint_attempts_per_stage_per_view": 20,
+    "stage_1_checkpoint_interval": 250,
+    "stage_2_checkpoint_interval": 1000,
+    "base_pool_mip_time_limit_seconds": 5.0,
+    "expanded_pool_mip_time_limit_seconds": 5.0,
+    "maximum_complete_candidate_evaluation_attempts": 280,
+    "cross_view_elite_migration": false
+  },
+  "confirmation_panel": [
+    "cn-cy-75c-02-V2-LOCATIONS seed 14",
+    "cn-jjj-75c-02-V2-LOCATIONS seed 14",
+    "cn-prd-75c-02-V2-LOCATIONS seed 14",
+    "cn-cy-200c-02-V2-LOCATIONS seed 14",
+    "cn-jjj-200c-02-V2-LOCATIONS seed 14",
+    "cn-prd-200c-02-V2-LOCATIONS seed 14"
+  ],
+  "panel_reason": "A fresh seed and previously unused staged-candidate size levels test both a smaller and the largest China81 scale in every region. Case suffix and thresholds were fixed before any confirmation result was run.",
+  "acceptance": {
+    "all_solutions_independently_feasible": true,
+    "actual_complete_attempts_at_most": 280,
+    "protected_stage_1_result_never_overwritten_by_a_worse_result": true,
+    "minimum_strict_final_improvements_over_stage_1": 3,
+    "main_method_zero_losses_to_each_own_single_view": true,
+    "minimum_strict_wins_over_HGS_E": 3,
+    "minimum_strict_wins_over_HGS_M": 3,
+    "minimum_strict_route_fusion_improvements_over_the_best_current_single_view": 2,
+    "minimum_panel_tasks_with_at_least_12_main_curve_points_and_10_strict_decreases": 5
+  },
+  "route_fusion_definition": "The final complete-model objective must be strictly lower than min(HGS-F, HGS-E, HGS-M) from the same two-stage run by more than 1e-9. Merely selecting the best single-view answer does not count.",
+  "failure_rule": "Reject unchanged if any invariant fails, fewer than three tasks improve over protected stage 1, either HGS-E or HGS-M is beaten on fewer than three tasks, fewer than two tasks show strict route-fusion improvement over the best current single view, or fewer than five trajectories meet the genuine complete-incumbent shape gate. Do not alter depth, checkpoints, seed, cases, MIP limits, budget cap, or thresholds after results.",
+  "claim_boundary": "Confirmation only. Passing authorizes formal algorithm freeze and a complete corrected E2 rerun; it is not itself paper evidence."
+}

@@ -1,0 +1,4705 @@
+{
+  "arm": "A_HGS",
+  "consumed": 80,
+  "duplicates": 55,
+  "feasible": 80,
+  "infeasible": 0,
+  "limit": 80,
+  "records": [
+    {
+      "arm": "A_HGS",
+      "duplicate_of_index": null,
+      "feasible": true,
+      "index": 1,
+      "metadata": {
+        "shared_initial": true
+      },
+      "objective": 1641.3275017740052,
+      "signature": "ade1195dd81baba63b8787a20d78607dd8b7bc740ca948ed25047f42c8239938",
+      "source": "SHARED_INITIAL",
+      "violation_count": 0
+    },
+    {
+      "arm": "A_HGS",
+      "duplicate_of_index": null,
+      "feasible": true,
+      "index": 2,
+      "metadata": {
+        "assignment_count": 5,
+        "assignment_dp_rank": 1,
+        "capacity_aware_assignment_dp": true,
+        "charger_slot_use": [],
+        "charging_route_count": 0,
+        "decoder": "explicit_reference_v1",
+        "fleet_use": [
+          5,
+          0
+        ],
+        "generation_kind": "population_archive",
+        "hgs_epoch": 1,
+        "hgs_seed": 943626379,
+        "proxy_cost": 1561454,
+        "proxy_rank": 2,
+        "route_local_cost": 1557.1819437454426,
+        "route_proxy_mode": "cv_only",
+        "warm_parent_signature": null,
+        "warm_signatures": [
+          "ade1195dd81baba63b8787a20d78607dd8b7bc740ca948ed25047f42c8239938"
+        ]
+      },
+      "objective": 1557.1819437454428,
+      "signature": "b3476594cc31e7cc481086af1698e18120067717703475606efe3b665ba39a87",
+      "source": "HGS_ARCHIVE",
+      "violation_count": 0
+    },
+    {
+      "arm": "A_HGS",
+      "duplicate_of_index": null,
+      "feasible": true,
+      "index": 3,
+      "metadata": {
+        "assignment_count": 5,
+        "assignment_dp_rank": 2,
+        "capacity_aware_assignment_dp": true,
+        "charger_slot_use": [
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 0,
+            "station_id": "D_beijing"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 1,
+            "station_id": "D_beijing"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 2,
+            "station_id": "D_beijing"
+          }
+        ],
+        "charging_route_count": 1,
+        "decoder": "explicit_reference_v1",
+        "fleet_use": [
+          4,
+          1
+        ],
+        "generation_kind": "population_archive",
+        "hgs_epoch": 1,
+        "hgs_seed": 943626379,
+        "proxy_cost": 1561454,
+        "proxy_rank": 2,
+        "route_local_cost": 1500.6490333979166,
+        "route_proxy_mode": "cv_only",
+        "warm_parent_signature": null,
+        "warm_signatures": [
+          "ade1195dd81baba63b8787a20d78607dd8b7bc740ca948ed25047f42c8239938"
+        ]
+      },
+      "objective": 1500.6490333979164,
+      "signature": "e70b6d32a1cd294d95c275e65ca7bdca320633b8362a9fa8e5e65ede817d6a83",
+      "source": "HGS_ARCHIVE",
+      "violation_count": 0
+    },
+    {
+      "arm": "A_HGS",
+      "duplicate_of_index": null,
+      "feasible": true,
+      "index": 4,
+      "metadata": {
+        "assignment_count": 5,
+        "assignment_dp_rank": 3,
+        "capacity_aware_assignment_dp": true,
+        "charger_slot_use": [
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 18,
+            "station_id": "D_beijing"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 19,
+            "station_id": "D_beijing"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 20,
+            "station_id": "D_beijing"
+          }
+        ],
+        "charging_route_count": 1,
+        "decoder": "explicit_reference_v1",
+        "fleet_use": [
+          4,
+          1
+        ],
+        "generation_kind": "population_archive",
+        "hgs_epoch": 1,
+        "hgs_seed": 943626379,
+        "proxy_cost": 1561454,
+        "proxy_rank": 2,
+        "route_local_cost": 1508.6543948002504,
+        "route_proxy_mode": "cv_only",
+        "warm_parent_signature": null,
+        "warm_signatures": [
+          "ade1195dd81baba63b8787a20d78607dd8b7bc740ca948ed25047f42c8239938"
+        ]
+      },
+      "objective": 1508.6543948002504,
+      "signature": "70081a68e9f25fc10ee64f30aa990b563d17bb933ccdece68f89484cec2fdcd1",
+      "source": "HGS_ARCHIVE",
+      "violation_count": 0
+    },
+    {
+      "arm": "A_HGS",
+      "duplicate_of_index": null,
+      "feasible": true,
+      "index": 5,
+      "metadata": {
+        "assignment_count": 5,
+        "assignment_dp_rank": 1,
+        "capacity_aware_assignment_dp": true,
+        "charger_slot_use": [
+          {
+            "day_offset": 0,
+            "route_count": 2,
+            "slot_index": 0,
+            "station_id": "D_beijing"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 2,
+            "slot_index": 1,
+            "station_id": "D_beijing"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 2,
+            "slot_index": 2,
+            "station_id": "D_beijing"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 2,
+            "slot_index": 3,
+            "station_id": "D_beijing"
+          }
+        ],
+        "charging_route_count": 2,
+        "decoder": "explicit_reference_v1",
+        "fleet_use": [
+          3,
+          2
+        ],
+        "generation_kind": "population_archive",
+        "hgs_epoch": 1,
+        "hgs_seed": 1317843392,
+        "proxy_cost": 1445053,
+        "proxy_rank": 2,
+        "route_local_cost": 1426.643032749301,
+        "route_proxy_mode": "naive_ev",
+        "warm_parent_signature": null,
+        "warm_signatures": [
+          "ade1195dd81baba63b8787a20d78607dd8b7bc740ca948ed25047f42c8239938"
+        ]
+      },
+      "objective": 1426.643032749301,
+      "signature": "3308112f89210b23924a9646589a077a731014dfb560bbc86505c0e9ec173009",
+      "source": "HGS_ARCHIVE",
+      "violation_count": 0
+    },
+    {
+      "arm": "A_HGS",
+      "duplicate_of_index": null,
+      "feasible": true,
+      "index": 6,
+      "metadata": {
+        "assignment_count": 5,
+        "assignment_dp_rank": 2,
+        "capacity_aware_assignment_dp": true,
+        "charger_slot_use": [
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 0,
+            "station_id": "D_beijing"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 1,
+            "station_id": "D_beijing"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 2,
+            "station_id": "D_beijing"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 3,
+            "station_id": "D_beijing"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 21,
+            "station_id": "D_beijing"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 22,
+            "station_id": "D_beijing"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 23,
+            "station_id": "D_beijing"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 24,
+            "station_id": "D_beijing"
+          }
+        ],
+        "charging_route_count": 2,
+        "decoder": "explicit_reference_v1",
+        "fleet_use": [
+          3,
+          2
+        ],
+        "generation_kind": "population_archive",
+        "hgs_epoch": 1,
+        "hgs_seed": 1317843392,
+        "proxy_cost": 1445053,
+        "proxy_rank": 2,
+        "route_local_cost": 1446.711450698401,
+        "route_proxy_mode": "naive_ev",
+        "warm_parent_signature": null,
+        "warm_signatures": [
+          "ade1195dd81baba63b8787a20d78607dd8b7bc740ca948ed25047f42c8239938"
+        ]
+      },
+      "objective": 1446.711450698401,
+      "signature": "9b13a77d458c587a208909b9570c4930d887aae76d99dd72b9f4388f8df8142f",
+      "source": "HGS_ARCHIVE",
+      "violation_count": 0
+    },
+    {
+      "arm": "A_HGS",
+      "duplicate_of_index": null,
+      "feasible": true,
+      "index": 7,
+      "metadata": {
+        "assignment_count": 5,
+        "assignment_dp_rank": 3,
+        "capacity_aware_assignment_dp": true,
+        "charger_slot_use": [
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 0,
+            "station_id": "D_beijing"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 1,
+            "station_id": "D_beijing"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 2,
+            "station_id": "D_beijing"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 3,
+            "station_id": "D_beijing"
+          }
+        ],
+        "charging_route_count": 1,
+        "decoder": "explicit_reference_v1",
+        "fleet_use": [
+          4,
+          1
+        ],
+        "generation_kind": "population_archive",
+        "hgs_epoch": 1,
+        "hgs_seed": 1317843392,
+        "proxy_cost": 1445053,
+        "proxy_rank": 2,
+        "route_local_cost": 1505.7654030896545,
+        "route_proxy_mode": "naive_ev",
+        "warm_parent_signature": null,
+        "warm_signatures": [
+          "ade1195dd81baba63b8787a20d78607dd8b7bc740ca948ed25047f42c8239938"
+        ]
+      },
+      "objective": 1505.7654030896545,
+      "signature": "504b4f3b1712c45fe27fc8e9c701da3f49542a9371a18349e25ac7467d164f97",
+      "source": "HGS_ARCHIVE",
+      "violation_count": 0
+    },
+    {
+      "arm": "A_HGS",
+      "duplicate_of_index": 5,
+      "feasible": true,
+      "index": 8,
+      "metadata": {
+        "assignment_count": 5,
+        "assignment_dp_rank": 1,
+        "capacity_aware_assignment_dp": true,
+        "charger_slot_use": [
+          {
+            "day_offset": 0,
+            "route_count": 2,
+            "slot_index": 0,
+            "station_id": "D_beijing"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 2,
+            "slot_index": 1,
+            "station_id": "D_beijing"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 2,
+            "slot_index": 2,
+            "station_id": "D_beijing"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 2,
+            "slot_index": 3,
+            "station_id": "D_beijing"
+          }
+        ],
+        "charging_route_count": 2,
+        "decoder": "explicit_reference_v1",
+        "fleet_use": [
+          3,
+          2
+        ],
+        "generation_kind": "population_archive",
+        "hgs_epoch": 1,
+        "hgs_seed": 1515491347,
+        "proxy_cost": 1426462,
+        "proxy_rank": 2,
+        "route_local_cost": 1426.643032749301,
+        "route_proxy_mode": "mechanism_ev",
+        "warm_parent_signature": null,
+        "warm_signatures": [
+          "ade1195dd81baba63b8787a20d78607dd8b7bc740ca948ed25047f42c8239938"
+        ]
+      },
+      "objective": 1426.643032749301,
+      "signature": "3308112f89210b23924a9646589a077a731014dfb560bbc86505c0e9ec173009",
+      "source": "HGS_ARCHIVE",
+      "violation_count": 0
+    },
+    {
+      "arm": "A_HGS",
+      "duplicate_of_index": 6,
+      "feasible": true,
+      "index": 9,
+      "metadata": {
+        "assignment_count": 5,
+        "assignment_dp_rank": 2,
+        "capacity_aware_assignment_dp": true,
+        "charger_slot_use": [
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 0,
+            "station_id": "D_beijing"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 1,
+            "station_id": "D_beijing"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 2,
+            "station_id": "D_beijing"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 3,
+            "station_id": "D_beijing"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 21,
+            "station_id": "D_beijing"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 22,
+            "station_id": "D_beijing"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 23,
+            "station_id": "D_beijing"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 24,
+            "station_id": "D_beijing"
+          }
+        ],
+        "charging_route_count": 2,
+        "decoder": "explicit_reference_v1",
+        "fleet_use": [
+          3,
+          2
+        ],
+        "generation_kind": "population_archive",
+        "hgs_epoch": 1,
+        "hgs_seed": 1515491347,
+        "proxy_cost": 1426462,
+        "proxy_rank": 2,
+        "route_local_cost": 1446.711450698401,
+        "route_proxy_mode": "mechanism_ev",
+        "warm_parent_signature": null,
+        "warm_signatures": [
+          "ade1195dd81baba63b8787a20d78607dd8b7bc740ca948ed25047f42c8239938"
+        ]
+      },
+      "objective": 1446.711450698401,
+      "signature": "9b13a77d458c587a208909b9570c4930d887aae76d99dd72b9f4388f8df8142f",
+      "source": "HGS_ARCHIVE",
+      "violation_count": 0
+    },
+    {
+      "arm": "A_HGS",
+      "duplicate_of_index": 7,
+      "feasible": true,
+      "index": 10,
+      "metadata": {
+        "assignment_count": 5,
+        "assignment_dp_rank": 3,
+        "capacity_aware_assignment_dp": true,
+        "charger_slot_use": [
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 0,
+            "station_id": "D_beijing"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 1,
+            "station_id": "D_beijing"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 2,
+            "station_id": "D_beijing"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 3,
+            "station_id": "D_beijing"
+          }
+        ],
+        "charging_route_count": 1,
+        "decoder": "explicit_reference_v1",
+        "fleet_use": [
+          4,
+          1
+        ],
+        "generation_kind": "population_archive",
+        "hgs_epoch": 1,
+        "hgs_seed": 1515491347,
+        "proxy_cost": 1426462,
+        "proxy_rank": 2,
+        "route_local_cost": 1505.7654030896545,
+        "route_proxy_mode": "mechanism_ev",
+        "warm_parent_signature": null,
+        "warm_signatures": [
+          "ade1195dd81baba63b8787a20d78607dd8b7bc740ca948ed25047f42c8239938"
+        ]
+      },
+      "objective": 1505.7654030896545,
+      "signature": "504b4f3b1712c45fe27fc8e9c701da3f49542a9371a18349e25ac7467d164f97",
+      "source": "HGS_ARCHIVE",
+      "violation_count": 0
+    },
+    {
+      "arm": "A_HGS",
+      "duplicate_of_index": null,
+      "feasible": true,
+      "index": 11,
+      "metadata": {
+        "assignment_count": 5,
+        "assignment_dp_rank": 1,
+        "capacity_aware_assignment_dp": true,
+        "charger_slot_use": [],
+        "charging_route_count": 0,
+        "decoder": "explicit_reference_v1",
+        "fleet_use": [
+          5,
+          0
+        ],
+        "generation_kind": "population_archive",
+        "hgs_epoch": 1,
+        "hgs_seed": 943626379,
+        "proxy_cost": 1562209,
+        "proxy_rank": 3,
+        "route_local_cost": 1558.4349398438976,
+        "route_proxy_mode": "cv_only",
+        "warm_parent_signature": null,
+        "warm_signatures": [
+          "ade1195dd81baba63b8787a20d78607dd8b7bc740ca948ed25047f42c8239938"
+        ]
+      },
+      "objective": 1558.4349398438976,
+      "signature": "ee0be98198de0ac594df1db7cdfb80e566bb900917a6648775d046674ba6d7ca",
+      "source": "HGS_ARCHIVE",
+      "violation_count": 0
+    },
+    {
+      "arm": "A_HGS",
+      "duplicate_of_index": null,
+      "feasible": true,
+      "index": 12,
+      "metadata": {
+        "assignment_count": 5,
+        "assignment_dp_rank": 2,
+        "capacity_aware_assignment_dp": true,
+        "charger_slot_use": [
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 0,
+            "station_id": "D_beijing"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 1,
+            "station_id": "D_beijing"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 2,
+            "station_id": "D_beijing"
+          }
+        ],
+        "charging_route_count": 1,
+        "decoder": "explicit_reference_v1",
+        "fleet_use": [
+          4,
+          1
+        ],
+        "generation_kind": "population_archive",
+        "hgs_epoch": 1,
+        "hgs_seed": 943626379,
+        "proxy_cost": 1562209,
+        "proxy_rank": 3,
+        "route_local_cost": 1507.8639721486668,
+        "route_proxy_mode": "cv_only",
+        "warm_parent_signature": null,
+        "warm_signatures": [
+          "ade1195dd81baba63b8787a20d78607dd8b7bc740ca948ed25047f42c8239938"
+        ]
+      },
+      "objective": 1507.8639721486666,
+      "signature": "b67aee30aca43ebfbc68c5651c767a81ec37f6b17884d73e89cda93e8ef244fa",
+      "source": "HGS_ARCHIVE",
+      "violation_count": 0
+    },
+    {
+      "arm": "A_HGS",
+      "duplicate_of_index": null,
+      "feasible": true,
+      "index": 13,
+      "metadata": {
+        "assignment_count": 5,
+        "assignment_dp_rank": 3,
+        "capacity_aware_assignment_dp": true,
+        "charger_slot_use": [
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 20,
+            "station_id": "D_beijing"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 21,
+            "station_id": "D_beijing"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 22,
+            "station_id": "D_beijing"
+          }
+        ],
+        "charging_route_count": 1,
+        "decoder": "explicit_reference_v1",
+        "fleet_use": [
+          4,
+          1
+        ],
+        "generation_kind": "population_archive",
+        "hgs_epoch": 1,
+        "hgs_seed": 943626379,
+        "proxy_cost": 1562209,
+        "proxy_rank": 3,
+        "route_local_cost": 1521.2770404283713,
+        "route_proxy_mode": "cv_only",
+        "warm_parent_signature": null,
+        "warm_signatures": [
+          "ade1195dd81baba63b8787a20d78607dd8b7bc740ca948ed25047f42c8239938"
+        ]
+      },
+      "objective": 1521.2770404283713,
+      "signature": "f148287b656082ba24d9c2d9c91933e8fe2363ee9e6bb7536ea27e57e013a625",
+      "source": "HGS_ARCHIVE",
+      "violation_count": 0
+    },
+    {
+      "arm": "A_HGS",
+      "duplicate_of_index": null,
+      "feasible": true,
+      "index": 14,
+      "metadata": {
+        "assignment_count": 5,
+        "assignment_dp_rank": 1,
+        "capacity_aware_assignment_dp": true,
+        "charger_slot_use": [
+          {
+            "day_offset": 0,
+            "route_count": 2,
+            "slot_index": 0,
+            "station_id": "D_beijing"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 2,
+            "slot_index": 1,
+            "station_id": "D_beijing"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 2,
+            "slot_index": 2,
+            "station_id": "D_beijing"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 2,
+            "slot_index": 3,
+            "station_id": "D_beijing"
+          }
+        ],
+        "charging_route_count": 2,
+        "decoder": "explicit_reference_v1",
+        "fleet_use": [
+          3,
+          2
+        ],
+        "generation_kind": "population_archive",
+        "hgs_epoch": 1,
+        "hgs_seed": 1317843392,
+        "proxy_cost": 1445357,
+        "proxy_rank": 3,
+        "route_local_cost": 1426.978055364359,
+        "route_proxy_mode": "naive_ev",
+        "warm_parent_signature": null,
+        "warm_signatures": [
+          "ade1195dd81baba63b8787a20d78607dd8b7bc740ca948ed25047f42c8239938"
+        ]
+      },
+      "objective": 1426.9780553643593,
+      "signature": "1405da07ecc13e961586cf539176c6cc5d33b2b24f8ba8c214bc5b5d4f4b1fe6",
+      "source": "HGS_ARCHIVE",
+      "violation_count": 0
+    },
+    {
+      "arm": "A_HGS",
+      "duplicate_of_index": null,
+      "feasible": true,
+      "index": 15,
+      "metadata": {
+        "assignment_count": 5,
+        "assignment_dp_rank": 2,
+        "capacity_aware_assignment_dp": true,
+        "charger_slot_use": [
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 0,
+            "station_id": "D_beijing"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 1,
+            "station_id": "D_beijing"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 2,
+            "station_id": "D_beijing"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 3,
+            "station_id": "D_beijing"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 21,
+            "station_id": "D_beijing"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 22,
+            "station_id": "D_beijing"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 23,
+            "station_id": "D_beijing"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 24,
+            "station_id": "D_beijing"
+          }
+        ],
+        "charging_route_count": 2,
+        "decoder": "explicit_reference_v1",
+        "fleet_use": [
+          3,
+          2
+        ],
+        "generation_kind": "population_archive",
+        "hgs_epoch": 1,
+        "hgs_seed": 1317843392,
+        "proxy_cost": 1445357,
+        "proxy_rank": 3,
+        "route_local_cost": 1447.046473313459,
+        "route_proxy_mode": "naive_ev",
+        "warm_parent_signature": null,
+        "warm_signatures": [
+          "ade1195dd81baba63b8787a20d78607dd8b7bc740ca948ed25047f42c8239938"
+        ]
+      },
+      "objective": 1447.0464733134593,
+      "signature": "f3720099f4e88896d511512e3d35a88df1e79cb097763c92f5b377947903b3f0",
+      "source": "HGS_ARCHIVE",
+      "violation_count": 0
+    },
+    {
+      "arm": "A_HGS",
+      "duplicate_of_index": null,
+      "feasible": true,
+      "index": 16,
+      "metadata": {
+        "assignment_count": 5,
+        "assignment_dp_rank": 3,
+        "capacity_aware_assignment_dp": true,
+        "charger_slot_use": [
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 0,
+            "station_id": "D_beijing"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 1,
+            "station_id": "D_beijing"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 2,
+            "station_id": "D_beijing"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 3,
+            "station_id": "D_beijing"
+          }
+        ],
+        "charging_route_count": 1,
+        "decoder": "explicit_reference_v1",
+        "fleet_use": [
+          4,
+          1
+        ],
+        "generation_kind": "population_archive",
+        "hgs_epoch": 1,
+        "hgs_seed": 1317843392,
+        "proxy_cost": 1445357,
+        "proxy_rank": 3,
+        "route_local_cost": 1506.1004257047125,
+        "route_proxy_mode": "naive_ev",
+        "warm_parent_signature": null,
+        "warm_signatures": [
+          "ade1195dd81baba63b8787a20d78607dd8b7bc740ca948ed25047f42c8239938"
+        ]
+      },
+      "objective": 1506.1004257047125,
+      "signature": "754eb4aa67927a24213cfa5500322cd8f41ad2ee6aebf88ff13e877fe386b430",
+      "source": "HGS_ARCHIVE",
+      "violation_count": 0
+    },
+    {
+      "arm": "A_HGS",
+      "duplicate_of_index": 14,
+      "feasible": true,
+      "index": 17,
+      "metadata": {
+        "assignment_count": 5,
+        "assignment_dp_rank": 1,
+        "capacity_aware_assignment_dp": true,
+        "charger_slot_use": [
+          {
+            "day_offset": 0,
+            "route_count": 2,
+            "slot_index": 0,
+            "station_id": "D_beijing"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 2,
+            "slot_index": 1,
+            "station_id": "D_beijing"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 2,
+            "slot_index": 2,
+            "station_id": "D_beijing"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 2,
+            "slot_index": 3,
+            "station_id": "D_beijing"
+          }
+        ],
+        "charging_route_count": 2,
+        "decoder": "explicit_reference_v1",
+        "fleet_use": [
+          3,
+          2
+        ],
+        "generation_kind": "population_archive",
+        "hgs_epoch": 1,
+        "hgs_seed": 1515491347,
+        "proxy_cost": 1426766,
+        "proxy_rank": 3,
+        "route_local_cost": 1426.978055364359,
+        "route_proxy_mode": "mechanism_ev",
+        "warm_parent_signature": null,
+        "warm_signatures": [
+          "ade1195dd81baba63b8787a20d78607dd8b7bc740ca948ed25047f42c8239938"
+        ]
+      },
+      "objective": 1426.9780553643593,
+      "signature": "1405da07ecc13e961586cf539176c6cc5d33b2b24f8ba8c214bc5b5d4f4b1fe6",
+      "source": "HGS_ARCHIVE",
+      "violation_count": 0
+    },
+    {
+      "arm": "A_HGS",
+      "duplicate_of_index": 15,
+      "feasible": true,
+      "index": 18,
+      "metadata": {
+        "assignment_count": 5,
+        "assignment_dp_rank": 2,
+        "capacity_aware_assignment_dp": true,
+        "charger_slot_use": [
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 0,
+            "station_id": "D_beijing"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 1,
+            "station_id": "D_beijing"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 2,
+            "station_id": "D_beijing"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 3,
+            "station_id": "D_beijing"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 21,
+            "station_id": "D_beijing"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 22,
+            "station_id": "D_beijing"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 23,
+            "station_id": "D_beijing"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 24,
+            "station_id": "D_beijing"
+          }
+        ],
+        "charging_route_count": 2,
+        "decoder": "explicit_reference_v1",
+        "fleet_use": [
+          3,
+          2
+        ],
+        "generation_kind": "population_archive",
+        "hgs_epoch": 1,
+        "hgs_seed": 1515491347,
+        "proxy_cost": 1426766,
+        "proxy_rank": 3,
+        "route_local_cost": 1447.046473313459,
+        "route_proxy_mode": "mechanism_ev",
+        "warm_parent_signature": null,
+        "warm_signatures": [
+          "ade1195dd81baba63b8787a20d78607dd8b7bc740ca948ed25047f42c8239938"
+        ]
+      },
+      "objective": 1447.0464733134593,
+      "signature": "f3720099f4e88896d511512e3d35a88df1e79cb097763c92f5b377947903b3f0",
+      "source": "HGS_ARCHIVE",
+      "violation_count": 0
+    },
+    {
+      "arm": "A_HGS",
+      "duplicate_of_index": 16,
+      "feasible": true,
+      "index": 19,
+      "metadata": {
+        "assignment_count": 5,
+        "assignment_dp_rank": 3,
+        "capacity_aware_assignment_dp": true,
+        "charger_slot_use": [
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 0,
+            "station_id": "D_beijing"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 1,
+            "station_id": "D_beijing"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 2,
+            "station_id": "D_beijing"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 3,
+            "station_id": "D_beijing"
+          }
+        ],
+        "charging_route_count": 1,
+        "decoder": "explicit_reference_v1",
+        "fleet_use": [
+          4,
+          1
+        ],
+        "generation_kind": "population_archive",
+        "hgs_epoch": 1,
+        "hgs_seed": 1515491347,
+        "proxy_cost": 1426766,
+        "proxy_rank": 3,
+        "route_local_cost": 1506.1004257047125,
+        "route_proxy_mode": "mechanism_ev",
+        "warm_parent_signature": null,
+        "warm_signatures": [
+          "ade1195dd81baba63b8787a20d78607dd8b7bc740ca948ed25047f42c8239938"
+        ]
+      },
+      "objective": 1506.1004257047125,
+      "signature": "754eb4aa67927a24213cfa5500322cd8f41ad2ee6aebf88ff13e877fe386b430",
+      "source": "HGS_ARCHIVE",
+      "violation_count": 0
+    },
+    {
+      "arm": "A_HGS",
+      "duplicate_of_index": null,
+      "feasible": true,
+      "index": 20,
+      "metadata": {
+        "assignment_count": 5,
+        "assignment_dp_rank": 1,
+        "capacity_aware_assignment_dp": true,
+        "charger_slot_use": [],
+        "charging_route_count": 0,
+        "decoder": "explicit_reference_v1",
+        "fleet_use": [
+          5,
+          0
+        ],
+        "generation_kind": "population_archive",
+        "hgs_epoch": 1,
+        "hgs_seed": 943626379,
+        "proxy_cost": 1562245,
+        "proxy_rank": 4,
+        "route_local_cost": 1558.9519950922693,
+        "route_proxy_mode": "cv_only",
+        "warm_parent_signature": null,
+        "warm_signatures": [
+          "ade1195dd81baba63b8787a20d78607dd8b7bc740ca948ed25047f42c8239938"
+        ]
+      },
+      "objective": 1558.9519950922693,
+      "signature": "9f4aa25d961f670d4452d0ea236d8334486d098f46bc949c82a50abfb8a1d5d1",
+      "source": "HGS_ARCHIVE",
+      "violation_count": 0
+    },
+    {
+      "arm": "A_HGS",
+      "duplicate_of_index": null,
+      "feasible": true,
+      "index": 21,
+      "metadata": {
+        "assignment_count": 5,
+        "assignment_dp_rank": 2,
+        "capacity_aware_assignment_dp": true,
+        "charger_slot_use": [
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 0,
+            "station_id": "D_beijing"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 1,
+            "station_id": "D_beijing"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 2,
+            "station_id": "D_beijing"
+          }
+        ],
+        "charging_route_count": 1,
+        "decoder": "explicit_reference_v1",
+        "fleet_use": [
+          4,
+          1
+        ],
+        "generation_kind": "population_archive",
+        "hgs_epoch": 1,
+        "hgs_seed": 943626379,
+        "proxy_cost": 1562245,
+        "proxy_rank": 4,
+        "route_local_cost": 1503.208864642684,
+        "route_proxy_mode": "cv_only",
+        "warm_parent_signature": null,
+        "warm_signatures": [
+          "ade1195dd81baba63b8787a20d78607dd8b7bc740ca948ed25047f42c8239938"
+        ]
+      },
+      "objective": 1503.208864642684,
+      "signature": "bc11df25e8ad2601f62c8a6b6bb5f2b0762d177925ffa06a591166c55acba0c8",
+      "source": "HGS_ARCHIVE",
+      "violation_count": 0
+    },
+    {
+      "arm": "A_HGS",
+      "duplicate_of_index": null,
+      "feasible": true,
+      "index": 22,
+      "metadata": {
+        "assignment_count": 5,
+        "assignment_dp_rank": 3,
+        "capacity_aware_assignment_dp": true,
+        "charger_slot_use": [
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 18,
+            "station_id": "D_beijing"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 19,
+            "station_id": "D_beijing"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 20,
+            "station_id": "D_beijing"
+          }
+        ],
+        "charging_route_count": 1,
+        "decoder": "explicit_reference_v1",
+        "fleet_use": [
+          4,
+          1
+        ],
+        "generation_kind": "population_archive",
+        "hgs_epoch": 1,
+        "hgs_seed": 943626379,
+        "proxy_cost": 1562245,
+        "proxy_rank": 4,
+        "route_local_cost": 1510.9261406117826,
+        "route_proxy_mode": "cv_only",
+        "warm_parent_signature": null,
+        "warm_signatures": [
+          "ade1195dd81baba63b8787a20d78607dd8b7bc740ca948ed25047f42c8239938"
+        ]
+      },
+      "objective": 1510.9261406117826,
+      "signature": "f05ec97ad9ffd12f3d876c233a99b1d203b667cfe31e1ab57a8ef10a280dd57c",
+      "source": "HGS_ARCHIVE",
+      "violation_count": 0
+    },
+    {
+      "arm": "A_HGS",
+      "duplicate_of_index": null,
+      "feasible": true,
+      "index": 23,
+      "metadata": {
+        "assignment_count": 5,
+        "assignment_dp_rank": 1,
+        "capacity_aware_assignment_dp": true,
+        "charger_slot_use": [
+          {
+            "day_offset": 0,
+            "route_count": 2,
+            "slot_index": 0,
+            "station_id": "D_beijing"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 2,
+            "slot_index": 1,
+            "station_id": "D_beijing"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 2,
+            "slot_index": 2,
+            "station_id": "D_beijing"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 2,
+            "slot_index": 3,
+            "station_id": "D_beijing"
+          }
+        ],
+        "charging_route_count": 2,
+        "decoder": "explicit_reference_v1",
+        "fleet_use": [
+          3,
+          2
+        ],
+        "generation_kind": "population_archive",
+        "hgs_epoch": 1,
+        "hgs_seed": 1317843392,
+        "proxy_cost": 1445883,
+        "proxy_rank": 4,
+        "route_local_cost": 1427.7324331357797,
+        "route_proxy_mode": "naive_ev",
+        "warm_parent_signature": null,
+        "warm_signatures": [
+          "ade1195dd81baba63b8787a20d78607dd8b7bc740ca948ed25047f42c8239938"
+        ]
+      },
+      "objective": 1427.7324331357797,
+      "signature": "c050cc285f9051e630aa7bb924a930cc4d8c2490a87b7a9297b1fb990b13a521",
+      "source": "HGS_ARCHIVE",
+      "violation_count": 0
+    },
+    {
+      "arm": "A_HGS",
+      "duplicate_of_index": null,
+      "feasible": true,
+      "index": 24,
+      "metadata": {
+        "assignment_count": 5,
+        "assignment_dp_rank": 2,
+        "capacity_aware_assignment_dp": true,
+        "charger_slot_use": [
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 0,
+            "station_id": "D_beijing"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 1,
+            "station_id": "D_beijing"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 2,
+            "station_id": "D_beijing"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 3,
+            "station_id": "D_beijing"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 21,
+            "station_id": "D_beijing"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 22,
+            "station_id": "D_beijing"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 23,
+            "station_id": "D_beijing"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 24,
+            "station_id": "D_beijing"
+          }
+        ],
+        "charging_route_count": 2,
+        "decoder": "explicit_reference_v1",
+        "fleet_use": [
+          3,
+          2
+        ],
+        "generation_kind": "population_archive",
+        "hgs_epoch": 1,
+        "hgs_seed": 1317843392,
+        "proxy_cost": 1445883,
+        "proxy_rank": 4,
+        "route_local_cost": 1447.8008510848797,
+        "route_proxy_mode": "naive_ev",
+        "warm_parent_signature": null,
+        "warm_signatures": [
+          "ade1195dd81baba63b8787a20d78607dd8b7bc740ca948ed25047f42c8239938"
+        ]
+      },
+      "objective": 1447.8008510848797,
+      "signature": "22a824a4396c86ea2e69e83512d488410702da57ad3be2222a513f40d497a2da",
+      "source": "HGS_ARCHIVE",
+      "violation_count": 0
+    },
+    {
+      "arm": "A_HGS",
+      "duplicate_of_index": null,
+      "feasible": true,
+      "index": 25,
+      "metadata": {
+        "assignment_count": 5,
+        "assignment_dp_rank": 3,
+        "capacity_aware_assignment_dp": true,
+        "charger_slot_use": [
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 0,
+            "station_id": "D_beijing"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 1,
+            "station_id": "D_beijing"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 2,
+            "station_id": "D_beijing"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 3,
+            "station_id": "D_beijing"
+          }
+        ],
+        "charging_route_count": 1,
+        "decoder": "explicit_reference_v1",
+        "fleet_use": [
+          4,
+          1
+        ],
+        "generation_kind": "population_archive",
+        "hgs_epoch": 1,
+        "hgs_seed": 1317843392,
+        "proxy_cost": 1445883,
+        "proxy_rank": 4,
+        "route_local_cost": 1506.8548034761332,
+        "route_proxy_mode": "naive_ev",
+        "warm_parent_signature": null,
+        "warm_signatures": [
+          "ade1195dd81baba63b8787a20d78607dd8b7bc740ca948ed25047f42c8239938"
+        ]
+      },
+      "objective": 1506.8548034761332,
+      "signature": "949556e6e8b13e1606627d15ae1f00f2da320fd468e1073c9733268e451d0b46",
+      "source": "HGS_ARCHIVE",
+      "violation_count": 0
+    },
+    {
+      "arm": "A_HGS",
+      "duplicate_of_index": 23,
+      "feasible": true,
+      "index": 26,
+      "metadata": {
+        "assignment_count": 5,
+        "assignment_dp_rank": 1,
+        "capacity_aware_assignment_dp": true,
+        "charger_slot_use": [
+          {
+            "day_offset": 0,
+            "route_count": 2,
+            "slot_index": 0,
+            "station_id": "D_beijing"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 2,
+            "slot_index": 1,
+            "station_id": "D_beijing"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 2,
+            "slot_index": 2,
+            "station_id": "D_beijing"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 2,
+            "slot_index": 3,
+            "station_id": "D_beijing"
+          }
+        ],
+        "charging_route_count": 2,
+        "decoder": "explicit_reference_v1",
+        "fleet_use": [
+          3,
+          2
+        ],
+        "generation_kind": "population_archive",
+        "hgs_epoch": 1,
+        "hgs_seed": 1515491347,
+        "proxy_cost": 1427292,
+        "proxy_rank": 4,
+        "route_local_cost": 1427.7324331357797,
+        "route_proxy_mode": "mechanism_ev",
+        "warm_parent_signature": null,
+        "warm_signatures": [
+          "ade1195dd81baba63b8787a20d78607dd8b7bc740ca948ed25047f42c8239938"
+        ]
+      },
+      "objective": 1427.7324331357797,
+      "signature": "c050cc285f9051e630aa7bb924a930cc4d8c2490a87b7a9297b1fb990b13a521",
+      "source": "HGS_ARCHIVE",
+      "violation_count": 0
+    },
+    {
+      "arm": "A_HGS",
+      "duplicate_of_index": 24,
+      "feasible": true,
+      "index": 27,
+      "metadata": {
+        "assignment_count": 5,
+        "assignment_dp_rank": 2,
+        "capacity_aware_assignment_dp": true,
+        "charger_slot_use": [
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 0,
+            "station_id": "D_beijing"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 1,
+            "station_id": "D_beijing"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 2,
+            "station_id": "D_beijing"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 3,
+            "station_id": "D_beijing"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 21,
+            "station_id": "D_beijing"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 22,
+            "station_id": "D_beijing"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 23,
+            "station_id": "D_beijing"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 24,
+            "station_id": "D_beijing"
+          }
+        ],
+        "charging_route_count": 2,
+        "decoder": "explicit_reference_v1",
+        "fleet_use": [
+          3,
+          2
+        ],
+        "generation_kind": "population_archive",
+        "hgs_epoch": 1,
+        "hgs_seed": 1515491347,
+        "proxy_cost": 1427292,
+        "proxy_rank": 4,
+        "route_local_cost": 1447.8008510848797,
+        "route_proxy_mode": "mechanism_ev",
+        "warm_parent_signature": null,
+        "warm_signatures": [
+          "ade1195dd81baba63b8787a20d78607dd8b7bc740ca948ed25047f42c8239938"
+        ]
+      },
+      "objective": 1447.8008510848797,
+      "signature": "22a824a4396c86ea2e69e83512d488410702da57ad3be2222a513f40d497a2da",
+      "source": "HGS_ARCHIVE",
+      "violation_count": 0
+    },
+    {
+      "arm": "A_HGS",
+      "duplicate_of_index": 25,
+      "feasible": true,
+      "index": 28,
+      "metadata": {
+        "assignment_count": 5,
+        "assignment_dp_rank": 3,
+        "capacity_aware_assignment_dp": true,
+        "charger_slot_use": [
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 0,
+            "station_id": "D_beijing"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 1,
+            "station_id": "D_beijing"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 2,
+            "station_id": "D_beijing"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 3,
+            "station_id": "D_beijing"
+          }
+        ],
+        "charging_route_count": 1,
+        "decoder": "explicit_reference_v1",
+        "fleet_use": [
+          4,
+          1
+        ],
+        "generation_kind": "population_archive",
+        "hgs_epoch": 1,
+        "hgs_seed": 1515491347,
+        "proxy_cost": 1427292,
+        "proxy_rank": 4,
+        "route_local_cost": 1506.8548034761332,
+        "route_proxy_mode": "mechanism_ev",
+        "warm_parent_signature": null,
+        "warm_signatures": [
+          "ade1195dd81baba63b8787a20d78607dd8b7bc740ca948ed25047f42c8239938"
+        ]
+      },
+      "objective": 1506.8548034761332,
+      "signature": "949556e6e8b13e1606627d15ae1f00f2da320fd468e1073c9733268e451d0b46",
+      "source": "HGS_ARCHIVE",
+      "violation_count": 0
+    },
+    {
+      "arm": "A_HGS",
+      "duplicate_of_index": 2,
+      "feasible": true,
+      "index": 29,
+      "metadata": {
+        "assignment_count": 5,
+        "assignment_dp_rank": 1,
+        "capacity_aware_assignment_dp": true,
+        "charger_slot_use": [],
+        "charging_route_count": 0,
+        "decoder": "explicit_reference_v1",
+        "fleet_use": [
+          5,
+          0
+        ],
+        "generation_kind": "population_archive",
+        "hgs_epoch": 2,
+        "hgs_seed": 1211672472,
+        "proxy_cost": 1561454,
+        "proxy_rank": 2,
+        "route_local_cost": 1557.1819437454426,
+        "route_proxy_mode": "cv_only",
+        "warm_parent_signature": null,
+        "warm_signatures": [
+          "3308112f89210b23924a9646589a077a731014dfb560bbc86505c0e9ec173009"
+        ]
+      },
+      "objective": 1557.1819437454428,
+      "signature": "b3476594cc31e7cc481086af1698e18120067717703475606efe3b665ba39a87",
+      "source": "HGS_ARCHIVE",
+      "violation_count": 0
+    },
+    {
+      "arm": "A_HGS",
+      "duplicate_of_index": 3,
+      "feasible": true,
+      "index": 30,
+      "metadata": {
+        "assignment_count": 5,
+        "assignment_dp_rank": 2,
+        "capacity_aware_assignment_dp": true,
+        "charger_slot_use": [
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 0,
+            "station_id": "D_beijing"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 1,
+            "station_id": "D_beijing"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 2,
+            "station_id": "D_beijing"
+          }
+        ],
+        "charging_route_count": 1,
+        "decoder": "explicit_reference_v1",
+        "fleet_use": [
+          4,
+          1
+        ],
+        "generation_kind": "population_archive",
+        "hgs_epoch": 2,
+        "hgs_seed": 1211672472,
+        "proxy_cost": 1561454,
+        "proxy_rank": 2,
+        "route_local_cost": 1500.6490333979166,
+        "route_proxy_mode": "cv_only",
+        "warm_parent_signature": null,
+        "warm_signatures": [
+          "3308112f89210b23924a9646589a077a731014dfb560bbc86505c0e9ec173009"
+        ]
+      },
+      "objective": 1500.6490333979164,
+      "signature": "e70b6d32a1cd294d95c275e65ca7bdca320633b8362a9fa8e5e65ede817d6a83",
+      "source": "HGS_ARCHIVE",
+      "violation_count": 0
+    },
+    {
+      "arm": "A_HGS",
+      "duplicate_of_index": 4,
+      "feasible": true,
+      "index": 31,
+      "metadata": {
+        "assignment_count": 5,
+        "assignment_dp_rank": 3,
+        "capacity_aware_assignment_dp": true,
+        "charger_slot_use": [
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 18,
+            "station_id": "D_beijing"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 19,
+            "station_id": "D_beijing"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 20,
+            "station_id": "D_beijing"
+          }
+        ],
+        "charging_route_count": 1,
+        "decoder": "explicit_reference_v1",
+        "fleet_use": [
+          4,
+          1
+        ],
+        "generation_kind": "population_archive",
+        "hgs_epoch": 2,
+        "hgs_seed": 1211672472,
+        "proxy_cost": 1561454,
+        "proxy_rank": 2,
+        "route_local_cost": 1508.6543948002504,
+        "route_proxy_mode": "cv_only",
+        "warm_parent_signature": null,
+        "warm_signatures": [
+          "3308112f89210b23924a9646589a077a731014dfb560bbc86505c0e9ec173009"
+        ]
+      },
+      "objective": 1508.6543948002504,
+      "signature": "70081a68e9f25fc10ee64f30aa990b563d17bb933ccdece68f89484cec2fdcd1",
+      "source": "HGS_ARCHIVE",
+      "violation_count": 0
+    },
+    {
+      "arm": "A_HGS",
+      "duplicate_of_index": 14,
+      "feasible": true,
+      "index": 32,
+      "metadata": {
+        "assignment_count": 5,
+        "assignment_dp_rank": 1,
+        "capacity_aware_assignment_dp": true,
+        "charger_slot_use": [
+          {
+            "day_offset": 0,
+            "route_count": 2,
+            "slot_index": 0,
+            "station_id": "D_beijing"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 2,
+            "slot_index": 1,
+            "station_id": "D_beijing"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 2,
+            "slot_index": 2,
+            "station_id": "D_beijing"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 2,
+            "slot_index": 3,
+            "station_id": "D_beijing"
+          }
+        ],
+        "charging_route_count": 2,
+        "decoder": "explicit_reference_v1",
+        "fleet_use": [
+          3,
+          2
+        ],
+        "generation_kind": "population_archive",
+        "hgs_epoch": 2,
+        "hgs_seed": 1034489929,
+        "proxy_cost": 1445357,
+        "proxy_rank": 2,
+        "route_local_cost": 1426.978055364359,
+        "route_proxy_mode": "naive_ev",
+        "warm_parent_signature": null,
+        "warm_signatures": [
+          "3308112f89210b23924a9646589a077a731014dfb560bbc86505c0e9ec173009"
+        ]
+      },
+      "objective": 1426.9780553643593,
+      "signature": "1405da07ecc13e961586cf539176c6cc5d33b2b24f8ba8c214bc5b5d4f4b1fe6",
+      "source": "HGS_ARCHIVE",
+      "violation_count": 0
+    },
+    {
+      "arm": "A_HGS",
+      "duplicate_of_index": 15,
+      "feasible": true,
+      "index": 33,
+      "metadata": {
+        "assignment_count": 5,
+        "assignment_dp_rank": 2,
+        "capacity_aware_assignment_dp": true,
+        "charger_slot_use": [
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 0,
+            "station_id": "D_beijing"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 1,
+            "station_id": "D_beijing"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 2,
+            "station_id": "D_beijing"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 3,
+            "station_id": "D_beijing"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 21,
+            "station_id": "D_beijing"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 22,
+            "station_id": "D_beijing"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 23,
+            "station_id": "D_beijing"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 24,
+            "station_id": "D_beijing"
+          }
+        ],
+        "charging_route_count": 2,
+        "decoder": "explicit_reference_v1",
+        "fleet_use": [
+          3,
+          2
+        ],
+        "generation_kind": "population_archive",
+        "hgs_epoch": 2,
+        "hgs_seed": 1034489929,
+        "proxy_cost": 1445357,
+        "proxy_rank": 2,
+        "route_local_cost": 1447.046473313459,
+        "route_proxy_mode": "naive_ev",
+        "warm_parent_signature": null,
+        "warm_signatures": [
+          "3308112f89210b23924a9646589a077a731014dfb560bbc86505c0e9ec173009"
+        ]
+      },
+      "objective": 1447.0464733134593,
+      "signature": "f3720099f4e88896d511512e3d35a88df1e79cb097763c92f5b377947903b3f0",
+      "source": "HGS_ARCHIVE",
+      "violation_count": 0
+    },
+    {
+      "arm": "A_HGS",
+      "duplicate_of_index": 16,
+      "feasible": true,
+      "index": 34,
+      "metadata": {
+        "assignment_count": 5,
+        "assignment_dp_rank": 3,
+        "capacity_aware_assignment_dp": true,
+        "charger_slot_use": [
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 0,
+            "station_id": "D_beijing"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 1,
+            "station_id": "D_beijing"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 2,
+            "station_id": "D_beijing"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 3,
+            "station_id": "D_beijing"
+          }
+        ],
+        "charging_route_count": 1,
+        "decoder": "explicit_reference_v1",
+        "fleet_use": [
+          4,
+          1
+        ],
+        "generation_kind": "population_archive",
+        "hgs_epoch": 2,
+        "hgs_seed": 1034489929,
+        "proxy_cost": 1445357,
+        "proxy_rank": 2,
+        "route_local_cost": 1506.1004257047125,
+        "route_proxy_mode": "naive_ev",
+        "warm_parent_signature": null,
+        "warm_signatures": [
+          "3308112f89210b23924a9646589a077a731014dfb560bbc86505c0e9ec173009"
+        ]
+      },
+      "objective": 1506.1004257047125,
+      "signature": "754eb4aa67927a24213cfa5500322cd8f41ad2ee6aebf88ff13e877fe386b430",
+      "source": "HGS_ARCHIVE",
+      "violation_count": 0
+    },
+    {
+      "arm": "A_HGS",
+      "duplicate_of_index": 14,
+      "feasible": true,
+      "index": 35,
+      "metadata": {
+        "assignment_count": 5,
+        "assignment_dp_rank": 1,
+        "capacity_aware_assignment_dp": true,
+        "charger_slot_use": [
+          {
+            "day_offset": 0,
+            "route_count": 2,
+            "slot_index": 0,
+            "station_id": "D_beijing"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 2,
+            "slot_index": 1,
+            "station_id": "D_beijing"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 2,
+            "slot_index": 2,
+            "station_id": "D_beijing"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 2,
+            "slot_index": 3,
+            "station_id": "D_beijing"
+          }
+        ],
+        "charging_route_count": 2,
+        "decoder": "explicit_reference_v1",
+        "fleet_use": [
+          3,
+          2
+        ],
+        "generation_kind": "population_archive",
+        "hgs_epoch": 2,
+        "hgs_seed": 1666371116,
+        "proxy_cost": 1426766,
+        "proxy_rank": 2,
+        "route_local_cost": 1426.978055364359,
+        "route_proxy_mode": "mechanism_ev",
+        "warm_parent_signature": null,
+        "warm_signatures": [
+          "3308112f89210b23924a9646589a077a731014dfb560bbc86505c0e9ec173009"
+        ]
+      },
+      "objective": 1426.9780553643593,
+      "signature": "1405da07ecc13e961586cf539176c6cc5d33b2b24f8ba8c214bc5b5d4f4b1fe6",
+      "source": "HGS_ARCHIVE",
+      "violation_count": 0
+    },
+    {
+      "arm": "A_HGS",
+      "duplicate_of_index": 15,
+      "feasible": true,
+      "index": 36,
+      "metadata": {
+        "assignment_count": 5,
+        "assignment_dp_rank": 2,
+        "capacity_aware_assignment_dp": true,
+        "charger_slot_use": [
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 0,
+            "station_id": "D_beijing"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 1,
+            "station_id": "D_beijing"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 2,
+            "station_id": "D_beijing"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 3,
+            "station_id": "D_beijing"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 21,
+            "station_id": "D_beijing"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 22,
+            "station_id": "D_beijing"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 23,
+            "station_id": "D_beijing"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 24,
+            "station_id": "D_beijing"
+          }
+        ],
+        "charging_route_count": 2,
+        "decoder": "explicit_reference_v1",
+        "fleet_use": [
+          3,
+          2
+        ],
+        "generation_kind": "population_archive",
+        "hgs_epoch": 2,
+        "hgs_seed": 1666371116,
+        "proxy_cost": 1426766,
+        "proxy_rank": 2,
+        "route_local_cost": 1447.046473313459,
+        "route_proxy_mode": "mechanism_ev",
+        "warm_parent_signature": null,
+        "warm_signatures": [
+          "3308112f89210b23924a9646589a077a731014dfb560bbc86505c0e9ec173009"
+        ]
+      },
+      "objective": 1447.0464733134593,
+      "signature": "f3720099f4e88896d511512e3d35a88df1e79cb097763c92f5b377947903b3f0",
+      "source": "HGS_ARCHIVE",
+      "violation_count": 0
+    },
+    {
+      "arm": "A_HGS",
+      "duplicate_of_index": 16,
+      "feasible": true,
+      "index": 37,
+      "metadata": {
+        "assignment_count": 5,
+        "assignment_dp_rank": 3,
+        "capacity_aware_assignment_dp": true,
+        "charger_slot_use": [
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 0,
+            "station_id": "D_beijing"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 1,
+            "station_id": "D_beijing"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 2,
+            "station_id": "D_beijing"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 3,
+            "station_id": "D_beijing"
+          }
+        ],
+        "charging_route_count": 1,
+        "decoder": "explicit_reference_v1",
+        "fleet_use": [
+          4,
+          1
+        ],
+        "generation_kind": "population_archive",
+        "hgs_epoch": 2,
+        "hgs_seed": 1666371116,
+        "proxy_cost": 1426766,
+        "proxy_rank": 2,
+        "route_local_cost": 1506.1004257047125,
+        "route_proxy_mode": "mechanism_ev",
+        "warm_parent_signature": null,
+        "warm_signatures": [
+          "3308112f89210b23924a9646589a077a731014dfb560bbc86505c0e9ec173009"
+        ]
+      },
+      "objective": 1506.1004257047125,
+      "signature": "754eb4aa67927a24213cfa5500322cd8f41ad2ee6aebf88ff13e877fe386b430",
+      "source": "HGS_ARCHIVE",
+      "violation_count": 0
+    },
+    {
+      "arm": "A_HGS",
+      "duplicate_of_index": 11,
+      "feasible": true,
+      "index": 38,
+      "metadata": {
+        "assignment_count": 5,
+        "assignment_dp_rank": 1,
+        "capacity_aware_assignment_dp": true,
+        "charger_slot_use": [],
+        "charging_route_count": 0,
+        "decoder": "explicit_reference_v1",
+        "fleet_use": [
+          5,
+          0
+        ],
+        "generation_kind": "population_archive",
+        "hgs_epoch": 2,
+        "hgs_seed": 1211672472,
+        "proxy_cost": 1562209,
+        "proxy_rank": 3,
+        "route_local_cost": 1558.4349398438976,
+        "route_proxy_mode": "cv_only",
+        "warm_parent_signature": null,
+        "warm_signatures": [
+          "3308112f89210b23924a9646589a077a731014dfb560bbc86505c0e9ec173009"
+        ]
+      },
+      "objective": 1558.4349398438976,
+      "signature": "ee0be98198de0ac594df1db7cdfb80e566bb900917a6648775d046674ba6d7ca",
+      "source": "HGS_ARCHIVE",
+      "violation_count": 0
+    },
+    {
+      "arm": "A_HGS",
+      "duplicate_of_index": 12,
+      "feasible": true,
+      "index": 39,
+      "metadata": {
+        "assignment_count": 5,
+        "assignment_dp_rank": 2,
+        "capacity_aware_assignment_dp": true,
+        "charger_slot_use": [
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 0,
+            "station_id": "D_beijing"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 1,
+            "station_id": "D_beijing"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 2,
+            "station_id": "D_beijing"
+          }
+        ],
+        "charging_route_count": 1,
+        "decoder": "explicit_reference_v1",
+        "fleet_use": [
+          4,
+          1
+        ],
+        "generation_kind": "population_archive",
+        "hgs_epoch": 2,
+        "hgs_seed": 1211672472,
+        "proxy_cost": 1562209,
+        "proxy_rank": 3,
+        "route_local_cost": 1507.8639721486668,
+        "route_proxy_mode": "cv_only",
+        "warm_parent_signature": null,
+        "warm_signatures": [
+          "3308112f89210b23924a9646589a077a731014dfb560bbc86505c0e9ec173009"
+        ]
+      },
+      "objective": 1507.8639721486666,
+      "signature": "b67aee30aca43ebfbc68c5651c767a81ec37f6b17884d73e89cda93e8ef244fa",
+      "source": "HGS_ARCHIVE",
+      "violation_count": 0
+    },
+    {
+      "arm": "A_HGS",
+      "duplicate_of_index": 13,
+      "feasible": true,
+      "index": 40,
+      "metadata": {
+        "assignment_count": 5,
+        "assignment_dp_rank": 3,
+        "capacity_aware_assignment_dp": true,
+        "charger_slot_use": [
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 20,
+            "station_id": "D_beijing"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 21,
+            "station_id": "D_beijing"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 22,
+            "station_id": "D_beijing"
+          }
+        ],
+        "charging_route_count": 1,
+        "decoder": "explicit_reference_v1",
+        "fleet_use": [
+          4,
+          1
+        ],
+        "generation_kind": "population_archive",
+        "hgs_epoch": 2,
+        "hgs_seed": 1211672472,
+        "proxy_cost": 1562209,
+        "proxy_rank": 3,
+        "route_local_cost": 1521.2770404283713,
+        "route_proxy_mode": "cv_only",
+        "warm_parent_signature": null,
+        "warm_signatures": [
+          "3308112f89210b23924a9646589a077a731014dfb560bbc86505c0e9ec173009"
+        ]
+      },
+      "objective": 1521.2770404283713,
+      "signature": "f148287b656082ba24d9c2d9c91933e8fe2363ee9e6bb7536ea27e57e013a625",
+      "source": "HGS_ARCHIVE",
+      "violation_count": 0
+    },
+    {
+      "arm": "A_HGS",
+      "duplicate_of_index": 23,
+      "feasible": true,
+      "index": 41,
+      "metadata": {
+        "assignment_count": 5,
+        "assignment_dp_rank": 1,
+        "capacity_aware_assignment_dp": true,
+        "charger_slot_use": [
+          {
+            "day_offset": 0,
+            "route_count": 2,
+            "slot_index": 0,
+            "station_id": "D_beijing"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 2,
+            "slot_index": 1,
+            "station_id": "D_beijing"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 2,
+            "slot_index": 2,
+            "station_id": "D_beijing"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 2,
+            "slot_index": 3,
+            "station_id": "D_beijing"
+          }
+        ],
+        "charging_route_count": 2,
+        "decoder": "explicit_reference_v1",
+        "fleet_use": [
+          3,
+          2
+        ],
+        "generation_kind": "population_archive",
+        "hgs_epoch": 2,
+        "hgs_seed": 1034489929,
+        "proxy_cost": 1445883,
+        "proxy_rank": 3,
+        "route_local_cost": 1427.7324331357797,
+        "route_proxy_mode": "naive_ev",
+        "warm_parent_signature": null,
+        "warm_signatures": [
+          "3308112f89210b23924a9646589a077a731014dfb560bbc86505c0e9ec173009"
+        ]
+      },
+      "objective": 1427.7324331357797,
+      "signature": "c050cc285f9051e630aa7bb924a930cc4d8c2490a87b7a9297b1fb990b13a521",
+      "source": "HGS_ARCHIVE",
+      "violation_count": 0
+    },
+    {
+      "arm": "A_HGS",
+      "duplicate_of_index": 24,
+      "feasible": true,
+      "index": 42,
+      "metadata": {
+        "assignment_count": 5,
+        "assignment_dp_rank": 2,
+        "capacity_aware_assignment_dp": true,
+        "charger_slot_use": [
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 0,
+            "station_id": "D_beijing"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 1,
+            "station_id": "D_beijing"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 2,
+            "station_id": "D_beijing"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 3,
+            "station_id": "D_beijing"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 21,
+            "station_id": "D_beijing"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 22,
+            "station_id": "D_beijing"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 23,
+            "station_id": "D_beijing"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 24,
+            "station_id": "D_beijing"
+          }
+        ],
+        "charging_route_count": 2,
+        "decoder": "explicit_reference_v1",
+        "fleet_use": [
+          3,
+          2
+        ],
+        "generation_kind": "population_archive",
+        "hgs_epoch": 2,
+        "hgs_seed": 1034489929,
+        "proxy_cost": 1445883,
+        "proxy_rank": 3,
+        "route_local_cost": 1447.8008510848797,
+        "route_proxy_mode": "naive_ev",
+        "warm_parent_signature": null,
+        "warm_signatures": [
+          "3308112f89210b23924a9646589a077a731014dfb560bbc86505c0e9ec173009"
+        ]
+      },
+      "objective": 1447.8008510848797,
+      "signature": "22a824a4396c86ea2e69e83512d488410702da57ad3be2222a513f40d497a2da",
+      "source": "HGS_ARCHIVE",
+      "violation_count": 0
+    },
+    {
+      "arm": "A_HGS",
+      "duplicate_of_index": 25,
+      "feasible": true,
+      "index": 43,
+      "metadata": {
+        "assignment_count": 5,
+        "assignment_dp_rank": 3,
+        "capacity_aware_assignment_dp": true,
+        "charger_slot_use": [
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 0,
+            "station_id": "D_beijing"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 1,
+            "station_id": "D_beijing"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 2,
+            "station_id": "D_beijing"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 3,
+            "station_id": "D_beijing"
+          }
+        ],
+        "charging_route_count": 1,
+        "decoder": "explicit_reference_v1",
+        "fleet_use": [
+          4,
+          1
+        ],
+        "generation_kind": "population_archive",
+        "hgs_epoch": 2,
+        "hgs_seed": 1034489929,
+        "proxy_cost": 1445883,
+        "proxy_rank": 3,
+        "route_local_cost": 1506.8548034761332,
+        "route_proxy_mode": "naive_ev",
+        "warm_parent_signature": null,
+        "warm_signatures": [
+          "3308112f89210b23924a9646589a077a731014dfb560bbc86505c0e9ec173009"
+        ]
+      },
+      "objective": 1506.8548034761332,
+      "signature": "949556e6e8b13e1606627d15ae1f00f2da320fd468e1073c9733268e451d0b46",
+      "source": "HGS_ARCHIVE",
+      "violation_count": 0
+    },
+    {
+      "arm": "A_HGS",
+      "duplicate_of_index": 23,
+      "feasible": true,
+      "index": 44,
+      "metadata": {
+        "assignment_count": 5,
+        "assignment_dp_rank": 1,
+        "capacity_aware_assignment_dp": true,
+        "charger_slot_use": [
+          {
+            "day_offset": 0,
+            "route_count": 2,
+            "slot_index": 0,
+            "station_id": "D_beijing"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 2,
+            "slot_index": 1,
+            "station_id": "D_beijing"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 2,
+            "slot_index": 2,
+            "station_id": "D_beijing"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 2,
+            "slot_index": 3,
+            "station_id": "D_beijing"
+          }
+        ],
+        "charging_route_count": 2,
+        "decoder": "explicit_reference_v1",
+        "fleet_use": [
+          3,
+          2
+        ],
+        "generation_kind": "population_archive",
+        "hgs_epoch": 2,
+        "hgs_seed": 1666371116,
+        "proxy_cost": 1427292,
+        "proxy_rank": 3,
+        "route_local_cost": 1427.7324331357797,
+        "route_proxy_mode": "mechanism_ev",
+        "warm_parent_signature": null,
+        "warm_signatures": [
+          "3308112f89210b23924a9646589a077a731014dfb560bbc86505c0e9ec173009"
+        ]
+      },
+      "objective": 1427.7324331357797,
+      "signature": "c050cc285f9051e630aa7bb924a930cc4d8c2490a87b7a9297b1fb990b13a521",
+      "source": "HGS_ARCHIVE",
+      "violation_count": 0
+    },
+    {
+      "arm": "A_HGS",
+      "duplicate_of_index": 24,
+      "feasible": true,
+      "index": 45,
+      "metadata": {
+        "assignment_count": 5,
+        "assignment_dp_rank": 2,
+        "capacity_aware_assignment_dp": true,
+        "charger_slot_use": [
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 0,
+            "station_id": "D_beijing"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 1,
+            "station_id": "D_beijing"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 2,
+            "station_id": "D_beijing"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 3,
+            "station_id": "D_beijing"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 21,
+            "station_id": "D_beijing"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 22,
+            "station_id": "D_beijing"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 23,
+            "station_id": "D_beijing"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 24,
+            "station_id": "D_beijing"
+          }
+        ],
+        "charging_route_count": 2,
+        "decoder": "explicit_reference_v1",
+        "fleet_use": [
+          3,
+          2
+        ],
+        "generation_kind": "population_archive",
+        "hgs_epoch": 2,
+        "hgs_seed": 1666371116,
+        "proxy_cost": 1427292,
+        "proxy_rank": 3,
+        "route_local_cost": 1447.8008510848797,
+        "route_proxy_mode": "mechanism_ev",
+        "warm_parent_signature": null,
+        "warm_signatures": [
+          "3308112f89210b23924a9646589a077a731014dfb560bbc86505c0e9ec173009"
+        ]
+      },
+      "objective": 1447.8008510848797,
+      "signature": "22a824a4396c86ea2e69e83512d488410702da57ad3be2222a513f40d497a2da",
+      "source": "HGS_ARCHIVE",
+      "violation_count": 0
+    },
+    {
+      "arm": "A_HGS",
+      "duplicate_of_index": 25,
+      "feasible": true,
+      "index": 46,
+      "metadata": {
+        "assignment_count": 5,
+        "assignment_dp_rank": 3,
+        "capacity_aware_assignment_dp": true,
+        "charger_slot_use": [
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 0,
+            "station_id": "D_beijing"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 1,
+            "station_id": "D_beijing"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 2,
+            "station_id": "D_beijing"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 3,
+            "station_id": "D_beijing"
+          }
+        ],
+        "charging_route_count": 1,
+        "decoder": "explicit_reference_v1",
+        "fleet_use": [
+          4,
+          1
+        ],
+        "generation_kind": "population_archive",
+        "hgs_epoch": 2,
+        "hgs_seed": 1666371116,
+        "proxy_cost": 1427292,
+        "proxy_rank": 3,
+        "route_local_cost": 1506.8548034761332,
+        "route_proxy_mode": "mechanism_ev",
+        "warm_parent_signature": null,
+        "warm_signatures": [
+          "3308112f89210b23924a9646589a077a731014dfb560bbc86505c0e9ec173009"
+        ]
+      },
+      "objective": 1506.8548034761332,
+      "signature": "949556e6e8b13e1606627d15ae1f00f2da320fd468e1073c9733268e451d0b46",
+      "source": "HGS_ARCHIVE",
+      "violation_count": 0
+    },
+    {
+      "arm": "A_HGS",
+      "duplicate_of_index": 20,
+      "feasible": true,
+      "index": 47,
+      "metadata": {
+        "assignment_count": 5,
+        "assignment_dp_rank": 1,
+        "capacity_aware_assignment_dp": true,
+        "charger_slot_use": [],
+        "charging_route_count": 0,
+        "decoder": "explicit_reference_v1",
+        "fleet_use": [
+          5,
+          0
+        ],
+        "generation_kind": "population_archive",
+        "hgs_epoch": 2,
+        "hgs_seed": 1211672472,
+        "proxy_cost": 1562245,
+        "proxy_rank": 4,
+        "route_local_cost": 1558.9519950922693,
+        "route_proxy_mode": "cv_only",
+        "warm_parent_signature": null,
+        "warm_signatures": [
+          "3308112f89210b23924a9646589a077a731014dfb560bbc86505c0e9ec173009"
+        ]
+      },
+      "objective": 1558.9519950922693,
+      "signature": "9f4aa25d961f670d4452d0ea236d8334486d098f46bc949c82a50abfb8a1d5d1",
+      "source": "HGS_ARCHIVE",
+      "violation_count": 0
+    },
+    {
+      "arm": "A_HGS",
+      "duplicate_of_index": 21,
+      "feasible": true,
+      "index": 48,
+      "metadata": {
+        "assignment_count": 5,
+        "assignment_dp_rank": 2,
+        "capacity_aware_assignment_dp": true,
+        "charger_slot_use": [
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 0,
+            "station_id": "D_beijing"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 1,
+            "station_id": "D_beijing"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 2,
+            "station_id": "D_beijing"
+          }
+        ],
+        "charging_route_count": 1,
+        "decoder": "explicit_reference_v1",
+        "fleet_use": [
+          4,
+          1
+        ],
+        "generation_kind": "population_archive",
+        "hgs_epoch": 2,
+        "hgs_seed": 1211672472,
+        "proxy_cost": 1562245,
+        "proxy_rank": 4,
+        "route_local_cost": 1503.2088646426841,
+        "route_proxy_mode": "cv_only",
+        "warm_parent_signature": null,
+        "warm_signatures": [
+          "3308112f89210b23924a9646589a077a731014dfb560bbc86505c0e9ec173009"
+        ]
+      },
+      "objective": 1503.208864642684,
+      "signature": "bc11df25e8ad2601f62c8a6b6bb5f2b0762d177925ffa06a591166c55acba0c8",
+      "source": "HGS_ARCHIVE",
+      "violation_count": 0
+    },
+    {
+      "arm": "A_HGS",
+      "duplicate_of_index": 22,
+      "feasible": true,
+      "index": 49,
+      "metadata": {
+        "assignment_count": 5,
+        "assignment_dp_rank": 3,
+        "capacity_aware_assignment_dp": true,
+        "charger_slot_use": [
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 18,
+            "station_id": "D_beijing"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 19,
+            "station_id": "D_beijing"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 20,
+            "station_id": "D_beijing"
+          }
+        ],
+        "charging_route_count": 1,
+        "decoder": "explicit_reference_v1",
+        "fleet_use": [
+          4,
+          1
+        ],
+        "generation_kind": "population_archive",
+        "hgs_epoch": 2,
+        "hgs_seed": 1211672472,
+        "proxy_cost": 1562245,
+        "proxy_rank": 4,
+        "route_local_cost": 1510.9261406117826,
+        "route_proxy_mode": "cv_only",
+        "warm_parent_signature": null,
+        "warm_signatures": [
+          "3308112f89210b23924a9646589a077a731014dfb560bbc86505c0e9ec173009"
+        ]
+      },
+      "objective": 1510.9261406117826,
+      "signature": "f05ec97ad9ffd12f3d876c233a99b1d203b667cfe31e1ab57a8ef10a280dd57c",
+      "source": "HGS_ARCHIVE",
+      "violation_count": 0
+    },
+    {
+      "arm": "A_HGS",
+      "duplicate_of_index": null,
+      "feasible": true,
+      "index": 50,
+      "metadata": {
+        "assignment_count": 5,
+        "assignment_dp_rank": 1,
+        "capacity_aware_assignment_dp": true,
+        "charger_slot_use": [
+          {
+            "day_offset": 0,
+            "route_count": 2,
+            "slot_index": 0,
+            "station_id": "D_beijing"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 2,
+            "slot_index": 1,
+            "station_id": "D_beijing"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 2,
+            "slot_index": 2,
+            "station_id": "D_beijing"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 2,
+            "slot_index": 3,
+            "station_id": "D_beijing"
+          }
+        ],
+        "charging_route_count": 2,
+        "decoder": "explicit_reference_v1",
+        "fleet_use": [
+          3,
+          2
+        ],
+        "generation_kind": "population_archive",
+        "hgs_epoch": 2,
+        "hgs_seed": 1034489929,
+        "proxy_cost": 1445921,
+        "proxy_rank": 4,
+        "route_local_cost": 1427.20315179633,
+        "route_proxy_mode": "naive_ev",
+        "warm_parent_signature": null,
+        "warm_signatures": [
+          "3308112f89210b23924a9646589a077a731014dfb560bbc86505c0e9ec173009"
+        ]
+      },
+      "objective": 1427.20315179633,
+      "signature": "38b0cb535148d67f270566bb340ef3bc27bdb1b581e9998ed22e36bf6da7c7ab",
+      "source": "HGS_ARCHIVE",
+      "violation_count": 0
+    },
+    {
+      "arm": "A_HGS",
+      "duplicate_of_index": null,
+      "feasible": true,
+      "index": 51,
+      "metadata": {
+        "assignment_count": 5,
+        "assignment_dp_rank": 2,
+        "capacity_aware_assignment_dp": true,
+        "charger_slot_use": [
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 0,
+            "station_id": "D_beijing"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 1,
+            "station_id": "D_beijing"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 2,
+            "station_id": "D_beijing"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 3,
+            "station_id": "D_beijing"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 21,
+            "station_id": "D_beijing"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 22,
+            "station_id": "D_beijing"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 23,
+            "station_id": "D_beijing"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 24,
+            "station_id": "D_beijing"
+          }
+        ],
+        "charging_route_count": 2,
+        "decoder": "explicit_reference_v1",
+        "fleet_use": [
+          3,
+          2
+        ],
+        "generation_kind": "population_archive",
+        "hgs_epoch": 2,
+        "hgs_seed": 1034489929,
+        "proxy_cost": 1445921,
+        "proxy_rank": 4,
+        "route_local_cost": 1447.2715697454298,
+        "route_proxy_mode": "naive_ev",
+        "warm_parent_signature": null,
+        "warm_signatures": [
+          "3308112f89210b23924a9646589a077a731014dfb560bbc86505c0e9ec173009"
+        ]
+      },
+      "objective": 1447.27156974543,
+      "signature": "61ff2e4e7cf683ead19d6b526bda116cb6cb2ea4028667d6cb1412caed335eb4",
+      "source": "HGS_ARCHIVE",
+      "violation_count": 0
+    },
+    {
+      "arm": "A_HGS",
+      "duplicate_of_index": null,
+      "feasible": true,
+      "index": 52,
+      "metadata": {
+        "assignment_count": 5,
+        "assignment_dp_rank": 3,
+        "capacity_aware_assignment_dp": true,
+        "charger_slot_use": [
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 0,
+            "station_id": "D_beijing"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 1,
+            "station_id": "D_beijing"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 2,
+            "station_id": "D_beijing"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 3,
+            "station_id": "D_beijing"
+          }
+        ],
+        "charging_route_count": 1,
+        "decoder": "explicit_reference_v1",
+        "fleet_use": [
+          4,
+          1
+        ],
+        "generation_kind": "population_archive",
+        "hgs_epoch": 2,
+        "hgs_seed": 1034489929,
+        "proxy_cost": 1445921,
+        "proxy_rank": 4,
+        "route_local_cost": 1506.3255221366833,
+        "route_proxy_mode": "naive_ev",
+        "warm_parent_signature": null,
+        "warm_signatures": [
+          "3308112f89210b23924a9646589a077a731014dfb560bbc86505c0e9ec173009"
+        ]
+      },
+      "objective": 1506.3255221366833,
+      "signature": "1ccbbe9193a4013f1eaec22a5870ee350d86156cda5c21586f28501e1c5db09d",
+      "source": "HGS_ARCHIVE",
+      "violation_count": 0
+    },
+    {
+      "arm": "A_HGS",
+      "duplicate_of_index": 50,
+      "feasible": true,
+      "index": 53,
+      "metadata": {
+        "assignment_count": 5,
+        "assignment_dp_rank": 1,
+        "capacity_aware_assignment_dp": true,
+        "charger_slot_use": [
+          {
+            "day_offset": 0,
+            "route_count": 2,
+            "slot_index": 0,
+            "station_id": "D_beijing"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 2,
+            "slot_index": 1,
+            "station_id": "D_beijing"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 2,
+            "slot_index": 2,
+            "station_id": "D_beijing"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 2,
+            "slot_index": 3,
+            "station_id": "D_beijing"
+          }
+        ],
+        "charging_route_count": 2,
+        "decoder": "explicit_reference_v1",
+        "fleet_use": [
+          3,
+          2
+        ],
+        "generation_kind": "population_archive",
+        "hgs_epoch": 2,
+        "hgs_seed": 1666371116,
+        "proxy_cost": 1427330,
+        "proxy_rank": 4,
+        "route_local_cost": 1427.20315179633,
+        "route_proxy_mode": "mechanism_ev",
+        "warm_parent_signature": null,
+        "warm_signatures": [
+          "3308112f89210b23924a9646589a077a731014dfb560bbc86505c0e9ec173009"
+        ]
+      },
+      "objective": 1427.20315179633,
+      "signature": "38b0cb535148d67f270566bb340ef3bc27bdb1b581e9998ed22e36bf6da7c7ab",
+      "source": "HGS_ARCHIVE",
+      "violation_count": 0
+    },
+    {
+      "arm": "A_HGS",
+      "duplicate_of_index": 51,
+      "feasible": true,
+      "index": 54,
+      "metadata": {
+        "assignment_count": 5,
+        "assignment_dp_rank": 2,
+        "capacity_aware_assignment_dp": true,
+        "charger_slot_use": [
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 0,
+            "station_id": "D_beijing"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 1,
+            "station_id": "D_beijing"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 2,
+            "station_id": "D_beijing"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 3,
+            "station_id": "D_beijing"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 21,
+            "station_id": "D_beijing"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 22,
+            "station_id": "D_beijing"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 23,
+            "station_id": "D_beijing"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 24,
+            "station_id": "D_beijing"
+          }
+        ],
+        "charging_route_count": 2,
+        "decoder": "explicit_reference_v1",
+        "fleet_use": [
+          3,
+          2
+        ],
+        "generation_kind": "population_archive",
+        "hgs_epoch": 2,
+        "hgs_seed": 1666371116,
+        "proxy_cost": 1427330,
+        "proxy_rank": 4,
+        "route_local_cost": 1447.2715697454298,
+        "route_proxy_mode": "mechanism_ev",
+        "warm_parent_signature": null,
+        "warm_signatures": [
+          "3308112f89210b23924a9646589a077a731014dfb560bbc86505c0e9ec173009"
+        ]
+      },
+      "objective": 1447.27156974543,
+      "signature": "61ff2e4e7cf683ead19d6b526bda116cb6cb2ea4028667d6cb1412caed335eb4",
+      "source": "HGS_ARCHIVE",
+      "violation_count": 0
+    },
+    {
+      "arm": "A_HGS",
+      "duplicate_of_index": 2,
+      "feasible": true,
+      "index": 55,
+      "metadata": {
+        "assignment_count": 5,
+        "assignment_dp_rank": 1,
+        "capacity_aware_assignment_dp": true,
+        "charger_slot_use": [],
+        "charging_route_count": 0,
+        "decoder": "explicit_reference_v1",
+        "fleet_use": [
+          5,
+          0
+        ],
+        "generation_kind": "population_archive",
+        "hgs_epoch": 3,
+        "hgs_seed": 1479718565,
+        "proxy_cost": 1561454,
+        "proxy_rank": 2,
+        "route_local_cost": 1557.1819437454426,
+        "route_proxy_mode": "cv_only",
+        "warm_parent_signature": null,
+        "warm_signatures": [
+          "3308112f89210b23924a9646589a077a731014dfb560bbc86505c0e9ec173009"
+        ]
+      },
+      "objective": 1557.1819437454428,
+      "signature": "b3476594cc31e7cc481086af1698e18120067717703475606efe3b665ba39a87",
+      "source": "HGS_ARCHIVE",
+      "violation_count": 0
+    },
+    {
+      "arm": "A_HGS",
+      "duplicate_of_index": 3,
+      "feasible": true,
+      "index": 56,
+      "metadata": {
+        "assignment_count": 5,
+        "assignment_dp_rank": 2,
+        "capacity_aware_assignment_dp": true,
+        "charger_slot_use": [
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 0,
+            "station_id": "D_beijing"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 1,
+            "station_id": "D_beijing"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 2,
+            "station_id": "D_beijing"
+          }
+        ],
+        "charging_route_count": 1,
+        "decoder": "explicit_reference_v1",
+        "fleet_use": [
+          4,
+          1
+        ],
+        "generation_kind": "population_archive",
+        "hgs_epoch": 3,
+        "hgs_seed": 1479718565,
+        "proxy_cost": 1561454,
+        "proxy_rank": 2,
+        "route_local_cost": 1500.6490333979166,
+        "route_proxy_mode": "cv_only",
+        "warm_parent_signature": null,
+        "warm_signatures": [
+          "3308112f89210b23924a9646589a077a731014dfb560bbc86505c0e9ec173009"
+        ]
+      },
+      "objective": 1500.6490333979164,
+      "signature": "e70b6d32a1cd294d95c275e65ca7bdca320633b8362a9fa8e5e65ede817d6a83",
+      "source": "HGS_ARCHIVE",
+      "violation_count": 0
+    },
+    {
+      "arm": "A_HGS",
+      "duplicate_of_index": 4,
+      "feasible": true,
+      "index": 57,
+      "metadata": {
+        "assignment_count": 5,
+        "assignment_dp_rank": 3,
+        "capacity_aware_assignment_dp": true,
+        "charger_slot_use": [
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 18,
+            "station_id": "D_beijing"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 19,
+            "station_id": "D_beijing"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 20,
+            "station_id": "D_beijing"
+          }
+        ],
+        "charging_route_count": 1,
+        "decoder": "explicit_reference_v1",
+        "fleet_use": [
+          4,
+          1
+        ],
+        "generation_kind": "population_archive",
+        "hgs_epoch": 3,
+        "hgs_seed": 1479718565,
+        "proxy_cost": 1561454,
+        "proxy_rank": 2,
+        "route_local_cost": 1508.6543948002504,
+        "route_proxy_mode": "cv_only",
+        "warm_parent_signature": null,
+        "warm_signatures": [
+          "3308112f89210b23924a9646589a077a731014dfb560bbc86505c0e9ec173009"
+        ]
+      },
+      "objective": 1508.6543948002504,
+      "signature": "70081a68e9f25fc10ee64f30aa990b563d17bb933ccdece68f89484cec2fdcd1",
+      "source": "HGS_ARCHIVE",
+      "violation_count": 0
+    },
+    {
+      "arm": "A_HGS",
+      "duplicate_of_index": 14,
+      "feasible": true,
+      "index": 58,
+      "metadata": {
+        "assignment_count": 5,
+        "assignment_dp_rank": 1,
+        "capacity_aware_assignment_dp": true,
+        "charger_slot_use": [
+          {
+            "day_offset": 0,
+            "route_count": 2,
+            "slot_index": 0,
+            "station_id": "D_beijing"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 2,
+            "slot_index": 1,
+            "station_id": "D_beijing"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 2,
+            "slot_index": 2,
+            "station_id": "D_beijing"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 2,
+            "slot_index": 3,
+            "station_id": "D_beijing"
+          }
+        ],
+        "charging_route_count": 2,
+        "decoder": "explicit_reference_v1",
+        "fleet_use": [
+          3,
+          2
+        ],
+        "generation_kind": "population_archive",
+        "hgs_epoch": 3,
+        "hgs_seed": 751136466,
+        "proxy_cost": 1445357,
+        "proxy_rank": 2,
+        "route_local_cost": 1426.978055364359,
+        "route_proxy_mode": "naive_ev",
+        "warm_parent_signature": null,
+        "warm_signatures": [
+          "3308112f89210b23924a9646589a077a731014dfb560bbc86505c0e9ec173009"
+        ]
+      },
+      "objective": 1426.9780553643593,
+      "signature": "1405da07ecc13e961586cf539176c6cc5d33b2b24f8ba8c214bc5b5d4f4b1fe6",
+      "source": "HGS_ARCHIVE",
+      "violation_count": 0
+    },
+    {
+      "arm": "A_HGS",
+      "duplicate_of_index": 15,
+      "feasible": true,
+      "index": 59,
+      "metadata": {
+        "assignment_count": 5,
+        "assignment_dp_rank": 2,
+        "capacity_aware_assignment_dp": true,
+        "charger_slot_use": [
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 0,
+            "station_id": "D_beijing"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 1,
+            "station_id": "D_beijing"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 2,
+            "station_id": "D_beijing"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 3,
+            "station_id": "D_beijing"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 21,
+            "station_id": "D_beijing"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 22,
+            "station_id": "D_beijing"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 23,
+            "station_id": "D_beijing"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 24,
+            "station_id": "D_beijing"
+          }
+        ],
+        "charging_route_count": 2,
+        "decoder": "explicit_reference_v1",
+        "fleet_use": [
+          3,
+          2
+        ],
+        "generation_kind": "population_archive",
+        "hgs_epoch": 3,
+        "hgs_seed": 751136466,
+        "proxy_cost": 1445357,
+        "proxy_rank": 2,
+        "route_local_cost": 1447.046473313459,
+        "route_proxy_mode": "naive_ev",
+        "warm_parent_signature": null,
+        "warm_signatures": [
+          "3308112f89210b23924a9646589a077a731014dfb560bbc86505c0e9ec173009"
+        ]
+      },
+      "objective": 1447.0464733134593,
+      "signature": "f3720099f4e88896d511512e3d35a88df1e79cb097763c92f5b377947903b3f0",
+      "source": "HGS_ARCHIVE",
+      "violation_count": 0
+    },
+    {
+      "arm": "A_HGS",
+      "duplicate_of_index": 16,
+      "feasible": true,
+      "index": 60,
+      "metadata": {
+        "assignment_count": 5,
+        "assignment_dp_rank": 3,
+        "capacity_aware_assignment_dp": true,
+        "charger_slot_use": [
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 0,
+            "station_id": "D_beijing"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 1,
+            "station_id": "D_beijing"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 2,
+            "station_id": "D_beijing"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 3,
+            "station_id": "D_beijing"
+          }
+        ],
+        "charging_route_count": 1,
+        "decoder": "explicit_reference_v1",
+        "fleet_use": [
+          4,
+          1
+        ],
+        "generation_kind": "population_archive",
+        "hgs_epoch": 3,
+        "hgs_seed": 751136466,
+        "proxy_cost": 1445357,
+        "proxy_rank": 2,
+        "route_local_cost": 1506.1004257047125,
+        "route_proxy_mode": "naive_ev",
+        "warm_parent_signature": null,
+        "warm_signatures": [
+          "3308112f89210b23924a9646589a077a731014dfb560bbc86505c0e9ec173009"
+        ]
+      },
+      "objective": 1506.1004257047125,
+      "signature": "754eb4aa67927a24213cfa5500322cd8f41ad2ee6aebf88ff13e877fe386b430",
+      "source": "HGS_ARCHIVE",
+      "violation_count": 0
+    },
+    {
+      "arm": "A_HGS",
+      "duplicate_of_index": 14,
+      "feasible": true,
+      "index": 61,
+      "metadata": {
+        "assignment_count": 5,
+        "assignment_dp_rank": 1,
+        "capacity_aware_assignment_dp": true,
+        "charger_slot_use": [
+          {
+            "day_offset": 0,
+            "route_count": 2,
+            "slot_index": 0,
+            "station_id": "D_beijing"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 2,
+            "slot_index": 1,
+            "station_id": "D_beijing"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 2,
+            "slot_index": 2,
+            "station_id": "D_beijing"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 2,
+            "slot_index": 3,
+            "station_id": "D_beijing"
+          }
+        ],
+        "charging_route_count": 2,
+        "decoder": "explicit_reference_v1",
+        "fleet_use": [
+          3,
+          2
+        ],
+        "generation_kind": "population_archive",
+        "hgs_epoch": 3,
+        "hgs_seed": 1817250885,
+        "proxy_cost": 1426766,
+        "proxy_rank": 2,
+        "route_local_cost": 1426.978055364359,
+        "route_proxy_mode": "mechanism_ev",
+        "warm_parent_signature": null,
+        "warm_signatures": [
+          "3308112f89210b23924a9646589a077a731014dfb560bbc86505c0e9ec173009"
+        ]
+      },
+      "objective": 1426.9780553643593,
+      "signature": "1405da07ecc13e961586cf539176c6cc5d33b2b24f8ba8c214bc5b5d4f4b1fe6",
+      "source": "HGS_ARCHIVE",
+      "violation_count": 0
+    },
+    {
+      "arm": "A_HGS",
+      "duplicate_of_index": 15,
+      "feasible": true,
+      "index": 62,
+      "metadata": {
+        "assignment_count": 5,
+        "assignment_dp_rank": 2,
+        "capacity_aware_assignment_dp": true,
+        "charger_slot_use": [
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 0,
+            "station_id": "D_beijing"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 1,
+            "station_id": "D_beijing"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 2,
+            "station_id": "D_beijing"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 3,
+            "station_id": "D_beijing"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 21,
+            "station_id": "D_beijing"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 22,
+            "station_id": "D_beijing"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 23,
+            "station_id": "D_beijing"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 24,
+            "station_id": "D_beijing"
+          }
+        ],
+        "charging_route_count": 2,
+        "decoder": "explicit_reference_v1",
+        "fleet_use": [
+          3,
+          2
+        ],
+        "generation_kind": "population_archive",
+        "hgs_epoch": 3,
+        "hgs_seed": 1817250885,
+        "proxy_cost": 1426766,
+        "proxy_rank": 2,
+        "route_local_cost": 1447.046473313459,
+        "route_proxy_mode": "mechanism_ev",
+        "warm_parent_signature": null,
+        "warm_signatures": [
+          "3308112f89210b23924a9646589a077a731014dfb560bbc86505c0e9ec173009"
+        ]
+      },
+      "objective": 1447.0464733134593,
+      "signature": "f3720099f4e88896d511512e3d35a88df1e79cb097763c92f5b377947903b3f0",
+      "source": "HGS_ARCHIVE",
+      "violation_count": 0
+    },
+    {
+      "arm": "A_HGS",
+      "duplicate_of_index": 16,
+      "feasible": true,
+      "index": 63,
+      "metadata": {
+        "assignment_count": 5,
+        "assignment_dp_rank": 3,
+        "capacity_aware_assignment_dp": true,
+        "charger_slot_use": [
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 0,
+            "station_id": "D_beijing"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 1,
+            "station_id": "D_beijing"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 2,
+            "station_id": "D_beijing"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 3,
+            "station_id": "D_beijing"
+          }
+        ],
+        "charging_route_count": 1,
+        "decoder": "explicit_reference_v1",
+        "fleet_use": [
+          4,
+          1
+        ],
+        "generation_kind": "population_archive",
+        "hgs_epoch": 3,
+        "hgs_seed": 1817250885,
+        "proxy_cost": 1426766,
+        "proxy_rank": 2,
+        "route_local_cost": 1506.1004257047125,
+        "route_proxy_mode": "mechanism_ev",
+        "warm_parent_signature": null,
+        "warm_signatures": [
+          "3308112f89210b23924a9646589a077a731014dfb560bbc86505c0e9ec173009"
+        ]
+      },
+      "objective": 1506.1004257047125,
+      "signature": "754eb4aa67927a24213cfa5500322cd8f41ad2ee6aebf88ff13e877fe386b430",
+      "source": "HGS_ARCHIVE",
+      "violation_count": 0
+    },
+    {
+      "arm": "A_HGS",
+      "duplicate_of_index": 11,
+      "feasible": true,
+      "index": 64,
+      "metadata": {
+        "assignment_count": 5,
+        "assignment_dp_rank": 1,
+        "capacity_aware_assignment_dp": true,
+        "charger_slot_use": [],
+        "charging_route_count": 0,
+        "decoder": "explicit_reference_v1",
+        "fleet_use": [
+          5,
+          0
+        ],
+        "generation_kind": "population_archive",
+        "hgs_epoch": 3,
+        "hgs_seed": 1479718565,
+        "proxy_cost": 1562209,
+        "proxy_rank": 3,
+        "route_local_cost": 1558.4349398438976,
+        "route_proxy_mode": "cv_only",
+        "warm_parent_signature": null,
+        "warm_signatures": [
+          "3308112f89210b23924a9646589a077a731014dfb560bbc86505c0e9ec173009"
+        ]
+      },
+      "objective": 1558.4349398438976,
+      "signature": "ee0be98198de0ac594df1db7cdfb80e566bb900917a6648775d046674ba6d7ca",
+      "source": "HGS_ARCHIVE",
+      "violation_count": 0
+    },
+    {
+      "arm": "A_HGS",
+      "duplicate_of_index": 12,
+      "feasible": true,
+      "index": 65,
+      "metadata": {
+        "assignment_count": 5,
+        "assignment_dp_rank": 2,
+        "capacity_aware_assignment_dp": true,
+        "charger_slot_use": [
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 0,
+            "station_id": "D_beijing"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 1,
+            "station_id": "D_beijing"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 2,
+            "station_id": "D_beijing"
+          }
+        ],
+        "charging_route_count": 1,
+        "decoder": "explicit_reference_v1",
+        "fleet_use": [
+          4,
+          1
+        ],
+        "generation_kind": "population_archive",
+        "hgs_epoch": 3,
+        "hgs_seed": 1479718565,
+        "proxy_cost": 1562209,
+        "proxy_rank": 3,
+        "route_local_cost": 1507.8639721486666,
+        "route_proxy_mode": "cv_only",
+        "warm_parent_signature": null,
+        "warm_signatures": [
+          "3308112f89210b23924a9646589a077a731014dfb560bbc86505c0e9ec173009"
+        ]
+      },
+      "objective": 1507.8639721486666,
+      "signature": "b67aee30aca43ebfbc68c5651c767a81ec37f6b17884d73e89cda93e8ef244fa",
+      "source": "HGS_ARCHIVE",
+      "violation_count": 0
+    },
+    {
+      "arm": "A_HGS",
+      "duplicate_of_index": 13,
+      "feasible": true,
+      "index": 66,
+      "metadata": {
+        "assignment_count": 5,
+        "assignment_dp_rank": 3,
+        "capacity_aware_assignment_dp": true,
+        "charger_slot_use": [
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 20,
+            "station_id": "D_beijing"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 21,
+            "station_id": "D_beijing"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 22,
+            "station_id": "D_beijing"
+          }
+        ],
+        "charging_route_count": 1,
+        "decoder": "explicit_reference_v1",
+        "fleet_use": [
+          4,
+          1
+        ],
+        "generation_kind": "population_archive",
+        "hgs_epoch": 3,
+        "hgs_seed": 1479718565,
+        "proxy_cost": 1562209,
+        "proxy_rank": 3,
+        "route_local_cost": 1521.277040428371,
+        "route_proxy_mode": "cv_only",
+        "warm_parent_signature": null,
+        "warm_signatures": [
+          "3308112f89210b23924a9646589a077a731014dfb560bbc86505c0e9ec173009"
+        ]
+      },
+      "objective": 1521.2770404283713,
+      "signature": "f148287b656082ba24d9c2d9c91933e8fe2363ee9e6bb7536ea27e57e013a625",
+      "source": "HGS_ARCHIVE",
+      "violation_count": 0
+    },
+    {
+      "arm": "A_HGS",
+      "duplicate_of_index": null,
+      "feasible": true,
+      "index": 67,
+      "metadata": {
+        "assignment_count": 5,
+        "assignment_dp_rank": 1,
+        "capacity_aware_assignment_dp": true,
+        "charger_slot_use": [
+          {
+            "day_offset": 0,
+            "route_count": 2,
+            "slot_index": 0,
+            "station_id": "D_beijing"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 2,
+            "slot_index": 1,
+            "station_id": "D_beijing"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 2,
+            "slot_index": 2,
+            "station_id": "D_beijing"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 2,
+            "slot_index": 3,
+            "station_id": "D_beijing"
+          }
+        ],
+        "charging_route_count": 2,
+        "decoder": "explicit_reference_v1",
+        "fleet_use": [
+          3,
+          2
+        ],
+        "generation_kind": "population_archive",
+        "hgs_epoch": 3,
+        "hgs_seed": 751136466,
+        "proxy_cost": 1445921,
+        "proxy_rank": 3,
+        "route_local_cost": 1427.196134902918,
+        "route_proxy_mode": "naive_ev",
+        "warm_parent_signature": null,
+        "warm_signatures": [
+          "3308112f89210b23924a9646589a077a731014dfb560bbc86505c0e9ec173009"
+        ]
+      },
+      "objective": 1427.196134902918,
+      "signature": "b8381e943a4ead70cd264700c65ef2b2a49be9b730ab575faa9f8912ee67009b",
+      "source": "HGS_ARCHIVE",
+      "violation_count": 0
+    },
+    {
+      "arm": "A_HGS",
+      "duplicate_of_index": null,
+      "feasible": true,
+      "index": 68,
+      "metadata": {
+        "assignment_count": 5,
+        "assignment_dp_rank": 2,
+        "capacity_aware_assignment_dp": true,
+        "charger_slot_use": [
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 0,
+            "station_id": "D_beijing"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 1,
+            "station_id": "D_beijing"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 2,
+            "station_id": "D_beijing"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 3,
+            "station_id": "D_beijing"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 21,
+            "station_id": "D_beijing"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 22,
+            "station_id": "D_beijing"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 23,
+            "station_id": "D_beijing"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 24,
+            "station_id": "D_beijing"
+          }
+        ],
+        "charging_route_count": 2,
+        "decoder": "explicit_reference_v1",
+        "fleet_use": [
+          3,
+          2
+        ],
+        "generation_kind": "population_archive",
+        "hgs_epoch": 3,
+        "hgs_seed": 751136466,
+        "proxy_cost": 1445921,
+        "proxy_rank": 3,
+        "route_local_cost": 1447.2645528520177,
+        "route_proxy_mode": "naive_ev",
+        "warm_parent_signature": null,
+        "warm_signatures": [
+          "3308112f89210b23924a9646589a077a731014dfb560bbc86505c0e9ec173009"
+        ]
+      },
+      "objective": 1447.264552852018,
+      "signature": "3d4ea5b828c3764e9ddf65a92e4fe248ab7455b41ca702c28363c53f52698cff",
+      "source": "HGS_ARCHIVE",
+      "violation_count": 0
+    },
+    {
+      "arm": "A_HGS",
+      "duplicate_of_index": null,
+      "feasible": true,
+      "index": 69,
+      "metadata": {
+        "assignment_count": 5,
+        "assignment_dp_rank": 3,
+        "capacity_aware_assignment_dp": true,
+        "charger_slot_use": [
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 0,
+            "station_id": "D_beijing"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 1,
+            "station_id": "D_beijing"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 2,
+            "station_id": "D_beijing"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 3,
+            "station_id": "D_beijing"
+          }
+        ],
+        "charging_route_count": 1,
+        "decoder": "explicit_reference_v1",
+        "fleet_use": [
+          4,
+          1
+        ],
+        "generation_kind": "population_archive",
+        "hgs_epoch": 3,
+        "hgs_seed": 751136466,
+        "proxy_cost": 1445921,
+        "proxy_rank": 3,
+        "route_local_cost": 1506.3185052432711,
+        "route_proxy_mode": "naive_ev",
+        "warm_parent_signature": null,
+        "warm_signatures": [
+          "3308112f89210b23924a9646589a077a731014dfb560bbc86505c0e9ec173009"
+        ]
+      },
+      "objective": 1506.3185052432714,
+      "signature": "d98c1da69f3584bfeaadd2fbccbf6527ed72046df60bc13fb0f70e5e9fa3e1e7",
+      "source": "HGS_ARCHIVE",
+      "violation_count": 0
+    },
+    {
+      "arm": "A_HGS",
+      "duplicate_of_index": 23,
+      "feasible": true,
+      "index": 70,
+      "metadata": {
+        "assignment_count": 5,
+        "assignment_dp_rank": 1,
+        "capacity_aware_assignment_dp": true,
+        "charger_slot_use": [
+          {
+            "day_offset": 0,
+            "route_count": 2,
+            "slot_index": 0,
+            "station_id": "D_beijing"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 2,
+            "slot_index": 1,
+            "station_id": "D_beijing"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 2,
+            "slot_index": 2,
+            "station_id": "D_beijing"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 2,
+            "slot_index": 3,
+            "station_id": "D_beijing"
+          }
+        ],
+        "charging_route_count": 2,
+        "decoder": "explicit_reference_v1",
+        "fleet_use": [
+          3,
+          2
+        ],
+        "generation_kind": "population_archive",
+        "hgs_epoch": 3,
+        "hgs_seed": 1817250885,
+        "proxy_cost": 1427292,
+        "proxy_rank": 3,
+        "route_local_cost": 1427.7324331357797,
+        "route_proxy_mode": "mechanism_ev",
+        "warm_parent_signature": null,
+        "warm_signatures": [
+          "3308112f89210b23924a9646589a077a731014dfb560bbc86505c0e9ec173009"
+        ]
+      },
+      "objective": 1427.7324331357797,
+      "signature": "c050cc285f9051e630aa7bb924a930cc4d8c2490a87b7a9297b1fb990b13a521",
+      "source": "HGS_ARCHIVE",
+      "violation_count": 0
+    },
+    {
+      "arm": "A_HGS",
+      "duplicate_of_index": 24,
+      "feasible": true,
+      "index": 71,
+      "metadata": {
+        "assignment_count": 5,
+        "assignment_dp_rank": 2,
+        "capacity_aware_assignment_dp": true,
+        "charger_slot_use": [
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 0,
+            "station_id": "D_beijing"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 1,
+            "station_id": "D_beijing"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 2,
+            "station_id": "D_beijing"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 3,
+            "station_id": "D_beijing"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 21,
+            "station_id": "D_beijing"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 22,
+            "station_id": "D_beijing"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 23,
+            "station_id": "D_beijing"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 24,
+            "station_id": "D_beijing"
+          }
+        ],
+        "charging_route_count": 2,
+        "decoder": "explicit_reference_v1",
+        "fleet_use": [
+          3,
+          2
+        ],
+        "generation_kind": "population_archive",
+        "hgs_epoch": 3,
+        "hgs_seed": 1817250885,
+        "proxy_cost": 1427292,
+        "proxy_rank": 3,
+        "route_local_cost": 1447.8008510848797,
+        "route_proxy_mode": "mechanism_ev",
+        "warm_parent_signature": null,
+        "warm_signatures": [
+          "3308112f89210b23924a9646589a077a731014dfb560bbc86505c0e9ec173009"
+        ]
+      },
+      "objective": 1447.8008510848797,
+      "signature": "22a824a4396c86ea2e69e83512d488410702da57ad3be2222a513f40d497a2da",
+      "source": "HGS_ARCHIVE",
+      "violation_count": 0
+    },
+    {
+      "arm": "A_HGS",
+      "duplicate_of_index": 25,
+      "feasible": true,
+      "index": 72,
+      "metadata": {
+        "assignment_count": 5,
+        "assignment_dp_rank": 3,
+        "capacity_aware_assignment_dp": true,
+        "charger_slot_use": [
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 0,
+            "station_id": "D_beijing"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 1,
+            "station_id": "D_beijing"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 2,
+            "station_id": "D_beijing"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 3,
+            "station_id": "D_beijing"
+          }
+        ],
+        "charging_route_count": 1,
+        "decoder": "explicit_reference_v1",
+        "fleet_use": [
+          4,
+          1
+        ],
+        "generation_kind": "population_archive",
+        "hgs_epoch": 3,
+        "hgs_seed": 1817250885,
+        "proxy_cost": 1427292,
+        "proxy_rank": 3,
+        "route_local_cost": 1506.8548034761332,
+        "route_proxy_mode": "mechanism_ev",
+        "warm_parent_signature": null,
+        "warm_signatures": [
+          "3308112f89210b23924a9646589a077a731014dfb560bbc86505c0e9ec173009"
+        ]
+      },
+      "objective": 1506.8548034761332,
+      "signature": "949556e6e8b13e1606627d15ae1f00f2da320fd468e1073c9733268e451d0b46",
+      "source": "HGS_ARCHIVE",
+      "violation_count": 0
+    },
+    {
+      "arm": "A_HGS",
+      "duplicate_of_index": 20,
+      "feasible": true,
+      "index": 73,
+      "metadata": {
+        "assignment_count": 5,
+        "assignment_dp_rank": 1,
+        "capacity_aware_assignment_dp": true,
+        "charger_slot_use": [],
+        "charging_route_count": 0,
+        "decoder": "explicit_reference_v1",
+        "fleet_use": [
+          5,
+          0
+        ],
+        "generation_kind": "population_archive",
+        "hgs_epoch": 3,
+        "hgs_seed": 1479718565,
+        "proxy_cost": 1562245,
+        "proxy_rank": 4,
+        "route_local_cost": 1558.9519950922693,
+        "route_proxy_mode": "cv_only",
+        "warm_parent_signature": null,
+        "warm_signatures": [
+          "3308112f89210b23924a9646589a077a731014dfb560bbc86505c0e9ec173009"
+        ]
+      },
+      "objective": 1558.9519950922693,
+      "signature": "9f4aa25d961f670d4452d0ea236d8334486d098f46bc949c82a50abfb8a1d5d1",
+      "source": "HGS_ARCHIVE",
+      "violation_count": 0
+    },
+    {
+      "arm": "A_HGS",
+      "duplicate_of_index": 21,
+      "feasible": true,
+      "index": 74,
+      "metadata": {
+        "assignment_count": 5,
+        "assignment_dp_rank": 2,
+        "capacity_aware_assignment_dp": true,
+        "charger_slot_use": [
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 0,
+            "station_id": "D_beijing"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 1,
+            "station_id": "D_beijing"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 2,
+            "station_id": "D_beijing"
+          }
+        ],
+        "charging_route_count": 1,
+        "decoder": "explicit_reference_v1",
+        "fleet_use": [
+          4,
+          1
+        ],
+        "generation_kind": "population_archive",
+        "hgs_epoch": 3,
+        "hgs_seed": 1479718565,
+        "proxy_cost": 1562245,
+        "proxy_rank": 4,
+        "route_local_cost": 1503.2088646426841,
+        "route_proxy_mode": "cv_only",
+        "warm_parent_signature": null,
+        "warm_signatures": [
+          "3308112f89210b23924a9646589a077a731014dfb560bbc86505c0e9ec173009"
+        ]
+      },
+      "objective": 1503.208864642684,
+      "signature": "bc11df25e8ad2601f62c8a6b6bb5f2b0762d177925ffa06a591166c55acba0c8",
+      "source": "HGS_ARCHIVE",
+      "violation_count": 0
+    },
+    {
+      "arm": "A_HGS",
+      "duplicate_of_index": 22,
+      "feasible": true,
+      "index": 75,
+      "metadata": {
+        "assignment_count": 5,
+        "assignment_dp_rank": 3,
+        "capacity_aware_assignment_dp": true,
+        "charger_slot_use": [
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 18,
+            "station_id": "D_beijing"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 19,
+            "station_id": "D_beijing"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 20,
+            "station_id": "D_beijing"
+          }
+        ],
+        "charging_route_count": 1,
+        "decoder": "explicit_reference_v1",
+        "fleet_use": [
+          4,
+          1
+        ],
+        "generation_kind": "population_archive",
+        "hgs_epoch": 3,
+        "hgs_seed": 1479718565,
+        "proxy_cost": 1562245,
+        "proxy_rank": 4,
+        "route_local_cost": 1510.9261406117826,
+        "route_proxy_mode": "cv_only",
+        "warm_parent_signature": null,
+        "warm_signatures": [
+          "3308112f89210b23924a9646589a077a731014dfb560bbc86505c0e9ec173009"
+        ]
+      },
+      "objective": 1510.9261406117826,
+      "signature": "f05ec97ad9ffd12f3d876c233a99b1d203b667cfe31e1ab57a8ef10a280dd57c",
+      "source": "HGS_ARCHIVE",
+      "violation_count": 0
+    },
+    {
+      "arm": "A_HGS",
+      "duplicate_of_index": 50,
+      "feasible": true,
+      "index": 76,
+      "metadata": {
+        "assignment_count": 5,
+        "assignment_dp_rank": 1,
+        "capacity_aware_assignment_dp": true,
+        "charger_slot_use": [
+          {
+            "day_offset": 0,
+            "route_count": 2,
+            "slot_index": 0,
+            "station_id": "D_beijing"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 2,
+            "slot_index": 1,
+            "station_id": "D_beijing"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 2,
+            "slot_index": 2,
+            "station_id": "D_beijing"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 2,
+            "slot_index": 3,
+            "station_id": "D_beijing"
+          }
+        ],
+        "charging_route_count": 2,
+        "decoder": "explicit_reference_v1",
+        "fleet_use": [
+          3,
+          2
+        ],
+        "generation_kind": "population_archive",
+        "hgs_epoch": 3,
+        "hgs_seed": 751136466,
+        "proxy_cost": 1445921,
+        "proxy_rank": 4,
+        "route_local_cost": 1427.20315179633,
+        "route_proxy_mode": "naive_ev",
+        "warm_parent_signature": null,
+        "warm_signatures": [
+          "3308112f89210b23924a9646589a077a731014dfb560bbc86505c0e9ec173009"
+        ]
+      },
+      "objective": 1427.20315179633,
+      "signature": "38b0cb535148d67f270566bb340ef3bc27bdb1b581e9998ed22e36bf6da7c7ab",
+      "source": "HGS_ARCHIVE",
+      "violation_count": 0
+    },
+    {
+      "arm": "A_HGS",
+      "duplicate_of_index": 51,
+      "feasible": true,
+      "index": 77,
+      "metadata": {
+        "assignment_count": 5,
+        "assignment_dp_rank": 2,
+        "capacity_aware_assignment_dp": true,
+        "charger_slot_use": [
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 0,
+            "station_id": "D_beijing"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 1,
+            "station_id": "D_beijing"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 2,
+            "station_id": "D_beijing"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 3,
+            "station_id": "D_beijing"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 21,
+            "station_id": "D_beijing"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 22,
+            "station_id": "D_beijing"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 23,
+            "station_id": "D_beijing"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 24,
+            "station_id": "D_beijing"
+          }
+        ],
+        "charging_route_count": 2,
+        "decoder": "explicit_reference_v1",
+        "fleet_use": [
+          3,
+          2
+        ],
+        "generation_kind": "population_archive",
+        "hgs_epoch": 3,
+        "hgs_seed": 751136466,
+        "proxy_cost": 1445921,
+        "proxy_rank": 4,
+        "route_local_cost": 1447.2715697454298,
+        "route_proxy_mode": "naive_ev",
+        "warm_parent_signature": null,
+        "warm_signatures": [
+          "3308112f89210b23924a9646589a077a731014dfb560bbc86505c0e9ec173009"
+        ]
+      },
+      "objective": 1447.27156974543,
+      "signature": "61ff2e4e7cf683ead19d6b526bda116cb6cb2ea4028667d6cb1412caed335eb4",
+      "source": "HGS_ARCHIVE",
+      "violation_count": 0
+    },
+    {
+      "arm": "A_HGS",
+      "duplicate_of_index": 52,
+      "feasible": true,
+      "index": 78,
+      "metadata": {
+        "assignment_count": 5,
+        "assignment_dp_rank": 3,
+        "capacity_aware_assignment_dp": true,
+        "charger_slot_use": [
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 0,
+            "station_id": "D_beijing"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 1,
+            "station_id": "D_beijing"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 2,
+            "station_id": "D_beijing"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 3,
+            "station_id": "D_beijing"
+          }
+        ],
+        "charging_route_count": 1,
+        "decoder": "explicit_reference_v1",
+        "fleet_use": [
+          4,
+          1
+        ],
+        "generation_kind": "population_archive",
+        "hgs_epoch": 3,
+        "hgs_seed": 751136466,
+        "proxy_cost": 1445921,
+        "proxy_rank": 4,
+        "route_local_cost": 1506.3255221366833,
+        "route_proxy_mode": "naive_ev",
+        "warm_parent_signature": null,
+        "warm_signatures": [
+          "3308112f89210b23924a9646589a077a731014dfb560bbc86505c0e9ec173009"
+        ]
+      },
+      "objective": 1506.3255221366833,
+      "signature": "1ccbbe9193a4013f1eaec22a5870ee350d86156cda5c21586f28501e1c5db09d",
+      "source": "HGS_ARCHIVE",
+      "violation_count": 0
+    },
+    {
+      "arm": "A_HGS",
+      "duplicate_of_index": 50,
+      "feasible": true,
+      "index": 79,
+      "metadata": {
+        "assignment_count": 5,
+        "assignment_dp_rank": 1,
+        "capacity_aware_assignment_dp": true,
+        "charger_slot_use": [
+          {
+            "day_offset": 0,
+            "route_count": 2,
+            "slot_index": 0,
+            "station_id": "D_beijing"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 2,
+            "slot_index": 1,
+            "station_id": "D_beijing"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 2,
+            "slot_index": 2,
+            "station_id": "D_beijing"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 2,
+            "slot_index": 3,
+            "station_id": "D_beijing"
+          }
+        ],
+        "charging_route_count": 2,
+        "decoder": "explicit_reference_v1",
+        "fleet_use": [
+          3,
+          2
+        ],
+        "generation_kind": "population_archive",
+        "hgs_epoch": 3,
+        "hgs_seed": 1817250885,
+        "proxy_cost": 1427330,
+        "proxy_rank": 4,
+        "route_local_cost": 1427.20315179633,
+        "route_proxy_mode": "mechanism_ev",
+        "warm_parent_signature": null,
+        "warm_signatures": [
+          "3308112f89210b23924a9646589a077a731014dfb560bbc86505c0e9ec173009"
+        ]
+      },
+      "objective": 1427.20315179633,
+      "signature": "38b0cb535148d67f270566bb340ef3bc27bdb1b581e9998ed22e36bf6da7c7ab",
+      "source": "HGS_ARCHIVE",
+      "violation_count": 0
+    },
+    {
+      "arm": "A_HGS",
+      "duplicate_of_index": 51,
+      "feasible": true,
+      "index": 80,
+      "metadata": {
+        "assignment_count": 5,
+        "assignment_dp_rank": 2,
+        "capacity_aware_assignment_dp": true,
+        "charger_slot_use": [
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 0,
+            "station_id": "D_beijing"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 1,
+            "station_id": "D_beijing"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 2,
+            "station_id": "D_beijing"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 3,
+            "station_id": "D_beijing"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 21,
+            "station_id": "D_beijing"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 22,
+            "station_id": "D_beijing"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 23,
+            "station_id": "D_beijing"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 24,
+            "station_id": "D_beijing"
+          }
+        ],
+        "charging_route_count": 2,
+        "decoder": "explicit_reference_v1",
+        "fleet_use": [
+          3,
+          2
+        ],
+        "generation_kind": "population_archive",
+        "hgs_epoch": 3,
+        "hgs_seed": 1817250885,
+        "proxy_cost": 1427330,
+        "proxy_rank": 4,
+        "route_local_cost": 1447.2715697454298,
+        "route_proxy_mode": "mechanism_ev",
+        "warm_parent_signature": null,
+        "warm_signatures": [
+          "3308112f89210b23924a9646589a077a731014dfb560bbc86505c0e9ec173009"
+        ]
+      },
+      "objective": 1447.27156974543,
+      "signature": "61ff2e4e7cf683ead19d6b526bda116cb6cb2ea4028667d6cb1412caed335eb4",
+      "source": "HGS_ARCHIVE",
+      "violation_count": 0
+    }
+  ],
+  "remaining": 0
+}

@@ -10,9 +10,12 @@ file bytes, not merely the input path strings.
 from __future__ import annotations
 
 import csv
+from collections import Counter
 import hashlib
 import json
 import math
+import os
+import re
 import sys
 from datetime import UTC, datetime
 from pathlib import Path
@@ -20,15 +23,30 @@ from typing import Any
 
 
 REPO = Path(__file__).resolve().parents[3]
+CAMPAIGN_NAME = os.environ.get(
+    "RESET_D6_CAMPAIGN_NAME",
+    "corrected_china81_rerun_v3_20260724",
+)
+if (
+    not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9._-]*", CAMPAIGN_NAME)
+    or not CAMPAIGN_NAME.startswith("corrected_china81_rerun_")
+):
+    raise RuntimeError(
+        f"invalid RESET_D6_CAMPAIGN_NAME: {CAMPAIGN_NAME!r}"
+    )
 CAMPAIGN = (
     REPO
-    / "baselines/e2_final_campaign_20260720/"
-    "corrected_china81_rerun_v2_20260723"
+    / "baselines/e2_final_campaign_20260720"
+    / CAMPAIGN_NAME
 )
 FULL = CAMPAIGN / "full_gate"
 OUT = CAMPAIGN / "full_witness_replay"
+PREREGISTRATION = (
+    CAMPAIGN / "full_witness_replay_preregistration.json"
+)
 FORMAL_DIR = REPO / "baselines/china_e3_e7"
 for path in (
+    REPO,
     REPO / "solver/src",
     REPO
     / "baselines/algorithm_prototypes/"
@@ -137,6 +155,27 @@ def load_solution(payload: dict[str, Any]) -> Solution:
 
 
 def main() -> int:
+    preregistration = json.loads(
+        PREREGISTRATION.read_text(encoding="utf-8")
+    )
+    if (
+        preregistration.get("campaign_name") != CAMPAIGN_NAME
+        or preregistration.get("operation")
+        != "NO_SEARCH_INDEPENDENT_REPLAY_ONLY"
+        or preregistration.get("expected_tasks") != 405
+        or preregistration.get("expected_solutions") != 1620
+        or preregistration.get("search_evaluations") != 0
+    ):
+        raise RuntimeError("full witness replay preregistration mismatch")
+    for relative, expected in preregistration.get(
+        "source_hashes",
+        {},
+    ).items():
+        source = REPO / relative
+        if not source.is_file() or sha256(source) != expected:
+            raise RuntimeError(
+                f"full witness replay preregistration drift: {relative}"
+            )
     full_decision = json.loads(
         (FULL / "decision.json").read_text(encoding="utf-8")
     )
@@ -153,6 +192,31 @@ def main() -> int:
         source_rows = list(csv.DictReader(handle))
     if len(source_rows) != 405:
         raise RuntimeError("expected 405 corrected D6 task rows")
+    task_ids = [row["task_id"] for row in source_rows]
+    task_keys = [
+        (row["instance_id"], int(row["seed"]))
+        for row in source_rows
+    ]
+    if len(set(task_ids)) != 405 or len(set(task_keys)) != 405:
+        raise RuntimeError("duplicate task id or instance-seed key")
+    seeds_by_instance: dict[str, Counter[int]] = {}
+    for instance_id, seed in task_keys:
+        seeds_by_instance.setdefault(instance_id, Counter())[seed] += 1
+    if (
+        len(seeds_by_instance) != 81
+        or any(
+            counts != Counter({1: 1, 2: 1, 3: 1, 4: 1, 5: 1})
+            for counts in seeds_by_instance.values()
+        )
+    ):
+        raise RuntimeError("task matrix is not 81 instances x seeds 1--5")
+    if any(
+        row["status"] != "PASS"
+        or int(row["complete_candidate_attempts"]) != 80
+        or row["wallclock_safety_triggered"].lower() == "true"
+        for row in source_rows
+    ):
+        raise RuntimeError("source ledger contains a failed budget/task row")
     OUT.mkdir(parents=True, exist_ok=True)
     manifest_dir = OUT / "input_manifests"
     manifest_hash_by_instance: dict[str, str] = {}
@@ -273,6 +337,7 @@ def main() -> int:
                             and cost_equal
                             and emissions_equal
                             and charging_within_registered_day
+                            and depot_charging_before_departure
                             and depot_fleet_caps_respected
                         )
                         else "FAIL"
@@ -322,8 +387,40 @@ def main() -> int:
                 flush=True,
             )
     write_csv(OUT / "raw_runs.csv", output)
+    replayed_costs: dict[str, dict[str, float]] = {}
+    for row in output:
+        replayed_costs.setdefault(
+            str(row["task_id"]),
+            {},
+        )[str(row["arm"])] = float(row["replayed_cost"])
+    dominance: dict[str, dict[str, int]] = {}
+    structural_nonworse = True
+    for comparator in ("HGS-F", "HGS-E", "HGS-M"):
+        counts = {"wins": 0, "ties": 0, "losses": 0}
+        for task_id, costs in replayed_costs.items():
+            if set(costs) != set(ARMS):
+                raise RuntimeError(
+                    f"incomplete replayed arm set: {task_id}"
+                )
+            main_cost = costs["MV-HGS-SP"]
+            comparator_cost = costs[comparator]
+            if main_cost < comparator_cost - 1.0e-9:
+                counts["wins"] += 1
+            elif main_cost > comparator_cost + 1.0e-9:
+                counts["losses"] += 1
+                structural_nonworse = False
+            else:
+                counts["ties"] += 1
+        dominance[comparator] = counts
     passed = (
         len(output) == 1620
+        and len(
+            {
+                (row["task_id"], row["arm"])
+                for row in output
+            }
+        )
+        == 1620
         and len(manifest_hash_by_instance) == 81
         and all(row["status"] == "PASS" for row in output)
         and all(
@@ -341,6 +438,7 @@ def main() -> int:
             row["all_depot_fleet_caps_respected"]
             for row in output
         )
+        and structural_nonworse
     )
     decision = {
         "schema": "resetp.d6-corrected-full-witness-replay.decision.v1",
@@ -352,6 +450,18 @@ def main() -> int:
         "search_executions": 0,
         "task_count": 405,
         "solution_count": len(output),
+        "unique_task_id_count": len(set(task_ids)),
+        "unique_instance_seed_count": len(set(task_keys)),
+        "unique_task_arm_count": len(
+            {
+                (row["task_id"], row["arm"])
+                for row in output
+            }
+        ),
+        "all_source_complete_candidate_budgets_80": all(
+            int(row["complete_candidate_attempts"]) == 80
+            for row in source_rows
+        ),
         "instance_input_manifest_count": len(
             manifest_hash_by_instance
         ),
@@ -381,6 +491,11 @@ def main() -> int:
             row["all_depot_fleet_caps_respected"]
             for row in output
         ),
+        "mv_hgs_sp_structurally_nonworse_than_each_single_view": (
+            structural_nonworse
+        ),
+        "mv_hgs_sp_pairwise_win_tie_loss": dominance,
+        "strict_improvement_is_not_a_release_gate": True,
         "joint_settlement_policy": (
             "diesel by route-origin city; electricity and carbon by charging "
             "node city, 2025-02-12 and half-hour slot; fail closed"
@@ -402,6 +517,8 @@ def main() -> int:
                 for path in (
                     FULL / "raw_runs.csv",
                     FULL / "decision.json",
+                    PREREGISTRATION,
+                    FORMAL_DIR / "release_v6_config.py",
                     FORMAL_DIR / "formal_e3_runner.py",
                     REPO / "solver/src/setp_solver/china81.py",
                     REPO
@@ -459,6 +576,21 @@ def main() -> int:
             "schema": "resetp.artifact-hashes.v1",
             "exclusions": ["artifact_hashes.json", "._*", "*.tmp"],
             "artifacts": artifacts,
+        },
+    )
+    write_json(
+        OUT / "done.json",
+        {
+            "schema": (
+                "resetp.d6-corrected-full-witness-replay-completion.v1"
+            ),
+            "verdict": decision["verdict"],
+            "solution_count": len(output),
+            "raw_runs_sha256": sha256(OUT / "raw_runs.csv"),
+            "decision_sha256": sha256(OUT / "decision.json"),
+            "artifact_hashes_sha256": sha256(
+                OUT / "artifact_hashes.json"
+            ),
         },
     )
     print(json.dumps(decision, ensure_ascii=False, sort_keys=True))

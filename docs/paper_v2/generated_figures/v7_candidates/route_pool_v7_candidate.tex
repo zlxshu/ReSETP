@@ -2,74 +2,67 @@
 \begin{figure}[H]
 \centering
 \begin{tikzpicture}[
-  every node/.style={font=\fontsize{8.2}{9.6}\selectfont},
+  every node/.style={font=\fontsize{8.4}{9.8}\selectfont},
   panel/.style={rectangle,draw=black,line width=0.45pt,align=center,
-    inner sep=2.6mm},
+    inner sep=3.0mm},
   plan/.style={rectangle,draw=black,line width=0.38pt,minimum width=17mm,
-    minimum height=5.5mm,align=center,inner sep=1pt},
+    minimum height=5.8mm,align=center,inner sep=1pt},
   route/.style={rectangle,draw=black,line width=0.38pt,minimum width=43mm,
-    minimum height=5.7mm,align=center,inner sep=1pt},
-  selected/.style={route,line width=0.85pt},
+    minimum height=5.9mm,align=center,inner sep=1pt},
   rejected/.style={plan,dashed},
   action/.style={rectangle,draw=black,line width=0.45pt,text width=45mm,
-    minimum height=8.2mm,align=center,inner sep=1.5pt},
+    minimum height=8.4mm,align=center,inner sep=1.5pt},
   arrow/.style={-{Latex[length=2.5mm,width=1.65mm]},line width=0.55pt,
     line cap=rect,line join=miter,shorten >=1.2pt},
-  small/.style={font=\fontsize{7.9}{9.1}\selectfont,align=center,inner sep=0.8pt}
+  small/.style={font=\fontsize{8.0}{9.2}\selectfont,align=center,
+    inner sep=0.8pt}
 ]
-% Panel (a): source archives.
-\node[panel,minimum width=66mm,minimum height=44mm] (pa) at (-3.60,2.70) {};
-\node[small] at (-3.60,4.52) {(a) 三视角候选档案};
+% Clockwise reading order: (a) -> (b) -> (c) -> (d).
+\node[panel,minimum width=62mm,minimum height=44mm] (pa) at (-3.75,2.75) {};
+\node[small] at (-3.75,4.55) {(a) 三视角候选档案};
 \node[small] at (-5.55,3.86) {HGS-F};
-\node[small] at (-3.60,3.86) {HGS-E};
-\node[small] at (-1.65,3.86) {HGS-M};
-\foreach \x in {-5.55,-3.60,-1.65} {
-  \node[plan] at (\x,3.28) {候选方案1};
-  \node[plan] at (\x,2.58) {候选方案2};
-  \node[plan] at (\x,1.88) {候选方案3};
-  \node[small] at (\x,1.30) {$\vdots$};
+\node[small] at (-3.75,3.86) {HGS-E};
+\node[small] at (-1.95,3.86) {HGS-M};
+\foreach \x in {-5.55,-3.75,-1.95} {
+  \node[plan] at (\x,3.26) {候选1};
+  \node[plan] at (\x,2.54) {候选2};
+  \node[plan] at (\x,1.82) {候选3};
+  \node[small] at (\x,1.24) {$\vdots$};
 }
 
-% Panel (b): full-model review.
-\node[panel,minimum width=51mm,minimum height=44mm] (pb) at (3.85,2.70) {};
-\node[small] at (3.85,4.52) {(b) 完整模型统一检查};
-\node[action] at (3.85,3.55)
-  {车型指派、补能、时间窗\\车队数量、分时成本与碳排放};
-\node[plan,minimum width=20mm] at (2.55,2.36) {可行候选};
-\node[plan,minimum width=20mm] at (5.15,2.36) {可行候选};
-\node[rejected,minimum width=20mm] at (2.55,1.52) {不可行剔除};
-\node[rejected,minimum width=20mm] at (5.15,1.52) {不可行剔除};
+\node[panel,minimum width=53mm,minimum height=44mm] (pb) at (3.75,2.75) {};
+\node[small] at (3.75,4.55) {(b) 完整模型统一检查};
+\node[action] at (3.75,3.46)
+  {车型与车队\\充电与时段\\时间窗、成本与排放};
+\node[plan,minimum width=21mm] at (2.45,2.10) {通过};
+\node[plan,minimum width=21mm] at (5.05,2.10) {通过};
+\node[rejected,minimum width=21mm] at (2.45,1.28) {剔除};
+\node[rejected,minimum width=21mm] at (5.05,1.28) {剔除};
 
-% Panel (c): route pool.
-\node[panel,minimum width=51mm,minimum height=44mm] (pc) at (-4.35,-2.70) {};
-\node[small] at (-4.35,-0.88) {(c) 可行路线合并去重};
-\node[route] at (-4.35,-1.62) {广州场--客户4--客户18--广州场};
-\node[selected] at (-4.35,-2.39) {深圳场--客户7--客户21--深圳场};
-\node[route] at (-4.35,-3.16) {广州场--客户2--客户13--广州场};
-\node[selected] at (-4.35,-3.93) {深圳场--客户5--客户16--深圳场};
+\node[panel,minimum width=53mm,minimum height=44mm] (pc) at (3.75,-2.75) {};
+\node[small] at (3.75,-0.95) {(c) 可行路线合并去重};
+\node[route] at (3.75,-1.66) {广州场--4--18--广州场};
+\node[route] at (3.75,-2.42) {深圳场--7--21--深圳场};
+\node[route] at (3.75,-3.18) {广州场--2--13--广州场};
+\node[route] at (3.75,-3.94) {深圳场--5--16--深圳场};
 
-% Panel (d): MIP and final adjudication.
-\node[panel,minimum width=66mm,minimum height=44mm] (pd) at (3.10,-2.70) {};
-\node[small] at (3.10,-0.88) {(d) 限时组合与最终择优};
-\node[action,text width=54mm] (mip) at (3.10,-1.62)
-  {限时MIP从路线池选取\\客户恰好覆盖的可行组合};
-\node[action,text width=54mm] (check) at (3.10,-2.78)
-  {组合方案重新完成排班\\并通过完整模型与独立检查};
-\node[action,text width=54mm] (best) at (3.10,-3.94)
-  {与三视角最好完整解比较\\输出成本最低的可行方案};
+\node[panel,minimum width=62mm,minimum height=44mm] (pd) at (-3.75,-2.75) {};
+\node[small] at (-3.75,-0.95) {(d) 限时组合与最终核验};
+\node[action,text width=51mm] (mip) at (-3.75,-1.78)
+  {限时MIP组合\\每个客户恰好覆盖一次};
+\node[action,text width=51mm] (check) at (-3.75,-2.90)
+  {重新完成实体车排班\\完整复核与独立检查};
+\node[action,text width=51mm] (best) at (-3.75,-4.02)
+  {与受保护完整解择优\\输出最低成本可行方案};
 
-% Orthogonal arrows, routed only through panel margins.
 \draw[arrow] (pa.east) -- (pb.west);
-\draw[arrow] (pb.south) -- (3.85,0.08) -- (-4.35,0.08) -- (pc.north);
-\draw[arrow] (pc.east) -- (pd.west);
+\node[small,above=0.7mm] at (0,2.75) {候选方案};
+\draw[arrow] (pb.south) -- (pc.north);
+\node[small,anchor=west] at (3.88,0) {可行路线};
+\draw[arrow] (pc.west) -- (pd.east);
+\node[small,above=0.7mm] at (0,-2.75) {路线池};
 \draw[arrow] (mip) -- (check);
 \draw[arrow] (check) -- (best);
-\draw[arrow] (pb.east) -- (6.95,2.70) -- (6.95,-3.94) -- (best.east);
-\node[small,above=0.7mm] at (0.18,2.70) {完整检查};
-\node[small,above=0.7mm] at (-0.62,0.08) {可行路线进入池};
-\node[small,above=0.7mm] at (-0.58,-2.70) {路线池};
-\node[small,text width=17mm,anchor=east] at (6.78,-0.24)
-  {最好完整解直接比较};
 \end{tikzpicture}
 \caption{多视角候选的完整模型筛选与路线重组}
 \label{fig:route-pool}

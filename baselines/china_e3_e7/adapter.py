@@ -173,19 +173,65 @@ def _order_audit(contract: dict[str, Any], rows: list[dict[str, str]]) -> dict[s
 def _release_gate_audit(contract: dict[str, Any]) -> dict[str, Any]:
     g1 = ROOT / "data/ChinaInstances/china81_g1_independent_frozen_v2_20260718/decision.json"
     nl3b = ROOT / "baselines/model_verification/china81_vehicle_road_profiles_nl3b_20260720/decision.json"
-    lock = ROOT / "data/ChinaInstances/china_parameter_lock_v2_20260718.json"
+    legacy_lock = ROOT / "data/ChinaInstances/china_parameter_lock_v2_20260718.json"
     calendar_decision = ROOT / contract["source_contracts"]["calendar_machine_decision"]
+    runtime = ROOT / contract["source_contracts"]["runtime_parameters"]
+    fleet = ROOT / contract["source_contracts"]["finite_fleet"]
+    settlement = ROOT / contract["source_contracts"][
+        "spatiotemporal_settlement"
+    ]
+    approval = ROOT / contract["source_contracts"][
+        "algorithm_repair_approval"
+    ]
+    approval_text = (
+        approval.read_text(encoding="utf-8")
+        if approval.is_file()
+        else ""
+    )
     checks = {
+        "v6_contract_selected": contract.get("schema", "").endswith(
+            "formal-release-contract.v6"
+        ),
         "contract_formal_search_allowed_false": contract["formal_search_allowed"] is False,
+        "contract_search_evaluations_zero": contract.get(
+            "search_evaluations"
+        )
+        == 0,
+        "g1_data_freeze_pass": str(_decision_value(g1, "verdict")).startswith(
+            "PASS_CHINA81_G1_INDEPENDENT_DATA_FROZEN"
+        ),
         "g1_formal_search_allowed_false": _decision_value(g1, "formal_search_allowed") is False,
         "g1_search_evaluations_zero": _decision_value(g1, "search_evaluations") == 0,
+        "nl3b_runtime_join_pass": _decision_value(nl3b, "verdict")
+        == "PASS_NL3B_CHINA81_81_OF_81_RUNTIME_JOIN",
         "nl3b_formal_search_allowed_false": _decision_value(nl3b, "formal_search_allowed") is False,
         "nl3b_search_evaluations_zero": _decision_value(nl3b, "search_evaluations") == 0,
         "e2_algorithm_closeout_present": E2_CLOSEOUT.is_file(),
-        "parameter_lock_present": lock.is_file(),
-        "parameter_lock_not_formal": _decision_value(lock, "status") == "NOT_FORMAL",
+        "legacy_parameter_lock_retained_as_historical": (
+            legacy_lock.is_file()
+            and _decision_value(legacy_lock, "status") == "NOT_FORMAL"
+        ),
+        "runtime_authority_pass": _decision_value(runtime, "verdict")
+        == "PASS_CITY_DATE_SLOT_PARAMETER_AUTHORITY",
+        "finite_fleet_authority_pass": _decision_value(fleet, "verdict")
+        == "PASS_FINITE_FLEET_ZERO_SEARCH_WITNESSES",
+        "settlement_authority_pass": _decision_value(
+            settlement,
+            "verdict",
+        )
+        == "PASS_FAIL_CLOSED_SPATIOTEMPORAL_SETTLEMENT_AUTHORITY",
+        "d1_d6_release_approval_present": (
+            "CHINA-E3-FORMAL-RELEASE-001" in approval_text
+        ),
         "calendar_machine_decision_present": calendar_decision.is_file(),
-        "calendar_panel_status_still_held": contract["data"]["calendar"]["formal_status"] == "HALT_CHINA_CALENDAR_NOT_ALIGNED",
+        "calendar_month_and_date_registered": (
+            contract["data"]["calendar"]["formal_status"]
+            == "PASS_COMMON_MONTH_AND_EXHIBIT_DATE_REGISTERED"
+            and contract["data"]["calendar"][
+                "common_default_exhibit_day"
+            ]
+            == "2025-02-12"
+        ),
     }
     return {
         "status": "FOUNDATION_PASS_FORMAL_RELEASE_HELD" if all(checks.values()) else "HALT_RELEASE_AUDIT",
@@ -193,9 +239,12 @@ def _release_gate_audit(contract: dict[str, Any]) -> dict[str, Any]:
         "formal_search_allowed": False,
         "search_evaluations": 0,
         "release_blockers": [
-            "中国 G1/物理包仍是 formal acceptance held；本次只记录这一事实，不替它改成 PASS。",
-            "参数锁仍为 NOT_FORMAL；车场、日历和正式接纳闸门需要后续独立放行。",
-            "E3-E7 当前任务清单是 planning-only；MV-HGS-SP 只读引用。",
+            "本基础检查不直接放行搜索；只有版本一致的 E2、独立复算、"
+            "双臂检查、小规模预算试跑、回归检查和最终 GO 包全部通过后"
+            "才能启动 E3。",
+            "旧参数锁的 NOT_FORMAL 状态保留为历史记录；当前正式依据是"
+            "用户批准的 D1--D6 登记及其城市—日期—半小时、有限车队和"
+            "结算三份新版机器检查。",
         ],
     }
 
@@ -480,6 +529,15 @@ def main(argv: list[str] | None = None) -> int:
     plot = sub.add_parser("plot")
     plot.add_argument("--raw", type=Path, default=DEFAULT_OUT / "raw_runs.csv")
     plot.add_argument("--out", type=Path, default=DEFAULT_OUT / "figures")
+    plot.add_argument(
+        "--aggregate",
+        type=Path,
+        default=None,
+        help=(
+            "independent-recalc aggregate directory; required before "
+            "formal-result figures can be released"
+        ),
+    )
     tables = sub.add_parser("tables")
     tables.add_argument("--aggregate", type=Path, default=DEFAULT_OUT / "aggregates")
     tables.add_argument("--out", type=Path, default=DEFAULT_OUT / "paper_tables")
@@ -503,7 +561,18 @@ def main(argv: list[str] | None = None) -> int:
         print(json.dumps(aggregate_raw(args.raw, args.out, repo_root=ROOT), ensure_ascii=False, indent=2))
         return 0
     if args.command == "plot":
-        print(json.dumps(generate_figures(args.raw, args.out, repo_root=ROOT), ensure_ascii=False, indent=2))
+        print(
+            json.dumps(
+                generate_figures(
+                    args.raw,
+                    args.out,
+                    repo_root=ROOT,
+                    aggregate_dir=args.aggregate,
+                ),
+                ensure_ascii=False,
+                indent=2,
+            )
+        )
         return 0
     if args.command == "tables":
         print(json.dumps(render_tables(args.aggregate, args.out, repo_root=ROOT), ensure_ascii=False, indent=2))

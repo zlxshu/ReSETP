@@ -1,0 +1,91 @@
+{
+  "ai": {
+    "enabled": false,
+    "timeout_seconds": 180
+  },
+  "checkpoint_paths": [],
+  "completion_files": [
+    "/Volumes/移动硬盘（512G）/ReSETP/baselines/algorithm_prototypes/resource_slot_pricing_20260725/engineering_gate_v2/done.json"
+  ],
+  "config_path": "/Volumes/移动硬盘（512G）/ReSETP/baselines/algorithm_prototypes/resource_slot_pricing_20260725/monitor_engineering_v2.json",
+  "csv_rules": [
+    {
+      "duplicate_key_fields": [
+        "task_id"
+      ],
+      "feasible_field": "status",
+      "max_duplicate_fraction": 0,
+      "min_feasible_rate": 1.0,
+      "path": "/Volumes/移动硬盘（512G）/ReSETP/baselines/algorithm_prototypes/resource_slot_pricing_20260725/engineering_gate_v2/raw_runs.csv",
+      "required": true,
+      "required_after_seconds": 150,
+      "required_fields": [
+        "task_id",
+        "instance_id",
+        "lane",
+        "status",
+        "extensions",
+        "complete_labels",
+        "peak_rss_bytes"
+      ],
+      "truthy": [
+        "PASS"
+      ]
+    }
+  ],
+  "forbidden_command_substrings": [
+    "run_g0_v2.py",
+    "exact_china81_score",
+    "--tune",
+    "--rescue"
+  ],
+  "logs": [],
+  "low_cpu_consecutive_checks": 4,
+  "max_rss_mb": 4096,
+  "max_runtime_seconds": 180,
+  "milestones": [],
+  "min_cpu_percent_when_active": 1,
+  "min_system_free_memory_mb": 1024,
+  "min_system_memory_free_percent": 10,
+  "name": "resource-slot-pricing-engineering-v2",
+  "objective": "Run the import-only repaired frozen zero-objective engineering and six-worker resource gate",
+  "pause_on_anomaly": true,
+  "poll_seconds": 5,
+  "progress_files": [],
+  "protected_files": [
+    {
+      "kind": "primary_config",
+      "path": "/Volumes/移动硬盘（512G）/ReSETP/baselines/algorithm_prototypes/resource_slot_pricing_20260725/g0_registration_v2.json"
+    },
+    {
+      "kind": "experiment_contract",
+      "path": "/Volumes/移动硬盘（512G）/ReSETP/docs/handoff/e2_resource_slot_pricing_candidate_review_20260725.md"
+    },
+    {
+      "kind": "experiment_contract",
+      "path": "/Volumes/移动硬盘（512G）/ReSETP/docs/handoff/e2_resource_slot_pricing_import_repair_v2_20260725.md"
+    },
+    {
+      "kind": "model",
+      "path": "/Volumes/移动硬盘（512G）/ReSETP/baselines/algorithm_prototypes/resource_slot_pricing_20260725/pricing_core.py"
+    },
+    {
+      "kind": "evaluator",
+      "path": "/Volumes/移动硬盘（512G）/ReSETP/baselines/algorithm_prototypes/resource_slot_pricing_20260725/run_engineering_gate.py"
+    },
+    {
+      "kind": "evaluator",
+      "path": "/Volumes/移动硬盘（512G）/ReSETP/baselines/algorithm_prototypes/resource_slot_pricing_20260725/run_engineering_gate_v2.py"
+    }
+  ],
+  "required_command_substrings": [
+    "run_engineering_gate_v2.py"
+  ],
+  "result_files": [
+    "/Volumes/移动硬盘（512G）/ReSETP/baselines/algorithm_prototypes/resource_slot_pricing_20260725/engineering_gate_v2/raw_runs.csv",
+    "/Volumes/移动硬盘（512G）/ReSETP/baselines/algorithm_prototypes/resource_slot_pricing_20260725/engineering_gate_v2/decision.json"
+  ],
+  "schema_version": 1,
+  "stale_seconds": 120,
+  "workdir": "/Volumes/移动硬盘（512G）/ReSETP/baselines/algorithm_prototypes/resource_slot_pricing_20260725"
+}

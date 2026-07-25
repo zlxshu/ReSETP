@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """Fail-closed formal E3 paired runner for corrected China81.
 
-Formal search is impossible until ``e3_go_gate_20260723/decision.json``
-contains ``GO_E3_FORMAL_SEARCH``. Every task binds the corrected authorities,
+Formal search is impossible until the version-matched v6 GO decision contains
+``GO_E3_FORMAL_SEARCH``. Every task binds the corrected authorities,
 finite-fleet witness, responsibility map, algorithm/evaluator sources, result
 solution, settlement trace, and independent recomputation by hash.
 """
@@ -46,6 +46,13 @@ import pyvrp  # noqa: E402
 from route_pool_sp import run_hgs_route_pool_recombination  # noqa: E402
 import numpy  # noqa: E402
 import scipy  # noqa: E402
+from baselines.china_e3_e7.release_v6_config import (  # noqa: E402
+    COMPLETE_CANDIDATE_BUDGET as RELEASE_COMPLETE_BUDGET,
+    CONTRACT,
+    E3_FORMAL as DEFAULT_OUT,
+    E3_GO_GATE as GO_ROOT,
+    RELEASE_CONFIG,
+)
 from baselines.china_e3_e7.build_e3_environment_authority import (  # noqa: E402
     distribution_tree_sha256,
 )
@@ -71,18 +78,7 @@ from setp_solver.solution import (  # noqa: E402
     physical_vehicle_id,
 )
 
-
-CONTRACT = (
-    REPO
-    / "data/ChinaInstances/"
-    "china_e3_formal_release_contract_v4_20260723.json"
-)
-GO_DECISION = (
-    REPO
-    / "baselines/china_e3_e7/"
-    "e3_go_gate_20260723/decision.json"
-)
-GO_ROOT = GO_DECISION.parent
+GO_DECISION = GO_ROOT / "decision.json"
 GO_METADATA = GO_ROOT / "metadata.json"
 GO_ARTIFACT_HASHES = GO_ROOT / "artifact_hashes.json"
 GO_RELEASE_LOCK = GO_ROOT / "release_evidence_lock.json"
@@ -101,11 +97,6 @@ ENVIRONMENT = (
     / "baselines/china_e3_e7/"
     "e3_environment_authority_20260723"
 )
-DEFAULT_OUT = (
-    REPO
-    / "baselines/china_e3_e7/"
-    "e3_formal_20260723"
-)
 SEEDS = (1, 2, 3, 4, 5)
 ARMS = {
     "status_quo_responsibility": True,
@@ -114,7 +105,7 @@ ARMS = {
 MAX_HGS_ITERATIONS_PER_VIEW = 5_000
 ARCHIVE_CANDIDATES_PER_VIEW = 24
 EXACT_ELITES_PER_VIEW = 8
-COMPLETE_CANDIDATE_BUDGET = 80
+COMPLETE_CANDIDATE_BUDGET = RELEASE_COMPLETE_BUDGET
 MIP_TIME_LIMIT_SECONDS = 5.0
 SECONDS_PER_DAY = 24 * 60 * 60
 REQUIRED_THREAD_ENV = {
@@ -708,6 +699,7 @@ def _source_hashes() -> dict[str, str]:
         GO_METADATA,
         GO_ARTIFACT_HASHES,
         GO_RELEASE_LOCK,
+        RELEASE_CONFIG,
         ENVIRONMENT / "artifact_hashes.json",
         SETTLEMENT / "artifact_hashes.json",
         FLEET / "artifact_hashes.json",
@@ -1268,6 +1260,23 @@ def finalize(out_root: Path) -> dict[str, Any]:
                 "*.tmp",
             ],
             "artifacts": hashes,
+        },
+    )
+    write_json(
+        out_root / "done.json",
+        {
+            "schema": "resetp.china-e3-formal-completion.v1",
+            "verdict": decision["verdict"],
+            "task_count": len(rows),
+            "raw_runs_sha256": file_sha256(
+                out_root / "raw_runs.csv"
+            ),
+            "decision_sha256": file_sha256(
+                out_root / "decision.json"
+            ),
+            "artifact_hashes_sha256": file_sha256(
+                out_root / "artifact_hashes.json"
+            ),
         },
     )
     return decision

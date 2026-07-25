@@ -1,0 +1,92 @@
+{
+  "ai": {
+    "enabled": false,
+    "timeout_seconds": 180
+  },
+  "checkpoint_paths": [],
+  "completion_files": [
+    "/Volumes/移动硬盘（512G）/ReSETP/baselines/e2_final_campaign_20260720/corrected_china81_rerun_v7_small_archive_ledger_20260724/paper_candidate_chain/done.json"
+  ],
+  "config_path": "/Volumes/移动硬盘（512G）/ReSETP/baselines/e2_final_campaign_20260720/corrected_china81_rerun_v7_small_archive_ledger_20260724/monitor_paper_candidate_chain_v1.json",
+  "forbidden_command_substrings": [
+    "--smoke",
+    "--debug"
+  ],
+  "logs": [
+    "/Volumes/移动硬盘（512G）/ReSETP/baselines/e2_final_campaign_20260720/corrected_china81_rerun_v7_small_archive_ledger_20260724/paper_candidate_chain/paper_text.log",
+    "/Volumes/移动硬盘（512G）/ReSETP/baselines/e2_final_campaign_20260720/corrected_china81_rerun_v7_small_archive_ledger_20260724/paper_candidate_chain/route_text.log",
+    "/Volumes/移动硬盘（512G）/ReSETP/baselines/e2_final_campaign_20260720/corrected_china81_rerun_v7_small_archive_ledger_20260724/paper_candidate_chain/paper_integration.log",
+    "/Volumes/移动硬盘（512G）/ReSETP/baselines/e2_final_campaign_20260720/corrected_china81_rerun_v7_small_archive_ledger_20260724/paper_candidate_chain/latexmk.log"
+  ],
+  "low_cpu_consecutive_checks": 100000,
+  "max_rss_mb": 3000,
+  "max_runtime_seconds": 172800,
+  "milestones": [],
+  "min_cpu_percent_when_active": 0,
+  "min_system_free_memory_mb": 128,
+  "min_system_memory_free_percent": 3,
+  "name": "e2-v7-paper-candidate-chain",
+  "objective": "等待E2发布链通过后零搜索生成结果文字、表4说明和独立整稿候选，并完成出版社格式编译检查",
+  "pause_on_anomaly": true,
+  "poll_seconds": 10,
+  "progress_files": [
+    "/Volumes/移动硬盘（512G）/ReSETP/baselines/e2_final_campaign_20260720/corrected_china81_rerun_v7_small_archive_ledger_20260724/paper_candidate_chain/progress.json"
+  ],
+  "protected_files": [
+    {
+      "kind": "release_contract",
+      "path": "/Volumes/移动硬盘（512G）/ReSETP/baselines/e2_final_campaign_20260720/corrected_china81_rerun_v7_small_archive_ledger_20260724/release_chain_registration_v1.json"
+    },
+    {
+      "kind": "paper_text_contract",
+      "path": "/Volumes/移动硬盘（512G）/ReSETP/baselines/e2_final_campaign_20260720/corrected_china81_rerun_v7_small_archive_ledger_20260724/paper_text_preregistration_v1.json"
+    },
+    {
+      "kind": "route_text_contract",
+      "path": "/Volumes/移动硬盘（512G）/ReSETP/baselines/e2_final_campaign_20260720/corrected_china81_rerun_v7_small_archive_ledger_20260724/route_text_preregistration_v1.json"
+    },
+    {
+      "kind": "paper_candidate_contract",
+      "path": "/Volumes/移动硬盘（512G）/ReSETP/baselines/e2_final_campaign_20260720/corrected_china81_rerun_v7_small_archive_ledger_20260724/paper_candidate_chain_preregistration_v1.json"
+    },
+    {
+      "kind": "paper_candidate_runner",
+      "path": "/Volumes/移动硬盘（512G）/ReSETP/baselines/e2_final_campaign_20260720/run_e2_v7_paper_candidate_chain.py"
+    },
+    {
+      "kind": "paper_text_runner",
+      "path": "/Volumes/移动硬盘（512G）/ReSETP/baselines/e2_final_campaign_20260720/materialize_e2_v7_paper_text.py"
+    },
+    {
+      "kind": "route_text_runner",
+      "path": "/Volumes/移动硬盘（512G）/ReSETP/baselines/e2_final_campaign_20260720/materialize_e2_v7_route_text.py"
+    },
+    {
+      "kind": "paper_integration_runner",
+      "path": "/Volumes/移动硬盘（512G）/ReSETP/docs/paper_v2/candidates/build_v7_integrated_paper.py"
+    },
+    {
+      "kind": "paper_integration_contract",
+      "path": "/Volumes/移动硬盘（512G）/ReSETP/docs/paper_v2/candidates/v7_paper_integration_registration.json"
+    },
+    {
+      "kind": "publisher_format",
+      "path": "/Volumes/移动硬盘（512G）/ReSETP/docs/paper_v2/setp-new.cls"
+    },
+    {
+      "kind": "protected_main_paper",
+      "path": "/Volumes/移动硬盘（512G）/ReSETP/docs/paper_v2/paper_main.tex"
+    }
+  ],
+  "required_command_substrings": [
+    "run_e2_v7_paper_candidate_chain.py"
+  ],
+  "result_files": [
+    "/Volumes/移动硬盘（512G）/ReSETP/baselines/e2_final_campaign_20260720/corrected_china81_rerun_v7_small_archive_ledger_20260724/paper_candidate_chain/decision.json",
+    "/Volumes/移动硬盘（512G）/ReSETP/baselines/e2_final_campaign_20260720/corrected_china81_rerun_v7_small_archive_ledger_20260724/paper_candidate_chain/artifact_hashes.json",
+    "/Volumes/移动硬盘（512G）/ReSETP/baselines/e2_final_campaign_20260720/corrected_china81_rerun_v7_small_archive_ledger_20260724/paper_candidate_chain/build/paper_main_v7_integrated.pdf"
+  ],
+  "schema_version": 1,
+  "stale_seconds": 600,
+  "workdir": "/Volumes/移动硬盘（512G）/ReSETP"
+}

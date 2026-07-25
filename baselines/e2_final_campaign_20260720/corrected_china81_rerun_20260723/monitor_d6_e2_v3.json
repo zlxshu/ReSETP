@@ -1,0 +1,103 @@
+{
+  "schema_version": 1,
+  "name": "d6-corrected-china81-e2-v3",
+  "objective": "在出发前充电检查一致且车场分车型数量受限下完整重跑China81第二阶段",
+  "workdir": "../../..",
+  "poll_seconds": 30,
+  "stale_seconds": 7200,
+  "max_runtime_seconds": 86400,
+  "pause_on_anomaly": true,
+  "required_command_substrings": [
+    "run_corrected_china81_d6.py",
+    "--workers",
+    "6"
+  ],
+  "forbidden_command_substrings": [
+    "--smoke",
+    "--debug",
+    "--finalize-only"
+  ],
+  "min_cpu_percent_when_active": 1,
+  "cpu_grace_seconds": 300,
+  "low_cpu_consecutive_checks": 4,
+  "max_rss_mb": 14000,
+  "min_system_free_memory_mb": 256,
+  "min_system_memory_free_percent": 5,
+  "progress_files": [
+    ".d6-corrected-china81-e2-v3.monitor/experiment.stdout.log"
+  ],
+  "result_files": [
+    "../corrected_china81_rerun_v3_20260724/full_gate/raw_runs.csv",
+    "../corrected_china81_rerun_v3_20260724/full_gate/decision.json"
+  ],
+  "completion_files": [
+    "../corrected_china81_rerun_v3_20260724/full_gate/decision.json"
+  ],
+  "checkpoint_paths": [
+    "../corrected_china81_rerun_v3_20260724/full_gate/tasks"
+  ],
+  "protected_files": [
+    {
+      "path": "../run_corrected_china81_d6.py",
+      "kind": "experiment_contract"
+    },
+    {
+      "path": "../../algorithm_prototypes/china81_mechanism_hybrid_20260720/pyvrp_adapter.py",
+      "kind": "model"
+    },
+    {
+      "path": "../../algorithm_prototypes/china81_mechanism_hybrid_20260720/epochal_hgs.py",
+      "kind": "model"
+    },
+    {
+      "path": "../../algorithm_prototypes/china81_mechanism_hybrid_20260720/route_pool_sp.py",
+      "kind": "model"
+    },
+    {
+      "path": "../../../solver/src/setp_solver/china81.py",
+      "kind": "core_data"
+    },
+    {
+      "path": "../../../solver/src/setp_solver/china81_completion.py",
+      "kind": "evaluator"
+    },
+    {
+      "path": "../../../solver/src/setp_solver/algorithms/resetp_alns/support/charging.py",
+      "kind": "model"
+    },
+    {
+      "path": "../../../solver/src/setp_solver/cost.py",
+      "kind": "cost_function"
+    },
+    {
+      "path": "../../../solver/src/setp_solver/check.py",
+      "kind": "evaluator"
+    },
+    {
+      "path": "../../../solver/src/setp_solver/prices.py",
+      "kind": "model"
+    },
+    {
+      "path": "../../../data/ChinaInstances/china_e3_formal_release_contract_v5_20260724.json",
+      "kind": "experiment_contract"
+    },
+    {
+      "path": "../../../data/ChinaInstances/china81_spatiotemporal_settlement_authority_v1_20260723/artifact_hashes.json",
+      "kind": "core_data"
+    },
+    {
+      "path": "../../../data/ChinaInstances/china81_finite_fleet_authority_v1_20260723/artifact_hashes.json",
+      "kind": "core_data"
+    }
+  ],
+  "milestones": [
+    {
+      "path": "../corrected_china81_rerun_v3_20260724/full_gate/tasks",
+      "min_size": 1
+    }
+  ],
+  "ai": {
+    "enabled": false,
+    "timeout_seconds": 180
+  }
+}

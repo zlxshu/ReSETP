@@ -33,6 +33,11 @@ for path in (REPO, REPO / "solver/src", PROTOTYPE):
 from baselines.china_e3_e7.statistics import (  # noqa: E402
     aggregate_raw,
 )
+from baselines.china_e3_e7.release_v6_config import (  # noqa: E402
+    E3_AGGREGATE as DEFAULT_OUT,
+    E3_FORMAL as DEFAULT_FORMAL,
+    E3_EXPECTED_TASKS as EXPECTED_TASKS,
+)
 from setp_solver.check import check_solution  # noqa: E402
 from setp_solver.china81 import load_china81_bundle  # noqa: E402
 from setp_solver.china81_completion import (  # noqa: E402
@@ -53,16 +58,6 @@ from setp_solver.solution import (  # noqa: E402
     Solution,
     physical_vehicle_id,
 )
-
-
-DEFAULT_FORMAL = (
-    REPO / "baselines/china_e3_e7/e3_formal_20260723"
-)
-DEFAULT_OUT = (
-    REPO / "baselines/china_e3_e7/e3_aggregate_20260723"
-)
-EXPECTED_TASKS = 81 * 5 * 2
-
 
 def require_depot_fleet_caps(
     solution: Solution,
@@ -641,6 +636,29 @@ def main(formal_root: Path, out_dir: Path) -> dict[str, Any]:
                 "*.tmp",
             ],
             "artifacts": manifest,
+        },
+    )
+    write_json(
+        out_dir / "done.json",
+        {
+            "schema": "resetp.china-e3-independent-recalc.done.v1",
+            "status": "PASS_E3_INDEPENDENT_RECALC_AND_AGGREGATION",
+            "created_at_utc": datetime.now(UTC).isoformat(),
+            "formal_raw_runs_sha256": file_sha256(raw_path),
+            "independent_recalc_certificate_sha256": file_sha256(
+                out_dir / "independent_recalc_certificate.json"
+            ),
+            "aggregate_decision_sha256": file_sha256(
+                out_dir / "decision.json"
+            ),
+            "artifact_hashes_sha256": file_sha256(
+                out_dir / "artifact_hashes.json"
+            ),
+            "task_count": len(replay_rows),
+            "pair_count": len(
+                {row["pair_id"] for row in replay_rows}
+            ),
+            "search_evaluations": 0,
         },
     )
     return aggregate_decision

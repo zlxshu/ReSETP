@@ -1384,3 +1384,577 @@ HGS 比例、破坏修复算子、接受规则、墙钟安全上限和全部性�
 `g1_micro_preregistration_v3.json`、
 `g1_six_worker_resource_probe_registration_v1.json` 和
 `g0_g1_release_chain_registration_v2.json`。
+
+## E2-V7-MECHANICAL-RELEASE-005：机械完整性与论文效果门解耦
+
+状态：`USER_APPROVED__FROZEN_BEFORE_TERMINAL_E2_RESULTS`
+（2026-07-25）。
+
+用户批准继续当前 E2 v7，并要求其结束后自动推进真混合算法。复核现有接力发现：
+`run_e2_staged_release_chain.py` 只有在正式批、1620 份解的独立复算、论文效果门、
+S3 轨迹、S4 路线明细和 S5 表图全部通过后，才输出完整发布 PASS；而真混合 G0/G1
+等待链又只认该完整 PASS。这样，若旧算法仅在“论文效果不够强”或展示层停止，已经
+机械正确的 E2 仍会错误阻断替代算法的低成本开发。
+
+批准新增零搜索机械放行门
+`build_e2_v7_mechanical_release_gate.py`，并在结果终态产生前冻结
+`mechanical_release_registration_v1.json`。该门只在以下证据同时成立时通过：
+正式 v7 为 405/405 任务、1620/1620 返回解且全部完整模型可行；独立 witness 复算为
+405 个任务、1620 个解，成本复现且全部可行；两阶段哈希清单闭合；原完整发布链已经
+形成终态，避免与既有接力争抢或重复启动。
+
+机械 PASS 只授权低成本真混合 G0/G1 开发，不覆盖原发布链的 PASS/HALT，不证明旧
+算法论文效果、迭代图、路线明细、BKS 或 SOTA，也不自动启动第二条 G0/G1 链。脚本
+默认仅做合同校验，只有显式 `--execute` 才能在终态后封存五件套。当前
+`CONTRACT_ONLY_PASS`，未读取正式成绩、未运行搜索、未创建放行结果目录。
+
+用户同时批准应用内自动化 `e2-v7-30`：每 30 分钟只读检查正式进程、405 任务进度、
+终态文件、资源和异常；正常时不通知，异常时只报告不自修；发现正式终态后先暂停
+自身，再核对既有发布链和真混合等待链，避免重复任务。
+
+## E2-V7-RELEASE-RECOVERY-006：嵌套监控误停后的版本化续接
+
+状态：`USER_CONFIRMED__FROZEN_AFTER_REPLAY_BEFORE_STRENGTH`
+（2026-07-25）。
+
+E2 v7 正式批已判
+`PASS_D6_CORRECTED_CHINA81_E2_STAGED_V7_SMALL_ARCHIVE_LEDGER`：
+405/405 任务完成，1620/1620 返回解通过完整模型。随后独立复算已判
+`PASS_D6_STAGED_FULL_WITNESS_REPLAY`：405 个任务、1620 个解，成本全部复现且全部
+可行；正式批和复算哈希清单分别有 2434、85 项并逐项闭合。
+
+原发布接力并非科学门失败。外层监控因 `release_chain/progress.json` 在内层复算期间
+307 秒未更新而触发 `PROGRESS_STALLED`；恢复后，内层监控又把已经退出的复算子进程
+识别为仍存活的僵尸进程，并因命令文字消失触发 `COMMAND_CONTRACT_MISMATCH`，导致
+外层永久等待。复算本身已有完整 PASS 和完成标记。用户明确确认安全结束卡死的进程组
+76777、保留异常现场，并从封存复算 PASS 后版本化恢复。
+
+批准新增 `run_e2_staged_release_recovery_v2.py`、
+`release_recovery_registration_v2.json` 和
+`monitor_release_recovery_v2.json`。恢复顺序固定为：复核正式批及复算 PASS 与哈希，
+不重跑二者；随后严格复用原登记的结果强度门、S3、S4 v3、S5。任一原门不通过即
+原样写 canonical HALT，禁止救援、降门或跳过。全部通过才写 canonical
+`PASS_E2_STAGED_V7_RELEASE_CHAIN`，由既有真混合等待链接手。
+
+新监控不把批处理阶段的中间文件当心跳，`progress_files` 为空，避免再次用固定 300 秒
+误判；仍保护恢复登记、四个冻结入口及登记、成本、检查、评价、价格和主 TeX。当前
+静态结果为 `CONTRACT_ONLY_PASS`：26 项登记指纹闭合，2434+85 项上游清单复核通过，
+监控 preflight 通过。尚未启动恢复阶段。
+
+## E2-GENUINE-HYBRID-MECHANICAL-RELEASE-007：效果 HOLD 后放行 G0/G1
+
+状态：`FROZEN_AFTER_MECHANICAL_PASS_BEFORE_G0_G1_RESULTS`
+（2026-07-25）。
+
+恢复链按原结果强度门得到
+`HOLD_E2_STAGED_PORTFOLIO_NOT_PAPER_STRONG`，因此 canonical 发布链诚实写
+`HALT_E2_STAGED_V7_RELEASE_CHAIN`，S3--S5 未继续。这不推翻正式 405/405 和
+1620/1620 独立复算 PASS；零搜索机械门随后判
+`PASS_E2_V7_MECHANICAL_INTEGRITY_RELEASE`。旧真混合 v2 等待链只认论文效果 PASS，
+故按原合同写 `STOP_UPSTREAM_E2_V7_RELEASE`；真实 G0、资源探针、G1 搜索均未执行。
+
+批准启用此前已登记的“机械正确即可开发替代算法”边界。新增
+`g1_micro_preregistration_v4_mechanical.json` 与薄包装入口
+`run_g1_micro_gate_v4_mechanical.py`。v4 只把上游要求从旧算法
+`PASS_E2_STAGED_V7_RELEASE_CHAIN` 改为
+`PASS_E2_V7_MECHANICAL_INTEGRITY_RELEASE`；v3 其余科学字段以整体哈希锁定：
+三道开发题、种子 1、A/B/A+B 身份、共同初解、每臂 80 次完整评价、A 的 75000 次
+HGS 迭代、A+B 的 60% HGS 比例、60/40 评价分配、全部算子、接受规则、墙钟上限、
+六进程结果盲资源门和所有性能/谱系停止条件均不变。
+
+新增机械接力 `run_genuine_hybrid_g0_g1_mechanical_release_chain.py`、登记与监控。
+顺序仍为真实 bundle 零搜索 G0 → 六进程零搜索资源探针 → 按 6/3 选择执行九项 G1。
+G1 只允许 `PASS_G1_COOPERATIVE_HYBRID_GAIN` 或
+`STOP_G1_NO_HYBRID_GAIN`；STOP 不自动调参、换题、换种子、重跑或扩大。静态检查：
+机械接力 24 项指纹 PASS，G1 v4 复核 v3 的 33 项源文件和 55 个结果盲输入，当前仅因
+G0 尚未执行而阻断，符合顺序合同。
+
+## E2-GENUINE-HYBRID-G0-REAL-008：真实 bundle G0 失败与修复授权边界
+
+状态：`USER_APPROVED_AUTONOMOUS_REPAIR__V2_FROZEN_BEFORE_EXECUTION`
+（2026-07-25）。
+
+机械接力执行真实 bundle 零搜索 G0 后，预登记的小、中、大三道开发题均报
+`decoder shortlist has no globally feasible candidate`，判
+`HALT_G0_REAL_BUNDLE_WIRING`。三题均为搜索前失败，`search_iterations=0`；资源探针
+和 G1 未运行。本条不授权把 G0 机械失败写成算法性能失败或成功。
+
+只读证据表明，失败前的封存 witness 完整补全、直接检查和精确评分均已通过；否则
+runner 会在进入短名单前以不同错误停止。三份 witness 均为全燃油方案，按车场统计
+的路线数等于或低于冻结车队中的 `num_cv`。共同输入与旧 E2 witness 因此不是当前
+已证实的失败源。
+
+新解码器的路线局部候选构造把 `_single_route_cost` 返回有限值作为“可行”条件，但
+该函数只计算成本，不执行硬约束检查。有限车队 DP 再按此局部成本截取前 6 个分配，
+导致低估但完整模型不可行的候选能够占满短名单，已知可行的原车场/原车型分配没有
+强制保留。v1 五件套未保存各候选违约类型，所以当前不得进一步声称具体是时间窗、
+充电、容量或其他哪一类违约。
+
+用户在收到上述根因和最小修复方案后明确授权“自主推进”。修复已另立结果盲 v2，
+执行前冻结，且满足：保留 v1 HALT；路线局部
+候选须用同一 checker 排除除“其他客户未出现在该单路线片段”之外的硬违约；已知完整
+可行的当前分配固定进入短名单但仍占用可见完整评价预算；候选级违约类型和明细进入
+审计产物；增加“便宜但不可行候选不能挤掉可行 incumbent”的测试；只重跑零搜索 G0，
+通过后才允许资源探针和科学字段不变的 G1。v2 登记为
+`g0_real_bundle_preregistration_v2.json`，修复前 37 项轻量测试全部通过。不得因 v2
+结果再次改代码或改变 G1 题、种子、预算、算子与硬门。
+
+## E2-GENUINE-HYBRID-G0-REAL-009：局部覆盖例外收窄与 G1 v6 最终 STOP
+
+状态：`FINAL_STOP_G1_NO_HYBRID_GAIN__E3_NOT_AUTHORIZED`
+（2026-07-25）。
+
+G1 v5 运行期间、读取任何目标值前发现 v2 路线局部检查把全部
+`CUSTOMER_COVERAGE` 违约忽略，范围超过登记的“只忽略片段天然缺少的其他客户”。
+用户确认安全结束 v5；4 个已出现结果路径只计数不读内容，保存于
+`g1_micro_v5_decoder_repair_abort/`，不得复用或解释。
+
+批准且已执行的 v3 修复只收窄例外：仅当违约明细恰为 `customer not served` 且客户
+不在当前片段时忽略；片段内重复服务继续判硬违约。未改完整检查器、成本、物理参数、
+输入、搜索、三题、种子、每臂 80 次完整评价、75000 次 HGS、A+B 60% HGS、
+60/40 分配、算子、接受规则或结果硬门。38 项测试通过，G0 v3 3/3 PASS，六进程
+资源门 6/6 PASS。
+
+G1 v6 最终 9/9 完成、每臂 80 次、全部可行且 replay 逐位一致。A+B 在三题中相对
+`min(A,B)` 为 1 胜 2 平，唯一严格改善为 `cn-cy-150c-03` 的 0.894%；直接协同
+改进证据为 0。预登记要求至少两题严格改善且至少一次直接回送后改进，因此判
+`STOP_G1_NO_HYBRID_GAIN`。本条明确禁止结果后调参、重跑、换题、换种子、降门、
+扩大 G2--G4、启动 E3，或把无损取优包装为 `1+1>2`。后续若要探索不同算法架构，
+必须由用户另行批准新的问题诊断和结果盲合同，不能延续本次 G1 调参。
+
+## E2-GENUINE-HYBRID-REDESIGN-010：失败归因后另立系统变邻域架构
+
+状态：`USER_APPROVED__IMPLEMENTATION_AND_BEHAVIOR_GATE_ONLY`
+（2026-07-25）。
+
+用户明确否决把旧 v7 算法降格后直接作为论文最终方法；该路线只保留为真正走投无路
+时的备选。当务之急改为查清真混合失败原因并实现真实成功，不得把“盘点旧材料并补
+缺口”误当当前主线。
+
+封存 G1 v6 的只读归因已确认：旧 B 只有五类随机问题动作，缺少完整路线优化能力；
+六个 RR 阶段没有一次刷新 HGS 最好解；三题×三阶段×三视角共 27 个直接热启动局部
+搜索后代全部因无可行车场/车型分配而无法完成联合解码；唯一严格胜出的 150 客户
+结果来自不同随机流下的 HGS 档案，不能归因于合作。旧候选不能靠调比例或增加评价
+次数救援。
+
+批准另立
+`docs/handoff/e2_genuine_hybrid_redesign_contract_20260725.md`。新候选进入独立目录
+`baselines/algorithm_prototypes/tailored_dp_vns_20260725/`，先把第二算法做成完整的
+系统变邻域搜索：单客户重插、客户交换、2-opt、2-opt* 和连续块联合重建；每个候选
+均经车场—车型—有限车队—充电—时间的本题专用下层解码及完整模型评价。
+
+首次只允许对 G1 v6 三道题的封存 A_HGS 最好解执行零 HGS 重跑的直接改善行为门，
+每题最多 96 次完整评价。三题输出须全部可行，至少 2/3 严格改善，且至少一次改善
+来自连续块联合重建或 2-opt*；五类邻域须在三题合计全部活跃，缺失车场/车型/充电
+的候选不得进入完整评价，重复比例不得超过 20%。不通过即停止该新候选，不在同三题
+调参。通过只授权另立新题盲测，不授权论文、E3、G2--G4 或全量长跑。
+
+## E2-FEASIBILITY-GUIDED-VNS-011：首次 STOP 后另立可行性引导架构
+
+状态：`USER_APPROVED__G0_AND_DIRECT_BEHAVIOR_GATE_ONLY`
+（2026-07-25）。
+
+`TAILORED-DP-VNS` 首次直接改善门已按登记停止：0/3 严格改善，141 个结构候选在
+完整评价前因至少一条路线不存在可行车场/车型分配而被拒绝，只有 4 个候选进入完整
+评价。五类邻域都已生成结构，输出解全部保持可行；原候选、三题和参数冻结，不扩大
+短名单救援。
+
+停止后的零目标结构诊断发现 25 客户题存在更靠后的路线级可行重插、交换、2-opt 和
+2-opt*，说明失败根因是纯距离排序先截断、硬约束后过滤，而非强解附近绝对没有可行
+移动。批准另立
+`docs/handoff/e2_feasibility_guided_vns_contract_20260725.md` 和隔离目录
+`baselines/algorithm_prototypes/feasibility_guided_ejection_vns_20260725/`。
+
+新算法必须在生成阶段检查容量、时间窗、车场、车型、充电、有限车队和共享桩可行性，
+并增加连续块弹出—逐客户束搜索重建；不得仅把原距离短名单从 10 调大。新开发题按
+实例 ID 哈希规则预先固定为 `cn-jjj-50c-02`、`cn-cy-100c-01` 和
+`cn-prd-200c-02`，起点使用题目冻结后 v7 五种子中最强的封存 `MV-HGS-SP`
+witness。先做零完整目标 G0，再做每题最多 120 次完整评价的直接改善门；仍要求至少
+2/3 严格改善且至少一次来自 2-opt* 或连续块重建。通过只授权另立未见题 A/B/A+B
+小门；不授权论文、E3、全量、BKS 或 SOTA。
+
+## E2-FGE-DIRECT-PACKAGING-012：行为门打包中断零搜索恢复
+
+状态：`USER_APPROVED_AUTONOMOUS_RECOVERY__RESULTS_NOT_READ`
+（2026-07-25）。
+
+FGE-VNS 三道行为门算法计算全部结束并已保存三份轨迹与三份最终 witness 后，runner
+在写 `raw_runs.csv` 时因结果字典含有表头外字段
+`improvements_by_neighborhood` 抛出 `ValueError`，正式 decision 尚未生成。异常发生
+前未向用户或代理显示三题目标结果；现场已整体保存为
+`direct_improvement_gate_v1_abort_packaging/`。
+
+批准绑定现场哈希后执行一次零搜索恢复：不得重跑搜索，不得修改已冻结算法、题、起点、
+预算或性能门；只对封存起点和最终 witness 做直接检查与精确复算，并从轨迹恢复完整
+评价账、重复、邻域访问和改善来源。原进程未持久化的每任务用时与峰值内存必须记为
+不可恢复，不得估算或伪造；它们不是本行为门的 PASS 阈值，未来未见题 A/B/A+B 门
+必须重新完整记录。恢复器搜索次数固定为 0，按原门生成版本化 v2 五件套。
+
+## E2-RC-EV-SPLIT-013：回到既定 EV-aware Split 主线的工程门
+
+状态：`USER_APPROVED__G0_ENGINEERING_GATE_ONLY`（2026-07-25）。
+
+第二版可行性引导大邻域搜索已按冻结门停止：三个全新强起点仅 1/3 出现严格改善，
+幅度 `4.55e-05%`，且连续块重建没有贡献。该结果说明可行性生成问题已经修复，但
+在成品路线附近继续增加普通移动仍缺少足够互补性；禁止在相同三题扩大 512 上限、
+束宽、候选数或完整评价预算。
+
+仓库 `algorithm_optimization_prd_20260718.md`、旧 A11 短预算信号和新增 HGS/动态规划
+文献共同支持重新启动此前未独立完成的 EV-aware Split：给定客户顺序，联合决定路线
+边界、车场、车型、非线性充电、有限车队和共享充电桩占用。批准
+`docs/handoff/e2_resource_constrained_split_contract_20260725.md` 及独立原型目录，
+只执行单元测试和小中大三档零候选完整目标 G0。
+
+G0 固定使用安全支配删除，不允许结果导向束宽；单位置 50,000 状态、全过程
+500,000 状态和 4 GiB 峰值内存为硬停止线。三题必须能回放封存可行起点、生成非保底
+片段、找到完整资源可行切分并通过完整验解。通过只授权另立新题直接效果门；不授权
+HGS 接入、正式比较、论文、E3、全量、BKS、SOTA 或 `1+1>2`。
+
+## E2-RC-EV-SPLIT-G0-WIRING-014：片段级不可行异常收窄
+
+状态：`USER_APPROVED_AUTONOMOUS_REPAIR__V2_FROZEN_BEFORE_RESULTS`
+（2026-07-25）。
+
+RC-EV-Split G0 v1 在 0.6 秒内三题同类停止，0 行完成、0 个切分状态、0 个候选完整
+目标评价。只读调用栈确认：连续片段方案生成器对“该片段没有任何车场/车型分配”
+抛出 `NoFeasibleAssignmentError`，适配器没有按切分语义跳过该片段，而是错误终止
+整道题。
+
+批准 v2 只捕获这一种已知片段级异常并继续枚举更短/其他起点片段。v1 五件套和登记
+原样保留；三道题、封存 witness、客户顺序、方案生成器、支配规则、50,000/500,000
+状态上限、4 GiB 内存门、完整检查和所有 G0 判据不变。修复前未出现任何候选目标值，
+不得借 v2 改参数或扩展性能主张。
+
+## E2-RC-EV-SPLIT-G0-STOP-015：联合标签状态爆炸停止
+
+状态：`FINAL_STOP_RC_EV_SPLIT_LABEL_STATE_EXPLOSION`（2026-07-25）。
+
+G0 v2 在固定三题、固定顺序和固定资源上限下判
+`HALT_RC_EV_SPLIT_G0_STRUCTURE_OR_SCALE`。15 客户题完成，生成 229 个状态、每位置
+最多 4 个；75 和 150 客户题均触发 500,000 总状态硬上限。候选完整目标评价总数为
+0，峰值内存未触发 4 GiB 门，输出不构成算法效果证据。
+
+停止“有限车队 + 全部共享充电时隙进入 Split 标签”的精确联合状态表示。禁止扩大
+状态上限、结果后束宽或同题救援。下一候选若继续，必须把路线局部方案生成与全局资源
+组装分开：先形成带客户、车场、车型、充电时隙占用和路线成本的列，再用限时 MIP
+统一满足客户覆盖、有限车队和共享桩容量，并完整披露 incumbent、bound、gap 和
+status。该方向须先审计现有 MV-HGS-SP 与历史路线池失败，证明不是旧方案重命名。
+
+## E2-ROUTE-COLUMN-MIP-016：共享桩约束路线列组装 G0
+
+状态：`USER_APPROVED__G0_ONLY`（2026-07-25）。
+
+旧 MV-HGS-SP 代码审计确认：列只来自 HGS 完整方案中的整条现成路线，MIP 含客户
+覆盖和车队上限，但没有共享充电站半小时时隙容量；完整模型只在 MIP 后检查。历史
+HGS+ALNS 路线池停止也来自父路线缺乏互补列，不能代表“从客户顺序生成新边界列”
+无效。
+
+批准 `docs/handoff/e2_route_column_mip_contract_20260725.md` 的独立 G0。新候选从
+冻结客户顺序枚举所有路线级可行连续片段，形成带车场、车型、充电方案、成本和充电
+时隙占用的路线列，再由限时 10 秒 MIP 同时满足客户覆盖、有限车队和共享桩容量。
+只用既有三道工程题且不扰动顺序；结果只作结构/规模证据。通过不授权 HGS 接入、
+论文、E3、正式、全量、BKS、SOTA 或 `1+1>2`。
+
+## E2-ROUTE-COLUMN-MIP-G0-017：工程 PASS 后的新题直接效果门
+
+状态：`USER_APPROVED__FRESH_DIRECT_HEADROOM_GATE_ONLY`（2026-07-25）。
+
+路线列 MIP G0 三题全部通过：列数 159/1576/2278，MIP 均证明最优、gap=0、完整
+约束与目标闭合，MIP 用时均低于 0.03 秒，整题最慢 8.4 秒，内存约 100--112 MiB。
+三题目标与输入持平，G0 不形成效果证据。
+
+批准按合同在三道全新结果盲题汇集 v7 五种子 MV-HGS-SP 客户顺序，固定比较最好父
+解、只含父解整路的旧池、以及从全部顺序生成连续片段的新池。至少 2/3 新池严格超过
+最好父解和旧池，且至少一次选入父解中不存在的新路线边界，才允许继续设计 HGS 接入
+门。失败即停止，不换题、种子、顺序来源、MIP 时限或列上限。
+
+## E2-ROUTE-COLUMN-MIP-DIRECT-STOP-018：单长链生成器直接门停止
+
+状态：`FINAL_STOP_SINGLE_CHAIN_ROUTE_COLUMN_GENERATOR`（2026-07-25）。
+
+三道结果盲新题全部完成，直接检查、精确评分、有限车队、共享桩时隙和MIP目标闭合；
+HiGHS均证明最优且gap=0。新池含318/2444/5861列，但三题均未选择父解外新边界，
+严格改善0/3，判`STOP_ROUTE_COLUMN_MIP_NO_DIRECT_HEADROOM`。禁止调整时限、
+列上限、种子、题或顺序来源后重跑。
+
+零目标结构审计确认根因是把无序路线集合按文件列表顺序压成单长链，只允许相邻路线
+跨界；三题对全部父路线对的覆盖率为50.0%/19.2%/6.0%。该结论不修改封存v7、评价器
+或旧门结果。
+
+## E2-UNORDERED-ROUTE-PAIR-MIP-019：无序路线对精确重切最低成本门
+
+状态：`USER_APPROVED_AUTONOMOUS__G0_AND_FRESH_DIRECT_GATE_ONLY`
+（2026-07-25）。
+
+批准`docs/handoff/e2_unordered_route_pair_resplit_contract_20260725.md`。新候选对
+完整父解中全部无序路线对分别形成两个保持内部次序的拼接方向，只生成跨原边界路线；
+扣除未动路线已占用的分车场车型车队和逐半小时共享桩容量后，用限时MIP重组该路线对，
+并把候选放回完整解验收。
+
+直接门使用结果前哈希冻结的三道全新50/100/150客户题，每题五个v7父解和五父整路池
+组装解共六个固定起点。至少2/3题严格优于最好父解/旧整路池，且至少一次来自原文件
+次序中不相邻路线对，才允许扩成独立迭代算法B并设计HGS双向接入。失败即停止，不改
+方向数、路线对、2秒MIP时限、5000列上限、20分钟题级安全上限、起点或判据。PASS
+仍不授权E3、正式全量、论文、BKS、SOTA或`1+1>2`。
+
+## E2-UNORDERED-ROUTE-PAIR-MIP-STOP-020：固定内部次序路线对重切最终停止
+
+状态：`FINAL_STOP_URP_FIXED_ORDER_RESCUE_FORBIDDEN`（2026-07-25）。
+
+无序路线对 G0 通过后，三道结果前冻结的新题和每题六个固定起点全部完成。共求解
+2850 个路线对 MIP，三题最终解均完整可行且与回退基线相同，但全部局部目标变化为 0，
+进入完整评分的新候选为 0，严格改善 0/3，判
+`STOP_URP_MIP_NO_DIRECT_HEADROOM`。
+
+根因限定为：该方法覆盖了全部无序路线对，但仍固定两条路线内部的客户相对次序；
+精确重切只能改变边界，不能产生新的客户排列。候选、三题、起点和参数冻结，禁止通过
+增加方向、MIP 时限、列数、起点或换题救援，也不得扩为独立算法 B。旧 v7、评价器、
+完成器、主 TeX、模型公式和所有失败证据保持不动。
+
+## E2-HGS-ILS-XD-PREREG-021：文献审查后的顺序交接候选与两级低成本门
+
+状态：`SUPERSEDED_BY_E2-HGS-ILS-XD-G0-STOP-023`
+（2026-07-25）。
+
+依据`docs/handoff/e2_order_changing_hybrid_literature_review_20260725.md`，排除已停的
+普通 HGS+ALNS 教育、ReMIX、MPILS-MVNS、TAILORED-DP-VNS、
+FEASIBILITY-GUIDED-EJECTION-VNS、穷举 SEG-GEN、资源约束 EV Split、单长链路线列、
+固定次序路线对重切及旧 HGS+RR。不得通过改名、重新拼装或延长预算复活这些路径。
+
+只批准候选`HGS-ILS-XD`进入 G0 工程开发：A 为 PyVRP 0.12.2 真实 HGS，B 为
+PyVRP 0.13.4 独立 ILS。按用户对陈式逻辑的准确澄清，基础 A+B 必须先检验严格
+`A→B`顺序交接：A 先完成并输出经共同完成、全局检查和精确评分的完整可行解，B
+再以该解为起点独立深化。实验任务可并行，但一个`A→B`任务内部不得并行或用中点
+双向交换替代顺序交接。顺序交接有既有文献先例，不声明新颖；只有该基础门通过后，
+才允许另立合同检验一次受限的本题资源核验交换或路线池机制。
+
+G0 固定三道未见题、B 冷/热启动共六任务、每任务128次 ILS 外层迭代和最多8次不同
+完整评价；热启动固定使用五个封存 seed 中成本最低的纯`HGS-M` witness，不使用含
+路线池的`MV-HGS-SP`冒充 HGS。资源门通过时用6 workers，因只有六个独立任务不得
+复制到8。六任务须完整可行，至少2/3题产生 v7 五种子 HGS 路线池外的完整可行路线，
+至少2/3热启动改变客户相邻关系并严格改善交接起点，且至少2/3题的热启动 ILS 严格
+优于同题同种子的冷启动 ILS，才允许 G1；否则判
+`STOP_HGS_ILS_XD_G0_NO_FEASIBLE_COMPLEMENTARITY`，禁止调参或重跑救援。
+
+G1 仅在 G0 通过后开放，三道另选结果盲题固定
+A24/B24/A-long48/B-long48/`A→B`48。`A→B`由A先用24次完整评价，B接手后再用
+24次；G1不运行路线池或双向交换。主要比较`A→B`与同为48次完整评价的A-long、
+B-long，并同时对照总评价数为48的`min(A24,B24)`独立并行取优。至少2/3严格胜、
+三题零负、至少一题改善0.20%，且至少2/3可追踪到B接手后的新改善才通过；否则判
+`STOP_HGS_ILS_XD_NO_MATCHED_BUDGET_SYNERGY`。通过也只授权多种子确认，不授权
+China81全量、公开BKS/SOTA、E3或论文。
+
+最终目标仍是公平证据下的真正 SOTA：公开 BKS 与私有 China81 严格分开；公开题须与
+相关已发表强手和 BKS 在匹配实例、起点、种子、评分和计算量下比较；China81 须共同
+完成、完整物理模型、精确评分和独立检查。任何小门、弱对手、有利子集或额外数倍计算
+均不得写成 SOTA。
+
+## E2-CHEN-SEQUENTIAL-HANDOFF-CORRECTION-022：陈式启发只取架构假设，不移植 VNS 动作
+
+状态：`SOURCE_VERIFIED__CONTRACT_CORRECTED_BEFORE_G0`
+（2026-07-25）。
+
+已从陈雨蝶、干宏程等（2025）原文核验：其混合体由多种群 GA 先形成优良完整解，
+后期再把该解单向交给 VNS 深化。用户借鉴的是这一“先完成、再交接”的架构逻辑，
+不是要求把 insert、exchange、reverse、shift、swap、crossover 机械加入当前 ILS。
+
+PyVRP 0.13.4 默认 ILS 已启用`Exchange10/20/11/21/22`、`SwapTails`和
+`RelocateWithDepot`，源码另有但默认未启用的`Exchange30--33`。陈文多数搬移、
+交换和跨路线尾段动作已被覆盖；显式三客户搬移、连续段反转又与本仓库已停止的
+`SEG-GEN-01`、`TAILORED-DP-VNS`和`FEASIBILITY-GUIDED-EJECTION-VNS`重合，
+此前已出现无改善、完整可行性拒绝或3.298--4.694倍用时。故本轮不追加陈文 VNS，
+不把它作为第三算法组件，也不为失败 G0 做算子救援。
+
+G0 在任何结果产生前已修订为纯`HGS-M`热启动与共同冷启动 ILS 的成对测试，并增加
+“至少2/3热启动严格改善HGS起点、至少2/3热启动严格优于冷启动”两项硬门。该门只
+验证顺序交接是否值得继续，不构成新颖性、性能、论文、E3、BKS或SOTA证据。
+
+## E2-HGS-ILS-XD-G0-STOP-023：顺序交接基础门停止
+
+状态：`FINAL_STOP_HGS_TO_OFFICIAL_ILS_HANDOFF_NO_RESCUE`
+（2026-07-25）。
+
+G0 按修订后登记一次执行，6个任务由6 workers完成；资源门记录6个不同进程、最低
+空闲内存40%、合计峰值393.0625 MiB，任务异常0、源码漂移0、预算违规0。仅2/6任务
+产生完整模型接受的新解，冷启动可行1/3；池外路线2/3，但热启动相邻关系变化1/3、
+严格改善HGS-M起点0/3、严格优于同题冷启动0/3，判
+`STOP_HGS_ILS_XD_G0_NO_FEASIBLE_COMPLEMENTARITY`。
+
+零搜索独立复算重新核验6/6起点和2/2生成witness，完整评分、独立检查与记录目标闭合。
+该结果冻结`HGS-ILS-XD`，不开放A24/B24/A-long48/B-long48/`A→B`48，不追加陈文
+VNS，不调128次迭代、8次完整评价、题、seed或完成器救援。不得把“出现池外路线”
+单独包装成互补性成功；基础门失败意味着后续性能、论文、E3、BKS和SOTA均未授权。
+
+## E2-DUAL-GUIDED-RESOURCE-ORDER-024：强 HGS 深化根因复盘与唯一候选预登记
+
+状态：`REVIEW_COMPLETE__PREREGISTERED_G0__NO_IMPLEMENTATION_OR_RUN`
+（2026-07-25）。
+
+冻结`HGS-ILS-XD`后，已把最新0/3热启动改善、普通局部邻域、连续段穷举、资源约束
+Split、路线列MIP、固定内部次序路线对重切、ReMIX/MPILS/MDA和旧HGS+RR的失败证据
+逐项对齐，并核验Zhao等、Dumez等、Desaulniers等、Froger等和Bruglieri等的一手文献。
+不再提出通用ILS/VNS/ALNS、参数救援或机械堆叠。
+
+唯一预登记候选为“对偶价格引导的资源耦合次序重构”：从客户覆盖、分车场分车型车队
+和共享充电时隙线性松弛读取对偶价格，只选择两个高资源压力路线对；用`k=4`的
+Balas--Simonetti型动态规划同时改变路线内部次序和路线分界；每题最多16个不同结构
+进入共同完成、全局检查和精确评分。
+
+G0按结果盲规则冻结六道未用于此前开发门的50/100/150客户题，六任务默认6 workers，
+每题16次完整评价、100000状态、90秒安全上限。至少4/6严格改善、至少2/6改善不低于
+0.05%、至少3个接受解产生旧池外客户相邻关系，且算子墙钟中位不超过对应HGS-M CPU
+的25%才通过；任一失败即
+`STOP_DUAL_GUIDED_RESOURCE_ORDER_NO_LOW_COST_HEADROOM`，禁止在已见题改参数、
+换题或补跑救援。
+
+权威合同为
+`docs/handoff/e2_dual_guided_resource_order_contract_20260725.md`。当前只完成审查、
+唯一候选合同和预登记；未实现、未运行，不授权E3、China81全量、公开BKS/SOTA、论文
+图表或`1+1>2`。
+
+## E2-DUAL-GUIDED-RESOURCE-ORDER-ENGINEERING-HALT-025：零成绩结构门停止
+
+状态：`FINAL_HALT_BEFORE_G0__NO_RESCUE`（2026-07-25）。
+
+按用户授权先实现零成绩工程验证；只有静态、接口、资源门全过才允许一次 G0。源码、
+六题、五种子纯 `HGS-M` witness、完成器、评价器和参数已由
+`g0_registration_v1.json` 冻结。合成/静态检查 7/7 通过。首个监控启动因工作目录
+切换后解释器仍用仓库相对路径而在 0.12 秒退出，未加载算例、未计算；异常现场保留，
+第二现场仅使用绝对启动路径，所有冻结哈希不变。
+
+六任务由 6 workers 完成零成绩工程门，候选完整目标评价总数为 0。启动前可用内存
+15.261%，预计六进程峰值合计 100777984 bytes，资源门无异常。结构门中五题有效候选
+数为 0，仅 `cn-prd-150c-02-V2-LOCATIONS` 生成 1 个，因此判
+`HALT_ZERO_OBJECTIVE_ENGINEERING_OR_RESOURCE_GATE`，G0 未运行。
+
+不得在原六题上修改 `k=4`、两路线对、每方向四候选、100000 状态、90 秒安全上限、
+筛选逻辑、起点或题后重跑，也不得把未运行的 G0 写成性能、BKS/SOTA、论文或 E3
+证据。若认为零候选来自实现语义错误，必须保留本 HALT，另立版本化审查和用户/协调
+任务批准；本条不自动授权修复。
+
+## E2-DUAL-GUIDED-RESOURCE-ORDER-FINAL-STOP-026：用户裁决关闭候选
+
+状态：`FINAL_STOP_DUAL_GUIDED_RESOURCE_ORDER_NO_RESCUE`
+（2026-07-25）。
+
+用户确认不开放 `E2-DUAL-GUIDED-RESOURCE-ORDER-ENGINEERING-HALT-025` 的实现语义
+救援审查。冻结结构门的用途就是在读取候选成绩前淘汰无法在锁定算例上产生足量有效
+候选的机制；5/6 题零候选、剩余 1/6 仅一个候选已经满足最终停止条件。原 HALT
+判定、注册、监控现场、五件套和源码全部保留，不覆盖、不重写。
+
+禁止修改代码、`k=4`、路线对数、候选数、100000 状态、90 秒上限、对偶排序、阈值、
+算例、起点或完成/评价链；禁止重跑工程门、运行 G0、改名复活或把本候选并入其他
+算法。该候选不授权 China81 全量、公开 BKS/SOTA、论文性能结论或 E3。
+
+在用户另行明确指令前不启动下一候选；若未来启动，必须重新完成既有失败证据复核、
+一手文献审查、唯一来源充分且可证伪的机制合同与最低成本预登记门。
+
+## E2-RESOURCE-SLOT-PRICING-PREREG-027：资源—时隙定价路线生成候选
+
+状态：`EVIDENCE_COMPLETE__ONE_CANDIDATE_PREREGISTERED__NO_IMPLEMENTATION_OR_RUN`
+（2026-07-25）。
+
+在最终冻结`HGS-ILS-XD`、普通局部动作、连续段穷举、`RC-EV-Split`、单长链路线列、
+无序路线对重切及对偶引导有限位移路线对后，完成新一轮一手文献与失败证据复核。唯一
+仍具备实质差异和最低成本可证伪性的候选，是在车场—车型分层稀疏时空图上运行资源
+约束双向标签搜索：客户顺序形成时同步更新载重、时间窗、电量、非线性充电、充电时段
+和地域—日期—时段成本，并让有限车队与共享充电时隙的主问题对偶价格直接进入扩展
+约化成本。主问题只协调全局覆盖、车队与共享桩闭合，不把旧路线重组收益冒充新生成
+机制。
+
+最低成本门结果盲冻结`cn-cy-25c-02`、`cn-jjj-75c-01`和`cn-jjj-150c-02`，每题成对
+比较`LOCAL`与`RESOURCE-SLOT`，共六个独立任务，资源门通过固定6 workers。每任务
+50000次标签扩展、最多8条新路线、一次完整整解评分和60秒安全上限。必须至少2/3题
+生成并选入旧池外新次序路线，至少2/3严格改善强`HGS-M`起点且一题不低于0.05%，并
+在相同预算下至少2/3严格胜`LOCAL`、三题零负；中位/最大墙钟比不超过1.25/1.50。
+任一失败即
+`STOP_RESOURCE_SLOT_PRICING_NO_LOW_COST_STRONG_HGS_HEADROOM`，禁止同题调图、
+调标签、换题、补种子或加全图兜底救援。
+
+权威文件为
+`docs/handoff/e2_resource_slot_pricing_candidate_review_20260725.md`。当前未实现、
+未运行，不授权China81全量、公开BKS/SOTA、E3、论文性能或`1+1>2`。
+
+## E2-RESOURCE-SLOT-PRICING-FINAL-STOP-028：零目标工程入口失败后不救援关闭
+
+状态：`FINAL_STOP_RESOURCE_SLOT_PRICING_NO_RESCUE`
+（2026-07-25）。
+
+用户授权只运行冻结零目标工程门，且明确规定任一失败即 STOP、不修复、不重试。
+`g0_registration_v1.json` 已冻结三题×两臂、六进程、输入 witness、源码和全部预算。
+正式监控启动后，runner 在进入 `main()` 前因 Python 同名模块解析冲突退出：
+`test_engineering` 被解析到已封存旧候选目录，缺少 `run_checks`。监控器记录
+`FATAL_LOG_PATTERN` 和 `PROCESS_EXITED_WITHOUT_COMPLETION`。
+
+候选完整目标评价数为0，真实算例任务和G0均未启动。本条不把工程接线失败误写成
+算法无改进证据，但依用户冻结规则仍作程序性最终关闭：
+`STOP_RESOURCE_SLOT_PRICING_NO_LOW_COST_STRONG_HGS_HEADROOM`。禁止修 import、
+重启工程门、运行G0、修改源码/预算/题/起点、改名复活或写入China81全量、
+公开BKS/SOTA、论文性能、E3及`1+1>2`主张。
+
+## E2-RESOURCE-SLOT-PRICING-V2-FINAL-STOP-030：纯接线 v2 工程门失败关闭
+
+状态：`FINAL_STOP_AFTER_V2_ENGINEERING_GATE__NO_G0__NO_RESCUE`
+（2026-07-25）。
+
+用户在 v1 未进入真实任务、候选完整目标评价为0的前提下，额外授权一次纯接线 v2：
+只解决同名模块解析，不改变机制、题、起点、预算、标签、阈值、候选限制和停止条件。
+v1 证据原样保留。v2 运行前精确模块检查6/6通过，v1/v2输入、任务及config完全相同，
+37项源码与9项保护文件哈希闭合。
+
+正式零目标工程门使用6 workers。六个子进程在反序列化任务函数时均报
+`ModuleNotFoundError: resource_slot_pricing_v2_engineering_runner`，完成0/6，
+候选完整目标评价0，判`HALT_ZERO_OBJECTIVE_ENGINEERING_OR_RESOURCE_GATE`；
+G0未启动。
+
+按授权的“v2任一门失败即STOP，不做算法或工程救援”，禁止修多进程可导入性、建立
+v3、重启工程门或运行G0。该候选最终关闭；不授权China81全量、公开BKS/SOTA、E3、
+论文性能或`1+1>2`。
+
+## E2-RESOURCE-SLOT-PRICING-V3-G0-HALT-032：工程 PASS 后 G0 runner 解析错误
+
+状态：`HALT_G0_WORKER_RESOLVED_ARCHIVED_RUNNER__NO_PERFORMANCE_EVIDENCE`
+（2026-07-25）。
+
+用户明确覆盖 v2 的工程不救援限制，只授权 v3 修复 spawned worker 可导入性，并要求
+真实算例加载前先做六进程零目标冒烟；机制、题、起点、预算、标签、候选数、阈值和
+停止条件不变。v1、v2证据原样保留。
+
+v3冒烟6/6通过且为6个不同PID，冒烟通过前未加载真实算例；真实零目标工程任务6/6
+PASS，候选完整目标评价0，工程/资源门判
+`PASS_ZERO_OBJECTIVE_ENGINEERING_AND_SIX_WORKER_RESOURCE_GATE`。
+
+随后冻结G0以6 workers启动。六任务均报`KeyError: 'k'`，完成0/6。只读复核证明
+worker把裸`import run_g0`解析到已封存
+`dual_guided_resource_order_20260725/run_g0.py`，而非本候选runner。候选完整目标
+评价0，无witness，独立复算未启动，性能门未评价。
+
+按用户指令，G0失败后只报告精确终态，不开启新工程救援。禁止建v4、重启G0或改变
+算法/题/起点/预算/阈值；不授权China81全量、公开BKS/SOTA、E3、论文性能或
+`1+1>2`。
+
+## E2-RESOURCE-SLOT-PRICING-V4-FINAL-STOP-033：最终根因隔离与效果门关闭
+
+状态：`FINAL_STOP_RESOURCE_SLOT_PRICING_NO_LOW_COST_STRONG_HGS_HEADROOM`
+（2026-07-25）。
+
+用户明确覆盖上一条“不建v4”的工程限制，并承担最终执行授权：只允许做一次根因级
+导入隔离，禁止表面修改裸导入。v1--v3证据必须原样保留；新入口必须是唯一可导入包，
+所有spawned worker须在加载真实算例前报告精确runner模块和文件身份。算法机制、三题、
+起点、`LOCAL/RESOURCE-SLOT`两臂、6 workers、50000标签扩展、最多8条路线、每任务
+一次完整评价、60秒上限及全部效果门不得改变。
+
+V4六进程身份冒烟6/6通过且为6个不同PID，所有worker均闭合到
+`rsp_final_isolated_20260725._frozen_g0_runner`及本候选冻结`run_g0.py`；真实算例
+在冒烟通过前未加载。随后零目标工程任务6/6通过、候选完整目标评价0、资源门通过。
+
+冻结G0六任务6/6完成，违约0，六个输出由完整评分与独立检查逐份重放闭合，每任务
+恰好一次完整候选评价，全部预算和墙钟门满足。资源定价臂对强HGS起点改善0/3、达到
+0.05%改善0/3、胜同预算LOCAL 0/3、负0/3；选入旧池外负约化成本新次序路线0/3，
+资源价格改变选路归因0/3。墙钟比中位0.998893、最大1.004203。
+
+因此按预登记规则判
+`STOP_RESOURCE_SLOT_PRICING_NO_LOW_COST_STRONG_HGS_HEADROOM`，下一步
+`FINAL_STOP_NO_RESCUE`。不得修改标签/弧/候选/状态/时间上限、阈值、题、起点或
+选择逻辑后重跑；不得扩大China81、启动E3、公开BKS/SOTA或写入论文性能与
+`1+1>2`。本条是已排除工程歧义后的低成本效果结论。

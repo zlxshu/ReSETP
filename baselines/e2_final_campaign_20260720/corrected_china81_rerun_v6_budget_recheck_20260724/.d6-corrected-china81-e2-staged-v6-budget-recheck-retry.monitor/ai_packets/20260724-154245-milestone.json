@@ -1,0 +1,266 @@
+{
+  "created_at": "2026-07-24T07:42:45+00:00",
+  "current_status": {
+    "checked_at": "2026-07-24T07:42:45+00:00",
+    "checkpoint_inventory": [],
+    "csv_summaries": [],
+    "files": {
+      "/Volumes/移动硬盘（512G）/ReSETP/baselines/e2_final_campaign_20260720/corrected_china81_rerun_v6_budget_recheck_20260724/.d6-corrected-china81-e2-staged-v6-budget-recheck-retry.monitor/experiment.stdout.log": {
+        "age_seconds": 30.252289056777954,
+        "exists": true,
+        "mtime": 1784878935.34,
+        "path": "/Volumes/移动硬盘（512G）/ReSETP/baselines/e2_final_campaign_20260720/corrected_china81_rerun_v6_budget_recheck_20260724/.d6-corrected-china81-e2-staged-v6-budget-recheck-retry.monitor/experiment.stdout.log",
+        "size": 0
+      },
+      "/Volumes/移动硬盘（512G）/ReSETP/baselines/e2_final_campaign_20260720/corrected_china81_rerun_v6_budget_recheck_20260724/full_gate/artifact_hashes.json": {
+        "exists": false,
+        "path": "/Volumes/移动硬盘（512G）/ReSETP/baselines/e2_final_campaign_20260720/corrected_china81_rerun_v6_budget_recheck_20260724/full_gate/artifact_hashes.json"
+      },
+      "/Volumes/移动硬盘（512G）/ReSETP/baselines/e2_final_campaign_20260720/corrected_china81_rerun_v6_budget_recheck_20260724/full_gate/decision.json": {
+        "exists": false,
+        "path": "/Volumes/移动硬盘（512G）/ReSETP/baselines/e2_final_campaign_20260720/corrected_china81_rerun_v6_budget_recheck_20260724/full_gate/decision.json"
+      },
+      "/Volumes/移动硬盘（512G）/ReSETP/baselines/e2_final_campaign_20260720/corrected_china81_rerun_v6_budget_recheck_20260724/full_gate/progress.json": {
+        "age_seconds": 29.142531871795654,
+        "exists": true,
+        "mtime": 1784878936.45,
+        "path": "/Volumes/移动硬盘（512G）/ReSETP/baselines/e2_final_campaign_20260720/corrected_china81_rerun_v6_budget_recheck_20260724/full_gate/progress.json",
+        "size": 328
+      },
+      "/Volumes/移动硬盘（512G）/ReSETP/baselines/e2_final_campaign_20260720/corrected_china81_rerun_v6_budget_recheck_20260724/full_gate/raw_runs.csv": {
+        "exists": false,
+        "path": "/Volumes/移动硬盘（512G）/ReSETP/baselines/e2_final_campaign_20260720/corrected_china81_rerun_v6_budget_recheck_20260724/full_gate/raw_runs.csv"
+      }
+    },
+    "findings": [],
+    "log_paths": [
+      "/Volumes/移动硬盘（512G）/ReSETP/baselines/e2_final_campaign_20260720/corrected_china81_rerun_v6_budget_recheck_20260724/.d6-corrected-china81-e2-staged-v6-budget-recheck-retry.monitor/experiment.stdout.log"
+    ],
+    "name": "d6-corrected-china81-e2-staged-v6-budget-recheck-retry",
+    "paused": false,
+    "process": {
+      "alive": true,
+      "cpu_percent": 297.0,
+      "members": [
+        {
+          "command": "build/python_envs/pyvrp-hgs-0.12.2/bin/python baselines/e2_final_campaign_20260720/run_corrected_china81_d6_staged_portfolio_v6_budget_recheck.py --workers 3",
+          "cpu_percent": 0.0,
+          "elapsed": "00:30",
+          "pgid": 46934,
+          "pid": 46934,
+          "ppid": 1,
+          "rss_kb": 10320,
+          "state": "Ss"
+        },
+        {
+          "command": "/Volumes/移动硬盘（512G）/ReSETP/build/python_envs/pyvrp-hgs-0.12.2/bin/python -c from multiprocessing.resource_tracker import main;main(8)",
+          "cpu_percent": 0.0,
+          "elapsed": "00:29",
+          "pgid": 46934,
+          "pid": 46952,
+          "ppid": 46934,
+          "rss_kb": 3232,
+          "state": "S"
+        },
+        {
+          "command": "/Volumes/移动硬盘（512G）/ReSETP/build/python_envs/pyvrp-hgs-0.12.2/bin/python -c from multiprocessing.spawn import spawn_main; spawn_main(tracker_fd=9, pipe_handle=17) --multiprocessing-fork",
+          "cpu_percent": 98.9,
+          "elapsed": "00:29",
+          "pgid": 46934,
+          "pid": 46953,
+          "ppid": 46934,
+          "rss_kb": 57168,
+          "state": "R"
+        },
+        {
+          "command": "/Volumes/移动硬盘（512G）/ReSETP/build/python_envs/pyvrp-hgs-0.12.2/bin/python -c from multiprocessing.spawn import spawn_main; spawn_main(tracker_fd=9, pipe_handle=19) --multiprocessing-fork",
+          "cpu_percent": 99.1,
+          "elapsed": "00:29",
+          "pgid": 46934,
+          "pid": 46954,
+          "ppid": 46934,
+          "rss_kb": 54688,
+          "state": "R"
+        },
+        {
+          "command": "/Volumes/移动硬盘（512G）/ReSETP/build/python_envs/pyvrp-hgs-0.12.2/bin/python -c from multiprocessing.spawn import spawn_main; spawn_main(tracker_fd=9, pipe_handle=21) --multiprocessing-fork",
+          "cpu_percent": 99.0,
+          "elapsed": "00:29",
+          "pgid": 46934,
+          "pid": 46955,
+          "ppid": 46934,
+          "rss_kb": 57328,
+          "state": "R"
+        }
+      ],
+      "pgid": 46934,
+      "root_pid": 46934,
+      "rss_mb": 178.453125
+    },
+    "protected_files": {
+      "/Volumes/移动硬盘（512G）/ReSETP/baselines/algorithm_prototypes/china81_mechanism_hybrid_20260720/epochal_hgs.py": {
+        "age_seconds": 20975.245406150818,
+        "exists": true,
+        "kind": "model",
+        "mtime": 1784857990.35,
+        "path": "/Volumes/移动硬盘（512G）/ReSETP/baselines/algorithm_prototypes/china81_mechanism_hybrid_20260720/epochal_hgs.py",
+        "sha256": "7c385cb8945ff468ae3a897b736e6aba149c5865e378ba11461c5f2ecb7c224a",
+        "size": 28156
+      },
+      "/Volumes/移动硬盘（512G）/ReSETP/baselines/algorithm_prototypes/china81_mechanism_hybrid_20260720/pyvrp_adapter.py": {
+        "age_seconds": 24771.224961042404,
+        "exists": true,
+        "kind": "model",
+        "mtime": 1784854194.37,
+        "path": "/Volumes/移动硬盘（512G）/ReSETP/baselines/algorithm_prototypes/china81_mechanism_hybrid_20260720/pyvrp_adapter.py",
+        "sha256": "a87389d2ac3daa652611f6acf3b4a26098c1de03e198ee5511570435d2d35139",
+        "size": 29363
+      },
+      "/Volumes/移动硬盘（512G）/ReSETP/baselines/algorithm_prototypes/china81_mechanism_hybrid_20260720/route_pool_sp.py": {
+        "age_seconds": 22982.81579899788,
+        "exists": true,
+        "kind": "model",
+        "mtime": 1784855982.78,
+        "path": "/Volumes/移动硬盘（512G）/ReSETP/baselines/algorithm_prototypes/china81_mechanism_hybrid_20260720/route_pool_sp.py",
+        "sha256": "9cce4bee41ac4b8fdcc50f407a861bd8bb0788a539567242cd5099bf02b57874",
+        "size": 24487
+      },
+      "/Volumes/移动硬盘（512G）/ReSETP/baselines/algorithm_prototypes/china81_mechanism_hybrid_20260720/staged_checkpoint_hgs_sp.py": {
+        "age_seconds": 20999.756222963333,
+        "exists": true,
+        "kind": "model",
+        "mtime": 1784857965.84,
+        "path": "/Volumes/移动硬盘（512G）/ReSETP/baselines/algorithm_prototypes/china81_mechanism_hybrid_20260720/staged_checkpoint_hgs_sp.py",
+        "sha256": "5d2643152ef46e0afeb55a8310b91a6def0c15efaf46997a09d19ad4c6ba8a4d",
+        "size": 11421
+      },
+      "/Volumes/移动硬盘（512G）/ReSETP/baselines/e2_final_campaign_20260720/corrected_china81_rerun_v6_budget_recheck_20260724/formal_preregistration_v3.json": {
+        "age_seconds": 136.18333983421326,
+        "exists": true,
+        "kind": "experiment_contract",
+        "mtime": 1784878829.41,
+        "path": "/Volumes/移动硬盘（512G）/ReSETP/baselines/e2_final_campaign_20260720/corrected_china81_rerun_v6_budget_recheck_20260724/formal_preregistration_v3.json",
+        "sha256": "575ffd8452de8ff6678b6599a51416aceafbcf31ac418b80e6a20ccb11cac6c2",
+        "size": 7111
+      },
+      "/Volumes/移动硬盘（512G）/ReSETP/baselines/e2_final_campaign_20260720/run_corrected_china81_d6_staged_portfolio.py": {
+        "age_seconds": 16732.23376107216,
+        "exists": true,
+        "kind": "primary_config",
+        "mtime": 1784862233.36,
+        "path": "/Volumes/移动硬盘（512G）/ReSETP/baselines/e2_final_campaign_20260720/run_corrected_china81_d6_staged_portfolio.py",
+        "sha256": "4b98147609d0c13034c4819b9e7c64e93bba464e3eb5f1d5498657231113e40a",
+        "size": 31721
+      },
+      "/Volumes/移动硬盘（512G）/ReSETP/baselines/e2_final_campaign_20260720/run_corrected_china81_d6_staged_portfolio_v6_budget_recheck.py": {
+        "age_seconds": 148.27425003051758,
+        "exists": true,
+        "kind": "primary_config",
+        "mtime": 1784878817.32,
+        "path": "/Volumes/移动硬盘（512G）/ReSETP/baselines/e2_final_campaign_20260720/run_corrected_china81_d6_staged_portfolio_v6_budget_recheck.py",
+        "sha256": "4fef8223c29d31359e13ace7c663cd053e5cacc9fc7c2f5366a5def374642674",
+        "size": 17975
+      },
+      "/Volumes/移动硬盘（512G）/ReSETP/data/ChinaInstances/china81_finite_fleet_authority_v1_20260723/artifact_hashes.json": {
+        "age_seconds": 76341.91971087456,
+        "exists": true,
+        "kind": "core_data",
+        "mtime": 1784802623.68,
+        "path": "/Volumes/移动硬盘（512G）/ReSETP/data/ChinaInstances/china81_finite_fleet_authority_v1_20260723/artifact_hashes.json",
+        "sha256": "cad19ac5259dc0693709314148cca84fa2e86d8758e91854eb1adb2e92d48341",
+        "size": 10192
+      },
+      "/Volumes/移动硬盘（512G）/ReSETP/data/ChinaInstances/china81_spatiotemporal_settlement_authority_v1_20260723/artifact_hashes.json": {
+        "age_seconds": 75676.9505469799,
+        "exists": true,
+        "kind": "core_data",
+        "mtime": 1784803288.65,
+        "path": "/Volumes/移动硬盘（512G）/ReSETP/data/ChinaInstances/china81_spatiotemporal_settlement_authority_v1_20260723/artifact_hashes.json",
+        "sha256": "9e1b6622e628793b37c0a8eea37fcbbb5f0a5da3e9c5623a9e1f8e59f377e96c",
+        "size": 744
+      },
+      "/Volumes/移动硬盘（512G）/ReSETP/data/ChinaInstances/china81_stage2_static_inputs_corrected_v3_20260723/instance_catalog.csv": {
+        "age_seconds": 83848.62138390541,
+        "exists": true,
+        "kind": "core_data",
+        "mtime": 1784795116.98,
+        "path": "/Volumes/移动硬盘（512G）/ReSETP/data/ChinaInstances/china81_stage2_static_inputs_corrected_v3_20260723/instance_catalog.csv",
+        "sha256": "886354a6a6a5fd3e63512caa800f9541637fd5e99e432b6843b235ef96300655",
+        "size": 10506
+      },
+      "/Volumes/移动硬盘（512G）/ReSETP/docs/paper_v2/paper_main.tex": {
+        "age_seconds": 32091.30268597603,
+        "exists": true,
+        "kind": "paper_conclusion",
+        "mtime": 1784846874.3,
+        "path": "/Volumes/移动硬盘（512G）/ReSETP/docs/paper_v2/paper_main.tex",
+        "sha256": "f4882979a3096b952f334ef11b750d7dbf6ebc2e0ec21babdd09da5c364415ad",
+        "size": 109043
+      },
+      "/Volumes/移动硬盘（512G）/ReSETP/solver/src/setp_solver/check.py": {
+        "age_seconds": 54613.61747407913,
+        "exists": true,
+        "kind": "evaluator",
+        "mtime": 1784824351.98,
+        "path": "/Volumes/移动硬盘（512G）/ReSETP/solver/src/setp_solver/check.py",
+        "sha256": "9c81e254e05591667c8225965bb9d0ba4e8bbfc53eb0f8c61ffdb4325a1403a8",
+        "size": 44701
+      },
+      "/Volumes/移动硬盘（512G）/ReSETP/solver/src/setp_solver/china81_completion.py": {
+        "age_seconds": 54371.17816591263,
+        "exists": true,
+        "kind": "evaluator",
+        "mtime": 1784824594.42,
+        "path": "/Volumes/移动硬盘（512G）/ReSETP/solver/src/setp_solver/china81_completion.py",
+        "sha256": "c0b72db82e324981442f357bc3bb336eac5dae033a44a3ab16fa2cbe4db91653",
+        "size": 17329
+      },
+      "/Volumes/移动硬盘（512G）/ReSETP/solver/src/setp_solver/cost.py": {
+        "age_seconds": 76568.75698804855,
+        "exists": true,
+        "kind": "cost_function",
+        "mtime": 1784802396.84,
+        "path": "/Volumes/移动硬盘（512G）/ReSETP/solver/src/setp_solver/cost.py",
+        "sha256": "2717b4b4de39bb4c2a9a1bda602f4420cb3e3b1e87faa83678dfa64f88fc80be",
+        "size": 44794
+      }
+    },
+    "runtime_seconds": 30.187572956085205,
+    "schema_version": 1,
+    "state": "RUNNING",
+    "system": {
+      "free_memory_mb": 81.09375,
+      "load_average_15m": 3.50390625,
+      "load_average_1m": 6.86279296875,
+      "load_average_5m": 4.54541015625,
+      "logical_cpus": 8,
+      "memory_pressure_free_percent": 35.0,
+      "swapouts": 15761491
+    }
+  },
+  "experiment": {
+    "allowed_ai_actions": [
+      "continue",
+      "pause_for_read_only_diagnosis",
+      "keep_paused_and_preserve_scene",
+      "recommend_safe_stop",
+      "recommend_checkpoint_restart",
+      "escalate_research_contract_change_to_user"
+    ],
+    "expected_contract": {},
+    "forbidden_ai_actions": [
+      "change_model_or_research_question",
+      "change_evaluator_or_cost_function",
+      "change_experiment_contract_or_core_data",
+      "change_primary_config_or_paper_conclusion",
+      "resume_paused_job_without_explicit_human_command"
+    ],
+    "name": "d6-corrected-china81-e2-staged-v6-budget-recheck-retry",
+    "objective": "重新启动冻结的修正后 China81 E2 v6 正式复跑；第一次启动异常发生在任务初始化前，已保留现场并修复登记文件接线"
+  },
+  "minimal_log_tails": {
+    "/Volumes/移动硬盘（512G）/ReSETP/baselines/e2_final_campaign_20260720/corrected_china81_rerun_v6_budget_recheck_20260724/.d6-corrected-china81-e2-staged-v6-budget-recheck-retry.monitor/experiment.stdout.log": []
+  },
+  "reason": "MILESTONE",
+  "schema_version": 1
+}

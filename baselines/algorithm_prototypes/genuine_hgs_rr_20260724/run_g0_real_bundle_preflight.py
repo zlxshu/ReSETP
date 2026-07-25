@@ -38,6 +38,14 @@ FORMAL_PROCESS_TOKENS = (
 CONTRACT = REPO / "docs/handoff/e2_genuine_hybrid_hgs_rr_contract_20260724.md"
 
 
+class DecoderShortlistInfeasibleError(RuntimeError):
+    """Carry candidate-level evidence when the real-bundle decoder fails."""
+
+    def __init__(self, diagnostics: list[dict[str, Any]]) -> None:
+        super().__init__("decoder shortlist has no globally feasible candidate")
+        self.diagnostics = diagnostics
+
+
 def sha256(path: Path) -> str:
     digest = hashlib.sha256()
     with path.open("rb") as handle:
@@ -423,6 +431,39 @@ def _projection_roundtrip(solution: Any, bundle: Any) -> tuple[Any, dict[str, An
     }
 
 
+def _decoder_diagnostics(shortlist: Any) -> list[dict[str, Any]]:
+    rows: list[dict[str, Any]] = []
+    for rank, result in enumerate(shortlist.evaluated, start=1):
+        candidate = shortlist.candidates[rank - 1]
+        rows.append(
+            {
+                "rank": rank,
+                "feasible": bool(result.scored.feasible),
+                "objective": float(result.scored.objective),
+                "assignments": [
+                    {
+                        "route_index": route_index,
+                        "home_depot_id": assignment.home_depot_id,
+                        "vehicle_type": assignment.vehicle_type,
+                        "charge_strategy": assignment.charge_strategy,
+                        "carbon_weight": assignment.carbon_weight,
+                    }
+                    for route_index, assignment in candidate.assignments
+                ],
+                "violations": [
+                    {
+                        "type": violation.type,
+                        "vehicle_id": violation.vehicle_id,
+                        "location": violation.location,
+                        "detail": violation.detail,
+                    }
+                    for violation in result.scored.violations
+                ],
+            }
+        )
+    return rows
+
+
 def _verify_bundle_source_paths(
     bundle: Any,
     preregistration: dict[str, Any],
@@ -572,7 +613,9 @@ def run_instance(
             "finite-fleet decoder did not retain both CV and EV assignments"
         )
     if shortlist.selected is None or not shortlist.selected.scored.feasible:
-        raise RuntimeError("decoder shortlist has no globally feasible candidate")
+        raise DecoderShortlistInfeasibleError(
+            _decoder_diagnostics(shortlist)
+        )
     if ledger.consumed != shortlist.decoded_count:
         raise RuntimeError("complete decoder evaluations escaped the visible ledger")
     if ledger.consumed < 1 or ledger.consumed > shortlist_limit:
@@ -616,6 +659,12 @@ def run_instance(
             record.feasible for record in ledger.records
         ),
         "decoder_selected_cost": float(shortlist.selected.scored.objective),
+        "decoder_diagnostics_json": json.dumps(
+            _decoder_diagnostics(shortlist),
+            ensure_ascii=False,
+            sort_keys=True,
+            separators=(",", ":"),
+        ),
         "decoder_depot_count": len(option_depots),
         "decoder_vehicle_types": "|".join(sorted(option_types)),
         "decoder_cache_entries": cache.as_dict()["entries"],
@@ -652,6 +701,12 @@ def _failure_row(
         "decoder_complete_evaluations": "",
         "decoder_feasible_evaluations": "",
         "decoder_selected_cost": "",
+        "decoder_diagnostics_json": json.dumps(
+            getattr(exc, "diagnostics", []),
+            ensure_ascii=False,
+            sort_keys=True,
+            separators=(",", ":"),
+        ),
         "decoder_depot_count": "",
         "decoder_vehicle_types": "",
         "decoder_cache_entries": "",
@@ -762,6 +817,15 @@ def execute_gate() -> int:
         {
             "schema": "resetp.artifact-hashes.v1",
             "files": {path.name: sha256(path) for path in targets},
+        },
+    )
+    write_json(
+        OUT / "done.json",
+        {
+            "schema": "resetp.coop-hgs-rr-g0-real-bundle-done.v1",
+            "decision": decision["decision"],
+            "completed_at_utc": datetime.now(timezone.utc).isoformat(),
+            "search_iterations": 0,
         },
     )
     print(decision["decision"])

@@ -1,0 +1,48 @@
+{
+  "schema": "resetp.type-preserving-staged-development-preregistration.v1",
+  "registered_at": "2026-07-24T08:51:19+08:00",
+  "formal_evidence": false,
+  "superseded_confirmation": "staged_deepening_confirmation_gate/decision.json",
+  "superseded_confirmation_verdict": "HALT_STAGED_DEEPENING_CONFIRMATION_EXECUTION",
+  "single_causal_repair": "Warm-start projection now preserves each route's CV/EV type for naive_ev and mechanism_ev; cv_only intentionally maps all warm routes to CV. A runtime assertion records and enforces this mapping.",
+  "why_this_is_not_parameter_rescue": "The failed 200-customer task proved that the prior code ignored route.vehicle_type and exceeded the finite CV count. Search depth, seeds per stage, exact-check intervals, archive limits, MIP limits, and all acceptance thresholds remain unchanged.",
+  "frozen_design": {
+    "stage_1_iterations_per_view": 5000,
+    "stage_2_iterations_per_view": 20000,
+    "total_iterations_per_view": 25000,
+    "stage_2_seed_offset": 1009,
+    "exact_elites_migrated_within_same_view": 8,
+    "final_population_candidate_cap_per_stage_per_view": 24,
+    "online_checkpoint_attempts_per_stage_per_view": 20,
+    "stage_1_checkpoint_interval": 250,
+    "stage_2_checkpoint_interval": 1000,
+    "base_pool_mip_time_limit_seconds": 5.0,
+    "expanded_pool_mip_time_limit_seconds": 5.0,
+    "maximum_complete_candidate_evaluation_attempts": 280,
+    "cross_view_elite_migration": false
+  },
+  "fresh_panel": [
+    "cn-cy-100c-03-V2-LOCATIONS seed 15",
+    "cn-jjj-100c-03-V2-LOCATIONS seed 15",
+    "cn-prd-100c-03-V2-LOCATIONS seed 15",
+    "cn-cy-200c-03-V2-LOCATIONS seed 15",
+    "cn-jjj-200c-03-V2-LOCATIONS seed 15",
+    "cn-prd-200c-03-V2-LOCATIONS seed 15"
+  ],
+  "panel_reason": "A fresh seed, a fresh staged-candidate case suffix for the 200-customer level, and both medium and largest scales in every region test the exact defect that appeared only at large scale while retaining a non-small curve test.",
+  "acceptance": {
+    "all_solutions_independently_feasible": true,
+    "all_warm_start_route_types_preserved": true,
+    "actual_complete_attempts_at_most": 280,
+    "protected_stage_1_result_never_overwritten_by_a_worse_result": true,
+    "minimum_strict_final_improvements_over_stage_1": 3,
+    "main_method_zero_losses_to_each_own_single_view": true,
+    "minimum_strict_wins_over_HGS_E": 3,
+    "minimum_strict_wins_over_HGS_M": 3,
+    "minimum_strict_route_fusion_improvements_over_the_best_current_single_view": 2,
+    "minimum_panel_tasks_with_at_least_12_main_curve_points_and_10_strict_decreases": 5
+  },
+  "route_fusion_definition": "The final complete-model objective must be strictly lower than min(HGS-F, HGS-E, HGS-M) from the same corrected two-stage run by more than 1e-9. Selecting the best single-view answer does not count.",
+  "failure_rule": "Reject unchanged if any invariant fails or any registered count threshold is missed. Do not alter depth, checkpoints, seed, cases, MIP limits, budget cap, or thresholds after results. Do not rerun failed pairs.",
+  "claim_boundary": "Development only. Passing requires one further independently frozen confirmation before formal E2 adoption."
+}

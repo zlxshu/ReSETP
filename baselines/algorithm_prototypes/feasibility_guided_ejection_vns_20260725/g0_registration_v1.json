@@ -1,0 +1,84 @@
+{
+  "approval_id": "E2-FEASIBILITY-GUIDED-VNS-011",
+  "authority_registration": {
+    "path": "baselines/algorithm_prototypes/genuine_hgs_rr_20260724/g0_real_bundle_preregistration_v1.json",
+    "sha256": "ae8db30839da5e3bf5367b71a39d5997fcac09f31dce0ca47336d860a5c33698"
+  },
+  "candidate_complete_objective_evaluations": 0,
+  "claim_boundary": "Zero candidate-objective wiring and feasibility gate only; no performance, hybrid, E3, BKS, SOTA, or paper claim.",
+  "config": {
+    "block_seed_limit": 8,
+    "block_widths": [
+      2,
+      3,
+      4
+    ],
+    "feasible_structures_per_neighborhood": 12,
+    "inspection_limit_per_local_neighborhood": 512,
+    "nearest_anchor_count": 24,
+    "rebuild_beam_width": 8,
+    "workers": 3
+  },
+  "contract_id": "E2-FEASIBILITY-GUIDED-VNS-001",
+  "inputs": [
+    {
+      "expected_objective": 2638.913419965574,
+      "instance_id": "cn-jjj-50c-02-V2-LOCATIONS",
+      "instance_id_sha256": "057d8e50fcddca1d26192d7439b50f603416f5807f8c705af1d6cc47e9204531",
+      "seed": 1,
+      "task_id": "D6-E2-STAGED__cn-jjj-50c-02-V2-LOCATIONS__seed1",
+      "witness_key": "MV-HGS-SP",
+      "witness_path": "baselines/e2_final_campaign_20260720/corrected_china81_rerun_v7_small_archive_ledger_20260724/full_gate/tasks/D6-E2-STAGED__cn-jjj-50c-02-V2-LOCATIONS__seed1/solution_witnesses.json",
+      "witness_sha256": "916ffbb62d99a645e08602c42c2faf7693e620ab282fd9d5b284b9f8a2689e1e"
+    },
+    {
+      "expected_objective": 5173.897533382516,
+      "instance_id": "cn-cy-100c-01-V2-LOCATIONS",
+      "instance_id_sha256": "153b47ad7021069392a1e4fe41561c0771f6e80a9c93d35b3f0c7a0dc68bc559",
+      "seed": 3,
+      "task_id": "D6-E2-STAGED__cn-cy-100c-01-V2-LOCATIONS__seed3",
+      "witness_key": "MV-HGS-SP",
+      "witness_path": "baselines/e2_final_campaign_20260720/corrected_china81_rerun_v7_small_archive_ledger_20260724/full_gate/tasks/D6-E2-STAGED__cn-cy-100c-01-V2-LOCATIONS__seed3/solution_witnesses.json",
+      "witness_sha256": "db45849807d5abc049b40b0b836c3966a52aacad239cdc34346e904c895e6b19"
+    },
+    {
+      "expected_objective": 9934.809498400024,
+      "instance_id": "cn-prd-200c-02-V2-LOCATIONS",
+      "instance_id_sha256": "2f15775a8b7e2066860781932e613f19d2cbe795c83f081153b5f60b42d97e8c",
+      "seed": 1,
+      "task_id": "D6-E2-STAGED__cn-prd-200c-02-V2-LOCATIONS__seed1",
+      "witness_key": "MV-HGS-SP",
+      "witness_path": "baselines/e2_final_campaign_20260720/corrected_china81_rerun_v7_small_archive_ledger_20260724/full_gate/tasks/D6-E2-STAGED__cn-prd-200c-02-V2-LOCATIONS__seed1/solution_witnesses.json",
+      "witness_sha256": "60509b41cfd5c09dbe63d1dca03f13d6ba68b669b9ccdfb012704e8a2e1481f4"
+    }
+  ],
+  "registered_at_utc": "2026-07-25T05:51:30.795762+00:00",
+  "schema": "resetp.fge-vns-g0-registration.v1",
+  "sealed_v7_raw_runs": {
+    "path": "baselines/e2_final_campaign_20260720/corrected_china81_rerun_v7_small_archive_ledger_20260724/full_gate/raw_runs.csv",
+    "sha256": "29cdc7896fc468b0698784a93283eb25ee89b34d1e6ac6a21fb57645b897e84d"
+  },
+  "selection_rule": "fixed family-size strata, minimum SHA-256(instance_id); then strongest sealed v7 MV-HGS-SP witness with seed tie-break",
+  "source_hashes": {
+    "baselines/algorithm_prototypes/feasibility_guided_ejection_vns_20260725/__init__.py": "ac625278740ac4d43ac62ddbc9a87d21bcb9418a25cb50c382a2f0574a020f46",
+    "baselines/algorithm_prototypes/feasibility_guided_ejection_vns_20260725/build_g0_registration.py": "f5f02b07edb872a0712199059d3b83e5512c7bb259dbe6acd2348482fbdc0714",
+    "baselines/algorithm_prototypes/feasibility_guided_ejection_vns_20260725/ejection_rebuild.py": "59f49ce1602237651aa3bb2a4d25c26ee43b22f0918247c8d46c34fe06cc5168",
+    "baselines/algorithm_prototypes/feasibility_guided_ejection_vns_20260725/feasible_moves.py": "5d99e6c78b455a7cc77e271b4fd201134023a97dc1fbb5033f681c7baaeb8e5c",
+    "baselines/algorithm_prototypes/feasibility_guided_ejection_vns_20260725/fge_vnd.py": "fcd3a3a64d054ac1d0092a36cd13e175dc2901f23b4ee26ca8801aa8288d79a2",
+    "baselines/algorithm_prototypes/feasibility_guided_ejection_vns_20260725/run_g0.py": "831cf1bf46a2cab6b2f3bcf1100edff8389bfa8ba999e5b97306465ccd80790d",
+    "baselines/algorithm_prototypes/feasibility_guided_ejection_vns_20260725/test_feasible_moves.py": "c4c388bdac6c4983c8dfe379be64152d2a5c655e643d200c0302f540b07ef1a6",
+    "baselines/algorithm_prototypes/genuine_hgs_rr_20260724/contracts.py": "4a8bc57f04f7c6b03f2c85f926fa32e5e68d9c647d490e8cd6388b65404acdca",
+    "baselines/algorithm_prototypes/genuine_hgs_rr_20260724/decoder_cache.py": "600d4003b1f2e8f6103809bfa3825f877acd9161f780bc028afa5688fd2fe7db",
+    "baselines/algorithm_prototypes/genuine_hgs_rr_20260724/fleet_assignment_dp.py": "b0b2cbb70d55ca0a26ddc3e7b388fe36d984d0e4618987de8a612f8354d19430",
+    "baselines/algorithm_prototypes/genuine_hgs_rr_20260724/reference_decoder.py": "cca72605d98ae39430975eb08facae1211e4b430e4931e4f36bcf8ec1f0b2b72",
+    "baselines/algorithm_prototypes/tailored_dp_vns_20260725/neighborhoods.py": "0cf3121ce9273d5609f2002b496406056f22bc846637950e2611814008cc4538",
+    "docs/handoff/e2_feasibility_guided_vns_contract_20260725.md": "27502c3c5976109ed22a1a7a5f61fefff86cc3ab5d1bd10143b8ed9a35a061de",
+    "solver/src/setp_solver/check.py": "9c81e254e05591667c8225965bb9d0ba4e8bbfc53eb0f8c61ffdb4325a1403a8",
+    "solver/src/setp_solver/china81.py": "df082b6a0e108aa5462b74048fcca7a63fdb7eaafb9e61f2dcdd787e3d9fcedd",
+    "solver/src/setp_solver/china81_completion.py": "c0b72db82e324981442f357bc3bb336eac5dae033a44a3ab16fa2cbe4db91653",
+    "solver/src/setp_solver/cost.py": "2717b4b4de39bb4c2a9a1bda602f4420cb3e3b1e87faa83678dfa64f88fc80be",
+    "solver/src/setp_solver/prices.py": "fe13a721fc63e79c44f5c7faf8bf4802155a28cb4c081d010d09d8dc4804d157",
+    "solver/src/setp_solver/search/evaluation.py": "c7215263c39d1d5a1429b41ca8ac40d950dbdf2bdc288337e56fbe9733406fc3"
+  },
+  "status": "FROZEN_BEFORE_EXECUTION"
+}

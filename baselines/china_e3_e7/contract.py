@@ -9,13 +9,11 @@ from pathlib import Path
 import re
 from typing import Any, Iterable
 
+from baselines.china_e3_e7.release_v6_config import CONTRACT
+
 
 ROOT = Path(__file__).resolve().parents[2]
-CONTRACT_PATH = (
-    ROOT
-    / "data/ChinaInstances/"
-    "china_e3_formal_release_contract_v4_20260723.json"
-)
+CONTRACT_PATH = CONTRACT
 
 
 def canonical_bytes(payload: Any) -> bytes:

@@ -1,0 +1,78 @@
+{
+  "all_complete_candidate_budgets_80": true,
+  "all_full_model_feasible": true,
+  "case_instance_id": "cn-cy-100c-01-V2-LOCATIONS",
+  "case_role": "mechanism_illustration",
+  "claim_boundary": "post-audit mechanism illustration, not a statistically representative case and not a replacement for the full 81-instance matrix; the three single-view columns are exact-model-selected outputs from the same three view generations used by MV-HGS-SP, while the fusion also pays for all views and time-limited MIP recombination; no equal-compute claim is made",
+  "four_arm_rows": 40,
+  "input_manifest_hash_set_count": 1,
+  "mechanism_endpoint_gate": {
+    "applicable": true,
+    "checks": {
+      "at_least_7_wins_vs_HGS-M": true,
+      "at_least_8_wins_vs_HGS-E": true,
+      "at_least_8_wins_vs_HGS-F": true,
+      "mean_below_HGS-E": true,
+      "mean_below_HGS-F": true,
+      "mean_below_HGS-M": true,
+      "zero_losses_vs_HGS-E": true,
+      "zero_losses_vs_HGS-F": true,
+      "zero_losses_vs_HGS-M": true
+    },
+    "passed": true,
+    "preregistration": "baselines/e2_final_campaign_20260720/algorithm_repair_diagnostic_20260724/chen_style_mechanism_case_preregistration.json",
+    "preregistration_sha256": "563ef8615e20a0723c711a0af1b3920af333289fa5150283b3a398922a8d8975"
+  },
+  "mv_hgs_sp_pairwise": {
+    "HGS-E": {
+      "losses": 0,
+      "ties": 1,
+      "wins": 9
+    },
+    "HGS-F": {
+      "losses": 0,
+      "ties": 0,
+      "wins": 10
+    },
+    "HGS-M": {
+      "losses": 0,
+      "ties": 0,
+      "wins": 10
+    }
+  },
+  "next_gate": "observation-only trajectories, S4 and S5",
+  "representative_instance_id": null,
+  "responsibility_map_hash_set_count": 1,
+  "schema": "resetp.d6-corrected-s3.decision.v1",
+  "seed_count": 10,
+  "shared_search_task_count": 10,
+  "source_hash_set_count": 1,
+  "summary": {
+    "HGS-E": {
+      "best_cost": 5176.631401537045,
+      "max_cost": 5193.7220453003665,
+      "mean_cost": 5184.956426218878,
+      "mean_cpu_seconds": 37.71155892090174
+    },
+    "HGS-F": {
+      "best_cost": 5285.201519052848,
+      "max_cost": 5295.767243070879,
+      "mean_cost": 5287.829806854952,
+      "mean_cpu_seconds": 30.085223233303985
+    },
+    "HGS-M": {
+      "best_cost": 5178.791295638886,
+      "max_cost": 5190.775646793525,
+      "mean_cost": 5185.435952355367,
+      "mean_cpu_seconds": 38.228019512302126
+    },
+    "MV-HGS-SP": {
+      "best_cost": 5175.070810721165,
+      "max_cost": 5188.29574701191,
+      "mean_cost": 5179.575613530187,
+      "mean_cpu_seconds": 110.4123449042003
+    }
+  },
+  "verdict": "PASS_D6_CORRECTED_S3_MECHANISM_CASE",
+  "wallclock_safety_trigger_count": 0
+}

@@ -1,0 +1,4060 @@
+{
+  "accepted_path": [],
+  "improvements_by_neighborhood": {
+    "ejection_rebuild": 0,
+    "relocate": 0,
+    "swap": 0,
+    "two_opt": 0,
+    "two_opt_star": 0
+  },
+  "ledger": {
+    "arm": "B_RR",
+    "consumed": 78,
+    "duplicates": 2,
+    "feasible": 78,
+    "infeasible": 0,
+    "limit": 120,
+    "records": [
+      {
+        "arm": "B_RR",
+        "duplicate_of_index": null,
+        "feasible": true,
+        "index": 1,
+        "metadata": {
+          "algorithm": "FEASIBILITY-GUIDED-EJECTION-VNS",
+          "assignment_count": 9,
+          "assignment_dp_rank": 1,
+          "capacity_aware_assignment_dp": true,
+          "charger_slot_use": [
+            {
+              "day_offset": 0,
+              "route_count": 1,
+              "slot_index": 0,
+              "station_id": "D_tianjin"
+            },
+            {
+              "day_offset": 0,
+              "route_count": 1,
+              "slot_index": 1,
+              "station_id": "D_tianjin"
+            }
+          ],
+          "charging_route_count": 1,
+          "decoder": "explicit_reference_v1",
+          "detail": "customer=C047;source=8:1;target=8:3",
+          "distance_delta": 158.8969757599989,
+          "feasible_rank": 1,
+          "fleet_use": [
+            6,
+            0,
+            2,
+            1
+          ],
+          "neighborhood": "relocate",
+          "pass_index": 1,
+          "route_local_cost": 2638.9922634857494
+        },
+        "objective": 2638.9922634857494,
+        "signature": "79f00c730f23729b9ed14848efd4ebdb1f574b6abc18e06ae0ea772854f458a0",
+        "source": "RUIN_RECREATE",
+        "violation_count": 0
+      },
+      {
+        "arm": "B_RR",
+        "duplicate_of_index": null,
+        "feasible": true,
+        "index": 2,
+        "metadata": {
+          "algorithm": "FEASIBILITY-GUIDED-EJECTION-VNS",
+          "assignment_count": 9,
+          "assignment_dp_rank": 2,
+          "capacity_aware_assignment_dp": true,
+          "charger_slot_use": [
+            {
+              "day_offset": 0,
+              "route_count": 1,
+              "slot_index": 23,
+              "station_id": "D_tianjin"
+            },
+            {
+              "day_offset": 0,
+              "route_count": 1,
+              "slot_index": 24,
+              "station_id": "D_tianjin"
+            }
+          ],
+          "charging_route_count": 1,
+          "decoder": "explicit_reference_v1",
+          "detail": "customer=C047;source=8:1;target=8:3",
+          "distance_delta": 158.8969757599989,
+          "feasible_rank": 1,
+          "fleet_use": [
+            6,
+            0,
+            2,
+            1
+          ],
+          "neighborhood": "relocate",
+          "pass_index": 1,
+          "route_local_cost": 2649.150919726193
+        },
+        "objective": 2649.1509197261935,
+        "signature": "e5e8414426543b81d6eb3970997405ace3229319ae821acb822991070ea7ae27",
+        "source": "RUIN_RECREATE",
+        "violation_count": 0
+      },
+      {
+        "arm": "B_RR",
+        "duplicate_of_index": null,
+        "feasible": true,
+        "index": 3,
+        "metadata": {
+          "algorithm": "FEASIBILITY-GUIDED-EJECTION-VNS",
+          "assignment_count": 9,
+          "assignment_dp_rank": 1,
+          "capacity_aware_assignment_dp": true,
+          "charger_slot_use": [
+            {
+              "day_offset": 0,
+              "route_count": 1,
+              "slot_index": 0,
+              "station_id": "D_tianjin"
+            },
+            {
+              "day_offset": 0,
+              "route_count": 1,
+              "slot_index": 1,
+              "station_id": "D_tianjin"
+            }
+          ],
+          "charging_route_count": 1,
+          "decoder": "explicit_reference_v1",
+          "detail": "customer=C040;source=6:4;target=7:3",
+          "distance_delta": 384.6488524749875,
+          "feasible_rank": 2,
+          "fleet_use": [
+            6,
+            0,
+            2,
+            1
+          ],
+          "neighborhood": "relocate",
+          "pass_index": 1,
+          "route_local_cost": 2639.4827439535793
+        },
+        "objective": 2639.4827439535798,
+        "signature": "2d2d42387acb78fd24584610691652e3f0e7eddc7b57f7a19be4f0959bef7518",
+        "source": "RUIN_RECREATE",
+        "violation_count": 0
+      },
+      {
+        "arm": "B_RR",
+        "duplicate_of_index": null,
+        "feasible": true,
+        "index": 4,
+        "metadata": {
+          "algorithm": "FEASIBILITY-GUIDED-EJECTION-VNS",
+          "assignment_count": 9,
+          "assignment_dp_rank": 2,
+          "capacity_aware_assignment_dp": true,
+          "charger_slot_use": [
+            {
+              "day_offset": 0,
+              "route_count": 1,
+              "slot_index": 23,
+              "station_id": "D_tianjin"
+            },
+            {
+              "day_offset": 0,
+              "route_count": 1,
+              "slot_index": 24,
+              "station_id": "D_tianjin"
+            }
+          ],
+          "charging_route_count": 1,
+          "decoder": "explicit_reference_v1",
+          "detail": "customer=C040;source=6:4;target=7:3",
+          "distance_delta": 384.6488524749875,
+          "feasible_rank": 2,
+          "fleet_use": [
+            6,
+            0,
+            2,
+            1
+          ],
+          "neighborhood": "relocate",
+          "pass_index": 1,
+          "route_local_cost": 2649.6786979120848
+        },
+        "objective": 2649.678697912085,
+        "signature": "28cac397fb50d64e7cea1a7de5d8703637b35026634999b58931e1443cfc3f45",
+        "source": "RUIN_RECREATE",
+        "violation_count": 0
+      },
+      {
+        "arm": "B_RR",
+        "duplicate_of_index": null,
+        "feasible": true,
+        "index": 5,
+        "metadata": {
+          "algorithm": "FEASIBILITY-GUIDED-EJECTION-VNS",
+          "assignment_count": 9,
+          "assignment_dp_rank": 1,
+          "capacity_aware_assignment_dp": true,
+          "charger_slot_use": [
+            {
+              "day_offset": 0,
+              "route_count": 1,
+              "slot_index": 0,
+              "station_id": "D_tianjin"
+            },
+            {
+              "day_offset": 0,
+              "route_count": 1,
+              "slot_index": 1,
+              "station_id": "D_tianjin"
+            }
+          ],
+          "charging_route_count": 1,
+          "decoder": "explicit_reference_v1",
+          "detail": "customer=C039;source=7:1;target=7:3",
+          "distance_delta": 341.91179099003784,
+          "feasible_rank": 3,
+          "fleet_use": [
+            6,
+            0,
+            2,
+            1
+          ],
+          "neighborhood": "relocate",
+          "pass_index": 1,
+          "route_local_cost": 2639.5534757942246
+        },
+        "objective": 2639.5534757942246,
+        "signature": "01296b980b643f52ba32ace633ac5ba53bd676b46b1de90da94ac65314a85c81",
+        "source": "RUIN_RECREATE",
+        "violation_count": 0
+      },
+      {
+        "arm": "B_RR",
+        "duplicate_of_index": null,
+        "feasible": true,
+        "index": 6,
+        "metadata": {
+          "algorithm": "FEASIBILITY-GUIDED-EJECTION-VNS",
+          "assignment_count": 9,
+          "assignment_dp_rank": 2,
+          "capacity_aware_assignment_dp": true,
+          "charger_slot_use": [
+            {
+              "day_offset": 0,
+              "route_count": 1,
+              "slot_index": 23,
+              "station_id": "D_tianjin"
+            },
+            {
+              "day_offset": 0,
+              "route_count": 1,
+              "slot_index": 24,
+              "station_id": "D_tianjin"
+            }
+          ],
+          "charging_route_count": 1,
+          "decoder": "explicit_reference_v1",
+          "detail": "customer=C039;source=7:1;target=7:3",
+          "distance_delta": 341.91179099003784,
+          "feasible_rank": 3,
+          "fleet_use": [
+            6,
+            0,
+            2,
+            1
+          ],
+          "neighborhood": "relocate",
+          "pass_index": 1,
+          "route_local_cost": 2649.74942975273
+        },
+        "objective": 2649.74942975273,
+        "signature": "d038fe5c907794cfd966b3c1af665855ee4c62d7d7326a88a934c5db3d410a7f",
+        "source": "RUIN_RECREATE",
+        "violation_count": 0
+      },
+      {
+        "arm": "B_RR",
+        "duplicate_of_index": null,
+        "feasible": true,
+        "index": 7,
+        "metadata": {
+          "algorithm": "FEASIBILITY-GUIDED-EJECTION-VNS",
+          "assignment_count": 9,
+          "assignment_dp_rank": 1,
+          "capacity_aware_assignment_dp": true,
+          "charger_slot_use": [
+            {
+              "day_offset": 0,
+              "route_count": 1,
+              "slot_index": 0,
+              "station_id": "D_tianjin"
+            },
+            {
+              "day_offset": 0,
+              "route_count": 1,
+              "slot_index": 1,
+              "station_id": "D_tianjin"
+            }
+          ],
+          "charging_route_count": 1,
+          "decoder": "explicit_reference_v1",
+          "detail": "customer=C027;source=3:4;target=3:6",
+          "distance_delta": 1451.2537292380584,
+          "feasible_rank": 4,
+          "fleet_use": [
+            6,
+            0,
+            2,
+            1
+          ],
+          "neighborhood": "relocate",
+          "pass_index": 1,
+          "route_local_cost": 2641.386078435233
+        },
+        "objective": 2641.386078435233,
+        "signature": "5f47e6e2d0c84fc4b33c2597681515c2fee84879fccd5ceb02ad61b88555d8b4",
+        "source": "RUIN_RECREATE",
+        "violation_count": 0
+      },
+      {
+        "arm": "B_RR",
+        "duplicate_of_index": null,
+        "feasible": true,
+        "index": 8,
+        "metadata": {
+          "algorithm": "FEASIBILITY-GUIDED-EJECTION-VNS",
+          "assignment_count": 9,
+          "assignment_dp_rank": 2,
+          "capacity_aware_assignment_dp": true,
+          "charger_slot_use": [
+            {
+              "day_offset": 0,
+              "route_count": 1,
+              "slot_index": 23,
+              "station_id": "D_tianjin"
+            },
+            {
+              "day_offset": 0,
+              "route_count": 1,
+              "slot_index": 24,
+              "station_id": "D_tianjin"
+            }
+          ],
+          "charging_route_count": 1,
+          "decoder": "explicit_reference_v1",
+          "detail": "customer=C027;source=3:4;target=3:6",
+          "distance_delta": 1451.2537292380584,
+          "feasible_rank": 4,
+          "fleet_use": [
+            6,
+            0,
+            2,
+            1
+          ],
+          "neighborhood": "relocate",
+          "pass_index": 1,
+          "route_local_cost": 2651.5820323937382
+        },
+        "objective": 2651.5820323937382,
+        "signature": "bb3924159eaec090308377662704947855a97511cdd5463a1ffdc85b231c2dc9",
+        "source": "RUIN_RECREATE",
+        "violation_count": 0
+      },
+      {
+        "arm": "B_RR",
+        "duplicate_of_index": null,
+        "feasible": true,
+        "index": 9,
+        "metadata": {
+          "algorithm": "FEASIBILITY-GUIDED-EJECTION-VNS",
+          "assignment_count": 9,
+          "assignment_dp_rank": 1,
+          "capacity_aware_assignment_dp": true,
+          "charger_slot_use": [
+            {
+              "day_offset": 0,
+              "route_count": 1,
+              "slot_index": 0,
+              "station_id": "D_tianjin"
+            },
+            {
+              "day_offset": 0,
+              "route_count": 1,
+              "slot_index": 1,
+              "station_id": "D_tianjin"
+            }
+          ],
+          "charging_route_count": 1,
+          "decoder": "explicit_reference_v1",
+          "detail": "customer=C010;source=1:2;target=1:4",
+          "distance_delta": 2429.8566677060444,
+          "feasible_rank": 5,
+          "fleet_use": [
+            6,
+            0,
+            2,
+            1
+          ],
+          "neighborhood": "relocate",
+          "pass_index": 1,
+          "route_local_cost": 2643.1500075015847
+        },
+        "objective": 2643.1500075015847,
+        "signature": "f34111cdec19cc9d6d013a5cb00d72c86a9c43ede647a4bbecfc8516689d31b2",
+        "source": "RUIN_RECREATE",
+        "violation_count": 0
+      },
+      {
+        "arm": "B_RR",
+        "duplicate_of_index": null,
+        "feasible": true,
+        "index": 10,
+        "metadata": {
+          "algorithm": "FEASIBILITY-GUIDED-EJECTION-VNS",
+          "assignment_count": 9,
+          "assignment_dp_rank": 2,
+          "capacity_aware_assignment_dp": true,
+          "charger_slot_use": [
+            {
+              "day_offset": 0,
+              "route_count": 1,
+              "slot_index": 23,
+              "station_id": "D_tianjin"
+            },
+            {
+              "day_offset": 0,
+              "route_count": 1,
+              "slot_index": 24,
+              "station_id": "D_tianjin"
+            }
+          ],
+          "charging_route_count": 1,
+          "decoder": "explicit_reference_v1",
+          "detail": "customer=C010;source=1:2;target=1:4",
+          "distance_delta": 2429.8566677060444,
+          "feasible_rank": 5,
+          "fleet_use": [
+            6,
+            0,
+            2,
+            1
+          ],
+          "neighborhood": "relocate",
+          "pass_index": 1,
+          "route_local_cost": 2653.34596146009
+        },
+        "objective": 2653.34596146009,
+        "signature": "df626e5b81825800a15e9a2b6fec658cf35dd8897f9b87f8dc368d18bfcc1ad1",
+        "source": "RUIN_RECREATE",
+        "violation_count": 0
+      },
+      {
+        "arm": "B_RR",
+        "duplicate_of_index": null,
+        "feasible": true,
+        "index": 11,
+        "metadata": {
+          "algorithm": "FEASIBILITY-GUIDED-EJECTION-VNS",
+          "assignment_count": 9,
+          "assignment_dp_rank": 1,
+          "capacity_aware_assignment_dp": true,
+          "charger_slot_use": [
+            {
+              "day_offset": 0,
+              "route_count": 1,
+              "slot_index": 0,
+              "station_id": "D_tianjin"
+            },
+            {
+              "day_offset": 0,
+              "route_count": 1,
+              "slot_index": 1,
+              "station_id": "D_tianjin"
+            }
+          ],
+          "charging_route_count": 1,
+          "decoder": "explicit_reference_v1",
+          "detail": "customer=C048;source=6:2;target=7:3",
+          "distance_delta": 3197.0957334890263,
+          "feasible_rank": 6,
+          "fleet_use": [
+            6,
+            0,
+            2,
+            1
+          ],
+          "neighborhood": "relocate",
+          "pass_index": 1,
+          "route_local_cost": 2644.335972706409
+        },
+        "objective": 2644.335972706409,
+        "signature": "93c0c2f1fdee8d533773712c8355aba9ffaa064cd6a5a7f8fbea033c5db101f2",
+        "source": "RUIN_RECREATE",
+        "violation_count": 0
+      },
+      {
+        "arm": "B_RR",
+        "duplicate_of_index": null,
+        "feasible": true,
+        "index": 12,
+        "metadata": {
+          "algorithm": "FEASIBILITY-GUIDED-EJECTION-VNS",
+          "assignment_count": 9,
+          "assignment_dp_rank": 2,
+          "capacity_aware_assignment_dp": true,
+          "charger_slot_use": [
+            {
+              "day_offset": 0,
+              "route_count": 1,
+              "slot_index": 23,
+              "station_id": "D_tianjin"
+            },
+            {
+              "day_offset": 0,
+              "route_count": 1,
+              "slot_index": 24,
+              "station_id": "D_tianjin"
+            }
+          ],
+          "charging_route_count": 1,
+          "decoder": "explicit_reference_v1",
+          "detail": "customer=C048;source=6:2;target=7:3",
+          "distance_delta": 3197.0957334890263,
+          "feasible_rank": 6,
+          "fleet_use": [
+            6,
+            0,
+            2,
+            1
+          ],
+          "neighborhood": "relocate",
+          "pass_index": 1,
+          "route_local_cost": 2654.531926664914
+        },
+        "objective": 2654.5319266649144,
+        "signature": "7a3c994ab341aa16cede6da7030f44f1b81ede327bf166b51e9901192bcbff2c",
+        "source": "RUIN_RECREATE",
+        "violation_count": 0
+      },
+      {
+        "arm": "B_RR",
+        "duplicate_of_index": null,
+        "feasible": true,
+        "index": 13,
+        "metadata": {
+          "algorithm": "FEASIBILITY-GUIDED-EJECTION-VNS",
+          "assignment_count": 9,
+          "assignment_dp_rank": 1,
+          "capacity_aware_assignment_dp": true,
+          "charger_slot_use": [
+            {
+              "day_offset": 0,
+              "route_count": 1,
+              "slot_index": 0,
+              "station_id": "D_tianjin"
+            },
+            {
+              "day_offset": 0,
+              "route_count": 1,
+              "slot_index": 1,
+              "station_id": "D_tianjin"
+            }
+          ],
+          "charging_route_count": 1,
+          "decoder": "explicit_reference_v1",
+          "detail": "customer=C035;source=4:2;target=4:4",
+          "distance_delta": 4483.667385778041,
+          "feasible_rank": 7,
+          "fleet_use": [
+            6,
+            0,
+            2,
+            1
+          ],
+          "neighborhood": "relocate",
+          "pass_index": 1,
+          "route_local_cost": 2646.5583679349097
+        },
+        "objective": 2646.5583679349097,
+        "signature": "a3220ba5204b4c7385f2f2b7d818a7bd83eb31f556c5e9a220b7a35596514429",
+        "source": "RUIN_RECREATE",
+        "violation_count": 0
+      },
+      {
+        "arm": "B_RR",
+        "duplicate_of_index": null,
+        "feasible": true,
+        "index": 14,
+        "metadata": {
+          "algorithm": "FEASIBILITY-GUIDED-EJECTION-VNS",
+          "assignment_count": 9,
+          "assignment_dp_rank": 2,
+          "capacity_aware_assignment_dp": true,
+          "charger_slot_use": [
+            {
+              "day_offset": 0,
+              "route_count": 1,
+              "slot_index": 23,
+              "station_id": "D_tianjin"
+            },
+            {
+              "day_offset": 0,
+              "route_count": 1,
+              "slot_index": 24,
+              "station_id": "D_tianjin"
+            }
+          ],
+          "charging_route_count": 1,
+          "decoder": "explicit_reference_v1",
+          "detail": "customer=C035;source=4:2;target=4:4",
+          "distance_delta": 4483.667385778041,
+          "feasible_rank": 7,
+          "fleet_use": [
+            6,
+            0,
+            2,
+            1
+          ],
+          "neighborhood": "relocate",
+          "pass_index": 1,
+          "route_local_cost": 2656.7543218934147
+        },
+        "objective": 2656.754321893415,
+        "signature": "36c96b0477796bf164517b52619dd01b886a8d932c8062a8faef08bb548a3bc7",
+        "source": "RUIN_RECREATE",
+        "violation_count": 0
+      },
+      {
+        "arm": "B_RR",
+        "duplicate_of_index": null,
+        "feasible": true,
+        "index": 15,
+        "metadata": {
+          "algorithm": "FEASIBILITY-GUIDED-EJECTION-VNS",
+          "assignment_count": 9,
+          "assignment_dp_rank": 1,
+          "capacity_aware_assignment_dp": true,
+          "charger_slot_use": [
+            {
+              "day_offset": 0,
+              "route_count": 1,
+              "slot_index": 0,
+              "station_id": "D_tianjin"
+            },
+            {
+              "day_offset": 0,
+              "route_count": 1,
+              "slot_index": 1,
+              "station_id": "D_tianjin"
+            }
+          ],
+          "charging_route_count": 1,
+          "decoder": "explicit_reference_v1",
+          "detail": "customer=C037;source=5:0;target=5:2",
+          "distance_delta": 5653.816291537019,
+          "feasible_rank": 8,
+          "fleet_use": [
+            6,
+            0,
+            2,
+            1
+          ],
+          "neighborhood": "relocate",
+          "pass_index": 1,
+          "route_local_cost": 2649.8967237376355
+        },
+        "objective": 2649.8967237376355,
+        "signature": "b59811206fb2160258726860abc1f759729e28616a626ee6f887818b3e7118e4",
+        "source": "RUIN_RECREATE",
+        "violation_count": 0
+      },
+      {
+        "arm": "B_RR",
+        "duplicate_of_index": null,
+        "feasible": true,
+        "index": 16,
+        "metadata": {
+          "algorithm": "FEASIBILITY-GUIDED-EJECTION-VNS",
+          "assignment_count": 9,
+          "assignment_dp_rank": 2,
+          "capacity_aware_assignment_dp": true,
+          "charger_slot_use": [
+            {
+              "day_offset": 0,
+              "route_count": 1,
+              "slot_index": 23,
+              "station_id": "D_tianjin"
+            },
+            {
+              "day_offset": 0,
+              "route_count": 1,
+              "slot_index": 24,
+              "station_id": "D_tianjin"
+            }
+          ],
+          "charging_route_count": 1,
+          "decoder": "explicit_reference_v1",
+          "detail": "customer=C037;source=5:0;target=5:2",
+          "distance_delta": 5653.816291537019,
+          "feasible_rank": 8,
+          "fleet_use": [
+            6,
+            0,
+            2,
+            1
+          ],
+          "neighborhood": "relocate",
+          "pass_index": 1,
+          "route_local_cost": 2660.0926776961405
+        },
+        "objective": 2660.092677696141,
+        "signature": "9904faae5e8d4b5f1c5c8a9c98d03df75505f5a955c37d9040ba1a7f71a4be15",
+        "source": "RUIN_RECREATE",
+        "violation_count": 0
+      },
+      {
+        "arm": "B_RR",
+        "duplicate_of_index": null,
+        "feasible": true,
+        "index": 17,
+        "metadata": {
+          "algorithm": "FEASIBILITY-GUIDED-EJECTION-VNS",
+          "assignment_count": 9,
+          "assignment_dp_rank": 1,
+          "capacity_aware_assignment_dp": true,
+          "charger_slot_use": [
+            {
+              "day_offset": 0,
+              "route_count": 1,
+              "slot_index": 0,
+              "station_id": "D_tianjin"
+            },
+            {
+              "day_offset": 0,
+              "route_count": 1,
+              "slot_index": 1,
+              "station_id": "D_tianjin"
+            }
+          ],
+          "charging_route_count": 1,
+          "decoder": "explicit_reference_v1",
+          "detail": "customer=C044;source=7:0;target=8:0",
+          "distance_delta": 520.4386368310079,
+          "feasible_rank": 9,
+          "fleet_use": [
+            6,
+            0,
+            2,
+            1
+          ],
+          "neighborhood": "relocate",
+          "pass_index": 1,
+          "route_local_cost": 2657.8149519557364
+        },
+        "objective": 2657.8149519557364,
+        "signature": "5d3a47bd33eafeeb7b8079207b2158a6b63139b87c939fb3ab377448bd06b8e9",
+        "source": "RUIN_RECREATE",
+        "violation_count": 0
+      },
+      {
+        "arm": "B_RR",
+        "duplicate_of_index": null,
+        "feasible": true,
+        "index": 18,
+        "metadata": {
+          "algorithm": "FEASIBILITY-GUIDED-EJECTION-VNS",
+          "assignment_count": 9,
+          "assignment_dp_rank": 2,
+          "capacity_aware_assignment_dp": true,
+          "charger_slot_use": [
+            {
+              "day_offset": 0,
+              "route_count": 1,
+              "slot_index": 25,
+              "station_id": "D_tianjin"
+            },
+            {
+              "day_offset": 0,
+              "route_count": 1,
+              "slot_index": 26,
+              "station_id": "D_tianjin"
+            }
+          ],
+          "charging_route_count": 1,
+          "decoder": "explicit_reference_v1",
+          "detail": "customer=C044;source=7:0;target=8:0",
+          "distance_delta": 520.4386368310079,
+          "feasible_rank": 9,
+          "fleet_use": [
+            6,
+            0,
+            2,
+            1
+          ],
+          "neighborhood": "relocate",
+          "pass_index": 1,
+          "route_local_cost": 2662.1055196488487
+        },
+        "objective": 2662.105519648849,
+        "signature": "96e4b1d4b26c5a42ddd5469a26aee36fff4016f77319b8d8afb4cd0e3161f587",
+        "source": "RUIN_RECREATE",
+        "violation_count": 0
+      },
+      {
+        "arm": "B_RR",
+        "duplicate_of_index": null,
+        "feasible": true,
+        "index": 19,
+        "metadata": {
+          "algorithm": "FEASIBILITY-GUIDED-EJECTION-VNS",
+          "assignment_count": 9,
+          "assignment_dp_rank": 1,
+          "capacity_aware_assignment_dp": true,
+          "charger_slot_use": [
+            {
+              "day_offset": 0,
+              "route_count": 1,
+              "slot_index": 0,
+              "station_id": "D_tianjin"
+            },
+            {
+              "day_offset": 0,
+              "route_count": 1,
+              "slot_index": 1,
+              "station_id": "D_tianjin"
+            }
+          ],
+          "charging_route_count": 1,
+          "decoder": "explicit_reference_v1",
+          "detail": "customer=C042;source=7:3;target=8:4",
+          "distance_delta": 1258.1878509460948,
+          "feasible_rank": 10,
+          "fleet_use": [
+            6,
+            0,
+            2,
+            1
+          ],
+          "neighborhood": "relocate",
+          "pass_index": 1,
+          "route_local_cost": 2659.9363247866468
+        },
+        "objective": 2659.9363247866477,
+        "signature": "d17914d5dbc4539a5500a13abc7a60f8616d0e858ca671f233a96f3130b2fd91",
+        "source": "RUIN_RECREATE",
+        "violation_count": 0
+      },
+      {
+        "arm": "B_RR",
+        "duplicate_of_index": null,
+        "feasible": true,
+        "index": 20,
+        "metadata": {
+          "algorithm": "FEASIBILITY-GUIDED-EJECTION-VNS",
+          "assignment_count": 9,
+          "assignment_dp_rank": 2,
+          "capacity_aware_assignment_dp": true,
+          "charger_slot_use": [
+            {
+              "day_offset": 0,
+              "route_count": 1,
+              "slot_index": 21,
+              "station_id": "D_tianjin"
+            },
+            {
+              "day_offset": 0,
+              "route_count": 1,
+              "slot_index": 22,
+              "station_id": "D_tianjin"
+            }
+          ],
+          "charging_route_count": 1,
+          "decoder": "explicit_reference_v1",
+          "detail": "customer=C042;source=7:3;target=8:4",
+          "distance_delta": 1258.1878509460948,
+          "feasible_rank": 10,
+          "fleet_use": [
+            6,
+            0,
+            2,
+            1
+          ],
+          "neighborhood": "relocate",
+          "pass_index": 1,
+          "route_local_cost": 2668.7218706822046
+        },
+        "objective": 2668.721870682205,
+        "signature": "6706ac43e77d5f214ddf611e1da93440c7f3236e154ff8f71ac6c0c8fcc48c20",
+        "source": "RUIN_RECREATE",
+        "violation_count": 0
+      },
+      {
+        "arm": "B_RR",
+        "duplicate_of_index": null,
+        "feasible": true,
+        "index": 21,
+        "metadata": {
+          "algorithm": "FEASIBILITY-GUIDED-EJECTION-VNS",
+          "assignment_count": 9,
+          "assignment_dp_rank": 1,
+          "capacity_aware_assignment_dp": true,
+          "charger_slot_use": [
+            {
+              "day_offset": 0,
+              "route_count": 1,
+              "slot_index": 0,
+              "station_id": "D_tianjin"
+            },
+            {
+              "day_offset": 0,
+              "route_count": 1,
+              "slot_index": 1,
+              "station_id": "D_tianjin"
+            }
+          ],
+          "charging_route_count": 1,
+          "decoder": "explicit_reference_v1",
+          "detail": "customer=C050;source=7:2;target=8:1",
+          "distance_delta": 3417.282933974988,
+          "feasible_rank": 11,
+          "fleet_use": [
+            6,
+            0,
+            2,
+            1
+          ],
+          "neighborhood": "relocate",
+          "pass_index": 1,
+          "route_local_cost": 2664.702326954922
+        },
+        "objective": 2664.7023269549222,
+        "signature": "d2e53cc5ac67843eb37661ebbaa176726287890127b82c3fbb7d9f55cb21c2c7",
+        "source": "RUIN_RECREATE",
+        "violation_count": 0
+      },
+      {
+        "arm": "B_RR",
+        "duplicate_of_index": null,
+        "feasible": true,
+        "index": 22,
+        "metadata": {
+          "algorithm": "FEASIBILITY-GUIDED-EJECTION-VNS",
+          "assignment_count": 9,
+          "assignment_dp_rank": 2,
+          "capacity_aware_assignment_dp": true,
+          "charger_slot_use": [
+            {
+              "day_offset": 0,
+              "route_count": 1,
+              "slot_index": 21,
+              "station_id": "D_tianjin"
+            },
+            {
+              "day_offset": 0,
+              "route_count": 1,
+              "slot_index": 22,
+              "station_id": "D_tianjin"
+            }
+          ],
+          "charging_route_count": 1,
+          "decoder": "explicit_reference_v1",
+          "detail": "customer=C050;source=7:2;target=8:1",
+          "distance_delta": 3417.282933974988,
+          "feasible_rank": 11,
+          "fleet_use": [
+            6,
+            0,
+            2,
+            1
+          ],
+          "neighborhood": "relocate",
+          "pass_index": 1,
+          "route_local_cost": 2673.1650151013555
+        },
+        "objective": 2673.1650151013555,
+        "signature": "78cb97279bae1f2edf93964f1027f0939450ac3289e10a82f602b09599927d4f",
+        "source": "RUIN_RECREATE",
+        "violation_count": 0
+      },
+      {
+        "arm": "B_RR",
+        "duplicate_of_index": null,
+        "feasible": true,
+        "index": 23,
+        "metadata": {
+          "algorithm": "FEASIBILITY-GUIDED-EJECTION-VNS",
+          "assignment_count": 9,
+          "assignment_dp_rank": 1,
+          "capacity_aware_assignment_dp": true,
+          "charger_slot_use": [],
+          "charging_route_count": 0,
+          "decoder": "explicit_reference_v1",
+          "detail": "customer=C045;source=6:1;target=8:1",
+          "distance_delta": 726.0054016450886,
+          "feasible_rank": 12,
+          "fleet_use": [
+            6,
+            0,
+            3,
+            0
+          ],
+          "neighborhood": "relocate",
+          "pass_index": 1,
+          "route_local_cost": 2690.520430066113
+        },
+        "objective": 2690.520430066113,
+        "signature": "341b5eb3f2591d6a880adbee60ca8c31f5f99563bc5580a5c20413cf9824f294",
+        "source": "RUIN_RECREATE",
+        "violation_count": 0
+      },
+      {
+        "arm": "B_RR",
+        "duplicate_of_index": null,
+        "feasible": true,
+        "index": 24,
+        "metadata": {
+          "algorithm": "FEASIBILITY-GUIDED-EJECTION-VNS",
+          "assignment_count": 9,
+          "assignment_dp_rank": 2,
+          "capacity_aware_assignment_dp": true,
+          "charger_slot_use": [],
+          "charging_route_count": 0,
+          "decoder": "explicit_reference_v1",
+          "detail": "customer=C045;source=6:1;target=8:1",
+          "distance_delta": 726.0054016450886,
+          "feasible_rank": 12,
+          "fleet_use": [
+            7,
+            0,
+            2,
+            0
+          ],
+          "neighborhood": "relocate",
+          "pass_index": 1,
+          "route_local_cost": 3137.9194772823
+        },
+        "objective": 3137.9194772823,
+        "signature": "1ea803f1bcf8a9386aede6e2d8f831292785841fbab59c44fe70b616c373cd5d",
+        "source": "RUIN_RECREATE",
+        "violation_count": 0
+      },
+      {
+        "arm": "B_RR",
+        "duplicate_of_index": null,
+        "feasible": true,
+        "index": 25,
+        "metadata": {
+          "algorithm": "FEASIBILITY-GUIDED-EJECTION-VNS",
+          "assignment_count": 9,
+          "assignment_dp_rank": 1,
+          "capacity_aware_assignment_dp": true,
+          "charger_slot_use": [
+            {
+              "day_offset": 0,
+              "route_count": 1,
+              "slot_index": 0,
+              "station_id": "D_tianjin"
+            },
+            {
+              "day_offset": 0,
+              "route_count": 1,
+              "slot_index": 1,
+              "station_id": "D_tianjin"
+            }
+          ],
+          "charging_route_count": 1,
+          "decoder": "explicit_reference_v1",
+          "detail": "left=6:0:C046;right=8:0:C038",
+          "distance_delta": 26.901746160001494,
+          "feasible_rank": 2,
+          "fleet_use": [
+            6,
+            0,
+            2,
+            1
+          ],
+          "neighborhood": "swap",
+          "pass_index": 1,
+          "route_local_cost": 2639.0088665039375
+        },
+        "objective": 2639.0088665039375,
+        "signature": "7bb7bd2f5e94f28e110760a79e458f3b62e7108427fa2a7d74f61e7e317303b8",
+        "source": "RUIN_RECREATE",
+        "violation_count": 0
+      },
+      {
+        "arm": "B_RR",
+        "duplicate_of_index": null,
+        "feasible": true,
+        "index": 26,
+        "metadata": {
+          "algorithm": "FEASIBILITY-GUIDED-EJECTION-VNS",
+          "assignment_count": 9,
+          "assignment_dp_rank": 2,
+          "capacity_aware_assignment_dp": true,
+          "charger_slot_use": [
+            {
+              "day_offset": 0,
+              "route_count": 1,
+              "slot_index": 20,
+              "station_id": "D_tianjin"
+            },
+            {
+              "day_offset": 0,
+              "route_count": 1,
+              "slot_index": 21,
+              "station_id": "D_tianjin"
+            },
+            {
+              "day_offset": 0,
+              "route_count": 1,
+              "slot_index": 22,
+              "station_id": "D_tianjin"
+            }
+          ],
+          "charging_route_count": 1,
+          "decoder": "explicit_reference_v1",
+          "detail": "left=6:0:C046;right=8:0:C038",
+          "distance_delta": 26.901746160001494,
+          "feasible_rank": 2,
+          "fleet_use": [
+            6,
+            0,
+            2,
+            1
+          ],
+          "neighborhood": "swap",
+          "pass_index": 1,
+          "route_local_cost": 2652.552633938161
+        },
+        "objective": 2652.552633938161,
+        "signature": "b452b0cbd0b2d83037328561c4ceea6c45947bbe4d624af1b3f42eb5cfb4d643",
+        "source": "RUIN_RECREATE",
+        "violation_count": 0
+      },
+      {
+        "arm": "B_RR",
+        "duplicate_of_index": null,
+        "feasible": true,
+        "index": 27,
+        "metadata": {
+          "algorithm": "FEASIBILITY-GUIDED-EJECTION-VNS",
+          "assignment_count": 9,
+          "assignment_dp_rank": 1,
+          "capacity_aware_assignment_dp": true,
+          "charger_slot_use": [
+            {
+              "day_offset": 0,
+              "route_count": 1,
+              "slot_index": 0,
+              "station_id": "D_tianjin"
+            },
+            {
+              "day_offset": 0,
+              "route_count": 1,
+              "slot_index": 1,
+              "station_id": "D_tianjin"
+            }
+          ],
+          "charging_route_count": 1,
+          "decoder": "explicit_reference_v1",
+          "detail": "left=6:4:C040;right=7:3:C042",
+          "distance_delta": 384.6488524749875,
+          "feasible_rank": 4,
+          "fleet_use": [
+            6,
+            0,
+            2,
+            1
+          ],
+          "neighborhood": "swap",
+          "pass_index": 1,
+          "route_local_cost": 2639.645241232231
+        },
+        "objective": 2639.6452412322305,
+        "signature": "ebcaf68312e32fb8b0302216d141c58d5608388059ce3f5bc45bdadc50db91fc",
+        "source": "RUIN_RECREATE",
+        "violation_count": 0
+      },
+      {
+        "arm": "B_RR",
+        "duplicate_of_index": null,
+        "feasible": true,
+        "index": 28,
+        "metadata": {
+          "algorithm": "FEASIBILITY-GUIDED-EJECTION-VNS",
+          "assignment_count": 9,
+          "assignment_dp_rank": 2,
+          "capacity_aware_assignment_dp": true,
+          "charger_slot_use": [
+            {
+              "day_offset": 0,
+              "route_count": 1,
+              "slot_index": 23,
+              "station_id": "D_tianjin"
+            },
+            {
+              "day_offset": 0,
+              "route_count": 1,
+              "slot_index": 24,
+              "station_id": "D_tianjin"
+            }
+          ],
+          "charging_route_count": 1,
+          "decoder": "explicit_reference_v1",
+          "detail": "left=6:4:C040;right=7:3:C042",
+          "distance_delta": 384.6488524749875,
+          "feasible_rank": 4,
+          "fleet_use": [
+            6,
+            0,
+            2,
+            1
+          ],
+          "neighborhood": "swap",
+          "pass_index": 1,
+          "route_local_cost": 2649.841195190736
+        },
+        "objective": 2649.841195190736,
+        "signature": "eba5f591a778656f955652115a4f79dcc2c1ac10591fb23614757d62e7e781c7",
+        "source": "RUIN_RECREATE",
+        "violation_count": 0
+      },
+      {
+        "arm": "B_RR",
+        "duplicate_of_index": null,
+        "feasible": true,
+        "index": 29,
+        "metadata": {
+          "algorithm": "FEASIBILITY-GUIDED-EJECTION-VNS",
+          "assignment_count": 9,
+          "assignment_dp_rank": 1,
+          "capacity_aware_assignment_dp": true,
+          "charger_slot_use": [
+            {
+              "day_offset": 0,
+              "route_count": 1,
+              "slot_index": 0,
+              "station_id": "D_tianjin"
+            },
+            {
+              "day_offset": 0,
+              "route_count": 1,
+              "slot_index": 1,
+              "station_id": "D_tianjin"
+            }
+          ],
+          "charging_route_count": 1,
+          "decoder": "explicit_reference_v1",
+          "detail": "left=0:5:C019;right=4:4:C036",
+          "distance_delta": 1180.5715694120154,
+          "feasible_rank": 5,
+          "fleet_use": [
+            6,
+            0,
+            2,
+            1
+          ],
+          "neighborhood": "swap",
+          "pass_index": 1,
+          "route_local_cost": 2640.856039443679
+        },
+        "objective": 2640.8560394436786,
+        "signature": "4b47e3ecfadd1f4b831c732bc6ac6b8aaa257111fd637f3fe94de017606fd64e",
+        "source": "RUIN_RECREATE",
+        "violation_count": 0
+      },
+      {
+        "arm": "B_RR",
+        "duplicate_of_index": null,
+        "feasible": true,
+        "index": 30,
+        "metadata": {
+          "algorithm": "FEASIBILITY-GUIDED-EJECTION-VNS",
+          "assignment_count": 9,
+          "assignment_dp_rank": 2,
+          "capacity_aware_assignment_dp": true,
+          "charger_slot_use": [
+            {
+              "day_offset": 0,
+              "route_count": 1,
+              "slot_index": 23,
+              "station_id": "D_tianjin"
+            },
+            {
+              "day_offset": 0,
+              "route_count": 1,
+              "slot_index": 24,
+              "station_id": "D_tianjin"
+            }
+          ],
+          "charging_route_count": 1,
+          "decoder": "explicit_reference_v1",
+          "detail": "left=0:5:C019;right=4:4:C036",
+          "distance_delta": 1180.5715694120154,
+          "feasible_rank": 5,
+          "fleet_use": [
+            6,
+            0,
+            2,
+            1
+          ],
+          "neighborhood": "swap",
+          "pass_index": 1,
+          "route_local_cost": 2651.051993402184
+        },
+        "objective": 2651.051993402184,
+        "signature": "96948ad2352f94159b9700f8351ca40b43e12907b8783bebccce402538a08ca4",
+        "source": "RUIN_RECREATE",
+        "violation_count": 0
+      },
+      {
+        "arm": "B_RR",
+        "duplicate_of_index": null,
+        "feasible": true,
+        "index": 31,
+        "metadata": {
+          "algorithm": "FEASIBILITY-GUIDED-EJECTION-VNS",
+          "assignment_count": 9,
+          "assignment_dp_rank": 1,
+          "capacity_aware_assignment_dp": true,
+          "charger_slot_use": [
+            {
+              "day_offset": 0,
+              "route_count": 1,
+              "slot_index": 0,
+              "station_id": "D_tianjin"
+            },
+            {
+              "day_offset": 0,
+              "route_count": 1,
+              "slot_index": 1,
+              "station_id": "D_tianjin"
+            }
+          ],
+          "charging_route_count": 1,
+          "decoder": "explicit_reference_v1",
+          "detail": "left=0:1:C014;right=2:0:C006",
+          "distance_delta": 2351.721552754985,
+          "feasible_rank": 8,
+          "fleet_use": [
+            6,
+            0,
+            2,
+            1
+          ],
+          "neighborhood": "swap",
+          "pass_index": 1,
+          "route_local_cost": 2643.2168409391666
+        },
+        "objective": 2643.2168409391666,
+        "signature": "c5a6647b00b8ffc696aa5a343983eae303a1c283b993c7cc1141c7ccf642d7c4",
+        "source": "RUIN_RECREATE",
+        "violation_count": 0
+      },
+      {
+        "arm": "B_RR",
+        "duplicate_of_index": null,
+        "feasible": true,
+        "index": 32,
+        "metadata": {
+          "algorithm": "FEASIBILITY-GUIDED-EJECTION-VNS",
+          "assignment_count": 9,
+          "assignment_dp_rank": 2,
+          "capacity_aware_assignment_dp": true,
+          "charger_slot_use": [
+            {
+              "day_offset": 0,
+              "route_count": 1,
+              "slot_index": 23,
+              "station_id": "D_tianjin"
+            },
+            {
+              "day_offset": 0,
+              "route_count": 1,
+              "slot_index": 24,
+              "station_id": "D_tianjin"
+            }
+          ],
+          "charging_route_count": 1,
+          "decoder": "explicit_reference_v1",
+          "detail": "left=0:1:C014;right=2:0:C006",
+          "distance_delta": 2351.721552754985,
+          "feasible_rank": 8,
+          "fleet_use": [
+            6,
+            0,
+            2,
+            1
+          ],
+          "neighborhood": "swap",
+          "pass_index": 1,
+          "route_local_cost": 2653.4127948976716
+        },
+        "objective": 2653.412794897672,
+        "signature": "1b743c683c7e45a554a11ff41022ad3e74263f2f40433033850aa9faff615031",
+        "source": "RUIN_RECREATE",
+        "violation_count": 0
+      },
+      {
+        "arm": "B_RR",
+        "duplicate_of_index": null,
+        "feasible": true,
+        "index": 33,
+        "metadata": {
+          "algorithm": "FEASIBILITY-GUIDED-EJECTION-VNS",
+          "assignment_count": 9,
+          "assignment_dp_rank": 1,
+          "capacity_aware_assignment_dp": true,
+          "charger_slot_use": [
+            {
+              "day_offset": 0,
+              "route_count": 1,
+              "slot_index": 0,
+              "station_id": "D_tianjin"
+            },
+            {
+              "day_offset": 0,
+              "route_count": 1,
+              "slot_index": 1,
+              "station_id": "D_tianjin"
+            }
+          ],
+          "charging_route_count": 1,
+          "decoder": "explicit_reference_v1",
+          "detail": "left=6:4:C040;right=8:3:C049",
+          "distance_delta": 3624.8778483780334,
+          "feasible_rank": 9,
+          "fleet_use": [
+            6,
+            0,
+            2,
+            1
+          ],
+          "neighborhood": "swap",
+          "pass_index": 1,
+          "route_local_cost": 2643.3742228452766
+        },
+        "objective": 2643.3742228452766,
+        "signature": "99d87b68bedb111e116a737dc98060db5c0c58c8fb4c0c87407ce843485d25da",
+        "source": "RUIN_RECREATE",
+        "violation_count": 0
+      },
+      {
+        "arm": "B_RR",
+        "duplicate_of_index": null,
+        "feasible": true,
+        "index": 34,
+        "metadata": {
+          "algorithm": "FEASIBILITY-GUIDED-EJECTION-VNS",
+          "assignment_count": 9,
+          "assignment_dp_rank": 2,
+          "capacity_aware_assignment_dp": true,
+          "charger_slot_use": [
+            {
+              "day_offset": 0,
+              "route_count": 1,
+              "slot_index": 22,
+              "station_id": "D_tianjin"
+            },
+            {
+              "day_offset": 0,
+              "route_count": 1,
+              "slot_index": 23,
+              "station_id": "D_tianjin"
+            },
+            {
+              "day_offset": 0,
+              "route_count": 1,
+              "slot_index": 24,
+              "station_id": "D_tianjin"
+            }
+          ],
+          "charging_route_count": 1,
+          "decoder": "explicit_reference_v1",
+          "detail": "left=6:4:C040;right=8:3:C049",
+          "distance_delta": 3624.8778483780334,
+          "feasible_rank": 9,
+          "fleet_use": [
+            6,
+            0,
+            2,
+            1
+          ],
+          "neighborhood": "swap",
+          "pass_index": 1,
+          "route_local_cost": 2654.283550104221
+        },
+        "objective": 2654.2835501042214,
+        "signature": "338e4fb82870c40220d66c1299422608629f4388d4d7b18dcb82598038e56b3b",
+        "source": "RUIN_RECREATE",
+        "violation_count": 0
+      },
+      {
+        "arm": "B_RR",
+        "duplicate_of_index": null,
+        "feasible": true,
+        "index": 35,
+        "metadata": {
+          "algorithm": "FEASIBILITY-GUIDED-EJECTION-VNS",
+          "assignment_count": 9,
+          "assignment_dp_rank": 1,
+          "capacity_aware_assignment_dp": true,
+          "charger_slot_use": [
+            {
+              "day_offset": 0,
+              "route_count": 1,
+              "slot_index": 0,
+              "station_id": "D_tianjin"
+            },
+            {
+              "day_offset": 0,
+              "route_count": 1,
+              "slot_index": 1,
+              "station_id": "D_tianjin"
+            }
+          ],
+          "charging_route_count": 1,
+          "decoder": "explicit_reference_v1",
+          "detail": "left=0:5:C019;right=5:5:C025",
+          "distance_delta": 4304.523872317048,
+          "feasible_rank": 11,
+          "fleet_use": [
+            6,
+            0,
+            2,
+            1
+          ],
+          "neighborhood": "swap",
+          "pass_index": 1,
+          "route_local_cost": 2646.666125365124
+        },
+        "objective": 2646.6661253651237,
+        "signature": "ddd452c7e6a691adc0d160955cfac0033a4a98e00addf1cc292646e3b0eed2c6",
+        "source": "RUIN_RECREATE",
+        "violation_count": 0
+      },
+      {
+        "arm": "B_RR",
+        "duplicate_of_index": null,
+        "feasible": true,
+        "index": 36,
+        "metadata": {
+          "algorithm": "FEASIBILITY-GUIDED-EJECTION-VNS",
+          "assignment_count": 9,
+          "assignment_dp_rank": 2,
+          "capacity_aware_assignment_dp": true,
+          "charger_slot_use": [
+            {
+              "day_offset": 0,
+              "route_count": 1,
+              "slot_index": 23,
+              "station_id": "D_tianjin"
+            },
+            {
+              "day_offset": 0,
+              "route_count": 1,
+              "slot_index": 24,
+              "station_id": "D_tianjin"
+            }
+          ],
+          "charging_route_count": 1,
+          "decoder": "explicit_reference_v1",
+          "detail": "left=0:5:C019;right=5:5:C025",
+          "distance_delta": 4304.523872317048,
+          "feasible_rank": 11,
+          "fleet_use": [
+            6,
+            0,
+            2,
+            1
+          ],
+          "neighborhood": "swap",
+          "pass_index": 1,
+          "route_local_cost": 2656.8620793236296
+        },
+        "objective": 2656.862079323629,
+        "signature": "e4ec731a5fe95de90b949aa72819775d93b15fe9b052b8c49e9b29d3b8756c6d",
+        "source": "RUIN_RECREATE",
+        "violation_count": 0
+      },
+      {
+        "arm": "B_RR",
+        "duplicate_of_index": null,
+        "feasible": true,
+        "index": 37,
+        "metadata": {
+          "algorithm": "FEASIBILITY-GUIDED-EJECTION-VNS",
+          "assignment_count": 9,
+          "assignment_dp_rank": 1,
+          "capacity_aware_assignment_dp": true,
+          "charger_slot_use": [
+            {
+              "day_offset": 0,
+              "route_count": 1,
+              "slot_index": 0,
+              "station_id": "D_tianjin"
+            },
+            {
+              "day_offset": 0,
+              "route_count": 1,
+              "slot_index": 1,
+              "station_id": "D_tianjin"
+            }
+          ],
+          "charging_route_count": 1,
+          "decoder": "explicit_reference_v1",
+          "detail": "left=6:3:C041;right=7:2:C050",
+          "distance_delta": 5609.873117324081,
+          "feasible_rank": 12,
+          "fleet_use": [
+            6,
+            0,
+            2,
+            1
+          ],
+          "neighborhood": "swap",
+          "pass_index": 1,
+          "route_local_cost": 2648.7604890063103
+        },
+        "objective": 2648.76048900631,
+        "signature": "469f9e080093d2cc0362ba22025ab2c6e34b8eec55dbed27bd328f1a15907c08",
+        "source": "RUIN_RECREATE",
+        "violation_count": 0
+      },
+      {
+        "arm": "B_RR",
+        "duplicate_of_index": null,
+        "feasible": true,
+        "index": 38,
+        "metadata": {
+          "algorithm": "FEASIBILITY-GUIDED-EJECTION-VNS",
+          "assignment_count": 9,
+          "assignment_dp_rank": 2,
+          "capacity_aware_assignment_dp": true,
+          "charger_slot_use": [
+            {
+              "day_offset": 0,
+              "route_count": 1,
+              "slot_index": 23,
+              "station_id": "D_tianjin"
+            },
+            {
+              "day_offset": 0,
+              "route_count": 1,
+              "slot_index": 24,
+              "station_id": "D_tianjin"
+            }
+          ],
+          "charging_route_count": 1,
+          "decoder": "explicit_reference_v1",
+          "detail": "left=6:3:C041;right=7:2:C050",
+          "distance_delta": 5609.873117324081,
+          "feasible_rank": 12,
+          "fleet_use": [
+            6,
+            0,
+            2,
+            1
+          ],
+          "neighborhood": "swap",
+          "pass_index": 1,
+          "route_local_cost": 2658.9564429648153
+        },
+        "objective": 2658.9564429648153,
+        "signature": "b637cc73b232663e5891e5e12b33ab6415674ff39aedea51524fa59c68e012db",
+        "source": "RUIN_RECREATE",
+        "violation_count": 0
+      },
+      {
+        "arm": "B_RR",
+        "duplicate_of_index": null,
+        "feasible": true,
+        "index": 39,
+        "metadata": {
+          "algorithm": "FEASIBILITY-GUIDED-EJECTION-VNS",
+          "assignment_count": 9,
+          "assignment_dp_rank": 1,
+          "capacity_aware_assignment_dp": true,
+          "charger_slot_use": [
+            {
+              "day_offset": 0,
+              "route_count": 1,
+              "slot_index": 0,
+              "station_id": "D_tianjin"
+            },
+            {
+              "day_offset": 0,
+              "route_count": 1,
+              "slot_index": 1,
+              "station_id": "D_tianjin"
+            }
+          ],
+          "charging_route_count": 1,
+          "decoder": "explicit_reference_v1",
+          "detail": "route=0;segment=1:3",
+          "distance_delta": 7052.377489074017,
+          "feasible_rank": 7,
+          "fleet_use": [
+            6,
+            0,
+            2,
+            1
+          ],
+          "neighborhood": "two_opt",
+          "pass_index": 1,
+          "route_local_cost": 2650.931088166025
+        },
+        "objective": 2650.9310881660244,
+        "signature": "11e73ecbb6d96377c768b9b9d26ed80c511ea7d35a40b8fd199dd783736aa405",
+        "source": "RUIN_RECREATE",
+        "violation_count": 0
+      },
+      {
+        "arm": "B_RR",
+        "duplicate_of_index": null,
+        "feasible": true,
+        "index": 40,
+        "metadata": {
+          "algorithm": "FEASIBILITY-GUIDED-EJECTION-VNS",
+          "assignment_count": 9,
+          "assignment_dp_rank": 2,
+          "capacity_aware_assignment_dp": true,
+          "charger_slot_use": [
+            {
+              "day_offset": 0,
+              "route_count": 1,
+              "slot_index": 23,
+              "station_id": "D_tianjin"
+            },
+            {
+              "day_offset": 0,
+              "route_count": 1,
+              "slot_index": 24,
+              "station_id": "D_tianjin"
+            }
+          ],
+          "charging_route_count": 1,
+          "decoder": "explicit_reference_v1",
+          "detail": "route=0;segment=1:3",
+          "distance_delta": 7052.377489074017,
+          "feasible_rank": 7,
+          "fleet_use": [
+            6,
+            0,
+            2,
+            1
+          ],
+          "neighborhood": "two_opt",
+          "pass_index": 1,
+          "route_local_cost": 2661.12704212453
+        },
+        "objective": 2661.12704212453,
+        "signature": "b3b5dcb61f0ce5feb0ff70a82e2f9a31a9f8432cde51a54c5907c20468dc7e77",
+        "source": "RUIN_RECREATE",
+        "violation_count": 0
+      },
+      {
+        "arm": "B_RR",
+        "duplicate_of_index": null,
+        "feasible": true,
+        "index": 41,
+        "metadata": {
+          "algorithm": "FEASIBILITY-GUIDED-EJECTION-VNS",
+          "assignment_count": 9,
+          "assignment_dp_rank": 1,
+          "capacity_aware_assignment_dp": true,
+          "charger_slot_use": [
+            {
+              "day_offset": 0,
+              "route_count": 1,
+              "slot_index": 0,
+              "station_id": "D_tianjin"
+            },
+            {
+              "day_offset": 0,
+              "route_count": 1,
+              "slot_index": 1,
+              "station_id": "D_tianjin"
+            }
+          ],
+          "charging_route_count": 1,
+          "decoder": "explicit_reference_v1",
+          "detail": "route=1;segment=0:2",
+          "distance_delta": 6866.674777913024,
+          "feasible_rank": 8,
+          "fleet_use": [
+            6,
+            0,
+            2,
+            1
+          ],
+          "neighborhood": "two_opt",
+          "pass_index": 1,
+          "route_local_cost": 2651.495622481381
+        },
+        "objective": 2651.495622481381,
+        "signature": "9a96eddaee9fd3c53ccb9b4d2e57d1ee51c6c47bd7214a1fd8898a76f3fa4296",
+        "source": "RUIN_RECREATE",
+        "violation_count": 0
+      },
+      {
+        "arm": "B_RR",
+        "duplicate_of_index": null,
+        "feasible": true,
+        "index": 42,
+        "metadata": {
+          "algorithm": "FEASIBILITY-GUIDED-EJECTION-VNS",
+          "assignment_count": 9,
+          "assignment_dp_rank": 2,
+          "capacity_aware_assignment_dp": true,
+          "charger_slot_use": [
+            {
+              "day_offset": 0,
+              "route_count": 1,
+              "slot_index": 23,
+              "station_id": "D_tianjin"
+            },
+            {
+              "day_offset": 0,
+              "route_count": 1,
+              "slot_index": 24,
+              "station_id": "D_tianjin"
+            }
+          ],
+          "charging_route_count": 1,
+          "decoder": "explicit_reference_v1",
+          "detail": "route=1;segment=0:2",
+          "distance_delta": 6866.674777913024,
+          "feasible_rank": 8,
+          "fleet_use": [
+            6,
+            0,
+            2,
+            1
+          ],
+          "neighborhood": "two_opt",
+          "pass_index": 1,
+          "route_local_cost": 2661.6915764398864
+        },
+        "objective": 2661.6915764398864,
+        "signature": "7f581e48d99b9ca6fb337a89b8b024b8d9100003dbf7ed3b27fee99d88674419",
+        "source": "RUIN_RECREATE",
+        "violation_count": 0
+      },
+      {
+        "arm": "B_RR",
+        "duplicate_of_index": null,
+        "feasible": true,
+        "index": 43,
+        "metadata": {
+          "algorithm": "FEASIBILITY-GUIDED-EJECTION-VNS",
+          "assignment_count": 9,
+          "assignment_dp_rank": 1,
+          "capacity_aware_assignment_dp": true,
+          "charger_slot_use": [
+            {
+              "day_offset": 0,
+              "route_count": 1,
+              "slot_index": 0,
+              "station_id": "D_tianjin"
+            },
+            {
+              "day_offset": 0,
+              "route_count": 1,
+              "slot_index": 1,
+              "station_id": "D_tianjin"
+            }
+          ],
+          "charging_route_count": 1,
+          "decoder": "explicit_reference_v1",
+          "detail": "route=3;segment=1:3",
+          "distance_delta": 6959.843606278067,
+          "feasible_rank": 9,
+          "fleet_use": [
+            6,
+            0,
+            2,
+            1
+          ],
+          "neighborhood": "two_opt",
+          "pass_index": 1,
+          "route_local_cost": 2652.233683904231
+        },
+        "objective": 2652.233683904231,
+        "signature": "8b82b175c8b0b3af0f06401ad66675784b8178ad2e2a79e70d8e7f96c6462720",
+        "source": "RUIN_RECREATE",
+        "violation_count": 0
+      },
+      {
+        "arm": "B_RR",
+        "duplicate_of_index": null,
+        "feasible": true,
+        "index": 44,
+        "metadata": {
+          "algorithm": "FEASIBILITY-GUIDED-EJECTION-VNS",
+          "assignment_count": 9,
+          "assignment_dp_rank": 2,
+          "capacity_aware_assignment_dp": true,
+          "charger_slot_use": [
+            {
+              "day_offset": 0,
+              "route_count": 1,
+              "slot_index": 23,
+              "station_id": "D_tianjin"
+            },
+            {
+              "day_offset": 0,
+              "route_count": 1,
+              "slot_index": 24,
+              "station_id": "D_tianjin"
+            }
+          ],
+          "charging_route_count": 1,
+          "decoder": "explicit_reference_v1",
+          "detail": "route=3;segment=1:3",
+          "distance_delta": 6959.843606278067,
+          "feasible_rank": 9,
+          "fleet_use": [
+            6,
+            0,
+            2,
+            1
+          ],
+          "neighborhood": "two_opt",
+          "pass_index": 1,
+          "route_local_cost": 2662.4296378627364
+        },
+        "objective": 2662.4296378627364,
+        "signature": "7eb023557086b4e6e0c75b6f4cf99ae7781b7cb49a9159a003fa5dd9df846629",
+        "source": "RUIN_RECREATE",
+        "violation_count": 0
+      },
+      {
+        "arm": "B_RR",
+        "duplicate_of_index": null,
+        "feasible": true,
+        "index": 45,
+        "metadata": {
+          "algorithm": "FEASIBILITY-GUIDED-EJECTION-VNS",
+          "assignment_count": 9,
+          "assignment_dp_rank": 1,
+          "capacity_aware_assignment_dp": true,
+          "charger_slot_use": [
+            {
+              "day_offset": 0,
+              "route_count": 1,
+              "slot_index": 0,
+              "station_id": "D_tianjin"
+            },
+            {
+              "day_offset": 0,
+              "route_count": 1,
+              "slot_index": 1,
+              "station_id": "D_tianjin"
+            }
+          ],
+          "charging_route_count": 1,
+          "decoder": "explicit_reference_v1",
+          "detail": "route=2;segment=0:4",
+          "distance_delta": 13168.730005825986,
+          "feasible_rank": 10,
+          "fleet_use": [
+            6,
+            0,
+            2,
+            1
+          ],
+          "neighborhood": "two_opt",
+          "pass_index": 1,
+          "route_local_cost": 2662.5873123471983
+        },
+        "objective": 2662.587312347198,
+        "signature": "05abff90a32d4c796183efaeceb0b36c7da8ab86756d5ea11aad6a602980f3e5",
+        "source": "RUIN_RECREATE",
+        "violation_count": 0
+      },
+      {
+        "arm": "B_RR",
+        "duplicate_of_index": null,
+        "feasible": true,
+        "index": 46,
+        "metadata": {
+          "algorithm": "FEASIBILITY-GUIDED-EJECTION-VNS",
+          "assignment_count": 9,
+          "assignment_dp_rank": 2,
+          "capacity_aware_assignment_dp": true,
+          "charger_slot_use": [
+            {
+              "day_offset": 0,
+              "route_count": 1,
+              "slot_index": 23,
+              "station_id": "D_tianjin"
+            },
+            {
+              "day_offset": 0,
+              "route_count": 1,
+              "slot_index": 24,
+              "station_id": "D_tianjin"
+            }
+          ],
+          "charging_route_count": 1,
+          "decoder": "explicit_reference_v1",
+          "detail": "route=2;segment=0:4",
+          "distance_delta": 13168.730005825986,
+          "feasible_rank": 10,
+          "fleet_use": [
+            6,
+            0,
+            2,
+            1
+          ],
+          "neighborhood": "two_opt",
+          "pass_index": 1,
+          "route_local_cost": 2672.7832663057034
+        },
+        "objective": 2672.7832663057034,
+        "signature": "7fb1bdfbeba0b8dd989c53b71adb4717ad95ea0db5b6197bc15a20e50f060997",
+        "source": "RUIN_RECREATE",
+        "violation_count": 0
+      },
+      {
+        "arm": "B_RR",
+        "duplicate_of_index": null,
+        "feasible": true,
+        "index": 47,
+        "metadata": {
+          "algorithm": "FEASIBILITY-GUIDED-EJECTION-VNS",
+          "assignment_count": 9,
+          "assignment_dp_rank": 1,
+          "capacity_aware_assignment_dp": true,
+          "charger_slot_use": [
+            {
+              "day_offset": 0,
+              "route_count": 1,
+              "slot_index": 0,
+              "station_id": "D_tianjin"
+            },
+            {
+              "day_offset": 0,
+              "route_count": 1,
+              "slot_index": 1,
+              "station_id": "D_tianjin"
+            }
+          ],
+          "charging_route_count": 1,
+          "decoder": "explicit_reference_v1",
+          "detail": "route=2;segment=1:4",
+          "distance_delta": 16879.916449573007,
+          "feasible_rank": 11,
+          "fleet_use": [
+            6,
+            0,
+            2,
+            1
+          ],
+          "neighborhood": "two_opt",
+          "pass_index": 1,
+          "route_local_cost": 2669.506738911983
+        },
+        "objective": 2669.506738911983,
+        "signature": "36e340039331b64a5249c3369625543320e8841d22a93d6584cf7a4225b743c2",
+        "source": "RUIN_RECREATE",
+        "violation_count": 0
+      },
+      {
+        "arm": "B_RR",
+        "duplicate_of_index": null,
+        "feasible": true,
+        "index": 48,
+        "metadata": {
+          "algorithm": "FEASIBILITY-GUIDED-EJECTION-VNS",
+          "assignment_count": 9,
+          "assignment_dp_rank": 2,
+          "capacity_aware_assignment_dp": true,
+          "charger_slot_use": [
+            {
+              "day_offset": 0,
+              "route_count": 1,
+              "slot_index": 23,
+              "station_id": "D_tianjin"
+            },
+            {
+              "day_offset": 0,
+              "route_count": 1,
+              "slot_index": 24,
+              "station_id": "D_tianjin"
+            }
+          ],
+          "charging_route_count": 1,
+          "decoder": "explicit_reference_v1",
+          "detail": "route=2;segment=1:4",
+          "distance_delta": 16879.916449573007,
+          "feasible_rank": 11,
+          "fleet_use": [
+            6,
+            0,
+            2,
+            1
+          ],
+          "neighborhood": "two_opt",
+          "pass_index": 1,
+          "route_local_cost": 2679.702692870488
+        },
+        "objective": 2679.7026928704886,
+        "signature": "5696999c8de2ee5d1f7467d0b998b1785f4d710f2522244001ec798220b3ee10",
+        "source": "RUIN_RECREATE",
+        "violation_count": 0
+      },
+      {
+        "arm": "B_RR",
+        "duplicate_of_index": 25,
+        "feasible": true,
+        "index": 49,
+        "metadata": {
+          "algorithm": "FEASIBILITY-GUIDED-EJECTION-VNS",
+          "assignment_count": 9,
+          "assignment_dp_rank": 1,
+          "capacity_aware_assignment_dp": true,
+          "charger_slot_use": [
+            {
+              "day_offset": 0,
+              "route_count": 1,
+              "slot_index": 0,
+              "station_id": "D_tianjin"
+            },
+            {
+              "day_offset": 0,
+              "route_count": 1,
+              "slot_index": 1,
+              "station_id": "D_tianjin"
+            }
+          ],
+          "charging_route_count": 1,
+          "decoder": "explicit_reference_v1",
+          "detail": "left=6:1;right=8:1",
+          "distance_delta": 26.901746160001494,
+          "feasible_rank": 1,
+          "fleet_use": [
+            6,
+            0,
+            2,
+            1
+          ],
+          "neighborhood": "two_opt_star",
+          "pass_index": 1,
+          "route_local_cost": 2639.0088665039375
+        },
+        "objective": 2639.0088665039375,
+        "signature": "7bb7bd2f5e94f28e110760a79e458f3b62e7108427fa2a7d74f61e7e317303b8",
+        "source": "RUIN_RECREATE",
+        "violation_count": 0
+      },
+      {
+        "arm": "B_RR",
+        "duplicate_of_index": 26,
+        "feasible": true,
+        "index": 50,
+        "metadata": {
+          "algorithm": "FEASIBILITY-GUIDED-EJECTION-VNS",
+          "assignment_count": 9,
+          "assignment_dp_rank": 2,
+          "capacity_aware_assignment_dp": true,
+          "charger_slot_use": [
+            {
+              "day_offset": 0,
+              "route_count": 1,
+              "slot_index": 20,
+              "station_id": "D_tianjin"
+            },
+            {
+              "day_offset": 0,
+              "route_count": 1,
+              "slot_index": 21,
+              "station_id": "D_tianjin"
+            },
+            {
+              "day_offset": 0,
+              "route_count": 1,
+              "slot_index": 22,
+              "station_id": "D_tianjin"
+            }
+          ],
+          "charging_route_count": 1,
+          "decoder": "explicit_reference_v1",
+          "detail": "left=6:1;right=8:1",
+          "distance_delta": 26.901746160001494,
+          "feasible_rank": 1,
+          "fleet_use": [
+            6,
+            0,
+            2,
+            1
+          ],
+          "neighborhood": "two_opt_star",
+          "pass_index": 1,
+          "route_local_cost": 2652.5526339381613
+        },
+        "objective": 2652.552633938161,
+        "signature": "b452b0cbd0b2d83037328561c4ceea6c45947bbe4d624af1b3f42eb5cfb4d643",
+        "source": "RUIN_RECREATE",
+        "violation_count": 0
+      },
+      {
+        "arm": "B_RR",
+        "duplicate_of_index": null,
+        "feasible": true,
+        "index": 51,
+        "metadata": {
+          "algorithm": "FEASIBILITY-GUIDED-EJECTION-VNS",
+          "assignment_count": 9,
+          "assignment_dp_rank": 1,
+          "capacity_aware_assignment_dp": true,
+          "charger_slot_use": [
+            {
+              "day_offset": 0,
+              "route_count": 1,
+              "slot_index": 0,
+              "station_id": "D_tianjin"
+            },
+            {
+              "day_offset": 0,
+              "route_count": 1,
+              "slot_index": 1,
+              "station_id": "D_tianjin"
+            }
+          ],
+          "charging_route_count": 1,
+          "decoder": "explicit_reference_v1",
+          "detail": "left=2:4;right=3:3",
+          "distance_delta": 1902.8521199580282,
+          "feasible_rank": 4,
+          "fleet_use": [
+            6,
+            0,
+            2,
+            1
+          ],
+          "neighborhood": "two_opt_star",
+          "pass_index": 1,
+          "route_local_cost": 2642.6204785044633
+        },
+        "objective": 2642.6204785044633,
+        "signature": "f7f514eef3d23ae5989a15a8f1e838452c51fd71c7676996f45a157a09967a38",
+        "source": "RUIN_RECREATE",
+        "violation_count": 0
+      },
+      {
+        "arm": "B_RR",
+        "duplicate_of_index": null,
+        "feasible": true,
+        "index": 52,
+        "metadata": {
+          "algorithm": "FEASIBILITY-GUIDED-EJECTION-VNS",
+          "assignment_count": 9,
+          "assignment_dp_rank": 2,
+          "capacity_aware_assignment_dp": true,
+          "charger_slot_use": [
+            {
+              "day_offset": 0,
+              "route_count": 1,
+              "slot_index": 23,
+              "station_id": "D_tianjin"
+            },
+            {
+              "day_offset": 0,
+              "route_count": 1,
+              "slot_index": 24,
+              "station_id": "D_tianjin"
+            }
+          ],
+          "charging_route_count": 1,
+          "decoder": "explicit_reference_v1",
+          "detail": "left=2:4;right=3:3",
+          "distance_delta": 1902.8521199580282,
+          "feasible_rank": 4,
+          "fleet_use": [
+            6,
+            0,
+            2,
+            1
+          ],
+          "neighborhood": "two_opt_star",
+          "pass_index": 1,
+          "route_local_cost": 2652.816432462969
+        },
+        "objective": 2652.816432462969,
+        "signature": "5321b3f109098917a84d3588699c9070253e83fdead7b191caa85e4880a7db56",
+        "source": "RUIN_RECREATE",
+        "violation_count": 0
+      },
+      {
+        "arm": "B_RR",
+        "duplicate_of_index": null,
+        "feasible": true,
+        "index": 53,
+        "metadata": {
+          "algorithm": "FEASIBILITY-GUIDED-EJECTION-VNS",
+          "assignment_count": 9,
+          "assignment_dp_rank": 1,
+          "capacity_aware_assignment_dp": true,
+          "charger_slot_use": [
+            {
+              "day_offset": 0,
+              "route_count": 1,
+              "slot_index": 0,
+              "station_id": "D_tianjin"
+            },
+            {
+              "day_offset": 0,
+              "route_count": 1,
+              "slot_index": 1,
+              "station_id": "D_tianjin"
+            }
+          ],
+          "charging_route_count": 1,
+          "decoder": "explicit_reference_v1",
+          "detail": "left=1:2;right=4:1",
+          "distance_delta": 3639.1541517759906,
+          "feasible_rank": 6,
+          "fleet_use": [
+            6,
+            0,
+            2,
+            1
+          ],
+          "neighborhood": "two_opt_star",
+          "pass_index": 1,
+          "route_local_cost": 2645.8293061005597
+        },
+        "objective": 2645.8293061005597,
+        "signature": "8e1b1282263671456d5b828c6c56ebed85cf8e839b02ebd6cb9e58d617dee232",
+        "source": "RUIN_RECREATE",
+        "violation_count": 0
+      },
+      {
+        "arm": "B_RR",
+        "duplicate_of_index": null,
+        "feasible": true,
+        "index": 54,
+        "metadata": {
+          "algorithm": "FEASIBILITY-GUIDED-EJECTION-VNS",
+          "assignment_count": 9,
+          "assignment_dp_rank": 2,
+          "capacity_aware_assignment_dp": true,
+          "charger_slot_use": [
+            {
+              "day_offset": 0,
+              "route_count": 1,
+              "slot_index": 23,
+              "station_id": "D_tianjin"
+            },
+            {
+              "day_offset": 0,
+              "route_count": 1,
+              "slot_index": 24,
+              "station_id": "D_tianjin"
+            }
+          ],
+          "charging_route_count": 1,
+          "decoder": "explicit_reference_v1",
+          "detail": "left=1:2;right=4:1",
+          "distance_delta": 3639.1541517759906,
+          "feasible_rank": 6,
+          "fleet_use": [
+            6,
+            0,
+            2,
+            1
+          ],
+          "neighborhood": "two_opt_star",
+          "pass_index": 1,
+          "route_local_cost": 2656.025260059065
+        },
+        "objective": 2656.025260059065,
+        "signature": "8c9e8c7a34ee3b215b8691deb4b8b09ed9f7e51781562844a359e676de62cd7f",
+        "source": "RUIN_RECREATE",
+        "violation_count": 0
+      },
+      {
+        "arm": "B_RR",
+        "duplicate_of_index": null,
+        "feasible": true,
+        "index": 55,
+        "metadata": {
+          "algorithm": "FEASIBILITY-GUIDED-EJECTION-VNS",
+          "assignment_count": 9,
+          "assignment_dp_rank": 1,
+          "capacity_aware_assignment_dp": true,
+          "charger_slot_use": [
+            {
+              "day_offset": 0,
+              "route_count": 1,
+              "slot_index": 0,
+              "station_id": "D_tianjin"
+            },
+            {
+              "day_offset": 0,
+              "route_count": 1,
+              "slot_index": 1,
+              "station_id": "D_tianjin"
+            }
+          ],
+          "charging_route_count": 1,
+          "decoder": "explicit_reference_v1",
+          "detail": "left=0:4;right=2:5",
+          "distance_delta": 4647.0439866890665,
+          "feasible_rank": 8,
+          "fleet_use": [
+            6,
+            0,
+            2,
+            1
+          ],
+          "neighborhood": "two_opt_star",
+          "pass_index": 1,
+          "route_local_cost": 2647.390433595122
+        },
+        "objective": 2647.390433595122,
+        "signature": "f8a2ed5c244cb32c0312b8b1956c515b387b2beb08a24a62a925def8b57ce4c7",
+        "source": "RUIN_RECREATE",
+        "violation_count": 0
+      },
+      {
+        "arm": "B_RR",
+        "duplicate_of_index": null,
+        "feasible": true,
+        "index": 56,
+        "metadata": {
+          "algorithm": "FEASIBILITY-GUIDED-EJECTION-VNS",
+          "assignment_count": 9,
+          "assignment_dp_rank": 2,
+          "capacity_aware_assignment_dp": true,
+          "charger_slot_use": [
+            {
+              "day_offset": 0,
+              "route_count": 1,
+              "slot_index": 23,
+              "station_id": "D_tianjin"
+            },
+            {
+              "day_offset": 0,
+              "route_count": 1,
+              "slot_index": 24,
+              "station_id": "D_tianjin"
+            }
+          ],
+          "charging_route_count": 1,
+          "decoder": "explicit_reference_v1",
+          "detail": "left=0:4;right=2:5",
+          "distance_delta": 4647.0439866890665,
+          "feasible_rank": 8,
+          "fleet_use": [
+            6,
+            0,
+            2,
+            1
+          ],
+          "neighborhood": "two_opt_star",
+          "pass_index": 1,
+          "route_local_cost": 2657.5863875536274
+        },
+        "objective": 2657.5863875536274,
+        "signature": "a77b5658643c5546d87d73d49a9d1d94b4c8ec0a9d8c78bacb83e95ca99b1b05",
+        "source": "RUIN_RECREATE",
+        "violation_count": 0
+      },
+      {
+        "arm": "B_RR",
+        "duplicate_of_index": null,
+        "feasible": true,
+        "index": 57,
+        "metadata": {
+          "algorithm": "FEASIBILITY-GUIDED-EJECTION-VNS",
+          "assignment_count": 9,
+          "assignment_dp_rank": 1,
+          "capacity_aware_assignment_dp": true,
+          "charger_slot_use": [
+            {
+              "day_offset": 0,
+              "route_count": 1,
+              "slot_index": 0,
+              "station_id": "D_tianjin"
+            },
+            {
+              "day_offset": 0,
+              "route_count": 1,
+              "slot_index": 1,
+              "station_id": "D_tianjin"
+            }
+          ],
+          "charging_route_count": 1,
+          "decoder": "explicit_reference_v1",
+          "detail": "left=6:3;right=7:2",
+          "distance_delta": 5225.224264849094,
+          "feasible_rank": 9,
+          "fleet_use": [
+            6,
+            0,
+            2,
+            1
+          ],
+          "neighborhood": "two_opt_star",
+          "pass_index": 1,
+          "route_local_cost": 2648.0286677396534
+        },
+        "objective": 2648.0286677396534,
+        "signature": "18c683a8b1996a2b98d70963ea5cbeff31f847b54a9c092861d2e76eeb6093a1",
+        "source": "RUIN_RECREATE",
+        "violation_count": 0
+      },
+      {
+        "arm": "B_RR",
+        "duplicate_of_index": null,
+        "feasible": true,
+        "index": 58,
+        "metadata": {
+          "algorithm": "FEASIBILITY-GUIDED-EJECTION-VNS",
+          "assignment_count": 9,
+          "assignment_dp_rank": 2,
+          "capacity_aware_assignment_dp": true,
+          "charger_slot_use": [
+            {
+              "day_offset": 0,
+              "route_count": 1,
+              "slot_index": 23,
+              "station_id": "D_tianjin"
+            },
+            {
+              "day_offset": 0,
+              "route_count": 1,
+              "slot_index": 24,
+              "station_id": "D_tianjin"
+            }
+          ],
+          "charging_route_count": 1,
+          "decoder": "explicit_reference_v1",
+          "detail": "left=6:3;right=7:2",
+          "distance_delta": 5225.224264849094,
+          "feasible_rank": 9,
+          "fleet_use": [
+            6,
+            0,
+            2,
+            1
+          ],
+          "neighborhood": "two_opt_star",
+          "pass_index": 1,
+          "route_local_cost": 2658.2246216981584
+        },
+        "objective": 2658.224621698159,
+        "signature": "7435d7734973651e0bdbcc40745ed1c1fc7efe4f9024b2e7d1400781851f8786",
+        "source": "RUIN_RECREATE",
+        "violation_count": 0
+      },
+      {
+        "arm": "B_RR",
+        "duplicate_of_index": null,
+        "feasible": true,
+        "index": 59,
+        "metadata": {
+          "algorithm": "FEASIBILITY-GUIDED-EJECTION-VNS",
+          "assignment_count": 9,
+          "assignment_dp_rank": 1,
+          "capacity_aware_assignment_dp": true,
+          "charger_slot_use": [
+            {
+              "day_offset": 0,
+              "route_count": 1,
+              "slot_index": 0,
+              "station_id": "D_tianjin"
+            },
+            {
+              "day_offset": 0,
+              "route_count": 1,
+              "slot_index": 1,
+              "station_id": "D_tianjin"
+            }
+          ],
+          "charging_route_count": 1,
+          "decoder": "explicit_reference_v1",
+          "detail": "left=6:3;right=7:3",
+          "distance_delta": 5480.352883827058,
+          "feasible_rank": 10,
+          "fleet_use": [
+            6,
+            0,
+            2,
+            1
+          ],
+          "neighborhood": "two_opt_star",
+          "pass_index": 1,
+          "route_local_cost": 2648.495197740331
+        },
+        "objective": 2648.495197740331,
+        "signature": "7d3bf03132f265b44f69888d8ab157b5221b3bedac2fdfdf9dcbab80dc59b2c6",
+        "source": "RUIN_RECREATE",
+        "violation_count": 0
+      },
+      {
+        "arm": "B_RR",
+        "duplicate_of_index": null,
+        "feasible": true,
+        "index": 60,
+        "metadata": {
+          "algorithm": "FEASIBILITY-GUIDED-EJECTION-VNS",
+          "assignment_count": 9,
+          "assignment_dp_rank": 2,
+          "capacity_aware_assignment_dp": true,
+          "charger_slot_use": [
+            {
+              "day_offset": 0,
+              "route_count": 1,
+              "slot_index": 23,
+              "station_id": "D_tianjin"
+            },
+            {
+              "day_offset": 0,
+              "route_count": 1,
+              "slot_index": 24,
+              "station_id": "D_tianjin"
+            }
+          ],
+          "charging_route_count": 1,
+          "decoder": "explicit_reference_v1",
+          "detail": "left=6:3;right=7:3",
+          "distance_delta": 5480.352883827058,
+          "feasible_rank": 10,
+          "fleet_use": [
+            6,
+            0,
+            2,
+            1
+          ],
+          "neighborhood": "two_opt_star",
+          "pass_index": 1,
+          "route_local_cost": 2658.691151698836
+        },
+        "objective": 2658.6911516988366,
+        "signature": "c6964b63be0821627fad0f64cea23098c2f1042d59e090358fd51b5ae0861b98",
+        "source": "RUIN_RECREATE",
+        "violation_count": 0
+      },
+      {
+        "arm": "B_RR",
+        "duplicate_of_index": null,
+        "feasible": true,
+        "index": 61,
+        "metadata": {
+          "algorithm": "FEASIBILITY-GUIDED-EJECTION-VNS",
+          "assignment_count": 9,
+          "assignment_dp_rank": 1,
+          "capacity_aware_assignment_dp": true,
+          "charger_slot_use": [
+            {
+              "day_offset": 0,
+              "route_count": 1,
+              "slot_index": 0,
+              "station_id": "D_tianjin"
+            },
+            {
+              "day_offset": 0,
+              "route_count": 1,
+              "slot_index": 1,
+              "station_id": "D_tianjin"
+            }
+          ],
+          "charging_route_count": 1,
+          "decoder": "explicit_reference_v1",
+          "detail": "left=6:2;right=7:2",
+          "distance_delta": 6123.837756511988,
+          "feasible_rank": 11,
+          "fleet_use": [
+            6,
+            0,
+            2,
+            1
+          ],
+          "neighborhood": "two_opt_star",
+          "pass_index": 1,
+          "route_local_cost": 2649.756745780031
+        },
+        "objective": 2649.756745780031,
+        "signature": "006b320ffaac6faad18238bfd2173735e39765d966e23be5d3da88ff88e9a1d6",
+        "source": "RUIN_RECREATE",
+        "violation_count": 0
+      },
+      {
+        "arm": "B_RR",
+        "duplicate_of_index": null,
+        "feasible": true,
+        "index": 62,
+        "metadata": {
+          "algorithm": "FEASIBILITY-GUIDED-EJECTION-VNS",
+          "assignment_count": 9,
+          "assignment_dp_rank": 2,
+          "capacity_aware_assignment_dp": true,
+          "charger_slot_use": [
+            {
+              "day_offset": 0,
+              "route_count": 1,
+              "slot_index": 23,
+              "station_id": "D_tianjin"
+            },
+            {
+              "day_offset": 0,
+              "route_count": 1,
+              "slot_index": 24,
+              "station_id": "D_tianjin"
+            }
+          ],
+          "charging_route_count": 1,
+          "decoder": "explicit_reference_v1",
+          "detail": "left=6:2;right=7:2",
+          "distance_delta": 6123.837756511988,
+          "feasible_rank": 11,
+          "fleet_use": [
+            6,
+            0,
+            2,
+            1
+          ],
+          "neighborhood": "two_opt_star",
+          "pass_index": 1,
+          "route_local_cost": 2659.952699738536
+        },
+        "objective": 2659.9526997385365,
+        "signature": "3d375b6d94fc33e83a6cca5083e6d66a73f32b02df0b72c86d5b441db3981972",
+        "source": "RUIN_RECREATE",
+        "violation_count": 0
+      },
+      {
+        "arm": "B_RR",
+        "duplicate_of_index": null,
+        "feasible": true,
+        "index": 63,
+        "metadata": {
+          "algorithm": "FEASIBILITY-GUIDED-EJECTION-VNS",
+          "assignment_count": 9,
+          "assignment_dp_rank": 1,
+          "capacity_aware_assignment_dp": true,
+          "charger_slot_use": [
+            {
+              "day_offset": 0,
+              "route_count": 1,
+              "slot_index": 0,
+              "station_id": "D_tianjin"
+            },
+            {
+              "day_offset": 0,
+              "route_count": 1,
+              "slot_index": 1,
+              "station_id": "D_tianjin"
+            }
+          ],
+          "charging_route_count": 1,
+          "decoder": "explicit_reference_v1",
+          "detail": "left=0:5;right=2:6",
+          "distance_delta": 6168.839688058011,
+          "feasible_rank": 12,
+          "fleet_use": [
+            6,
+            0,
+            2,
+            1
+          ],
+          "neighborhood": "two_opt_star",
+          "pass_index": 1,
+          "route_local_cost": 2649.938026400017
+        },
+        "objective": 2649.938026400017,
+        "signature": "07be59254529b7b9f6a5e20ab8338cf6c64df266285512c9a8dbcfba041caa06",
+        "source": "RUIN_RECREATE",
+        "violation_count": 0
+      },
+      {
+        "arm": "B_RR",
+        "duplicate_of_index": null,
+        "feasible": true,
+        "index": 64,
+        "metadata": {
+          "algorithm": "FEASIBILITY-GUIDED-EJECTION-VNS",
+          "assignment_count": 9,
+          "assignment_dp_rank": 2,
+          "capacity_aware_assignment_dp": true,
+          "charger_slot_use": [
+            {
+              "day_offset": 0,
+              "route_count": 1,
+              "slot_index": 23,
+              "station_id": "D_tianjin"
+            },
+            {
+              "day_offset": 0,
+              "route_count": 1,
+              "slot_index": 24,
+              "station_id": "D_tianjin"
+            }
+          ],
+          "charging_route_count": 1,
+          "decoder": "explicit_reference_v1",
+          "detail": "left=0:5;right=2:6",
+          "distance_delta": 6168.839688058011,
+          "feasible_rank": 12,
+          "fleet_use": [
+            6,
+            0,
+            2,
+            1
+          ],
+          "neighborhood": "two_opt_star",
+          "pass_index": 1,
+          "route_local_cost": 2660.133980358522
+        },
+        "objective": 2660.1339803585224,
+        "signature": "f7d57eaecd09bb1cdedaa6a7b8cd3ad6c90c74ab57b1217e3595b58242bd559e",
+        "source": "RUIN_RECREATE",
+        "violation_count": 0
+      },
+      {
+        "arm": "B_RR",
+        "duplicate_of_index": null,
+        "feasible": true,
+        "index": 65,
+        "metadata": {
+          "algorithm": "FEASIBILITY-GUIDED-EJECTION-VNS",
+          "assignment_count": 9,
+          "assignment_dp_rank": 1,
+          "capacity_aware_assignment_dp": true,
+          "charger_slot_use": [
+            {
+              "day_offset": 0,
+              "route_count": 1,
+              "slot_index": 0,
+              "station_id": "D_tianjin"
+            },
+            {
+              "day_offset": 0,
+              "route_count": 1,
+              "slot_index": 1,
+              "station_id": "D_tianjin"
+            }
+          ],
+          "charging_route_count": 1,
+          "decoder": "explicit_reference_v1",
+          "detail": "source=6;start=0;width=4;order=forward;saving=16696.418323620001;insert=C046:route=6;position=0;insert=C045:route=6;position=1;insert=C048:route=6;position=2;insert=C041:route=7;position=3",
+          "distance_delta": 6640.410049088998,
+          "feasible_rank": 5,
+          "fleet_use": [
+            6,
+            0,
+            2,
+            1
+          ],
+          "neighborhood": "ejection_rebuild",
+          "pass_index": 1,
+          "route_local_cost": 2650.510144702015
+        },
+        "objective": 2650.510144702015,
+        "signature": "91ed4611c39514282796f0636a79e7ebe08c9382f94e62c2b948b8a60710646f",
+        "source": "RUIN_RECREATE",
+        "violation_count": 0
+      },
+      {
+        "arm": "B_RR",
+        "duplicate_of_index": null,
+        "feasible": true,
+        "index": 66,
+        "metadata": {
+          "algorithm": "FEASIBILITY-GUIDED-EJECTION-VNS",
+          "assignment_count": 9,
+          "assignment_dp_rank": 2,
+          "capacity_aware_assignment_dp": true,
+          "charger_slot_use": [
+            {
+              "day_offset": 0,
+              "route_count": 1,
+              "slot_index": 23,
+              "station_id": "D_tianjin"
+            },
+            {
+              "day_offset": 0,
+              "route_count": 1,
+              "slot_index": 24,
+              "station_id": "D_tianjin"
+            }
+          ],
+          "charging_route_count": 1,
+          "decoder": "explicit_reference_v1",
+          "detail": "source=6;start=0;width=4;order=forward;saving=16696.418323620001;insert=C046:route=6;position=0;insert=C045:route=6;position=1;insert=C048:route=6;position=2;insert=C041:route=7;position=3",
+          "distance_delta": 6640.410049088998,
+          "feasible_rank": 5,
+          "fleet_use": [
+            6,
+            0,
+            2,
+            1
+          ],
+          "neighborhood": "ejection_rebuild",
+          "pass_index": 1,
+          "route_local_cost": 2660.7060986605206
+        },
+        "objective": 2660.7060986605206,
+        "signature": "b913245a5ffb3ca02c50fc3bd99998b8cfb2808324a79dd714f09f9480247ded",
+        "source": "RUIN_RECREATE",
+        "violation_count": 0
+      },
+      {
+        "arm": "B_RR",
+        "duplicate_of_index": null,
+        "feasible": true,
+        "index": 67,
+        "metadata": {
+          "algorithm": "FEASIBILITY-GUIDED-EJECTION-VNS",
+          "assignment_count": 9,
+          "assignment_dp_rank": 1,
+          "capacity_aware_assignment_dp": true,
+          "charger_slot_use": [
+            {
+              "day_offset": 0,
+              "route_count": 1,
+              "slot_index": 0,
+              "station_id": "D_tianjin"
+            },
+            {
+              "day_offset": 0,
+              "route_count": 1,
+              "slot_index": 1,
+              "station_id": "D_tianjin"
+            }
+          ],
+          "charging_route_count": 1,
+          "decoder": "explicit_reference_v1",
+          "detail": "source=6;start=0;width=4;order=forward;saving=16696.418323620001;insert=C046:route=8;position=0;insert=C045:route=8;position=1;insert=C048:route=6;position=0;insert=C041:route=6;position=1",
+          "distance_delta": 3493.3424248810625,
+          "feasible_rank": 7,
+          "fleet_use": [
+            6,
+            0,
+            2,
+            1
+          ],
+          "neighborhood": "ejection_rebuild",
+          "pass_index": 1,
+          "route_local_cost": 2653.0243352784605
+        },
+        "objective": 2653.0243352784605,
+        "signature": "1338dd231ae06b8f61f7d79013b584a43aa500baf2f2c47b65c10eaa1937f969",
+        "source": "RUIN_RECREATE",
+        "violation_count": 0
+      },
+      {
+        "arm": "B_RR",
+        "duplicate_of_index": null,
+        "feasible": true,
+        "index": 68,
+        "metadata": {
+          "algorithm": "FEASIBILITY-GUIDED-EJECTION-VNS",
+          "assignment_count": 9,
+          "assignment_dp_rank": 2,
+          "capacity_aware_assignment_dp": true,
+          "charger_slot_use": [
+            {
+              "day_offset": 0,
+              "route_count": 1,
+              "slot_index": 25,
+              "station_id": "D_tianjin"
+            },
+            {
+              "day_offset": 0,
+              "route_count": 1,
+              "slot_index": 26,
+              "station_id": "D_tianjin"
+            }
+          ],
+          "charging_route_count": 1,
+          "decoder": "explicit_reference_v1",
+          "detail": "source=6;start=0;width=4;order=forward;saving=16696.418323620001;insert=C046:route=8;position=0;insert=C045:route=8;position=1;insert=C048:route=6;position=0;insert=C041:route=6;position=1",
+          "distance_delta": 3493.3424248810625,
+          "feasible_rank": 7,
+          "fleet_use": [
+            6,
+            0,
+            2,
+            1
+          ],
+          "neighborhood": "ejection_rebuild",
+          "pass_index": 1,
+          "route_local_cost": 2659.243994083615
+        },
+        "objective": 2659.243994083615,
+        "signature": "a9bf2493b25b0f09834e5c477fc91ee4112c59ef9797185af38b2d02f962e7e1",
+        "source": "RUIN_RECREATE",
+        "violation_count": 0
+      },
+      {
+        "arm": "B_RR",
+        "duplicate_of_index": null,
+        "feasible": true,
+        "index": 69,
+        "metadata": {
+          "algorithm": "FEASIBILITY-GUIDED-EJECTION-VNS",
+          "assignment_count": 9,
+          "assignment_dp_rank": 1,
+          "capacity_aware_assignment_dp": true,
+          "charger_slot_use": [
+            {
+              "day_offset": 0,
+              "route_count": 1,
+              "slot_index": 0,
+              "station_id": "D_tianjin"
+            },
+            {
+              "day_offset": 0,
+              "route_count": 1,
+              "slot_index": 1,
+              "station_id": "D_tianjin"
+            }
+          ],
+          "charging_route_count": 1,
+          "decoder": "explicit_reference_v1",
+          "detail": "source=6;start=0;width=4;order=reverse;saving=16696.418323620001;insert=C041:route=6;position=0;insert=C048:route=8;position=2;insert=C045:route=8;position=1;insert=C046:route=6;position=0",
+          "distance_delta": 3079.151974106091,
+          "feasible_rank": 8,
+          "fleet_use": [
+            6,
+            0,
+            2,
+            1
+          ],
+          "neighborhood": "ejection_rebuild",
+          "pass_index": 1,
+          "route_local_cost": 2653.274633640305
+        },
+        "objective": 2653.2746336403056,
+        "signature": "a5a2e51f0ce26b163f8f226fef9bc3db625d88da60a451136cf07f8349413dc0",
+        "source": "RUIN_RECREATE",
+        "violation_count": 0
+      },
+      {
+        "arm": "B_RR",
+        "duplicate_of_index": null,
+        "feasible": true,
+        "index": 70,
+        "metadata": {
+          "algorithm": "FEASIBILITY-GUIDED-EJECTION-VNS",
+          "assignment_count": 9,
+          "assignment_dp_rank": 2,
+          "capacity_aware_assignment_dp": true,
+          "charger_slot_use": [
+            {
+              "day_offset": 0,
+              "route_count": 1,
+              "slot_index": 20,
+              "station_id": "D_tianjin"
+            },
+            {
+              "day_offset": 0,
+              "route_count": 1,
+              "slot_index": 21,
+              "station_id": "D_tianjin"
+            },
+            {
+              "day_offset": 0,
+              "route_count": 1,
+              "slot_index": 22,
+              "station_id": "D_tianjin"
+            }
+          ],
+          "charging_route_count": 1,
+          "decoder": "explicit_reference_v1",
+          "detail": "source=6;start=0;width=4;order=reverse;saving=16696.418323620001;insert=C041:route=6;position=0;insert=C048:route=8;position=2;insert=C045:route=8;position=1;insert=C046:route=6;position=0",
+          "distance_delta": 3079.151974106091,
+          "feasible_rank": 8,
+          "fleet_use": [
+            6,
+            0,
+            2,
+            1
+          ],
+          "neighborhood": "ejection_rebuild",
+          "pass_index": 1,
+          "route_local_cost": 2665.223310513502
+        },
+        "objective": 2665.2233105135024,
+        "signature": "2977c93fb3942b7a80363d4e1fd3ce52e158ef2263d43c42500f7668a8e769b3",
+        "source": "RUIN_RECREATE",
+        "violation_count": 0
+      },
+      {
+        "arm": "B_RR",
+        "duplicate_of_index": null,
+        "feasible": true,
+        "index": 71,
+        "metadata": {
+          "algorithm": "FEASIBILITY-GUIDED-EJECTION-VNS",
+          "assignment_count": 9,
+          "assignment_dp_rank": 1,
+          "capacity_aware_assignment_dp": true,
+          "charger_slot_use": [
+            {
+              "day_offset": 0,
+              "route_count": 1,
+              "slot_index": 0,
+              "station_id": "D_tianjin"
+            },
+            {
+              "day_offset": 0,
+              "route_count": 1,
+              "slot_index": 1,
+              "station_id": "D_tianjin"
+            }
+          ],
+          "charging_route_count": 1,
+          "decoder": "explicit_reference_v1",
+          "detail": "source=6;start=0;width=4;order=reverse;saving=16696.418323620001;insert=C041:route=6;position=0;insert=C048:route=7;position=3;insert=C045:route=8;position=1;insert=C046:route=6;position=0",
+          "distance_delta": 3923.1011351339985,
+          "feasible_rank": 9,
+          "fleet_use": [
+            6,
+            0,
+            2,
+            1
+          ],
+          "neighborhood": "ejection_rebuild",
+          "pass_index": 1,
+          "route_local_cost": 2654.384644695144
+        },
+        "objective": 2654.3846446951443,
+        "signature": "13f62be298710faa98aba0107dcbabd178cf0018ae51c783a61ce9a8b117e01f",
+        "source": "RUIN_RECREATE",
+        "violation_count": 0
+      },
+      {
+        "arm": "B_RR",
+        "duplicate_of_index": null,
+        "feasible": true,
+        "index": 72,
+        "metadata": {
+          "algorithm": "FEASIBILITY-GUIDED-EJECTION-VNS",
+          "assignment_count": 9,
+          "assignment_dp_rank": 2,
+          "capacity_aware_assignment_dp": true,
+          "charger_slot_use": [
+            {
+              "day_offset": 0,
+              "route_count": 1,
+              "slot_index": 20,
+              "station_id": "D_tianjin"
+            },
+            {
+              "day_offset": 0,
+              "route_count": 1,
+              "slot_index": 21,
+              "station_id": "D_tianjin"
+            },
+            {
+              "day_offset": 0,
+              "route_count": 1,
+              "slot_index": 22,
+              "station_id": "D_tianjin"
+            }
+          ],
+          "charging_route_count": 1,
+          "decoder": "explicit_reference_v1",
+          "detail": "source=6;start=0;width=4;order=reverse;saving=16696.418323620001;insert=C041:route=6;position=0;insert=C048:route=7;position=3;insert=C045:route=8;position=1;insert=C046:route=6;position=0",
+          "distance_delta": 3923.1011351339985,
+          "feasible_rank": 9,
+          "fleet_use": [
+            6,
+            0,
+            2,
+            1
+          ],
+          "neighborhood": "ejection_rebuild",
+          "pass_index": 1,
+          "route_local_cost": 2666.3333215683406
+        },
+        "objective": 2666.333321568341,
+        "signature": "e8650f267aeeab155be65ba95424a324645ac644e26c6bb806925e8bef3be3b1",
+        "source": "RUIN_RECREATE",
+        "violation_count": 0
+      },
+      {
+        "arm": "B_RR",
+        "duplicate_of_index": null,
+        "feasible": true,
+        "index": 73,
+        "metadata": {
+          "algorithm": "FEASIBILITY-GUIDED-EJECTION-VNS",
+          "assignment_count": 9,
+          "assignment_dp_rank": 1,
+          "capacity_aware_assignment_dp": true,
+          "charger_slot_use": [
+            {
+              "day_offset": 0,
+              "route_count": 1,
+              "slot_index": 0,
+              "station_id": "D_tianjin"
+            },
+            {
+              "day_offset": 0,
+              "route_count": 1,
+              "slot_index": 1,
+              "station_id": "D_tianjin"
+            }
+          ],
+          "charging_route_count": 1,
+          "decoder": "explicit_reference_v1",
+          "detail": "source=6;start=0;width=4;order=reverse;saving=16696.418323620001;insert=C041:route=6;position=0;insert=C048:route=6;position=0;insert=C045:route=8;position=1;insert=C046:route=8;position=0",
+          "distance_delta": 4219.347826526035,
+          "feasible_rank": 10,
+          "fleet_use": [
+            6,
+            0,
+            2,
+            1
+          ],
+          "neighborhood": "ejection_rebuild",
+          "pass_index": 1,
+          "route_local_cost": 2654.613220875073
+        },
+        "objective": 2654.613220875073,
+        "signature": "ed30e83a9a6679f4aa1e65187bc3786043d5aa4d99e8e5127ce1b248701959ac",
+        "source": "RUIN_RECREATE",
+        "violation_count": 0
+      },
+      {
+        "arm": "B_RR",
+        "duplicate_of_index": null,
+        "feasible": true,
+        "index": 74,
+        "metadata": {
+          "algorithm": "FEASIBILITY-GUIDED-EJECTION-VNS",
+          "assignment_count": 9,
+          "assignment_dp_rank": 2,
+          "capacity_aware_assignment_dp": true,
+          "charger_slot_use": [
+            {
+              "day_offset": 0,
+              "route_count": 1,
+              "slot_index": 25,
+              "station_id": "D_tianjin"
+            },
+            {
+              "day_offset": 0,
+              "route_count": 1,
+              "slot_index": 26,
+              "station_id": "D_tianjin"
+            }
+          ],
+          "charging_route_count": 1,
+          "decoder": "explicit_reference_v1",
+          "detail": "source=6;start=0;width=4;order=reverse;saving=16696.418323620001;insert=C041:route=6;position=0;insert=C048:route=6;position=0;insert=C045:route=8;position=1;insert=C046:route=8;position=0",
+          "distance_delta": 4219.347826526035,
+          "feasible_rank": 10,
+          "fleet_use": [
+            6,
+            0,
+            2,
+            1
+          ],
+          "neighborhood": "ejection_rebuild",
+          "pass_index": 1,
+          "route_local_cost": 2660.832879680227
+        },
+        "objective": 2660.832879680227,
+        "signature": "3381165d2cf5cba9ec16377804b18d52b5cd0680fa5527b987255b00e962a3d4",
+        "source": "RUIN_RECREATE",
+        "violation_count": 0
+      },
+      {
+        "arm": "B_RR",
+        "duplicate_of_index": null,
+        "feasible": true,
+        "index": 75,
+        "metadata": {
+          "algorithm": "FEASIBILITY-GUIDED-EJECTION-VNS",
+          "assignment_count": 9,
+          "assignment_dp_rank": 1,
+          "capacity_aware_assignment_dp": true,
+          "charger_slot_use": [
+            {
+              "day_offset": 0,
+              "route_count": 1,
+              "slot_index": 0,
+              "station_id": "D_tianjin"
+            },
+            {
+              "day_offset": 0,
+              "route_count": 1,
+              "slot_index": 1,
+              "station_id": "D_tianjin"
+            }
+          ],
+          "charging_route_count": 1,
+          "decoder": "explicit_reference_v1",
+          "detail": "source=3;start=2;width=4;order=forward;saving=15193.244033143012;insert=C018:route=3;position=1;insert=C023:route=3;position=3;insert=C027:route=3;position=4;insert=C020:route=3;position=4",
+          "distance_delta": 8411.09733551601,
+          "feasible_rank": 11,
+          "fleet_use": [
+            6,
+            0,
+            2,
+            1
+          ],
+          "neighborhood": "ejection_rebuild",
+          "pass_index": 1,
+          "route_local_cost": 2654.7063423738896
+        },
+        "objective": 2654.70634237389,
+        "signature": "c5be4e0bdad864f3e711188e2a04e6d1be25f8b6582656751f9487975b0a8506",
+        "source": "RUIN_RECREATE",
+        "violation_count": 0
+      },
+      {
+        "arm": "B_RR",
+        "duplicate_of_index": null,
+        "feasible": true,
+        "index": 76,
+        "metadata": {
+          "algorithm": "FEASIBILITY-GUIDED-EJECTION-VNS",
+          "assignment_count": 9,
+          "assignment_dp_rank": 2,
+          "capacity_aware_assignment_dp": true,
+          "charger_slot_use": [
+            {
+              "day_offset": 0,
+              "route_count": 1,
+              "slot_index": 23,
+              "station_id": "D_tianjin"
+            },
+            {
+              "day_offset": 0,
+              "route_count": 1,
+              "slot_index": 24,
+              "station_id": "D_tianjin"
+            }
+          ],
+          "charging_route_count": 1,
+          "decoder": "explicit_reference_v1",
+          "detail": "source=3;start=2;width=4;order=forward;saving=15193.244033143012;insert=C018:route=3;position=1;insert=C023:route=3;position=3;insert=C027:route=3;position=4;insert=C020:route=3;position=4",
+          "distance_delta": 8411.09733551601,
+          "feasible_rank": 11,
+          "fleet_use": [
+            6,
+            0,
+            2,
+            1
+          ],
+          "neighborhood": "ejection_rebuild",
+          "pass_index": 1,
+          "route_local_cost": 2664.902296332395
+        },
+        "objective": 2664.9022963323955,
+        "signature": "5b680b74d14eb8b2ac751a3b54b70a4fc87d3660e3443ca45551c7f55be941a7",
+        "source": "RUIN_RECREATE",
+        "violation_count": 0
+      },
+      {
+        "arm": "B_RR",
+        "duplicate_of_index": null,
+        "feasible": true,
+        "index": 77,
+        "metadata": {
+          "algorithm": "FEASIBILITY-GUIDED-EJECTION-VNS",
+          "assignment_count": 9,
+          "assignment_dp_rank": 1,
+          "capacity_aware_assignment_dp": true,
+          "charger_slot_use": [
+            {
+              "day_offset": 0,
+              "route_count": 1,
+              "slot_index": 0,
+              "station_id": "D_tianjin"
+            },
+            {
+              "day_offset": 0,
+              "route_count": 1,
+              "slot_index": 1,
+              "station_id": "D_tianjin"
+            }
+          ],
+          "charging_route_count": 1,
+          "decoder": "explicit_reference_v1",
+          "detail": "source=6;start=0;width=4;order=forward;saving=16696.418323620001;insert=C046:route=6;position=0;insert=C045:route=6;position=1;insert=C048:route=8;position=3;insert=C041:route=8;position=4",
+          "distance_delta": 3624.8778483780334,
+          "feasible_rank": 12,
+          "fleet_use": [
+            6,
+            0,
+            2,
+            1
+          ],
+          "neighborhood": "ejection_rebuild",
+          "pass_index": 1,
+          "route_local_cost": 2655.3391504448086
+        },
+        "objective": 2655.3391504448095,
+        "signature": "1aeadb2f1966dca1688816c3611c8ae8e83f571f8a158f19ddf55e1c2244c318",
+        "source": "RUIN_RECREATE",
+        "violation_count": 0
+      },
+      {
+        "arm": "B_RR",
+        "duplicate_of_index": null,
+        "feasible": true,
+        "index": 78,
+        "metadata": {
+          "algorithm": "FEASIBILITY-GUIDED-EJECTION-VNS",
+          "assignment_count": 9,
+          "assignment_dp_rank": 2,
+          "capacity_aware_assignment_dp": true,
+          "charger_slot_use": [
+            {
+              "day_offset": 0,
+              "route_count": 1,
+              "slot_index": 20,
+              "station_id": "D_tianjin"
+            },
+            {
+              "day_offset": 0,
+              "route_count": 1,
+              "slot_index": 21,
+              "station_id": "D_tianjin"
+            },
+            {
+              "day_offset": 0,
+              "route_count": 1,
+              "slot_index": 22,
+              "station_id": "D_tianjin"
+            }
+          ],
+          "charging_route_count": 1,
+          "decoder": "explicit_reference_v1",
+          "detail": "source=6;start=0;width=4;order=forward;saving=16696.418323620001;insert=C046:route=6;position=0;insert=C045:route=6;position=1;insert=C048:route=8;position=3;insert=C041:route=8;position=4",
+          "distance_delta": 3624.8778483780334,
+          "feasible_rank": 12,
+          "fleet_use": [
+            6,
+            0,
+            2,
+            1
+          ],
+          "neighborhood": "ejection_rebuild",
+          "pass_index": 1,
+          "route_local_cost": 2667.331811994934
+        },
+        "objective": 2667.3318119949345,
+        "signature": "bb2eaae99dbec666e0d627436dfdafd1e7487ec708a40d0bfffc17cdd4c392a8",
+        "source": "RUIN_RECREATE",
+        "violation_count": 0
+      }
+    ],
+    "remaining": 42
+  },
+  "neighborhood_stats": {
+    "ejection_rebuild": {
+      "feasible_structures": 12,
+      "full_evaluations": 14,
+      "infeasible_structures": 5383,
+      "raw_generated": 5637,
+      "raw_inspected": 5637,
+      "visited": true
+    },
+    "relocate": {
+      "feasible_structures": 12,
+      "full_evaluations": 24,
+      "infeasible_structures": 495,
+      "raw_generated": 512,
+      "raw_inspected": 512,
+      "visited": true
+    },
+    "swap": {
+      "feasible_structures": 12,
+      "full_evaluations": 14,
+      "infeasible_structures": 463,
+      "raw_generated": 512,
+      "raw_inspected": 512,
+      "visited": true
+    },
+    "two_opt": {
+      "feasible_structures": 11,
+      "full_evaluations": 10,
+      "infeasible_structures": 108,
+      "raw_generated": 119,
+      "raw_inspected": 119,
+      "visited": true
+    },
+    "two_opt_star": {
+      "feasible_structures": 12,
+      "full_evaluations": 16,
+      "infeasible_structures": 475,
+      "raw_generated": 512,
+      "raw_inspected": 512,
+      "visited": true
+    }
+  },
+  "route_local_cache": {
+    "entries": 25648,
+    "hit_rate": 0.9029308465544387,
+    "hits": 238576,
+    "misses": 25648,
+    "requests": 264224
+  },
+  "trace": [
+    {
+      "decoded_count": 2,
+      "detail": "customer=C047;source=8:1;target=8:3",
+      "distance_delta": 158.8969757599989,
+      "evaluations_after": 2,
+      "evaluations_before": 0,
+      "feasible_rank": 1,
+      "improved_incumbent": false,
+      "neighborhood": "relocate",
+      "pass_index": 1,
+      "route_local_cost": 2638.9922634857494,
+      "selected_objective": 2638.9922634857494,
+      "structural_signature": "8f3fa80089ae20565aa59fdb44ed63b72cd4b91b3b574729ad0d61e11bbaaeac"
+    },
+    {
+      "decoded_count": 2,
+      "detail": "customer=C040;source=6:4;target=7:3",
+      "distance_delta": 384.6488524749875,
+      "evaluations_after": 4,
+      "evaluations_before": 2,
+      "feasible_rank": 2,
+      "improved_incumbent": false,
+      "neighborhood": "relocate",
+      "pass_index": 1,
+      "route_local_cost": 2639.4827439535798,
+      "selected_objective": 2639.4827439535798,
+      "structural_signature": "596fe1ba0595219e320da57743a166b0554a9c5dfb1bce68c43a5de982c8c4f1"
+    },
+    {
+      "decoded_count": 2,
+      "detail": "customer=C039;source=7:1;target=7:3",
+      "distance_delta": 341.91179099003784,
+      "evaluations_after": 6,
+      "evaluations_before": 4,
+      "feasible_rank": 3,
+      "improved_incumbent": false,
+      "neighborhood": "relocate",
+      "pass_index": 1,
+      "route_local_cost": 2639.553475794225,
+      "selected_objective": 2639.5534757942246,
+      "structural_signature": "9b983205c4b5dc9c9d7e9715645f6a3bcd357fc6dadcbdcc42abfa221b2c376c"
+    },
+    {
+      "decoded_count": 2,
+      "detail": "customer=C027;source=3:4;target=3:6",
+      "distance_delta": 1451.2537292380584,
+      "evaluations_after": 8,
+      "evaluations_before": 6,
+      "feasible_rank": 4,
+      "improved_incumbent": false,
+      "neighborhood": "relocate",
+      "pass_index": 1,
+      "route_local_cost": 2641.3860784352332,
+      "selected_objective": 2641.386078435233,
+      "structural_signature": "7f2f6411a3c31c3edf55fe497317b8abf98149ec894198ec86c9da51fa7453bf"
+    },
+    {
+      "decoded_count": 2,
+      "detail": "customer=C010;source=1:2;target=1:4",
+      "distance_delta": 2429.8566677060444,
+      "evaluations_after": 10,
+      "evaluations_before": 8,
+      "feasible_rank": 5,
+      "improved_incumbent": false,
+      "neighborhood": "relocate",
+      "pass_index": 1,
+      "route_local_cost": 2643.150007501585,
+      "selected_objective": 2643.1500075015847,
+      "structural_signature": "7aa7fb0c98e0d2971a491ab9776874a188f8008774081ba1488a936988013ea4"
+    },
+    {
+      "decoded_count": 2,
+      "detail": "customer=C048;source=6:2;target=7:3",
+      "distance_delta": 3197.0957334890263,
+      "evaluations_after": 12,
+      "evaluations_before": 10,
+      "feasible_rank": 6,
+      "improved_incumbent": false,
+      "neighborhood": "relocate",
+      "pass_index": 1,
+      "route_local_cost": 2644.335972706409,
+      "selected_objective": 2644.335972706409,
+      "structural_signature": "51547ac4fb47ae4843a7a3e7052669242f95bff21b0829ca65b54857387d3a1e"
+    },
+    {
+      "decoded_count": 2,
+      "detail": "customer=C035;source=4:2;target=4:4",
+      "distance_delta": 4483.667385778041,
+      "evaluations_after": 14,
+      "evaluations_before": 12,
+      "feasible_rank": 7,
+      "improved_incumbent": false,
+      "neighborhood": "relocate",
+      "pass_index": 1,
+      "route_local_cost": 2646.5583679349097,
+      "selected_objective": 2646.5583679349097,
+      "structural_signature": "a48a221dfc326d94464d5c25658b5fe72d789911ddbfcb4e9d99fbd134f9106a"
+    },
+    {
+      "decoded_count": 2,
+      "detail": "customer=C037;source=5:0;target=5:2",
+      "distance_delta": 5653.816291537019,
+      "evaluations_after": 16,
+      "evaluations_before": 14,
+      "feasible_rank": 8,
+      "improved_incumbent": false,
+      "neighborhood": "relocate",
+      "pass_index": 1,
+      "route_local_cost": 2649.8967237376355,
+      "selected_objective": 2649.8967237376355,
+      "structural_signature": "30ff26a6f4fbe9e942560b5e72084d2aab83378a7c0c981bcf375447fe43e53a"
+    },
+    {
+      "decoded_count": 2,
+      "detail": "customer=C044;source=7:0;target=8:0",
+      "distance_delta": 520.4386368310079,
+      "evaluations_after": 18,
+      "evaluations_before": 16,
+      "feasible_rank": 9,
+      "improved_incumbent": false,
+      "neighborhood": "relocate",
+      "pass_index": 1,
+      "route_local_cost": 2657.8149519557364,
+      "selected_objective": 2657.8149519557364,
+      "structural_signature": "0bba387d36e0db1224aa1507cac81ebdb6583b67063e96dfdcfdb67b34395ecb"
+    },
+    {
+      "decoded_count": 2,
+      "detail": "customer=C042;source=7:3;target=8:4",
+      "distance_delta": 1258.1878509460948,
+      "evaluations_after": 20,
+      "evaluations_before": 18,
+      "feasible_rank": 10,
+      "improved_incumbent": false,
+      "neighborhood": "relocate",
+      "pass_index": 1,
+      "route_local_cost": 2659.9363247866468,
+      "selected_objective": 2659.9363247866477,
+      "structural_signature": "8bc30e7329edf5809fc315f40094e0667077ea1ecb611b33f1b418eac884ca3b"
+    },
+    {
+      "decoded_count": 2,
+      "detail": "customer=C050;source=7:2;target=8:1",
+      "distance_delta": 3417.282933974988,
+      "evaluations_after": 22,
+      "evaluations_before": 20,
+      "feasible_rank": 11,
+      "improved_incumbent": false,
+      "neighborhood": "relocate",
+      "pass_index": 1,
+      "route_local_cost": 2664.702326954922,
+      "selected_objective": 2664.7023269549222,
+      "structural_signature": "a0291101915399e5368b2f599343e933499b8cc93baa342e97bc9321b66611e1"
+    },
+    {
+      "decoded_count": 2,
+      "detail": "customer=C045;source=6:1;target=8:1",
+      "distance_delta": 726.0054016450886,
+      "evaluations_after": 24,
+      "evaluations_before": 22,
+      "feasible_rank": 12,
+      "improved_incumbent": false,
+      "neighborhood": "relocate",
+      "pass_index": 1,
+      "route_local_cost": 2690.520430066113,
+      "selected_objective": 2690.520430066113,
+      "structural_signature": "ecf8a4c5bcba738a3ca656bc9417b8a78caf3d1f9ed04818f762453806ba635b"
+    },
+    {
+      "decoded_count": 2,
+      "detail": "left=6:0:C046;right=8:0:C038",
+      "distance_delta": 26.901746160001494,
+      "evaluations_after": 26,
+      "evaluations_before": 24,
+      "feasible_rank": 2,
+      "improved_incumbent": false,
+      "neighborhood": "swap",
+      "pass_index": 1,
+      "route_local_cost": 2639.0088665039375,
+      "selected_objective": 2639.0088665039375,
+      "structural_signature": "e521155e10b6f3e6de025faed8e15236f8b3f789c4a708400c6d96bd7133bd34"
+    },
+    {
+      "decoded_count": 2,
+      "detail": "left=6:4:C040;right=7:3:C042",
+      "distance_delta": 384.6488524749875,
+      "evaluations_after": 28,
+      "evaluations_before": 26,
+      "feasible_rank": 4,
+      "improved_incumbent": false,
+      "neighborhood": "swap",
+      "pass_index": 1,
+      "route_local_cost": 2639.645241232231,
+      "selected_objective": 2639.6452412322305,
+      "structural_signature": "8c9f0e48ac315eaceed7c18dc188debfb1b22b0539536fe20d8ae6caef3b7f2f"
+    },
+    {
+      "decoded_count": 2,
+      "detail": "left=0:5:C019;right=4:4:C036",
+      "distance_delta": 1180.5715694120154,
+      "evaluations_after": 30,
+      "evaluations_before": 28,
+      "feasible_rank": 5,
+      "improved_incumbent": false,
+      "neighborhood": "swap",
+      "pass_index": 1,
+      "route_local_cost": 2640.856039443679,
+      "selected_objective": 2640.8560394436786,
+      "structural_signature": "3b9ed7e464c199ce342b69d7264b906477c8a0fb58bbc3368ac837b5af6fc704"
+    },
+    {
+      "decoded_count": 2,
+      "detail": "left=0:1:C014;right=2:0:C006",
+      "distance_delta": 2351.721552754985,
+      "evaluations_after": 32,
+      "evaluations_before": 30,
+      "feasible_rank": 8,
+      "improved_incumbent": false,
+      "neighborhood": "swap",
+      "pass_index": 1,
+      "route_local_cost": 2643.2168409391666,
+      "selected_objective": 2643.2168409391666,
+      "structural_signature": "5329764895b7f074e33ba75f4f48527fb31b0781b43f0dda8dcb790ff4ddf363"
+    },
+    {
+      "decoded_count": 2,
+      "detail": "left=6:4:C040;right=8:3:C049",
+      "distance_delta": 3624.8778483780334,
+      "evaluations_after": 34,
+      "evaluations_before": 32,
+      "feasible_rank": 9,
+      "improved_incumbent": false,
+      "neighborhood": "swap",
+      "pass_index": 1,
+      "route_local_cost": 2643.3742228452766,
+      "selected_objective": 2643.3742228452766,
+      "structural_signature": "fe3c4ed70929ea28e116ccdcd454e7d2834f7e0f3206ad49351e9048300926ae"
+    },
+    {
+      "decoded_count": 2,
+      "detail": "left=0:5:C019;right=5:5:C025",
+      "distance_delta": 4304.523872317048,
+      "evaluations_after": 36,
+      "evaluations_before": 34,
+      "feasible_rank": 11,
+      "improved_incumbent": false,
+      "neighborhood": "swap",
+      "pass_index": 1,
+      "route_local_cost": 2646.6661253651246,
+      "selected_objective": 2646.6661253651237,
+      "structural_signature": "9db4f6db073ee09ad45ee66d9f563c816fbe66417e33b57555d7d1aa919aff6f"
+    },
+    {
+      "decoded_count": 2,
+      "detail": "left=6:3:C041;right=7:2:C050",
+      "distance_delta": 5609.873117324081,
+      "evaluations_after": 38,
+      "evaluations_before": 36,
+      "feasible_rank": 12,
+      "improved_incumbent": false,
+      "neighborhood": "swap",
+      "pass_index": 1,
+      "route_local_cost": 2648.7604890063103,
+      "selected_objective": 2648.76048900631,
+      "structural_signature": "63589c628139d9f6f42c94f36ecb65553b910f45540d5ed9d78be98f336565da"
+    },
+    {
+      "decoded_count": 2,
+      "detail": "route=0;segment=1:3",
+      "distance_delta": 7052.377489074017,
+      "evaluations_after": 40,
+      "evaluations_before": 38,
+      "feasible_rank": 7,
+      "improved_incumbent": false,
+      "neighborhood": "two_opt",
+      "pass_index": 1,
+      "route_local_cost": 2650.931088166025,
+      "selected_objective": 2650.9310881660244,
+      "structural_signature": "72621aab5a81da606d5b30a7fe059c933db66d0ce5716583c3603004655fa59d"
+    },
+    {
+      "decoded_count": 2,
+      "detail": "route=1;segment=0:2",
+      "distance_delta": 6866.674777913024,
+      "evaluations_after": 42,
+      "evaluations_before": 40,
+      "feasible_rank": 8,
+      "improved_incumbent": false,
+      "neighborhood": "two_opt",
+      "pass_index": 1,
+      "route_local_cost": 2651.4956224813814,
+      "selected_objective": 2651.495622481381,
+      "structural_signature": "3b6c48c1057395ce0b0fe01538c4b335e9b3dfbb6dba9d1ca73b1bc17116ab3e"
+    },
+    {
+      "decoded_count": 2,
+      "detail": "route=3;segment=1:3",
+      "distance_delta": 6959.843606278067,
+      "evaluations_after": 44,
+      "evaluations_before": 42,
+      "feasible_rank": 9,
+      "improved_incumbent": false,
+      "neighborhood": "two_opt",
+      "pass_index": 1,
+      "route_local_cost": 2652.2336839042314,
+      "selected_objective": 2652.233683904231,
+      "structural_signature": "3f3cfd5fb110e52db9777d2798f1196732fd4bce4f1681157966c6d44cd2b128"
+    },
+    {
+      "decoded_count": 2,
+      "detail": "route=2;segment=0:4",
+      "distance_delta": 13168.730005825986,
+      "evaluations_after": 46,
+      "evaluations_before": 44,
+      "feasible_rank": 10,
+      "improved_incumbent": false,
+      "neighborhood": "two_opt",
+      "pass_index": 1,
+      "route_local_cost": 2662.5873123471983,
+      "selected_objective": 2662.587312347198,
+      "structural_signature": "8f8d383ee981fd520f3f29d33e4b386da29b9d5852e994597f0c4778899dd55f"
+    },
+    {
+      "decoded_count": 2,
+      "detail": "route=2;segment=1:4",
+      "distance_delta": 16879.916449573007,
+      "evaluations_after": 48,
+      "evaluations_before": 46,
+      "feasible_rank": 11,
+      "improved_incumbent": false,
+      "neighborhood": "two_opt",
+      "pass_index": 1,
+      "route_local_cost": 2669.506738911983,
+      "selected_objective": 2669.506738911983,
+      "structural_signature": "7a62e45c8124c48cafba62047c108a420e028f65943db7d8ec11e89ea7b2ee41"
+    },
+    {
+      "decoded_count": 2,
+      "detail": "left=6:1;right=8:1",
+      "distance_delta": 26.901746160001494,
+      "evaluations_after": 50,
+      "evaluations_before": 48,
+      "feasible_rank": 1,
+      "improved_incumbent": false,
+      "neighborhood": "two_opt_star",
+      "pass_index": 1,
+      "route_local_cost": 2639.0088665039375,
+      "selected_objective": 2639.0088665039375,
+      "structural_signature": "99b765fc5768752464e83e0b7b9b016c54293f29e32e34e42c4fa7f8773cd5d5"
+    },
+    {
+      "decoded_count": 2,
+      "detail": "left=2:4;right=3:3",
+      "distance_delta": 1902.8521199580282,
+      "evaluations_after": 52,
+      "evaluations_before": 50,
+      "feasible_rank": 4,
+      "improved_incumbent": false,
+      "neighborhood": "two_opt_star",
+      "pass_index": 1,
+      "route_local_cost": 2642.620478504464,
+      "selected_objective": 2642.6204785044633,
+      "structural_signature": "171224dc163568271ea6c80bc70ebc1956408846917cc9c9f932902ac631cfd4"
+    },
+    {
+      "decoded_count": 2,
+      "detail": "left=1:2;right=4:1",
+      "distance_delta": 3639.1541517759906,
+      "evaluations_after": 54,
+      "evaluations_before": 52,
+      "feasible_rank": 6,
+      "improved_incumbent": false,
+      "neighborhood": "two_opt_star",
+      "pass_index": 1,
+      "route_local_cost": 2645.82930610056,
+      "selected_objective": 2645.8293061005597,
+      "structural_signature": "4292b7e603f1543046318db3ad19f83977014708e64955d1ca77fa3ee00ce01c"
+    },
+    {
+      "decoded_count": 2,
+      "detail": "left=0:4;right=2:5",
+      "distance_delta": 4647.0439866890665,
+      "evaluations_after": 56,
+      "evaluations_before": 54,
+      "feasible_rank": 8,
+      "improved_incumbent": false,
+      "neighborhood": "two_opt_star",
+      "pass_index": 1,
+      "route_local_cost": 2647.3904335951224,
+      "selected_objective": 2647.390433595122,
+      "structural_signature": "3b0cb92b355889e04868e17a8c16763cfca36a3fc26973fb88b620ec5b2b59ee"
+    },
+    {
+      "decoded_count": 2,
+      "detail": "left=6:3;right=7:2",
+      "distance_delta": 5225.224264849094,
+      "evaluations_after": 58,
+      "evaluations_before": 56,
+      "feasible_rank": 9,
+      "improved_incumbent": false,
+      "neighborhood": "two_opt_star",
+      "pass_index": 1,
+      "route_local_cost": 2648.0286677396534,
+      "selected_objective": 2648.0286677396534,
+      "structural_signature": "c4f9198feb47a179b9164b06aa086016dad7da78591b555bc97fb4f55208f57c"
+    },
+    {
+      "decoded_count": 2,
+      "detail": "left=6:3;right=7:3",
+      "distance_delta": 5480.352883827058,
+      "evaluations_after": 60,
+      "evaluations_before": 58,
+      "feasible_rank": 10,
+      "improved_incumbent": false,
+      "neighborhood": "two_opt_star",
+      "pass_index": 1,
+      "route_local_cost": 2648.495197740331,
+      "selected_objective": 2648.495197740331,
+      "structural_signature": "68813e18ae472b93794a4be3ef653e696451501cf92c4599363f7aca5a188ba7"
+    },
+    {
+      "decoded_count": 2,
+      "detail": "left=6:2;right=7:2",
+      "distance_delta": 6123.837756511988,
+      "evaluations_after": 62,
+      "evaluations_before": 60,
+      "feasible_rank": 11,
+      "improved_incumbent": false,
+      "neighborhood": "two_opt_star",
+      "pass_index": 1,
+      "route_local_cost": 2649.756745780031,
+      "selected_objective": 2649.756745780031,
+      "structural_signature": "f3468f33091d9df188a7805a39781dfd7d690905a6200001be0885675c1b9cd4"
+    },
+    {
+      "decoded_count": 2,
+      "detail": "left=0:5;right=2:6",
+      "distance_delta": 6168.839688058011,
+      "evaluations_after": 64,
+      "evaluations_before": 62,
+      "feasible_rank": 12,
+      "improved_incumbent": false,
+      "neighborhood": "two_opt_star",
+      "pass_index": 1,
+      "route_local_cost": 2649.938026400017,
+      "selected_objective": 2649.938026400017,
+      "structural_signature": "e56f88dc0ee9bba2046a2d9b3585dd9f27f3d9d571fe0b0925f37aa33f0e0b3f"
+    },
+    {
+      "decoded_count": 2,
+      "detail": "source=6;start=0;width=4;order=forward;saving=16696.418323620001;insert=C046:route=6;position=0;insert=C045:route=6;position=1;insert=C048:route=6;position=2;insert=C041:route=7;position=3",
+      "distance_delta": 6640.410049088998,
+      "evaluations_after": 66,
+      "evaluations_before": 64,
+      "feasible_rank": 5,
+      "improved_incumbent": false,
+      "neighborhood": "ejection_rebuild",
+      "pass_index": 1,
+      "route_local_cost": 2650.5101447020156,
+      "selected_objective": 2650.510144702015,
+      "structural_signature": "c47ba2abecc81edfc0133aab34d51d300dd08814df27c7c3b8fd864583f552e3"
+    },
+    {
+      "decoded_count": 2,
+      "detail": "source=6;start=0;width=4;order=forward;saving=16696.418323620001;insert=C046:route=8;position=0;insert=C045:route=8;position=1;insert=C048:route=6;position=0;insert=C041:route=6;position=1",
+      "distance_delta": 3493.3424248810625,
+      "evaluations_after": 68,
+      "evaluations_before": 66,
+      "feasible_rank": 7,
+      "improved_incumbent": false,
+      "neighborhood": "ejection_rebuild",
+      "pass_index": 1,
+      "route_local_cost": 2653.0243352784605,
+      "selected_objective": 2653.0243352784605,
+      "structural_signature": "717443afdf4ba4913bd206c1bc969945071fa92165e19b35a89e2463e64d627d"
+    },
+    {
+      "decoded_count": 2,
+      "detail": "source=6;start=0;width=4;order=reverse;saving=16696.418323620001;insert=C041:route=6;position=0;insert=C048:route=8;position=2;insert=C045:route=8;position=1;insert=C046:route=6;position=0",
+      "distance_delta": 3079.151974106091,
+      "evaluations_after": 70,
+      "evaluations_before": 68,
+      "feasible_rank": 8,
+      "improved_incumbent": false,
+      "neighborhood": "ejection_rebuild",
+      "pass_index": 1,
+      "route_local_cost": 2653.274633640305,
+      "selected_objective": 2653.2746336403056,
+      "structural_signature": "30e6bb97940f4a6a532570d70e5d89f4252a927d35ba1ac71e7b69200a70993c"
+    },
+    {
+      "decoded_count": 2,
+      "detail": "source=6;start=0;width=4;order=reverse;saving=16696.418323620001;insert=C041:route=6;position=0;insert=C048:route=7;position=3;insert=C045:route=8;position=1;insert=C046:route=6;position=0",
+      "distance_delta": 3923.1011351339985,
+      "evaluations_after": 72,
+      "evaluations_before": 70,
+      "feasible_rank": 9,
+      "improved_incumbent": false,
+      "neighborhood": "ejection_rebuild",
+      "pass_index": 1,
+      "route_local_cost": 2654.384644695144,
+      "selected_objective": 2654.3846446951443,
+      "structural_signature": "50b629cf2ead14506b37b6b88ab09fabd26f9074afe73a073bff768813a2c49e"
+    },
+    {
+      "decoded_count": 2,
+      "detail": "source=6;start=0;width=4;order=reverse;saving=16696.418323620001;insert=C041:route=6;position=0;insert=C048:route=6;position=0;insert=C045:route=8;position=1;insert=C046:route=8;position=0",
+      "distance_delta": 4219.347826526035,
+      "evaluations_after": 74,
+      "evaluations_before": 72,
+      "feasible_rank": 10,
+      "improved_incumbent": false,
+      "neighborhood": "ejection_rebuild",
+      "pass_index": 1,
+      "route_local_cost": 2654.613220875073,
+      "selected_objective": 2654.613220875073,
+      "structural_signature": "b23fb2d9790c43688d2594c8e2a1c600cbdbe46d867a1a765e68ecff19f32179"
+    },
+    {
+      "decoded_count": 2,
+      "detail": "source=3;start=2;width=4;order=forward;saving=15193.244033143012;insert=C018:route=3;position=1;insert=C023:route=3;position=3;insert=C027:route=3;position=4;insert=C020:route=3;position=4",
+      "distance_delta": 8411.09733551601,
+      "evaluations_after": 76,
+      "evaluations_before": 74,
+      "feasible_rank": 11,
+      "improved_incumbent": false,
+      "neighborhood": "ejection_rebuild",
+      "pass_index": 1,
+      "route_local_cost": 2654.70634237389,
+      "selected_objective": 2654.70634237389,
+      "structural_signature": "50bd9dbb5b9929fa1b55aed00218deabc599319fd2921269d56c7139363ad864"
+    },
+    {
+      "decoded_count": 2,
+      "detail": "source=6;start=0;width=4;order=forward;saving=16696.418323620001;insert=C046:route=6;position=0;insert=C045:route=6;position=1;insert=C048:route=8;position=3;insert=C041:route=8;position=4",
+      "distance_delta": 3624.8778483780334,
+      "evaluations_after": 78,
+      "evaluations_before": 76,
+      "feasible_rank": 12,
+      "improved_incumbent": false,
+      "neighborhood": "ejection_rebuild",
+      "pass_index": 1,
+      "route_local_cost": 2655.3391504448086,
+      "selected_objective": 2655.3391504448095,
+      "structural_signature": "25e57f0af1d57e780b28cb5962e18decdbaedb879ebbf9652956530c04d915b2"
+    }
+  ]
+}

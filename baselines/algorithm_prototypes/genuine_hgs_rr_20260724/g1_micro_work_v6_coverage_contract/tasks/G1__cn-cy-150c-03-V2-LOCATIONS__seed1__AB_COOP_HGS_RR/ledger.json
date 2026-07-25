@@ -1,0 +1,4087 @@
+{
+  "arm": "AB_COOP_HGS_RR",
+  "consumed": 80,
+  "duplicates": 8,
+  "feasible": 78,
+  "infeasible": 2,
+  "limit": 80,
+  "records": [
+    {
+      "arm": "AB_COOP_HGS_RR",
+      "duplicate_of_index": null,
+      "feasible": true,
+      "index": 1,
+      "metadata": {
+        "shared_initial": true
+      },
+      "objective": 8886.621089737959,
+      "signature": "905f2d1e4caa3957a3155cd30108b2cb07cb3992b967a0db47b3e12bed20645d",
+      "source": "SHARED_INITIAL",
+      "violation_count": 0
+    },
+    {
+      "arm": "AB_COOP_HGS_RR",
+      "duplicate_of_index": null,
+      "feasible": true,
+      "index": 2,
+      "metadata": {
+        "assignment_count": 26,
+        "assignment_dp_rank": 1,
+        "capacity_aware_assignment_dp": true,
+        "charger_slot_use": [],
+        "charging_route_count": 0,
+        "decoder": "explicit_reference_v1",
+        "fleet_use": [
+          11,
+          0,
+          15,
+          0
+        ],
+        "generation_kind": "population_archive",
+        "hgs_epoch": 1,
+        "hgs_seed": 1037020054,
+        "proxy_cost": 7755095,
+        "proxy_rank": 2,
+        "route_local_cost": 7745.303665636196,
+        "route_proxy_mode": "cv_only",
+        "warm_parent_signature": null,
+        "warm_signatures": [
+          "905f2d1e4caa3957a3155cd30108b2cb07cb3992b967a0db47b3e12bed20645d"
+        ]
+      },
+      "objective": 7745.303665636195,
+      "signature": "c9a449ea1d0655b509f9b9cf279d0f76eea85172a144a9ae1456f2ef62fece57",
+      "source": "HGS_ARCHIVE",
+      "violation_count": 0
+    },
+    {
+      "arm": "AB_COOP_HGS_RR",
+      "duplicate_of_index": null,
+      "feasible": true,
+      "index": 3,
+      "metadata": {
+        "assignment_count": 26,
+        "assignment_dp_rank": 2,
+        "capacity_aware_assignment_dp": true,
+        "charger_slot_use": [],
+        "charging_route_count": 0,
+        "decoder": "explicit_reference_v1",
+        "fleet_use": [
+          11,
+          0,
+          15,
+          0
+        ],
+        "generation_kind": "population_archive",
+        "hgs_epoch": 1,
+        "hgs_seed": 1037020054,
+        "proxy_cost": 7755095,
+        "proxy_rank": 2,
+        "route_local_cost": 9758.085899232841,
+        "route_proxy_mode": "cv_only",
+        "warm_parent_signature": null,
+        "warm_signatures": [
+          "905f2d1e4caa3957a3155cd30108b2cb07cb3992b967a0db47b3e12bed20645d"
+        ]
+      },
+      "objective": 9758.085899232845,
+      "signature": "7d374a525ab4086cda20fd3c307224ac6ca1aadc2b819120328e6d90edf9f4f2",
+      "source": "HGS_ARCHIVE",
+      "violation_count": 0
+    },
+    {
+      "arm": "AB_COOP_HGS_RR",
+      "duplicate_of_index": null,
+      "feasible": true,
+      "index": 4,
+      "metadata": {
+        "assignment_count": 25,
+        "assignment_dp_rank": 1,
+        "capacity_aware_assignment_dp": true,
+        "charger_slot_use": [
+          {
+            "day_offset": 0,
+            "route_count": 2,
+            "slot_index": 0,
+            "station_id": "D_chengdu"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 2,
+            "slot_index": 1,
+            "station_id": "D_chengdu"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 2,
+            "station_id": "D_chengdu"
+          }
+        ],
+        "charging_route_count": 2,
+        "decoder": "explicit_reference_v1",
+        "fleet_use": [
+          9,
+          2,
+          14,
+          0
+        ],
+        "generation_kind": "population_archive",
+        "hgs_epoch": 1,
+        "hgs_seed": 1721837423,
+        "proxy_cost": 7492311,
+        "proxy_rank": 2,
+        "route_local_cost": 7469.122770591771,
+        "route_proxy_mode": "naive_ev",
+        "warm_parent_signature": null,
+        "warm_signatures": [
+          "905f2d1e4caa3957a3155cd30108b2cb07cb3992b967a0db47b3e12bed20645d"
+        ]
+      },
+      "objective": 7469.122770591771,
+      "signature": "5bc14bd05c70f761c5c727a7e2c008143cce1466ab6742dd3ee8e66554602756",
+      "source": "HGS_ARCHIVE",
+      "violation_count": 0
+    },
+    {
+      "arm": "AB_COOP_HGS_RR",
+      "duplicate_of_index": null,
+      "feasible": true,
+      "index": 5,
+      "metadata": {
+        "assignment_count": 25,
+        "assignment_dp_rank": 2,
+        "capacity_aware_assignment_dp": true,
+        "charger_slot_use": [
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 0,
+            "station_id": "D_chengdu"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 1,
+            "station_id": "D_chengdu"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 2,
+            "station_id": "D_chengdu"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 20,
+            "station_id": "D_chengdu"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 21,
+            "station_id": "D_chengdu"
+          }
+        ],
+        "charging_route_count": 2,
+        "decoder": "explicit_reference_v1",
+        "fleet_use": [
+          9,
+          2,
+          14,
+          0
+        ],
+        "generation_kind": "population_archive",
+        "hgs_epoch": 1,
+        "hgs_seed": 1721837423,
+        "proxy_cost": 7492311,
+        "proxy_rank": 2,
+        "route_local_cost": 7483.400929120268,
+        "route_proxy_mode": "naive_ev",
+        "warm_parent_signature": null,
+        "warm_signatures": [
+          "905f2d1e4caa3957a3155cd30108b2cb07cb3992b967a0db47b3e12bed20645d"
+        ]
+      },
+      "objective": 7483.400929120268,
+      "signature": "ad0a7235f8f0c755a6a907c4c81e0d26bfe472e449e3b63d2530c8af69e0a78f",
+      "source": "HGS_ARCHIVE",
+      "violation_count": 0
+    },
+    {
+      "arm": "AB_COOP_HGS_RR",
+      "duplicate_of_index": null,
+      "feasible": true,
+      "index": 6,
+      "metadata": {
+        "assignment_count": 25,
+        "assignment_dp_rank": 3,
+        "capacity_aware_assignment_dp": true,
+        "charger_slot_use": [
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 0,
+            "station_id": "D_chengdu"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 1,
+            "station_id": "D_chengdu"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 2,
+            "station_id": "D_chengdu"
+          }
+        ],
+        "charging_route_count": 1,
+        "decoder": "explicit_reference_v1",
+        "fleet_use": [
+          10,
+          1,
+          14,
+          0
+        ],
+        "generation_kind": "population_archive",
+        "hgs_epoch": 1,
+        "hgs_seed": 1721837423,
+        "proxy_cost": 7492311,
+        "proxy_rank": 2,
+        "route_local_cost": 7513.38959497796,
+        "route_proxy_mode": "naive_ev",
+        "warm_parent_signature": null,
+        "warm_signatures": [
+          "905f2d1e4caa3957a3155cd30108b2cb07cb3992b967a0db47b3e12bed20645d"
+        ]
+      },
+      "objective": 7513.38959497796,
+      "signature": "e74f0e7b6f791b81212cd1064477df38009d2972ea34ace0eba3fa61e44e46bf",
+      "source": "HGS_ARCHIVE",
+      "violation_count": 0
+    },
+    {
+      "arm": "AB_COOP_HGS_RR",
+      "duplicate_of_index": null,
+      "feasible": true,
+      "index": 7,
+      "metadata": {
+        "assignment_count": 25,
+        "assignment_dp_rank": 1,
+        "capacity_aware_assignment_dp": true,
+        "charger_slot_use": [
+          {
+            "day_offset": 0,
+            "route_count": 2,
+            "slot_index": 0,
+            "station_id": "D_chengdu"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 2,
+            "slot_index": 1,
+            "station_id": "D_chengdu"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 2,
+            "slot_index": 2,
+            "station_id": "D_chengdu"
+          }
+        ],
+        "charging_route_count": 2,
+        "decoder": "explicit_reference_v1",
+        "fleet_use": [
+          9,
+          2,
+          14,
+          0
+        ],
+        "generation_kind": "population_archive",
+        "hgs_epoch": 1,
+        "hgs_seed": 237777330,
+        "proxy_cost": 7532573,
+        "proxy_rank": 2,
+        "route_local_cost": 7528.948958510535,
+        "route_proxy_mode": "mechanism_ev",
+        "warm_parent_signature": null,
+        "warm_signatures": [
+          "905f2d1e4caa3957a3155cd30108b2cb07cb3992b967a0db47b3e12bed20645d"
+        ]
+      },
+      "objective": 7528.948958510536,
+      "signature": "aa87f61d7ed541342bfdd1fcb7cdd4e8ee7001a3f26988eab889c8fabfced53e",
+      "source": "HGS_ARCHIVE",
+      "violation_count": 0
+    },
+    {
+      "arm": "AB_COOP_HGS_RR",
+      "duplicate_of_index": null,
+      "feasible": true,
+      "index": 8,
+      "metadata": {
+        "assignment_count": 25,
+        "assignment_dp_rank": 2,
+        "capacity_aware_assignment_dp": true,
+        "charger_slot_use": [
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 0,
+            "station_id": "D_chengdu"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 1,
+            "station_id": "D_chengdu"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 2,
+            "station_id": "D_chengdu"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 18,
+            "station_id": "D_chengdu"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 19,
+            "station_id": "D_chengdu"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 20,
+            "station_id": "D_chengdu"
+          }
+        ],
+        "charging_route_count": 2,
+        "decoder": "explicit_reference_v1",
+        "fleet_use": [
+          9,
+          2,
+          14,
+          0
+        ],
+        "generation_kind": "population_archive",
+        "hgs_epoch": 1,
+        "hgs_seed": 237777330,
+        "proxy_cost": 7532573,
+        "proxy_rank": 2,
+        "route_local_cost": 7546.390095767975,
+        "route_proxy_mode": "mechanism_ev",
+        "warm_parent_signature": null,
+        "warm_signatures": [
+          "905f2d1e4caa3957a3155cd30108b2cb07cb3992b967a0db47b3e12bed20645d"
+        ]
+      },
+      "objective": 7546.390095767973,
+      "signature": "80f534e33103a283b4c39ec319765e09cc00b47bccefc33140ee9dc9adf962ed",
+      "source": "HGS_ARCHIVE",
+      "violation_count": 0
+    },
+    {
+      "arm": "AB_COOP_HGS_RR",
+      "duplicate_of_index": null,
+      "feasible": true,
+      "index": 9,
+      "metadata": {
+        "assignment_count": 25,
+        "assignment_dp_rank": 3,
+        "capacity_aware_assignment_dp": true,
+        "charger_slot_use": [
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 0,
+            "station_id": "D_chengdu"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 1,
+            "station_id": "D_chengdu"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 2,
+            "station_id": "D_chengdu"
+          }
+        ],
+        "charging_route_count": 1,
+        "decoder": "explicit_reference_v1",
+        "fleet_use": [
+          10,
+          1,
+          14,
+          0
+        ],
+        "generation_kind": "population_archive",
+        "hgs_epoch": 1,
+        "hgs_seed": 237777330,
+        "proxy_cost": 7532573,
+        "proxy_rank": 2,
+        "route_local_cost": 7585.204356643476,
+        "route_proxy_mode": "mechanism_ev",
+        "warm_parent_signature": null,
+        "warm_signatures": [
+          "905f2d1e4caa3957a3155cd30108b2cb07cb3992b967a0db47b3e12bed20645d"
+        ]
+      },
+      "objective": 7585.204356643475,
+      "signature": "c79454aa291127fd7800c542c656cb0e69c1757b202f7520d7df43d3bbcd6265",
+      "source": "HGS_ARCHIVE",
+      "violation_count": 0
+    },
+    {
+      "arm": "AB_COOP_HGS_RR",
+      "duplicate_of_index": null,
+      "feasible": true,
+      "index": 10,
+      "metadata": {
+        "assignment_count": 26,
+        "assignment_dp_rank": 1,
+        "capacity_aware_assignment_dp": true,
+        "charger_slot_use": [],
+        "charging_route_count": 0,
+        "decoder": "explicit_reference_v1",
+        "fleet_use": [
+          11,
+          0,
+          15,
+          0
+        ],
+        "generation_kind": "population_archive",
+        "hgs_epoch": 1,
+        "hgs_seed": 1037020054,
+        "proxy_cost": 7755530,
+        "proxy_rank": 3,
+        "route_local_cost": 7745.5955233253635,
+        "route_proxy_mode": "cv_only",
+        "warm_parent_signature": null,
+        "warm_signatures": [
+          "905f2d1e4caa3957a3155cd30108b2cb07cb3992b967a0db47b3e12bed20645d"
+        ]
+      },
+      "objective": 7745.5955233253635,
+      "signature": "3297596814dd793bd105433ca11c10de661674ddf43e6030fa81ac05606347b4",
+      "source": "HGS_ARCHIVE",
+      "violation_count": 0
+    },
+    {
+      "arm": "AB_COOP_HGS_RR",
+      "duplicate_of_index": null,
+      "feasible": true,
+      "index": 11,
+      "metadata": {
+        "assignment_count": 26,
+        "assignment_dp_rank": 2,
+        "capacity_aware_assignment_dp": true,
+        "charger_slot_use": [],
+        "charging_route_count": 0,
+        "decoder": "explicit_reference_v1",
+        "fleet_use": [
+          11,
+          0,
+          15,
+          0
+        ],
+        "generation_kind": "population_archive",
+        "hgs_epoch": 1,
+        "hgs_seed": 1037020054,
+        "proxy_cost": 7755530,
+        "proxy_rank": 3,
+        "route_local_cost": 9758.37775692201,
+        "route_proxy_mode": "cv_only",
+        "warm_parent_signature": null,
+        "warm_signatures": [
+          "905f2d1e4caa3957a3155cd30108b2cb07cb3992b967a0db47b3e12bed20645d"
+        ]
+      },
+      "objective": 9758.377756922011,
+      "signature": "72233aeaf3ed67c952feb63d1aa90bae518e66b02aee241e0f6661bd00cd144e",
+      "source": "HGS_ARCHIVE",
+      "violation_count": 0
+    },
+    {
+      "arm": "AB_COOP_HGS_RR",
+      "duplicate_of_index": null,
+      "feasible": true,
+      "index": 12,
+      "metadata": {
+        "assignment_count": 25,
+        "assignment_dp_rank": 1,
+        "capacity_aware_assignment_dp": true,
+        "charger_slot_use": [
+          {
+            "day_offset": 0,
+            "route_count": 2,
+            "slot_index": 0,
+            "station_id": "D_chengdu"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 2,
+            "slot_index": 1,
+            "station_id": "D_chengdu"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 2,
+            "slot_index": 2,
+            "station_id": "D_chengdu"
+          }
+        ],
+        "charging_route_count": 2,
+        "decoder": "explicit_reference_v1",
+        "fleet_use": [
+          9,
+          2,
+          14,
+          0
+        ],
+        "generation_kind": "population_archive",
+        "hgs_epoch": 1,
+        "hgs_seed": 1721837423,
+        "proxy_cost": 7497592,
+        "proxy_rank": 3,
+        "route_local_cost": 7471.865130381134,
+        "route_proxy_mode": "naive_ev",
+        "warm_parent_signature": null,
+        "warm_signatures": [
+          "905f2d1e4caa3957a3155cd30108b2cb07cb3992b967a0db47b3e12bed20645d"
+        ]
+      },
+      "objective": 7471.865130381133,
+      "signature": "7637521b70e5a4b679096039eb5644c5ae072e80a56341100718babd302fd22f",
+      "source": "HGS_ARCHIVE",
+      "violation_count": 0
+    },
+    {
+      "arm": "AB_COOP_HGS_RR",
+      "duplicate_of_index": null,
+      "feasible": true,
+      "index": 13,
+      "metadata": {
+        "assignment_count": 25,
+        "assignment_dp_rank": 2,
+        "capacity_aware_assignment_dp": true,
+        "charger_slot_use": [
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 0,
+            "station_id": "D_chengdu"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 1,
+            "station_id": "D_chengdu"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 2,
+            "station_id": "D_chengdu"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 18,
+            "station_id": "D_chengdu"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 19,
+            "station_id": "D_chengdu"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 20,
+            "station_id": "D_chengdu"
+          }
+        ],
+        "charging_route_count": 2,
+        "decoder": "explicit_reference_v1",
+        "fleet_use": [
+          9,
+          2,
+          14,
+          0
+        ],
+        "generation_kind": "population_archive",
+        "hgs_epoch": 1,
+        "hgs_seed": 1721837423,
+        "proxy_cost": 7497592,
+        "proxy_rank": 3,
+        "route_local_cost": 7486.86173047614,
+        "route_proxy_mode": "naive_ev",
+        "warm_parent_signature": null,
+        "warm_signatures": [
+          "905f2d1e4caa3957a3155cd30108b2cb07cb3992b967a0db47b3e12bed20645d"
+        ]
+      },
+      "objective": 7486.86173047614,
+      "signature": "c6bc006bb539cca6e17e16799c10896682a5f8adbac83d8c507020bed8136fc7",
+      "source": "HGS_ARCHIVE",
+      "violation_count": 0
+    },
+    {
+      "arm": "AB_COOP_HGS_RR",
+      "duplicate_of_index": null,
+      "feasible": true,
+      "index": 14,
+      "metadata": {
+        "assignment_count": 25,
+        "assignment_dp_rank": 3,
+        "capacity_aware_assignment_dp": true,
+        "charger_slot_use": [
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 0,
+            "station_id": "D_chengdu"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 1,
+            "station_id": "D_chengdu"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 2,
+            "station_id": "D_chengdu"
+          }
+        ],
+        "charging_route_count": 1,
+        "decoder": "explicit_reference_v1",
+        "fleet_use": [
+          10,
+          1,
+          14,
+          0
+        ],
+        "generation_kind": "population_archive",
+        "hgs_epoch": 1,
+        "hgs_seed": 1721837423,
+        "proxy_cost": 7497592,
+        "proxy_rank": 3,
+        "route_local_cost": 7529.724778081122,
+        "route_proxy_mode": "naive_ev",
+        "warm_parent_signature": null,
+        "warm_signatures": [
+          "905f2d1e4caa3957a3155cd30108b2cb07cb3992b967a0db47b3e12bed20645d"
+        ]
+      },
+      "objective": 7529.724778081122,
+      "signature": "a0556cf6934cc387cdccf572f8d5a32095e6e69005e48d9d2bfc72d5da4fad6e",
+      "source": "HGS_ARCHIVE",
+      "violation_count": 0
+    },
+    {
+      "arm": "AB_COOP_HGS_RR",
+      "duplicate_of_index": null,
+      "feasible": true,
+      "index": 15,
+      "metadata": {
+        "assignment_count": 25,
+        "assignment_dp_rank": 1,
+        "capacity_aware_assignment_dp": true,
+        "charger_slot_use": [
+          {
+            "day_offset": 0,
+            "route_count": 2,
+            "slot_index": 0,
+            "station_id": "D_chengdu"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 2,
+            "slot_index": 1,
+            "station_id": "D_chengdu"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 2,
+            "slot_index": 2,
+            "station_id": "D_chengdu"
+          }
+        ],
+        "charging_route_count": 2,
+        "decoder": "explicit_reference_v1",
+        "fleet_use": [
+          9,
+          2,
+          14,
+          0
+        ],
+        "generation_kind": "population_archive",
+        "hgs_epoch": 1,
+        "hgs_seed": 237777330,
+        "proxy_cost": 7546936,
+        "proxy_rank": 3,
+        "route_local_cost": 7544.504518842683,
+        "route_proxy_mode": "mechanism_ev",
+        "warm_parent_signature": null,
+        "warm_signatures": [
+          "905f2d1e4caa3957a3155cd30108b2cb07cb3992b967a0db47b3e12bed20645d"
+        ]
+      },
+      "objective": 7544.504518842683,
+      "signature": "bf6ec5d716074bd494ce661fd8a4c1f7c08d803a2ac249830df1097219619d9e",
+      "source": "HGS_ARCHIVE",
+      "violation_count": 0
+    },
+    {
+      "arm": "AB_COOP_HGS_RR",
+      "duplicate_of_index": null,
+      "feasible": true,
+      "index": 16,
+      "metadata": {
+        "assignment_count": 25,
+        "assignment_dp_rank": 2,
+        "capacity_aware_assignment_dp": true,
+        "charger_slot_use": [
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 0,
+            "station_id": "D_chengdu"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 1,
+            "station_id": "D_chengdu"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 2,
+            "station_id": "D_chengdu"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 18,
+            "station_id": "D_chengdu"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 19,
+            "station_id": "D_chengdu"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 20,
+            "station_id": "D_chengdu"
+          }
+        ],
+        "charging_route_count": 2,
+        "decoder": "explicit_reference_v1",
+        "fleet_use": [
+          9,
+          2,
+          14,
+          0
+        ],
+        "generation_kind": "population_archive",
+        "hgs_epoch": 1,
+        "hgs_seed": 237777330,
+        "proxy_cost": 7546936,
+        "proxy_rank": 3,
+        "route_local_cost": 7561.984657888651,
+        "route_proxy_mode": "mechanism_ev",
+        "warm_parent_signature": null,
+        "warm_signatures": [
+          "905f2d1e4caa3957a3155cd30108b2cb07cb3992b967a0db47b3e12bed20645d"
+        ]
+      },
+      "objective": 7561.984657888653,
+      "signature": "b2bac79bbd2c83fb17bef5b5427612bb7d416674240c288c9c311d84e0f555b5",
+      "source": "HGS_ARCHIVE",
+      "violation_count": 0
+    },
+    {
+      "arm": "AB_COOP_HGS_RR",
+      "duplicate_of_index": null,
+      "feasible": true,
+      "index": 17,
+      "metadata": {
+        "assignment_count": 25,
+        "assignment_dp_rank": 3,
+        "capacity_aware_assignment_dp": true,
+        "charger_slot_use": [
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 0,
+            "station_id": "D_chengdu"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 1,
+            "station_id": "D_chengdu"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 2,
+            "station_id": "D_chengdu"
+          }
+        ],
+        "charging_route_count": 1,
+        "decoder": "explicit_reference_v1",
+        "fleet_use": [
+          10,
+          1,
+          14,
+          0
+        ],
+        "generation_kind": "population_archive",
+        "hgs_epoch": 1,
+        "hgs_seed": 237777330,
+        "proxy_cost": 7546936,
+        "proxy_rank": 3,
+        "route_local_cost": 7602.888644616792,
+        "route_proxy_mode": "mechanism_ev",
+        "warm_parent_signature": null,
+        "warm_signatures": [
+          "905f2d1e4caa3957a3155cd30108b2cb07cb3992b967a0db47b3e12bed20645d"
+        ]
+      },
+      "objective": 7602.888644616792,
+      "signature": "6a1b2a10b1df3437d991b625d8c8edf73c6118f6661d863145a1f0954a2ad1c0",
+      "source": "HGS_ARCHIVE",
+      "violation_count": 0
+    },
+    {
+      "arm": "AB_COOP_HGS_RR",
+      "duplicate_of_index": 4,
+      "feasible": true,
+      "index": 18,
+      "metadata": {
+        "assignment_count": 25,
+        "assignment_dp_rank": 1,
+        "capacity_aware_assignment_dp": true,
+        "charger_slot_use": [
+          {
+            "day_offset": 0,
+            "route_count": 2,
+            "slot_index": 0,
+            "station_id": "D_chengdu"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 2,
+            "slot_index": 1,
+            "station_id": "D_chengdu"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 2,
+            "station_id": "D_chengdu"
+          }
+        ],
+        "charging_route_count": 2,
+        "decoder": "explicit_reference_v1",
+        "fleet_use": [
+          9,
+          2,
+          14,
+          0
+        ],
+        "opened_route_count": 0,
+        "recreate_step_count": 3,
+        "removed_customer_count": 3,
+        "route_local_cost": 7469.122770591771,
+        "rr_iteration": 1,
+        "rr_operator": "time_window_pressure_string",
+        "rr_reason": "remove a result-blind customer with low residual time-window slack under the shared route schedule and its adjacent string, then rebuild across depots, types, and charge schedules"
+      },
+      "objective": 7469.122770591771,
+      "signature": "5bc14bd05c70f761c5c727a7e2c008143cce1466ab6742dd3ee8e66554602756",
+      "source": "RUIN_RECREATE",
+      "violation_count": 0
+    },
+    {
+      "arm": "AB_COOP_HGS_RR",
+      "duplicate_of_index": 5,
+      "feasible": true,
+      "index": 19,
+      "metadata": {
+        "assignment_count": 25,
+        "assignment_dp_rank": 2,
+        "capacity_aware_assignment_dp": true,
+        "charger_slot_use": [
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 0,
+            "station_id": "D_chengdu"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 1,
+            "station_id": "D_chengdu"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 2,
+            "station_id": "D_chengdu"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 20,
+            "station_id": "D_chengdu"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 21,
+            "station_id": "D_chengdu"
+          }
+        ],
+        "charging_route_count": 2,
+        "decoder": "explicit_reference_v1",
+        "fleet_use": [
+          9,
+          2,
+          14,
+          0
+        ],
+        "opened_route_count": 0,
+        "recreate_step_count": 3,
+        "removed_customer_count": 3,
+        "route_local_cost": 7483.400929120268,
+        "rr_iteration": 1,
+        "rr_operator": "time_window_pressure_string",
+        "rr_reason": "remove a result-blind customer with low residual time-window slack under the shared route schedule and its adjacent string, then rebuild across depots, types, and charge schedules"
+      },
+      "objective": 7483.400929120268,
+      "signature": "ad0a7235f8f0c755a6a907c4c81e0d26bfe472e449e3b63d2530c8af69e0a78f",
+      "source": "RUIN_RECREATE",
+      "violation_count": 0
+    },
+    {
+      "arm": "AB_COOP_HGS_RR",
+      "duplicate_of_index": 6,
+      "feasible": true,
+      "index": 20,
+      "metadata": {
+        "assignment_count": 25,
+        "assignment_dp_rank": 3,
+        "capacity_aware_assignment_dp": true,
+        "charger_slot_use": [
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 0,
+            "station_id": "D_chengdu"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 1,
+            "station_id": "D_chengdu"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 2,
+            "station_id": "D_chengdu"
+          }
+        ],
+        "charging_route_count": 1,
+        "decoder": "explicit_reference_v1",
+        "fleet_use": [
+          10,
+          1,
+          14,
+          0
+        ],
+        "opened_route_count": 0,
+        "recreate_step_count": 3,
+        "removed_customer_count": 3,
+        "route_local_cost": 7513.38959497796,
+        "rr_iteration": 1,
+        "rr_operator": "time_window_pressure_string",
+        "rr_reason": "remove a result-blind customer with low residual time-window slack under the shared route schedule and its adjacent string, then rebuild across depots, types, and charge schedules"
+      },
+      "objective": 7513.38959497796,
+      "signature": "e74f0e7b6f791b81212cd1064477df38009d2972ea34ace0eba3fa61e44e46bf",
+      "source": "RUIN_RECREATE",
+      "violation_count": 0
+    },
+    {
+      "arm": "AB_COOP_HGS_RR",
+      "duplicate_of_index": null,
+      "feasible": true,
+      "index": 21,
+      "metadata": {
+        "assignment_count": 25,
+        "assignment_dp_rank": 1,
+        "capacity_aware_assignment_dp": true,
+        "charger_slot_use": [
+          {
+            "day_offset": 0,
+            "route_count": 2,
+            "slot_index": 0,
+            "station_id": "D_chengdu"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 2,
+            "slot_index": 1,
+            "station_id": "D_chengdu"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 2,
+            "station_id": "D_chengdu"
+          }
+        ],
+        "charging_route_count": 2,
+        "decoder": "explicit_reference_v1",
+        "fleet_use": [
+          8,
+          2,
+          15,
+          0
+        ],
+        "opened_route_count": 0,
+        "recreate_step_count": 0,
+        "removed_customer_count": 6,
+        "route_local_cost": 8616.716285462328,
+        "rr_iteration": 2,
+        "rr_operator": "cross_depot_route_reassignment",
+        "rr_reason": "rebuild the whole route under another depot, finite fleet, vehicle type, charging, tariff, carbon, and diesel mapping"
+      },
+      "objective": 8616.716285462326,
+      "signature": "ce01b9de5d21a0294ec1f93a73338d1f9cb0e1fced92ffeb146676e47d03241e",
+      "source": "RUIN_RECREATE",
+      "violation_count": 0
+    },
+    {
+      "arm": "AB_COOP_HGS_RR",
+      "duplicate_of_index": null,
+      "feasible": true,
+      "index": 22,
+      "metadata": {
+        "assignment_count": 25,
+        "assignment_dp_rank": 2,
+        "capacity_aware_assignment_dp": true,
+        "charger_slot_use": [
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 0,
+            "station_id": "D_chengdu"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 1,
+            "station_id": "D_chengdu"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 2,
+            "station_id": "D_chengdu"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 20,
+            "station_id": "D_chengdu"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 21,
+            "station_id": "D_chengdu"
+          }
+        ],
+        "charging_route_count": 2,
+        "decoder": "explicit_reference_v1",
+        "fleet_use": [
+          8,
+          2,
+          15,
+          0
+        ],
+        "opened_route_count": 0,
+        "recreate_step_count": 0,
+        "removed_customer_count": 6,
+        "route_local_cost": 8630.994443990825,
+        "rr_iteration": 2,
+        "rr_operator": "cross_depot_route_reassignment",
+        "rr_reason": "rebuild the whole route under another depot, finite fleet, vehicle type, charging, tariff, carbon, and diesel mapping"
+      },
+      "objective": 8630.994443990823,
+      "signature": "872e482d4f22f701b808f77b4579465f8e8886aa2281ef0c1ecb8154a784b02e",
+      "source": "RUIN_RECREATE",
+      "violation_count": 0
+    },
+    {
+      "arm": "AB_COOP_HGS_RR",
+      "duplicate_of_index": null,
+      "feasible": true,
+      "index": 23,
+      "metadata": {
+        "assignment_count": 25,
+        "assignment_dp_rank": 3,
+        "capacity_aware_assignment_dp": true,
+        "charger_slot_use": [
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 0,
+            "station_id": "D_chengdu"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 1,
+            "station_id": "D_chengdu"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 2,
+            "station_id": "D_chengdu"
+          }
+        ],
+        "charging_route_count": 1,
+        "decoder": "explicit_reference_v1",
+        "fleet_use": [
+          9,
+          1,
+          15,
+          0
+        ],
+        "opened_route_count": 0,
+        "recreate_step_count": 0,
+        "removed_customer_count": 6,
+        "route_local_cost": 8660.983109848517,
+        "rr_iteration": 2,
+        "rr_operator": "cross_depot_route_reassignment",
+        "rr_reason": "rebuild the whole route under another depot, finite fleet, vehicle type, charging, tariff, carbon, and diesel mapping"
+      },
+      "objective": 8660.983109848516,
+      "signature": "a7f33fc858f372b7a5c92727751344dcda83296ce672bbb25eba4a83a1458042",
+      "source": "RUIN_RECREATE",
+      "violation_count": 0
+    },
+    {
+      "arm": "AB_COOP_HGS_RR",
+      "duplicate_of_index": null,
+      "feasible": true,
+      "index": 24,
+      "metadata": {
+        "assignment_count": 25,
+        "assignment_dp_rank": 1,
+        "capacity_aware_assignment_dp": true,
+        "charger_slot_use": [
+          {
+            "day_offset": 0,
+            "route_count": 2,
+            "slot_index": 0,
+            "station_id": "D_chengdu"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 2,
+            "slot_index": 1,
+            "station_id": "D_chengdu"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 2,
+            "station_id": "D_chengdu"
+          }
+        ],
+        "charging_route_count": 2,
+        "decoder": "explicit_reference_v1",
+        "fleet_use": [
+          10,
+          2,
+          13,
+          0
+        ],
+        "opened_route_count": 0,
+        "recreate_step_count": 0,
+        "removed_customer_count": 6,
+        "route_local_cost": 8421.044981863553,
+        "rr_iteration": 3,
+        "rr_operator": "cross_depot_route_reassignment",
+        "rr_reason": "rebuild the whole route under another depot, finite fleet, vehicle type, charging, tariff, carbon, and diesel mapping"
+      },
+      "objective": 8421.044981863553,
+      "signature": "aec6f43674d8c1b3011e3c70bbaf9039aed49540133210a8ed41a0460aad3512",
+      "source": "RUIN_RECREATE",
+      "violation_count": 0
+    },
+    {
+      "arm": "AB_COOP_HGS_RR",
+      "duplicate_of_index": null,
+      "feasible": true,
+      "index": 25,
+      "metadata": {
+        "assignment_count": 25,
+        "assignment_dp_rank": 2,
+        "capacity_aware_assignment_dp": true,
+        "charger_slot_use": [
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 0,
+            "station_id": "D_chengdu"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 1,
+            "station_id": "D_chengdu"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 2,
+            "station_id": "D_chengdu"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 20,
+            "station_id": "D_chengdu"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 21,
+            "station_id": "D_chengdu"
+          }
+        ],
+        "charging_route_count": 2,
+        "decoder": "explicit_reference_v1",
+        "fleet_use": [
+          10,
+          2,
+          13,
+          0
+        ],
+        "opened_route_count": 0,
+        "recreate_step_count": 0,
+        "removed_customer_count": 6,
+        "route_local_cost": 8435.323140392049,
+        "rr_iteration": 3,
+        "rr_operator": "cross_depot_route_reassignment",
+        "rr_reason": "rebuild the whole route under another depot, finite fleet, vehicle type, charging, tariff, carbon, and diesel mapping"
+      },
+      "objective": 8435.32314039205,
+      "signature": "1cc430f85dae41387bd035cec6dc8265832decc4f5e6aabac8b5223cc44b7ac2",
+      "source": "RUIN_RECREATE",
+      "violation_count": 0
+    },
+    {
+      "arm": "AB_COOP_HGS_RR",
+      "duplicate_of_index": null,
+      "feasible": true,
+      "index": 26,
+      "metadata": {
+        "assignment_count": 25,
+        "assignment_dp_rank": 3,
+        "capacity_aware_assignment_dp": true,
+        "charger_slot_use": [
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 0,
+            "station_id": "D_chengdu"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 1,
+            "station_id": "D_chengdu"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 2,
+            "station_id": "D_chengdu"
+          }
+        ],
+        "charging_route_count": 1,
+        "decoder": "explicit_reference_v1",
+        "fleet_use": [
+          11,
+          1,
+          13,
+          0
+        ],
+        "opened_route_count": 0,
+        "recreate_step_count": 0,
+        "removed_customer_count": 6,
+        "route_local_cost": 8465.311806249741,
+        "rr_iteration": 3,
+        "rr_operator": "cross_depot_route_reassignment",
+        "rr_reason": "rebuild the whole route under another depot, finite fleet, vehicle type, charging, tariff, carbon, and diesel mapping"
+      },
+      "objective": 8465.311806249741,
+      "signature": "4bcf5f73f8e04ef1b5f401a2e2c56ebec4d27a58b057a97b114d0012e2c2bdc0",
+      "source": "RUIN_RECREATE",
+      "violation_count": 0
+    },
+    {
+      "arm": "AB_COOP_HGS_RR",
+      "duplicate_of_index": null,
+      "feasible": false,
+      "index": 27,
+      "metadata": {
+        "assignment_only_target_route": 8,
+        "removed_customer_count": 6,
+        "rr_iteration": 4,
+        "rr_operator": "vehicle_type_flip",
+        "rr_reason": "re-evaluate fixed cost, finite fleet, fuel or charging, time-varying price, and carbon under the opposite type",
+        "target_carbon_weight": 1.0,
+        "target_charge_strategy": "integrated",
+        "target_vehicle_type": "ev",
+        "unselected_routes_preserved": true
+      },
+      "objective": 7433.6011458171715,
+      "signature": "e0e5d7e09e9d14828397fbb9f1c8d145dc9de1d0ccf10fce0f80634f1d66e732",
+      "source": "RUIN_RECREATE",
+      "violation_count": 1
+    },
+    {
+      "arm": "AB_COOP_HGS_RR",
+      "duplicate_of_index": null,
+      "feasible": true,
+      "index": 28,
+      "metadata": {
+        "assignment_only_target_route": 10,
+        "removed_customer_count": 0,
+        "rr_iteration": 5,
+        "rr_operator": "charge_departure_retiming",
+        "rr_reason": "keep customers but rebuild charge location, amount, start time, and departure time against half-hour price and carbon",
+        "target_carbon_weight": 1.0,
+        "target_charge_strategy": "legacy",
+        "target_vehicle_type": "ev",
+        "unselected_routes_preserved": true
+      },
+      "objective": 7484.119370686778,
+      "signature": "c4d2d0830dc0957f1a4b9c4a10f3111d143ebb1512cec08744656373c768d26f",
+      "source": "RUIN_RECREATE",
+      "violation_count": 0
+    },
+    {
+      "arm": "AB_COOP_HGS_RR",
+      "duplicate_of_index": 4,
+      "feasible": true,
+      "index": 29,
+      "metadata": {
+        "assignment_count": 25,
+        "assignment_dp_rank": 1,
+        "capacity_aware_assignment_dp": true,
+        "charger_slot_use": [
+          {
+            "day_offset": 0,
+            "route_count": 2,
+            "slot_index": 0,
+            "station_id": "D_chengdu"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 2,
+            "slot_index": 1,
+            "station_id": "D_chengdu"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 2,
+            "station_id": "D_chengdu"
+          }
+        ],
+        "charging_route_count": 2,
+        "decoder": "explicit_reference_v1",
+        "fleet_use": [
+          9,
+          2,
+          14,
+          0
+        ],
+        "opened_route_count": 0,
+        "recreate_step_count": 3,
+        "removed_customer_count": 3,
+        "route_local_cost": 7469.122770591771,
+        "rr_iteration": 6,
+        "rr_operator": "time_window_pressure_string",
+        "rr_reason": "remove a result-blind customer with low residual time-window slack under the shared route schedule and its adjacent string, then rebuild across depots, types, and charge schedules"
+      },
+      "objective": 7469.122770591771,
+      "signature": "5bc14bd05c70f761c5c727a7e2c008143cce1466ab6742dd3ee8e66554602756",
+      "source": "RUIN_RECREATE",
+      "violation_count": 0
+    },
+    {
+      "arm": "AB_COOP_HGS_RR",
+      "duplicate_of_index": 5,
+      "feasible": true,
+      "index": 30,
+      "metadata": {
+        "assignment_count": 25,
+        "assignment_dp_rank": 2,
+        "capacity_aware_assignment_dp": true,
+        "charger_slot_use": [
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 0,
+            "station_id": "D_chengdu"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 1,
+            "station_id": "D_chengdu"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 2,
+            "station_id": "D_chengdu"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 20,
+            "station_id": "D_chengdu"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 21,
+            "station_id": "D_chengdu"
+          }
+        ],
+        "charging_route_count": 2,
+        "decoder": "explicit_reference_v1",
+        "fleet_use": [
+          9,
+          2,
+          14,
+          0
+        ],
+        "opened_route_count": 0,
+        "recreate_step_count": 3,
+        "removed_customer_count": 3,
+        "route_local_cost": 7483.400929120268,
+        "rr_iteration": 6,
+        "rr_operator": "time_window_pressure_string",
+        "rr_reason": "remove a result-blind customer with low residual time-window slack under the shared route schedule and its adjacent string, then rebuild across depots, types, and charge schedules"
+      },
+      "objective": 7483.400929120268,
+      "signature": "ad0a7235f8f0c755a6a907c4c81e0d26bfe472e449e3b63d2530c8af69e0a78f",
+      "source": "RUIN_RECREATE",
+      "violation_count": 0
+    },
+    {
+      "arm": "AB_COOP_HGS_RR",
+      "duplicate_of_index": 6,
+      "feasible": true,
+      "index": 31,
+      "metadata": {
+        "assignment_count": 25,
+        "assignment_dp_rank": 3,
+        "capacity_aware_assignment_dp": true,
+        "charger_slot_use": [
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 0,
+            "station_id": "D_chengdu"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 1,
+            "station_id": "D_chengdu"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 2,
+            "station_id": "D_chengdu"
+          }
+        ],
+        "charging_route_count": 1,
+        "decoder": "explicit_reference_v1",
+        "fleet_use": [
+          10,
+          1,
+          14,
+          0
+        ],
+        "opened_route_count": 0,
+        "recreate_step_count": 3,
+        "removed_customer_count": 3,
+        "route_local_cost": 7513.38959497796,
+        "rr_iteration": 6,
+        "rr_operator": "time_window_pressure_string",
+        "rr_reason": "remove a result-blind customer with low residual time-window slack under the shared route schedule and its adjacent string, then rebuild across depots, types, and charge schedules"
+      },
+      "objective": 7513.38959497796,
+      "signature": "e74f0e7b6f791b81212cd1064477df38009d2972ea34ace0eba3fa61e44e46bf",
+      "source": "RUIN_RECREATE",
+      "violation_count": 0
+    },
+    {
+      "arm": "AB_COOP_HGS_RR",
+      "duplicate_of_index": null,
+      "feasible": true,
+      "index": 32,
+      "metadata": {
+        "assignment_count": 25,
+        "assignment_dp_rank": 1,
+        "capacity_aware_assignment_dp": true,
+        "charger_slot_use": [
+          {
+            "day_offset": 0,
+            "route_count": 2,
+            "slot_index": 0,
+            "station_id": "D_chengdu"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 2,
+            "slot_index": 1,
+            "station_id": "D_chengdu"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 2,
+            "station_id": "D_chengdu"
+          }
+        ],
+        "charging_route_count": 2,
+        "decoder": "explicit_reference_v1",
+        "fleet_use": [
+          10,
+          2,
+          13,
+          0
+        ],
+        "opened_route_count": 0,
+        "recreate_step_count": 0,
+        "removed_customer_count": 7,
+        "route_local_cost": 8429.915045107306,
+        "rr_iteration": 7,
+        "rr_operator": "cross_depot_route_reassignment",
+        "rr_reason": "rebuild the whole route under another depot, finite fleet, vehicle type, charging, tariff, carbon, and diesel mapping"
+      },
+      "objective": 8429.915045107304,
+      "signature": "9649c67bc580e86d22e36064431f1884975b85b0a720e888ef9339c595565fd2",
+      "source": "RUIN_RECREATE",
+      "violation_count": 0
+    },
+    {
+      "arm": "AB_COOP_HGS_RR",
+      "duplicate_of_index": null,
+      "feasible": true,
+      "index": 33,
+      "metadata": {
+        "assignment_count": 25,
+        "assignment_dp_rank": 2,
+        "capacity_aware_assignment_dp": true,
+        "charger_slot_use": [
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 0,
+            "station_id": "D_chengdu"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 1,
+            "station_id": "D_chengdu"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 2,
+            "station_id": "D_chengdu"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 20,
+            "station_id": "D_chengdu"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 21,
+            "station_id": "D_chengdu"
+          }
+        ],
+        "charging_route_count": 2,
+        "decoder": "explicit_reference_v1",
+        "fleet_use": [
+          10,
+          2,
+          13,
+          0
+        ],
+        "opened_route_count": 0,
+        "recreate_step_count": 0,
+        "removed_customer_count": 7,
+        "route_local_cost": 8444.193203635803,
+        "rr_iteration": 7,
+        "rr_operator": "cross_depot_route_reassignment",
+        "rr_reason": "rebuild the whole route under another depot, finite fleet, vehicle type, charging, tariff, carbon, and diesel mapping"
+      },
+      "objective": 8444.193203635801,
+      "signature": "e6080049c5adc6edd042a8c181884852c182ce19874639bb847b38051fb04226",
+      "source": "RUIN_RECREATE",
+      "violation_count": 0
+    },
+    {
+      "arm": "AB_COOP_HGS_RR",
+      "duplicate_of_index": null,
+      "feasible": true,
+      "index": 34,
+      "metadata": {
+        "assignment_count": 25,
+        "assignment_dp_rank": 1,
+        "capacity_aware_assignment_dp": true,
+        "charger_slot_use": [],
+        "charging_route_count": 0,
+        "decoder": "explicit_reference_v1",
+        "fleet_use": [
+          11,
+          0,
+          14,
+          0
+        ],
+        "generation_kind": "population_archive",
+        "hgs_epoch": 2,
+        "hgs_seed": 1305066147,
+        "proxy_cost": 7549284,
+        "proxy_rank": 2,
+        "route_local_cost": 7543.591079183091,
+        "route_proxy_mode": "cv_only",
+        "warm_parent_signature": null,
+        "warm_signatures": [
+          "c4d2d0830dc0957f1a4b9c4a10f3111d143ebb1512cec08744656373c768d26f",
+          "5bc14bd05c70f761c5c727a7e2c008143cce1466ab6742dd3ee8e66554602756"
+        ]
+      },
+      "objective": 7543.591079183092,
+      "signature": "4d9b3178b90cb58ccd5fb6164e80cb49e96ba9d4e1a70271a79d88969c054ca7",
+      "source": "HGS_ARCHIVE",
+      "violation_count": 0
+    },
+    {
+      "arm": "AB_COOP_HGS_RR",
+      "duplicate_of_index": null,
+      "feasible": true,
+      "index": 35,
+      "metadata": {
+        "assignment_count": 25,
+        "assignment_dp_rank": 2,
+        "capacity_aware_assignment_dp": true,
+        "charger_slot_use": [],
+        "charging_route_count": 0,
+        "decoder": "explicit_reference_v1",
+        "fleet_use": [
+          10,
+          0,
+          15,
+          0
+        ],
+        "generation_kind": "population_archive",
+        "hgs_epoch": 2,
+        "hgs_seed": 1305066147,
+        "proxy_cost": 7549284,
+        "proxy_rank": 2,
+        "route_local_cost": 8640.888342661758,
+        "route_proxy_mode": "cv_only",
+        "warm_parent_signature": null,
+        "warm_signatures": [
+          "c4d2d0830dc0957f1a4b9c4a10f3111d143ebb1512cec08744656373c768d26f",
+          "5bc14bd05c70f761c5c727a7e2c008143cce1466ab6742dd3ee8e66554602756"
+        ]
+      },
+      "objective": 8640.88834266176,
+      "signature": "f7a1d9933e9f6f720d0ac5ac07ec8e79a02536d328be30a747b9aeb9ef9a4ab8",
+      "source": "HGS_ARCHIVE",
+      "violation_count": 0
+    },
+    {
+      "arm": "AB_COOP_HGS_RR",
+      "duplicate_of_index": null,
+      "feasible": true,
+      "index": 36,
+      "metadata": {
+        "assignment_count": 25,
+        "assignment_dp_rank": 3,
+        "capacity_aware_assignment_dp": true,
+        "charger_slot_use": [],
+        "charging_route_count": 0,
+        "decoder": "explicit_reference_v1",
+        "fleet_use": [
+          10,
+          0,
+          15,
+          0
+        ],
+        "generation_kind": "population_archive",
+        "hgs_epoch": 2,
+        "hgs_seed": 1305066147,
+        "proxy_cost": 7549284,
+        "proxy_rank": 2,
+        "route_local_cost": 8645.999383083938,
+        "route_proxy_mode": "cv_only",
+        "warm_parent_signature": null,
+        "warm_signatures": [
+          "c4d2d0830dc0957f1a4b9c4a10f3111d143ebb1512cec08744656373c768d26f",
+          "5bc14bd05c70f761c5c727a7e2c008143cce1466ab6742dd3ee8e66554602756"
+        ]
+      },
+      "objective": 8645.999383083938,
+      "signature": "b216bc677099fb0ce2a1d1cf08508fa92f11f701b730626a2ca56b981574aac8",
+      "source": "HGS_ARCHIVE",
+      "violation_count": 0
+    },
+    {
+      "arm": "AB_COOP_HGS_RR",
+      "duplicate_of_index": null,
+      "feasible": true,
+      "index": 37,
+      "metadata": {
+        "assignment_count": 25,
+        "assignment_dp_rank": 1,
+        "capacity_aware_assignment_dp": true,
+        "charger_slot_use": [
+          {
+            "day_offset": 0,
+            "route_count": 2,
+            "slot_index": 0,
+            "station_id": "D_chengdu"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 2,
+            "slot_index": 1,
+            "station_id": "D_chengdu"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 2,
+            "station_id": "D_chengdu"
+          }
+        ],
+        "charging_route_count": 2,
+        "decoder": "explicit_reference_v1",
+        "fleet_use": [
+          9,
+          2,
+          14,
+          0
+        ],
+        "generation_kind": "population_archive",
+        "hgs_epoch": 2,
+        "hgs_seed": 1438483960,
+        "proxy_cost": 7451299,
+        "proxy_rank": 2,
+        "route_local_cost": 7428.815599895136,
+        "route_proxy_mode": "naive_ev",
+        "warm_parent_signature": null,
+        "warm_signatures": [
+          "c4d2d0830dc0957f1a4b9c4a10f3111d143ebb1512cec08744656373c768d26f",
+          "5bc14bd05c70f761c5c727a7e2c008143cce1466ab6742dd3ee8e66554602756"
+        ]
+      },
+      "objective": 7428.815599895135,
+      "signature": "01fcb7df304266b5e2deba41d20d98dbaae587003792be386aa2ab151a5d9b63",
+      "source": "HGS_ARCHIVE",
+      "violation_count": 0
+    },
+    {
+      "arm": "AB_COOP_HGS_RR",
+      "duplicate_of_index": null,
+      "feasible": true,
+      "index": 38,
+      "metadata": {
+        "assignment_count": 25,
+        "assignment_dp_rank": 2,
+        "capacity_aware_assignment_dp": true,
+        "charger_slot_use": [
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 0,
+            "station_id": "D_chengdu"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 1,
+            "station_id": "D_chengdu"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 2,
+            "station_id": "D_chengdu"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 20,
+            "station_id": "D_chengdu"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 21,
+            "station_id": "D_chengdu"
+          }
+        ],
+        "charging_route_count": 2,
+        "decoder": "explicit_reference_v1",
+        "fleet_use": [
+          9,
+          2,
+          14,
+          0
+        ],
+        "generation_kind": "population_archive",
+        "hgs_epoch": 2,
+        "hgs_seed": 1438483960,
+        "proxy_cost": 7451299,
+        "proxy_rank": 2,
+        "route_local_cost": 7443.093758423633,
+        "route_proxy_mode": "naive_ev",
+        "warm_parent_signature": null,
+        "warm_signatures": [
+          "c4d2d0830dc0957f1a4b9c4a10f3111d143ebb1512cec08744656373c768d26f",
+          "5bc14bd05c70f761c5c727a7e2c008143cce1466ab6742dd3ee8e66554602756"
+        ]
+      },
+      "objective": 7443.093758423633,
+      "signature": "df8c397ef8c7916578761f746b3a01736702bc58c5af00e6c04ee3225559b6e1",
+      "source": "HGS_ARCHIVE",
+      "violation_count": 0
+    },
+    {
+      "arm": "AB_COOP_HGS_RR",
+      "duplicate_of_index": null,
+      "feasible": true,
+      "index": 39,
+      "metadata": {
+        "assignment_count": 25,
+        "assignment_dp_rank": 3,
+        "capacity_aware_assignment_dp": true,
+        "charger_slot_use": [
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 0,
+            "station_id": "D_chengdu"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 1,
+            "station_id": "D_chengdu"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 2,
+            "station_id": "D_chengdu"
+          }
+        ],
+        "charging_route_count": 1,
+        "decoder": "explicit_reference_v1",
+        "fleet_use": [
+          10,
+          1,
+          14,
+          0
+        ],
+        "generation_kind": "population_archive",
+        "hgs_epoch": 2,
+        "hgs_seed": 1438483960,
+        "proxy_cost": 7451299,
+        "proxy_rank": 2,
+        "route_local_cost": 7473.082424281324,
+        "route_proxy_mode": "naive_ev",
+        "warm_parent_signature": null,
+        "warm_signatures": [
+          "c4d2d0830dc0957f1a4b9c4a10f3111d143ebb1512cec08744656373c768d26f",
+          "5bc14bd05c70f761c5c727a7e2c008143cce1466ab6742dd3ee8e66554602756"
+        ]
+      },
+      "objective": 7473.082424281325,
+      "signature": "7220d81aa856adf9fefc30ea17a5552490d1b0e252f33c32119397b559e67e29",
+      "source": "HGS_ARCHIVE",
+      "violation_count": 0
+    },
+    {
+      "arm": "AB_COOP_HGS_RR",
+      "duplicate_of_index": null,
+      "feasible": true,
+      "index": 40,
+      "metadata": {
+        "assignment_count": 25,
+        "assignment_dp_rank": 1,
+        "capacity_aware_assignment_dp": true,
+        "charger_slot_use": [
+          {
+            "day_offset": 0,
+            "route_count": 2,
+            "slot_index": 0,
+            "station_id": "D_chengdu"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 2,
+            "slot_index": 1,
+            "station_id": "D_chengdu"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 2,
+            "slot_index": 2,
+            "station_id": "D_chengdu"
+          }
+        ],
+        "charging_route_count": 2,
+        "decoder": "explicit_reference_v1",
+        "fleet_use": [
+          9,
+          2,
+          14,
+          0
+        ],
+        "generation_kind": "population_archive",
+        "hgs_epoch": 2,
+        "hgs_seed": 388657099,
+        "proxy_cost": 7429723,
+        "proxy_rank": 2,
+        "route_local_cost": 7426.675749367869,
+        "route_proxy_mode": "mechanism_ev",
+        "warm_parent_signature": null,
+        "warm_signatures": [
+          "c4d2d0830dc0957f1a4b9c4a10f3111d143ebb1512cec08744656373c768d26f",
+          "5bc14bd05c70f761c5c727a7e2c008143cce1466ab6742dd3ee8e66554602756"
+        ]
+      },
+      "objective": 7426.675749367869,
+      "signature": "2952206c9b6ad5d8ad3625034c297641478d64cec825b5401ed416abdaeb1a43",
+      "source": "HGS_ARCHIVE",
+      "violation_count": 0
+    },
+    {
+      "arm": "AB_COOP_HGS_RR",
+      "duplicate_of_index": null,
+      "feasible": true,
+      "index": 41,
+      "metadata": {
+        "assignment_count": 25,
+        "assignment_dp_rank": 2,
+        "capacity_aware_assignment_dp": true,
+        "charger_slot_use": [
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 0,
+            "station_id": "D_chengdu"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 1,
+            "station_id": "D_chengdu"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 2,
+            "station_id": "D_chengdu"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 20,
+            "station_id": "D_chengdu"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 21,
+            "station_id": "D_chengdu"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 22,
+            "station_id": "D_chengdu"
+          }
+        ],
+        "charging_route_count": 2,
+        "decoder": "explicit_reference_v1",
+        "fleet_use": [
+          9,
+          2,
+          14,
+          0
+        ],
+        "generation_kind": "population_archive",
+        "hgs_epoch": 2,
+        "hgs_seed": 388657099,
+        "proxy_cost": 7429723,
+        "proxy_rank": 2,
+        "route_local_cost": 7446.280845886653,
+        "route_proxy_mode": "mechanism_ev",
+        "warm_parent_signature": null,
+        "warm_signatures": [
+          "c4d2d0830dc0957f1a4b9c4a10f3111d143ebb1512cec08744656373c768d26f",
+          "5bc14bd05c70f761c5c727a7e2c008143cce1466ab6742dd3ee8e66554602756"
+        ]
+      },
+      "objective": 7446.280845886655,
+      "signature": "be2a76779e4bf91708ed44a5eef7fa95716ecbc9f808d4c1ea78c477608956ab",
+      "source": "HGS_ARCHIVE",
+      "violation_count": 0
+    },
+    {
+      "arm": "AB_COOP_HGS_RR",
+      "duplicate_of_index": null,
+      "feasible": true,
+      "index": 42,
+      "metadata": {
+        "assignment_count": 25,
+        "assignment_dp_rank": 3,
+        "capacity_aware_assignment_dp": true,
+        "charger_slot_use": [
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 0,
+            "station_id": "D_chengdu"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 1,
+            "station_id": "D_chengdu"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 2,
+            "station_id": "D_chengdu"
+          }
+        ],
+        "charging_route_count": 1,
+        "decoder": "explicit_reference_v1",
+        "fleet_use": [
+          10,
+          1,
+          14,
+          0
+        ],
+        "generation_kind": "population_archive",
+        "hgs_epoch": 2,
+        "hgs_seed": 388657099,
+        "proxy_cost": 7429723,
+        "proxy_rank": 2,
+        "route_local_cost": 7484.195038631371,
+        "route_proxy_mode": "mechanism_ev",
+        "warm_parent_signature": null,
+        "warm_signatures": [
+          "c4d2d0830dc0957f1a4b9c4a10f3111d143ebb1512cec08744656373c768d26f",
+          "5bc14bd05c70f761c5c727a7e2c008143cce1466ab6742dd3ee8e66554602756"
+        ]
+      },
+      "objective": 7484.195038631373,
+      "signature": "d3c20b90888dabb166c4f5d06e4fc2a8e26230c74b0ae9cce556ccc27afed058",
+      "source": "HGS_ARCHIVE",
+      "violation_count": 0
+    },
+    {
+      "arm": "AB_COOP_HGS_RR",
+      "duplicate_of_index": null,
+      "feasible": true,
+      "index": 43,
+      "metadata": {
+        "assignment_count": 25,
+        "assignment_dp_rank": 1,
+        "capacity_aware_assignment_dp": true,
+        "charger_slot_use": [],
+        "charging_route_count": 0,
+        "decoder": "explicit_reference_v1",
+        "fleet_use": [
+          11,
+          0,
+          14,
+          0
+        ],
+        "generation_kind": "population_archive",
+        "hgs_epoch": 2,
+        "hgs_seed": 1305066147,
+        "proxy_cost": 7549479,
+        "proxy_rank": 3,
+        "route_local_cost": 7544.087308037095,
+        "route_proxy_mode": "cv_only",
+        "warm_parent_signature": null,
+        "warm_signatures": [
+          "c4d2d0830dc0957f1a4b9c4a10f3111d143ebb1512cec08744656373c768d26f",
+          "5bc14bd05c70f761c5c727a7e2c008143cce1466ab6742dd3ee8e66554602756"
+        ]
+      },
+      "objective": 7544.087308037095,
+      "signature": "e84c1d98597e5f0d24b8e3b9e5ddcd41acba2d17547dbc9b1a49a5fd84e79fda",
+      "source": "HGS_ARCHIVE",
+      "violation_count": 0
+    },
+    {
+      "arm": "AB_COOP_HGS_RR",
+      "duplicate_of_index": null,
+      "feasible": true,
+      "index": 44,
+      "metadata": {
+        "assignment_count": 25,
+        "assignment_dp_rank": 2,
+        "capacity_aware_assignment_dp": true,
+        "charger_slot_use": [],
+        "charging_route_count": 0,
+        "decoder": "explicit_reference_v1",
+        "fleet_use": [
+          10,
+          0,
+          15,
+          0
+        ],
+        "generation_kind": "population_archive",
+        "hgs_epoch": 2,
+        "hgs_seed": 1305066147,
+        "proxy_cost": 7549479,
+        "proxy_rank": 3,
+        "route_local_cost": 8641.38457151576,
+        "route_proxy_mode": "cv_only",
+        "warm_parent_signature": null,
+        "warm_signatures": [
+          "c4d2d0830dc0957f1a4b9c4a10f3111d143ebb1512cec08744656373c768d26f",
+          "5bc14bd05c70f761c5c727a7e2c008143cce1466ab6742dd3ee8e66554602756"
+        ]
+      },
+      "objective": 8641.384571515762,
+      "signature": "18f9dc8f105b1bb38f956f5d6334cc12f03fe58d6fa2f6b475af8d6f95f140a3",
+      "source": "HGS_ARCHIVE",
+      "violation_count": 0
+    },
+    {
+      "arm": "AB_COOP_HGS_RR",
+      "duplicate_of_index": null,
+      "feasible": true,
+      "index": 45,
+      "metadata": {
+        "assignment_count": 25,
+        "assignment_dp_rank": 3,
+        "capacity_aware_assignment_dp": true,
+        "charger_slot_use": [],
+        "charging_route_count": 0,
+        "decoder": "explicit_reference_v1",
+        "fleet_use": [
+          10,
+          0,
+          15,
+          0
+        ],
+        "generation_kind": "population_archive",
+        "hgs_epoch": 2,
+        "hgs_seed": 1305066147,
+        "proxy_cost": 7549479,
+        "proxy_rank": 3,
+        "route_local_cost": 8646.49561193794,
+        "route_proxy_mode": "cv_only",
+        "warm_parent_signature": null,
+        "warm_signatures": [
+          "c4d2d0830dc0957f1a4b9c4a10f3111d143ebb1512cec08744656373c768d26f",
+          "5bc14bd05c70f761c5c727a7e2c008143cce1466ab6742dd3ee8e66554602756"
+        ]
+      },
+      "objective": 8646.49561193794,
+      "signature": "23acb3f4558813e41b8a11ad24805fe504baa3500959a11a68776a2ce76bdc4e",
+      "source": "HGS_ARCHIVE",
+      "violation_count": 0
+    },
+    {
+      "arm": "AB_COOP_HGS_RR",
+      "duplicate_of_index": null,
+      "feasible": true,
+      "index": 46,
+      "metadata": {
+        "assignment_count": 25,
+        "assignment_dp_rank": 1,
+        "capacity_aware_assignment_dp": true,
+        "charger_slot_use": [
+          {
+            "day_offset": 0,
+            "route_count": 2,
+            "slot_index": 0,
+            "station_id": "D_chengdu"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 2,
+            "slot_index": 1,
+            "station_id": "D_chengdu"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 2,
+            "slot_index": 2,
+            "station_id": "D_chengdu"
+          }
+        ],
+        "charging_route_count": 2,
+        "decoder": "explicit_reference_v1",
+        "fleet_use": [
+          9,
+          2,
+          14,
+          0
+        ],
+        "generation_kind": "population_archive",
+        "hgs_epoch": 2,
+        "hgs_seed": 1438483960,
+        "proxy_cost": 7452313,
+        "proxy_rank": 3,
+        "route_local_cost": 7426.629513622602,
+        "route_proxy_mode": "naive_ev",
+        "warm_parent_signature": null,
+        "warm_signatures": [
+          "c4d2d0830dc0957f1a4b9c4a10f3111d143ebb1512cec08744656373c768d26f",
+          "5bc14bd05c70f761c5c727a7e2c008143cce1466ab6742dd3ee8e66554602756"
+        ]
+      },
+      "objective": 7426.629513622603,
+      "signature": "512e30c681cee60e8c842c46738346818919177bce37b348ee87db30990448b9",
+      "source": "HGS_ARCHIVE",
+      "violation_count": 0
+    },
+    {
+      "arm": "AB_COOP_HGS_RR",
+      "duplicate_of_index": null,
+      "feasible": true,
+      "index": 47,
+      "metadata": {
+        "assignment_count": 25,
+        "assignment_dp_rank": 2,
+        "capacity_aware_assignment_dp": true,
+        "charger_slot_use": [
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 0,
+            "station_id": "D_chengdu"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 1,
+            "station_id": "D_chengdu"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 2,
+            "station_id": "D_chengdu"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 18,
+            "station_id": "D_chengdu"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 19,
+            "station_id": "D_chengdu"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 20,
+            "station_id": "D_chengdu"
+          }
+        ],
+        "charging_route_count": 2,
+        "decoder": "explicit_reference_v1",
+        "fleet_use": [
+          9,
+          2,
+          14,
+          0
+        ],
+        "generation_kind": "population_archive",
+        "hgs_epoch": 2,
+        "hgs_seed": 1438483960,
+        "proxy_cost": 7452313,
+        "proxy_rank": 3,
+        "route_local_cost": 7440.560941432547,
+        "route_proxy_mode": "naive_ev",
+        "warm_parent_signature": null,
+        "warm_signatures": [
+          "c4d2d0830dc0957f1a4b9c4a10f3111d143ebb1512cec08744656373c768d26f",
+          "5bc14bd05c70f761c5c727a7e2c008143cce1466ab6742dd3ee8e66554602756"
+        ]
+      },
+      "objective": 7440.560941432549,
+      "signature": "5f29be15074b68d10c8c5f2fe75f47d089913bbd0704a5fb0d378b2789808400",
+      "source": "HGS_ARCHIVE",
+      "violation_count": 0
+    },
+    {
+      "arm": "AB_COOP_HGS_RR",
+      "duplicate_of_index": null,
+      "feasible": true,
+      "index": 48,
+      "metadata": {
+        "assignment_count": 25,
+        "assignment_dp_rank": 3,
+        "capacity_aware_assignment_dp": true,
+        "charger_slot_use": [
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 0,
+            "station_id": "D_chengdu"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 1,
+            "station_id": "D_chengdu"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 2,
+            "station_id": "D_chengdu"
+          }
+        ],
+        "charging_route_count": 1,
+        "decoder": "explicit_reference_v1",
+        "fleet_use": [
+          10,
+          1,
+          14,
+          0
+        ],
+        "generation_kind": "population_archive",
+        "hgs_epoch": 2,
+        "hgs_seed": 1438483960,
+        "proxy_cost": 7452313,
+        "proxy_rank": 3,
+        "route_local_cost": 7491.248079649853,
+        "route_proxy_mode": "naive_ev",
+        "warm_parent_signature": null,
+        "warm_signatures": [
+          "c4d2d0830dc0957f1a4b9c4a10f3111d143ebb1512cec08744656373c768d26f",
+          "5bc14bd05c70f761c5c727a7e2c008143cce1466ab6742dd3ee8e66554602756"
+        ]
+      },
+      "objective": 7491.248079649854,
+      "signature": "9b268a69d6ea3466229108766a8bdfbf0fcc6a21c528bceb4b0300b3c6dc5679",
+      "source": "HGS_ARCHIVE",
+      "violation_count": 0
+    },
+    {
+      "arm": "AB_COOP_HGS_RR",
+      "duplicate_of_index": null,
+      "feasible": true,
+      "index": 49,
+      "metadata": {
+        "assignment_count": 25,
+        "assignment_dp_rank": 1,
+        "capacity_aware_assignment_dp": true,
+        "charger_slot_use": [
+          {
+            "day_offset": 0,
+            "route_count": 2,
+            "slot_index": 0,
+            "station_id": "D_chengdu"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 2,
+            "slot_index": 1,
+            "station_id": "D_chengdu"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 2,
+            "slot_index": 2,
+            "station_id": "D_chengdu"
+          }
+        ],
+        "charging_route_count": 2,
+        "decoder": "explicit_reference_v1",
+        "fleet_use": [
+          9,
+          2,
+          14,
+          0
+        ],
+        "generation_kind": "population_archive",
+        "hgs_epoch": 2,
+        "hgs_seed": 388657099,
+        "proxy_cost": 7431072,
+        "proxy_rank": 3,
+        "route_local_cost": 7428.537880935777,
+        "route_proxy_mode": "mechanism_ev",
+        "warm_parent_signature": null,
+        "warm_signatures": [
+          "c4d2d0830dc0957f1a4b9c4a10f3111d143ebb1512cec08744656373c768d26f",
+          "5bc14bd05c70f761c5c727a7e2c008143cce1466ab6742dd3ee8e66554602756"
+        ]
+      },
+      "objective": 7428.537880935776,
+      "signature": "f699e32d1cfcd17c2d52f4f33dc8859828d67cc7b5055308c3cfbb7d576a2395",
+      "source": "HGS_ARCHIVE",
+      "violation_count": 0
+    },
+    {
+      "arm": "AB_COOP_HGS_RR",
+      "duplicate_of_index": null,
+      "feasible": true,
+      "index": 50,
+      "metadata": {
+        "assignment_count": 25,
+        "assignment_dp_rank": 1,
+        "capacity_aware_assignment_dp": true,
+        "charger_slot_use": [
+          {
+            "day_offset": 0,
+            "route_count": 2,
+            "slot_index": 0,
+            "station_id": "D_chengdu"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 2,
+            "slot_index": 1,
+            "station_id": "D_chengdu"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 2,
+            "slot_index": 2,
+            "station_id": "D_chengdu"
+          }
+        ],
+        "charging_route_count": 2,
+        "decoder": "explicit_reference_v1",
+        "fleet_use": [
+          8,
+          2,
+          15,
+          0
+        ],
+        "opened_route_count": 0,
+        "recreate_step_count": 0,
+        "removed_customer_count": 6,
+        "route_local_cost": 8535.113118104544,
+        "rr_iteration": 1,
+        "rr_operator": "cross_depot_route_reassignment",
+        "rr_reason": "rebuild the whole route under another depot, finite fleet, vehicle type, charging, tariff, carbon, and diesel mapping"
+      },
+      "objective": 8535.113118104544,
+      "signature": "105954ec1bccb7cedeae26fa993da84b3fcee335dc3121c4d3e2077956b0ebd5",
+      "source": "RUIN_RECREATE",
+      "violation_count": 0
+    },
+    {
+      "arm": "AB_COOP_HGS_RR",
+      "duplicate_of_index": null,
+      "feasible": true,
+      "index": 51,
+      "metadata": {
+        "assignment_count": 25,
+        "assignment_dp_rank": 2,
+        "capacity_aware_assignment_dp": true,
+        "charger_slot_use": [
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 0,
+            "station_id": "D_chengdu"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 1,
+            "station_id": "D_chengdu"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 2,
+            "station_id": "D_chengdu"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 18,
+            "station_id": "D_chengdu"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 19,
+            "station_id": "D_chengdu"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 20,
+            "station_id": "D_chengdu"
+          }
+        ],
+        "charging_route_count": 2,
+        "decoder": "explicit_reference_v1",
+        "fleet_use": [
+          8,
+          2,
+          15,
+          0
+        ],
+        "opened_route_count": 0,
+        "recreate_step_count": 0,
+        "removed_customer_count": 6,
+        "route_local_cost": 8549.04454591449,
+        "rr_iteration": 1,
+        "rr_operator": "cross_depot_route_reassignment",
+        "rr_reason": "rebuild the whole route under another depot, finite fleet, vehicle type, charging, tariff, carbon, and diesel mapping"
+      },
+      "objective": 8549.04454591449,
+      "signature": "938cb717c289ca383d2b47ea8ea985aa8222ab3a25764955fcfa93cd4cc08315",
+      "source": "RUIN_RECREATE",
+      "violation_count": 0
+    },
+    {
+      "arm": "AB_COOP_HGS_RR",
+      "duplicate_of_index": null,
+      "feasible": true,
+      "index": 52,
+      "metadata": {
+        "assignment_count": 25,
+        "assignment_dp_rank": 3,
+        "capacity_aware_assignment_dp": true,
+        "charger_slot_use": [
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 0,
+            "station_id": "D_chengdu"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 1,
+            "station_id": "D_chengdu"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 2,
+            "station_id": "D_chengdu"
+          }
+        ],
+        "charging_route_count": 1,
+        "decoder": "explicit_reference_v1",
+        "fleet_use": [
+          9,
+          1,
+          15,
+          0
+        ],
+        "opened_route_count": 0,
+        "recreate_step_count": 0,
+        "removed_customer_count": 6,
+        "route_local_cost": 8599.731684131797,
+        "rr_iteration": 1,
+        "rr_operator": "cross_depot_route_reassignment",
+        "rr_reason": "rebuild the whole route under another depot, finite fleet, vehicle type, charging, tariff, carbon, and diesel mapping"
+      },
+      "objective": 8599.731684131795,
+      "signature": "4516e7eb58eaef18658e72a8f244c3b7dd9cfdb9b7e288f19296a7382226befc",
+      "source": "RUIN_RECREATE",
+      "violation_count": 0
+    },
+    {
+      "arm": "AB_COOP_HGS_RR",
+      "duplicate_of_index": null,
+      "feasible": true,
+      "index": 53,
+      "metadata": {
+        "assignment_count": 25,
+        "assignment_dp_rank": 1,
+        "capacity_aware_assignment_dp": true,
+        "charger_slot_use": [
+          {
+            "day_offset": 0,
+            "route_count": 2,
+            "slot_index": 0,
+            "station_id": "D_chengdu"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 2,
+            "slot_index": 1,
+            "station_id": "D_chengdu"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 2,
+            "slot_index": 2,
+            "station_id": "D_chengdu"
+          }
+        ],
+        "charging_route_count": 2,
+        "decoder": "explicit_reference_v1",
+        "fleet_use": [
+          10,
+          2,
+          13,
+          0
+        ],
+        "opened_route_count": 0,
+        "recreate_step_count": 0,
+        "removed_customer_count": 5,
+        "route_local_cost": 8374.023980615459,
+        "rr_iteration": 2,
+        "rr_operator": "cross_depot_route_reassignment",
+        "rr_reason": "rebuild the whole route under another depot, finite fleet, vehicle type, charging, tariff, carbon, and diesel mapping"
+      },
+      "objective": 8374.023980615459,
+      "signature": "7fe836875c9bee34d34674582ac571c9c4a7ae95d6b92d20c11c1e9643e84cf4",
+      "source": "RUIN_RECREATE",
+      "violation_count": 0
+    },
+    {
+      "arm": "AB_COOP_HGS_RR",
+      "duplicate_of_index": null,
+      "feasible": true,
+      "index": 54,
+      "metadata": {
+        "assignment_count": 25,
+        "assignment_dp_rank": 2,
+        "capacity_aware_assignment_dp": true,
+        "charger_slot_use": [
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 0,
+            "station_id": "D_chengdu"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 1,
+            "station_id": "D_chengdu"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 2,
+            "station_id": "D_chengdu"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 18,
+            "station_id": "D_chengdu"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 19,
+            "station_id": "D_chengdu"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 20,
+            "station_id": "D_chengdu"
+          }
+        ],
+        "charging_route_count": 2,
+        "decoder": "explicit_reference_v1",
+        "fleet_use": [
+          10,
+          2,
+          13,
+          0
+        ],
+        "opened_route_count": 0,
+        "recreate_step_count": 0,
+        "removed_customer_count": 5,
+        "route_local_cost": 8387.955408425405,
+        "rr_iteration": 2,
+        "rr_operator": "cross_depot_route_reassignment",
+        "rr_reason": "rebuild the whole route under another depot, finite fleet, vehicle type, charging, tariff, carbon, and diesel mapping"
+      },
+      "objective": 8387.955408425405,
+      "signature": "7116c184b3fff8ba406879886f0b5b2f3ccc83add311fcba1015a341bc225b60",
+      "source": "RUIN_RECREATE",
+      "violation_count": 0
+    },
+    {
+      "arm": "AB_COOP_HGS_RR",
+      "duplicate_of_index": null,
+      "feasible": true,
+      "index": 55,
+      "metadata": {
+        "assignment_count": 25,
+        "assignment_dp_rank": 3,
+        "capacity_aware_assignment_dp": true,
+        "charger_slot_use": [
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 0,
+            "station_id": "D_chengdu"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 1,
+            "station_id": "D_chengdu"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 2,
+            "station_id": "D_chengdu"
+          }
+        ],
+        "charging_route_count": 1,
+        "decoder": "explicit_reference_v1",
+        "fleet_use": [
+          11,
+          1,
+          13,
+          0
+        ],
+        "opened_route_count": 0,
+        "recreate_step_count": 0,
+        "removed_customer_count": 5,
+        "route_local_cost": 8438.64254664271,
+        "rr_iteration": 2,
+        "rr_operator": "cross_depot_route_reassignment",
+        "rr_reason": "rebuild the whole route under another depot, finite fleet, vehicle type, charging, tariff, carbon, and diesel mapping"
+      },
+      "objective": 8438.64254664271,
+      "signature": "420d6b7061b21c7545b3cd238245c238a0e7160640177c2d37342319ca842f04",
+      "source": "RUIN_RECREATE",
+      "violation_count": 0
+    },
+    {
+      "arm": "AB_COOP_HGS_RR",
+      "duplicate_of_index": null,
+      "feasible": false,
+      "index": 56,
+      "metadata": {
+        "assignment_only_target_route": 7,
+        "removed_customer_count": 7,
+        "rr_iteration": 3,
+        "rr_operator": "vehicle_type_flip",
+        "rr_reason": "re-evaluate fixed cost, finite fleet, fuel or charging, time-varying price, and carbon under the opposite type",
+        "target_carbon_weight": 1.0,
+        "target_charge_strategy": "integrated",
+        "target_vehicle_type": "ev",
+        "unselected_routes_preserved": true
+      },
+      "objective": 7380.915348432249,
+      "signature": "8a30dceeedbad1694ae6408a602a940e7aa28f02d53188aacd15f6f0d13a1e8e",
+      "source": "RUIN_RECREATE",
+      "violation_count": 1
+    },
+    {
+      "arm": "AB_COOP_HGS_RR",
+      "duplicate_of_index": 47,
+      "feasible": true,
+      "index": 57,
+      "metadata": {
+        "assignment_only_target_route": 10,
+        "removed_customer_count": 0,
+        "rr_iteration": 4,
+        "rr_operator": "charge_departure_retiming",
+        "rr_reason": "keep customers but rebuild charge location, amount, start time, and departure time against half-hour price and carbon",
+        "target_carbon_weight": 1.0,
+        "target_charge_strategy": "legacy",
+        "target_vehicle_type": "ev",
+        "unselected_routes_preserved": true
+      },
+      "objective": 7440.560941432549,
+      "signature": "5f29be15074b68d10c8c5f2fe75f47d089913bbd0704a5fb0d378b2789808400",
+      "source": "RUIN_RECREATE",
+      "violation_count": 0
+    },
+    {
+      "arm": "AB_COOP_HGS_RR",
+      "duplicate_of_index": null,
+      "feasible": true,
+      "index": 58,
+      "metadata": {
+        "assignment_count": 25,
+        "assignment_dp_rank": 1,
+        "capacity_aware_assignment_dp": true,
+        "charger_slot_use": [
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 0,
+            "station_id": "D_chengdu"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 1,
+            "station_id": "D_chengdu"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 2,
+            "station_id": "D_chengdu"
+          }
+        ],
+        "charging_route_count": 1,
+        "decoder": "explicit_reference_v1",
+        "fleet_use": [
+          10,
+          1,
+          14,
+          0
+        ],
+        "opened_route_count": 0,
+        "recreate_step_count": 3,
+        "removed_customer_count": 3,
+        "route_local_cost": 7511.739365768553,
+        "rr_iteration": 5,
+        "rr_operator": "time_window_pressure_string",
+        "rr_reason": "remove a result-blind customer with low residual time-window slack under the shared route schedule and its adjacent string, then rebuild across depots, types, and charge schedules"
+      },
+      "objective": 7511.739365768554,
+      "signature": "11f76b88a4a46d7f1886c6c1d79d0252b8512d131a6aab720a21591eacda002d",
+      "source": "RUIN_RECREATE",
+      "violation_count": 0
+    },
+    {
+      "arm": "AB_COOP_HGS_RR",
+      "duplicate_of_index": null,
+      "feasible": true,
+      "index": 59,
+      "metadata": {
+        "assignment_count": 25,
+        "assignment_dp_rank": 2,
+        "capacity_aware_assignment_dp": true,
+        "charger_slot_use": [
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 18,
+            "station_id": "D_chengdu"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 19,
+            "station_id": "D_chengdu"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 20,
+            "station_id": "D_chengdu"
+          }
+        ],
+        "charging_route_count": 1,
+        "decoder": "explicit_reference_v1",
+        "fleet_use": [
+          10,
+          1,
+          14,
+          0
+        ],
+        "opened_route_count": 0,
+        "recreate_step_count": 3,
+        "removed_customer_count": 3,
+        "route_local_cost": 7525.6707935785,
+        "rr_iteration": 5,
+        "rr_operator": "time_window_pressure_string",
+        "rr_reason": "remove a result-blind customer with low residual time-window slack under the shared route schedule and its adjacent string, then rebuild across depots, types, and charge schedules"
+      },
+      "objective": 7525.6707935785,
+      "signature": "e9548971e0a3b58ed4565a1bc9ca315bd864b46600d3a1ad5ac219f568c22e96",
+      "source": "RUIN_RECREATE",
+      "violation_count": 0
+    },
+    {
+      "arm": "AB_COOP_HGS_RR",
+      "duplicate_of_index": null,
+      "feasible": true,
+      "index": 60,
+      "metadata": {
+        "assignment_count": 25,
+        "assignment_dp_rank": 3,
+        "capacity_aware_assignment_dp": true,
+        "charger_slot_use": [],
+        "charging_route_count": 0,
+        "decoder": "explicit_reference_v1",
+        "fleet_use": [
+          11,
+          0,
+          14,
+          0
+        ],
+        "opened_route_count": 0,
+        "recreate_step_count": 3,
+        "removed_customer_count": 3,
+        "route_local_cost": 7580.412021854941,
+        "rr_iteration": 5,
+        "rr_operator": "time_window_pressure_string",
+        "rr_reason": "remove a result-blind customer with low residual time-window slack under the shared route schedule and its adjacent string, then rebuild across depots, types, and charge schedules"
+      },
+      "objective": 7580.4120218549415,
+      "signature": "15d1a47ede07a9d34aff244a43c4290f0d252dcf4739edd97c5c214de044f0f6",
+      "source": "RUIN_RECREATE",
+      "violation_count": 0
+    },
+    {
+      "arm": "AB_COOP_HGS_RR",
+      "duplicate_of_index": null,
+      "feasible": true,
+      "index": 61,
+      "metadata": {
+        "assignment_count": 25,
+        "assignment_dp_rank": 1,
+        "capacity_aware_assignment_dp": true,
+        "charger_slot_use": [
+          {
+            "day_offset": 0,
+            "route_count": 2,
+            "slot_index": 0,
+            "station_id": "D_chengdu"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 2,
+            "slot_index": 1,
+            "station_id": "D_chengdu"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 2,
+            "slot_index": 2,
+            "station_id": "D_chengdu"
+          }
+        ],
+        "charging_route_count": 2,
+        "decoder": "explicit_reference_v1",
+        "fleet_use": [
+          8,
+          2,
+          15,
+          0
+        ],
+        "opened_route_count": 0,
+        "recreate_step_count": 0,
+        "removed_customer_count": 6,
+        "route_local_cost": 8533.09689735006,
+        "rr_iteration": 6,
+        "rr_operator": "cross_depot_route_reassignment",
+        "rr_reason": "rebuild the whole route under another depot, finite fleet, vehicle type, charging, tariff, carbon, and diesel mapping"
+      },
+      "objective": 8533.09689735006,
+      "signature": "f6a752554431533408585a5ee1c79fccbcb7791a0865410d7a82c8ec6fc716fd",
+      "source": "RUIN_RECREATE",
+      "violation_count": 0
+    },
+    {
+      "arm": "AB_COOP_HGS_RR",
+      "duplicate_of_index": null,
+      "feasible": true,
+      "index": 62,
+      "metadata": {
+        "assignment_count": 25,
+        "assignment_dp_rank": 2,
+        "capacity_aware_assignment_dp": true,
+        "charger_slot_use": [
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 0,
+            "station_id": "D_chengdu"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 1,
+            "station_id": "D_chengdu"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 2,
+            "station_id": "D_chengdu"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 18,
+            "station_id": "D_chengdu"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 19,
+            "station_id": "D_chengdu"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 20,
+            "station_id": "D_chengdu"
+          }
+        ],
+        "charging_route_count": 2,
+        "decoder": "explicit_reference_v1",
+        "fleet_use": [
+          8,
+          2,
+          15,
+          0
+        ],
+        "opened_route_count": 0,
+        "recreate_step_count": 0,
+        "removed_customer_count": 6,
+        "route_local_cost": 8547.028325160007,
+        "rr_iteration": 6,
+        "rr_operator": "cross_depot_route_reassignment",
+        "rr_reason": "rebuild the whole route under another depot, finite fleet, vehicle type, charging, tariff, carbon, and diesel mapping"
+      },
+      "objective": 8547.028325160007,
+      "signature": "af178d8b05365d365e9afe16e12e38b9ec86ae33d5c312bc799251cbb1b18354",
+      "source": "RUIN_RECREATE",
+      "violation_count": 0
+    },
+    {
+      "arm": "AB_COOP_HGS_RR",
+      "duplicate_of_index": null,
+      "feasible": true,
+      "index": 63,
+      "metadata": {
+        "assignment_count": 25,
+        "assignment_dp_rank": 3,
+        "capacity_aware_assignment_dp": true,
+        "charger_slot_use": [
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 0,
+            "station_id": "D_chengdu"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 1,
+            "station_id": "D_chengdu"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 2,
+            "station_id": "D_chengdu"
+          }
+        ],
+        "charging_route_count": 1,
+        "decoder": "explicit_reference_v1",
+        "fleet_use": [
+          9,
+          1,
+          15,
+          0
+        ],
+        "opened_route_count": 0,
+        "recreate_step_count": 0,
+        "removed_customer_count": 6,
+        "route_local_cost": 8597.715463377313,
+        "rr_iteration": 6,
+        "rr_operator": "cross_depot_route_reassignment",
+        "rr_reason": "rebuild the whole route under another depot, finite fleet, vehicle type, charging, tariff, carbon, and diesel mapping"
+      },
+      "objective": 8597.715463377312,
+      "signature": "df89aa09b8387b81f86d96d6dc08c0cae85204e241a03d5611514e9c63d3d998",
+      "source": "RUIN_RECREATE",
+      "violation_count": 0
+    },
+    {
+      "arm": "AB_COOP_HGS_RR",
+      "duplicate_of_index": 53,
+      "feasible": true,
+      "index": 64,
+      "metadata": {
+        "assignment_count": 25,
+        "assignment_dp_rank": 1,
+        "capacity_aware_assignment_dp": true,
+        "charger_slot_use": [
+          {
+            "day_offset": 0,
+            "route_count": 2,
+            "slot_index": 0,
+            "station_id": "D_chengdu"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 2,
+            "slot_index": 1,
+            "station_id": "D_chengdu"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 2,
+            "slot_index": 2,
+            "station_id": "D_chengdu"
+          }
+        ],
+        "charging_route_count": 2,
+        "decoder": "explicit_reference_v1",
+        "fleet_use": [
+          10,
+          2,
+          13,
+          0
+        ],
+        "opened_route_count": 0,
+        "recreate_step_count": 0,
+        "removed_customer_count": 5,
+        "route_local_cost": 8374.023980615459,
+        "rr_iteration": 7,
+        "rr_operator": "cross_depot_route_reassignment",
+        "rr_reason": "rebuild the whole route under another depot, finite fleet, vehicle type, charging, tariff, carbon, and diesel mapping"
+      },
+      "objective": 8374.023980615459,
+      "signature": "7fe836875c9bee34d34674582ac571c9c4a7ae95d6b92d20c11c1e9643e84cf4",
+      "source": "RUIN_RECREATE",
+      "violation_count": 0
+    },
+    {
+      "arm": "AB_COOP_HGS_RR",
+      "duplicate_of_index": null,
+      "feasible": true,
+      "index": 65,
+      "metadata": {
+        "assignment_count": 25,
+        "assignment_dp_rank": 1,
+        "capacity_aware_assignment_dp": true,
+        "charger_slot_use": [],
+        "charging_route_count": 0,
+        "decoder": "explicit_reference_v1",
+        "fleet_use": [
+          11,
+          0,
+          14,
+          0
+        ],
+        "generation_kind": "population_archive",
+        "hgs_epoch": 3,
+        "hgs_seed": 1573112240,
+        "proxy_cost": 7534618,
+        "proxy_rank": 2,
+        "route_local_cost": 7529.875232052544,
+        "route_proxy_mode": "cv_only",
+        "warm_parent_signature": null,
+        "warm_signatures": [
+          "5f29be15074b68d10c8c5f2fe75f47d089913bbd0704a5fb0d378b2789808400",
+          "512e30c681cee60e8c842c46738346818919177bce37b348ee87db30990448b9"
+        ]
+      },
+      "objective": 7529.875232052543,
+      "signature": "c6f8718bb09a7d3ac18af0f858ef595d91a0ade4242575ec0a43e65e0ab25f58",
+      "source": "HGS_ARCHIVE",
+      "violation_count": 0
+    },
+    {
+      "arm": "AB_COOP_HGS_RR",
+      "duplicate_of_index": null,
+      "feasible": true,
+      "index": 66,
+      "metadata": {
+        "assignment_count": 25,
+        "assignment_dp_rank": 2,
+        "capacity_aware_assignment_dp": true,
+        "charger_slot_use": [
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 0,
+            "station_id": "D_chengdu"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 1,
+            "station_id": "D_chengdu"
+          }
+        ],
+        "charging_route_count": 1,
+        "decoder": "explicit_reference_v1",
+        "fleet_use": [
+          10,
+          1,
+          14,
+          0
+        ],
+        "generation_kind": "population_archive",
+        "hgs_epoch": 3,
+        "hgs_seed": 1573112240,
+        "proxy_cost": 7534618,
+        "proxy_rank": 2,
+        "route_local_cost": 7484.494853381439,
+        "route_proxy_mode": "cv_only",
+        "warm_parent_signature": null,
+        "warm_signatures": [
+          "5f29be15074b68d10c8c5f2fe75f47d089913bbd0704a5fb0d378b2789808400",
+          "512e30c681cee60e8c842c46738346818919177bce37b348ee87db30990448b9"
+        ]
+      },
+      "objective": 7484.4948533814395,
+      "signature": "57850ccae93ac204e52de4b45bad4a0df849b9e2f640e40df7ad5977e94eb6aa",
+      "source": "HGS_ARCHIVE",
+      "violation_count": 0
+    },
+    {
+      "arm": "AB_COOP_HGS_RR",
+      "duplicate_of_index": null,
+      "feasible": true,
+      "index": 67,
+      "metadata": {
+        "assignment_count": 25,
+        "assignment_dp_rank": 3,
+        "capacity_aware_assignment_dp": true,
+        "charger_slot_use": [
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 20,
+            "station_id": "D_chengdu"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 21,
+            "station_id": "D_chengdu"
+          }
+        ],
+        "charging_route_count": 1,
+        "decoder": "explicit_reference_v1",
+        "fleet_use": [
+          10,
+          1,
+          14,
+          0
+        ],
+        "generation_kind": "population_archive",
+        "hgs_epoch": 3,
+        "hgs_seed": 1573112240,
+        "proxy_cost": 7534618,
+        "proxy_rank": 2,
+        "route_local_cost": 7499.853713621765,
+        "route_proxy_mode": "cv_only",
+        "warm_parent_signature": null,
+        "warm_signatures": [
+          "5f29be15074b68d10c8c5f2fe75f47d089913bbd0704a5fb0d378b2789808400",
+          "512e30c681cee60e8c842c46738346818919177bce37b348ee87db30990448b9"
+        ]
+      },
+      "objective": 7499.853713621765,
+      "signature": "ea8084a79c58ff54ee0efda5853323709ab2ef333f901d0e4265a6188bef31bd",
+      "source": "HGS_ARCHIVE",
+      "violation_count": 0
+    },
+    {
+      "arm": "AB_COOP_HGS_RR",
+      "duplicate_of_index": null,
+      "feasible": true,
+      "index": 68,
+      "metadata": {
+        "assignment_count": 25,
+        "assignment_dp_rank": 1,
+        "capacity_aware_assignment_dp": true,
+        "charger_slot_use": [
+          {
+            "day_offset": 0,
+            "route_count": 2,
+            "slot_index": 0,
+            "station_id": "D_chengdu"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 2,
+            "slot_index": 1,
+            "station_id": "D_chengdu"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 2,
+            "slot_index": 2,
+            "station_id": "D_chengdu"
+          }
+        ],
+        "charging_route_count": 2,
+        "decoder": "explicit_reference_v1",
+        "fleet_use": [
+          9,
+          2,
+          14,
+          0
+        ],
+        "generation_kind": "population_archive",
+        "hgs_epoch": 3,
+        "hgs_seed": 1155130497,
+        "proxy_cost": 7444306,
+        "proxy_rank": 2,
+        "route_local_cost": 7418.53110799539,
+        "route_proxy_mode": "naive_ev",
+        "warm_parent_signature": null,
+        "warm_signatures": [
+          "5f29be15074b68d10c8c5f2fe75f47d089913bbd0704a5fb0d378b2789808400",
+          "512e30c681cee60e8c842c46738346818919177bce37b348ee87db30990448b9"
+        ]
+      },
+      "objective": 7418.531107995391,
+      "signature": "c0597c49432b42af80d0d95e482c95b661175e14845af7e0aad2e6bfe5ed308a",
+      "source": "HGS_ARCHIVE",
+      "violation_count": 0
+    },
+    {
+      "arm": "AB_COOP_HGS_RR",
+      "duplicate_of_index": null,
+      "feasible": true,
+      "index": 69,
+      "metadata": {
+        "assignment_count": 25,
+        "assignment_dp_rank": 2,
+        "capacity_aware_assignment_dp": true,
+        "charger_slot_use": [
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 0,
+            "station_id": "D_chengdu"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 1,
+            "station_id": "D_chengdu"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 2,
+            "station_id": "D_chengdu"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 18,
+            "station_id": "D_chengdu"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 19,
+            "station_id": "D_chengdu"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 20,
+            "station_id": "D_chengdu"
+          }
+        ],
+        "charging_route_count": 2,
+        "decoder": "explicit_reference_v1",
+        "fleet_use": [
+          9,
+          2,
+          14,
+          0
+        ],
+        "generation_kind": "population_archive",
+        "hgs_epoch": 3,
+        "hgs_seed": 1155130497,
+        "proxy_cost": 7444306,
+        "proxy_rank": 2,
+        "route_local_cost": 7433.527708090396,
+        "route_proxy_mode": "naive_ev",
+        "warm_parent_signature": null,
+        "warm_signatures": [
+          "5f29be15074b68d10c8c5f2fe75f47d089913bbd0704a5fb0d378b2789808400",
+          "512e30c681cee60e8c842c46738346818919177bce37b348ee87db30990448b9"
+        ]
+      },
+      "objective": 7433.527708090398,
+      "signature": "f0f8761038325487e86c0f176d3552d129eb806ee3836e1dc832b025ecdf3cd7",
+      "source": "HGS_ARCHIVE",
+      "violation_count": 0
+    },
+    {
+      "arm": "AB_COOP_HGS_RR",
+      "duplicate_of_index": null,
+      "feasible": true,
+      "index": 70,
+      "metadata": {
+        "assignment_count": 25,
+        "assignment_dp_rank": 3,
+        "capacity_aware_assignment_dp": true,
+        "charger_slot_use": [
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 0,
+            "station_id": "D_chengdu"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 1,
+            "station_id": "D_chengdu"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 2,
+            "station_id": "D_chengdu"
+          }
+        ],
+        "charging_route_count": 1,
+        "decoder": "explicit_reference_v1",
+        "fleet_use": [
+          10,
+          1,
+          14,
+          0
+        ],
+        "generation_kind": "population_archive",
+        "hgs_epoch": 3,
+        "hgs_seed": 1155130497,
+        "proxy_cost": 7444306,
+        "proxy_rank": 2,
+        "route_local_cost": 7477.4650390085135,
+        "route_proxy_mode": "naive_ev",
+        "warm_parent_signature": null,
+        "warm_signatures": [
+          "5f29be15074b68d10c8c5f2fe75f47d089913bbd0704a5fb0d378b2789808400",
+          "512e30c681cee60e8c842c46738346818919177bce37b348ee87db30990448b9"
+        ]
+      },
+      "objective": 7477.465039008514,
+      "signature": "0a94e9aa0b3b545ad72064a6d807d8f42eb9dfada09a628b088a77bb1d5385d7",
+      "source": "HGS_ARCHIVE",
+      "violation_count": 0
+    },
+    {
+      "arm": "AB_COOP_HGS_RR",
+      "duplicate_of_index": null,
+      "feasible": true,
+      "index": 71,
+      "metadata": {
+        "assignment_count": 25,
+        "assignment_dp_rank": 1,
+        "capacity_aware_assignment_dp": true,
+        "charger_slot_use": [
+          {
+            "day_offset": 0,
+            "route_count": 2,
+            "slot_index": 0,
+            "station_id": "D_chengdu"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 2,
+            "slot_index": 1,
+            "station_id": "D_chengdu"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 2,
+            "slot_index": 2,
+            "station_id": "D_chengdu"
+          }
+        ],
+        "charging_route_count": 2,
+        "decoder": "explicit_reference_v1",
+        "fleet_use": [
+          9,
+          2,
+          14,
+          0
+        ],
+        "generation_kind": "population_archive",
+        "hgs_epoch": 3,
+        "hgs_seed": 539536868,
+        "proxy_cost": 7427719,
+        "proxy_rank": 2,
+        "route_local_cost": 7424.774441099239,
+        "route_proxy_mode": "mechanism_ev",
+        "warm_parent_signature": null,
+        "warm_signatures": [
+          "5f29be15074b68d10c8c5f2fe75f47d089913bbd0704a5fb0d378b2789808400",
+          "512e30c681cee60e8c842c46738346818919177bce37b348ee87db30990448b9"
+        ]
+      },
+      "objective": 7424.774441099239,
+      "signature": "ce35f67ff897a43c9f579eb33c38beeb73b713920429853e137063a529199eb7",
+      "source": "HGS_ARCHIVE",
+      "violation_count": 0
+    },
+    {
+      "arm": "AB_COOP_HGS_RR",
+      "duplicate_of_index": null,
+      "feasible": true,
+      "index": 72,
+      "metadata": {
+        "assignment_count": 25,
+        "assignment_dp_rank": 2,
+        "capacity_aware_assignment_dp": true,
+        "charger_slot_use": [
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 0,
+            "station_id": "D_chengdu"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 1,
+            "station_id": "D_chengdu"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 2,
+            "station_id": "D_chengdu"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 18,
+            "station_id": "D_chengdu"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 19,
+            "station_id": "D_chengdu"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 20,
+            "station_id": "D_chengdu"
+          }
+        ],
+        "charging_route_count": 2,
+        "decoder": "explicit_reference_v1",
+        "fleet_use": [
+          9,
+          2,
+          14,
+          0
+        ],
+        "generation_kind": "population_archive",
+        "hgs_epoch": 3,
+        "hgs_seed": 539536868,
+        "proxy_cost": 7427719,
+        "proxy_rank": 2,
+        "route_local_cost": 7439.771041194245,
+        "route_proxy_mode": "mechanism_ev",
+        "warm_parent_signature": null,
+        "warm_signatures": [
+          "5f29be15074b68d10c8c5f2fe75f47d089913bbd0704a5fb0d378b2789808400",
+          "512e30c681cee60e8c842c46738346818919177bce37b348ee87db30990448b9"
+        ]
+      },
+      "objective": 7439.771041194246,
+      "signature": "0dbd58841da9408e613f87e23f2495c7e6bfeff9e1b59f48d3303fcd921d868d",
+      "source": "HGS_ARCHIVE",
+      "violation_count": 0
+    },
+    {
+      "arm": "AB_COOP_HGS_RR",
+      "duplicate_of_index": null,
+      "feasible": true,
+      "index": 73,
+      "metadata": {
+        "assignment_count": 25,
+        "assignment_dp_rank": 3,
+        "capacity_aware_assignment_dp": true,
+        "charger_slot_use": [
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 0,
+            "station_id": "D_chengdu"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 1,
+            "station_id": "D_chengdu"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 2,
+            "station_id": "D_chengdu"
+          }
+        ],
+        "charging_route_count": 1,
+        "decoder": "explicit_reference_v1",
+        "fleet_use": [
+          10,
+          1,
+          14,
+          0
+        ],
+        "generation_kind": "population_archive",
+        "hgs_epoch": 3,
+        "hgs_seed": 539536868,
+        "proxy_cost": 7427719,
+        "proxy_rank": 2,
+        "route_local_cost": 7487.024760248565,
+        "route_proxy_mode": "mechanism_ev",
+        "warm_parent_signature": null,
+        "warm_signatures": [
+          "5f29be15074b68d10c8c5f2fe75f47d089913bbd0704a5fb0d378b2789808400",
+          "512e30c681cee60e8c842c46738346818919177bce37b348ee87db30990448b9"
+        ]
+      },
+      "objective": 7487.024760248566,
+      "signature": "7d6e53fd1d2c6ccb8e1d5bd62d15e0a97f07fb98e61bc2dfb01fb2fb6ac91012",
+      "source": "HGS_ARCHIVE",
+      "violation_count": 0
+    },
+    {
+      "arm": "AB_COOP_HGS_RR",
+      "duplicate_of_index": null,
+      "feasible": true,
+      "index": 74,
+      "metadata": {
+        "assignment_count": 25,
+        "assignment_dp_rank": 1,
+        "capacity_aware_assignment_dp": true,
+        "charger_slot_use": [],
+        "charging_route_count": 0,
+        "decoder": "explicit_reference_v1",
+        "fleet_use": [
+          11,
+          0,
+          14,
+          0
+        ],
+        "generation_kind": "population_archive",
+        "hgs_epoch": 3,
+        "hgs_seed": 1573112240,
+        "proxy_cost": 7535220,
+        "proxy_rank": 3,
+        "route_local_cost": 7530.218560599294,
+        "route_proxy_mode": "cv_only",
+        "warm_parent_signature": null,
+        "warm_signatures": [
+          "5f29be15074b68d10c8c5f2fe75f47d089913bbd0704a5fb0d378b2789808400",
+          "512e30c681cee60e8c842c46738346818919177bce37b348ee87db30990448b9"
+        ]
+      },
+      "objective": 7530.218560599294,
+      "signature": "6948b4bbaaec6c5430f526c5e59ef12c72946011e9a4ade318f6298bed3b5830",
+      "source": "HGS_ARCHIVE",
+      "violation_count": 0
+    },
+    {
+      "arm": "AB_COOP_HGS_RR",
+      "duplicate_of_index": null,
+      "feasible": true,
+      "index": 75,
+      "metadata": {
+        "assignment_count": 25,
+        "assignment_dp_rank": 2,
+        "capacity_aware_assignment_dp": true,
+        "charger_slot_use": [
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 0,
+            "station_id": "D_chengdu"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 1,
+            "station_id": "D_chengdu"
+          }
+        ],
+        "charging_route_count": 1,
+        "decoder": "explicit_reference_v1",
+        "fleet_use": [
+          10,
+          1,
+          14,
+          0
+        ],
+        "generation_kind": "population_archive",
+        "hgs_epoch": 3,
+        "hgs_seed": 1573112240,
+        "proxy_cost": 7535220,
+        "proxy_rank": 3,
+        "route_local_cost": 7484.8381819281885,
+        "route_proxy_mode": "cv_only",
+        "warm_parent_signature": null,
+        "warm_signatures": [
+          "5f29be15074b68d10c8c5f2fe75f47d089913bbd0704a5fb0d378b2789808400",
+          "512e30c681cee60e8c842c46738346818919177bce37b348ee87db30990448b9"
+        ]
+      },
+      "objective": 7484.838181928189,
+      "signature": "1b1ebdd56d56addf5bbb644fd90948274af8a5386165384b88e6666bda481726",
+      "source": "HGS_ARCHIVE",
+      "violation_count": 0
+    },
+    {
+      "arm": "AB_COOP_HGS_RR",
+      "duplicate_of_index": null,
+      "feasible": true,
+      "index": 76,
+      "metadata": {
+        "assignment_count": 25,
+        "assignment_dp_rank": 3,
+        "capacity_aware_assignment_dp": true,
+        "charger_slot_use": [
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 20,
+            "station_id": "D_chengdu"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 21,
+            "station_id": "D_chengdu"
+          }
+        ],
+        "charging_route_count": 1,
+        "decoder": "explicit_reference_v1",
+        "fleet_use": [
+          10,
+          1,
+          14,
+          0
+        ],
+        "generation_kind": "population_archive",
+        "hgs_epoch": 3,
+        "hgs_seed": 1573112240,
+        "proxy_cost": 7535220,
+        "proxy_rank": 3,
+        "route_local_cost": 7500.197042168515,
+        "route_proxy_mode": "cv_only",
+        "warm_parent_signature": null,
+        "warm_signatures": [
+          "5f29be15074b68d10c8c5f2fe75f47d089913bbd0704a5fb0d378b2789808400",
+          "512e30c681cee60e8c842c46738346818919177bce37b348ee87db30990448b9"
+        ]
+      },
+      "objective": 7500.1970421685155,
+      "signature": "cc9eb3ede772e931c81c82ebea84fd8af4f5825d615ad8ac775f6a1ffb77b388",
+      "source": "HGS_ARCHIVE",
+      "violation_count": 0
+    },
+    {
+      "arm": "AB_COOP_HGS_RR",
+      "duplicate_of_index": null,
+      "feasible": true,
+      "index": 77,
+      "metadata": {
+        "assignment_count": 25,
+        "assignment_dp_rank": 1,
+        "capacity_aware_assignment_dp": true,
+        "charger_slot_use": [
+          {
+            "day_offset": 0,
+            "route_count": 2,
+            "slot_index": 0,
+            "station_id": "D_chengdu"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 2,
+            "slot_index": 1,
+            "station_id": "D_chengdu"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 2,
+            "station_id": "D_chengdu"
+          }
+        ],
+        "charging_route_count": 2,
+        "decoder": "explicit_reference_v1",
+        "fleet_use": [
+          9,
+          2,
+          14,
+          0
+        ],
+        "generation_kind": "population_archive",
+        "hgs_epoch": 3,
+        "hgs_seed": 1155130497,
+        "proxy_cost": 7450662,
+        "proxy_rank": 3,
+        "route_local_cost": 7428.522850569837,
+        "route_proxy_mode": "naive_ev",
+        "warm_parent_signature": null,
+        "warm_signatures": [
+          "5f29be15074b68d10c8c5f2fe75f47d089913bbd0704a5fb0d378b2789808400",
+          "512e30c681cee60e8c842c46738346818919177bce37b348ee87db30990448b9"
+        ]
+      },
+      "objective": 7428.522850569837,
+      "signature": "9fabc77768a70e4721ff9ff679c530dd675d5f5f0fc1acc0d26eb79ce8026d90",
+      "source": "HGS_ARCHIVE",
+      "violation_count": 0
+    },
+    {
+      "arm": "AB_COOP_HGS_RR",
+      "duplicate_of_index": null,
+      "feasible": true,
+      "index": 78,
+      "metadata": {
+        "assignment_count": 25,
+        "assignment_dp_rank": 2,
+        "capacity_aware_assignment_dp": true,
+        "charger_slot_use": [
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 0,
+            "station_id": "D_chengdu"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 1,
+            "station_id": "D_chengdu"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 2,
+            "station_id": "D_chengdu"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 20,
+            "station_id": "D_chengdu"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 21,
+            "station_id": "D_chengdu"
+          }
+        ],
+        "charging_route_count": 2,
+        "decoder": "explicit_reference_v1",
+        "fleet_use": [
+          9,
+          2,
+          14,
+          0
+        ],
+        "generation_kind": "population_archive",
+        "hgs_epoch": 3,
+        "hgs_seed": 1155130497,
+        "proxy_cost": 7450662,
+        "proxy_rank": 3,
+        "route_local_cost": 7442.801009098333,
+        "route_proxy_mode": "naive_ev",
+        "warm_parent_signature": null,
+        "warm_signatures": [
+          "5f29be15074b68d10c8c5f2fe75f47d089913bbd0704a5fb0d378b2789808400",
+          "512e30c681cee60e8c842c46738346818919177bce37b348ee87db30990448b9"
+        ]
+      },
+      "objective": 7442.801009098333,
+      "signature": "52b8c5a07ef388e3496f93aa5800b2a4b2caf00260f324183a37fac9ec1e53e7",
+      "source": "HGS_ARCHIVE",
+      "violation_count": 0
+    },
+    {
+      "arm": "AB_COOP_HGS_RR",
+      "duplicate_of_index": null,
+      "feasible": true,
+      "index": 79,
+      "metadata": {
+        "assignment_count": 25,
+        "assignment_dp_rank": 3,
+        "capacity_aware_assignment_dp": true,
+        "charger_slot_use": [
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 0,
+            "station_id": "D_chengdu"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 1,
+            "station_id": "D_chengdu"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 2,
+            "station_id": "D_chengdu"
+          }
+        ],
+        "charging_route_count": 1,
+        "decoder": "explicit_reference_v1",
+        "fleet_use": [
+          10,
+          1,
+          14,
+          0
+        ],
+        "generation_kind": "population_archive",
+        "hgs_epoch": 3,
+        "hgs_seed": 1155130497,
+        "proxy_cost": 7450662,
+        "proxy_rank": 3,
+        "route_local_cost": 7472.789674956025,
+        "route_proxy_mode": "naive_ev",
+        "warm_parent_signature": null,
+        "warm_signatures": [
+          "5f29be15074b68d10c8c5f2fe75f47d089913bbd0704a5fb0d378b2789808400",
+          "512e30c681cee60e8c842c46738346818919177bce37b348ee87db30990448b9"
+        ]
+      },
+      "objective": 7472.789674956026,
+      "signature": "46126aeb50d9fb8e91a8f27c8becb85831f92303c617afd014d5f4ab42e26751",
+      "source": "HGS_ARCHIVE",
+      "violation_count": 0
+    },
+    {
+      "arm": "AB_COOP_HGS_RR",
+      "duplicate_of_index": null,
+      "feasible": true,
+      "index": 80,
+      "metadata": {
+        "assignment_count": 25,
+        "assignment_dp_rank": 1,
+        "capacity_aware_assignment_dp": true,
+        "charger_slot_use": [
+          {
+            "day_offset": 0,
+            "route_count": 2,
+            "slot_index": 0,
+            "station_id": "D_chengdu"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 2,
+            "slot_index": 1,
+            "station_id": "D_chengdu"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 2,
+            "slot_index": 2,
+            "station_id": "D_chengdu"
+          }
+        ],
+        "charging_route_count": 2,
+        "decoder": "explicit_reference_v1",
+        "fleet_use": [
+          9,
+          2,
+          14,
+          0
+        ],
+        "generation_kind": "population_archive",
+        "hgs_epoch": 3,
+        "hgs_seed": 539536868,
+        "proxy_cost": 7429487,
+        "proxy_rank": 3,
+        "route_local_cost": 7426.661920781444,
+        "route_proxy_mode": "mechanism_ev",
+        "warm_parent_signature": null,
+        "warm_signatures": [
+          "5f29be15074b68d10c8c5f2fe75f47d089913bbd0704a5fb0d378b2789808400",
+          "512e30c681cee60e8c842c46738346818919177bce37b348ee87db30990448b9"
+        ]
+      },
+      "objective": 7426.661920781443,
+      "signature": "24725915c2494fbf68c56f8387ae15413829762c0cff76d49c82ead399fdc1f5",
+      "source": "HGS_ARCHIVE",
+      "violation_count": 0
+    }
+  ],
+  "remaining": 0
+}

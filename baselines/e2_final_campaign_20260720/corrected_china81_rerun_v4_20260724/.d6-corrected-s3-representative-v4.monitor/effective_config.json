@@ -1,0 +1,111 @@
+{
+  "ai": {
+    "enabled": false,
+    "timeout_seconds": 180
+  },
+  "checkpoint_paths": [
+    "/Volumes/移动硬盘（512G）/ReSETP/baselines/e2_final_campaign_20260720/corrected_china81_rerun_v4_20260724/representative_gate/extra_gate/tasks"
+  ],
+  "completion_files": [
+    "/Volumes/移动硬盘（512G）/ReSETP/baselines/e2_final_campaign_20260720/corrected_china81_rerun_v4_20260724/representative_gate/done.json"
+  ],
+  "config_path": "/Volumes/移动硬盘（512G）/ReSETP/baselines/e2_final_campaign_20260720/corrected_china81_rerun_v4_20260724/monitor_d6_s3_representative_v4.json",
+  "cpu_grace_seconds": 180,
+  "forbidden_command_substrings": [
+    "--register-only",
+    "--finalize-only",
+    "--smoke",
+    "--debug"
+  ],
+  "logs": [],
+  "low_cpu_consecutive_checks": 4,
+  "max_rss_mb": 12000,
+  "max_runtime_seconds": 14400,
+  "min_cpu_percent_when_active": 1,
+  "min_system_memory_free_percent": 5,
+  "name": "d6-corrected-s3-representative-v4",
+  "objective": "按输入特征规则登记50客户仿真算例，补齐种子6至10并为最佳路径明细提供十次结果",
+  "pause_on_anomaly": true,
+  "poll_seconds": 20,
+  "progress_files": [
+    "/Volumes/移动硬盘（512G）/ReSETP/baselines/e2_final_campaign_20260720/corrected_china81_rerun_v4_20260724/.d6-corrected-s3-representative-v4.monitor/experiment.stdout.log"
+  ],
+  "protected_files": [
+    {
+      "kind": "core_data",
+      "path": "/Volumes/移动硬盘（512G）/ReSETP/baselines/e2_final_campaign_20260720/corrected_china81_rerun_v4_20260724/full_gate/raw_runs.csv"
+    },
+    {
+      "kind": "experiment_contract",
+      "path": "/Volumes/移动硬盘（512G）/ReSETP/baselines/e2_final_campaign_20260720/corrected_china81_rerun_v4_20260724/full_gate/decision.json"
+    },
+    {
+      "kind": "experiment_contract",
+      "path": "/Volumes/移动硬盘（512G）/ReSETP/baselines/e2_final_campaign_20260720/corrected_china81_rerun_v4_20260724/result_strength_gate/decision.json"
+    },
+    {
+      "kind": "experiment_contract",
+      "path": "/Volumes/移动硬盘（512G）/ReSETP/baselines/e2_final_campaign_20260720/corrected_china81_rerun_v4_20260724/result_strength_gate/artifact_hashes.json"
+    },
+    {
+      "kind": "primary_config",
+      "path": "/Volumes/移动硬盘（512G）/ReSETP/baselines/e2_final_campaign_20260720/corrected_china81_rerun_v4_20260724/e2_result_release_preregistration_v1_20260724.json"
+    },
+    {
+      "kind": "primary_config",
+      "path": "/Volumes/移动硬盘（512G）/ReSETP/baselines/e2_final_campaign_20260720/corrected_china81_rerun_v4_20260724/formal_preregistration.json"
+    },
+    {
+      "kind": "experiment_contract",
+      "path": "/Volumes/移动硬盘（512G）/ReSETP/baselines/e2_final_campaign_20260720/corrected_china81_rerun_20260723/run_corrected_s3.py"
+    },
+    {
+      "kind": "experiment_contract",
+      "path": "/Volumes/移动硬盘（512G）/ReSETP/baselines/e2_final_campaign_20260720/run_corrected_china81_d6.py"
+    },
+    {
+      "kind": "model",
+      "path": "/Volumes/移动硬盘（512G）/ReSETP/baselines/algorithm_prototypes/china81_mechanism_hybrid_20260720/epochal_hgs.py"
+    },
+    {
+      "kind": "model",
+      "path": "/Volumes/移动硬盘（512G）/ReSETP/baselines/algorithm_prototypes/china81_mechanism_hybrid_20260720/route_pool_sp.py"
+    },
+    {
+      "kind": "model",
+      "path": "/Volumes/移动硬盘（512G）/ReSETP/baselines/algorithm_prototypes/china81_mechanism_hybrid_20260720/pyvrp_adapter.py"
+    },
+    {
+      "kind": "cost_function",
+      "path": "/Volumes/移动硬盘（512G）/ReSETP/solver/src/setp_solver/cost.py"
+    },
+    {
+      "kind": "evaluator",
+      "path": "/Volumes/移动硬盘（512G）/ReSETP/solver/src/setp_solver/check.py"
+    },
+    {
+      "kind": "evaluator",
+      "path": "/Volumes/移动硬盘（512G）/ReSETP/solver/src/setp_solver/china81_completion.py"
+    },
+    {
+      "kind": "model",
+      "path": "/Volumes/移动硬盘（512G）/ReSETP/solver/src/setp_solver/prices.py"
+    },
+    {
+      "kind": "experiment_contract",
+      "path": "/Volumes/移动硬盘（512G）/ReSETP/docs/handoff/model_change_approval_register_20260718.md"
+    }
+  ],
+  "required_command_substrings": [
+    "run_corrected_s3.py",
+    "--workers",
+    "5"
+  ],
+  "result_files": [
+    "/Volumes/移动硬盘（512G）/ReSETP/baselines/e2_final_campaign_20260720/corrected_china81_rerun_v4_20260724/representative_gate/raw_runs.csv",
+    "/Volumes/移动硬盘（512G）/ReSETP/baselines/e2_final_campaign_20260720/corrected_china81_rerun_v4_20260724/representative_gate/decision.json"
+  ],
+  "schema_version": 1,
+  "stale_seconds": 1800,
+  "workdir": "/Volumes/移动硬盘（512G）/ReSETP"
+}

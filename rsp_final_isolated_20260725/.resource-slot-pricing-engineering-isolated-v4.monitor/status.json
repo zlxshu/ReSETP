@@ -1,0 +1,98 @@
+{
+  "ai_diagnosis": {
+    "invoked": false,
+    "reason": "disabled"
+  },
+  "checked_at": "2026-07-25T10:54:22+00:00",
+  "checkpoint_inventory": [],
+  "csv_summaries": [
+    {
+      "exists": false,
+      "path": "/Volumes/移动硬盘（512G）/ReSETP/rsp_final_isolated_20260725/rsp_final_isolated_20260725/engineering_gate_v4/raw_runs.csv",
+      "rows": 0
+    }
+  ],
+  "files": {
+    "/Volumes/移动硬盘（512G）/ReSETP/rsp_final_isolated_20260725/.resource-slot-pricing-engineering-isolated-v4.monitor/experiment.stdout.log": {
+      "age_seconds": 1.4404890537261963,
+      "exists": true,
+      "mtime": 1784976861.07,
+      "path": "/Volumes/移动硬盘（512G）/ReSETP/rsp_final_isolated_20260725/.resource-slot-pricing-engineering-isolated-v4.monitor/experiment.stdout.log",
+      "size": 503
+    },
+    "/Volumes/移动硬盘（512G）/ReSETP/rsp_final_isolated_20260725/rsp_final_isolated_20260725/engineering_gate_v4/decision.json": {
+      "exists": false,
+      "path": "/Volumes/移动硬盘（512G）/ReSETP/rsp_final_isolated_20260725/rsp_final_isolated_20260725/engineering_gate_v4/decision.json"
+    },
+    "/Volumes/移动硬盘（512G）/ReSETP/rsp_final_isolated_20260725/rsp_final_isolated_20260725/engineering_gate_v4/raw_runs.csv": {
+      "exists": false,
+      "path": "/Volumes/移动硬盘（512G）/ReSETP/rsp_final_isolated_20260725/rsp_final_isolated_20260725/engineering_gate_v4/raw_runs.csv"
+    }
+  },
+  "findings": [
+    {
+      "code": "PROCESS_EXITED_WITHOUT_COMPLETION",
+      "details": {},
+      "message": "process ended without completion evidence",
+      "severity": "critical"
+    }
+  ],
+  "log_paths": [
+    "/Volumes/移动硬盘（512G）/ReSETP/rsp_final_isolated_20260725/.resource-slot-pricing-engineering-isolated-v4.monitor/experiment.stdout.log"
+  ],
+  "name": "resource-slot-pricing-engineering-isolated-v4",
+  "paused": false,
+  "process": {
+    "alive": false,
+    "cpu_percent": 0,
+    "members": [],
+    "pgid": 33783,
+    "root_pid": 33783,
+    "rss_mb": 0.0
+  },
+  "protected_files": {
+    "/Volumes/移动硬盘（512G）/ReSETP/rsp_final_isolated_20260725/docs/handoff/e2_resource_slot_pricing_candidate_review_20260725.md": {
+      "exists": false,
+      "kind": "experiment_contract",
+      "path": "/Volumes/移动硬盘（512G）/ReSETP/rsp_final_isolated_20260725/docs/handoff/e2_resource_slot_pricing_candidate_review_20260725.md"
+    },
+    "/Volumes/移动硬盘（512G）/ReSETP/rsp_final_isolated_20260725/docs/handoff/e2_resource_slot_pricing_isolated_final_v4_20260725.md": {
+      "exists": false,
+      "kind": "experiment_contract",
+      "path": "/Volumes/移动硬盘（512G）/ReSETP/rsp_final_isolated_20260725/docs/handoff/e2_resource_slot_pricing_isolated_final_v4_20260725.md"
+    },
+    "/Volumes/移动硬盘（512G）/ReSETP/rsp_final_isolated_20260725/rsp_final_isolated_20260725/engineering.py": {
+      "exists": false,
+      "kind": "evaluator",
+      "path": "/Volumes/移动硬盘（512G）/ReSETP/rsp_final_isolated_20260725/rsp_final_isolated_20260725/engineering.py"
+    },
+    "/Volumes/移动硬盘（512G）/ReSETP/rsp_final_isolated_20260725/rsp_final_isolated_20260725/frozen_loader.py": {
+      "exists": false,
+      "kind": "model",
+      "path": "/Volumes/移动硬盘（512G）/ReSETP/rsp_final_isolated_20260725/rsp_final_isolated_20260725/frozen_loader.py"
+    },
+    "/Volumes/移动硬盘（512G）/ReSETP/rsp_final_isolated_20260725/rsp_final_isolated_20260725/g0_registration_v4.json": {
+      "exists": false,
+      "kind": "primary_config",
+      "path": "/Volumes/移动硬盘（512G）/ReSETP/rsp_final_isolated_20260725/rsp_final_isolated_20260725/g0_registration_v4.json"
+    },
+    "/Volumes/移动硬盘（512G）/ReSETP/rsp_final_isolated_20260725/rsp_final_isolated_20260725/workers.py": {
+      "exists": false,
+      "kind": "model",
+      "path": "/Volumes/移动硬盘（512G）/ReSETP/rsp_final_isolated_20260725/rsp_final_isolated_20260725/workers.py"
+    }
+  },
+  "runtime_seconds": 5.154872894287109,
+  "scene_path": "/Volumes/移动硬盘（512G）/ReSETP/rsp_final_isolated_20260725/.resource-slot-pricing-engineering-isolated-v4.monitor/scenes/20260725-185422-anomaly",
+  "schema_version": 1,
+  "state": "ANOMALY",
+  "system": {
+    "free_memory_mb": 520.828125,
+    "load_average_15m": 2.6806640625,
+    "load_average_1m": 2.9794921875,
+    "load_average_5m": 2.71484375,
+    "logical_cpus": 8,
+    "memory_pressure_free_percent": 41.0,
+    "swapouts": 63349331
+  }
+}

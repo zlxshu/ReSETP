@@ -9,8 +9,12 @@ from typing import Any, Callable, Mapping
 from setp_solver.algorithms.resetp_alns.support.charging import (
     repair_route_charging,
 )
+from setp_solver.check import CUSTOMER_COVERAGE, check_solution
 from setp_solver.china81 import China81Bundle
-from setp_solver.china81_completion import _single_route_cost
+from setp_solver.china81_completion import (
+    _single_route_cost,
+    annotate_cross_site_services,
+)
 from setp_solver.cost import charging_action_slot_breakdown
 from setp_solver.solution import ChargingAction, Route, Solution
 
@@ -57,6 +61,7 @@ class AssignmentShortlistResult:
     selected: ExplicitDecodeResult | None
     candidates: tuple[AssignmentCandidate, ...]
     decoded: tuple[ExplicitDecodeResult, ...]
+    evaluated: tuple[ExplicitDecodeResult, ...]
     decoded_count: int
     infeasible_count: int
 
@@ -123,7 +128,7 @@ def build_route_assignment_options(
                     dynamic_state_hash=dynamic_state_hash,
                     cache=route_local_cache,
                     compute=lambda route=cv_route: (
-                        _single_route_cost(
+                        _checked_route_local_cost(
                             route,
                             (),
                             bundle,
@@ -396,7 +401,22 @@ def decode_assignment_shortlist(
         max_candidates=max_candidates,
         station_charger_caps=_station_charger_caps(bundle),
     )
+    incumbent = _incumbent_assignment_candidate(
+        skeleton,
+        options,
+        bundle,
+    )
+    if incumbent is not None:
+        candidates = (
+            incumbent,
+            *(
+                candidate
+                for candidate in candidates
+                if candidate.assignments != incumbent.assignments
+            ),
+        )[:max_candidates]
     decoded: list[ExplicitDecodeResult] = []
+    evaluated: list[ExplicitDecodeResult] = []
     infeasible = 0
     for rank, candidate in enumerate(candidates, start=1):
         if evaluator.ledger.remaining <= 0:
@@ -427,6 +447,7 @@ def decode_assignment_shortlist(
             },
             charge_repair_function=charge_repair_function,
         )
+        evaluated.append(result)
         if result.scored.feasible:
             decoded.append(result)
         else:
@@ -436,8 +457,160 @@ def decode_assignment_shortlist(
         selected=selected,
         candidates=candidates,
         decoded=tuple(decoded),
+        evaluated=tuple(evaluated),
         decoded_count=len(decoded) + infeasible,
         infeasible_count=infeasible,
+    )
+
+
+def _checked_route_local_cost(
+    route: Route,
+    actions: tuple[ChargingAction, ...],
+    bundle: China81Bundle,
+) -> float:
+    """Return route-local cost only when all route-level hard checks pass.
+
+    A one-route fragment necessarily omits customers assigned to other
+    routes. Those missing-customer coverage messages are the only global
+    violations ignored here. Every structural, capacity, time-window,
+    battery, charging, and station-capacity violation remains fail-closed.
+    """
+
+    partial = annotate_cross_site_services(
+        Solution(
+            routes=[route],
+            charging_actions=list(actions),
+        ),
+        bundle.customer_home_depot,
+    )
+    node_type = {
+        node.node_id: node.node_type.lower()
+        for node in bundle.instance.nodes
+    }
+    route_customers = {
+        node_id
+        for node_id in route.node_sequence
+        if node_type.get(node_id) == "c"
+    }
+    violations = [
+        violation
+        for violation in check_solution(
+            partial,
+            bundle.instance,
+            bundle.prices,
+        )
+        if not (
+            violation.type == CUSTOMER_COVERAGE
+            and violation.detail == "customer not served"
+            and violation.location not in route_customers
+        )
+    ]
+    if violations:
+        summary = "; ".join(
+            (
+                f"{violation.type}:{violation.vehicle_id}:"
+                f"{violation.location}:{violation.detail}"
+            )
+            for violation in violations[:4]
+        )
+        raise ValueError(f"route-local hard violation: {summary}")
+    return float(_single_route_cost(route, actions, bundle))
+
+
+def _incumbent_assignment_candidate(
+    skeleton: Solution,
+    options_by_route: Mapping[int, tuple[AssignmentOption, ...]],
+    bundle: China81Bundle,
+) -> AssignmentCandidate | None:
+    """Keep the skeleton's current depot/type assignment in the shortlist.
+
+    This is a budget-visible monotone safeguard, not a free rescue: the
+    resulting complete candidate is still scored by the shared evaluator and
+    consumes one shortlist evaluation. If any current assignment has no
+    route-level feasible option or violates a joint cap, no incumbent
+    candidate is injected.
+    """
+
+    node_type = {
+        node.node_id: node.node_type.lower()
+        for node in bundle.instance.nodes
+    }
+    selected: list[tuple[int, AssignmentOption]] = []
+    for route_index, route in enumerate(skeleton.routes):
+        if not any(
+            node_type.get(node_id) == "c"
+            for node_id in route.node_sequence
+        ):
+            continue
+        matches = [
+            option
+            for option in options_by_route.get(route_index, ())
+            if (
+                option.assignment.home_depot_id == route.home_depot_id
+                and option.assignment.vehicle_type
+                == route.vehicle_type.strip().lower()
+            )
+        ]
+        if not matches:
+            return None
+        selected.append(
+            (
+                route_index,
+                min(
+                    matches,
+                    key=lambda item: (
+                        item.route_local_cost,
+                        item.route_local_signature,
+                    ),
+                ),
+            )
+        )
+    if not selected:
+        return None
+
+    depots = tuple(sorted(bundle.fleet_caps_by_depot))
+    dimension = {
+        (depot_id, vehicle_type): 2 * depot_index + type_index
+        for depot_index, depot_id in enumerate(depots)
+        for type_index, vehicle_type in enumerate(("cv", "ev"))
+    }
+    caps = tuple(
+        int(bundle.fleet_caps_by_depot[depot_id][f"num_{vehicle_type}"])
+        for depot_id in depots
+        for vehicle_type in ("cv", "ev")
+    )
+    fleet_use = [0 for _ in caps]
+    charger_slot_use: tuple[tuple[str, int, int, int], ...] = ()
+    for _, option in selected:
+        assignment = option.assignment
+        position = dimension[
+            (
+                assignment.home_depot_id,
+                assignment.vehicle_type.strip().lower(),
+            )
+        ]
+        fleet_use[position] += 1
+        if fleet_use[position] > caps[position]:
+            return None
+        charger_slot_use = _merge_charger_slot_use(
+            charger_slot_use,
+            option.charger_slot_keys,
+        )
+    if not _charger_slot_use_within_caps(
+        charger_slot_use,
+        _station_charger_caps(bundle),
+    ):
+        return None
+    return AssignmentCandidate(
+        assignments=tuple(
+            (route_index, option.assignment)
+            for route_index, option in selected
+        ),
+        route_local_cost=sum(
+            option.route_local_cost for _, option in selected
+        ),
+        fleet_use=tuple(fleet_use),
+        charger_slot_use=charger_slot_use,
     )
 
 
@@ -531,7 +704,7 @@ def _repaired_route_local_result(
     )
     return (
         float(
-            _single_route_cost(
+            _checked_route_local_cost(
                 repaired,
                 tuple(actions),
                 bundle,

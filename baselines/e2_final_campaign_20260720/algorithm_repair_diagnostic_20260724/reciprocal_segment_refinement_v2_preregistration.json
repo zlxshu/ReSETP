@@ -1,0 +1,24 @@
+{
+  "schema": "resetp.algorithm-repair-development-preregistration.v1",
+  "registered_at": "2026-07-24T03:52:00+08:00",
+  "formal_evidence": false,
+  "candidate": "Reciprocal segment refinement v2 with bounded insertion-position and orientation repair",
+  "v1_failure_preserved": "reciprocal_segment_refinement_panel_results.json",
+  "single_allowed_correction": "For every fixed reciprocal segment pair, select the insertion positions and segment orientations that minimize deterministic earliest-schedule lateness before applying the unchanged three-view shortlist.",
+  "unchanged_bounds": {
+    "segment_lengths_each_direction": [2, 3],
+    "candidate_views": ["demand_balance", "distance_change", "time_window_compatibility"],
+    "candidates_per_view": 4,
+    "maximum_complete_candidates": 12,
+    "refinement_rounds": 1
+  },
+  "gate": {
+    "minimum_strict_improvements_on_same_panel": 2,
+    "no_regressions": true,
+    "all_final_solutions_feasible": true,
+    "at_least_one_completed_candidate_per_panel_task": true,
+    "representative_instance_result_reported_separately": true
+  },
+  "stop_rule": "If this v2 gate fails, stop reciprocal segment development for this E2 repair. Do not change bounds, add rounds, or create v3 on the observed panel.",
+  "claim_boundary": "Development diagnosis only; no paper or formal experiment claim."
+}

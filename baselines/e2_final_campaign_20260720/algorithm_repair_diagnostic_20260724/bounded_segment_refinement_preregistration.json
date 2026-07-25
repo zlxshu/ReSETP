@@ -1,0 +1,33 @@
+{
+  "schema": "resetp.algorithm-repair-development-preregistration.v1",
+  "registered_at": "2026-07-24T03:24:00+08:00",
+  "formal_evidence": false,
+  "candidate": "One fixed SEG-GEN-02 bounded segment proposal after archive-expanded route-pool recombination",
+  "frozen_bounds": {
+    "segment_length": [2, 3],
+    "maximum_source_segments": 64,
+    "maximum_positions_per_segment": 6,
+    "maximum_local_candidates": 48,
+    "maximum_jointly_completed_candidates": 12,
+    "proposal_rounds": 1
+  },
+  "acceptance_authority": "The corrected China81 complete route-skeleton completion and exact scorer, including registered date, city mappings, finite depot fleets, charging, fuel, electricity, and carbon.",
+  "acceptance_rule": "Accept the proposal only when the corrected complete objective is strictly lower and there are zero violations. Otherwise retain the pre-refinement solution.",
+  "development_panel": [
+    "cn-cy-50c-01-V2-LOCATIONS seed 1",
+    "cn-jjj-50c-01-V2-LOCATIONS seed 1",
+    "cn-prd-50c-01-V2-LOCATIONS seed 1",
+    "cn-cy-75c-01-V2-LOCATIONS seed 1",
+    "cn-jjj-75c-01-V2-LOCATIONS seed 1",
+    "cn-prd-75c-01-V2-LOCATIONS seed 1"
+  ],
+  "gate": {
+    "minimum_strict_improvements": 2,
+    "no_final_regressions": true,
+    "all_final_solutions_feasible": true,
+    "all_bounds_respected": true,
+    "representative_instance_result_reported_separately": true
+  },
+  "failure_rule": "Reject the candidate if any invariant fails or fewer than two panel tasks improve. A non-improving representative instance must be reported, not hidden or rescued by parameter changes.",
+  "claim_boundary": "Development diagnosis only; no paper or formal experiment claim."
+}

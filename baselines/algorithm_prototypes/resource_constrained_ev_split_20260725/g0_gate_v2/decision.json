@@ -1,0 +1,17 @@
+{
+  "candidate_complete_objective_evaluations": 0,
+  "claim_boundary": "Zero-candidate-objective engineering and scale gate only; no algorithm-performance, HGS integration, paper, E3, BKS, SOTA, or hybrid claim.",
+  "expected_rows": 3,
+  "failures": [
+    "cn-prd-75c-03-V2-LOCATIONS: ResourceLimitError: total generated-label safety limit exceeded",
+    "cn-cy-150c-01-V2-LOCATIONS: ResourceLimitError: total generated-label safety limit exceeded"
+  ],
+  "max_generated_labels": 229,
+  "max_labels_at_position": 4,
+  "max_peak_rss_bytes": 57327616,
+  "next_step": "NONE",
+  "pass": false,
+  "rows": 1,
+  "schema": "resetp.rc-ev-split-g0-decision.v1",
+  "verdict": "HALT_RC_EV_SPLIT_G0_STRUCTURE_OR_SCALE"
+}

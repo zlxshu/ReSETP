@@ -1,0 +1,2289 @@
+{
+  "arm": "B_RR",
+  "consumed": 80,
+  "duplicates": 46,
+  "feasible": 51,
+  "infeasible": 29,
+  "limit": 80,
+  "records": [
+    {
+      "arm": "B_RR",
+      "duplicate_of_index": null,
+      "feasible": true,
+      "index": 1,
+      "metadata": {
+        "shared_initial": true
+      },
+      "objective": 1641.3275017740052,
+      "signature": "ade1195dd81baba63b8787a20d78607dd8b7bc740ca948ed25047f42c8239938",
+      "source": "SHARED_INITIAL",
+      "violation_count": 0
+    },
+    {
+      "arm": "B_RR",
+      "duplicate_of_index": null,
+      "feasible": false,
+      "index": 2,
+      "metadata": {
+        "assignment_only_target_route": 3,
+        "removed_customer_count": 6,
+        "rr_iteration": 1,
+        "rr_operator": "vehicle_type_flip",
+        "rr_reason": "re-evaluate fixed cost, finite fleet, fuel or charging, time-varying price, and carbon under the opposite type",
+        "target_carbon_weight": 1.0,
+        "target_charge_strategy": "integrated",
+        "target_vehicle_type": "ev",
+        "unselected_routes_preserved": true
+      },
+      "objective": 1565.5857983032197,
+      "signature": "efe3427e3bbd149262906813a8b8023dacd45d473569b649d6ffea372afc08a6",
+      "source": "RUIN_RECREATE",
+      "violation_count": 1
+    },
+    {
+      "arm": "B_RR",
+      "duplicate_of_index": null,
+      "feasible": false,
+      "index": 3,
+      "metadata": {
+        "assignment_only_target_route": 1,
+        "removed_customer_count": 6,
+        "rr_iteration": 2,
+        "rr_operator": "vehicle_type_flip",
+        "rr_reason": "re-evaluate fixed cost, finite fleet, fuel or charging, time-varying price, and carbon under the opposite type",
+        "target_carbon_weight": 1.0,
+        "target_charge_strategy": "integrated",
+        "target_vehicle_type": "ev",
+        "unselected_routes_preserved": true
+      },
+      "objective": 1564.3091102475835,
+      "signature": "a19d619ba92df1efd9ada13f6176066812ada954a6194ea0e3efb22de64563d9",
+      "source": "RUIN_RECREATE",
+      "violation_count": 1
+    },
+    {
+      "arm": "B_RR",
+      "duplicate_of_index": null,
+      "feasible": false,
+      "index": 4,
+      "metadata": {
+        "assignment_only_target_route": 0,
+        "removed_customer_count": 6,
+        "rr_iteration": 3,
+        "rr_operator": "vehicle_type_flip",
+        "rr_reason": "re-evaluate fixed cost, finite fleet, fuel or charging, time-varying price, and carbon under the opposite type",
+        "target_carbon_weight": 1.0,
+        "target_charge_strategy": "integrated",
+        "target_vehicle_type": "ev",
+        "unselected_routes_preserved": true
+      },
+      "objective": 1575.3148270391885,
+      "signature": "6f7f13ca2a2a60677f77b63acb7b32ddcf3fd5c91894e24c6c1a7d83cc429f1b",
+      "source": "RUIN_RECREATE",
+      "violation_count": 1
+    },
+    {
+      "arm": "B_RR",
+      "duplicate_of_index": null,
+      "feasible": true,
+      "index": 5,
+      "metadata": {
+        "assignment_only_target_route": 4,
+        "removed_customer_count": 0,
+        "rr_iteration": 4,
+        "rr_operator": "charge_departure_retiming",
+        "rr_reason": "keep customers but rebuild charge location, amount, start time, and departure time against half-hour price and carbon",
+        "target_carbon_weight": 1.0,
+        "target_charge_strategy": "legacy",
+        "target_vehicle_type": "ev",
+        "unselected_routes_preserved": true
+      },
+      "objective": 1648.0344934699776,
+      "signature": "680924ada29b7a44c4e3cf4143a2d4eaced66d1b07d3edff9dba7057156d50c7",
+      "source": "RUIN_RECREATE",
+      "violation_count": 0
+    },
+    {
+      "arm": "B_RR",
+      "duplicate_of_index": null,
+      "feasible": true,
+      "index": 6,
+      "metadata": {
+        "assignment_count": 5,
+        "assignment_dp_rank": 1,
+        "capacity_aware_assignment_dp": true,
+        "charger_slot_use": [
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 0,
+            "station_id": "D_beijing"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 1,
+            "station_id": "D_beijing"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 2,
+            "station_id": "D_beijing"
+          }
+        ],
+        "charging_route_count": 1,
+        "decoder": "explicit_reference_v1",
+        "fleet_use": [
+          4,
+          1
+        ],
+        "opened_route_count": 0,
+        "recreate_step_count": 3,
+        "removed_customer_count": 3,
+        "route_local_cost": 1624.5893036508044,
+        "rr_iteration": 5,
+        "rr_operator": "time_window_pressure_string",
+        "rr_reason": "remove a result-blind customer with low residual time-window slack under the shared route schedule and its adjacent string, then rebuild across depots, types, and charge schedules"
+      },
+      "objective": 1624.5893036508044,
+      "signature": "69fb0894ddc858ea98e379534ba70c2c6d5e2fa25ad5783b50f215087766d7f2",
+      "source": "RUIN_RECREATE",
+      "violation_count": 0
+    },
+    {
+      "arm": "B_RR",
+      "duplicate_of_index": null,
+      "feasible": true,
+      "index": 7,
+      "metadata": {
+        "assignment_count": 5,
+        "assignment_dp_rank": 2,
+        "capacity_aware_assignment_dp": true,
+        "charger_slot_use": [
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 26,
+            "station_id": "D_beijing"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 27,
+            "station_id": "D_beijing"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 28,
+            "station_id": "D_beijing"
+          }
+        ],
+        "charging_route_count": 1,
+        "decoder": "explicit_reference_v1",
+        "fleet_use": [
+          4,
+          1
+        ],
+        "opened_route_count": 0,
+        "recreate_step_count": 3,
+        "removed_customer_count": 3,
+        "route_local_cost": 1631.2962953467766,
+        "rr_iteration": 5,
+        "rr_operator": "time_window_pressure_string",
+        "rr_reason": "remove a result-blind customer with low residual time-window slack under the shared route schedule and its adjacent string, then rebuild across depots, types, and charge schedules"
+      },
+      "objective": 1631.296295346777,
+      "signature": "2a2592e61fe4b4a8e3d97a94decd8c3d34e69e5438e7e0c63d9b61242756c2b7",
+      "source": "RUIN_RECREATE",
+      "violation_count": 0
+    },
+    {
+      "arm": "B_RR",
+      "duplicate_of_index": null,
+      "feasible": true,
+      "index": 8,
+      "metadata": {
+        "assignment_count": 5,
+        "assignment_dp_rank": 3,
+        "capacity_aware_assignment_dp": true,
+        "charger_slot_use": [],
+        "charging_route_count": 0,
+        "decoder": "explicit_reference_v1",
+        "fleet_use": [
+          5,
+          0
+        ],
+        "opened_route_count": 0,
+        "recreate_step_count": 3,
+        "removed_customer_count": 3,
+        "route_local_cost": 1685.7581197087507,
+        "rr_iteration": 5,
+        "rr_operator": "time_window_pressure_string",
+        "rr_reason": "remove a result-blind customer with low residual time-window slack under the shared route schedule and its adjacent string, then rebuild across depots, types, and charge schedules"
+      },
+      "objective": 1685.7581197087507,
+      "signature": "40ac2f09275beab19e6c68ccfcc68937e7503c4b3faa8356fa8821b177af6c05",
+      "source": "RUIN_RECREATE",
+      "violation_count": 0
+    },
+    {
+      "arm": "B_RR",
+      "duplicate_of_index": null,
+      "feasible": false,
+      "index": 9,
+      "metadata": {
+        "assignment_only_target_route": 2,
+        "removed_customer_count": 5,
+        "rr_iteration": 6,
+        "rr_operator": "vehicle_type_flip",
+        "rr_reason": "re-evaluate fixed cost, finite fleet, fuel or charging, time-varying price, and carbon under the opposite type",
+        "target_carbon_weight": 1.0,
+        "target_charge_strategy": "integrated",
+        "target_vehicle_type": "ev",
+        "unselected_routes_preserved": true
+      },
+      "objective": 1572.1886626498256,
+      "signature": "e13e0915a54bf07fef950daacfb67172cd96ae9649cbcbc2f33d3bfb3df9adac",
+      "source": "RUIN_RECREATE",
+      "violation_count": 1
+    },
+    {
+      "arm": "B_RR",
+      "duplicate_of_index": 9,
+      "feasible": false,
+      "index": 10,
+      "metadata": {
+        "assignment_only_target_route": 2,
+        "removed_customer_count": 5,
+        "rr_iteration": 7,
+        "rr_operator": "vehicle_type_flip",
+        "rr_reason": "re-evaluate fixed cost, finite fleet, fuel or charging, time-varying price, and carbon under the opposite type",
+        "target_carbon_weight": 1.0,
+        "target_charge_strategy": "integrated",
+        "target_vehicle_type": "ev",
+        "unselected_routes_preserved": true
+      },
+      "objective": 1572.1886626498256,
+      "signature": "e13e0915a54bf07fef950daacfb67172cd96ae9649cbcbc2f33d3bfb3df9adac",
+      "source": "RUIN_RECREATE",
+      "violation_count": 1
+    },
+    {
+      "arm": "B_RR",
+      "duplicate_of_index": 9,
+      "feasible": false,
+      "index": 11,
+      "metadata": {
+        "assignment_only_target_route": 2,
+        "removed_customer_count": 5,
+        "rr_iteration": 8,
+        "rr_operator": "vehicle_type_flip",
+        "rr_reason": "re-evaluate fixed cost, finite fleet, fuel or charging, time-varying price, and carbon under the opposite type",
+        "target_carbon_weight": 1.0,
+        "target_charge_strategy": "integrated",
+        "target_vehicle_type": "ev",
+        "unselected_routes_preserved": true
+      },
+      "objective": 1572.1886626498256,
+      "signature": "e13e0915a54bf07fef950daacfb67172cd96ae9649cbcbc2f33d3bfb3df9adac",
+      "source": "RUIN_RECREATE",
+      "violation_count": 1
+    },
+    {
+      "arm": "B_RR",
+      "duplicate_of_index": 7,
+      "feasible": true,
+      "index": 12,
+      "metadata": {
+        "assignment_only_target_route": 4,
+        "removed_customer_count": 0,
+        "rr_iteration": 9,
+        "rr_operator": "charge_departure_retiming",
+        "rr_reason": "keep customers but rebuild charge location, amount, start time, and departure time against half-hour price and carbon",
+        "target_carbon_weight": 1.0,
+        "target_charge_strategy": "legacy",
+        "target_vehicle_type": "ev",
+        "unselected_routes_preserved": true
+      },
+      "objective": 1631.296295346777,
+      "signature": "2a2592e61fe4b4a8e3d97a94decd8c3d34e69e5438e7e0c63d9b61242756c2b7",
+      "source": "RUIN_RECREATE",
+      "violation_count": 0
+    },
+    {
+      "arm": "B_RR",
+      "duplicate_of_index": 6,
+      "feasible": true,
+      "index": 13,
+      "metadata": {
+        "assignment_count": 5,
+        "assignment_dp_rank": 1,
+        "capacity_aware_assignment_dp": true,
+        "charger_slot_use": [
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 0,
+            "station_id": "D_beijing"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 1,
+            "station_id": "D_beijing"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 2,
+            "station_id": "D_beijing"
+          }
+        ],
+        "charging_route_count": 1,
+        "decoder": "explicit_reference_v1",
+        "fleet_use": [
+          4,
+          1
+        ],
+        "opened_route_count": 0,
+        "recreate_step_count": 3,
+        "removed_customer_count": 3,
+        "route_local_cost": 1624.5893036508044,
+        "rr_iteration": 10,
+        "rr_operator": "time_window_pressure_string",
+        "rr_reason": "remove a result-blind customer with low residual time-window slack under the shared route schedule and its adjacent string, then rebuild across depots, types, and charge schedules"
+      },
+      "objective": 1624.5893036508044,
+      "signature": "69fb0894ddc858ea98e379534ba70c2c6d5e2fa25ad5783b50f215087766d7f2",
+      "source": "RUIN_RECREATE",
+      "violation_count": 0
+    },
+    {
+      "arm": "B_RR",
+      "duplicate_of_index": 7,
+      "feasible": true,
+      "index": 14,
+      "metadata": {
+        "assignment_count": 5,
+        "assignment_dp_rank": 2,
+        "capacity_aware_assignment_dp": true,
+        "charger_slot_use": [
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 26,
+            "station_id": "D_beijing"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 27,
+            "station_id": "D_beijing"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 28,
+            "station_id": "D_beijing"
+          }
+        ],
+        "charging_route_count": 1,
+        "decoder": "explicit_reference_v1",
+        "fleet_use": [
+          4,
+          1
+        ],
+        "opened_route_count": 0,
+        "recreate_step_count": 3,
+        "removed_customer_count": 3,
+        "route_local_cost": 1631.2962953467766,
+        "rr_iteration": 10,
+        "rr_operator": "time_window_pressure_string",
+        "rr_reason": "remove a result-blind customer with low residual time-window slack under the shared route schedule and its adjacent string, then rebuild across depots, types, and charge schedules"
+      },
+      "objective": 1631.296295346777,
+      "signature": "2a2592e61fe4b4a8e3d97a94decd8c3d34e69e5438e7e0c63d9b61242756c2b7",
+      "source": "RUIN_RECREATE",
+      "violation_count": 0
+    },
+    {
+      "arm": "B_RR",
+      "duplicate_of_index": 8,
+      "feasible": true,
+      "index": 15,
+      "metadata": {
+        "assignment_count": 5,
+        "assignment_dp_rank": 3,
+        "capacity_aware_assignment_dp": true,
+        "charger_slot_use": [],
+        "charging_route_count": 0,
+        "decoder": "explicit_reference_v1",
+        "fleet_use": [
+          5,
+          0
+        ],
+        "opened_route_count": 0,
+        "recreate_step_count": 3,
+        "removed_customer_count": 3,
+        "route_local_cost": 1685.7581197087507,
+        "rr_iteration": 10,
+        "rr_operator": "time_window_pressure_string",
+        "rr_reason": "remove a result-blind customer with low residual time-window slack under the shared route schedule and its adjacent string, then rebuild across depots, types, and charge schedules"
+      },
+      "objective": 1685.7581197087507,
+      "signature": "40ac2f09275beab19e6c68ccfcc68937e7503c4b3faa8356fa8821b177af6c05",
+      "source": "RUIN_RECREATE",
+      "violation_count": 0
+    },
+    {
+      "arm": "B_RR",
+      "duplicate_of_index": 8,
+      "feasible": true,
+      "index": 16,
+      "metadata": {
+        "assignment_only_target_route": 4,
+        "removed_customer_count": 2,
+        "rr_iteration": 11,
+        "rr_operator": "vehicle_type_flip",
+        "rr_reason": "re-evaluate fixed cost, finite fleet, fuel or charging, time-varying price, and carbon under the opposite type",
+        "target_carbon_weight": 0.0,
+        "target_charge_strategy": "not_applicable",
+        "target_vehicle_type": "cv",
+        "unselected_routes_preserved": true
+      },
+      "objective": 1685.7581197087507,
+      "signature": "40ac2f09275beab19e6c68ccfcc68937e7503c4b3faa8356fa8821b177af6c05",
+      "source": "RUIN_RECREATE",
+      "violation_count": 0
+    },
+    {
+      "arm": "B_RR",
+      "duplicate_of_index": 8,
+      "feasible": true,
+      "index": 17,
+      "metadata": {
+        "assignment_only_target_route": 4,
+        "removed_customer_count": 2,
+        "rr_iteration": 12,
+        "rr_operator": "vehicle_type_flip",
+        "rr_reason": "re-evaluate fixed cost, finite fleet, fuel or charging, time-varying price, and carbon under the opposite type",
+        "target_carbon_weight": 0.0,
+        "target_charge_strategy": "not_applicable",
+        "target_vehicle_type": "cv",
+        "unselected_routes_preserved": true
+      },
+      "objective": 1685.7581197087507,
+      "signature": "40ac2f09275beab19e6c68ccfcc68937e7503c4b3faa8356fa8821b177af6c05",
+      "source": "RUIN_RECREATE",
+      "violation_count": 0
+    },
+    {
+      "arm": "B_RR",
+      "duplicate_of_index": 8,
+      "feasible": true,
+      "index": 18,
+      "metadata": {
+        "assignment_only_target_route": 4,
+        "removed_customer_count": 2,
+        "rr_iteration": 13,
+        "rr_operator": "vehicle_type_flip",
+        "rr_reason": "re-evaluate fixed cost, finite fleet, fuel or charging, time-varying price, and carbon under the opposite type",
+        "target_carbon_weight": 0.0,
+        "target_charge_strategy": "not_applicable",
+        "target_vehicle_type": "cv",
+        "unselected_routes_preserved": true
+      },
+      "objective": 1685.7581197087507,
+      "signature": "40ac2f09275beab19e6c68ccfcc68937e7503c4b3faa8356fa8821b177af6c05",
+      "source": "RUIN_RECREATE",
+      "violation_count": 0
+    },
+    {
+      "arm": "B_RR",
+      "duplicate_of_index": 6,
+      "feasible": true,
+      "index": 19,
+      "metadata": {
+        "assignment_only_target_route": 4,
+        "removed_customer_count": 0,
+        "rr_iteration": 14,
+        "rr_operator": "charge_departure_retiming",
+        "rr_reason": "keep customers but rebuild charge location, amount, start time, and departure time against half-hour price and carbon",
+        "target_carbon_weight": 0.0,
+        "target_charge_strategy": "integrated",
+        "target_vehicle_type": "ev",
+        "unselected_routes_preserved": true
+      },
+      "objective": 1624.5893036508044,
+      "signature": "69fb0894ddc858ea98e379534ba70c2c6d5e2fa25ad5783b50f215087766d7f2",
+      "source": "RUIN_RECREATE",
+      "violation_count": 0
+    },
+    {
+      "arm": "B_RR",
+      "duplicate_of_index": 6,
+      "feasible": true,
+      "index": 20,
+      "metadata": {
+        "assignment_count": 5,
+        "assignment_dp_rank": 1,
+        "capacity_aware_assignment_dp": true,
+        "charger_slot_use": [
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 0,
+            "station_id": "D_beijing"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 1,
+            "station_id": "D_beijing"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 2,
+            "station_id": "D_beijing"
+          }
+        ],
+        "charging_route_count": 1,
+        "decoder": "explicit_reference_v1",
+        "fleet_use": [
+          4,
+          1
+        ],
+        "opened_route_count": 0,
+        "recreate_step_count": 3,
+        "removed_customer_count": 3,
+        "route_local_cost": 1624.5893036508044,
+        "rr_iteration": 15,
+        "rr_operator": "time_window_pressure_string",
+        "rr_reason": "remove a result-blind customer with low residual time-window slack under the shared route schedule and its adjacent string, then rebuild across depots, types, and charge schedules"
+      },
+      "objective": 1624.5893036508044,
+      "signature": "69fb0894ddc858ea98e379534ba70c2c6d5e2fa25ad5783b50f215087766d7f2",
+      "source": "RUIN_RECREATE",
+      "violation_count": 0
+    },
+    {
+      "arm": "B_RR",
+      "duplicate_of_index": 7,
+      "feasible": true,
+      "index": 21,
+      "metadata": {
+        "assignment_count": 5,
+        "assignment_dp_rank": 2,
+        "capacity_aware_assignment_dp": true,
+        "charger_slot_use": [
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 26,
+            "station_id": "D_beijing"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 27,
+            "station_id": "D_beijing"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 28,
+            "station_id": "D_beijing"
+          }
+        ],
+        "charging_route_count": 1,
+        "decoder": "explicit_reference_v1",
+        "fleet_use": [
+          4,
+          1
+        ],
+        "opened_route_count": 0,
+        "recreate_step_count": 3,
+        "removed_customer_count": 3,
+        "route_local_cost": 1631.2962953467766,
+        "rr_iteration": 15,
+        "rr_operator": "time_window_pressure_string",
+        "rr_reason": "remove a result-blind customer with low residual time-window slack under the shared route schedule and its adjacent string, then rebuild across depots, types, and charge schedules"
+      },
+      "objective": 1631.296295346777,
+      "signature": "2a2592e61fe4b4a8e3d97a94decd8c3d34e69e5438e7e0c63d9b61242756c2b7",
+      "source": "RUIN_RECREATE",
+      "violation_count": 0
+    },
+    {
+      "arm": "B_RR",
+      "duplicate_of_index": 8,
+      "feasible": true,
+      "index": 22,
+      "metadata": {
+        "assignment_count": 5,
+        "assignment_dp_rank": 3,
+        "capacity_aware_assignment_dp": true,
+        "charger_slot_use": [],
+        "charging_route_count": 0,
+        "decoder": "explicit_reference_v1",
+        "fleet_use": [
+          5,
+          0
+        ],
+        "opened_route_count": 0,
+        "recreate_step_count": 3,
+        "removed_customer_count": 3,
+        "route_local_cost": 1685.7581197087507,
+        "rr_iteration": 15,
+        "rr_operator": "time_window_pressure_string",
+        "rr_reason": "remove a result-blind customer with low residual time-window slack under the shared route schedule and its adjacent string, then rebuild across depots, types, and charge schedules"
+      },
+      "objective": 1685.7581197087507,
+      "signature": "40ac2f09275beab19e6c68ccfcc68937e7503c4b3faa8356fa8821b177af6c05",
+      "source": "RUIN_RECREATE",
+      "violation_count": 0
+    },
+    {
+      "arm": "B_RR",
+      "duplicate_of_index": null,
+      "feasible": false,
+      "index": 23,
+      "metadata": {
+        "assignment_only_target_route": 1,
+        "removed_customer_count": 6,
+        "rr_iteration": 16,
+        "rr_operator": "vehicle_type_flip",
+        "rr_reason": "re-evaluate fixed cost, finite fleet, fuel or charging, time-varying price, and carbon under the opposite type",
+        "target_carbon_weight": 1.0,
+        "target_charge_strategy": "integrated",
+        "target_vehicle_type": "ev",
+        "unselected_routes_preserved": true
+      },
+      "objective": 1554.2271841432448,
+      "signature": "f695fa29a816731d5c99d7449ab0b6aea88a047bfbb483ab785bda45db780004",
+      "source": "RUIN_RECREATE",
+      "violation_count": 1
+    },
+    {
+      "arm": "B_RR",
+      "duplicate_of_index": 8,
+      "feasible": true,
+      "index": 24,
+      "metadata": {
+        "assignment_only_target_route": 4,
+        "removed_customer_count": 2,
+        "rr_iteration": 17,
+        "rr_operator": "vehicle_type_flip",
+        "rr_reason": "re-evaluate fixed cost, finite fleet, fuel or charging, time-varying price, and carbon under the opposite type",
+        "target_carbon_weight": 0.0,
+        "target_charge_strategy": "not_applicable",
+        "target_vehicle_type": "cv",
+        "unselected_routes_preserved": true
+      },
+      "objective": 1685.7581197087507,
+      "signature": "40ac2f09275beab19e6c68ccfcc68937e7503c4b3faa8356fa8821b177af6c05",
+      "source": "RUIN_RECREATE",
+      "violation_count": 0
+    },
+    {
+      "arm": "B_RR",
+      "duplicate_of_index": null,
+      "feasible": false,
+      "index": 25,
+      "metadata": {
+        "assignment_only_target_route": 0,
+        "removed_customer_count": 6,
+        "rr_iteration": 18,
+        "rr_operator": "vehicle_type_flip",
+        "rr_reason": "re-evaluate fixed cost, finite fleet, fuel or charging, time-varying price, and carbon under the opposite type",
+        "target_carbon_weight": 1.0,
+        "target_charge_strategy": "integrated",
+        "target_vehicle_type": "ev",
+        "unselected_routes_preserved": true
+      },
+      "objective": 1558.5766289159876,
+      "signature": "7528eba80a73fe07c385261f3f505dcb54dcf582e049e3ca75a82ca4ae05bbc6",
+      "source": "RUIN_RECREATE",
+      "violation_count": 1
+    },
+    {
+      "arm": "B_RR",
+      "duplicate_of_index": 7,
+      "feasible": true,
+      "index": 26,
+      "metadata": {
+        "assignment_only_target_route": 4,
+        "removed_customer_count": 0,
+        "rr_iteration": 19,
+        "rr_operator": "charge_departure_retiming",
+        "rr_reason": "keep customers but rebuild charge location, amount, start time, and departure time against half-hour price and carbon",
+        "target_carbon_weight": 1.0,
+        "target_charge_strategy": "legacy",
+        "target_vehicle_type": "ev",
+        "unselected_routes_preserved": true
+      },
+      "objective": 1631.296295346777,
+      "signature": "2a2592e61fe4b4a8e3d97a94decd8c3d34e69e5438e7e0c63d9b61242756c2b7",
+      "source": "RUIN_RECREATE",
+      "violation_count": 0
+    },
+    {
+      "arm": "B_RR",
+      "duplicate_of_index": null,
+      "feasible": true,
+      "index": 27,
+      "metadata": {
+        "assignment_count": 5,
+        "assignment_dp_rank": 1,
+        "capacity_aware_assignment_dp": true,
+        "charger_slot_use": [
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 0,
+            "station_id": "D_beijing"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 1,
+            "station_id": "D_beijing"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 2,
+            "station_id": "D_beijing"
+          }
+        ],
+        "charging_route_count": 1,
+        "decoder": "explicit_reference_v1",
+        "fleet_use": [
+          4,
+          1
+        ],
+        "opened_route_count": 0,
+        "recreate_step_count": 3,
+        "removed_customer_count": 3,
+        "route_local_cost": 1602.091521939673,
+        "rr_iteration": 20,
+        "rr_operator": "time_window_pressure_string",
+        "rr_reason": "remove a result-blind customer with low residual time-window slack under the shared route schedule and its adjacent string, then rebuild across depots, types, and charge schedules"
+      },
+      "objective": 1602.091521939673,
+      "signature": "04c5a616934091e5e0b4e8acfa8620f7ba9f10a8d7981140a4ae1a07c8cf6a8b",
+      "source": "RUIN_RECREATE",
+      "violation_count": 0
+    },
+    {
+      "arm": "B_RR",
+      "duplicate_of_index": null,
+      "feasible": true,
+      "index": 28,
+      "metadata": {
+        "assignment_count": 5,
+        "assignment_dp_rank": 2,
+        "capacity_aware_assignment_dp": true,
+        "charger_slot_use": [
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 18,
+            "station_id": "D_beijing"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 19,
+            "station_id": "D_beijing"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 20,
+            "station_id": "D_beijing"
+          }
+        ],
+        "charging_route_count": 1,
+        "decoder": "explicit_reference_v1",
+        "fleet_use": [
+          4,
+          1
+        ],
+        "opened_route_count": 0,
+        "recreate_step_count": 3,
+        "removed_customer_count": 3,
+        "route_local_cost": 1611.5790507994184,
+        "rr_iteration": 20,
+        "rr_operator": "time_window_pressure_string",
+        "rr_reason": "remove a result-blind customer with low residual time-window slack under the shared route schedule and its adjacent string, then rebuild across depots, types, and charge schedules"
+      },
+      "objective": 1611.5790507994184,
+      "signature": "f5210d44102aae2ecfb4fa8bbf005d24187850708557a195997aa4806ffd5527",
+      "source": "RUIN_RECREATE",
+      "violation_count": 0
+    },
+    {
+      "arm": "B_RR",
+      "duplicate_of_index": null,
+      "feasible": true,
+      "index": 29,
+      "metadata": {
+        "assignment_count": 5,
+        "assignment_dp_rank": 3,
+        "capacity_aware_assignment_dp": true,
+        "charger_slot_use": [],
+        "charging_route_count": 0,
+        "decoder": "explicit_reference_v1",
+        "fleet_use": [
+          5,
+          0
+        ],
+        "opened_route_count": 0,
+        "recreate_step_count": 3,
+        "removed_customer_count": 3,
+        "route_local_cost": 1665.7357091284707,
+        "rr_iteration": 20,
+        "rr_operator": "time_window_pressure_string",
+        "rr_reason": "remove a result-blind customer with low residual time-window slack under the shared route schedule and its adjacent string, then rebuild across depots, types, and charge schedules"
+      },
+      "objective": 1665.7357091284707,
+      "signature": "bcbe14afc46336e854902f5336c8f953de20b8f18231cafe5bed4e7f2695a99f",
+      "source": "RUIN_RECREATE",
+      "violation_count": 0
+    },
+    {
+      "arm": "B_RR",
+      "duplicate_of_index": null,
+      "feasible": false,
+      "index": 30,
+      "metadata": {
+        "assignment_only_target_route": 1,
+        "removed_customer_count": 6,
+        "rr_iteration": 21,
+        "rr_operator": "vehicle_type_flip",
+        "rr_reason": "re-evaluate fixed cost, finite fleet, fuel or charging, time-varying price, and carbon under the opposite type",
+        "target_carbon_weight": 1.0,
+        "target_charge_strategy": "integrated",
+        "target_vehicle_type": "ev",
+        "unselected_routes_preserved": true
+      },
+      "objective": 1531.7294024321138,
+      "signature": "4390872c4f898713e857ed799a7d6d356d765e47a7599405e4ccd6ac0d6e7d92",
+      "source": "RUIN_RECREATE",
+      "violation_count": 1
+    },
+    {
+      "arm": "B_RR",
+      "duplicate_of_index": 29,
+      "feasible": true,
+      "index": 31,
+      "metadata": {
+        "assignment_only_target_route": 4,
+        "removed_customer_count": 3,
+        "rr_iteration": 22,
+        "rr_operator": "vehicle_type_flip",
+        "rr_reason": "re-evaluate fixed cost, finite fleet, fuel or charging, time-varying price, and carbon under the opposite type",
+        "target_carbon_weight": 0.0,
+        "target_charge_strategy": "not_applicable",
+        "target_vehicle_type": "cv",
+        "unselected_routes_preserved": true
+      },
+      "objective": 1665.7357091284707,
+      "signature": "bcbe14afc46336e854902f5336c8f953de20b8f18231cafe5bed4e7f2695a99f",
+      "source": "RUIN_RECREATE",
+      "violation_count": 0
+    },
+    {
+      "arm": "B_RR",
+      "duplicate_of_index": 29,
+      "feasible": true,
+      "index": 32,
+      "metadata": {
+        "assignment_only_target_route": 4,
+        "removed_customer_count": 3,
+        "rr_iteration": 23,
+        "rr_operator": "vehicle_type_flip",
+        "rr_reason": "re-evaluate fixed cost, finite fleet, fuel or charging, time-varying price, and carbon under the opposite type",
+        "target_carbon_weight": 0.0,
+        "target_charge_strategy": "not_applicable",
+        "target_vehicle_type": "cv",
+        "unselected_routes_preserved": true
+      },
+      "objective": 1665.7357091284707,
+      "signature": "bcbe14afc46336e854902f5336c8f953de20b8f18231cafe5bed4e7f2695a99f",
+      "source": "RUIN_RECREATE",
+      "violation_count": 0
+    },
+    {
+      "arm": "B_RR",
+      "duplicate_of_index": 28,
+      "feasible": true,
+      "index": 33,
+      "metadata": {
+        "assignment_only_target_route": 4,
+        "removed_customer_count": 0,
+        "rr_iteration": 24,
+        "rr_operator": "charge_departure_retiming",
+        "rr_reason": "keep customers but rebuild charge location, amount, start time, and departure time against half-hour price and carbon",
+        "target_carbon_weight": 1.0,
+        "target_charge_strategy": "legacy",
+        "target_vehicle_type": "ev",
+        "unselected_routes_preserved": true
+      },
+      "objective": 1611.5790507994184,
+      "signature": "f5210d44102aae2ecfb4fa8bbf005d24187850708557a195997aa4806ffd5527",
+      "source": "RUIN_RECREATE",
+      "violation_count": 0
+    },
+    {
+      "arm": "B_RR",
+      "duplicate_of_index": null,
+      "feasible": true,
+      "index": 34,
+      "metadata": {
+        "assignment_count": 5,
+        "assignment_dp_rank": 1,
+        "capacity_aware_assignment_dp": true,
+        "charger_slot_use": [
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 0,
+            "station_id": "D_beijing"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 1,
+            "station_id": "D_beijing"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 2,
+            "station_id": "D_beijing"
+          }
+        ],
+        "charging_route_count": 1,
+        "decoder": "explicit_reference_v1",
+        "fleet_use": [
+          4,
+          1
+        ],
+        "opened_route_count": 0,
+        "recreate_step_count": 3,
+        "removed_customer_count": 3,
+        "route_local_cost": 1592.7154654659548,
+        "rr_iteration": 25,
+        "rr_operator": "time_window_pressure_string",
+        "rr_reason": "remove a result-blind customer with low residual time-window slack under the shared route schedule and its adjacent string, then rebuild across depots, types, and charge schedules"
+      },
+      "objective": 1592.715465465955,
+      "signature": "3dfadcd7e2e27f68688dc051fd2c28ad1886b10abccfaf8e3a6a0ac9a4da4908",
+      "source": "RUIN_RECREATE",
+      "violation_count": 0
+    },
+    {
+      "arm": "B_RR",
+      "duplicate_of_index": null,
+      "feasible": true,
+      "index": 35,
+      "metadata": {
+        "assignment_count": 5,
+        "assignment_dp_rank": 2,
+        "capacity_aware_assignment_dp": true,
+        "charger_slot_use": [
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 21,
+            "station_id": "D_beijing"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 22,
+            "station_id": "D_beijing"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 23,
+            "station_id": "D_beijing"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 24,
+            "station_id": "D_beijing"
+          }
+        ],
+        "charging_route_count": 1,
+        "decoder": "explicit_reference_v1",
+        "fleet_use": [
+          4,
+          1
+        ],
+        "opened_route_count": 0,
+        "recreate_step_count": 3,
+        "removed_customer_count": 3,
+        "route_local_cost": 1609.9350061757837,
+        "rr_iteration": 25,
+        "rr_operator": "time_window_pressure_string",
+        "rr_reason": "remove a result-blind customer with low residual time-window slack under the shared route schedule and its adjacent string, then rebuild across depots, types, and charge schedules"
+      },
+      "objective": 1609.9350061757839,
+      "signature": "c366c4f05e55841fcc5d8dd7e8fe6716750a892cb4471a260fd3976551b580a9",
+      "source": "RUIN_RECREATE",
+      "violation_count": 0
+    },
+    {
+      "arm": "B_RR",
+      "duplicate_of_index": null,
+      "feasible": true,
+      "index": 36,
+      "metadata": {
+        "assignment_count": 5,
+        "assignment_dp_rank": 3,
+        "capacity_aware_assignment_dp": true,
+        "charger_slot_use": [],
+        "charging_route_count": 0,
+        "decoder": "explicit_reference_v1",
+        "fleet_use": [
+          5,
+          0
+        ],
+        "opened_route_count": 0,
+        "recreate_step_count": 3,
+        "removed_customer_count": 3,
+        "route_local_cost": 1655.0411970187442,
+        "rr_iteration": 25,
+        "rr_operator": "time_window_pressure_string",
+        "rr_reason": "remove a result-blind customer with low residual time-window slack under the shared route schedule and its adjacent string, then rebuild across depots, types, and charge schedules"
+      },
+      "objective": 1655.0411970187442,
+      "signature": "7aacbc365af02b6d65ebdd64a395d1d744946325bfd808fa5788480b988827fb",
+      "source": "RUIN_RECREATE",
+      "violation_count": 0
+    },
+    {
+      "arm": "B_RR",
+      "duplicate_of_index": 36,
+      "feasible": true,
+      "index": 37,
+      "metadata": {
+        "assignment_only_target_route": 2,
+        "removed_customer_count": 3,
+        "rr_iteration": 26,
+        "rr_operator": "vehicle_type_flip",
+        "rr_reason": "re-evaluate fixed cost, finite fleet, fuel or charging, time-varying price, and carbon under the opposite type",
+        "target_carbon_weight": 0.0,
+        "target_charge_strategy": "not_applicable",
+        "target_vehicle_type": "cv",
+        "unselected_routes_preserved": true
+      },
+      "objective": 1655.0411970187442,
+      "signature": "7aacbc365af02b6d65ebdd64a395d1d744946325bfd808fa5788480b988827fb",
+      "source": "RUIN_RECREATE",
+      "violation_count": 0
+    },
+    {
+      "arm": "B_RR",
+      "duplicate_of_index": null,
+      "feasible": false,
+      "index": 38,
+      "metadata": {
+        "assignment_only_target_route": 0,
+        "removed_customer_count": 6,
+        "rr_iteration": 27,
+        "rr_operator": "vehicle_type_flip",
+        "rr_reason": "re-evaluate fixed cost, finite fleet, fuel or charging, time-varying price, and carbon under the opposite type",
+        "target_carbon_weight": 1.0,
+        "target_charge_strategy": "integrated",
+        "target_vehicle_type": "ev",
+        "unselected_routes_preserved": true
+      },
+      "objective": 1536.42788118322,
+      "signature": "f07f36f165624b172e2408c59e6dc2e48b5eb1e3ded7022faf27ffa6b825c5f0",
+      "source": "RUIN_RECREATE",
+      "violation_count": 1
+    },
+    {
+      "arm": "B_RR",
+      "duplicate_of_index": null,
+      "feasible": false,
+      "index": 39,
+      "metadata": {
+        "assignment_only_target_route": 3,
+        "removed_customer_count": 6,
+        "rr_iteration": 28,
+        "rr_operator": "vehicle_type_flip",
+        "rr_reason": "re-evaluate fixed cost, finite fleet, fuel or charging, time-varying price, and carbon under the opposite type",
+        "target_carbon_weight": 1.0,
+        "target_charge_strategy": "integrated",
+        "target_vehicle_type": "ev",
+        "unselected_routes_preserved": true
+      },
+      "objective": 1516.9737619951698,
+      "signature": "9146cffa03ae4ad72603b4c7e1c4ecdf62a4950a25b53977e9b862449715d3c4",
+      "source": "RUIN_RECREATE",
+      "violation_count": 1
+    },
+    {
+      "arm": "B_RR",
+      "duplicate_of_index": null,
+      "feasible": true,
+      "index": 40,
+      "metadata": {
+        "assignment_only_target_route": 2,
+        "removed_customer_count": 0,
+        "rr_iteration": 29,
+        "rr_operator": "charge_departure_retiming",
+        "rr_reason": "keep customers but rebuild charge location, amount, start time, and departure time against half-hour price and carbon",
+        "target_carbon_weight": 1.0,
+        "target_charge_strategy": "legacy",
+        "target_vehicle_type": "ev",
+        "unselected_routes_preserved": true
+      },
+      "objective": 1610.0218077034815,
+      "signature": "3674fbe187b14556664669bcd4dc55f459b68d6758763b89b650516dc7c32601",
+      "source": "RUIN_RECREATE",
+      "violation_count": 0
+    },
+    {
+      "arm": "B_RR",
+      "duplicate_of_index": null,
+      "feasible": true,
+      "index": 41,
+      "metadata": {
+        "assignment_count": 5,
+        "assignment_dp_rank": 1,
+        "capacity_aware_assignment_dp": true,
+        "charger_slot_use": [
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 0,
+            "station_id": "D_beijing"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 1,
+            "station_id": "D_beijing"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 2,
+            "station_id": "D_beijing"
+          }
+        ],
+        "charging_route_count": 1,
+        "decoder": "explicit_reference_v1",
+        "fleet_use": [
+          4,
+          1
+        ],
+        "opened_route_count": 0,
+        "recreate_step_count": 3,
+        "removed_customer_count": 3,
+        "route_local_cost": 1581.7500293767298,
+        "rr_iteration": 30,
+        "rr_operator": "time_window_pressure_string",
+        "rr_reason": "remove a result-blind customer with low residual time-window slack under the shared route schedule and its adjacent string, then rebuild across depots, types, and charge schedules"
+      },
+      "objective": 1581.7500293767298,
+      "signature": "5ee760e929e26ecec84ab234ef163e27a7fa4258b45d6d0166c903e0b985ca9f",
+      "source": "RUIN_RECREATE",
+      "violation_count": 0
+    },
+    {
+      "arm": "B_RR",
+      "duplicate_of_index": null,
+      "feasible": true,
+      "index": 42,
+      "metadata": {
+        "assignment_count": 5,
+        "assignment_dp_rank": 2,
+        "capacity_aware_assignment_dp": true,
+        "charger_slot_use": [
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 23,
+            "station_id": "D_beijing"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 24,
+            "station_id": "D_beijing"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 25,
+            "station_id": "D_beijing"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 26,
+            "station_id": "D_beijing"
+          }
+        ],
+        "charging_route_count": 1,
+        "decoder": "explicit_reference_v1",
+        "fleet_use": [
+          4,
+          1
+        ],
+        "opened_route_count": 0,
+        "recreate_step_count": 3,
+        "removed_customer_count": 3,
+        "route_local_cost": 1597.8209060753463,
+        "rr_iteration": 30,
+        "rr_operator": "time_window_pressure_string",
+        "rr_reason": "remove a result-blind customer with low residual time-window slack under the shared route schedule and its adjacent string, then rebuild across depots, types, and charge schedules"
+      },
+      "objective": 1597.8209060753466,
+      "signature": "34c2066da54afc23aba24cfa1911255ccb81bdf313b5414b17cedfdb644612b8",
+      "source": "RUIN_RECREATE",
+      "violation_count": 0
+    },
+    {
+      "arm": "B_RR",
+      "duplicate_of_index": null,
+      "feasible": true,
+      "index": 43,
+      "metadata": {
+        "assignment_count": 5,
+        "assignment_dp_rank": 3,
+        "capacity_aware_assignment_dp": true,
+        "charger_slot_use": [],
+        "charging_route_count": 0,
+        "decoder": "explicit_reference_v1",
+        "fleet_use": [
+          5,
+          0
+        ],
+        "opened_route_count": 0,
+        "recreate_step_count": 3,
+        "removed_customer_count": 3,
+        "route_local_cost": 1649.6252244045425,
+        "rr_iteration": 30,
+        "rr_operator": "time_window_pressure_string",
+        "rr_reason": "remove a result-blind customer with low residual time-window slack under the shared route schedule and its adjacent string, then rebuild across depots, types, and charge schedules"
+      },
+      "objective": 1649.625224404543,
+      "signature": "a01bc93bcb402ee40b02120dca9a1c4aede321e18e6450e48b2611507059e0f9",
+      "source": "RUIN_RECREATE",
+      "violation_count": 0
+    },
+    {
+      "arm": "B_RR",
+      "duplicate_of_index": null,
+      "feasible": false,
+      "index": 44,
+      "metadata": {
+        "assignment_only_target_route": 0,
+        "removed_customer_count": 6,
+        "rr_iteration": 31,
+        "rr_operator": "vehicle_type_flip",
+        "rr_reason": "re-evaluate fixed cost, finite fleet, fuel or charging, time-varying price, and carbon under the opposite type",
+        "target_carbon_weight": 1.0,
+        "target_charge_strategy": "integrated",
+        "target_vehicle_type": "ev",
+        "unselected_routes_preserved": true
+      },
+      "objective": 1525.462445093995,
+      "signature": "f130ca64f55eaafc5cf535b85727eae211af53584419dac464d148720e9cae48",
+      "source": "RUIN_RECREATE",
+      "violation_count": 1
+    },
+    {
+      "arm": "B_RR",
+      "duplicate_of_index": null,
+      "feasible": false,
+      "index": 45,
+      "metadata": {
+        "assignment_only_target_route": 2,
+        "removed_customer_count": 6,
+        "rr_iteration": 32,
+        "rr_operator": "vehicle_type_flip",
+        "rr_reason": "re-evaluate fixed cost, finite fleet, fuel or charging, time-varying price, and carbon under the opposite type",
+        "target_carbon_weight": 1.0,
+        "target_charge_strategy": "integrated",
+        "target_vehicle_type": "ev",
+        "unselected_routes_preserved": true
+      },
+      "objective": 1514.0058197449991,
+      "signature": "7fb7aa73aa5abd40367aba24508419fe7f9c5910bcedbd08f902144d28242a66",
+      "source": "RUIN_RECREATE",
+      "violation_count": 1
+    },
+    {
+      "arm": "B_RR",
+      "duplicate_of_index": 44,
+      "feasible": false,
+      "index": 46,
+      "metadata": {
+        "assignment_only_target_route": 0,
+        "removed_customer_count": 6,
+        "rr_iteration": 33,
+        "rr_operator": "vehicle_type_flip",
+        "rr_reason": "re-evaluate fixed cost, finite fleet, fuel or charging, time-varying price, and carbon under the opposite type",
+        "target_carbon_weight": 1.0,
+        "target_charge_strategy": "integrated",
+        "target_vehicle_type": "ev",
+        "unselected_routes_preserved": true
+      },
+      "objective": 1525.462445093995,
+      "signature": "f130ca64f55eaafc5cf535b85727eae211af53584419dac464d148720e9cae48",
+      "source": "RUIN_RECREATE",
+      "violation_count": 1
+    },
+    {
+      "arm": "B_RR",
+      "duplicate_of_index": null,
+      "feasible": true,
+      "index": 47,
+      "metadata": {
+        "assignment_only_target_route": 3,
+        "removed_customer_count": 0,
+        "rr_iteration": 34,
+        "rr_operator": "charge_departure_retiming",
+        "rr_reason": "keep customers but rebuild charge location, amount, start time, and departure time against half-hour price and carbon",
+        "target_carbon_weight": 1.0,
+        "target_charge_strategy": "legacy",
+        "target_vehicle_type": "ev",
+        "unselected_routes_preserved": true
+      },
+      "objective": 1599.5119625016978,
+      "signature": "0b8e056168aaf96ab9a3854b9672801ebb1d538a15d253bd8f3afa7a801c1088",
+      "source": "RUIN_RECREATE",
+      "violation_count": 0
+    },
+    {
+      "arm": "B_RR",
+      "duplicate_of_index": null,
+      "feasible": true,
+      "index": 48,
+      "metadata": {
+        "assignment_count": 5,
+        "assignment_dp_rank": 1,
+        "capacity_aware_assignment_dp": true,
+        "charger_slot_use": [],
+        "charging_route_count": 0,
+        "decoder": "explicit_reference_v1",
+        "fleet_use": [
+          5,
+          0
+        ],
+        "opened_route_count": 0,
+        "recreate_step_count": 3,
+        "removed_customer_count": 3,
+        "route_local_cost": 1641.9369147814489,
+        "rr_iteration": 35,
+        "rr_operator": "time_window_pressure_string",
+        "rr_reason": "remove a result-blind customer with low residual time-window slack under the shared route schedule and its adjacent string, then rebuild across depots, types, and charge schedules"
+      },
+      "objective": 1641.936914781449,
+      "signature": "3c189f22ea709dc4dd398c3a2df68e249f96bb178d5bc19f7973817df72f7ccb",
+      "source": "RUIN_RECREATE",
+      "violation_count": 0
+    },
+    {
+      "arm": "B_RR",
+      "duplicate_of_index": 45,
+      "feasible": false,
+      "index": 49,
+      "metadata": {
+        "assignment_only_target_route": 2,
+        "removed_customer_count": 6,
+        "rr_iteration": 36,
+        "rr_operator": "vehicle_type_flip",
+        "rr_reason": "re-evaluate fixed cost, finite fleet, fuel or charging, time-varying price, and carbon under the opposite type",
+        "target_carbon_weight": 1.0,
+        "target_charge_strategy": "integrated",
+        "target_vehicle_type": "ev",
+        "unselected_routes_preserved": true
+      },
+      "objective": 1514.0058197449991,
+      "signature": "7fb7aa73aa5abd40367aba24508419fe7f9c5910bcedbd08f902144d28242a66",
+      "source": "RUIN_RECREATE",
+      "violation_count": 1
+    },
+    {
+      "arm": "B_RR",
+      "duplicate_of_index": null,
+      "feasible": false,
+      "index": 50,
+      "metadata": {
+        "assignment_only_target_route": 4,
+        "removed_customer_count": 4,
+        "rr_iteration": 37,
+        "rr_operator": "vehicle_type_flip",
+        "rr_reason": "re-evaluate fixed cost, finite fleet, fuel or charging, time-varying price, and carbon under the opposite type",
+        "target_carbon_weight": 1.0,
+        "target_charge_strategy": "integrated",
+        "target_vehicle_type": "ev",
+        "unselected_routes_preserved": true
+      },
+      "objective": 1530.2699825417103,
+      "signature": "a1f01ade2f9f9f0a733f7dffec9c09aff6c7844d70c34a592415c539ac500bec",
+      "source": "RUIN_RECREATE",
+      "violation_count": 1
+    },
+    {
+      "arm": "B_RR",
+      "duplicate_of_index": 43,
+      "feasible": true,
+      "index": 51,
+      "metadata": {
+        "assignment_only_target_route": 3,
+        "removed_customer_count": 3,
+        "rr_iteration": 38,
+        "rr_operator": "vehicle_type_flip",
+        "rr_reason": "re-evaluate fixed cost, finite fleet, fuel or charging, time-varying price, and carbon under the opposite type",
+        "target_carbon_weight": 0.0,
+        "target_charge_strategy": "not_applicable",
+        "target_vehicle_type": "cv",
+        "unselected_routes_preserved": true
+      },
+      "objective": 1649.625224404543,
+      "signature": "a01bc93bcb402ee40b02120dca9a1c4aede321e18e6450e48b2611507059e0f9",
+      "source": "RUIN_RECREATE",
+      "violation_count": 0
+    },
+    {
+      "arm": "B_RR",
+      "duplicate_of_index": 47,
+      "feasible": true,
+      "index": 52,
+      "metadata": {
+        "assignment_only_target_route": 3,
+        "removed_customer_count": 0,
+        "rr_iteration": 39,
+        "rr_operator": "charge_departure_retiming",
+        "rr_reason": "keep customers but rebuild charge location, amount, start time, and departure time against half-hour price and carbon",
+        "target_carbon_weight": 1.0,
+        "target_charge_strategy": "legacy",
+        "target_vehicle_type": "ev",
+        "unselected_routes_preserved": true
+      },
+      "objective": 1599.5119625016978,
+      "signature": "0b8e056168aaf96ab9a3854b9672801ebb1d538a15d253bd8f3afa7a801c1088",
+      "source": "RUIN_RECREATE",
+      "violation_count": 0
+    },
+    {
+      "arm": "B_RR",
+      "duplicate_of_index": 48,
+      "feasible": true,
+      "index": 53,
+      "metadata": {
+        "assignment_count": 5,
+        "assignment_dp_rank": 1,
+        "capacity_aware_assignment_dp": true,
+        "charger_slot_use": [],
+        "charging_route_count": 0,
+        "decoder": "explicit_reference_v1",
+        "fleet_use": [
+          5,
+          0
+        ],
+        "opened_route_count": 0,
+        "recreate_step_count": 2,
+        "removed_customer_count": 2,
+        "route_local_cost": 1641.9369147814489,
+        "rr_iteration": 40,
+        "rr_operator": "time_window_pressure_string",
+        "rr_reason": "remove a result-blind customer with low residual time-window slack under the shared route schedule and its adjacent string, then rebuild across depots, types, and charge schedules"
+      },
+      "objective": 1641.936914781449,
+      "signature": "3c189f22ea709dc4dd398c3a2df68e249f96bb178d5bc19f7973817df72f7ccb",
+      "source": "RUIN_RECREATE",
+      "violation_count": 0
+    },
+    {
+      "arm": "B_RR",
+      "duplicate_of_index": 50,
+      "feasible": false,
+      "index": 54,
+      "metadata": {
+        "assignment_only_target_route": 4,
+        "removed_customer_count": 4,
+        "rr_iteration": 41,
+        "rr_operator": "vehicle_type_flip",
+        "rr_reason": "re-evaluate fixed cost, finite fleet, fuel or charging, time-varying price, and carbon under the opposite type",
+        "target_carbon_weight": 1.0,
+        "target_charge_strategy": "integrated",
+        "target_vehicle_type": "ev",
+        "unselected_routes_preserved": true
+      },
+      "objective": 1530.2699825417103,
+      "signature": "a1f01ade2f9f9f0a733f7dffec9c09aff6c7844d70c34a592415c539ac500bec",
+      "source": "RUIN_RECREATE",
+      "violation_count": 1
+    },
+    {
+      "arm": "B_RR",
+      "duplicate_of_index": 50,
+      "feasible": false,
+      "index": 55,
+      "metadata": {
+        "assignment_only_target_route": 4,
+        "removed_customer_count": 4,
+        "rr_iteration": 42,
+        "rr_operator": "vehicle_type_flip",
+        "rr_reason": "re-evaluate fixed cost, finite fleet, fuel or charging, time-varying price, and carbon under the opposite type",
+        "target_carbon_weight": 1.0,
+        "target_charge_strategy": "integrated",
+        "target_vehicle_type": "ev",
+        "unselected_routes_preserved": true
+      },
+      "objective": 1530.2699825417103,
+      "signature": "a1f01ade2f9f9f0a733f7dffec9c09aff6c7844d70c34a592415c539ac500bec",
+      "source": "RUIN_RECREATE",
+      "violation_count": 1
+    },
+    {
+      "arm": "B_RR",
+      "duplicate_of_index": 45,
+      "feasible": false,
+      "index": 56,
+      "metadata": {
+        "assignment_only_target_route": 2,
+        "removed_customer_count": 6,
+        "rr_iteration": 43,
+        "rr_operator": "vehicle_type_flip",
+        "rr_reason": "re-evaluate fixed cost, finite fleet, fuel or charging, time-varying price, and carbon under the opposite type",
+        "target_carbon_weight": 1.0,
+        "target_charge_strategy": "integrated",
+        "target_vehicle_type": "ev",
+        "unselected_routes_preserved": true
+      },
+      "objective": 1514.0058197449991,
+      "signature": "7fb7aa73aa5abd40367aba24508419fe7f9c5910bcedbd08f902144d28242a66",
+      "source": "RUIN_RECREATE",
+      "violation_count": 1
+    },
+    {
+      "arm": "B_RR",
+      "duplicate_of_index": 47,
+      "feasible": true,
+      "index": 57,
+      "metadata": {
+        "assignment_only_target_route": 3,
+        "removed_customer_count": 0,
+        "rr_iteration": 44,
+        "rr_operator": "charge_departure_retiming",
+        "rr_reason": "keep customers but rebuild charge location, amount, start time, and departure time against half-hour price and carbon",
+        "target_carbon_weight": 1.0,
+        "target_charge_strategy": "legacy",
+        "target_vehicle_type": "ev",
+        "unselected_routes_preserved": true
+      },
+      "objective": 1599.5119625016978,
+      "signature": "0b8e056168aaf96ab9a3854b9672801ebb1d538a15d253bd8f3afa7a801c1088",
+      "source": "RUIN_RECREATE",
+      "violation_count": 0
+    },
+    {
+      "arm": "B_RR",
+      "duplicate_of_index": 41,
+      "feasible": true,
+      "index": 58,
+      "metadata": {
+        "assignment_count": 5,
+        "assignment_dp_rank": 1,
+        "capacity_aware_assignment_dp": true,
+        "charger_slot_use": [
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 0,
+            "station_id": "D_beijing"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 1,
+            "station_id": "D_beijing"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 2,
+            "station_id": "D_beijing"
+          }
+        ],
+        "charging_route_count": 1,
+        "decoder": "explicit_reference_v1",
+        "fleet_use": [
+          4,
+          1
+        ],
+        "opened_route_count": 0,
+        "recreate_step_count": 3,
+        "removed_customer_count": 3,
+        "route_local_cost": 1581.7500293767298,
+        "rr_iteration": 45,
+        "rr_operator": "time_window_pressure_string",
+        "rr_reason": "remove a result-blind customer with low residual time-window slack under the shared route schedule and its adjacent string, then rebuild across depots, types, and charge schedules"
+      },
+      "objective": 1581.7500293767298,
+      "signature": "5ee760e929e26ecec84ab234ef163e27a7fa4258b45d6d0166c903e0b985ca9f",
+      "source": "RUIN_RECREATE",
+      "violation_count": 0
+    },
+    {
+      "arm": "B_RR",
+      "duplicate_of_index": 42,
+      "feasible": true,
+      "index": 59,
+      "metadata": {
+        "assignment_count": 5,
+        "assignment_dp_rank": 2,
+        "capacity_aware_assignment_dp": true,
+        "charger_slot_use": [
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 23,
+            "station_id": "D_beijing"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 24,
+            "station_id": "D_beijing"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 25,
+            "station_id": "D_beijing"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 26,
+            "station_id": "D_beijing"
+          }
+        ],
+        "charging_route_count": 1,
+        "decoder": "explicit_reference_v1",
+        "fleet_use": [
+          4,
+          1
+        ],
+        "opened_route_count": 0,
+        "recreate_step_count": 3,
+        "removed_customer_count": 3,
+        "route_local_cost": 1597.8209060753463,
+        "rr_iteration": 45,
+        "rr_operator": "time_window_pressure_string",
+        "rr_reason": "remove a result-blind customer with low residual time-window slack under the shared route schedule and its adjacent string, then rebuild across depots, types, and charge schedules"
+      },
+      "objective": 1597.8209060753466,
+      "signature": "34c2066da54afc23aba24cfa1911255ccb81bdf313b5414b17cedfdb644612b8",
+      "source": "RUIN_RECREATE",
+      "violation_count": 0
+    },
+    {
+      "arm": "B_RR",
+      "duplicate_of_index": 43,
+      "feasible": true,
+      "index": 60,
+      "metadata": {
+        "assignment_count": 5,
+        "assignment_dp_rank": 3,
+        "capacity_aware_assignment_dp": true,
+        "charger_slot_use": [],
+        "charging_route_count": 0,
+        "decoder": "explicit_reference_v1",
+        "fleet_use": [
+          5,
+          0
+        ],
+        "opened_route_count": 0,
+        "recreate_step_count": 3,
+        "removed_customer_count": 3,
+        "route_local_cost": 1649.6252244045425,
+        "rr_iteration": 45,
+        "rr_operator": "time_window_pressure_string",
+        "rr_reason": "remove a result-blind customer with low residual time-window slack under the shared route schedule and its adjacent string, then rebuild across depots, types, and charge schedules"
+      },
+      "objective": 1649.625224404543,
+      "signature": "a01bc93bcb402ee40b02120dca9a1c4aede321e18e6450e48b2611507059e0f9",
+      "source": "RUIN_RECREATE",
+      "violation_count": 0
+    },
+    {
+      "arm": "B_RR",
+      "duplicate_of_index": null,
+      "feasible": false,
+      "index": 61,
+      "metadata": {
+        "assignment_only_target_route": 1,
+        "removed_customer_count": 6,
+        "rr_iteration": 46,
+        "rr_operator": "vehicle_type_flip",
+        "rr_reason": "re-evaluate fixed cost, finite fleet, fuel or charging, time-varying price, and carbon under the opposite type",
+        "target_carbon_weight": 1.0,
+        "target_charge_strategy": "integrated",
+        "target_vehicle_type": "ev",
+        "unselected_routes_preserved": true
+      },
+      "objective": 1511.3879098691705,
+      "signature": "dbbfb03d91300ebe6cfe1a513af43486c55a4d9284dd424d4071d53a22ed138b",
+      "source": "RUIN_RECREATE",
+      "violation_count": 1
+    },
+    {
+      "arm": "B_RR",
+      "duplicate_of_index": 44,
+      "feasible": false,
+      "index": 62,
+      "metadata": {
+        "assignment_only_target_route": 0,
+        "removed_customer_count": 6,
+        "rr_iteration": 47,
+        "rr_operator": "vehicle_type_flip",
+        "rr_reason": "re-evaluate fixed cost, finite fleet, fuel or charging, time-varying price, and carbon under the opposite type",
+        "target_carbon_weight": 1.0,
+        "target_charge_strategy": "integrated",
+        "target_vehicle_type": "ev",
+        "unselected_routes_preserved": true
+      },
+      "objective": 1525.462445093995,
+      "signature": "f130ca64f55eaafc5cf535b85727eae211af53584419dac464d148720e9cae48",
+      "source": "RUIN_RECREATE",
+      "violation_count": 1
+    },
+    {
+      "arm": "B_RR",
+      "duplicate_of_index": 61,
+      "feasible": false,
+      "index": 63,
+      "metadata": {
+        "assignment_only_target_route": 1,
+        "removed_customer_count": 6,
+        "rr_iteration": 48,
+        "rr_operator": "vehicle_type_flip",
+        "rr_reason": "re-evaluate fixed cost, finite fleet, fuel or charging, time-varying price, and carbon under the opposite type",
+        "target_carbon_weight": 1.0,
+        "target_charge_strategy": "integrated",
+        "target_vehicle_type": "ev",
+        "unselected_routes_preserved": true
+      },
+      "objective": 1511.3879098691705,
+      "signature": "dbbfb03d91300ebe6cfe1a513af43486c55a4d9284dd424d4071d53a22ed138b",
+      "source": "RUIN_RECREATE",
+      "violation_count": 1
+    },
+    {
+      "arm": "B_RR",
+      "duplicate_of_index": 47,
+      "feasible": true,
+      "index": 64,
+      "metadata": {
+        "assignment_only_target_route": 3,
+        "removed_customer_count": 0,
+        "rr_iteration": 49,
+        "rr_operator": "charge_departure_retiming",
+        "rr_reason": "keep customers but rebuild charge location, amount, start time, and departure time against half-hour price and carbon",
+        "target_carbon_weight": 1.0,
+        "target_charge_strategy": "legacy",
+        "target_vehicle_type": "ev",
+        "unselected_routes_preserved": true
+      },
+      "objective": 1599.5119625016978,
+      "signature": "0b8e056168aaf96ab9a3854b9672801ebb1d538a15d253bd8f3afa7a801c1088",
+      "source": "RUIN_RECREATE",
+      "violation_count": 0
+    },
+    {
+      "arm": "B_RR",
+      "duplicate_of_index": null,
+      "feasible": true,
+      "index": 65,
+      "metadata": {
+        "assignment_count": 5,
+        "assignment_dp_rank": 1,
+        "capacity_aware_assignment_dp": true,
+        "charger_slot_use": [],
+        "charging_route_count": 0,
+        "decoder": "explicit_reference_v1",
+        "fleet_use": [
+          5,
+          0
+        ],
+        "opened_route_count": 0,
+        "recreate_step_count": 3,
+        "removed_customer_count": 3,
+        "route_local_cost": 1642.3838283463974,
+        "rr_iteration": 50,
+        "rr_operator": "time_window_pressure_string",
+        "rr_reason": "remove a result-blind customer with low residual time-window slack under the shared route schedule and its adjacent string, then rebuild across depots, types, and charge schedules"
+      },
+      "objective": 1642.3838283463974,
+      "signature": "456676a6c8539a9e7dfd75e04e71ad64f80bbbf47e224235d4d8077aea92de24",
+      "source": "RUIN_RECREATE",
+      "violation_count": 0
+    },
+    {
+      "arm": "B_RR",
+      "duplicate_of_index": 61,
+      "feasible": false,
+      "index": 66,
+      "metadata": {
+        "assignment_only_target_route": 1,
+        "removed_customer_count": 6,
+        "rr_iteration": 51,
+        "rr_operator": "vehicle_type_flip",
+        "rr_reason": "re-evaluate fixed cost, finite fleet, fuel or charging, time-varying price, and carbon under the opposite type",
+        "target_carbon_weight": 1.0,
+        "target_charge_strategy": "integrated",
+        "target_vehicle_type": "ev",
+        "unselected_routes_preserved": true
+      },
+      "objective": 1511.3879098691705,
+      "signature": "dbbfb03d91300ebe6cfe1a513af43486c55a4d9284dd424d4071d53a22ed138b",
+      "source": "RUIN_RECREATE",
+      "violation_count": 1
+    },
+    {
+      "arm": "B_RR",
+      "duplicate_of_index": 50,
+      "feasible": false,
+      "index": 67,
+      "metadata": {
+        "assignment_only_target_route": 4,
+        "removed_customer_count": 4,
+        "rr_iteration": 52,
+        "rr_operator": "vehicle_type_flip",
+        "rr_reason": "re-evaluate fixed cost, finite fleet, fuel or charging, time-varying price, and carbon under the opposite type",
+        "target_carbon_weight": 1.0,
+        "target_charge_strategy": "integrated",
+        "target_vehicle_type": "ev",
+        "unselected_routes_preserved": true
+      },
+      "objective": 1530.2699825417103,
+      "signature": "a1f01ade2f9f9f0a733f7dffec9c09aff6c7844d70c34a592415c539ac500bec",
+      "source": "RUIN_RECREATE",
+      "violation_count": 1
+    },
+    {
+      "arm": "B_RR",
+      "duplicate_of_index": 50,
+      "feasible": false,
+      "index": 68,
+      "metadata": {
+        "assignment_only_target_route": 4,
+        "removed_customer_count": 4,
+        "rr_iteration": 53,
+        "rr_operator": "vehicle_type_flip",
+        "rr_reason": "re-evaluate fixed cost, finite fleet, fuel or charging, time-varying price, and carbon under the opposite type",
+        "target_carbon_weight": 1.0,
+        "target_charge_strategy": "integrated",
+        "target_vehicle_type": "ev",
+        "unselected_routes_preserved": true
+      },
+      "objective": 1530.2699825417103,
+      "signature": "a1f01ade2f9f9f0a733f7dffec9c09aff6c7844d70c34a592415c539ac500bec",
+      "source": "RUIN_RECREATE",
+      "violation_count": 1
+    },
+    {
+      "arm": "B_RR",
+      "duplicate_of_index": 47,
+      "feasible": true,
+      "index": 69,
+      "metadata": {
+        "assignment_only_target_route": 3,
+        "removed_customer_count": 0,
+        "rr_iteration": 54,
+        "rr_operator": "charge_departure_retiming",
+        "rr_reason": "keep customers but rebuild charge location, amount, start time, and departure time against half-hour price and carbon",
+        "target_carbon_weight": 1.0,
+        "target_charge_strategy": "legacy",
+        "target_vehicle_type": "ev",
+        "unselected_routes_preserved": true
+      },
+      "objective": 1599.5119625016978,
+      "signature": "0b8e056168aaf96ab9a3854b9672801ebb1d538a15d253bd8f3afa7a801c1088",
+      "source": "RUIN_RECREATE",
+      "violation_count": 0
+    },
+    {
+      "arm": "B_RR",
+      "duplicate_of_index": 41,
+      "feasible": true,
+      "index": 70,
+      "metadata": {
+        "assignment_count": 5,
+        "assignment_dp_rank": 1,
+        "capacity_aware_assignment_dp": true,
+        "charger_slot_use": [
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 0,
+            "station_id": "D_beijing"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 1,
+            "station_id": "D_beijing"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 2,
+            "station_id": "D_beijing"
+          }
+        ],
+        "charging_route_count": 1,
+        "decoder": "explicit_reference_v1",
+        "fleet_use": [
+          4,
+          1
+        ],
+        "opened_route_count": 0,
+        "recreate_step_count": 2,
+        "removed_customer_count": 2,
+        "route_local_cost": 1581.7500293767298,
+        "rr_iteration": 55,
+        "rr_operator": "time_window_pressure_string",
+        "rr_reason": "remove a result-blind customer with low residual time-window slack under the shared route schedule and its adjacent string, then rebuild across depots, types, and charge schedules"
+      },
+      "objective": 1581.7500293767298,
+      "signature": "5ee760e929e26ecec84ab234ef163e27a7fa4258b45d6d0166c903e0b985ca9f",
+      "source": "RUIN_RECREATE",
+      "violation_count": 0
+    },
+    {
+      "arm": "B_RR",
+      "duplicate_of_index": 42,
+      "feasible": true,
+      "index": 71,
+      "metadata": {
+        "assignment_count": 5,
+        "assignment_dp_rank": 2,
+        "capacity_aware_assignment_dp": true,
+        "charger_slot_use": [
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 23,
+            "station_id": "D_beijing"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 24,
+            "station_id": "D_beijing"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 25,
+            "station_id": "D_beijing"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 26,
+            "station_id": "D_beijing"
+          }
+        ],
+        "charging_route_count": 1,
+        "decoder": "explicit_reference_v1",
+        "fleet_use": [
+          4,
+          1
+        ],
+        "opened_route_count": 0,
+        "recreate_step_count": 2,
+        "removed_customer_count": 2,
+        "route_local_cost": 1597.8209060753463,
+        "rr_iteration": 55,
+        "rr_operator": "time_window_pressure_string",
+        "rr_reason": "remove a result-blind customer with low residual time-window slack under the shared route schedule and its adjacent string, then rebuild across depots, types, and charge schedules"
+      },
+      "objective": 1597.8209060753466,
+      "signature": "34c2066da54afc23aba24cfa1911255ccb81bdf313b5414b17cedfdb644612b8",
+      "source": "RUIN_RECREATE",
+      "violation_count": 0
+    },
+    {
+      "arm": "B_RR",
+      "duplicate_of_index": 43,
+      "feasible": true,
+      "index": 72,
+      "metadata": {
+        "assignment_count": 5,
+        "assignment_dp_rank": 3,
+        "capacity_aware_assignment_dp": true,
+        "charger_slot_use": [],
+        "charging_route_count": 0,
+        "decoder": "explicit_reference_v1",
+        "fleet_use": [
+          5,
+          0
+        ],
+        "opened_route_count": 0,
+        "recreate_step_count": 2,
+        "removed_customer_count": 2,
+        "route_local_cost": 1649.6252244045425,
+        "rr_iteration": 55,
+        "rr_operator": "time_window_pressure_string",
+        "rr_reason": "remove a result-blind customer with low residual time-window slack under the shared route schedule and its adjacent string, then rebuild across depots, types, and charge schedules"
+      },
+      "objective": 1649.625224404543,
+      "signature": "a01bc93bcb402ee40b02120dca9a1c4aede321e18e6450e48b2611507059e0f9",
+      "source": "RUIN_RECREATE",
+      "violation_count": 0
+    },
+    {
+      "arm": "B_RR",
+      "duplicate_of_index": 44,
+      "feasible": false,
+      "index": 73,
+      "metadata": {
+        "assignment_only_target_route": 0,
+        "removed_customer_count": 6,
+        "rr_iteration": 56,
+        "rr_operator": "vehicle_type_flip",
+        "rr_reason": "re-evaluate fixed cost, finite fleet, fuel or charging, time-varying price, and carbon under the opposite type",
+        "target_carbon_weight": 1.0,
+        "target_charge_strategy": "integrated",
+        "target_vehicle_type": "ev",
+        "unselected_routes_preserved": true
+      },
+      "objective": 1525.462445093995,
+      "signature": "f130ca64f55eaafc5cf535b85727eae211af53584419dac464d148720e9cae48",
+      "source": "RUIN_RECREATE",
+      "violation_count": 1
+    },
+    {
+      "arm": "B_RR",
+      "duplicate_of_index": 61,
+      "feasible": false,
+      "index": 74,
+      "metadata": {
+        "assignment_only_target_route": 1,
+        "removed_customer_count": 6,
+        "rr_iteration": 57,
+        "rr_operator": "vehicle_type_flip",
+        "rr_reason": "re-evaluate fixed cost, finite fleet, fuel or charging, time-varying price, and carbon under the opposite type",
+        "target_carbon_weight": 1.0,
+        "target_charge_strategy": "integrated",
+        "target_vehicle_type": "ev",
+        "unselected_routes_preserved": true
+      },
+      "objective": 1511.3879098691705,
+      "signature": "dbbfb03d91300ebe6cfe1a513af43486c55a4d9284dd424d4071d53a22ed138b",
+      "source": "RUIN_RECREATE",
+      "violation_count": 1
+    },
+    {
+      "arm": "B_RR",
+      "duplicate_of_index": 44,
+      "feasible": false,
+      "index": 75,
+      "metadata": {
+        "assignment_only_target_route": 0,
+        "removed_customer_count": 6,
+        "rr_iteration": 58,
+        "rr_operator": "vehicle_type_flip",
+        "rr_reason": "re-evaluate fixed cost, finite fleet, fuel or charging, time-varying price, and carbon under the opposite type",
+        "target_carbon_weight": 1.0,
+        "target_charge_strategy": "integrated",
+        "target_vehicle_type": "ev",
+        "unselected_routes_preserved": true
+      },
+      "objective": 1525.462445093995,
+      "signature": "f130ca64f55eaafc5cf535b85727eae211af53584419dac464d148720e9cae48",
+      "source": "RUIN_RECREATE",
+      "violation_count": 1
+    },
+    {
+      "arm": "B_RR",
+      "duplicate_of_index": 47,
+      "feasible": true,
+      "index": 76,
+      "metadata": {
+        "assignment_only_target_route": 3,
+        "removed_customer_count": 0,
+        "rr_iteration": 59,
+        "rr_operator": "charge_departure_retiming",
+        "rr_reason": "keep customers but rebuild charge location, amount, start time, and departure time against half-hour price and carbon",
+        "target_carbon_weight": 1.0,
+        "target_charge_strategy": "legacy",
+        "target_vehicle_type": "ev",
+        "unselected_routes_preserved": true
+      },
+      "objective": 1599.5119625016978,
+      "signature": "0b8e056168aaf96ab9a3854b9672801ebb1d538a15d253bd8f3afa7a801c1088",
+      "source": "RUIN_RECREATE",
+      "violation_count": 0
+    },
+    {
+      "arm": "B_RR",
+      "duplicate_of_index": null,
+      "feasible": true,
+      "index": 77,
+      "metadata": {
+        "assignment_count": 5,
+        "assignment_dp_rank": 1,
+        "capacity_aware_assignment_dp": true,
+        "charger_slot_use": [
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 0,
+            "station_id": "D_beijing"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 1,
+            "station_id": "D_beijing"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 2,
+            "station_id": "D_beijing"
+          }
+        ],
+        "charging_route_count": 1,
+        "decoder": "explicit_reference_v1",
+        "fleet_use": [
+          4,
+          1
+        ],
+        "opened_route_count": 0,
+        "recreate_step_count": 3,
+        "removed_customer_count": 3,
+        "route_local_cost": 1592.82117687971,
+        "rr_iteration": 60,
+        "rr_operator": "time_window_pressure_string",
+        "rr_reason": "remove a result-blind customer with low residual time-window slack under the shared route schedule and its adjacent string, then rebuild across depots, types, and charge schedules"
+      },
+      "objective": 1592.8211768797103,
+      "signature": "940794b02fc1c505086f4d1b53419eae5229dbf900ac8475c3d72fc464acacc2",
+      "source": "RUIN_RECREATE",
+      "violation_count": 0
+    },
+    {
+      "arm": "B_RR",
+      "duplicate_of_index": null,
+      "feasible": true,
+      "index": 78,
+      "metadata": {
+        "assignment_count": 5,
+        "assignment_dp_rank": 2,
+        "capacity_aware_assignment_dp": true,
+        "charger_slot_use": [
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 18,
+            "station_id": "D_beijing"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 19,
+            "station_id": "D_beijing"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 20,
+            "station_id": "D_beijing"
+          }
+        ],
+        "charging_route_count": 1,
+        "decoder": "explicit_reference_v1",
+        "fleet_use": [
+          4,
+          1
+        ],
+        "opened_route_count": 0,
+        "recreate_step_count": 3,
+        "removed_customer_count": 3,
+        "route_local_cost": 1600.7265990832698,
+        "rr_iteration": 60,
+        "rr_operator": "time_window_pressure_string",
+        "rr_reason": "remove a result-blind customer with low residual time-window slack under the shared route schedule and its adjacent string, then rebuild across depots, types, and charge schedules"
+      },
+      "objective": 1600.72659908327,
+      "signature": "c74892477cd55d437601a011e5e2ea0a142b45071642df4410c9acbffc12c280",
+      "source": "RUIN_RECREATE",
+      "violation_count": 0
+    },
+    {
+      "arm": "B_RR",
+      "duplicate_of_index": null,
+      "feasible": true,
+      "index": 79,
+      "metadata": {
+        "assignment_count": 5,
+        "assignment_dp_rank": 3,
+        "capacity_aware_assignment_dp": true,
+        "charger_slot_use": [],
+        "charging_route_count": 0,
+        "decoder": "explicit_reference_v1",
+        "fleet_use": [
+          5,
+          0
+        ],
+        "opened_route_count": 0,
+        "recreate_step_count": 3,
+        "removed_customer_count": 3,
+        "route_local_cost": 1647.9320160507978,
+        "rr_iteration": 60,
+        "rr_operator": "time_window_pressure_string",
+        "rr_reason": "remove a result-blind customer with low residual time-window slack under the shared route schedule and its adjacent string, then rebuild across depots, types, and charge schedules"
+      },
+      "objective": 1647.9320160507978,
+      "signature": "df64ba76db5cc0164d9e73228dd6f57e0286c73e0805d8b5516df7329dceb99c",
+      "source": "RUIN_RECREATE",
+      "violation_count": 0
+    },
+    {
+      "arm": "B_RR",
+      "duplicate_of_index": 45,
+      "feasible": false,
+      "index": 80,
+      "metadata": {
+        "assignment_only_target_route": 2,
+        "removed_customer_count": 6,
+        "rr_iteration": 61,
+        "rr_operator": "vehicle_type_flip",
+        "rr_reason": "re-evaluate fixed cost, finite fleet, fuel or charging, time-varying price, and carbon under the opposite type",
+        "target_carbon_weight": 1.0,
+        "target_charge_strategy": "integrated",
+        "target_vehicle_type": "ev",
+        "unselected_routes_preserved": true
+      },
+      "objective": 1514.0058197449991,
+      "signature": "7fb7aa73aa5abd40367aba24508419fe7f9c5910bcedbd08f902144d28242a66",
+      "source": "RUIN_RECREATE",
+      "violation_count": 1
+    }
+  ],
+  "remaining": 0
+}

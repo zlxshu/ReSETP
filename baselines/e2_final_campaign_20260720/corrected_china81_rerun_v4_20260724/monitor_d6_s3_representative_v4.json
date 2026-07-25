@@ -1,0 +1,109 @@
+{
+  "schema_version": 1,
+  "name": "d6-corrected-s3-representative-v4",
+  "objective": "按输入特征规则登记50客户仿真算例，补齐种子6至10并为最佳路径明细提供十次结果",
+  "workdir": "../../..",
+  "poll_seconds": 20,
+  "stale_seconds": 1800,
+  "max_runtime_seconds": 14400,
+  "pause_on_anomaly": true,
+  "required_command_substrings": [
+    "run_corrected_s3.py",
+    "--workers",
+    "5"
+  ],
+  "forbidden_command_substrings": [
+    "--register-only",
+    "--finalize-only",
+    "--smoke",
+    "--debug"
+  ],
+  "min_cpu_percent_when_active": 1,
+  "cpu_grace_seconds": 180,
+  "low_cpu_consecutive_checks": 4,
+  "max_rss_mb": 12000,
+  "min_system_memory_free_percent": 5,
+  "progress_files": [
+    ".d6-corrected-s3-representative-v4.monitor/experiment.stdout.log"
+  ],
+  "result_files": [
+    "representative_gate/raw_runs.csv",
+    "representative_gate/decision.json"
+  ],
+  "completion_files": [
+    "representative_gate/done.json"
+  ],
+  "checkpoint_paths": [
+    "representative_gate/extra_gate/tasks"
+  ],
+  "protected_files": [
+    {
+      "path": "full_gate/raw_runs.csv",
+      "kind": "core_data"
+    },
+    {
+      "path": "full_gate/decision.json",
+      "kind": "experiment_contract"
+    },
+    {
+      "path": "result_strength_gate/decision.json",
+      "kind": "experiment_contract"
+    },
+    {
+      "path": "result_strength_gate/artifact_hashes.json",
+      "kind": "experiment_contract"
+    },
+    {
+      "path": "e2_result_release_preregistration_v1_20260724.json",
+      "kind": "primary_config"
+    },
+    {
+      "path": "formal_preregistration.json",
+      "kind": "primary_config"
+    },
+    {
+      "path": "../corrected_china81_rerun_20260723/run_corrected_s3.py",
+      "kind": "experiment_contract"
+    },
+    {
+      "path": "../run_corrected_china81_d6.py",
+      "kind": "experiment_contract"
+    },
+    {
+      "path": "../../algorithm_prototypes/china81_mechanism_hybrid_20260720/epochal_hgs.py",
+      "kind": "model"
+    },
+    {
+      "path": "../../algorithm_prototypes/china81_mechanism_hybrid_20260720/route_pool_sp.py",
+      "kind": "model"
+    },
+    {
+      "path": "../../algorithm_prototypes/china81_mechanism_hybrid_20260720/pyvrp_adapter.py",
+      "kind": "model"
+    },
+    {
+      "path": "../../../solver/src/setp_solver/cost.py",
+      "kind": "cost_function"
+    },
+    {
+      "path": "../../../solver/src/setp_solver/check.py",
+      "kind": "evaluator"
+    },
+    {
+      "path": "../../../solver/src/setp_solver/china81_completion.py",
+      "kind": "evaluator"
+    },
+    {
+      "path": "../../../solver/src/setp_solver/prices.py",
+      "kind": "model"
+    },
+    {
+      "path": "../../../docs/handoff/model_change_approval_register_20260718.md",
+      "kind": "experiment_contract"
+    }
+  ],
+  "ai": {
+    "enabled": false,
+    "timeout_seconds": 180
+  }
+}

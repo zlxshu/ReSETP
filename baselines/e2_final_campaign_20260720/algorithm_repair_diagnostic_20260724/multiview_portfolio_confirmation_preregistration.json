@@ -1,0 +1,52 @@
+{
+  "schema": "resetp.multiview-portfolio-confirmation-preregistration.v1",
+  "registered_at": "2026-07-24T10:23:35+08:00",
+  "formal_evidence": false,
+  "claim_stop_record": "STOP_ROUTE_FUSION_SUPERADDITIVITY_20260724.json",
+  "claim_boundary": {
+    "primary": "MV-HGS-SP is a three-view portfolio that retains the best independently feasible complete-model incumbent.",
+    "secondary": "A checked time-limited MIP route-pool recombination may improve that incumbent and its frequency and magnitude must be reported descriptively.",
+    "forbidden": "Do not claim stable or material route-level 1+1+1>3 superadditivity.",
+    "compute": "Do not claim equal time or equal compute against a single view; report the extra three-view and MIP work."
+  },
+  "frozen_algorithm": {
+    "stage_1_iterations_per_view": 5000,
+    "stage_2_iterations_per_view": 20000,
+    "total_iterations_per_view": 25000,
+    "stage_2_seed_offset": 1009,
+    "exact_elites_migrated_within_same_view": 8,
+    "online_complete_checks_per_stage_per_view": 20,
+    "final_population_exact_candidate_limit_per_stage_per_view": 24,
+    "historical_population_snapshots_per_stage": 20,
+    "archive_quality_candidates_per_stage_per_view": 12,
+    "archive_diverse_candidates_per_stage_per_view": 12,
+    "diversity_metric": "PyVRP broken-pairs distance",
+    "mip_time_limit_seconds_per_stage": 30.0,
+    "checked_mip_incumbent_preserved_without_redecoding": true,
+    "maximum_complete_candidate_evaluation_attempts": 280
+  },
+  "fresh_confirmation_panel": [
+    "cn-cy-150c-03-V2-LOCATIONS seed 18",
+    "cn-jjj-150c-03-V2-LOCATIONS seed 18",
+    "cn-prd-150c-03-V2-LOCATIONS seed 18",
+    "cn-cy-200c-03-V2-LOCATIONS seed 18",
+    "cn-jjj-200c-03-V2-LOCATIONS seed 18",
+    "cn-prd-200c-03-V2-LOCATIONS seed 18"
+  ],
+  "acceptance": {
+    "all_solutions_independently_feasible": true,
+    "all_warm_start_route_types_preserved": true,
+    "all_history_archive_ledgers_complete": true,
+    "all_expanded_mip_runs_return_a_checked_incumbent": true,
+    "actual_complete_attempts_at_most": 280,
+    "protected_stage_1_result_never_overwritten_by_a_worse_result": true,
+    "main_method_zero_losses_to_each_single_view": true,
+    "minimum_strict_wins_over_each_single_view": 3,
+    "minimum_mean_reduction_percent_against_each_single_view": 0.05,
+    "minimum_strict_final_improvements_over_stage_1": 3,
+    "minimum_panel_tasks_with_at_least_12_main_curve_points_and_10_strict_decreases": 5
+  },
+  "route_fusion_reporting_only": "Record strict route-fusion wins and mean incremental reduction but do not use them as a pass criterion and do not elevate them into a stable-mechanism claim.",
+  "failure_rule": "Reject unchanged if any registered invariant, win-count, mean-reduction, search-improvement, or trajectory threshold is missed. Do not change the claim, panel, seed, algorithm, budget, MIP cap, or thresholds after results. Do not rerun failed pairs.",
+  "authorization_on_pass": "Freeze this algorithm and claim boundary for the complete corrected E2 rerun. Passing confirmation is not itself formal paper evidence."
+}

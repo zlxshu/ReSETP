@@ -16,24 +16,29 @@ from typing import Any
 
 REPO = Path(__file__).resolve().parents[2]
 BASE = Path(__file__).resolve().parent
-OUT = BASE / "e3_go_gate_20260723"
-CAMPAIGN = (
-    REPO
-    / "baselines/e2_final_campaign_20260720/"
-    "corrected_china81_rerun_v2_20260723"
+if str(REPO) not in sys.path:
+    sys.path.insert(0, str(REPO))
+
+from baselines.china_e3_e7.release_v6_config import (  # noqa: E402
+    CONTRACT,
+    CONTRACT_BUILDER,
+    E2_FULL as FULL,
+    E2_REPLAY as FULL_REPLAY,
+    E2_RESULT_AUDIT as E2_RESULT_STRENGTH,
+    E3_ARM_GATE as ARM,
+    E3_BUDGET_PILOT as PILOT,
+    E3_GO_GATE as OUT,
+    E3_PARAMETER_GATE as PARAMETERS,
+    E3_RELEASE_REGRESSION as REGRESSION,
+    PUBLIC_P1_REPLAY as PUBLIC,
+    RELEASE_CONFIG,
+    S3_MECHANISM_CASE,
+    S3_MECHANISM_TRAJECTORIES as TRAJ,
+    S3_REPRESENTATIVE,
+    S4_ROUTE_DETAIL as S4,
+    S5_ARTIFACTS as S5,
 )
-FULL = CAMPAIGN / "full_gate"
-S3 = CAMPAIGN / "representative_gate"
-TRAJ = S3 / "trajectories"
-S4 = CAMPAIGN / "table4_gate"
-S5 = CAMPAIGN / "artifacts"
-PUBLIC = (
-    REPO
-    / "baselines/e2_final_campaign_20260720/"
-    "corrected_china81_rerun_20260723/"
-    "public_p1_no_search_replay"
-)
-FULL_REPLAY = CAMPAIGN / "full_witness_replay"
+
 RUNTIME = (
     REPO
     / "data/ChinaInstances/"
@@ -49,22 +54,14 @@ SETTLEMENT = (
     / "data/ChinaInstances/"
     "china81_spatiotemporal_settlement_authority_v1_20260723"
 )
-ARM = BASE / "e3_arm_semantics_gate_v4_20260723"
-PILOT = BASE / "e3_budget_pilot_v3_20260723"
-REGRESSION = BASE / "e3_release_regression_20260723"
 ENVIRONMENT = BASE / "e3_environment_authority_20260723"
-PARAMETERS = BASE / "e3_parameter_coherence_gate_v2_20260723"
-CONTRACT = (
-    REPO
-    / "data/ChinaInstances/"
-    "china_e3_formal_release_contract_v4_20260723.json"
-)
-CONTRACT_BUILDER = BASE / "build_formal_release_contract_v4.py"
 FORMAL_RUNNER = BASE / "formal_e3_runner.py"
 POST_RUN_SOURCES = (
     BASE / "contract.py",
     BASE / "run_e3_independent_recalc.py",
     BASE / "statistics.py",
+    BASE / "e3_exhibits.py",
+    BASE / "run_e3_result_audit.py",
     BASE / "charts.py",
     BASE / "tables.py",
 )
@@ -331,6 +328,7 @@ def write_gate_package(
     write_csv(OUT / "raw_runs.csv", checks)
     source_paths = (
         CONTRACT,
+        RELEASE_CONFIG,
         FORMAL_RUNNER,
         *POST_RUN_SOURCES,
         APPROVAL,
@@ -539,9 +537,19 @@ def main() -> int:
             "PASS_D6_CORRECTED_CHINA81_E2_RAW",
         ),
         (
-            "d6_corrected_s3",
-            S3 / "decision.json",
+            "d6_corrected_e2_result_strength",
+            E2_RESULT_STRENGTH / "decision.json",
+            "PASS_E2_CORRECTED_PAPER_STRENGTH",
+        ),
+        (
+            "d6_corrected_s3_representative",
+            S3_REPRESENTATIVE / "decision.json",
             "PASS_D6_CORRECTED_S3_REPRESENTATIVE",
+        ),
+        (
+            "d6_corrected_s3_mechanism_case",
+            S3_MECHANISM_CASE / "decision.json",
+            "PASS_D6_CORRECTED_S3_MECHANISM_CASE",
         ),
         (
             "d6_corrected_trajectories",
@@ -587,7 +595,9 @@ def main() -> int:
         ARM,
         PILOT,
         FULL,
-        S3,
+        E2_RESULT_STRENGTH,
+        S3_REPRESENTATIVE,
+        S3_MECHANISM_CASE,
         TRAJ,
         S4,
         S5,
@@ -800,6 +810,7 @@ def main() -> int:
         (
             CONTRACT,
             CONTRACT_BUILDER,
+            RELEASE_CONFIG,
             FORMAL_RUNNER,
             *POST_RUN_SOURCES,
             APPROVAL,

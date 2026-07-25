@@ -1,0 +1,60 @@
+{
+  "candidate_objectives_evaluated": 0,
+  "memory_before": {
+    "available_bytes": 1782071296.0,
+    "available_percent": 20.74604034423828,
+    "total_bytes": 8589934592.0
+  },
+  "real_instance_loaded_before_smoke_pass": false,
+  "registration_sha256": "3e938408cb5b72f115c1862f2ea6ca56f6aa1f53aaeafee330576b9fafd51c06",
+  "schema": "resetp.resource-slot-pricing-engineering.v3",
+  "spawn_smoke_error": "",
+  "spawn_smoke_results": [
+    {
+      "file": "/Volumes/移动硬盘（512G）/ReSETP/baselines/algorithm_prototypes/resource_slot_pricing_20260725/worker_entry_v3.py",
+      "module": "worker_entry_v3",
+      "pid": 32099,
+      "token": 0
+    },
+    {
+      "file": "/Volumes/移动硬盘（512G）/ReSETP/baselines/algorithm_prototypes/resource_slot_pricing_20260725/worker_entry_v3.py",
+      "module": "worker_entry_v3",
+      "pid": 32098,
+      "token": 1
+    },
+    {
+      "file": "/Volumes/移动硬盘（512G）/ReSETP/baselines/algorithm_prototypes/resource_slot_pricing_20260725/worker_entry_v3.py",
+      "module": "worker_entry_v3",
+      "pid": 32102,
+      "token": 2
+    },
+    {
+      "file": "/Volumes/移动硬盘（512G）/ReSETP/baselines/algorithm_prototypes/resource_slot_pricing_20260725/worker_entry_v3.py",
+      "module": "worker_entry_v3",
+      "pid": 32104,
+      "token": 3
+    },
+    {
+      "file": "/Volumes/移动硬盘（512G）/ReSETP/baselines/algorithm_prototypes/resource_slot_pricing_20260725/worker_entry_v3.py",
+      "module": "worker_entry_v3",
+      "pid": 32101,
+      "token": 4
+    },
+    {
+      "file": "/Volumes/移动硬盘（512G）/ReSETP/baselines/algorithm_prototypes/resource_slot_pricing_20260725/worker_entry_v3.py",
+      "module": "worker_entry_v3",
+      "pid": 32103,
+      "token": 5
+    }
+  ],
+  "started_at_utc": "2026-07-25T10:43:12.399909+00:00",
+  "unit_checks": {
+    "dominance_accepts_lower_cost_resource_subset": true,
+    "dominance_rejects_reverse": true,
+    "merge_preserves_customer_order": true,
+    "merge_rejects_overlap": true,
+    "negative_reduced_cost_sign": true,
+    "resource_penalty_changes_reduced_cost": true
+  },
+  "workers": 6
+}

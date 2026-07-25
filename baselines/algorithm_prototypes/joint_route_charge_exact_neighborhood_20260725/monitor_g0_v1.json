@@ -1,0 +1,116 @@
+{
+  "schema_version": 1,
+  "name": "jrc-exact-neighborhood-g0-v1",
+  "objective": "Run the single frozen 3-instance by 2-arm exact-neighborhood preflight with six independent workers",
+  "workdir": "../../..",
+  "poll_seconds": 5,
+  "stale_seconds": 180,
+  "max_runtime_seconds": 300,
+  "pause_on_anomaly": true,
+  "required_command_substrings": [
+    "run_g0"
+  ],
+  "forbidden_command_substrings": [
+    "--tune",
+    "--rescue",
+    "--full"
+  ],
+  "min_cpu_percent_when_active": 1,
+  "cpu_grace_seconds": 90,
+  "low_cpu_consecutive_checks": 8,
+  "max_rss_mb": 4096,
+  "min_system_free_memory_mb": 1024,
+  "min_system_memory_free_percent": 10,
+  "logs": [],
+  "progress_files": [],
+  "result_files": [
+    "baselines/algorithm_prototypes/joint_route_charge_exact_neighborhood_20260725/g0_gate_v1/raw_runs.csv",
+    "baselines/algorithm_prototypes/joint_route_charge_exact_neighborhood_20260725/g0_gate_v1/decision.json",
+    "baselines/algorithm_prototypes/joint_route_charge_exact_neighborhood_20260725/g0_gate_v1/independent_replay.json",
+    "baselines/algorithm_prototypes/joint_route_charge_exact_neighborhood_20260725/g0_gate_v1/artifact_hashes.json"
+  ],
+  "completion_files": [
+    "baselines/algorithm_prototypes/joint_route_charge_exact_neighborhood_20260725/g0_gate_v1/done.json"
+  ],
+  "checkpoint_paths": [
+    "baselines/algorithm_prototypes/joint_route_charge_exact_neighborhood_20260725/g0_gate_v1"
+  ],
+  "protected_files": [
+    {
+      "path": "baselines/algorithm_prototypes/joint_route_charge_exact_neighborhood_20260725/g0_registration_v1.json",
+      "kind": "primary_config"
+    },
+    {
+      "path": "baselines/algorithm_prototypes/joint_route_charge_exact_neighborhood_20260725/engineering_gate_v1/decision.json",
+      "kind": "experiment_contract"
+    },
+    {
+      "path": "docs/handoff/e2_joint_route_charge_exact_neighborhood_contract_20260725.md",
+      "kind": "experiment_contract"
+    },
+    {
+      "path": "baselines/algorithm_prototypes/joint_route_charge_exact_neighborhood_20260725/exact_neighborhood.py",
+      "kind": "model"
+    },
+    {
+      "path": "baselines/algorithm_prototypes/joint_route_charge_exact_neighborhood_20260725/worker_entry.py",
+      "kind": "model"
+    },
+    {
+      "path": "baselines/algorithm_prototypes/joint_route_charge_exact_neighborhood_20260725/run_g0.py",
+      "kind": "experiment_contract"
+    },
+    {
+      "path": "baselines/algorithm_prototypes/joint_route_charge_exact_neighborhood_20260725/independent_replay.py",
+      "kind": "evaluator"
+    },
+    {
+      "path": "solver/src/setp_solver/check.py",
+      "kind": "evaluator"
+    },
+    {
+      "path": "solver/src/setp_solver/china81_completion.py",
+      "kind": "evaluator"
+    },
+    {
+      "path": "solver/src/setp_solver/cost.py",
+      "kind": "cost_function"
+    },
+    {
+      "path": "solver/src/setp_solver/prices.py",
+      "kind": "core_data"
+    }
+  ],
+  "csv_rules": [
+    {
+      "path": "baselines/algorithm_prototypes/joint_route_charge_exact_neighborhood_20260725/g0_gate_v1/raw_runs.csv",
+      "required": true,
+      "required_after_seconds": 240,
+      "required_fields": [
+        "task_id",
+        "instance_id",
+        "arm",
+        "start_cost",
+        "final_cost",
+        "complete_candidate_scores",
+        "optimality_proven"
+      ],
+      "feasible_field": "optimality_proven",
+      "truthy": [
+        "True",
+        "true",
+        "1"
+      ],
+      "min_feasible_rate": 1.0,
+      "duplicate_key_fields": [
+        "task_id"
+      ],
+      "max_duplicate_fraction": 0
+    }
+  ],
+  "milestones": [],
+  "ai": {
+    "enabled": false,
+    "timeout_seconds": 300
+  }
+}

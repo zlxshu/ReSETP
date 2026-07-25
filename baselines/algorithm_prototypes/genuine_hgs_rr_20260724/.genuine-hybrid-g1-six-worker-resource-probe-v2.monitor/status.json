@@ -1,0 +1,233 @@
+{
+  "ai_diagnosis": {
+    "invoked": false,
+    "reason": "disabled"
+  },
+  "checked_at": "2026-07-25T04:12:14+00:00",
+  "checkpoint_inventory": [],
+  "csv_summaries": [
+    {
+      "duplicate_rows": 0,
+      "exists": true,
+      "feasible_rate": 1.0,
+      "path": "/Volumes/移动硬盘（512G）/ReSETP/baselines/algorithm_prototypes/genuine_hgs_rr_20260724/g1_six_worker_resource_probe_v2/raw_runs.csv",
+      "rows": 6
+    }
+  ],
+  "files": {
+    "/Volumes/移动硬盘（512G）/ReSETP/baselines/algorithm_prototypes/genuine_hgs_rr_20260724/.genuine-hybrid-g1-six-worker-resource-probe-v2.monitor/experiment.stdout.log": {
+      "age_seconds": 12.041297912597656,
+      "exists": true,
+      "mtime": 1784952722.41,
+      "path": "/Volumes/移动硬盘（512G）/ReSETP/baselines/algorithm_prototypes/genuine_hgs_rr_20260724/.genuine-hybrid-g1-six-worker-resource-probe-v2.monitor/experiment.stdout.log",
+      "size": 35
+    },
+    "/Volumes/移动硬盘（512G）/ReSETP/baselines/algorithm_prototypes/genuine_hgs_rr_20260724/g1_six_worker_resource_probe_v2/artifact_hashes.json": {
+      "age_seconds": 12.062735795974731,
+      "exists": true,
+      "mtime": 1784952722.39,
+      "path": "/Volumes/移动硬盘（512G）/ReSETP/baselines/algorithm_prototypes/genuine_hgs_rr_20260724/g1_six_worker_resource_probe_v2/artifact_hashes.json",
+      "size": 412
+    },
+    "/Volumes/移动硬盘（512G）/ReSETP/baselines/algorithm_prototypes/genuine_hgs_rr_20260724/g1_six_worker_resource_probe_v2/decision.json": {
+      "age_seconds": 12.102445125579834,
+      "exists": true,
+      "mtime": 1784952722.35,
+      "path": "/Volumes/移动硬盘（512G）/ReSETP/baselines/algorithm_prototypes/genuine_hgs_rr_20260724/g1_six_worker_resource_probe_v2/decision.json",
+      "size": 560
+    },
+    "/Volumes/移动硬盘（512G）/ReSETP/baselines/algorithm_prototypes/genuine_hgs_rr_20260724/g1_six_worker_resource_probe_v2/metadata.json": {
+      "age_seconds": 12.071870803833008,
+      "exists": true,
+      "mtime": 1784952722.38,
+      "path": "/Volumes/移动硬盘（512G）/ReSETP/baselines/algorithm_prototypes/genuine_hgs_rr_20260724/g1_six_worker_resource_probe_v2/metadata.json",
+      "size": 2030
+    },
+    "/Volumes/移动硬盘（512G）/ReSETP/baselines/algorithm_prototypes/genuine_hgs_rr_20260724/g1_six_worker_resource_probe_v2/raw_runs.csv": {
+      "age_seconds": 12.11216115951538,
+      "exists": true,
+      "mtime": 1784952722.34,
+      "path": "/Volumes/移动硬盘（512G）/ReSETP/baselines/algorithm_prototypes/genuine_hgs_rr_20260724/g1_six_worker_resource_probe_v2/raw_runs.csv",
+      "size": 687
+    },
+    "/Volumes/移动硬盘（512G）/ReSETP/baselines/algorithm_prototypes/genuine_hgs_rr_20260724/g1_six_worker_resource_probe_v2/report.md": {
+      "age_seconds": 12.063023805618286,
+      "exists": true,
+      "mtime": 1784952722.39,
+      "path": "/Volumes/移动硬盘（512G）/ReSETP/baselines/algorithm_prototypes/genuine_hgs_rr_20260724/g1_six_worker_resource_probe_v2/report.md",
+      "size": 470
+    }
+  },
+  "findings": [],
+  "log_paths": [
+    "/Volumes/移动硬盘（512G）/ReSETP/baselines/algorithm_prototypes/genuine_hgs_rr_20260724/.genuine-hybrid-g1-six-worker-resource-probe-v2.monitor/experiment.stdout.log"
+  ],
+  "name": "genuine-hybrid-g1-six-worker-resource-probe-v2",
+  "paused": false,
+  "process": {
+    "alive": false,
+    "cpu_percent": 0,
+    "members": [],
+    "pgid": 70595,
+    "root_pid": 70595,
+    "rss_mb": 0.0
+  },
+  "protected_files": {
+    "/Volumes/移动硬盘（512G）/ReSETP/baselines/algorithm_prototypes/genuine_hgs_rr_20260724/evaluation.py": {
+      "age_seconds": 61368.508284807205,
+      "exists": true,
+      "kind": "evaluator",
+      "mtime": 1784891365.96,
+      "path": "/Volumes/移动硬盘（512G）/ReSETP/baselines/algorithm_prototypes/genuine_hgs_rr_20260724/evaluation.py",
+      "sha256": "c95d91293723278005bc77a513826495fc8fca7ce5daef56903714bce82a7385",
+      "size": 2101
+    },
+    "/Volumes/移动硬盘（512G）/ReSETP/baselines/algorithm_prototypes/genuine_hgs_rr_20260724/fleet_assignment_dp.py": {
+      "age_seconds": 468.63698291778564,
+      "exists": true,
+      "kind": "model",
+      "mtime": 1784952265.83,
+      "path": "/Volumes/移动硬盘（512G）/ReSETP/baselines/algorithm_prototypes/genuine_hgs_rr_20260724/fleet_assignment_dp.py",
+      "sha256": "ff1dc05af5c218759568c6a2e4f46106e3cbffa9e3d32d8c2cbaa4b7719127b3",
+      "size": 28097
+    },
+    "/Volumes/移动硬盘（512G）/ReSETP/baselines/algorithm_prototypes/genuine_hgs_rr_20260724/g0_real_bundle_gate_v2/artifact_hashes.json": {
+      "age_seconds": 209.12499809265137,
+      "exists": true,
+      "kind": "upstream_evidence",
+      "mtime": 1784952525.33,
+      "path": "/Volumes/移动硬盘（512G）/ReSETP/baselines/algorithm_prototypes/genuine_hgs_rr_20260724/g0_real_bundle_gate_v2/artifact_hashes.json",
+      "sha256": "cf24b05a1fda05bc0f4500a4eef005d6291b3d67501cfb064d052c36642b23ee",
+      "size": 412
+    },
+    "/Volumes/移动硬盘（512G）/ReSETP/baselines/algorithm_prototypes/genuine_hgs_rr_20260724/g0_real_bundle_gate_v2/decision.json": {
+      "age_seconds": 209.13449096679688,
+      "exists": true,
+      "kind": "upstream_evidence",
+      "mtime": 1784952525.32,
+      "path": "/Volumes/移动硬盘（512G）/ReSETP/baselines/algorithm_prototypes/genuine_hgs_rr_20260724/g0_real_bundle_gate_v2/decision.json",
+      "sha256": "f16d4bd0eeae08517a15009cafe893ec92660c12cd1ed4097a61e748fa4c9dfe",
+      "size": 419
+    },
+    "/Volumes/移动硬盘（512G）/ReSETP/baselines/algorithm_prototypes/genuine_hgs_rr_20260724/g0_real_bundle_preregistration_v2.json": {
+      "age_seconds": 263.6936628818512,
+      "exists": true,
+      "kind": "experiment_contract",
+      "mtime": 1784952470.76,
+      "path": "/Volumes/移动硬盘（512G）/ReSETP/baselines/algorithm_prototypes/genuine_hgs_rr_20260724/g0_real_bundle_preregistration_v2.json",
+      "sha256": "33089ede8bea3c263c7b7b6da1ac1ca905d7ae38286ba3e87dfdcee421b10abd",
+      "size": 3632
+    },
+    "/Volumes/移动硬盘（512G）/ReSETP/baselines/algorithm_prototypes/genuine_hgs_rr_20260724/g1_six_worker_resource_probe_registration_v2.json": {
+      "age_seconds": 61.66331505775452,
+      "exists": true,
+      "kind": "resource_contract",
+      "mtime": 1784952672.79,
+      "path": "/Volumes/移动硬盘（512G）/ReSETP/baselines/algorithm_prototypes/genuine_hgs_rr_20260724/g1_six_worker_resource_probe_registration_v2.json",
+      "sha256": "e8e2770eab196e61532fd80b39f4015bed7ec171823b0620c94cc15f6bcbe8d8",
+      "size": 3439
+    },
+    "/Volumes/移动硬盘（512G）/ReSETP/baselines/algorithm_prototypes/genuine_hgs_rr_20260724/reference_decoder.py": {
+      "age_seconds": 59197.98766994476,
+      "exists": true,
+      "kind": "model",
+      "mtime": 1784893536.48,
+      "path": "/Volumes/移动硬盘（512G）/ReSETP/baselines/algorithm_prototypes/genuine_hgs_rr_20260724/reference_decoder.py",
+      "sha256": "cca72605d98ae39430975eb08facae1211e4b430e4931e4f36bcf8ec1f0b2b72",
+      "size": 6409
+    },
+    "/Volumes/移动硬盘（512G）/ReSETP/baselines/algorithm_prototypes/genuine_hgs_rr_20260724/run_g0_real_bundle_preflight.py": {
+      "age_seconds": 272.86551117897034,
+      "exists": true,
+      "kind": "validation_runner",
+      "mtime": 1784952461.59,
+      "path": "/Volumes/移动硬盘（512G）/ReSETP/baselines/algorithm_prototypes/genuine_hgs_rr_20260724/run_g0_real_bundle_preflight.py",
+      "sha256": "db1b7ae924abda6fa5ed6a7318ae61e02729e34100d5039b85e71c69c51d595c",
+      "size": 31842
+    },
+    "/Volumes/移动硬盘（512G）/ReSETP/baselines/algorithm_prototypes/genuine_hgs_rr_20260724/run_g0_real_bundle_preflight_v2.py": {
+      "age_seconds": 336.70644998550415,
+      "exists": true,
+      "kind": "validation_runner",
+      "mtime": 1784952397.76,
+      "path": "/Volumes/移动硬盘（512G）/ReSETP/baselines/algorithm_prototypes/genuine_hgs_rr_20260724/run_g0_real_bundle_preflight_v2.py",
+      "sha256": "4f61cae44d501806990f30f4b2a2c8461fc089d3407f41f290590df544688195",
+      "size": 2353
+    },
+    "/Volumes/移动硬盘（512G）/ReSETP/baselines/e2_final_campaign_20260720/run_g1_six_worker_resource_probe.py": {
+      "age_seconds": 41344.91912317276,
+      "exists": true,
+      "kind": "resource_runner",
+      "mtime": 1784911389.55,
+      "path": "/Volumes/移动硬盘（512G）/ReSETP/baselines/e2_final_campaign_20260720/run_g1_six_worker_resource_probe.py",
+      "sha256": "6bb202f8236639707170202070219184a3801310f4b4a0e5fd10595c078d9877",
+      "size": 8357
+    },
+    "/Volumes/移动硬盘（512G）/ReSETP/baselines/e2_final_campaign_20260720/run_g1_six_worker_resource_probe_v2.py": {
+      "age_seconds": 71.24971389770508,
+      "exists": true,
+      "kind": "resource_runner",
+      "mtime": 1784952663.22,
+      "path": "/Volumes/移动硬盘（512G）/ReSETP/baselines/e2_final_campaign_20260720/run_g1_six_worker_resource_probe_v2.py",
+      "sha256": "14edcf88e2bbe104298f3974bd367618091c720e7c16ebc5213e1ab3a9f7f927",
+      "size": 3575
+    },
+    "/Volumes/移动硬盘（512G）/ReSETP/docs/paper_v2/paper_main.tex": {
+      "age_seconds": 105860.17448091507,
+      "exists": true,
+      "kind": "paper_conclusion",
+      "mtime": 1784846874.3,
+      "path": "/Volumes/移动硬盘（512G）/ReSETP/docs/paper_v2/paper_main.tex",
+      "sha256": "f4882979a3096b952f334ef11b750d7dbf6ebc2e0ec21babdd09da5c364415ad",
+      "size": 109043
+    },
+    "/Volumes/移动硬盘（512G）/ReSETP/solver/src/setp_solver/check.py": {
+      "age_seconds": 128382.49103784561,
+      "exists": true,
+      "kind": "evaluator",
+      "mtime": 1784824351.98,
+      "path": "/Volumes/移动硬盘（512G）/ReSETP/solver/src/setp_solver/check.py",
+      "sha256": "9c81e254e05591667c8225965bb9d0ba4e8bbfc53eb0f8c61ffdb4325a1403a8",
+      "size": 44701
+    },
+    "/Volumes/移动硬盘（512G）/ReSETP/solver/src/setp_solver/china81_completion.py": {
+      "age_seconds": 128140.05185389519,
+      "exists": true,
+      "kind": "evaluator",
+      "mtime": 1784824594.42,
+      "path": "/Volumes/移动硬盘（512G）/ReSETP/solver/src/setp_solver/china81_completion.py",
+      "sha256": "c0b72db82e324981442f357bc3bb336eac5dae033a44a3ab16fa2cbe4db91653",
+      "size": 17329
+    },
+    "/Volumes/移动硬盘（512G）/ReSETP/solver/src/setp_solver/cost.py": {
+      "age_seconds": 150337.6326379776,
+      "exists": true,
+      "kind": "cost_function",
+      "mtime": 1784802396.84,
+      "path": "/Volumes/移动硬盘（512G）/ReSETP/solver/src/setp_solver/cost.py",
+      "sha256": "2717b4b4de39bb4c2a9a1bda602f4420cb3e3b1e87faa83678dfa64f88fc80be",
+      "size": 44794
+    },
+    "/Volumes/移动硬盘（512G）/ReSETP/solver/src/setp_solver/prices.py": {
+      "age_seconds": 150337.6333911419,
+      "exists": true,
+      "kind": "primary_config",
+      "mtime": 1784802396.84,
+      "path": "/Volumes/移动硬盘（512G）/ReSETP/solver/src/setp_solver/prices.py",
+      "sha256": "fe13a721fc63e79c44f5c7faf8bf4802155a28cb4c081d010d09d8dc4804d157",
+      "size": 18069
+    }
+  },
+  "runtime_seconds": 15.199917078018188,
+  "schema_version": 1,
+  "state": "COMPLETED",
+  "system": {
+    "free_memory_mb": 293.75,
+    "load_average_15m": 1.44189453125,
+    "load_average_1m": 1.7568359375,
+    "load_average_5m": 1.57568359375,
+    "logical_cpus": 8,
+    "memory_pressure_free_percent": 62.0,
+    "swapouts": 63179555
+  }
+}

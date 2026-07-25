@@ -1,0 +1,59 @@
+{
+  "all_complete_candidate_budgets_80": true,
+  "all_full_model_feasible": true,
+  "claim_boundary": "descriptive four-column representative comparison; the three single-view columns are exact-model-selected outputs from the same three view generations used by MV-HGS-SP, while the fusion also pays for all views and time-limited MIP recombination; no equal-compute claim is made",
+  "four_arm_rows": 40,
+  "input_manifest_hash_set_count": 1,
+  "mv_hgs_sp_pairwise": {
+    "HGS-E": {
+      "losses": 0,
+      "ties": 0,
+      "wins": 10
+    },
+    "HGS-F": {
+      "losses": 0,
+      "ties": 10,
+      "wins": 0
+    },
+    "HGS-M": {
+      "losses": 0,
+      "ties": 0,
+      "wins": 10
+    }
+  },
+  "next_gate": "observation-only trajectories, S4 and S5",
+  "representative_instance_id": "cn-prd-50c-01-V2-LOCATIONS",
+  "responsibility_map_hash_set_count": 1,
+  "schema": "resetp.d6-corrected-s3.decision.v1",
+  "seed_count": 10,
+  "shared_search_task_count": 10,
+  "source_hash_set_count": 1,
+  "summary": {
+    "HGS-E": {
+      "best_cost": 2592.346706891174,
+      "max_cost": 2595.219509474322,
+      "mean_cost": 2593.9362616490484,
+      "mean_cpu_seconds": 24.00186388739967
+    },
+    "HGS-F": {
+      "best_cost": 2574.660505687653,
+      "max_cost": 2574.660505687653,
+      "mean_cost": 2574.660505687653,
+      "mean_cpu_seconds": 22.291933596099263
+    },
+    "HGS-M": {
+      "best_cost": 2594.1291282681514,
+      "max_cost": 2601.8222782557614,
+      "mean_cost": 2598.0443446511445,
+      "mean_cpu_seconds": 24.349587320900174
+    },
+    "MV-HGS-SP": {
+      "best_cost": 2574.660505687653,
+      "max_cost": 2574.660505687653,
+      "mean_cost": 2574.660505687653,
+      "mean_cpu_seconds": 71.05766163339577
+    }
+  },
+  "verdict": "PASS_D6_CORRECTED_S3_REPRESENTATIVE",
+  "wallclock_safety_trigger_count": 0
+}

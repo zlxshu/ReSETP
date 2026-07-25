@@ -1,0 +1,3647 @@
+{
+  "arm": "B_RR",
+  "consumed": 80,
+  "duplicates": 15,
+  "feasible": 73,
+  "infeasible": 7,
+  "limit": 80,
+  "records": [
+    {
+      "arm": "B_RR",
+      "duplicate_of_index": null,
+      "feasible": true,
+      "index": 1,
+      "metadata": {
+        "shared_initial": true
+      },
+      "objective": 8886.621089737959,
+      "signature": "905f2d1e4caa3957a3155cd30108b2cb07cb3992b967a0db47b3e12bed20645d",
+      "source": "SHARED_INITIAL",
+      "violation_count": 0
+    },
+    {
+      "arm": "B_RR",
+      "duplicate_of_index": null,
+      "feasible": true,
+      "index": 2,
+      "metadata": {
+        "assignment_count": 26,
+        "assignment_dp_rank": 1,
+        "capacity_aware_assignment_dp": true,
+        "charger_slot_use": [
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 0,
+            "station_id": "D_chengdu"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 1,
+            "station_id": "D_chengdu"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 2,
+            "station_id": "D_chengdu"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 0,
+            "station_id": "D_chongqing"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 1,
+            "station_id": "D_chongqing"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 2,
+            "station_id": "D_chongqing"
+          }
+        ],
+        "charging_route_count": 2,
+        "decoder": "explicit_reference_v1",
+        "fleet_use": [
+          9,
+          1,
+          15,
+          1
+        ],
+        "opened_route_count": 0,
+        "recreate_step_count": 0,
+        "removed_customer_count": 5,
+        "route_local_cost": 9997.385524948782,
+        "rr_iteration": 1,
+        "rr_operator": "cross_depot_route_reassignment",
+        "rr_reason": "rebuild the whole route under another depot, finite fleet, vehicle type, charging, tariff, carbon, and diesel mapping"
+      },
+      "objective": 9997.385524948782,
+      "signature": "ec0c14365d4aa4925264208343499bec6413fbdd1e6a3f6adc5600e147dca26f",
+      "source": "RUIN_RECREATE",
+      "violation_count": 0
+    },
+    {
+      "arm": "B_RR",
+      "duplicate_of_index": null,
+      "feasible": true,
+      "index": 3,
+      "metadata": {
+        "assignment_count": 26,
+        "assignment_dp_rank": 2,
+        "capacity_aware_assignment_dp": true,
+        "charger_slot_use": [
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 20,
+            "station_id": "D_chengdu"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 21,
+            "station_id": "D_chengdu"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 22,
+            "station_id": "D_chengdu"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 0,
+            "station_id": "D_chongqing"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 1,
+            "station_id": "D_chongqing"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 2,
+            "station_id": "D_chongqing"
+          }
+        ],
+        "charging_route_count": 2,
+        "decoder": "explicit_reference_v1",
+        "fleet_use": [
+          9,
+          1,
+          15,
+          1
+        ],
+        "opened_route_count": 0,
+        "recreate_step_count": 0,
+        "removed_customer_count": 5,
+        "route_local_cost": 10016.510067494672,
+        "rr_iteration": 1,
+        "rr_operator": "cross_depot_route_reassignment",
+        "rr_reason": "rebuild the whole route under another depot, finite fleet, vehicle type, charging, tariff, carbon, and diesel mapping"
+      },
+      "objective": 10016.510067494672,
+      "signature": "9924f869dbcf1e5745b4337063d9eaf0db1dc91dcc4dd1976658bf1790e15b21",
+      "source": "RUIN_RECREATE",
+      "violation_count": 0
+    },
+    {
+      "arm": "B_RR",
+      "duplicate_of_index": null,
+      "feasible": true,
+      "index": 4,
+      "metadata": {
+        "assignment_count": 26,
+        "assignment_dp_rank": 3,
+        "capacity_aware_assignment_dp": true,
+        "charger_slot_use": [
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 0,
+            "station_id": "D_chongqing"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 1,
+            "station_id": "D_chongqing"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 2,
+            "station_id": "D_chongqing"
+          }
+        ],
+        "charging_route_count": 1,
+        "decoder": "explicit_reference_v1",
+        "fleet_use": [
+          10,
+          0,
+          15,
+          1
+        ],
+        "opened_route_count": 0,
+        "recreate_step_count": 0,
+        "removed_customer_count": 5,
+        "route_local_cost": 10053.151943836621,
+        "rr_iteration": 1,
+        "rr_operator": "cross_depot_route_reassignment",
+        "rr_reason": "rebuild the whole route under another depot, finite fleet, vehicle type, charging, tariff, carbon, and diesel mapping"
+      },
+      "objective": 10053.151943836621,
+      "signature": "48da32b4445dc27c4f28c650e8fb49bcec3f318c02b660ee9d0c49417fa2658d",
+      "source": "RUIN_RECREATE",
+      "violation_count": 0
+    },
+    {
+      "arm": "B_RR",
+      "duplicate_of_index": null,
+      "feasible": true,
+      "index": 5,
+      "metadata": {
+        "assignment_count": 26,
+        "assignment_dp_rank": 1,
+        "capacity_aware_assignment_dp": true,
+        "charger_slot_use": [
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 0,
+            "station_id": "D_chengdu"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 1,
+            "station_id": "D_chengdu"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 2,
+            "station_id": "D_chengdu"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 0,
+            "station_id": "D_chongqing"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 1,
+            "station_id": "D_chongqing"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 2,
+            "station_id": "D_chongqing"
+          }
+        ],
+        "charging_route_count": 2,
+        "decoder": "explicit_reference_v1",
+        "fleet_use": [
+          11,
+          1,
+          13,
+          1
+        ],
+        "opened_route_count": 0,
+        "recreate_step_count": 0,
+        "removed_customer_count": 5,
+        "route_local_cost": 9872.36149028444,
+        "rr_iteration": 2,
+        "rr_operator": "cross_depot_route_reassignment",
+        "rr_reason": "rebuild the whole route under another depot, finite fleet, vehicle type, charging, tariff, carbon, and diesel mapping"
+      },
+      "objective": 9872.36149028444,
+      "signature": "7be05c2cca96e48c6a55e68b796bc7c789dc15f4c72c66440f676971dd04eb5d",
+      "source": "RUIN_RECREATE",
+      "violation_count": 0
+    },
+    {
+      "arm": "B_RR",
+      "duplicate_of_index": null,
+      "feasible": true,
+      "index": 6,
+      "metadata": {
+        "assignment_count": 26,
+        "assignment_dp_rank": 2,
+        "capacity_aware_assignment_dp": true,
+        "charger_slot_use": [
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 20,
+            "station_id": "D_chengdu"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 21,
+            "station_id": "D_chengdu"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 22,
+            "station_id": "D_chengdu"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 0,
+            "station_id": "D_chongqing"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 1,
+            "station_id": "D_chongqing"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 2,
+            "station_id": "D_chongqing"
+          }
+        ],
+        "charging_route_count": 2,
+        "decoder": "explicit_reference_v1",
+        "fleet_use": [
+          11,
+          1,
+          13,
+          1
+        ],
+        "opened_route_count": 0,
+        "recreate_step_count": 0,
+        "removed_customer_count": 5,
+        "route_local_cost": 9891.48603283033,
+        "rr_iteration": 2,
+        "rr_operator": "cross_depot_route_reassignment",
+        "rr_reason": "rebuild the whole route under another depot, finite fleet, vehicle type, charging, tariff, carbon, and diesel mapping"
+      },
+      "objective": 9891.486032830328,
+      "signature": "7db9f9b190b411081e62d9083ec4dbcf70c6d6b79e42a694cbb4d1fbbc2b6e47",
+      "source": "RUIN_RECREATE",
+      "violation_count": 0
+    },
+    {
+      "arm": "B_RR",
+      "duplicate_of_index": null,
+      "feasible": true,
+      "index": 7,
+      "metadata": {
+        "assignment_count": 26,
+        "assignment_dp_rank": 3,
+        "capacity_aware_assignment_dp": true,
+        "charger_slot_use": [
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 0,
+            "station_id": "D_chengdu"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 1,
+            "station_id": "D_chengdu"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 2,
+            "station_id": "D_chengdu"
+          }
+        ],
+        "charging_route_count": 1,
+        "decoder": "explicit_reference_v1",
+        "fleet_use": [
+          11,
+          1,
+          14,
+          0
+        ],
+        "opened_route_count": 0,
+        "recreate_step_count": 0,
+        "removed_customer_count": 5,
+        "route_local_cost": 9942.895705877278,
+        "rr_iteration": 2,
+        "rr_operator": "cross_depot_route_reassignment",
+        "rr_reason": "rebuild the whole route under another depot, finite fleet, vehicle type, charging, tariff, carbon, and diesel mapping"
+      },
+      "objective": 9942.895705877278,
+      "signature": "28c8d5001b96e69da7eab095b1644e48e5225c821d161f2fa4de1965315a785f",
+      "source": "RUIN_RECREATE",
+      "violation_count": 0
+    },
+    {
+      "arm": "B_RR",
+      "duplicate_of_index": null,
+      "feasible": false,
+      "index": 8,
+      "metadata": {
+        "assignment_only_target_route": 22,
+        "removed_customer_count": 6,
+        "rr_iteration": 3,
+        "rr_operator": "vehicle_type_flip",
+        "rr_reason": "re-evaluate fixed cost, finite fleet, fuel or charging, time-varying price, and carbon under the opposite type",
+        "target_carbon_weight": 1.0,
+        "target_charge_strategy": "integrated",
+        "target_vehicle_type": "ev",
+        "unselected_routes_preserved": true
+      },
+      "objective": 8819.417273090361,
+      "signature": "4d2dc7f49985180e05e45e0f5e1067e35785e27933bb697f9fce652c0004b85d",
+      "source": "RUIN_RECREATE",
+      "violation_count": 1
+    },
+    {
+      "arm": "B_RR",
+      "duplicate_of_index": null,
+      "feasible": true,
+      "index": 9,
+      "metadata": {
+        "assignment_only_target_route": 25,
+        "removed_customer_count": 0,
+        "rr_iteration": 4,
+        "rr_operator": "charge_departure_retiming",
+        "rr_reason": "keep customers but rebuild charge location, amount, start time, and departure time against half-hour price and carbon",
+        "target_carbon_weight": 1.0,
+        "target_charge_strategy": "legacy",
+        "target_vehicle_type": "ev",
+        "unselected_routes_preserved": true
+      },
+      "objective": 8912.981297853159,
+      "signature": "1c118d29fd1fcd010b8c4fe1cc4a998ebb6800cbb8b6c1214a9839ae893aff83",
+      "source": "RUIN_RECREATE",
+      "violation_count": 0
+    },
+    {
+      "arm": "B_RR",
+      "duplicate_of_index": null,
+      "feasible": true,
+      "index": 10,
+      "metadata": {
+        "assignment_count": 27,
+        "assignment_dp_rank": 1,
+        "capacity_aware_assignment_dp": true,
+        "charger_slot_use": [
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 0,
+            "station_id": "D_chengdu"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 1,
+            "station_id": "D_chengdu"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 2,
+            "station_id": "D_chengdu"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 2,
+            "slot_index": 0,
+            "station_id": "D_chongqing"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 2,
+            "slot_index": 1,
+            "station_id": "D_chongqing"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 2,
+            "slot_index": 2,
+            "station_id": "D_chongqing"
+          }
+        ],
+        "charging_route_count": 3,
+        "decoder": "explicit_reference_v1",
+        "fleet_use": [
+          10,
+          1,
+          14,
+          2
+        ],
+        "opened_route_count": 1,
+        "recreate_step_count": 3,
+        "removed_customer_count": 3,
+        "route_local_cost": 9076.978517618514,
+        "rr_iteration": 5,
+        "rr_operator": "time_window_pressure_string",
+        "rr_reason": "remove a result-blind customer with low residual time-window slack under the shared route schedule and its adjacent string, then rebuild across depots, types, and charge schedules"
+      },
+      "objective": 9076.978517618516,
+      "signature": "c0f23e0ccff5f3619fad01e373f2a0e448ebcc656ca063fa68373f4279711efa",
+      "source": "RUIN_RECREATE",
+      "violation_count": 0
+    },
+    {
+      "arm": "B_RR",
+      "duplicate_of_index": null,
+      "feasible": true,
+      "index": 11,
+      "metadata": {
+        "assignment_count": 27,
+        "assignment_dp_rank": 2,
+        "capacity_aware_assignment_dp": true,
+        "charger_slot_use": [
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 0,
+            "station_id": "D_chengdu"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 1,
+            "station_id": "D_chengdu"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 2,
+            "station_id": "D_chengdu"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 0,
+            "station_id": "D_chongqing"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 1,
+            "station_id": "D_chongqing"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 2,
+            "station_id": "D_chongqing"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 16,
+            "station_id": "D_chongqing"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 17,
+            "station_id": "D_chongqing"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 18,
+            "station_id": "D_chongqing"
+          }
+        ],
+        "charging_route_count": 3,
+        "decoder": "explicit_reference_v1",
+        "fleet_use": [
+          10,
+          1,
+          14,
+          2
+        ],
+        "opened_route_count": 1,
+        "recreate_step_count": 3,
+        "removed_customer_count": 3,
+        "route_local_cost": 9090.10450957904,
+        "rr_iteration": 5,
+        "rr_operator": "time_window_pressure_string",
+        "rr_reason": "remove a result-blind customer with low residual time-window slack under the shared route schedule and its adjacent string, then rebuild across depots, types, and charge schedules"
+      },
+      "objective": 9090.104509579041,
+      "signature": "ab1cc9c918169b81125d51be6b89de147d8bf878e0ca8db9dc0e4e745b780c7d",
+      "source": "RUIN_RECREATE",
+      "violation_count": 0
+    },
+    {
+      "arm": "B_RR",
+      "duplicate_of_index": null,
+      "feasible": true,
+      "index": 12,
+      "metadata": {
+        "assignment_count": 27,
+        "assignment_dp_rank": 3,
+        "capacity_aware_assignment_dp": true,
+        "charger_slot_use": [
+          {
+            "day_offset": 0,
+            "route_count": 2,
+            "slot_index": 0,
+            "station_id": "D_chongqing"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 2,
+            "slot_index": 1,
+            "station_id": "D_chongqing"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 2,
+            "slot_index": 2,
+            "station_id": "D_chongqing"
+          }
+        ],
+        "charging_route_count": 2,
+        "decoder": "explicit_reference_v1",
+        "fleet_use": [
+          11,
+          0,
+          14,
+          2
+        ],
+        "opened_route_count": 1,
+        "recreate_step_count": 3,
+        "removed_customer_count": 3,
+        "route_local_cost": 9132.744936506351,
+        "rr_iteration": 5,
+        "rr_operator": "time_window_pressure_string",
+        "rr_reason": "remove a result-blind customer with low residual time-window slack under the shared route schedule and its adjacent string, then rebuild across depots, types, and charge schedules"
+      },
+      "objective": 9132.744936506353,
+      "signature": "7988a4156c8de655863adb61074da8b89e15a98a7e61076327a303018791d5bf",
+      "source": "RUIN_RECREATE",
+      "violation_count": 0
+    },
+    {
+      "arm": "B_RR",
+      "duplicate_of_index": null,
+      "feasible": true,
+      "index": 13,
+      "metadata": {
+        "assignment_count": 26,
+        "assignment_dp_rank": 1,
+        "capacity_aware_assignment_dp": true,
+        "charger_slot_use": [
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 0,
+            "station_id": "D_chengdu"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 1,
+            "station_id": "D_chengdu"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 2,
+            "station_id": "D_chengdu"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 0,
+            "station_id": "D_chongqing"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 1,
+            "station_id": "D_chongqing"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 2,
+            "station_id": "D_chongqing"
+          }
+        ],
+        "charging_route_count": 2,
+        "decoder": "explicit_reference_v1",
+        "fleet_use": [
+          11,
+          1,
+          13,
+          1
+        ],
+        "opened_route_count": 0,
+        "recreate_step_count": 0,
+        "removed_customer_count": 5,
+        "route_local_cost": 9828.051199549034,
+        "rr_iteration": 6,
+        "rr_operator": "cross_depot_route_reassignment",
+        "rr_reason": "rebuild the whole route under another depot, finite fleet, vehicle type, charging, tariff, carbon, and diesel mapping"
+      },
+      "objective": 9828.051199549032,
+      "signature": "66a33f8a48154947c65dd1f3c42a398e61cc35a10a4c33ce869e2d8a9abe8c01",
+      "source": "RUIN_RECREATE",
+      "violation_count": 0
+    },
+    {
+      "arm": "B_RR",
+      "duplicate_of_index": null,
+      "feasible": true,
+      "index": 14,
+      "metadata": {
+        "assignment_count": 26,
+        "assignment_dp_rank": 2,
+        "capacity_aware_assignment_dp": true,
+        "charger_slot_use": [
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 20,
+            "station_id": "D_chengdu"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 21,
+            "station_id": "D_chengdu"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 22,
+            "station_id": "D_chengdu"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 0,
+            "station_id": "D_chongqing"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 1,
+            "station_id": "D_chongqing"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 2,
+            "station_id": "D_chongqing"
+          }
+        ],
+        "charging_route_count": 2,
+        "decoder": "explicit_reference_v1",
+        "fleet_use": [
+          11,
+          1,
+          13,
+          1
+        ],
+        "opened_route_count": 0,
+        "recreate_step_count": 0,
+        "removed_customer_count": 5,
+        "route_local_cost": 9847.175742094923,
+        "rr_iteration": 6,
+        "rr_operator": "cross_depot_route_reassignment",
+        "rr_reason": "rebuild the whole route under another depot, finite fleet, vehicle type, charging, tariff, carbon, and diesel mapping"
+      },
+      "objective": 9847.175742094922,
+      "signature": "e9a02ca5cfbf290c7fddf0a8762c0fb288435a74a59ad4931b91842a1618047d",
+      "source": "RUIN_RECREATE",
+      "violation_count": 0
+    },
+    {
+      "arm": "B_RR",
+      "duplicate_of_index": null,
+      "feasible": true,
+      "index": 15,
+      "metadata": {
+        "assignment_count": 26,
+        "assignment_dp_rank": 3,
+        "capacity_aware_assignment_dp": true,
+        "charger_slot_use": [
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 0,
+            "station_id": "D_chengdu"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 1,
+            "station_id": "D_chengdu"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 2,
+            "station_id": "D_chengdu"
+          }
+        ],
+        "charging_route_count": 1,
+        "decoder": "explicit_reference_v1",
+        "fleet_use": [
+          11,
+          1,
+          14,
+          0
+        ],
+        "opened_route_count": 0,
+        "recreate_step_count": 0,
+        "removed_customer_count": 5,
+        "route_local_cost": 9898.585415141872,
+        "rr_iteration": 6,
+        "rr_operator": "cross_depot_route_reassignment",
+        "rr_reason": "rebuild the whole route under another depot, finite fleet, vehicle type, charging, tariff, carbon, and diesel mapping"
+      },
+      "objective": 9898.58541514187,
+      "signature": "091bcae5d23802a9a6388021e8a29139c6df81d5d50ffe9ed43940bb2d8ca872",
+      "source": "RUIN_RECREATE",
+      "violation_count": 0
+    },
+    {
+      "arm": "B_RR",
+      "duplicate_of_index": null,
+      "feasible": true,
+      "index": 16,
+      "metadata": {
+        "assignment_count": 26,
+        "assignment_dp_rank": 1,
+        "capacity_aware_assignment_dp": true,
+        "charger_slot_use": [
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 0,
+            "station_id": "D_chengdu"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 1,
+            "station_id": "D_chengdu"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 2,
+            "station_id": "D_chengdu"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 0,
+            "station_id": "D_chongqing"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 1,
+            "station_id": "D_chongqing"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 2,
+            "station_id": "D_chongqing"
+          }
+        ],
+        "charging_route_count": 2,
+        "decoder": "explicit_reference_v1",
+        "fleet_use": [
+          9,
+          1,
+          15,
+          1
+        ],
+        "opened_route_count": 0,
+        "recreate_step_count": 0,
+        "removed_customer_count": 7,
+        "route_local_cost": 10033.939625386558,
+        "rr_iteration": 7,
+        "rr_operator": "cross_depot_route_reassignment",
+        "rr_reason": "rebuild the whole route under another depot, finite fleet, vehicle type, charging, tariff, carbon, and diesel mapping"
+      },
+      "objective": 10033.939625386556,
+      "signature": "0914169e4299dd0dcd0e431e1c01d340d43fa09571ff3d8e9941f55179786846",
+      "source": "RUIN_RECREATE",
+      "violation_count": 0
+    },
+    {
+      "arm": "B_RR",
+      "duplicate_of_index": null,
+      "feasible": true,
+      "index": 17,
+      "metadata": {
+        "assignment_count": 26,
+        "assignment_dp_rank": 2,
+        "capacity_aware_assignment_dp": true,
+        "charger_slot_use": [
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 20,
+            "station_id": "D_chengdu"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 21,
+            "station_id": "D_chengdu"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 22,
+            "station_id": "D_chengdu"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 0,
+            "station_id": "D_chongqing"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 1,
+            "station_id": "D_chongqing"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 2,
+            "station_id": "D_chongqing"
+          }
+        ],
+        "charging_route_count": 2,
+        "decoder": "explicit_reference_v1",
+        "fleet_use": [
+          9,
+          1,
+          15,
+          1
+        ],
+        "opened_route_count": 0,
+        "recreate_step_count": 0,
+        "removed_customer_count": 7,
+        "route_local_cost": 10053.064167932445,
+        "rr_iteration": 7,
+        "rr_operator": "cross_depot_route_reassignment",
+        "rr_reason": "rebuild the whole route under another depot, finite fleet, vehicle type, charging, tariff, carbon, and diesel mapping"
+      },
+      "objective": 10053.064167932444,
+      "signature": "08c01ebe12606f6857043d51fe227df4211611c31d0446ed3082b87ac179d36f",
+      "source": "RUIN_RECREATE",
+      "violation_count": 0
+    },
+    {
+      "arm": "B_RR",
+      "duplicate_of_index": null,
+      "feasible": true,
+      "index": 18,
+      "metadata": {
+        "assignment_count": 26,
+        "assignment_dp_rank": 3,
+        "capacity_aware_assignment_dp": true,
+        "charger_slot_use": [
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 0,
+            "station_id": "D_chongqing"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 1,
+            "station_id": "D_chongqing"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 2,
+            "station_id": "D_chongqing"
+          }
+        ],
+        "charging_route_count": 1,
+        "decoder": "explicit_reference_v1",
+        "fleet_use": [
+          10,
+          0,
+          15,
+          1
+        ],
+        "opened_route_count": 0,
+        "recreate_step_count": 0,
+        "removed_customer_count": 7,
+        "route_local_cost": 10089.706044274395,
+        "rr_iteration": 7,
+        "rr_operator": "cross_depot_route_reassignment",
+        "rr_reason": "rebuild the whole route under another depot, finite fleet, vehicle type, charging, tariff, carbon, and diesel mapping"
+      },
+      "objective": 10089.706044274395,
+      "signature": "20d8e78b69ae6b3d6808fdad23536e8bf7e26b1f0eb1a13514ff113ee6d15e05",
+      "source": "RUIN_RECREATE",
+      "violation_count": 0
+    },
+    {
+      "arm": "B_RR",
+      "duplicate_of_index": null,
+      "feasible": false,
+      "index": 19,
+      "metadata": {
+        "assignment_only_target_route": 11,
+        "removed_customer_count": 7,
+        "rr_iteration": 8,
+        "rr_operator": "vehicle_type_flip",
+        "rr_reason": "re-evaluate fixed cost, finite fleet, fuel or charging, time-varying price, and carbon under the opposite type",
+        "target_carbon_weight": 1.0,
+        "target_charge_strategy": "integrated",
+        "target_vehicle_type": "ev",
+        "unselected_routes_preserved": true
+      },
+      "objective": 8826.682319432899,
+      "signature": "63ef70deb56953d8ad46d8d885140702fd18768020438be415d27bb1ca35fdfd",
+      "source": "RUIN_RECREATE",
+      "violation_count": 1
+    },
+    {
+      "arm": "B_RR",
+      "duplicate_of_index": 1,
+      "feasible": true,
+      "index": 20,
+      "metadata": {
+        "assignment_only_target_route": 25,
+        "removed_customer_count": 0,
+        "rr_iteration": 9,
+        "rr_operator": "charge_departure_retiming",
+        "rr_reason": "keep customers but rebuild charge location, amount, start time, and departure time against half-hour price and carbon",
+        "target_carbon_weight": 0.0,
+        "target_charge_strategy": "integrated",
+        "target_vehicle_type": "ev",
+        "unselected_routes_preserved": true
+      },
+      "objective": 8886.621089737959,
+      "signature": "905f2d1e4caa3957a3155cd30108b2cb07cb3992b967a0db47b3e12bed20645d",
+      "source": "RUIN_RECREATE",
+      "violation_count": 0
+    },
+    {
+      "arm": "B_RR",
+      "duplicate_of_index": null,
+      "feasible": true,
+      "index": 21,
+      "metadata": {
+        "assignment_count": 26,
+        "assignment_dp_rank": 1,
+        "capacity_aware_assignment_dp": true,
+        "charger_slot_use": [
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 0,
+            "station_id": "D_chengdu"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 1,
+            "station_id": "D_chengdu"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 2,
+            "station_id": "D_chengdu"
+          }
+        ],
+        "charging_route_count": 1,
+        "decoder": "explicit_reference_v1",
+        "fleet_use": [
+          10,
+          1,
+          15,
+          0
+        ],
+        "opened_route_count": 0,
+        "recreate_step_count": 3,
+        "removed_customer_count": 3,
+        "route_local_cost": 8941.178418096983,
+        "rr_iteration": 10,
+        "rr_operator": "time_window_pressure_string",
+        "rr_reason": "remove a result-blind customer with low residual time-window slack under the shared route schedule and its adjacent string, then rebuild across depots, types, and charge schedules"
+      },
+      "objective": 8941.178418096984,
+      "signature": "3e47bd5ec44da5972d7146f20ecb36305f7397983f7a262692580ebff96623b1",
+      "source": "RUIN_RECREATE",
+      "violation_count": 0
+    },
+    {
+      "arm": "B_RR",
+      "duplicate_of_index": null,
+      "feasible": true,
+      "index": 22,
+      "metadata": {
+        "assignment_count": 26,
+        "assignment_dp_rank": 2,
+        "capacity_aware_assignment_dp": true,
+        "charger_slot_use": [
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 20,
+            "station_id": "D_chengdu"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 21,
+            "station_id": "D_chengdu"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 22,
+            "station_id": "D_chengdu"
+          }
+        ],
+        "charging_route_count": 1,
+        "decoder": "explicit_reference_v1",
+        "fleet_use": [
+          10,
+          1,
+          15,
+          0
+        ],
+        "opened_route_count": 0,
+        "recreate_step_count": 3,
+        "removed_customer_count": 3,
+        "route_local_cost": 8960.30296064287,
+        "rr_iteration": 10,
+        "rr_operator": "time_window_pressure_string",
+        "rr_reason": "remove a result-blind customer with low residual time-window slack under the shared route schedule and its adjacent string, then rebuild across depots, types, and charge schedules"
+      },
+      "objective": 8960.302960642872,
+      "signature": "b24dffa95278399db9afc555dabe5181db3c8e047a3770b5bc8e19ab4199766f",
+      "source": "RUIN_RECREATE",
+      "violation_count": 0
+    },
+    {
+      "arm": "B_RR",
+      "duplicate_of_index": null,
+      "feasible": true,
+      "index": 23,
+      "metadata": {
+        "assignment_count": 26,
+        "assignment_dp_rank": 3,
+        "capacity_aware_assignment_dp": true,
+        "charger_slot_use": [],
+        "charging_route_count": 0,
+        "decoder": "explicit_reference_v1",
+        "fleet_use": [
+          11,
+          0,
+          15,
+          0
+        ],
+        "opened_route_count": 0,
+        "recreate_step_count": 3,
+        "removed_customer_count": 3,
+        "route_local_cost": 8996.94483698482,
+        "rr_iteration": 10,
+        "rr_operator": "time_window_pressure_string",
+        "rr_reason": "remove a result-blind customer with low residual time-window slack under the shared route schedule and its adjacent string, then rebuild across depots, types, and charge schedules"
+      },
+      "objective": 8996.94483698482,
+      "signature": "e2fb2def8a68198b5ea5af8a1625c966f43d3c1df20faa4c4f93f559dfa99057",
+      "source": "RUIN_RECREATE",
+      "violation_count": 0
+    },
+    {
+      "arm": "B_RR",
+      "duplicate_of_index": null,
+      "feasible": true,
+      "index": 24,
+      "metadata": {
+        "assignment_count": 26,
+        "assignment_dp_rank": 1,
+        "capacity_aware_assignment_dp": true,
+        "charger_slot_use": [
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 0,
+            "station_id": "D_chengdu"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 1,
+            "station_id": "D_chengdu"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 2,
+            "station_id": "D_chengdu"
+          }
+        ],
+        "charging_route_count": 1,
+        "decoder": "explicit_reference_v1",
+        "fleet_use": [
+          11,
+          1,
+          14,
+          0
+        ],
+        "opened_route_count": 0,
+        "recreate_step_count": 0,
+        "removed_customer_count": 8,
+        "route_local_cost": 9885.181059212659,
+        "rr_iteration": 11,
+        "rr_operator": "cross_depot_route_reassignment",
+        "rr_reason": "rebuild the whole route under another depot, finite fleet, vehicle type, charging, tariff, carbon, and diesel mapping"
+      },
+      "objective": 9885.181059212659,
+      "signature": "2dceef41fc3f593e08f76b01a1c35b8b341b401ba07b040082245c0ee6389e9b",
+      "source": "RUIN_RECREATE",
+      "violation_count": 0
+    },
+    {
+      "arm": "B_RR",
+      "duplicate_of_index": null,
+      "feasible": true,
+      "index": 25,
+      "metadata": {
+        "assignment_count": 26,
+        "assignment_dp_rank": 2,
+        "capacity_aware_assignment_dp": true,
+        "charger_slot_use": [
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 20,
+            "station_id": "D_chengdu"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 21,
+            "station_id": "D_chengdu"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 22,
+            "station_id": "D_chengdu"
+          }
+        ],
+        "charging_route_count": 1,
+        "decoder": "explicit_reference_v1",
+        "fleet_use": [
+          11,
+          1,
+          14,
+          0
+        ],
+        "opened_route_count": 0,
+        "recreate_step_count": 0,
+        "removed_customer_count": 8,
+        "route_local_cost": 9904.305601758546,
+        "rr_iteration": 11,
+        "rr_operator": "cross_depot_route_reassignment",
+        "rr_reason": "rebuild the whole route under another depot, finite fleet, vehicle type, charging, tariff, carbon, and diesel mapping"
+      },
+      "objective": 9904.305601758546,
+      "signature": "3cd351b0e8afdb2337d372d2618ef986ec87bf966701432edf1fcf1efb2c6a8c",
+      "source": "RUIN_RECREATE",
+      "violation_count": 0
+    },
+    {
+      "arm": "B_RR",
+      "duplicate_of_index": null,
+      "feasible": true,
+      "index": 26,
+      "metadata": {
+        "assignment_count": 26,
+        "assignment_dp_rank": 3,
+        "capacity_aware_assignment_dp": true,
+        "charger_slot_use": [
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 0,
+            "station_id": "D_chengdu"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 1,
+            "station_id": "D_chengdu"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 2,
+            "station_id": "D_chengdu"
+          }
+        ],
+        "charging_route_count": 1,
+        "decoder": "explicit_reference_v1",
+        "fleet_use": [
+          10,
+          1,
+          15,
+          0
+        ],
+        "opened_route_count": 0,
+        "recreate_step_count": 0,
+        "removed_customer_count": 8,
+        "route_local_cost": 10984.835447777366,
+        "rr_iteration": 11,
+        "rr_operator": "cross_depot_route_reassignment",
+        "rr_reason": "rebuild the whole route under another depot, finite fleet, vehicle type, charging, tariff, carbon, and diesel mapping"
+      },
+      "objective": 10984.835447777366,
+      "signature": "627db56445979790283734133394cb47659cc28925cbc153efbd83a29218855b",
+      "source": "RUIN_RECREATE",
+      "violation_count": 0
+    },
+    {
+      "arm": "B_RR",
+      "duplicate_of_index": null,
+      "feasible": true,
+      "index": 27,
+      "metadata": {
+        "assignment_count": 26,
+        "assignment_dp_rank": 1,
+        "capacity_aware_assignment_dp": true,
+        "charger_slot_use": [],
+        "charging_route_count": 0,
+        "decoder": "explicit_reference_v1",
+        "fleet_use": [
+          11,
+          0,
+          15,
+          0
+        ],
+        "opened_route_count": 0,
+        "recreate_step_count": 0,
+        "removed_customer_count": 3,
+        "route_local_cost": 10983.848512421491,
+        "rr_iteration": 12,
+        "rr_operator": "cross_depot_route_reassignment",
+        "rr_reason": "rebuild the whole route under another depot, finite fleet, vehicle type, charging, tariff, carbon, and diesel mapping"
+      },
+      "objective": 10983.84851242149,
+      "signature": "b7aa4b928318c745fa6a8deea31733253ce9bd7dc5e23fd0bab872580223a9df",
+      "source": "RUIN_RECREATE",
+      "violation_count": 0
+    },
+    {
+      "arm": "B_RR",
+      "duplicate_of_index": null,
+      "feasible": true,
+      "index": 28,
+      "metadata": {
+        "assignment_count": 26,
+        "assignment_dp_rank": 2,
+        "capacity_aware_assignment_dp": true,
+        "charger_slot_use": [],
+        "charging_route_count": 0,
+        "decoder": "explicit_reference_v1",
+        "fleet_use": [
+          11,
+          0,
+          15,
+          0
+        ],
+        "opened_route_count": 0,
+        "recreate_step_count": 0,
+        "removed_customer_count": 3,
+        "route_local_cost": 11002.24799472081,
+        "rr_iteration": 12,
+        "rr_operator": "cross_depot_route_reassignment",
+        "rr_reason": "rebuild the whole route under another depot, finite fleet, vehicle type, charging, tariff, carbon, and diesel mapping"
+      },
+      "objective": 11002.24799472081,
+      "signature": "caf97565caf3f6e5b618077186559d908da15695484fbe970f5c98f2537f64c0",
+      "source": "RUIN_RECREATE",
+      "violation_count": 0
+    },
+    {
+      "arm": "B_RR",
+      "duplicate_of_index": null,
+      "feasible": false,
+      "index": 29,
+      "metadata": {
+        "assignment_only_target_route": 12,
+        "removed_customer_count": 7,
+        "rr_iteration": 13,
+        "rr_operator": "vehicle_type_flip",
+        "rr_reason": "re-evaluate fixed cost, finite fleet, fuel or charging, time-varying price, and carbon under the opposite type",
+        "target_carbon_weight": 1.0,
+        "target_charge_strategy": "integrated",
+        "target_vehicle_type": "ev",
+        "unselected_routes_preserved": true
+      },
+      "objective": 8842.876232385212,
+      "signature": "2a1001b0a5447fc792deca47270e1c84294cf9cb4697241473a4dbc6e1f3b4e9",
+      "source": "RUIN_RECREATE",
+      "violation_count": 1
+    },
+    {
+      "arm": "B_RR",
+      "duplicate_of_index": 22,
+      "feasible": true,
+      "index": 30,
+      "metadata": {
+        "assignment_only_target_route": 10,
+        "removed_customer_count": 0,
+        "rr_iteration": 14,
+        "rr_operator": "charge_departure_retiming",
+        "rr_reason": "keep customers but rebuild charge location, amount, start time, and departure time against half-hour price and carbon",
+        "target_carbon_weight": 1.0,
+        "target_charge_strategy": "legacy",
+        "target_vehicle_type": "ev",
+        "unselected_routes_preserved": true
+      },
+      "objective": 8960.302960642872,
+      "signature": "b24dffa95278399db9afc555dabe5181db3c8e047a3770b5bc8e19ab4199766f",
+      "source": "RUIN_RECREATE",
+      "violation_count": 0
+    },
+    {
+      "arm": "B_RR",
+      "duplicate_of_index": null,
+      "feasible": true,
+      "index": 31,
+      "metadata": {
+        "assignment_count": 27,
+        "assignment_dp_rank": 1,
+        "capacity_aware_assignment_dp": true,
+        "charger_slot_use": [
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 0,
+            "station_id": "D_chengdu"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 1,
+            "station_id": "D_chengdu"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 2,
+            "station_id": "D_chengdu"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 0,
+            "station_id": "D_chongqing"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 1,
+            "station_id": "D_chongqing"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 2,
+            "station_id": "D_chongqing"
+          }
+        ],
+        "charging_route_count": 2,
+        "decoder": "explicit_reference_v1",
+        "fleet_use": [
+          10,
+          1,
+          15,
+          1
+        ],
+        "opened_route_count": 1,
+        "recreate_step_count": 3,
+        "removed_customer_count": 3,
+        "route_local_cost": 9094.322581663935,
+        "rr_iteration": 15,
+        "rr_operator": "time_window_pressure_string",
+        "rr_reason": "remove a result-blind customer with low residual time-window slack under the shared route schedule and its adjacent string, then rebuild across depots, types, and charge schedules"
+      },
+      "objective": 9094.322581663937,
+      "signature": "aac4c2c06c86b2eba641cf471b36abad27d4c2b0d440f07376ff0c43e228bcc2",
+      "source": "RUIN_RECREATE",
+      "violation_count": 0
+    },
+    {
+      "arm": "B_RR",
+      "duplicate_of_index": null,
+      "feasible": true,
+      "index": 32,
+      "metadata": {
+        "assignment_count": 27,
+        "assignment_dp_rank": 2,
+        "capacity_aware_assignment_dp": true,
+        "charger_slot_use": [
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 0,
+            "station_id": "D_chengdu"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 1,
+            "station_id": "D_chengdu"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 2,
+            "station_id": "D_chengdu"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 16,
+            "station_id": "D_chongqing"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 17,
+            "station_id": "D_chongqing"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 18,
+            "station_id": "D_chongqing"
+          }
+        ],
+        "charging_route_count": 2,
+        "decoder": "explicit_reference_v1",
+        "fleet_use": [
+          10,
+          1,
+          15,
+          1
+        ],
+        "opened_route_count": 1,
+        "recreate_step_count": 3,
+        "removed_customer_count": 3,
+        "route_local_cost": 9106.96349368375,
+        "rr_iteration": 15,
+        "rr_operator": "time_window_pressure_string",
+        "rr_reason": "remove a result-blind customer with low residual time-window slack under the shared route schedule and its adjacent string, then rebuild across depots, types, and charge schedules"
+      },
+      "objective": 9106.96349368375,
+      "signature": "8427c73c1c858024f61c3dfc5be36efd978ae465cd5c870af4317eecdb2e3456",
+      "source": "RUIN_RECREATE",
+      "violation_count": 0
+    },
+    {
+      "arm": "B_RR",
+      "duplicate_of_index": null,
+      "feasible": true,
+      "index": 33,
+      "metadata": {
+        "assignment_count": 27,
+        "assignment_dp_rank": 3,
+        "capacity_aware_assignment_dp": true,
+        "charger_slot_use": [
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 0,
+            "station_id": "D_chongqing"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 1,
+            "station_id": "D_chongqing"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 2,
+            "station_id": "D_chongqing"
+          }
+        ],
+        "charging_route_count": 1,
+        "decoder": "explicit_reference_v1",
+        "fleet_use": [
+          11,
+          0,
+          15,
+          1
+        ],
+        "opened_route_count": 1,
+        "recreate_step_count": 3,
+        "removed_customer_count": 3,
+        "route_local_cost": 9150.089000551772,
+        "rr_iteration": 15,
+        "rr_operator": "time_window_pressure_string",
+        "rr_reason": "remove a result-blind customer with low residual time-window slack under the shared route schedule and its adjacent string, then rebuild across depots, types, and charge schedules"
+      },
+      "objective": 9150.089000551772,
+      "signature": "ecca86483fb413766771b639985d709127e1f2f9b6a3b7720a626192400e08a3",
+      "source": "RUIN_RECREATE",
+      "violation_count": 0
+    },
+    {
+      "arm": "B_RR",
+      "duplicate_of_index": null,
+      "feasible": true,
+      "index": 34,
+      "metadata": {
+        "assignment_count": 26,
+        "assignment_dp_rank": 1,
+        "capacity_aware_assignment_dp": true,
+        "charger_slot_use": [
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 0,
+            "station_id": "D_chengdu"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 1,
+            "station_id": "D_chengdu"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 2,
+            "station_id": "D_chengdu"
+          }
+        ],
+        "charging_route_count": 1,
+        "decoder": "explicit_reference_v1",
+        "fleet_use": [
+          11,
+          1,
+          14,
+          0
+        ],
+        "opened_route_count": 0,
+        "recreate_step_count": 0,
+        "removed_customer_count": 4,
+        "route_local_cost": 9898.148971779532,
+        "rr_iteration": 16,
+        "rr_operator": "cross_depot_route_reassignment",
+        "rr_reason": "rebuild the whole route under another depot, finite fleet, vehicle type, charging, tariff, carbon, and diesel mapping"
+      },
+      "objective": 9898.148971779534,
+      "signature": "e37b909e401358db5a2c68d230c0c06706324f1612c2a62d965623dcbe1135a5",
+      "source": "RUIN_RECREATE",
+      "violation_count": 0
+    },
+    {
+      "arm": "B_RR",
+      "duplicate_of_index": null,
+      "feasible": true,
+      "index": 35,
+      "metadata": {
+        "assignment_count": 26,
+        "assignment_dp_rank": 2,
+        "capacity_aware_assignment_dp": true,
+        "charger_slot_use": [
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 20,
+            "station_id": "D_chengdu"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 21,
+            "station_id": "D_chengdu"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 22,
+            "station_id": "D_chengdu"
+          }
+        ],
+        "charging_route_count": 1,
+        "decoder": "explicit_reference_v1",
+        "fleet_use": [
+          11,
+          1,
+          14,
+          0
+        ],
+        "opened_route_count": 0,
+        "recreate_step_count": 0,
+        "removed_customer_count": 4,
+        "route_local_cost": 9917.273514325418,
+        "rr_iteration": 16,
+        "rr_operator": "cross_depot_route_reassignment",
+        "rr_reason": "rebuild the whole route under another depot, finite fleet, vehicle type, charging, tariff, carbon, and diesel mapping"
+      },
+      "objective": 9917.273514325421,
+      "signature": "0d0c3ceb460a00378d833c6dc615f610cb2649d42795c15653b8268c95f5ebfd",
+      "source": "RUIN_RECREATE",
+      "violation_count": 0
+    },
+    {
+      "arm": "B_RR",
+      "duplicate_of_index": null,
+      "feasible": true,
+      "index": 36,
+      "metadata": {
+        "assignment_count": 26,
+        "assignment_dp_rank": 3,
+        "capacity_aware_assignment_dp": true,
+        "charger_slot_use": [
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 0,
+            "station_id": "D_chengdu"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 1,
+            "station_id": "D_chengdu"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 2,
+            "station_id": "D_chengdu"
+          }
+        ],
+        "charging_route_count": 1,
+        "decoder": "explicit_reference_v1",
+        "fleet_use": [
+          10,
+          1,
+          15,
+          0
+        ],
+        "opened_route_count": 0,
+        "recreate_step_count": 0,
+        "removed_customer_count": 4,
+        "route_local_cost": 10997.803360344238,
+        "rr_iteration": 16,
+        "rr_operator": "cross_depot_route_reassignment",
+        "rr_reason": "rebuild the whole route under another depot, finite fleet, vehicle type, charging, tariff, carbon, and diesel mapping"
+      },
+      "objective": 10997.803360344238,
+      "signature": "dd678d325c85b40d2b9e99b4a0da104c5833409ef38129fd22395386433c3484",
+      "source": "RUIN_RECREATE",
+      "violation_count": 0
+    },
+    {
+      "arm": "B_RR",
+      "duplicate_of_index": null,
+      "feasible": true,
+      "index": 37,
+      "metadata": {
+        "assignment_count": 26,
+        "assignment_dp_rank": 1,
+        "capacity_aware_assignment_dp": true,
+        "charger_slot_use": [
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 0,
+            "station_id": "D_chengdu"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 1,
+            "station_id": "D_chengdu"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 2,
+            "station_id": "D_chengdu"
+          }
+        ],
+        "charging_route_count": 1,
+        "decoder": "explicit_reference_v1",
+        "fleet_use": [
+          10,
+          1,
+          15,
+          0
+        ],
+        "opened_route_count": 0,
+        "recreate_step_count": 0,
+        "removed_customer_count": 7,
+        "route_local_cost": 10971.338786495859,
+        "rr_iteration": 17,
+        "rr_operator": "cross_depot_route_reassignment",
+        "rr_reason": "rebuild the whole route under another depot, finite fleet, vehicle type, charging, tariff, carbon, and diesel mapping"
+      },
+      "objective": 10971.33878649586,
+      "signature": "632f0076265c655645c31913f854211dd485673413a913854c3c30eb3ee4ff8e",
+      "source": "RUIN_RECREATE",
+      "violation_count": 0
+    },
+    {
+      "arm": "B_RR",
+      "duplicate_of_index": null,
+      "feasible": true,
+      "index": 38,
+      "metadata": {
+        "assignment_count": 26,
+        "assignment_dp_rank": 2,
+        "capacity_aware_assignment_dp": true,
+        "charger_slot_use": [
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 20,
+            "station_id": "D_chengdu"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 21,
+            "station_id": "D_chengdu"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 22,
+            "station_id": "D_chengdu"
+          }
+        ],
+        "charging_route_count": 1,
+        "decoder": "explicit_reference_v1",
+        "fleet_use": [
+          10,
+          1,
+          15,
+          0
+        ],
+        "opened_route_count": 0,
+        "recreate_step_count": 0,
+        "removed_customer_count": 7,
+        "route_local_cost": 10990.463329041746,
+        "rr_iteration": 17,
+        "rr_operator": "cross_depot_route_reassignment",
+        "rr_reason": "rebuild the whole route under another depot, finite fleet, vehicle type, charging, tariff, carbon, and diesel mapping"
+      },
+      "objective": 10990.463329041748,
+      "signature": "8f544f1db32d95a0cde9378cc9e20e0d613fbb26c2729aef93dda3ae525c675a",
+      "source": "RUIN_RECREATE",
+      "violation_count": 0
+    },
+    {
+      "arm": "B_RR",
+      "duplicate_of_index": null,
+      "feasible": true,
+      "index": 39,
+      "metadata": {
+        "assignment_count": 26,
+        "assignment_dp_rank": 3,
+        "capacity_aware_assignment_dp": true,
+        "charger_slot_use": [],
+        "charging_route_count": 0,
+        "decoder": "explicit_reference_v1",
+        "fleet_use": [
+          11,
+          0,
+          15,
+          0
+        ],
+        "opened_route_count": 0,
+        "recreate_step_count": 0,
+        "removed_customer_count": 7,
+        "route_local_cost": 11027.105205383696,
+        "rr_iteration": 17,
+        "rr_operator": "cross_depot_route_reassignment",
+        "rr_reason": "rebuild the whole route under another depot, finite fleet, vehicle type, charging, tariff, carbon, and diesel mapping"
+      },
+      "objective": 11027.105205383696,
+      "signature": "5ea68dd0c136b4aa9db5c91e8f9ac13bf5c10ecf445643d9cc74ae695b0b8e9b",
+      "source": "RUIN_RECREATE",
+      "violation_count": 0
+    },
+    {
+      "arm": "B_RR",
+      "duplicate_of_index": null,
+      "feasible": false,
+      "index": 40,
+      "metadata": {
+        "assignment_only_target_route": 15,
+        "removed_customer_count": 5,
+        "rr_iteration": 18,
+        "rr_operator": "vehicle_type_flip",
+        "rr_reason": "re-evaluate fixed cost, finite fleet, fuel or charging, time-varying price, and carbon under the opposite type",
+        "target_carbon_weight": 1.0,
+        "target_charge_strategy": "integrated",
+        "target_vehicle_type": "ev",
+        "unselected_routes_preserved": true
+      },
+      "objective": 8876.966075347502,
+      "signature": "20c7c8ddde9f82abd2970fe3a66262af8e90b53862be9c865efd849a79247917",
+      "source": "RUIN_RECREATE",
+      "violation_count": 1
+    },
+    {
+      "arm": "B_RR",
+      "duplicate_of_index": 22,
+      "feasible": true,
+      "index": 41,
+      "metadata": {
+        "assignment_only_target_route": 10,
+        "removed_customer_count": 0,
+        "rr_iteration": 19,
+        "rr_operator": "charge_departure_retiming",
+        "rr_reason": "keep customers but rebuild charge location, amount, start time, and departure time against half-hour price and carbon",
+        "target_carbon_weight": 1.0,
+        "target_charge_strategy": "legacy",
+        "target_vehicle_type": "ev",
+        "unselected_routes_preserved": true
+      },
+      "objective": 8960.302960642872,
+      "signature": "b24dffa95278399db9afc555dabe5181db3c8e047a3770b5bc8e19ab4199766f",
+      "source": "RUIN_RECREATE",
+      "violation_count": 0
+    },
+    {
+      "arm": "B_RR",
+      "duplicate_of_index": null,
+      "feasible": true,
+      "index": 42,
+      "metadata": {
+        "assignment_count": 27,
+        "assignment_dp_rank": 1,
+        "capacity_aware_assignment_dp": true,
+        "charger_slot_use": [
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 0,
+            "station_id": "D_chengdu"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 1,
+            "station_id": "D_chengdu"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 2,
+            "station_id": "D_chengdu"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 2,
+            "slot_index": 0,
+            "station_id": "D_chongqing"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 2,
+            "slot_index": 1,
+            "station_id": "D_chongqing"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 2,
+            "slot_index": 2,
+            "station_id": "D_chongqing"
+          }
+        ],
+        "charging_route_count": 3,
+        "decoder": "explicit_reference_v1",
+        "fleet_use": [
+          10,
+          1,
+          14,
+          2
+        ],
+        "opened_route_count": 1,
+        "recreate_step_count": 3,
+        "removed_customer_count": 3,
+        "route_local_cost": 9062.964589813104,
+        "rr_iteration": 20,
+        "rr_operator": "time_window_pressure_string",
+        "rr_reason": "remove a result-blind customer with low residual time-window slack under the shared route schedule and its adjacent string, then rebuild across depots, types, and charge schedules"
+      },
+      "objective": 9062.964589813104,
+      "signature": "e3ecddf9f33e45f35622f685edd048b10e1e3543f2fb0d0820866c3a605bdde7",
+      "source": "RUIN_RECREATE",
+      "violation_count": 0
+    },
+    {
+      "arm": "B_RR",
+      "duplicate_of_index": null,
+      "feasible": true,
+      "index": 43,
+      "metadata": {
+        "assignment_count": 27,
+        "assignment_dp_rank": 2,
+        "capacity_aware_assignment_dp": true,
+        "charger_slot_use": [
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 0,
+            "station_id": "D_chengdu"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 1,
+            "station_id": "D_chengdu"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 2,
+            "station_id": "D_chengdu"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 0,
+            "station_id": "D_chongqing"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 1,
+            "station_id": "D_chongqing"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 2,
+            "station_id": "D_chongqing"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 16,
+            "station_id": "D_chongqing"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 17,
+            "station_id": "D_chongqing"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 18,
+            "station_id": "D_chongqing"
+          }
+        ],
+        "charging_route_count": 3,
+        "decoder": "explicit_reference_v1",
+        "fleet_use": [
+          10,
+          1,
+          14,
+          2
+        ],
+        "opened_route_count": 1,
+        "recreate_step_count": 3,
+        "removed_customer_count": 3,
+        "route_local_cost": 9076.090581773627,
+        "rr_iteration": 20,
+        "rr_operator": "time_window_pressure_string",
+        "rr_reason": "remove a result-blind customer with low residual time-window slack under the shared route schedule and its adjacent string, then rebuild across depots, types, and charge schedules"
+      },
+      "objective": 9076.09058177363,
+      "signature": "340fcdd085721d617399b06ac00535d6cbbb4c7d73d61b87ca1c9613128ca390",
+      "source": "RUIN_RECREATE",
+      "violation_count": 0
+    },
+    {
+      "arm": "B_RR",
+      "duplicate_of_index": null,
+      "feasible": true,
+      "index": 44,
+      "metadata": {
+        "assignment_count": 27,
+        "assignment_dp_rank": 3,
+        "capacity_aware_assignment_dp": true,
+        "charger_slot_use": [
+          {
+            "day_offset": 0,
+            "route_count": 2,
+            "slot_index": 0,
+            "station_id": "D_chongqing"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 2,
+            "slot_index": 1,
+            "station_id": "D_chongqing"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 2,
+            "slot_index": 2,
+            "station_id": "D_chongqing"
+          }
+        ],
+        "charging_route_count": 2,
+        "decoder": "explicit_reference_v1",
+        "fleet_use": [
+          11,
+          0,
+          14,
+          2
+        ],
+        "opened_route_count": 1,
+        "recreate_step_count": 3,
+        "removed_customer_count": 3,
+        "route_local_cost": 9118.731008700941,
+        "rr_iteration": 20,
+        "rr_operator": "time_window_pressure_string",
+        "rr_reason": "remove a result-blind customer with low residual time-window slack under the shared route schedule and its adjacent string, then rebuild across depots, types, and charge schedules"
+      },
+      "objective": 9118.731008700941,
+      "signature": "fc5f7c312c45d30eb5e548197963db0672d74583c908385d71bfaac0c12dfb18",
+      "source": "RUIN_RECREATE",
+      "violation_count": 0
+    },
+    {
+      "arm": "B_RR",
+      "duplicate_of_index": null,
+      "feasible": true,
+      "index": 45,
+      "metadata": {
+        "assignment_count": 26,
+        "assignment_dp_rank": 1,
+        "capacity_aware_assignment_dp": true,
+        "charger_slot_use": [
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 0,
+            "station_id": "D_chengdu"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 1,
+            "station_id": "D_chengdu"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 2,
+            "station_id": "D_chengdu"
+          }
+        ],
+        "charging_route_count": 1,
+        "decoder": "explicit_reference_v1",
+        "fleet_use": [
+          10,
+          1,
+          15,
+          0
+        ],
+        "opened_route_count": 0,
+        "recreate_step_count": 0,
+        "removed_customer_count": 6,
+        "route_local_cost": 10927.957497338093,
+        "rr_iteration": 21,
+        "rr_operator": "cross_depot_route_reassignment",
+        "rr_reason": "rebuild the whole route under another depot, finite fleet, vehicle type, charging, tariff, carbon, and diesel mapping"
+      },
+      "objective": 10927.957497338093,
+      "signature": "a4d489a5bf532822c573045519c8eeb0cabef2f7d8904d1268edb15cebda77b0",
+      "source": "RUIN_RECREATE",
+      "violation_count": 0
+    },
+    {
+      "arm": "B_RR",
+      "duplicate_of_index": null,
+      "feasible": true,
+      "index": 46,
+      "metadata": {
+        "assignment_count": 26,
+        "assignment_dp_rank": 2,
+        "capacity_aware_assignment_dp": true,
+        "charger_slot_use": [
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 20,
+            "station_id": "D_chengdu"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 21,
+            "station_id": "D_chengdu"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 22,
+            "station_id": "D_chengdu"
+          }
+        ],
+        "charging_route_count": 1,
+        "decoder": "explicit_reference_v1",
+        "fleet_use": [
+          10,
+          1,
+          15,
+          0
+        ],
+        "opened_route_count": 0,
+        "recreate_step_count": 0,
+        "removed_customer_count": 6,
+        "route_local_cost": 10947.08203988398,
+        "rr_iteration": 21,
+        "rr_operator": "cross_depot_route_reassignment",
+        "rr_reason": "rebuild the whole route under another depot, finite fleet, vehicle type, charging, tariff, carbon, and diesel mapping"
+      },
+      "objective": 10947.08203988398,
+      "signature": "e3172bf071ed71d0ceab6296f9b5aaef4419a8f76cada86366751f75606ad807",
+      "source": "RUIN_RECREATE",
+      "violation_count": 0
+    },
+    {
+      "arm": "B_RR",
+      "duplicate_of_index": null,
+      "feasible": true,
+      "index": 47,
+      "metadata": {
+        "assignment_count": 26,
+        "assignment_dp_rank": 3,
+        "capacity_aware_assignment_dp": true,
+        "charger_slot_use": [],
+        "charging_route_count": 0,
+        "decoder": "explicit_reference_v1",
+        "fleet_use": [
+          11,
+          0,
+          15,
+          0
+        ],
+        "opened_route_count": 0,
+        "recreate_step_count": 0,
+        "removed_customer_count": 6,
+        "route_local_cost": 10983.72391622593,
+        "rr_iteration": 21,
+        "rr_operator": "cross_depot_route_reassignment",
+        "rr_reason": "rebuild the whole route under another depot, finite fleet, vehicle type, charging, tariff, carbon, and diesel mapping"
+      },
+      "objective": 10983.723916225928,
+      "signature": "208d16983f3c71b9e350d6161d7b3e0cff8f9cd364467abd529eeca9b364f5a0",
+      "source": "RUIN_RECREATE",
+      "violation_count": 0
+    },
+    {
+      "arm": "B_RR",
+      "duplicate_of_index": 34,
+      "feasible": true,
+      "index": 48,
+      "metadata": {
+        "assignment_count": 26,
+        "assignment_dp_rank": 1,
+        "capacity_aware_assignment_dp": true,
+        "charger_slot_use": [
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 0,
+            "station_id": "D_chengdu"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 1,
+            "station_id": "D_chengdu"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 2,
+            "station_id": "D_chengdu"
+          }
+        ],
+        "charging_route_count": 1,
+        "decoder": "explicit_reference_v1",
+        "fleet_use": [
+          11,
+          1,
+          14,
+          0
+        ],
+        "opened_route_count": 0,
+        "recreate_step_count": 0,
+        "removed_customer_count": 4,
+        "route_local_cost": 9898.148971779532,
+        "rr_iteration": 22,
+        "rr_operator": "cross_depot_route_reassignment",
+        "rr_reason": "rebuild the whole route under another depot, finite fleet, vehicle type, charging, tariff, carbon, and diesel mapping"
+      },
+      "objective": 9898.148971779534,
+      "signature": "e37b909e401358db5a2c68d230c0c06706324f1612c2a62d965623dcbe1135a5",
+      "source": "RUIN_RECREATE",
+      "violation_count": 0
+    },
+    {
+      "arm": "B_RR",
+      "duplicate_of_index": 35,
+      "feasible": true,
+      "index": 49,
+      "metadata": {
+        "assignment_count": 26,
+        "assignment_dp_rank": 2,
+        "capacity_aware_assignment_dp": true,
+        "charger_slot_use": [
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 20,
+            "station_id": "D_chengdu"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 21,
+            "station_id": "D_chengdu"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 22,
+            "station_id": "D_chengdu"
+          }
+        ],
+        "charging_route_count": 1,
+        "decoder": "explicit_reference_v1",
+        "fleet_use": [
+          11,
+          1,
+          14,
+          0
+        ],
+        "opened_route_count": 0,
+        "recreate_step_count": 0,
+        "removed_customer_count": 4,
+        "route_local_cost": 9917.273514325418,
+        "rr_iteration": 22,
+        "rr_operator": "cross_depot_route_reassignment",
+        "rr_reason": "rebuild the whole route under another depot, finite fleet, vehicle type, charging, tariff, carbon, and diesel mapping"
+      },
+      "objective": 9917.273514325421,
+      "signature": "0d0c3ceb460a00378d833c6dc615f610cb2649d42795c15653b8268c95f5ebfd",
+      "source": "RUIN_RECREATE",
+      "violation_count": 0
+    },
+    {
+      "arm": "B_RR",
+      "duplicate_of_index": 36,
+      "feasible": true,
+      "index": 50,
+      "metadata": {
+        "assignment_count": 26,
+        "assignment_dp_rank": 3,
+        "capacity_aware_assignment_dp": true,
+        "charger_slot_use": [
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 0,
+            "station_id": "D_chengdu"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 1,
+            "station_id": "D_chengdu"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 2,
+            "station_id": "D_chengdu"
+          }
+        ],
+        "charging_route_count": 1,
+        "decoder": "explicit_reference_v1",
+        "fleet_use": [
+          10,
+          1,
+          15,
+          0
+        ],
+        "opened_route_count": 0,
+        "recreate_step_count": 0,
+        "removed_customer_count": 4,
+        "route_local_cost": 10997.803360344238,
+        "rr_iteration": 22,
+        "rr_operator": "cross_depot_route_reassignment",
+        "rr_reason": "rebuild the whole route under another depot, finite fleet, vehicle type, charging, tariff, carbon, and diesel mapping"
+      },
+      "objective": 10997.803360344238,
+      "signature": "dd678d325c85b40d2b9e99b4a0da104c5833409ef38129fd22395386433c3484",
+      "source": "RUIN_RECREATE",
+      "violation_count": 0
+    },
+    {
+      "arm": "B_RR",
+      "duplicate_of_index": null,
+      "feasible": false,
+      "index": 51,
+      "metadata": {
+        "assignment_only_target_route": 12,
+        "removed_customer_count": 7,
+        "rr_iteration": 23,
+        "rr_operator": "vehicle_type_flip",
+        "rr_reason": "re-evaluate fixed cost, finite fleet, fuel or charging, time-varying price, and carbon under the opposite type",
+        "target_carbon_weight": 1.0,
+        "target_charge_strategy": "integrated",
+        "target_vehicle_type": "ev",
+        "unselected_routes_preserved": true
+      },
+      "objective": 8862.0007749311,
+      "signature": "21c741c9c8207187a1822f7eeaa633266a40ae6513768ef6a0f52398c6ff936a",
+      "source": "RUIN_RECREATE",
+      "violation_count": 1
+    },
+    {
+      "arm": "B_RR",
+      "duplicate_of_index": 21,
+      "feasible": true,
+      "index": 52,
+      "metadata": {
+        "assignment_only_target_route": 10,
+        "removed_customer_count": 0,
+        "rr_iteration": 24,
+        "rr_operator": "charge_departure_retiming",
+        "rr_reason": "keep customers but rebuild charge location, amount, start time, and departure time against half-hour price and carbon",
+        "target_carbon_weight": 0.0,
+        "target_charge_strategy": "integrated",
+        "target_vehicle_type": "ev",
+        "unselected_routes_preserved": true
+      },
+      "objective": 8941.178418096984,
+      "signature": "3e47bd5ec44da5972d7146f20ecb36305f7397983f7a262692580ebff96623b1",
+      "source": "RUIN_RECREATE",
+      "violation_count": 0
+    },
+    {
+      "arm": "B_RR",
+      "duplicate_of_index": 21,
+      "feasible": true,
+      "index": 53,
+      "metadata": {
+        "assignment_count": 26,
+        "assignment_dp_rank": 1,
+        "capacity_aware_assignment_dp": true,
+        "charger_slot_use": [
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 0,
+            "station_id": "D_chengdu"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 1,
+            "station_id": "D_chengdu"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 2,
+            "station_id": "D_chengdu"
+          }
+        ],
+        "charging_route_count": 1,
+        "decoder": "explicit_reference_v1",
+        "fleet_use": [
+          10,
+          1,
+          15,
+          0
+        ],
+        "opened_route_count": 0,
+        "recreate_step_count": 2,
+        "removed_customer_count": 2,
+        "route_local_cost": 8941.178418096984,
+        "rr_iteration": 25,
+        "rr_operator": "time_window_pressure_string",
+        "rr_reason": "remove a result-blind customer with low residual time-window slack under the shared route schedule and its adjacent string, then rebuild across depots, types, and charge schedules"
+      },
+      "objective": 8941.178418096984,
+      "signature": "3e47bd5ec44da5972d7146f20ecb36305f7397983f7a262692580ebff96623b1",
+      "source": "RUIN_RECREATE",
+      "violation_count": 0
+    },
+    {
+      "arm": "B_RR",
+      "duplicate_of_index": 22,
+      "feasible": true,
+      "index": 54,
+      "metadata": {
+        "assignment_count": 26,
+        "assignment_dp_rank": 2,
+        "capacity_aware_assignment_dp": true,
+        "charger_slot_use": [
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 20,
+            "station_id": "D_chengdu"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 21,
+            "station_id": "D_chengdu"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 22,
+            "station_id": "D_chengdu"
+          }
+        ],
+        "charging_route_count": 1,
+        "decoder": "explicit_reference_v1",
+        "fleet_use": [
+          10,
+          1,
+          15,
+          0
+        ],
+        "opened_route_count": 0,
+        "recreate_step_count": 2,
+        "removed_customer_count": 2,
+        "route_local_cost": 8960.30296064287,
+        "rr_iteration": 25,
+        "rr_operator": "time_window_pressure_string",
+        "rr_reason": "remove a result-blind customer with low residual time-window slack under the shared route schedule and its adjacent string, then rebuild across depots, types, and charge schedules"
+      },
+      "objective": 8960.302960642872,
+      "signature": "b24dffa95278399db9afc555dabe5181db3c8e047a3770b5bc8e19ab4199766f",
+      "source": "RUIN_RECREATE",
+      "violation_count": 0
+    },
+    {
+      "arm": "B_RR",
+      "duplicate_of_index": 23,
+      "feasible": true,
+      "index": 55,
+      "metadata": {
+        "assignment_count": 26,
+        "assignment_dp_rank": 3,
+        "capacity_aware_assignment_dp": true,
+        "charger_slot_use": [],
+        "charging_route_count": 0,
+        "decoder": "explicit_reference_v1",
+        "fleet_use": [
+          11,
+          0,
+          15,
+          0
+        ],
+        "opened_route_count": 0,
+        "recreate_step_count": 2,
+        "removed_customer_count": 2,
+        "route_local_cost": 8996.94483698482,
+        "rr_iteration": 25,
+        "rr_operator": "time_window_pressure_string",
+        "rr_reason": "remove a result-blind customer with low residual time-window slack under the shared route schedule and its adjacent string, then rebuild across depots, types, and charge schedules"
+      },
+      "objective": 8996.94483698482,
+      "signature": "e2fb2def8a68198b5ea5af8a1625c966f43d3c1df20faa4c4f93f559dfa99057",
+      "source": "RUIN_RECREATE",
+      "violation_count": 0
+    },
+    {
+      "arm": "B_RR",
+      "duplicate_of_index": null,
+      "feasible": true,
+      "index": 56,
+      "metadata": {
+        "assignment_count": 26,
+        "assignment_dp_rank": 1,
+        "capacity_aware_assignment_dp": true,
+        "charger_slot_use": [
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 0,
+            "station_id": "D_chengdu"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 1,
+            "station_id": "D_chengdu"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 2,
+            "station_id": "D_chengdu"
+          }
+        ],
+        "charging_route_count": 1,
+        "decoder": "explicit_reference_v1",
+        "fleet_use": [
+          11,
+          1,
+          14,
+          0
+        ],
+        "opened_route_count": 0,
+        "recreate_step_count": 0,
+        "removed_customer_count": 5,
+        "route_local_cost": 9824.02025084726,
+        "rr_iteration": 26,
+        "rr_operator": "cross_depot_route_reassignment",
+        "rr_reason": "rebuild the whole route under another depot, finite fleet, vehicle type, charging, tariff, carbon, and diesel mapping"
+      },
+      "objective": 9824.020250847263,
+      "signature": "88dac1ade7746a4b8a9cd05b61864986e86a45c8905fa68e45021ed8c0a98d98",
+      "source": "RUIN_RECREATE",
+      "violation_count": 0
+    },
+    {
+      "arm": "B_RR",
+      "duplicate_of_index": null,
+      "feasible": true,
+      "index": 57,
+      "metadata": {
+        "assignment_count": 26,
+        "assignment_dp_rank": 2,
+        "capacity_aware_assignment_dp": true,
+        "charger_slot_use": [
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 20,
+            "station_id": "D_chengdu"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 21,
+            "station_id": "D_chengdu"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 22,
+            "station_id": "D_chengdu"
+          }
+        ],
+        "charging_route_count": 1,
+        "decoder": "explicit_reference_v1",
+        "fleet_use": [
+          11,
+          1,
+          14,
+          0
+        ],
+        "opened_route_count": 0,
+        "recreate_step_count": 0,
+        "removed_customer_count": 5,
+        "route_local_cost": 9843.144793393149,
+        "rr_iteration": 26,
+        "rr_operator": "cross_depot_route_reassignment",
+        "rr_reason": "rebuild the whole route under another depot, finite fleet, vehicle type, charging, tariff, carbon, and diesel mapping"
+      },
+      "objective": 9843.14479339315,
+      "signature": "14b9c3b1afca1654d346dd6c9eea392c64995736ec5d72c4fe500f0fed00643a",
+      "source": "RUIN_RECREATE",
+      "violation_count": 0
+    },
+    {
+      "arm": "B_RR",
+      "duplicate_of_index": null,
+      "feasible": true,
+      "index": 58,
+      "metadata": {
+        "assignment_count": 26,
+        "assignment_dp_rank": 3,
+        "capacity_aware_assignment_dp": true,
+        "charger_slot_use": [
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 0,
+            "station_id": "D_chengdu"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 1,
+            "station_id": "D_chengdu"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 2,
+            "station_id": "D_chengdu"
+          }
+        ],
+        "charging_route_count": 1,
+        "decoder": "explicit_reference_v1",
+        "fleet_use": [
+          10,
+          1,
+          15,
+          0
+        ],
+        "opened_route_count": 0,
+        "recreate_step_count": 0,
+        "removed_customer_count": 5,
+        "route_local_cost": 10923.674639411967,
+        "rr_iteration": 26,
+        "rr_operator": "cross_depot_route_reassignment",
+        "rr_reason": "rebuild the whole route under another depot, finite fleet, vehicle type, charging, tariff, carbon, and diesel mapping"
+      },
+      "objective": 10923.674639411967,
+      "signature": "11409def6014a93fa67695353785bffffc1d30cf981f6e2255d3244740002ce2",
+      "source": "RUIN_RECREATE",
+      "violation_count": 0
+    },
+    {
+      "arm": "B_RR",
+      "duplicate_of_index": null,
+      "feasible": true,
+      "index": 59,
+      "metadata": {
+        "assignment_count": 26,
+        "assignment_dp_rank": 1,
+        "capacity_aware_assignment_dp": true,
+        "charger_slot_use": [
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 0,
+            "station_id": "D_chengdu"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 1,
+            "station_id": "D_chengdu"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 2,
+            "station_id": "D_chengdu"
+          }
+        ],
+        "charging_route_count": 1,
+        "decoder": "explicit_reference_v1",
+        "fleet_use": [
+          11,
+          1,
+          14,
+          0
+        ],
+        "opened_route_count": 0,
+        "recreate_step_count": 0,
+        "removed_customer_count": 7,
+        "route_local_cost": 9842.419733146582,
+        "rr_iteration": 27,
+        "rr_operator": "cross_depot_route_reassignment",
+        "rr_reason": "rebuild the whole route under another depot, finite fleet, vehicle type, charging, tariff, carbon, and diesel mapping"
+      },
+      "objective": 9842.419733146584,
+      "signature": "cce59774efed83ff2614462bed322518597818caaffb7d5e5d713deed04000a6",
+      "source": "RUIN_RECREATE",
+      "violation_count": 0
+    },
+    {
+      "arm": "B_RR",
+      "duplicate_of_index": null,
+      "feasible": true,
+      "index": 60,
+      "metadata": {
+        "assignment_count": 26,
+        "assignment_dp_rank": 2,
+        "capacity_aware_assignment_dp": true,
+        "charger_slot_use": [
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 20,
+            "station_id": "D_chengdu"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 21,
+            "station_id": "D_chengdu"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 22,
+            "station_id": "D_chengdu"
+          }
+        ],
+        "charging_route_count": 1,
+        "decoder": "explicit_reference_v1",
+        "fleet_use": [
+          11,
+          1,
+          14,
+          0
+        ],
+        "opened_route_count": 0,
+        "recreate_step_count": 0,
+        "removed_customer_count": 7,
+        "route_local_cost": 9861.54427569247,
+        "rr_iteration": 27,
+        "rr_operator": "cross_depot_route_reassignment",
+        "rr_reason": "rebuild the whole route under another depot, finite fleet, vehicle type, charging, tariff, carbon, and diesel mapping"
+      },
+      "objective": 9861.544275692471,
+      "signature": "fd6f2fb84cf87fa724410f1cf8bf9a51b7074a47953806a69a9e8a481b64594d",
+      "source": "RUIN_RECREATE",
+      "violation_count": 0
+    },
+    {
+      "arm": "B_RR",
+      "duplicate_of_index": null,
+      "feasible": true,
+      "index": 61,
+      "metadata": {
+        "assignment_count": 26,
+        "assignment_dp_rank": 3,
+        "capacity_aware_assignment_dp": true,
+        "charger_slot_use": [
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 0,
+            "station_id": "D_chengdu"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 1,
+            "station_id": "D_chengdu"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 2,
+            "station_id": "D_chengdu"
+          }
+        ],
+        "charging_route_count": 1,
+        "decoder": "explicit_reference_v1",
+        "fleet_use": [
+          10,
+          1,
+          15,
+          0
+        ],
+        "opened_route_count": 0,
+        "recreate_step_count": 0,
+        "removed_customer_count": 7,
+        "route_local_cost": 10942.07412171129,
+        "rr_iteration": 27,
+        "rr_operator": "cross_depot_route_reassignment",
+        "rr_reason": "rebuild the whole route under another depot, finite fleet, vehicle type, charging, tariff, carbon, and diesel mapping"
+      },
+      "objective": 10942.07412171129,
+      "signature": "0dbd3f2d6e7c6ccac2b4c5899d6838cdad41f3c838d77a51a63a39a8723f860b",
+      "source": "RUIN_RECREATE",
+      "violation_count": 0
+    },
+    {
+      "arm": "B_RR",
+      "duplicate_of_index": null,
+      "feasible": false,
+      "index": 62,
+      "metadata": {
+        "assignment_only_target_route": 25,
+        "removed_customer_count": 4,
+        "rr_iteration": 28,
+        "rr_operator": "vehicle_type_flip",
+        "rr_reason": "re-evaluate fixed cost, finite fleet, fuel or charging, time-varying price, and carbon under the opposite type",
+        "target_carbon_weight": 1.0,
+        "target_charge_strategy": "integrated",
+        "target_vehicle_type": "ev",
+        "unselected_routes_preserved": true
+      },
+      "objective": 8890.19049496703,
+      "signature": "0014695f23e63e240cc473900fb36f1359baf306726bf310483c5ccf22f1a786",
+      "source": "RUIN_RECREATE",
+      "violation_count": 1
+    },
+    {
+      "arm": "B_RR",
+      "duplicate_of_index": 22,
+      "feasible": true,
+      "index": 63,
+      "metadata": {
+        "assignment_only_target_route": 10,
+        "removed_customer_count": 0,
+        "rr_iteration": 29,
+        "rr_operator": "charge_departure_retiming",
+        "rr_reason": "keep customers but rebuild charge location, amount, start time, and departure time against half-hour price and carbon",
+        "target_carbon_weight": 1.0,
+        "target_charge_strategy": "legacy",
+        "target_vehicle_type": "ev",
+        "unselected_routes_preserved": true
+      },
+      "objective": 8960.302960642872,
+      "signature": "b24dffa95278399db9afc555dabe5181db3c8e047a3770b5bc8e19ab4199766f",
+      "source": "RUIN_RECREATE",
+      "violation_count": 0
+    },
+    {
+      "arm": "B_RR",
+      "duplicate_of_index": null,
+      "feasible": true,
+      "index": 64,
+      "metadata": {
+        "assignment_count": 26,
+        "assignment_dp_rank": 1,
+        "capacity_aware_assignment_dp": true,
+        "charger_slot_use": [
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 0,
+            "station_id": "D_chengdu"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 1,
+            "station_id": "D_chengdu"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 2,
+            "station_id": "D_chengdu"
+          }
+        ],
+        "charging_route_count": 1,
+        "decoder": "explicit_reference_v1",
+        "fleet_use": [
+          10,
+          1,
+          15,
+          0
+        ],
+        "opened_route_count": 0,
+        "recreate_step_count": 3,
+        "removed_customer_count": 3,
+        "route_local_cost": 8946.904559764185,
+        "rr_iteration": 30,
+        "rr_operator": "time_window_pressure_string",
+        "rr_reason": "remove a result-blind customer with low residual time-window slack under the shared route schedule and its adjacent string, then rebuild across depots, types, and charge schedules"
+      },
+      "objective": 8946.904559764185,
+      "signature": "337916e1a87cf8e48830e8a5160f6c878b736a40ceafc4f2558613f50d57773a",
+      "source": "RUIN_RECREATE",
+      "violation_count": 0
+    },
+    {
+      "arm": "B_RR",
+      "duplicate_of_index": null,
+      "feasible": true,
+      "index": 65,
+      "metadata": {
+        "assignment_count": 26,
+        "assignment_dp_rank": 2,
+        "capacity_aware_assignment_dp": true,
+        "charger_slot_use": [
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 20,
+            "station_id": "D_chengdu"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 21,
+            "station_id": "D_chengdu"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 22,
+            "station_id": "D_chengdu"
+          }
+        ],
+        "charging_route_count": 1,
+        "decoder": "explicit_reference_v1",
+        "fleet_use": [
+          10,
+          1,
+          15,
+          0
+        ],
+        "opened_route_count": 0,
+        "recreate_step_count": 3,
+        "removed_customer_count": 3,
+        "route_local_cost": 8966.02910231007,
+        "rr_iteration": 30,
+        "rr_operator": "time_window_pressure_string",
+        "rr_reason": "remove a result-blind customer with low residual time-window slack under the shared route schedule and its adjacent string, then rebuild across depots, types, and charge schedules"
+      },
+      "objective": 8966.029102310073,
+      "signature": "e6156647ee27c67577888e0ed9931e6371672055fa8b7bfe8ba0df7a0544ccaf",
+      "source": "RUIN_RECREATE",
+      "violation_count": 0
+    },
+    {
+      "arm": "B_RR",
+      "duplicate_of_index": null,
+      "feasible": true,
+      "index": 66,
+      "metadata": {
+        "assignment_count": 26,
+        "assignment_dp_rank": 3,
+        "capacity_aware_assignment_dp": true,
+        "charger_slot_use": [],
+        "charging_route_count": 0,
+        "decoder": "explicit_reference_v1",
+        "fleet_use": [
+          11,
+          0,
+          15,
+          0
+        ],
+        "opened_route_count": 0,
+        "recreate_step_count": 3,
+        "removed_customer_count": 3,
+        "route_local_cost": 9002.67097865202,
+        "rr_iteration": 30,
+        "rr_operator": "time_window_pressure_string",
+        "rr_reason": "remove a result-blind customer with low residual time-window slack under the shared route schedule and its adjacent string, then rebuild across depots, types, and charge schedules"
+      },
+      "objective": 9002.67097865202,
+      "signature": "653faf8837d4872f23457be9e7222f6ff156a5806474c2a856d2e620aaee83c8",
+      "source": "RUIN_RECREATE",
+      "violation_count": 0
+    },
+    {
+      "arm": "B_RR",
+      "duplicate_of_index": 37,
+      "feasible": true,
+      "index": 67,
+      "metadata": {
+        "assignment_count": 26,
+        "assignment_dp_rank": 1,
+        "capacity_aware_assignment_dp": true,
+        "charger_slot_use": [
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 0,
+            "station_id": "D_chengdu"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 1,
+            "station_id": "D_chengdu"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 2,
+            "station_id": "D_chengdu"
+          }
+        ],
+        "charging_route_count": 1,
+        "decoder": "explicit_reference_v1",
+        "fleet_use": [
+          10,
+          1,
+          15,
+          0
+        ],
+        "opened_route_count": 0,
+        "recreate_step_count": 0,
+        "removed_customer_count": 7,
+        "route_local_cost": 10971.338786495859,
+        "rr_iteration": 31,
+        "rr_operator": "cross_depot_route_reassignment",
+        "rr_reason": "rebuild the whole route under another depot, finite fleet, vehicle type, charging, tariff, carbon, and diesel mapping"
+      },
+      "objective": 10971.33878649586,
+      "signature": "632f0076265c655645c31913f854211dd485673413a913854c3c30eb3ee4ff8e",
+      "source": "RUIN_RECREATE",
+      "violation_count": 0
+    },
+    {
+      "arm": "B_RR",
+      "duplicate_of_index": 38,
+      "feasible": true,
+      "index": 68,
+      "metadata": {
+        "assignment_count": 26,
+        "assignment_dp_rank": 2,
+        "capacity_aware_assignment_dp": true,
+        "charger_slot_use": [
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 20,
+            "station_id": "D_chengdu"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 21,
+            "station_id": "D_chengdu"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 22,
+            "station_id": "D_chengdu"
+          }
+        ],
+        "charging_route_count": 1,
+        "decoder": "explicit_reference_v1",
+        "fleet_use": [
+          10,
+          1,
+          15,
+          0
+        ],
+        "opened_route_count": 0,
+        "recreate_step_count": 0,
+        "removed_customer_count": 7,
+        "route_local_cost": 10990.463329041746,
+        "rr_iteration": 31,
+        "rr_operator": "cross_depot_route_reassignment",
+        "rr_reason": "rebuild the whole route under another depot, finite fleet, vehicle type, charging, tariff, carbon, and diesel mapping"
+      },
+      "objective": 10990.463329041748,
+      "signature": "8f544f1db32d95a0cde9378cc9e20e0d613fbb26c2729aef93dda3ae525c675a",
+      "source": "RUIN_RECREATE",
+      "violation_count": 0
+    },
+    {
+      "arm": "B_RR",
+      "duplicate_of_index": 39,
+      "feasible": true,
+      "index": 69,
+      "metadata": {
+        "assignment_count": 26,
+        "assignment_dp_rank": 3,
+        "capacity_aware_assignment_dp": true,
+        "charger_slot_use": [],
+        "charging_route_count": 0,
+        "decoder": "explicit_reference_v1",
+        "fleet_use": [
+          11,
+          0,
+          15,
+          0
+        ],
+        "opened_route_count": 0,
+        "recreate_step_count": 0,
+        "removed_customer_count": 7,
+        "route_local_cost": 11027.105205383696,
+        "rr_iteration": 31,
+        "rr_operator": "cross_depot_route_reassignment",
+        "rr_reason": "rebuild the whole route under another depot, finite fleet, vehicle type, charging, tariff, carbon, and diesel mapping"
+      },
+      "objective": 11027.105205383696,
+      "signature": "5ea68dd0c136b4aa9db5c91e8f9ac13bf5c10ecf445643d9cc74ae695b0b8e9b",
+      "source": "RUIN_RECREATE",
+      "violation_count": 0
+    },
+    {
+      "arm": "B_RR",
+      "duplicate_of_index": null,
+      "feasible": true,
+      "index": 70,
+      "metadata": {
+        "assignment_count": 26,
+        "assignment_dp_rank": 1,
+        "capacity_aware_assignment_dp": true,
+        "charger_slot_use": [
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 0,
+            "station_id": "D_chengdu"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 1,
+            "station_id": "D_chengdu"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 2,
+            "station_id": "D_chengdu"
+          }
+        ],
+        "charging_route_count": 1,
+        "decoder": "explicit_reference_v1",
+        "fleet_use": [
+          10,
+          1,
+          15,
+          0
+        ],
+        "opened_route_count": 0,
+        "recreate_step_count": 0,
+        "removed_customer_count": 5,
+        "route_local_cost": 10934.784686058085,
+        "rr_iteration": 32,
+        "rr_operator": "cross_depot_route_reassignment",
+        "rr_reason": "rebuild the whole route under another depot, finite fleet, vehicle type, charging, tariff, carbon, and diesel mapping"
+      },
+      "objective": 10934.784686058085,
+      "signature": "a2633df675dfb63ad7b81402309b1f8adfc09f195aa1d5186e4d96ed7280c7e3",
+      "source": "RUIN_RECREATE",
+      "violation_count": 0
+    },
+    {
+      "arm": "B_RR",
+      "duplicate_of_index": null,
+      "feasible": true,
+      "index": 71,
+      "metadata": {
+        "assignment_count": 26,
+        "assignment_dp_rank": 2,
+        "capacity_aware_assignment_dp": true,
+        "charger_slot_use": [
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 20,
+            "station_id": "D_chengdu"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 21,
+            "station_id": "D_chengdu"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 22,
+            "station_id": "D_chengdu"
+          }
+        ],
+        "charging_route_count": 1,
+        "decoder": "explicit_reference_v1",
+        "fleet_use": [
+          10,
+          1,
+          15,
+          0
+        ],
+        "opened_route_count": 0,
+        "recreate_step_count": 0,
+        "removed_customer_count": 5,
+        "route_local_cost": 10953.909228603972,
+        "rr_iteration": 32,
+        "rr_operator": "cross_depot_route_reassignment",
+        "rr_reason": "rebuild the whole route under another depot, finite fleet, vehicle type, charging, tariff, carbon, and diesel mapping"
+      },
+      "objective": 10953.909228603972,
+      "signature": "2e1723f37bd53ebc441acfe0a27b7146a5ae59110914c48e082db92fbd443d24",
+      "source": "RUIN_RECREATE",
+      "violation_count": 0
+    },
+    {
+      "arm": "B_RR",
+      "duplicate_of_index": null,
+      "feasible": true,
+      "index": 72,
+      "metadata": {
+        "assignment_count": 26,
+        "assignment_dp_rank": 3,
+        "capacity_aware_assignment_dp": true,
+        "charger_slot_use": [],
+        "charging_route_count": 0,
+        "decoder": "explicit_reference_v1",
+        "fleet_use": [
+          11,
+          0,
+          15,
+          0
+        ],
+        "opened_route_count": 0,
+        "recreate_step_count": 0,
+        "removed_customer_count": 5,
+        "route_local_cost": 10990.551104945922,
+        "rr_iteration": 32,
+        "rr_operator": "cross_depot_route_reassignment",
+        "rr_reason": "rebuild the whole route under another depot, finite fleet, vehicle type, charging, tariff, carbon, and diesel mapping"
+      },
+      "objective": 10990.55110494592,
+      "signature": "1d5f8ccee6c4e9192c8b1babcf3241e03daa1112024ad39df8c72b6fb4b8c90c",
+      "source": "RUIN_RECREATE",
+      "violation_count": 0
+    },
+    {
+      "arm": "B_RR",
+      "duplicate_of_index": null,
+      "feasible": false,
+      "index": 73,
+      "metadata": {
+        "assignment_only_target_route": 0,
+        "removed_customer_count": 6,
+        "rr_iteration": 33,
+        "rr_operator": "vehicle_type_flip",
+        "rr_reason": "re-evaluate fixed cost, finite fleet, fuel or charging, time-varying price, and carbon under the opposite type",
+        "target_carbon_weight": 1.0,
+        "target_charge_strategy": "integrated",
+        "target_vehicle_type": "ev",
+        "unselected_routes_preserved": true
+      },
+      "objective": 8894.19391278083,
+      "signature": "45cae0e8db824317b0b646207e1687458fac8d26f34479c58655a93c86eb352a",
+      "source": "RUIN_RECREATE",
+      "violation_count": 1
+    },
+    {
+      "arm": "B_RR",
+      "duplicate_of_index": 22,
+      "feasible": true,
+      "index": 74,
+      "metadata": {
+        "assignment_only_target_route": 10,
+        "removed_customer_count": 0,
+        "rr_iteration": 34,
+        "rr_operator": "charge_departure_retiming",
+        "rr_reason": "keep customers but rebuild charge location, amount, start time, and departure time against half-hour price and carbon",
+        "target_carbon_weight": 1.0,
+        "target_charge_strategy": "legacy",
+        "target_vehicle_type": "ev",
+        "unselected_routes_preserved": true
+      },
+      "objective": 8960.302960642872,
+      "signature": "b24dffa95278399db9afc555dabe5181db3c8e047a3770b5bc8e19ab4199766f",
+      "source": "RUIN_RECREATE",
+      "violation_count": 0
+    },
+    {
+      "arm": "B_RR",
+      "duplicate_of_index": null,
+      "feasible": true,
+      "index": 75,
+      "metadata": {
+        "assignment_count": 26,
+        "assignment_dp_rank": 1,
+        "capacity_aware_assignment_dp": true,
+        "charger_slot_use": [],
+        "charging_route_count": 0,
+        "decoder": "explicit_reference_v1",
+        "fleet_use": [
+          11,
+          0,
+          15,
+          0
+        ],
+        "opened_route_count": 0,
+        "recreate_step_count": 3,
+        "removed_customer_count": 3,
+        "route_local_cost": 8982.838136592505,
+        "rr_iteration": 35,
+        "rr_operator": "time_window_pressure_string",
+        "rr_reason": "remove a result-blind customer with low residual time-window slack under the shared route schedule and its adjacent string, then rebuild across depots, types, and charge schedules"
+      },
+      "objective": 8982.838136592505,
+      "signature": "6dc0efbbd2503f91962ffcd646b83f8bec6413146f051697196a7cf1556bc4a1",
+      "source": "RUIN_RECREATE",
+      "violation_count": 0
+    },
+    {
+      "arm": "B_RR",
+      "duplicate_of_index": null,
+      "feasible": true,
+      "index": 76,
+      "metadata": {
+        "assignment_count": 26,
+        "assignment_dp_rank": 2,
+        "capacity_aware_assignment_dp": true,
+        "charger_slot_use": [],
+        "charging_route_count": 0,
+        "decoder": "explicit_reference_v1",
+        "fleet_use": [
+          11,
+          0,
+          15,
+          0
+        ],
+        "opened_route_count": 0,
+        "recreate_step_count": 3,
+        "removed_customer_count": 3,
+        "route_local_cost": 10960.926113917432,
+        "rr_iteration": 35,
+        "rr_operator": "time_window_pressure_string",
+        "rr_reason": "remove a result-blind customer with low residual time-window slack under the shared route schedule and its adjacent string, then rebuild across depots, types, and charge schedules"
+      },
+      "objective": 10960.92611391743,
+      "signature": "ede458adec31e9c57fb47c6c6b0fb5d38c1931ad4a79f30268a5d078b4c92727",
+      "source": "RUIN_RECREATE",
+      "violation_count": 0
+    },
+    {
+      "arm": "B_RR",
+      "duplicate_of_index": null,
+      "feasible": true,
+      "index": 77,
+      "metadata": {
+        "assignment_count": 26,
+        "assignment_dp_rank": 1,
+        "capacity_aware_assignment_dp": true,
+        "charger_slot_use": [
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 0,
+            "station_id": "D_chengdu"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 1,
+            "station_id": "D_chengdu"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 2,
+            "station_id": "D_chengdu"
+          }
+        ],
+        "charging_route_count": 1,
+        "decoder": "explicit_reference_v1",
+        "fleet_use": [
+          11,
+          1,
+          14,
+          0
+        ],
+        "opened_route_count": 0,
+        "recreate_step_count": 0,
+        "removed_customer_count": 7,
+        "route_local_cost": 9881.281495133602,
+        "rr_iteration": 36,
+        "rr_operator": "cross_depot_route_reassignment",
+        "rr_reason": "rebuild the whole route under another depot, finite fleet, vehicle type, charging, tariff, carbon, and diesel mapping"
+      },
+      "objective": 9881.281495133602,
+      "signature": "9a02698789774d65935fd736abe4d0b5a69fd6709e3210b7570b3d0c6ceafd46",
+      "source": "RUIN_RECREATE",
+      "violation_count": 0
+    },
+    {
+      "arm": "B_RR",
+      "duplicate_of_index": null,
+      "feasible": true,
+      "index": 78,
+      "metadata": {
+        "assignment_count": 26,
+        "assignment_dp_rank": 2,
+        "capacity_aware_assignment_dp": true,
+        "charger_slot_use": [
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 20,
+            "station_id": "D_chengdu"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 21,
+            "station_id": "D_chengdu"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 22,
+            "station_id": "D_chengdu"
+          }
+        ],
+        "charging_route_count": 1,
+        "decoder": "explicit_reference_v1",
+        "fleet_use": [
+          11,
+          1,
+          14,
+          0
+        ],
+        "opened_route_count": 0,
+        "recreate_step_count": 0,
+        "removed_customer_count": 7,
+        "route_local_cost": 9900.406037679491,
+        "rr_iteration": 36,
+        "rr_operator": "cross_depot_route_reassignment",
+        "rr_reason": "rebuild the whole route under another depot, finite fleet, vehicle type, charging, tariff, carbon, and diesel mapping"
+      },
+      "objective": 9900.40603767949,
+      "signature": "d9463e4e1b4785d67b422e09179a0af326a2ffe7d8f3e92b28a41a4c270a104b",
+      "source": "RUIN_RECREATE",
+      "violation_count": 0
+    },
+    {
+      "arm": "B_RR",
+      "duplicate_of_index": null,
+      "feasible": true,
+      "index": 79,
+      "metadata": {
+        "assignment_count": 26,
+        "assignment_dp_rank": 3,
+        "capacity_aware_assignment_dp": true,
+        "charger_slot_use": [
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 0,
+            "station_id": "D_chengdu"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 1,
+            "station_id": "D_chengdu"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 2,
+            "station_id": "D_chengdu"
+          }
+        ],
+        "charging_route_count": 1,
+        "decoder": "explicit_reference_v1",
+        "fleet_use": [
+          10,
+          1,
+          15,
+          0
+        ],
+        "opened_route_count": 0,
+        "recreate_step_count": 0,
+        "removed_customer_count": 7,
+        "route_local_cost": 10980.93588369831,
+        "rr_iteration": 36,
+        "rr_operator": "cross_depot_route_reassignment",
+        "rr_reason": "rebuild the whole route under another depot, finite fleet, vehicle type, charging, tariff, carbon, and diesel mapping"
+      },
+      "objective": 10980.93588369831,
+      "signature": "0defa21524156a1f2d56a31655f6addb6d5bd7080b007e7f3fc950c09404de27",
+      "source": "RUIN_RECREATE",
+      "violation_count": 0
+    },
+    {
+      "arm": "B_RR",
+      "duplicate_of_index": null,
+      "feasible": true,
+      "index": 80,
+      "metadata": {
+        "assignment_count": 26,
+        "assignment_dp_rank": 1,
+        "capacity_aware_assignment_dp": true,
+        "charger_slot_use": [
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 0,
+            "station_id": "D_chengdu"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 1,
+            "station_id": "D_chengdu"
+          },
+          {
+            "day_offset": 0,
+            "route_count": 1,
+            "slot_index": 2,
+            "station_id": "D_chengdu"
+          }
+        ],
+        "charging_route_count": 1,
+        "decoder": "explicit_reference_v1",
+        "fleet_use": [
+          11,
+          1,
+          14,
+          0
+        ],
+        "opened_route_count": 0,
+        "recreate_step_count": 0,
+        "removed_customer_count": 5,
+        "route_local_cost": 9882.60852790806,
+        "rr_iteration": 37,
+        "rr_operator": "cross_depot_route_reassignment",
+        "rr_reason": "rebuild the whole route under another depot, finite fleet, vehicle type, charging, tariff, carbon, and diesel mapping"
+      },
+      "objective": 9882.60852790806,
+      "signature": "d5b412ef100417b87c75a3c54984707aaac2e3c7f27d2c9c3c6e522cd470e283",
+      "source": "RUIN_RECREATE",
+      "violation_count": 0
+    }
+  ],
+  "remaining": 0
+}

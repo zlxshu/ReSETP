@@ -3,12 +3,14 @@ from __future__ import annotations
 import random
 
 import pytest
+import fleet_assignment_dp as assignment_dp
 import hybrid_orchestrator as orchestration
 import run_g0_real_bundle_preflight as real_bundle_gate
 import run_g1_micro_gate as g1_gate
 import rr_engine as rr_runtime
 
 from setp_solver.instance_loader import Instance, Node
+from setp_solver.check import CUSTOMER_COVERAGE, TIME_WINDOW, Violation
 from setp_solver.solution import ChargingAction, Route, Solution
 
 from contracts import (
@@ -27,6 +29,8 @@ from decoder_cache import (
 from evaluation import BudgetedCompleteEvaluator, ScoredCandidate
 from fleet_assignment_dp import (
     AssignmentOption,
+    _checked_route_local_cost,
+    _incumbent_assignment_candidate,
     solve_finite_fleet_assignment_dp,
 )
 from hybrid_orchestrator import (
@@ -962,6 +966,139 @@ def test_finite_fleet_dp_jointly_assigns_routes_without_overflow() -> None:
         (1, "D_SZ", "ev"),
     ]
     assert all(candidate.fleet_use == (1, 0, 0, 1) for candidate in candidates)
+
+
+def test_route_local_cost_ignores_only_missing_other_customers(
+    monkeypatch,
+) -> None:
+    class Bundle:
+        instance = _instance()
+        prices = object()
+        customer_home_depot = {
+            node_id: "D_GZ" for node_id in _customer_ids()
+        }
+
+    route = _solution().routes[0]
+    coverage = Violation(
+        CUSTOMER_COVERAGE,
+        "",
+        "C4",
+        "customer not served",
+    )
+    late = Violation(
+        TIME_WINDOW,
+        route.vehicle_id,
+        "C2",
+        "late by 1.000 s",
+    )
+    monkeypatch.setattr(
+        assignment_dp,
+        "_single_route_cost",
+        lambda *args: 12.5,
+    )
+    monkeypatch.setattr(
+        assignment_dp,
+        "check_solution",
+        lambda *args: [coverage],
+    )
+    assert _checked_route_local_cost(route, (), Bundle()) == 12.5
+
+    monkeypatch.setattr(
+        assignment_dp,
+        "check_solution",
+        lambda *args: [coverage, late],
+    )
+    with pytest.raises(ValueError, match="TIME_WINDOW"):
+        _checked_route_local_cost(route, (), Bundle())
+
+
+def test_route_local_cost_rejects_duplicate_customer_coverage(
+    monkeypatch,
+) -> None:
+    class Bundle:
+        instance = _instance()
+        prices = object()
+        customer_home_depot = {
+            node_id: "D_GZ" for node_id in _customer_ids()
+        }
+
+    route = _solution().routes[0]
+    duplicate = Violation(
+        CUSTOMER_COVERAGE,
+        route.vehicle_id,
+        "C2",
+        "customer served 2 times",
+    )
+    monkeypatch.setattr(
+        assignment_dp,
+        "_single_route_cost",
+        lambda *args: 12.5,
+    )
+    monkeypatch.setattr(
+        assignment_dp,
+        "check_solution",
+        lambda *args: [duplicate],
+    )
+    with pytest.raises(ValueError, match="CUSTOMER_COVERAGE"):
+        _checked_route_local_cost(route, (), Bundle())
+
+
+def test_incumbent_assignment_survives_cheaper_alternatives() -> None:
+    class Bundle:
+        instance = _instance()
+        fleet_caps_by_depot = {
+            "D_GZ": {"num_cv": 2, "num_ev": 2},
+            "D_SZ": {"num_cv": 2, "num_ev": 2},
+        }
+
+    options = {
+        0: (
+            AssignmentOption(
+                0,
+                RouteAssignment("D_SZ", "ev"),
+                1.0,
+                ("cheap", 0),
+            ),
+            AssignmentOption(
+                0,
+                RouteAssignment("D_GZ", "cv"),
+                100.0,
+                ("incumbent", 0),
+            ),
+        ),
+        1: (
+            AssignmentOption(
+                1,
+                RouteAssignment("D_GZ", "cv"),
+                1.0,
+                ("cheap", 1),
+            ),
+            AssignmentOption(
+                1,
+                RouteAssignment("D_SZ", "ev"),
+                100.0,
+                ("incumbent", 1),
+            ),
+        ),
+    }
+    incumbent = _incumbent_assignment_candidate(
+        _solution(),
+        options,
+        Bundle(),
+    )
+    assert incumbent is not None
+    assert [
+        (
+            route_index,
+            assignment.home_depot_id,
+            assignment.vehicle_type,
+        )
+        for route_index, assignment in incumbent.assignments
+    ] == [
+        (0, "D_GZ", "cv"),
+        (1, "D_SZ", "ev"),
+    ]
+    assert incumbent.route_local_cost == 200.0
 
 
 def test_assignment_dp_prunes_shared_single_charger_conflicts() -> None:

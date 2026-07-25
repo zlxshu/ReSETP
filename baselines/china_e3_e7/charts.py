@@ -6,17 +6,31 @@ That behaviour is deliberate: a blank chart is still a misleading artifact.
 
 from __future__ import annotations
 
+import csv
 import hashlib
 import json
+import math
 from pathlib import Path
 from typing import Any
 
 try:
     from .contract import ROOT, load_contract, read_csv
-    from .statistics import _normalise_formal_row
+    from .e3_exhibits import (
+        REGION_LABELS,
+        REGIONS,
+        SIZE_LAYERS,
+        build_e3_cell_rows,
+        build_e3_layer_rows,
+    )
 except ImportError:  # pragma: no cover - direct script compatibility
     from contract import ROOT, load_contract, read_csv
-    from statistics import _normalise_formal_row
+    from e3_exhibits import (
+        REGION_LABELS,
+        REGIONS,
+        SIZE_LAYERS,
+        build_e3_cell_rows,
+        build_e3_layer_rows,
+    )
 
 
 def _sha256(path: Path) -> str:
@@ -36,25 +50,42 @@ def _display_path(path: Path, repo_root: Path) -> str:
 
 def figure_specs(contract: dict[str, Any]) -> dict[str, Any]:
     return {
-        "schema": "resetp.china.e3-e7-figure-specs.v1",
+        "schema": "resetp.china.e3-e7-figure-specs.v2",
         "global": {
-            "font_family": "STIXGeneral",
+            "font_family": "Songti SC with Times New Roman fallback",
+            "font_size_pt": 8.0,
+            "axis_line_width_pt": 0.468,
+            "bar_edge_width_pt": 0.45,
+            "figure_size_in": [4.30, 2.80],
             "figure_policy": "只从正式 raw_runs 和独立复算结果生成；无结果时不生成 PDF/PNG。",
-            "caption_policy": "中文学术图题，不写内部 F/E 编号，不根据结果改变坐标轴范围。",
+            "caption_policy": "中文学术图题，不写内部 F/E 编号；坐标范围使用预先固定的含零点留白规则，不按结论方向改轴。",
+            "reference_shell": {
+                "paper": "陈婉茹等（2023）",
+                "figure": "图5",
+                "use": "并列分组柱、颜色与纹理双重编码、细边框",
+            },
             "palette": {
-                "control": "#6B7280",
-                "treatment": "#1F5A85",
-                "secondary": "#C77C2B",
-                "warning": "#9A3412"
+                "jjj": "#4C78A8",
+                "prd": "#F2A65A",
+                "cy": "#8A8A8A",
             }
         },
         "families": {
             "E3": {
-                "form": "paired_slope_or_dot_interval",
+                "analytical_question": "解除责任锁并允许双向跨场协同后，三个城市群在小、中、大规模层的总成本是否下降。",
+                "form": "grouped_bar_from_nine_region_layer_rows",
                 "output_stem": "e3_responsibility",
-                "x": "27个地区—规模统计单元",
-                "y": "总成本改善(%)",
-                "caption": "责任错配与跨场协同的配对成本变化"
+                "source_grain": "810 formal rows -> 27 paired region-size cells -> 9 display rows",
+                "x": "客户规模",
+                "y": "成本降低(%)",
+                "x_categories": [
+                    layer for layer, _sizes in SIZE_LAYERS
+                ],
+                "series": [
+                    REGION_LABELS[region] for region in REGIONS
+                ],
+                "axis_rule": "纵轴必须包含0；上下界由全部9个柱值按同一12%留白公式一次性计算；禁止断轴。",
+                "caption": "责任错配与跨场协同的配对成本变化",
             },
             "E4": {
                 "form": "paired_effect_with_day_distribution",
@@ -105,83 +136,238 @@ def _write_status(path: Path, payload: Any) -> None:
     _write_json(path, payload)
 
 
-def _metric_value(row: dict[str, str], metric: str) -> float | None:
-    value = row.get(metric, "")
-    if metric == "feasible":
-        normalized = value.strip().lower()
-        if normalized in {"1", "true", "yes", "pass", "feasible"}:
-            return 1.0
-        if normalized in {"0", "false", "no", "fail", "infeasible"}:
-            return 0.0
+def _write_csv(
+    path: Path,
+    rows: list[dict[str, Any]],
+    fieldnames: list[str],
+) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    with path.open("w", newline="", encoding="utf-8") as handle:
+        writer = csv.DictWriter(
+            handle,
+            fieldnames=fieldnames,
+            extrasaction="ignore",
+        )
+        writer.writeheader()
+        writer.writerows(rows)
+
+
+def _released(
+    raw_path: Path,
+    aggregate_dir: Path,
+) -> tuple[bool, str]:
+    decision_path = aggregate_dir / "decision.json"
+    certificate_path = (
+        aggregate_dir / "independent_recalc_certificate.json"
+    )
+    if not decision_path.is_file() or not certificate_path.is_file():
+        return False, "independent recalc decision/certificate is absent"
     try:
-        return float(value)
-    except (TypeError, ValueError):
-        return None
+        decision = json.loads(
+            decision_path.read_text(encoding="utf-8")
+        )
+        certificate = json.loads(
+            certificate_path.read_text(encoding="utf-8")
+        )
+    except (OSError, json.JSONDecodeError) as exc:
+        return False, f"cannot read independent recalc release: {exc}"
+    if (
+        decision.get("status") != "AGGREGATE_READY_FOR_REVIEW"
+        or decision.get("independent_recalc_complete") is not True
+    ):
+        return False, "aggregate decision has not released E3 evidence"
+    if (
+        certificate.get("status") != "PASS_INDEPENDENT_RECALC"
+        or certificate.get("task_count") != 810
+        or certificate.get("pair_count") != 405
+        or certificate.get("raw_runs_sha256") != _sha256(raw_path)
+    ):
+        return False, "independent recalc certificate does not bind the 810-row raw file"
+    return True, "PASS"
 
 
-def _plot_if_data(
-    family_id: str,
+def _choose_cjk_font() -> str:
+    from matplotlib import font_manager  # type: ignore
+
+    candidates = (
+        "Songti SC",
+        "STSong",
+        "SimSun",
+        "Noto Serif CJK SC",
+        "PingFang SC",
+    )
+    for candidate in candidates:
+        try:
+            font_manager.findfont(
+                candidate,
+                fallback_to_default=False,
+            )
+        except ValueError:
+            continue
+        return candidate
+    raise RuntimeError(
+        "no approved CJK font is installed for E3 paper figures"
+    )
+
+
+def _axis_limits(values: list[float]) -> tuple[float, float]:
+    """Return an honest, deterministic, zero-inclusive bar-chart domain."""
+
+    if not values or any(not math.isfinite(value) for value in values):
+        raise ValueError("E3 figure has no finite bar values")
+    lower = min(0.0, min(values))
+    upper = max(0.0, max(values))
+    span = upper - lower
+    if span <= 1.0e-12:
+        return -1.0, 1.0
+    padding = 0.12 * span
+    if lower < 0:
+        lower -= padding
+    if upper > 0:
+        upper += padding
+    return lower, upper
+
+
+def _plot_e3(
     rows: list[dict[str, str]],
     output_dir: Path,
     spec: dict[str, Any],
 ) -> dict[str, Any]:
-    complete = [
-        row
-        for row in (
-            _normalise_formal_row(source) for source in rows
-        )
-        if row.get("record_type") == "formal_run"
-        and row.get("status") == "complete"
-        and row.get("family") == family_id
-    ]
-    if not complete:
-        return {
-            "family": family_id,
-            "status": "NO_FORMAL_RESULTS_NO_FIGURE",
-            "reason": "raw_runs.csv currently contains no complete formal rows",
-        }
     try:
         import matplotlib.pyplot as plt  # type: ignore
     except ImportError as exc:
-        return {"family": family_id, "status": "HALT_MATPLOTLIB_MISSING", "reason": str(exc)}
+        return {
+            "family": "E3",
+            "status": "HALT_MATPLOTLIB_MISSING",
+            "reason": str(exc),
+        }
+    cell_rows = build_e3_cell_rows(rows)
+    layer_rows = build_e3_layer_rows(cell_rows)
+    display_rows = [
+        row for row in layer_rows if row["region"] != "overall"
+    ]
+    font = _choose_cjk_font()
+    plt.rcParams.update(
+        {
+            "font.family": [font, "Times New Roman"],
+            "font.size": 8.0,
+            "axes.labelsize": 8.0,
+            "xtick.labelsize": 7.2,
+            "ytick.labelsize": 7.2,
+            "legend.fontsize": 7.0,
+            "axes.unicode_minus": False,
+            "pdf.fonttype": 42,
+            "ps.fonttype": 42,
+        }
+    )
+    colors = spec["global"]["palette"]
+    hatches = {"jjj": "", "prd": "///", "cy": "\\\\\\"}
+    layer_labels = [label for label, _sizes in SIZE_LAYERS]
+    positions = list(range(len(layer_labels)))
+    width = 0.22
+    offsets = {
+        "jjj": -width,
+        "prd": 0.0,
+        "cy": width,
+    }
 
-    arms: list[str] = []
-    values: dict[str, list[float]] = {}
-    metric = {
-        "E3": "total_cost",
-        "E4": "charging_emissions",
-        "E5": "feasible",
-        "E6": "member_min_benefit",
-        "E7": "total_cost",
-    }[family_id]
-    for row in complete:
-        arm = row.get("arm", "")
-        if arm not in arms:
-            arms.append(arm)
-        value = _metric_value(row, metric)
-        if value is None:
-            continue
-        values.setdefault(arm, []).append(value)
-    if not values or any(not values.get(arm) for arm in arms[:2]):
-        return {"family": family_id, "status": "HALT_MISSING_PLOT_METRIC"}
+    figure, axis = plt.subplots(figsize=(4.30, 2.80))
+    plotted_values: list[float] = []
+    for region in REGIONS:
+        region_rows = [
+            row for row in display_rows if row["region"] == region
+        ]
+        values = [
+            float(row["cost_reduction_percent"])
+            for row in region_rows
+        ]
+        plotted_values.extend(values)
+        axis.bar(
+            [position + offsets[region] for position in positions],
+            values,
+            width=width,
+            label=REGION_LABELS[region],
+            color=colors[region],
+            hatch=hatches[region],
+            edgecolor="#222222",
+            linewidth=0.45,
+            zorder=2,
+        )
+    axis.axhline(
+        0.0,
+        color="#222222",
+        linewidth=0.468,
+        zorder=1,
+    )
+    # The registered visual contract keeps legends inside the upper-right
+    # corner. Reserve a full blank bar group there instead of covering data.
+    axis.set_xlim(-0.55, len(layer_labels) + 0.25)
+    axis.set_ylim(*_axis_limits(plotted_values))
+    axis.set_xticks(positions, layer_labels)
+    axis.set_xlabel("客户规模")
+    axis.set_ylabel("成本降低(%)")
+    axis.grid(False)
+    for spine in axis.spines.values():
+        spine.set_visible(True)
+        spine.set_color("#222222")
+        spine.set_linewidth(0.468)
+    axis.tick_params(
+        axis="both",
+        direction="out",
+        width=0.468,
+        length=2.4,
+        pad=2.0,
+    )
+    axis.legend(
+        loc="upper right",
+        frameon=False,
+        ncol=1,
+        handlelength=1.5,
+        handletextpad=0.45,
+        borderaxespad=0.35,
+        labelspacing=0.3,
+    )
+    figure.subplots_adjust(
+        left=0.15,
+        right=0.985,
+        bottom=0.19,
+        top=0.975,
+    )
     output_dir.mkdir(parents=True, exist_ok=True)
-    figure = plt.figure(figsize=(6.4, 3.6))
-    axis = figure.add_subplot(111)
-    axis.boxplot([values[arm] for arm in arms if values.get(arm)], labels=[arm for arm in arms if values.get(arm)], patch_artist=False)
-    axis.set_title(spec["families"][family_id]["caption"])
-    axis.set_ylabel(spec["families"][family_id]["y"])
-    axis.grid(axis="y", color="#D1D5DB", linewidth=0.5, alpha=0.7)
-    figure.tight_layout()
-    stem = spec["families"][family_id]["output_stem"]
+    stem = spec["families"]["E3"]["output_stem"]
     pdf = output_dir / f"{stem}.pdf"
     png = output_dir / f"{stem}.png"
+    cell_csv = output_dir / "e3_paired_cells.csv"
+    layer_csv = output_dir / "e3_region_layer_rows.csv"
     figure.savefig(pdf)
-    figure.savefig(png, dpi=220)
+    figure.savefig(png, dpi=300)
     plt.close(figure)
+    _write_csv(
+        cell_csv,
+        cell_rows,
+        list(cell_rows[0]),
+    )
+    _write_csv(
+        layer_csv,
+        layer_rows,
+        list(layer_rows[0]),
+    )
     return {
-        "family": family_id,
-        "status": "FIGURE_GENERATED_FROM_FORMAL_ROWS",
-        "files": [str(pdf), str(png)],
+        "family": "E3",
+        "status": "FIGURE_GENERATED_FROM_27_PAIRED_CELLS",
+        "source_formal_rows": 810,
+        "source_pairs": 405,
+        "source_cells": len(cell_rows),
+        "display_rows": len(display_rows),
+        "font": font,
+        "axis_limits": list(_axis_limits(plotted_values)),
+        "broken_axis": False,
+        "files": [
+            str(pdf),
+            str(png),
+            str(cell_csv),
+            str(layer_csv),
+        ],
     }
 
 
@@ -190,21 +376,106 @@ def generate_figures(
     output_dir: Path,
     *,
     repo_root: Path = ROOT,
+    aggregate_dir: Path | None = None,
 ) -> dict[str, Any]:
     contract = load_contract(repo_root)
     rows = read_csv(raw_path) if raw_path.is_file() else []
     spec = figure_specs(contract)
     output_dir.mkdir(parents=True, exist_ok=True)
     _write_json(output_dir / "figure_specs.json", spec)
-    statuses = [
-        _plot_if_data(family["id"], rows, output_dir, spec)
-        for family in contract["families"]
+    formal_families = {
+        str(row.get("family", "")).strip()
+        for row in rows
+        if str(row.get("record_type", "")).strip() == "formal_run"
+    }
+    if not formal_families:
+        statuses = [
+            {
+                "family": family["id"],
+                "status": "NO_FORMAL_RESULTS_NO_FIGURE",
+                "reason": (
+                    "raw_runs.csv currently contains no complete formal rows"
+                ),
+            }
+            for family in contract["families"]
+        ]
+    else:
+        release_root = (
+            aggregate_dir
+            if aggregate_dir is not None
+            else raw_path.parent / "aggregates"
+        )
+        released, release_reason = _released(
+            raw_path,
+            release_root,
+        )
+        statuses = []
+        for family in contract["families"]:
+            family_id = family["id"]
+            if family_id not in formal_families:
+                statuses.append(
+                    {
+                        "family": family_id,
+                        "status": "NO_FORMAL_RESULTS_NO_FIGURE",
+                    }
+                )
+            elif not released:
+                statuses.append(
+                    {
+                        "family": family_id,
+                        "status": (
+                            "HALT_FIGURE_UNTIL_INDEPENDENT_RECALC"
+                        ),
+                        "reason": release_reason,
+                    }
+                )
+            elif family_id == "E3":
+                try:
+                    statuses.append(
+                        _plot_e3(rows, output_dir, spec)
+                    )
+                except (RuntimeError, ValueError) as exc:
+                    statuses.append(
+                        {
+                            "family": "E3",
+                            "status": "HALT_E3_EXHIBIT_DATA",
+                            "reason": str(exc),
+                        }
+                    )
+            else:
+                statuses.append(
+                    {
+                        "family": family_id,
+                        "status": (
+                            "NO_DEDICATED_PUBLISHER_RENDERER"
+                        ),
+                        "reason": (
+                            "A generic raw-row boxplot is prohibited; "
+                            "this family needs its registered reference shell."
+                        ),
+                    }
+                )
+    generated = [
+        item
+        for item in statuses
+        if item["status"].startswith("FIGURE_GENERATED")
     ]
     decision = {
-        "schema": "resetp.china.e3-e7-figure-decision.v1",
+        "schema": "resetp.china.e3-e7-figure-decision.v2",
         "raw_path": str(raw_path),
+        "aggregate_dir": (
+            str(aggregate_dir) if aggregate_dir is not None else None
+        ),
         "formal_rows": sum(row.get("record_type") == "formal_run" for row in rows),
-        "status": "NO_FORMAL_RESULTS_NO_FIGURES" if not any(item["status"].startswith("FIGURE") for item in statuses) else "FIGURE_REVIEW_REQUIRED",
+        "status": (
+            "NO_FORMAL_RESULTS_NO_FIGURES"
+            if not formal_families
+            else (
+                "FIGURE_REVIEW_REQUIRED"
+                if generated
+                else "HALT_NO_RELEASED_FIGURE"
+            )
+        ),
         "families": statuses,
         "scientific_claim_allowed": False,
     }
@@ -216,13 +487,25 @@ def generate_figures(
                 "",
                 f"状态：`{decision['status']}`。",
                 "",
-                "图表规格已固定；当前没有正式 raw 行，因此没有生成任何结果 PDF/PNG。",
+                (
+                    "E3 只允许把810条正式结果先配成27个地区—规模单元，"
+                    "再生成九个城市群—规模层柱值；不会直接对810条原始行"
+                    "画箱线图，也不会按结果方向改变坐标轴。"
+                ),
             ]
         )
         + "\n",
         encoding="utf-8",
     )
-    files = [output_dir / name for name in ("figure_specs.json", "decision.json", "report.md")]
+    files = [
+        path
+        for path in output_dir.iterdir()
+        if (
+            path.is_file()
+            and path.name != "artifact_hashes.json"
+            and not path.name.startswith("._")
+        )
+    ]
     _write_json(
         output_dir / "artifact_hashes.json",
         {

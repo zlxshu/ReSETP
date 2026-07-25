@@ -1,0 +1,53 @@
+{
+  "schema_version": 1,
+  "name": "resource-slot-pricing-g0-v2",
+  "objective": "Run and independently replay the unchanged frozen six-task G0 through versioned paths",
+  "workdir": ".",
+  "poll_seconds": 5,
+  "stale_seconds": 180,
+  "max_runtime_seconds": 300,
+  "pause_on_anomaly": true,
+  "required_command_substrings": ["run_release_chain_v2.py"],
+  "forbidden_command_substrings": ["--tune", "--rescue", "--full"],
+  "min_cpu_percent_when_active": 1,
+  "low_cpu_consecutive_checks": 4,
+  "max_rss_mb": 4096,
+  "min_system_free_memory_mb": 1024,
+  "min_system_memory_free_percent": 10,
+  "logs": [],
+  "progress_files": [],
+  "result_files": ["g0_gate_v2/raw_runs.csv", "g0_gate_v2/decision.json"],
+  "completion_files": ["g0_gate_v2/done.json"],
+  "checkpoint_paths": [],
+  "protected_files": [
+    {"path": "g0_registration_v2.json", "kind": "primary_config"},
+    {"path": "../../../docs/handoff/e2_resource_slot_pricing_candidate_review_20260725.md", "kind": "experiment_contract"},
+    {"path": "../../../docs/handoff/e2_resource_slot_pricing_import_repair_v2_20260725.md", "kind": "experiment_contract"},
+    {"path": "../../../solver/src/setp_solver/check.py", "kind": "evaluator"},
+    {"path": "../../../solver/src/setp_solver/china81_completion.py", "kind": "evaluator"},
+    {"path": "../../../solver/src/setp_solver/cost.py", "kind": "cost_function"},
+    {"path": "../../../solver/src/setp_solver/prices.py", "kind": "core_data"},
+    {"path": "pricing_core.py", "kind": "model"},
+    {"path": "run_g0.py", "kind": "model"},
+    {"path": "run_g0_v2.py", "kind": "model"},
+    {"path": "independent_replay.py", "kind": "evaluator"},
+    {"path": "independent_replay_v2.py", "kind": "evaluator"}
+  ],
+  "csv_rules": [
+    {
+      "path": "g0_gate_v2/raw_runs.csv",
+      "required": true,
+      "required_after_seconds": 240,
+      "required_fields": ["task_id", "instance_id", "lane", "status", "start_objective", "output_objective", "complete_candidate_evaluations", "label_extensions", "violation_count"],
+      "feasible_field": "status",
+      "truthy": ["OK"],
+      "min_feasible_rate": 1.0,
+      "violation_field": "violation_count",
+      "max_violation_total": 0,
+      "duplicate_key_fields": ["task_id"],
+      "max_duplicate_fraction": 0
+    }
+  ],
+  "milestones": [],
+  "ai": {"enabled": false, "timeout_seconds": 300}
+}

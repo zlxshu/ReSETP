@@ -1,0 +1,68 @@
+{
+  "ai": {
+    "enabled": false,
+    "timeout_seconds": 180
+  },
+  "checkpoint_paths": [],
+  "completion_files": [
+    "/Volumes/移动硬盘（512G）/ReSETP/baselines/e2_final_campaign_20260720/algorithm_repair_diagnostic_20260724/history_archive_small_instance_v1/artifact_hashes.json"
+  ],
+  "config_path": "/Volumes/移动硬盘（512G）/ReSETP/baselines/e2_final_campaign_20260720/algorithm_repair_diagnostic_20260724/monitor_history_archive_small_instance_v1.json",
+  "forbidden_command_substrings": [
+    "--workers",
+    "--finalize-only",
+    "--smoke"
+  ],
+  "logs": [],
+  "low_cpu_consecutive_checks": 5,
+  "max_rss_mb": 3000,
+  "max_runtime_seconds": 3600,
+  "milestones": [],
+  "min_cpu_percent_when_active": 1,
+  "min_system_free_memory_mb": 256,
+  "min_system_memory_free_percent": 5,
+  "name": "e2-history-archive-small-instance-v1",
+  "objective": "复现 cn-cy-10c-01 seed1 的历史档案验收停机并记录六阶段账本，不修改正式 V5/V6 结果",
+  "pause_on_anomaly": true,
+  "poll_seconds": 15,
+  "progress_files": [],
+  "protected_files": [
+    {
+      "kind": "primary_config",
+      "path": "/Volumes/移动硬盘（512G）/ReSETP/baselines/e2_final_campaign_20260720/run_corrected_china81_d6_staged_portfolio.py"
+    },
+    {
+      "kind": "model",
+      "path": "/Volumes/移动硬盘（512G）/ReSETP/baselines/algorithm_prototypes/china81_mechanism_hybrid_20260720/epochal_hgs.py"
+    },
+    {
+      "kind": "model",
+      "path": "/Volumes/移动硬盘（512G）/ReSETP/baselines/algorithm_prototypes/china81_mechanism_hybrid_20260720/staged_checkpoint_hgs_sp.py"
+    },
+    {
+      "kind": "cost_function",
+      "path": "/Volumes/移动硬盘（512G）/ReSETP/solver/src/setp_solver/cost.py"
+    },
+    {
+      "kind": "evaluator",
+      "path": "/Volumes/移动硬盘（512G）/ReSETP/solver/src/setp_solver/check.py"
+    },
+    {
+      "kind": "evaluator",
+      "path": "/Volumes/移动硬盘（512G）/ReSETP/solver/src/setp_solver/china81_completion.py"
+    }
+  ],
+  "required_command_substrings": [
+    "diagnose_history_archive_small_instance_20260724.py"
+  ],
+  "result_files": [
+    "/Volumes/移动硬盘（512G）/ReSETP/baselines/e2_final_campaign_20260720/algorithm_repair_diagnostic_20260724/history_archive_small_instance_v1/metadata.json",
+    "/Volumes/移动硬盘（512G）/ReSETP/baselines/e2_final_campaign_20260720/algorithm_repair_diagnostic_20260724/history_archive_small_instance_v1/raw_runs.csv",
+    "/Volumes/移动硬盘（512G）/ReSETP/baselines/e2_final_campaign_20260720/algorithm_repair_diagnostic_20260724/history_archive_small_instance_v1/decision.json",
+    "/Volumes/移动硬盘（512G）/ReSETP/baselines/e2_final_campaign_20260720/algorithm_repair_diagnostic_20260724/history_archive_small_instance_v1/report.md",
+    "/Volumes/移动硬盘（512G）/ReSETP/baselines/e2_final_campaign_20260720/algorithm_repair_diagnostic_20260724/history_archive_small_instance_v1/artifact_hashes.json"
+  ],
+  "schema_version": 1,
+  "stale_seconds": 900,
+  "workdir": "/Volumes/移动硬盘（512G）/ReSETP"
+}

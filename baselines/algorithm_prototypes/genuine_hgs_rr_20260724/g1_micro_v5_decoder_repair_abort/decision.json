@@ -1,0 +1,8 @@
+{
+  "schema": "resetp.coop-hgs-rr-g1-abort-decision.v1",
+  "decision": "ABORT_G1_V5_PRE_RESULT_CONTRACT_MISMATCH",
+  "reason": "The route-local checker ignored every CUSTOMER_COVERAGE violation instead of only missing-customer messages for customers outside the fragment.",
+  "scientific_interpretation": "No G1 v5 objective or arm comparison was read. Partial outputs are preserved only as abort evidence and may not be reused.",
+  "next_authorized_step": "Correct the coverage predicate, pass tests, then repeat versioned G0 and resource gates before a fresh G1 version.",
+  "mechanical_pass_is_effect_pass": false
+}

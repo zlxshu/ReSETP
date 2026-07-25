@@ -1,0 +1,85 @@
+{
+  "schema_version": 1,
+  "name": "d6-corrected-e2-result-strength-v4",
+  "objective": "零搜索核验405对、81个五种子均值和9个地区规模层是否达到结果出现前冻结的E2论文强度门",
+  "workdir": "../../..",
+  "poll_seconds": 15,
+  "stale_seconds": 300,
+  "max_runtime_seconds": 900,
+  "pause_on_anomaly": true,
+  "required_command_substrings": [
+    "run_e2_result_strength_audit.py"
+  ],
+  "forbidden_command_substrings": [
+    "--smoke",
+    "--debug"
+  ],
+  "min_cpu_percent_when_active": 0.1,
+  "cpu_grace_seconds": 60,
+  "low_cpu_consecutive_checks": 5,
+  "max_rss_mb": 4000,
+  "min_system_memory_free_percent": 5,
+  "progress_files": [
+    ".d6-corrected-e2-result-strength-v4.monitor/experiment.stdout.log"
+  ],
+  "result_files": [
+    "result_strength_gate/task_pair_outcomes.csv",
+    "result_strength_gate/instance_pair_outcomes.csv",
+    "result_strength_gate/layer_pair_outcomes.csv",
+    "result_strength_gate/result_summary.json",
+    "result_strength_gate/decision.json",
+    "result_strength_gate/artifact_hashes.json"
+  ],
+  "completion_files": [
+    "result_strength_gate/done.json"
+  ],
+  "checkpoint_paths": [
+    "result_strength_gate"
+  ],
+  "protected_files": [
+    {
+      "path": "full_gate/raw_runs.csv",
+      "kind": "core_data"
+    },
+    {
+      "path": "full_gate/decision.json",
+      "kind": "experiment_contract"
+    },
+    {
+      "path": "full_gate/artifact_hashes.json",
+      "kind": "experiment_contract"
+    },
+    {
+      "path": "full_witness_replay/raw_runs.csv",
+      "kind": "core_data"
+    },
+    {
+      "path": "full_witness_replay/decision.json",
+      "kind": "experiment_contract"
+    },
+    {
+      "path": "full_witness_replay/artifact_hashes.json",
+      "kind": "experiment_contract"
+    },
+    {
+      "path": "full_witness_replay/done.json",
+      "kind": "experiment_contract"
+    },
+    {
+      "path": "e2_result_release_preregistration_v1_20260724.json",
+      "kind": "primary_config"
+    },
+    {
+      "path": "../run_e2_result_strength_audit.py",
+      "kind": "experiment_contract"
+    },
+    {
+      "path": "../../china_e3_e7/release_v6_config.py",
+      "kind": "experiment_contract"
+    }
+  ],
+  "ai": {
+    "enabled": false,
+    "timeout_seconds": 180
+  }
+}

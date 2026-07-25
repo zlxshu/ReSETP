@@ -31,7 +31,7 @@ sys.path = [
     for entry in sys.path
     if Path(entry or ".").resolve() != SCRIPT_DIR
 ]
-for path in (REPO / "solver/src", PROTOTYPE):
+for path in (REPO, REPO / "solver/src", PROTOTYPE):
     if str(path) not in sys.path:
         sys.path.insert(0, str(path))
 
@@ -43,6 +43,10 @@ from setp_solver.china81_completion import (  # noqa: E402
     exact_china81_score,
 )
 from setp_solver.solution import Route, Solution  # noqa: E402
+from baselines.china_e3_e7.release_v6_config import (  # noqa: E402
+    CONTRACT,
+    E3_ARM_GATE as OUT,
+)
 
 
 STATIC = (
@@ -54,16 +58,6 @@ FLEET = (
     REPO
     / "data/ChinaInstances/"
     "china81_finite_fleet_authority_v1_20260723"
-)
-OUT = (
-    REPO
-    / "baselines/china_e3_e7/"
-    "e3_arm_semantics_gate_v4_20260723"
-)
-CONTRACT = (
-    REPO
-    / "data/ChinaInstances/"
-    "china_e3_formal_release_contract_v4_20260723.json"
 )
 APPROVAL_ID = "CHINA-E3-FORMAL-RELEASE-001"
 

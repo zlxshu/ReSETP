@@ -7,6 +7,8 @@ import csv
 import hashlib
 import json
 import math
+import os
+import re
 import statistics
 from datetime import UTC, datetime
 from pathlib import Path
@@ -20,13 +22,35 @@ from scipy.stats import wilcoxon  # noqa: E402
 
 
 REPO = Path(__file__).resolve().parents[3]
+CAMPAIGN_NAME = os.environ.get(
+    "RESET_D6_CAMPAIGN_NAME",
+    "corrected_china81_rerun_v3_20260724",
+)
+if (
+    not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9._-]*", CAMPAIGN_NAME)
+    or not CAMPAIGN_NAME.startswith("corrected_china81_rerun_")
+):
+    raise RuntimeError(
+        f"invalid RESET_D6_CAMPAIGN_NAME: {CAMPAIGN_NAME!r}"
+    )
+CASE_ROLE = os.environ.get("RESET_S3_CASE_ROLE", "representative")
+if CASE_ROLE not in {"representative", "mechanism_illustration"}:
+    raise RuntimeError(f"invalid RESET_S3_CASE_ROLE: {CASE_ROLE!r}")
 CAMPAIGN = (
     REPO
-    / "baselines/e2_final_campaign_20260720/"
-    "corrected_china81_rerun_v2_20260723"
+    / "baselines/e2_final_campaign_20260720"
+    / CAMPAIGN_NAME
 )
 FULL = CAMPAIGN / "full_gate"
-S3 = CAMPAIGN / "representative_gate"
+RESULT_STRENGTH = CAMPAIGN / "result_strength_gate"
+RESULT_STRENGTH_PREREGISTRATION = (
+    CAMPAIGN / "e2_result_release_preregistration_v1_20260724.json"
+)
+S3 = CAMPAIGN / (
+    "mechanism_case_gate"
+    if CASE_ROLE == "mechanism_illustration"
+    else "representative_gate"
+)
 TRAJ = S3 / "trajectories"
 S4 = CAMPAIGN / "table4_gate"
 PUBLIC_REPLAY = (
@@ -63,9 +87,9 @@ def configure_publication_fonts() -> None:
             "font.family": ["Times New Roman", "Songti SC"],
             "font.size": 8.0,
             "axes.labelsize": 8.0,
-            "xtick.labelsize": 7.0,
-            "ytick.labelsize": 7.0,
-            "legend.fontsize": 7.0,
+            "xtick.labelsize": 7.2,
+            "ytick.labelsize": 7.2,
+            "legend.fontsize": 7.2,
             "axes.unicode_minus": False,
             "pdf.fonttype": 42,
             "ps.fonttype": 42,
@@ -110,6 +134,20 @@ def require_verdict(path: Path, key: str, expected: str) -> dict[str, Any]:
     if payload.get(key) != expected:
         raise RuntimeError(f"{path}: expected {expected!r}")
     return payload
+
+
+def verify_artifact_manifest(root: Path) -> None:
+    manifest_path = root / "artifact_hashes.json"
+    payload = json.loads(manifest_path.read_text(encoding="utf-8"))
+    artifacts = payload.get("artifacts")
+    if not isinstance(artifacts, dict) or not artifacts:
+        raise RuntimeError(f"{root}: empty artifact manifest")
+    for relative, expected in artifacts.items():
+        path = root / relative
+        if not path.is_file() or sha256(path) != expected:
+            raise RuntimeError(
+                f"{root}: artifact drift at {relative}"
+            )
 
 
 def public_table() -> list[dict[str, Any]]:
@@ -421,11 +459,11 @@ def plot_carbon() -> dict[str, Any]:
             for row in city_rows
         )
     ax.set_xlabel("时刻(h)", fontsize=8)
-    ax.set_ylabel(r"碳强度(gCO$_2$/kWh)", fontsize=8)
-    ax.tick_params(labelsize=7, direction="in")
+    ax.set_ylabel("碳强度(gCO₂/kWh)", fontsize=8)
+    ax.tick_params(labelsize=7.2, direction="in")
     ax.legend(
         loc="lower left",
-        fontsize=6.5,
+        fontsize=7.2,
         frameon=False,
         handlelength=2.2,
         labelspacing=0.25,
@@ -450,13 +488,27 @@ def plot_carbon() -> dict[str, Any]:
 
 def plot_convergence() -> dict[str, Any]:
     rows = read_csv(TRAJ / "curve_data.csv")
-    styles = {
-        "HGS-F": ("#333333", "-", "o", 0.85, 2),
-        "HGS-E": ("#D97904", "--", "s", 0.85, 2),
-        "HGS-M": ("#1559A6", (0, (3, 1, 1, 1)), "^", 0.95, 3),
-        "MV-HGS-SP": ("#B3261E", "-.", "D", 1.15, 4),
+    if {row["algorithm"] for row in rows} != set(ARMS):
+        raise RuntimeError(
+            "Figure 4 must contain exactly the four registered algorithms"
+        )
+    sealed_rows = read_csv(S3 / "raw_runs.csv")
+    sealed = {
+        (row["arm"], int(row["seed"])): float(row["cost"])
+        for row in sealed_rows
+        if row["status"] == "PASS"
     }
-    fig, ax = plt.subplots(figsize=(4.3, 2.8))
+    styles = {
+        "HGS-F": ("#333333", "-", 0.85, 2),
+        "HGS-E": ("#D97904", "--", 0.85, 2),
+        "HGS-M": ("#1559A6", (0, (3, 1, 1, 1)), 0.95, 3),
+        "MV-HGS-SP": ("#B3261E", "-.", 1.10, 4),
+    }
+    # Chen et al. (2025), Fig. 4 uses a compact, near-square plotting
+    # field and unmarked thin lines.  Keep every sealed observation and
+    # both axes unchanged, but avoid point glyphs that make a short,
+    # irregularly timed trajectory look like a staircase.
+    fig, ax = plt.subplots(figsize=(3.55, 3.10))
     for arm in ARMS:
         arm_rows = sorted(
             (row for row in rows if row["algorithm"] == arm),
@@ -466,27 +518,58 @@ def plot_convergence() -> dict[str, Any]:
             raise RuntimeError(f"{arm}: insufficient curve points")
         x = [float(row["elapsed_minutes"]) for row in arm_rows]
         y = [float(row["cost_cny"]) for row in arm_rows]
-        color, style, marker, width, zorder = styles[arm]
-        marker_every = max(1, len(x) // 6)
-        ax.step(
+        seed_set = {
+            int(row["selected_seed"]) for row in arm_rows
+        }
+        if len(seed_set) != 1:
+            raise RuntimeError(f"{arm}: mixed trajectory seeds")
+        selected_seed = next(iter(seed_set))
+        if (
+            len(arm_rows) < 8
+            or sum(
+                y[index] < y[index - 1] - EPS
+                for index in range(1, len(y))
+            )
+            < 6
+            or any(
+                x[index] < x[index - 1]
+                for index in range(1, len(x))
+            )
+            or any(
+                y[index] > y[index - 1] + EPS
+                for index in range(1, len(y))
+            )
+            or arm_rows[-1]["source"]
+            != "sealed_final_solution"
+            or not math.isclose(
+                y[-1],
+                sealed[(arm, selected_seed)],
+                rel_tol=0.0,
+                abs_tol=EPS,
+            )
+        ):
+            raise RuntimeError(
+                f"{arm}: trajectory fails the registered Figure 4 gate"
+            )
+        color, style, width, zorder = styles[arm]
+        # Connect recorded observations directly, as in the reference
+        # iteration plot. Do not manufacture intermediate points or smooth
+        # the sealed trajectory.
+        ax.plot(
             x,
             y,
-            where="post",
             color=color,
             linestyle=style,
             linewidth=width,
-            marker=marker,
-            markevery=marker_every,
-            markersize=2.4,
             label=arm,
             zorder=zorder,
         )
     ax.set_xlabel("时间(min)", fontsize=8)
     ax.set_ylabel("成本(元)", fontsize=8)
-    ax.tick_params(labelsize=7, direction="in")
+    ax.tick_params(labelsize=7.2, direction="in")
     ax.legend(
         loc="upper right",
-        fontsize=6.3,
+        fontsize=7.2,
         frameon=False,
         handlelength=2.5,
         labelspacing=0.25,
@@ -494,8 +577,8 @@ def plot_convergence() -> dict[str, Any]:
     ax.grid(False)
     for spine in ax.spines.values():
         spine.set_linewidth(0.7)
-    ax.margins(x=0.025, y=0.06)
-    fig.tight_layout(pad=0.5)
+    ax.margins(x=0.035, y=0.06)
+    fig.tight_layout(pad=0.65)
     fig.savefig(OUT / "figure4_convergence.pdf")
     fig.savefig(OUT / "figure4_convergence.png", dpi=300)
     plt.close(fig)
@@ -516,6 +599,12 @@ def plot_convergence() -> dict[str, Any]:
     return {
         "rows": len(rows),
         "algorithms": sorted({row["algorithm"] for row in rows}),
+        "minimum_points_per_algorithm": min(
+            sum(row["algorithm"] == arm for row in rows)
+            for arm in ARMS
+        ),
+        "sealed_endpoints_verified": True,
+        "monotone_recorded_costs_verified": True,
         "broken_axis": False,
         "x_axis": "时间(min)",
         "y_axis": "成本(元)",
@@ -523,52 +612,82 @@ def plot_convergence() -> dict[str, Any]:
 
 
 def tex_table_representative(rows: list[dict[str, Any]]) -> str:
+    seed_rows = [
+        row for row in rows if str(row["seed_or_stat"]).isdigit()
+    ]
+    column_minima = {
+        f"{arm}_{metric}": min(
+            float(row[f"{arm}_{metric}"]) for row in seed_rows
+        )
+        for arm in ARMS
+        for metric in ("cost_cny", "cpu_min")
+    }
     lines = [
-        r"\begin{tabular}{c*{8}{r}}",
+        r"\begin{tabular*}{\linewidth}{@{\extracolsep{\fill}}ccccccccc@{}}",
         r"\toprule",
         r"\multirow{2}{*}{序号} & \multicolumn{2}{c}{HGS-F} & \multicolumn{2}{c}{HGS-E} & \multicolumn{2}{c}{HGS-M} & \multicolumn{2}{c}{MV-HGS-SP}\\",
         r"\cmidrule(lr){2-3}\cmidrule(lr){4-5}\cmidrule(lr){6-7}\cmidrule(lr){8-9}",
-        r" & 值 & CPU & 值 & CPU & 值 & CPU & 值 & CPU\\",
+        r" & \multicolumn{1}{c}{值} & \multicolumn{1}{c}{CPU} & \multicolumn{1}{c}{值} & \multicolumn{1}{c}{CPU} & \multicolumn{1}{c}{值} & \multicolumn{1}{c}{CPU} & \multicolumn{1}{c}{值} & \multicolumn{1}{c}{CPU}\\",
         r"\midrule",
     ]
     for row in rows:
-        cells = [str(row["seed_or_stat"])]
+        label = str(row["seed_or_stat"])
+        is_seed = label.isdigit()
+        cells = [label]
         for arm in ARMS:
-            cells.extend(
-                [
-                    f"{float(row[f'{arm}_cost_cny']):.2f}",
-                    f"{float(row[f'{arm}_cpu_min']):.2f}",
-                ]
-            )
+            for metric in ("cost_cny", "cpu_min"):
+                value = float(row[f"{arm}_{metric}"])
+                rendered = f"{value:.2f}"
+                if is_seed and math.isclose(
+                    value,
+                    column_minima[f"{arm}_{metric}"],
+                    rel_tol=0.0,
+                    abs_tol=1.0e-12,
+                ):
+                    rendered = rf"\textbf{{{rendered}}}"
+                cells.append(rendered)
         lines.append(" & ".join(cells) + r"\\")
-    lines.extend([r"\bottomrule", r"\end{tabular}"])
+    lines.extend([r"\bottomrule", r"\end{tabular*}"])
     return "\n".join(lines) + "\n"
 
 
 def tex_table_summary(rows: list[dict[str, Any]]) -> str:
     lines = [
-        r"\begin{tabular}{ccc*{8}{r}}",
+        r"\begin{tabular*}{\linewidth}{@{\extracolsep{\fill}}cccccccccc@{}}",
         r"\toprule",
-        r"\multirow{2}{*}{城市群} & \multirow{2}{*}{规模层} & \multirow{2}{*}{算例数} & \multicolumn{2}{c}{HGS-F} & \multicolumn{2}{c}{HGS-E} & \multicolumn{2}{c}{HGS-M} & \multicolumn{2}{c}{MV-HGS-SP}\\",
-        r"\cmidrule(lr){4-5}\cmidrule(lr){6-7}\cmidrule(lr){8-9}\cmidrule(lr){10-11}",
-        r" & & & Best. & avg. & Best. & avg. & Best. & avg. & Best. & avg.\\",
+        r"\multirow{2}{*}{城市群} & \multirow{2}{*}{规模层} & \multicolumn{2}{c}{HGS-F} & \multicolumn{2}{c}{HGS-E} & \multicolumn{2}{c}{HGS-M} & \multicolumn{2}{c}{MV-HGS-SP}\\",
+        r"\cmidrule(lr){3-4}\cmidrule(lr){5-6}\cmidrule(lr){7-8}\cmidrule(lr){9-10}",
+        r" & & \multicolumn{1}{c}{Best.} & \multicolumn{1}{c}{avg.} & \multicolumn{1}{c}{Best.} & \multicolumn{1}{c}{avg.} & \multicolumn{1}{c}{Best.} & \multicolumn{1}{c}{avg.} & \multicolumn{1}{c}{Best.} & \multicolumn{1}{c}{avg.}\\",
         r"\midrule",
     ]
     for row in rows:
+        best_minimum = min(float(row[f"{arm}_Best"]) for arm in ARMS)
+        avg_minimum = min(float(row[f"{arm}_avg"]) for arm in ARMS)
         cells = [
             str(row["region"]),
-            str(row["scale_band"]),
-            str(row["instance_count"]),
+            (
+                "全部9层"
+                if str(row["scale_band"]) == "All"
+                else str(row["tiers"])
+            ),
         ]
         for arm in ARMS:
-            cells.extend(
-                [
-                    f"{float(row[f'{arm}_Best']):.2f}",
-                    f"{float(row[f'{arm}_avg']):.2f}",
-                ]
-            )
+            for metric, minimum in (
+                ("Best", best_minimum),
+                ("avg", avg_minimum),
+            ):
+                value = float(row[f"{arm}_{metric}"])
+                rendered = f"{value:.2f}"
+                if math.isclose(
+                    value,
+                    minimum,
+                    rel_tol=0.0,
+                    abs_tol=1.0e-9,
+                ):
+                    rendered = rf"\textbf{{{rendered}}}"
+                cells.append(rendered)
         lines.append(" & ".join(cells) + r"\\")
-    lines.extend([r"\bottomrule", r"\end{tabular}"])
+    lines.extend([r"\bottomrule", r"\end{tabular*}"])
     return "\n".join(lines) + "\n"
 
 
@@ -580,16 +699,51 @@ def main() -> int:
         "verdict",
         "PASS_D6_CORRECTED_CHINA81_E2_RAW",
     )
+    result_strength = require_verdict(
+        RESULT_STRENGTH / "decision.json",
+        "verdict",
+        "PASS_E2_CORRECTED_PAPER_STRENGTH",
+    )
+    if result_strength.get("paper_strength_pass") is not True:
+        raise RuntimeError("E2 paper-strength decision is internally false")
     require_verdict(
         S3 / "decision.json",
         "verdict",
-        "PASS_D6_CORRECTED_S3_REPRESENTATIVE",
+        (
+            "PASS_D6_CORRECTED_S3_MECHANISM_CASE"
+            if CASE_ROLE == "mechanism_illustration"
+            else "PASS_D6_CORRECTED_S3_REPRESENTATIVE"
+        ),
     )
-    require_verdict(
+    trajectory_decision = require_verdict(
         TRAJ / "decision.json",
         "verdict",
         "PASS_D6_CORRECTED_S3_TRAJECTORIES",
     )
+    if (
+        trajectory_decision.get("chen_style_shape_gate", {}).get(
+            "passed"
+        )
+        is not True
+    ):
+        raise RuntimeError(
+            "registered Chen-style trajectory gate is not PASS"
+        )
+    verify_artifact_manifest(TRAJ)
+    trajectory_done = json.loads(
+        (TRAJ / "done.json").read_text(encoding="utf-8")
+    )
+    if (
+        trajectory_done.get("verdict")
+        != "PASS_D6_CORRECTED_S3_TRAJECTORIES"
+        or trajectory_done.get("curve_data_sha256")
+        != sha256(TRAJ / "curve_data.csv")
+        or trajectory_done.get("decision_sha256")
+        != sha256(TRAJ / "decision.json")
+        or trajectory_done.get("artifact_hashes_sha256")
+        != sha256(TRAJ / "artifact_hashes.json")
+    ):
+        raise RuntimeError("trajectory completion seal is invalid")
     require_verdict(
         S4 / "decision.json",
         "verdict",
@@ -635,11 +789,16 @@ def main() -> int:
     summary, paired = china81_summary(full_rows)
     table4 = read_csv(S4 / "route_details.csv")
     write_csv(OUT / "table5_public.csv", table5)
-    write_csv(OUT / "table8a_representative.csv", table8a)
+    table8a_slug = (
+        "mechanism_case"
+        if CASE_ROLE == "mechanism_illustration"
+        else "representative"
+    )
+    write_csv(OUT / f"table8a_{table8a_slug}.csv", table8a)
     write_csv(OUT / "table8b_china81_summary.csv", summary)
     write_csv(OUT / "china81_pairwise_tests.csv", paired)
     write_csv(OUT / "table4_route_details.csv", table4)
-    (OUT / "table8a_representative.tex").write_text(
+    (OUT / f"table8a_{table8a_slug}.tex").write_text(
         tex_table_representative(table8a),
         encoding="utf-8",
     )
@@ -654,8 +813,11 @@ def main() -> int:
         "verdict": "PASS_D6_CORRECTED_S5_ARTIFACTS",
         "solver_executions": 0,
         "public_p1_preserved": True,
+        "e2_paper_strength_pass": True,
         "private_china81_source_rows": len(full_rows),
-        "representative_rows": len(table8a),
+        "case_role": CASE_ROLE,
+        "case_rows": len(table8a),
+        "route_detail_case_role": "representative",
         "china81_summary_rows": len(summary),
         "route_detail_rows": len(table4),
         "paired_test_rows": len(paired),
@@ -682,6 +844,9 @@ def main() -> int:
                 for path in (
                     FULL / "raw_runs.csv",
                     FULL / "decision.json",
+                    RESULT_STRENGTH / "decision.json",
+                    RESULT_STRENGTH / "result_summary.json",
+                    RESULT_STRENGTH_PREREGISTRATION,
                     S3 / "raw_runs.csv",
                     S3 / "decision.json",
                     TRAJ / "curve_data.csv",

@@ -1,0 +1,120 @@
+{
+  "status": "PASS_DIAGNOSTIC",
+  "formal_evidence": false,
+  "instance_id": "cn-prd-50c-01-V2-LOCATIONS",
+  "seed": 1,
+  "selected_source": "best_exact_hgs_parent",
+  "best_parent_objective": 2393.8185755222853,
+  "final_objective": 2393.8185755222853,
+  "route_pool_size": 65,
+  "route_records_by_first_source_view": {
+    "cv_only": 29,
+    "naive_ev": 31,
+    "mechanism_ev": 5
+  },
+  "views": {
+    "cv_only": {
+      "population_size": 107,
+      "unique_feasible_population_size": 49,
+      "unique_proxy_population_size": 124,
+      "archive_candidates_completed": 24,
+      "selected_exact_objectives": [
+        2468.13821350964,
+        2473.7268350732356,
+        2475.745624266098,
+        2475.7456242660983,
+        2476.228439433204,
+        2476.3320366657285,
+        2476.448851905994,
+        2476.5518502028517
+      ],
+      "hgs_iterations": 5000,
+      "elite_count": 8,
+      "unique_elite_solution_sets": 8,
+      "unique_route_columns": 29,
+      "route_customer_count_distribution": {
+        "2": 2,
+        "3": 1,
+        "4": 1,
+        "5": 3,
+        "6": 10,
+        "7": 6,
+        "8": 5,
+        "9": 1
+      }
+    },
+    "naive_ev": {
+      "population_size": 79,
+      "unique_feasible_population_size": 32,
+      "unique_proxy_population_size": 104,
+      "archive_candidates_completed": 24,
+      "selected_exact_objectives": [
+        2395.074255021319,
+        2395.2507434687786,
+        2395.5393549564774,
+        2396.152021001425,
+        2396.292579905074,
+        2396.377910810631,
+        2396.4064272657233,
+        2396.4406324891243
+      ],
+      "hgs_iterations": 5000,
+      "elite_count": 8,
+      "unique_elite_solution_sets": 8,
+      "unique_route_columns": 31,
+      "route_customer_count_distribution": {
+        "4": 5,
+        "5": 11,
+        "6": 8,
+        "7": 6,
+        "8": 1
+      }
+    },
+    "mechanism_ev": {
+      "population_size": 95,
+      "unique_feasible_population_size": 49,
+      "unique_proxy_population_size": 119,
+      "archive_candidates_completed": 24,
+      "selected_exact_objectives": [
+        2393.8185755222853,
+        2394.571800470882,
+        2394.657131376439,
+        2394.9055405684867,
+        2394.9316519586687,
+        2394.9971274529826,
+        2395.074255021319,
+        2395.2507434687786
+      ],
+      "hgs_iterations": 5000,
+      "elite_count": 8,
+      "unique_elite_solution_sets": 8,
+      "unique_route_columns": 5,
+      "route_customer_count_distribution": {
+        "4": 1,
+        "5": 3,
+        "7": 1
+      }
+    }
+  },
+  "route_pool_solver": {
+    "solver": "scipy.optimize.milp/HiGHS",
+    "component": "time-limited MIP route-pool recombination",
+    "success": true,
+    "status": 0,
+    "status_class": "OPTIMAL",
+    "message": "Optimization terminated successfully. (HiGHS Status 7: Optimal)",
+    "incumbent_available": true,
+    "objective": 2393.818575522285,
+    "dual_bound": 2393.818575522285,
+    "mip_gap": 0.0,
+    "mip_node_count": 1,
+    "time_limit_seconds": 5.0,
+    "optimality_proven": true,
+    "incumbent_vector_integral": true,
+    "incumbent_cover_exact": true,
+    "selected_route_count": 9,
+    "independent_violation_count": 0,
+    "independent_complete_candidate_evaluation_attempts": 1,
+    "recombined_exact_objective": 2393.8185755222853
+  }
+}

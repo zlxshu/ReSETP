@@ -1,0 +1,117 @@
+{
+  "checked_at": "2026-07-25T09:05:12+00:00",
+  "checkpoint_inventory": [],
+  "csv_summaries": [
+    {
+      "exists": false,
+      "path": "/Volumes/移动硬盘（512G）/ReSETP/baselines/algorithm_prototypes/dual_guided_resource_order_20260725/engineering_gate_v1/raw_runs.csv",
+      "rows": 0
+    }
+  ],
+  "files": {
+    "/Volumes/移动硬盘（512G）/ReSETP/baselines/algorithm_prototypes/dual_guided_resource_order_20260725/.dual-guided-engineering.monitor/experiment.stdout.log": {
+      "age_seconds": 0.16057085990905762,
+      "exists": true,
+      "mtime": 1784970311.89,
+      "path": "/Volumes/移动硬盘（512G）/ReSETP/baselines/algorithm_prototypes/dual_guided_resource_order_20260725/.dual-guided-engineering.monitor/experiment.stdout.log",
+      "size": 78
+    },
+    "/Volumes/移动硬盘（512G）/ReSETP/baselines/algorithm_prototypes/dual_guided_resource_order_20260725/engineering_gate_v1/decision.json": {
+      "exists": false,
+      "path": "/Volumes/移动硬盘（512G）/ReSETP/baselines/algorithm_prototypes/dual_guided_resource_order_20260725/engineering_gate_v1/decision.json"
+    },
+    "/Volumes/移动硬盘（512G）/ReSETP/baselines/algorithm_prototypes/dual_guided_resource_order_20260725/engineering_gate_v1/raw_runs.csv": {
+      "exists": false,
+      "path": "/Volumes/移动硬盘（512G）/ReSETP/baselines/algorithm_prototypes/dual_guided_resource_order_20260725/engineering_gate_v1/raw_runs.csv"
+    }
+  },
+  "findings": [
+    {
+      "code": "PROCESS_EXITED_WITHOUT_COMPLETION",
+      "details": {},
+      "message": "process ended without completion evidence",
+      "severity": "critical"
+    }
+  ],
+  "log_paths": [
+    "/Volumes/移动硬盘（512G）/ReSETP/baselines/algorithm_prototypes/dual_guided_resource_order_20260725/.dual-guided-engineering.monitor/experiment.stdout.log"
+  ],
+  "name": "dual-guided-resource-order-engineering",
+  "paused": false,
+  "process": {
+    "alive": false,
+    "cpu_percent": 0,
+    "members": [],
+    "pgid": 20359,
+    "root_pid": 20359,
+    "rss_mb": 0.0
+  },
+  "protected_files": {
+    "/Volumes/移动硬盘（512G）/ReSETP/baselines/algorithm_prototypes/dual_guided_resource_order_20260725/candidate_core.py": {
+      "age_seconds": 1148.9307231903076,
+      "exists": true,
+      "kind": "model",
+      "mtime": 1784969163.12,
+      "path": "/Volumes/移动硬盘（512G）/ReSETP/baselines/algorithm_prototypes/dual_guided_resource_order_20260725/candidate_core.py",
+      "sha256": "c5fe1926484720baa726926bc28214576352feb409beaffa65e614f4e04aa77a",
+      "size": 7542
+    },
+    "/Volumes/移动硬盘（512G）/ReSETP/baselines/algorithm_prototypes/dual_guided_resource_order_20260725/g0_registration_v1.json": {
+      "age_seconds": 10.88060188293457,
+      "exists": true,
+      "kind": "primary_config",
+      "mtime": 1784970301.17,
+      "path": "/Volumes/移动硬盘（512G）/ReSETP/baselines/algorithm_prototypes/dual_guided_resource_order_20260725/g0_registration_v1.json",
+      "sha256": "f095ca0a9a742cc702af37f9c778c680605fa6121f8f130d74926b5bb8e7c00e",
+      "size": 24172
+    },
+    "/Volumes/移动硬盘（512G）/ReSETP/baselines/algorithm_prototypes/dual_guided_resource_order_20260725/limited_displacement.py": {
+      "age_seconds": 636.1307618618011,
+      "exists": true,
+      "kind": "model",
+      "mtime": 1784969675.92,
+      "path": "/Volumes/移动硬盘（512G）/ReSETP/baselines/algorithm_prototypes/dual_guided_resource_order_20260725/limited_displacement.py",
+      "sha256": "3b02fa58743126ac8f7fd82fffaf26eca9d4941b1279455e1f6862fa120f8bd3",
+      "size": 8003
+    },
+    "/Volumes/移动硬盘（512G）/ReSETP/baselines/algorithm_prototypes/dual_guided_resource_order_20260725/lp_duals.py": {
+      "age_seconds": 1148.9407992362976,
+      "exists": true,
+      "kind": "model",
+      "mtime": 1784969163.11,
+      "path": "/Volumes/移动硬盘（512G）/ReSETP/baselines/algorithm_prototypes/dual_guided_resource_order_20260725/lp_duals.py",
+      "sha256": "d623a4b7147b91311f270cd6cde9a2aaefc5a0f37ef27fcccd81cedab9a0b305",
+      "size": 7717
+    },
+    "/Volumes/移动硬盘（512G）/ReSETP/baselines/algorithm_prototypes/dual_guided_resource_order_20260725/run_engineering_gate.py": {
+      "age_seconds": 869.9608340263367,
+      "exists": true,
+      "kind": "evaluator",
+      "mtime": 1784969442.09,
+      "path": "/Volumes/移动硬盘（512G）/ReSETP/baselines/algorithm_prototypes/dual_guided_resource_order_20260725/run_engineering_gate.py",
+      "sha256": "dc53c61d0f254c03315be7eabfc98e53776160c3f3df591ecda0d7a179263796",
+      "size": 6346
+    },
+    "/Volumes/移动硬盘（512G）/ReSETP/docs/handoff/e2_dual_guided_resource_order_contract_20260725.md": {
+      "age_seconds": 1775.9006729125977,
+      "exists": true,
+      "kind": "experiment_contract",
+      "mtime": 1784968536.15,
+      "path": "/Volumes/移动硬盘（512G）/ReSETP/docs/handoff/e2_dual_guided_resource_order_contract_20260725.md",
+      "sha256": "599f5c6bdf6200803af8288636a85dd01936cff82dbb31cbb61e8304e36f8d5f",
+      "size": 11749
+    }
+  },
+  "runtime_seconds": 0.12232589721679688,
+  "schema_version": 1,
+  "state": "ANOMALY",
+  "system": {
+    "free_memory_mb": 144.625,
+    "load_average_15m": 2.79052734375,
+    "load_average_1m": 3.70166015625,
+    "load_average_5m": 3.16357421875,
+    "logical_cpus": 8,
+    "memory_pressure_free_percent": 32.0,
+    "swapouts": 63320167
+  }
+}

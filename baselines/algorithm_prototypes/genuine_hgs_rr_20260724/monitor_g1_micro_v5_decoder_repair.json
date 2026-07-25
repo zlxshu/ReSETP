@@ -1,0 +1,194 @@
+{
+  "schema_version": 1,
+  "name": "genuine-hybrid-g1-micro-v5-decoder-repair",
+  "objective": "以冻结三题种子1和每臂80次完整评价，使用6个独立单线程任务检验A、B、A+B是否达到预登记真协同硬门",
+  "workdir": "../../..",
+  "poll_seconds": 30,
+  "max_runtime_seconds": 86400,
+  "pause_on_anomaly": true,
+  "required_command_substrings": [
+    "run_g1_micro_gate_v5_decoder_repair.py",
+    "--workers",
+    "6"
+  ],
+  "forbidden_command_substrings": [
+    "--smoke",
+    "--debug"
+  ],
+  "min_cpu_percent_when_active": 1,
+  "low_cpu_consecutive_checks": 12,
+  "max_rss_mb": 7000,
+  "min_system_free_memory_mb": 128,
+  "min_system_memory_free_percent": 5,
+  "logs": [],
+  "progress_files": [],
+  "result_files": [
+    "g1_micro_gate_v5_decoder_repair/metadata.json",
+    "g1_micro_gate_v5_decoder_repair/raw_runs.csv",
+    "g1_micro_gate_v5_decoder_repair/decision.json",
+    "g1_micro_gate_v5_decoder_repair/artifact_hashes.json",
+    "g1_micro_gate_v5_decoder_repair/report.md"
+  ],
+  "completion_files": [
+    "g1_micro_gate_v5_decoder_repair/done.json"
+  ],
+  "checkpoint_paths": [
+    "g1_micro_work_v5_decoder_repair/tasks"
+  ],
+  "protected_files": [
+    {
+      "path": "g1_micro_preregistration_v3.json",
+      "kind": "experiment_contract"
+    },
+    {
+      "path": "g1_micro_preregistration_v4_mechanical.json",
+      "kind": "experiment_contract"
+    },
+    {
+      "path": "g1_micro_preregistration_v5_decoder_repair.json",
+      "kind": "experiment_contract"
+    },
+    {
+      "path": "g0_real_bundle_preregistration_v2.json",
+      "kind": "experiment_contract"
+    },
+    {
+      "path": "g0_real_bundle_gate_v2/decision.json",
+      "kind": "upstream_evidence"
+    },
+    {
+      "path": "g0_real_bundle_gate_v2/artifact_hashes.json",
+      "kind": "upstream_evidence"
+    },
+    {
+      "path": "g1_six_worker_resource_probe_registration_v2.json",
+      "kind": "resource_contract"
+    },
+    {
+      "path": "g1_six_worker_resource_probe_v2/decision.json",
+      "kind": "upstream_evidence"
+    },
+    {
+      "path": "g1_six_worker_resource_probe_v2/artifact_hashes.json",
+      "kind": "upstream_evidence"
+    },
+    {
+      "path": "run_g1_micro_gate.py",
+      "kind": "experiment_runner"
+    },
+    {
+      "path": "run_g1_micro_gate_v4_mechanical.py",
+      "kind": "experiment_runner"
+    },
+    {
+      "path": "run_g1_micro_gate_v5_decoder_repair.py",
+      "kind": "experiment_runner"
+    },
+    {
+      "path": "budgeted_completion.py",
+      "kind": "evaluator"
+    },
+    {
+      "path": "contracts.py",
+      "kind": "experiment_contract"
+    },
+    {
+      "path": "decoder_cache.py",
+      "kind": "model"
+    },
+    {
+      "path": "evaluation.py",
+      "kind": "evaluator"
+    },
+    {
+      "path": "fleet_assignment_dp.py",
+      "kind": "model"
+    },
+    {
+      "path": "hgs_generator.py",
+      "kind": "primary_config"
+    },
+    {
+      "path": "hybrid_orchestrator.py",
+      "kind": "primary_config"
+    },
+    {
+      "path": "operator_effects.py",
+      "kind": "primary_config"
+    },
+    {
+      "path": "operator_plans.py",
+      "kind": "primary_config"
+    },
+    {
+      "path": "recreate.py",
+      "kind": "primary_config"
+    },
+    {
+      "path": "reference_decoder.py",
+      "kind": "model"
+    },
+    {
+      "path": "rr_engine.py",
+      "kind": "primary_config"
+    },
+    {
+      "path": "../../../docs/handoff/e2_genuine_hybrid_hgs_rr_contract_20260724.md",
+      "kind": "research_question"
+    },
+    {
+      "path": "../../../solver/src/setp_solver/check.py",
+      "kind": "evaluator"
+    },
+    {
+      "path": "../../../solver/src/setp_solver/china81_completion.py",
+      "kind": "evaluator"
+    },
+    {
+      "path": "../../../solver/src/setp_solver/cost.py",
+      "kind": "cost_function"
+    },
+    {
+      "path": "../../../solver/src/setp_solver/prices.py",
+      "kind": "primary_config"
+    },
+    {
+      "path": "../../../docs/paper_v2/paper_main.tex",
+      "kind": "paper_conclusion"
+    }
+  ],
+  "csv_rules": [
+    {
+      "path": "g1_micro_gate_v5_decoder_repair/raw_runs.csv",
+      "required": true,
+      "required_after_seconds": 82800,
+      "required_fields": [
+        "status",
+        "instance_id",
+        "seed",
+        "arm",
+        "best_objective",
+        "complete_evaluations_consumed",
+        "direct_violation_count",
+        "exact_violation_count"
+      ],
+      "feasible_field": "status",
+      "truthy": [
+        "PASS"
+      ],
+      "min_feasible_rate": 1.0,
+      "violation_field": "exact_violation_count",
+      "max_violation_total": 0,
+      "duplicate_key_fields": [
+        "instance_id",
+        "seed",
+        "arm"
+      ],
+      "max_duplicate_fraction": 0
+    }
+  ],
+  "ai": {
+    "enabled": false,
+    "timeout_seconds": 180
+  }
+}

@@ -1,0 +1,34 @@
+{
+  "schema": "resetp.algorithm-repair-development-preregistration.v1",
+  "registered_at": "2026-07-24T03:39:00+08:00",
+  "formal_evidence": false,
+  "candidate": "One bounded reciprocal cross-depot segment-exchange refinement after archive-expanded route-pool recombination",
+  "reason": "The one-way segment candidate failed under real capacity, time-window, EV charging, and charger-occupancy constraints. A reciprocal exchange preserves route balance while implementing the already approved bidirectional cross-depot neighbourhood.",
+  "frozen_design": {
+    "segment_lengths_each_direction": [2, 3],
+    "candidate_views": ["demand_balance", "distance_change", "time_window_compatibility"],
+    "candidates_per_view": 4,
+    "maximum_complete_candidates": 12,
+    "refinement_rounds": 1,
+    "no_parameter_rescue": true
+  },
+  "acceptance_authority": "Corrected China81 completion and exact scoring under the registered date, city-specific fuel/electricity/carbon mappings, finite depot fleets, and charging constraints.",
+  "acceptance_rule": "Accept only a zero-violation strict complete-objective improvement; otherwise retain the pre-refinement solution.",
+  "development_panel": [
+    "cn-cy-50c-01-V2-LOCATIONS seed 1",
+    "cn-jjj-50c-01-V2-LOCATIONS seed 1",
+    "cn-prd-50c-01-V2-LOCATIONS seed 1",
+    "cn-cy-75c-01-V2-LOCATIONS seed 1",
+    "cn-jjj-75c-01-V2-LOCATIONS seed 1",
+    "cn-prd-75c-01-V2-LOCATIONS seed 1"
+  ],
+  "gate": {
+    "minimum_strict_improvements": 2,
+    "no_regressions": true,
+    "all_final_solutions_feasible": true,
+    "all_candidate_limits_respected": true,
+    "representative_instance_result_reported_separately": true
+  },
+  "failure_rule": "Reject this candidate if the gate fails. Do not change bounds or add rounds on the observed panel.",
+  "claim_boundary": "Development diagnosis only; no paper or formal experiment claim."
+}

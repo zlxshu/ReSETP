@@ -1,0 +1,25 @@
+{
+  "schema": "resetp.algorithm-repair-development-preregistration.v1",
+  "registered_at": "2026-07-24T03:10:00+08:00",
+  "formal_evidence": false,
+  "problem": "The complete evaluator scores 24 archive candidates per view, but route-pool recombination currently receives routes from only the best 8 complete candidates per view.",
+  "repair": "Retain all already-scored archive completions for route-pool construction while leaving the eight exact elites, all three single-view outputs, random streams, complete-evaluation budget, evaluators, and fleet/energy/price/carbon authorities unchanged.",
+  "development_panel": [
+    "cn-cy-50c-01-V2-LOCATIONS seed 1",
+    "cn-jjj-50c-01-V2-LOCATIONS seed 1",
+    "cn-prd-50c-01-V2-LOCATIONS seed 1",
+    "cn-cy-75c-01-V2-LOCATIONS seed 1",
+    "cn-jjj-75c-01-V2-LOCATIONS seed 1",
+    "cn-prd-75c-01-V2-LOCATIONS seed 1"
+  ],
+  "acceptance": {
+    "single_view_costs_bitwise_unchanged": true,
+    "complete_candidate_attempts_unchanged": 80,
+    "route_pool_never_smaller": true,
+    "final_solution_never_worse_than_best_single_view": true,
+    "minimum_strict_recombination_improvements_on_panel": 2,
+    "all_solutions_independently_feasible": true
+  },
+  "failure_rule": "If any invariant fails or fewer than two panel tasks improve strictly through recombination, reject this repair and do not use it for a formal rerun.",
+  "claim_boundary": "Development diagnosis only. Passing does not authorize paper claims or formal E2/E3 results."
+}

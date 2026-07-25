@@ -1,0 +1,95 @@
+{
+  "abort_artifacts": {
+    "baselines/algorithm_prototypes/feasibility_guided_ejection_vns_20260725/direct_improvement_gate_v1_abort_packaging/metadata.json": "a387105a0e01cdd349c7835cb63039c9ba47ab1eeb6eba33f15fd9b604e048a7",
+    "baselines/algorithm_prototypes/feasibility_guided_ejection_vns_20260725/direct_improvement_gate_v1_abort_packaging/raw_runs.csv": "8f4705366706cdc07d1aecf81d37448e66b82c0489fb5b323bba86e74d70e002",
+    "baselines/algorithm_prototypes/feasibility_guided_ejection_vns_20260725/direct_improvement_gate_v1_abort_packaging/traces/cn-cy-100c-01-V2-LOCATIONS.json": "91dc6116344cc1e0b1cb4f6e5fe7cd95eb2f5e5f1056c78e66548fe06b27737b",
+    "baselines/algorithm_prototypes/feasibility_guided_ejection_vns_20260725/direct_improvement_gate_v1_abort_packaging/traces/cn-jjj-50c-02-V2-LOCATIONS.json": "3fbe9af8679424f12d2fa899f27a62a92278d1fba61e3b99fc2a3af35eef6780",
+    "baselines/algorithm_prototypes/feasibility_guided_ejection_vns_20260725/direct_improvement_gate_v1_abort_packaging/traces/cn-prd-200c-02-V2-LOCATIONS.json": "d326d77467ea62b2ad320b1f3037f25996f3432ce404cf604932c7b7a2fa4c17",
+    "baselines/algorithm_prototypes/feasibility_guided_ejection_vns_20260725/direct_improvement_gate_v1_abort_packaging/witnesses/cn-cy-100c-01-V2-LOCATIONS.json": "ff00dfc55ae7f8582f06b0d4e9769e572400982593aea4277d19f6a9503511c3",
+    "baselines/algorithm_prototypes/feasibility_guided_ejection_vns_20260725/direct_improvement_gate_v1_abort_packaging/witnesses/cn-jjj-50c-02-V2-LOCATIONS.json": "c0df0cd9901e65705c275df8cd8c0d2d9d606f3f5dfc234e727a77577212ae99",
+    "baselines/algorithm_prototypes/feasibility_guided_ejection_vns_20260725/direct_improvement_gate_v1_abort_packaging/witnesses/cn-prd-200c-02-V2-LOCATIONS.json": "e86a666cc00743b8813405003310d823fad1e265fd1a42fa9c562f0d7095c73a"
+  },
+  "approval_id": "E2-FGE-DIRECT-PACKAGING-012",
+  "authority_registration": {
+    "path": "baselines/algorithm_prototypes/genuine_hgs_rr_20260724/g0_real_bundle_preregistration_v1.json",
+    "sha256": "ae8db30839da5e3bf5367b71a39d5997fcac09f31dce0ca47336d860a5c33698"
+  },
+  "claim_boundary": "Direct improvement behavior evidence only. PASS authorizes a separately preregistered unseen-instance A/B/A+B micro gate; it does not authorize E3, formal China81, BKS, SOTA, or paper claims.",
+  "config": {
+    "assignment_beam_per_state": 2,
+    "assignment_candidates_per_structure": 2,
+    "block_seed_limit": 8,
+    "block_widths": [
+      2,
+      3,
+      4
+    ],
+    "complete_evaluation_limit_per_instance": 120,
+    "duplicate_fraction_limit": 0.2,
+    "feasible_structures_per_neighborhood": 12,
+    "improvement_tolerance": 1e-09,
+    "inspection_limit_per_local_neighborhood": 512,
+    "large_neighborhoods": [
+      "two_opt_star",
+      "ejection_rebuild"
+    ],
+    "nearest_anchor_count": 24,
+    "rebuild_beam_width": 8,
+    "required_improved_instances": 2,
+    "workers": 3
+  },
+  "inputs": [
+    {
+      "expected_objective": 2638.913419965574,
+      "instance_id": "cn-jjj-50c-02-V2-LOCATIONS",
+      "instance_id_sha256": "057d8e50fcddca1d26192d7439b50f603416f5807f8c705af1d6cc47e9204531",
+      "seed": 1,
+      "task_id": "D6-E2-STAGED__cn-jjj-50c-02-V2-LOCATIONS__seed1",
+      "witness_key": "MV-HGS-SP",
+      "witness_path": "baselines/e2_final_campaign_20260720/corrected_china81_rerun_v7_small_archive_ledger_20260724/full_gate/tasks/D6-E2-STAGED__cn-jjj-50c-02-V2-LOCATIONS__seed1/solution_witnesses.json",
+      "witness_sha256": "916ffbb62d99a645e08602c42c2faf7693e620ab282fd9d5b284b9f8a2689e1e"
+    },
+    {
+      "expected_objective": 5173.897533382516,
+      "instance_id": "cn-cy-100c-01-V2-LOCATIONS",
+      "instance_id_sha256": "153b47ad7021069392a1e4fe41561c0771f6e80a9c93d35b3f0c7a0dc68bc559",
+      "seed": 3,
+      "task_id": "D6-E2-STAGED__cn-cy-100c-01-V2-LOCATIONS__seed3",
+      "witness_key": "MV-HGS-SP",
+      "witness_path": "baselines/e2_final_campaign_20260720/corrected_china81_rerun_v7_small_archive_ledger_20260724/full_gate/tasks/D6-E2-STAGED__cn-cy-100c-01-V2-LOCATIONS__seed3/solution_witnesses.json",
+      "witness_sha256": "db45849807d5abc049b40b0b836c3966a52aacad239cdc34346e904c895e6b19"
+    },
+    {
+      "expected_objective": 9934.809498400024,
+      "instance_id": "cn-prd-200c-02-V2-LOCATIONS",
+      "instance_id_sha256": "2f15775a8b7e2066860781932e613f19d2cbe795c83f081153b5f60b42d97e8c",
+      "seed": 1,
+      "task_id": "D6-E2-STAGED__cn-prd-200c-02-V2-LOCATIONS__seed1",
+      "witness_key": "MV-HGS-SP",
+      "witness_path": "baselines/e2_final_campaign_20260720/corrected_china81_rerun_v7_small_archive_ledger_20260724/full_gate/tasks/D6-E2-STAGED__cn-prd-200c-02-V2-LOCATIONS__seed1/solution_witnesses.json",
+      "witness_sha256": "60509b41cfd5c09dbe63d1dca03f13d6ba68b669b9ccdfb012704e8a2e1481f4"
+    }
+  ],
+  "original_registration": {
+    "path": "baselines/algorithm_prototypes/feasibility_guided_ejection_vns_20260725/direct_improvement_registration_v1.json",
+    "sha256": "8c336cef0e3659eb751edf02a1817c22e2e0b6f2f9ff83d46a4a8c26021c3cd7"
+  },
+  "registered_at_utc": "2026-07-25T06:13:06.996127+00:00",
+  "schema": "resetp.fge-vns-direct-recovery-registration.v1",
+  "search_executions": 0,
+  "source_hashes": {
+    "baselines/algorithm_prototypes/feasibility_guided_ejection_vns_20260725/build_direct_recovery_registration.py": "939c7a4864a391f1303ecdb222d1ccde140c55a02d378606f3a66ad1fc29f5c3",
+    "baselines/algorithm_prototypes/feasibility_guided_ejection_vns_20260725/recover_direct_gate_no_search.py": "ac2fc791a4c44708c1a0edd0313bd310ca87a87d349ab41dc6675c53369fc481",
+    "docs/handoff/e2_feasibility_guided_vns_contract_20260725.md": "ac04bb53cfbea4361787842f03b9a2a66dd2137c410aff0ad54ae78b6cfff9f2",
+    "solver/src/setp_solver/check.py": "9c81e254e05591667c8225965bb9d0ba4e8bbfc53eb0f8c61ffdb4325a1403a8",
+    "solver/src/setp_solver/china81.py": "df082b6a0e108aa5462b74048fcca7a63fdb7eaafb9e61f2dcdd787e3d9fcedd",
+    "solver/src/setp_solver/china81_completion.py": "c0b72db82e324981442f357bc3bb336eac5dae033a44a3ab16fa2cbe4db91653",
+    "solver/src/setp_solver/cost.py": "2717b4b4de39bb4c2a9a1bda602f4420cb3e3b1e87faa83678dfa64f88fc80be",
+    "solver/src/setp_solver/prices.py": "fe13a721fc63e79c44f5c7faf8bf4802155a28cb4c081d010d09d8dc4804d157"
+  },
+  "status": "FROZEN_BEFORE_ZERO_SEARCH_RECOVERY",
+  "unrecoverable_fields": [
+    "elapsed_seconds_per_instance",
+    "peak_rss_per_instance"
+  ]
+}

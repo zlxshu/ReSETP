@@ -1,0 +1,77 @@
+{
+  "schema": "resetp.tailored-dp-vns-direct-improvement-registration.v1",
+  "registered_at": "2026-07-25",
+  "status": "FROZEN_BEFORE_EXECUTION",
+  "approval_id": "E2-GENUINE-HYBRID-REDESIGN-010",
+  "contract": "docs/handoff/e2_genuine_hybrid_redesign_contract_20260725.md",
+  "purpose": "Test whether the redesigned independent DP-VNS can directly improve frozen strong HGS solutions without rerunning HGS.",
+  "frozen_configuration": {
+    "complete_evaluation_limit_per_instance": 96,
+    "structural_candidates_per_neighborhood": 10,
+    "assignment_candidates_per_skeleton": 2,
+    "assignment_beam_per_state": 2,
+    "improvement_tolerance": 1e-09,
+    "neighborhood_order": [
+      "relocate",
+      "swap",
+      "two_opt",
+      "two_opt_star",
+      "block_rebuild"
+    ],
+    "acceptance": "best strict complete-model improvement in the active neighborhood; restart from relocate after acceptance",
+    "workers": 3,
+    "threads_per_worker": 1,
+    "hgs_rerun": false,
+    "mip": false
+  },
+  "pass_gate": {
+    "all_inputs_replay_exact_and_feasible": true,
+    "all_outputs_replay_exact_and_feasible": true,
+    "minimum_strictly_improved_instances": 2,
+    "require_two_opt_star_or_block_rebuild_improvement": true,
+    "all_five_neighborhoods_generate_across_three_instances": true,
+    "incomplete_candidates_may_not_enter_complete_evaluation": true,
+    "maximum_duplicate_evaluation_fraction": 0.2
+  },
+  "instances": [
+    {
+      "instance_id": "cn-jjj-25c-02-V2-LOCATIONS",
+      "solution_path": "baselines/algorithm_prototypes/genuine_hgs_rr_20260724/g1_micro_work_v6_coverage_contract/tasks/G1__cn-jjj-25c-02-V2-LOCATIONS__seed1__A_HGS/best_solution.json",
+      "solution_path_sha256": "02f00658beb2b57885582a8544d228f54d257576c09bfde7c72e757dbc0dc6fb",
+      "result_path": "baselines/algorithm_prototypes/genuine_hgs_rr_20260724/g1_micro_work_v6_coverage_contract/tasks/G1__cn-jjj-25c-02-V2-LOCATIONS__seed1__A_HGS/result.json",
+      "result_path_sha256": "32f6f0e8809f33747b57e80f6fe7bd7e232c9d376e8bad7e3f096f6e1ab87d4c"
+    },
+    {
+      "instance_id": "cn-prd-100c-03-V2-LOCATIONS",
+      "solution_path": "baselines/algorithm_prototypes/genuine_hgs_rr_20260724/g1_micro_work_v6_coverage_contract/tasks/G1__cn-prd-100c-03-V2-LOCATIONS__seed1__A_HGS/best_solution.json",
+      "solution_path_sha256": "9eaaf5f1906bf0388a8fabb111e5bb4bfa6a8d3a9e9cfaf8c4a8ea5fe54986e1",
+      "result_path": "baselines/algorithm_prototypes/genuine_hgs_rr_20260724/g1_micro_work_v6_coverage_contract/tasks/G1__cn-prd-100c-03-V2-LOCATIONS__seed1__A_HGS/result.json",
+      "result_path_sha256": "15684c82e9d05552defacab0f93b4d12b9a657b0747f22261cee36dfd84402dc"
+    },
+    {
+      "instance_id": "cn-cy-150c-03-V2-LOCATIONS",
+      "solution_path": "baselines/algorithm_prototypes/genuine_hgs_rr_20260724/g1_micro_work_v6_coverage_contract/tasks/G1__cn-cy-150c-03-V2-LOCATIONS__seed1__A_HGS/best_solution.json",
+      "solution_path_sha256": "c217ba116d3b6336d7f8a0ced68e72dbfc8197ed9f54348632cabccd7a857b79",
+      "result_path": "baselines/algorithm_prototypes/genuine_hgs_rr_20260724/g1_micro_work_v6_coverage_contract/tasks/G1__cn-cy-150c-03-V2-LOCATIONS__seed1__A_HGS/result.json",
+      "result_path_sha256": "a4c278cec32f44d30c8e4b56e632703275bf6f1181493d4810b5135465b4c11c"
+    }
+  ],
+  "source_hashes": {
+    "docs/handoff/e2_genuine_hybrid_redesign_contract_20260725.md": "2b0f0c28a7aabc4711d82694fb64acd1ec391f263a869354be9a7d89b34af45c",
+    "baselines/algorithm_prototypes/tailored_dp_vns_20260725/neighborhoods.py": "0cf3121ce9273d5609f2002b496406056f22bc846637950e2611814008cc4538",
+    "baselines/algorithm_prototypes/tailored_dp_vns_20260725/vnd_engine.py": "f6b81c89a27c56122c4c58119ae66253a98bfa879d24e6730ed2e4c9d683f8f1",
+    "baselines/algorithm_prototypes/tailored_dp_vns_20260725/run_direct_improvement_gate.py": "b47a79547d13cbc1accd6238d6289b8a30301149a7a5357d65c9a2cb9e60b35a",
+    "baselines/algorithm_prototypes/tailored_dp_vns_20260725/test_neighborhoods.py": "7c42e6db052848237bdbece2a6611a52a3c9ec745d6ccb1a1dfac35dac93a945",
+    "baselines/algorithm_prototypes/genuine_hgs_rr_20260724/contracts.py": "4a8bc57f04f7c6b03f2c85f926fa32e5e68d9c647d490e8cd6388b65404acdca",
+    "baselines/algorithm_prototypes/genuine_hgs_rr_20260724/evaluation.py": "c95d91293723278005bc77a513826495fc8fca7ce5daef56903714bce82a7385",
+    "baselines/algorithm_prototypes/genuine_hgs_rr_20260724/fleet_assignment_dp.py": "b0b2cbb70d55ca0a26ddc3e7b388fe36d984d0e4618987de8a612f8354d19430",
+    "baselines/algorithm_prototypes/genuine_hgs_rr_20260724/decoder_cache.py": "600d4003b1f2e8f6103809bfa3825f877acd9161f780bc028afa5688fd2fe7db",
+    "baselines/algorithm_prototypes/genuine_hgs_rr_20260724/reference_decoder.py": "cca72605d98ae39430975eb08facae1211e4b430e4931e4f36bcf8ec1f0b2b72",
+    "baselines/algorithm_prototypes/genuine_hgs_rr_20260724/g0_real_bundle_preregistration_v1.json": "ae8db30839da5e3bf5367b71a39d5997fcac09f31dce0ca47336d860a5c33698",
+    "solver/src/setp_solver/cost.py": "2717b4b4de39bb4c2a9a1bda602f4420cb3e3b1e87faa83678dfa64f88fc80be",
+    "solver/src/setp_solver/check.py": "9c81e254e05591667c8225965bb9d0ba4e8bbfc53eb0f8c61ffdb4325a1403a8",
+    "solver/src/setp_solver/search/evaluation.py": "c7215263c39d1d5a1429b41ca8ac40d950dbdf2bdc288337e56fbe9733406fc3",
+    "solver/src/setp_solver/prices.py": "fe13a721fc63e79c44f5c7faf8bf4802155a28cb4c081d010d09d8dc4804d157"
+  },
+  "claim_boundary": "Engineering behavior gate only. PASS may authorize a fresh blind micro-gate design, but does not authorize paper claims, E3, G2-G4, formal China81, BKS, or SOTA."
+}

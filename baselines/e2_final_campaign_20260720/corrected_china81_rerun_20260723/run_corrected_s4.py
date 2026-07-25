@@ -7,6 +7,8 @@ import csv
 import hashlib
 import json
 import math
+import os
+import re
 import statistics
 import sys
 from collections import Counter
@@ -16,12 +18,35 @@ from typing import Any
 
 
 REPO = Path(__file__).resolve().parents[3]
+CAMPAIGN_NAME = os.environ.get(
+    "RESET_D6_CAMPAIGN_NAME",
+    "corrected_china81_rerun_v3_20260724",
+)
+if (
+    not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9._-]*", CAMPAIGN_NAME)
+    or not CAMPAIGN_NAME.startswith("corrected_china81_rerun_")
+):
+    raise RuntimeError(
+        f"invalid RESET_D6_CAMPAIGN_NAME: {CAMPAIGN_NAME!r}"
+    )
+S4_CASE_ROLE = os.environ.get(
+    "RESET_S4_CASE_ROLE",
+    "representative",
+)
+if S4_CASE_ROLE not in {"representative", "mechanism_illustration"}:
+    raise RuntimeError(
+        f"invalid RESET_S4_CASE_ROLE: {S4_CASE_ROLE!r}"
+    )
 CAMPAIGN = (
     REPO
-    / "baselines/e2_final_campaign_20260720/"
-    "corrected_china81_rerun_v2_20260723"
+    / "baselines/e2_final_campaign_20260720"
+    / CAMPAIGN_NAME
 )
-S3 = CAMPAIGN / "representative_gate"
+S3 = CAMPAIGN / (
+    "mechanism_case_gate"
+    if S4_CASE_ROLE == "mechanism_illustration"
+    else "representative_gate"
+)
 OUT = CAMPAIGN / "table4_gate"
 for path in (REPO / "solver/src",):
     if str(path) not in sys.path:
@@ -158,10 +183,18 @@ def best_s3_witness() -> tuple[str, int, float, Path, Solution]:
     decision = json.loads((S3 / "decision.json").read_text(encoding="utf-8"))
     if (
         decision.get("verdict")
-        != "PASS_D6_CORRECTED_S3_REPRESENTATIVE"
+        not in {
+            "PASS_D6_CORRECTED_S3_REPRESENTATIVE",
+            "PASS_D6_CORRECTED_S3_MECHANISM_CASE",
+        }
     ):
         raise RuntimeError("corrected S3 is not PASS")
-    instance_id = str(decision["representative_instance_id"])
+    instance_id = str(
+        decision.get(
+            "case_instance_id",
+            decision.get("representative_instance_id"),
+        )
+    )
     with (S3 / "raw_runs.csv").open(
         newline="",
         encoding="utf-8-sig",
@@ -581,7 +614,8 @@ def main() -> int:
             if passed
             else "HALT_D6_CORRECTED_S4_RECHECK"
         ),
-        "representative_instance_id": instance_id,
+        "case_role": S4_CASE_ROLE,
+        "case_instance_id": instance_id,
         "best_seed": seed,
         "recorded_s3_cost": recorded_cost,
         "direct_cost": float(direct["total_cost"]),

@@ -1,0 +1,19 @@
+{
+  "available_memory_percent_before": 15.261459350585938,
+  "candidate_objectives_evaluated": 0,
+  "expected_rows": 6,
+  "failures": [
+    "cn-cy-50c-01-V2-LOCATIONS: RuntimeError: invalid distinct candidate count: 0",
+    "cn-jjj-50c-01-V2-LOCATIONS: RuntimeError: invalid distinct candidate count: 0",
+    "cn-jjj-150c-01-V2-LOCATIONS: RuntimeError: invalid distinct candidate count: 0",
+    "cn-jjj-100c-01-V2-LOCATIONS: RuntimeError: invalid distinct candidate count: 0",
+    "cn-cy-100c-02-V2-LOCATIONS: RuntimeError: invalid distinct candidate count: 0"
+  ],
+  "next_step": "STOP_NO_RESCUE",
+  "pass": false,
+  "projected_combined_peak_rss_bytes": 100777984,
+  "rows": 1,
+  "schema": "resetp.dual-guided-resource-order-engineering-decision.v1",
+  "verdict": "HALT_ZERO_OBJECTIVE_ENGINEERING_OR_RESOURCE_GATE",
+  "workers": 6
+}

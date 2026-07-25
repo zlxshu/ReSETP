@@ -1,0 +1,250 @@
+{
+  "created_at": "2026-07-25T10:36:07+00:00",
+  "current_status": {
+    "checked_at": "2026-07-25T10:36:07+00:00",
+    "checkpoint_inventory": [],
+    "csv_summaries": [
+      {
+        "duplicate_rows": 0,
+        "exists": true,
+        "feasible_rate": 0.0,
+        "path": "/Volumes/移动硬盘（512G）/ReSETP/baselines/algorithm_prototypes/resource_slot_pricing_20260725/engineering_gate_v2/raw_runs.csv",
+        "rows": 6
+      }
+    ],
+    "files": {
+      "/Volumes/移动硬盘（512G）/ReSETP/baselines/algorithm_prototypes/resource_slot_pricing_20260725/.resource-slot-pricing-engineering-v2.monitor/experiment.stdout.log": {
+        "age_seconds": 3.9029150009155273,
+        "exists": true,
+        "mtime": 1784975763.74,
+        "path": "/Volumes/移动硬盘（512G）/ReSETP/baselines/algorithm_prototypes/resource_slot_pricing_20260725/.resource-slot-pricing-engineering-v2.monitor/experiment.stdout.log",
+        "size": 5000
+      },
+      "/Volumes/移动硬盘（512G）/ReSETP/baselines/algorithm_prototypes/resource_slot_pricing_20260725/engineering_gate_v2/decision.json": {
+        "age_seconds": 3.9629440307617188,
+        "exists": true,
+        "mtime": 1784975763.68,
+        "path": "/Volumes/移动硬盘（512G）/ReSETP/baselines/algorithm_prototypes/resource_slot_pricing_20260725/engineering_gate_v2/decision.json",
+        "size": 1350
+      },
+      "/Volumes/移动硬盘（512G）/ReSETP/baselines/algorithm_prototypes/resource_slot_pricing_20260725/engineering_gate_v2/raw_runs.csv": {
+        "age_seconds": 3.962930917739868,
+        "exists": true,
+        "mtime": 1784975763.68,
+        "path": "/Volumes/移动硬盘（512G）/ReSETP/baselines/algorithm_prototypes/resource_slot_pricing_20260725/engineering_gate_v2/raw_runs.csv",
+        "size": 1492
+      }
+    },
+    "findings": [
+      {
+        "code": "FATAL_LOG_PATTERN",
+        "details": {},
+        "message": "matched fatal pattern: \\bTraceback \\(most recent call last\\):",
+        "severity": "critical"
+      },
+      {
+        "code": "RESULT_SCHEMA_DRIFT",
+        "details": {},
+        "message": "missing field extensions in /Volumes/移动硬盘（512G）/ReSETP/baselines/algorithm_prototypes/resource_slot_pricing_20260725/engineering_gate_v2/raw_runs.csv",
+        "severity": "critical"
+      },
+      {
+        "code": "RESULT_SCHEMA_DRIFT",
+        "details": {},
+        "message": "missing field complete_labels in /Volumes/移动硬盘（512G）/ReSETP/baselines/algorithm_prototypes/resource_slot_pricing_20260725/engineering_gate_v2/raw_runs.csv",
+        "severity": "critical"
+      },
+      {
+        "code": "RESULT_SCHEMA_DRIFT",
+        "details": {},
+        "message": "missing field peak_rss_bytes in /Volumes/移动硬盘（512G）/ReSETP/baselines/algorithm_prototypes/resource_slot_pricing_20260725/engineering_gate_v2/raw_runs.csv",
+        "severity": "critical"
+      },
+      {
+        "code": "FEASIBILITY_RATE_LOW",
+        "details": {},
+        "message": "/Volumes/移动硬盘（512G）/ReSETP/baselines/algorithm_prototypes/resource_slot_pricing_20260725/engineering_gate_v2/raw_runs.csv: feasible rate 0.0000",
+        "severity": "warning"
+      }
+    ],
+    "log_paths": [
+      "/Volumes/移动硬盘（512G）/ReSETP/baselines/algorithm_prototypes/resource_slot_pricing_20260725/.resource-slot-pricing-engineering-v2.monitor/experiment.stdout.log"
+    ],
+    "name": "resource-slot-pricing-engineering-v2",
+    "paused": false,
+    "process": {
+      "alive": false,
+      "cpu_percent": 0,
+      "members": [],
+      "pgid": 31021,
+      "root_pid": 31021,
+      "rss_mb": 0.0
+    },
+    "protected_files": {
+      "/Volumes/移动硬盘（512G）/ReSETP/baselines/algorithm_prototypes/resource_slot_pricing_20260725/g0_registration_v2.json": {
+        "age_seconds": 29.59295392036438,
+        "exists": true,
+        "kind": "primary_config",
+        "mtime": 1784975738.05,
+        "path": "/Volumes/移动硬盘（512G）/ReSETP/baselines/algorithm_prototypes/resource_slot_pricing_20260725/g0_registration_v2.json",
+        "sha256": "df63afeab4f65576c0e7cba991b9066891bcd82cc6f983b091aaf70ad2d999aa",
+        "size": 34376
+      },
+      "/Volumes/移动硬盘（512G）/ReSETP/baselines/algorithm_prototypes/resource_slot_pricing_20260725/pricing_core.py": {
+        "age_seconds": 700.6132209300995,
+        "exists": true,
+        "kind": "model",
+        "mtime": 1784975067.03,
+        "path": "/Volumes/移动硬盘（512G）/ReSETP/baselines/algorithm_prototypes/resource_slot_pricing_20260725/pricing_core.py",
+        "sha256": "cb9f838b8eccbffc1f92c20c89d11a2356351ffd379281925d6d120ccc54f5b2",
+        "size": 17138
+      },
+      "/Volumes/移动硬盘（512G）/ReSETP/baselines/algorithm_prototypes/resource_slot_pricing_20260725/run_engineering_gate.py": {
+        "age_seconds": 569.0132808685303,
+        "exists": true,
+        "kind": "evaluator",
+        "mtime": 1784975198.63,
+        "path": "/Volumes/移动硬盘（512G）/ReSETP/baselines/algorithm_prototypes/resource_slot_pricing_20260725/run_engineering_gate.py",
+        "sha256": "2f1dbc1aaf592314fc493195dcfa873a7588700199232815ec83686d94941a4e",
+        "size": 5899
+      },
+      "/Volumes/移动硬盘（512G）/ReSETP/baselines/algorithm_prototypes/resource_slot_pricing_20260725/run_engineering_gate_v2.py": {
+        "age_seconds": 63.13333582878113,
+        "exists": true,
+        "kind": "evaluator",
+        "mtime": 1784975704.51,
+        "path": "/Volumes/移动硬盘（512G）/ReSETP/baselines/algorithm_prototypes/resource_slot_pricing_20260725/run_engineering_gate_v2.py",
+        "sha256": "0bb4f7d277cad4aaf952c1911bc3914ea50ff02a6d00ded6f46ce2cde5cb60f4",
+        "size": 1434
+      },
+      "/Volumes/移动硬盘（512G）/ReSETP/docs/handoff/e2_resource_slot_pricing_candidate_review_20260725.md": {
+        "age_seconds": 4290.933081865311,
+        "exists": true,
+        "kind": "experiment_contract",
+        "mtime": 1784971476.71,
+        "path": "/Volumes/移动硬盘（512G）/ReSETP/docs/handoff/e2_resource_slot_pricing_candidate_review_20260725.md",
+        "sha256": "8b97f3c9cc9f6d252cb2d05a63406f44a775df89a49d454a950887c466ae9364",
+        "size": 12619
+      },
+      "/Volumes/移动硬盘（512G）/ReSETP/docs/handoff/e2_resource_slot_pricing_import_repair_v2_20260725.md": {
+        "age_seconds": 63.15314483642578,
+        "exists": true,
+        "kind": "experiment_contract",
+        "mtime": 1784975704.49,
+        "path": "/Volumes/移动硬盘（512G）/ReSETP/docs/handoff/e2_resource_slot_pricing_import_repair_v2_20260725.md",
+        "sha256": "d5e043578b444e5de994c3dbb77dee3425a25e157a29b4204da96f9767363255",
+        "size": 1251
+      }
+    },
+    "runtime_seconds": 5.1552557945251465,
+    "scene_path": "/Volumes/移动硬盘（512G）/ReSETP/baselines/algorithm_prototypes/resource_slot_pricing_20260725/.resource-slot-pricing-engineering-v2.monitor/scenes/20260725-183607-anomaly",
+    "schema_version": 1,
+    "state": "ANOMALY",
+    "system": {
+      "free_memory_mb": 209.90625,
+      "load_average_15m": 2.75146484375,
+      "load_average_1m": 3.162109375,
+      "load_average_5m": 2.87158203125,
+      "logical_cpus": 8,
+      "memory_pressure_free_percent": 43.0,
+      "swapouts": 63349331
+    }
+  },
+  "experiment": {
+    "allowed_ai_actions": [
+      "continue",
+      "pause_for_read_only_diagnosis",
+      "keep_paused_and_preserve_scene",
+      "recommend_safe_stop",
+      "recommend_checkpoint_restart",
+      "escalate_research_contract_change_to_user"
+    ],
+    "expected_contract": {},
+    "forbidden_ai_actions": [
+      "change_model_or_research_question",
+      "change_evaluator_or_cost_function",
+      "change_experiment_contract_or_core_data",
+      "change_primary_config_or_paper_conclusion",
+      "resume_paused_job_without_explicit_human_command"
+    ],
+    "name": "resource-slot-pricing-engineering-v2",
+    "objective": "Run the import-only repaired frozen zero-objective engineering and six-worker resource gate"
+  },
+  "minimal_log_tails": {
+    "/Volumes/移动硬盘（512G）/ReSETP/baselines/algorithm_prototypes/resource_slot_pricing_20260725/.resource-slot-pricing-engineering-v2.monitor/experiment.stdout.log": [
+      "Process SpawnProcess-2:",
+      "Traceback (most recent call last):",
+      "  File \"/opt/anaconda3/lib/python3.13/multiprocessing/process.py\", line 313, in _bootstrap",
+      "    self.run()",
+      "    ~~~~~~~~^^",
+      "  File \"/opt/anaconda3/lib/python3.13/multiprocessing/process.py\", line 108, in run",
+      "    self._target(*self._args, **self._kwargs)",
+      "    ~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^",
+      "  File \"/opt/anaconda3/lib/python3.13/concurrent/futures/process.py\", line 242, in _process_worker",
+      "    call_item = call_queue.get(block=True)",
+      "  File \"/opt/anaconda3/lib/python3.13/multiprocessing/queues.py\", line 120, in get",
+      "    return _ForkingPickler.loads(res)",
+      "           ~~~~~~~~~~~~~~~~~~~~~^^^^^",
+      "ModuleNotFoundError: No module named 'resource_slot_pricing_v2_engineering_runner'",
+      "Process SpawnProcess-1:",
+      "Traceback (most recent call last):",
+      "  File \"/opt/anaconda3/lib/python3.13/multiprocessing/process.py\", line 313, in _bootstrap",
+      "    self.run()",
+      "    ~~~~~~~~^^",
+      "  File \"/opt/anaconda3/lib/python3.13/multiprocessing/process.py\", line 108, in run",
+      "    self._target(*self._args, **self._kwargs)",
+      "    ~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^",
+      "  File \"/opt/anaconda3/lib/python3.13/concurrent/futures/process.py\", line 242, in _process_worker",
+      "    call_item = call_queue.get(block=True)",
+      "  File \"/opt/anaconda3/lib/python3.13/multiprocessing/queues.py\", line 120, in get",
+      "    return _ForkingPickler.loads(res)",
+      "           ~~~~~~~~~~~~~~~~~~~~~^^^^^",
+      "ModuleNotFoundError: No module named 'resource_slot_pricing_v2_engineering_runner'",
+      "Process SpawnProcess-4:",
+      "Traceback (most recent call last):",
+      "  File \"/opt/anaconda3/lib/python3.13/multiprocessing/process.py\", line 313, in _bootstrap",
+      "    self.run()",
+      "    ~~~~~~~~^^",
+      "  File \"/opt/anaconda3/lib/python3.13/multiprocessing/process.py\", line 108, in run",
+      "    self._target(*self._args, **self._kwargs)",
+      "    ~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^",
+      "  File \"/opt/anaconda3/lib/python3.13/concurrent/futures/process.py\", line 242, in _process_worker",
+      "    call_item = call_queue.get(block=True)",
+      "  File \"/opt/anaconda3/lib/python3.13/multiprocessing/queues.py\", line 120, in get",
+      "    return _ForkingPickler.loads(res)",
+      "           ~~~~~~~~~~~~~~~~~~~~~^^^^^",
+      "ModuleNotFoundError: No module named 'resource_slot_pricing_v2_engineering_runner'",
+      "Process SpawnProcess-5:",
+      "Traceback (most recent call last):",
+      "Process SpawnProcess-3:",
+      "Traceback (most recent call last):",
+      "  File \"/opt/anaconda3/lib/python3.13/multiprocessing/process.py\", line 313, in _bootstrap",
+      "    self.run()",
+      "    ~~~~~~~~^^",
+      "  File \"/opt/anaconda3/lib/python3.13/multiprocessing/process.py\", line 108, in run",
+      "    self._target(*self._args, **self._kwargs)",
+      "    ~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^",
+      "  File \"/opt/anaconda3/lib/python3.13/concurrent/futures/process.py\", line 242, in _process_worker",
+      "    call_item = call_queue.get(block=True)",
+      "  File \"/opt/anaconda3/lib/python3.13/multiprocessing/queues.py\", line 120, in get",
+      "    return _ForkingPickler.loads(res)",
+      "           ~~~~~~~~~~~~~~~~~~~~~^^^^^",
+      "ModuleNotFoundError: No module named 'resource_slot_pricing_v2_engineering_runner'",
+      "  File \"/opt/anaconda3/lib/python3.13/multiprocessing/process.py\", line 313, in _bootstrap",
+      "    self.run()",
+      "    ~~~~~~~~^^",
+      "  File \"/opt/anaconda3/lib/python3.13/multiprocessing/process.py\", line 108, in run",
+      "    self._target(*self._args, **self._kwargs)",
+      "    ~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^",
+      "  File \"/opt/anaconda3/lib/python3.13/concurrent/futures/process.py\", line 242, in _process_worker",
+      "    call_item = call_queue.get(block=True)",
+      "  File \"/opt/anaconda3/lib/python3.13/multiprocessing/queues.py\", line 120, in get",
+      "    return _ForkingPickler.loads(res)",
+      "           ~~~~~~~~~~~~~~~~~~~~~^^^^^",
+      "ModuleNotFoundError: No module named 'resource_slot_pricing_v2_engineering_runner'",
+      "{\"schema\": \"resetp.resource-slot-pricing-engineering-decision.v1\", \"verdict\": \"HALT_ZERO_OBJECTIVE_ENGINEERING_OR_RESOURCE_GATE\", \"pass\": false, \"candidate_objectives_evaluated\": 0, \"completed_tasks\": 0, \"expected_tasks\": 6, \"available_memory_percent_before\": 21.66309356689453, \"projected_combined_peak_rss_bytes\": 0, \"failures\": [\"cn-cy-25c-02-V2-LOCATIONS__LOCAL: BrokenProcessPool: A process in the process pool was terminated abruptly while the future was running or pending.\", \"cn-cy-25c-02-V2-LOCATIONS__RESOURCE-SLOT: BrokenProcessPool: A process in the process pool was terminated abruptly while the future was running or pending.\", \"cn-jjj-75c-01-V2-LOCATIONS__LOCAL: BrokenProcessPool: A process in the process pool was terminated abruptly while the future was running or pending.\", \"cn-jjj-75c-01-V2-LOCATIONS__RESOURCE-SLOT: BrokenProcessPool: A process in the process pool was terminated abruptly while the future was running or pending.\", \"cn-jjj-150c-02-V2-LOCATIONS__LOCAL: BrokenProcessPool: A process in the process pool was terminated abruptly while the future was running or pending.\", \"cn-jjj-150c-02-V2-LOCATIONS__RESOURCE-SLOT: BrokenProcessPool: A process in the process pool was terminated abruptly while the future was running or pending.\"], \"next_step\": \"STOP_NO_RESCUE\"}"
+    ]
+  },
+  "reason": "ANOMALY",
+  "schema_version": 1
+}

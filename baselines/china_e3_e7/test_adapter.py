@@ -2,15 +2,21 @@
 
 from __future__ import annotations
 
+import csv
 import hashlib
 import json
 from pathlib import Path
 
 from baselines.china_e3_e7.adapter import ROOT, build_task_manifest, preflight
+from baselines.china_e3_e7.charts import generate_figures
 from baselines.china_e3_e7.contract import (
     CONTRACT_PATH,
     instance_rows,
     load_contract,
+)
+from baselines.china_e3_e7.e3_exhibits import (
+    build_e3_cell_rows,
+    build_e3_layer_rows,
 )
 from baselines.china_e3_e7.tables import render_tables
 from baselines.china_e3_e7.statistics import (
@@ -26,10 +32,10 @@ from baselines.china_e3_e7.statistics import (
 def test_manifest_is_china_only_and_formal_held() -> None:
     contract = load_contract(ROOT)
     assert CONTRACT_PATH.name == (
-        "china_e3_formal_release_contract_v4_20260723.json"
+        "china_e3_formal_release_contract_v6_20260724.json"
     )
     assert contract["schema"].endswith(
-        "formal-release-contract.v4"
+        "formal-release-contract.v6"
     )
     assert contract["experiment_id"] == (
         "CHINA-E3-FORMAL-RELEASE-001"
@@ -178,6 +184,108 @@ def test_disjoint_arm_seeds_fail_pairing_gate() -> None:
     )
     assert violations
     assert any(":arms=" in item for item in violations)
+
+
+def test_e3_810_rows_reduce_to_27_paired_cells() -> None:
+    rows = []
+    for region_index, region in enumerate(("jjj", "prd", "cy")):
+        for size_index, size in enumerate(
+            (10, 15, 20, 25, 50, 75, 100, 150, 200)
+        ):
+            for map_index in (1, 2, 3):
+                instance_id = (
+                    f"cn-{region}-{size}c-{map_index:02d}-"
+                    "V2-LOCATIONS"
+                )
+                for seed in (1, 2, 3, 4, 5):
+                    pair = f"E3__{instance_id}__seed{seed}"
+                    base_cost = (
+                        1000.0
+                        + 100.0 * region_index
+                        + 10.0 * size_index
+                        + map_index
+                        + seed / 10.0
+                    )
+                    common = {
+                        "family": "E3",
+                        "instance_id": instance_id,
+                        "region": region,
+                        "customer_size": str(size),
+                        "map_index": str(map_index),
+                        "seed": str(seed),
+                        "pair_id": pair,
+                        "status": "complete",
+                        "feasible": "true",
+                        "input_manifest_sha256": "input",
+                        "contract_sha256": "contract",
+                        "spatiotemporal_crosswalk_sha256": "crosswalk",
+                        "responsibility_map_sha256": "responsibility",
+                        "initial_solution_sha256": "initial",
+                        "algorithm_source_sha256": "algorithm",
+                        "evaluator_source_sha256": "evaluator",
+                        "go_decision_sha256": "go",
+                    }
+                    rows.extend(
+                        (
+                            {
+                                **common,
+                                "task_id": (
+                                    f"{pair}__"
+                                    "status_quo_responsibility"
+                                ),
+                                "arm": (
+                                    "status_quo_responsibility"
+                                ),
+                                "arm_id": (
+                                    "status_quo_responsibility"
+                                ),
+                                "total_cost": str(base_cost),
+                            },
+                            {
+                                **common,
+                                "task_id": (
+                                    f"{pair}__"
+                                    "optimized_responsibility_cooperation"
+                                ),
+                                "arm": (
+                                    "optimized_responsibility_cooperation"
+                                ),
+                                "arm_id": (
+                                    "optimized_responsibility_cooperation"
+                                ),
+                                "total_cost": str(base_cost - 10.0),
+                            },
+                        )
+                    )
+    assert len(rows) == 810
+    violations = _pairing_violations(
+        rows,
+        family_id="E3",
+        control="status_quo_responsibility",
+        treatment="optimized_responsibility_cooperation",
+    )
+    assert violations == []
+    control, control_missing = _cell_map_means(
+        rows,
+        metric="total_cost",
+        family_id="E3",
+        arm_id="status_quo_responsibility",
+        expected_seeds={"1", "2", "3", "4", "5"},
+    )
+    treatment, treatment_missing = _cell_map_means(
+        rows,
+        metric="total_cost",
+        family_id="E3",
+        arm_id="optimized_responsibility_cooperation",
+        expected_seeds={"1", "2", "3", "4", "5"},
+    )
+    assert control_missing == []
+    assert treatment_missing == []
+    assert len(control) == len(treatment) == 27
+    assert all(
+        abs(control[cell] - treatment[cell] - 10.0) < 1.0e-12
+        for cell in control
+    )
 
 
 def test_infeasible_cost_is_not_aggregated_without_rule() -> None:
@@ -409,11 +517,79 @@ def test_e3_only_complete_raw_does_not_require_unstarted_families(
         json.dumps(released),
         encoding="utf-8",
     )
+    (
+        aggregate_dir / "independent_recalc_certificate.json"
+    ).write_text(
+        json.dumps(
+            {
+                "status": "PASS_INDEPENDENT_RECALC",
+                "contract_id": "CHINA-E3-FORMAL-RELEASE-001",
+                "raw_runs_sha256": hashlib.sha256(
+                    raw.read_bytes()
+                ).hexdigest(),
+                "task_count": 810,
+                "pair_count": 405,
+            }
+        ),
+        encoding="utf-8",
+    )
+    cells = build_e3_cell_rows(rows)
+    layers = build_e3_layer_rows(cells)
+    assert len(cells) == 27
+    assert len(layers) == 10
+    assert all(
+        row["cost_reduction_percent"] == 1.0
+        for row in cells
+    )
     table_decision = render_tables(
         aggregate_dir,
         tmp_path / "tables",
         repo_root=ROOT,
     )
+    aggregate_decision = json.loads(
+        (aggregate_dir / "decision.json").read_text(encoding="utf-8")
+    )
+    assert aggregate_decision["holm_status"] == (
+        "PENDING_UNTIL_ALL_FIVE_PRIMARY_FAMILIES_EXIST"
+    )
+    with (aggregate_dir / "summary.csv").open(
+        newline="",
+        encoding="utf-8",
+    ) as handle:
+        e3_summary_rows = list(csv.DictReader(handle))
+    e3_primary = next(
+        row
+        for row in e3_summary_rows
+        if row["family"] == "E3"
+        and row["contrast_role"] == "primary"
+        and row["metric"] == "total_cost"
+    )
+    assert e3_primary["holm_adjusted_p"] == ""
     assert table_decision["status"] == "TABLE_REVIEW_REQUIRED"
     assert (tmp_path / "tables/e3_summary.tex").is_file()
+    assert (
+        "TABLE_GENERATED_FROM_27_PAIRED_CELLS"
+        in {
+            item["status"]
+            for item in table_decision["families"]
+        }
+    )
+    table_text = (
+        tmp_path / "tables/e3_summary.tex"
+    ).read_text(encoding="utf-8")
+    assert r"\multicolumn{2}{c}{总成本(元)}" in table_text
+    assert r"\multirow{3}{*}{京津冀}" in table_text
     assert not (tmp_path / "tables/e4_summary.tex").exists()
+    figure_decision = generate_figures(
+        raw,
+        tmp_path / "figures",
+        repo_root=ROOT,
+        aggregate_dir=aggregate_dir,
+    )
+    assert figure_decision["status"] == "FIGURE_REVIEW_REQUIRED"
+    assert (
+        tmp_path / "figures/e3_responsibility.pdf"
+    ).is_file()
+    assert (
+        tmp_path / "figures/e3_responsibility.png"
+    ).is_file()

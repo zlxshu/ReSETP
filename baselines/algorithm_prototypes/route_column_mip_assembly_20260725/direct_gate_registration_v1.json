@@ -1,0 +1,192 @@
+{
+  "approval_id": "E2-ROUTE-COLUMN-MIP-G0-017",
+  "authority_registration": {
+    "path": "baselines/algorithm_prototypes/genuine_hgs_rr_20260724/g0_real_bundle_preregistration_v1.json",
+    "sha256": "ae8db30839da5e3bf5367b71a39d5997fcac09f31dce0ca47336d860a5c33698"
+  },
+  "claim_boundary": "Fresh direct headroom gate only. A PASS authorizes design of an HGS integration gate; it does not authorize paper, E3, full China81, BKS, SOTA, or genuine-hybrid claims.",
+  "config": {
+    "max_route_columns": 50000,
+    "mip_time_limit_seconds": 10.0,
+    "required_improving_instances": 2,
+    "strict_improvement_absolute_tolerance": 1e-06,
+    "workers": 3
+  },
+  "contract_id": "E2-RC-MIP-ASSEMBLY-001",
+  "inputs": [
+    {
+      "customer_count": 25,
+      "instance_id": "cn-jjj-25c-01-V2-LOCATIONS",
+      "parents": [
+        {
+          "expected_objective": 1247.0186692958644,
+          "seed": 1,
+          "task_id": "D6-E2-STAGED__cn-jjj-25c-01-V2-LOCATIONS__seed1",
+          "witness_key": "MV-HGS-SP",
+          "witness_path": "baselines/e2_final_campaign_20260720/corrected_china81_rerun_v7_small_archive_ledger_20260724/full_gate/tasks/D6-E2-STAGED__cn-jjj-25c-01-V2-LOCATIONS__seed1/solution_witnesses.json",
+          "witness_sha256": "4d5ea91432323268a0449907392538451e2945bbce1c61f97e6bec835dd0ce3e"
+        },
+        {
+          "expected_objective": 1247.0186692958644,
+          "seed": 2,
+          "task_id": "D6-E2-STAGED__cn-jjj-25c-01-V2-LOCATIONS__seed2",
+          "witness_key": "MV-HGS-SP",
+          "witness_path": "baselines/e2_final_campaign_20260720/corrected_china81_rerun_v7_small_archive_ledger_20260724/full_gate/tasks/D6-E2-STAGED__cn-jjj-25c-01-V2-LOCATIONS__seed2/solution_witnesses.json",
+          "witness_sha256": "288804a3ecc4718f3ffce587f789ff9944bfa9120ecf2e633d40ab555c75858f"
+        },
+        {
+          "expected_objective": 1247.0186692958644,
+          "seed": 3,
+          "task_id": "D6-E2-STAGED__cn-jjj-25c-01-V2-LOCATIONS__seed3",
+          "witness_key": "MV-HGS-SP",
+          "witness_path": "baselines/e2_final_campaign_20260720/corrected_china81_rerun_v7_small_archive_ledger_20260724/full_gate/tasks/D6-E2-STAGED__cn-jjj-25c-01-V2-LOCATIONS__seed3/solution_witnesses.json",
+          "witness_sha256": "1b143defb996d4ae677ac837d68647d935976b6b1766d799f9b308f96b5bea6a"
+        },
+        {
+          "expected_objective": 1247.0186692958644,
+          "seed": 4,
+          "task_id": "D6-E2-STAGED__cn-jjj-25c-01-V2-LOCATIONS__seed4",
+          "witness_key": "MV-HGS-SP",
+          "witness_path": "baselines/e2_final_campaign_20260720/corrected_china81_rerun_v7_small_archive_ledger_20260724/full_gate/tasks/D6-E2-STAGED__cn-jjj-25c-01-V2-LOCATIONS__seed4/solution_witnesses.json",
+          "witness_sha256": "9c548ce8593e0f4f8256243a201b177022981d69be2332908bde981d2c798077"
+        },
+        {
+          "expected_objective": 1247.0186692958644,
+          "seed": 5,
+          "task_id": "D6-E2-STAGED__cn-jjj-25c-01-V2-LOCATIONS__seed5",
+          "witness_key": "MV-HGS-SP",
+          "witness_path": "baselines/e2_final_campaign_20260720/corrected_china81_rerun_v7_small_archive_ledger_20260724/full_gate/tasks/D6-E2-STAGED__cn-jjj-25c-01-V2-LOCATIONS__seed5/solution_witnesses.json",
+          "witness_sha256": "d6c4864224b89fa83ef65c7e12076da9ab5d3325d7e5d4ede96d8a037d857c87"
+        }
+      ],
+      "region": "jjj"
+    },
+    {
+      "customer_count": 100,
+      "instance_id": "cn-prd-100c-03-V2-LOCATIONS",
+      "parents": [
+        {
+          "expected_objective": 4616.183683334074,
+          "seed": 1,
+          "task_id": "D6-E2-STAGED__cn-prd-100c-03-V2-LOCATIONS__seed1",
+          "witness_key": "MV-HGS-SP",
+          "witness_path": "baselines/e2_final_campaign_20260720/corrected_china81_rerun_v7_small_archive_ledger_20260724/full_gate/tasks/D6-E2-STAGED__cn-prd-100c-03-V2-LOCATIONS__seed1/solution_witnesses.json",
+          "witness_sha256": "2704d5d950d3c5027be15865d4da53ae5eb6d244c3df6f80c2a5c805435f3fe9"
+        },
+        {
+          "expected_objective": 4616.183683334074,
+          "seed": 2,
+          "task_id": "D6-E2-STAGED__cn-prd-100c-03-V2-LOCATIONS__seed2",
+          "witness_key": "MV-HGS-SP",
+          "witness_path": "baselines/e2_final_campaign_20260720/corrected_china81_rerun_v7_small_archive_ledger_20260724/full_gate/tasks/D6-E2-STAGED__cn-prd-100c-03-V2-LOCATIONS__seed2/solution_witnesses.json",
+          "witness_sha256": "057a4514f1a53dd3d0d7ae2f3ae96d7a5d561bf5a85ec0286cb6dc2a646960b6"
+        },
+        {
+          "expected_objective": 4616.183683334074,
+          "seed": 3,
+          "task_id": "D6-E2-STAGED__cn-prd-100c-03-V2-LOCATIONS__seed3",
+          "witness_key": "MV-HGS-SP",
+          "witness_path": "baselines/e2_final_campaign_20260720/corrected_china81_rerun_v7_small_archive_ledger_20260724/full_gate/tasks/D6-E2-STAGED__cn-prd-100c-03-V2-LOCATIONS__seed3/solution_witnesses.json",
+          "witness_sha256": "0fec007a35551b62496afa4f73503e013e851c6ca304cf20011c60d76bde6b5b"
+        },
+        {
+          "expected_objective": 4616.183683334074,
+          "seed": 4,
+          "task_id": "D6-E2-STAGED__cn-prd-100c-03-V2-LOCATIONS__seed4",
+          "witness_key": "MV-HGS-SP",
+          "witness_path": "baselines/e2_final_campaign_20260720/corrected_china81_rerun_v7_small_archive_ledger_20260724/full_gate/tasks/D6-E2-STAGED__cn-prd-100c-03-V2-LOCATIONS__seed4/solution_witnesses.json",
+          "witness_sha256": "395d18ea5594ca17d7fc5d206bf53819b80feabf7767051ad4cf4ba360a53161"
+        },
+        {
+          "expected_objective": 4616.183683334074,
+          "seed": 5,
+          "task_id": "D6-E2-STAGED__cn-prd-100c-03-V2-LOCATIONS__seed5",
+          "witness_key": "MV-HGS-SP",
+          "witness_path": "baselines/e2_final_campaign_20260720/corrected_china81_rerun_v7_small_archive_ledger_20260724/full_gate/tasks/D6-E2-STAGED__cn-prd-100c-03-V2-LOCATIONS__seed5/solution_witnesses.json",
+          "witness_sha256": "97be1121cbb34ce39807b3b0992b678089b1e9a608e46772f7ea44432886faac"
+        }
+      ],
+      "region": "prd"
+    },
+    {
+      "customer_count": 200,
+      "instance_id": "cn-cy-200c-03-V2-LOCATIONS",
+      "parents": [
+        {
+          "expected_objective": 9839.869279263292,
+          "seed": 1,
+          "task_id": "D6-E2-STAGED__cn-cy-200c-03-V2-LOCATIONS__seed1",
+          "witness_key": "MV-HGS-SP",
+          "witness_path": "baselines/e2_final_campaign_20260720/corrected_china81_rerun_v7_small_archive_ledger_20260724/full_gate/tasks/D6-E2-STAGED__cn-cy-200c-03-V2-LOCATIONS__seed1/solution_witnesses.json",
+          "witness_sha256": "d1dbacb5990dd887885ae64bc66c76a9329f79a268ea468791cbed54b6eba5a2"
+        },
+        {
+          "expected_objective": 9849.289391636277,
+          "seed": 2,
+          "task_id": "D6-E2-STAGED__cn-cy-200c-03-V2-LOCATIONS__seed2",
+          "witness_key": "MV-HGS-SP",
+          "witness_path": "baselines/e2_final_campaign_20260720/corrected_china81_rerun_v7_small_archive_ledger_20260724/full_gate/tasks/D6-E2-STAGED__cn-cy-200c-03-V2-LOCATIONS__seed2/solution_witnesses.json",
+          "witness_sha256": "9d1ad7fe00eb800577da718baeeaf09a1239b519c70151c32dc8f9a3004122b6"
+        },
+        {
+          "expected_objective": 9843.211686941131,
+          "seed": 3,
+          "task_id": "D6-E2-STAGED__cn-cy-200c-03-V2-LOCATIONS__seed3",
+          "witness_key": "MV-HGS-SP",
+          "witness_path": "baselines/e2_final_campaign_20260720/corrected_china81_rerun_v7_small_archive_ledger_20260724/full_gate/tasks/D6-E2-STAGED__cn-cy-200c-03-V2-LOCATIONS__seed3/solution_witnesses.json",
+          "witness_sha256": "7ff9052626b4916739006038683b4afcb540a64be0a04f93975125741c4d1758"
+        },
+        {
+          "expected_objective": 9843.863012538575,
+          "seed": 4,
+          "task_id": "D6-E2-STAGED__cn-cy-200c-03-V2-LOCATIONS__seed4",
+          "witness_key": "MV-HGS-SP",
+          "witness_path": "baselines/e2_final_campaign_20260720/corrected_china81_rerun_v7_small_archive_ledger_20260724/full_gate/tasks/D6-E2-STAGED__cn-cy-200c-03-V2-LOCATIONS__seed4/solution_witnesses.json",
+          "witness_sha256": "babc9f8740a287b21d3e9747b68d67ef832204c0a7873b51021c9250c8269199"
+        },
+        {
+          "expected_objective": 9848.823661225786,
+          "seed": 5,
+          "task_id": "D6-E2-STAGED__cn-cy-200c-03-V2-LOCATIONS__seed5",
+          "witness_key": "MV-HGS-SP",
+          "witness_path": "baselines/e2_final_campaign_20260720/corrected_china81_rerun_v7_small_archive_ledger_20260724/full_gate/tasks/D6-E2-STAGED__cn-cy-200c-03-V2-LOCATIONS__seed5/solution_witnesses.json",
+          "witness_sha256": "e952c846a48c8e0bfde9f441184bd9a9c87800377664f8b6e3916320e842e1e2"
+        }
+      ],
+      "region": "cy"
+    }
+  ],
+  "registered_at_utc": "2026-07-25T06:52:08.792638+00:00",
+  "schema": "resetp.route-column-mip-direct-registration.v1",
+  "selection": {
+    "path": "baselines/algorithm_prototypes/route_column_mip_assembly_20260725/direct_input_selection_v1.json",
+    "sha256": "c93f23abf4c75d26a25ef65843e4084ccbaf18927de6233265c4858e08fcb6bb"
+  },
+  "source_hashes": {
+    "baselines/algorithm_prototypes/genuine_hgs_rr_20260724/contracts.py": "4a8bc57f04f7c6b03f2c85f926fa32e5e68d9c647d490e8cd6388b65404acdca",
+    "baselines/algorithm_prototypes/genuine_hgs_rr_20260724/decoder_cache.py": "600d4003b1f2e8f6103809bfa3825f877acd9161f780bc028afa5688fd2fe7db",
+    "baselines/algorithm_prototypes/genuine_hgs_rr_20260724/fleet_assignment_dp.py": "b0b2cbb70d55ca0a26ddc3e7b388fe36d984d0e4618987de8a612f8354d19430",
+    "baselines/algorithm_prototypes/genuine_hgs_rr_20260724/reference_decoder.py": "cca72605d98ae39430975eb08facae1211e4b430e4931e4f36bcf8ec1f0b2b72",
+    "baselines/algorithm_prototypes/route_column_mip_assembly_20260725/__init__.py": "ad6c01e2eeb45315eb58533b3592eb330dc6dde457a48b9898aea60621f75e01",
+    "baselines/algorithm_prototypes/route_column_mip_assembly_20260725/build_direct_input_selection.py": "98cad891c385cb39b7786d39c1c3c6a762cab198417d93be6e72bf0a28978e77",
+    "baselines/algorithm_prototypes/route_column_mip_assembly_20260725/build_direct_registration.py": "c11958aa63a6b420302dbab6fd56d1557246913944cebfb25ad3b984867bd8a7",
+    "baselines/algorithm_prototypes/route_column_mip_assembly_20260725/china81_columns.py": "dab376226cdd61d24caab4ee00d42ef6bc6d000ab2ed681d2d4957d91dcda145",
+    "baselines/algorithm_prototypes/route_column_mip_assembly_20260725/direct_gate_support.py": "a0ddb8511dcaa6d07f1a6542cbfd966ae08bd793ee5f270d9546b8cf9c05a728",
+    "baselines/algorithm_prototypes/route_column_mip_assembly_20260725/mip_core.py": "7d42ff1b4e3d970fe1ca5a5cf22aada0dd2de7d458637e03d5c4c4f03fbd4020",
+    "baselines/algorithm_prototypes/route_column_mip_assembly_20260725/run_direct_gate.py": "4c5dbf5be7503934cc0d69ab45dfa89bb22dce06e40009693ffe9c0f12fb4ea3",
+    "baselines/algorithm_prototypes/route_column_mip_assembly_20260725/test_direct_gate_support.py": "39af62fd79fd87ecf09ef06c2d75bf0374702a8b1f4b8a1fb5a460a235655ea4",
+    "baselines/algorithm_prototypes/route_column_mip_assembly_20260725/test_mip_core.py": "077743c05ce4442429ee3368b938821d2bf82c36418a5834e95b30b8fdba4fff",
+    "docs/handoff/e2_route_column_mip_contract_20260725.md": "b604f143b57d8f6a4cced607e51e1d84ba02e501009ebad2561da7add7c010d1",
+    "solver/src/setp_solver/check.py": "9c81e254e05591667c8225965bb9d0ba4e8bbfc53eb0f8c61ffdb4325a1403a8",
+    "solver/src/setp_solver/china81.py": "df082b6a0e108aa5462b74048fcca7a63fdb7eaafb9e61f2dcdd787e3d9fcedd",
+    "solver/src/setp_solver/china81_completion.py": "c0b72db82e324981442f357bc3bb336eac5dae033a44a3ab16fa2cbe4db91653",
+    "solver/src/setp_solver/cost.py": "2717b4b4de39bb4c2a9a1bda602f4420cb3e3b1e87faa83678dfa64f88fc80be",
+    "solver/src/setp_solver/prices.py": "fe13a721fc63e79c44f5c7faf8bf4802155a28cb4c081d010d09d8dc4804d157",
+    "solver/src/setp_solver/search/evaluation.py": "c7215263c39d1d5a1429b41ca8ac40d950dbdf2bdc288337e56fbe9733406fc3"
+  },
+  "status": "FROZEN_BEFORE_EXECUTION",
+  "upstream_g0_registration": {
+    "path": "baselines/algorithm_prototypes/route_column_mip_assembly_20260725/g0_registration_v1.json",
+    "sha256": "d4bfff62a06eb2fd8e2594fa150bb4d11f48fae675b79e6e196bd4b93200bb1e"
+  }
+}

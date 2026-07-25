@@ -376,6 +376,34 @@ def _holm(p_values: list[float | None]) -> list[float | None]:
     return adjusted
 
 
+def _apply_registered_familywise_holm(
+    primary_rows: list[dict[str, Any]],
+    *,
+    active_families: set[str],
+    registered_families: set[str],
+    expected_primary_families: int,
+) -> str:
+    """Apply Holm only when the full preregistered five-family set exists."""
+
+    complete = (
+        len(primary_rows) == expected_primary_families
+        and active_families == registered_families
+    )
+    if complete:
+        p_values = [
+            row.get("randomization_p") for row in primary_rows
+        ]
+        for row, adjusted in zip(
+            primary_rows,
+            _holm(p_values),
+        ):
+            row["holm_adjusted_p"] = adjusted
+        return "PASS_FIVE_FAMILY_HOLM_COMPLETE"
+    for row in primary_rows:
+        row["holm_adjusted_p"] = None
+    return "PENDING_UNTIL_ALL_FIVE_PRIMARY_FAMILIES_EXIST"
+
+
 def _cell_map_means(
     rows: list[dict[str, str]],
     *,
@@ -638,9 +666,17 @@ def aggregate_raw(
         if row["contrast_role"] == "primary"
         and row["metric"] == family_by_id(contract, row["family"])["primary_metric"]
     ]
-    p_values = [row.get("randomization_p") for row in primary]
-    for row, adjusted in zip(primary, _holm(p_values)):
-        row["holm_adjusted_p"] = adjusted
+    expected_primary_families = int(
+        contract["statistical_control"]["primary_families"]
+    )
+    holm_status = _apply_registered_familywise_holm(
+        primary,
+        active_families=active_families,
+        registered_families={
+            str(family["id"]) for family in contract["families"]
+        },
+        expected_primary_families=expected_primary_families,
+    )
     primary_by_key = {(row["family"], row["metric"]): row for row in primary}
     for row in summaries:
         row.setdefault("holm_adjusted_p", primary_by_key.get((row["family"], row["metric"]), {}).get("holm_adjusted_p"))
@@ -654,6 +690,9 @@ def aggregate_raw(
         "search_evaluations": sum(int(float(row.get("search_evaluations") or 0)) for row in data_rows),
         "formal_search_allowed": False,
         "independent_recalc_complete": certificate_valid,
+        "holm_status": holm_status,
+        "holm_expected_primary_families": expected_primary_families,
+        "holm_observed_primary_families": len(primary),
         "independent_recalc_certificate": _display_path(certificate_path, repo_root) if certificate_path.is_file() else None,
         "status": "NO_FORMAL_RESULTS" if not data_rows else ("HALT_MISSING_PAIRED_CELL" if missing else "AGGREGATE_READY_FOR_REVIEW"),
         "missing_or_incomplete": missing,
@@ -668,6 +707,7 @@ def aggregate_raw(
                 "",
                 f"状态：`{decision['status']}`。",
                 f"正式 raw 行数：`{len(data_rows)}`；搜索评价次数：`{decision['search_evaluations']}`。",
+                f"五组共同校正状态：`{holm_status}`。",
                 "",
                 "本目录由固定合同驱动；若缺少配对 cell 或端点，统计停止，不删除不利单元。",
             ]

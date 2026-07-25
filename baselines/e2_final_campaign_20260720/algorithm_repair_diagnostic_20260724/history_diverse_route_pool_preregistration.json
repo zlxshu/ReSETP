@@ -1,0 +1,64 @@
+{
+  "schema": "resetp.history-diverse-route-pool-development-preregistration.v1",
+  "registered_at": "2026-07-24T09:51:17+08:00",
+  "formal_evidence": false,
+  "predecessor_gate": "mip_integrity_staged_gate/decision.json",
+  "predecessor_verdict": "HALT_MIP_INTEGRITY_STAGED_DEVELOPMENT_GATE",
+  "diagnosis": "After preserving exact MIP incumbents and increasing the fixed MIP cap to 30 seconds, all six tasks improved and all six trajectories passed, but only one route-pool solution beat the best current single view. Five of six best single views were HGS-E. The remaining defect is route-pool complementarity, not search depth, vehicle-type transfer, MIP incumbent availability, or trajectory observation.",
+  "literature_basis": [
+    {
+      "citation": "Kelly and Xu (1999), A Set-Partitioning-Based Heuristic for the Vehicle Routing Problem",
+      "doi": "10.1287/ijoc.11.2.161",
+      "relevance": "Solutions produced throughout heuristic search are selected and assembled by a set-partitioning model."
+    },
+    {
+      "citation": "Montoya et al. (2017), A hybrid metaheuristic for the electric vehicle routing problem with nonlinear charging",
+      "url": "https://hal.science/hal-01331293v2",
+      "relevance": "Routes of local optima are added to a route pool during search before the final set-partitioning phase."
+    },
+    {
+      "citation": "Hybrid ILS-SP for the vehicle routing problem with lockers (2024)",
+      "url": "https://optimization-online.org/2024/09/hybrid-iterated-local-search-algorithm-for-the-vehicle-routing-problem-with-lockers/",
+      "relevance": "The route pool is updated during search and set partitioning is applied periodically and at termination."
+    }
+  ],
+  "single_structural_repair": {
+    "collect_population_history": true,
+    "collection_points_per_stage": 20,
+    "collection_rule": "At each already registered exact checkpoint, retain read-only references to every proxy-feasible member of the current HGS population. Collection performs no complete-model evaluation and does not consume random numbers.",
+    "exact_archive_limit_per_stage_per_view": 24,
+    "quality_share": 0.5,
+    "quality_selection": "Select the 12 unique candidates with lowest proxy cost.",
+    "diversity_selection": "Select the remaining 12 greedily by maximum minimum PyVRP broken-pairs distance from candidates already selected; ties use lower proxy cost and then the stable native-solution key.",
+    "complete_candidate_budget_changed": false,
+    "online_exact_checkpoint_count_changed": false,
+    "search_iterations_changed": false,
+    "mip_time_limit_seconds_per_stage": 30.0,
+    "checked_mip_incumbent_preservation": true
+  },
+  "fresh_panel": [
+    "cn-cy-100c-02-V2-LOCATIONS seed 17",
+    "cn-jjj-100c-02-V2-LOCATIONS seed 17",
+    "cn-prd-100c-02-V2-LOCATIONS seed 17",
+    "cn-cy-200c-02-V2-LOCATIONS seed 17",
+    "cn-jjj-200c-02-V2-LOCATIONS seed 17",
+    "cn-prd-200c-02-V2-LOCATIONS seed 17"
+  ],
+  "acceptance": {
+    "all_solutions_independently_feasible": true,
+    "all_warm_start_route_types_preserved": true,
+    "all_six_stages_per_task_record_twenty_population_snapshots": true,
+    "all_six_stages_per_task_use_history_candidates_in_the_exact_archive": true,
+    "all_expanded_mip_runs_return_a_checked_incumbent": true,
+    "actual_complete_attempts_at_most": 280,
+    "protected_stage_1_result_never_overwritten_by_a_worse_result": true,
+    "minimum_strict_final_improvements_over_stage_1": 3,
+    "main_method_zero_losses_to_each_own_single_view": true,
+    "minimum_strict_wins_over_HGS_E": 3,
+    "minimum_strict_wins_over_HGS_M": 3,
+    "minimum_strict_route_fusion_improvements_over_the_best_current_single_view": 2,
+    "minimum_panel_tasks_with_at_least_12_main_curve_points_and_10_strict_decreases": 5
+  },
+  "failure_rule": "Reject unchanged if any invariant fails or any registered count threshold is missed. Do not alter archive split, collection timing, search depth, checkpoints, seed, cases, MIP limit, budget cap, or thresholds after results. Do not rerun failed pairs.",
+  "claim_boundary": "Development only. Passing requires one further independently frozen confirmation before formal E2 adoption."
+}

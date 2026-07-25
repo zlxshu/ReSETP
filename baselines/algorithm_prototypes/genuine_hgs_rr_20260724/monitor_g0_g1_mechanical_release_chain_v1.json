@@ -1,0 +1,179 @@
+{
+  "schema_version": 1,
+  "name": "genuine-hybrid-g0-g1-mechanical-release-chain-v1",
+  "objective": "在E2机械完整性PASS后，严格按真实bundle零搜索G0、六进程零搜索资源门和冻结三题G1执行，任一门失败即保留证据并停止",
+  "workdir": "../../..",
+  "poll_seconds": 30,
+  "max_runtime_seconds": 259200,
+  "pause_on_anomaly": true,
+  "required_command_substrings": [
+    "run_genuine_hybrid_g0_g1_mechanical_release_chain.py",
+    "--poll-seconds",
+    "30"
+  ],
+  "forbidden_command_substrings": [
+    "--smoke",
+    "--debug"
+  ],
+  "min_cpu_percent_when_active": 0,
+  "low_cpu_consecutive_checks": 20,
+  "max_rss_mb": 7000,
+  "min_system_free_memory_mb": 128,
+  "min_system_memory_free_percent": 5,
+  "logs": [
+    "g0_g1_mechanical_release_chain_v1/g0_real_bundle.log",
+    "g0_g1_mechanical_release_chain_v1/worker_probe.log",
+    "g0_g1_mechanical_release_chain_v1/g1_micro.log"
+  ],
+  "progress_files": [],
+  "result_files": [
+    "g0_g1_mechanical_release_chain_v1/metadata.json",
+    "g0_g1_mechanical_release_chain_v1/raw_runs.csv",
+    "g0_g1_mechanical_release_chain_v1/decision.json",
+    "g0_g1_mechanical_release_chain_v1/artifact_hashes.json",
+    "g0_g1_mechanical_release_chain_v1/report.md"
+  ],
+  "completion_files": [
+    "g0_g1_mechanical_release_chain_v1/done.json"
+  ],
+  "checkpoint_paths": [
+    "g0_real_bundle_gate_v1",
+    "g1_six_worker_resource_probe_v1",
+    "g1_micro_work_v4_mechanical/tasks",
+    "g1_micro_gate_v4_mechanical"
+  ],
+  "protected_files": [
+    {
+      "path": "monitor_g0_g1_mechanical_release_chain_v1.json",
+      "kind": "monitor_contract"
+    },
+    {
+      "path": "g0_g1_mechanical_release_registration_v1.json",
+      "kind": "release_contract"
+    },
+    {
+      "path": "g0_real_bundle_preregistration_v1.json",
+      "kind": "experiment_contract"
+    },
+    {
+      "path": "g1_micro_preregistration_v3.json",
+      "kind": "experiment_contract"
+    },
+    {
+      "path": "g1_micro_preregistration_v4_mechanical.json",
+      "kind": "experiment_contract"
+    },
+    {
+      "path": "g1_six_worker_resource_probe_registration_v1.json",
+      "kind": "resource_contract"
+    },
+    {
+      "path": "run_g0_real_bundle_preflight.py",
+      "kind": "validation_runner"
+    },
+    {
+      "path": "run_g1_micro_gate.py",
+      "kind": "experiment_runner"
+    },
+    {
+      "path": "run_g1_micro_gate_v4_mechanical.py",
+      "kind": "experiment_runner"
+    },
+    {
+      "path": "budgeted_completion.py",
+      "kind": "evaluator"
+    },
+    {
+      "path": "contracts.py",
+      "kind": "experiment_contract"
+    },
+    {
+      "path": "decoder_cache.py",
+      "kind": "model"
+    },
+    {
+      "path": "decoder_labels.py",
+      "kind": "model"
+    },
+    {
+      "path": "evaluation.py",
+      "kind": "evaluator"
+    },
+    {
+      "path": "fleet_assignment_dp.py",
+      "kind": "model"
+    },
+    {
+      "path": "hgs_generator.py",
+      "kind": "primary_config"
+    },
+    {
+      "path": "hybrid_orchestrator.py",
+      "kind": "primary_config"
+    },
+    {
+      "path": "operator_effects.py",
+      "kind": "primary_config"
+    },
+    {
+      "path": "operator_plans.py",
+      "kind": "primary_config"
+    },
+    {
+      "path": "recreate.py",
+      "kind": "primary_config"
+    },
+    {
+      "path": "reference_decoder.py",
+      "kind": "model"
+    },
+    {
+      "path": "rr_engine.py",
+      "kind": "primary_config"
+    },
+    {
+      "path": "../../e2_final_campaign_20260720/run_g1_six_worker_resource_probe.py",
+      "kind": "resource_runner"
+    },
+    {
+      "path": "../../e2_final_campaign_20260720/run_genuine_hybrid_g0_g1_release_chain_v2.py",
+      "kind": "release_runner"
+    },
+    {
+      "path": "../../e2_final_campaign_20260720/run_genuine_hybrid_g0_g1_mechanical_release_chain.py",
+      "kind": "release_runner"
+    },
+    {
+      "path": "../../../docs/handoff/e2_genuine_hybrid_hgs_rr_contract_20260724.md",
+      "kind": "research_question"
+    },
+    {
+      "path": "../../../docs/handoff/e2_genuine_hybrid_implementation_gap_audit_20260724.md",
+      "kind": "analysis_contract"
+    },
+    {
+      "path": "../../../solver/src/setp_solver/check.py",
+      "kind": "evaluator"
+    },
+    {
+      "path": "../../../solver/src/setp_solver/china81_completion.py",
+      "kind": "evaluator"
+    },
+    {
+      "path": "../../../solver/src/setp_solver/cost.py",
+      "kind": "cost_function"
+    },
+    {
+      "path": "../../../solver/src/setp_solver/prices.py",
+      "kind": "primary_config"
+    },
+    {
+      "path": "../../../docs/paper_v2/paper_main.tex",
+      "kind": "paper_conclusion"
+    }
+  ],
+  "ai": {
+    "enabled": false,
+    "timeout_seconds": 180
+  }
+}

@@ -1,0 +1,12 @@
+Traceback (most recent call last):
+  File "/Volumes/移动硬盘（512G）/ReSETP/baselines/e2_final_campaign_20260720/run_corrected_china81_d6_staged_portfolio_v6_budget_recheck.py", line 453, in <module>
+    raise SystemExit(main())
+                     ~~~~^^
+  File "/Volumes/移动硬盘（512G）/ReSETP/baselines/e2_final_campaign_20260720/run_corrected_china81_d6_staged_portfolio_v6_budget_recheck.py", line 449, in main
+    return frozen.main()
+           ~~~~~~~~~~~^^
+  File "/Volumes/移动硬盘（512G）/ReSETP/baselines/e2_final_campaign_20260720/run_corrected_china81_d6_staged_portfolio.py", line 916, in main
+    decision = _run_all(args.workers)
+  File "/Volumes/移动硬盘（512G）/ReSETP/baselines/e2_final_campaign_20260720/run_corrected_china81_d6_staged_portfolio.py", line 844, in _run_all
+    raise FileNotFoundError(PREREGISTRATION)
+FileNotFoundError: /Volumes/移动硬盘（512G）/ReSETP/baselines/e2_final_campaign_20260720/corrected_china81_rerun_v6_budget_recheck_20260724/formal_preregistration_v2.json

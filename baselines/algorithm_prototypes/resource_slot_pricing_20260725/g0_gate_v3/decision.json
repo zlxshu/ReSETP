@@ -1,0 +1,21 @@
+{
+  "candidate_complete_objectives_evaluated": 0,
+  "completed_tasks": 0,
+  "expected_tasks": 6,
+  "failures": [
+    "cn-cy-25c-02-V2-LOCATIONS__LOCAL: KeyError: 'k'",
+    "cn-cy-25c-02-V2-LOCATIONS__RESOURCE-SLOT: KeyError: 'k'",
+    "cn-jjj-75c-01-V2-LOCATIONS__LOCAL: KeyError: 'k'",
+    "cn-jjj-75c-01-V2-LOCATIONS__RESOURCE-SLOT: KeyError: 'k'",
+    "cn-jjj-150c-02-V2-LOCATIONS__LOCAL: KeyError: 'k'",
+    "cn-jjj-150c-02-V2-LOCATIONS__RESOURCE-SLOT: KeyError: 'k'"
+  ],
+  "frozen_performance_criteria_evaluated": false,
+  "independent_replay_started": false,
+  "next_step": "FINAL_STOP_NO_RESCUE",
+  "pass": false,
+  "reason": "The spawn-safe worker entry imported the archived dual_guided_resource_order_20260725/run_g0.py instead of this candidate's frozen run_g0.py. All six tasks therefore requested the unrelated config key 'k' and stopped before candidate search or complete candidate scoring.",
+  "resolved_runner_path": "baselines/algorithm_prototypes/dual_guided_resource_order_20260725/run_g0.py",
+  "schema": "resetp.resource-slot-pricing-g0-decision.v3",
+  "verdict": "HALT_G0_WORKER_RESOLVED_ARCHIVED_RUNNER"
+}

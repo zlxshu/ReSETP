@@ -1,0 +1,934 @@
+{
+  "budget_plan": {
+    "hgs_epoch_evaluations": [
+      16,
+      16,
+      16
+    ],
+    "initial_evaluations": 1,
+    "rr_phase_evaluations": [
+      16,
+      15
+    ],
+    "total": 80
+  },
+  "hgs_epochs": [
+    {
+      "archives": [
+        {
+          "candidate_count": 24,
+          "elapsed_seconds": 9.31390704200021,
+          "iterations": 5000,
+          "route_proxy_mode": "cv_only",
+          "seed": 1037020054,
+          "stats": {
+            "active_node_operators": [
+              "Exchange10",
+              "Exchange20",
+              "Exchange11",
+              "Exchange21",
+              "Exchange22",
+              "SwapTails"
+            ],
+            "active_route_operators": [
+              "SwapStar"
+            ],
+            "actual_iterations": 5000,
+            "archive_count": 24,
+            "direct_warm_descendant_archive_count": 1,
+            "direct_warm_local_search_attempts": 1,
+            "direct_warm_local_search_changed": 1,
+            "elapsed_seconds": 9.31390704200021,
+            "full_model_evaluations": 0,
+            "max_iterations": 5000,
+            "native_unique_count": 104,
+            "route_proxy_mode": "cv_only",
+            "schema": "resetp.hgs-proxy-archive.v1",
+            "seed": 1037020054,
+            "translation_failures": [],
+            "unchanged_initial_native_count": 0,
+            "wallclock_safety_seconds": 900.0,
+            "warm_route_type_counts": [
+              {
+                "cv": 4,
+                "ev": 1
+              }
+            ],
+            "warm_solution_count": 1
+          }
+        },
+        {
+          "candidate_count": 24,
+          "elapsed_seconds": 8.274954708991572,
+          "iterations": 5000,
+          "route_proxy_mode": "naive_ev",
+          "seed": 1721837423,
+          "stats": {
+            "active_node_operators": [
+              "Exchange10",
+              "Exchange20",
+              "Exchange11",
+              "Exchange21",
+              "Exchange22",
+              "SwapTails"
+            ],
+            "active_route_operators": [
+              "SwapRoutes",
+              "SwapStar"
+            ],
+            "actual_iterations": 5000,
+            "archive_count": 24,
+            "direct_warm_descendant_archive_count": 1,
+            "direct_warm_local_search_attempts": 1,
+            "direct_warm_local_search_changed": 1,
+            "elapsed_seconds": 8.274954708991572,
+            "full_model_evaluations": 0,
+            "max_iterations": 5000,
+            "native_unique_count": 64,
+            "route_proxy_mode": "naive_ev",
+            "schema": "resetp.hgs-proxy-archive.v1",
+            "seed": 1721837423,
+            "translation_failures": [],
+            "unchanged_initial_native_count": 1,
+            "wallclock_safety_seconds": 900.0,
+            "warm_route_type_counts": [
+              {
+                "cv": 4,
+                "ev": 1
+              }
+            ],
+            "warm_solution_count": 1
+          }
+        },
+        {
+          "candidate_count": 24,
+          "elapsed_seconds": 7.817133832984837,
+          "iterations": 5000,
+          "route_proxy_mode": "mechanism_ev",
+          "seed": 237777330,
+          "stats": {
+            "active_node_operators": [
+              "Exchange10",
+              "Exchange20",
+              "Exchange11",
+              "Exchange21",
+              "Exchange22",
+              "SwapTails"
+            ],
+            "active_route_operators": [
+              "SwapRoutes",
+              "SwapStar"
+            ],
+            "actual_iterations": 5000,
+            "archive_count": 24,
+            "direct_warm_descendant_archive_count": 1,
+            "direct_warm_local_search_attempts": 1,
+            "direct_warm_local_search_changed": 1,
+            "elapsed_seconds": 7.817133832984837,
+            "full_model_evaluations": 0,
+            "max_iterations": 5000,
+            "native_unique_count": 52,
+            "route_proxy_mode": "mechanism_ev",
+            "schema": "resetp.hgs-proxy-archive.v1",
+            "seed": 237777330,
+            "translation_failures": [],
+            "unchanged_initial_native_count": 0,
+            "wallclock_safety_seconds": 900.0,
+            "warm_route_type_counts": [
+              {
+                "cv": 4,
+                "ev": 1
+              }
+            ],
+            "warm_solution_count": 1
+          }
+        }
+      ],
+      "decode_failures": [
+        "cv_only:1:route 0 has no depot/type assignment",
+        "naive_ev:1:route 0 has no depot/type assignment",
+        "mechanism_ev:1:route 0 has no depot/type assignment"
+      ],
+      "direct_warm_descendant_count": 0,
+      "duplicate_evaluations": 4,
+      "elapsed_seconds": 25.544704542000545,
+      "epoch": 1,
+      "evaluated_candidates": 16,
+      "feasible_candidates": 16,
+      "padding_rechecks": 0,
+      "unique_candidate_signatures": 12,
+      "warm_signatures": [
+        "ade1195dd81baba63b8787a20d78607dd8b7bc740ca948ed25047f42c8239938"
+      ]
+    },
+    {
+      "archives": [
+        {
+          "candidate_count": 24,
+          "elapsed_seconds": 9.128402208996704,
+          "iterations": 5000,
+          "route_proxy_mode": "cv_only",
+          "seed": 1305066147,
+          "stats": {
+            "active_node_operators": [
+              "Exchange10",
+              "Exchange20",
+              "Exchange11",
+              "Exchange21",
+              "Exchange22",
+              "SwapTails"
+            ],
+            "active_route_operators": [
+              "SwapStar"
+            ],
+            "actual_iterations": 5000,
+            "archive_count": 24,
+            "direct_warm_descendant_archive_count": 1,
+            "direct_warm_local_search_attempts": 1,
+            "direct_warm_local_search_changed": 1,
+            "elapsed_seconds": 9.128402208996704,
+            "full_model_evaluations": 0,
+            "max_iterations": 5000,
+            "native_unique_count": 101,
+            "route_proxy_mode": "cv_only",
+            "schema": "resetp.hgs-proxy-archive.v1",
+            "seed": 1305066147,
+            "translation_failures": [],
+            "unchanged_initial_native_count": 0,
+            "wallclock_safety_seconds": 900.0,
+            "warm_route_type_counts": [
+              {
+                "cv": 4,
+                "ev": 1
+              },
+              {
+                "cv": 3,
+                "ev": 2
+              }
+            ],
+            "warm_solution_count": 2
+          }
+        },
+        {
+          "candidate_count": 24,
+          "elapsed_seconds": 7.8922908330278005,
+          "iterations": 5000,
+          "route_proxy_mode": "naive_ev",
+          "seed": 1438483960,
+          "stats": {
+            "active_node_operators": [
+              "Exchange10",
+              "Exchange20",
+              "Exchange11",
+              "Exchange21",
+              "Exchange22",
+              "SwapTails"
+            ],
+            "active_route_operators": [
+              "SwapRoutes",
+              "SwapStar"
+            ],
+            "actual_iterations": 5000,
+            "archive_count": 24,
+            "direct_warm_descendant_archive_count": 1,
+            "direct_warm_local_search_attempts": 1,
+            "direct_warm_local_search_changed": 1,
+            "elapsed_seconds": 7.8922908330278005,
+            "full_model_evaluations": 0,
+            "max_iterations": 5000,
+            "native_unique_count": 72,
+            "route_proxy_mode": "naive_ev",
+            "schema": "resetp.hgs-proxy-archive.v1",
+            "seed": 1438483960,
+            "translation_failures": [],
+            "unchanged_initial_native_count": 1,
+            "wallclock_safety_seconds": 900.0,
+            "warm_route_type_counts": [
+              {
+                "cv": 4,
+                "ev": 1
+              },
+              {
+                "cv": 3,
+                "ev": 2
+              }
+            ],
+            "warm_solution_count": 2
+          }
+        },
+        {
+          "candidate_count": 24,
+          "elapsed_seconds": 8.0497192920011,
+          "iterations": 5000,
+          "route_proxy_mode": "mechanism_ev",
+          "seed": 388657099,
+          "stats": {
+            "active_node_operators": [
+              "Exchange10",
+              "Exchange20",
+              "Exchange11",
+              "Exchange21",
+              "Exchange22",
+              "SwapTails"
+            ],
+            "active_route_operators": [
+              "SwapRoutes",
+              "SwapStar"
+            ],
+            "actual_iterations": 5000,
+            "archive_count": 24,
+            "direct_warm_descendant_archive_count": 1,
+            "direct_warm_local_search_attempts": 1,
+            "direct_warm_local_search_changed": 1,
+            "elapsed_seconds": 8.0497192920011,
+            "full_model_evaluations": 0,
+            "max_iterations": 5000,
+            "native_unique_count": 88,
+            "route_proxy_mode": "mechanism_ev",
+            "schema": "resetp.hgs-proxy-archive.v1",
+            "seed": 388657099,
+            "translation_failures": [],
+            "unchanged_initial_native_count": 1,
+            "wallclock_safety_seconds": 900.0,
+            "warm_route_type_counts": [
+              {
+                "cv": 4,
+                "ev": 1
+              },
+              {
+                "cv": 3,
+                "ev": 2
+              }
+            ],
+            "warm_solution_count": 2
+          }
+        }
+      ],
+      "decode_failures": [
+        "cv_only:1:route 0 has no depot/type assignment",
+        "naive_ev:1:route 0 has no depot/type assignment",
+        "mechanism_ev:1:route 0 has no depot/type assignment"
+      ],
+      "direct_warm_descendant_count": 0,
+      "duplicate_evaluations": 13,
+      "elapsed_seconds": 25.149432749982225,
+      "epoch": 2,
+      "evaluated_candidates": 16,
+      "feasible_candidates": 16,
+      "padding_rechecks": 0,
+      "unique_candidate_signatures": 12,
+      "warm_signatures": [
+        "7888969a7996f29e92e4188b0d3e948fc92bb246356cde7871064133bf5d546b",
+        "3308112f89210b23924a9646589a077a731014dfb560bbc86505c0e9ec173009"
+      ]
+    },
+    {
+      "archives": [
+        {
+          "candidate_count": 24,
+          "elapsed_seconds": 8.66736791699077,
+          "iterations": 5000,
+          "route_proxy_mode": "cv_only",
+          "seed": 1573112240,
+          "stats": {
+            "active_node_operators": [
+              "Exchange10",
+              "Exchange20",
+              "Exchange11",
+              "Exchange21",
+              "Exchange22",
+              "SwapTails"
+            ],
+            "active_route_operators": [
+              "SwapStar"
+            ],
+            "actual_iterations": 5000,
+            "archive_count": 24,
+            "direct_warm_descendant_archive_count": 1,
+            "direct_warm_local_search_attempts": 1,
+            "direct_warm_local_search_changed": 1,
+            "elapsed_seconds": 8.66736791699077,
+            "full_model_evaluations": 0,
+            "max_iterations": 5000,
+            "native_unique_count": 110,
+            "route_proxy_mode": "cv_only",
+            "schema": "resetp.hgs-proxy-archive.v1",
+            "seed": 1573112240,
+            "translation_failures": [],
+            "unchanged_initial_native_count": 0,
+            "wallclock_safety_seconds": 900.0,
+            "warm_route_type_counts": [
+              {
+                "cv": 3,
+                "ev": 2
+              },
+              {
+                "cv": 3,
+                "ev": 2
+              }
+            ],
+            "warm_solution_count": 2
+          }
+        },
+        {
+          "candidate_count": 24,
+          "elapsed_seconds": 9.226217791991076,
+          "iterations": 5000,
+          "route_proxy_mode": "naive_ev",
+          "seed": 1155130497,
+          "stats": {
+            "active_node_operators": [
+              "Exchange10",
+              "Exchange20",
+              "Exchange11",
+              "Exchange21",
+              "Exchange22",
+              "SwapTails"
+            ],
+            "active_route_operators": [
+              "SwapRoutes",
+              "SwapStar"
+            ],
+            "actual_iterations": 5000,
+            "archive_count": 24,
+            "direct_warm_descendant_archive_count": 1,
+            "direct_warm_local_search_attempts": 1,
+            "direct_warm_local_search_changed": 1,
+            "elapsed_seconds": 9.226217791991076,
+            "full_model_evaluations": 0,
+            "max_iterations": 5000,
+            "native_unique_count": 77,
+            "route_proxy_mode": "naive_ev",
+            "schema": "resetp.hgs-proxy-archive.v1",
+            "seed": 1155130497,
+            "translation_failures": [],
+            "unchanged_initial_native_count": 2,
+            "wallclock_safety_seconds": 900.0,
+            "warm_route_type_counts": [
+              {
+                "cv": 3,
+                "ev": 2
+              },
+              {
+                "cv": 3,
+                "ev": 2
+              }
+            ],
+            "warm_solution_count": 2
+          }
+        },
+        {
+          "candidate_count": 24,
+          "elapsed_seconds": 8.083721125003649,
+          "iterations": 5000,
+          "route_proxy_mode": "mechanism_ev",
+          "seed": 539536868,
+          "stats": {
+            "active_node_operators": [
+              "Exchange10",
+              "Exchange20",
+              "Exchange11",
+              "Exchange21",
+              "Exchange22",
+              "SwapTails"
+            ],
+            "active_route_operators": [
+              "SwapRoutes",
+              "SwapStar"
+            ],
+            "actual_iterations": 5000,
+            "archive_count": 24,
+            "direct_warm_descendant_archive_count": 1,
+            "direct_warm_local_search_attempts": 1,
+            "direct_warm_local_search_changed": 1,
+            "elapsed_seconds": 8.083721125003649,
+            "full_model_evaluations": 0,
+            "max_iterations": 5000,
+            "native_unique_count": 74,
+            "route_proxy_mode": "mechanism_ev",
+            "schema": "resetp.hgs-proxy-archive.v1",
+            "seed": 539536868,
+            "translation_failures": [],
+            "unchanged_initial_native_count": 2,
+            "wallclock_safety_seconds": 900.0,
+            "warm_route_type_counts": [
+              {
+                "cv": 3,
+                "ev": 2
+              },
+              {
+                "cv": 3,
+                "ev": 2
+              }
+            ],
+            "warm_solution_count": 2
+          }
+        }
+      ],
+      "decode_failures": [
+        "cv_only:1:route 0 has no depot/type assignment",
+        "naive_ev:1:route 0 has no depot/type assignment",
+        "mechanism_ev:1:route 0 has no depot/type assignment"
+      ],
+      "direct_warm_descendant_count": 0,
+      "duplicate_evaluations": 12,
+      "elapsed_seconds": 26.043326999992132,
+      "epoch": 3,
+      "evaluated_candidates": 16,
+      "feasible_candidates": 16,
+      "padding_rechecks": 0,
+      "unique_candidate_signatures": 13,
+      "warm_signatures": [
+        "3308112f89210b23924a9646589a077a731014dfb560bbc86505c0e9ec173009",
+        "1405da07ecc13e961586cf539176c6cc5d33b2b24f8ba8c214bc5b5d4f4b1fe6"
+      ]
+    }
+  ],
+  "lineage": {
+    "cooperative_gain_evidence_count": 0,
+    "descendants": [],
+    "transfers": [
+      {
+        "accepted_into_next_hgs_epoch": false,
+        "child_objective": 1426.643032749301,
+        "child_signature": "3308112f89210b23924a9646589a077a731014dfb560bbc86505c0e9ec173009",
+        "complete_evaluation_index": 5,
+        "direction": "HGS_TO_RR",
+        "next_hgs_epoch": null,
+        "parent_objective": 1641.3275017740052,
+        "parent_signature": "ade1195dd81baba63b8787a20d78607dd8b7bc740ca948ed25047f42c8239938",
+        "sequence": 1
+      },
+      {
+        "accepted_into_next_hgs_epoch": true,
+        "child_objective": 1504.7528263294216,
+        "child_signature": "7888969a7996f29e92e4188b0d3e948fc92bb246356cde7871064133bf5d546b",
+        "complete_evaluation_index": 18,
+        "direction": "RR_TO_HGS",
+        "next_hgs_epoch": 2,
+        "parent_objective": 1426.643032749301,
+        "parent_signature": "3308112f89210b23924a9646589a077a731014dfb560bbc86505c0e9ec173009",
+        "sequence": 2
+      },
+      {
+        "accepted_into_next_hgs_epoch": false,
+        "child_objective": 1426.9780553643593,
+        "child_signature": "1405da07ecc13e961586cf539176c6cc5d33b2b24f8ba8c214bc5b5d4f4b1fe6",
+        "complete_evaluation_index": 37,
+        "direction": "HGS_TO_RR",
+        "next_hgs_epoch": null,
+        "parent_objective": 1504.7528263294216,
+        "parent_signature": "7888969a7996f29e92e4188b0d3e948fc92bb246356cde7871064133bf5d546b",
+        "sequence": 3
+      }
+    ]
+  },
+  "route_local_cache_stats": {
+    "entries": 164,
+    "hit_rate": 0.6693548387096774,
+    "hits": 332,
+    "misses": 164,
+    "requests": 496
+  },
+  "rr_phases": [
+    {
+      "elapsed_seconds": 0.06987925001885742,
+      "operator_accepted": {
+        "time_window_pressure_string": 1
+      },
+      "operator_attempts": {
+        "bidirectional_cross_depot_segment": 2,
+        "charge_departure_retiming": 2,
+        "cross_depot_route_reassignment": 4,
+        "time_window_pressure_string": 3,
+        "vehicle_type_flip": 6
+      },
+      "operator_best_improvements": {},
+      "route_local_cache_stats": {
+        "entries": 108,
+        "hit_rate": 0.4375,
+        "hits": 84,
+        "misses": 108,
+        "requests": 192
+      },
+      "stop_reason": "PHASE_EVALUATION_ALLOWANCE",
+      "trace": [
+        {
+          "accepted": true,
+          "best_objective": 1426.643032749301,
+          "candidate_feasible": true,
+          "candidate_objective": 1504.7528263294216,
+          "candidate_signature": "7888969a7996f29e92e4188b0d3e948fc92bb246356cde7871064133bf5d546b",
+          "current_objective": 1504.7528263294216,
+          "detail": "2 affected customer contexts changed;worsening",
+          "evaluations_after": 20,
+          "evaluations_before": 17,
+          "improved_best": false,
+          "iteration": 1,
+          "operator": "time_window_pressure_string",
+          "operator_effect_passed": true,
+          "temperature": 20.582108284662077
+        },
+        {
+          "accepted": false,
+          "best_objective": 1426.643032749301,
+          "candidate_feasible": false,
+          "candidate_objective": null,
+          "candidate_signature": null,
+          "current_objective": 1504.7528263294216,
+          "detail": "no_feasible_candidate;attempted=bidirectional_cross_depot_segment,cross_depot_route_reassignment,vehicle_type_flip",
+          "evaluations_after": 21,
+          "evaluations_before": 20,
+          "improved_best": false,
+          "iteration": 2,
+          "operator": "vehicle_type_flip",
+          "operator_effect_passed": false,
+          "temperature": 8.892130220340919
+        },
+        {
+          "accepted": false,
+          "best_objective": 1426.643032749301,
+          "candidate_feasible": false,
+          "candidate_objective": null,
+          "candidate_signature": null,
+          "current_objective": 1504.7528263294216,
+          "detail": "no_feasible_candidate;attempted=cross_depot_route_reassignment,vehicle_type_flip",
+          "evaluations_after": 22,
+          "evaluations_before": 21,
+          "improved_best": false,
+          "iteration": 3,
+          "operator": "vehicle_type_flip",
+          "operator_effect_passed": false,
+          "temperature": 6.722195402836054
+        },
+        {
+          "accepted": false,
+          "best_objective": 1426.643032749301,
+          "candidate_feasible": false,
+          "candidate_objective": null,
+          "candidate_signature": null,
+          "current_objective": 1504.7528263294216,
+          "detail": "no_feasible_candidate;attempted=vehicle_type_flip",
+          "evaluations_after": 23,
+          "evaluations_before": 22,
+          "improved_best": false,
+          "iteration": 4,
+          "operator": "vehicle_type_flip",
+          "operator_effect_passed": false,
+          "temperature": 5.0817869187905025
+        },
+        {
+          "accepted": false,
+          "best_objective": 1426.643032749301,
+          "candidate_feasible": true,
+          "candidate_objective": 1524.9079026112452,
+          "candidate_signature": "a1f2b945a8de912883b02eac67234cd71fa2a3d2335887e3eac73a74baccccd4",
+          "current_objective": 1504.7528263294216,
+          "detail": "charging location, amount, or start time changed;worsening",
+          "evaluations_after": 24,
+          "evaluations_before": 23,
+          "improved_best": false,
+          "iteration": 5,
+          "operator": "charge_departure_retiming",
+          "operator_effect_passed": true,
+          "temperature": 3.8416851549859787
+        },
+        {
+          "accepted": false,
+          "best_objective": 1426.643032749301,
+          "candidate_feasible": true,
+          "candidate_objective": 1505.7779338581238,
+          "candidate_signature": "4c639be961cf9275aff58408d6262214b7a86fc77d518afe6fc9cc4825cc4bbd",
+          "current_objective": 1504.7528263294216,
+          "detail": "2 affected customer contexts changed;worsening",
+          "evaluations_after": 27,
+          "evaluations_before": 24,
+          "improved_best": false,
+          "iteration": 6,
+          "operator": "time_window_pressure_string",
+          "operator_effect_passed": true,
+          "temperature": 2.904203790101509
+        },
+        {
+          "accepted": false,
+          "best_objective": 1426.643032749301,
+          "candidate_feasible": true,
+          "candidate_objective": 1584.814506618244,
+          "candidate_signature": "4f2fddbb1a21da9c37024abab28dbbdda1a220f1fe42305906c66ce0e0baae55",
+          "current_objective": 1504.7528263294216,
+          "detail": "selected route uses the opposite registered vehicle type;worsening;skipped_nonapplicable=bidirectional_cross_depot_segment,cross_depot_route_reassignment",
+          "evaluations_after": 28,
+          "evaluations_before": 27,
+          "improved_best": false,
+          "iteration": 7,
+          "operator": "vehicle_type_flip",
+          "operator_effect_passed": true,
+          "temperature": 1.2547090866893797
+        },
+        {
+          "accepted": false,
+          "best_objective": 1426.643032749301,
+          "candidate_feasible": false,
+          "candidate_objective": null,
+          "candidate_signature": null,
+          "current_objective": 1504.7528263294216,
+          "detail": "no_feasible_candidate;attempted=cross_depot_route_reassignment,vehicle_type_flip",
+          "evaluations_after": 29,
+          "evaluations_before": 28,
+          "improved_best": false,
+          "iteration": 8,
+          "operator": "vehicle_type_flip",
+          "operator_effect_passed": false,
+          "temperature": 0.9485240820187408
+        },
+        {
+          "accepted": false,
+          "best_objective": 1426.643032749301,
+          "candidate_feasible": false,
+          "candidate_objective": null,
+          "candidate_signature": null,
+          "current_objective": 1504.7528263294216,
+          "detail": "no_feasible_candidate;attempted=vehicle_type_flip",
+          "evaluations_after": 30,
+          "evaluations_before": 29,
+          "improved_best": false,
+          "iteration": 9,
+          "operator": "vehicle_type_flip",
+          "operator_effect_passed": false,
+          "temperature": 0.7170570004744271
+        },
+        {
+          "accepted": false,
+          "best_objective": 1426.643032749301,
+          "candidate_feasible": true,
+          "candidate_objective": 1524.9079026112452,
+          "candidate_signature": "a1f2b945a8de912883b02eac67234cd71fa2a3d2335887e3eac73a74baccccd4",
+          "current_objective": 1504.7528263294216,
+          "detail": "charging location, amount, or start time changed;worsening",
+          "evaluations_after": 31,
+          "evaluations_before": 30,
+          "improved_best": false,
+          "iteration": 10,
+          "operator": "charge_departure_retiming",
+          "operator_effect_passed": true,
+          "temperature": 0.542074525756979
+        },
+        {
+          "accepted": false,
+          "best_objective": 1426.643032749301,
+          "candidate_feasible": true,
+          "candidate_objective": 1505.1058163540274,
+          "candidate_signature": "cb0b7ef158b645a9529c1106f9438d166bea637ff86addfd7fe4fca27c874683",
+          "current_objective": 1504.7528263294216,
+          "detail": "2 affected customer contexts changed;worsening",
+          "evaluations_after": 33,
+          "evaluations_before": 31,
+          "improved_best": false,
+          "iteration": 11,
+          "operator": "time_window_pressure_string",
+          "operator_effect_passed": true,
+          "temperature": 0.40979279371129057
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 0.030956875008996576,
+      "operator_accepted": {},
+      "operator_attempts": {
+        "bidirectional_cross_depot_segment": 3,
+        "charge_departure_retiming": 2,
+        "cross_depot_route_reassignment": 5,
+        "time_window_pressure_string": 2,
+        "vehicle_type_flip": 7
+      },
+      "operator_best_improvements": {},
+      "route_local_cache_stats": {
+        "entries": 140,
+        "hit_rate": 0.6153846153846154,
+        "hits": 224,
+        "misses": 140,
+        "requests": 364
+      },
+      "stop_reason": "PHASE_EVALUATION_ALLOWANCE",
+      "trace": [
+        {
+          "accepted": false,
+          "best_objective": 1426.9780553643593,
+          "candidate_feasible": true,
+          "candidate_objective": 1507.0397356531814,
+          "candidate_signature": "e72015f8be5aff44a8771f06f649ecb735bbcbf4632fa9e66ca147f4887d1eee",
+          "current_objective": 1426.9780553643593,
+          "detail": "selected route uses the opposite registered vehicle type;worsening;skipped_nonapplicable=bidirectional_cross_depot_segment,cross_depot_route_reassignment",
+          "evaluations_after": 50,
+          "evaluations_before": 49,
+          "improved_best": false,
+          "iteration": 1,
+          "operator": "vehicle_type_flip",
+          "operator_effect_passed": true,
+          "temperature": 20.58694163931538
+        },
+        {
+          "accepted": false,
+          "best_objective": 1426.9780553643593,
+          "candidate_feasible": true,
+          "candidate_objective": 1506.1004257047125,
+          "candidate_signature": "754eb4aa67927a24213cfa5500322cd8f41ad2ee6aebf88ff13e877fe386b430",
+          "current_objective": 1426.9780553643593,
+          "detail": "selected route uses the opposite registered vehicle type;worsening;skipped_nonapplicable=cross_depot_route_reassignment",
+          "evaluations_after": 51,
+          "evaluations_before": 50,
+          "improved_best": false,
+          "iteration": 2,
+          "operator": "vehicle_type_flip",
+          "operator_effect_passed": true,
+          "temperature": 15.255237042021847
+        },
+        {
+          "accepted": false,
+          "best_objective": 1426.9780553643593,
+          "candidate_feasible": true,
+          "candidate_objective": 1506.1004257047125,
+          "candidate_signature": "754eb4aa67927a24213cfa5500322cd8f41ad2ee6aebf88ff13e877fe386b430",
+          "current_objective": 1426.9780553643593,
+          "detail": "selected route uses the opposite registered vehicle type;worsening",
+          "evaluations_after": 52,
+          "evaluations_before": 51,
+          "improved_best": false,
+          "iteration": 3,
+          "operator": "vehicle_type_flip",
+          "operator_effect_passed": true,
+          "temperature": 11.304362798786983
+        },
+        {
+          "accepted": false,
+          "best_objective": 1426.9780553643593,
+          "candidate_feasible": true,
+          "candidate_objective": 1449.122452300178,
+          "candidate_signature": "664ce685675fa0c98939e73000f4e6e080e87a309c2fc4b1da3fb263ec8d6024",
+          "current_objective": 1426.9780553643593,
+          "detail": "charging location, amount, or start time changed;worsening",
+          "evaluations_after": 53,
+          "evaluations_before": 52,
+          "improved_best": false,
+          "iteration": 4,
+          "operator": "charge_departure_retiming",
+          "operator_effect_passed": true,
+          "temperature": 8.376704861064725
+        },
+        {
+          "accepted": false,
+          "best_objective": 1426.9780553643593,
+          "candidate_feasible": true,
+          "candidate_objective": 1505.8907354357918,
+          "candidate_signature": "6bee46b7853a829a29eb87bc0843c17c96dd2a24818de5476994983726a7d1f0",
+          "current_objective": 1426.9780553643593,
+          "detail": "2 affected customer contexts changed;worsening",
+          "evaluations_after": 56,
+          "evaluations_before": 53,
+          "improved_best": false,
+          "iteration": 5,
+          "operator": "time_window_pressure_string",
+          "operator_effect_passed": true,
+          "temperature": 6.207265776795037
+        },
+        {
+          "accepted": false,
+          "best_objective": 1426.9780553643593,
+          "candidate_feasible": true,
+          "candidate_objective": 1507.0397356531814,
+          "candidate_signature": "e72015f8be5aff44a8771f06f649ecb735bbcbf4632fa9e66ca147f4887d1eee",
+          "current_objective": 1426.9780553643593,
+          "detail": "selected route uses the opposite registered vehicle type;worsening;skipped_nonapplicable=bidirectional_cross_depot_segment,cross_depot_route_reassignment",
+          "evaluations_after": 57,
+          "evaluations_before": 56,
+          "improved_best": false,
+          "iteration": 6,
+          "operator": "vehicle_type_flip",
+          "operator_effect_passed": true,
+          "temperature": 2.525699752657813
+        },
+        {
+          "accepted": false,
+          "best_objective": 1426.9780553643593,
+          "candidate_feasible": true,
+          "candidate_objective": 1507.0397356531814,
+          "candidate_signature": "e72015f8be5aff44a8771f06f649ecb735bbcbf4632fa9e66ca147f4887d1eee",
+          "current_objective": 1426.9780553643593,
+          "detail": "selected route uses the opposite registered vehicle type;worsening;skipped_nonapplicable=cross_depot_route_reassignment",
+          "evaluations_after": 58,
+          "evaluations_before": 57,
+          "improved_best": false,
+          "iteration": 7,
+          "operator": "vehicle_type_flip",
+          "operator_effect_passed": true,
+          "temperature": 1.8715819522307742
+        },
+        {
+          "accepted": false,
+          "best_objective": 1426.9780553643593,
+          "candidate_feasible": true,
+          "candidate_objective": 1507.0397356531814,
+          "candidate_signature": "e72015f8be5aff44a8771f06f649ecb735bbcbf4632fa9e66ca147f4887d1eee",
+          "current_objective": 1426.9780553643593,
+          "detail": "selected route uses the opposite registered vehicle type;worsening",
+          "evaluations_after": 59,
+          "evaluations_before": 58,
+          "improved_best": false,
+          "iteration": 8,
+          "operator": "vehicle_type_flip",
+          "operator_effect_passed": true,
+          "temperature": 1.3868707079018046
+        },
+        {
+          "accepted": false,
+          "best_objective": 1426.9780553643593,
+          "candidate_feasible": true,
+          "candidate_objective": 1449.122452300178,
+          "candidate_signature": "664ce685675fa0c98939e73000f4e6e080e87a309c2fc4b1da3fb263ec8d6024",
+          "current_objective": 1426.9780553643593,
+          "detail": "charging location, amount, or start time changed;worsening",
+          "evaluations_after": 60,
+          "evaluations_before": 59,
+          "improved_best": false,
+          "iteration": 9,
+          "operator": "charge_departure_retiming",
+          "operator_effect_passed": true,
+          "temperature": 1.0276922996310711
+        },
+        {
+          "accepted": false,
+          "best_objective": 1426.9780553643593,
+          "candidate_feasible": true,
+          "candidate_objective": 1506.1004257047125,
+          "candidate_signature": "754eb4aa67927a24213cfa5500322cd8f41ad2ee6aebf88ff13e877fe386b430",
+          "current_objective": 1426.9780553643593,
+          "detail": "2 affected customer contexts changed;worsening",
+          "evaluations_after": 63,
+          "evaluations_before": 60,
+          "improved_best": false,
+          "iteration": 10,
+          "operator": "time_window_pressure_string",
+          "operator_effect_passed": true,
+          "temperature": 0.7615356332089885
+        },
+        {
+          "accepted": false,
+          "best_objective": 1426.9780553643593,
+          "candidate_feasible": true,
+          "candidate_objective": 1507.0397356531814,
+          "candidate_signature": "e72015f8be5aff44a8771f06f649ecb735bbcbf4632fa9e66ca147f4887d1eee",
+          "current_objective": 1426.9780553643593,
+          "detail": "selected route uses the opposite registered vehicle type;worsening;skipped_nonapplicable=bidirectional_cross_depot_segment,cross_depot_route_reassignment",
+          "evaluations_after": 64,
+          "evaluations_before": 63,
+          "improved_best": false,
+          "iteration": 11,
+          "operator": "vehicle_type_flip",
+          "operator_effect_passed": true,
+          "temperature": 0.30986434762088716
+        }
+      ]
+    }
+  ],
+  "schema": "resetp.coop-hgs-rr-g1-trace.v1"
+}

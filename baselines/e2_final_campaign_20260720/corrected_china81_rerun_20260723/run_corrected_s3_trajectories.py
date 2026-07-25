@@ -14,6 +14,8 @@ import csv
 import hashlib
 import json
 import math
+import os
+import re
 import sys
 import time
 from dataclasses import dataclass
@@ -24,13 +26,34 @@ from typing import Any, Callable
 
 
 REPO = Path(__file__).resolve().parents[3]
+CAMPAIGN_NAME = os.environ.get(
+    "RESET_D6_CAMPAIGN_NAME",
+    "corrected_china81_rerun_v3_20260724",
+)
+if (
+    not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9._-]*", CAMPAIGN_NAME)
+    or not CAMPAIGN_NAME.startswith("corrected_china81_rerun_")
+):
+    raise RuntimeError(
+        f"invalid RESET_D6_CAMPAIGN_NAME: {CAMPAIGN_NAME!r}"
+    )
+CASE_ROLE = os.environ.get("RESET_S3_CASE_ROLE", "representative")
+if CASE_ROLE not in {"representative", "mechanism_illustration"}:
+    raise RuntimeError(f"invalid RESET_S3_CASE_ROLE: {CASE_ROLE!r}")
 CAMPAIGN = (
     REPO
-    / "baselines/e2_final_campaign_20260720/"
-    "corrected_china81_rerun_v2_20260723"
+    / "baselines/e2_final_campaign_20260720"
+    / CAMPAIGN_NAME
 )
-S3 = CAMPAIGN / "representative_gate"
+S3 = CAMPAIGN / (
+    "mechanism_case_gate"
+    if CASE_ROLE == "mechanism_illustration"
+    else "representative_gate"
+)
 OUT = S3 / "trajectories"
+TRAJECTORY_SHAPE_PREREGISTRATION = (
+    CAMPAIGN / "trajectory_shape_preregistration.json"
+)
 FLEET = (
     REPO
     / "data/ChinaInstances/"
@@ -393,6 +416,9 @@ def run_observed_epoch(
             "active_node_operators": active_node,
             "active_route_operators": active_route,
         },
+        archive_completions=tuple(
+            item[1] for item in exact_ranked
+        ),
     )
     return ObservedEpoch(epoch=epoch, snapshots=tuple(snapshots))
 
@@ -401,6 +427,36 @@ def select_registration() -> dict[str, Any]:
     path = OUT / "trajectory_registration.json"
     if path.is_file():
         return json.loads(path.read_text(encoding="utf-8"))
+    s3_decision = json.loads(
+        (S3 / "decision.json").read_text(encoding="utf-8")
+    )
+    expected_s3_verdict = (
+        "PASS_D6_CORRECTED_S3_MECHANISM_CASE"
+        if CASE_ROLE == "mechanism_illustration"
+        else "PASS_D6_CORRECTED_S3_REPRESENTATIVE"
+    )
+    if s3_decision.get("verdict") != expected_s3_verdict:
+        raise RuntimeError(
+            "trajectory observation is blocked by the S3 endpoint gate"
+        )
+    shape_preregistration: dict[str, Any] | None = None
+    if CASE_ROLE == "mechanism_illustration":
+        shape_preregistration = json.loads(
+            TRAJECTORY_SHAPE_PREREGISTRATION.read_text(
+                encoding="utf-8"
+            )
+        )
+        if (
+            shape_preregistration.get("instance_id")
+            != s3_decision.get("case_instance_id")
+            or shape_preregistration.get(
+                "registered_before_formal_s3_trajectory_run"
+            )
+            is not True
+        ):
+            raise RuntimeError(
+                "trajectory shape preregistration does not match S3"
+            )
     with (S3 / "raw_runs.csv").open(
         newline="",
         encoding="utf-8-sig",
@@ -426,9 +482,6 @@ def select_registration() -> dict[str, Any]:
         )
         averages[arm] = average
         selected[arm] = int(winner["seed"])
-    s3_decision = json.loads(
-        (S3 / "decision.json").read_text(encoding="utf-8")
-    )
     payload = {
         "schema": "resetp.d6-corrected-s3-trajectory-registration.v1",
         "registered_at_utc": datetime.now(UTC).isoformat(),
@@ -438,12 +491,24 @@ def select_registration() -> dict[str, Any]:
         ),
         "shape_blind": True,
         "curve_data_read_before_registration": False,
-        "representative_instance_id": s3_decision[
-            "representative_instance_id"
-        ],
+        "case_role": s3_decision.get("case_role", CASE_ROLE),
+        "case_instance_id": s3_decision.get(
+            "case_instance_id",
+            s3_decision.get("representative_instance_id"),
+        ),
         "mean_cost_by_arm": averages,
         "selected_seed_by_arm": selected,
         "s3_raw_sha256": sha256(S3 / "raw_runs.csv"),
+        "shape_preregistration": (
+            str(TRAJECTORY_SHAPE_PREREGISTRATION.relative_to(REPO))
+            if shape_preregistration is not None
+            else None
+        ),
+        "shape_preregistration_sha256": (
+            sha256(TRAJECTORY_SHAPE_PREREGISTRATION)
+            if shape_preregistration is not None
+            else None
+        ),
     }
     write_json(path, payload)
     return payload
@@ -467,7 +532,7 @@ def offline_points(
     initial_cost: float,
     final_time: float,
     sealed_cost: float,
-) -> tuple[list[dict[str, Any]], dict[str, int]]:
+) -> tuple[list[dict[str, Any]], dict[str, Any]]:
     scored: list[dict[str, Any]] = [
         {
             "elapsed_seconds": 0.0,
@@ -501,13 +566,6 @@ def offline_points(
             )
         except (IndexError, KeyError, TypeError, ValueError):
             errors += 1
-    scored.append(
-        {
-            "elapsed_seconds": float(final_time),
-            "cost": float(sealed_cost),
-            "source": "sealed_final_solution",
-        }
-    )
     scored.sort(key=lambda row: row["elapsed_seconds"])
     curve: list[dict[str, Any]] = []
     best = math.inf
@@ -515,18 +573,101 @@ def offline_points(
         if float(row["cost"]) < best - EPS:
             best = float(row["cost"])
             curve.append(row)
+    observed_minimum = best
+    historical_better_than_sealed = (
+        observed_minimum < float(sealed_cost) - EPS
+    )
+    if not historical_better_than_sealed:
+        if float(sealed_cost) < best - EPS:
+            best = float(sealed_cost)
+        curve.append(
+            {
+                "elapsed_seconds": float(final_time),
+                "cost": float(sealed_cost),
+                "source": "sealed_final_solution",
+            }
+        )
+    strict_decreases = sum(
+        float(curve[index]["cost"])
+        < float(curve[index - 1]["cost"]) - EPS
+        for index in range(1, len(curve))
+    )
+    elapsed_non_decreasing = all(
+        float(curve[index]["elapsed_seconds"])
+        >= float(curve[index - 1]["elapsed_seconds"])
+        for index in range(1, len(curve))
+    )
+    cost_monotone_non_increasing = all(
+        float(curve[index]["cost"])
+        <= float(curve[index - 1]["cost"]) + EPS
+        for index in range(1, len(curve))
+    )
+    final_point_is_sealed = bool(
+        curve
+        and curve[-1]["source"] == "sealed_final_solution"
+        and math.isclose(
+            float(curve[-1]["cost"]),
+            float(sealed_cost),
+            rel_tol=0.0,
+            abs_tol=EPS,
+        )
+    )
     return curve, {
         "snapshot_count": len(snapshots),
-        "valid_scored_count": len(scored) - 2,
+        "valid_scored_count": len(scored) - 1,
         "infeasible_count": infeasible,
         "error_count": errors,
+        "observed_minimum_cost": observed_minimum,
+        "historical_better_than_sealed": (
+            historical_better_than_sealed
+        ),
+        "strict_decrease_count": strict_decreases,
+        "elapsed_non_decreasing": elapsed_non_decreasing,
+        "cost_monotone_non_increasing": (
+            cost_monotone_non_increasing
+        ),
+        "final_point_is_sealed": final_point_is_sealed,
+    }
+
+
+def trajectory_shape_checks(
+    raw_rows: list[dict[str, Any]],
+    *,
+    minimum_points: int,
+    minimum_decreases: int,
+) -> dict[str, dict[str, bool]]:
+    """Evaluate the registered non-cosmetic Figure 4 shape gate."""
+
+    return {
+        str(row["algorithm"]): {
+            "point_count_pass": (
+                int(row["curve_point_count"]) >= minimum_points
+            ),
+            "strict_decrease_count_pass": (
+                int(row["strict_decrease_count"])
+                >= minimum_decreases
+            ),
+            "elapsed_non_decreasing": bool(
+                row["elapsed_non_decreasing"]
+            ),
+            "cost_monotone_non_increasing": bool(
+                row["cost_monotone_non_increasing"]
+            ),
+            "final_point_is_sealed": bool(
+                row["final_point_is_sealed"]
+            ),
+            "no_retrospective_point_better_than_sealed": not bool(
+                row["historical_better_than_sealed"]
+            ),
+        }
+        for row in raw_rows
     }
 
 
 def main() -> int:
     OUT.mkdir(parents=True, exist_ok=True)
     registration = select_registration()
-    instance_id = str(registration["representative_instance_id"])
+    instance_id = str(registration["case_instance_id"])
     selected = {
         str(key): int(value)
         for key, value in registration["selected_seed_by_arm"].items()
@@ -611,6 +752,24 @@ def main() -> int:
                 "offline_valid_count": audit["valid_scored_count"],
                 "offline_infeasible_count": audit["infeasible_count"],
                 "offline_error_count": audit["error_count"],
+                "observed_minimum_cost": audit[
+                    "observed_minimum_cost"
+                ],
+                "historical_better_than_sealed": audit[
+                    "historical_better_than_sealed"
+                ],
+                "strict_decrease_count": audit[
+                    "strict_decrease_count"
+                ],
+                "elapsed_non_decreasing": audit[
+                    "elapsed_non_decreasing"
+                ],
+                "cost_monotone_non_increasing": audit[
+                    "cost_monotone_non_increasing"
+                ],
+                "final_point_is_sealed": audit[
+                    "final_point_is_sealed"
+                ],
             }
         )
 
@@ -708,19 +867,92 @@ def main() -> int:
             "offline_valid_count": fusion_audit["valid_scored_count"],
             "offline_infeasible_count": fusion_audit["infeasible_count"],
             "offline_error_count": fusion_audit["error_count"],
+            "observed_minimum_cost": fusion_audit[
+                "observed_minimum_cost"
+            ],
+            "historical_better_than_sealed": fusion_audit[
+                "historical_better_than_sealed"
+            ],
+            "strict_decrease_count": fusion_audit[
+                "strict_decrease_count"
+            ],
+            "elapsed_non_decreasing": fusion_audit[
+                "elapsed_non_decreasing"
+            ],
+            "cost_monotone_non_increasing": fusion_audit[
+                "cost_monotone_non_increasing"
+            ],
+            "final_point_is_sealed": fusion_audit[
+                "final_point_is_sealed"
+            ],
         }
     )
     write_csv(OUT / "raw_runs.csv", raw_rows)
     write_csv(OUT / "curve_data.csv", curve_rows)
+    if CASE_ROLE == "mechanism_illustration":
+        shape_preregistration = json.loads(
+            TRAJECTORY_SHAPE_PREREGISTRATION.read_text(
+                encoding="utf-8"
+            )
+        )
+        hard_gates = shape_preregistration["hard_gates"]
+        minimum_points = int(
+            hard_gates["minimum_plotted_points_per_algorithm"]
+        )
+        minimum_decreases = int(
+            hard_gates[
+                "minimum_strict_cost_decreases_per_algorithm"
+            ]
+        )
+    else:
+        shape_preregistration = None
+        minimum_points = 2
+        minimum_decreases = 1
+    shape_checks = trajectory_shape_checks(
+        raw_rows,
+        minimum_points=minimum_points,
+        minimum_decreases=minimum_decreases,
+    )
+    shape_gate_pass = all(
+        all(checks.values()) for checks in shape_checks.values()
+    )
+    verdict = (
+        "PASS_D6_CORRECTED_S3_TRAJECTORIES"
+        if shape_gate_pass
+        else "HALT_D6_CORRECTED_S3_TRAJECTORY_SHAPE_OR_ENDPOINT"
+    )
     decision = {
         "schema": "resetp.d6-corrected-s3-trajectories.decision.v1",
-        "verdict": "PASS_D6_CORRECTED_S3_TRAJECTORIES",
-        "representative_instance_id": instance_id,
+        "verdict": verdict,
+        "case_role": CASE_ROLE,
+        "case_instance_id": instance_id,
         "selected_seed_by_arm": selected,
         "observation_only": True,
         "all_final_costs_equal": all(
             bool(row["final_cost_equal"]) for row in raw_rows
         ),
+        "chen_style_shape_gate": {
+            "passed": shape_gate_pass,
+            "minimum_plotted_points_per_algorithm": minimum_points,
+            "minimum_strict_cost_decreases_per_algorithm": (
+                minimum_decreases
+            ),
+            "checks_by_algorithm": shape_checks,
+            "preregistration": (
+                str(
+                    TRAJECTORY_SHAPE_PREREGISTRATION.relative_to(
+                        REPO
+                    )
+                )
+                if shape_preregistration is not None
+                else None
+            ),
+            "preregistration_sha256": (
+                sha256(TRAJECTORY_SHAPE_PREREGISTRATION)
+                if shape_preregistration is not None
+                else None
+            ),
+        },
         "curve_definition": (
             "monotone running minimum of complete-model scores obtained by "
             "offline completion of copy-only HGS proxy-best snapshots"
@@ -753,6 +985,11 @@ def main() -> int:
             "archive_candidates_per_view": MAX_ARCHIVE,
             "exact_elites_per_view": EXACT_ELITES,
             "mip_time_limit_seconds": MIP_SECONDS,
+            "trajectory_shape_preregistration_sha256": (
+                sha256(TRAJECTORY_SHAPE_PREREGISTRATION)
+                if CASE_ROLE == "mechanism_illustration"
+                else None
+            ),
         },
     )
     (OUT / "report.md").write_text(
@@ -762,8 +999,10 @@ def main() -> int:
         "ten-seed mean cost before observing its curve. The hook copied only "
         "route skeletons and timestamps. Offline full-model scoring occurred "
         "after search. Every rerun final cost equals the sealed corrected S3 "
-        "cost exactly within 1e-9. Curve observations do not replace official "
-        "table scores.\n",
+        "cost exactly within 1e-9. The registered shape gate also requires "
+        "at least six genuine cost decreases and eight plotted observations "
+        "per algorithm, with the sealed final solution as the final plotted "
+        "point. Curve observations do not replace official table scores.\n",
         encoding="utf-8",
     )
     artifacts = {
@@ -783,8 +1022,23 @@ def main() -> int:
             "artifacts": artifacts,
         },
     )
+    write_json(
+        OUT / "done.json",
+        {
+            "schema": (
+                "resetp.d6-corrected-s3-trajectories-completion.v1"
+            ),
+            "verdict": decision["verdict"],
+            "case_role": CASE_ROLE,
+            "curve_data_sha256": sha256(OUT / "curve_data.csv"),
+            "decision_sha256": sha256(OUT / "decision.json"),
+            "artifact_hashes_sha256": sha256(
+                OUT / "artifact_hashes.json"
+            ),
+        },
+    )
     print(json.dumps(decision, ensure_ascii=False, sort_keys=True))
-    return 0
+    return 0 if verdict.startswith("PASS") else 2
 
 
 if __name__ == "__main__":

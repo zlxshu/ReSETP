@@ -1,0 +1,97 @@
+{
+  "instance_pair_outcomes": {
+    "HGS-E": {
+      "holm_adjusted_p_value": 1.1641532182693481e-10,
+      "losses": 0,
+      "one_sided_wilcoxon_p_value": 5.820766091346741e-11,
+      "paired_units": 81,
+      "ties": 47,
+      "wins": 34
+    },
+    "HGS-F": {
+      "holm_adjusted_p_value": 1.6795504648829962e-12,
+      "losses": 0,
+      "one_sided_wilcoxon_p_value": 5.598501549609987e-13,
+      "paired_units": 81,
+      "ties": 14,
+      "wins": 67
+    },
+    "HGS-M": {
+      "holm_adjusted_p_value": 4.656612873077393e-10,
+      "losses": 0,
+      "one_sided_wilcoxon_p_value": 4.656612873077393e-10,
+      "paired_units": 81,
+      "ties": 50,
+      "wins": 31
+    }
+  },
+  "layer_pair_outcomes": {
+    "HGS-E": {
+      "losses": 0,
+      "paired_units": 27,
+      "ties": 13,
+      "wins": 14
+    },
+    "HGS-F": {
+      "losses": 0,
+      "paired_units": 27,
+      "ties": 0,
+      "wins": 27
+    },
+    "HGS-M": {
+      "losses": 0,
+      "paired_units": 27,
+      "ties": 14,
+      "wins": 13
+    }
+  },
+  "overall_mean_cost_reduction_percent": {
+    "HGS-E": 0.11357549776249558,
+    "HGS-F": 0.9148031454347395,
+    "HGS-M": 0.17939136598376895
+  },
+  "paper_strength_checks": {
+    "HGS-E:all_27_layers_nonworse": true,
+    "HGS-E:holm_p": true,
+    "HGS-E:instance_losses_zero": true,
+    "HGS-E:instance_wins": false,
+    "HGS-E:mean_reduction": true,
+    "HGS-E:task_losses_zero": true,
+    "HGS-F:all_27_layers_nonworse": true,
+    "HGS-F:holm_p": true,
+    "HGS-F:instance_losses_zero": true,
+    "HGS-F:instance_wins": true,
+    "HGS-F:mean_reduction": true,
+    "HGS-F:task_losses_zero": true,
+    "HGS-M:all_27_layers_nonworse": true,
+    "HGS-M:holm_p": true,
+    "HGS-M:instance_losses_zero": true,
+    "HGS-M:instance_wins": true,
+    "HGS-M:mean_reduction": true,
+    "HGS-M:task_losses_zero": true,
+    "stage_1_improvement_count": false
+  },
+  "schema": "resetp.e2-staged-result-strength-summary.v1",
+  "strict_improvements_over_protected_stage_1": 150,
+  "strict_route_fusion_improvements_descriptive_only": 62,
+  "task_pair_outcomes": {
+    "HGS-E": {
+      "losses": 0,
+      "paired_units": 405,
+      "ties": 280,
+      "wins": 125
+    },
+    "HGS-F": {
+      "losses": 0,
+      "paired_units": 405,
+      "ties": 98,
+      "wins": 307
+    },
+    "HGS-M": {
+      "losses": 0,
+      "paired_units": 405,
+      "ties": 291,
+      "wins": 114
+    }
+  }
+}

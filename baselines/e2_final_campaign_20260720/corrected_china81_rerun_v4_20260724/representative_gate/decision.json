@@ -1,0 +1,68 @@
+{
+  "all_complete_candidate_budgets_80": true,
+  "all_full_model_feasible": true,
+  "case_instance_id": "cn-prd-50c-01-V2-LOCATIONS",
+  "case_role": "representative",
+  "claim_boundary": "descriptive result-blind representative comparison; the three single-view columns are exact-model-selected outputs from the same three view generations used by MV-HGS-SP, while the fusion also pays for all views and time-limited MIP recombination; no equal-compute claim is made",
+  "four_arm_rows": 40,
+  "input_manifest_hash_set_count": 1,
+  "mechanism_endpoint_gate": {
+    "applicable": false,
+    "checks": null,
+    "passed": null,
+    "preregistration": null,
+    "preregistration_sha256": null
+  },
+  "mv_hgs_sp_pairwise": {
+    "HGS-E": {
+      "losses": 0,
+      "ties": 8,
+      "wins": 2
+    },
+    "HGS-F": {
+      "losses": 0,
+      "ties": 0,
+      "wins": 10
+    },
+    "HGS-M": {
+      "losses": 0,
+      "ties": 10,
+      "wins": 0
+    }
+  },
+  "next_gate": "observation-only trajectories, S4 and S5",
+  "representative_instance_id": "cn-prd-50c-01-V2-LOCATIONS",
+  "responsibility_map_hash_set_count": 1,
+  "schema": "resetp.d6-corrected-s3.decision.v1",
+  "seed_count": 10,
+  "shared_search_task_count": 10,
+  "source_hash_set_count": 1,
+  "summary": {
+    "HGS-E": {
+      "best_cost": 2393.8185755222853,
+      "max_cost": 2395.074255021319,
+      "mean_cost": 2394.0342712254533,
+      "mean_cpu_seconds": 22.84042928729905
+    },
+    "HGS-F": {
+      "best_cost": 2468.13821350964,
+      "max_cost": 2473.2451623263755,
+      "mean_cost": 2469.34495273826,
+      "mean_cpu_seconds": 21.517453758296323
+    },
+    "HGS-M": {
+      "best_cost": 2393.8185755222853,
+      "max_cost": 2393.8185755222853,
+      "mean_cost": 2393.8185755222853,
+      "mean_cpu_seconds": 23.67065091249242
+    },
+    "MV-HGS-SP": {
+      "best_cost": 2393.8185755222853,
+      "max_cost": 2393.8185755222853,
+      "mean_cost": 2393.8185755222853,
+      "mean_cpu_seconds": 69.73161309150164
+    }
+  },
+  "verdict": "PASS_D6_CORRECTED_S3_REPRESENTATIVE",
+  "wallclock_safety_trigger_count": 0
+}

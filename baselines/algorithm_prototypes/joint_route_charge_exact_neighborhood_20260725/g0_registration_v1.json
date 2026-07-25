@@ -1,0 +1,120 @@
+{
+  "contract_id": "E2-JRC-EXACT-NH-001",
+  "created_date": "2026-07-25",
+  "instances": [
+    "cn-cy-25c-01-V2-LOCATIONS",
+    "cn-prd-75c-03-V2-LOCATIONS",
+    "cn-jjj-150c-03-V2-LOCATIONS"
+  ],
+  "limits": {
+    "aggregate_rss_mib": 4096,
+    "new_complete_candidate_scores_per_task": 1,
+    "selected_customers": 8,
+    "threads_per_worker": 1,
+    "time_limit_seconds": 30.0,
+    "workers": 6
+  },
+  "pass_rules": {
+    "ab_adjacency_change_min": 3,
+    "ab_beats_a_and_b_count_min": 2,
+    "ab_improves_count_min": 2,
+    "ab_loss_count_max": 0,
+    "ab_one_improvement_pct_min": 0.05,
+    "ab_resource_change_min": 1,
+    "all_tasks_exact_feasible_replayed": true,
+    "b_improves_count_min": 2
+  },
+  "protected_fallback": {
+    "formal_root": "baselines/e2_final_campaign_20260720/corrected_china81_rerun_v7_small_archive_ledger_20260724/full_gate",
+    "name": "MV-HGS-SP",
+    "status": "IMMUTABLE_FALLBACK"
+  },
+  "protected_sha256": {
+    "baselines/algorithm_prototypes/genuine_hgs_rr_20260724/decoder_cache.py": "600d4003b1f2e8f6103809bfa3825f877acd9161f780bc028afa5688fd2fe7db",
+    "baselines/algorithm_prototypes/genuine_hgs_rr_20260724/fleet_assignment_dp.py": "b0b2cbb70d55ca0a26ddc3e7b388fe36d984d0e4618987de8a612f8354d19430",
+    "baselines/algorithm_prototypes/genuine_hgs_rr_20260724/reference_decoder.py": "cca72605d98ae39430975eb08facae1211e4b430e4931e4f36bcf8ec1f0b2b72",
+    "baselines/algorithm_prototypes/joint_route_charge_exact_neighborhood_20260725/__init__.py": "010c7e265e0085f4217d0787e80bcdfec7ee000a591737c97b3fd035f3b648a0",
+    "baselines/algorithm_prototypes/joint_route_charge_exact_neighborhood_20260725/build_registration.py": "ae86e8c16ac807a1475ee36589b0f3a3a4f933dfc71b644dbc3e725e8646e4eb",
+    "baselines/algorithm_prototypes/joint_route_charge_exact_neighborhood_20260725/common.py": "e107ebbd5c21ba457c465eb24344563d6413ae53a7ae7c655670158104019708",
+    "baselines/algorithm_prototypes/joint_route_charge_exact_neighborhood_20260725/exact_neighborhood.py": "01956b0755ef41d1ba3ebc119051d6c954630c9a38915abc4fd5da22368b5c73",
+    "baselines/algorithm_prototypes/joint_route_charge_exact_neighborhood_20260725/independent_replay.py": "9717b17d58f14664b19d884f5bbfa68c689402f1791d32ca402813c4167eda31",
+    "baselines/algorithm_prototypes/joint_route_charge_exact_neighborhood_20260725/run_engineering_gate.py": "15167aa3c46f8487914a12b06d5b4d6956603def96b6955684ce608a9d69a5f3",
+    "baselines/algorithm_prototypes/joint_route_charge_exact_neighborhood_20260725/run_g0.py": "c084cd5b5acc1bb27a340717026c761f288097ff9ffd8c3f937c87afb554da31",
+    "baselines/algorithm_prototypes/joint_route_charge_exact_neighborhood_20260725/worker_entry.py": "0d3bb87fdbfff74695832d3c58d298238e3c6ae1f0f866bd63d815efd91510d9",
+    "baselines/e2_final_campaign_20260720/corrected_china81_rerun_v7_small_archive_ledger_20260724/full_gate/decision.json": "b7847b70a06277a7c53c0211f28f1161824171692f5c68f38521b3a7113ef3a6",
+    "baselines/e2_final_campaign_20260720/corrected_china81_rerun_v7_small_archive_ledger_20260724/full_gate/raw_runs.csv": "29cdc7896fc468b0698784a93283eb25ee89b34d1e6ac6a21fb57645b897e84d",
+    "baselines/e2_final_campaign_20260720/corrected_china81_rerun_v7_small_archive_ledger_20260724/full_gate/tasks/D6-E2-STAGED__cn-cy-25c-01-V2-LOCATIONS__seed1/solution_witnesses.json": "f532e3548d6c9c72d3707d2f27e6cd99abf95dafcc18927dd3c3ec2eadc6dd7e",
+    "baselines/e2_final_campaign_20260720/corrected_china81_rerun_v7_small_archive_ledger_20260724/full_gate/tasks/D6-E2-STAGED__cn-jjj-150c-03-V2-LOCATIONS__seed1/solution_witnesses.json": "6a9891c036dcb91c71f525ed458576ab51f18cf65c525f1817886e3d71973bc8",
+    "baselines/e2_final_campaign_20260720/corrected_china81_rerun_v7_small_archive_ledger_20260724/full_gate/tasks/D6-E2-STAGED__cn-prd-75c-03-V2-LOCATIONS__seed1/solution_witnesses.json": "865d8fe447e83274eebdcb2623755abf4c4745c831a12ffd0ce490e4f7ab65a0",
+    "data/ChinaInstances/china81_finite_fleet_authority_v1_20260723/artifact_hashes.json": "cad19ac5259dc0693709314148cca84fa2e86d8758e91854eb1adb2e92d48341",
+    "data/ChinaInstances/china81_finite_fleet_authority_v1_20260723/witnesses/cn-cy-25c-01-V2-LOCATIONS.json": "7e52fa5917634e8c242e3f19bbd59a4f0f48460ac59759a909a72b0091a76430",
+    "data/ChinaInstances/china81_finite_fleet_authority_v1_20260723/witnesses/cn-jjj-150c-03-V2-LOCATIONS.json": "bf0985f93e823c53d2ac1cf9a1ac92180044996235802700478ac5e6eab192b1",
+    "data/ChinaInstances/china81_finite_fleet_authority_v1_20260723/witnesses/cn-prd-75c-03-V2-LOCATIONS.json": "5534106c29579bfb178445d32be0d5643a496b7ece7bcf649d6ac64464d18ef7",
+    "data/ChinaInstances/china81_local_directed_matrices_corrected_v10_20260723/artifact_hashes.json": "3e2f65dd653011a7c021bfc439f3dea8e445788182c6307cbc316b2cf23e64ce",
+    "data/ChinaInstances/china81_runtime_parameter_authority_v4_20260723/artifact_hashes.json": "f2adff241dc43b9960399887d27b52ef2688327cc3db61c08cc15e97e4d9318c",
+    "data/ChinaInstances/china81_stage2_static_inputs_corrected_v3_20260723/artifact_hashes.json": "9601841c4dcfee30cddbad237ff3dc5a1770cfde243a017c4541deb7341f4356",
+    "docs/handoff/e2_joint_route_charge_exact_neighborhood_contract_20260725.md": "6e6573e7bc906a8198fee846cfd7d5d5860ae476f54e71783305f02c66a1d600",
+    "solver/src/setp_solver/check.py": "9c81e254e05591667c8225965bb9d0ba4e8bbfc53eb0f8c61ffdb4325a1403a8",
+    "solver/src/setp_solver/china81_completion.py": "c0b72db82e324981442f357bc3bb336eac5dae033a44a3ab16fa2cbe4db91653",
+    "solver/src/setp_solver/cost.py": "2717b4b4de39bb4c2a9a1bda602f4420cb3e3b1e87faa83678dfa64f88fc80be",
+    "solver/src/setp_solver/prices.py": "fe13a721fc63e79c44f5c7faf8bf4802155a28cb4c081d010d09d8dc4804d157"
+  },
+  "schema": "resetp.jrc-exact-nh-g0.v1",
+  "selection_rule": "result-blind SHA-256 minimum unused instance in each of the frozen 25/75/150-customer layers",
+  "tasks": [
+    {
+      "arm": "B_EXACT_NH",
+      "construction_witness": "data/ChinaInstances/china81_finite_fleet_authority_v1_20260723/witnesses/cn-cy-25c-01-V2-LOCATIONS.json",
+      "hgs_expected_cost": 1287.1206743588011,
+      "hgs_seed": 1,
+      "hgs_witness": "baselines/e2_final_campaign_20260720/corrected_china81_rerun_v7_small_archive_ledger_20260724/full_gate/tasks/D6-E2-STAGED__cn-cy-25c-01-V2-LOCATIONS__seed1/solution_witnesses.json",
+      "instance_id": "cn-cy-25c-01-V2-LOCATIONS",
+      "task_id": "JRC-G0__cn-cy-25c-01-V2-LOCATIONS__B_EXACT_NH"
+    },
+    {
+      "arm": "AB_HGS_EXACT_NH",
+      "construction_witness": "data/ChinaInstances/china81_finite_fleet_authority_v1_20260723/witnesses/cn-cy-25c-01-V2-LOCATIONS.json",
+      "hgs_expected_cost": 1287.1206743588011,
+      "hgs_seed": 1,
+      "hgs_witness": "baselines/e2_final_campaign_20260720/corrected_china81_rerun_v7_small_archive_ledger_20260724/full_gate/tasks/D6-E2-STAGED__cn-cy-25c-01-V2-LOCATIONS__seed1/solution_witnesses.json",
+      "instance_id": "cn-cy-25c-01-V2-LOCATIONS",
+      "task_id": "JRC-G0__cn-cy-25c-01-V2-LOCATIONS__AB_HGS_EXACT_NH"
+    },
+    {
+      "arm": "B_EXACT_NH",
+      "construction_witness": "data/ChinaInstances/china81_finite_fleet_authority_v1_20260723/witnesses/cn-prd-75c-03-V2-LOCATIONS.json",
+      "hgs_expected_cost": 3935.78265565653,
+      "hgs_seed": 1,
+      "hgs_witness": "baselines/e2_final_campaign_20260720/corrected_china81_rerun_v7_small_archive_ledger_20260724/full_gate/tasks/D6-E2-STAGED__cn-prd-75c-03-V2-LOCATIONS__seed1/solution_witnesses.json",
+      "instance_id": "cn-prd-75c-03-V2-LOCATIONS",
+      "task_id": "JRC-G0__cn-prd-75c-03-V2-LOCATIONS__B_EXACT_NH"
+    },
+    {
+      "arm": "AB_HGS_EXACT_NH",
+      "construction_witness": "data/ChinaInstances/china81_finite_fleet_authority_v1_20260723/witnesses/cn-prd-75c-03-V2-LOCATIONS.json",
+      "hgs_expected_cost": 3935.78265565653,
+      "hgs_seed": 1,
+      "hgs_witness": "baselines/e2_final_campaign_20260720/corrected_china81_rerun_v7_small_archive_ledger_20260724/full_gate/tasks/D6-E2-STAGED__cn-prd-75c-03-V2-LOCATIONS__seed1/solution_witnesses.json",
+      "instance_id": "cn-prd-75c-03-V2-LOCATIONS",
+      "task_id": "JRC-G0__cn-prd-75c-03-V2-LOCATIONS__AB_HGS_EXACT_NH"
+    },
+    {
+      "arm": "B_EXACT_NH",
+      "construction_witness": "data/ChinaInstances/china81_finite_fleet_authority_v1_20260723/witnesses/cn-jjj-150c-03-V2-LOCATIONS.json",
+      "hgs_expected_cost": 7260.371109289286,
+      "hgs_seed": 1,
+      "hgs_witness": "baselines/e2_final_campaign_20260720/corrected_china81_rerun_v7_small_archive_ledger_20260724/full_gate/tasks/D6-E2-STAGED__cn-jjj-150c-03-V2-LOCATIONS__seed1/solution_witnesses.json",
+      "instance_id": "cn-jjj-150c-03-V2-LOCATIONS",
+      "task_id": "JRC-G0__cn-jjj-150c-03-V2-LOCATIONS__B_EXACT_NH"
+    },
+    {
+      "arm": "AB_HGS_EXACT_NH",
+      "construction_witness": "data/ChinaInstances/china81_finite_fleet_authority_v1_20260723/witnesses/cn-jjj-150c-03-V2-LOCATIONS.json",
+      "hgs_expected_cost": 7260.371109289286,
+      "hgs_seed": 1,
+      "hgs_witness": "baselines/e2_final_campaign_20260720/corrected_china81_rerun_v7_small_archive_ledger_20260724/full_gate/tasks/D6-E2-STAGED__cn-jjj-150c-03-V2-LOCATIONS__seed1/solution_witnesses.json",
+      "instance_id": "cn-jjj-150c-03-V2-LOCATIONS",
+      "task_id": "JRC-G0__cn-jjj-150c-03-V2-LOCATIONS__AB_HGS_EXACT_NH"
+    }
+  ]
+}

@@ -1,0 +1,13 @@
+{
+  "candidate_objectives_evaluated": 0,
+  "g0_started": false,
+  "monitor_findings": [
+    "FATAL_LOG_PATTERN",
+    "PROCESS_EXITED_WITHOUT_COMPLETION"
+  ],
+  "next_step": "FINAL_STOP_NO_RESCUE",
+  "pass": false,
+  "reason": "The frozen engineering runner resolved test_engineering to a previously sealed prototype directory and failed before main() entered. The standing contract forbids implementation rescue or retry after any engineering-gate failure.",
+  "schema": "resetp.resource-slot-pricing-engineering-decision.v1",
+  "verdict": "STOP_RESOURCE_SLOT_PRICING_NO_LOW_COST_STRONG_HGS_HEADROOM"
+}

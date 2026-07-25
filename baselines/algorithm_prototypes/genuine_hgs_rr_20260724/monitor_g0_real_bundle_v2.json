@@ -1,0 +1,124 @@
+{
+  "schema_version": 1,
+  "name": "genuine-hybrid-g0-real-bundle-v2",
+  "objective": "执行版本化零搜索真实bundle接线复验，保留v1失败，验证局部硬约束筛选和可行当前分配保留机制",
+  "workdir": "../../..",
+  "poll_seconds": 15,
+  "max_runtime_seconds": 3600,
+  "pause_on_anomaly": true,
+  "required_command_substrings": [
+    "run_g0_real_bundle_preflight_v2.py",
+    "--execute"
+  ],
+  "forbidden_command_substrings": [
+    "--smoke",
+    "--debug"
+  ],
+  "min_cpu_percent_when_active": 0,
+  "low_cpu_consecutive_checks": 20,
+  "max_rss_mb": 5000,
+  "min_system_free_memory_mb": 128,
+  "min_system_memory_free_percent": 5,
+  "logs": [],
+  "progress_files": [],
+  "result_files": [
+    "g0_real_bundle_gate_v2/metadata.json",
+    "g0_real_bundle_gate_v2/raw_runs.csv",
+    "g0_real_bundle_gate_v2/decision.json",
+    "g0_real_bundle_gate_v2/artifact_hashes.json",
+    "g0_real_bundle_gate_v2/report.md"
+  ],
+  "completion_files": [
+    "g0_real_bundle_gate_v2/done.json"
+  ],
+  "checkpoint_paths": [],
+  "protected_files": [
+    {
+      "path": "monitor_g0_real_bundle_v2.json",
+      "kind": "monitor_contract"
+    },
+    {
+      "path": "g0_real_bundle_preregistration_v1.json",
+      "kind": "experiment_contract"
+    },
+    {
+      "path": "g0_real_bundle_preregistration_v2.json",
+      "kind": "experiment_contract"
+    },
+    {
+      "path": "run_g0_real_bundle_preflight.py",
+      "kind": "validation_runner"
+    },
+    {
+      "path": "run_g0_real_bundle_preflight_v2.py",
+      "kind": "validation_runner"
+    },
+    {
+      "path": "fleet_assignment_dp.py",
+      "kind": "model"
+    },
+    {
+      "path": "reference_decoder.py",
+      "kind": "model"
+    },
+    {
+      "path": "evaluation.py",
+      "kind": "evaluator"
+    },
+    {
+      "path": "contracts.py",
+      "kind": "experiment_contract"
+    },
+    {
+      "path": "../../../docs/handoff/e2_genuine_hybrid_hgs_rr_contract_20260724.md",
+      "kind": "research_question"
+    },
+    {
+      "path": "../../../solver/src/setp_solver/check.py",
+      "kind": "evaluator"
+    },
+    {
+      "path": "../../../solver/src/setp_solver/china81_completion.py",
+      "kind": "evaluator"
+    },
+    {
+      "path": "../../../solver/src/setp_solver/cost.py",
+      "kind": "cost_function"
+    },
+    {
+      "path": "../../../solver/src/setp_solver/prices.py",
+      "kind": "primary_config"
+    },
+    {
+      "path": "../../../docs/paper_v2/paper_main.tex",
+      "kind": "paper_conclusion"
+    }
+  ],
+  "csv_rules": [
+    {
+      "path": "g0_real_bundle_gate_v2/raw_runs.csv",
+      "required": true,
+      "required_after_seconds": 1800,
+      "required_fields": [
+        "instance_id",
+        "status",
+        "decoder_complete_evaluations",
+        "decoder_feasible_evaluations",
+        "search_iterations"
+      ],
+      "feasible_field": "status",
+      "truthy": [
+        "PASS"
+      ],
+      "min_feasible_rate": 1.0,
+      "duplicate_key_fields": [
+        "instance_id"
+      ],
+      "max_duplicate_fraction": 0
+    }
+  ],
+  "ai": {
+    "enabled": false,
+    "timeout_seconds": 180
+  }
+}

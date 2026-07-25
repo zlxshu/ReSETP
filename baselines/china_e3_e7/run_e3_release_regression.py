@@ -11,6 +11,7 @@ import re
 import subprocess
 import sys
 from datetime import UTC, datetime
+from importlib.metadata import version
 from pathlib import Path
 from time import perf_counter
 from typing import Any
@@ -18,7 +19,16 @@ from xml.etree import ElementTree
 
 
 REPO = Path(__file__).resolve().parents[2]
-OUT = Path(__file__).resolve().parent / "e3_release_regression_20260723"
+if str(REPO) not in sys.path:
+    sys.path.insert(0, str(REPO))
+
+from baselines.china_e3_e7.release_v6_config import (  # noqa: E402
+    CONTRACT,
+    CONTRACT_BUILDER,
+    E3_RELEASE_REGRESSION as OUT,
+    RELEASE_CONFIG,
+)
+
 EXPECTED = {
     "solver/tests/test_e2_80k_robustness_gate.py::test_protected_semantics_and_goeke80_parameters_match_frozen_commit": "EXPECTED_HISTORICAL_FROZEN_HASH_ALARM",
     "solver/tests/test_e2_alns_throughput.py::E2AlnsThroughputTest::test_runner_smoke_outputs_finite_zero_violation_rows": "EXPECTED_LEGACY_ENVIRONMENT_GUARD",
@@ -82,7 +92,14 @@ def main() -> int:
         "-q",
         f"--junitxml={junit}",
         "solver/tests",
+        "baselines/china_e3_e7/test_corrected_s3_endpoint_gate.py",
+        "baselines/china_e3_e7/test_corrected_s3_trajectory_gate.py",
+        "baselines/china_e3_e7/test_e2_result_strength_audit.py",
         "baselines/china_e3_e7/test_adapter.py",
+        "baselines/china_e3_e7/test_e3_exhibits.py",
+        "baselines/china_e3_e7/test_e3_result_audit.py",
+        "baselines/china_e3_e7/test_statistics_holm_gate.py",
+        "baselines/china_e3_e7/test_paper_algorithm_contract.py",
         "baselines/china_e3_e7/test_formal_e3_runner.py",
         "baselines/china_e3_e7/test_spatiotemporal_settlement.py",
     ]
@@ -160,6 +177,14 @@ def main() -> int:
             "command": command,
             "cwd": str(REPO),
             "python": sys.version,
+            "environment_dependencies": {
+                package: version(package)
+                for package in (
+                    "pandas",
+                    "sympy",
+                    "beautifulsoup4",
+                )
+            },
             "duration_seconds": elapsed,
             "expected_failure_registry": EXPECTED,
             "source_hashes": {
@@ -178,23 +203,53 @@ def main() -> int:
                     REPO
                     / "baselines/china_e3_e7/statistics.py",
                     REPO
+                    / "baselines/china_e3_e7/e3_exhibits.py",
+                    REPO
+                    / "baselines/china_e3_e7/"
+                    "run_e3_result_audit.py",
+                    REPO
                     / "baselines/china_e3_e7/charts.py",
                     REPO
                     / "baselines/china_e3_e7/tables.py",
                     REPO
+                    / "baselines/china_e3_e7/"
+                    "test_corrected_s3_endpoint_gate.py",
+                    REPO
+                    / "baselines/china_e3_e7/"
+                    "test_corrected_s3_trajectory_gate.py",
+                    REPO
+                    / "baselines/china_e3_e7/"
+                    "test_e2_result_strength_audit.py",
+                    REPO
+                    / "baselines/e2_final_campaign_20260720/"
+                    "run_e2_result_strength_audit.py",
+                    REPO
+                    / "baselines/e2_final_campaign_20260720/"
+                    "corrected_china81_rerun_v4_20260724/"
+                    "e2_result_release_preregistration_v1_20260724.json",
+                    REPO
                     / "baselines/china_e3_e7/test_adapter.py",
+                    REPO
+                    / "baselines/china_e3_e7/"
+                    "test_e3_exhibits.py",
+                    REPO
+                    / "baselines/china_e3_e7/"
+                    "test_e3_result_audit.py",
+                    REPO
+                    / "baselines/china_e3_e7/"
+                    "test_statistics_holm_gate.py",
+                    REPO
+                    / "baselines/china_e3_e7/"
+                    "test_paper_algorithm_contract.py",
                     REPO
                     / "baselines/china_e3_e7/"
                     "test_formal_e3_runner.py",
                     REPO
                     / "baselines/china_e3_e7/"
                     "test_spatiotemporal_settlement.py",
-                    REPO
-                    / "data/ChinaInstances/"
-                    "china_e3_formal_release_contract_v4_20260723.json",
-                    REPO
-                    / "baselines/china_e3_e7/"
-                    "build_formal_release_contract_v4.py",
+                    CONTRACT,
+                    CONTRACT_BUILDER,
+                    RELEASE_CONFIG,
                     REPO
                     / "baselines/china_e3_e7/"
                     "pre_e3_full_chain_audit_20260723/"

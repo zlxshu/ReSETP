@@ -1,0 +1,56 @@
+{
+  "excluded_instance_ids": [
+    "cn-cy-100c-01-V2-LOCATIONS",
+    "cn-cy-150c-01-V2-LOCATIONS",
+    "cn-cy-200c-01-V2-LOCATIONS",
+    "cn-cy-200c-03-V2-LOCATIONS",
+    "cn-cy-25c-01-V2-LOCATIONS",
+    "cn-cy-50c-03-V2-LOCATIONS",
+    "cn-jjj-100c-03-V2-LOCATIONS",
+    "cn-jjj-15c-01-V2-LOCATIONS",
+    "cn-jjj-25c-01-V2-LOCATIONS",
+    "cn-jjj-50c-02-V2-LOCATIONS",
+    "cn-prd-100c-03-V2-LOCATIONS",
+    "cn-prd-150c-03-V2-LOCATIONS",
+    "cn-prd-200c-02-V2-LOCATIONS",
+    "cn-prd-50c-01-V2-LOCATIONS",
+    "cn-prd-75c-01-V2-LOCATIONS",
+    "cn-prd-75c-03-V2-LOCATIONS"
+  ],
+  "registered_at_utc": "2026-07-25T07:02:29.232381+00:00",
+  "schema": "resetp.unordered-route-pair-input-selection.v1",
+  "selected": [
+    {
+      "customer_count": 50,
+      "eligible_instance_ids": [
+        "cn-jjj-50c-01-V2-LOCATIONS",
+        "cn-jjj-50c-03-V2-LOCATIONS"
+      ],
+      "instance_id": "cn-jjj-50c-03-V2-LOCATIONS",
+      "region": "jjj",
+      "selection_digest": "1e7422c6259f6d1d6aaeccdd0c5021bed70528d69752fd381fa35cc3d9a15205"
+    },
+    {
+      "customer_count": 100,
+      "eligible_instance_ids": [
+        "cn-prd-100c-01-V2-LOCATIONS",
+        "cn-prd-100c-02-V2-LOCATIONS"
+      ],
+      "instance_id": "cn-prd-100c-01-V2-LOCATIONS",
+      "region": "prd",
+      "selection_digest": "5295d7731360b7d22ab468b057cd651679b58a3cb73e183558a8650cc7fa54fd"
+    },
+    {
+      "customer_count": 150,
+      "eligible_instance_ids": [
+        "cn-cy-150c-02-V2-LOCATIONS",
+        "cn-cy-150c-03-V2-LOCATIONS"
+      ],
+      "instance_id": "cn-cy-150c-03-V2-LOCATIONS",
+      "region": "cy",
+      "selection_digest": "12dea551272f8a6b6f962aa83933f906c12258ad3df750d47ba54e488b90fe2f"
+    }
+  ],
+  "selection_rule": "Use pre-fixed 50/100/150-customer strata; exclude every prior prototype instance; choose the eligible instance with smallest SHA-256(instance_id), without reading objectives.",
+  "status": "FROZEN_BEFORE_OBJECTIVE_ACCESS"
+}

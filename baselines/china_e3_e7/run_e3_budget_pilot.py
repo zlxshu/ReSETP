@@ -32,7 +32,7 @@ PROTOTYPE = (
     / "baselines/algorithm_prototypes/"
     "china81_mechanism_hybrid_20260720"
 )
-for path in (REPO / "solver/src", PROTOTYPE):
+for path in (REPO, REPO / "solver/src", PROTOTYPE):
     if str(path) not in sys.path:
         sys.path.insert(0, str(path))
 
@@ -40,24 +40,19 @@ import pyvrp  # noqa: E402
 from route_pool_sp import run_hgs_route_pool_recombination  # noqa: E402
 import numpy  # noqa: E402
 import scipy  # noqa: E402
+from baselines.china_e3_e7.release_v6_config import (  # noqa: E402
+    COMPLETE_CANDIDATE_BUDGET as EXPECTED_COMPLETE_BUDGET,
+    CONTRACT,
+    E3_BUDGET_PILOT as OUT,
+)
 from setp_solver.china81 import load_china81_bundle  # noqa: E402
 from setp_solver.solution import Route, Solution  # noqa: E402
 
 
-OUT = (
-    REPO
-    / "baselines/china_e3_e7/"
-    "e3_budget_pilot_v3_20260723"
-)
 FLEET = (
     REPO
     / "data/ChinaInstances/"
     "china81_finite_fleet_authority_v1_20260723"
-)
-CONTRACT = (
-    REPO
-    / "data/ChinaInstances/"
-    "china_e3_formal_release_contract_v4_20260723.json"
 )
 INSTANCES = (
     "cn-prd-10c-01-V2-LOCATIONS",
@@ -72,7 +67,6 @@ SEED = 1
 PILOT_HGS_ITERATIONS_PER_VIEW = 100
 ARCHIVE_CANDIDATES_PER_VIEW = 24
 EXACT_ELITES_PER_VIEW = 8
-EXPECTED_COMPLETE_BUDGET = 80
 MIP_SECONDS = 5.0
 REQUIRED_THREAD_ENV = {
     "OMP_NUM_THREADS": "1",

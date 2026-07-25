@@ -1,0 +1,63 @@
+{
+  "schema": "resetp.online-exact-checkpoint-development-preregistration.v1",
+  "registered_at": "2026-07-24T07:13:34+08:00",
+  "formal_evidence": false,
+  "problem": "The current algorithm completes and exactly scores its retained population only after each HGS view finishes. Consequently, genuine complete-model incumbent improvements are discovered late, discarded historical proxy incumbents cannot contribute routes, and the convergence record is dominated by an end-of-view or final-MIP drop.",
+  "candidate": "Keep the existing 5000-iteration HGS search, final 24-candidate exact archive, three views, and 5-second final route-pool MIP unchanged. In addition, at every 250 HGS iterations, copy the current proxy incumbent, immediately complete and score it with the registered complete China81 model, retain every feasible completion in the exact route archive, and update the complete-model incumbent. The checkpoint callback performs no random draw and no mutation.",
+  "pre_result_amendment": {
+    "registered_at": "2026-07-24T07:13:34+08:00",
+    "reason": "The expanded route pool can make a time-limited MIP return a weaker incumbent even though it contains every old route. To guarantee that the repair cannot erase the current algorithm's recombination result, first solve the unchanged final-population pool for 5 seconds, then solve the history-expanded pool for 5 seconds, and return the best exact feasible solution from both stages and all parents. This amendment was made before any seed-11 panel run.",
+    "result_data_seen_before_amendment": false
+  },
+  "literature_basis": [
+    {
+      "citation": "Subramanian, Uchoa, and Ochi (2013), Computers & Operations Research 40(10), 2519-2531",
+      "doi": "10.1016/j.cor.2013.01.013",
+      "relevance": "Route pools collected during heuristic execution and a sequence of set-partitioning models that may interact with the metaheuristic."
+    },
+    {
+      "citation": "Oliveira, Pessoa, and Roboredo (2024), Hybrid iterated local search algorithm for the vehicle routing problem with lockers",
+      "url": "https://optimization-online.org/2024/09/hybrid-iterated-local-search-algorithm-for-the-vehicle-routing-problem-with-lockers/",
+      "relevance": "The published ILS-SP scheme inserts periodic set-partitioning calls during the search and solves the accumulated pool again at the end."
+    }
+  ],
+  "frozen_budgets": {
+    "hgs_iterations_per_view": 5000,
+    "checkpoint_interval_iterations": 250,
+    "checkpoint_attempts_per_view": 20,
+    "final_population_candidates_per_view": 24,
+    "complete_candidate_evaluation_attempts_as_registered": 141,
+    "base_pool_mip_time_limit_seconds": 5.0,
+    "history_expanded_pool_mip_time_limit_seconds": 5.0,
+    "total_mip_time_limit_seconds": 10.0,
+    "wallclock_role": "safety cap only"
+  },
+  "development_panel": [
+    "cn-cy-100c-02-V2-LOCATIONS seed 11",
+    "cn-jjj-100c-02-V2-LOCATIONS seed 11",
+    "cn-prd-100c-02-V2-LOCATIONS seed 11",
+    "cn-cy-150c-02-V2-LOCATIONS seed 11",
+    "cn-jjj-150c-02-V2-LOCATIONS seed 11",
+    "cn-prd-150c-02-V2-LOCATIONS seed 11"
+  ],
+  "result_blindness": {
+    "seed_11_unused_in_formal_e2_or_s3": true,
+    "panel_results_not_read_before_registration": true,
+    "no_case_or_seed_substitution_after_registration": true
+  },
+  "acceptance": {
+    "all_solutions_independently_feasible": true,
+    "complete_budget_exactly_consumed_as_registered": 141,
+    "same_random_stream_endpoint_as_uninstrumented_hgs": true,
+    "candidate_final_never_worse_than_archive_route_reuse_control": true,
+    "minimum_strict_candidate_wins_over_control": 2,
+    "main_method_never_worse_than_any_own_single_view": true,
+    "minimum_panel_tasks_with_at_least_8_main_curve_points_and_6_strict_decreases": 5
+  },
+  "failure_rule": "If any invariant fails, fewer than two panel tasks improve, or fewer than five panel tasks meet the genuine complete-incumbent trajectory gate, preserve HALT evidence and reject this candidate. Do not change the interval, panel, seed, budgets, or threshold after seeing results.",
+  "post_run_accounting_correction": {
+    "corrected_complete_candidate_evaluation_attempts": 142,
+    "reason": "Each of the two MIP stages performs one independent exact check inside the set-partitioning solver and one complete reconstruction check after it returns. The preregistration counted the second MIP stage as only one additional check. The correction strengthens the existing HALT and does not alter any search result, threshold, or interpretation."
+  },
+  "claim_boundary": "Development diagnosis only. Passing authorizes a separately frozen confirmation and complete corrected E2 rerun; it does not itself support a paper claim."
+}

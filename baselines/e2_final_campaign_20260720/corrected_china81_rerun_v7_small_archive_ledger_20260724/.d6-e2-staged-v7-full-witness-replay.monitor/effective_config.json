@@ -1,0 +1,88 @@
+{
+  "ai": {
+    "enabled": false,
+    "timeout_seconds": 180
+  },
+  "checkpoint_paths": [
+    "/Volumes/移动硬盘（512G）/ReSETP/baselines/e2_final_campaign_20260720/corrected_china81_rerun_v7_small_archive_ledger_20260724/full_witness_replay/input_manifests"
+  ],
+  "completion_files": [
+    "/Volumes/移动硬盘（512G）/ReSETP/baselines/e2_final_campaign_20260720/corrected_china81_rerun_v7_small_archive_ledger_20260724/full_witness_replay/done.json"
+  ],
+  "config_path": "/Volumes/移动硬盘（512G）/ReSETP/baselines/e2_final_campaign_20260720/corrected_china81_rerun_v7_small_archive_ledger_20260724/monitor_full_witness_replay_v3.json",
+  "forbidden_command_substrings": [
+    "run_corrected_china81_d6_staged_portfolio.py",
+    "--smoke",
+    "--debug"
+  ],
+  "logs": [],
+  "low_cpu_consecutive_checks": 8,
+  "max_rss_mb": 5000,
+  "max_runtime_seconds": 14400,
+  "milestones": [],
+  "min_cpu_percent_when_active": 1,
+  "min_system_free_memory_mb": 128,
+  "min_system_memory_free_percent": 3,
+  "name": "d6-e2-staged-v7-full-witness-replay",
+  "objective": "独立重算修正版E2的1620个封存方案，核对可行性、成本、排放、日期地域价格、有限车队、预算和历史档案账本",
+  "pause_on_anomaly": true,
+  "poll_seconds": 15,
+  "progress_files": [],
+  "protected_files": [
+    {
+      "kind": "experiment_contract",
+      "path": "/Volumes/移动硬盘（512G）/ReSETP/baselines/e2_final_campaign_20260720/corrected_china81_rerun_v7_small_archive_ledger_20260724/full_witness_replay_preregistration_v3.json"
+    },
+    {
+      "kind": "experiment_contract",
+      "path": "/Volumes/移动硬盘（512G）/ReSETP/baselines/e2_final_campaign_20260720/corrected_china81_rerun_v7_small_archive_ledger_20260724/formal_preregistration_v4.json"
+    },
+    {
+      "kind": "core_data",
+      "path": "/Volumes/移动硬盘（512G）/ReSETP/baselines/e2_final_campaign_20260720/corrected_china81_rerun_v7_small_archive_ledger_20260724/full_gate/raw_runs.csv"
+    },
+    {
+      "kind": "experiment_decision",
+      "path": "/Volumes/移动硬盘（512G）/ReSETP/baselines/e2_final_campaign_20260720/corrected_china81_rerun_v7_small_archive_ledger_20260724/full_gate/decision.json"
+    },
+    {
+      "kind": "artifact_manifest",
+      "path": "/Volumes/移动硬盘（512G）/ReSETP/baselines/e2_final_campaign_20260720/corrected_china81_rerun_v7_small_archive_ledger_20260724/full_gate/artifact_hashes.json"
+    },
+    {
+      "kind": "validation_runner",
+      "path": "/Volumes/移动硬盘（512G）/ReSETP/baselines/e2_final_campaign_20260720/replay_corrected_d6_staged_witnesses.py"
+    },
+    {
+      "kind": "validation_dependency",
+      "path": "/Volumes/移动硬盘（512G）/ReSETP/baselines/china_e3_e7/formal_e3_runner.py"
+    },
+    {
+      "kind": "cost_function",
+      "path": "/Volumes/移动硬盘（512G）/ReSETP/solver/src/setp_solver/cost.py"
+    },
+    {
+      "kind": "evaluator",
+      "path": "/Volumes/移动硬盘（512G）/ReSETP/solver/src/setp_solver/check.py"
+    },
+    {
+      "kind": "evaluator",
+      "path": "/Volumes/移动硬盘（512G）/ReSETP/solver/src/setp_solver/china81_completion.py"
+    },
+    {
+      "kind": "paper_conclusion",
+      "path": "/Volumes/移动硬盘（512G）/ReSETP/docs/paper_v2/paper_main.tex"
+    }
+  ],
+  "required_command_substrings": [
+    "replay_corrected_d6_staged_witnesses.py"
+  ],
+  "result_files": [
+    "/Volumes/移动硬盘（512G）/ReSETP/baselines/e2_final_campaign_20260720/corrected_china81_rerun_v7_small_archive_ledger_20260724/full_witness_replay/raw_runs.csv",
+    "/Volumes/移动硬盘（512G）/ReSETP/baselines/e2_final_campaign_20260720/corrected_china81_rerun_v7_small_archive_ledger_20260724/full_witness_replay/decision.json",
+    "/Volumes/移动硬盘（512G）/ReSETP/baselines/e2_final_campaign_20260720/corrected_china81_rerun_v7_small_archive_ledger_20260724/full_witness_replay/artifact_hashes.json"
+  ],
+  "schema_version": 1,
+  "stale_seconds": 1800,
+  "workdir": "/Volumes/移动硬盘（512G）/ReSETP"
+}

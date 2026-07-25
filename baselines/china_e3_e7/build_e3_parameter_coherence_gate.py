@@ -14,18 +14,19 @@ from typing import Any
 
 
 REPO = Path(__file__).resolve().parents[2]
+sys.path.insert(0, str(REPO))
 sys.path.insert(0, str(REPO / "solver/src"))
 
 from setp_solver.china81 import (  # noqa: E402
     DEFAULT_CHINA81_DATE,
     load_china81_bundle,
 )
-
-
-OUT = (
-    Path(__file__).resolve().parent
-    / "e3_parameter_coherence_gate_v2_20260723"
+from baselines.china_e3_e7.release_v6_config import (  # noqa: E402
+    CONTRACT,
+    E3_PARAMETER_GATE as OUT,
 )
+
+
 RUNTIME = (
     REPO
     / "data/ChinaInstances/"
@@ -40,11 +41,6 @@ STATIC = (
     REPO
     / "data/ChinaInstances/"
     "china81_stage2_static_inputs_corrected_v3_20260723"
-)
-CONTRACT = (
-    REPO
-    / "data/ChinaInstances/"
-    "china_e3_formal_release_contract_v4_20260723.json"
 )
 EXPECTED_CITIES = {
     "beijing",

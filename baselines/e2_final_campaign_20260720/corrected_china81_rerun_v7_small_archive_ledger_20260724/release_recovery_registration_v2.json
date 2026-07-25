@@ -1,0 +1,69 @@
+{
+  "schema": "resetp.e2-v7-release-recovery-registration.v2",
+  "status": "FROZEN_AFTER_REPLAY_BEFORE_STRENGTH",
+  "registered_date": "2026-07-25",
+  "user_authorization": "User explicitly confirmed safe termination of stuck process group 76777 and versioned recovery from the sealed witness-replay PASS.",
+  "incident": {
+    "formal_e2_verdict": "PASS_D6_CORRECTED_CHINA81_E2_STAGED_V7_SMALL_ARCHIVE_LEDGER",
+    "formal_task_count": 405,
+    "formal_solution_count": 1620,
+    "witness_replay_verdict": "PASS_D6_STAGED_FULL_WITNESS_REPLAY",
+    "witness_replay_solution_count": 1620,
+    "original_outer_monitor_finding": "PROGRESS_STALLED",
+    "original_inner_monitor_finding": "COMMAND_CONTRACT_MISMATCH_ON_DEFUNCT_CHILD",
+    "original_process_group": 76777,
+    "safe_stop_required": true,
+    "safe_stop_completed": true
+  },
+  "recovery_contract": {
+    "rerun_formal_e2": false,
+    "rerun_full_witness_replay": false,
+    "stage_order": [
+      "verify_formal_e2",
+      "verify_full_witness_replay",
+      "result_strength",
+      "s3_trajectory",
+      "s4_route_detail",
+      "s5_artifacts"
+    ],
+    "s3_workers": 3,
+    "fail_closed": true,
+    "canonical_pass_verdict": "PASS_E2_STAGED_V7_RELEASE_CHAIN",
+    "canonical_halt_verdict": "HALT_E2_STAGED_V7_RELEASE_CHAIN"
+  },
+  "claim_boundary": [
+    "The recovery changes orchestration only.",
+    "It does not change or rerun the formal E2 campaign or the 1620-solution witness replay.",
+    "It does not change algorithms, inputs, budgets, seeds, evaluators, protected files, stage thresholds, or sealed scores.",
+    "Every downstream frozen PASS or HALT verdict is preserved exactly.",
+    "A mechanical recovery PASS is not by itself a paper-strength, BKS, SOTA, or genuine-hybrid claim."
+  ],
+  "source_hashes": {
+    "baselines/e2_final_campaign_20260720/run_e2_staged_release_recovery_v2.py": "16ef4585b3f65a3c4348f3bdad30094af59fb1e42585672019d87283d435d8b1",
+    "baselines/e2_final_campaign_20260720/corrected_china81_rerun_v7_small_archive_ledger_20260724/monitor_release_recovery_v2.json": "70a412bf81269c9c3d73bb92bba05f8e3f5b1ade1708b4a551ea88cec8d6efee",
+    "baselines/e2_final_campaign_20260720/run_e2_staged_release_chain.py": "d06611794070da771add0669479de005e28dce6e067d20ea4badadeaec41fd10",
+    "baselines/e2_final_campaign_20260720/run_e2_staged_result_strength_audit.py": "184a2a8802f1defcee38d1c88ddb56719e33c7acda07ba80346bba838f2c6fbc",
+    "baselines/e2_final_campaign_20260720/run_e2_staged_s3_trajectory_gate.py": "ae899864239945de9c725a8442d787abfe3405f51750da3ae0daee879368d287",
+    "baselines/e2_final_campaign_20260720/run_e2_staged_s4_route_detail_v3.py": "df5dcba7507ffc1b81d34b91fdf361114625e95cf273fbe588ce972ac5874fd6",
+    "baselines/e2_final_campaign_20260720/run_e2_staged_s5_artifacts.py": "4fe1cb79d629203fdcd84a6f45d545d660688e3fcf3ff0d69b3a0fd8df71d2c3",
+    "baselines/e2_final_campaign_20260720/corrected_china81_rerun_v7_small_archive_ledger_20260724/formal_preregistration_v4.json": "3806bf3500417c49836be2cdcbee303bf8d29e3b84a7ff539ddc6f0593811f27",
+    "baselines/e2_final_campaign_20260720/corrected_china81_rerun_v7_small_archive_ledger_20260724/full_witness_replay_preregistration_v3.json": "c39cc85279c60b24b50554b81f107d6591c81646f1f7147e959cbee111fa913c",
+    "baselines/e2_final_campaign_20260720/corrected_china81_rerun_v7_small_archive_ledger_20260724/result_strength_audit_preregistration_v3.json": "7562fbaf596c931558d106ee799a2d4285cc6f37cb38845020de144bcf9fc13f",
+    "baselines/e2_final_campaign_20260720/corrected_china81_rerun_v7_small_archive_ledger_20260724/s3_trajectory_execution_preregistration_v2.json": "3828704fe29b63c282a4eb1c9684abf85064d17491eabedbffb04f51a3a5cde4",
+    "baselines/e2_final_campaign_20260720/corrected_china81_rerun_v7_small_archive_ledger_20260724/s4_route_detail_preregistration_v3.json": "4eb7985189bcbd7e246f0e9501432e512fa9a4240934b17a62b2049320973754",
+    "baselines/e2_final_campaign_20260720/corrected_china81_rerun_v7_small_archive_ledger_20260724/s5_artifact_runner_registration_v1.json": "0a17a461a32e5fe8eaf33945523a2afc33846199793ad326ffca9738d338c882",
+    "baselines/e2_final_campaign_20260720/corrected_china81_rerun_v7_small_archive_ledger_20260724/full_gate/decision.json": "b7847b70a06277a7c53c0211f28f1161824171692f5c68f38521b3a7113ef3a6",
+    "baselines/e2_final_campaign_20260720/corrected_china81_rerun_v7_small_archive_ledger_20260724/full_gate/done.json": "5c307acdc6fdd46069748f140e3c68c14cc6cb3f97326e6cdc4a3a84e562f750",
+    "baselines/e2_final_campaign_20260720/corrected_china81_rerun_v7_small_archive_ledger_20260724/full_gate/artifact_hashes.json": "de26ec4c01b19bb9e6e523976d24c6494c205e90775bc43feb491292b167b609",
+    "baselines/e2_final_campaign_20260720/corrected_china81_rerun_v7_small_archive_ledger_20260724/full_witness_replay/decision.json": "9a0f486a77f7bd691379b25c68ff176f5ea0d6e2998f70440eb91bb8c774b3f6",
+    "baselines/e2_final_campaign_20260720/corrected_china81_rerun_v7_small_archive_ledger_20260724/full_witness_replay/done.json": "3bb49f686996136646b99d16c5df2e8df7667c730ec18836b1369ca45da21edc",
+    "baselines/e2_final_campaign_20260720/corrected_china81_rerun_v7_small_archive_ledger_20260724/full_witness_replay/artifact_hashes.json": "01ea61d25431088db633c8d04689fcb93c11bb11955558ef7bbd470da47507ed",
+    "baselines/e2_final_campaign_20260720/corrected_china81_rerun_v7_small_archive_ledger_20260724/.e2-staged-v7-release-chain.monitor/status.json": "a62d1916e5089217ad3bda0d5510d22964456afa13995ae173d24da9092aec5e",
+    "baselines/e2_final_campaign_20260720/corrected_china81_rerun_v7_small_archive_ledger_20260724/.e2-staged-v7-release-chain.monitor/runtime.json": "ab91b197ccca627f66dbd98f2eb3cffec79647c5b838c05b852aace415f01026",
+    "solver/src/setp_solver/cost.py": "2717b4b4de39bb4c2a9a1bda602f4420cb3e3b1e87faa83678dfa64f88fc80be",
+    "solver/src/setp_solver/check.py": "9c81e254e05591667c8225965bb9d0ba4e8bbfc53eb0f8c61ffdb4325a1403a8",
+    "solver/src/setp_solver/search/evaluation.py": "c7215263c39d1d5a1429b41ca8ac40d950dbdf2bdc288337e56fbe9733406fc3",
+    "solver/src/setp_solver/prices.py": "fe13a721fc63e79c44f5c7faf8bf4802155a28cb4c081d010d09d8dc4804d157",
+    "docs/paper_v2/paper_main.tex": "f4882979a3096b952f334ef11b750d7dbf6ebc2e0ec21babdd09da5c364415ad"
+  }
+}

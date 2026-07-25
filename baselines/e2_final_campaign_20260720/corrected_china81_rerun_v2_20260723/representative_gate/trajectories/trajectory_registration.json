@@ -1,0 +1,21 @@
+{
+  "curve_data_read_before_registration": false,
+  "mean_cost_by_arm": {
+    "HGS-E": 2593.9362616490484,
+    "HGS-F": 2574.660505687653,
+    "HGS-M": 2598.0443446511445,
+    "MV-HGS-SP": 2574.660505687653
+  },
+  "registered_at_utc": "2026-07-23T16:23:20.688267+00:00",
+  "representative_instance_id": "cn-prd-50c-01-V2-LOCATIONS",
+  "s3_raw_sha256": "49dc95464d7f912a2552aaf317fc0191f814346632f95879dc597c66172cf5bb",
+  "schema": "resetp.d6-corrected-s3-trajectory-registration.v1",
+  "selected_seed_by_arm": {
+    "HGS-E": 8,
+    "HGS-F": 1,
+    "HGS-M": 2,
+    "MV-HGS-SP": 1
+  },
+  "selection_rule": "for each algorithm, choose the seed whose sealed final cost is closest to its ten-seed arithmetic mean; lower seed breaks ties",
+  "shape_blind": true
+}

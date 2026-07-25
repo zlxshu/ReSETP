@@ -18,6 +18,7 @@ import math
 import multiprocessing as mp
 import os
 import platform
+import re
 import statistics
 import sys
 from datetime import UTC, datetime
@@ -26,13 +27,39 @@ from typing import Any
 
 
 REPO = Path(__file__).resolve().parents[3]
+CAMPAIGN_NAME = os.environ.get(
+    "RESET_D6_CAMPAIGN_NAME",
+    "corrected_china81_rerun_v3_20260724",
+)
+if (
+    not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9._-]*", CAMPAIGN_NAME)
+    or not CAMPAIGN_NAME.startswith("corrected_china81_rerun_")
+):
+    raise RuntimeError(
+        f"invalid RESET_D6_CAMPAIGN_NAME: {CAMPAIGN_NAME!r}"
+    )
+CASE_ROLE = os.environ.get("RESET_S3_CASE_ROLE", "representative")
+if CASE_ROLE not in {"representative", "mechanism_illustration"}:
+    raise RuntimeError(f"invalid RESET_S3_CASE_ROLE: {CASE_ROLE!r}")
+MECHANISM_INSTANCE_ID = os.environ.get(
+    "RESET_S3_MECHANISM_INSTANCE_ID",
+    "cn-cy-100c-01-V2-LOCATIONS",
+)
 CAMPAIGN = (
     REPO
-    / "baselines/e2_final_campaign_20260720/"
-    "corrected_china81_rerun_v2_20260723"
+    / "baselines/e2_final_campaign_20260720"
+    / CAMPAIGN_NAME
 )
-OUT = CAMPAIGN / "representative_gate"
+OUT = CAMPAIGN / (
+    "mechanism_case_gate"
+    if CASE_ROLE == "mechanism_illustration"
+    else "representative_gate"
+)
 FULL = CAMPAIGN / "full_gate"
+RESULT_STRENGTH = CAMPAIGN / "result_strength_gate"
+RESULT_STRENGTH_PREREGISTRATION = (
+    CAMPAIGN / "e2_result_release_preregistration_v1_20260724.json"
+)
 CATALOG = (
     REPO
     / "data/ChinaInstances/"
@@ -44,6 +71,12 @@ PROTOTYPE = (
     REPO
     / "baselines/algorithm_prototypes/"
     "china81_mechanism_hybrid_20260720"
+)
+MECHANISM_PREREGISTRATION = (
+    REPO
+    / "baselines/e2_final_campaign_20260720/"
+    "algorithm_repair_diagnostic_20260724/"
+    "chen_style_mechanism_case_preregistration.json"
 )
 for path in (REPO / "solver/src", RUNNER_DIR, PROTOTYPE):
     if str(path) not in sys.path:
@@ -162,6 +195,58 @@ def instance_features(instance_id: str) -> dict[str, float]:
 
 
 def register_representative() -> dict[str, Any]:
+    if CASE_ROLE == "mechanism_illustration":
+        path = OUT / "mechanism_case_registration.json"
+        if path.is_file():
+            return json.loads(path.read_text(encoding="utf-8"))
+        source = (
+            REPO
+            / "baselines/e2_final_campaign_20260720/"
+            "algorithm_repair_diagnostic_20260724/"
+            "chen_style_mechanism_case_preregistration.json"
+        )
+        source_payload = json.loads(source.read_text(encoding="utf-8"))
+        if (
+            source_payload.get("instance_id")
+            != MECHANISM_INSTANCE_ID
+        ):
+            raise RuntimeError(
+                "mechanism case differs from the disclosed preregistration"
+            )
+        if MECHANISM_INSTANCE_ID not in instance_ids():
+            raise RuntimeError("mechanism case is absent from the catalog")
+        payload = {
+            "schema": "resetp.d6-corrected-s3-mechanism-case-registration.v1",
+            "registered_at_utc": datetime.now(UTC).isoformat(),
+            "case_role": CASE_ROLE,
+            "selected_instance_id": MECHANISM_INSTANCE_ID,
+            "result_blind": False,
+            "selection_disclosure": source_payload[
+                "selection_disclosure"
+            ],
+            "full_81_instance_matrix_remains_generality_evidence": True,
+            "may_be_called_representative": False,
+            "source_preregistration": str(source.relative_to(REPO)),
+            "source_preregistration_sha256": file_sha256(source),
+            "catalog_sha256": file_sha256(CATALOG),
+        }
+        write_json(path, payload)
+        write_json(
+            OUT / "registration_decision.json",
+            {
+                "schema": (
+                    "resetp.d6-corrected-s3-mechanism-case-"
+                    "registration-decision.v1"
+                ),
+                "verdict": (
+                    "PASS_DISCLOSED_MECHANISM_ILLUSTRATION_REGISTRATION"
+                ),
+                "selected_instance_id": MECHANISM_INSTANCE_ID,
+                "result_blind": False,
+                "representative_claim_allowed": False,
+            },
+        )
+        return payload
     path = OUT / "representative_registration.json"
     if path.is_file():
         return json.loads(path.read_text(encoding="utf-8"))
@@ -305,6 +390,19 @@ def run_extra_seeds(instance_id: str, workers: int) -> None:
         != "PASS_D6_CORRECTED_CHINA81_E2_RAW"
     ):
         raise RuntimeError("corrected 81-instance D6 batch is not PASS")
+    result_strength = json.loads(
+        (RESULT_STRENGTH / "decision.json").read_text(
+            encoding="utf-8"
+        )
+    )
+    if (
+        result_strength.get("verdict")
+        != "PASS_E2_CORRECTED_PAPER_STRENGTH"
+        or result_strength.get("paper_strength_pass") is not True
+    ):
+        raise RuntimeError(
+            "corrected E2 did not pass the preregistered paper-strength gate"
+        )
     if any(
         os.environ.get(key) != value
         for key, value in REQUIRED_THREAD_ENV.items()
@@ -329,7 +427,60 @@ def _outcome(full: float, other: float) -> str:
     return "tie"
 
 
+def mechanism_endpoint_checks(
+    pairwise: dict[str, dict[str, int]],
+    summary: dict[str, dict[str, float]],
+) -> dict[str, bool]:
+    """Evaluate the preregistered mechanism-case endpoint gate."""
+
+    return {
+        "zero_losses_vs_HGS-F": (
+            pairwise["HGS-F"]["losses"] == 0
+        ),
+        "zero_losses_vs_HGS-E": (
+            pairwise["HGS-E"]["losses"] == 0
+        ),
+        "zero_losses_vs_HGS-M": (
+            pairwise["HGS-M"]["losses"] == 0
+        ),
+        "at_least_8_wins_vs_HGS-F": (
+            pairwise["HGS-F"]["wins"] >= 8
+        ),
+        "at_least_8_wins_vs_HGS-E": (
+            pairwise["HGS-E"]["wins"] >= 8
+        ),
+        "at_least_7_wins_vs_HGS-M": (
+            pairwise["HGS-M"]["wins"] >= 7
+        ),
+        "mean_below_HGS-F": (
+            summary["MV-HGS-SP"]["mean_cost"]
+            < summary["HGS-F"]["mean_cost"] - EPS
+        ),
+        "mean_below_HGS-E": (
+            summary["MV-HGS-SP"]["mean_cost"]
+            < summary["HGS-E"]["mean_cost"] - EPS
+        ),
+        "mean_below_HGS-M": (
+            summary["MV-HGS-SP"]["mean_cost"]
+            < summary["HGS-M"]["mean_cost"] - EPS
+        ),
+    }
+
+
 def finalize(instance_id: str) -> dict[str, Any]:
+    result_strength = json.loads(
+        (RESULT_STRENGTH / "decision.json").read_text(
+            encoding="utf-8"
+        )
+    )
+    if (
+        result_strength.get("verdict")
+        != "PASS_E2_CORRECTED_PAPER_STRENGTH"
+        or result_strength.get("paper_strength_pass") is not True
+    ):
+        raise RuntimeError(
+            "cannot finalize S3 without the E2 paper-strength PASS"
+        )
     rows: list[dict[str, Any]] = []
     task_rows: list[dict[str, str]] = []
     source_hash_sets: set[str] = set()
@@ -416,7 +567,11 @@ def finalize(instance_id: str) -> dict[str, Any]:
                     "source_scope": (
                         "corrected_full_gate"
                         if seed <= 5
-                        else "corrected_representative_extra_gate"
+                        else (
+                            "corrected_mechanism_case_extra_gate"
+                            if CASE_ROLE == "mechanism_illustration"
+                            else "corrected_representative_extra_gate"
+                        )
                     ),
                 }
             )
@@ -456,10 +611,43 @@ def finalize(instance_id: str) -> dict[str, Any]:
             "ties": outcomes.count("tie"),
             "losses": outcomes.count("loss"),
         }
+    mechanism_checks: dict[str, bool] | None = None
+    mechanism_endpoint_pass: bool | None = None
+    if CASE_ROLE == "mechanism_illustration":
+        preregistration = json.loads(
+            MECHANISM_PREREGISTRATION.read_text(encoding="utf-8")
+        )
+        if (
+            preregistration.get("instance_id") != instance_id
+            or preregistration.get("seeds") != list(SEEDS)
+        ):
+            raise RuntimeError(
+                "mechanism endpoint gate differs from preregistration"
+            )
+        mechanism_checks = mechanism_endpoint_checks(
+            pairwise,
+            summary,
+        )
+        mechanism_endpoint_pass = all(
+            mechanism_checks.values()
+        )
+    verdict = (
+        (
+            "PASS_D6_CORRECTED_S3_MECHANISM_CASE"
+            if mechanism_endpoint_pass
+            else "HALT_D6_CORRECTED_S3_MECHANISM_ENDPOINT_GATE"
+        )
+        if CASE_ROLE == "mechanism_illustration"
+        else "PASS_D6_CORRECTED_S3_REPRESENTATIVE"
+    )
     decision = {
         "schema": "resetp.d6-corrected-s3.decision.v1",
-        "verdict": "PASS_D6_CORRECTED_S3_REPRESENTATIVE",
-        "representative_instance_id": instance_id,
+        "verdict": verdict,
+        "case_role": CASE_ROLE,
+        "case_instance_id": instance_id,
+        "representative_instance_id": (
+            instance_id if CASE_ROLE == "representative" else None
+        ),
         "seed_count": len(SEEDS),
         "four_arm_rows": len(rows),
         "shared_search_task_count": len(task_rows),
@@ -473,14 +661,40 @@ def finalize(instance_id: str) -> dict[str, Any]:
         "wallclock_safety_trigger_count": 0,
         "summary": summary,
         "mv_hgs_sp_pairwise": pairwise,
+        "mechanism_endpoint_gate": {
+            "applicable": CASE_ROLE == "mechanism_illustration",
+            "passed": mechanism_endpoint_pass,
+            "checks": mechanism_checks,
+            "preregistration": (
+                str(MECHANISM_PREREGISTRATION.relative_to(REPO))
+                if CASE_ROLE == "mechanism_illustration"
+                else None
+            ),
+            "preregistration_sha256": (
+                file_sha256(MECHANISM_PREREGISTRATION)
+                if CASE_ROLE == "mechanism_illustration"
+                else None
+            ),
+        },
         "claim_boundary": (
-            "descriptive four-column representative comparison; the three "
+            (
+                "post-audit mechanism illustration, not a statistically "
+                "representative case and not a replacement for the full "
+                "81-instance matrix; "
+                if CASE_ROLE == "mechanism_illustration"
+                else "descriptive result-blind representative comparison; "
+            )
+            + "the three "
             "single-view columns are exact-model-selected outputs from the "
             "same three view generations used by MV-HGS-SP, while the fusion "
             "also pays for all views and time-limited MIP recombination; no "
             "equal-compute claim is made"
         ),
-        "next_gate": "observation-only trajectories, S4 and S5",
+        "next_gate": (
+            "observation-only trajectories, S4 and S5"
+            if verdict.startswith("PASS")
+            else "STOP_BEFORE_TRAJECTORIES_S4_S5"
+        ),
     }
     write_json(OUT / "decision.json", decision)
     write_json(
@@ -491,22 +705,48 @@ def finalize(instance_id: str) -> dict[str, Any]:
             "python": sys.version,
             "platform": platform.platform(),
             "thread_environment": REQUIRED_THREAD_ENV,
+            "case_role": CASE_ROLE,
             "registration_sha256": file_sha256(
-                OUT / "representative_registration.json"
+                OUT
+                / (
+                    "mechanism_case_registration.json"
+                    if CASE_ROLE == "mechanism_illustration"
+                    else "representative_registration.json"
+                )
             ),
             "full_gate_decision_sha256": file_sha256(
                 FULL / "decision.json"
             ),
+            "result_strength_decision_sha256": file_sha256(
+                RESULT_STRENGTH / "decision.json"
+            ),
+            "result_strength_preregistration_sha256": file_sha256(
+                RESULT_STRENGTH_PREREGISTRATION
+            ),
             "d6_runner_sha256": file_sha256(
                 RUNNER_DIR / "run_corrected_china81_d6.py"
+            ),
+            "mechanism_preregistration_sha256": (
+                file_sha256(MECHANISM_PREREGISTRATION)
+                if CASE_ROLE == "mechanism_illustration"
+                else None
             ),
         },
     )
     report_lines = [
-        "# D6 corrected S3 representative comparison",
+        (
+            "# D6 corrected S3 mechanism illustration"
+            if CASE_ROLE == "mechanism_illustration"
+            else "# D6 corrected S3 representative comparison"
+        ),
         "",
         f"Decision: `{decision['verdict']}`.",
-        f"Result-blind representative: `{instance_id}`.",
+        (
+            f"Disclosed post-audit mechanism illustration: `{instance_id}`; "
+            "this case is not statistically representative."
+            if CASE_ROLE == "mechanism_illustration"
+            else f"Result-blind representative: `{instance_id}`."
+        ),
         "Seeds 1--5 are reused from the corrected full China81 batch; "
         "seeds 6--10 were run under the identical D6 task routine.",
         "",
@@ -519,6 +759,21 @@ def finalize(instance_id: str) -> dict[str, Any]:
             f"CPU avg={item['mean_cpu_seconds']:.3f}s."
         )
     report_lines.append("")
+    if CASE_ROLE == "mechanism_illustration":
+        report_lines.extend(
+            [
+                (
+                    "Pre-registered endpoint gate: "
+                    f"{'PASS' if mechanism_endpoint_pass else 'HALT'}."
+                ),
+                (
+                    "The trajectory and paper-artifact chain is released "
+                    "only after every zero-loss, strict-win and lower-mean "
+                    "check passes."
+                ),
+                "",
+            ]
+        )
     report_lines.append(
         "The comparison is descriptive and does not assert equal compute "
         "between one-view algorithms and the three-view fusion."
@@ -551,6 +806,23 @@ def finalize(instance_id: str) -> dict[str, Any]:
             "artifacts": artifacts,
         },
     )
+    write_json(
+        OUT / "done.json",
+        {
+            "schema": "resetp.d6-corrected-s3-completion.v1",
+            "verdict": decision["verdict"],
+            "case_role": CASE_ROLE,
+            "raw_runs_sha256": file_sha256(
+                OUT / "raw_runs.csv"
+            ),
+            "decision_sha256": file_sha256(
+                OUT / "decision.json"
+            ),
+            "artifact_hashes_sha256": file_sha256(
+                OUT / "artifact_hashes.json"
+            ),
+        },
+    )
     return decision
 
 
@@ -562,14 +834,17 @@ def main() -> int:
     args = parser.parse_args()
     registration = register_representative()
     selected = str(registration["selected_instance_id"])
-    print(f"[D6-S3] registered representative={selected}", flush=True)
+    print(
+        f"[D6-S3] registered {CASE_ROLE}={selected}",
+        flush=True,
+    )
     if args.register_only:
         return 0
     if not args.finalize_only:
         run_extra_seeds(selected, args.workers)
     decision = finalize(selected)
     print(json.dumps(decision, ensure_ascii=False, sort_keys=True))
-    return 0
+    return 0 if str(decision["verdict"]).startswith("PASS") else 2
 
 
 if __name__ == "__main__":
