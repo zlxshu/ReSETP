@@ -1,5 +1,16 @@
 # ReSETP — 项目总交接文档（HANDOFF）
 
+> **2026-07-25 资源耦合 HGS 的代理误判因果门正式 STOP，禁止进入搜索救援。**
+> 六个冻结 `HGS-M` witness 由 6 workers 完成零搜索审计，每份生成 96 个固定动作
+> 候选，共 576 个；账本、完整评分、独立验解和保护文件哈希闭合。仅 32/576 候选
+> 能由完整模型完成，544/576 无可行全燃油完成；严格代理排序逆转为 3/6，但完整
+> 严格改善为 0/6，代理前八名漏掉改善为 0/6，合格规模为 0，未达到任何预登记
+> 效果门，判 `STOP_RCE_HGS_NO_VERIFIED_PROXY_MISRANK_HEADROOM`。这否定了在当前
+> 冻结面上以“代理错杀更优次序”为理由继续改 HGS；不得增加候选、换动作/题/witness、
+> 放宽门槛或启动搜索。三视角 HGS 和 corrected China81 v7 未改、未重跑，继续作为
+> 受保护备份；不授权 E3、BKS/SOTA、论文性能或 `1+1>2`。终局记录：
+> `docs/handoff/e2_resource_coupled_hgs_misranking_audit_final_stop_20260725.md`。
+
 > **2026-07-25 JRC 精确小邻域 v2 工程门通过，但六任务 G0 因冻结30秒内无法证明邻域最优而最终 STOP。** v2 仅换用已验收绝对路径框架，v1证据、科学机制、三题两臂、起点、8客户邻域、每任务1次完整候选评分、30秒上限、6 workers和全部阈值未变。工程门中6客户独立穷举与候选求解同得规范最优值147；六起点全部完整可行、均选出8客户，6个不同进程合计峰值330.71875 MiB，监督器`COMPLETED`且无异常。唯一一次G0中至少一项在30秒内未穷尽邻域并抛出`ExactNeighborhoodTimeout`，故没有完整六行、没有独立复算和效果判定，终态=`FINAL_STOP_JRC_EXACT_NH_EXECUTION_FAILURE_V2`。按合同不延时、不改邻域/剪枝、不换题/起点、不重试；该候选无性能结论，不开放下一A/B/A+B门、全量、BKS/SOTA、E3或论文。`MV-HGS-SP`未修改、未重跑，继续保底。证据=`baselines/algorithm_prototypes/joint_route_charge_exact_neighborhood_20260725/{engineering_gate_v2,g0_gate_v2}/`。
 
 > **2026-07-25 共用实验启动器绝对路径基础设施已通过六进程零算例验收；JRC 尚未自动重跑。** 首次基础设施 v1 测试保留了监督器命令文字误判现场：Python 启动符号链接与真实目标路径不一致，且过长进程命令被截断后看不到末尾并发字段；这属于共用启动器缺陷，不是候选性能证据。v2 将项目根、Python 启动路径及真实路径、监督器、主脚本、11个保护文件、结果、完成标记和监督目录全部改为存在的绝对路径，并在主进程创建子进程前逐项断言。受监督集成门正式 `COMPLETED`、findings=0；6行来自6个不同 spawn 进程，全部回报同一仓库、模块和 Python，真实算例加载0次，4项结果哈希复核一致，判 `PASS_EXPERIMENT_ABSOLUTE_HARNESS_V1`。JRC v1 异常与证据保持不改；此次只修基础设施，未改任何候选算法、科学合同、算例、预算或阈值，也未授权自动重跑 JRC。证据=`baselines/experiment_infrastructure/absolute_execution_harness_20260725/integration_gate_v2/`。
@@ -380,6 +391,12 @@ ReSETP = 投《系统工程理论与实践》的绿色车辆路径论文。多�
 3. **迁回 M1**：整合 DR 结果。
 
 ## 变更日志（每次对话/决策/Codex run 追加一行）
+- 2026-07-25 [M1/E2资源耦合HGS代理误判门最终STOP] 6 workers 对六个冻结
+  `HGS-M` witness 完成零搜索因果审计：每任务96个固定动作候选，共576行，账本、
+  完整评分、独立验解和保护哈希闭合。仅32/576能由完整模型完成；严格代理排序逆转
+  3/6，但完整严格改善0/6、代理前八名漏掉改善0/6、合格规模0，判
+  `STOP_RCE_HGS_NO_VERIFIED_PROXY_MISRANK_HEADROOM`。不增加候选、不换动作/题/
+  witness、不调门槛、不进入搜索；三视角HGS/v7原样保护，E3与论文性能仍未放行。
 - 2026-07-17 [M1/E7清洁重跑启动阻断] 启动前沙箱进程池探针按预期在`SC_SEM_NSEMS_MAX`处报`PermissionError: Operation not permitted`；Terminal/LaunchServices和用户级`launchctl submit`在当前执行环境也不可用，故没有调用监控`start`，没有启动沙箱内必崩的重跑，也没有产生新输出。目标输出目录仍不存在/为空；需在真正非沙箱终端中按同一命令启动。监控目录仍为`/private/tmp/.resetp-e7-timing-clean-rerun-20260717.monitor`，当前没有本轮新PID。
 - 2026-07-17 [M1/E7清洁重跑合同比较修复] 仅改目标脚本；四键逐项语义校验、父合同禁带校验和三键调度源豁免比较已通过真实合同与三种篡改 harness。Ruff、py_compile、diff通过；脚本SHA-256=`1949837b7dff684962531f2216f3280a23f285d4e7047100e83c254f60238c8e`。启动前输出目录不存在/为空；监控配置没有固定旧脚本哈希。代码commit因当前环境`.git`只读无法创建`index.lock`，未伪称已提交。
 - 2026-06-20 建本文件；记忆快照入 `docs/handoff/memory/`。探针 PROMISING（r2_delta≈1.05）；8 基线 HALT_BASELINE_THROUGHPUT。提出迁移策略（M1 canonical + 3060 训 DR）。

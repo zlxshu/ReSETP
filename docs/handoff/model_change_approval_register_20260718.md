@@ -1983,3 +1983,20 @@ witness，共六任务，资源安全时固定 6 workers。每任务最多 96 �
 
 权威合同：
 `docs/handoff/e2_resource_coupled_hgs_misranking_audit_contract_20260725.md`。
+
+## E2-RCE-HGS-MISRANK-FINAL-STOP-034：代理误判因果门最终停止
+
+状态：`FINAL_STOP_RCE_HGS_NO_VERIFIED_PROXY_MISRANK_HEADROOM`
+（2026-07-25）。
+
+六个冻结 `HGS-M` witness、每份 96 个固定动作候选已由 6 workers 完成零搜索正式
+审计；576 行账本闭合，保护文件哈希无漂移。32/576 候选可由完整模型完成，严格代理
+排序逆转为 3/6，但完整模型严格改善为 0/6、代理前八名漏掉最优改善为 0/6、合格
+规模为 0，未达到合同任何效果门。
+
+因此当前资源耦合 HGS 教育机制最终停止。不得增加候选、换动作、换题、换 seed、
+换 witness、调阈值或进入搜索救援。三视角 HGS 与 corrected China81 v7 原样保护；
+不授权 E3、公开 BKS/SOTA、论文性能或 `1+1>2`。
+
+权威终局：
+`docs/handoff/e2_resource_coupled_hgs_misranking_audit_final_stop_20260725.md`。

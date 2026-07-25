@@ -854,3 +854,8 @@ E7正式结果终验
   `STOP_RESOURCE_SLOT_PRICING_NO_LOW_COST_STRONG_HGS_HEADROOM`。禁止救援、
   扩大 China81、E3、BKS/SOTA、论文性能或 `1+1>2` 主张。
 - [RC-EV-Split 状态规模停止（2026-07-25）](e2_algorithm_repair_and_mechanism_case_20260724.md) — 给定客户顺序联合切路线、车场、车型、非线性充电、有限车队和共享桩的精确标签法：15客户229状态完成，75/150客户均触发500,000状态硬上限，候选完整目标评价0，判`HALT_RC_EV_SPLIT_G0_STRUCTURE_OR_SCALE`；禁止加上限/束宽救援，下一步只可审计路线列池+限时MIP组装。
+- [资源耦合 HGS 代理误判门最终停止（2026-07-25）](e2_resource_coupled_hgs_misranking_stop_20260725.md)
+  — 六个冻结 `HGS-M` witness、576 个固定动作候选完成零搜索审计；仅 32 个能由
+  完整模型完成，严格代理排序逆转 3/6，但完整严格改善 0/6、代理前八名漏掉改善
+  0/6，判 `STOP_RCE_HGS_NO_VERIFIED_PROXY_MISRANK_HEADROOM`。禁止候选/动作/
+  题/witness/阈值救援；三视角 HGS 与 v7 只作受保护备份，不开放 E3 或论文性能。
