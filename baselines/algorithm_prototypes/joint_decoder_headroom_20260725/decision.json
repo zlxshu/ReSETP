@@ -1,0 +1,33 @@
+{
+  "schema": "resetp.joint-decoder-headroom.decision.v1",
+  "task_id": "E2-JOINT-DECODER-HEADROOM-001",
+  "verdict": "AUDIT_COMPLETE__ZERO_ALGORITHMIC_HEADROOM_ON_CURRENT_SETTING",
+  "hypothesis_A_ev_uneconomical": "REFUTED — 291/291 feasible EV variants strictly cheaper, mean 60.97 CNY saving",
+  "hypothesis_B_sequential_architecture": "REAL BUT ZERO MAGNITUDE — completer already optimal at fixed routes (81/81 identical); rebalance gain 0; split gain 0",
+  "root_cause": "EV payload 1000 kg vs CV payload 1735 kg at equal 4495 kg GVW; curb-mass gap 735 kg exactly equals payload gap; routes pack to median 1667 kg",
+  "key_numbers": {
+    "ev_slots_idle_pct": 69.1,
+    "ev_variants_feasible": 291,
+    "ev_variants_infeasible": 2667,
+    "infeasible_reason": "CAPACITY (2667/2667)",
+    "ev_variants_cheaper_than_cv": "291/291",
+    "forced_maxev_equals_sealed": "81/81",
+    "rebalance_achieved_gain_pct": 0.0,
+    "split_attempts": 683,
+    "split_accepted": 0,
+    "split_best_delta_cny": 136.8295,
+    "vehicle_fixed_cost_cny": 170.0,
+    "electrifiable_route_share_at_1000kg": 0.098,
+    "electrifiable_route_share_at_1735kg": 1.0
+  },
+  "g3_gate_reference": "frozen G3 requires >=0.50% mean improvement; unreachable on current vehicle parameters for reasons unrelated to algorithm design",
+  "authorises": [],
+  "blocks": [
+    "E3",
+    "China81 rerun",
+    "public BKS/SOTA claim",
+    "any paper performance claim",
+    "any parameter change"
+  ],
+  "requires_user_decision": true
+}

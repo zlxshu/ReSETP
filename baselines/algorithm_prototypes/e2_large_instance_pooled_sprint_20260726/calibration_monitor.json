@@ -1,0 +1,58 @@
+{
+  "schema_version": 1,
+  "name": "e2-large-pooled-calibration",
+  "objective": "完成 PR16A seed1 的 6200 代单进程标定并保留真实墙钟、CPU和内存证据",
+  "workdir": "../../..",
+  "poll_seconds": 30,
+  "stale_seconds": 1800,
+  "max_runtime_seconds": 1800,
+  "pause_on_anomaly": true,
+  "required_command_substrings": [
+    "calibrate_pr16a_6200.py"
+  ],
+  "forbidden_command_substrings": [
+    "--smoke",
+    "--debug"
+  ],
+  "min_cpu_percent_when_active": 1,
+  "low_cpu_consecutive_checks": 3,
+  "max_rss_mb": 2048,
+  "min_system_free_memory_mb": 256,
+  "min_system_memory_free_percent": 5,
+  "logs": [],
+  "progress_files": [],
+  "result_files": [
+    "calibration_summary.json",
+    "calibration/PR16A__s1.json"
+  ],
+  "completion_files": [
+    "calibration_summary.json"
+  ],
+  "checkpoint_paths": [
+    "calibration"
+  ],
+  "protected_files": [
+    {
+      "path": "TASK_CARD.md",
+      "kind": "experiment_contract"
+    },
+    {
+      "path": "../boundary_probe_20260726/d7_long_runs_pooled.py",
+      "kind": "algorithm_reference"
+    },
+    {
+      "path": "../../algorithm_foundation/mdvrptw_v13_comparison_20260719/sources/normalised_instances/PR16A.vrp",
+      "kind": "core_data"
+    },
+    {
+      "path": "../../algorithm_foundation/mdvrptw_v13_comparison_20260719/sources/current_bks/PR16A.sol",
+      "kind": "evaluation_reference"
+    }
+  ],
+  "csv_rules": [],
+  "milestones": [],
+  "ai": {
+    "enabled": false,
+    "timeout_seconds": 180
+  }
+}

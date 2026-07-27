@@ -1,0 +1,94 @@
+{
+  "schema": "resetp.dual-guided-columns.decision.v1",
+  "task_id": "E2-DUAL-GUIDED-COLUMNS-001",
+  "verdict": "STOP_A3_DUAL_GUIDED",
+  "preregistration": "PREREGISTRATION.md (frozen before any run)",
+  "criteria": {
+    "1_at_least_4_of_5_strictly_better_than_A2": {
+      "required": 4,
+      "observed": 0,
+      "pass": false
+    },
+    "2_mean_gain_vs_A2_at_least_2.104": {
+      "required": 2.104,
+      "observed": -4.0972,
+      "pass": false
+    },
+    "3_new_bks_or_30pct_error_cut": {
+      "new_bks": 0,
+      "a3_mean_error_pct": 0.215,
+      "a2_mean_error_pct": 0.1314,
+      "pass": false
+    },
+    "4_all_final_solutions_feasible": {
+      "pass": true,
+      "note": "moot, criterion 1/2/3/5 already failed"
+    },
+    "5_at_least_one_guided_only_column_selected": {
+      "required": 1,
+      "observed": 0,
+      "pass": false
+    }
+  },
+  "per_instance": [
+    {
+      "instance": "PR17B",
+      "a3": 4776.851,
+      "a2": 4771.155,
+      "a1": 4776.027,
+      "a3_minus_a2": 5.696,
+      "guided_cols_selected": 0,
+      "pool_after_seeds": 1528,
+      "pool_final": 2262
+    },
+    {
+      "instance": "PR21B",
+      "a3": 4826.451,
+      "a2": 4826.451,
+      "a1": 4829.522,
+      "a3_minus_a2": 0.0,
+      "guided_cols_selected": 0,
+      "pool_after_seeds": 1274,
+      "pool_final": 1998
+    },
+    {
+      "instance": "PR11B",
+      "a3": 4832.33,
+      "a2": 4819.579,
+      "a1": 4820.019,
+      "a3_minus_a2": 12.751,
+      "guided_cols_selected": 0,
+      "pool_after_seeds": 1537,
+      "pool_final": 2401
+    },
+    {
+      "instance": "PR21A",
+      "a3": 6234.394,
+      "a2": 6234.394,
+      "a1": 6234.989,
+      "a3_minus_a2": 0.0,
+      "guided_cols_selected": 0,
+      "pool_after_seeds": 927,
+      "pool_final": 1599
+    },
+    {
+      "instance": "PR12B",
+      "a3": 6031.045,
+      "a2": 6029.006,
+      "a1": 6030.547,
+      "a3_minus_a2": 2.039,
+      "guided_cols_selected": 0,
+      "pool_after_seeds": 1705,
+      "pool_final": 2613
+    }
+  ],
+  "diagnosis": "The four guided rounds added 672-908 columns each and none entered the final integer solution. PR17B A3 = 4776.851 is bit-identical to the D6 k=6 result, so the guided rounds contributed nothing at all; A3 trails A2 only because it spent 4 of its 10 budget units on guided rounds instead of random seeds.",
+  "not_authorised": [
+    "parameter tuning",
+    "extra guided rounds",
+    "instance swap",
+    "rerun",
+    "any paper claim"
+  ],
+  "note": "Any repair is a redesign and needs a new registration and a new development set."
+}

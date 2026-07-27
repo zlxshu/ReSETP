@@ -1,0 +1,23 @@
+{
+  "schema": "resetp.joint-decoder-headroom.metadata.v1",
+  "task_id": "E2-JOINT-DECODER-HEADROOM-001",
+  "created_at_utc": "2026-07-25T16:00:00+00:00",
+  "executor": "Claude (user override 2026-07-25: Claude executes code directly, superseding CLAUDE.md role rule)",
+  "commit": "3c01f3c89614d41ab21a62b3fb082a48a0536a7f",
+  "branch": "codex/reporting-pipeline",
+  "python": "3.13.9",
+  "numpy": "2.3.5",
+  "env": {
+    "PYTHONHASHSEED": "0",
+    "MKL_NUM_THREADS": "1",
+    "OMP_NUM_THREADS": "1"
+  },
+  "scope": "81 China81 instances, seed1 (M1 uses all 5 seeds)",
+  "search_evaluations": 0,
+  "complete_model_evaluations": 3641,
+  "protected_files_modified": [],
+  "inputs": {
+    "witnesses": "baselines/e2_final_campaign_20260720/corrected_china81_rerun_v7_small_archive_ledger_20260724/full_gate/tasks",
+    "fleet_caps": "data/ChinaInstances/china81_finite_fleet_authority_v1_20260723/fleet_caps.csv"
+  }
+}

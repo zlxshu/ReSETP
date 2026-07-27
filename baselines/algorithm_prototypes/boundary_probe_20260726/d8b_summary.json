@@ -1,0 +1,39 @@
+{
+  "schema": "resetp.public-algo-diag.d8b.v1",
+  "note": "sparse constraint matrix; MILP gap and time-limit status disclosed",
+  "iterations_per_run": 20000,
+  "instances": [
+    "PR16A",
+    "PR16B",
+    "PR20A",
+    "PR24A"
+  ],
+  "seeds": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9,
+    10
+  ],
+  "improved_count": 2,
+  "new_bks_count": 0,
+  "mean_gain": -31.453,
+  "errors_before": {
+    "PR16A": 1.1643,
+    "PR16B": 0.8342,
+    "PR20A": 1.3741,
+    "PR24A": 0.9508
+  },
+  "errors_after": {
+    "PR16A": 1.68,
+    "PR16B": 1.4845,
+    "PR20A": 1.3162,
+    "PR24A": 0.8427
+  },
+  "any_hit_time_limit": true
+}
