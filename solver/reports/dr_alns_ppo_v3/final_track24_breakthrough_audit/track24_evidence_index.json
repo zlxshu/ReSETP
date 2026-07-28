@@ -1,0 +1,56 @@
+{
+  "status": "EVIDENCE_INDEX_COMPLETE",
+  "git": {
+    "head": "c2d070c9cd41e3b3f7a9c35d8790359803200ec4",
+    "branch": "dr-x86",
+    "origin_dr_x86": "baab206ab085f437c70a872967d424e149415a6c",
+    "status_short_branch": "## dr-x86...origin/dr-x86 [ahead 1]\n M solver/src/setp_solver/search/dynamic.py\n?? solver/rl/dr_alns_ppo/track24_breakthrough_audit.py\n?? solver/rl/tests/test_track24_breakthrough_audit.py"
+  },
+  "track21": {
+    "final_status": "HALT_100C_STILL_STARVED",
+    "status_25c_50c": "MARGIN_REAL",
+    "status_100c": "HALT_100C_STILL_STARVED",
+    "valid_but_weak_preserved": true,
+    "invalid_not_run_preserved": true
+  },
+  "track23": {
+    "final_status": "TRACK23_COMPLETE",
+    "pillar_summary": {
+      "DR_PILLAR_QUALITY": "站住",
+      "DR_PILLAR_EFFICIENCY": "没站住",
+      "DR_PILLAR_DYNAMIC": "没站住"
+    },
+    "stage_a": "NO_DESTROY_LEVERAGE_ANY_BUDGET",
+    "stage_b": "CARBON_MECHANISM_WEAK",
+    "stage_c": "NO_TUNING_PARITY_CLEAN",
+    "stage_d": "HEURISTIC_FLAT",
+    "stage_d_mean_information_cost_pct": 44.70696096379163
+  },
+  "breakthrough_map": {
+    "path": "docs/handoff/dr_alns_breakthrough_map_20260705.md",
+    "sha256": "b4fb59a4777277c3a70325b5f05c423c457a1813e436372449adee4d32331699"
+  },
+  "protected_files": [
+    {
+      "path": "solver/src/setp_solver/cost.py",
+      "sha256": "ab9bfb9f8e95a92d599d07bd21de7780a52884fe72d227b58d4e9fe5e55d8a37",
+      "git_status": ""
+    },
+    {
+      "path": "solver/src/setp_solver/check.py",
+      "sha256": "1e36735429360d22987353519a4dee3a43b58ed9b32e8693fdfbf201dd8a4f81",
+      "git_status": ""
+    },
+    {
+      "path": "solver/src/setp_solver/search/evaluation.py",
+      "sha256": "1fae4f76ac6ff0a2caa36e78b3b68740b1fa65738474d9ecf1f4875983e1545d",
+      "git_status": ""
+    },
+    {
+      "path": "solver/src/setp_solver/search/metaheuristic_baselines.py",
+      "sha256": "ec675cc0da7322150d0682a6a1cf7e07b6d30ed2465ed768032fbbfc964a7d0a",
+      "git_status": ""
+    }
+  ],
+  "handoff_track23_placeholders_remaining": false
+}

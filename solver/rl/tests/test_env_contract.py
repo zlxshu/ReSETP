@@ -1,6 +1,8 @@
 import numpy as np
 
-from dr_alns_ppo.block_env import BlockAlnsEnv
+from dr_alns_ppo.action_space import BLOCK_SEARCH_CONTROL_CHOICES
+from dr_alns_ppo.action_space import BLOCK_CANDIDATE_GENERATOR_CHOICES
+from dr_alns_ppo.block_env import BLOCK_OBSERVATION_SIZE, BlockAlnsEnv
 from dr_alns_ppo.env import SetpAlnsEnv
 
 
@@ -78,8 +80,8 @@ def test_block_env_step_advances_multiple_candidate_evals() -> None:
     finally:
         env.close()
 
-    assert obs.shape == (19,)
-    assert next_obs.shape == (19,)
+    assert obs.shape == (BLOCK_OBSERVATION_SIZE,)
+    assert next_obs.shape == (BLOCK_OBSERVATION_SIZE,)
     assert obs.dtype == np.float32
     assert next_obs.dtype == np.float32
     assert info["actual_evals"] == 0
@@ -91,3 +93,64 @@ def test_block_env_step_advances_multiple_candidate_evals() -> None:
     assert np.isfinite(reward)
     assert terminated is False
     assert truncated is False
+
+
+def test_block_env_search_control_stop_terminates_without_candidate_evals() -> None:
+    env = BlockAlnsEnv(FIXTURE_DIR, seed=1, eval_budget=20, block_size=4, search_control_mode=True)
+    try:
+        _obs, _info = env.reset()
+        action = [0, 0, 0, 0, 0, BLOCK_SEARCH_CONTROL_CHOICES.index("stop")]
+        _next_obs, reward, terminated, truncated, step_info = env.step(action)
+    finally:
+        env.close()
+
+    assert np.isfinite(reward)
+    assert terminated is True
+    assert truncated is False
+    assert step_info["actual_evals"] == 0
+    assert step_info["trace"]["search_control"] == "stop"
+    assert step_info["trace"]["search_control_stop_requested"] is True
+
+
+def test_block_env_search_control_restart_is_reported() -> None:
+    env = BlockAlnsEnv(FIXTURE_DIR, seed=1, eval_budget=20, block_size=4, search_control_mode=True)
+    try:
+        _obs, _info = env.reset()
+        action = [0, 0, 0, 0, 0, BLOCK_SEARCH_CONTROL_CHOICES.index("restart")]
+        _next_obs, reward, terminated, truncated, step_info = env.step(action)
+    finally:
+        env.close()
+
+    assert np.isfinite(reward)
+    assert step_info["actual_evals"] >= 1
+    assert step_info["trace"]["search_control"] == "restart"
+    assert step_info["trace"]["search_control_restart_applied"] == 1
+
+
+def test_block_env_candidate_generator_and_search_control_heads_work_together() -> None:
+    env = BlockAlnsEnv(
+        FIXTURE_DIR,
+        seed=1,
+        eval_budget=20,
+        block_size=4,
+        candidate_generator_mode=True,
+        search_control_mode=True,
+    )
+    try:
+        _obs, _info = env.reset()
+        action = [
+            0,
+            0,
+            0,
+            0,
+            0,
+            BLOCK_CANDIDATE_GENERATOR_CHOICES.index("default"),
+            BLOCK_SEARCH_CONTROL_CHOICES.index("continue"),
+        ]
+        _next_obs, reward, terminated, truncated, step_info = env.step(action)
+    finally:
+        env.close()
+
+    assert np.isfinite(reward)
+    assert step_info["actual_evals"] >= 1
+    assert step_info["trace"]["search_control"] == "continue"

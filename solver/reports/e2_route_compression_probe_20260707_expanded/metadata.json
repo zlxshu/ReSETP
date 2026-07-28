@@ -1,0 +1,9 @@
+{
+  "schema_version": "setp-e2-route-compression-probe.v2",
+  "metric_definitions": {
+    "best_update_count": "max(0, len(winner history) - 1); history records warm start and each accepted best improvement",
+    "unique_solution_count": "distinct solution_signature_hash values in winner history plus final best solution",
+    "zero_violations": "check_solution returned no hard or soft violations for the reported solution",
+    "first_gate_pass": "at least one documented 100c exception improves and no 150/200c sanity row regresses by more than 0.5 percent"
+  }
+}

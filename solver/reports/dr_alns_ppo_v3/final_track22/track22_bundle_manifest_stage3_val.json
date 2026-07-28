@@ -1,0 +1,18 @@
+{
+  "schema_version": "dr-alns-ppo-bundle-manifest.v1",
+  "train": [
+    "models/data_bundle/generated_instances/E-UK25_17__curric_d2_s3_seed2417_24h",
+    "models/data_bundle/generated_instances/E-UK50_15__curric_d2_s3_seed2455_24h"
+  ],
+  "held_out": [
+    "models/data_bundle/generated_instances/E-UK100_03__u0_seed3_24h_20251113"
+  ],
+  "formal_eval": [
+    "models/data_bundle/generated_instances/E-UK100_01__d2_s3_seed1_24h_20251113"
+  ],
+  "excluded_from_training_reason": {
+    "curriculum_small_to_large": "Intentional Daysalilar-style small-to-large DR curriculum: train on 25c/50c generated bundles and reserve 100c held-out/formal bundles for honest zero-shot validation.",
+    "not_verify_or_demo": "These are generated curriculum bundles, not verify/demo toy bundles.",
+    "E-UK100_01_reserved": "E-UK100_01 remains formal evaluation only and must not appear in train or donor paths."
+  }
+}

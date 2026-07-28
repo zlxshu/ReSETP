@@ -5,16 +5,19 @@ import os
 import subprocess
 import sys
 import tempfile
+import uuid
 from dataclasses import asdict
 from functools import lru_cache
 from pathlib import Path
 from typing import Any
 
-from .schemas import BlockDecodedAction, DecodedAction
+from .schemas import BlockDecodedAction, DecodedAction, LearnedDestroyDecodedAction
 
 
 RESTORATION_FINGERPRINT = Path("solver/reports/dr_alns_ppo_v2/restoration/phase1_env_fingerprints.json")
 WORKER_PYTHON_ENV = "SETP_WORKER_PYTHON"
+WORKER_CRASH_LOG_DIR_ENV = "SETP_WORKER_CRASH_LOG_DIR"
+WORKER_CRASH_LOG_ENV = "SETP_WORKER_CRASH_LOG"
 
 
 class WorkerClient:
@@ -26,6 +29,7 @@ class WorkerClient:
         resolved_bundle_dir = _resolve_bundle_dir(bundle_dir, self._repo_root)
         worker_python = resolve_worker_python(self._repo_root)
         self.worker_python = str(worker_python)
+        self._crash_log_path = _allocate_crash_log(self._repo_root)
         cmd = [
             str(worker_python),
             "-m",
@@ -46,7 +50,7 @@ class WorkerClient:
             encoding="utf-8",
             bufsize=1,
             cwd=str(self._repo_root),
-            env=_worker_env(self._repo_root),
+            env=_worker_env(self._repo_root, crash_log_path=self._crash_log_path),
         )
 
     def reset(self) -> dict[str, Any]:
@@ -56,9 +60,12 @@ class WorkerClient:
         action = asdict(decoded_action)
         return self._request({"op": "step", "action": action})
 
-    def block_step(self, decoded_action: BlockDecodedAction) -> dict[str, Any]:
+    def block_step(self, decoded_action: BlockDecodedAction | LearnedDestroyDecodedAction) -> dict[str, Any]:
         action = asdict(decoded_action)
         return self._request({"op": "block_step", "action": action})
+
+    def best_of_k_destroy(self, action: dict[str, Any]) -> dict[str, Any]:
+        return self._request({"op": "best_of_k_destroy", "action": dict(action)})
 
     def close(self) -> dict[str, Any] | None:
         if self._closed:
@@ -115,7 +122,10 @@ class WorkerClient:
         return response
 
     def _error_message(self, reason: str, request: dict[str, Any]) -> str:
-        return f"{reason}; request={request!r}; stderr_tail={self._stderr_tail()!r}"
+        return (
+            f"{reason}; request={request!r}; stderr_tail={self._stderr_tail()!r}; "
+            f"crash_log={str(self._crash_log_path)!r}; crash_log_tail={self._crash_log_tail()!r}"
+        )
 
     def _stderr_tail(self, limit: int = 4000) -> str:
         try:
@@ -143,6 +153,14 @@ class WorkerClient:
             self._proc.wait(timeout=0)
         except subprocess.TimeoutExpired:
             pass
+
+    def _crash_log_tail(self, limit: int = 4000) -> str:
+        try:
+            if not self._crash_log_path.exists():
+                return ""
+            return self._crash_log_path.read_text(encoding="utf-8", errors="replace")[-limit:]
+        except Exception:
+            return ""
 
 
 __all__ = ["WorkerClient", "resolve_worker_python", "_worker_env"]
@@ -249,7 +267,12 @@ def _candidate_can_import_worker(python_exe: Path, repo_root: Path) -> bool:
     return proc.returncode == 0
 
 
-def _worker_env(repo_root: Path) -> dict[str, str]:
+def _worker_env(
+    repo_root: Path,
+    *,
+    crash_log_dir: str | Path | None = None,
+    crash_log_path: str | Path | None = None,
+) -> dict[str, str]:
     env = os.environ.copy()
     entries = [
         str(repo_root / "solver" / "rl"),
@@ -258,4 +281,19 @@ def _worker_env(repo_root: Path) -> dict[str, str]:
     ]
     env["PYTHONPATH"] = os.pathsep.join(entries)
     env["PYTHONNOUSERSITE"] = "1"
+    env["PYTHONFAULTHANDLER"] = "1"
+    log_dir = Path(crash_log_dir) if crash_log_dir is not None else _default_crash_log_dir(repo_root)
+    env[WORKER_CRASH_LOG_DIR_ENV] = str(log_dir)
+    if crash_log_path is not None:
+        env[WORKER_CRASH_LOG_ENV] = str(Path(crash_log_path))
     return env
+
+
+def _default_crash_log_dir(repo_root: Path) -> Path:
+    return Path(repo_root) / "solver" / "reports" / "dr_alns_ppo_v3" / "worker_crash_logs"
+
+
+def _allocate_crash_log(repo_root: Path) -> Path:
+    directory = _default_crash_log_dir(repo_root)
+    directory.mkdir(parents=True, exist_ok=True)
+    return directory / f"worker_{os.getpid()}_{uuid.uuid4().hex}.log"

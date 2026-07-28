@@ -1,0 +1,37 @@
+{
+  "gate_status": "G0_PASS",
+  "gate_reason": "Destroy headroom found on scales: 25c",
+  "scale_rows": [
+    {
+      "scale": "100c",
+      "operator_select_mean": 2478.6985947075373,
+      "worst_removal_mean": 2478.6985947075373,
+      "best_of_k_mean": 2478.6985947075373,
+      "headroom_pct": 0.0,
+      "worst_improvement_pct": 0.0,
+      "has_destroy_headroom": false
+    },
+    {
+      "scale": "25c",
+      "operator_select_mean": 570.4788966208015,
+      "worst_removal_mean": 576.1592433756146,
+      "best_of_k_mean": 534.75904171796,
+      "headroom_pct": 6.261380589961512,
+      "worst_improvement_pct": -0.9957154924503362,
+      "has_destroy_headroom": true
+    },
+    {
+      "scale": "50c",
+      "operator_select_mean": 957.7682967356021,
+      "worst_removal_mean": 997.0645944808023,
+      "best_of_k_mean": 1030.4602861733308,
+      "headroom_pct": -7.58972600006573,
+      "worst_improvement_pct": -4.102902328165926,
+      "has_destroy_headroom": false
+    }
+  ],
+  "headroom_scales": [
+    "25c"
+  ],
+  "worker_integrity_ok": true
+}

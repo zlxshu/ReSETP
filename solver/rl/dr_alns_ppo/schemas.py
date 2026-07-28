@@ -24,6 +24,19 @@ class BlockDecodedAction:
     block_size: int
     raw: tuple[int, ...]
     control_mode: str = "block_ppo"
+    candidate_generator: str = "default"
+    search_control: str = "continue"
+
+
+@dataclass(frozen=True)
+class LearnedDestroyDecodedAction:
+    repair_id: str
+    q_ratio: float
+    threshold_ratio: float
+    block_size: int
+    remove_customer_ids: tuple[str, ...]
+    raw: tuple[int, ...] = ()
+    control_mode: str = "learned_destroy"
 
 
 @dataclass(frozen=True)

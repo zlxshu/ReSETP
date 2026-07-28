@@ -1,0 +1,53 @@
+{
+  "rows": [
+    {
+      "config": "actors4_budget20_block4",
+      "num_actors": 4,
+      "completed_episodes": 130,
+      "valid_steps_total": 603,
+      "updates": 10,
+      "wall_seconds": 713.140000000014,
+      "episodes_per_hour": 656.6983228935516,
+      "busy_ratio": 0.9234683353540003,
+      "stale_episodes_total": 3,
+      "peak_system_memory_used_mb": 13680.421875,
+      "min_system_memory_available_mb": 2555.63671875,
+      "violations": 0,
+      "workers": "C:\\Users\\zlxshu\\.venvs\\resetp-solver-py313\\Scripts\\python.exe",
+      "numpys": "2.3.5",
+      "finite_rewards": true,
+      "finite_best_obj": true,
+      "candidate_nondefault_rate": 0.7330097087378641,
+      "search_noncontinue_rate": 0.4967637540453074,
+      "device": "cuda"
+    },
+    {
+      "config": "actors6_budget20_block4",
+      "num_actors": 6,
+      "completed_episodes": 134,
+      "valid_steps_total": 602,
+      "updates": 10,
+      "wall_seconds": 526.6720000000205,
+      "episodes_per_hour": 916.8923734853885,
+      "busy_ratio": 0.8942000475169863,
+      "stale_episodes_total": 7,
+      "peak_system_memory_used_mb": 13553.21484375,
+      "min_system_memory_available_mb": 2682.84375,
+      "violations": 0,
+      "workers": "C:\\Users\\zlxshu\\.venvs\\resetp-solver-py313\\Scripts\\python.exe",
+      "numpys": "2.3.5",
+      "finite_rewards": true,
+      "finite_best_obj": true,
+      "candidate_nondefault_rate": 0.7048665620094191,
+      "search_noncontinue_rate": 0.5243328100470958,
+      "device": "cuda"
+    }
+  ],
+  "throughput_improvement_6_vs_4": 0.39621549427043906,
+  "selected": {
+    "num_actors": 6,
+    "eval_budget": 20,
+    "block_size": 4,
+    "reason": "6 actors exceeds +15% throughput and keeps memory above 1.5GB"
+  }
+}

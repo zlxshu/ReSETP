@@ -1,5 +1,19 @@
 # ReSETP — 项目总交接文档（HANDOFF）
 
+> **2026-07-28 M1 与冻结 `dr-x86` 已按两父历史受控同步，DR 未解冻。**
+> 本集成以 M1 `54d784213b01cdd555b7073d99c573d6174bcd02` 为第一父和共享
+> solver canonical，以 `dr-x86` `3b7eae2efbb72912fe047c9f2de60c7934887a06`
+> 为第二父。`solver/rl/**` 原样保留冻结树
+> `cd4ba5f1f34fd3f02709db4b3f6b84090552b304`，并保留 441 个 x86-only
+> 代码、测试、报告和交接资产；共享 ALNS 内核、检查器、评价器、M1 报告和论文资产
+> 均以 M1 为准。运行时兼容改动限于在 deprecated `search/alns_wouda.py` shim
+> 恢复 `search_policy_for_bundle`，以及让 canonical feasible-repair 新车 ID 分配器
+> 按 `physical_vehicle_id` 避让已有 `EV1#Tn/CV1#Tn`，防止同一物理车产生重叠充电；
+> 不修改冻结 DR 控制层。8 个含反斜杠的历史
+> tracked 输出路径同步规范化到对应正斜杠路径，以便 Windows 可检出。此次同步只证明
+> 历史、代码和证据得到保留，不代表重新训练、性能复现或 DR 目标达成；状态依赖优势
+> 未重新证明前，DQN/PPO 继续 blocked。
+
 > **2026-07-25 当前 China81 设定下的算法探索已证据化终止，等待范围决定。**
 > 全部封存失败后唯一未覆盖且有一手文献支持的“客户顺序＋车场/动力标签共同遗传”
 > 候选已完成最低成本门。405 份正式 witness 的只读审计显示 HGS-M 有 322/405 个解

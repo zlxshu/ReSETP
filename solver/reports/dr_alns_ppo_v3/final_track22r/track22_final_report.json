@@ -1,0 +1,60 @@
+{
+  "final_status": "HALT_R0_STAGE2_WALL_UNSTABLE_WITHOUT_VERDICT",
+  "final_reason": "Stage2 equal-steps oracle produced UNDERPOWERED wall-clock rows after three self-repair attempts; stopped without DR verdict.",
+  "preflight": {
+    "worker_python": "C:\\Users\\zlxshu\\.venvs\\resetp-solver-py313\\Scripts\\python.exe",
+    "worker_numpy": "2.3.5",
+    "branch": "dr-x86"
+  },
+  "r1": {
+    "status": "PASS_R1_REGRESSION",
+    "summary": "28 passed in 23.01s",
+    "root_cause": "The original silent worker crash did not reproduce under the targeted regression path; the confirmed instrumentation defect was empty stderr/logging on worker failure.",
+    "fix": "faulthandler plus per-process worker crash logs and stderr/crash-log tails in WorkerClient errors"
+  },
+  "r2": {
+    "status": "HALT_R0_STAGE2_WALL_UNSTABLE_WITHOUT_VERDICT",
+    "partial_equal_steps_rows": 10,
+    "ok_rows": 9,
+    "underpowered_rows": 1,
+    "underpowered_sample": {
+      "bundle": "models/data_bundle/generated_instances/E-UK25_12__curric_d2_s3_seed2212_24h",
+      "scale": "25c",
+      "seed": 1201,
+      "algorithm": "operator_select",
+      "target_steps": 4000,
+      "actual_evals": 4000,
+      "wall_time_seconds": 50.95299999997951,
+      "eval_floor_ratio": 2.0,
+      "wall_floor_ratio": 0.8492166666663252,
+      "violation_count": 0,
+      "worker_integrity_ok": true
+    },
+    "self_repair_attempts": [
+      {
+        "attempt": "2000-step initial equal-steps run",
+        "result": "HALT_WORKER_RESPONSE",
+        "evidence": "best_of_k_destroy hit worker EvalBudget target: 12010 >= 12010"
+      },
+      {
+        "attempt": "3000-step 25c guard-band",
+        "result": "UNDERPOWERED",
+        "evidence": "E-UK25_11 seed1202 operator_select wall 58.829s < 60s"
+      },
+      {
+        "attempt": "4000-step 25c guard-band",
+        "result": "UNDERPOWERED",
+        "evidence": "E-UK25_12 seed1201 operator_select wall 50.953s < 60s"
+      }
+    ],
+    "verdict_allowed": false
+  },
+  "r3": {
+    "status": "NOT_RUN",
+    "reason": "R2 did not produce a valid equal-steps leverage verdict."
+  },
+  "r4": {
+    "status": "NOT_RUN",
+    "reason": "Run stopped at R0/Stage2 before carbon timing."
+  }
+}

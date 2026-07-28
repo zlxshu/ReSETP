@@ -23,6 +23,13 @@ BLOCK_REPAIR_IDS = (*REPAIR_IDS, ALPHA_UCB_CHOICE)
 BLOCK_Q_RATIOS = (0.10, 0.16, 0.23, 0.30, 0.40)
 BLOCK_THRESHOLD_RATIOS = (0.0, 0.0025, 0.0075, 0.02)
 BLOCK_EXPLORATION_RATIOS = (0.0, 0.05, 0.15, 0.30)
+BLOCK_CANDIDATE_GENERATOR_CHOICES = (
+    "default",
+    "route_compression_rebuild",
+    "stronger_insertion_repair",
+    "ev_charging_aware_repair",
+)
+BLOCK_SEARCH_CONTROL_CHOICES = ("continue", "stop", "restart")
 BLOCK_ACTION_NVECS = (
     len(BLOCK_DESTROY_IDS),
     len(BLOCK_REPAIR_IDS),
@@ -30,6 +37,16 @@ BLOCK_ACTION_NVECS = (
     len(BLOCK_THRESHOLD_RATIOS),
     len(BLOCK_EXPLORATION_RATIOS),
 )
+BLOCK_CANDIDATE_ACTION_NVECS = (*BLOCK_ACTION_NVECS, len(BLOCK_CANDIDATE_GENERATOR_CHOICES))
+
+
+def block_action_nvecs(*, candidate_generator_mode: bool = False, search_control_mode: bool = False) -> tuple[int, ...]:
+    nvecs = list(BLOCK_ACTION_NVECS)
+    if bool(candidate_generator_mode):
+        nvecs.append(len(BLOCK_CANDIDATE_GENERATOR_CHOICES))
+    if bool(search_control_mode):
+        nvecs.append(len(BLOCK_SEARCH_CONTROL_CHOICES))
+    return tuple(nvecs)
 
 
 def _coerce_action_component(value: Any) -> int:
@@ -85,11 +102,21 @@ def decode_action(raw: Sequence[int], *, base_temperature: float, control_mode: 
     )
 
 
-def decode_block_action(raw: Sequence[int], *, block_size: int = 128) -> BlockDecodedAction:
-    if len(raw) != 5:
-        raise ValueError(f"Expected 5 block action components, got {len(raw)}")
+def decode_block_action(
+    raw: Sequence[int],
+    *,
+    block_size: int = 128,
+    candidate_generator_mode: bool = False,
+    search_control_mode: bool = False,
+) -> BlockDecodedAction:
+    expected_len = len(block_action_nvecs(
+        candidate_generator_mode=bool(candidate_generator_mode),
+        search_control_mode=bool(search_control_mode),
+    ))
+    if len(raw) != expected_len:
+        raise ValueError(f"Expected {expected_len} block action components, got {len(raw)}")
     values = [_coerce_action_component(value) for value in raw]
-    d_idx, r_idx, q_idx, t_idx, exploration_idx = values
+    d_idx, r_idx, q_idx, t_idx, exploration_idx = values[:5]
     if not 0 <= d_idx < len(BLOCK_DESTROY_IDS):
         raise ValueError(f"block destroy index out of range: {d_idx}")
     if not 0 <= r_idx < len(BLOCK_REPAIR_IDS):
@@ -100,6 +127,18 @@ def decode_block_action(raw: Sequence[int], *, block_size: int = 128) -> BlockDe
         raise ValueError(f"block threshold index out of range: {t_idx}")
     if not 0 <= exploration_idx < len(BLOCK_EXPLORATION_RATIOS):
         raise ValueError(f"block exploration index out of range: {exploration_idx}")
+    candidate_generator = "default"
+    if bool(candidate_generator_mode):
+        generator_idx = values[5]
+        if not 0 <= generator_idx < len(BLOCK_CANDIDATE_GENERATOR_CHOICES):
+            raise ValueError(f"block candidate-generator index out of range: {generator_idx}")
+        candidate_generator = BLOCK_CANDIDATE_GENERATOR_CHOICES[generator_idx]
+    search_control = "continue"
+    if bool(search_control_mode):
+        control_idx = values[5 + int(bool(candidate_generator_mode))]
+        if not 0 <= control_idx < len(BLOCK_SEARCH_CONTROL_CHOICES):
+            raise ValueError(f"block search-control index out of range: {control_idx}")
+        search_control = BLOCK_SEARCH_CONTROL_CHOICES[control_idx]
     if int(block_size) < 1:
         raise ValueError("block_size must be >= 1")
     return BlockDecodedAction(
@@ -110,4 +149,6 @@ def decode_block_action(raw: Sequence[int], *, block_size: int = 128) -> BlockDe
         exploration_ratio=float(BLOCK_EXPLORATION_RATIOS[exploration_idx]),
         block_size=int(block_size),
         raw=tuple(values),
+        candidate_generator=str(candidate_generator),
+        search_control=str(search_control),
     )

@@ -1,0 +1,437 @@
+{
+  "preflight": {
+    "worker": {
+      "exe": "C:\\Users\\zlxshu\\.venvs\\resetp-solver-py313\\Scripts\\python.exe",
+      "version": "3.13.12",
+      "numpy": "2.3.5"
+    },
+    "required_worker_numpy": "2.3.5",
+    "output_dir": "solver\\reports\\dr_alns_ppo_v3\\final_track22",
+    "disk_free_gb": 102.70351028442383,
+    "git": {
+      "status_short_branch": "## dr-x86...origin/dr-x86 [ahead 2]\n?? solver/rl/dr_alns_ppo/track22_endgame.py",
+      "head": "f3cea6e237a0644ed48f57fcdb50076609aaf2aa",
+      "branch": "dr-x86"
+    }
+  },
+  "bundle_manifest": {
+    "schema_version": "track22-bundle-manifest.v1",
+    "roles": {
+      "stage2_probe": [
+        {
+          "role": "stage2_probe",
+          "name": "E-UK25_11__curric_d2_s3_seed2211_24h",
+          "path": "models/data_bundle/generated_instances/E-UK25_11__curric_d2_s3_seed2211_24h",
+          "n_customers": 25,
+          "validation_passed": true,
+          "has_carbon_profile": true,
+          "seed": 2211,
+          "base_id": "E-UK25_11"
+        },
+        {
+          "role": "stage2_probe",
+          "name": "E-UK25_12__curric_d2_s3_seed2212_24h",
+          "path": "models/data_bundle/generated_instances/E-UK25_12__curric_d2_s3_seed2212_24h",
+          "n_customers": 25,
+          "validation_passed": true,
+          "has_carbon_profile": true,
+          "seed": 2212,
+          "base_id": "E-UK25_12"
+        },
+        {
+          "role": "stage2_probe",
+          "name": "E-UK25_13__curric_d2_s3_seed2213_24h",
+          "path": "models/data_bundle/generated_instances/E-UK25_13__curric_d2_s3_seed2213_24h",
+          "n_customers": 25,
+          "validation_passed": true,
+          "has_carbon_profile": true,
+          "seed": 2213,
+          "base_id": "E-UK25_13"
+        },
+        {
+          "role": "stage2_probe",
+          "name": "E-UK50_11__curric_d2_s3_seed2251_24h",
+          "path": "models/data_bundle/generated_instances/E-UK50_11__curric_d2_s3_seed2251_24h",
+          "n_customers": 50,
+          "validation_passed": true,
+          "has_carbon_profile": true,
+          "seed": 2251,
+          "base_id": "E-UK50_11"
+        },
+        {
+          "role": "stage2_probe",
+          "name": "E-UK50_12__curric_d2_s3_seed2252_24h",
+          "path": "models/data_bundle/generated_instances/E-UK50_12__curric_d2_s3_seed2252_24h",
+          "n_customers": 50,
+          "validation_passed": true,
+          "has_carbon_profile": true,
+          "seed": 2252,
+          "base_id": "E-UK50_12"
+        }
+      ],
+      "stage3_train": [
+        {
+          "role": "stage3_train",
+          "name": "E-UK25_14__curric_d2_s3_seed2314_24h",
+          "path": "models/data_bundle/generated_instances/E-UK25_14__curric_d2_s3_seed2314_24h",
+          "n_customers": 25,
+          "validation_passed": true,
+          "has_carbon_profile": true,
+          "seed": 2314,
+          "base_id": "E-UK25_14"
+        },
+        {
+          "role": "stage3_train",
+          "name": "E-UK25_15__curric_d2_s3_seed2315_24h",
+          "path": "models/data_bundle/generated_instances/E-UK25_15__curric_d2_s3_seed2315_24h",
+          "n_customers": 25,
+          "validation_passed": true,
+          "has_carbon_profile": true,
+          "seed": 2315,
+          "base_id": "E-UK25_15"
+        },
+        {
+          "role": "stage3_train",
+          "name": "E-UK25_16__curric_d2_s3_seed2316_24h",
+          "path": "models/data_bundle/generated_instances/E-UK25_16__curric_d2_s3_seed2316_24h",
+          "n_customers": 25,
+          "validation_passed": true,
+          "has_carbon_profile": true,
+          "seed": 2316,
+          "base_id": "E-UK25_16"
+        },
+        {
+          "role": "stage3_train",
+          "name": "E-UK50_13__curric_d2_s3_seed2353_24h",
+          "path": "models/data_bundle/generated_instances/E-UK50_13__curric_d2_s3_seed2353_24h",
+          "n_customers": 50,
+          "validation_passed": true,
+          "has_carbon_profile": true,
+          "seed": 2353,
+          "base_id": "E-UK50_13"
+        },
+        {
+          "role": "stage3_train",
+          "name": "E-UK50_14__curric_d2_s3_seed2354_24h",
+          "path": "models/data_bundle/generated_instances/E-UK50_14__curric_d2_s3_seed2354_24h",
+          "n_customers": 50,
+          "validation_passed": true,
+          "has_carbon_profile": true,
+          "seed": 2354,
+          "base_id": "E-UK50_14"
+        }
+      ],
+      "stage3_val": [
+        {
+          "role": "stage3_val",
+          "name": "E-UK25_17__curric_d2_s3_seed2417_24h",
+          "path": "models/data_bundle/generated_instances/E-UK25_17__curric_d2_s3_seed2417_24h",
+          "n_customers": 25,
+          "validation_passed": true,
+          "has_carbon_profile": true,
+          "seed": 2417,
+          "base_id": "E-UK25_17"
+        },
+        {
+          "role": "stage3_val",
+          "name": "E-UK50_15__curric_d2_s3_seed2455_24h",
+          "path": "models/data_bundle/generated_instances/E-UK50_15__curric_d2_s3_seed2455_24h",
+          "n_customers": 50,
+          "validation_passed": true,
+          "has_carbon_profile": true,
+          "seed": 2455,
+          "base_id": "E-UK50_15"
+        }
+      ],
+      "stage3_test": [
+        {
+          "role": "stage3_test",
+          "name": "E-UK25_18__curric_d2_s3_seed2518_24h",
+          "path": "models/data_bundle/generated_instances/E-UK25_18__curric_d2_s3_seed2518_24h",
+          "n_customers": 25,
+          "validation_passed": true,
+          "has_carbon_profile": true,
+          "seed": 2518,
+          "base_id": "E-UK25_18"
+        },
+        {
+          "role": "stage3_test",
+          "name": "E-UK50_16__curric_d2_s3_seed2556_24h",
+          "path": "models/data_bundle/generated_instances/E-UK50_16__curric_d2_s3_seed2556_24h",
+          "n_customers": 50,
+          "validation_passed": true,
+          "has_carbon_profile": true,
+          "seed": 2556,
+          "base_id": "E-UK50_16"
+        },
+        {
+          "role": "stage3_test",
+          "name": "E-UK50_17__curric_d2_s3_seed2557_24h",
+          "path": "models/data_bundle/generated_instances/E-UK50_17__curric_d2_s3_seed2557_24h",
+          "n_customers": 50,
+          "validation_passed": true,
+          "has_carbon_profile": true,
+          "seed": 2557,
+          "base_id": "E-UK50_17"
+        }
+      ]
+    },
+    "all": [
+      {
+        "role": "stage2_probe",
+        "name": "E-UK25_11__curric_d2_s3_seed2211_24h",
+        "path": "models/data_bundle/generated_instances/E-UK25_11__curric_d2_s3_seed2211_24h",
+        "n_customers": 25,
+        "validation_passed": true,
+        "has_carbon_profile": true,
+        "seed": 2211,
+        "base_id": "E-UK25_11"
+      },
+      {
+        "role": "stage2_probe",
+        "name": "E-UK25_12__curric_d2_s3_seed2212_24h",
+        "path": "models/data_bundle/generated_instances/E-UK25_12__curric_d2_s3_seed2212_24h",
+        "n_customers": 25,
+        "validation_passed": true,
+        "has_carbon_profile": true,
+        "seed": 2212,
+        "base_id": "E-UK25_12"
+      },
+      {
+        "role": "stage2_probe",
+        "name": "E-UK25_13__curric_d2_s3_seed2213_24h",
+        "path": "models/data_bundle/generated_instances/E-UK25_13__curric_d2_s3_seed2213_24h",
+        "n_customers": 25,
+        "validation_passed": true,
+        "has_carbon_profile": true,
+        "seed": 2213,
+        "base_id": "E-UK25_13"
+      },
+      {
+        "role": "stage2_probe",
+        "name": "E-UK50_11__curric_d2_s3_seed2251_24h",
+        "path": "models/data_bundle/generated_instances/E-UK50_11__curric_d2_s3_seed2251_24h",
+        "n_customers": 50,
+        "validation_passed": true,
+        "has_carbon_profile": true,
+        "seed": 2251,
+        "base_id": "E-UK50_11"
+      },
+      {
+        "role": "stage2_probe",
+        "name": "E-UK50_12__curric_d2_s3_seed2252_24h",
+        "path": "models/data_bundle/generated_instances/E-UK50_12__curric_d2_s3_seed2252_24h",
+        "n_customers": 50,
+        "validation_passed": true,
+        "has_carbon_profile": true,
+        "seed": 2252,
+        "base_id": "E-UK50_12"
+      },
+      {
+        "role": "stage3_train",
+        "name": "E-UK25_14__curric_d2_s3_seed2314_24h",
+        "path": "models/data_bundle/generated_instances/E-UK25_14__curric_d2_s3_seed2314_24h",
+        "n_customers": 25,
+        "validation_passed": true,
+        "has_carbon_profile": true,
+        "seed": 2314,
+        "base_id": "E-UK25_14"
+      },
+      {
+        "role": "stage3_train",
+        "name": "E-UK25_15__curric_d2_s3_seed2315_24h",
+        "path": "models/data_bundle/generated_instances/E-UK25_15__curric_d2_s3_seed2315_24h",
+        "n_customers": 25,
+        "validation_passed": true,
+        "has_carbon_profile": true,
+        "seed": 2315,
+        "base_id": "E-UK25_15"
+      },
+      {
+        "role": "stage3_train",
+        "name": "E-UK25_16__curric_d2_s3_seed2316_24h",
+        "path": "models/data_bundle/generated_instances/E-UK25_16__curric_d2_s3_seed2316_24h",
+        "n_customers": 25,
+        "validation_passed": true,
+        "has_carbon_profile": true,
+        "seed": 2316,
+        "base_id": "E-UK25_16"
+      },
+      {
+        "role": "stage3_train",
+        "name": "E-UK50_13__curric_d2_s3_seed2353_24h",
+        "path": "models/data_bundle/generated_instances/E-UK50_13__curric_d2_s3_seed2353_24h",
+        "n_customers": 50,
+        "validation_passed": true,
+        "has_carbon_profile": true,
+        "seed": 2353,
+        "base_id": "E-UK50_13"
+      },
+      {
+        "role": "stage3_train",
+        "name": "E-UK50_14__curric_d2_s3_seed2354_24h",
+        "path": "models/data_bundle/generated_instances/E-UK50_14__curric_d2_s3_seed2354_24h",
+        "n_customers": 50,
+        "validation_passed": true,
+        "has_carbon_profile": true,
+        "seed": 2354,
+        "base_id": "E-UK50_14"
+      },
+      {
+        "role": "stage3_val",
+        "name": "E-UK25_17__curric_d2_s3_seed2417_24h",
+        "path": "models/data_bundle/generated_instances/E-UK25_17__curric_d2_s3_seed2417_24h",
+        "n_customers": 25,
+        "validation_passed": true,
+        "has_carbon_profile": true,
+        "seed": 2417,
+        "base_id": "E-UK25_17"
+      },
+      {
+        "role": "stage3_val",
+        "name": "E-UK50_15__curric_d2_s3_seed2455_24h",
+        "path": "models/data_bundle/generated_instances/E-UK50_15__curric_d2_s3_seed2455_24h",
+        "n_customers": 50,
+        "validation_passed": true,
+        "has_carbon_profile": true,
+        "seed": 2455,
+        "base_id": "E-UK50_15"
+      },
+      {
+        "role": "stage3_test",
+        "name": "E-UK25_18__curric_d2_s3_seed2518_24h",
+        "path": "models/data_bundle/generated_instances/E-UK25_18__curric_d2_s3_seed2518_24h",
+        "n_customers": 25,
+        "validation_passed": true,
+        "has_carbon_profile": true,
+        "seed": 2518,
+        "base_id": "E-UK25_18"
+      },
+      {
+        "role": "stage3_test",
+        "name": "E-UK50_16__curric_d2_s3_seed2556_24h",
+        "path": "models/data_bundle/generated_instances/E-UK50_16__curric_d2_s3_seed2556_24h",
+        "n_customers": 50,
+        "validation_passed": true,
+        "has_carbon_profile": true,
+        "seed": 2556,
+        "base_id": "E-UK50_16"
+      },
+      {
+        "role": "stage3_test",
+        "name": "E-UK50_17__curric_d2_s3_seed2557_24h",
+        "path": "models/data_bundle/generated_instances/E-UK50_17__curric_d2_s3_seed2557_24h",
+        "n_customers": 50,
+        "validation_passed": true,
+        "has_carbon_profile": true,
+        "seed": 2557,
+        "base_id": "E-UK50_17"
+      }
+    ],
+    "non_overlap_ok": true
+  },
+  "stage2": {
+    "status": "NO_DESTROY_LEVERAGE_CLEAN",
+    "reason": "Clean best-of-k destroy leverage <1%; max_scale=-1.405%.",
+    "row_count": 45,
+    "worker_integrity_ok": true,
+    "zero_violations": true,
+    "overall": {
+      "label": "overall",
+      "operator_select_mean": 716.4039416548876,
+      "worst_removal_mean": 755.9744484084757,
+      "best_of_k_mean": 749.24589390351,
+      "best_of_k_headroom_pct": -4.584278552789333,
+      "worst_improvement_pct": -5.523490931970663
+    },
+    "scale_rows": [
+      {
+        "label": "25c",
+        "operator_select_mean": 577.5465061669412,
+        "worst_removal_mean": 597.0660214269644,
+        "best_of_k_mean": 585.6618644387933,
+        "best_of_k_headroom_pct": -1.4051436871659146,
+        "worst_improvement_pct": -3.379730472195269
+      },
+      {
+        "label": "50c",
+        "operator_select_mean": 924.6900948868071,
+        "worst_removal_mean": 994.337088880743,
+        "best_of_k_mean": 994.621938100585,
+        "best_of_k_headroom_pct": -7.562733028122078,
+        "worst_improvement_pct": -7.531928197247696
+      }
+    ],
+    "bundle_rows": [
+      {
+        "label": "models/data_bundle/generated_instances/E-UK25_11__curric_d2_s3_seed2211_24h",
+        "operator_select_mean": 615.0384939190468,
+        "worst_removal_mean": 644.5096985813939,
+        "best_of_k_mean": 618.8650358524277,
+        "best_of_k_headroom_pct": -0.6221629981235867,
+        "worst_improvement_pct": -4.791765873800115
+      },
+      {
+        "label": "models/data_bundle/generated_instances/E-UK25_12__curric_d2_s3_seed2212_24h",
+        "operator_select_mean": 509.46012121597306,
+        "worst_removal_mean": 529.3620546238368,
+        "best_of_k_mean": 521.7809516965591,
+        "best_of_k_headroom_pct": -2.4184092076095838,
+        "worst_improvement_pct": -3.906475223293641
+      },
+      {
+        "label": "models/data_bundle/generated_instances/E-UK25_13__curric_d2_s3_seed2213_24h",
+        "operator_select_mean": 608.1409033658034,
+        "worst_removal_mean": 617.3263110756625,
+        "best_of_k_mean": 616.339605767393,
+        "best_of_k_headroom_pct": -1.348158355442499,
+        "worst_improvement_pct": -1.5104078115814479
+      },
+      {
+        "label": "models/data_bundle/generated_instances/E-UK50_11__curric_d2_s3_seed2251_24h",
+        "operator_select_mean": 966.9003786331178,
+        "worst_removal_mean": 1048.3776254368456,
+        "best_of_k_mean": 1067.5500658304543,
+        "best_of_k_headroom_pct": -10.409519886590832,
+        "worst_improvement_pct": -8.42664338583775
+      },
+      {
+        "label": "models/data_bundle/generated_instances/E-UK50_12__curric_d2_s3_seed2252_24h",
+        "operator_select_mean": 882.4798111404965,
+        "worst_removal_mean": 940.2965523246403,
+        "best_of_k_mean": 921.6938103707158,
+        "best_of_k_headroom_pct": -4.443614316744544,
+        "worst_improvement_pct": -6.551621969620218
+      }
+    ],
+    "max_scale_best_of_k_headroom_pct": -1.4051436871659146,
+    "gate_rule": "DESTROY_LEVERAGE_CLEAN if any scale >=3%; LEVERAGE_MARGINAL if any scale is 1-3%; NO_DESTROY_LEVERAGE_CLEAN if all scales <1%."
+  },
+  "completed_stage": "stage4",
+  "stage3": {
+    "status": "SKIP_LEARNED_DESTROY_NO_LEVERAGE",
+    "reason": "Stage2 status=NO_DESTROY_LEVERAGE_CLEAN; learned-destroy training skipped by Track22 gate.",
+    "trained": false
+  },
+  "stage4": {
+    "status": "NO_CARBON_TIMING_LEVERAGE",
+    "reason": "Default scenario carbon timing leverage <0.5%: -0.003%.",
+    "avg_improvement_pct": -0.002870717979199905,
+    "row_count": 4,
+    "gate_row_count": 3,
+    "zero_violations": true,
+    "gate_rule": ">=2% passes, 0.5-2% weak, <0.5% no leverage; EV-heavy row is diagnostic only.",
+    "ev_heavy_diagnostic": {
+      "bundle": "models/data_bundle/generated_instances/E-UK25_11__curric_d2_s3_seed2211_24h",
+      "scale": "25c",
+      "seed": 2999,
+      "diagnostic_role": "ev_heavy_diagnostic_only",
+      "source": "ev_heavy_initial_solution",
+      "error": "ValueError: HALT_M0: unable to satisfy EV-heavy fleet limits (cv=5/0, ev=0/999)",
+      "improvement_pct": null
+    }
+  },
+  "final_status": "DR_CLEAN_NEGATIVE",
+  "final_reason": "stage2=NO_DESTROY_LEVERAGE_CLEAN; stage3=SKIP_LEARNED_DESTROY_NO_LEVERAGE; stage4=NO_CARBON_TIMING_LEVERAGE",
+  "wall_time_seconds": 13.718000000109896
+}

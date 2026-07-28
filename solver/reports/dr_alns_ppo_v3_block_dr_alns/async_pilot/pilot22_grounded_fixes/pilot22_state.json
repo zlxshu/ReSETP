@@ -1,0 +1,102 @@
+{
+  "preflight": {
+    "worker": {
+      "exe": "C:\\Users\\zlxshu\\.venvs\\resetp-solver-py313\\Scripts\\python.exe",
+      "version": "3.13.12",
+      "numpy": "2.3.5"
+    },
+    "torch_version": "2.5.1+cu124",
+    "cuda_available": true,
+    "cuda_device": "NVIDIA GeForce RTX 3060 Laptop GPU",
+    "cuda_total_gb": 5.99951171875,
+    "disk_free_gb": 102.78168869018555,
+    "required_bundles": [
+      "models/data_bundle/generated_instances/E-UK25_02__curric_d2_s3_seed2_24h",
+      "models/data_bundle/generated_instances/E-UK25_03__curric_d2_s3_seed3_24h",
+      "models/data_bundle/generated_instances/E-UK25_04__curric_d2_s3_seed4_24h",
+      "models/data_bundle/generated_instances/E-UK25_05__curric_d2_s3_seed5_24h",
+      "models/data_bundle/generated_instances/E-UK25_06__curric_d2_s3_seed6_24h",
+      "models/data_bundle/generated_instances/E-UK25_07__curric_d2_s3_seed7_24h",
+      "models/data_bundle/generated_instances/E-UK25_08__curric_d2_s3_seed8_24h",
+      "models/data_bundle/generated_instances/E-UK25_09__curric_d2_s3_seed9_24h",
+      "models/data_bundle/generated_instances/E-UK50_01__curric_d2_s3_seed1_24h",
+      "models/data_bundle/generated_instances/E-UK50_02__curric_d2_s3_seed2_24h",
+      "models/data_bundle/generated_instances/E-UK50_03__curric_d2_s3_seed3_24h",
+      "models/data_bundle/generated_instances/E-UK50_04__curric_d2_s3_seed4_24h"
+    ],
+    "git": {
+      "status_short_branch": "## dr-x86...origin/dr-x86 [ahead 1]\n M HANDOFF.md\n M solver/rl/dr_alns_ppo/learned_destroy.py\n M solver/rl/dr_alns_ppo/pilot21_learned_destroy_big.py\n M solver/rl/tests/test_pilot21_learned_destroy_big.py\n?? docs/handoff/codex_prompts/11_dr_learned_destroy_pilot22_grounded_fixes.md\n?? solver/rl/dr_alns_ppo/pilot22_grounded_fixes.py\n?? solver/rl/tests/test_pilot22_grounded_fixes.py",
+      "head": "e2fc52e4f7c7c4e75d6e9bbabc99e27629202b15",
+      "branch": "dr-x86",
+      "tracked_docs": [
+        "HANDOFF.md",
+        "docs/handoff/codex_prompts/10_dr_learned_destroy_big_experiment.md"
+      ]
+    }
+  },
+  "literature_fixes": [
+    {
+      "fix": "G1_VALIDATION_COST",
+      "symptom": "Pilot21 failed only because entropy increased although reward, slope, loss, and KL were healthy.",
+      "source": "POMO NeurIPS 2020 discourages premature convergence; RL4CO reports validation/test gaps rather than entropy-drop gates.",
+      "change": "Pilot22 Stage B G1 uses held-out deterministic cost improvement, finite losses, KL stability, and only an entropy floor.",
+      "why_only_this": "The failure was a gate-definition problem, not evidence that high entropy itself is unhealthy."
+    },
+    {
+      "fix": "POMO_SHARED_BASELINE",
+      "symptom": "Single-trajectory GAE gave high-variance credit for the same instance.",
+      "source": "POMO uses multiple rollouts per instance and a shared group baseline.",
+      "change": "Pilot22 groups multiple stochastic learned-destroy rollouts on the same bundle and uses group mean return as the advantage baseline.",
+      "why_only_this": "It changes the credit estimator while preserving the existing policy, worker, and solution-feasibility contract."
+    },
+    {
+      "fix": "DISCRETE_5_3_1_0_REWARD",
+      "symptom": "Pilot21 still used custom 120x best-gain scaling after removing the max(0) clamp.",
+      "source": "Cao alns/ALNS.py reward_list=[5,3,1,0]; Reijnen-style ALNS outcome classes are best, better, accepted, rejected.",
+      "change": "learned_destroy_reward maps new best/accepted improvement/accepted worsening/rejected to 5/3/1/0.",
+      "why_only_this": "This is the published operator-selection reward shape; the rest of the search/referee semantics stay unchanged."
+    }
+  ],
+  "stageA": {
+    "proxy_status": "EXPLORATORY_MIXED_GAP",
+    "reason": "Pilot21 ckpt gap is -15.934%; Stage B still proceeds with the grounded fixes",
+    "phase_summary": {
+      "status": "HALT_LEARNED_DESTROY",
+      "reason": "avg_vs_operator=-15.934%, min_scale=-21.361%, avg_vs_random=-18.039%, avg_vs_worst=-10.529%, zero_violations=True, worker_ok=True",
+      "heldout_avg_improvement_pct_vs_operator_select": -15.933959524025147,
+      "min_scale_improvement_pct_vs_operator_select": -21.3609539529102,
+      "heldout_avg_improvement_pct_vs_random": -18.03936589262538,
+      "heldout_avg_improvement_pct_vs_worst_removal": -10.529060549904287,
+      "zero_violation_learned": true,
+      "worker_integrity_ok": true,
+      "scale_improvement_pct": {
+        "25c": -13.220462309582617,
+        "50c": -21.3609539529102
+      }
+    }
+  },
+  "completed_stage": "stageB",
+  "stageB_progress": {
+    "next_group": 250
+  },
+  "stageB": {
+    "gate_status": "HALT_POLICY_UNSTABLE",
+    "gate_reason": "best_validation_gain=11.507%, final_validation_gain=2.410%, gain_slope=-0.102373, finite_losses=True, kl_ok=False, zero_violations=True, entropy_floor_ok=True",
+    "model_path": "solver\\reports\\dr_alns_ppo_v3_block_dr_alns\\async_pilot\\pilot22_grounded_fixes\\pilot22_learned_destroy_model.pt",
+    "episode_count": 1000,
+    "update_count": 250,
+    "validation_count": 27,
+    "best_validation_gain_pct_vs_initial": 11.506677666418925,
+    "final_validation_gain_pct_vs_initial": 2.4096715037784153,
+    "validation_gain_slope": -0.10237285887904572,
+    "finite_losses": true,
+    "approx_kl_ok": false,
+    "entropy_first": 21.936705946922302,
+    "entropy_last": 30.964274883270264,
+    "entropy_floor_ok": true,
+    "validation_zero_violations": true
+  },
+  "final_status": "HALT_POLICY_UNSTABLE",
+  "final_reason": "best_validation_gain=11.507%, final_validation_gain=2.410%, gain_slope=-0.102373, finite_losses=True, kl_ok=False, zero_violations=True, entropy_floor_ok=True",
+  "wall_time_seconds": 12397.8
+}

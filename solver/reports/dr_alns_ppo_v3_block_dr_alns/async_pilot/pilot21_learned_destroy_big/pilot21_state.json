@@ -1,0 +1,99 @@
+{
+  "preflight": {
+    "worker": {
+      "exe": "C:\\Users\\zlxshu\\.venvs\\resetp-solver-py313\\Scripts\\python.exe",
+      "version": "3.13.12",
+      "numpy": "2.3.5"
+    },
+    "torch_version": "2.5.1+cu124",
+    "cuda_available": true,
+    "cuda_device": "NVIDIA GeForce RTX 3060 Laptop GPU",
+    "disk_free_gb": 102.79864501953125,
+    "required_bundles": [
+      "models/data_bundle/generated_instances/E-UK100_02__u0_seed2_24h_20251113",
+      "models/data_bundle/generated_instances/E-UK100_03__u0_seed3_24h_20251113",
+      "models/data_bundle/generated_instances/E-UK25_02__curric_d2_s3_seed2_24h",
+      "models/data_bundle/generated_instances/E-UK25_03__curric_d2_s3_seed3_24h",
+      "models/data_bundle/generated_instances/E-UK25_04__curric_d2_s3_seed4_24h",
+      "models/data_bundle/generated_instances/E-UK25_05__curric_d2_s3_seed5_24h",
+      "models/data_bundle/generated_instances/E-UK25_06__curric_d2_s3_seed6_24h",
+      "models/data_bundle/generated_instances/E-UK25_07__curric_d2_s3_seed7_24h",
+      "models/data_bundle/generated_instances/E-UK25_08__curric_d2_s3_seed8_24h",
+      "models/data_bundle/generated_instances/E-UK25_09__curric_d2_s3_seed9_24h",
+      "models/data_bundle/generated_instances/E-UK50_01__curric_d2_s3_seed1_24h",
+      "models/data_bundle/generated_instances/E-UK50_02__curric_d2_s3_seed2_24h",
+      "models/data_bundle/generated_instances/E-UK50_03__curric_d2_s3_seed3_24h",
+      "models/data_bundle/generated_instances/E-UK50_04__curric_d2_s3_seed4_24h"
+    ],
+    "git": {
+      "status_short_branch": "## dr-x86...origin/dr-x86\n M solver/rl/dr_alns_ppo/learned_destroy.py\n M solver/rl/dr_alns_ppo/learned_destroy_policy.py\n M solver/rl/dr_alns_ppo/worker.py\n M solver/rl/dr_alns_ppo/worker_client.py\n?? solver/rl/dr_alns_ppo/pilot21_learned_destroy_big.py\n?? solver/rl/tests/test_pilot21_learned_destroy_big.py",
+      "head": "bc89a7b7c0de3ec4edf06f7d4218b1b6bf6c169e",
+      "branch": "dr-x86",
+      "tracked_docs": [
+        "HANDOFF.md",
+        "docs/handoff/codex_prompts/09_dr_learned_destroy_phaseA.md",
+        "docs/handoff/codex_prompts/10_dr_learned_destroy_big_experiment.md",
+        "docs/handoff/dr_alns_learned_destroy_plan.md"
+      ]
+    }
+  },
+  "stage0": {
+    "gate_status": "G0_PASS",
+    "gate_reason": "Destroy headroom found on scales: 25c",
+    "scale_rows": [
+      {
+        "scale": "100c",
+        "operator_select_mean": 2478.6985947075373,
+        "worst_removal_mean": 2478.6985947075373,
+        "best_of_k_mean": 2478.6985947075373,
+        "headroom_pct": 0.0,
+        "worst_improvement_pct": 0.0,
+        "has_destroy_headroom": false
+      },
+      {
+        "scale": "25c",
+        "operator_select_mean": 570.4788966208015,
+        "worst_removal_mean": 576.1592433756146,
+        "best_of_k_mean": 534.75904171796,
+        "headroom_pct": 6.261380589961512,
+        "worst_improvement_pct": -0.9957154924503362,
+        "has_destroy_headroom": true
+      },
+      {
+        "scale": "50c",
+        "operator_select_mean": 957.7682967356021,
+        "worst_removal_mean": 997.0645944808023,
+        "best_of_k_mean": 1030.4602861733308,
+        "headroom_pct": -7.58972600006573,
+        "worst_improvement_pct": -4.102902328165926,
+        "has_destroy_headroom": false
+      }
+    ],
+    "headroom_scales": [
+      "25c"
+    ],
+    "worker_integrity_ok": true
+  },
+  "completed_stage": "stage1",
+  "stage1_progress": {
+    "next_episode": 1000
+  },
+  "stage1": {
+    "gate_status": "HALT_LEARNER_FLAT",
+    "gate_reason": "reward_lift=7.286%, slope=0.00460845, entropy_drop=-9.433, finite_losses=True, kl_ok=True",
+    "model_path": "solver\\reports\\dr_alns_ppo_v3_block_dr_alns\\async_pilot\\pilot21_learned_destroy_big\\pilot21_learned_destroy_model.pt",
+    "episode_count": 1000,
+    "update_count": 250,
+    "reward_early_mean": 38.02254616525747,
+    "reward_late_mean": 40.79299246253533,
+    "reward_late_vs_early_pct": 7.286325027357894,
+    "reward_slope": 0.004608445113144197,
+    "entropy_first": 21.34705650806427,
+    "entropy_last": 30.780423998832703,
+    "entropy_drop": -9.433367490768433,
+    "finite_losses": true,
+    "approx_kl_ok": true
+  },
+  "final_status": "HALT_LEARNER_FLAT",
+  "final_reason": "reward_lift=7.286%, slope=0.00460845, entropy_drop=-9.433, finite_losses=True, kl_ok=True"
+}

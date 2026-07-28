@@ -1,0 +1,133 @@
+{
+  "preflight": {
+    "worker": {
+      "exe": "C:\\Users\\zlxshu\\.venvs\\resetp-solver-py313\\Scripts\\python.exe",
+      "version": "3.13.12",
+      "numpy": "2.3.5"
+    },
+    "torch_version": "2.5.1+cu124",
+    "cuda_available": true,
+    "cuda_device": "NVIDIA GeForce RTX 3060 Laptop GPU",
+    "cuda_total_gb": 5.99951171875,
+    "disk_free_gb": 102.76251602172852,
+    "required_bundles": [
+      "models/data_bundle/generated_instances/E-UK100_01__d2_s3_seed1_24h_20251113",
+      "models/data_bundle/generated_instances/E-UK25_02__curric_d2_s3_seed2_24h",
+      "models/data_bundle/generated_instances/E-UK25_03__curric_d2_s3_seed3_24h",
+      "models/data_bundle/generated_instances/E-UK25_04__curric_d2_s3_seed4_24h",
+      "models/data_bundle/generated_instances/E-UK25_05__curric_d2_s3_seed5_24h",
+      "models/data_bundle/generated_instances/E-UK25_06__curric_d2_s3_seed6_24h",
+      "models/data_bundle/generated_instances/E-UK25_07__curric_d2_s3_seed7_24h",
+      "models/data_bundle/generated_instances/E-UK25_08__curric_d2_s3_seed8_24h",
+      "models/data_bundle/generated_instances/E-UK25_09__curric_d2_s3_seed9_24h",
+      "models/data_bundle/generated_instances/E-UK50_01__curric_d2_s3_seed1_24h",
+      "models/data_bundle/generated_instances/E-UK50_02__curric_d2_s3_seed2_24h",
+      "models/data_bundle/generated_instances/E-UK50_03__curric_d2_s3_seed3_24h",
+      "models/data_bundle/generated_instances/E-UK50_04__curric_d2_s3_seed4_24h"
+    ],
+    "required_bundle_files": [
+      "instance.json",
+      "distance_matrix.npy",
+      "carbon_profile.csv",
+      "nodes.csv",
+      "scenario_manifest.json"
+    ],
+    "independent_test_overlap": {
+      "overlap": false,
+      "test_bundles": [
+        "models/data_bundle/generated_instances/E-UK100_01__d2_s3_seed1_24h_20251113",
+        "models/data_bundle/generated_instances/E-UK50_01__curric_d2_s3_seed1_24h",
+        "models/data_bundle/generated_instances/E-UK50_02__curric_d2_s3_seed2_24h",
+        "models/data_bundle/generated_instances/E-UK50_03__curric_d2_s3_seed3_24h"
+      ],
+      "overlaps": {
+        "pilot22_train": [],
+        "pilot22_validation": [],
+        "pilot23_stage_b_train": [],
+        "pilot23_validation": []
+      }
+    },
+    "git": {
+      "status_short_branch": "## dr-x86...origin/dr-x86\n?? solver/rl/dr_alns_ppo/pilot23_stabilize.py\n?? solver/rl/tests/test_pilot23_stabilize.py",
+      "head": "ea5ee8e2b48837e04361b705d3db1acfb694b656",
+      "branch": "dr-x86",
+      "tracked_docs": [
+        "HANDOFF.md",
+        "docs/handoff/codex_prompts/10_dr_learned_destroy_big_experiment.md",
+        "docs/handoff/codex_prompts/11_dr_learned_destroy_pilot22_grounded_fixes.md"
+      ]
+    }
+  },
+  "stabilization_fixes": [
+    {
+      "fix": "PEAK_CHECKPOINT_INDEPENDENT_TEST",
+      "symptom": "Pilot22 final checkpoint fell back to +2.4% after a +11.5% validation peak.",
+      "source": "Standard NCO/RL practice selects checkpoints on validation and reports on a separate test set.",
+      "change": "Pilot23 Stage A locates the Pilot22 validation peak checkpoint and evaluates it on non-overlapping independent test bundles/seeds.",
+      "why_only_this": "It tests the cheapest explanation, checkpoint selection, before spending another training run."
+    },
+    {
+      "fix": "TARGET_KL_EARLY_STOP",
+      "symptom": "Pilot22 gate failed because approx_kl exceeded the stability bound.",
+      "source": "PPO implementations commonly stop update epochs when approximate KL crosses a target.",
+      "change": "Pilot23 Stage B stops the current PPO update when minibatch approx_kl exceeds target_kl and logs the stop.",
+      "why_only_this": "It directly limits the observed failure mode without changing the learned-destroy action space."
+    },
+    {
+      "fix": "LR_ANNEAL_SMALLER_CLIP_FEWER_EPOCHS",
+      "symptom": "Pilot22 validation peaked and then regressed late in training.",
+      "source": "PPO stabilization uses smaller updates via LR schedules, tighter clipping, and fewer epochs.",
+      "change": "Pilot23 defaults to lr 1e-4 -> 1e-5, clip 0.1, and one PPO epoch while preserving POMO and 5/3/1/0 reward.",
+      "why_only_this": "The reward/baseline fixes worked; this only reduces late destructive update size."
+    }
+  ],
+  "pilot22_peak": {
+    "checkpoint_path": "solver\\reports\\dr_alns_ppo_v3_block_dr_alns\\async_pilot\\pilot22_grounded_fixes\\checkpoints\\pilot22_learned_destroy_update_0130.pt",
+    "checkpoint_selection_method": "best_validation_exact_checkpoint",
+    "tag": "update_0130",
+    "update_index": 129,
+    "validation_gain_pct_vs_initial": 11.506677666418925,
+    "validation_mean_obj": 749.1888540265803,
+    "validation_zero_violations": true
+  },
+  "stageA": {
+    "gate_status": "STAGEB_REQUIRED_CKPT_LT2",
+    "reason": "avg_vs_operator=-17.726%, min_scale=-23.635%, avg_vs_random=-16.775%, avg_vs_worst=-11.453%, zero_violations=True, worker_ok=True, preserves_plus_10=False",
+    "avg_vs_operator": -17.72629109121851,
+    "min_scale_vs_operator": -23.635054788291345,
+    "avg_vs_random": -16.774649776435268,
+    "avg_vs_worst": -11.453103581205148,
+    "zero_violations": true,
+    "worker_ok": true,
+    "preserves_plus_10": false,
+    "scale_improvement_pct": {
+      "100c": 0.0,
+      "50c": -23.635054788291345
+    },
+    "row_count": 48
+  },
+  "completed_stage": "stageB",
+  "stageB_progress": {
+    "next_group": 250
+  },
+  "stageB": {
+    "gate_status": "HALT_POLICY_UNSTABLE_V2",
+    "gate_reason": "best_validation_gain=12.072%, final_validation_gain=8.688%, recent_slope=0.449225, stable_keep=False, finite_losses=True, kl_ok=True, zero_violations=True, entropy_floor_ok=True",
+    "best_model_path": "solver\\reports\\dr_alns_ppo_v3_block_dr_alns\\async_pilot\\pilot23_stabilize\\pilot23_best_validation_model.pt",
+    "update_count": 250,
+    "validation_count": 27,
+    "best_validation_gain_pct_vs_initial": 12.071601780805983,
+    "final_validation_gain_pct_vs_initial": 8.688299494398018,
+    "recent_validation_gain_slope": 0.44922507659084776,
+    "recent_validation_gain_floor": 7.789849341216323,
+    "stable_keep": false,
+    "finite_losses": true,
+    "approx_kl_ok": true,
+    "max_approx_kl": 0.01693066954612732,
+    "entropy_floor_ok": true,
+    "validation_zero_violations": true
+  },
+  "final_status": "HALT_POLICY_UNSTABLE_V2",
+  "final_reason": "best_validation_gain=12.072%, final_validation_gain=8.688%, recent_slope=0.449225, stable_keep=False, finite_losses=True, kl_ok=True, zero_violations=True, entropy_floor_ok=True",
+  "wall_time_seconds": 9463.109000000055
+}

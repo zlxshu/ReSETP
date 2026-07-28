@@ -1,0 +1,40 @@
+{
+  "manifest": "",
+  "output_dir": "solver\\reports\\dr_alns_ppo_v3_block_dr_alns\\async_pilot\\pilot20_learned_destroy_phaseA\\formal_120",
+  "worker_python": "C:\\Users\\zlxshu\\.venvs\\resetp-solver-py313\\Scripts\\python.exe",
+  "seed": 1,
+  "heldout_seeds": "101,102,103",
+  "train_episodes": 120,
+  "rollout_min_episodes": 8,
+  "eval_budget": 120,
+  "max_customers": 64,
+  "hidden_size": 128,
+  "learning_rate": 0.0003,
+  "ppo_epochs": 2,
+  "minibatch_size": 64,
+  "gamma": 0.99,
+  "gae_lambda": 0.95,
+  "clip_range": 0.2,
+  "value_coef": 0.5,
+  "entropy_coef": 0.01,
+  "max_grad_norm": 0.5,
+  "skip_baselines": false,
+  "train_bundles": [
+    "models/data_bundle/generated_instances/E-UK25_02__curric_d2_s3_seed2_24h",
+    "models/data_bundle/generated_instances/E-UK25_03__curric_d2_s3_seed3_24h",
+    "models/data_bundle/generated_instances/E-UK25_04__curric_d2_s3_seed4_24h",
+    "models/data_bundle/generated_instances/E-UK25_05__curric_d2_s3_seed5_24h",
+    "models/data_bundle/generated_instances/E-UK25_06__curric_d2_s3_seed6_24h",
+    "models/data_bundle/generated_instances/E-UK25_07__curric_d2_s3_seed7_24h",
+    "models/data_bundle/generated_instances/E-UK50_01__curric_d2_s3_seed1_24h",
+    "models/data_bundle/generated_instances/E-UK50_02__curric_d2_s3_seed2_24h",
+    "models/data_bundle/generated_instances/E-UK50_03__curric_d2_s3_seed3_24h"
+  ],
+  "held_out_bundles": [
+    "models/data_bundle/generated_instances/E-UK25_08__curric_d2_s3_seed8_24h",
+    "models/data_bundle/generated_instances/E-UK25_09__curric_d2_s3_seed9_24h",
+    "models/data_bundle/generated_instances/E-UK50_04__curric_d2_s3_seed4_24h"
+  ],
+  "required_worker_python": "C:\\Users\\zlxshu\\.venvs\\resetp-solver-py313\\Scripts\\python.exe",
+  "required_worker_numpy": "2.3.5"
+}

@@ -2,6 +2,11 @@
 
 > 这是 Claude(M1)交给 Codex 的总纲。**Claude 之后基本不在场,Codex 既思考也执行。** 本文件 = 剩余全部规划(总体+局部) + 预备方案 + 行为铁律。每段对话先读 `docs/handoff/READ_ME_FIRST_FOR_AGENTS.md`，再按其中清单读 `HANDOFF.md` + `docs/handoff/project_prd_execution_map_v2_20260702.md` + `docs/handoff/project_planning_map_20260701.md` + 本文件 + `docs/handoff/memory/MEMORY.md` + 相关 memory 节点，再动手。
 
+> **2026-07-28 M1/DR 集成边界：** M1 仍是共享 solver、基线、报告、论文与当前任务的
+> canonical；合入的 `solver/rl/**`、x86-only prompts 和历史报告只作为冻结 DR-ALNS
+> 实现与证据归档，不恢复旧接管指令，不授权训练、DQN/PPO 或 DR 性能主张。若本文件
+> 的旧 DR 排期与 `HANDOFF.md` 顶部同步记录冲突，以后者为准。
+
 > **2026-07-11最新用户决定覆盖本文件的旧参数与旧排期：** 当前先完成E2九算例×九算法×十次×4000评价统一比赛，280 kWh主场景、80 kWh备用、公平off、跨场费0；完成后立即准备E3。自有算例不套BKS/AVG/Gap%，公开标准算例和未经改动Goeke算法留作E2后补实验。客户归属、跨场费用和线性碳配额挂账查文献。唯一拍板单为`docs/handoff/e1_e7_submission_contract_decision_20260711.md`；以下旧80 kWh主线、16000预算等段落只作历史，不得作为当前执行入口。
 
 ## 0. 给 Codex 的行为铁律(每段对话自我约束,务必照做)

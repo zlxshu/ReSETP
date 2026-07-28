@@ -1,0 +1,80 @@
+{
+  "status": "NO_DESTROY_LEVERAGE_ANY_BUDGET",
+  "reason": "All budget ladder rows are <1%; max=-0.960% at 25c_4000.",
+  "row_count": 123,
+  "worker_integrity_ok": true,
+  "zero_violations": true,
+  "budget_rows": [
+    {
+      "label": "100c_1000",
+      "scale": "100c",
+      "budget_steps": 1000,
+      "row_count": 6,
+      "paired_count": 2,
+      "best_of_k_headroom_pct": -3.1896640953783173,
+      "worst_removal_headroom_pct": -0.5790089617150482
+    },
+    {
+      "label": "25c_1000",
+      "scale": "25c",
+      "budget_steps": 1000,
+      "row_count": 27,
+      "paired_count": 9,
+      "best_of_k_headroom_pct": -2.376434792040782,
+      "worst_removal_headroom_pct": -0.3757997303586045
+    },
+    {
+      "label": "25c_250",
+      "scale": "25c",
+      "budget_steps": 250,
+      "row_count": 27,
+      "paired_count": 9,
+      "best_of_k_headroom_pct": -2.301529897320319,
+      "worst_removal_headroom_pct": -4.5035202741347256
+    },
+    {
+      "label": "25c_4000",
+      "scale": "25c",
+      "budget_steps": 4000,
+      "row_count": 27,
+      "paired_count": 9,
+      "best_of_k_headroom_pct": -0.9600521006069864,
+      "worst_removal_headroom_pct": -0.8659017818495778
+    },
+    {
+      "label": "50c_3000",
+      "scale": "50c",
+      "budget_steps": 3000,
+      "row_count": 18,
+      "paired_count": 6,
+      "best_of_k_headroom_pct": -1.62721276213667,
+      "worst_removal_headroom_pct": 0.5155614766022414
+    },
+    {
+      "label": "50c_750",
+      "scale": "50c",
+      "budget_steps": 750,
+      "row_count": 18,
+      "paired_count": 6,
+      "best_of_k_headroom_pct": -1.8355460222840787,
+      "worst_removal_headroom_pct": -1.024786441782413
+    }
+  ],
+  "max_budget_row": {
+    "label": "25c_4000",
+    "scale": "25c",
+    "budget_steps": 4000,
+    "row_count": 27,
+    "paired_count": 9,
+    "best_of_k_headroom_pct": -0.9600521006069864,
+    "worst_removal_headroom_pct": -0.8659017818495778
+  },
+  "max_headroom_pct": -0.9600521006069864,
+  "budget_summary": {
+    "row_count": 123,
+    "min_eval_floor_ratio": 1.0,
+    "min_wall_floor_ratio": 0.11433333333504075,
+    "underpowered_count": 0
+  },
+  "gate_rule": "Max paired best_of_k vs operator_select over all scale-budget cells: >=3 pass, 1-3 marginal, <1 clean negative."
+}

@@ -9,7 +9,7 @@ from typing import Any
 from setp_solver.check import check_solution
 from setp_solver.cost import _arc_loads, ev_instance_arc_energy_kwh, route_node_schedule
 from setp_solver.instance_loader import Instance, Node
-from setp_solver.solution import ChargingAction, CrossSiteService, Route, Solution
+from setp_solver.solution import ChargingAction, CrossSiteService, Route, Solution, physical_vehicle_id
 from setp_solver.algorithms.resetp_alns.support.charging import repair_route_charging
 from setp_solver.search.evaluation import BIG_M, EvaluationContext, fairness_context_for_solution, record_repair_delta
 from setp_solver.algorithms.resetp_alns.support.fleet import normalize_solution_vehicle_trips
@@ -709,10 +709,10 @@ def _structure_cache_enabled(instance: Instance | None = None) -> bool:
 
 
 def _next_vehicle_id(routes: list[Route], prefix: str) -> str:
-    used = {route.vehicle_id for route in routes}
+    used = {physical_vehicle_id(route.vehicle_id) for route in routes}
     idx = 1
     candidate = f"{prefix}{idx}"
-    while candidate in used:
+    while physical_vehicle_id(candidate) in used:
         idx += 1
         candidate = f"{prefix}{idx}"
     return candidate

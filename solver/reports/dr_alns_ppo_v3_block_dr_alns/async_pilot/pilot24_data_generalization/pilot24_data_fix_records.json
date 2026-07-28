@@ -1,0 +1,23 @@
+[
+  {
+    "fix": "LARGE_SAME_SCALE_GENERATED_POOL",
+    "symptom": "Pilot23 validation learned but independent cross-scale test failed.",
+    "source": "Neural CO training relies on many same-distribution, same-scale generated instances.",
+    "change": "Pilot24 generates train/val/test 25c pools by disjoint seed ranges with complete carbon bundles.",
+    "why_only_this": "It removes the identified data cause without changing the learned-destroy algorithm."
+  },
+  {
+    "fix": "FRESH_PER_BATCH_POMO",
+    "symptom": "Earlier pilots repeatedly trained on a tiny fixed set of bundles.",
+    "source": "POMO-style training samples fresh problem instances per batch and uses grouped rollouts per instance.",
+    "change": "Each Stage1 POMO group uses one unused train bundle and multiple rollouts on that bundle.",
+    "why_only_this": "It preserves the stable PPO/reward stack while replacing the overfit data regime."
+  },
+  {
+    "fix": "SAME_SCALE_TEST",
+    "symptom": "Pilot23 had to test 25c-trained policies on 50/100c bundles because old 25c test bundles were incomplete.",
+    "source": "Generalization claims need independent test data from the intended distribution before cross-scale claims.",
+    "change": "Pilot24 tests the best-validation checkpoint only on held-out generated 25c bundles.",
+    "why_only_this": "This isolates data generalization from cross-scale extrapolation."
+  }
+]

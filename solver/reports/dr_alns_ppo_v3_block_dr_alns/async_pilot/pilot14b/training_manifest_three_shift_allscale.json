@@ -1,0 +1,31 @@
+{
+  "schema_version": "dr-alns-ppo-bundle-manifest.v1",
+  "train": [
+    "models/data_bundle/generated_instances/e2_benchmark/threeshift/e2-threeshift-50c-01",
+    "models/data_bundle/generated_instances/e2_benchmark/threeshift/e2-threeshift-50c-02",
+    "models/data_bundle/generated_instances/e2_benchmark/threeshift/e2-threeshift-50c-03",
+    "models/data_bundle/generated_instances/e2_benchmark/threeshift/e2-threeshift-75c-01",
+    "models/data_bundle/generated_instances/e2_benchmark/threeshift/e2-threeshift-75c-02",
+    "models/data_bundle/generated_instances/e2_benchmark/threeshift/e2-threeshift-75c-03",
+    "models/data_bundle/generated_instances/e2_benchmark/threeshift/e2-threeshift-100c-01",
+    "models/data_bundle/generated_instances/e2_benchmark/threeshift/e2-threeshift-100c-02",
+    "models/data_bundle/generated_instances/e2_benchmark/threeshift/e2-threeshift-100c-03",
+    "models/data_bundle/generated_instances/e2_benchmark/threeshift/e2-threeshift-150c-01",
+    "models/data_bundle/generated_instances/e2_benchmark/threeshift/e2-threeshift-150c-02",
+    "models/data_bundle/generated_instances/e2_benchmark/threeshift/e2-threeshift-150c-03",
+    "models/data_bundle/generated_instances/e2_benchmark/threeshift/e2-threeshift-200c-01",
+    "models/data_bundle/generated_instances/e2_benchmark/threeshift/e2-threeshift-200c-02",
+    "models/data_bundle/generated_instances/e2_benchmark/threeshift/e2-threeshift-200c-03"
+  ],
+  "held_out": [
+    "models/data_bundle/generated_instances/E-UK100_03__u0_seed3_24h_20251113"
+  ],
+  "formal_eval": [
+    "models/data_bundle/generated_instances/E-UK100_01__d2_s3_seed1_24h_20251113"
+  ],
+  "excluded_from_training_reason": {
+    "Pilot14b scope": "intentional all-scale three-shift curriculum candidate-generator PPO smoke manifest before any long training",
+    "train scales": "50c, 75c, 100c, 150c, and 200c three-shift bundles are included to prevent small-instance-only overfitting",
+    "E-UK100_01": "formal-only guard bundle, not used in train"
+  }
+}
