@@ -117,6 +117,21 @@ class PriceParameters:
     B_battery_kwh: float = B_battery_kwh
     initial_ev_battery_kwh: float = initial_ev_battery_kwh
     diesel_price: float = diesel_price
+    # China81 diesel-price trace (documentation only; no default changes here):
+    # the superseded runtime snapshot used Beijing/Tianjin/Shijiazhuang
+    # 6.87 CNY/L, Guangzhou/Shenzhen/Dongguan/Foshan 6.83 CNY/L, and
+    # Chengdu/Chongqing 6.90 CNY/L.  Those values came from the 2026-07
+    # official snapshots identified as BEIJING_OFFICIAL_2026-07-03,
+    # GUANGDONG_OFFICIAL_2026-07-03, and CHONGQING_OFFICIAL_2026-07-04 in
+    # diesel_price_2025_02_12_source_register.csv.
+    # The user-approved 2025-02-12 city values are Beijing/Chengdu 7.48,
+    # Tianjin/Shijiazhuang(Hebei) 7.43, Guangdong cities 7.44, and Chongqing
+    # 7.50 CNY/L.  Their new evidence is the official 2025-01-16 local or
+    # provincial retail material (and Chongqing's registered NDRC/local
+    # derivation) recorded, with file hashes, in
+    # baselines/china_e3_e7/pre_e3_full_chain_audit_20260723/
+    # diesel_price_2025_02_12_source_register.csv.  China81 loads these through
+    # its explicit city/date/slot authority; DEFAULT_PRICES remains unchanged.
     # Optional route-origin city overrides. The empty tuple preserves every
     # historical/default scenario; China81 formal bundles provide a complete
     # nine-city tuple and fail closed when a route-origin city is absent.

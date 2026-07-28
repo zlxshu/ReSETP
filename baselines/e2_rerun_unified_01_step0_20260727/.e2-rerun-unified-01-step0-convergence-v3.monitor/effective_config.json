@@ -1,0 +1,111 @@
+{
+  "ai": {
+    "enabled": false,
+    "timeout_seconds": 180
+  },
+  "checkpoint_paths": [],
+  "completion_files": [
+    "/Volumes/移动硬盘（512G）/ReSETP/baselines/e2_rerun_unified_01_step0_20260727/done.json"
+  ],
+  "config_path": "/Volumes/移动硬盘（512G）/ReSETP/baselines/e2_rerun_unified_01_step0_20260727/monitor.json",
+  "csv_rules": [
+    {
+      "duplicate_key_fields": [
+        "instance_id",
+        "seed",
+        "arm"
+      ],
+      "feasible_field": "status",
+      "max_duplicate_fraction": 0,
+      "max_violation_total": 0,
+      "min_feasible_rate": 1.0,
+      "path": "/Volumes/移动硬盘（512G）/ReSETP/baselines/e2_rerun_unified_01_step0_20260727/raw_runs.csv",
+      "required": true,
+      "required_after_seconds": 300,
+      "required_fields": [
+        "instance_id",
+        "seed",
+        "arm",
+        "status",
+        "stop_iterations",
+        "last_strict_improvement_iteration",
+        "l_over_s",
+        "trajectory_path",
+        "cpu_seconds",
+        "wallclock_seconds",
+        "peak_rss_mib"
+      ],
+      "truthy": [
+        "PASS"
+      ],
+      "violation_field": "violation_count"
+    }
+  ],
+  "forbidden_command_substrings": [
+    "2025",
+    "--formal",
+    "e2_final_campaign_20260720/corrected_china81_rerun_v4_20260724"
+  ],
+  "logs": [],
+  "low_cpu_consecutive_checks": 5,
+  "max_rss_mb": 12000,
+  "max_runtime_seconds": 21600,
+  "milestones": [
+    {
+      "min_size": 4096,
+      "path": "/Volumes/移动硬盘（512G）/ReSETP/baselines/e2_rerun_unified_01_step0_20260727/raw_runs.csv"
+    }
+  ],
+  "min_cpu_percent_when_active": 1,
+  "min_system_free_memory_mb": 512,
+  "min_system_memory_free_percent": 5,
+  "name": "e2-rerun-unified-01-step0-convergence-v3",
+  "objective": "Complete exactly 45 result-blind NoImprovement(3000) convergence units with six spawn workers",
+  "pause_on_anomaly": true,
+  "poll_seconds": 30,
+  "progress_files": [
+    "/Volumes/移动硬盘（512G）/ReSETP/baselines/e2_rerun_unified_01_step0_20260727/progress.json",
+    "/Volumes/移动硬盘（512G）/ReSETP/baselines/e2_rerun_unified_01_step0_20260727/raw_runs.csv"
+  ],
+  "protected_files": [
+    {
+      "kind": "cost_function",
+      "path": "/Volumes/移动硬盘（512G）/ReSETP/solver/src/setp_solver/cost.py"
+    },
+    {
+      "kind": "evaluator",
+      "path": "/Volumes/移动硬盘（512G）/ReSETP/solver/src/setp_solver/check.py"
+    },
+    {
+      "kind": "evaluator",
+      "path": "/Volumes/移动硬盘（512G）/ReSETP/solver/src/setp_solver/search/evaluation.py"
+    },
+    {
+      "kind": "experiment_contract",
+      "path": "/Volumes/移动硬盘（512G）/ReSETP/baselines/e2_rerun_unified_01_step0_20260727/run_convergence_trial.py"
+    },
+    {
+      "kind": "core_data",
+      "path": "/Volumes/移动硬盘（512G）/ReSETP/baselines/e2_final_campaign_20260720/corrected_china81_rerun_v4_20260724/full_gate/artifact_hashes.json"
+    },
+    {
+      "kind": "core_data",
+      "path": "/Volumes/移动硬盘（512G）/ReSETP/baselines/algorithm_prototypes/china81_vs_opensource_20260727/artifact_hashes.json"
+    }
+  ],
+  "required_command_substrings": [
+    "run_convergence_trial.py",
+    "--workers",
+    "6"
+  ],
+  "result_files": [
+    "/Volumes/移动硬盘（512G）/ReSETP/baselines/e2_rerun_unified_01_step0_20260727/metadata.json",
+    "/Volumes/移动硬盘（512G）/ReSETP/baselines/e2_rerun_unified_01_step0_20260727/raw_runs.csv",
+    "/Volumes/移动硬盘（512G）/ReSETP/baselines/e2_rerun_unified_01_step0_20260727/decision.json",
+    "/Volumes/移动硬盘（512G）/ReSETP/baselines/e2_rerun_unified_01_step0_20260727/artifact_hashes.json",
+    "/Volumes/移动硬盘（512G）/ReSETP/baselines/e2_rerun_unified_01_step0_20260727/report.md"
+  ],
+  "schema_version": 1,
+  "stale_seconds": 1800,
+  "workdir": "/Volumes/移动硬盘（512G）/ReSETP"
+}

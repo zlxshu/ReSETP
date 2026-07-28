@@ -2067,3 +2067,135 @@ G0 注册先于结果冻结三题、seed 3/4 父代、`ORDER_ONLY/ORDER_PLUS_TYP
 
 权威报告：
 `docs/handoff/e2_algorithm_exploration_current_setting_final_stop_20260725.md`。
+
+## E2-RERUN-UNIFIED-01-STEP0-039：收敛盲试跑前柴油价痕迹登记
+
+状态：`APPROVED_PRICE_TRACE_REGISTERED__DEFAULT_NOT_CHANGED__STEP0_ENV_HALTED`
+（2026-07-27）。
+
+用户再次明确批准 2025-02-12 分城市 0 号柴油价：北京 7.48、天津 7.43、
+石家庄及河北 7.43、广州/深圳/东莞/佛山 7.44、成都 7.48、重庆 7.50，单位均为
+元/升。来源登记为
+`baselines/china_e3_e7/pre_e3_full_chain_audit_20260723/`
+`diesel_price_2025_02_12_source_register.csv`，其中北京、天津、河北、广东和四川使用
+登记的 2025-01-16 官方地方或省级零售材料，重庆使用已登记的国家发改委吨价与地方
+相邻零售价推导链；各证据文件及 SHA-256 以该 CSV 为准。
+
+`solver/src/setp_solver/prices.py` 只补了两段注释痕迹：旧运行快照为京津冀
+6.87、广东 6.83、成渝 6.90 元/升及其 2026-07 官方快照标识；新痕迹为上述
+2025-02-12 分城市值及新来源登记。没有修改 `diesel_price`、
+`PriceParameters.diesel_price_by_city` 的空默认、`DEFAULT_PRICES` 或任何 China81
+运行绑定。新值是否进入后续正式重跑仍由实例的显式城市—日期—时槽 authority
+控制，本登记本身不启动任何搜索。
+
+本次第 0 步环境探针在目标沙箱内按一次性规则启动 6 个 `spawn` worker 时，于
+`ProcessPoolExecutor._check_system_limits()` 读取
+`os.sysconf("SC_SEM_NSEMS_MAX")` 处收到
+`PermissionError: [Errno 1] Operation not permitted`。合同要求随后转非沙箱模式，
+但当前 Codex 会话没有非沙箱执行通道，因此未重试同一配置、未用单进程或其他沙箱
+方案替代，也未启动 45 个盲试跑单元或 2025 个正式单元。权威证据目录为
+`baselines/e2_rerun_unified_01_step0_20260727/`。
+
+## E3E6-BINDING-PREFLIGHT-01：D2/D3/D4 与统计依赖复核
+
+状态：`DRAFT_OPTIONS_AWAITING_USER_AND_CLAUDE_APPROVAL`（2026-07-27）。
+
+只读审计包为
+`baselines/china_e3_e7/e3e6_binding_preflight_01_20260727/`，正式搜索评价数 0。
+本条只登记可拍板选项，不替用户批准。推荐组合为：D3 使用多维容量硬锁并在当前源码
+冻结后重放零搜索门；D2 使用确定性输入驱动 `R_d`、主储备 1.25、敏感性
+1.10/1.25/1.50，场充 2 x 22 kW 及 1/2/3 枪、11/22/44 kW 全部保持构造情景；
+D4 以 80 次完整候选为目标预算，单线程、墙钟仅熔断、CPU 独立报告，并在源码冻结后
+按 80/56/32 固定梯做结果盲吞吐 pilot；统计上保留 27 个地区--规模汇总单元，但须
+处理跨规模客户身份复用和共同地区基础设施，不批准无条件 IID 解释。三个受保护文件
+均未修改。用户与 Claude 明确拍板前，`formal_search_allowed=false`。
+
+## E2-RERUN-UNIFIED-01-STEP1-040：新车型、迎风高度、柴油价与外层轮次统一重跑
+
+状态：`APPROVED_BY_USER_DIALOGUE_2026-07-27__PREFLIGHT_PASS__FULL_RERUN_AUTHORIZED`
+（2026-07-27）。
+
+用户在 2026-07-27 对话中一次性批准以下四项，并要求先过九题新车型可行性预检，
+再决定是否进入 China81 81 题 × 5 种子 × 5 臂统一重跑。旧车型、旧高度、旧柴油价
+和旧算法流程均作为历史痕迹保留；本条不把旧证据改写成新批证据。
+
+第一，China81 电动车由旧
+`FOTON-AUMARK-ES1-140-box`（额定载质量 1000 kg、整备质量 3300 kg、总质量
+4495 kg、电池 140.41 kWh、迎风面积 `0.85*2.2*3.25`）改为福田欧马可智蓝 ES1
+快递版栏板配置 `FOTON-AUMARK-ES1-EXPRESS-STAKE`（额定载质量 1700 kg、整备质量
+2600 kg、总质量 4495 kg、电池 77.28 kWh）。新硬来源为
+`docs/handoff/research_ev_payload_01_20260727/evidence/vehicles/`
+`V04_foton_aumark_es1.md`；旧来源
+`FOTON_OFFICIAL_AUMARK_ES1_140_BOX` 保留在历史登记和旧批元数据中，不作静默覆盖。
+变更理由是既有完整模型审计的载重断崖：EV 载重 1000/1300/1500/1735 kg 时，
+可电动化路线比例分别为 9.8%/11.2%/15.2%/100%。本次选择 1700 kg 是已批准的
+真实在售配置，不是根据预检结果调参。
+
+第二，福田官方 V04 未给快递版各配置对应的完整整车外廓高度。主情景显式采用与
+同级燃油车官方字段相同的 2.480 m，故 EV 迎风面积为
+`0.85*2.2*2.48`，标记
+`HEIGHT_ASSUMED_SYMMETRIC_WITH_CV_FIELD_INCOMPLETE`。预登记高度敏感性仅为
+2.48/3.05/3.25 m；本次 E2 主批只用 2.48 m，禁止根据结果切换。由于
+`cost.py` 的阻力项使用 `drag_coefficient × frontal_area × Σv²d`，该高度是进入
+能耗与成本的显式情景假设，不得称官方车高或静默省略。
+
+第三，启用 2025-02-12 分城市 0 号柴油价：北京 7.48、天津 7.43、石家庄及河北
+7.43、广州/深圳/东莞/佛山 7.44、成都 7.48、重庆 7.50 元/升。旧运行快照
+京津冀 6.87、广东 6.83、成渝 6.90 元/升及旧来源继续保留。本项沿用
+`E2-RERUN-UNIFIED-01-STEP0-039` 的来源登记；正式新批必须在每单元记录实际
+城市—日期绑定，不能只引用注释。
+
+第四，`MV-HGS-SP` 正式定义增加外层轮次循环。每轮 `cv_only`、`naive_ev`、
+`mechanism_ev` 三视角各自独立跑到 `NoImprovement(K)`，禁止切分一个总预算；
+复核可行候选路线跨轮累积入池，限时 MIP 集合划分后用 `min()` 安全网接受，接受的
+最好完整解写回为下一轮共同起点。达到轮次上限或连续无改进时终止。每视角、每轮
+CPU、墙钟、S、L、L/S 与完整 best-so-far 轨迹分别保留；额外 CPU 属预期，只作
+收敛式质量比较和分臂 CPU 披露，不作等算力主张。
+
+执行门固定为两关。第一关为京津冀、珠三角、成渝各 25/100/200 客户的 `-01`、
+种子 1，共九题；必须全部产出完整模型可行解，并且 EV 承担客户比例中位数实质高于
+历史 7.8%，否则判 `HALT_NEW_VEHICLE_PAIR_INFEASIBLE`，不得自行切换到厢式
+1450 kg 或不对称配对。第二关才允许 2025 个正式单元。K 从 3000 起；任一臂任一
+规模层中 `L/S > 0.5` 的单元占比超过 20%，只对该臂该层把 K 加倍重跑，最多两次。
+判据只看该臂自身收敛形状。大规模停机迭代中位数系统性低于小规模时须标饥饿指纹。
+
+保护边界：不得修改 `solver/src/setp_solver/cost.py`、
+`solver/src/setp_solver/check.py` 或
+`solver/src/setp_solver/search/evaluation.py`。若实现必须触碰其中任何一份，
+立即判 `HALT_AWAITING_USER_APPROVAL` 并停止。
+
+外层轮次的数值终止参数在第一关 EV 参与率揭盲前已固定：最多 3 轮，连续 2 轮
+没有严格完整模型目标改进即停；每轮三个视角使用由基础种子、轮次和视角确定性派生
+的子种子。该数值沿用既有三轮协议的低轮次边界，不根据本次预检或后续五臂结果选择。
+接受判据仍是完整模型目标的严格 `min()` 安全网；平局不算改进。
+
+第一关权威目录为
+`baselines/e2_rerun_unified_01_20260727/vehicle_feasibility_preflight/`。九题
+全部完成，完整模型可行率均为 100%，电量/时窗/容量/车队违约均为 0，直接
+`check_solution/evaluate` 独立复核闭合。EV 承担客户比例依次落在
+28.0%--56.0%，中位数 32.5%，相对历史 7.8% 提高 24.7 个百分点；EV 路线占比
+25.0%--50.0%，充电动作 1--11 次。裁决为
+`PASS_NEW_VEHICLE_PAIR_FEASIBILITY_PREFLIGHT`，因此第二关按上述冻结合同获准启动；
+不得把本预检写成五臂胜负证据。
+
+## E2-RERUN-UNIFIED-01-STEP1-CLEAN-RESTART-041：超订作废与 4-worker 洁净重启
+
+状态：`AUTHORIZED_BY_USER_2026-07-27__CONTAMINATED_PARTIAL_ARCHIVED__CLEAN_RESTART_READY`
+（2026-07-27）。
+
+用户明确要求停止首次正式批并从零洁净重启。首次批启动时与已被取代的
+`run_convergence_trial.py --workers 6` 双池重叠；MV 的路线池集合划分使用 5 秒
+墙钟限时 MIP，因此超订减少了同秒数内的实际求解工作，并对 MV 产生不对称质量影响。
+发现时约 163 行；安全停止完成写盘时为 165 个完整尝试行。全部归档至
+`baselines/e2_rerun_unified_01_20260727/contaminated_partial_run_oversubscribed/`，
+只作诊断证据，不得用于论文数字、臂间比较、饥饿判定或正式续跑。
+
+洁净批唯一协议变化为 `--workers 4`。依据是项目实验手册允许在总吞吐恶化时按
+证据降级，并须为限时 MIP 保留稳定墙钟质量。STEP1-040 的新车型、2.480 m
+迎风高度假设、2025-02-12 分城市柴油价、五臂、81 题 × 5 种子、K=3000 起步、
+按臂×规模层 L/S 饥饿加倍最多两次、MV 三视角逐轮独立收敛及外层轮次均不变。
+
+运行器必须持续检查本批之外的 ReSETP 实验 Python 池；发现后先写异常证据并暂停
+整批，不自行恢复。正式 `artifact_hashes.json` 必须排除所有 `.monitor` 目录、
+AppleDouble、临时文件、`__pycache__` 和受污染诊断归档。保护文件
+`cost.py`、`check.py`、`search/evaluation.py` 不得修改。

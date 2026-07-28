@@ -65,3 +65,17 @@
 XeLaTeX 已写出 21 页 PDF，无未定义引用或 overfull。逐句主张审计为 2 PASS、
 1 REVIEW、9 FAIL；在替代证据封存前，不得用旧数值改写修正后结论。
 
+## 2026-07-27 E3E6-BINDING-PREFLIGHT-01 追加路由
+
+后续只读审计见
+`baselines/china_e3_e7/e3e6_binding_preflight_01_20260727/`。D3 已有不修改
+`cost.py/check.py/search/evaluation.py` 的多维容量硬锁、路线池过滤和最终守卫；
+但 2026-07-24 语义门及预算 pilot 绑定的算法源码哈希已与当前文件不同，旧 PASS
+不得直接作为当前执行绑定。D4 当前 runner 还缺 CPU 独立字段。D2、D3、D4 与统计
+依赖均已形成可拍板选项，状态仍为
+`DRAFT_BINDING_OPTIONS_AWAITING_USER_APPROVAL`，正式搜索评价数 0。
+
+China81 的 81 实例结构可形成 27 个地区--规模单元，且每格 01/02/03 三图客户身份
+互斥；但跨规模允许复用客户 OSM 身份并共享地区基础设施。因此 27 格可以是主要汇总
+单元，不能无条件解释为 27 个 IID 地区样本。用户与 Claude 拍板并完成当前源码的
+零搜索重放、结果盲预算 pilot 和 CPU 记录绑定前，E3/E6 继续 HOLD。

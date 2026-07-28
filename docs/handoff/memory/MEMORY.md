@@ -1,5 +1,7 @@
 # Memory Index
 
+- [E2算法实验终局裁决（2026-07-27）](../e2_final_closeout_20260727.md) — `ALGORITHM_EXPERIMENTS_CLOSED_WITH_MIXED_EVIDENCE`。China81:MV对纯距离开源O臂354胜/46平/5负、平均降本1.9191%(全量405配对),但五级阶梯仅299/405,**不得称每层机制全面单调贡献**;O为新收敛式批、F/E/M/MV为v7固定迭代封存复用,必须披露非同批非同机非等算力。公开算例:固定MV-HGS-SP协议只复现13/18个目标(PR14A/PR15A/PR15B/PR16A/PR24A失败),**禁止写"18个新BKS全部由本文算法复现"或"公开算例上普遍优于纯HGS"**;新增5个独立认证更低候选(PR12A/PR14B/PR22B/PR23B/PR24B),仅PR14B可严格归因集合划分。验证:4测试+Ruff通过,15哈希匹配,16/16新witness证书PASS。主TeX尚未按校正登记册改写,属下一步论文任务。
+
 - [E2算法线完整历程 2026-07-25至27（2026-07-27）](../e2_algorithm_journey_20260725_to_27.md) — 唯一权威时间线文档:三个月卡死病灶(China81载重闸门)→公开算例等预算检验揭穿264:0是预算差→四方向证据关闭(地理分解/池富集/对偶引导数学恒等/三层设计被Codex评审否)→喂饱迭代误差腰斩→ε热启动18个新BKS全部独立认证→用户三次关键纠正(不是新算法/不能造假但可以是陈2025级组合/China81须真正干过开源HGS且允许不等算力消融)→三层消融在等CPU下A0反而最优,已叫停转向China81。末节含三条可迁移教训,取代e2_algorithm_design_candidate_20260726.md作为叙事入口(该文件原样保留为失败现场)。
 
 - [公开算例等预算检验：融合结构在等预算下无收益（2026-07-26）](e2_public_equal_budget_finding_20260726.md) — 封存P1的"MV-HGS-SP对母体264胜16平0负"是预算差撑出来的(cpu_ratio 1.47--2.00,434秒比240秒,此事直接读自封存数据)。等迭代6200代对照:hybrid vs 等预算母体+0.0963%(2胜4负),vs短预算母体-1.2411%,而等预算母体 vs 短预算母体-1.3361%——母体光靠给够预算就涨1.34%,超过hybrid相对短预算母体的1.24%领先。措辞边界:seed1六题,差值与种子噪声同量级,只支持"无可观测收益"不支持"更差",D4补seeds2--5中。同轮关闭地理分解(V13无局部性,BKS路线跨度215/全图282)与喂饱路线池(池喂到6--8倍仍三胜三负-0.088%)。三者是同一结论的三面:没有任何东西比把预算直接花在HGS迭代上更划算。新基准线=等迭代(最终等墙钟)真赢过PyVRP-HGS母体。
@@ -913,3 +915,108 @@ E7正式结果终验
 - 结合 China81 MV 对 O 354/46/5、平均改进 1.919118015025895%，E2 算法实验封存为
   `ALGORITHM_EXPERIMENTS_CLOSED_WITH_MIXED_EVIDENCE`。终局见
   `docs/handoff/e2_final_closeout_20260727.md`；主 TeX 同步属后续写作，不授权救援。
+
+# 2026-07-27 公开算例 13/18 复现缺口诊断（论文可引用口径）
+
+- 权威文档：`docs/handoff/e2_reproduction_gap_diagnosis_20260727.md`。
+- 五题未复现 = 两类协议差异，非计算错误、非算力不足：
+  ①阶梯截断 PR16A/PR24A（目标出自 12000→24000→40000 三级链共 76000 代，固定协议
+  3×12000 只买前两级，MV 逐轮读数与该链逐级对应）；②max-of-N vs 单条链 PR14A/PR15A/PR15B
+  （目标为两次独立 18000 代热启动的较好者；MV 单轮迭代与机时反而更多；PR15B 落在较差那次上，
+  0.041 即两次之差）。
+- 机制：SP 的 `min()` 仅保证单轮内不劣于自身路线池（48/48 成立），装配解写回作下轮起点后
+  轨迹与纯 HGS 分叉，故无跨轨迹支配。禁止用"算力不足"为由重跑。
+- 16 题全部低于 2013 年公布 BKS（−0.005%--−0.083%）**不得写成算法性能优势**（BKS 热启动
+  + min 接受，不变差是结构性的），只能作为"公开基准值仍可改进"的基准侧发现留在热启动副账本。
+- 论文 V2 §4.2 已改写第一批（见 HANDOFF 同日条目）；表 `tab:china81-summary` 加 O 列 + 编译
+  为 Codex 待办；E3--E7 共 27 处占位仍无数据（China E3 仍 HOLD）。
+
+# 2026-07-27 E2 统一重跑第 0 步环境阻断
+
+- `E2-RERUN-UNIFIED-01` 第 0 步在目标 workspace-write 沙箱只做了一次 6-worker
+  `spawn` 探针；`ProcessPoolExecutor._check_system_limits()` 调用
+  `os.sysconf("SC_SEM_NSEMS_MAX")` 时得到 `PermissionError: [Errno 1] Operation not
+  permitted`。合同要求改用非沙箱，当前会话无该通道，故判
+  `HALT_NON_SANDBOX_EXECUTION_UNAVAILABLE`，不以单进程或其他沙箱配置替代。
+- 45 个盲试跑与 2025 个正式单元均为 0；K=3000 的 95% L/S 门没有数据，K 不能定档。
+  柴油价只补审批与 `prices.py` 注释痕迹，默认值和受保护三文件未改。代码级审计确认
+  完成器读取城市柴油价、O 的严格改善安全网规则不变、五臂无需改保护文件即可另立统一
+  runner。证据目录为 `baselines/e2_rerun_unified_01_step0_20260727/`。
+- 同日第三、四条补跑续接时，会话仍只有 `workspace-write` 沙箱且禁止申请提权；按冻结
+  合同未重试六进程配置、未降并发、未启动 runner。上一轮完整 traceback 已从会话日志
+  恢复并追加到 `report.md` 和 `environment_probe.json`；45 单元仍为 0，K 与缩放仍未定。
+
+# 2026-07-27 RESEARCH-EV-PAYLOAD-01 取证记忆节点
+
+- 权威报告：`docs/handoff/research_ev_payload_01_20260727/report.md`；这是事实与描述统计，
+  不构成载质量参数选择。五个官方完整样本均为 4495 kg，配置值 950--1700 kg，4/5 个车型的
+  已列配置全部高于 1000 kg。
+- 有效规则边界：GB 1589-2016 没有新能源商用车额外总质量额度；工信部联通装〔2022〕3号附件
+  第一条第（二）项仅将新能源轻型货车排除在最低载质量利用系数要求之外；地方便利通行是路权，
+  不是核定质量豁免。2026 GB 1589 修订材料仍是征求意见稿。
+- Zotero 定向样本 6 篇：4 篇 EV/ICE 同载重，1 篇 EV 较低，1 篇 EV 较高；没有论文明确以
+  电池质量推导 EV 载重折减。检索技术边界与 PDF 哈希见报告证据目录。
+- 原始服务器页面字节因沙箱 DNS 限制未能保存；现有哈希对应规范化页面文本快照。后续如需原始
+  HTML/PDF 字节哈希，应在非沙箱网络环境按已存 URL 复抓，不能把当前哈希冒充原始响应哈希。
+
+## E3/E6 执行绑定只读预检（2026-07-27）
+
+- [E3E6-BINDING-PREFLIGHT-01 报告](../../../baselines/china_e3_e7/e3e6_binding_preflight_01_20260727/report.md)
+  — 只读静态审计与设计取证；搜索评价 0。D3 多维容量硬锁可在受保护文件之外实现，
+  但旧语义门和预算 pilot 的算法源码哈希已漂移，须在用户拍板与源码冻结后重放。
+  旧独立车场子搜索不能直接消费当前 China81 权威，且不等价于同算法硬锁对照。
+  D2 推荐输入驱动 `R_d`、储备 1.25 与 1.10/1.25/1.50 面板，2 x 22 kW 仅为构造
+  情景；D4 推荐 80 次完整候选、单线程、墙钟仅熔断并补 CPU 独立报告。
+  81 实例可聚合为 27 格且格内三图互斥，但跨规模客户身份复用显著，27 格不能无条件
+  解释为 IID 地区样本。状态=`DRAFT_BINDING_OPTIONS_AWAITING_USER_APPROVAL`。
+
+## E2-RERUN-UNIFIED-01 新车型预检与统一批启动（2026-07-27）
+
+- 新 EV 绑定为 `FOTON-AUMARK-ES1-EXPRESS-STAKE`，1700/2600/4495 kg、
+  77.28 kWh；迎风高度 2.480 m 是
+  `HEIGHT_ASSUMED_SYMMETRIC_WITH_CV_FIELD_INCOMPLETE` 情景假设，不是官方
+  配置车高。旧值、柴油价新旧痕迹和外层轮次定义见
+  `docs/handoff/model_change_approval_register_20260718.md`。
+- 九题完整模型预检在
+  `baselines/e2_rerun_unified_01_20260727/vehicle_feasibility_preflight/`
+  判 `PASS_NEW_VEHICLE_PAIR_FEASIBILITY_PREFLIGHT`：9/9 可行、四类违约均为 0，
+  EV 客户占比中位数 32.5%（范围 28.0%--56.0%），历史基线 7.8%。
+- China81 五臂同批基础矩阵 2025 单元已用 6 个 spawn 进程启动，状态
+  `FULL_UNIFIED_RERUN_RUNNING`，并非完成证据。K=3000 和饥饿加倍规则冻结；
+  MV 最多 3 轮、连续 2 轮无严格改进即停。不得在最终四件套、独立验解和论文表源
+  全部生成前引用胜负或平均改进。
+
+## E2-RERUN-UNIFIED-01 第 0 步收敛试跑（2026-07-27）
+
+- `baselines/e2_rerun_unified_01_step0_20260727/` 是第三、四条权威证据：
+  9 题 x 5 臂 = 45/45 单元、6 个 `spawn` 进程、seed 1。MV 三视角每个都
+  独立跑完 `NoImprovement(3000)`。
+- K=3000 只有 20/45 满足 `L/S < 0.5`。原轨迹推导的全局 K=21000 和
+  `K(n)=max(5000,110n)` 都使 43/45 过 95% 门，但未重跑验证。大规模层
+  15/15 偏晚，小规模层中位 S=3101 是早停/饥饿指纹。
+- 本门只报机时、收敛形状和工程可行性，不是臂间成本或性能证据。第 1 步
+  2025 单元仍未授权且未启动；旧 HALT 记录已保留。
+
+## E2-RERUN-UNIFIED-01 正式批洁净重启（2026-07-27）
+
+- 首次 6-worker 正式批与另一 6-worker 收敛池重叠，限时 MIP 的墙钟求解工作
+  不可比；安全停止时的 165 个完整尝试行全部归档到
+  `baselines/e2_rerun_unified_01_20260727/contaminated_partial_run_oversubscribed/`，
+  只能作诊断证据，不得用于论文、臂间比较、饥饿判定或正式续跑。
+- 洁净批从空任务账本以 4 workers 重启；其余 STEP1-040 合同不变。运行器持续
+  检查外部实验 Python 池，发现后先写证据并暂停整批。正式 `artifact_hashes.json`
+  排除所有 `.monitor` 目录及受污染归档。
+- PID/PGID 23367 已进入 `RUNNING`；首个原子检查点 3/2025，监控 findings=0，
+  隔离守卫无异常。当前只是健康启动证据，不是完成或臂间胜负证据。
+
+## PAPER-ALGCHAPTER-01 算法章正式协议接线（2026-07-27）
+
+- 报告：`docs/handoff/paper_algchapter_01_20260727/report.md`。
+- `docs/paper_v2/paper_main.tex` 的算法步骤已改为三阶段、六步骤：三视角逐一
+  `NoImprovement(K)`、跨轮累积路线池、限时 MIP 路线池集合划分、`min()` 安全网、
+  最好解写回和外层收敛停机。`algorithm_flow.tex` 的右侧回线说明移到回线内侧。
+- E2 禁止主张扫描通过，China81 现有数字与 `DATA_PLACEHOLDER` 未改。历史封存表图
+  被明确区分于新正式协议，不能作为新协议已验证的证据。
+- 当前 XeLaTeX/MiKTeX 在受限环境中于读取源文件前阻塞，Tectonic 离线资源亦不可用；
+  状态为 `WRITING_COMPLETE__HALT_XELATEX_RUNTIME_UNAVAILABLE`。旧21页 PDF 不属于
+  本任务；后续必须补两遍 XeLaTeX、日志计数和流程图逐页渲染复核。

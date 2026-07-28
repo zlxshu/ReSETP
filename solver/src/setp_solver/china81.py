@@ -658,13 +658,18 @@ def _china_vehicle_parameters() -> dict[str, VehicleTypeParameters]:
             ),
         ),
         "ev": VehicleTypeParameters(
-            vehicle_type_id="FOTON-AUMARK-ES1-140-box",
+            vehicle_type_id="FOTON-AUMARK-ES1-EXPRESS-STAKE",
             fuel_type="electric",
-            payload_capacity_kg=1_000.0,
-            curb_mass_kg=3_300.0,
+            payload_capacity_kg=1_700.0,
+            curb_mass_kg=2_600.0,
             gross_mass_kg=4_495.0,
-            frontal_area_m2=0.85 * 2.2 * 3.25,
-            battery_kwh=140.41,
+            # HEIGHT_ASSUMED_SYMMETRIC_WITH_CV_FIELD_INCOMPLETE:
+            # the official ES1 express sheet identifies the 1700 kg stake
+            # configuration but does not publish a configuration-specific
+            # overall height. The main scenario transfers the matched CV field
+            # height (2.480 m); 3.05/3.25 m are preregistered sensitivities.
+            frontal_area_m2=0.85 * 2.2 * 2.48,
+            battery_kwh=77.28,
             drag_coefficient=0.45,
             rolling_resistance_coefficient=0.01,
             non_energy_distance_cost_per_km=0.67,
@@ -673,7 +678,8 @@ def _china_vehicle_parameters() -> dict[str, VehicleTypeParameters]:
             engine_displacement_l=None,
             traction_energy_multiplier=1.184692 * 1.112434,
             source_ids=(
-                "FOTON_OFFICIAL_AUMARK_ES1_140_BOX",
+                "FOTON_OFFICIAL_AUMARK_ES1_EXPRESS_STAKE_V04",
+                "HEIGHT_ASSUMED_SYMMETRIC_WITH_CV_FIELD_INCOMPLETE",
                 "AF_0.85_WH_SCENARIO_TRIP_2026_102123",
                 "CD_0.45_EPA_SMARTWAY_CLASS2B_SCENARIO",
                 "EV_EFFICIENCY_GOEKE2015_TRANSFER",
@@ -882,7 +888,9 @@ def _china_prices(
         m_curb=2_565.0,
         m_unit=1.0,
         Q_capacity=1_735.0,
-        B_battery_kwh=140.41,
+        # Compatibility field for legacy code paths; the per-type EV contract
+        # above remains authoritative.
+        B_battery_kwh=77.28,
         initial_ev_battery_kwh=0.0,
         diesel_price=(
             sum(float(value) for value in diesel_price_by_city.values())

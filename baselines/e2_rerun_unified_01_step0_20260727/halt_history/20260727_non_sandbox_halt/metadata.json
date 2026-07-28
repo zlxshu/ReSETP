@@ -1,0 +1,52 @@
+{
+  "arms": {
+    "E": "HGS-E / naive_ev",
+    "F": "HGS-F / cv_only",
+    "M": "HGS-M / mechanism_ev",
+    "MV": "MV-HGS-SP; all three views independently converge before route-pool recombination",
+    "O": "open-source PyVRP 0.12.2 HGS / distance_only"
+  },
+  "created_date": "2026-07-27",
+  "environment": {
+    "MKL_NUM_THREADS": "1",
+    "OMP_NUM_THREADS": "1",
+    "OPENBLAS_NUM_THREADS": "1",
+    "PYTHONHASHSEED": "0",
+    "VECLIB_MAXIMUM_THREADS": "1",
+    "python": "/opt/anaconda3/bin/python3.13",
+    "sandbox_mode": "workspace-write"
+  },
+  "git_head_at_preflight": "e99901854ee10af77d42c3e5e152ef79a806c8d1",
+  "planned_instances": [
+    {"customer_count": 25, "instance_id": "cn-jjj-25c-01-V2-LOCATIONS", "region": "jjj", "size_layer": "small"},
+    {"customer_count": 100, "instance_id": "cn-jjj-100c-01-V2-LOCATIONS", "region": "jjj", "size_layer": "medium"},
+    {"customer_count": 200, "instance_id": "cn-jjj-200c-01-V2-LOCATIONS", "region": "jjj", "size_layer": "large"},
+    {"customer_count": 25, "instance_id": "cn-prd-25c-01-V2-LOCATIONS", "region": "prd", "size_layer": "small"},
+    {"customer_count": 100, "instance_id": "cn-prd-100c-01-V2-LOCATIONS", "region": "prd", "size_layer": "medium"},
+    {"customer_count": 200, "instance_id": "cn-prd-200c-01-V2-LOCATIONS", "region": "prd", "size_layer": "large"},
+    {"customer_count": 25, "instance_id": "cn-cy-25c-01-V2-LOCATIONS", "region": "cy", "size_layer": "small"},
+    {"customer_count": 100, "instance_id": "cn-cy-100c-01-V2-LOCATIONS", "region": "cy", "size_layer": "medium"},
+    {"customer_count": 200, "instance_id": "cn-cy-200c-01-V2-LOCATIONS", "region": "cy", "size_layer": "large"}
+  ],
+  "planned_seed": 1,
+  "planned_unit_count": 45,
+  "protected_files": [
+    "solver/src/setp_solver/cost.py",
+    "solver/src/setp_solver/check.py",
+    "solver/src/setp_solver/search/evaluation.py"
+  ],
+  "result_blinding": "No arm-to-arm wins, losses, average improvement, or cost comparison may be reported in step 0.",
+  "schema": "resetp.e2-rerun-unified-01.step0.metadata.v1",
+  "scope": "preflight_and_result_blind_convergence_trial_only",
+  "step1_formal_units_authorized": false,
+  "stop_rule_to_test": "NoImprovement(K), with current K=3000",
+  "step_3_4_supplement_20260727": {
+    "execution_channel": "workspace-write sandbox; escalation disabled by session policy",
+    "full_access_switch_succeeded": false,
+    "runner_started": false,
+    "same_multiprocessing_configuration_retried": false,
+    "status": "HALT_NON_SANDBOX_EXECUTION_UNAVAILABLE"
+  },
+  "task_id": "E2-RERUN-UNIFIED-01",
+  "trial_started": false
+}

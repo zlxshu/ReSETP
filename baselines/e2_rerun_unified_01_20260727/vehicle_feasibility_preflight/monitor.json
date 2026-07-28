@@ -1,0 +1,48 @@
+{
+  "schema_version": 1,
+  "name": "e2-rerun-unified-01-vehicle-feasibility-preflight",
+  "objective": "完成新车型对九题完整模型可行性预检并按预注册门裁决",
+  "workdir": ".",
+  "poll_seconds": 30,
+  "stale_seconds": 1200,
+  "max_runtime_seconds": 14400,
+  "pause_on_anomaly": true,
+  "required_command_substrings": ["run_preflight.py"],
+  "forbidden_command_substrings": ["--smoke", "--debug"],
+  "min_cpu_percent_when_active": 1,
+  "low_cpu_consecutive_checks": 5,
+  "max_rss_mb": 12000,
+  "min_system_free_memory_mb": 512,
+  "min_system_memory_free_percent": 5,
+  "progress_files": ["raw_runs.csv", "progress.json"],
+  "result_files": ["raw_runs.csv", "decision.json", "metadata.json", "artifact_hashes.json", "report.md"],
+  "completion_files": ["done.json"],
+  "checkpoint_paths": ["tasks"],
+  "protected_files": [
+    {"path": "../../../solver/src/setp_solver/cost.py", "kind": "cost_function"},
+    {"path": "../../../solver/src/setp_solver/check.py", "kind": "evaluator"},
+    {"path": "../../../solver/src/setp_solver/search/evaluation.py", "kind": "evaluator"},
+    {"path": "../../../solver/src/setp_solver/china81.py", "kind": "model"},
+    {"path": "../../../solver/src/setp_solver/prices.py", "kind": "primary_config"},
+    {"path": "../../../docs/handoff/model_change_approval_register_20260718.md", "kind": "experiment_contract"},
+    {"path": "run_preflight.py", "kind": "experiment_contract"},
+    {"path": "monitor.json", "kind": "experiment_contract"}
+  ],
+  "csv_rules": [
+    {
+      "path": "raw_runs.csv",
+      "required": true,
+      "required_after_seconds": 300,
+      "required_fields": ["instance_id", "seed", "status", "violation_count", "ev_customer_share"],
+      "feasible_field": "status",
+      "truthy": ["PASS"],
+      "min_feasible_rate": 1.0,
+      "violation_field": "violation_count",
+      "max_violation_total": 0,
+      "duplicate_key_fields": ["instance_id", "seed"],
+      "max_duplicate_fraction": 0
+    }
+  ],
+  "milestones": [{"path": "raw_runs.csv", "min_size": 1024}],
+  "ai": {"enabled": false, "timeout_seconds": 180}
+}

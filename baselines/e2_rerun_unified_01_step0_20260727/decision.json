@@ -1,0 +1,126 @@
+{
+  "convergence_shape_by_arm": {
+    "E": {
+      "clearly_earlier_stop": false,
+      "late_fraction": 0.5555555555555556,
+      "max_peak_rss_mib": 140.90625,
+      "median_L_over_S": 0.5335095630539574,
+      "median_S": 6431,
+      "median_cpu_seconds": 46.752644,
+      "median_wallclock_seconds": 104.04901216598228,
+      "peer_median_S": 6990.0,
+      "unit_count": 9
+    },
+    "F": {
+      "clearly_earlier_stop": false,
+      "late_fraction": 0.4444444444444444,
+      "max_peak_rss_mib": 122.234375,
+      "median_L_over_S": 0.4815966822187662,
+      "median_S": 5787,
+      "median_cpu_seconds": 49.819597,
+      "median_wallclock_seconds": 124.07425783301005,
+      "peer_median_S": 7010.0,
+      "unit_count": 9
+    },
+    "M": {
+      "clearly_earlier_stop": false,
+      "late_fraction": 0.5555555555555556,
+      "max_peak_rss_mib": 140.78125,
+      "median_L_over_S": 0.6046910001317697,
+      "median_S": 7589,
+      "median_cpu_seconds": 58.831551,
+      "median_wallclock_seconds": 133.7220669159724,
+      "peer_median_S": 6411.0,
+      "unit_count": 9
+    },
+    "MV": {
+      "clearly_earlier_stop": false,
+      "late_fraction": 0.6666666666666666,
+      "max_peak_rss_mib": 238.53125,
+      "median_L_over_S": 0.6919601601807167,
+      "median_S": 9739,
+      "median_cpu_seconds": 152.902082,
+      "median_wallclock_seconds": 342.25652791702305,
+      "peer_median_S": 6411.0,
+      "unit_count": 9
+    },
+    "O": {
+      "clearly_earlier_stop": false,
+      "late_fraction": 0.5555555555555556,
+      "max_peak_rss_mib": 124.75,
+      "median_L_over_S": 0.5305898920356752,
+      "median_S": 6391,
+      "median_cpu_seconds": 41.143212999999996,
+      "median_wallclock_seconds": 113.30043600001954,
+      "peer_median_S": 7010.0,
+      "unit_count": 9
+    }
+  },
+  "convergence_shape_by_size": {
+    "large": {
+      "clearly_earlier_stop": false,
+      "late_fraction": 1.0,
+      "max_peak_rss_mib": 238.53125,
+      "median_L_over_S": 0.8257232485186476,
+      "median_S": 17214,
+      "median_cpu_seconds": 279.467221,
+      "median_wallclock_seconds": 569.1996788750112,
+      "peer_median_S": 4766.0,
+      "unit_count": 15
+    },
+    "medium": {
+      "clearly_earlier_stop": false,
+      "late_fraction": 0.6666666666666666,
+      "max_peak_rss_mib": 175.734375,
+      "median_L_over_S": 0.5335095630539574,
+      "median_S": 6431,
+      "median_cpu_seconds": 58.831551,
+      "median_wallclock_seconds": 133.7220669159724,
+      "peer_median_S": 10157.5,
+      "unit_count": 15
+    },
+    "small": {
+      "clearly_earlier_stop": true,
+      "late_fraction": 0.0,
+      "max_peak_rss_mib": 107.03125,
+      "median_L_over_S": 0.03257013866494679,
+      "median_S": 3101,
+      "median_cpu_seconds": 8.493438000000001,
+      "median_wallclock_seconds": 22.178429374995176,
+      "peer_median_S": 11822.5,
+      "unit_count": 15
+    }
+  },
+  "cost_comparison_performed": false,
+  "early_stop_starvation_fingerprints": [
+    "size:small"
+  ],
+  "k_decision": {
+    "criterion": "at least 95% of 45 arm-units have L/S < 0.5",
+    "criterion_satisfied": false,
+    "customer_count_scaling_recommended": true,
+    "passing_units": 20,
+    "recommendation_status": "DERIVED_FROM_OBSERVED_TRAJECTORIES_NOT_RERUN",
+    "recommended_k": 21000,
+    "recommended_scaled_rule": "K(n)=max(5000,110n)",
+    "required_units": 43,
+    "scaled_rule_observed_passing_units": 43,
+    "size_specific_observed_required_k": {
+      "large": 28000,
+      "medium": 11000,
+      "small": 1000
+    },
+    "tested_k": 3000
+  },
+  "mv_unit_rule": "max of the three independent view L/S values; unit S and L are from that critical view",
+  "hash_hygiene": "HASH_CONTAMINATED_APPLEDOUBLE_CLEANED",
+  "appledouble_files_removed": 323,
+  "prior_halts_preserved_at": "halt_history/20260727_non_sandbox_halt",
+  "protected_files_modified": [],
+  "raw_run_count": 45,
+  "schema": "resetp.e2-rerun-unified-01.step0.decision.v2",
+  "sealed_directories_modified": [],
+  "step1_started": false,
+  "task_id": "E2-RERUN-UNIFIED-01",
+  "verdict": "PASS_STEP0_CONVERGENCE_TRIAL_COMPLETE"
+}

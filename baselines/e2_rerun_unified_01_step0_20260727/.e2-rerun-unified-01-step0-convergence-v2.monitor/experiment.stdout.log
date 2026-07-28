@@ -1,0 +1,26 @@
+concurrent.futures.process._RemoteTraceback: 
+"""
+Traceback (most recent call last):
+  File "/opt/anaconda3/lib/python3.13/concurrent/futures/process.py", line 254, in _process_worker
+    r = call_item.fn(*call_item.args, **call_item.kwargs)
+  File "/Volumes/移动硬盘（512G）/ReSETP/baselines/e2_rerun_unified_01_step0_20260727/run_convergence_trial.py", line 354, in _run_unit
+    price_binding = dict(sorted(bundle.prices.diesel_price_by_city.items()))
+                                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AttributeError: 'tuple' object has no attribute 'items'
+"""
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/Volumes/移动硬盘（512G）/ReSETP/baselines/e2_rerun_unified_01_step0_20260727/run_convergence_trial.py", line 567, in <module>
+    write_json(HERE / "artifact_hashes.json", {
+    ^^^^^^
+  File "/Volumes/移动硬盘（512G）/ReSETP/baselines/e2_rerun_unified_01_step0_20260727/run_convergence_trial.py", line 547, in main
+    result_path = HERE / "tasks" / f"{spec[0]}__seed{SEED}__{spec[4]}" / "result.json"
+                    ^^^^^^^^^^^^^^^
+  File "/opt/anaconda3/lib/python3.13/concurrent/futures/_base.py", line 449, in result
+    return self.__get_result()
+           ~~~~~~~~~~~~~~~~~^^
+  File "/opt/anaconda3/lib/python3.13/concurrent/futures/_base.py", line 401, in __get_result
+    raise self._exception
+AttributeError: 'tuple' object has no attribute 'items'

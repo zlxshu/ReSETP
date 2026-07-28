@@ -1,16 +1,24 @@
-% MV-HGS-SP main algorithm flow. Transparent line art only.
-% The sequence is bound to route_pool_sp.py: three independent HGS views,
-% full-model archive review, a time-limited MIP route-pool recombination,
-% full-model verification, and monotone acceptance.
+% MV-HGS-SP main algorithm flow (v2, 2026-07-27).
+% Bound to the unified protocol approved on 2026-07-27:
+%   (a) three mechanism views, each run to its own NoImprovement(K) convergence
+%       (a single budget is never split across the three views);
+%   (b) an OUTER EPOCH LOOP: the accepted incumbent is written back as the
+%       warm start of the next epoch and the route pool accumulates across epochs;
+%   (c) time-limited MIP set partitioning on the pool with a min() safety net.
+% Superseded v1 (single pass, "fixed 5000 iterations") is kept in git history only.
+% Style: transparent line art, no shading, phase band on the left, loop return
+% routed outside all nodes on the right.
 \begin{figure}[H]
 \centering
 \begin{tikzpicture}[
     every node/.style={font=\fontsize{8.2}{9.6}\selectfont},
     main/.style={rectangle,draw,thin,text width=6.5cm,minimum height=7.4mm,
         align=center,inner xsep=3pt,inner ysep=2pt},
-    view/.style={rectangle,draw,thin,text width=3.35cm,minimum height=10.5mm,
+    wide/.style={rectangle,draw,thin,text width=9.1cm,minimum height=7.4mm,
+        align=center,inner xsep=3pt,inner ysep=2pt},
+    view/.style={rectangle,draw,thin,text width=3.3cm,minimum height=11.6mm,
         align=center,inner xsep=2pt,inner ysep=1.8pt},
-    review/.style={rectangle,draw,thin,text width=3.35cm,minimum height=11.6mm,
+    review/.style={rectangle,draw,thin,text width=3.3cm,minimum height=11.6mm,
         align=center,inner xsep=2pt,inner ysep=1.8pt},
     decision/.style={diamond,draw,thin,aspect=3.35,text width=4.15cm,
         align=center,inner sep=1.0pt},
@@ -19,51 +27,58 @@
     edge/.style={-{Stealth[length=2.0mm,width=1.35mm]},line width=0.46pt,
         line cap=round,line join=miter},
     stem/.style={line width=0.46pt,line cap=round,line join=miter},
-    labeltext/.style={font=\fontsize{8.0}{9.2}\selectfont,inner sep=1.1pt}
+    band/.style={line width=0.40pt,line cap=round},
+    labeltext/.style={font=\fontsize{8.0}{9.2}\selectfont,inner sep=1.1pt},
+    phase/.style={font=\fontsize{8.0}{9.2}\selectfont,rotate=90,anchor=south}
 ]
+
+% ---------- main column ----------
 \node[main] (input) at (0,0)
     {读取算例、时空参数、有限车队与统一评价设置};
 \node[main] (fallback) at (0,-1.05)
-    {构造共同可行后备解};
+    {构造共同可行后备解, 作为第一轮起点};
 
-\coordinate (split) at (0,-1.72);
-\node[labeltext] at (0,-1.98)
-    {三个机制视角独立搜索（相同种子、独立种群）};
-\node[view] (hgsf) at (-4.15,-2.78)
-    {HGS-F\\燃油成本视角\\固定5000次迭代};
-\node[view] (hgse) at (0,-2.78)
-    {HGS-E\\简化电动视角\\固定5000次迭代};
-\node[view] (hgsm) at (4.15,-2.78)
-    {HGS-M\\机制感知视角\\固定5000次迭代};
+\coordinate (split) at (0,-1.78);
+\node[labeltext] at (0,-2.04)
+    {三个机制视角独立搜索（同一起点、独立种群、独立收敛）};
 
-\node[review] (reviewf) at (-4.15,-4.20)
-    {完整模型复核\\24个档案候选\\及后备、代理最优解};
-\node[review] (reviewe) at (0,-4.20)
-    {完整模型复核\\24个档案候选\\及后备、代理最优解};
-\node[review] (reviewm) at (4.15,-4.20)
-    {完整模型复核\\24个档案候选\\及后备、代理最优解};
+\node[view] (hgsf) at (-4.0,-3.00)
+    {HGS-F\\燃油成本视角\\收敛停机 $\mathrm{NoImp}(K)$};
+\node[view] (hgse) at (0,-3.00)
+    {HGS-E\\简化电动视角\\收敛停机 $\mathrm{NoImp}(K)$};
+\node[view] (hgsm) at (4.0,-3.00)
+    {HGS-M\\机制感知视角\\收敛停机 $\mathrm{NoImp}(K)$};
 
-\coordinate (merge) at (0,-5.03);
-\node[main,text width=9.15cm] (archive) at (0,-5.68)
-    {每视角保留8个完整成本最低的父方案；汇集全部复核成功候选的路线};
-\node[main] (pool) at (0,-6.78)
-    {路线合并去重，建立完整成本路线池};
-\node[main] (mip) at (0,-7.88)
-    {HiGHS限时MIP路线重组（5~s）；记录可行解、下界、间隙与状态};
-\node[main] (verify) at (0,-8.98)
-    {重组方案完整补全、客户恰好覆盖检查与独立核验};
-\node[decision] (better) at (0,-10.30)
-    {重组方案严格优于最好父方案};
+\node[review] (reviewf) at (-4.0,-4.55)
+    {完整模型复核\\档案候选与\\代理最优解};
+\node[review] (reviewe) at (0,-4.55)
+    {完整模型复核\\档案候选与\\代理最优解};
+\node[review] (reviewm) at (4.0,-4.55)
+    {完整模型复核\\档案候选与\\代理最优解};
 
-\node[result] (accept) at (-2.55,-11.98)
-    {接受重组方案};
-\node[result] (retain) at (2.55,-11.98)
-    {保留最好父方案};
-\coordinate (branch) at (0,-11.30);
-\coordinate (outmerge) at (0,-12.70);
-\node[main] (output) at (0,-13.37)
+\coordinate (merge) at (0,-5.42);
+\node[wide] (pool) at (0,-6.10)
+    {汇集各视角全部复核成功候选的路线；跨轮次累积并去重, 形成完整成本路线池};
+\node[main] (mip) at (0,-7.25)
+    {路线池上限时MIP集合划分；记录求解状态、下界与间隙};
+\node[main] (verify) at (0,-8.40)
+    {重组方案完整补全、客户恰好覆盖检查与独立验解};
+
+\node[decision] (better) at (0,-9.75)
+    {重组方案严格优于当前最好解};
+\node[result] (accept) at (-2.60,-11.45)
+    {更新当前最好解};
+\node[result] (retain) at (2.60,-11.45)
+    {保留当前最好解};
+\coordinate (branch) at (0,-10.75);
+\coordinate (outmerge) at (0,-12.20);
+
+\node[decision] (stop) at (0,-13.20)
+    {达到轮次上限或连续无改进};
+\node[main] (output) at (0,-15.05)
     {输出总体最好可行解};
 
+% ---------- edges: main column ----------
 \draw[edge] (input) -- (fallback);
 \draw[stem] (fallback.south) -- (split);
 \draw[edge] (split) -| (hgsf.north);
@@ -75,19 +90,37 @@
 \draw[stem] (reviewf.south) |- (merge);
 \draw[stem] (reviewe.south) -- (merge);
 \draw[stem] (reviewm.south) |- (merge);
-\draw[edge] (merge) -- (archive);
-\draw[edge] (archive) -- (pool);
+\draw[edge] (merge) -- (pool);
 \draw[edge] (pool) -- (mip);
 \draw[edge] (mip) -- (verify);
 \draw[edge] (verify) -- (better);
 \draw[stem] (better.south) -- (branch);
 \draw[edge] (branch) -| (accept.north);
 \draw[edge] (branch) -| (retain.north);
-\node[labeltext,above] at (-1.30,-11.30) {是};
-\node[labeltext,above] at (1.30,-11.30) {否};
+\node[labeltext,above] at (-1.32,-10.75) {是};
+\node[labeltext,above] at (1.32,-10.75) {否};
 \draw[stem] (accept.south) |- (outmerge);
 \draw[stem] (retain.south) |- (outmerge);
-\draw[edge] (outmerge) -- (output);
+\draw[edge] (outmerge) -- (stop);
+\draw[edge] (stop.south) -- (output);
+\node[labeltext,right] at (0.06,-14.15) {是};
+
+% ---------- outer epoch loop (routed clear of every node) ----------
+\draw[stem] (stop.east) -- (6.40,-13.20);
+\draw[stem] (6.40,-13.20) -- (6.40,-1.78);
+\draw[edge] (6.40,-1.78) -- (split);
+\node[labeltext,above] at (4.05,-13.20) {否};
+\node[labeltext,left,align=right,text width=2.35cm] at (6.28,-7.40)
+    {当前最好解写回\\作为下一轮起点};
+
+% ---------- phase band on the left ----------
+\draw[band] (-6.55,-2.28) -- (-6.85,-2.28) -- (-6.85,-5.18) -- (-6.55,-5.18);
+\node[phase] at (-6.95,-3.73) {阶段一\ 多视角搜索};
+\draw[band] (-6.55,-5.42) -- (-6.85,-5.42) -- (-6.85,-6.78) -- (-6.55,-6.78);
+\node[phase] at (-6.95,-6.10) {阶段二\ 路线池构造};
+\draw[band] (-6.55,-6.90) -- (-6.85,-6.90) -- (-6.85,-13.90) -- (-6.55,-13.90);
+\node[phase] at (-6.95,-10.40) {阶段三\ 集合划分重组与验收};
+
 \end{tikzpicture}
 \caption{MV-HGS-SP算法主流程}
 \label{fig:algorithm-flow}

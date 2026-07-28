@@ -1,0 +1,36 @@
+concurrent.futures.process._RemoteTraceback: 
+"""
+Traceback (most recent call last):
+  File "/opt/anaconda3/lib/python3.13/concurrent/futures/process.py", line 254, in _process_worker
+    r = call_item.fn(*call_item.args, **call_item.kwargs)
+  File "/Volumes/移动硬盘（512G）/ReSETP/baselines/e2_rerun_unified_01_step0_20260727/run_convergence_trial.py", line 319, in _run_unit
+    final_cost, selected_source, criteria = _run_single_view(
+                                            ~~~~~~~~~~~~~~~~^
+        bundle, initial, VIEW_BY_ARM[arm]
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/Volumes/移动硬盘（512G）/ReSETP/baselines/e2_rerun_unified_01_step0_20260727/run_convergence_trial.py", line 259, in _run_single_view
+    problem = epochal_hgs.build_pyvrp_problem(bundle, route_proxy_mode=mode)
+  File "/Volumes/移动硬盘（512G）/ReSETP/baselines/algorithm_prototypes/china81_vs_opensource_20260727/pyvrp_adapter.py", line 78, in build_pyvrp_problem
+    raise ValueError(
+        "isolated open-source adapter only supports 'distance_only'"
+    )
+ValueError: isolated open-source adapter only supports 'distance_only'
+"""
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/Volumes/移动硬盘（512G）/ReSETP/baselines/e2_rerun_unified_01_step0_20260727/run_convergence_trial.py", line 551, in <module>
+    main()
+    ~~~~^^
+  File "/Volumes/移动硬盘（512G）/ReSETP/baselines/e2_rerun_unified_01_step0_20260727/run_convergence_trial.py", line 531, in main
+    rows.append(future.result())
+                ~~~~~~~~~~~~~^^
+  File "/opt/anaconda3/lib/python3.13/concurrent/futures/_base.py", line 449, in result
+    return self.__get_result()
+           ~~~~~~~~~~~~~~~~~^^
+  File "/opt/anaconda3/lib/python3.13/concurrent/futures/_base.py", line 401, in __get_result
+    raise self._exception
+ValueError: isolated open-source adapter only supports 'distance_only'

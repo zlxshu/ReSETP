@@ -73,7 +73,7 @@ def test_real_china81_bundle_joins_region_vehicle_and_road_contracts(
         for value in bundle.diesel_price_by_city.values()
     )
     assert bundle.prices.charging_curve_id == NL90_MILD.curve_id
-    assert bundle.prices.B_battery_kwh == pytest.approx(140.41)
+    assert bundle.prices.B_battery_kwh == pytest.approx(77.28)
     assert len(bundle.instance.nodes) == 12
     assert bundle.instance.num_cv == num_cv
     assert bundle.instance.num_ev == num_ev
@@ -94,10 +94,16 @@ def test_real_china81_bundle_joins_region_vehicle_and_road_contracts(
     assert bundle.instance.payload_capacity_kg(
         "ev",
         fallback=-1.0,
-    ) == pytest.approx(1_000.0)
+    ) == pytest.approx(1_700.0)
     assert bundle.instance.battery_capacity_kwh(
         fallback=-1.0,
-    ) == pytest.approx(140.41)
+    ) == pytest.approx(77.28)
+    ev = bundle.instance.vehicle_parameters["ev"]
+    assert ev.vehicle_type_id == "FOTON-AUMARK-ES1-EXPRESS-STAKE"
+    assert ev.curb_mass_kg == pytest.approx(2_600.0)
+    assert ev.gross_mass_kg == pytest.approx(4_495.0)
+    assert ev.frontal_area_m2 == pytest.approx(0.85 * 2.2 * 2.48)
+    assert "HEIGHT_ASSUMED_SYMMETRIC_WITH_CV_FIELD_INCOMPLETE" in ev.source_ids
     customers = [
         node
         for node in bundle.instance.nodes

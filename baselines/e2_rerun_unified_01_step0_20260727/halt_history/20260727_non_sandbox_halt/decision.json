@@ -1,0 +1,59 @@
+{
+  "code_level_scope_confirmation": {
+    "completion_reads_diesel_price": {
+      "conclusion": true,
+      "evidence": [
+        "china81_completion.py:81-102 passes bundle.prices into evaluate",
+        "cost.py:178-183 multiplies route fuel by diesel_price_for_route",
+        "cost.py:234-270 resolves the origin-depot city override",
+        "china81.py:346-355 and 964-1000 load and fail-close the approved city price binding"
+      ]
+    },
+    "five_arms_same_batch_without_protected_file_changes": {
+      "conclusion": "YES_STATICALLY; NOT_EXECUTED",
+      "evidence": [
+        "The isolated O adapter supplies distance_only without editing protected files.",
+        "The frozen China81 adapter supplies cv_only, naive_ev, and mechanism_ev.",
+        "route_pool_sp.py:88-118 runs all three MV views independently before recombination.",
+        "No change to cost.py, check.py, or search/evaluation.py is required."
+      ]
+    },
+    "o_common_initial_safety_rule_under_new_price": {
+      "conclusion": "UNCHANGED",
+      "evidence": "run_comparison.py:267-308 scores the common initial completion and uses search only when searched_completion.objective < initial_completion.objective - 1e-9; both sides receive the same bundle price authority."
+    }
+  },
+  "environment_probe": {
+    "non_sandbox_required": true,
+    "original_error_summary": "PermissionError: [Errno 1] Operation not permitted at os.sysconf(\"SC_SEM_NSEMS_MAX\")",
+    "sandbox_passed": false,
+    "same_configuration_retried": false
+  },
+  "halt_awaiting_user_approval_triggered": false,
+  "k_decision": {
+    "criterion": "at least 95% of executed arm-units have L/S < 0.5",
+    "criterion_assessed": false,
+    "current_k": 3000,
+    "recommended_k": null,
+    "reason": "No convergence units could legally run after the mandatory environment gate failed, so any numeric recommendation would be fabricated.",
+    "size_scaling_assessed": false
+  },
+  "price_change": {
+    "approval_registered": true,
+    "default_value_changed": false,
+    "prices_comment_trace_added": true
+  },
+  "protected_files_modified": [],
+  "raw_run_count": 0,
+  "schema": "resetp.e2-rerun-unified-01.step0.decision.v1",
+  "step_3_4_supplement": {
+    "full_access_switch_succeeded": false,
+    "k_criterion_assessed": false,
+    "runner_started": false,
+    "same_configuration_retried": false,
+    "status": "HALT_NON_SANDBOX_EXECUTION_UNAVAILABLE"
+  },
+  "step1_started": false,
+  "task_id": "E2-RERUN-UNIFIED-01",
+  "verdict": "HALT_NON_SANDBOX_EXECUTION_UNAVAILABLE"
+}
