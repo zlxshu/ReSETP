@@ -1,0 +1,186 @@
+{
+  "independent_initial_audit": {
+    "breakdown_for_integrity_only": {
+      "E_cv_direct": 821.6147592215046,
+      "E_ev_indirect": 24.861010070932295,
+      "E_total": 846.4757692924369,
+      "carbon_quota_kg": 0.0,
+      "cost_carbon": 63.50261221231862,
+      "cost_elec": 40.37403716493254,
+      "cost_fix": 1700.0,
+      "cost_fuel": 2274.411332211758,
+      "cost_km": 1974.0987866596502,
+      "cost_occ": 0.0,
+      "cost_transship": 0.0,
+      "depot_charging_kwh": 101.8413359849919,
+      "distance_cv": 2258000.235111366,
+      "distance_ev": 317699.40786982805,
+      "distance_total": 2575699.642981194,
+      "electricity_kwh": 101.8413359849919,
+      "ev_drive_kwh": 101.8413359849919,
+      "fuel_liters": 303.7611420944269,
+      "n_veh_cv": 7,
+      "n_veh_ev": 3,
+      "station_charging_kwh": 0,
+      "total_cost": 6052.38676824866
+    },
+    "completion_activity": {
+      "accepted_variants": [
+        {
+          "after_cost": 6166.707158053881,
+          "before_cost": 6282.014524325764,
+          "charging_action_count": 1,
+          "improvement": 115.30736627188253,
+          "label": "ev_immediate",
+          "route_index": 7
+        },
+        {
+          "after_cost": 6052.38676824866,
+          "before_cost": 6166.707158053881,
+          "charging_action_count": 1,
+          "improvement": 114.32038980522157,
+          "label": "ev_immediate",
+          "route_index": 5
+        }
+      ],
+      "baseline_all_cv_cost": 6365.73890075558,
+      "baseline_breakdown": {
+        "E_cv_direct": 934.2830292085091,
+        "E_ev_indirect": 0.0,
+        "E_total": 934.2830292085091,
+        "carbon_quota_kg": 0.0,
+        "cost_carbon": 70.08991285122235,
+        "cost_elec": 0,
+        "cost_fix": 1700.0,
+        "cost_fuel": 2586.603266379027,
+        "cost_km": 2009.0457215253314,
+        "cost_occ": 0.0,
+        "cost_transship": 0.0,
+        "depot_charging_kwh": 0,
+        "distance_cv": 2575699.642981194,
+        "distance_ev": 0,
+        "distance_total": 2575699.642981194,
+        "electricity_kwh": 0,
+        "ev_drive_kwh": 0,
+        "fuel_liters": 345.4159955216996,
+        "n_veh_cv": 10,
+        "n_veh_ev": 0,
+        "station_charging_kwh": 0,
+        "total_cost": 6365.73890075558
+      },
+      "charging_action_count": 3,
+      "cross_site_service_count": 0,
+      "ev_route_count": 3,
+      "final_breakdown": {
+        "E_cv_direct": 821.6147592215046,
+        "E_ev_indirect": 24.861010070932295,
+        "E_total": 846.4757692924369,
+        "carbon_quota_kg": 0.0,
+        "cost_carbon": 63.50261221231862,
+        "cost_elec": 40.37403716493254,
+        "cost_fix": 1700.0,
+        "cost_fuel": 2274.411332211758,
+        "cost_km": 1974.0987866596502,
+        "cost_occ": 0.0,
+        "cost_transship": 0.0,
+        "depot_charging_kwh": 101.8413359849919,
+        "distance_cv": 2258000.235111366,
+        "distance_ev": 317699.40786982805,
+        "distance_total": 2575699.642981194,
+        "electricity_kwh": 101.8413359849919,
+        "ev_drive_kwh": 101.8413359849919,
+        "fuel_liters": 303.7611420944269,
+        "n_veh_cv": 7,
+        "n_veh_ev": 3,
+        "station_charging_kwh": 0,
+        "total_cost": 6052.38676824866
+      },
+      "final_cost": 6052.38676824866,
+      "finite_fleet_reference_cost": 6282.014524325764,
+      "improvement": 229.6277560771041,
+      "mandatory_fleet_assignment_count": 1,
+      "mandatory_fleet_assignments": [
+        {
+          "after_cost": 6282.014524325764,
+          "before_cost": 6365.73890075558,
+          "charging_action_count": 1,
+          "cost_change": -83.7243764298164,
+          "depot_id": "D_chengdu",
+          "label": "ev_immediate",
+          "route_index": 1
+        }
+      ],
+      "mechanism_experts_queried": [
+        "vehicle_type_and_nonlinear_charging",
+        "time_varying_electricity_and_carbon",
+        "multi_depot_responsibility_accounting"
+      ],
+      "rejected_infeasible": 0,
+      "rejected_non_improving": 0,
+      "route_count": 10,
+      "schema_version": "resetp.china81-shared-completion.v1",
+      "strict_improvement": true,
+      "variant_attempts": 3,
+      "variant_count": 21,
+      "variant_generation_failures": [
+        {
+          "label": "ev_integrated",
+          "reason": "No feasible charging insert between D_chengdu and C050",
+          "route_index": 0
+        },
+        {
+          "label": "ev_low_carbon",
+          "reason": "No feasible charging insert between D_chengdu and C050",
+          "route_index": 0
+        },
+        {
+          "label": "ev_immediate",
+          "reason": "No feasible charging insert between D_chengdu and C050",
+          "route_index": 0
+        },
+        {
+          "label": "ev_integrated",
+          "reason": "No feasible charging insert between D_chengdu and C025",
+          "route_index": 2
+        },
+        {
+          "label": "ev_low_carbon",
+          "reason": "No feasible charging insert between D_chengdu and C025",
+          "route_index": 2
+        },
+        {
+          "label": "ev_immediate",
+          "reason": "No feasible charging insert between D_chengdu and C025",
+          "route_index": 2
+        },
+        {
+          "label": "ev_integrated",
+          "reason": "No feasible charging insert between D_chongqing and C014",
+          "route_index": 6
+        },
+        {
+          "label": "ev_low_carbon",
+          "reason": "No feasible charging insert between D_chongqing and C014",
+          "route_index": 6
+        },
+        {
+          "label": "ev_immediate",
+          "reason": "No feasible charging insert between D_chongqing and C014",
+          "route_index": 6
+        }
+      ]
+    },
+    "cross_site_service_count": 0,
+    "objective_for_integrity_only": 6052.38676824866,
+    "route_counts_by_depot": {
+      "D_chengdu": 5,
+      "D_chongqing": 5
+    },
+    "violation_count": 0
+  },
+  "initial_solution_sha256": "743837ee80cd68821208901c26111c41af3bd34decd2905d657e1e7d352e2952",
+  "responsibility_map_sha256": "87bb783e52f7a44244b9ebc4bd3be7722c54251d01cacd70ec3ae30f372d9df4",
+  "schema": "resetp.e3e6.input-certificate.v1",
+  "shared_by_all_seeds_and_e3_e6_arms": true,
+  "status": "PASS"
+}

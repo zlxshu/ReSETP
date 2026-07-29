@@ -1,0 +1,2333 @@
+{
+  "common_initial_audit": {
+    "breakdown_for_integrity_only": {
+      "E_cv_direct": 829.9845034390971,
+      "E_ev_indirect": 104.83729467277638,
+      "E_total": 934.8217981118735,
+      "carbon_quota_kg": 0.0,
+      "cost_carbon": 70.13033129435276,
+      "cost_elec": 161.6623841680382,
+      "cost_fix": 4760.0,
+      "cost_fuel": 2283.00521825607,
+      "cost_km": 2540.6931630367644,
+      "cost_occ": 0.49811956023741005,
+      "cost_transship": 0.0,
+      "depot_charging_kwh": 362.24860447719743,
+      "distance_cv": 2313361.591580955,
+      "distance_ev": 1098912.1217964469,
+      "distance_total": 3412273.7133774017,
+      "electricity_kwh": 363.24484359767223,
+      "ev_drive_kwh": 363.24484359767223,
+      "fuel_liters": 306.8555400881814,
+      "n_veh_cv": 20,
+      "n_veh_ev": 8,
+      "station_charging_kwh": 0.9962391204748258,
+      "total_cost": 9815.989216315462
+    },
+    "completion_activity": {
+      "accepted_variants": [
+        {
+          "after_cost": 10173.189569657565,
+          "before_cost": 10340.862965986607,
+          "charging_action_count": 1,
+          "improvement": 167.6733963290426,
+          "label": "ev_immediate",
+          "route_index": 16
+        },
+        {
+          "after_cost": 10062.258932176164,
+          "before_cost": 10173.189569657565,
+          "charging_action_count": 1,
+          "improvement": 110.93063748140048,
+          "label": "ev_integrated",
+          "route_index": 14
+        },
+        {
+          "after_cost": 9969.82784904495,
+          "before_cost": 10062.258932176164,
+          "charging_action_count": 1,
+          "improvement": 92.43108313121411,
+          "label": "ev_immediate",
+          "route_index": 21
+        },
+        {
+          "after_cost": 9881.459159627964,
+          "before_cost": 9969.82784904495,
+          "charging_action_count": 1,
+          "improvement": 88.36868941698594,
+          "label": "ev_immediate",
+          "route_index": 25
+        },
+        {
+          "after_cost": 9815.989216315462,
+          "before_cost": 9881.459159627964,
+          "charging_action_count": 1,
+          "improvement": 65.46994331250244,
+          "label": "ev_integrated",
+          "route_index": 22
+        }
+      ],
+      "baseline_all_cv_cost": 10876.960162777446,
+      "baseline_breakdown": {
+        "E_cv_direct": 1223.3192297583255,
+        "E_ev_indirect": 0.0,
+        "E_total": 1223.3192297583255,
+        "carbon_quota_kg": 0.0,
+        "cost_carbon": 91.77340861646958,
+        "cost_elec": 0,
+        "cost_fix": 4760.0,
+        "cost_fuel": 3364.9353374176426,
+        "cost_km": 2660.251416743334,
+        "cost_occ": 0.0,
+        "cost_transship": 0.0,
+        "depot_charging_kwh": 0,
+        "distance_cv": 3410578.739414531,
+        "distance_ev": 0,
+        "distance_total": 3410578.739414531,
+        "electricity_kwh": 0,
+        "ev_drive_kwh": 0,
+        "fuel_liters": 452.27625502925304,
+        "n_veh_cv": 28,
+        "n_veh_ev": 0,
+        "station_charging_kwh": 0,
+        "total_cost": 10876.960162777446
+      },
+      "charging_action_count": 9,
+      "cross_site_service_count": 0,
+      "ev_route_count": 8,
+      "final_breakdown": {
+        "E_cv_direct": 829.9845034390971,
+        "E_ev_indirect": 104.83729467277638,
+        "E_total": 934.8217981118735,
+        "carbon_quota_kg": 0.0,
+        "cost_carbon": 70.13033129435276,
+        "cost_elec": 161.6623841680382,
+        "cost_fix": 4760.0,
+        "cost_fuel": 2283.00521825607,
+        "cost_km": 2540.6931630367644,
+        "cost_occ": 0.49811956023741005,
+        "cost_transship": 0.0,
+        "depot_charging_kwh": 362.24860447719743,
+        "distance_cv": 2313361.591580955,
+        "distance_ev": 1098912.1217964469,
+        "distance_total": 3412273.7133774017,
+        "electricity_kwh": 363.24484359767223,
+        "ev_drive_kwh": 363.24484359767223,
+        "fuel_liters": 306.8555400881814,
+        "n_veh_cv": 20,
+        "n_veh_ev": 8,
+        "station_charging_kwh": 0.9962391204748258,
+        "total_cost": 9815.989216315462
+      },
+      "final_cost": 9815.989216315462,
+      "finite_fleet_reference_cost": 10340.862965986607,
+      "improvement": 524.8737496711456,
+      "mandatory_fleet_assignment_count": 3,
+      "mandatory_fleet_assignments": [
+        {
+          "after_cost": 10688.565767061238,
+          "before_cost": 10876.960162777446,
+          "charging_action_count": 1,
+          "cost_change": -188.39439571620824,
+          "depot_id": "D_dongguan",
+          "label": "ev_immediate",
+          "route_index": 3
+        },
+        {
+          "after_cost": 10553.519181307205,
+          "before_cost": 10688.565767061238,
+          "charging_action_count": 1,
+          "cost_change": -135.046585754033,
+          "depot_id": "D_foshan",
+          "label": "ev_immediate",
+          "route_index": 5
+        },
+        {
+          "after_cost": 10340.862965986607,
+          "before_cost": 10553.519181307205,
+          "charging_action_count": 2,
+          "cost_change": -212.65621532059777,
+          "depot_id": "D_guangzhou",
+          "label": "ev_immediate",
+          "route_index": 17
+        }
+      ],
+      "mechanism_experts_queried": [
+        "vehicle_type_and_nonlinear_charging",
+        "time_varying_electricity_and_carbon",
+        "multi_depot_responsibility_accounting"
+      ],
+      "rejected_infeasible": 10,
+      "rejected_non_improving": 0,
+      "route_count": 28,
+      "schema_version": "resetp.china81-shared-completion.v1",
+      "strict_improvement": true,
+      "variant_attempts": 18,
+      "variant_count": 81,
+      "variant_generation_failures": [
+        {
+          "label": "ev_integrated",
+          "reason": "No feasible charging insert between C070 and C074",
+          "route_index": 6
+        },
+        {
+          "label": "ev_low_carbon",
+          "reason": "No feasible charging insert between C070 and C074",
+          "route_index": 6
+        },
+        {
+          "label": "ev_immediate",
+          "reason": "No feasible charging insert between C070 and C074",
+          "route_index": 6
+        }
+      ]
+    },
+    "cross_site_service_count": 0,
+    "objective_for_integrity_only": 9815.989216315462,
+    "route_counts_by_depot": {
+      "D_dongguan": 5,
+      "D_foshan": 5,
+      "D_guangzhou": 10,
+      "D_shenzhen": 8
+    },
+    "violation_count": 0
+  },
+  "created_at_utc": "2026-07-29T14:33:42.006848+00:00",
+  "d2a_caps_preserved": true,
+  "diagnosis": "PREFIX_GREEDY_FALSE_HALT_GLOBAL_COMPLETION_EXISTS",
+  "distance_rankings_preserved": true,
+  "fallbacks": [
+    {
+      "absolute_distance_rank": 3,
+      "customer_id": "C099",
+      "destination": "D_foshan",
+      "index": 30,
+      "owner": "D_shenzhen"
+    },
+    {
+      "absolute_distance_rank": 4,
+      "customer_id": "C149",
+      "destination": "D_guangzhou",
+      "index": 32,
+      "owner": "D_shenzhen"
+    },
+    {
+      "absolute_distance_rank": 3,
+      "customer_id": "C106",
+      "destination": "D_foshan",
+      "index": 35,
+      "owner": "D_shenzhen"
+    }
+  ],
+  "final_fleet_probe": {
+    "depot_counts": {
+      "D_dongguan": {
+        "d2a_total_cap": 5,
+        "packed_routes": 5
+      },
+      "D_foshan": {
+        "d2a_total_cap": 5,
+        "packed_routes": 5
+      },
+      "D_guangzhou": {
+        "d2a_total_cap": 12,
+        "packed_routes": 10
+      },
+      "D_shenzhen": {
+        "d2a_total_cap": 13,
+        "packed_routes": 8
+      }
+    },
+    "feasible": true,
+    "reason": "PASS"
+  },
+  "first_prior_locally_accepted_choice_that_differs_from_global_completion": {
+    "accepted_destination": "D_dongguan",
+    "attempts": [
+      {
+        "absolute_distance_rank": 2,
+        "destination": "D_dongguan",
+        "probe": {
+          "depot_counts": {
+            "D_dongguan": {
+              "d2a_total_cap": 5,
+              "packed_routes": 5
+            },
+            "D_foshan": {
+              "d2a_total_cap": 5,
+              "packed_routes": 5
+            },
+            "D_guangzhou": {
+              "d2a_total_cap": 12,
+              "packed_routes": 9
+            },
+            "D_shenzhen": {
+              "d2a_total_cap": 13,
+              "packed_routes": 9
+            }
+          },
+          "feasible": true,
+          "reason": "PASS"
+        }
+      }
+    ],
+    "customer_id": "C099",
+    "index": 30,
+    "owner": "D_shenzhen",
+    "ranking": [
+      "D_shenzhen",
+      "D_dongguan",
+      "D_foshan",
+      "D_guangzhou"
+    ]
+  },
+  "fixed_customer_order_preserved": true,
+  "global_search": {
+    "failed_tail_branch_leaf_counts": {
+      "prefix_29_C122_rank_2": 8047,
+      "prefix_30_C099_rank_2": 6561,
+      "prefix_30_C099_rank_3": 1486,
+      "prefix_31_C080_rank_2": 1486,
+      "prefix_31_C080_rank_3": 2187,
+      "prefix_31_C080_rank_4": 2187,
+      "prefix_32_C149_rank_2": 729,
+      "prefix_32_C149_rank_3": 729,
+      "prefix_32_C149_rank_4": 28,
+      "prefix_33_C113_rank_2": 28,
+      "prefix_33_C113_rank_3": 243,
+      "prefix_33_C113_rank_4": 243,
+      "prefix_34_C033_rank_2": 28,
+      "prefix_34_C033_rank_3": 81,
+      "prefix_34_C033_rank_4": 81,
+      "prefix_35_C106_rank_2": 27,
+      "prefix_35_C106_rank_3": 1,
+      "prefix_35_C106_rank_4": 27,
+      "prefix_36_C015_rank_2": 1,
+      "prefix_36_C015_rank_3": 9,
+      "prefix_36_C015_rank_4": 9,
+      "prefix_37_C005_rank_2": 1,
+      "prefix_37_C005_rank_3": 3,
+      "prefix_37_C005_rank_4": 3,
+      "prefix_38_C013_rank_2": 1,
+      "prefix_38_C013_rank_3": 1,
+      "prefix_38_C013_rank_4": 1
+    },
+    "leaf_assignments_checked_before_first_feasible": 8047
+  },
+  "initial_solution_sha256": "fb6e2b110841ffa14360ca7672cab9adbd4dbac8fdc7d58842ba69ffae2b2593",
+  "instance_id": "cn-prd-150c-01-V2-LOCATIONS",
+  "lexicographically_first_feasible_rank_vector": [
+    2,
+    2,
+    2,
+    2,
+    2,
+    2,
+    2,
+    2,
+    2,
+    2,
+    2,
+    2,
+    2,
+    2,
+    2,
+    2,
+    2,
+    2,
+    2,
+    2,
+    2,
+    2,
+    2,
+    2,
+    2,
+    2,
+    2,
+    2,
+    2,
+    3,
+    2,
+    4,
+    2,
+    2,
+    3,
+    2,
+    2,
+    2
+  ],
+  "mismatch_intensity_nominal_pct": 25,
+  "ordered_selected_customers": [
+    {
+      "customer_id": "C076",
+      "index": 1,
+      "owner": "D_guangzhou",
+      "rank_hash": "0022c6e409dc9127ffd1d226c76b5b659cbff4ed6af47de72e8f689d6e95e753",
+      "ranking": [
+        "D_guangzhou",
+        "D_foshan",
+        "D_dongguan",
+        "D_shenzhen"
+      ]
+    },
+    {
+      "customer_id": "C102",
+      "index": 2,
+      "owner": "D_shenzhen",
+      "rank_hash": "009d5bc6cfc889e1d4a3a866056a086a73fe23933841c12a5c10f4e76e196429",
+      "ranking": [
+        "D_shenzhen",
+        "D_dongguan",
+        "D_foshan",
+        "D_guangzhou"
+      ]
+    },
+    {
+      "customer_id": "C029",
+      "index": 3,
+      "owner": "D_foshan",
+      "rank_hash": "03713d1c4645917377b8a5d2e85298eefded4f85d67d21cf7bfbe1336c5c3ea7",
+      "ranking": [
+        "D_foshan",
+        "D_guangzhou",
+        "D_dongguan",
+        "D_shenzhen"
+      ]
+    },
+    {
+      "customer_id": "C094",
+      "index": 4,
+      "owner": "D_shenzhen",
+      "rank_hash": "04ecf5bdd5aeae0eedcde1c2bee41e096a08480adafa29b1ad609ae48b913786",
+      "ranking": [
+        "D_shenzhen",
+        "D_dongguan",
+        "D_foshan",
+        "D_guangzhou"
+      ]
+    },
+    {
+      "customer_id": "C098",
+      "index": 5,
+      "owner": "D_shenzhen",
+      "rank_hash": "07fea9f1c708a6c68d636589a3822fc8203b8c790bd97d60561e49dbee1207cb",
+      "ranking": [
+        "D_shenzhen",
+        "D_dongguan",
+        "D_foshan",
+        "D_guangzhou"
+      ]
+    },
+    {
+      "customer_id": "C070",
+      "index": 6,
+      "owner": "D_guangzhou",
+      "rank_hash": "08b963211ad4e3fee1f8c48af9523534c30f37360a849b13b301de67df074358",
+      "ranking": [
+        "D_guangzhou",
+        "D_foshan",
+        "D_dongguan",
+        "D_shenzhen"
+      ]
+    },
+    {
+      "customer_id": "C009",
+      "index": 7,
+      "owner": "D_dongguan",
+      "rank_hash": "09d5c4f9b04747313d990f84190e339938b21ad9bb7089ec312d42eb7a198329",
+      "ranking": [
+        "D_dongguan",
+        "D_guangzhou",
+        "D_shenzhen",
+        "D_foshan"
+      ]
+    },
+    {
+      "customer_id": "C034",
+      "index": 8,
+      "owner": "D_foshan",
+      "rank_hash": "0bb7d0dc0998f2b257ba40eead1dbb90d3cb6942872034510c0740c887e2e253",
+      "ranking": [
+        "D_foshan",
+        "D_guangzhou",
+        "D_dongguan",
+        "D_shenzhen"
+      ]
+    },
+    {
+      "customer_id": "C146",
+      "index": 9,
+      "owner": "D_shenzhen",
+      "rank_hash": "0be79c4bbde43599ee304bffcae9cdcc1d18c29479d90638a6aa0a9b2cccd5b1",
+      "ranking": [
+        "D_shenzhen",
+        "D_dongguan",
+        "D_foshan",
+        "D_guangzhou"
+      ]
+    },
+    {
+      "customer_id": "C077",
+      "index": 10,
+      "owner": "D_guangzhou",
+      "rank_hash": "0d632e5838f3e00fb41aa1394b3c66befe89b9ad5705a89e30096170e7609928",
+      "ranking": [
+        "D_guangzhou",
+        "D_foshan",
+        "D_dongguan",
+        "D_shenzhen"
+      ]
+    },
+    {
+      "customer_id": "C085",
+      "index": 11,
+      "owner": "D_guangzhou",
+      "rank_hash": "10b264531ee5e5c32f65188efcd0f872c035bdc281bdff780f4ffeb56463eaf3",
+      "ranking": [
+        "D_guangzhou",
+        "D_foshan",
+        "D_dongguan",
+        "D_shenzhen"
+      ]
+    },
+    {
+      "customer_id": "C082",
+      "index": 12,
+      "owner": "D_guangzhou",
+      "rank_hash": "1228ebfd7555e2a57a464f5eb6e145bbc0b7d3fc68b8ce506e66eb5193d43cd1",
+      "ranking": [
+        "D_guangzhou",
+        "D_foshan",
+        "D_dongguan",
+        "D_shenzhen"
+      ]
+    },
+    {
+      "customer_id": "C040",
+      "index": 13,
+      "owner": "D_foshan",
+      "rank_hash": "12daa5e96e5d751304e92b9b61fe5b65687fc801be634ee19429bf6e8c1c48cd",
+      "ranking": [
+        "D_foshan",
+        "D_guangzhou",
+        "D_dongguan",
+        "D_shenzhen"
+      ]
+    },
+    {
+      "customer_id": "C120",
+      "index": 14,
+      "owner": "D_shenzhen",
+      "rank_hash": "141ca9d03696b473b549e723340e7f396f7e02e598acc66d6bb380ab5daf9996",
+      "ranking": [
+        "D_shenzhen",
+        "D_dongguan",
+        "D_foshan",
+        "D_guangzhou"
+      ]
+    },
+    {
+      "customer_id": "C091",
+      "index": 15,
+      "owner": "D_guangzhou",
+      "rank_hash": "1585da27ad3921c6a4f2ce0b7477ad104831cc3c86c31077ca101e101c2b46fd",
+      "ranking": [
+        "D_guangzhou",
+        "D_foshan",
+        "D_dongguan",
+        "D_shenzhen"
+      ]
+    },
+    {
+      "customer_id": "C143",
+      "index": 16,
+      "owner": "D_shenzhen",
+      "rank_hash": "158c5aeb579c0f8485038ea040751c2d4fe439ad560c7337e51fe54ad81ed9e2",
+      "ranking": [
+        "D_shenzhen",
+        "D_dongguan",
+        "D_foshan",
+        "D_guangzhou"
+      ]
+    },
+    {
+      "customer_id": "C139",
+      "index": 17,
+      "owner": "D_shenzhen",
+      "rank_hash": "1650047a5b2025ddb5f1c0c22ee6aa42faa4bdefae12d9d551f8dcee5154d254",
+      "ranking": [
+        "D_shenzhen",
+        "D_dongguan",
+        "D_foshan",
+        "D_guangzhou"
+      ]
+    },
+    {
+      "customer_id": "C074",
+      "index": 18,
+      "owner": "D_guangzhou",
+      "rank_hash": "167d3ebec29a3a614c72c398f9e05dfab98d8bdbfb9571d23f4d814a22275bd3",
+      "ranking": [
+        "D_guangzhou",
+        "D_foshan",
+        "D_dongguan",
+        "D_shenzhen"
+      ]
+    },
+    {
+      "customer_id": "C019",
+      "index": 19,
+      "owner": "D_dongguan",
+      "rank_hash": "1729f02caf4e6534dd36e0f950fd016420ba3d6f8e9fe02a8eb1223a2c2283bc",
+      "ranking": [
+        "D_dongguan",
+        "D_guangzhou",
+        "D_shenzhen",
+        "D_foshan"
+      ]
+    },
+    {
+      "customer_id": "C126",
+      "index": 20,
+      "owner": "D_shenzhen",
+      "rank_hash": "1940e83d6de2317605d48fb680c969ce1ca679c30cef1a3aebe142f59ead3b12",
+      "ranking": [
+        "D_shenzhen",
+        "D_dongguan",
+        "D_foshan",
+        "D_guangzhou"
+      ]
+    },
+    {
+      "customer_id": "C060",
+      "index": 21,
+      "owner": "D_guangzhou",
+      "rank_hash": "1a5dd6932b01177628be5905668d841aea26e6cc3a39ccb410b1b7595e1b1118",
+      "ranking": [
+        "D_guangzhou",
+        "D_foshan",
+        "D_dongguan",
+        "D_shenzhen"
+      ]
+    },
+    {
+      "customer_id": "C073",
+      "index": 22,
+      "owner": "D_guangzhou",
+      "rank_hash": "1de4453095841fe2d469df5bf88fc1245a7407b1c3d13ca23aa651757b43d33d",
+      "ranking": [
+        "D_guangzhou",
+        "D_foshan",
+        "D_dongguan",
+        "D_shenzhen"
+      ]
+    },
+    {
+      "customer_id": "C037",
+      "index": 23,
+      "owner": "D_foshan",
+      "rank_hash": "1f08071d84cb525aab527239a8bdbaf324155bf603701e080b6781d3c7766883",
+      "ranking": [
+        "D_foshan",
+        "D_guangzhou",
+        "D_dongguan",
+        "D_shenzhen"
+      ]
+    },
+    {
+      "customer_id": "C055",
+      "index": 24,
+      "owner": "D_guangzhou",
+      "rank_hash": "21acbc8215d24f98f9f15e898a71bf74b92869398f81102c17d7e7478abcc35d",
+      "ranking": [
+        "D_guangzhou",
+        "D_foshan",
+        "D_dongguan",
+        "D_shenzhen"
+      ]
+    },
+    {
+      "customer_id": "C134",
+      "index": 25,
+      "owner": "D_shenzhen",
+      "rank_hash": "22e4106f1e71f698f8d6675b9be86c0aeebffeb8ea3a868ee65331fa7c2da8dc",
+      "ranking": [
+        "D_shenzhen",
+        "D_dongguan",
+        "D_foshan",
+        "D_guangzhou"
+      ]
+    },
+    {
+      "customer_id": "C053",
+      "index": 26,
+      "owner": "D_guangzhou",
+      "rank_hash": "25a973b72b8364fbd30d8a5b0c44cd48d55efedd50f3140a229e07dd5608dae9",
+      "ranking": [
+        "D_guangzhou",
+        "D_foshan",
+        "D_dongguan",
+        "D_shenzhen"
+      ]
+    },
+    {
+      "customer_id": "C108",
+      "index": 27,
+      "owner": "D_shenzhen",
+      "rank_hash": "2b94841e68c0307720cead6120f3ecdcf727060238e984d73d301c49052ee14c",
+      "ranking": [
+        "D_shenzhen",
+        "D_dongguan",
+        "D_foshan",
+        "D_guangzhou"
+      ]
+    },
+    {
+      "customer_id": "C071",
+      "index": 28,
+      "owner": "D_guangzhou",
+      "rank_hash": "2e4e2021f350ec88f98abd1f752d07a2388db5ba7e6346faf85f4a11fa6529d4",
+      "ranking": [
+        "D_guangzhou",
+        "D_foshan",
+        "D_dongguan",
+        "D_shenzhen"
+      ]
+    },
+    {
+      "customer_id": "C122",
+      "index": 29,
+      "owner": "D_shenzhen",
+      "rank_hash": "2f7acba188f038244d6e32aa7886e3b5364c17ff143259b5aa6cb6bcc2d81450",
+      "ranking": [
+        "D_shenzhen",
+        "D_dongguan",
+        "D_foshan",
+        "D_guangzhou"
+      ]
+    },
+    {
+      "customer_id": "C099",
+      "index": 30,
+      "owner": "D_shenzhen",
+      "rank_hash": "30fbfcb7148fec35a106eee044e59db02e82eef89acfae1d015338a652a57abf",
+      "ranking": [
+        "D_shenzhen",
+        "D_dongguan",
+        "D_foshan",
+        "D_guangzhou"
+      ]
+    },
+    {
+      "customer_id": "C080",
+      "index": 31,
+      "owner": "D_guangzhou",
+      "rank_hash": "316f9b111842ae528360a4f9fa3312191b3018a22fe1c36f39ae5d946999d564",
+      "ranking": [
+        "D_guangzhou",
+        "D_foshan",
+        "D_dongguan",
+        "D_shenzhen"
+      ]
+    },
+    {
+      "customer_id": "C149",
+      "index": 32,
+      "owner": "D_shenzhen",
+      "rank_hash": "34955c08e6b097a35fd00f5ddb2c7c64a9ad061cffcc98308a332dff92341c01",
+      "ranking": [
+        "D_shenzhen",
+        "D_dongguan",
+        "D_foshan",
+        "D_guangzhou"
+      ]
+    },
+    {
+      "customer_id": "C113",
+      "index": 33,
+      "owner": "D_shenzhen",
+      "rank_hash": "3530b1e66712df4e6d93f3f36b0a404b3dae24dc91fb6d0a82d3ba9b71dee83f",
+      "ranking": [
+        "D_shenzhen",
+        "D_dongguan",
+        "D_foshan",
+        "D_guangzhou"
+      ]
+    },
+    {
+      "customer_id": "C033",
+      "index": 34,
+      "owner": "D_foshan",
+      "rank_hash": "394b19724aa6ada2d8e517e9f53d6c66c55760f9e63eed80e2d533c70f94c3ab",
+      "ranking": [
+        "D_foshan",
+        "D_guangzhou",
+        "D_dongguan",
+        "D_shenzhen"
+      ]
+    },
+    {
+      "customer_id": "C106",
+      "index": 35,
+      "owner": "D_shenzhen",
+      "rank_hash": "4fb9d3c7deff00a25824958224aa5687281eb3e232007f2c3835d38414184717",
+      "ranking": [
+        "D_shenzhen",
+        "D_dongguan",
+        "D_foshan",
+        "D_guangzhou"
+      ]
+    },
+    {
+      "customer_id": "C015",
+      "index": 36,
+      "owner": "D_dongguan",
+      "rank_hash": "55ecf5baaf24b015bf9ef3959670bd4fdddcffc705dcf0402946752dd4de9599",
+      "ranking": [
+        "D_dongguan",
+        "D_guangzhou",
+        "D_shenzhen",
+        "D_foshan"
+      ]
+    },
+    {
+      "customer_id": "C005",
+      "index": 37,
+      "owner": "D_dongguan",
+      "rank_hash": "5a17e70d87d316b0a73334a2688ae5da676c914b7658dab9800977e011880a7a",
+      "ranking": [
+        "D_dongguan",
+        "D_guangzhou",
+        "D_shenzhen",
+        "D_foshan"
+      ]
+    },
+    {
+      "customer_id": "C013",
+      "index": 38,
+      "owner": "D_dongguan",
+      "rank_hash": "64432b33484dc1465b73d9180c68a45e55ba70f876ded3dc8c4eb0dbad1ef5d6",
+      "ranking": [
+        "D_dongguan",
+        "D_guangzhou",
+        "D_shenzhen",
+        "D_foshan"
+      ]
+    }
+  ],
+  "prefix_greedy": {
+    "halt_customer_id": "C015",
+    "halt_index": 36,
+    "status": "HALT",
+    "trace": [
+      {
+        "accepted_destination": "D_foshan",
+        "attempts": [
+          {
+            "absolute_distance_rank": 2,
+            "destination": "D_foshan",
+            "probe": {
+              "depot_counts": {
+                "D_dongguan": {
+                  "d2a_total_cap": 5,
+                  "packed_routes": 4
+                },
+                "D_foshan": {
+                  "d2a_total_cap": 5,
+                  "packed_routes": 4
+                },
+                "D_guangzhou": {
+                  "d2a_total_cap": 12,
+                  "packed_routes": 8
+                },
+                "D_shenzhen": {
+                  "d2a_total_cap": 13,
+                  "packed_routes": 10
+                }
+              },
+              "feasible": true,
+              "reason": "PASS"
+            }
+          }
+        ],
+        "customer_id": "C076",
+        "index": 1,
+        "owner": "D_guangzhou",
+        "ranking": [
+          "D_guangzhou",
+          "D_foshan",
+          "D_dongguan",
+          "D_shenzhen"
+        ]
+      },
+      {
+        "accepted_destination": "D_dongguan",
+        "attempts": [
+          {
+            "absolute_distance_rank": 2,
+            "destination": "D_dongguan",
+            "probe": {
+              "depot_counts": {
+                "D_dongguan": {
+                  "d2a_total_cap": 5,
+                  "packed_routes": 4
+                },
+                "D_foshan": {
+                  "d2a_total_cap": 5,
+                  "packed_routes": 4
+                },
+                "D_guangzhou": {
+                  "d2a_total_cap": 12,
+                  "packed_routes": 8
+                },
+                "D_shenzhen": {
+                  "d2a_total_cap": 13,
+                  "packed_routes": 10
+                }
+              },
+              "feasible": true,
+              "reason": "PASS"
+            }
+          }
+        ],
+        "customer_id": "C102",
+        "index": 2,
+        "owner": "D_shenzhen",
+        "ranking": [
+          "D_shenzhen",
+          "D_dongguan",
+          "D_foshan",
+          "D_guangzhou"
+        ]
+      },
+      {
+        "accepted_destination": "D_guangzhou",
+        "attempts": [
+          {
+            "absolute_distance_rank": 2,
+            "destination": "D_guangzhou",
+            "probe": {
+              "depot_counts": {
+                "D_dongguan": {
+                  "d2a_total_cap": 5,
+                  "packed_routes": 4
+                },
+                "D_foshan": {
+                  "d2a_total_cap": 5,
+                  "packed_routes": 4
+                },
+                "D_guangzhou": {
+                  "d2a_total_cap": 12,
+                  "packed_routes": 9
+                },
+                "D_shenzhen": {
+                  "d2a_total_cap": 13,
+                  "packed_routes": 10
+                }
+              },
+              "feasible": true,
+              "reason": "PASS"
+            }
+          }
+        ],
+        "customer_id": "C029",
+        "index": 3,
+        "owner": "D_foshan",
+        "ranking": [
+          "D_foshan",
+          "D_guangzhou",
+          "D_dongguan",
+          "D_shenzhen"
+        ]
+      },
+      {
+        "accepted_destination": "D_dongguan",
+        "attempts": [
+          {
+            "absolute_distance_rank": 2,
+            "destination": "D_dongguan",
+            "probe": {
+              "depot_counts": {
+                "D_dongguan": {
+                  "d2a_total_cap": 5,
+                  "packed_routes": 4
+                },
+                "D_foshan": {
+                  "d2a_total_cap": 5,
+                  "packed_routes": 4
+                },
+                "D_guangzhou": {
+                  "d2a_total_cap": 12,
+                  "packed_routes": 9
+                },
+                "D_shenzhen": {
+                  "d2a_total_cap": 13,
+                  "packed_routes": 10
+                }
+              },
+              "feasible": true,
+              "reason": "PASS"
+            }
+          }
+        ],
+        "customer_id": "C094",
+        "index": 4,
+        "owner": "D_shenzhen",
+        "ranking": [
+          "D_shenzhen",
+          "D_dongguan",
+          "D_foshan",
+          "D_guangzhou"
+        ]
+      },
+      {
+        "accepted_destination": "D_dongguan",
+        "attempts": [
+          {
+            "absolute_distance_rank": 2,
+            "destination": "D_dongguan",
+            "probe": {
+              "depot_counts": {
+                "D_dongguan": {
+                  "d2a_total_cap": 5,
+                  "packed_routes": 4
+                },
+                "D_foshan": {
+                  "d2a_total_cap": 5,
+                  "packed_routes": 4
+                },
+                "D_guangzhou": {
+                  "d2a_total_cap": 12,
+                  "packed_routes": 9
+                },
+                "D_shenzhen": {
+                  "d2a_total_cap": 13,
+                  "packed_routes": 10
+                }
+              },
+              "feasible": true,
+              "reason": "PASS"
+            }
+          }
+        ],
+        "customer_id": "C098",
+        "index": 5,
+        "owner": "D_shenzhen",
+        "ranking": [
+          "D_shenzhen",
+          "D_dongguan",
+          "D_foshan",
+          "D_guangzhou"
+        ]
+      },
+      {
+        "accepted_destination": "D_foshan",
+        "attempts": [
+          {
+            "absolute_distance_rank": 2,
+            "destination": "D_foshan",
+            "probe": {
+              "depot_counts": {
+                "D_dongguan": {
+                  "d2a_total_cap": 5,
+                  "packed_routes": 4
+                },
+                "D_foshan": {
+                  "d2a_total_cap": 5,
+                  "packed_routes": 4
+                },
+                "D_guangzhou": {
+                  "d2a_total_cap": 12,
+                  "packed_routes": 9
+                },
+                "D_shenzhen": {
+                  "d2a_total_cap": 13,
+                  "packed_routes": 10
+                }
+              },
+              "feasible": true,
+              "reason": "PASS"
+            }
+          }
+        ],
+        "customer_id": "C070",
+        "index": 6,
+        "owner": "D_guangzhou",
+        "ranking": [
+          "D_guangzhou",
+          "D_foshan",
+          "D_dongguan",
+          "D_shenzhen"
+        ]
+      },
+      {
+        "accepted_destination": "D_guangzhou",
+        "attempts": [
+          {
+            "absolute_distance_rank": 2,
+            "destination": "D_guangzhou",
+            "probe": {
+              "depot_counts": {
+                "D_dongguan": {
+                  "d2a_total_cap": 5,
+                  "packed_routes": 4
+                },
+                "D_foshan": {
+                  "d2a_total_cap": 5,
+                  "packed_routes": 4
+                },
+                "D_guangzhou": {
+                  "d2a_total_cap": 12,
+                  "packed_routes": 10
+                },
+                "D_shenzhen": {
+                  "d2a_total_cap": 13,
+                  "packed_routes": 10
+                }
+              },
+              "feasible": true,
+              "reason": "PASS"
+            }
+          }
+        ],
+        "customer_id": "C009",
+        "index": 7,
+        "owner": "D_dongguan",
+        "ranking": [
+          "D_dongguan",
+          "D_guangzhou",
+          "D_shenzhen",
+          "D_foshan"
+        ]
+      },
+      {
+        "accepted_destination": "D_guangzhou",
+        "attempts": [
+          {
+            "absolute_distance_rank": 2,
+            "destination": "D_guangzhou",
+            "probe": {
+              "depot_counts": {
+                "D_dongguan": {
+                  "d2a_total_cap": 5,
+                  "packed_routes": 4
+                },
+                "D_foshan": {
+                  "d2a_total_cap": 5,
+                  "packed_routes": 4
+                },
+                "D_guangzhou": {
+                  "d2a_total_cap": 12,
+                  "packed_routes": 10
+                },
+                "D_shenzhen": {
+                  "d2a_total_cap": 13,
+                  "packed_routes": 10
+                }
+              },
+              "feasible": true,
+              "reason": "PASS"
+            }
+          }
+        ],
+        "customer_id": "C034",
+        "index": 8,
+        "owner": "D_foshan",
+        "ranking": [
+          "D_foshan",
+          "D_guangzhou",
+          "D_dongguan",
+          "D_shenzhen"
+        ]
+      },
+      {
+        "accepted_destination": "D_dongguan",
+        "attempts": [
+          {
+            "absolute_distance_rank": 2,
+            "destination": "D_dongguan",
+            "probe": {
+              "depot_counts": {
+                "D_dongguan": {
+                  "d2a_total_cap": 5,
+                  "packed_routes": 4
+                },
+                "D_foshan": {
+                  "d2a_total_cap": 5,
+                  "packed_routes": 4
+                },
+                "D_guangzhou": {
+                  "d2a_total_cap": 12,
+                  "packed_routes": 10
+                },
+                "D_shenzhen": {
+                  "d2a_total_cap": 13,
+                  "packed_routes": 9
+                }
+              },
+              "feasible": true,
+              "reason": "PASS"
+            }
+          }
+        ],
+        "customer_id": "C146",
+        "index": 9,
+        "owner": "D_shenzhen",
+        "ranking": [
+          "D_shenzhen",
+          "D_dongguan",
+          "D_foshan",
+          "D_guangzhou"
+        ]
+      },
+      {
+        "accepted_destination": "D_foshan",
+        "attempts": [
+          {
+            "absolute_distance_rank": 2,
+            "destination": "D_foshan",
+            "probe": {
+              "depot_counts": {
+                "D_dongguan": {
+                  "d2a_total_cap": 5,
+                  "packed_routes": 4
+                },
+                "D_foshan": {
+                  "d2a_total_cap": 5,
+                  "packed_routes": 4
+                },
+                "D_guangzhou": {
+                  "d2a_total_cap": 12,
+                  "packed_routes": 10
+                },
+                "D_shenzhen": {
+                  "d2a_total_cap": 13,
+                  "packed_routes": 9
+                }
+              },
+              "feasible": true,
+              "reason": "PASS"
+            }
+          }
+        ],
+        "customer_id": "C077",
+        "index": 10,
+        "owner": "D_guangzhou",
+        "ranking": [
+          "D_guangzhou",
+          "D_foshan",
+          "D_dongguan",
+          "D_shenzhen"
+        ]
+      },
+      {
+        "accepted_destination": "D_foshan",
+        "attempts": [
+          {
+            "absolute_distance_rank": 2,
+            "destination": "D_foshan",
+            "probe": {
+              "depot_counts": {
+                "D_dongguan": {
+                  "d2a_total_cap": 5,
+                  "packed_routes": 4
+                },
+                "D_foshan": {
+                  "d2a_total_cap": 5,
+                  "packed_routes": 4
+                },
+                "D_guangzhou": {
+                  "d2a_total_cap": 12,
+                  "packed_routes": 9
+                },
+                "D_shenzhen": {
+                  "d2a_total_cap": 13,
+                  "packed_routes": 9
+                }
+              },
+              "feasible": true,
+              "reason": "PASS"
+            }
+          }
+        ],
+        "customer_id": "C085",
+        "index": 11,
+        "owner": "D_guangzhou",
+        "ranking": [
+          "D_guangzhou",
+          "D_foshan",
+          "D_dongguan",
+          "D_shenzhen"
+        ]
+      },
+      {
+        "accepted_destination": "D_foshan",
+        "attempts": [
+          {
+            "absolute_distance_rank": 2,
+            "destination": "D_foshan",
+            "probe": {
+              "depot_counts": {
+                "D_dongguan": {
+                  "d2a_total_cap": 5,
+                  "packed_routes": 4
+                },
+                "D_foshan": {
+                  "d2a_total_cap": 5,
+                  "packed_routes": 4
+                },
+                "D_guangzhou": {
+                  "d2a_total_cap": 12,
+                  "packed_routes": 9
+                },
+                "D_shenzhen": {
+                  "d2a_total_cap": 13,
+                  "packed_routes": 9
+                }
+              },
+              "feasible": true,
+              "reason": "PASS"
+            }
+          }
+        ],
+        "customer_id": "C082",
+        "index": 12,
+        "owner": "D_guangzhou",
+        "ranking": [
+          "D_guangzhou",
+          "D_foshan",
+          "D_dongguan",
+          "D_shenzhen"
+        ]
+      },
+      {
+        "accepted_destination": "D_guangzhou",
+        "attempts": [
+          {
+            "absolute_distance_rank": 2,
+            "destination": "D_guangzhou",
+            "probe": {
+              "depot_counts": {
+                "D_dongguan": {
+                  "d2a_total_cap": 5,
+                  "packed_routes": 4
+                },
+                "D_foshan": {
+                  "d2a_total_cap": 5,
+                  "packed_routes": 4
+                },
+                "D_guangzhou": {
+                  "d2a_total_cap": 12,
+                  "packed_routes": 9
+                },
+                "D_shenzhen": {
+                  "d2a_total_cap": 13,
+                  "packed_routes": 9
+                }
+              },
+              "feasible": true,
+              "reason": "PASS"
+            }
+          }
+        ],
+        "customer_id": "C040",
+        "index": 13,
+        "owner": "D_foshan",
+        "ranking": [
+          "D_foshan",
+          "D_guangzhou",
+          "D_dongguan",
+          "D_shenzhen"
+        ]
+      },
+      {
+        "accepted_destination": "D_dongguan",
+        "attempts": [
+          {
+            "absolute_distance_rank": 2,
+            "destination": "D_dongguan",
+            "probe": {
+              "depot_counts": {
+                "D_dongguan": {
+                  "d2a_total_cap": 5,
+                  "packed_routes": 5
+                },
+                "D_foshan": {
+                  "d2a_total_cap": 5,
+                  "packed_routes": 4
+                },
+                "D_guangzhou": {
+                  "d2a_total_cap": 12,
+                  "packed_routes": 9
+                },
+                "D_shenzhen": {
+                  "d2a_total_cap": 13,
+                  "packed_routes": 9
+                }
+              },
+              "feasible": true,
+              "reason": "PASS"
+            }
+          }
+        ],
+        "customer_id": "C120",
+        "index": 14,
+        "owner": "D_shenzhen",
+        "ranking": [
+          "D_shenzhen",
+          "D_dongguan",
+          "D_foshan",
+          "D_guangzhou"
+        ]
+      },
+      {
+        "accepted_destination": "D_foshan",
+        "attempts": [
+          {
+            "absolute_distance_rank": 2,
+            "destination": "D_foshan",
+            "probe": {
+              "depot_counts": {
+                "D_dongguan": {
+                  "d2a_total_cap": 5,
+                  "packed_routes": 5
+                },
+                "D_foshan": {
+                  "d2a_total_cap": 5,
+                  "packed_routes": 4
+                },
+                "D_guangzhou": {
+                  "d2a_total_cap": 12,
+                  "packed_routes": 9
+                },
+                "D_shenzhen": {
+                  "d2a_total_cap": 13,
+                  "packed_routes": 9
+                }
+              },
+              "feasible": true,
+              "reason": "PASS"
+            }
+          }
+        ],
+        "customer_id": "C091",
+        "index": 15,
+        "owner": "D_guangzhou",
+        "ranking": [
+          "D_guangzhou",
+          "D_foshan",
+          "D_dongguan",
+          "D_shenzhen"
+        ]
+      },
+      {
+        "accepted_destination": "D_dongguan",
+        "attempts": [
+          {
+            "absolute_distance_rank": 2,
+            "destination": "D_dongguan",
+            "probe": {
+              "depot_counts": {
+                "D_dongguan": {
+                  "d2a_total_cap": 5,
+                  "packed_routes": 5
+                },
+                "D_foshan": {
+                  "d2a_total_cap": 5,
+                  "packed_routes": 4
+                },
+                "D_guangzhou": {
+                  "d2a_total_cap": 12,
+                  "packed_routes": 9
+                },
+                "D_shenzhen": {
+                  "d2a_total_cap": 13,
+                  "packed_routes": 9
+                }
+              },
+              "feasible": true,
+              "reason": "PASS"
+            }
+          }
+        ],
+        "customer_id": "C143",
+        "index": 16,
+        "owner": "D_shenzhen",
+        "ranking": [
+          "D_shenzhen",
+          "D_dongguan",
+          "D_foshan",
+          "D_guangzhou"
+        ]
+      },
+      {
+        "accepted_destination": "D_dongguan",
+        "attempts": [
+          {
+            "absolute_distance_rank": 2,
+            "destination": "D_dongguan",
+            "probe": {
+              "depot_counts": {
+                "D_dongguan": {
+                  "d2a_total_cap": 5,
+                  "packed_routes": 5
+                },
+                "D_foshan": {
+                  "d2a_total_cap": 5,
+                  "packed_routes": 4
+                },
+                "D_guangzhou": {
+                  "d2a_total_cap": 12,
+                  "packed_routes": 9
+                },
+                "D_shenzhen": {
+                  "d2a_total_cap": 13,
+                  "packed_routes": 9
+                }
+              },
+              "feasible": true,
+              "reason": "PASS"
+            }
+          }
+        ],
+        "customer_id": "C139",
+        "index": 17,
+        "owner": "D_shenzhen",
+        "ranking": [
+          "D_shenzhen",
+          "D_dongguan",
+          "D_foshan",
+          "D_guangzhou"
+        ]
+      },
+      {
+        "accepted_destination": "D_foshan",
+        "attempts": [
+          {
+            "absolute_distance_rank": 2,
+            "destination": "D_foshan",
+            "probe": {
+              "depot_counts": {
+                "D_dongguan": {
+                  "d2a_total_cap": 5,
+                  "packed_routes": 5
+                },
+                "D_foshan": {
+                  "d2a_total_cap": 5,
+                  "packed_routes": 5
+                },
+                "D_guangzhou": {
+                  "d2a_total_cap": 12,
+                  "packed_routes": 9
+                },
+                "D_shenzhen": {
+                  "d2a_total_cap": 13,
+                  "packed_routes": 9
+                }
+              },
+              "feasible": true,
+              "reason": "PASS"
+            }
+          }
+        ],
+        "customer_id": "C074",
+        "index": 18,
+        "owner": "D_guangzhou",
+        "ranking": [
+          "D_guangzhou",
+          "D_foshan",
+          "D_dongguan",
+          "D_shenzhen"
+        ]
+      },
+      {
+        "accepted_destination": "D_guangzhou",
+        "attempts": [
+          {
+            "absolute_distance_rank": 2,
+            "destination": "D_guangzhou",
+            "probe": {
+              "depot_counts": {
+                "D_dongguan": {
+                  "d2a_total_cap": 5,
+                  "packed_routes": 5
+                },
+                "D_foshan": {
+                  "d2a_total_cap": 5,
+                  "packed_routes": 5
+                },
+                "D_guangzhou": {
+                  "d2a_total_cap": 12,
+                  "packed_routes": 9
+                },
+                "D_shenzhen": {
+                  "d2a_total_cap": 13,
+                  "packed_routes": 9
+                }
+              },
+              "feasible": true,
+              "reason": "PASS"
+            }
+          }
+        ],
+        "customer_id": "C019",
+        "index": 19,
+        "owner": "D_dongguan",
+        "ranking": [
+          "D_dongguan",
+          "D_guangzhou",
+          "D_shenzhen",
+          "D_foshan"
+        ]
+      },
+      {
+        "accepted_destination": "D_dongguan",
+        "attempts": [
+          {
+            "absolute_distance_rank": 2,
+            "destination": "D_dongguan",
+            "probe": {
+              "depot_counts": {
+                "D_dongguan": {
+                  "d2a_total_cap": 5,
+                  "packed_routes": 5
+                },
+                "D_foshan": {
+                  "d2a_total_cap": 5,
+                  "packed_routes": 5
+                },
+                "D_guangzhou": {
+                  "d2a_total_cap": 12,
+                  "packed_routes": 9
+                },
+                "D_shenzhen": {
+                  "d2a_total_cap": 13,
+                  "packed_routes": 9
+                }
+              },
+              "feasible": true,
+              "reason": "PASS"
+            }
+          }
+        ],
+        "customer_id": "C126",
+        "index": 20,
+        "owner": "D_shenzhen",
+        "ranking": [
+          "D_shenzhen",
+          "D_dongguan",
+          "D_foshan",
+          "D_guangzhou"
+        ]
+      },
+      {
+        "accepted_destination": "D_foshan",
+        "attempts": [
+          {
+            "absolute_distance_rank": 2,
+            "destination": "D_foshan",
+            "probe": {
+              "depot_counts": {
+                "D_dongguan": {
+                  "d2a_total_cap": 5,
+                  "packed_routes": 5
+                },
+                "D_foshan": {
+                  "d2a_total_cap": 5,
+                  "packed_routes": 5
+                },
+                "D_guangzhou": {
+                  "d2a_total_cap": 12,
+                  "packed_routes": 9
+                },
+                "D_shenzhen": {
+                  "d2a_total_cap": 13,
+                  "packed_routes": 9
+                }
+              },
+              "feasible": true,
+              "reason": "PASS"
+            }
+          }
+        ],
+        "customer_id": "C060",
+        "index": 21,
+        "owner": "D_guangzhou",
+        "ranking": [
+          "D_guangzhou",
+          "D_foshan",
+          "D_dongguan",
+          "D_shenzhen"
+        ]
+      },
+      {
+        "accepted_destination": "D_foshan",
+        "attempts": [
+          {
+            "absolute_distance_rank": 2,
+            "destination": "D_foshan",
+            "probe": {
+              "depot_counts": {
+                "D_dongguan": {
+                  "d2a_total_cap": 5,
+                  "packed_routes": 5
+                },
+                "D_foshan": {
+                  "d2a_total_cap": 5,
+                  "packed_routes": 5
+                },
+                "D_guangzhou": {
+                  "d2a_total_cap": 12,
+                  "packed_routes": 9
+                },
+                "D_shenzhen": {
+                  "d2a_total_cap": 13,
+                  "packed_routes": 9
+                }
+              },
+              "feasible": true,
+              "reason": "PASS"
+            }
+          }
+        ],
+        "customer_id": "C073",
+        "index": 22,
+        "owner": "D_guangzhou",
+        "ranking": [
+          "D_guangzhou",
+          "D_foshan",
+          "D_dongguan",
+          "D_shenzhen"
+        ]
+      },
+      {
+        "accepted_destination": "D_guangzhou",
+        "attempts": [
+          {
+            "absolute_distance_rank": 2,
+            "destination": "D_guangzhou",
+            "probe": {
+              "depot_counts": {
+                "D_dongguan": {
+                  "d2a_total_cap": 5,
+                  "packed_routes": 5
+                },
+                "D_foshan": {
+                  "d2a_total_cap": 5,
+                  "packed_routes": 5
+                },
+                "D_guangzhou": {
+                  "d2a_total_cap": 12,
+                  "packed_routes": 9
+                },
+                "D_shenzhen": {
+                  "d2a_total_cap": 13,
+                  "packed_routes": 9
+                }
+              },
+              "feasible": true,
+              "reason": "PASS"
+            }
+          }
+        ],
+        "customer_id": "C037",
+        "index": 23,
+        "owner": "D_foshan",
+        "ranking": [
+          "D_foshan",
+          "D_guangzhou",
+          "D_dongguan",
+          "D_shenzhen"
+        ]
+      },
+      {
+        "accepted_destination": "D_foshan",
+        "attempts": [
+          {
+            "absolute_distance_rank": 2,
+            "destination": "D_foshan",
+            "probe": {
+              "depot_counts": {
+                "D_dongguan": {
+                  "d2a_total_cap": 5,
+                  "packed_routes": 5
+                },
+                "D_foshan": {
+                  "d2a_total_cap": 5,
+                  "packed_routes": 5
+                },
+                "D_guangzhou": {
+                  "d2a_total_cap": 12,
+                  "packed_routes": 9
+                },
+                "D_shenzhen": {
+                  "d2a_total_cap": 13,
+                  "packed_routes": 9
+                }
+              },
+              "feasible": true,
+              "reason": "PASS"
+            }
+          }
+        ],
+        "customer_id": "C055",
+        "index": 24,
+        "owner": "D_guangzhou",
+        "ranking": [
+          "D_guangzhou",
+          "D_foshan",
+          "D_dongguan",
+          "D_shenzhen"
+        ]
+      },
+      {
+        "accepted_destination": "D_dongguan",
+        "attempts": [
+          {
+            "absolute_distance_rank": 2,
+            "destination": "D_dongguan",
+            "probe": {
+              "depot_counts": {
+                "D_dongguan": {
+                  "d2a_total_cap": 5,
+                  "packed_routes": 5
+                },
+                "D_foshan": {
+                  "d2a_total_cap": 5,
+                  "packed_routes": 5
+                },
+                "D_guangzhou": {
+                  "d2a_total_cap": 12,
+                  "packed_routes": 9
+                },
+                "D_shenzhen": {
+                  "d2a_total_cap": 13,
+                  "packed_routes": 9
+                }
+              },
+              "feasible": true,
+              "reason": "PASS"
+            }
+          }
+        ],
+        "customer_id": "C134",
+        "index": 25,
+        "owner": "D_shenzhen",
+        "ranking": [
+          "D_shenzhen",
+          "D_dongguan",
+          "D_foshan",
+          "D_guangzhou"
+        ]
+      },
+      {
+        "accepted_destination": "D_foshan",
+        "attempts": [
+          {
+            "absolute_distance_rank": 2,
+            "destination": "D_foshan",
+            "probe": {
+              "depot_counts": {
+                "D_dongguan": {
+                  "d2a_total_cap": 5,
+                  "packed_routes": 5
+                },
+                "D_foshan": {
+                  "d2a_total_cap": 5,
+                  "packed_routes": 5
+                },
+                "D_guangzhou": {
+                  "d2a_total_cap": 12,
+                  "packed_routes": 9
+                },
+                "D_shenzhen": {
+                  "d2a_total_cap": 13,
+                  "packed_routes": 9
+                }
+              },
+              "feasible": true,
+              "reason": "PASS"
+            }
+          }
+        ],
+        "customer_id": "C053",
+        "index": 26,
+        "owner": "D_guangzhou",
+        "ranking": [
+          "D_guangzhou",
+          "D_foshan",
+          "D_dongguan",
+          "D_shenzhen"
+        ]
+      },
+      {
+        "accepted_destination": "D_dongguan",
+        "attempts": [
+          {
+            "absolute_distance_rank": 2,
+            "destination": "D_dongguan",
+            "probe": {
+              "depot_counts": {
+                "D_dongguan": {
+                  "d2a_total_cap": 5,
+                  "packed_routes": 5
+                },
+                "D_foshan": {
+                  "d2a_total_cap": 5,
+                  "packed_routes": 5
+                },
+                "D_guangzhou": {
+                  "d2a_total_cap": 12,
+                  "packed_routes": 9
+                },
+                "D_shenzhen": {
+                  "d2a_total_cap": 13,
+                  "packed_routes": 9
+                }
+              },
+              "feasible": true,
+              "reason": "PASS"
+            }
+          }
+        ],
+        "customer_id": "C108",
+        "index": 27,
+        "owner": "D_shenzhen",
+        "ranking": [
+          "D_shenzhen",
+          "D_dongguan",
+          "D_foshan",
+          "D_guangzhou"
+        ]
+      },
+      {
+        "accepted_destination": "D_foshan",
+        "attempts": [
+          {
+            "absolute_distance_rank": 2,
+            "destination": "D_foshan",
+            "probe": {
+              "depot_counts": {
+                "D_dongguan": {
+                  "d2a_total_cap": 5,
+                  "packed_routes": 5
+                },
+                "D_foshan": {
+                  "d2a_total_cap": 5,
+                  "packed_routes": 5
+                },
+                "D_guangzhou": {
+                  "d2a_total_cap": 12,
+                  "packed_routes": 9
+                },
+                "D_shenzhen": {
+                  "d2a_total_cap": 13,
+                  "packed_routes": 9
+                }
+              },
+              "feasible": true,
+              "reason": "PASS"
+            }
+          }
+        ],
+        "customer_id": "C071",
+        "index": 28,
+        "owner": "D_guangzhou",
+        "ranking": [
+          "D_guangzhou",
+          "D_foshan",
+          "D_dongguan",
+          "D_shenzhen"
+        ]
+      },
+      {
+        "accepted_destination": "D_dongguan",
+        "attempts": [
+          {
+            "absolute_distance_rank": 2,
+            "destination": "D_dongguan",
+            "probe": {
+              "depot_counts": {
+                "D_dongguan": {
+                  "d2a_total_cap": 5,
+                  "packed_routes": 5
+                },
+                "D_foshan": {
+                  "d2a_total_cap": 5,
+                  "packed_routes": 5
+                },
+                "D_guangzhou": {
+                  "d2a_total_cap": 12,
+                  "packed_routes": 9
+                },
+                "D_shenzhen": {
+                  "d2a_total_cap": 13,
+                  "packed_routes": 9
+                }
+              },
+              "feasible": true,
+              "reason": "PASS"
+            }
+          }
+        ],
+        "customer_id": "C122",
+        "index": 29,
+        "owner": "D_shenzhen",
+        "ranking": [
+          "D_shenzhen",
+          "D_dongguan",
+          "D_foshan",
+          "D_guangzhou"
+        ]
+      },
+      {
+        "accepted_destination": "D_dongguan",
+        "attempts": [
+          {
+            "absolute_distance_rank": 2,
+            "destination": "D_dongguan",
+            "probe": {
+              "depot_counts": {
+                "D_dongguan": {
+                  "d2a_total_cap": 5,
+                  "packed_routes": 5
+                },
+                "D_foshan": {
+                  "d2a_total_cap": 5,
+                  "packed_routes": 5
+                },
+                "D_guangzhou": {
+                  "d2a_total_cap": 12,
+                  "packed_routes": 9
+                },
+                "D_shenzhen": {
+                  "d2a_total_cap": 13,
+                  "packed_routes": 9
+                }
+              },
+              "feasible": true,
+              "reason": "PASS"
+            }
+          }
+        ],
+        "customer_id": "C099",
+        "index": 30,
+        "owner": "D_shenzhen",
+        "ranking": [
+          "D_shenzhen",
+          "D_dongguan",
+          "D_foshan",
+          "D_guangzhou"
+        ]
+      },
+      {
+        "accepted_destination": "D_foshan",
+        "attempts": [
+          {
+            "absolute_distance_rank": 2,
+            "destination": "D_foshan",
+            "probe": {
+              "depot_counts": {
+                "D_dongguan": {
+                  "d2a_total_cap": 5,
+                  "packed_routes": 5
+                },
+                "D_foshan": {
+                  "d2a_total_cap": 5,
+                  "packed_routes": 5
+                },
+                "D_guangzhou": {
+                  "d2a_total_cap": 12,
+                  "packed_routes": 8
+                },
+                "D_shenzhen": {
+                  "d2a_total_cap": 13,
+                  "packed_routes": 9
+                }
+              },
+              "feasible": true,
+              "reason": "PASS"
+            }
+          }
+        ],
+        "customer_id": "C080",
+        "index": 31,
+        "owner": "D_guangzhou",
+        "ranking": [
+          "D_guangzhou",
+          "D_foshan",
+          "D_dongguan",
+          "D_shenzhen"
+        ]
+      },
+      {
+        "accepted_destination": "D_guangzhou",
+        "attempts": [
+          {
+            "absolute_distance_rank": 2,
+            "destination": "D_dongguan",
+            "probe": {
+              "depot_counts": {
+                "D_dongguan": {
+                  "d2a_total_cap": 5,
+                  "packed_routes": 6
+                }
+              },
+              "feasible": false,
+              "reason": "D2A_TOTAL_FLEET_CAP_EXCEEDED"
+            }
+          },
+          {
+            "absolute_distance_rank": 3,
+            "destination": "D_foshan",
+            "probe": {
+              "depot_counts": {
+                "D_dongguan": {
+                  "d2a_total_cap": 5,
+                  "packed_routes": 5
+                },
+                "D_foshan": {
+                  "d2a_total_cap": 5,
+                  "packed_routes": 6
+                }
+              },
+              "feasible": false,
+              "reason": "D2A_TOTAL_FLEET_CAP_EXCEEDED"
+            }
+          },
+          {
+            "absolute_distance_rank": 4,
+            "destination": "D_guangzhou",
+            "probe": {
+              "depot_counts": {
+                "D_dongguan": {
+                  "d2a_total_cap": 5,
+                  "packed_routes": 5
+                },
+                "D_foshan": {
+                  "d2a_total_cap": 5,
+                  "packed_routes": 5
+                },
+                "D_guangzhou": {
+                  "d2a_total_cap": 12,
+                  "packed_routes": 9
+                },
+                "D_shenzhen": {
+                  "d2a_total_cap": 13,
+                  "packed_routes": 8
+                }
+              },
+              "feasible": true,
+              "reason": "PASS"
+            }
+          }
+        ],
+        "customer_id": "C149",
+        "index": 32,
+        "owner": "D_shenzhen",
+        "ranking": [
+          "D_shenzhen",
+          "D_dongguan",
+          "D_foshan",
+          "D_guangzhou"
+        ]
+      },
+      {
+        "accepted_destination": "D_dongguan",
+        "attempts": [
+          {
+            "absolute_distance_rank": 2,
+            "destination": "D_dongguan",
+            "probe": {
+              "depot_counts": {
+                "D_dongguan": {
+                  "d2a_total_cap": 5,
+                  "packed_routes": 5
+                },
+                "D_foshan": {
+                  "d2a_total_cap": 5,
+                  "packed_routes": 5
+                },
+                "D_guangzhou": {
+                  "d2a_total_cap": 12,
+                  "packed_routes": 9
+                },
+                "D_shenzhen": {
+                  "d2a_total_cap": 13,
+                  "packed_routes": 8
+                }
+              },
+              "feasible": true,
+              "reason": "PASS"
+            }
+          }
+        ],
+        "customer_id": "C113",
+        "index": 33,
+        "owner": "D_shenzhen",
+        "ranking": [
+          "D_shenzhen",
+          "D_dongguan",
+          "D_foshan",
+          "D_guangzhou"
+        ]
+      },
+      {
+        "accepted_destination": "D_guangzhou",
+        "attempts": [
+          {
+            "absolute_distance_rank": 2,
+            "destination": "D_guangzhou",
+            "probe": {
+              "depot_counts": {
+                "D_dongguan": {
+                  "d2a_total_cap": 5,
+                  "packed_routes": 5
+                },
+                "D_foshan": {
+                  "d2a_total_cap": 5,
+                  "packed_routes": 5
+                },
+                "D_guangzhou": {
+                  "d2a_total_cap": 12,
+                  "packed_routes": 10
+                },
+                "D_shenzhen": {
+                  "d2a_total_cap": 13,
+                  "packed_routes": 8
+                }
+              },
+              "feasible": true,
+              "reason": "PASS"
+            }
+          }
+        ],
+        "customer_id": "C033",
+        "index": 34,
+        "owner": "D_foshan",
+        "ranking": [
+          "D_foshan",
+          "D_guangzhou",
+          "D_dongguan",
+          "D_shenzhen"
+        ]
+      },
+      {
+        "accepted_destination": "D_foshan",
+        "attempts": [
+          {
+            "absolute_distance_rank": 2,
+            "destination": "D_dongguan",
+            "probe": {
+              "depot_counts": {
+                "D_dongguan": {
+                  "d2a_total_cap": 5,
+                  "packed_routes": 6
+                }
+              },
+              "feasible": false,
+              "reason": "D2A_TOTAL_FLEET_CAP_EXCEEDED"
+            }
+          },
+          {
+            "absolute_distance_rank": 3,
+            "destination": "D_foshan",
+            "probe": {
+              "depot_counts": {
+                "D_dongguan": {
+                  "d2a_total_cap": 5,
+                  "packed_routes": 5
+                },
+                "D_foshan": {
+                  "d2a_total_cap": 5,
+                  "packed_routes": 5
+                },
+                "D_guangzhou": {
+                  "d2a_total_cap": 12,
+                  "packed_routes": 10
+                },
+                "D_shenzhen": {
+                  "d2a_total_cap": 13,
+                  "packed_routes": 8
+                }
+              },
+              "feasible": true,
+              "reason": "PASS"
+            }
+          }
+        ],
+        "customer_id": "C106",
+        "index": 35,
+        "owner": "D_shenzhen",
+        "ranking": [
+          "D_shenzhen",
+          "D_dongguan",
+          "D_foshan",
+          "D_guangzhou"
+        ]
+      },
+      {
+        "accepted_destination": null,
+        "attempts": [
+          {
+            "absolute_distance_rank": 2,
+            "destination": "D_guangzhou",
+            "probe": {
+              "depot_counts": {
+                "D_dongguan": {
+                  "d2a_total_cap": 5,
+                  "packed_routes": 6
+                }
+              },
+              "feasible": false,
+              "reason": "D2A_TOTAL_FLEET_CAP_EXCEEDED"
+            }
+          },
+          {
+            "absolute_distance_rank": 3,
+            "destination": "D_shenzhen",
+            "probe": {
+              "depot_counts": {
+                "D_dongguan": {
+                  "d2a_total_cap": 5,
+                  "packed_routes": 6
+                }
+              },
+              "feasible": false,
+              "reason": "D2A_TOTAL_FLEET_CAP_EXCEEDED"
+            }
+          },
+          {
+            "absolute_distance_rank": 4,
+            "destination": "D_foshan",
+            "probe": {
+              "depot_counts": {
+                "D_dongguan": {
+                  "d2a_total_cap": 5,
+                  "packed_routes": 6
+                }
+              },
+              "feasible": false,
+              "reason": "D2A_TOTAL_FLEET_CAP_EXCEEDED"
+            }
+          }
+        ],
+        "customer_id": "C015",
+        "index": 36,
+        "owner": "D_dongguan",
+        "ranking": [
+          "D_dongguan",
+          "D_guangzhou",
+          "D_shenzhen",
+          "D_foshan"
+        ]
+      }
+    ]
+  },
+  "reassignment_count_preserved": true,
+  "responsibility_map_sha256": "62d06e2d1cc407a92278ff38c4007d9adc88c699282d9d0e0ebf41dd663760b5",
+  "result_values_read": false,
+  "schema": "resetp.e3e6.input-backtracking-diagnostic.v1",
+  "selected_customer_count": 38,
+  "status": "PASS_IMPLEMENTATION_ERROR_CONFIRMED"
+}

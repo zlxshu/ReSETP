@@ -1,0 +1,86 @@
+{
+  "candidate_case_plan": {
+    "E3": [
+      "cn-prd-50c-01-V2-LOCATIONS",
+      "cn-prd-100c-02-V2-LOCATIONS"
+    ],
+    "E5": [
+      "cn-prd-50c-01-V2-LOCATIONS",
+      "cn-prd-100c-02-V2-LOCATIONS"
+    ],
+    "E6": [
+      "cn-prd-150c-01-V2-LOCATIONS"
+    ],
+    "E7": [
+      "cn-prd-50c-01-V2-LOCATIONS",
+      "cn-prd-100c-02-V2-LOCATIONS",
+      "cn-prd-150c-01-V2-LOCATIONS"
+    ]
+  },
+  "case_plan_approval_status": "AWAITING_USER_APPROVAL",
+  "created_at_utc": "2026-07-29T16:31:49.759391+00:00",
+  "e3": {
+    "arms": [
+      "LOCK",
+      "FREE"
+    ],
+    "common_input_per_instance_intensity": true,
+    "intensities_pct": [
+      0,
+      25,
+      50
+    ]
+  },
+  "e5": {
+    "active_option": null,
+    "approval_status": "AWAITING_USER_CHOICE_A_OR_B",
+    "arm_failure_rule_if_approved": "starved share > 0.20",
+    "arms": [
+      "L100_control",
+      "NL90_mild"
+    ],
+    "budget_unit": "total complete-candidate evaluations",
+    "option_A": "change execution schedule so deterministic evaluations remain after route-pool recombination; requires rerunning the blind pilot",
+    "option_B": "measure L/S on search candidates while retaining the route-pool comparison and certificate in the total evaluation ledger; implementation is tested but not activated",
+    "option_B_candidate_starved_unit_rule": "L_search/S_search > 0.5"
+  },
+  "e6": {
+    "candidate_rule": "F is the cheapest independently checked U-nested candidate plus I fallback that weakly preserves every depot profit",
+    "nested_candidates_are_not_independent_samples": true,
+    "profit_ledger_must_close": true,
+    "states": [
+      "I",
+      "U",
+      "F"
+    ]
+  },
+  "e7": {
+    "event_types": [
+      "add",
+      "cancel",
+      "demand_change"
+    ],
+    "numeric_budget_status": "UNSELECTED",
+    "stage_budget_selector_status": "AWAITING_USER_APPROVAL",
+    "state_gates": [
+      "state inheritance",
+      "customer conservation",
+      "charging concurrency",
+      "exact-trigger charging lock",
+      "independent final certificate"
+    ],
+    "stream_seeds": [
+      1,
+      2,
+      3,
+      4,
+      5
+    ]
+  },
+  "formal_hold_reason": "FOUNDATION_ONLY_EFFECT_RUN_NOT_STARTED",
+  "formal_search_allowed": false,
+  "schema": "resetp.mechanism-foundation.candidate-contract.v1",
+  "scope": "zero-search technical foundation and decision options only; no method choice or mechanism effect was frozen",
+  "search_evaluations": 0,
+  "task_id": "E3E7-MINIMAL-FOUNDATION-01"
+}

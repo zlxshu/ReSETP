@@ -1,0 +1,36 @@
+{
+  "audit": {
+    "attempts": [
+      {
+        "absolute_distance_rank": 2,
+        "destination": "D_tianjin",
+        "directed_distance_m": 130736.046001639,
+        "fleet_probe": {
+          "depot_counts": {
+            "D_beijing": {
+              "d2a_total_cap": 15,
+              "packed_routes": 11
+            },
+            "D_tianjin": {
+              "d2a_total_cap": 7,
+              "packed_routes": 8
+            }
+          },
+          "feasible": false,
+          "reason": "D2A_TOTAL_FLEET_CAP_EXCEEDED"
+        }
+      }
+    ],
+    "customer_id": "C068",
+    "reason": "NO_NONOWNER_DESTINATION_PRESERVES_D2A_COMMON_INITIAL",
+    "status": "INFEASIBLE_INPUT",
+    "target_reassigned": 50
+  },
+  "d2a_not_expanded": true,
+  "instance_id": "cn-jjj-100c-01-V2-LOCATIONS",
+  "mismatch_intensity_nominal_pct": 50,
+  "no_rows_deleted": true,
+  "schema": "resetp.e3e6.infeasible-input-certificate.v1",
+  "status": "INFEASIBLE_INPUT",
+  "unserved_customers_not_allowed": true
+}

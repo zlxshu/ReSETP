@@ -1,0 +1,238 @@
+{
+  "independent_initial_audit": {
+    "breakdown_for_integrity_only": {
+      "E_cv_direct": 1542.4485257203555,
+      "E_ev_indirect": 27.684176590699366,
+      "E_total": 1570.1327023110548,
+      "carbon_quota_kg": 0.0,
+      "cost_carbon": 117.79135532737534,
+      "cost_elec": 51.721958928349544,
+      "cost_fix": 2210.0,
+      "cost_fuel": 4271.580265873903,
+      "cost_km": 3545.554606570658,
+      "cost_occ": 0.0,
+      "cost_transship": 0.0,
+      "depot_charging_kwh": 131.29802912118333,
+      "distance_cv": 4189377.578148121,
+      "distance_ev": 414686.709873319,
+      "distance_total": 4604064.28802144,
+      "electricity_kwh": 131.29802912118333,
+      "ev_drive_kwh": 131.29802912118333,
+      "fuel_liters": 570.2623042441774,
+      "n_veh_cv": 9,
+      "n_veh_ev": 4,
+      "station_charging_kwh": 0,
+      "total_cost": 10196.648186700288
+    },
+    "completion_activity": {
+      "accepted_variants": [
+        {
+          "after_cost": 10476.529091130777,
+          "before_cost": 10603.253602131395,
+          "charging_action_count": 1,
+          "improvement": 126.7245110006188,
+          "label": "ev_immediate",
+          "route_index": 7
+        },
+        {
+          "after_cost": 10355.850913873437,
+          "before_cost": 10476.529091130777,
+          "charging_action_count": 1,
+          "improvement": 120.67817725733948,
+          "label": "ev_immediate",
+          "route_index": 8
+        },
+        {
+          "after_cost": 10264.972278735444,
+          "before_cost": 10355.850913873437,
+          "charging_action_count": 1,
+          "improvement": 90.87863513799311,
+          "label": "ev_immediate",
+          "route_index": 0
+        },
+        {
+          "after_cost": 10196.648186700288,
+          "before_cost": 10264.972278735444,
+          "charging_action_count": 1,
+          "improvement": 68.32409203515635,
+          "label": "ev_immediate",
+          "route_index": 4
+        }
+      ],
+      "baseline_all_cv_cost": 10603.253602131395,
+      "baseline_breakdown": {
+        "E_cv_direct": 1688.2441845383407,
+        "E_ev_indirect": 0.0,
+        "E_total": 1688.2441845383407,
+        "carbon_quota_kg": 0.0,
+        "cost_carbon": 126.65207872406633,
+        "cost_elec": 0,
+        "cost_fix": 2210.0,
+        "cost_fuel": 4675.431378750606,
+        "cost_km": 3591.170144656723,
+        "cost_occ": 0.0,
+        "cost_transship": 0.0,
+        "depot_charging_kwh": 0,
+        "distance_cv": 4604064.28802144,
+        "distance_ev": 0,
+        "distance_total": 4604064.28802144,
+        "electricity_kwh": 0,
+        "ev_drive_kwh": 0,
+        "fuel_liters": 624.1647631982052,
+        "n_veh_cv": 13,
+        "n_veh_ev": 0,
+        "station_charging_kwh": 0,
+        "total_cost": 10603.253602131395
+      },
+      "charging_action_count": 4,
+      "cross_site_service_count": 0,
+      "ev_route_count": 4,
+      "final_breakdown": {
+        "E_cv_direct": 1542.4485257203555,
+        "E_ev_indirect": 27.684176590699366,
+        "E_total": 1570.1327023110548,
+        "carbon_quota_kg": 0.0,
+        "cost_carbon": 117.79135532737534,
+        "cost_elec": 51.721958928349544,
+        "cost_fix": 2210.0,
+        "cost_fuel": 4271.580265873903,
+        "cost_km": 3545.554606570658,
+        "cost_occ": 0.0,
+        "cost_transship": 0.0,
+        "depot_charging_kwh": 131.29802912118333,
+        "distance_cv": 4189377.578148121,
+        "distance_ev": 414686.709873319,
+        "distance_total": 4604064.28802144,
+        "electricity_kwh": 131.29802912118333,
+        "ev_drive_kwh": 131.29802912118333,
+        "fuel_liters": 570.2623042441774,
+        "n_veh_cv": 9,
+        "n_veh_ev": 4,
+        "station_charging_kwh": 0,
+        "total_cost": 10196.648186700288
+      },
+      "final_cost": 10196.648186700288,
+      "finite_fleet_reference_cost": 10603.253602131395,
+      "improvement": 406.60541543110776,
+      "mandatory_fleet_assignment_count": 0,
+      "mandatory_fleet_assignments": [],
+      "mechanism_experts_queried": [
+        "vehicle_type_and_nonlinear_charging",
+        "time_varying_electricity_and_carbon",
+        "multi_depot_responsibility_accounting"
+      ],
+      "rejected_infeasible": 0,
+      "rejected_non_improving": 0,
+      "route_count": 13,
+      "schema_version": "resetp.china81-shared-completion.v1",
+      "strict_improvement": true,
+      "variant_attempts": 4,
+      "variant_count": 21,
+      "variant_generation_failures": [
+        {
+          "label": "ev_integrated",
+          "reason": "No feasible charging insert between D_chengdu and C036",
+          "route_index": 1
+        },
+        {
+          "label": "ev_low_carbon",
+          "reason": "No feasible charging insert between D_chengdu and C036",
+          "route_index": 1
+        },
+        {
+          "label": "ev_immediate",
+          "reason": "No feasible charging insert between D_chengdu and C036",
+          "route_index": 1
+        },
+        {
+          "label": "ev_integrated",
+          "reason": "No feasible charging insert between D_chengdu and C035",
+          "route_index": 2
+        },
+        {
+          "label": "ev_low_carbon",
+          "reason": "No feasible charging insert between D_chengdu and C035",
+          "route_index": 2
+        },
+        {
+          "label": "ev_immediate",
+          "reason": "No feasible charging insert between D_chengdu and C035",
+          "route_index": 2
+        },
+        {
+          "label": "ev_integrated",
+          "reason": "No feasible charging insert between D_chengdu and C058",
+          "route_index": 5
+        },
+        {
+          "label": "ev_low_carbon",
+          "reason": "No feasible charging insert between D_chengdu and C058",
+          "route_index": 5
+        },
+        {
+          "label": "ev_immediate",
+          "reason": "No feasible charging insert between D_chengdu and C058",
+          "route_index": 5
+        },
+        {
+          "label": "ev_integrated",
+          "reason": "No feasible charging insert between D_chongqing and C014",
+          "route_index": 6
+        },
+        {
+          "label": "ev_low_carbon",
+          "reason": "No feasible charging insert between D_chongqing and C014",
+          "route_index": 6
+        },
+        {
+          "label": "ev_immediate",
+          "reason": "No feasible charging insert between D_chongqing and C014",
+          "route_index": 6
+        },
+        {
+          "label": "ev_integrated",
+          "reason": "No feasible charging insert between D_chongqing and C018",
+          "route_index": 10
+        },
+        {
+          "label": "ev_low_carbon",
+          "reason": "No feasible charging insert between D_chongqing and C018",
+          "route_index": 10
+        },
+        {
+          "label": "ev_immediate",
+          "reason": "No feasible charging insert between D_chongqing and C018",
+          "route_index": 10
+        },
+        {
+          "label": "ev_integrated",
+          "reason": "No feasible charging insert between D_chongqing and C029",
+          "route_index": 11
+        },
+        {
+          "label": "ev_low_carbon",
+          "reason": "No feasible charging insert between D_chongqing and C029",
+          "route_index": 11
+        },
+        {
+          "label": "ev_immediate",
+          "reason": "No feasible charging insert between D_chongqing and C029",
+          "route_index": 11
+        }
+      ]
+    },
+    "construction": "EXACT_D2A_CAPPED_ROUTE_PARTITION",
+    "cross_site_service_count": 0,
+    "objective_for_integrity_only": 10196.648186700288,
+    "route_counts_by_depot": {
+      "D_chengdu": 6,
+      "D_chongqing": 7
+    },
+    "violation_count": 0
+  },
+  "initial_solution_sha256": "8d96c5b44624cddff96a7db5150f34bc50238f450a9e75466a02067887f41908",
+  "responsibility_map_sha256": "0ff84535fe3c0215c31e3e6ca02f83ae79cb3bec0fe79206e321620f174ad5a9",
+  "schema": "resetp.e3e6.input-certificate.v1",
+  "shared_by_all_seeds_and_e3_e6_arms": true,
+  "status": "PASS"
+}

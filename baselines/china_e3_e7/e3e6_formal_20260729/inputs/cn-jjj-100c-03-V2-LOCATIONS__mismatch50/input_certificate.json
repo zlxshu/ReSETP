@@ -1,0 +1,27 @@
+{
+  "audit": {
+    "global_search_audit": {
+      "algorithm": "EXACT_LEXICOGRAPHIC_FULL_MAPPING_DFS_IN_FROZEN_FIRST_FIT_ORDER",
+      "cache_hits": 0,
+      "cache_misses": 76,
+      "conflict_backjumps": 39,
+      "d2a_cap_prunes": 1,
+      "global_feasible_completion_found": false,
+      "heuristic_checker_calls": 1,
+      "infeasible_prefix_attempts": 1,
+      "nodes_visited": 76,
+      "prefix_oracle_calls": 1,
+      "route_feasibility_checker_calls": 272
+    },
+    "reason": "NO_COMPLETE_DESTINATION_ASSIGNMENT_PRESERVES_D2A_COMMON_INITIAL",
+    "status": "INFEASIBLE_INPUT",
+    "target_reassigned": 50
+  },
+  "d2a_not_expanded": true,
+  "instance_id": "cn-jjj-100c-03-V2-LOCATIONS",
+  "mismatch_intensity_nominal_pct": 50,
+  "no_rows_deleted": true,
+  "schema": "resetp.e3e6.infeasible-input-certificate.v1",
+  "status": "INFEASIBLE_INPUT",
+  "unserved_customers_not_allowed": true
+}

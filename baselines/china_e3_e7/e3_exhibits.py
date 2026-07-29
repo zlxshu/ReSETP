@@ -15,7 +15,7 @@ No result-direction gate is applied here.
 from __future__ import annotations
 
 from collections import defaultdict
-from statistics import fmean
+from math import fsum
 from typing import Any, Iterable
 
 try:
@@ -27,6 +27,13 @@ except ImportError:  # pragma: no cover - direct script compatibility
 CONTROL_ARM = "status_quo_responsibility"
 TREATMENT_ARM = "optimized_responsibility_cooperation"
 ARMS = (CONTROL_ARM, TREATMENT_ARM)
+
+
+def fmean(values: Iterable[float]) -> float:
+    items = list(values)
+    if not items:
+        raise ValueError("fmean requires at least one value")
+    return fsum(items) / len(items)
 
 REGIONS = ("jjj", "prd", "cy")
 REGION_LABELS = {

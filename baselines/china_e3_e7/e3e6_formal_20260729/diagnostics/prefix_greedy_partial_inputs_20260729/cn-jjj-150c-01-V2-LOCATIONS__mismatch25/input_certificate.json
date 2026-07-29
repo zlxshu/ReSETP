@@ -1,0 +1,59 @@
+{
+  "audit": {
+    "attempts": [
+      {
+        "absolute_distance_rank": 2,
+        "destination": "D_tianjin",
+        "directed_distance_m": 128444.305246247,
+        "fleet_probe": {
+          "depot_counts": {
+            "D_beijing": {
+              "d2a_total_cap": 20,
+              "packed_routes": 14
+            },
+            "D_shijiazhuang": {
+              "d2a_total_cap": 4,
+              "packed_routes": 4
+            },
+            "D_tianjin": {
+              "d2a_total_cap": 8,
+              "packed_routes": 9
+            }
+          },
+          "feasible": false,
+          "reason": "D2A_TOTAL_FLEET_CAP_EXCEEDED"
+        }
+      },
+      {
+        "absolute_distance_rank": 3,
+        "destination": "D_shijiazhuang",
+        "directed_distance_m": 285276.641618599,
+        "fleet_probe": {
+          "depot_counts": {
+            "D_beijing": {
+              "d2a_total_cap": 20,
+              "packed_routes": 14
+            },
+            "D_shijiazhuang": {
+              "d2a_total_cap": 4,
+              "packed_routes": 5
+            }
+          },
+          "feasible": false,
+          "reason": "D2A_TOTAL_FLEET_CAP_EXCEEDED"
+        }
+      }
+    ],
+    "customer_id": "C033",
+    "reason": "NO_NONOWNER_DESTINATION_PRESERVES_D2A_COMMON_INITIAL",
+    "status": "INFEASIBLE_INPUT",
+    "target_reassigned": 38
+  },
+  "d2a_not_expanded": true,
+  "instance_id": "cn-jjj-150c-01-V2-LOCATIONS",
+  "mismatch_intensity_nominal_pct": 25,
+  "no_rows_deleted": true,
+  "schema": "resetp.e3e6.infeasible-input-certificate.v1",
+  "status": "INFEASIBLE_INPUT",
+  "unserved_customers_not_allowed": true
+}

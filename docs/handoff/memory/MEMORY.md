@@ -1073,3 +1073,13 @@ E7正式结果终验
 - 四个强制科学端点均为
   `NOT_RUN_UPSTREAM_PILOT_STARVATION_GATE_HALT`；不得推断科学方向。终态四件套、
   报告、HALT `done.json` 和保护哈希已闭合。
+
+## E3--E7 技术底座候选与用户决策边界（2026-07-30）
+
+- 详细记忆：`docs/handoff/memory/mechanism_foundation_options_20260730.md`；候选底座：
+  `baselines/china_e3_e7/mechanism_foundation_20260730/`；E5 B 技术复判：
+  `baselines/china_e3_e7/e5_option_b_assessment_20260730/`。
+- 三题候选输入与 15 条 E7 JSON/TSV 事件流已通过零搜索技术验收，但算例分工、E5 A/B、
+  E7 阶段预算均保持 `AWAITING_USER_APPROVAL`；正式搜索仍为 0。
+- 方案 B 只读取盲态改进序列复判为 12/9/7/5/5（每臂分母 15）；240 档仍不通过，
+  即使用户批准 B 也须从 320 档继续盲 pilot。不得把技术可构造写成方法已批准。

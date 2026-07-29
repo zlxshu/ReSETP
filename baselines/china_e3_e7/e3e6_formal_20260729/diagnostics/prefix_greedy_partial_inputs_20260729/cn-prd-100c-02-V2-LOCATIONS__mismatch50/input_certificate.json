@@ -1,0 +1,156 @@
+{
+  "independent_initial_audit": {
+    "breakdown_for_integrity_only": {
+      "E_cv_direct": 708.5004512195809,
+      "E_ev_indirect": 96.29703582899259,
+      "E_total": 804.7974870485734,
+      "carbon_quota_kg": 0.0,
+      "cost_carbon": 60.37590747838398,
+      "cost_elec": 191.27125062484728,
+      "cost_fix": 3060.0,
+      "cost_fuel": 1948.8438887338493,
+      "cost_km": 2170.2291060509183,
+      "cost_occ": 26.9555199117454,
+      "cost_transship": 0.0,
+      "depot_charging_kwh": 290.24701604444414,
+      "distance_cv": 1954555.758905726,
+      "distance_ev": 963694.946424555,
+      "distance_total": 2918250.705330281,
+      "electricity_kwh": 344.158055867935,
+      "ev_drive_kwh": 344.158055867935,
+      "fuel_liters": 261.9413828943346,
+      "n_veh_cv": 13,
+      "n_veh_ev": 5,
+      "station_charging_kwh": 53.91103982349081,
+      "total_cost": 7457.675672799744
+    },
+    "completion_activity": {
+      "accepted_variants": [
+        {
+          "after_cost": 7810.175511096878,
+          "before_cost": 8051.168712992808,
+          "charging_action_count": 2,
+          "improvement": 240.99320189592981,
+          "label": "ev_immediate",
+          "route_index": 11
+        },
+        {
+          "after_cost": 7647.960663996997,
+          "before_cost": 7810.175511096878,
+          "charging_action_count": 2,
+          "improvement": 162.2148470998809,
+          "label": "ev_integrated",
+          "route_index": 14
+        },
+        {
+          "after_cost": 7551.032023431032,
+          "before_cost": 7647.960663996997,
+          "charging_action_count": 1,
+          "improvement": 96.928640565965,
+          "label": "ev_immediate",
+          "route_index": 2
+        },
+        {
+          "after_cost": 7457.675672799744,
+          "before_cost": 7551.032023431032,
+          "charging_action_count": 1,
+          "improvement": 93.35635063128848,
+          "label": "ev_immediate",
+          "route_index": 16
+        }
+      ],
+      "baseline_all_cv_cost": 8274.63404831354,
+      "baseline_breakdown": {
+        "E_cv_direct": 1048.3381455965064,
+        "E_ev_indirect": 0.0,
+        "E_total": 1048.3381455965064,
+        "carbon_quota_kg": 0.0,
+        "cost_carbon": 78.64632768264991,
+        "cost_elec": 0,
+        "cost_fix": 3060.0,
+        "cost_fuel": 2883.6218591752736,
+        "cost_km": 2252.365861455615,
+        "cost_occ": 0.0,
+        "cost_transship": 0.0,
+        "depot_charging_kwh": 0,
+        "distance_cv": 2887648.540327711,
+        "distance_ev": 0,
+        "distance_total": 2887648.540327711,
+        "electricity_kwh": 0,
+        "ev_drive_kwh": 0,
+        "fuel_liters": 387.58358322248296,
+        "n_veh_cv": 18,
+        "n_veh_ev": 0,
+        "station_charging_kwh": 0,
+        "total_cost": 8274.63404831354
+      },
+      "charging_action_count": 8,
+      "cross_site_service_count": 0,
+      "ev_route_count": 5,
+      "final_breakdown": {
+        "E_cv_direct": 708.5004512195809,
+        "E_ev_indirect": 96.29703582899259,
+        "E_total": 804.7974870485734,
+        "carbon_quota_kg": 0.0,
+        "cost_carbon": 60.37590747838398,
+        "cost_elec": 191.27125062484728,
+        "cost_fix": 3060.0,
+        "cost_fuel": 1948.8438887338493,
+        "cost_km": 2170.2291060509183,
+        "cost_occ": 26.9555199117454,
+        "cost_transship": 0.0,
+        "depot_charging_kwh": 290.24701604444414,
+        "distance_cv": 1954555.758905726,
+        "distance_ev": 963694.946424555,
+        "distance_total": 2918250.705330281,
+        "electricity_kwh": 344.158055867935,
+        "ev_drive_kwh": 344.158055867935,
+        "fuel_liters": 261.9413828943346,
+        "n_veh_cv": 13,
+        "n_veh_ev": 5,
+        "station_charging_kwh": 53.91103982349081,
+        "total_cost": 7457.675672799744
+      },
+      "final_cost": 7457.675672799744,
+      "finite_fleet_reference_cost": 8051.168712992808,
+      "improvement": 593.4930401930642,
+      "mandatory_fleet_assignment_count": 1,
+      "mandatory_fleet_assignments": [
+        {
+          "after_cost": 8051.168712992808,
+          "before_cost": 8274.63404831354,
+          "charging_action_count": 2,
+          "cost_change": -223.46533532073136,
+          "depot_id": "D_guangzhou",
+          "label": "ev_immediate",
+          "route_index": 1
+        }
+      ],
+      "mechanism_experts_queried": [
+        "vehicle_type_and_nonlinear_charging",
+        "time_varying_electricity_and_carbon",
+        "multi_depot_responsibility_accounting"
+      ],
+      "rejected_infeasible": 20,
+      "rejected_non_improving": 0,
+      "route_count": 18,
+      "schema_version": "resetp.china81-shared-completion.v1",
+      "strict_improvement": true,
+      "variant_attempts": 25,
+      "variant_count": 54,
+      "variant_generation_failures": []
+    },
+    "cross_site_service_count": 0,
+    "objective_for_integrity_only": 7457.675672799744,
+    "route_counts_by_depot": {
+      "D_guangzhou": 9,
+      "D_shenzhen": 9
+    },
+    "violation_count": 0
+  },
+  "initial_solution_sha256": "2c45b80b15ba213f618b89b8b7ce83db5058764e3983ddd062c40cf50e5e81bf",
+  "responsibility_map_sha256": "285a16f4eafe7c590dedba6146968378a3598459371f103f43d9ac002ae75955",
+  "schema": "resetp.e3e6.input-certificate.v1",
+  "shared_by_all_seeds_and_e3_e6_arms": true,
+  "status": "PASS"
+}

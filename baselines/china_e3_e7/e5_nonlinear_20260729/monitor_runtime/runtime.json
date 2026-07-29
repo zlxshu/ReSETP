@@ -1,0 +1,83 @@
+{
+  "command": [
+    "env",
+    "OMP_NUM_THREADS=1",
+    "OPENBLAS_NUM_THREADS=1",
+    "MKL_NUM_THREADS=1",
+    "VECLIB_MAXIMUM_THREADS=1",
+    "build/python_envs/pyvrp-hgs-0.12.2/bin/python",
+    "baselines/china_e3_e7/run_e5_nonlinear_20260729.py",
+    "run"
+  ],
+  "events_emitted": [],
+  "last_event_state": "ANOMALY",
+  "log_initial_sizes": {
+    "/Volumes/移动硬盘（512G）/ReSETP/baselines/china_e3_e7/e5_nonlinear_20260729/monitor_runtime/runner.log": 0
+  },
+  "low_cpu_checks": 0,
+  "mode": "start",
+  "monitor_config_sha256": "2a1a527dab7da4610f38fdd178235e897b6544d319bb78034953da33d00f0af0",
+  "paused": true,
+  "pgid": 41229,
+  "pid": 41229,
+  "protected_hashes": {
+    "/Volumes/移动硬盘（512G）/ReSETP/baselines/china_e3_e7/e5_nonlinear_20260729/baselines/china_e3_e7/check_e5_nonlinear_20260729.py": {
+      "exists": false,
+      "kind": "evaluator",
+      "path": "/Volumes/移动硬盘（512G）/ReSETP/baselines/china_e3_e7/e5_nonlinear_20260729/baselines/china_e3_e7/check_e5_nonlinear_20260729.py"
+    },
+    "/Volumes/移动硬盘（512G）/ReSETP/baselines/china_e3_e7/e5_nonlinear_20260729/baselines/china_e3_e7/e5_nonlinear_20260729/preregistration.json": {
+      "exists": false,
+      "kind": "experiment_contract",
+      "path": "/Volumes/移动硬盘（512G）/ReSETP/baselines/china_e3_e7/e5_nonlinear_20260729/baselines/china_e3_e7/e5_nonlinear_20260729/preregistration.json"
+    },
+    "/Volumes/移动硬盘（512G）/ReSETP/baselines/china_e3_e7/e5_nonlinear_20260729/baselines/china_e3_e7/e5_nonlinear_20260729/source_lock.json": {
+      "exists": false,
+      "kind": "primary_config",
+      "path": "/Volumes/移动硬盘（512G）/ReSETP/baselines/china_e3_e7/e5_nonlinear_20260729/baselines/china_e3_e7/e5_nonlinear_20260729/source_lock.json"
+    },
+    "/Volumes/移动硬盘（512G）/ReSETP/baselines/china_e3_e7/e5_nonlinear_20260729/baselines/china_e3_e7/e5_nonlinear_20260729/task_card.json": {
+      "exists": false,
+      "kind": "research_question",
+      "path": "/Volumes/移动硬盘（512G）/ReSETP/baselines/china_e3_e7/e5_nonlinear_20260729/baselines/china_e3_e7/e5_nonlinear_20260729/task_card.json"
+    },
+    "/Volumes/移动硬盘（512G）/ReSETP/baselines/china_e3_e7/e5_nonlinear_20260729/baselines/china_e3_e7/run_e5_nonlinear_20260729.py": {
+      "exists": false,
+      "kind": "primary_config",
+      "path": "/Volumes/移动硬盘（512G）/ReSETP/baselines/china_e3_e7/e5_nonlinear_20260729/baselines/china_e3_e7/run_e5_nonlinear_20260729.py"
+    },
+    "/Volumes/移动硬盘（512G）/ReSETP/baselines/china_e3_e7/e5_nonlinear_20260729/docs/handoff/advisor_instance_selection_01_20260729/report.md": {
+      "exists": false,
+      "kind": "research_question",
+      "path": "/Volumes/移动硬盘（512G）/ReSETP/baselines/china_e3_e7/e5_nonlinear_20260729/docs/handoff/advisor_instance_selection_01_20260729/report.md"
+    },
+    "/Volumes/移动硬盘（512G）/ReSETP/baselines/china_e3_e7/e5_nonlinear_20260729/docs/handoff/contract_e5e7_blind_01_20260728/report.md": {
+      "exists": false,
+      "kind": "experiment_contract",
+      "path": "/Volumes/移动硬盘（512G）/ReSETP/baselines/china_e3_e7/e5_nonlinear_20260729/docs/handoff/contract_e5e7_blind_01_20260728/report.md"
+    },
+    "/Volumes/移动硬盘（512G）/ReSETP/baselines/china_e3_e7/e5_nonlinear_20260729/solver/src/setp_solver/charging_curve.py": {
+      "exists": false,
+      "kind": "model",
+      "path": "/Volumes/移动硬盘（512G）/ReSETP/baselines/china_e3_e7/e5_nonlinear_20260729/solver/src/setp_solver/charging_curve.py"
+    },
+    "/Volumes/移动硬盘（512G）/ReSETP/baselines/china_e3_e7/e5_nonlinear_20260729/solver/src/setp_solver/check.py": {
+      "exists": false,
+      "kind": "evaluator",
+      "path": "/Volumes/移动硬盘（512G）/ReSETP/baselines/china_e3_e7/e5_nonlinear_20260729/solver/src/setp_solver/check.py"
+    },
+    "/Volumes/移动硬盘（512G）/ReSETP/baselines/china_e3_e7/e5_nonlinear_20260729/solver/src/setp_solver/cost.py": {
+      "exists": false,
+      "kind": "cost_function",
+      "path": "/Volumes/移动硬盘（512G）/ReSETP/baselines/china_e3_e7/e5_nonlinear_20260729/solver/src/setp_solver/cost.py"
+    },
+    "/Volumes/移动硬盘（512G）/ReSETP/baselines/china_e3_e7/e5_nonlinear_20260729/solver/src/setp_solver/search/evaluation.py": {
+      "exists": false,
+      "kind": "evaluator",
+      "path": "/Volumes/移动硬盘（512G）/ReSETP/baselines/china_e3_e7/e5_nonlinear_20260729/solver/src/setp_solver/search/evaluation.py"
+    }
+  },
+  "started_at": "2026-07-29T14:23:15+00:00",
+  "started_at_epoch": 1785334995.804307,
+  "stdout_path": "/Volumes/移动硬盘（512G）/ReSETP/baselines/china_e3_e7/e5_nonlinear_20260729/monitor_runtime/runner.log"
+}

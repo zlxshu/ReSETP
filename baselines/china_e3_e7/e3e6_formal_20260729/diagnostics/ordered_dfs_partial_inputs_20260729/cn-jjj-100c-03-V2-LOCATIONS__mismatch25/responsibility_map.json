@@ -1,0 +1,290 @@
+{
+  "destination_rule": "absolute second-nearest depot by directed depot-to-customer road distance; advance to third/fourth when D2-A common-initial construction fails; never return to original owner",
+  "instance_id": "cn-jjj-100c-03-V2-LOCATIONS",
+  "map_audit": {
+    "actual_reassigned": 25,
+    "customers_ineligible_because_second_nearest_is_original_owner": 0,
+    "fallback_steps_beyond_second_nearest": 0,
+    "final_fleet_probe": {
+      "depot_counts": {
+        "D_beijing": {
+          "d2a_total_cap": 17,
+          "packed_routes": 11
+        },
+        "D_tianjin": {
+          "d2a_total_cap": 7,
+          "packed_routes": 7
+        }
+      },
+      "feasible": true,
+      "reason": "PASS_EXACT_LEGAL_COMMON_ROUTE_PARTITION"
+    },
+    "global_search_audit": {
+      "algorithm": "EXACT_LEXICOGRAPHIC_FULL_MAPPING_DFS_IN_FROZEN_FIRST_FIT_ORDER",
+      "cache_hits": 0,
+      "cache_misses": 101,
+      "conflict_backjumps": 0,
+      "d2a_cap_prunes": 0,
+      "destination_order": "directed-distance absolute rank, second then third/fourth, original owner skipped",
+      "feasibility_search_order": "frozen due_time, ready_time, customer_id order used by D2-A First-Fit packer",
+      "fixed_customer_order": "result-blind SHA-256 order for lexicographic destination decisions",
+      "global_feasible_completion_found": true,
+      "infeasible_prefix_attempts": 0,
+      "nodes_visited": 101,
+      "nonmonotone_hash_prefix_pruning": false,
+      "prefix_oracle_calls": 1,
+      "route_feasibility_checker_calls": 470,
+      "route_groups_by_depot": {
+        "D_beijing": [
+          [
+            "C019",
+            "C052",
+            "C014",
+            "C049",
+            "C016",
+            "C039",
+            "C023",
+            "C050"
+          ],
+          [
+            "C003",
+            "C057",
+            "C071",
+            "C002",
+            "C006"
+          ],
+          [
+            "C046",
+            "C037",
+            "C043",
+            "C041",
+            "C013",
+            "C022"
+          ],
+          [
+            "C076",
+            "C094",
+            "C027",
+            "C007",
+            "C031",
+            "C010",
+            "C060"
+          ],
+          [
+            "C001",
+            "C054",
+            "C055",
+            "C062",
+            "C066",
+            "C004",
+            "C036"
+          ],
+          [
+            "C030",
+            "C059",
+            "C048",
+            "C045",
+            "C017",
+            "C042"
+          ],
+          [
+            "C058",
+            "C053",
+            "C028",
+            "C040",
+            "C069",
+            "C029"
+          ],
+          [
+            "C044",
+            "C005",
+            "C072",
+            "C015",
+            "C065",
+            "C025"
+          ],
+          [
+            "C009",
+            "C033",
+            "C085",
+            "C081",
+            "C093",
+            "C080"
+          ],
+          [
+            "C074",
+            "C021",
+            "C008",
+            "C056"
+          ],
+          [
+            "C070"
+          ]
+        ],
+        "D_tianjin": [
+          [
+            "C077",
+            "C061",
+            "C067",
+            "C018",
+            "C035",
+            "C051"
+          ],
+          [
+            "C073",
+            "C068",
+            "C020",
+            "C064",
+            "C026",
+            "C090"
+          ],
+          [
+            "C083",
+            "C086",
+            "C088",
+            "C099",
+            "C082",
+            "C078",
+            "C084"
+          ],
+          [
+            "C032",
+            "C012",
+            "C063",
+            "C034",
+            "C038"
+          ],
+          [
+            "C091",
+            "C097",
+            "C096",
+            "C095",
+            "C089",
+            "C100",
+            "C087"
+          ],
+          [
+            "C011",
+            "C047",
+            "C024"
+          ],
+          [
+            "C079",
+            "C075",
+            "C092",
+            "C098"
+          ]
+        ]
+      }
+    },
+    "status": "PASS",
+    "target_reassigned": 25
+  },
+  "mapping": {
+    "C001": "D_beijing",
+    "C002": "D_beijing",
+    "C003": "D_beijing",
+    "C004": "D_beijing",
+    "C005": "D_beijing",
+    "C006": "D_beijing",
+    "C007": "D_beijing",
+    "C008": "D_beijing",
+    "C009": "D_beijing",
+    "C010": "D_beijing",
+    "C011": "D_tianjin",
+    "C012": "D_tianjin",
+    "C013": "D_beijing",
+    "C014": "D_beijing",
+    "C015": "D_beijing",
+    "C016": "D_beijing",
+    "C017": "D_beijing",
+    "C018": "D_tianjin",
+    "C019": "D_beijing",
+    "C020": "D_tianjin",
+    "C021": "D_beijing",
+    "C022": "D_beijing",
+    "C023": "D_beijing",
+    "C024": "D_tianjin",
+    "C025": "D_beijing",
+    "C026": "D_tianjin",
+    "C027": "D_beijing",
+    "C028": "D_beijing",
+    "C029": "D_beijing",
+    "C030": "D_beijing",
+    "C031": "D_beijing",
+    "C032": "D_tianjin",
+    "C033": "D_beijing",
+    "C034": "D_tianjin",
+    "C035": "D_tianjin",
+    "C036": "D_beijing",
+    "C037": "D_beijing",
+    "C038": "D_tianjin",
+    "C039": "D_beijing",
+    "C040": "D_beijing",
+    "C041": "D_beijing",
+    "C042": "D_beijing",
+    "C043": "D_beijing",
+    "C044": "D_beijing",
+    "C045": "D_beijing",
+    "C046": "D_beijing",
+    "C047": "D_tianjin",
+    "C048": "D_beijing",
+    "C049": "D_beijing",
+    "C050": "D_beijing",
+    "C051": "D_tianjin",
+    "C052": "D_beijing",
+    "C053": "D_beijing",
+    "C054": "D_beijing",
+    "C055": "D_beijing",
+    "C056": "D_beijing",
+    "C057": "D_beijing",
+    "C058": "D_beijing",
+    "C059": "D_beijing",
+    "C060": "D_beijing",
+    "C061": "D_tianjin",
+    "C062": "D_beijing",
+    "C063": "D_tianjin",
+    "C064": "D_tianjin",
+    "C065": "D_beijing",
+    "C066": "D_beijing",
+    "C067": "D_tianjin",
+    "C068": "D_tianjin",
+    "C069": "D_beijing",
+    "C070": "D_beijing",
+    "C071": "D_beijing",
+    "C072": "D_beijing",
+    "C073": "D_tianjin",
+    "C074": "D_beijing",
+    "C075": "D_tianjin",
+    "C076": "D_beijing",
+    "C077": "D_tianjin",
+    "C078": "D_tianjin",
+    "C079": "D_tianjin",
+    "C080": "D_beijing",
+    "C081": "D_beijing",
+    "C082": "D_tianjin",
+    "C083": "D_tianjin",
+    "C084": "D_tianjin",
+    "C085": "D_beijing",
+    "C086": "D_tianjin",
+    "C087": "D_tianjin",
+    "C088": "D_tianjin",
+    "C089": "D_tianjin",
+    "C090": "D_tianjin",
+    "C091": "D_tianjin",
+    "C092": "D_tianjin",
+    "C093": "D_beijing",
+    "C094": "D_beijing",
+    "C095": "D_tianjin",
+    "C096": "D_tianjin",
+    "C097": "D_tianjin",
+    "C098": "D_tianjin",
+    "C099": "D_tianjin",
+    "C100": "D_tianjin"
+  },
+  "mapping_sha256": "bd20e8719006677727e6c35dcada42bea7ba1ee393e4f5fbc0e8738d5b027882",
+  "mismatch_intensity_nominal_pct": 25,
+  "schema": "resetp.e3e6.responsibility-map.v1",
+  "selection_rule": "proportional largest-remainder allocation within original owner strata; frozen SHA-256 rank",
+  "task_id": "E3E6-MISMATCH-FAIRNESS-01"
+}

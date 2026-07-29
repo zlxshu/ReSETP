@@ -1,0 +1,157 @@
+{
+  "ai_diagnosis": {
+    "invoked": false,
+    "reason": "disabled"
+  },
+  "checked_at": "2026-07-29T14:24:16+00:00",
+  "checkpoint_inventory": [],
+  "csv_summaries": [],
+  "files": {
+    "/Volumes/移动硬盘（512G）/ReSETP/baselines/china_e3_e7/e5_nonlinear_20260729/baselines/china_e3_e7/e5_nonlinear_20260729/artifact_hashes.json": {
+      "exists": false,
+      "path": "/Volumes/移动硬盘（512G）/ReSETP/baselines/china_e3_e7/e5_nonlinear_20260729/baselines/china_e3_e7/e5_nonlinear_20260729/artifact_hashes.json"
+    },
+    "/Volumes/移动硬盘（512G）/ReSETP/baselines/china_e3_e7/e5_nonlinear_20260729/baselines/china_e3_e7/e5_nonlinear_20260729/decision.json": {
+      "exists": false,
+      "path": "/Volumes/移动硬盘（512G）/ReSETP/baselines/china_e3_e7/e5_nonlinear_20260729/baselines/china_e3_e7/e5_nonlinear_20260729/decision.json"
+    },
+    "/Volumes/移动硬盘（512G）/ReSETP/baselines/china_e3_e7/e5_nonlinear_20260729/baselines/china_e3_e7/e5_nonlinear_20260729/metadata.json": {
+      "exists": false,
+      "path": "/Volumes/移动硬盘（512G）/ReSETP/baselines/china_e3_e7/e5_nonlinear_20260729/baselines/china_e3_e7/e5_nonlinear_20260729/metadata.json"
+    },
+    "/Volumes/移动硬盘（512G）/ReSETP/baselines/china_e3_e7/e5_nonlinear_20260729/baselines/china_e3_e7/e5_nonlinear_20260729/raw_runs.csv": {
+      "exists": false,
+      "path": "/Volumes/移动硬盘（512G）/ReSETP/baselines/china_e3_e7/e5_nonlinear_20260729/baselines/china_e3_e7/e5_nonlinear_20260729/raw_runs.csv"
+    },
+    "/Volumes/移动硬盘（512G）/ReSETP/baselines/china_e3_e7/e5_nonlinear_20260729/baselines/china_e3_e7/e5_nonlinear_20260729/report.md": {
+      "exists": false,
+      "path": "/Volumes/移动硬盘（512G）/ReSETP/baselines/china_e3_e7/e5_nonlinear_20260729/baselines/china_e3_e7/e5_nonlinear_20260729/report.md"
+    },
+    "/Volumes/移动硬盘（512G）/ReSETP/baselines/china_e3_e7/e5_nonlinear_20260729/monitor_runtime/runner.log": {
+      "age_seconds": 58.767733097076416,
+      "exists": true,
+      "mtime": 1785334997.25,
+      "path": "/Volumes/移动硬盘（512G）/ReSETP/baselines/china_e3_e7/e5_nonlinear_20260729/monitor_runtime/runner.log",
+      "size": 56
+    }
+  },
+  "findings": [
+    {
+      "code": "COMMAND_CONTRACT_MISMATCH",
+      "details": {},
+      "message": "expected command text missing: run_e5_nonlinear_20260729.py",
+      "severity": "critical"
+    },
+    {
+      "code": "COMMAND_CONTRACT_MISMATCH",
+      "details": {},
+      "message": "expected command text missing: run",
+      "severity": "critical"
+    }
+  ],
+  "log_paths": [
+    "/Volumes/移动硬盘（512G）/ReSETP/baselines/china_e3_e7/e5_nonlinear_20260729/monitor_runtime/runner.log"
+  ],
+  "name": "e5-nonlinear-charging-01",
+  "pause_action": "SIGSTOP",
+  "paused": true,
+  "process": {
+    "alive": true,
+    "cpu_percent": 0.0,
+    "members": [
+      {
+        "command": "<defunct>",
+        "cpu_percent": 0.0,
+        "elapsed": "01:01",
+        "pgid": 41229,
+        "pid": 41229,
+        "ppid": 41218,
+        "rss_kb": 0,
+        "state": "Z"
+      },
+      {
+        "command": "/Volumes/移动硬盘（512G）/ReSETP/build/python_envs/pyvrp-hgs-0.12.2/bin/python -c from multiprocessing.resource_tracker import main;main(8)",
+        "cpu_percent": 0.0,
+        "elapsed": "01:00",
+        "pgid": 41229,
+        "pid": 41251,
+        "ppid": 1,
+        "rss_kb": 2080,
+        "state": "T"
+      }
+    ],
+    "pgid": 41229,
+    "root_pid": 41229,
+    "rss_mb": 2.03125
+  },
+  "protected_files": {
+    "/Volumes/移动硬盘（512G）/ReSETP/baselines/china_e3_e7/e5_nonlinear_20260729/baselines/china_e3_e7/check_e5_nonlinear_20260729.py": {
+      "exists": false,
+      "kind": "evaluator",
+      "path": "/Volumes/移动硬盘（512G）/ReSETP/baselines/china_e3_e7/e5_nonlinear_20260729/baselines/china_e3_e7/check_e5_nonlinear_20260729.py"
+    },
+    "/Volumes/移动硬盘（512G）/ReSETP/baselines/china_e3_e7/e5_nonlinear_20260729/baselines/china_e3_e7/e5_nonlinear_20260729/preregistration.json": {
+      "exists": false,
+      "kind": "experiment_contract",
+      "path": "/Volumes/移动硬盘（512G）/ReSETP/baselines/china_e3_e7/e5_nonlinear_20260729/baselines/china_e3_e7/e5_nonlinear_20260729/preregistration.json"
+    },
+    "/Volumes/移动硬盘（512G）/ReSETP/baselines/china_e3_e7/e5_nonlinear_20260729/baselines/china_e3_e7/e5_nonlinear_20260729/source_lock.json": {
+      "exists": false,
+      "kind": "primary_config",
+      "path": "/Volumes/移动硬盘（512G）/ReSETP/baselines/china_e3_e7/e5_nonlinear_20260729/baselines/china_e3_e7/e5_nonlinear_20260729/source_lock.json"
+    },
+    "/Volumes/移动硬盘（512G）/ReSETP/baselines/china_e3_e7/e5_nonlinear_20260729/baselines/china_e3_e7/e5_nonlinear_20260729/task_card.json": {
+      "exists": false,
+      "kind": "research_question",
+      "path": "/Volumes/移动硬盘（512G）/ReSETP/baselines/china_e3_e7/e5_nonlinear_20260729/baselines/china_e3_e7/e5_nonlinear_20260729/task_card.json"
+    },
+    "/Volumes/移动硬盘（512G）/ReSETP/baselines/china_e3_e7/e5_nonlinear_20260729/baselines/china_e3_e7/run_e5_nonlinear_20260729.py": {
+      "exists": false,
+      "kind": "primary_config",
+      "path": "/Volumes/移动硬盘（512G）/ReSETP/baselines/china_e3_e7/e5_nonlinear_20260729/baselines/china_e3_e7/run_e5_nonlinear_20260729.py"
+    },
+    "/Volumes/移动硬盘（512G）/ReSETP/baselines/china_e3_e7/e5_nonlinear_20260729/docs/handoff/advisor_instance_selection_01_20260729/report.md": {
+      "exists": false,
+      "kind": "research_question",
+      "path": "/Volumes/移动硬盘（512G）/ReSETP/baselines/china_e3_e7/e5_nonlinear_20260729/docs/handoff/advisor_instance_selection_01_20260729/report.md"
+    },
+    "/Volumes/移动硬盘（512G）/ReSETP/baselines/china_e3_e7/e5_nonlinear_20260729/docs/handoff/contract_e5e7_blind_01_20260728/report.md": {
+      "exists": false,
+      "kind": "experiment_contract",
+      "path": "/Volumes/移动硬盘（512G）/ReSETP/baselines/china_e3_e7/e5_nonlinear_20260729/docs/handoff/contract_e5e7_blind_01_20260728/report.md"
+    },
+    "/Volumes/移动硬盘（512G）/ReSETP/baselines/china_e3_e7/e5_nonlinear_20260729/solver/src/setp_solver/charging_curve.py": {
+      "exists": false,
+      "kind": "model",
+      "path": "/Volumes/移动硬盘（512G）/ReSETP/baselines/china_e3_e7/e5_nonlinear_20260729/solver/src/setp_solver/charging_curve.py"
+    },
+    "/Volumes/移动硬盘（512G）/ReSETP/baselines/china_e3_e7/e5_nonlinear_20260729/solver/src/setp_solver/check.py": {
+      "exists": false,
+      "kind": "evaluator",
+      "path": "/Volumes/移动硬盘（512G）/ReSETP/baselines/china_e3_e7/e5_nonlinear_20260729/solver/src/setp_solver/check.py"
+    },
+    "/Volumes/移动硬盘（512G）/ReSETP/baselines/china_e3_e7/e5_nonlinear_20260729/solver/src/setp_solver/cost.py": {
+      "exists": false,
+      "kind": "cost_function",
+      "path": "/Volumes/移动硬盘（512G）/ReSETP/baselines/china_e3_e7/e5_nonlinear_20260729/solver/src/setp_solver/cost.py"
+    },
+    "/Volumes/移动硬盘（512G）/ReSETP/baselines/china_e3_e7/e5_nonlinear_20260729/solver/src/setp_solver/search/evaluation.py": {
+      "exists": false,
+      "kind": "evaluator",
+      "path": "/Volumes/移动硬盘（512G）/ReSETP/baselines/china_e3_e7/e5_nonlinear_20260729/solver/src/setp_solver/search/evaluation.py"
+    }
+  },
+  "runtime_seconds": 60.16932916641235,
+  "scene_path": "/Volumes/移动硬盘（512G）/ReSETP/baselines/china_e3_e7/e5_nonlinear_20260729/monitor_runtime/scenes/20260729-222416-anomaly",
+  "schema_version": 1,
+  "state": "ANOMALY",
+  "system": {
+    "free_memory_mb": 192.1875,
+    "load_average_15m": 3.22021484375,
+    "load_average_1m": 5.4228515625,
+    "load_average_5m": 3.626953125,
+    "logical_cpus": 8,
+    "memory_pressure_free_percent": 35.0,
+    "swapouts": 3777606
+  }
+}
