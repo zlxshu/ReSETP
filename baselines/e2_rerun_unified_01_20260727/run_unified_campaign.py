@@ -64,7 +64,7 @@ _O_ADAPTER = importlib.util.module_from_spec(_O_SPEC)
 sys.modules[_O_SPEC.name] = _O_ADAPTER
 _O_SPEC.loader.exec_module(_O_ADAPTER)
 
-WORKERS = 4
+WORKERS = 6
 SEEDS = (1, 2, 3, 4, 5)
 ARMS = ("O", "F", "E", "M", "MV")
 VIEW_BY_ARM = {"F": "cv_only", "E": "naive_ev", "M": "mechanism_ev"}

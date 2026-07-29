@@ -1,0 +1,24 @@
+{
+  "arm_costs_read_or_reported": false,
+  "fixed_budget_source_precheck": {
+    "checks": {
+      "epochal_does_not_import_NoImprovement": true,
+      "epochal_imports_MaxIterations": true,
+      "formal_archive_candidates_24": true,
+      "formal_fixed_iteration_argument_present": true,
+      "formal_imports_release_complete_budget": true,
+      "release_complete_candidate_budget_80": true,
+      "route_pool_expected_budget_formula_present": true
+    },
+    "interpretation": "Current E3/E6 path binds 80 complete candidate evaluations under MaxIterations plus a wallclock safety cap; it is not the NoImprovement convergence-stopping path.",
+    "verdict": "PASS_FIXED_COMPLETE_CANDIDATE_BUDGET_SOURCE_PRECHECK"
+  },
+  "formal_search_allowed": false,
+  "gate": "D4",
+  "pilot_started": false,
+  "schema": "resetp.e3e6-gates.d4.decision.v1",
+  "search_evaluations": 0,
+  "task_id": "E3E6-GATES-01",
+  "upstream_gate_2_verdict": "HALT_TREATMENT_CROSS_SITE_NOT_CONSTRUCTIBLE_FOR_36_SINGLE_DEPOT_INSTANCES",
+  "verdict": "NOT_RUN_UPSTREAM_GATE_2_HALT"
+}

@@ -1,28 +1,28 @@
+#!/usr/bin/env python3
 """Genuine HGS with exact ReSETP elite migration between epochs."""
 
 from __future__ import annotations
 
 from collections import Counter
+from collections.abc import Callable
 from dataclasses import dataclass
 from time import perf_counter
-from typing import Any, Callable
+from typing import Any
 
 import pyvrp
+from pyvrp._pyvrp import RandomNumberGenerator
+from pyvrp._pyvrp import Solution as NativeSolution
+from pyvrp.crossover import ordered_crossover, selective_route_exchange
+from pyvrp.diversity import broken_pairs_distance
 from pyvrp.GeneticAlgorithm import GeneticAlgorithm
 from pyvrp.PenaltyManager import PenaltyManager
 from pyvrp.Population import Population
 from pyvrp.ProgressPrinter import ProgressPrinter
 from pyvrp.Result import Result
-from pyvrp.Statistics import Statistics
-from pyvrp._pyvrp import RandomNumberGenerator
-from pyvrp._pyvrp import Solution as NativeSolution
-from pyvrp.crossover import ordered_crossover
-from pyvrp.crossover import selective_route_exchange
-from pyvrp.diversity import broken_pairs_distance
 from pyvrp.search import LocalSearch, compute_neighbours
 from pyvrp.solve import SolveParams
+from pyvrp.Statistics import Statistics
 from pyvrp.stop import MaxIterations, MaxRuntime, MultipleCriteria
-
 from pyvrp_adapter import (
     China81PyVRPProblem,
     _native_solution_key,
@@ -419,6 +419,15 @@ def _run_exact_epoch(
     exact_candidates: list[
         tuple[Solution, China81CompletionResult, int]
     ] = []
+    complete_candidate_evaluation_trace: list[dict[str, Any]] = [
+        {
+            "source": "hgs_iteration_checkpoint",
+            "iteration": int(observation["iteration"]),
+            "complete_objective": observation["complete_objective"],
+            "status": observation["status"],
+        }
+        for observation in checkpoint_observations
+    ]
     failures: list[str] = []
     archive_completion_attempts = 0
     cross_depot_candidate_attempts = 0
@@ -465,13 +474,39 @@ def _run_exact_epoch(
                     int(cost_evaluator.cost(native)),
                 )
             )
+            complete_candidate_evaluation_trace.append(
+                {
+                    "source": "terminal_population_archive",
+                    "iteration": None,
+                    "complete_objective": float(
+                        completion.objective
+                    ),
+                    "status": "PASS",
+                }
+            )
         except (IndexError, KeyError, TypeError, ValueError) as exc:
             failures.append(str(exc))
+            complete_candidate_evaluation_trace.append(
+                {
+                    "source": "terminal_population_archive",
+                    "iteration": None,
+                    "complete_objective": None,
+                    "status": "INFEASIBLE_OR_ERROR",
+                }
+            )
     base_exact_candidates = list(exact_candidates)
     exact_candidates.extend(checkpoint_candidates)
     common_completion = complete_china81_route_skeleton(
         common_initial_solution,
         bundle,
+    )
+    complete_candidate_evaluation_trace.append(
+        {
+            "source": "common_initial_solution",
+            "iteration": None,
+            "complete_objective": float(common_completion.objective),
+            "status": "PASS",
+        }
     )
     if (
         problem.hard_home_depot_lock
@@ -524,11 +559,42 @@ def _run_exact_epoch(
                 "hard home-depot control proxy best contains cross-site "
                 "service"
             )
+        complete_candidate_evaluation_trace.append(
+            {
+                "source": "proxy_best_solution",
+                "iteration": int(result.num_iterations),
+                "complete_objective": float(
+                    proxy_best_completion.objective
+                ),
+                "status": "PASS",
+            }
+        )
     except (IndexError, KeyError, TypeError, ValueError) as exc:
         proxy_best_completion_failure = str(exc)
+        complete_candidate_evaluation_trace.append(
+            {
+                "source": "proxy_best_solution",
+                "iteration": int(result.num_iterations),
+                "complete_objective": None,
+                "status": "INFEASIBLE_OR_ERROR",
+            }
+        )
         proxy_best_completion = min(
             (item[1] for item in exact_candidates),
             key=lambda item: item.objective,
+        )
+    complete_candidate_evaluation_attempts = (
+        archive_completion_attempts
+        + len(checkpoint_observations)
+        + 2
+    )
+    if (
+        len(complete_candidate_evaluation_trace)
+        != complete_candidate_evaluation_attempts
+    ):
+        raise RuntimeError(
+            "complete-candidate trace does not match the frozen "
+            "evaluation-attempt counter"
         )
     return HgsExactEpoch(
         elite_skeletons=tuple(item[0] for item in selected),
@@ -619,9 +685,10 @@ def _run_exact_epoch(
                 proxy_best_completion_failure
             ),
             "complete_candidate_evaluation_attempts": (
-                archive_completion_attempts
-                + len(checkpoint_observations)
-                + 2
+                complete_candidate_evaluation_attempts
+            ),
+            "complete_candidate_evaluation_trace": (
+                complete_candidate_evaluation_trace
             ),
             "hgs_iterations": int(result.num_iterations),
             "active_node_operators": active_node_operators,

@@ -1,0 +1,31 @@
+{
+  "applicability_domain": "MULTI_DEPOT_ONLY",
+  "current_source_replay": true,
+  "eligible_multi_depot_instances": 45,
+  "excluded_single_depot_instances": 36,
+  "four_layer_guards": {
+    "complete_candidate_guard_pass": true,
+    "complete_candidate_guard_tokens": {
+      "common_completion.solution.cross_site_services": true,
+      "completion.solution.cross_site_services": true,
+      "problem.hard_home_depot_lock": true,
+      "proxy_best_completion.solution.cross_site_services": true
+    },
+    "final_certificate_guard_behaviorally_replayed": true,
+    "route_pool_guard_pass": true,
+    "route_pool_guard_tokens": {
+      "bundle.customer_home_depot[customer_id]": true,
+      "if hard_home_depot_lock and any(": true,
+      "if hard_home_depot_lock:": true,
+      "record.route.home_depot_id": true
+    },
+    "search_space_guard_runtime_replayed": true
+  },
+  "free_cross_site_constructible_all": true,
+  "lock_cross_site_zero_all": true,
+  "old_pass_reused": false,
+  "schema": "resetp.e3-mismatch.d3-gate.v1",
+  "search_evaluations": 0,
+  "task_id": "E3-RESPONSIBILITY-MISMATCH-01",
+  "verdict": "PASS_D3_MULTI_DEPOT_CURRENT_SOURCE"
+}

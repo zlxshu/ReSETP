@@ -1,16 +1,17 @@
+#!/usr/bin/env python3
 """Time-limited MIP route-pool recombination of genuine-HGS elites."""
 
 from __future__ import annotations
 
-from dataclasses import dataclass, replace
 import math
-from pathlib import Path
 import sys
+from collections.abc import Mapping
+from dataclasses import dataclass, replace
+from pathlib import Path
 from time import perf_counter
 from typing import Any
 
 import numpy as np
-
 from epochal_hgs import HgsExactEpoch, _run_exact_epoch
 from pyvrp_adapter import build_pyvrp_problem
 from setp_solver.china81 import China81Bundle
@@ -22,7 +23,6 @@ from setp_solver.china81_completion import (
     exact_china81_score,
 )
 from setp_solver.solution import ChargingAction, Route, Solution
-
 
 try:
     from scipy.optimize import Bounds, LinearConstraint, milp
@@ -60,16 +60,57 @@ def run_hgs_route_pool_recombination(
     seed: int,
     hgs_seconds_per_view: float | None,
     exact_elites_per_view: int = 8,
-    max_archive_candidates_per_view: int = 24,
+    max_archive_candidates_per_view: int | Mapping[str, int] = 24,
     sp_time_limit_seconds: float = 5.0,
     hard_home_depot_lock: bool = False,
     max_hgs_iterations_per_view: int | None = None,
     wallclock_safety_seconds_per_view: float | None = None,
-    exact_checkpoint_interval_iterations: int | None = None,
+    exact_checkpoint_interval_iterations: (
+        int | Mapping[str, int | None] | None
+    ) = None,
     preserve_base_pool_recombination: bool = False,
 ) -> HgsRoutePoolRun:
     """Generate mechanism-diverse HGS elites and recombine their routes."""
 
+    modes = ("cv_only", "naive_ev", "mechanism_ev")
+    if isinstance(max_archive_candidates_per_view, Mapping):
+        if set(max_archive_candidates_per_view) != set(modes):
+            raise ValueError(
+                "archive-candidate mapping must cover exactly the three "
+                "registered views"
+            )
+        archive_limits = {
+            mode: int(max_archive_candidates_per_view[mode])
+            for mode in modes
+        }
+    else:
+        archive_limits = {
+            mode: int(max_archive_candidates_per_view)
+            for mode in modes
+        }
+    if isinstance(exact_checkpoint_interval_iterations, Mapping):
+        if set(exact_checkpoint_interval_iterations) != set(modes):
+            raise ValueError(
+                "checkpoint-interval mapping must cover exactly the three "
+                "registered views"
+            )
+        checkpoint_intervals = {
+            mode: (
+                None
+                if exact_checkpoint_interval_iterations[mode] is None
+                else int(exact_checkpoint_interval_iterations[mode])
+            )
+            for mode in modes
+        }
+    else:
+        checkpoint_intervals = {
+            mode: (
+                None
+                if exact_checkpoint_interval_iterations is None
+                else int(exact_checkpoint_interval_iterations)
+            )
+            for mode in modes
+        }
     if sp_time_limit_seconds <= 0.0:
         raise ValueError("MIP route-pool time limit must be positive")
     if max_hgs_iterations_per_view is None:
@@ -84,8 +125,19 @@ def run_hgs_route_pool_recombination(
         )
     if exact_elites_per_view < 1:
         raise ValueError("exact_elites_per_view must be positive")
+    if any(
+        limit < int(exact_elites_per_view)
+        for limit in archive_limits.values()
+    ):
+        raise ValueError(
+            "each archive-candidate limit must cover the exact elites"
+        )
+    if any(
+        interval is not None and interval <= 0
+        for interval in checkpoint_intervals.values()
+    ):
+        raise ValueError("checkpoint intervals must be positive")
     started = perf_counter()
-    modes = ("cv_only", "naive_ev", "mechanism_ev")
     view_epochs: dict[str, HgsExactEpoch] = {}
     for mode in modes:
         problem = build_pyvrp_problem(
@@ -105,16 +157,14 @@ def run_hgs_route_pool_recombination(
             ),
             warm_elites=(),
             exact_elite_count=int(exact_elites_per_view),
-            max_archive_candidates=int(
-                max_archive_candidates_per_view
-            ),
+            max_archive_candidates=archive_limits[mode],
             max_hgs_iterations=max_hgs_iterations_per_view,
             wallclock_safety_seconds=(
                 wallclock_safety_seconds_per_view
             ),
-            exact_checkpoint_interval_iterations=(
-                exact_checkpoint_interval_iterations
-            ),
+            exact_checkpoint_interval_iterations=checkpoint_intervals[
+                mode
+            ],
         )
     parent_completions = [
         completion
@@ -212,16 +262,24 @@ def run_hgs_route_pool_recombination(
     )
     total_complete_attempts = epoch_attempts + 2
     expected_complete_attempts = (
-        len(modes) * (int(max_archive_candidates_per_view) + 2) + 2
+        sum(archive_limits[mode] + 2 for mode in modes) + 2
     )
-    if exact_checkpoint_interval_iterations is not None:
+    if any(
+        interval is not None
+        for interval in checkpoint_intervals.values()
+    ):
         if max_hgs_iterations_per_view is None:
             raise ValueError(
                 "exact checkpoints require an HGS iteration budget"
             )
-        expected_complete_attempts += len(modes) * (
-            int(max_hgs_iterations_per_view)
-            // int(exact_checkpoint_interval_iterations)
+        expected_complete_attempts += sum(
+            0
+            if checkpoint_intervals[mode] is None
+            else (
+                int(max_hgs_iterations_per_view)
+                // int(checkpoint_intervals[mode])
+            )
+            for mode in modes
         )
     if preserve_base_pool_recombination:
         total_complete_attempts += 2
@@ -230,6 +288,49 @@ def run_hgs_route_pool_recombination(
         bool(epoch.stats["wallclock_safety_triggered"])
         for epoch in view_epochs.values()
     )
+    evaluation_trace: list[dict[str, Any]] = []
+    for mode in modes:
+        for item in view_epochs[
+            mode
+        ].stats["complete_candidate_evaluation_trace"]:
+            evaluation_trace.append(
+                {
+                    "evaluation_index": len(evaluation_trace) + 1,
+                    "view": mode,
+                    **item,
+                }
+            )
+    for source in (
+        "route_pool_candidate_or_parent",
+        "final_independent_certificate",
+    ):
+        evaluation_trace.append(
+            {
+                "evaluation_index": len(evaluation_trace) + 1,
+                "view": "route_pool",
+                "source": source,
+                "iteration": None,
+                "complete_objective": float(completion.objective),
+                "status": "PASS",
+            }
+        )
+    if len(evaluation_trace) != total_complete_attempts:
+        raise RuntimeError(
+            "combined complete-candidate trace does not match the frozen "
+            "evaluation-attempt counter"
+        )
+    incumbent = math.inf
+    last_strict_improvement_evaluation = 0
+    for item in evaluation_trace:
+        objective = item["complete_objective"]
+        if (
+            objective is not None
+            and float(objective) < incumbent - 1.0e-9
+        ):
+            incumbent = float(objective)
+            last_strict_improvement_evaluation = int(
+                item["evaluation_index"]
+            )
     return HgsRoutePoolRun(
         solution=completion.solution,
         completion=completion,
@@ -280,13 +381,19 @@ def run_hgs_route_pool_recombination(
             "complete_candidate_budget_exactly_consumed": (
                 total_complete_attempts == expected_complete_attempts
             ),
+            "complete_candidate_evaluation_trace": evaluation_trace,
+            "last_strict_improvement_evaluation": (
+                last_strict_improvement_evaluation
+            ),
+            "last_strict_improvement_fraction": (
+                last_strict_improvement_evaluation
+                / total_complete_attempts
+            ),
             "view_count": len(modes),
             "exact_elites_per_view": int(exact_elites_per_view),
-            "archive_candidates_per_view": int(
-                max_archive_candidates_per_view
-            ),
+            "archive_candidates_per_view": archive_limits,
             "exact_checkpoint_interval_iterations": (
-                exact_checkpoint_interval_iterations
+                checkpoint_intervals
             ),
             "exact_checkpoint_attempts_by_view": {
                 mode: int(

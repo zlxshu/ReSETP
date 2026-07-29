@@ -1,0 +1,104 @@
+{
+  "formal_e3_e6_allowed": false,
+  "gate_1": {
+    "changed_Rd_rows": 0,
+    "changed_main_cap_rows": 0,
+    "fleet_rows": 144,
+    "formal_search_allowed": false,
+    "gate": "D2-A",
+    "instances_passed": 81,
+    "main_reserve_factor": 1.25,
+    "old_authority": "data/ChinaInstances/china81_finite_fleet_authority_v1_20260723",
+    "old_authority_overwritten": false,
+    "schema": "resetp.e3e6-gates.d2a.decision.v1",
+    "search_evaluations": 0,
+    "sensitivity_factors": [
+      1.1,
+      1.25,
+      1.5
+    ],
+    "task_id": "E3E6-GATES-01",
+    "vehicle_pair": {
+      "cv": {
+        "battery_kwh": null,
+        "curb_mass_kg": 2565.0,
+        "gross_mass_kg": 4495.0,
+        "payload_capacity_kg": 1735.0,
+        "vehicle_type_id": "JAC-WL-K7-G12J8-G12K8-box"
+      },
+      "ev": {
+        "battery_kwh": 77.28,
+        "curb_mass_kg": 2600.0,
+        "gross_mass_kg": 4495.0,
+        "payload_capacity_kg": 1700.0,
+        "vehicle_type_id": "FOTON-AUMARK-ES1-EXPRESS-STAKE"
+      }
+    },
+    "verdict": "PASS",
+    "witnesses_passed": 81
+  },
+  "gate_2": {
+    "current_source_replay": true,
+    "formal_search_allowed": false,
+    "four_layer_guard_evidence": {
+      "complete_candidate_guard_pass": true,
+      "complete_candidate_guard_tokens": {
+        "common_completion.solution.cross_site_services": true,
+        "completion.solution.cross_site_services": true,
+        "problem.hard_home_depot_lock": true,
+        "proxy_best_completion.solution.cross_site_services": true
+      },
+      "final_certificate_guard_pass": true,
+      "final_certificate_guard_token": "if ARMS[arm_id] and solution.cross_site_services:",
+      "route_pool_guard_pass": true,
+      "route_pool_guard_tokens": {
+        "bundle.customer_home_depot[customer_id]": true,
+        "if hard_home_depot_lock and any(": true,
+        "if hard_home_depot_lock:": true,
+        "record.route.home_depot_id": true
+      }
+    },
+    "gate": "D3",
+    "instances_strict_halt": 36,
+    "instances_strict_pass": 45,
+    "instances_total": 81,
+    "multi_depot_instances": 45,
+    "old_pass_reused": false,
+    "schema": "resetp.e3e6-gates.d3.decision.v1",
+    "search_evaluations": 0,
+    "single_depot_instances": 36,
+    "strict_user_condition": "for every one of 81 instances, control hard lock makes cross-site service impossible and treatment can produce it",
+    "task_id": "E3E6-GATES-01",
+    "verdict": "HALT_TREATMENT_CROSS_SITE_NOT_CONSTRUCTIBLE_FOR_36_SINGLE_DEPOT_INSTANCES"
+  },
+  "gate_3": {
+    "arm_costs_read_or_reported": false,
+    "fixed_budget_source_precheck": {
+      "checks": {
+        "epochal_does_not_import_NoImprovement": true,
+        "epochal_imports_MaxIterations": true,
+        "formal_archive_candidates_24": true,
+        "formal_fixed_iteration_argument_present": true,
+        "formal_imports_release_complete_budget": true,
+        "release_complete_candidate_budget_80": true,
+        "route_pool_expected_budget_formula_present": true
+      },
+      "interpretation": "Current E3/E6 path binds 80 complete candidate evaluations under MaxIterations plus a wallclock safety cap; it is not the NoImprovement convergence-stopping path.",
+      "verdict": "PASS_FIXED_COMPLETE_CANDIDATE_BUDGET_SOURCE_PRECHECK"
+    },
+    "formal_search_allowed": false,
+    "gate": "D4",
+    "pilot_started": false,
+    "schema": "resetp.e3e6-gates.d4.decision.v1",
+    "search_evaluations": 0,
+    "task_id": "E3E6-GATES-01",
+    "upstream_gate_2_verdict": "HALT_TREATMENT_CROSS_SITE_NOT_CONSTRUCTIBLE_FOR_36_SINGLE_DEPOT_INSTANCES",
+    "verdict": "NOT_RUN_UPSTREAM_GATE_2_HALT"
+  },
+  "rescue_attempted": false,
+  "schema": "resetp.e3e6-gates.decision.v1",
+  "search_evaluations": 0,
+  "task_id": "E3E6-GATES-01",
+  "verdict": "HALT_AT_GATE_2_D3",
+  "worker_count": 1
+}

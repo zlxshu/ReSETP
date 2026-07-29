@@ -1,0 +1,139 @@
+{
+  "construction_rule": "per-home-depot deterministic first-feasible packing after sorting by (due_time,ready_time,customer_id)",
+  "cross_site_service_count": 0,
+  "depot_details": {
+    "D_beijing": {
+      "base_all_cv_routes_Rd": 3,
+      "main_num_cv": 3,
+      "main_num_ev": 1,
+      "packed_customers": [
+        [
+          "C010",
+          "C011",
+          "C004",
+          "C001",
+          "C009",
+          "C006"
+        ],
+        [
+          "C015",
+          "C012",
+          "C005",
+          "C002",
+          "C003",
+          "C014"
+        ],
+        [
+          "C007",
+          "C008",
+          "C013"
+        ]
+      ],
+      "sensitivity": {
+        "1.10": {
+          "num_cv": 3,
+          "num_ev": 1
+        },
+        "1.25": {
+          "num_cv": 3,
+          "num_ev": 1
+        },
+        "1.50": {
+          "num_cv": 3,
+          "num_ev": 2
+        }
+      }
+    }
+  },
+  "formal_search_allowed": false,
+  "instance_id": "cn-jjj-15c-01-V2-LOCATIONS",
+  "metrics_for_integrity_only": {
+    "E_cv_direct": 102.18458160283082,
+    "E_ev_indirect": 0.0,
+    "E_total": 102.18458160283082,
+    "carbon_quota_kg": 0.0,
+    "cost_carbon": 7.665887311844369,
+    "cost_elec": 0,
+    "cost_fix": 510.0,
+    "cost_fuel": 282.58620281678924,
+    "cost_km": 223.2324658981092,
+    "cost_occ": 0.0,
+    "cost_transship": 0.0,
+    "depot_charging_kwh": 0,
+    "distance_cv": 286195.46910014004,
+    "distance_ev": 0,
+    "distance_total": 286195.46910014004,
+    "electricity_kwh": 0,
+    "ev_drive_kwh": 0,
+    "fuel_liters": 37.77890411989161,
+    "n_veh_cv": 3,
+    "n_veh_ev": 0,
+    "station_charging_kwh": 0,
+    "total_cost": 1023.4845560267428
+  },
+  "objective_for_integrity_only": 1023.4845560267428,
+  "routes": [
+    {
+      "home_depot_id": "D_beijing",
+      "node_sequence": [
+        "D_beijing",
+        "C010",
+        "C011",
+        "C004",
+        "C001",
+        "C009",
+        "C006",
+        "D_beijing"
+      ],
+      "vehicle_id": "FLEET-CV-0001",
+      "vehicle_type": "cv"
+    },
+    {
+      "home_depot_id": "D_beijing",
+      "node_sequence": [
+        "D_beijing",
+        "C015",
+        "C012",
+        "C005",
+        "C002",
+        "C003",
+        "C014",
+        "D_beijing"
+      ],
+      "vehicle_id": "FLEET-CV-0002",
+      "vehicle_type": "cv"
+    },
+    {
+      "home_depot_id": "D_beijing",
+      "node_sequence": [
+        "D_beijing",
+        "C007",
+        "C008",
+        "C013",
+        "D_beijing"
+      ],
+      "vehicle_id": "FLEET-CV-0003",
+      "vehicle_type": "cv"
+    }
+  ],
+  "schema": "resetp.china81-finite-fleet-witness.d2a.v1",
+  "search_evaluations": 0,
+  "task_id": "E3E6-GATES-01",
+  "vehicle_pair": {
+    "cv": {
+      "battery_kwh": null,
+      "curb_mass_kg": 2565.0,
+      "gross_mass_kg": 4495.0,
+      "payload_capacity_kg": 1735.0,
+      "vehicle_type_id": "JAC-WL-K7-G12J8-G12K8-box"
+    },
+    "ev": {
+      "battery_kwh": 77.28,
+      "curb_mass_kg": 2600.0,
+      "gross_mass_kg": 4495.0,
+      "payload_capacity_kg": 1700.0,
+      "vehicle_type_id": "FOTON-AUMARK-ES1-EXPRESS-STAKE"
+    }
+  },
+  "violation_count": 0
+}

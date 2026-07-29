@@ -1,0 +1,34 @@
+{
+  "current_source_replay": true,
+  "formal_search_allowed": false,
+  "four_layer_guard_evidence": {
+    "complete_candidate_guard_pass": true,
+    "complete_candidate_guard_tokens": {
+      "common_completion.solution.cross_site_services": true,
+      "completion.solution.cross_site_services": true,
+      "problem.hard_home_depot_lock": true,
+      "proxy_best_completion.solution.cross_site_services": true
+    },
+    "final_certificate_guard_pass": true,
+    "final_certificate_guard_token": "if ARMS[arm_id] and solution.cross_site_services:",
+    "route_pool_guard_pass": true,
+    "route_pool_guard_tokens": {
+      "bundle.customer_home_depot[customer_id]": true,
+      "if hard_home_depot_lock and any(": true,
+      "if hard_home_depot_lock:": true,
+      "record.route.home_depot_id": true
+    }
+  },
+  "gate": "D3",
+  "instances_strict_halt": 36,
+  "instances_strict_pass": 45,
+  "instances_total": 81,
+  "multi_depot_instances": 45,
+  "old_pass_reused": false,
+  "schema": "resetp.e3e6-gates.d3.decision.v1",
+  "search_evaluations": 0,
+  "single_depot_instances": 36,
+  "strict_user_condition": "for every one of 81 instances, control hard lock makes cross-site service impossible and treatment can produce it",
+  "task_id": "E3E6-GATES-01",
+  "verdict": "HALT_TREATMENT_CROSS_SITE_NOT_CONSTRUCTIBLE_FOR_36_SINGLE_DEPOT_INSTANCES"
+}

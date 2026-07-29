@@ -1020,3 +1020,40 @@ E7正式结果终验
 - 当前 XeLaTeX/MiKTeX 在受限环境中于读取源文件前阻塞，Tectonic 离线资源亦不可用；
   状态为 `WRITING_COMPLETE__HALT_XELATEX_RUNTIME_UNAVAILABLE`。旧21页 PDF 不属于
   本任务；后续必须补两遍 XeLaTeX、日志计数和流程图逐页渲染复核。
+
+## E3E6-GATES-01 前置门（2026-07-29）
+
+- 详细记忆：`docs/handoff/memory/e3e6_gates_01_20260729.md`；权威证据：
+  `baselines/china_e3_e7/e3e6_gates_01_20260729/`。
+- D2-A 在当前 K7/ES1 车型对下以 81 个零搜索 witness 通过；144 个逐场 `R_d`
+  与旧只读权威相同。D3 当前源码四层守卫闭合，但只有 45 个多车场实例能在处理臂
+  构造跨场服务；36 个单车场实例拓扑上不可能，故总判决
+  `HALT_AT_GATE_2_D3`。
+- D4 未运行且未查看臂间成本；源码预检确认固定 80 次完整候选评价而非
+  `NoImprovement`。后续必须等用户裁定单车场实例适用域或处理臂定义，执行代理
+  不得自行放宽门槛。
+
+## E4-CARBON-TIMING-01 固定解零搜索复算（2026-07-29）
+
+- 详细记忆：`docs/handoff/memory/e4_carbon_timing_20260729.md`；权威证据：
+  `baselines/china_e3_e7/e4_carbon_timing_20260729/`。
+- 405 个 MV 固定解×28 电网日共 11340/11340 行，完整搜索候选为 0；充电侧排放
+  减幅 54.9704%，系统总排放减幅 9.7463%，电费增加 134.8798%，移动电量
+  98.3386%。有效规模区间为 `[10, 200]`，必须同时报告明显电费权衡。
+- 405 个源解与 22680 个两臂解独立复算均为 0 违约；受保护三文件未改。
+  v3 择时值逐行等同 v4，但 v3 缺正式批准状态列；profile 用 v3，非择时 bundle
+  外壳用 v4，边界不得省略。请求 4 workers 因沙箱权限机械回退为 1 worker。
+
+## E3-RESPONSIBILITY-MISMATCH-01 当前源码门二 PASS、预注册 HALT（2026-07-29）
+
+- 详细记忆：`docs/handoff/memory/e3_responsibility_mismatch_20260729.md`；
+  权威目录：`baselines/china_e3_e7/e3_mismatch_20260729/`。
+- 门二在当前源码和多车场适用域上 45/45 PASS；36 个单车场按用户更正排除。
+  主展品 `cn-prd-50c-01-V2-LOCATIONS` 的 0/25/50% 三档共同输入均在 D2-A
+  上限内通过独立检查器。
+- 稳定性预注册未封口：当前 50% 哈希错配使
+  `cn-jjj-100c-01-V2-LOCATIONS` 天津场需 10 条路线而 D2-A 总上限为 7；
+  另有 12 个三/四车场实例缺唯一的“另一车场”目的地规则。状态
+  `HALT_PREREGISTRATION_METHOD_APPROVAL_REQUIRED`，pilot/正式搜索均未启动，
+  未读取臂间成本差异。任何条件化映射、D2 扩展、部分服务或主展品单独放行均须
+  用户明确批准。
