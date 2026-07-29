@@ -8,15 +8,39 @@
 
 每次新对话、恢复上下文、切换机器、切换分支、执行实验、写报告、改代码、生成 Codex 提示词前，必须按顺序读取：
 
+0. **`docs/handoff/session_handoff_20260729_document_hierarchy_and_e5_e3e6_state.md`（先读，含文档层级校正）**
 1. `HANDOFF.md`
 2. `docs/handoff/READ_ME_FIRST_FOR_AGENTS.md`
-3. `docs/handoff/project_prd_execution_map_v2_20260702.md`
-4. `docs/handoff/project_planning_map_20260701.md`
+3. `docs/handoff/project_prd_execution_map_v2_20260702.md` ⚠️ **历史，非当前入口**
+4. `docs/handoff/project_planning_map_20260701.md` ⚠️ **历史，非当前入口**
 5. `docs/handoff/memory/MEMORY.md`
 6. `docs/handoff/memory/project-prd-execution-v2.md`
-7. `docs/handoff/codex_prompts/MASTER_codex_takeover_plan.md`
+7. `docs/handoff/codex_prompts/MASTER_codex_takeover_plan.md` ⚠️ **历史，非当前入口**
 8. `CLAUDE.md`
 9. `docs/handoff/model_change_approval_register_20260718.md`
+
+> ⚠️ **第 3/4/7 项的定位（2026-07-29 校正，务必先看）**
+>
+> 这三份的正文主体是**已退役的英国轨**（Goeke80 主场景 / 280 kWh 诊断场景 /
+> 09x-09y 排查链 / DR-ALNS 训练线 / E2-G0~G5 门链）。MASTER 第 5 行**自陈**被
+> 2026-07-11 用户决定覆盖；PRD v2 的 E2 门链已被 2026-07-25 `FINAL_STOP` 与
+> 2026-07-27 `e2_final_closeout_20260727.md` 整体作废。**照单全读会形成过时的项目
+> 理解**，切勿据其规划当前工作。
+>
+> 它们**仍然有效**的部分（硬约束，不因降级而失效）：记录纪律（四件套+report、
+> hash 排除 `._*`）、结论标签制（`FACT`/`INFERENCE`/`DECISION`/`HALT_*`/
+> `VALID_BUT_WEAK`/`MECHANISM_BUT_TIE`）、禁改语义（`cost.py`/`check.py`/
+> `search/evaluation.py`）、四同步链、**已关闭路线台账**（PRD v2 §Phase2 七条；
+> 重提任一条前须书面说明"与当时失败条件有何不同"并经用户明示同意）、
+> 不要做清单（planning map §9）。
+>
+> **当前权威链**：`e1_e7_submission_contract_decision_20260711`（唯一拍板单）→
+> `e3_e7_experiment_product_design_20260712`（E3-E7 设计权威）→
+> `paper_north_star_20260713`（迷路时先读）→ 07-17/20 China pivot →
+> `e2_post_v7_algorithm_paper_action_contract_20260725` →
+> `e2_final_closeout_20260727`（E2 终局）→
+> `contract_e5e7_blind_01_20260728`（E5/E6/E7 结果盲合同）→
+> `advisor_instance_selection_01_20260729`（算例选型裁决）。
 
 启动后必须在第一条工作汇报里写明：
 

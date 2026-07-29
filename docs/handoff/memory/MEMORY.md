@@ -1,5 +1,7 @@
 # Memory Index
 
+- [⚠️ 文档层级校正 + E5/E3E6 交接（2026-07-29）](../session_handoff_20260729_document_hierarchy_and_e5_e3e6_state.md) — **冷启动先读这份再读其余强制入口**。READ_ME_FIRST 清单里的 MASTER 总纲/planning map(07-01)/PRD v2(07-02) **已不是当前执行入口**(MASTER第5行自陈被07-11覆盖；PRD的E2-G0~G5已被07-25 FINAL_STOP+07-27终局裁决作废)，其正文主体是**已退役的英国轨**(Goeke80/280kWh/09x-09y/DR-ALNS)；但记录纪律、结论标签制、禁改语义、四同步链、**已关闭路线台账**、不要做清单仍是硬约束。当前权威链=07-11拍板单→07-12 E3-E7设计→07-13 north star→07-17/20 China pivot→07-25行动合同→07-27 E2终局→07-28 `CONTRACT-E5E7-BLIND-01`→07-29算例选型裁决。并载E5/E3E6实时状态、结果盲合同硬约束(27单元统计/种子锁1-5不扩种/预算=完整候选数/首个结果后合同不可改)、`HALT_BUDGET_VALUE_NOT_APPROVED`待批项、`paper_main.tex:924-927`与27单元口径的设计漂移，以及看门狗三缺陷教训。参见[文档层级校正](document-hierarchy-correction.md)。
+
 - [E2算法实验终局裁决（2026-07-27）](../e2_final_closeout_20260727.md) — `ALGORITHM_EXPERIMENTS_CLOSED_WITH_MIXED_EVIDENCE`。China81:MV对纯距离开源O臂354胜/46平/5负、平均降本1.9191%(全量405配对),但五级阶梯仅299/405,**不得称每层机制全面单调贡献**;O为新收敛式批、F/E/M/MV为v7固定迭代封存复用,必须披露非同批非同机非等算力。公开算例:固定MV-HGS-SP协议只复现13/18个目标(PR14A/PR15A/PR15B/PR16A/PR24A失败),**禁止写"18个新BKS全部由本文算法复现"或"公开算例上普遍优于纯HGS"**;新增5个独立认证更低候选(PR12A/PR14B/PR22B/PR23B/PR24B),仅PR14B可严格归因集合划分。验证:4测试+Ruff通过,15哈希匹配,16/16新witness证书PASS。主TeX尚未按校正登记册改写,属下一步论文任务。
 
 - [E2算法线完整历程 2026-07-25至27（2026-07-27）](../e2_algorithm_journey_20260725_to_27.md) — 唯一权威时间线文档:三个月卡死病灶(China81载重闸门)→公开算例等预算检验揭穿264:0是预算差→四方向证据关闭(地理分解/池富集/对偶引导数学恒等/三层设计被Codex评审否)→喂饱迭代误差腰斩→ε热启动18个新BKS全部独立认证→用户三次关键纠正(不是新算法/不能造假但可以是陈2025级组合/China81须真正干过开源HGS且允许不等算力消融)→三层消融在等CPU下A0反而最优,已叫停转向China81。末节含三条可迁移教训,取代e2_algorithm_design_candidate_20260726.md作为叙事入口(该文件原样保留为失败现场)。
@@ -1057,3 +1059,17 @@ E7正式结果终验
   `HALT_PREREGISTRATION_METHOD_APPROVAL_REQUIRED`，pilot/正式搜索均未启动，
   未读取臂间成本差异。任何条件化映射、D2 扩展、部分服务或主展品单独放行均须
   用户明确批准。
+
+## E5-NONLINEAR-CHARGING-01 盲 pilot 结构性 HALT（2026-07-29）
+
+- 详细记忆：`docs/handoff/memory/e5_nonlinear_charging_01_20260729.md`；
+  权威目录：`baselines/china_e3_e7/e5_nonlinear_20260729/`。
+- 32/56/80/160/240 五档结果盲 pilot 均不通过；两臂各档饥饿单元数为
+  12/11/12/13/13（分母始终 15）。150 条 pilot 记录不含目标值或臂间成本差。
+- 160 与 240 档中，50c-01 的 9 个相同种子对两臂都在 `S-1` 最后严格改进；
+  当前扩档只在最终路线池重组前增加评价，结构上不能提供重组后的剩余预算。
+  判决 `HALT_PILOT_STARVATION_SCHEDULE_NOT_CONSTRUCTIBLE`，320 单元和正式搜索
+  均为 0。继续须用户批准重组后评价调度或另一饥饿定义。
+- 四个强制科学端点均为
+  `NOT_RUN_UPSTREAM_PILOT_STARVATION_GATE_HALT`；不得推断科学方向。终态四件套、
+  报告、HALT `done.json` 和保护哈希已闭合。
