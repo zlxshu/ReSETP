@@ -8,7 +8,8 @@
 
 每次新对话、恢复上下文、切换机器、切换分支、执行实验、写报告、改代码、生成 Codex 提示词前，必须按顺序读取：
 
-0. **`docs/handoff/session_handoff_20260729_document_hierarchy_and_e5_e3e6_state.md`（先读，含文档层级校正）**
+0. **`docs/handoff/session_handoff_20260730_codex_to_new_claude.md`（先读，当前状态与决策边界）**，随后完整读
+   `docs/handoff/session_handoff_20260729_document_hierarchy_and_e5_e3e6_state.md`（老 Claude 完整历史、故障现场与文档层级校正）
 1. `HANDOFF.md`
 2. `docs/handoff/READ_ME_FIRST_FOR_AGENTS.md`
 3. `docs/handoff/project_prd_execution_map_v2_20260702.md` ⚠️ **历史，非当前入口**

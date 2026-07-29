@@ -1083,3 +1083,11 @@ E7正式结果终验
   E7 阶段预算均保持 `AWAITING_USER_APPROVAL`；正式搜索仍为 0。
 - 方案 B 只读取盲态改进序列复判为 12/9/7/5/5（每臂分母 15）；240 档仍不通过，
   即使用户批准 B 也须从 320 档继续盲 pilot。不得把技术可构造写成方法已批准。
+
+## Codex → 新 Claude 主交接（2026-07-30）
+
+- 当前第一入口：`docs/handoff/session_handoff_20260730_codex_to_new_claude.md`；随后必须完整读
+  老 Claude 的 `session_handoff_20260729_document_hierarchy_and_e5_e3e6_state.md`。
+- 新交接纠正旧实时状态：当前无实验/项目监控运行；E5 HALT、E3/E6 56/135 故障现场、
+  E7 未批预算均未被技术底座解除。E3--E7 算例分工、E5 A/B 和 E7 阶段预算仍须用户批准。
+- `396e2931` 中旧 E3/E6 目录只作故障/中间证据留档，不得把提交状态误认作可执行授权。
