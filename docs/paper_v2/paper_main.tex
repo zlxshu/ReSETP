@@ -357,7 +357,7 @@ $\Omega_k$ & 车辆$k$的可行排班模式集合 & $\lambda^g$ & 燃油排放�
 $\mathcal R_{kp}$ & 模式$p$的配送趟集合 & $\pi_s$ & 站点$s$的额定充电功率(kW)\\
 $\mathcal Q_{kp}$ & 模式$p$的充电会话集合 & $C_s$ & 站点$s$的充电桩数\\
 $d_r^+,d_r^-$ & 趟$r$的起讫车场副本 & $b_l,\kappa_l$ & 充电曲线第$l$段SOC断点与相对功率\\
-$[\underline T_t,\overline T_t]$ & 时段$t$的起止时刻(s) & $\gamma_t$ & 时段$t$的电网碳强度(kgCO$_2$e/kWh)\\
+$[\underline T_t,\overline T_t]$ & 时段$t$的起止时刻(s) & $\widehat\gamma_t,\gamma_t$ & 时段$t$的预测与结算碳强度(kgCO$_2$e/kWh)\\
 $q_i$ & 客户$i$的需求量(kg) & $p^{\mathrm{car}}$ & 单位碳价格(元/kg)\\
 $Q_k$ & 车辆$k$的最大载重(kg) & $CE$ & 碳配额(kg)\\
 $[\underline t_i,\overline t_i]$ & 客户$i$的时间窗 & $c^{\mathrm{fix}}$ & 每趟派遣固定成本(元/趟)\\
@@ -376,7 +376,7 @@ $s_d,\Pi_d^{\mathrm{set}}$ & 车场$d$收到的有符号转移额及结算利润
 $n_{kp}$ & 模式$p$的配送趟数 & $\overline W$ & 动态触发的累计需求上限(kg)\\
 $D_{kp}$ & 模式$p$的总里程(km) & $T^{\mathrm{int}}$ & 动态触发的时间间隔(s)\\
 $F_{kp}$ & 模式$p$的总油耗(L) & $M$ & 足够大的正数\\
-$H_{kp}^{S}$ & 模式$p$的公共站占用时长(min) & $L_{ir}$ & 离开节点$i$时的载重(kg)\\
+$H_{kp}^{S},\widehat E_{kp},E_{kp}$ & 模式$p$的公共站占用时长(min)、预测与结算碳排放(kgCO$_2$e) & $L_{ir}$ & 离开节点$i$时的载重(kg)\\
 $O_{skpt}$ & 模式$p$在站$s$、时段$t$的在充会话数 & $T_{ir}$ & 节点$i$的服务开始时刻(s)\\
 $A_{ikp}$ & 0-1变量, 如果模式$p$服务客户$i$, 则为1, 否则为0 & $\varepsilon_{ir}$ & 到达节点$i$时的电量(kWh)\\
 $x_{ijr}$ & 0-1变量, 如果趟$r$使用弧$(i,j)$, 则为1, 否则为0 & $Y_{ir}$ & 节点$i$处的补电量(kWh)\\
@@ -446,28 +446,32 @@ g_{qt}=[\min\{a_q^{\mathrm{ch}}+\Delta_q,\overline T_t\}-\max\{a_q^{\mathrm{ch}}
 各时段补能量$y_{qt}$由时段内充电曲线积分确定, 满足$\sum_{t\in T}y_{qt}=E_q^{\mathrm{ch}}$;
 恒功率($L=1,\kappa_1=1$)退化为$y_{qt}=\pi_{s(q)}g_{qt}/3600$.
 
-充电间接排放按补电量所在时段的电网碳强度核算,
-模式$p$的碳排放为
+充电间接排放按补电量所在时段的电网碳强度核算.
+决策时使用预测碳强度$\widehat\gamma_t$, 执行后按结算碳强度$\gamma_t$复算,
+模式$p$的预测碳排放与结算碳排放分别为
 \begin{equation}
-E_{kp}=\lambda^g\sum_{r\in\mathcal R_{kp}}\sum_{(i,j)\in r}f_{ij}
+\begin{aligned}
+\widehat E_{kp}&=\lambda^g\sum_{r\in\mathcal R_{kp}}\sum_{(i,j)\in r}f_{ij}
++\sum_{q\in\mathcal Q_{kp}}\sum_{t\in T}\widehat\gamma_t y_{qt},\\
+E_{kp}&=\lambda^g\sum_{r\in\mathcal R_{kp}}\sum_{(i,j)\in r}f_{ij}
 +\sum_{q\in\mathcal Q_{kp}}\sum_{t\in T}\gamma_t y_{qt}.
+\end{aligned}
 \label{eq:carbon}
 \end{equation}
-时段碳强度序列$\gamma_t$在调度与排放核算两端使用同一组预先给定的值,
-不区分调度用序列与结算用序列.
+第一项是燃油车直接排放, 第二项是电动车充电侧间接排放.
 
 \subsection{目标函数}
 
 \subsubsection{碳排放成本\texorpdfstring{$F_1$}{F1}}
 碳排放成本由燃油车行驶的直接排放和电动车充电的间接排放构成.
 燃油油耗由公式(\ref{eq:power})和(\ref{eq:fuel})求得,
-充电间接排放按充电发生时段的电网碳强度逐时段核算,
-模式$p$的碳排放$E_{kp}$如公式(\ref{eq:carbon})所示.
+规划阶段的充电间接排放按充电发生时段的预测碳强度逐时段核算,
+模式$p$的预测碳排放$\widehat E_{kp}$如公式(\ref{eq:carbon})所示.
 在碳交易机制中, 政府指定碳配额,
 企业碳排放量超过配额$CE$时需要购买更多的碳排放权,
 相反也可以通过出售碳排放权赚取利润, 此时碳排放成本的计算如公式(\ref{eq:F1})所示.
 \begin{equation}
-F_1=p^{\mathrm{car}}\Bigl(\sum_{k\in K}\sum_{p\in\Omega_k}E_{kp}z_{kp}-CE\Bigr).
+F_1=p^{\mathrm{car}}\Bigl(\sum_{k\in K}\sum_{p\in\Omega_k}\widehat E_{kp}z_{kp}-CE\Bigr).
 \label{eq:F1}
 \end{equation}
 
@@ -511,9 +515,10 @@ F_6=c^{\mathrm{tr}}\sum_{k\in K}\sum_{p\in\Omega_k}\sum_{i\in N}A_{ikp}\mathbf 1
 \label{eq:F6}
 \end{equation}
 
-上述公式中, $n_{kp}$, $D_{kp}$, $F_{kp}$, $H_{kp}^{S}$, $E_{kp}$
-分别为模式$p$的配送趟数、总里程(km)、总油耗(L)、公共站占用时间(min)和碳排放(kgCO$_2$e),
+上述公式中, $n_{kp}$, $D_{kp}$, $F_{kp}$, $H_{kp}^{S}$, $\widehat E_{kp}$
+分别为模式$p$的配送趟数、总里程(km)、总油耗(L)、公共站占用时间(min)和预测碳排放(kgCO$_2$e),
 由模式$p$所含配送趟和充电会话按公式(\ref{eq:power})--(\ref{eq:carbon})逐项累计得到.
+$E_{kp}$为同一模式执行后按结算碳强度复算的碳排放.
 
 \subsection{模型建立}
 
@@ -568,11 +573,12 @@ T_{d_{r'}^+r'}\ge T_{d_r^-r},\quad
 \sum_{k\in K}\sum_{p\in\Omega_k}O_{skpt}z_{kp}\le C_s,\quad s\in S\cup D,\;t\in T.
 \label{eq:station_cap}
 \end{equation}
+规划阶段的车场收益采用预测碳排放$\widehat E_{kp}$; 执行后的排放报告采用$E_{kp}$.
 \begin{equation}
 \Pi_d^{\mathrm{stage}}=\sum_{k\in K_d}\sum_{p\in\Omega_k}
 \Bigl(\rho\sum_{i\in N}q_iA_{ikp}
 -c^{\mathrm{fix}}n_{kp}-c_k^{\mathrm{km}}D_{kp}-p^fF_{kp}-G_{kp}^{e}
--c^{\mathrm{tr}}n_{kp}^{\mathrm{tr}}-p^{\mathrm{car}}E_{kp}\Bigr)z_{kp}.
+-c^{\mathrm{tr}}n_{kp}^{\mathrm{tr}}-p^{\mathrm{car}}\widehat E_{kp}\Bigr)z_{kp}.
 \label{eq:stage_profit}
 \end{equation}
 \begin{equation}
@@ -884,14 +890,14 @@ $\bar K_u$与$\bar K_{du}$分别为车型总可用车辆数和车场--车型可�
 给定进出电量后, 会话相对开始时刻的功率转换时刻
 $0=\delta_0<\delta_1<\cdots<\delta_{L_q}=\Delta_q$由SOC分段决定,
 充电功率关于时间为分段常函数,
-因此充电排放关于开始时刻分段线性,
+因此预测充电排放关于开始时刻分段线性,
 最优开始时刻必位于窗口端点或"时段边界减去某一功率转换时刻"处,
 候选集和择时规则为
 \begin{align}
 \mathcal A_q&=\bigl(\{\underline a_q,\overline a_q-\Delta_q\}
 \cup\{b-\delta_l:b\in\mathcal B,\;0\le l\le L_q\}\bigr)
 \cap[\underline a_q,\overline a_q-\Delta_q], \label{eq:charging-candidates}\\
-a_q^{\mathrm{ch}}&=\arg\min_{a\in\mathcal A_q}\sum_{t\in T}\gamma_t y_{qt}(a). \label{eq:charging-rule}
+a_q^{\mathrm{ch}}&=\arg\min_{a\in\mathcal A_q}\sum_{t\in T}\widehat\gamma_t y_{qt}(a). \label{eq:charging-rule}
 \end{align}
 该步骤仅优化既定充电会话的开始时刻,
 路线、实体车、服务客户、充电站、充电量和充电持续时间均保持不变,
@@ -1035,10 +1041,10 @@ $g_0$=9.81~m/s$^2$, $\rho^a$=1.2041~kg/m$^3$, $c_R$=0.01, 空阻系数与迎风�
 由于电网碳排放因子按省级电网发布, 且城市群横跨多张省级电网,
 三个城市群分别采用其核心省级电网的序列作为区域碳强度:
 京津冀取北京电网、珠三角取广东电网、成渝取重庆电网.
-正式实验月为2025年2月, 每个区域含28个电网日;
+本文采用该数据集S1情景的2025年表. 正式实验月为2025年2月, 每个区域含28个电网日;
 选月规则为最大化三区域日内峰谷碳强度差且不读取任何优化结果,
-该数据集为省级情景投影, 不是官方实测、实时或边际碳强度;
-调度与排放核算两端使用同一组预先给定的序列.
+该数据属于模型模拟的省级情景投影, 不是官方实测、实时或边际碳强度;
+China81没有独立的事后观测序列, 因而将同一组预先计算值同时写入调度预测字段和事后核算字段, 即$\widehat\gamma_t=\gamma_t$.
 三大城市群典型日的碳强度曲线如图\ref{fig:carbon-profile}所示.
 
 \begin{figure}[H]
@@ -1046,7 +1052,7 @@ $g_0$=9.81~m/s$^2$, $\rho^a$=1.2041~kg/m$^3$, $c_R$=0.01, 空阻系数与迎风�
 \includegraphics[width=0.74\linewidth]{generated_figures/figure3_carbon_profile_v14.pdf}
 \caption{三大城市群典型日电网碳强度曲线}
 \label{fig:carbon-profile}
-\tabnote{注：典型日取2025年2月12日，各城市群曲线为该日所属城市的48个半小时时段值；纵轴以gCO$_2$/kWh表示，模型中的$\gamma_t$以kgCO$_2$e/kWh计，二者相差1000倍。}
+\tabnote{注：典型日取2025年2月12日，各城市群曲线为该日所属城市的48个半小时时段值；中国算例中$\widehat\gamma_t=\gamma_t$；图中纵轴以gCO$_2$/kWh表示，模型以kgCO$_2$e/kWh计，二者相差1000倍。}
 \end{figure}
 
 \subsubsection{最终解分析}
@@ -1424,8 +1430,9 @@ JOINT保留同一ZONE映射与同一初始解, 但解除服务归属硬锁, 允�
 \subsection{固定路线下的碳感知充电择时}
 
 本节固定客户服务关系、车辆、路径和交付电量,
-只比较“有空即充”和按碳强度选择合法窗口的充电安排.
+只比较“有空即充”和按预测碳强度选择合法窗口的充电安排, 并按结算碳强度复算排放.
 实验覆盖全部81个算例的405个冻结排班方案与28个电网日, 共11340个配对单元;
+本批中国数据的预测与结算字段取同值, 因而结果反映充电择时作用, 不含预测误差影响;
 主要终点是充电侧间接排放, 系统总排放与充电电费为预先登记的次要终点.
 两种安排下的方案均由同一完整模型检查器复算, 违约数均为零.
 这样可以把充电择时的边际作用与路径和车型变化分开.
@@ -1625,7 +1632,7 @@ E6已按同一批$I/U$方案并列报告无转移与Shapley事后结算.
 单车场、单趟、纯燃油车队或静态需求等情形.
 仿真算例未覆盖天气、道路拥堵和突发订单等运营不确定性;
 分段常功率充电未刻画温度和电池老化对功率的影响;
-客户责任和订单流采用合成情景; 碳强度序列为省级情景投影且两端同值, 其不确定性未进入模型.
+客户责任和订单流采用合成情景; 中国算例的预测与结算碳强度取同一序列, 未单独检验预测误差影响.
 企业实测订单流、更细的充电曲线和含碳强度预测误差的滚动场景可用于检验这些边界.
 
 \section{结语}

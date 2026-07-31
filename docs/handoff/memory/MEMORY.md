@@ -1,13 +1,23 @@
 # Memory Index
 
+- [ReSETP 长期工作方法（2026-08-01，唯一正文）](user_operating_principles.md) —
+  **所有代理强制先读。** 记录用户长期有效的十二条做事规则：不设无目标期刊原文页码支持的科学门槛；
+  深读文献完整做法；卡点先查文献；新提案先查已关闭路线；删无信息量的防御性免责；允许事先设计放大器但禁止
+  事后结果过滤；已批准范围内自主推进、真正需要用户决定时一次性收齐；对用户说人话、对执行者给编号施工小任务；
+  单一事实源；按难度选模型；一任务一监控器。并明确区分代理可直接执行的事项与必须由用户拍板的研究选择。
+
+- [碳强度双字段语义恢复（2026-08-01）](carbon_forecast_semantics_restore_20260801.md) —
+  `REG-20260801-C01` 已完成：当前 China81 主稿同时定义预测/事后核算碳强度与排放；规划目标、
+  参与收益和充电择时使用预测量，结果复算使用核算量；实验章明确 S1-2025 为省级情景投影且
+  China81 两字段同值，故现有 E4 不含预测误差效应。25 页编译成功，数学审计 36/1/0，A-1 关闭。
+
 - [未决问题清单（2026-07-31）](../open_issues_20260731.md) —
-  **用户"稍后处理"的交付，四类**：A 需裁决（A-1 碳强度 TeX 改动方向错需回退重做——
-  代码里预测/实际是真机制、E4 本身按两字段各算一遍，回退成本为零；A-2 车队构成——
+  **用户"稍后处理"的交付，四类；A-1 已于 2026-08-01 关闭。** A 其余需裁决（A-2 车队构成——
   电动车配额 25% 无依据且从未校验 77.28 kWh 续航，台账 L33 指错了对象；
   A-3 E3/E5/E7 三主线已获原则批准等开工令；A-4 碳强度情景敏感性数据已备齐）；
   B 只欠动手（建模章子节顺序、43 项里 25 项未披露来源类型、E5 快充 100c 待指令）；
   C 查过没查到（阻力系数 0.45、尖峰电价月份不匹配、E7 两项需小批诊断）；
-  D 已执行备查（车队重算逐行全等、碳强度 TeX 待回退、CEF 数据集补齐 MD5 7/7）。
+  D 已执行备查（车队重算逐行全等、碳强度双字段语义已恢复、CEF 数据集补齐 MD5 7/7）。
 
 - [诊断与整改主文档（2026-07-31）](../diagnosis_and_remediation_master_20260731.md) —
   **2026-07-31 之后 E3/E5/E7 整改的唯一入口，与之冲突的更早文档以它为准。**
@@ -327,7 +337,7 @@ E7正式结果终验
 
 - [Project plan overview](project-plan-overview.md) — global ReSETP paper plan: done / in-progress / left / ETA; role rule (Claude thinks+prompts only, Codex executes, no workflows)
 - [Read me first for agents](../READ_ME_FIRST_FOR_AGENTS.md) — 强制启动入口: Codex/Claude 每轮先读, 再读 HANDOFF/PRD v2/planning map/memory/MASTER; 实验必须留四件套和 HANDOFF/memory 记录
-- [Communication style](feedback_communication_style.md) — plain Chinese with user; Codex prompts must be precise, actionable, bounded, factual (no jargon, no overdo); always understand+confirm+ask before executing
+- [Communication style（兼容入口）](feedback_communication_style.md) — 旧链接保留；规则正文已合并到 `user_operating_principles.md`，不得继续使用“总是先确认再执行”的旧概括。
 - [Project PRD execution v2](project-prd-execution-v2.md) — 全项目 PRD/施工图 v2: 宏观路线、E2重点摸排、E1-E7 PDCA、DR-ALNS接入、记录制度、风险门槛; C1已判5174同值平台为ARTIFICIAL_HOMOGENIZATION，C1-R2=PARTIAL_OR_WEAK_SUPPORT(H2确认/H1未确认)，G4/G5冻结
 - [Figure redesign task](figure-redesign-task.md) — remake paper figures to top-journal level via Zotero exemplars, pixel-locked specs, Codex only fills data; F4 is a blank/broken figure; blocked on Zotero connection
 - [E3 full paper preview 20260713](../../paper_submission_final/e3_full_preview_20260713/E3_FULL_PAPER_PREVIEW.md) — complete paper-body preview from the first six-layer plan through strict v11 and the fixed ownership-mismatch branch; only approved reference shells are used for figures, while cooperation, fairness, vehicle, and mismatch evidence remain explicit tables with budget and extrapolation caveats

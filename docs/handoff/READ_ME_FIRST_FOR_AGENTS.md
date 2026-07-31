@@ -2,13 +2,14 @@
 
 适用对象：Codex、Claude、Claude Code、任何接手 ReSETP 的代码/实验代理。
 
-本文件是仓库级启动门。除非用户明确说“只回答一个简单问题，不读项目上下文”，否则任何非平凡任务都必须先读本文件列出的入口材料。读完之前不得改代码、不得跑实验、不得下论文结论。
+本文件是仓库级启动门。除非用户明确说“只回答一个简单问题，不读项目上下文”，否则任何非平凡任务都必须先读本文件列出的入口材料。读完之前不得改代码、不得跑实验、不得下论文结论。所有旧合同、提示词和计划还必须服从用户 2026-08-01 固化的[长期工作方法](memory/user_operating_principles.md)：不得用代理自建规则给科学实验设卡，不得把已经替用户选好的方案包装成“请拍板”。
 
 ## 1. 每轮强制读取清单
 
 每次新对话、恢复上下文、切换机器、切换分支、执行实验、写报告、改代码、生成 Codex 提示词前，必须按顺序读取：
 
-0. **`docs/handoff/diagnosis_and_remediation_master_20260731.md`（最新且最高优先级，必须第一个读：
+0-A. **`docs/handoff/memory/user_operating_principles.md`**（用户长期工作方法，必须先读；它管“怎样做事”，不是具体实验设计）。
+0-B. **`docs/handoff/diagnosis_and_remediation_master_20260731.md`（最新且最高优先级的实验事实入口，必须第一个读：
    六组实验终态 / E3-E5-E7 三条根因确诊 / 43 项输入台账复查 / 三份文献取证合并裁定 /
    用户 2026-07-31 三条整改裁决 / 六条执行方案 / 七条未查清台账。**
    **它是 2026-07-31 之后 E3/E5/E7 整改工作的唯一入口，与之冲突的更早文档一律以它为准）**，随后读
@@ -53,6 +54,7 @@
 
 ```text
 已读强制入口：HANDOFF / READ_ME_FIRST / PRD v2 / planning map / memory index / project-prd memory / MASTER / CLAUDE / model-change approval register
+已读用户长期工作方法：user_operating_principles
 当前任务入口：
 当前停止条件：
 ```
@@ -114,7 +116,7 @@ artifact_hashes.json
 1. `HANDOFF.md` 变更日志
 2. `docs/handoff/memory/MEMORY.md` 索引，如新增/更新 memory 节点
 3. 相关 `docs/handoff/memory/*.md`
-4. 若是交给 Codex 的下一步，写入 `docs/handoff/codex_prompts/*.md`
+4. 若是交给执行者的下一步，在对话中只下发一个有编号、含明确产物/验收/停止条件的小任务；不得让执行者产总计划，也不得把提示词写入仓库，除非用户明确要求归档
 
 ## 4. 禁止越权
 
@@ -125,6 +127,8 @@ artifact_hashes.json
 - `solver/src/setp_solver/search/evaluation.py`
 
 未获用户明确批准，也不得把下列任何候选写成正式锁定或投入正式实验：单位/币种/物理量转换，观测数据代理化，目标函数或约束变化，默认参数与主情景，新算例生成/抽样/配额/插补/筛选方法，道路矩阵/能耗/充电构造方法，新算法机制，以及统计单位、主要终点、检验与多重校正方法。允许先做来源取证、描述统计和不改变正式入口的探针，但必须写 `HALT_*_AWAITING_USER_APPROVAL` 或 `DRAFT_METHOD_AWAITING_USER_APPROVAL`，并登记到 `docs/handoff/model_change_approval_register_20260718.md`。
+
+上述“需批准”只针对会实质改变研究问题、模型语义、主要比较、正式参数方案或论文故事的选择。文献已经唯一确定、用户已经批准的机械实现，已经证实且不涉及制度选择的接线/记账缺陷修复，只读取证、测试、复算和记录更新，应当自主推进，不得反复请示。任何新增科学门槛、阈值、统计单位、多重校正、预算合格线或预注册条款，必须先给出目标期刊直接相关论文的原文页码；没有出处就不得设立。旧文档中与此冲突的代理自建门禁不再有效。
 
 不得把 `VALID_BUT_WEAK`、`MECHANISM_BUT_TIE`、`HALT_*` 包装成胜利。不得用 x86 绝对成本和 M1 正式表混比。不得用 DR-ALNS 弱信号救 E2。
 
