@@ -1,0 +1,104 @@
+{
+  "F_time_definition": "shared sealed U search time, not a third trajectory and not additive",
+  "budget_cap": 400,
+  "budget_semantics": "UPPER_CAP_NOT_QUOTA",
+  "candidate_pool_persisted": true,
+  "candidate_pool_size_definition": "unique solution payload hashes among fully evaluated feasible events",
+  "contract": "docs/handoff/experiment_contract_v2_journal_aligned_20260730.md",
+  "created_at_utc": "2026-07-30T02:21:33.388288+00:00",
+  "e3_source_directory": "baselines/china_e3_e7/e3_zone_joint_20260731",
+  "e3_verification": {
+    "e3_decision_sha256": "0d358e6a9eddc97656c82439586a937ba881bff2c265d220dec823ebf67b756b",
+    "e3_done_sha256": "eef1fd4798d0e315ec953ca577bc013a9588c5840c80bc5fd06997480cd261e2",
+    "e3_manifest_failures": 0,
+    "e3_manifest_file_count": 167,
+    "e3_manifest_id": "de141968f0d7cd796e37bcc8c8a4234cca45abee4a543567c4108321dc5736ee",
+    "e3_manifest_sha256": "0c9ee53da030461547e14b1ff89b2747c04d90f42b788792ed599eb0bb099903"
+  },
+  "file_enumeration_exclusions": [
+    "._*",
+    "__pycache__",
+    ".pytest_cache",
+    "monitor_runtime",
+    "experiment.stdout.log (monitor-owned mutable stdout)"
+  ],
+  "independent_verification_status": "PASS",
+  "instances": [
+    "cn-prd-50c-01-V2-LOCATIONS",
+    "cn-prd-100c-02-V2-LOCATIONS"
+  ],
+  "joint_search_units_rerun": 20,
+  "nested_candidates_counted_as_independent_samples": false,
+  "overall": {
+    "F_u_weak_member_improvement_avg_cny": 755.017665916595,
+    "candidate_full_evaluation_events": 2869,
+    "candidate_pool_unique_total": 2764,
+    "fairness_cost_pct": 1.511783666875632,
+    "fairness_cost_pct_definition": "equal-weight mean of the two instance-row percentages",
+    "fairness_cost_pct_pooled_unit_mean": 1.5124654575275558,
+    "joint_rerun_elapsed_wall_seconds_sum": 1806.4154103760375,
+    "participation_satisfying_candidates_total": 0,
+    "units_f_equals_i": 20,
+    "units_naturally_pareto": 0,
+    "units_total": 20
+  },
+  "postrun_closeout": {
+    "appledouble_corrective_cleanup_performed": true,
+    "appledouble_initial_cleanup_count": 96,
+    "appledouble_input_count_this_reseal": 2,
+    "appledouble_input_path_list_sha256": "e73d1becdec8a5818b531f154c990a53e74770e40967bab33c29dc6715258645",
+    "appledouble_remaining_after_cleanup": 0,
+    "automatic_manifest_id": "e59336d22609a5ff392854e8f63eff26fdd13ce3ae7a794e46f49e291b2cb02f",
+    "automatic_manifest_mismatch": {
+      "actual": "3dfefbd8879db71984d84f33917d1c595c59c9ef2bd18ccf6e46034750ef52b1",
+      "expected": "8435e3e902bfd0f0272d059be5a9dbd0ae4b63a257f3cdd6142d35ac55768b54",
+      "path": "baselines/china_e3_e7/e6_fairness_v3_20260731/experiment.stdout.log"
+    },
+    "automatic_manifest_other_mismatches": 0,
+    "completed_at_utc": "2026-07-30T02:39:14.874949+00:00",
+    "mutable_monitor_stdout_excluded_from_resealed_manifest": true,
+    "reason": "MONITOR_STDOUT_MUTATED_AFTER_AUTOMATIC_MANIFEST",
+    "resealed_predecessor_manifest_id": "c8fe538afe911b01700b8df2f244df1ca5cb31609aae737601794a5c24163710",
+    "scientific_evidence_changed": false,
+    "search_rerun_during_closeout": false,
+    "status": "PASS"
+  },
+  "prior_e6_directory": "baselines/china_e3_e7/e6_fairness_20260731",
+  "protected_hashes": {
+    "baselines/algorithm_prototypes/china81_mechanism_hybrid_20260720/epochal_hgs.py": "655fa347b52a3e8ac20c5da6213c84b09ac90f96c1513ca95554753aad3f8a91",
+    "baselines/algorithm_prototypes/china81_mechanism_hybrid_20260720/route_pool_sp.py": "976ef21d4952b3c488300de9a8d3e351411305d26f1e2601ca17c15185d462c1",
+    "solver/src/setp_solver/check.py": "9c81e254e05591667c8225965bb9d0ba4e8bbfc53eb0f8c61ffdb4325a1403a8",
+    "solver/src/setp_solver/cost.py": "2717b4b4de39bb4c2a9a1bda602f4420cb3e3b1e87faa83678dfa64f88fc80be",
+    "solver/src/setp_solver/profit.py": "216c4f16f2e26f1c2840fa272adbf1e3ccb056c3de9403dd15b71fa5edfef1dc",
+    "solver/src/setp_solver/search/evaluation.py": "c7215263c39d1d5a1429b41ca8ac40d950dbdf2bdc288337e56fbe9733406fc3"
+  },
+  "schema": "resetp.e6-fairness-v3.metadata.v1",
+  "seeds": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9,
+    10
+  ],
+  "state_definitions": {
+    "F": "minimum-system-cost theta=1 unique candidate among the same rerun U pool, with I fallback only when the pool contains no participation-satisfying candidate",
+    "I": "same-seed sealed E3 ZONE final solution",
+    "U": "same-seed sealed E3 JOINT final solution"
+  },
+  "states": [
+    "I",
+    "U",
+    "F"
+  ],
+  "status": "COMPLETE",
+  "task_id": "E6-FAIRNESS-V3-20260731",
+  "theta": 1.0,
+  "tolerance_cny": 1e-09,
+  "workers_max": 2,
+  "zone_search_units_rerun": 0
+}

@@ -1,0 +1,81 @@
+{
+  "schema_version": 1,
+  "name": "e5-v4-null-objective-two-arm-probe",
+  "objective": "Persist and classify every null-objective complete evaluation before selecting the formal cap",
+  "workdir": "../../..",
+  "poll_seconds": 30,
+  "stale_seconds": 600,
+  "max_runtime_seconds": 1800,
+  "pause_on_anomaly": true,
+  "required_command_substrings": [
+    "run_e5_nonlinear_v4_20260730.py",
+    "probe",
+    "--complete-eval-budget",
+    "1500",
+    "--workers",
+    "1"
+  ],
+  "forbidden_command_substrings": [
+    "--workers 2"
+  ],
+  "min_cpu_percent_when_active": 1,
+  "low_cpu_consecutive_checks": 10,
+  "max_rss_mb": 3072,
+  "min_system_memory_free_percent": 5,
+  "logs": [],
+  "progress_files": [],
+  "result_files": [
+    "probe/null_objective_diagnosis.json",
+    "probe/convergence_curve.csv",
+    "probe/summary.json",
+    "budget_lock.json"
+  ],
+  "completion_files": [
+    "probe/summary.json",
+    "budget_lock.json"
+  ],
+  "checkpoint_paths": [
+    "probe/tasks",
+    "probe/search_traces"
+  ],
+  "protected_files": [
+    {
+      "path": "../../../solver/src/setp_solver/cost.py",
+      "kind": "cost_function"
+    },
+    {
+      "path": "../../../solver/src/setp_solver/check.py",
+      "kind": "evaluator"
+    },
+    {
+      "path": "../../../solver/src/setp_solver/search/evaluation.py",
+      "kind": "evaluator"
+    },
+    {
+      "path": "../../algorithm_prototypes/china81_mechanism_hybrid_20260720/route_pool_sp.py",
+      "kind": "search_semantics"
+    },
+    {
+      "path": "../../algorithm_prototypes/china81_mechanism_hybrid_20260720/epochal_hgs.py",
+      "kind": "search_semantics"
+    },
+    {
+      "path": "../run_e5_nonlinear_v4_20260730.py",
+      "kind": "primary_config"
+    },
+    {
+      "path": "../check_e5_nonlinear_v4_20260730.py",
+      "kind": "evaluator"
+    },
+    {
+      "path": "diagnostics/search_semantics_unchanged_proof.json",
+      "kind": "semantic_proof"
+    }
+  ],
+  "csv_rules": [],
+  "milestones": [],
+  "ai": {
+    "enabled": false,
+    "timeout_seconds": 180
+  }
+}

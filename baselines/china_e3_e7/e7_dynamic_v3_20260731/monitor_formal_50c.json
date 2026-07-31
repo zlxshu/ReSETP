@@ -1,0 +1,43 @@
+{
+  "schema_version": 1,
+  "name": "e7-v3-formal-50c",
+  "objective": "Complete all 40 preregistered 50c E7 task cells",
+  "workdir": ".",
+  "poll_seconds": 30,
+  "stale_seconds": 1200,
+  "max_runtime_seconds": 43200,
+  "pause_on_anomaly": true,
+  "required_command_substrings": [
+    "run_e7_dynamic.py",
+    "formal",
+    "--scale",
+    "50c",
+    "--workers",
+    "2"
+  ],
+  "forbidden_command_substrings": ["--debug", "--smoke"],
+  "min_cpu_percent_when_active": 1,
+  "cpu_grace_seconds": 300,
+  "low_cpu_consecutive_checks": 3,
+  "max_rss_mb": 6500,
+  "min_system_free_memory_mb": 256,
+  "min_system_memory_free_percent": 3,
+  "progress_files": ["progress.jsonl"],
+  "result_files": ["formal/50c/scale_complete.json"],
+  "completion_files": ["formal/50c/scale_complete.json"],
+  "checkpoint_paths": ["formal/50c/tasks"],
+  "protected_files": [
+    {"path": "run_e7_dynamic.py", "kind": "experiment_contract"},
+    {"path": "pre_registration.json", "kind": "research_question"},
+    {"path": "wiring_selfcheck.json", "kind": "primary_config"},
+    {"path": "../../../solver/src/setp_solver/cost.py", "kind": "cost_function"},
+    {"path": "../../../solver/src/setp_solver/check.py", "kind": "evaluator"},
+    {"path": "../../../solver/src/setp_solver/search/evaluation.py", "kind": "evaluator"},
+    {"path": "../../../solver/src/setp_solver/profit.py", "kind": "evaluator"},
+    {"path": "../../algorithm_prototypes/china81_mechanism_hybrid_20260720/route_pool_sp.py", "kind": "search_semantics"},
+    {"path": "../../algorithm_prototypes/china81_mechanism_hybrid_20260720/epochal_hgs.py", "kind": "search_semantics"},
+    {"path": "../../../data/ChinaInstances/china81_runtime_parameter_authority_v3_20260723/tariff_carbon_48slot_calendar.csv", "kind": "core_data"},
+    {"path": "../../../data/ChinaInstances/china81_runtime_parameter_authority_v4_20260723/tariff_carbon_48slot_calendar.csv", "kind": "core_data"}
+  ],
+  "ai": {"enabled": false, "timeout_seconds": 180}
+}

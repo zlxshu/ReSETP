@@ -1,0 +1,173 @@
+第 6 期   饶卫振 , 等 :
+一种求解协作配送成本分摊 问 题核仁解 的 近似迭代算法   1 5 3 3
+问 题并不全是 凸 博弈 问 题 , 但 AIA 算法仍 能得到 问 题 的 核仁解 , 因 此 , AIA 求解非 凸 博弈 问 题 的 核仁解不 能  
+保证获取准确 的核仁解, 但 由 本部分实验表 明 ,
+A
+IA 获得核仁解 的 概率非 常 大 .  
+7 语  
+合作博弈 中 的 利 益分配和 成 本分摊是该领域 的 核心 问 题, 研究合理公平的 利 益分配或成本分摊方法是学
+者关注 的 热点 问 题 . 其 中 核仁解具有唯 一存在 的特点 , 并且 当 核 心解存在 时核仁解会处 于核心解 的几何 中 心  
+位置, 因 此是 当 前被公认的公平成本分摊方 案 . 但求解核仁解具有很大挑 战性 , 当 前普遍采用 循环线性规划  
+方法求解 , 该方法具有较大复杂性且容 易 输 出 错误结果 .  
+本文 以 协作Eit 问 题为研効橡 , 提 出 了j 能够 由 转 归 解 为初始解 , 迭代方式不断接近核仁解 的
+A
+IA 算法 ■ 其 主要 结论包括 以 下几 点 :  
+1
+) 如 果顾客 位置完 全均 匀 分布在某 区 域 内 , 协作配送 的 成本分摊 问 题 , 从理论上是 凸 博弈 问 题 ;
+2
+)AIA 方法如 果不 限定 最大迭代次数, 能够保证得 到 凸 博弈 问 题 的 核仁解 ;
+3 ) 基 于 AIA 算法 的 两个策 略 能够 有效地提髙 AIA 算法 的 求解质量及 执行效率 .  
+本文 的 不 足 之 处包括 以 下两 点 :  
+1 )AIA 对于 非 凸 博弈成本分摊 问题 , 虽 然在本实验 中 均 求解得到 核仁解 , 但从理 论上不 能 保证 一定得到  
+精 确 的 核仁解 ;
+2 ) 基于 AIA 算法提 出 近似计算部分子联盟对成本分摊方案 z 最 小 满意度 句 (4) 的 策 略 , 其 中 如何针对  
+不 同 合作博弈 问 题 , 本文未设计 出 动 态调整参数 的 机制 ?  
+以 上两 点 , 題得今后 进一步研究 的 问 题 .  
+辦 文 献
+[
+1
+]G anstererM
+,  H ar t l  R  F .  C o l l a b or at i ve  ve h i c l e  r o u t i n g :  A  s u r vey [
+J
+]
+. Europ e anJ our nal ofO p er at ionalRes earch
+,
+20 18 ( 1 )
+:  1 - 1 2 .
+[
+2
+]  Fe r n an d e z  E ,  R o c a ^ R i u  M ,  S p e r a nz a  M  G .  T h e  s h a r e d  c us t o m e r  co l l ab o r a t i o n  v e hi c le  r o ut i n g  p r o b l e m
+[
+J
+]
+.  E u r o ?  
+p e anJournalofO p erat i onal Rese arch
+,20 1 8
+,265 ( 3 )
+:  1 0 7 8 - 1 0 9 3 .
+[
+3
+]  Wan g  Y ,  Z h a ng  J
+,  A s s o g b a  K ,  e t  a l .  C o l l a b o r a t i o n  an d  t r an s p o rt a t i o n  r e s o u r ce  s h a x i n g  i n  m u l t i p l e  c e nt e r s  ve h i c l e  
+r o ut i n g  o pt i m i z at i o n  wi t h  d e l i ve ry  an d  p i ck u p [
+J
+]
+.  K now le dge- B ase d  S y s t e m s
+,20 1 8
+,  1 6 0 :  2 9 6 - 3 1 0 .
+[
+4
+]  Wan g  Y ,  Z h an g  S
+,  A s s o g b a  K ,  e t  al .  E c o n o m i c  an d  e nv i ro n m e nt al  eval u at i o n s  i n  t h e  t wo- e che l o n  c o l l a b o r at i ve  
+mu lt i p le  c ent er s  ve h i cle  r o ut i n g  o p t i m iz at i on ^]
+. J o ur n al  of  C le ane r  Pr o d uct io n ,  2 0 1 8
+,1 97( 1 )
+:  4 4 3 - 4 6 1 .
+问 刘 家利 , 马祖军? 存在车辆租赁及共享且有 时 间 窗 的 多配送 中 心开 环 VRP
+[
+J
+]
+? 系统工程理论与实践,
+20 1 3 ,33 ( 3)
+:  6 6 6 -  
+6 7 5 .
+L
+iuJL
+,M aZJ . Mult i
+- d ep o t  o p en  ve h i cl e  r o u t i n g  p r o b l e m  wi t h  t i m e  w i n d ow s  b a s e d  o n  v e h i c l e  le as i ng  an d  
+sharing [
+J
+]
+. S ys t ems  Enginee ring  Theory& P ract ic e
+,20 1 3 ,33 ( 3)
+:  6 6 6 6 7 5 .
+[
+6
+] DefrynC ,
+S o r e ns e n  K ,  C o r n el is s e ns  T .  T h e  s e l e c t i ve  ve h i c l e  r out i n g  p ro b l e m  i n  a  c oll ab o r at i ve  e nv i r o m nent
+[
+J
+]
+_  
+E urop e an  J o u r n al  of  O p e r at i o n al  R ^ e ar ch
+,20 1 6 ( 2)
+:  4 0 0 - 4 1 1 .  
+[
+7
+]  Von  N e um an n  J
+, Morgenst ernO . Theory of
+ gam e s  a n d  e c o n o m i c  b e h av i o r
+[
+M
+]
+.  P r i n cet o n  U n iver s i ty  P r ess
+,  1 9 4 4 .
+[
+8
+]  S ch me id ler  D .  The  nu c leolus  of  a  ch ar ac t e r ist i c  fu n c t io n  g am e
+[
+J
+]
+.  S I A M  J o urn al  o n  A p p li e d  M at h e m at i c s
+,1 969
+,
+1 7(6)
+:  1 1 6 3 - 1 1 7 0 .
+[
+9
+] B aiou M , B arahon aF .  O nt he nucleolusof shortest  p at h games
+[
+J
+]
+.  A l gor i t hm i c  G am e  T he or y,  2 0 1 7 :  5 5- 6 6 .  
+[
+10
+]  Far s an i  E  A ,  A bya n e h  H  A
+,  A b e d i  M ,  et  al .  A  nov e l  p ol i c y  for  L M P  c a lc u l at i o n  i n  d i s t r i b u t i on  n e two r k s  b as e d  o n  
+l os s  an d  e m i s s i on  r e d u ct i o n  al l o c at i on  usin g  nu c l e ol u s  t h e ory [
+J
+]
+.  IE E E  Tr an s act i o n s  o n  Power  S yst e m s
+,20 1 6 ( 1 )
+:  
+1 4 3 - 1 5 2 .
+[
+11
+] 刘家财 , 李登峰 , 胡勋锋 . 区 间值最小二乘核仁解及在供应链合作 利益分 配 中 的 应用 [
+J
+]
+? 中 国管理科学 _20 1 7
+,25 ( 1 2)
+:  
+7 8 8 7 .
+L
+i  J  C ,  L i  D  F ,  H u  X  F .  I nt e r val- Val u e d  l e a s t  s qu are  n u c l eo l u s  an d  i t s  ap p l i c at i on  i n  c o op e r at i ve  p r ofi t  al l o c at i o n  
+o f supp lychain
+[
+J
+]
+_ C hi nese Jour nal of M an agem ent S c ie nce
+,20 1 7 ,25 ( 1 2 )
+:  7 8 8 7 .  
+[
+12
+]  G ow  S  H , T h om as  L  C .  I nt e r ch an ge  fee s  for  b an k  AT M  n e t work s
+[
+J
+]
+,  N aval  R e s e ar c h  L ogi s t i cs
+,1 998 ,45 ( 4)
+:
+4 0 7- ^ 1 7 .
+[
+13
+] Albiz uri MJ
+,Ech arriJM
+,  Z ar z u e l o  J  M .  A  non- c o op e r at i ve  m e ch an i s m  y i e l d i n g  t h e  nu c l e ol u s  of  a i r p o r t  p r o b -  
+lems [
+J
+]
+.  G r o up  D e c i s i o n  a nd  N e g ot i at i on ,  2 0 1 8 ,  2 7 ( 1 )
+:  1 5 3 1 6 3 .  
+
+

@@ -1,0 +1,33 @@
+Traceback (most recent call last):
+  File "/Volumes/移动硬盘（512G）/ReSETP/baselines/china_e3_e7/e7_dynamic_v3_20260731/run_e7_dynamic.py", line 1881, in <module>
+    raise SystemExit(main())
+                     ~~~~^^
+  File "/Volumes/移动硬盘（512G）/ReSETP/baselines/china_e3_e7/e7_dynamic_v3_20260731/run_e7_dynamic.py", line 1867, in main
+    output = run_probe()
+  File "/Volumes/移动硬盘（512G）/ReSETP/baselines/china_e3_e7/e7_dynamic_v3_20260731/run_e7_dynamic.py", line 1177, in run_probe
+    result = LEGACY.run_task(
+        "50c",
+    ...<4 lines>...
+        trace_mode=True,
+    )
+  File "/Volumes/移动硬盘（512G）/ReSETP/baselines/china_e3_e7/e7_dynamic_20260731/run_e7_dynamic.py", line 989, in run_task
+    payload = probe.run_probe_arm(
+        arm,
+    ...<4 lines>...
+        network=scale,
+    )
+  File "/Volumes/移动硬盘（512G）/ReSETP/baselines/e7_dynamic/e7_full_mechanism_probe_20260714.py", line 1125, in run_probe_arm
+    charging_windows[key] = _charging_window_witness(
+                            ~~~~~~~~~~~~~~~~~~~~~~~~^
+        action,
+        ^^^^^^^
+    ...<2 lines>...
+        trigger_second=trigger,
+        ^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/Volumes/移动硬盘（512G）/ReSETP/baselines/e7_dynamic/e7_full_mechanism_probe_20260714.py", line 330, in _charging_window_witness
+    raise RuntimeError(
+        f"unstarted charging action was marked locked: {action.vehicle_id}"
+    )
+RuntimeError: unstarted charging action was marked locked: EV_D_shenzhen_1#T1

@@ -1,0 +1,91 @@
+{
+  "authorities": {
+    "catalog": "data/ChinaInstances/china81_stage2_static_inputs_corrected_v3_20260723/instance_catalog.csv",
+    "loader": "solver/src/setp_solver/china81.py",
+    "static_input": "data/ChinaInstances/china81_stage2_static_inputs_corrected_v3_20260723"
+  },
+  "created_at_utc": "2026-07-30T04:41:34.489822+00:00",
+  "customers_checked": 5805,
+  "global_mismatch_rate_pct": 0.4134366925064599,
+  "instances_checked": 81,
+  "mismatched_customers_total": 24,
+  "multi_depot_instances": 45,
+  "nearest_distance_ties": 0,
+  "nonzero_instances": [
+    {
+      "administrative_assignment_rule": "customer city -> unique same-city depot",
+      "customer_count": 150,
+      "depot_count": 4,
+      "instance_id": "cn-prd-150c-01-V2-LOCATIONS",
+      "mismatch_customer_count": 3,
+      "mismatch_rate_pct": 2.0,
+      "nearest_assignment_rule": "minimum directed depot-to-customer CV road distance",
+      "nearest_tie_count": 0,
+      "region": "prd"
+    },
+    {
+      "administrative_assignment_rule": "customer city -> unique same-city depot",
+      "customer_count": 150,
+      "depot_count": 4,
+      "instance_id": "cn-prd-150c-02-V2-LOCATIONS",
+      "mismatch_customer_count": 2,
+      "mismatch_rate_pct": 1.3333333333333333,
+      "nearest_assignment_rule": "minimum directed depot-to-customer CV road distance",
+      "nearest_tie_count": 0,
+      "region": "prd"
+    },
+    {
+      "administrative_assignment_rule": "customer city -> unique same-city depot",
+      "customer_count": 150,
+      "depot_count": 4,
+      "instance_id": "cn-prd-150c-03-V2-LOCATIONS",
+      "mismatch_customer_count": 4,
+      "mismatch_rate_pct": 2.6666666666666665,
+      "nearest_assignment_rule": "minimum directed depot-to-customer CV road distance",
+      "nearest_tie_count": 0,
+      "region": "prd"
+    },
+    {
+      "administrative_assignment_rule": "customer city -> unique same-city depot",
+      "customer_count": 200,
+      "depot_count": 4,
+      "instance_id": "cn-prd-200c-01-V2-LOCATIONS",
+      "mismatch_customer_count": 7,
+      "mismatch_rate_pct": 3.5,
+      "nearest_assignment_rule": "minimum directed depot-to-customer CV road distance",
+      "nearest_tie_count": 0,
+      "region": "prd"
+    },
+    {
+      "administrative_assignment_rule": "customer city -> unique same-city depot",
+      "customer_count": 200,
+      "depot_count": 4,
+      "instance_id": "cn-prd-200c-02-V2-LOCATIONS",
+      "mismatch_customer_count": 6,
+      "mismatch_rate_pct": 3.0,
+      "nearest_assignment_rule": "minimum directed depot-to-customer CV road distance",
+      "nearest_tie_count": 0,
+      "region": "prd"
+    },
+    {
+      "administrative_assignment_rule": "customer city -> unique same-city depot",
+      "customer_count": 200,
+      "depot_count": 4,
+      "instance_id": "cn-prd-200c-03-V2-LOCATIONS",
+      "mismatch_customer_count": 2,
+      "mismatch_rate_pct": 1.0,
+      "nearest_assignment_rule": "minimum directed depot-to-customer CV road distance",
+      "nearest_tie_count": 0,
+      "region": "prd"
+    }
+  ],
+  "nonzero_mismatch_instances_found": 6,
+  "rules": {
+    "administrative": "loader customer_home_depot; customer city to unique same-city depot",
+    "nearest": "minimum directed CV road distance from depot to customer",
+    "tie_break": "depot id, with ties separately detected at 1e-9 m"
+  },
+  "schema": "resetp.e3-mismatch.input-audit.v1",
+  "single_depot_instances": 36,
+  "status": "PASS_COMPLETE_81_INSTANCE_ENUMERATION"
+}

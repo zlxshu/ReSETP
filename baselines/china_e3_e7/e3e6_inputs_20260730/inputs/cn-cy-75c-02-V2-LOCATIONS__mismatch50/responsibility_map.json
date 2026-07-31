@@ -1,0 +1,231 @@
+{
+  "destination_rule": "absolute second-nearest depot by directed depot-to-customer road distance; advance to third/fourth when D2-A common-initial construction fails; never return to original owner",
+  "instance_id": "cn-cy-75c-02-V2-LOCATIONS",
+  "map_audit": {
+    "actual_reassigned": 38,
+    "customers_ineligible_because_second_nearest_is_original_owner": 0,
+    "fallback_steps_beyond_second_nearest": 0,
+    "final_fleet_probe": {
+      "depot_counts": {
+        "D_chengdu": {
+          "d2a_total_cap": 8,
+          "packed_routes": 6
+        },
+        "D_chongqing": {
+          "d2a_total_cap": 9,
+          "packed_routes": 7
+        }
+      },
+      "feasible": true,
+      "reason": "PASS_EXACT_LEGAL_COMMON_ROUTE_PARTITION"
+    },
+    "global_search_audit": {
+      "algorithm": "EXACT_LEXICOGRAPHIC_FULL_MAPPING_DFS_IN_FROZEN_FIRST_FIT_ORDER",
+      "cache_hits": 0,
+      "cache_misses": 0,
+      "conflict_backjumps": 0,
+      "d2a_cap_prunes": 0,
+      "destination_order": "directed-distance absolute rank, second then third/fourth, original owner skipped",
+      "feasibility_search_order": "frozen due_time, ready_time, customer_id order used by D2-A First-Fit packer",
+      "fixed_customer_order": "result-blind SHA-256 order for lexicographic destination decisions",
+      "global_feasible_completion_found": true,
+      "heuristic_checker_calls": 1,
+      "infeasible_prefix_attempts": 0,
+      "nodes_visited": 0,
+      "nonmonotone_hash_prefix_pruning": false,
+      "prefix_oracle_calls": 1,
+      "route_feasibility_checker_calls": 0,
+      "route_groups_by_depot": {
+        "D_chengdu": [
+          [
+            "C015",
+            "C022",
+            "C001",
+            "C020",
+            "C004",
+            "C028",
+            "C013"
+          ],
+          [
+            "C036",
+            "C043",
+            "C062",
+            "C039",
+            "C072",
+            "C075",
+            "C055",
+            "C033"
+          ],
+          [
+            "C035",
+            "C042",
+            "C049",
+            "C064",
+            "C037",
+            "C056",
+            "C044",
+            "C052"
+          ],
+          [
+            "C030",
+            "C032",
+            "C010",
+            "C021",
+            "C008"
+          ],
+          [
+            "C023",
+            "C005",
+            "C026",
+            "C025"
+          ],
+          [
+            "C058",
+            "C047",
+            "C059",
+            "C067",
+            "C041",
+            "C057"
+          ]
+        ],
+        "D_chongqing": [
+          [
+            "C014",
+            "C017",
+            "C002",
+            "C003",
+            "C012",
+            "C031"
+          ],
+          [
+            "C066",
+            "C063",
+            "C051",
+            "C071",
+            "C040",
+            "C054",
+            "C053"
+          ],
+          [
+            "C061",
+            "C038",
+            "C034",
+            "C069",
+            "C068",
+            "C074"
+          ],
+          [
+            "C073",
+            "C045",
+            "C070",
+            "C060",
+            "C065",
+            "C050"
+          ],
+          [
+            "C018",
+            "C019",
+            "C016",
+            "C027",
+            "C006",
+            "C009"
+          ],
+          [
+            "C029",
+            "C024",
+            "C011",
+            "C007"
+          ],
+          [
+            "C046",
+            "C048"
+          ]
+        ]
+      }
+    },
+    "status": "PASS",
+    "target_reassigned": 38
+  },
+  "mapping": {
+    "C001": "D_chengdu",
+    "C002": "D_chongqing",
+    "C003": "D_chongqing",
+    "C004": "D_chengdu",
+    "C005": "D_chengdu",
+    "C006": "D_chongqing",
+    "C007": "D_chongqing",
+    "C008": "D_chengdu",
+    "C009": "D_chongqing",
+    "C010": "D_chengdu",
+    "C011": "D_chongqing",
+    "C012": "D_chongqing",
+    "C013": "D_chengdu",
+    "C014": "D_chongqing",
+    "C015": "D_chengdu",
+    "C016": "D_chongqing",
+    "C017": "D_chongqing",
+    "C018": "D_chongqing",
+    "C019": "D_chongqing",
+    "C020": "D_chengdu",
+    "C021": "D_chengdu",
+    "C022": "D_chengdu",
+    "C023": "D_chengdu",
+    "C024": "D_chongqing",
+    "C025": "D_chengdu",
+    "C026": "D_chengdu",
+    "C027": "D_chongqing",
+    "C028": "D_chengdu",
+    "C029": "D_chongqing",
+    "C030": "D_chengdu",
+    "C031": "D_chongqing",
+    "C032": "D_chengdu",
+    "C033": "D_chengdu",
+    "C034": "D_chongqing",
+    "C035": "D_chengdu",
+    "C036": "D_chengdu",
+    "C037": "D_chengdu",
+    "C038": "D_chongqing",
+    "C039": "D_chengdu",
+    "C040": "D_chongqing",
+    "C041": "D_chengdu",
+    "C042": "D_chengdu",
+    "C043": "D_chengdu",
+    "C044": "D_chengdu",
+    "C045": "D_chongqing",
+    "C046": "D_chongqing",
+    "C047": "D_chengdu",
+    "C048": "D_chongqing",
+    "C049": "D_chengdu",
+    "C050": "D_chongqing",
+    "C051": "D_chongqing",
+    "C052": "D_chengdu",
+    "C053": "D_chongqing",
+    "C054": "D_chongqing",
+    "C055": "D_chengdu",
+    "C056": "D_chengdu",
+    "C057": "D_chengdu",
+    "C058": "D_chengdu",
+    "C059": "D_chengdu",
+    "C060": "D_chongqing",
+    "C061": "D_chongqing",
+    "C062": "D_chengdu",
+    "C063": "D_chongqing",
+    "C064": "D_chengdu",
+    "C065": "D_chongqing",
+    "C066": "D_chongqing",
+    "C067": "D_chengdu",
+    "C068": "D_chongqing",
+    "C069": "D_chongqing",
+    "C070": "D_chongqing",
+    "C071": "D_chongqing",
+    "C072": "D_chengdu",
+    "C073": "D_chongqing",
+    "C074": "D_chongqing",
+    "C075": "D_chengdu"
+  },
+  "mapping_sha256": "5ec6f51edfb9e518f104a7aae9b68ccca79f0f5bdad6dc1094b423f10729d746",
+  "mismatch_intensity_nominal_pct": 50,
+  "schema": "resetp.e3e6.responsibility-map.v1",
+  "selection_rule": "proportional largest-remainder allocation within original owner strata; frozen SHA-256 rank",
+  "task_id": "E3E6-MISMATCH-FAIRNESS-01"
+}

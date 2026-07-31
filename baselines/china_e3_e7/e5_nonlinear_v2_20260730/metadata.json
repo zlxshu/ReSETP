@@ -1,0 +1,42 @@
+{
+  "schema_version": "E5-METADATA-v2-HALT",
+  "task_id": "E5-NONLINEAR-CHARGING-V2-20260730",
+  "status": "HALT_PROBE_NONEXACT_BUDGET",
+  "halted_at_utc": "2026-07-29T19:00:51Z",
+  "contract": "docs/handoff/experiment_contract_v2_journal_aligned_20260730.md",
+  "contract_sha256": "65a879e7bb68025f024a5f2d37c44b7f1fd836f2137a170b1bd415f8c80533fe",
+  "phase_reached": "CONVERGENCE_PROBE",
+  "probe_instance": "cn-prd-50c-01-V2-LOCATIONS",
+  "probe_seed": 1,
+  "probe_budget_requested": 1500,
+  "formal_budget_selected": null,
+  "formal_budget_used": 0,
+  "budget_source": "convergence_probe",
+  "workers": 2,
+  "formal_units_completed": 0,
+  "instances_completed": [],
+  "scientific_endpoints_answered": 0,
+  "source_lock_id": "a3ef33a909e9a62b95d4f7ed81a85ae701fabc28fbf5c0f992b60622df3001d7",
+  "old_sealed_e5_20260729_tree_id": "44cc4b262437eb984386f825e47fcef7c3f60a346229f19f9d912f3f19d7413d",
+  "protected_source_sha256": {
+    "solver/src/setp_solver/cost.py": "2717b4b4de39bb4c2a9a1bda602f4420cb3e3b1e87faa83678dfa64f88fc80be",
+    "solver/src/setp_solver/check.py": "9c81e254e05591667c8225965bb9d0ba4e8bbfc53eb0f8c61ffdb4325a1403a8",
+    "solver/src/setp_solver/search/evaluation.py": "c7215263c39d1d5a1429b41ca8ac40d950dbdf2bdc288337e56fbe9733406fc3",
+    "baselines/algorithm_prototypes/china81_mechanism_hybrid_20260720/route_pool_sp.py": "976ef21d4952b3c488300de9a8d3e351411305d26f1e2601ca17c15185d462c1"
+  },
+  "environment": {
+    "python": "3.13.9",
+    "pyvrp": "0.12.2",
+    "scipy": "1.16.3",
+    "memory_bytes": 8589934592,
+    "logical_cpus": 8,
+    "memory_pressure_free_percent_at_monitor_close": 42.0
+  },
+  "monitor": {
+    "state": "ANOMALY",
+    "ai_enabled": false,
+    "runtime_seconds": 80.49196910858154,
+    "scene_path": "monitor_runtime/probe/scenes/20260730-030051-anomaly",
+    "stdout_log": "monitor_runtime/probe/experiment.stdout.log"
+  }
+}

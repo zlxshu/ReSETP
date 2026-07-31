@@ -1,0 +1,33 @@
+{
+  "schema_version": "E5-DECISION-v2-HALT",
+  "task_id": "E5-NONLINEAR-CHARGING-V2-20260730",
+  "status": "HALT_PROBE_NONEXACT_BUDGET",
+  "decision": "STOP_WITHOUT_REPAIR_OR_FORMAL_CONTINUATION",
+  "failure": {
+    "phase": "CONVERGENCE_PROBE",
+    "instance_id": "cn-prd-50c-01-V2-LOCATIONS",
+    "seed": 1,
+    "arm": "L100_control",
+    "requested_complete_candidate_budget": 1500,
+    "observed_complete_candidate_evaluations": 331,
+    "runner_expected_complete_candidate_evaluations": 1500,
+    "exception": "HALT_E5_V2_NONEXACT_BUDGET:cn-prd-50c-01-V2-LOCATIONS__seed-01__L100_control:331:1500:1500"
+  },
+  "interpretation": {
+    "confirmed": "The long-budget probe did not consume the required fixed complete-candidate budget, so the convergence curve and common formal budget were not validly formed.",
+    "code_level_explanation": "The configured terminal-population archive size is an upper limit. At this long setting the generated unique native population supplied fewer archive candidates than the configured limit, while route_pool_sp.py computed its expected budget from the limit.",
+    "not_inferred": "No scientific direction, feasibility effect, cost effect, or session-duration effect is inferred from this technical failure."
+  },
+  "endpoints": {
+    "1_nonlinear_feasibility": "NOT_RUN_UPSTREAM_TECHNICAL_FAILURE",
+    "2_linear_false_feasibility_and_causes": "NOT_RUN_UPSTREAM_TECHNICAL_FAILURE",
+    "3_common_feasible_cost_effect": "NOT_RUN_UPSTREAM_TECHNICAL_FAILURE",
+    "4_session_soc_and_duration": "NOT_RUN_UPSTREAM_TECHNICAL_FAILURE"
+  },
+  "endpoints_answered": 0,
+  "formal_search_started": false,
+  "formal_units_completed": 0,
+  "L_over_S_gate_used": false,
+  "result_filtering_used": false,
+  "repair_or_retry_performed": false
+}

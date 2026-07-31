@@ -1,0 +1,29 @@
+{
+  "schema": "resetp.china81.e7.decision.v2",
+  "task_id": "E7-DYNAMIC-V2-20260731",
+  "status": "HALT_PROBE_STARTUP_CURVE_CALENDAR_CONTRACT",
+  "verdict": "NO_E7_SCIENTIFIC_RESULT",
+  "keyerror_fixed": true,
+  "reason": "The source adapter no longer requests instance_json, but the shared initial-plan layer first omits China81 prices when rescheduling an NL90 certificate and, when prices are supplied diagnostically, lacks the required charge_day_offset=-1 carbon profile for carbon-aware prehorizon charging.",
+  "search_evaluations": 0,
+  "formal_budget_selected": false,
+  "formal_instances_completed": [],
+  "static_degradation_pct": null,
+  "dynamic_recovery_pct": null,
+  "mechanism_participation": {
+    "cross_depot_reassignment": false,
+    "member_profit_shift": false,
+    "carbon_aware_charging_shift": false,
+    "semantics": "NOT_OBSERVED_BECAUSE_NO_ARM_ENTERED"
+  },
+  "arms_implementation_status": {
+    "STATIC_FIXED_RECOURSE": "BLOCKED_BY_SHARED_INITIAL_PLAN",
+    "FULL_ROLLING": "BLOCKED_BY_SHARED_INITIAL_PLAN",
+    "NO_COOPERATION": "BLOCKED_BY_SHARED_INITIAL_PLAN",
+    "CARBON_BLIND": "BLOCKED_BY_SHARED_INITIAL_PLAN"
+  },
+  "protected_hash_drift": false,
+  "sealed_upstream_modified": false,
+  "restart_authorized": false,
+  "next_action_requires_user_authorization": "Authorize a fresh attempt that passes sources['prices'] into both shared rescheduling calls and supplies the authoritative previous-day China81 carbon profile for charge_day_offset=-1, with a new zero-search contract test before any convergence probe."
+}

@@ -1,0 +1,184 @@
+{
+  "schema": "resetp.e3-mismatch-restart.preregistration.v1",
+  "task_id": "E3-MISMATCH-RESTART-20260731",
+  "created_at_utc": "2026-07-30T04:42:04Z",
+  "status": "LOCKED_BEFORE_ANY_SEARCH",
+  "search_evaluations_observed_before_registration": 0,
+  "research_question": "How much cost change is attributable to replacing same-city administrative customer responsibility with directed-road-nearest responsibility, and how much additional value remains when all depots may serve all customers?",
+  "instance_population": {
+    "audit_denominator_instances": 81,
+    "audit_denominator_customers": 5805,
+    "selection_rule": "Use every China81 instance with at least one customer whose loader customer_home_depot differs from the depot minimizing directed CV road distance from depot to customer. No instance is selected from search outcomes.",
+    "selection_rule_result": [
+      "cn-prd-150c-01-V2-LOCATIONS",
+      "cn-prd-150c-02-V2-LOCATIONS",
+      "cn-prd-150c-03-V2-LOCATIONS",
+      "cn-prd-200c-01-V2-LOCATIONS",
+      "cn-prd-200c-02-V2-LOCATIONS",
+      "cn-prd-200c-03-V2-LOCATIONS"
+    ],
+    "instances_used_count": 6,
+    "main_display_rule": "Among selected instances, use the highest input mismatch rate as the named main display; ties are broken by larger customer count and then instance_id.",
+    "main_display_instance": "cn-prd-200c-01-V2-LOCATIONS",
+    "robustness_instances": [
+      "cn-prd-200c-02-V2-LOCATIONS",
+      "cn-prd-150c-03-V2-LOCATIONS",
+      "cn-prd-150c-01-V2-LOCATIONS",
+      "cn-prd-150c-02-V2-LOCATIONS",
+      "cn-prd-200c-03-V2-LOCATIONS"
+    ],
+    "formal_execution_order_rule": "Descending input mismatch rate, then descending customer count, then instance_id; finish and persist all 30 units of one instance before starting the next.",
+    "formal_execution_order": [
+      "cn-prd-200c-01-V2-LOCATIONS",
+      "cn-prd-200c-02-V2-LOCATIONS",
+      "cn-prd-150c-03-V2-LOCATIONS",
+      "cn-prd-150c-01-V2-LOCATIONS",
+      "cn-prd-150c-02-V2-LOCATIONS",
+      "cn-prd-200c-03-V2-LOCATIONS"
+    ],
+    "reason_for_all_six": "Natural nonzero mismatch is rare and weak. Using the complete six-instance population avoids result-dependent case selection and supplies three 150-customer and three 200-customer instances for scale robustness.",
+    "audit_summary_sha256": "f025096df3753a40e135c476d21c49cd84be760fd182655905dc4a5df5992bb1",
+    "mismatched_customers_csv_sha256": "49ae6b930fd08f9951aa37ca57476657d0fc3b0e71db5ace52c664054553026c"
+  },
+  "arms": {
+    "IND": {
+      "name": "independent delivery",
+      "responsibility": "Each customer is assigned to loader customer_home_depot, derived as customer city to the unique same-city depot.",
+      "hard_home_depot_lock": true,
+      "cross_depot_service_allowed": false
+    },
+    "ZONE": {
+      "name": "zoned delivery",
+      "responsibility": "Each customer is reassigned to the depot minimizing directed CV road distance from depot to customer, with depot_id as deterministic tie-break.",
+      "hard_home_depot_lock": true,
+      "cross_depot_service_allowed": false
+    },
+    "JOINT": {
+      "name": "joint delivery",
+      "responsibility": "The ZONE responsibility map and initial route skeleton are retained as the common reference, while the service lock is removed and any depot may serve any customer.",
+      "hard_home_depot_lock": false,
+      "cross_depot_service_allowed": true
+    }
+  },
+  "effects": {
+    "IND_TO_ZONE": {
+      "interpretation": "spatial organization value",
+      "formula_pct": "100 * (mean_IND_cost - mean_ZONE_cost) / mean_IND_cost"
+    },
+    "ZONE_TO_JOINT": {
+      "interpretation": "remaining coordination value",
+      "formula_pct": "100 * (mean_ZONE_cost - mean_JOINT_cost) / mean_ZONE_cost"
+    },
+    "IND_TO_JOINT": {
+      "interpretation": "total value",
+      "formula_pct": "100 * (mean_IND_cost - mean_JOINT_cost) / mean_IND_cost"
+    },
+    "sign_convention": "Positive means the later arm costs less; negative means it costs more; zero is retained."
+  },
+  "seeds": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9,
+    10
+  ],
+  "formal_units_expected": 180,
+  "budget": {
+    "unit": "complete candidates submitted to the full model evaluator",
+    "semantics": "UPPER_CAP_NOT_QUOTA",
+    "reference_cap_from_50c_e3_and_e5": 400,
+    "convergence_probe": {
+      "instance_selection_rule": "Largest customer count, then highest mismatch count, then instance_id among the six selected inputs.",
+      "instance_id": "cn-prd-200c-01-V2-LOCATIONS",
+      "arm": "JOINT",
+      "seed": 1,
+      "long_probe_cap": 1500,
+      "plateau_relative_band": 0.0001,
+      "plateau_confirmation_evaluations": 200
+    },
+    "formal_cap_selection_rule": "If the long probe naturally exhausts candidates, candidate_cap = 100 * ceil((actual_consumption + 1) / 100). Otherwise, if the incumbent first enters a 1e-4 relative band of the final search best and remains covered by 200 later search evaluations, candidate_cap = 100 * ceil((confirmation_evaluation + 2) / 100). Otherwise candidate_cap = 1500. The common formal cap is max(400, candidate_cap), bounded above by 1500.",
+    "formal_cap_destination": "budget_lock.json",
+    "same_cap_for_all_arms_and_instances": true,
+    "early_termination": "Candidate exhaustion or no improvement is normal and its actual consumption and reason are reported."
+  },
+  "candidate_classification": {
+    "legal_infeasible": "A null objective caused by a whitelisted complete-model capacity or time-window infeasibility; consumes budget and does not halt.",
+    "hard_lock_filter": "FILTERED_HARD_HOME_DEPOT_LOCK; consumes budget and is removed before elite or route-pool entry.",
+    "technical_error": "Any unclassified exception or nonzero error_candidates; halt immediately and preserve the trace."
+  },
+  "concurrency": {
+    "maximum_workers": 2,
+    "numeric_threads": {
+      "MKL_NUM_THREADS": "1",
+      "OMP_NUM_THREADS": "1",
+      "OPENBLAS_NUM_THREADS": "1",
+      "VECLIB_MAXIMUM_THREADS": "1"
+    },
+    "load_rule": "Do not start E3 search while another ReSETP experiment already occupies the two allowed workers."
+  },
+  "reporting": {
+    "statistical_unit": "one row per instance",
+    "primary_fields_per_arm": [
+      "Best",
+      "Avg",
+      "Gap%",
+      "vehicle_count",
+      "elapsed_seconds",
+      "actual_complete_candidate_evaluations",
+      "distance_m",
+      "carbon_emissions_kg",
+      "time_window_satisfied_customer_count"
+    ],
+    "descriptive_field": "mismatch_rate_pct",
+    "overall_summary": "Equal weight across the six instance rows; do not weight by customer count or select seeds.",
+    "zero_mismatch_controls": [
+      {
+        "instance_id": "cn-prd-50c-01-V2-LOCATIONS",
+        "mismatch_rate_pct": 0.0,
+        "zone_to_joint_cost_saving_pct": 2.272759
+      },
+      {
+        "instance_id": "cn-prd-100c-02-V2-LOCATIONS",
+        "mismatch_rate_pct": 0.0,
+        "zone_to_joint_cost_saving_pct": 0.693115
+      }
+    ],
+    "reference_comparisons": [
+      "Chen Yudie 2025 Table 9: JOINT versus ZONE total cost -3.44%, carbon +2.86%, vehicles 8 to 7",
+      "Chen Yudie 2023 Table 5: JOINT versus ZONE total cost -6.09%, distance -6.34%, time -5.07%, carbon -4.79%"
+    ],
+    "figures": "No figure is precommitted. A figure enters the main text only if it materially clarifies the mismatch-effect relationship beyond the required one-row-per-instance table; otherwise no figure is produced.",
+    "appendix": false
+  },
+  "result_integrity": {
+    "no_direction_filter": true,
+    "no_instance_filter_after_search": true,
+    "no_seed_filter": true,
+    "no_budget_change_from_effect_direction": true,
+    "legacy_l_main_16_55_and_24_72_forbidden_as_evidence": true
+  },
+  "protected_files": {
+    "solver/src/setp_solver/cost.py": "2717b4b4de39bb4c2a9a1bda602f4420cb3e3b1e87faa83678dfa64f88fc80be",
+    "solver/src/setp_solver/check.py": "9c81e254e05591667c8225965bb9d0ba4e8bbfc53eb0f8c61ffdb4325a1403a8",
+    "solver/src/setp_solver/search/evaluation.py": "c7215263c39d1d5a1429b41ca8ac40d950dbdf2bdc288337e56fbe9733406fc3",
+    "baselines/algorithm_prototypes/china81_mechanism_hybrid_20260720/route_pool_sp.py": "976ef21d4952b3c488300de9a8d3e351411305d26f1e2601ca17c15185d462c1",
+    "baselines/algorithm_prototypes/china81_mechanism_hybrid_20260720/epochal_hgs.py": "655fa347b52a3e8ac20c5da6213c84b09ac90f96c1513ca95554753aad3f8a91"
+  },
+  "source_contracts": {
+    "docs/handoff/experiment_contract_v2_journal_aligned_20260730.md": "075f0093e90bb583b6c9f0431eeaf186cf30ff109dc164923ca914257f503b5e",
+    "docs/handoff/adversarial_review_20260731/report.md": "686dfd822eb6748258fdfd93598ae752c3117a331bd7c43d8a85b4ddf87f2b0d",
+    "baselines/china_e3_e7/e3_zone_joint_20260731/report.md": "d5bb5fa4b52a2a935038a4c6025309fd7afe3368e37673968cbf1e464406b4ce"
+  },
+  "halt_conditions": [
+    "Any protected hash drift",
+    "Any route_pool_sp.py or epochal_hgs.py search-semantics change",
+    "Any search before this preregistration",
+    "Any technical error candidate",
+    "Any input, plan, trace, or independent-recompute denominator failure"
+  ]
+}

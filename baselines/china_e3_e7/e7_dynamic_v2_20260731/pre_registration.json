@@ -1,0 +1,118 @@
+{
+  "task_id": "E7-DYNAMIC-V2-20260731",
+  "status": "PREREGISTERED_REUSE_PRIOR_SCIENTIFIC_DESIGN_WITH_SOURCE_ADAPTER_FIX",
+  "created_date": "2026-07-30",
+  "prior_preregistration": {
+    "path": "baselines/china_e3_e7/e7_dynamic_20260731/pre_registration.json",
+    "sha256": "c0a7efe3f05cea3eee8ba1cee68a64245ba8a4dc4dfbd61e83e1048f6a26d135",
+    "reuse_scope": "All scientific arms, instances, frozen event streams, seeds, event-to-seed mapping, decision rules, convergence probe, scale order, estimands, and hard-stop rules are unchanged."
+  },
+  "startup_bug_fix": {
+    "prior_status": "HALT_PROBE_STARTUP_KEYERROR_INSTANCE_PATH",
+    "exception": "KeyError: 'instance_json'",
+    "legacy_expected_source_key": "instance_json",
+    "legacy_adapter_output_field": "instance_path",
+    "actual_china81_source_keys": [
+      "catalog",
+      "facilities",
+      "finite_fleet_authority",
+      "nodes",
+      "orders",
+      "road_matrices",
+      "tariff_carbon_calendar",
+      "vehicle_parameter_lock"
+    ],
+    "fix_rule": "Replace the invalid legacy single-file instance path with an explicit, fail-closed mapping of all eight China81 source paths and hashes. Do not use dict.get, a default value, or an invented instance JSON.",
+    "zero_search_check_required": true,
+    "minimum_startup_validation": "Enter probe.run_probe_arm and complete one 50c FULL_ROLLING stage with per-pass cap 10 before the convergence probe."
+  },
+  "arms": [
+    "STATIC_FIXED_RECOURSE",
+    "FULL_ROLLING",
+    "NO_COOPERATION",
+    "CARBON_BLIND"
+  ],
+  "scales_and_instances": {
+    "50c": "cn-prd-50c-01",
+    "100c": "cn-prd-100c-02",
+    "150c": "cn-prd-150c-01"
+  },
+  "event_streams": {
+    "frozen": true,
+    "streams_per_scale": 5,
+    "total_streams": 15,
+    "seed_to_stream_seed": "1 + ((seed - 1) % 5)"
+  },
+  "seeds": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9,
+    10
+  ],
+  "convergence_probe": {
+    "unit": {
+      "scale": "50c",
+      "seed": 1,
+      "stream_seed": 1,
+      "arm": "FULL_ROLLING",
+      "max_stages": 1
+    },
+    "initial_per_pass_cap": 800,
+    "initial_total_stage_cap": 1600,
+    "selection_rule": "Use the last strict incumbent improvement across the two preregistered passes. If it is at most 720 per pass, round up to the next 100 and lock that as the formal per-pass cap. Otherwise run the single preregistered extension at 1600 per pass; if the last strict improvement exceeds 1440, halt.",
+    "formal_budget_definition": "The formal stage cap is twice the locked per-pass cap because the preregistered mechanism performs one shadow and one main pass.",
+    "formal_budget_locked_before_formal_runs": true
+  },
+  "formal_execution": {
+    "order": [
+      "50c",
+      "100c",
+      "150c"
+    ],
+    "checkpoint_each_scale": true,
+    "workers_max": 2,
+    "python_unbuffered": true,
+    "thread_environment": {
+      "OMP_NUM_THREADS": "1",
+      "OPENBLAS_NUM_THREADS": "1",
+      "MKL_NUM_THREADS": "1",
+      "VECLIB_MAXIMUM_THREADS": "1"
+    }
+  },
+  "estimands": [
+    "Static-plan degradation after disruption",
+    "Dynamic rolling recovery relative to static fixed recourse",
+    "Cross-depot responsibility reassignment after events",
+    "Member/depot profit-pattern shifts after events",
+    "Charging-time shifts induced by carbon intensity"
+  ],
+  "protected_files_sha256": {
+    "solver/src/setp_solver/cost.py": "2717b4b4de39bb4c2a9a1bda602f4420cb3e3b1e87faa83678dfa64f88fc80be",
+    "solver/src/setp_solver/check.py": "9c81e254e05591667c8225965bb9d0ba4e8bbfc53eb0f8c61ffdb4325a1403a8",
+    "solver/src/setp_solver/search/evaluation.py": "c7215263c39d1d5a1429b41ca8ac40d950dbdf2bdc288337e56fbe9733406fc3",
+    "solver/src/setp_solver/profit.py": "216c4f16f2e26f1c2840fa272adbf1e3ccb056c3de9403dd15b71fa5edfef1dc",
+    "baselines/algorithm_prototypes/china81_mechanism_hybrid_20260720/route_pool_sp.py": "976ef21d4952b3c488300de9a8d3e351411305d26f1e2601ca17c15185d462c1",
+    "baselines/algorithm_prototypes/china81_mechanism_hybrid_20260720/epochal_hgs.py": "655fa347b52a3e8ac20c5da6213c84b09ac90f96c1513ca95554753aad3f8a91"
+  },
+  "hard_stop_conditions": [
+    "Crash or missing required artifact",
+    "Any protected hash drift",
+    "Any actual search-evaluation consumption above the locked cap",
+    "Independent recomputation does not close",
+    "Search semantics changed",
+    "Frozen event stream drift"
+  ],
+  "paper_output_policy": {
+    "appendix": false,
+    "maximum_recommended_main_figures": 1,
+    "maximum_recommended_main_tables": 1,
+    "all_other_tables_and_figures": "machine-readable evidence archive only"
+  },
+  "done_json_written_last": true
+}

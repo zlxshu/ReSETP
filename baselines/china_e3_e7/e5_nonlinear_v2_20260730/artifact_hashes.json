@@ -1,0 +1,58 @@
+{
+  "schema_version": "E5-ARTIFACT-HASHES-v2-HALT",
+  "task_id": "E5-NONLINEAR-CHARGING-V2-20260730",
+  "status": "HALT_PROBE_NONEXACT_BUDGET",
+  "hash_algorithm": "sha256",
+  "excluded": [
+    "artifact_hashes.json",
+    "done.json",
+    "monitor_runtime/**",
+    "._*",
+    "__pycache__/**",
+    ".pytest_cache/**"
+  ],
+  "artifacts": [
+    {
+      "path": "decision.json",
+      "sha256": "1b5c6f66dcae9b5b460f0a5a43b5944559c5d73e91c6c3efa54957c8d77f875c",
+      "bytes": 1772
+    },
+    {
+      "path": "metadata.json",
+      "sha256": "758e97a78109c1ff91a6e5030f75828ca7786ba9e1e3c797f5b76d2b178fa826",
+      "bytes": 1881
+    },
+    {
+      "path": "monitor_configs/probe.json",
+      "sha256": "34d55c2e95c30132088cbb0075ddede92f4adc467b8ae2bbb230a24f6fbb135f",
+      "bytes": 3086
+    },
+    {
+      "path": "raw_runs.csv",
+      "sha256": "794b24f8d6f604b4a02e51d529dc4381944bc53c42ee68ecb41f999e57c57194",
+      "bytes": 319
+    },
+    {
+      "path": "report.md",
+      "sha256": "95ea6a2e9854d66dc51ec7341f4be1dd0f870170863ab61ad55839a212da54a6",
+      "bytes": 3166
+    },
+    {
+      "path": "source_lock.json",
+      "sha256": "b57c7b22a8d912af93562a2726c755dd2927de341be892e0a4ba39767504f315",
+      "bytes": 32061
+    },
+    {
+      "path": "task_card.json",
+      "sha256": "1bed43feba00f96a1e8fc286cf25721cd4e199d0d5a10e46159b2b8b9f10d711",
+      "bytes": 1633
+    }
+  ],
+  "protected_source_sha256_at_closeout": {
+    "solver/src/setp_solver/cost.py": "2717b4b4de39bb4c2a9a1bda602f4420cb3e3b1e87faa83678dfa64f88fc80be",
+    "solver/src/setp_solver/check.py": "9c81e254e05591667c8225965bb9d0ba4e8bbfc53eb0f8c61ffdb4325a1403a8",
+    "solver/src/setp_solver/search/evaluation.py": "c7215263c39d1d5a1429b41ca8ac40d950dbdf2bdc288337e56fbe9733406fc3",
+    "baselines/algorithm_prototypes/china81_mechanism_hybrid_20260720/route_pool_sp.py": "976ef21d4952b3c488300de9a8d3e351411305d26f1e2601ca17c15185d462c1"
+  },
+  "old_sealed_e5_20260729_tree_id_at_closeout": "44cc4b262437eb984386f825e47fcef7c3f60a346229f19f9d912f3f19d7413d"
+}

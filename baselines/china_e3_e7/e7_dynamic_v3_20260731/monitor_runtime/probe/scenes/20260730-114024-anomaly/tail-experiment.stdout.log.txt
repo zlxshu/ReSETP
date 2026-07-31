@@ -1,0 +1,29 @@
+Traceback (most recent call last):
+  File "/Volumes/移动硬盘（512G）/ReSETP/baselines/china_e3_e7/e7_dynamic_v3_20260731/run_e7_dynamic.py", line 1600, in <module>
+    raise SystemExit(main())
+                     ~~~~^^
+  File "/Volumes/移动硬盘（512G）/ReSETP/baselines/china_e3_e7/e7_dynamic_v3_20260731/run_e7_dynamic.py", line 1586, in main
+    output = run_probe()
+  File "/Volumes/移动硬盘（512G）/ReSETP/baselines/china_e3_e7/e7_dynamic_v3_20260731/run_e7_dynamic.py", line 896, in run_probe
+    result = LEGACY.run_task(
+        "50c",
+    ...<4 lines>...
+        trace_mode=True,
+    )
+  File "/Volumes/移动硬盘（512G）/ReSETP/baselines/china_e3_e7/e7_dynamic_20260731/run_e7_dynamic.py", line 989, in run_task
+    payload = probe.run_probe_arm(
+        arm,
+    ...<4 lines>...
+        network=scale,
+    )
+  File "/Volumes/移动硬盘（512G）/ReSETP/baselines/e7_dynamic/e7_full_mechanism_probe_20260714.py", line 1096, in run_probe_arm
+    cut = cut_certificate_at_trigger(
+        current_solution,
+    ...<3 lines>...
+        trigger_second=trigger,
+    )
+  File "/Volumes/移动硬盘（512G）/ReSETP/solver/src/setp_solver/search/dynamic_multitrip_schedule.py", line 194, in cut_certificate_at_trigger
+    raise ValueError(
+        f"{DYNAMIC_CONTRACT_ID}: {asset_id} battery {battery:.9f} is outside capacity"
+    )
+ValueError: E7_DYNAMIC_MULTITRIP_V1: EV_D_shenzhen_1 battery -16.294662253 is outside capacity

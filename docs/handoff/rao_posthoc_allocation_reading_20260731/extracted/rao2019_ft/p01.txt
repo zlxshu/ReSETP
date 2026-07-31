@@ -1,0 +1,97 @@
+第 39 卷 第 6 期  
+2 0 1 9 年 6 月
+系 统工程理 论与 实 践  
+S yst em sEngineeri ng
+
+ T h e ory  &  P r act i c e
+Vo l . 3 9 ,  N o . 6
+J une
+,  2 0 1 9
+d oi :  1 0 . 1 2 0 1 1 / 1 00 0- 6 78 8 - 2 0 1 8- 1 6 6 8- 1 8  中 图 法 分类号 : N 9 4 5  文献 标 志码 : A
+-种求 解协作配送成本分摊 问 题核仁解 的 近似迭代算法
+饶 卫 振'张 云 东 S 刘 从虎 2
+, 于 灏 \ 侯 艳 辉 1
+( 1 . 山 东 科技 大 学 经 济 管 理 学 院 , 青 岛 266590
+;  2 . 上 海 交 通 大 学 中 美 物 流 研 究 院 , 上 海 2 0 0 0 3 0 )
+摘 要 协 作 配 送 问 题 是 典 型 的 组 合 优 化 合 作 博 弈 问 题 , 也 可 称 为 协 作 车 辆 路 径 问 题 , 其 核 心 问 题 之  
+一 是 确 定 公 平 合 理 的 成 本 分 摊 方 案 . 其 中 核 仁 解 由 于 具 有 唯 一 性 和 公 平 性 等 特 点 , 是 成 本 分 摊 领 域
+中 公认 的 科 学 分摊 方 案 . 本 文提 出 了
+一 种 近 似 求 解 协 作 配 送 问 题 核 仁 解 的 方 法 . 首 先 分 析 证 明 了 当
+顾 客 位 置 分 布 均 匀 , 从 理 论 上 协 作 配 送 成 本 分 摊 问 题 会 是 凸 博 弈 问 题 , 然 后 , 基 于 凸 博 弈 的 核 仁 解
+会 等 同 于 预 内 核 解 的 理 论 , 提 出 了 一 个 能 够 求 解 凸 博 弈 问 题 核 仁 解 的 迭 代 逼 近 算 法 ( approxim at e  
+i t er at i ve  al g ori t hm
+,AIA) , 分 析 了AIA 算 法 的 复 杂 度 为 0 ( n4 2"
+)
+, 为 此 又 提 出 了AIA 的 有 效 提 速  
+策 略 , 可 将 A IA 的 复 杂 度 降 低 至 多 项 式 ? 最 后 , 通 过 求 解 协 作 配 送 算 例 和 实 例 , 验 证 了 本 文 AIA 算
+法 能 够 准 确 求 解 得 到 协 作 配 送 成 本 分 摊 问 题 的 核 仁 解 , 提 出 的 求 解 策 略 能 有 效 的 减 少 求 解 耗 时 , 并
+且 得 到 的 最 终 结 果 与 实 际 核 仁 解 的 平 均 偏 差 不 到 0 . 0 2 % , 更 重 要 的 是 A IA 能 够 用 于 求 解 所 有 凸 博
+弈 问 题 的 核 仁 解 .  
+关键词 协 作 车 辆 路 径 问 题 ; 核 仁 解 ; 成 本 分 摊 ; 合 作 博 弈
+A n ap p r ox i m at e it e r at i ve al g o r it h m fo rg e n e r at i n g c o s ts h ar i n g
+nu c le o l u s o f c o l l ab o r at ive ve h i c l e  r o u t i n g p r o b l e m  
+R A O  Wei z hen 1
+'
+2
+,  Z HA N G  Yundo ng
+1
+,  L I U  C o nghu 2
+,YU Hao 1
+,  H O U  Yanhui
+1
+( 1 .  C o l l e ge  o f  Ec o no m i c s  a n d  M a n age m ent ,  S h a n d o ng  U ni ve r s i ty  o f  S c i e n c e  a nd  Te c h nol o g y,  Q i n g d a o  2 6 6 5 9 0 ,  C hi n a
+;
+2
+.  S i n o - U S  G l o b a l  L o g i s t i c s  I ns t i t u t e ,  S h ang h ai  J i a o  To n g  U n i ve r s i t y,  S h a n g h a i  2 0 0 0 3 0 ,  C h i n a)
+A b s t rac t  T h e  c o l l ab or at i ve  d i s t r i b ut i o n  p r ob l e m  i s  a  t y p i c a l  c o mb i ned  opt i m i z at i o n  c o o p e r at i ve  gam e
+problem
+,  an d  i s  n am e d  t h e  c ol l ab or at i ve  ve hi c l e  r o u t i n g  p r o b l e m .  O ne  o f  i t s  co r e  p r o b l e m s  i s  t o  d e t er m i n e
+a  fa i r  a n d  r e as o n ab l e  c o st  s h ar i ng  p l an .  A m on g  t he m
+,  t h e  nuc l e o lu s  s ol u t i o n  i s  a  r ec o gni z ed  s c i ent ifi c
+al l o c at ion  p l an  i n  t he  fi e ld  of  c ost  s har i n g  b e c au s e  o f  i t s  u ni que n e ss  and  fa i rn ess .  T h i s  p ap er  p r o p os es
+a  m et h o d  t o  app r oxi m at e  t h e  n uc l eol u s  s o l ut i o n  of  co l l ab or at i ve  d is t r ib u t i o n  p r o b l em .  F i r s t l y,  t h e  p ap e r
+p r oves  t h e  co s t  a l l o c at i o n  of  c o l l ab o r at i ve  ve h i c l e  r o u t i n g  p r o b l e m  w i l l  t h eo r et i c a ll y  b e  a  c o n vex  game
+p r o b l e m  w h en  t he  l o c at i o n  o f  t he  c u s t o m e r  i s  eve n l y  d i s t r i b ut ed .  B a s ed  on  t he  t h e or y  t h at  t h e  nu c l eol us
+s o l u t i on  w i l l  b e  e qu i val e nt  t o  t he  p r e ker a e l  s ol ut i o n  i n  c o nvex  gam e  p r o b lem s
+,  an  ap pr ox i m at e  i t er at i ve
+algorit hm ( A LA.
+)  is  p ro p os ed  t o  ge t  t he  nucl eol u s  s o l ut i o n  of  c o nvex  gam e  pro b l e m s .  T h e  c o m p l e xi ty
+ofAIA is0 ( n4
+2
+n
+) ,  a nd  t hen  t he  p ap er  p r o p o se s  t wo  efect i ve  s p e e d - u p  st r at e gi e s  of  A I A
+,  w h i ch  r e d uce
+t he  com pl exi ty  of  A IA  t o  p ol y n om i al  l evel .  F i n al ly,  by  s o l vi n g  t h e  c o op er at i ve  d i s t r i b u t i on  ex am p l es
+,  i t  i s
+ver ifi ed  t h at  t he  A I A  a l gor i t hm  i n  t hi s
+ p ap e r  c an  ac c ur at e ly 
+s o l ve  t he  nuc l e o l us  s o l u t i o n  o f  t he  c o l l a b o r a t i ve
+d
+i s t r i b ut i on  c o s t  al l o c at i on  p r ob l em .  T h e  p r op os e d  s ol u t i on  c an  efe c t i ve l y  r e d u ce  t he  t i m e - c ons um i ng  o f
+c al c u l at i on .  A n d  t he  aver age  dev i at i o n  b et wee n  t he  fi n al  r e su lt  of  A I A  an d  t he  ac t u al  nu c l e o l u s  s ol ut io n  
+收 曰 期 : 20 1 8- 08- 2 2
+作者简介: 饶卫振 ( 1 98 1 
+) , 男 , 汉 , 江西 丰 城人 , 博士  (后 ) ’  0| 教 授 , 硕士 生导师 , 研究方 向 : 协 作配送 , 成本分摊方法 , 算法分析  
+与设计 , E> m ai l :  r aowei z h en ? 1 6 3 . co m ; 张 云 东 ( 1 9 9 0 ) , 女 , 山 东青 州 人 , 硕士研 究 生 , 研 究 方 向 : 成 本分摊方法 .  
+基金琐 目 : 国家社会科学基金 (
+1 6 C G L 0 1 6 )
+Fo u n d at i o n  i t e m :  N at i o n al  S o c i al  S c i e n ce  Fo un d at i o n  o f  C h i n a  ( 1 6 C G L 0 1 6 )  
+中文引 用賊 虹振, 张云东, 刘聽 等?
+一种求解■腿成本分摊 问题核仁解的 近■體法 [
+j
+i
+? 系 舡 麵 论与 实践 ,  
+20 1 9 ,  3 9 ( 6 ) :  1 5 1 7
+1 5 3 4 .
+软 引 用賊  RaoW Z
+,  Z h a n g  Y  D ,  L i u  C  et  a l .  A n  ap p r oxi m at e  i t e r at i v e  a l go r i t hm  fo r  g e n e r at i ng  c os t  s h a r i n g  nu c l e o l u s
+o f  c ol l ab o r at i ve  ve h i c l e  r o ut i n g  p r o b l e m
+[
+J
+]
+.  S yst ems  En gi neer i ng 
+ Theory &P ract i ce
+,  2 0 1 9 ,  3 9 ( 6 ) :  1 5 1 7- 1 5 3 4 .  
+中 国 系 统工程学会第 2 0 届 学 术年会推荐 论文 ?
+
+

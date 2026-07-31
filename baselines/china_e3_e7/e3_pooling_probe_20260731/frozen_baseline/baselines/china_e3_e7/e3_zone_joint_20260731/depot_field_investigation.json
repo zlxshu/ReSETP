@@ -1,0 +1,68 @@
+{
+  "equivalent_existing_field": "customer city",
+  "ind_arm_reason": "IND_AND_ZONE_INPUTS_IDENTICAL_BY_PRE_SEARCH_FACT",
+  "ind_arm_run": false,
+  "instances": [
+    {
+      "all_customer_city_certificates_pass": true,
+      "boundary_source_class": [
+        "COMPUTATIONAL_VALIDATION_BOUNDARY_NOT_OFFICIAL_CHINA_SURVEY"
+      ],
+      "customer_certificates": 50,
+      "equivalent_administrative_assignment_found": true,
+      "instance_id": "cn-prd-50c-01-V2-LOCATIONS",
+      "literal_registered_depot_column_found": false,
+      "loader_derivation": "customer city -> the unique depot in that same city",
+      "loader_path": "solver/src/setp_solver/china81.py:355",
+      "no_new_ind_parameter_required": true,
+      "registered_depot_field_found": true,
+      "source_fields": [
+        "nodes.csv:city",
+        "node_city_membership.csv:declared_city",
+        "node_city_membership.csv:gis_status"
+      ]
+    },
+    {
+      "all_customer_city_certificates_pass": true,
+      "boundary_source_class": [
+        "COMPUTATIONAL_VALIDATION_BOUNDARY_NOT_OFFICIAL_CHINA_SURVEY"
+      ],
+      "customer_certificates": 100,
+      "equivalent_administrative_assignment_found": true,
+      "instance_id": "cn-prd-100c-02-V2-LOCATIONS",
+      "literal_registered_depot_column_found": false,
+      "loader_derivation": "customer city -> the unique depot in that same city",
+      "loader_path": "solver/src/setp_solver/china81.py:355",
+      "no_new_ind_parameter_required": true,
+      "registered_depot_field_found": true,
+      "source_fields": [
+        "nodes.csv:city",
+        "node_city_membership.csv:declared_city",
+        "node_city_membership.csv:gis_status"
+      ]
+    }
+  ],
+  "literal_registered_depot_column_found": false,
+  "loader_derivation": "customer city -> unique depot in that same city",
+  "no_ind_constructor_parameter_introduced": true,
+  "registered_depot_field_found": true,
+  "schema": "resetp.e3-structural.depot-field-investigation.v1",
+  "status": "PASS_EXISTING_ADMINISTRATIVE_ASSIGNMENT_FOUND",
+  "unused_alternatives": [
+    {
+      "drawback": "synthetic mismatch severity parameter and artificially imposed spatial disorder",
+      "objective_basis": "distance rank",
+      "option": "second-nearest depot"
+    },
+    {
+      "drawback": "requires a new reliable boundary source and a documented sub-region-to-depot mapping",
+      "objective_basis": "sub-city administrative membership",
+      "option": "finer administrative-region assignment"
+    },
+    {
+      "drawback": "endogenous to model capacity and not a historical/administrative registration",
+      "objective_basis": "fleet-cap load balancing",
+      "option": "capacity-balanced assignment"
+    }
+  ]
+}

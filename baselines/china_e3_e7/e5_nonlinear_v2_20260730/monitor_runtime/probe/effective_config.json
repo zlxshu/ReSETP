@@ -1,0 +1,90 @@
+{
+  "ai": {
+    "enabled": false,
+    "timeout_seconds": 180
+  },
+  "checkpoint_paths": [
+    "/Volumes/移动硬盘（512G）/ReSETP/baselines/china_e3_e7/e5_nonlinear_v2_20260730/probe/tasks",
+    "/Volumes/移动硬盘（512G）/ReSETP/baselines/china_e3_e7/e5_nonlinear_v2_20260730/probe/search_traces"
+  ],
+  "completion_files": [
+    "/Volumes/移动硬盘（512G）/ReSETP/baselines/china_e3_e7/e5_nonlinear_v2_20260730/budget_lock.json"
+  ],
+  "config_path": "/Volumes/移动硬盘（512G）/ReSETP/baselines/china_e3_e7/e5_nonlinear_v2_20260730/monitor_configs/probe.json",
+  "csv_rules": [],
+  "forbidden_command_substrings": [
+    "--smoke",
+    "--debug"
+  ],
+  "logs": [],
+  "low_cpu_consecutive_checks": 5,
+  "max_rss_mb": 7000,
+  "max_runtime_seconds": 1800,
+  "milestones": [
+    {
+      "min_size": 4096,
+      "path": "/Volumes/移动硬盘（512G）/ReSETP/baselines/china_e3_e7/e5_nonlinear_v2_20260730/probe/convergence_curve.csv"
+    }
+  ],
+  "min_cpu_percent_when_active": 0.5,
+  "min_system_free_memory_mb": 256,
+  "min_system_memory_free_percent": 5,
+  "name": "e5-v2-convergence-probe",
+  "objective": "Run the two-arm 1500-complete-evaluation E5 convergence probe and atomically lock the common formal budget",
+  "pause_on_anomaly": true,
+  "poll_seconds": 20,
+  "progress_files": [],
+  "protected_files": [
+    {
+      "kind": "primary_config",
+      "path": "/Volumes/移动硬盘（512G）/ReSETP/baselines/china_e3_e7/run_e5_nonlinear_v2_20260730.py"
+    },
+    {
+      "kind": "evaluator",
+      "path": "/Volumes/移动硬盘（512G）/ReSETP/baselines/china_e3_e7/check_e5_nonlinear_v2_20260730.py"
+    },
+    {
+      "kind": "experiment_contract",
+      "path": "/Volumes/移动硬盘（512G）/ReSETP/docs/handoff/experiment_contract_v2_journal_aligned_20260730.md"
+    },
+    {
+      "kind": "cost_function",
+      "path": "/Volumes/移动硬盘（512G）/ReSETP/solver/src/setp_solver/cost.py"
+    },
+    {
+      "kind": "evaluator",
+      "path": "/Volumes/移动硬盘（512G）/ReSETP/solver/src/setp_solver/check.py"
+    },
+    {
+      "kind": "evaluator",
+      "path": "/Volumes/移动硬盘（512G）/ReSETP/solver/src/setp_solver/search/evaluation.py"
+    },
+    {
+      "kind": "model",
+      "path": "/Volumes/移动硬盘（512G）/ReSETP/baselines/algorithm_prototypes/china81_mechanism_hybrid_20260720/route_pool_sp.py"
+    },
+    {
+      "kind": "primary_config",
+      "path": "/Volumes/移动硬盘（512G）/ReSETP/baselines/china_e3_e7/run_e5_nonlinear_20260729.py"
+    },
+    {
+      "kind": "experiment_contract",
+      "path": "/Volumes/移动硬盘（512G）/ReSETP/baselines/china_e3_e7/e5_nonlinear_20260729/source_lock.json"
+    }
+  ],
+  "required_command_substrings": [
+    "run_e5_nonlinear_v2_20260730.py",
+    "probe",
+    "--complete-eval-budget",
+    "1500",
+    "--workers",
+    "2"
+  ],
+  "result_files": [
+    "/Volumes/移动硬盘（512G）/ReSETP/baselines/china_e3_e7/e5_nonlinear_v2_20260730/probe/convergence_curve.csv",
+    "/Volumes/移动硬盘（512G）/ReSETP/baselines/china_e3_e7/e5_nonlinear_v2_20260730/probe/summary.json"
+  ],
+  "schema_version": 1,
+  "stale_seconds": 1200,
+  "workdir": "/Volumes/移动硬盘（512G）/ReSETP"
+}

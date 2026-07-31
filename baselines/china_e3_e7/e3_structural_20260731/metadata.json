@@ -1,0 +1,75 @@
+{
+  "appledouble_cleanup_scope": "only ._* files under the new E3 structural delivery directory",
+  "arms": [
+    "IND",
+    "ZONE",
+    "JOINT"
+  ],
+  "budget_cap": 400,
+  "budget_semantics": "UPPER_CAP_NOT_QUOTA",
+  "contract": "docs/handoff/experiment_contract_v2_journal_aligned_20260730.md",
+  "created_at_utc": "2026-07-30T00:13:37.348128+00:00",
+  "file_enumeration_exclusions": [
+    "._*",
+    "__pycache__",
+    ".pytest_cache",
+    "monitor_runtime",
+    "*.tmp"
+  ],
+  "first_fit_equivalence_mismatches": 0,
+  "first_fit_equivalence_units": 56,
+  "formal_process_group_pgid": 24515,
+  "formal_process_group_stopped": true,
+  "formal_units_expected": 60,
+  "formal_units_halted": 8,
+  "formal_units_not_run": 34,
+  "formal_units_passed": 18,
+  "formal_units_run": 26,
+  "hash_contamination_status": "HASH_CONTAMINATED_APPLEDOUBLE_CLEANED_BEFORE_SEAL",
+  "ind_inputs_built": 2,
+  "instances": [
+    "cn-prd-50c-01-V2-LOCATIONS",
+    "cn-prd-100c-02-V2-LOCATIONS"
+  ],
+  "joint_inputs_built": 2,
+  "literal_registered_depot_column_found": false,
+  "pgid_7965_stopped": true,
+  "probe": {
+    "actual_consumption": 331,
+    "long_cap": 1500,
+    "selected_formal_cap": 400,
+    "technical_error_candidates": 0,
+    "termination_reason": "CANDIDATES_EXHAUSTED"
+  },
+  "protected_hashes": {
+    "baselines/algorithm_prototypes/china81_mechanism_hybrid_20260720/route_pool_sp.py": "976ef21d4952b3c488300de9a8d3e351411305d26f1e2601ca17c15185d462c1",
+    "solver/src/setp_solver/check.py": "9c81e254e05591667c8225965bb9d0ba4e8bbfc53eb0f8c61ffdb4325a1403a8",
+    "solver/src/setp_solver/cost.py": "2717b4b4de39bb4c2a9a1bda602f4420cb3e3b1e87faa83678dfa64f88fc80be",
+    "solver/src/setp_solver/search/evaluation.py": "c7215263c39d1d5a1429b41ca8ac40d950dbdf2bdc288337e56fbe9733406fc3"
+  },
+  "real_artifact_files_changed_by_cleanup": false,
+  "registered_depot_field_found": true,
+  "registered_nearest_mismatch": {
+    "cn-prd-100c-02-V2-LOCATIONS": "0/100",
+    "cn-prd-50c-01-V2-LOCATIONS": "0/50"
+  },
+  "schema": "resetp.e3-structural.metadata.v1",
+  "seeds": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9,
+    10
+  ],
+  "source_lock_id": "21fc3c2661c7655a8eb0c954d28cabbca99557e7453df71242bacc5cfe94bb53",
+  "status": "HALT_TECHNICAL_ERROR_CROSS_SITE_CANDIDATE_UNDER_HARD_LOCK",
+  "superseded_units_registered": 29,
+  "task_id": "E3-STRUCTURAL-COMPARISON-20260731",
+  "workers": 2,
+  "zone_inputs_built": 2
+}

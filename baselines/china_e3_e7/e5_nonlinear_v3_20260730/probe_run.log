@@ -1,0 +1,35 @@
+PREPARED task=E5-NONLINEAR-CHARGING-V3-20260730 probe_budget=1500 old_sealed_files=201
+PREFLIGHT_PASS phase=probe python=3.13.9 pyvrp=0.12.2 workers=1 budget=1500
+concurrent.futures.process._RemoteTraceback: 
+"""
+Traceback (most recent call last):
+  File "/opt/anaconda3/lib/python3.13/concurrent/futures/process.py", line 254, in _process_worker
+    r = call_item.fn(*call_item.args, **call_item.kwargs)
+  File "/Volumes/移动硬盘（512G）/ReSETP/baselines/china_e3_e7/run_e5_nonlinear_v3_20260730.py", line 215, in run_search_unit
+    raise RuntimeError(f"HALT_E5_V3_INVALID_COMPLETE_TRACE:{stem}")
+RuntimeError: HALT_E5_V3_INVALID_COMPLETE_TRACE:cn-prd-50c-01-V2-LOCATIONS__seed-01__L100_control
+"""
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/Volumes/移动硬盘（512G）/ReSETP/baselines/china_e3_e7/run_e5_nonlinear_v3_20260730.py", line 907, in <module>
+    raise SystemExit(main())
+                     ~~~~^^
+  File "/Volumes/移动硬盘（512G）/ReSETP/baselines/china_e3_e7/run_e5_nonlinear_v3_20260730.py", line 892, in main
+    base.run_probe(args.complete_eval_budget, args.workers)
+    ~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Volumes/移动硬盘（512G）/ReSETP/baselines/china_e3_e7/run_e5_nonlinear_v2_20260730.py", line 805, in run_probe
+    rows = run_parallel(
+        probe_specs(),
+    ...<3 lines>...
+        workers=workers,
+    )
+  File "/Volumes/移动硬盘（512G）/ReSETP/baselines/china_e3_e7/run_e5_nonlinear_v2_20260730.py", line 586, in run_parallel
+    row = future.result()
+  File "/opt/anaconda3/lib/python3.13/concurrent/futures/_base.py", line 449, in result
+    return self.__get_result()
+           ~~~~~~~~~~~~~~~~~^^
+  File "/opt/anaconda3/lib/python3.13/concurrent/futures/_base.py", line 401, in __get_result
+    raise self._exception
+RuntimeError: HALT_E5_V3_INVALID_COMPLETE_TRACE:cn-prd-50c-01-V2-LOCATIONS__seed-01__L100_control

@@ -1,0 +1,9 @@
+{
+  "status": "BLOCKED_ACCESSIBILITY_PERMISSION",
+  "quota_signal_found": true,
+  "quota_signal_source": "Claude Desktop ~/Library/Logs/Claude/main.log exact current-session limit/reset text; ~/Library/Application Support/Claude/plan-usage-history.json five-hour utilization samples; Claude Desktop Accessibility UI usage popup",
+  "wake_channel_tested": false,
+  "watchdog_running": false,
+  "watchdog_pid": null,
+  "user_action_required": "Open System Settings > Privacy & Security > Accessibility, add and enable /Volumes/移动硬盘（512G）/ReSETP/tools/claude_quota_watchdog/ReSETP Claude Quota Watchdog Helper.app, then run python3 tools/claude_quota_watchdog/claude_quota_watchdog.py --test-wake. Start the daemon only if that self-test reports PASS."
+}

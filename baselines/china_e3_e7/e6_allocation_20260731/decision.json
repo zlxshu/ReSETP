@@ -1,0 +1,103 @@
+{
+  "schema": "resetp.e6-posthoc-allocation.decision.v1",
+  "task_id": "E6-POSTHOC-ALLOCATION-20260731",
+  "status": "COMPLETE",
+  "verdict": "PASS_POSTHOC_SHAPLEY_ALLOCATION_19_OF_20_FEASIBLE",
+  "created_at_utc": "2026-07-30T03:24:07Z",
+  "search_reruns": 0,
+  "route_search_executed": false,
+  "data_source": "e6_fairness_v3_20260731 certified I/U rows",
+  "source_rows_used_I_U": 40,
+  "units_total": 20,
+  "units_feasible_with_transfer": 19,
+  "units_infeasible_negative_delta": 1,
+  "infeasible_units": [
+    {
+      "instance_id": "cn-prd-100c-02-V2-LOCATIONS",
+      "seed": 4,
+      "system_saving_delta_cny": -1.135377416539,
+      "core_transfer_lower_cny": 1.13537741654,
+      "core_transfer_upper_cny": 0.0,
+      "reason": "NEGATIVE_SYSTEM_SAVING_EMPTY_CORE_NO_BUDGET_BALANCED_PARTICIPATION_SOLUTION"
+    }
+  ],
+  "no_transfer_regime": {
+    "units_naturally_pareto": 0,
+    "units_fallback_to_I": 20,
+    "fairness_cost_pct_equal_weight_instance_rows": 1.511783666875632,
+    "instance_rows": [
+      {
+        "instance_id": "cn-prd-50c-01-V2-LOCATIONS",
+        "units": 10,
+        "units_naturally_pareto": 0,
+        "units_fallback_to_I": 10,
+        "fairness_cost_pct": 2.3256150488348655
+      },
+      {
+        "instance_id": "cn-prd-100c-02-V2-LOCATIONS",
+        "units": 10,
+        "units_naturally_pareto": 0,
+        "units_fallback_to_I": 10,
+        "fairness_cost_pct": 0.6979522849163983
+      }
+    ]
+  },
+  "transfer_regime": {
+    "allocation_rule": "Two-member Shapley value with equal split of positive cooperative surplus",
+    "transfer_sign_convention": "Positive amount is paid by member B to the U-damaged member A",
+    "statistics_scope": "19 participation-feasible units only",
+    "mean_shapley_transfer_cny": 817.374756596798,
+    "min_shapley_transfer_cny": 0.648672294658,
+    "max_shapley_transfer_cny": 993.716759451924,
+    "mean_system_saving_delta_cny": 45.35815099198,
+    "mean_transfer_to_mean_system_saving_ratio": 18.020460241894,
+    "mean_net_gain_per_member_cny": 22.67907549599,
+    "min_net_gain_per_member_cny": 0.164524999589,
+    "max_net_gain_per_member_cny": 26.717427496373,
+    "transfer_directions": {
+      "D_shenzhen_TO_D_guangzhou": 18,
+      "D_guangzhou_TO_D_shenzhen": 1
+    },
+    "instance_rows": [
+      {
+        "instance_id": "cn-prd-50c-01-V2-LOCATIONS",
+        "units_total": 10,
+        "units_feasible_with_transfer": 10,
+        "mean_shapley_transfer_cny": 901.678616448178,
+        "min_shapley_transfer_cny": 175.228606511773,
+        "max_shapley_transfer_cny": 993.716759451924,
+        "mean_settled_profit_D_guangzhou_cny": 6943.840805392476,
+        "mean_settled_profit_D_shenzhen_cny": 9102.427856990938,
+        "mean_net_gain_vs_I_D_guangzhou_cny": 26.607726169883,
+        "mean_net_gain_vs_I_D_shenzhen_cny": 26.607726169882,
+        "min_net_gain_per_member_cny": 26.064095559302,
+        "max_net_gain_per_member_cny": 26.717427496373
+      },
+      {
+        "instance_id": "cn-prd-100c-02-V2-LOCATIONS",
+        "units_total": 10,
+        "units_feasible_with_transfer": 9,
+        "mean_shapley_transfer_cny": 723.703801206376,
+        "min_shapley_transfer_cny": 0.648672294658,
+        "max_shapley_transfer_cny": 993.120058280671,
+        "mean_settled_profit_D_guangzhou_cny": 16234.00337862463,
+        "mean_settled_profit_D_shenzhen_cny": 21049.462449912084,
+        "mean_net_gain_vs_I_D_guangzhou_cny": 18.313908080552,
+        "mean_net_gain_vs_I_D_shenzhen_cny": 18.313908080551,
+        "min_net_gain_per_member_cny": 0.164524999589,
+        "max_net_gain_per_member_cny": 23.479821149496
+      }
+    ]
+  },
+  "negative_delta_unit_included_in_raw_and_denominator": true,
+  "negative_delta_unit_excluded_from_feasible_settlement_statistics": true,
+  "budget_balance_violations": 0,
+  "profit_conservation_violations": 0,
+  "participation_violations_among_feasible_units": 0,
+  "external_subsidy_used": false,
+  "cross_unit_compensation_used": false,
+  "sealed_source_manifest_verified": true,
+  "sealed_source_files_modified": false,
+  "protected_files_modified": false,
+  "both_regimes_reported": true
+}

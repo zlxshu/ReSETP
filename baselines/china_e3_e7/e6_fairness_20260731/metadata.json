@@ -1,0 +1,67 @@
+{
+  "alpha_grid_used": false,
+  "candidate_pool_persisted": false,
+  "contract": "docs/handoff/experiment_contract_v2_journal_aligned_20260730.md",
+  "created_at_utc": "2026-07-30T01:39:57.129844+00:00",
+  "e3_source_directory": "baselines/china_e3_e7/e3_zone_joint_20260731",
+  "e3_verification": {
+    "e3_decision_sha256": "0d358e6a9eddc97656c82439586a937ba881bff2c265d220dec823ebf67b756b",
+    "e3_done_sha256": "eef1fd4798d0e315ec953ca577bc013a9588c5840c80bc5fd06997480cd261e2",
+    "e3_manifest_failures": 0,
+    "e3_manifest_file_count": 167,
+    "e3_manifest_id": "de141968f0d7cd796e37bcc8c8a4234cca45abee4a543567c4108321dc5736ee",
+    "e3_manifest_sha256": "0c9ee53da030461547e14b1ff89b2747c04d90f42b788792ed599eb0bb099903"
+  },
+  "file_enumeration_exclusions": [
+    "._*",
+    "__pycache__",
+    ".pytest_cache",
+    "monitor_runtime"
+  ],
+  "instances": [
+    "cn-prd-50c-01-V2-LOCATIONS",
+    "cn-prd-100c-02-V2-LOCATIONS"
+  ],
+  "member_ledger_definition": "revenue credited to serving route home depot; route, charging, occupancy, transship and proportional carbon costs allocated by the existing calculate_depot_profits ledger",
+  "member_ledger_found": true,
+  "member_ledger_source": "solver/src/setp_solver/profit.py",
+  "member_ledger_source_sha256": "216c4f16f2e26f1c2840fa272adbf1e3ccb056c3de9403dd15b71fa5edfef1dc",
+  "member_rows": 120,
+  "nested_candidates_counted_as_independent_samples": false,
+  "protected_hashes_start": {
+    "baselines/algorithm_prototypes/china81_mechanism_hybrid_20260720/epochal_hgs.py": "655fa347b52a3e8ac20c5da6213c84b09ac90f96c1513ca95554753aad3f8a91",
+    "baselines/algorithm_prototypes/china81_mechanism_hybrid_20260720/route_pool_sp.py": "976ef21d4952b3c488300de9a8d3e351411305d26f1e2601ca17c15185d462c1",
+    "solver/src/setp_solver/check.py": "9c81e254e05591667c8225965bb9d0ba4e8bbfc53eb0f8c61ffdb4325a1403a8",
+    "solver/src/setp_solver/cost.py": "2717b4b4de39bb4c2a9a1bda602f4420cb3e3b1e87faa83678dfa64f88fc80be",
+    "solver/src/setp_solver/search/evaluation.py": "c7215263c39d1d5a1429b41ca8ac40d950dbdf2bdc288337e56fbe9733406fc3"
+  },
+  "raw_state_rows": 60,
+  "schema": "resetp.e6-fairness.metadata.v1",
+  "search_reruns": 0,
+  "seed_units": 20,
+  "seeds": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9,
+    10
+  ],
+  "state_definitions": {
+    "F": "minimum-system-cost theta=1 candidate among the same U run's fully checked nested candidates plus explicit I fallback",
+    "I": "same-seed sealed E3 ZONE final solution",
+    "U": "same-seed sealed E3 JOINT final solution"
+  },
+  "states": [
+    "I",
+    "U",
+    "F"
+  ],
+  "status": "HALT_E3_NESTED_CANDIDATE_SOLUTIONS_NOT_PERSISTED",
+  "task_id": "E6-FAIRNESS-20260731",
+  "theta": 1.0
+}

@@ -1,0 +1,3574 @@
+{
+ "streams": [
+  {
+   "scale": "50c",
+   "instance": "cn-prd-50c-01-V2-LOCATIONS",
+   "stream_seed": 1,
+   "rolling_parameters": {
+    "add_ratio": 0.1,
+    "cancel_ratio": 0.05,
+    "delta_t_seconds": 10800.0,
+    "demand_change_ratio": 0.1,
+    "q_bar": 8,
+    "stages": 4
+   },
+   "total_events": 12,
+   "total_adds": 5,
+   "batch_count": 4,
+   "stages": [
+    {
+     "stage": 1,
+     "trigger_time": 32400.0,
+     "trigger_reason": "delta_t",
+     "event_count": 1,
+     "type_counts": {
+      "add": 1
+     },
+     "add_count": 1,
+     "add_by_owner_depot": {
+      "D_guangzhou": 1
+     },
+     "adds": [
+      {
+       "customer_id": "N4",
+       "owner_depot": "D_guangzhou",
+       "donor": "C005",
+       "t_appear": 27648.010540217423,
+       "ready": 53825.577659999995,
+       "due": 57124.17966,
+       "service": 720.0,
+       "demand": 278.0,
+       "slack_trigger_to_due": 24724.17966,
+       "due_before_trigger": false
+      }
+     ]
+    },
+    {
+     "stage": 2,
+     "trigger_time": 43200.0,
+     "trigger_reason": "delta_t",
+     "event_count": 3,
+     "type_counts": {
+      "demand_change": 1,
+      "cancel": 1,
+      "add": 1
+     },
+     "add_count": 1,
+     "add_by_owner_depot": {
+      "D_guangzhou": 1
+     },
+     "adds": [
+      {
+       "customer_id": "N1",
+       "owner_depot": "D_guangzhou",
+       "donor": "C002",
+       "t_appear": 39941.076024212176,
+       "ready": 46143.897840000005,
+       "due": 48282.083459999994,
+       "service": 720.0,
+       "demand": 278.0,
+       "slack_trigger_to_due": 5082.083459999994,
+       "due_before_trigger": false
+      }
+     ]
+    },
+    {
+     "stage": 3,
+     "trigger_time": 54000.0,
+     "trigger_reason": "delta_t",
+     "event_count": 3,
+     "type_counts": {
+      "add": 1,
+      "cancel": 1,
+      "demand_change": 1
+     },
+     "add_count": 1,
+     "add_by_owner_depot": {
+      "D_guangzhou": 1
+     },
+     "adds": [
+      {
+       "customer_id": "N5",
+       "owner_depot": "D_guangzhou",
+       "donor": "C006",
+       "t_appear": 48229.240938649236,
+       "ready": 61672.727100000004,
+       "due": 64755.311579999994,
+       "service": 720.0,
+       "demand": 278.0,
+       "slack_trigger_to_due": 10755.311579999994,
+       "due_before_trigger": false
+      }
+     ]
+    },
+    {
+     "stage": 4,
+     "trigger_time": 64800.0,
+     "trigger_reason": "delta_t",
+     "event_count": 5,
+     "type_counts": {
+      "demand_change": 3,
+      "add": 2
+     },
+     "add_count": 2,
+     "add_by_owner_depot": {
+      "D_guangzhou": 2
+     },
+     "adds": [
+      {
+       "customer_id": "N2",
+       "owner_depot": "D_guangzhou",
+       "donor": "C003",
+       "t_appear": 59384.571204445834,
+       "ready": 59384.571204445834,
+       "due": 59384.571204445834,
+       "service": 360.0,
+       "demand": 139.0,
+       "slack_trigger_to_due": -5415.428795554166,
+       "due_before_trigger": true
+      },
+      {
+       "customer_id": "N3",
+       "owner_depot": "D_guangzhou",
+       "donor": "C004",
+       "t_appear": 59614.69130882923,
+       "ready": 59614.69130882923,
+       "due": 60316.76064,
+       "service": 540.0,
+       "demand": 208.0,
+       "slack_trigger_to_due": -4483.23936,
+       "due_before_trigger": true
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "scale": "50c",
+   "instance": "cn-prd-50c-01-V2-LOCATIONS",
+   "stream_seed": 2,
+   "rolling_parameters": {
+    "add_ratio": 0.1,
+    "cancel_ratio": 0.05,
+    "delta_t_seconds": 10800.0,
+    "demand_change_ratio": 0.1,
+    "q_bar": 8,
+    "stages": 4
+   },
+   "total_events": 12,
+   "total_adds": 5,
+   "batch_count": 4,
+   "stages": [
+    {
+     "stage": 1,
+     "trigger_time": 32400.0,
+     "trigger_reason": "delta_t",
+     "event_count": 1,
+     "type_counts": {
+      "demand_change": 1
+     },
+     "add_count": 0,
+     "add_by_owner_depot": {},
+     "adds": []
+    },
+    {
+     "stage": 2,
+     "trigger_time": 43200.0,
+     "trigger_reason": "delta_t",
+     "event_count": 1,
+     "type_counts": {
+      "add": 1
+     },
+     "add_count": 1,
+     "add_by_owner_depot": {
+      "D_guangzhou": 1
+     },
+     "adds": [
+      {
+       "customer_id": "N5",
+       "owner_depot": "D_guangzhou",
+       "donor": "C007",
+       "t_appear": 37515.23769848154,
+       "ready": 53463.85458,
+       "due": 56468.373419999996,
+       "service": 540.0,
+       "demand": 208.0,
+       "slack_trigger_to_due": 13268.373419999996,
+       "due_before_trigger": false
+      }
+     ]
+    },
+    {
+     "stage": 3,
+     "trigger_time": 54000.0,
+     "trigger_reason": "delta_t",
+     "event_count": 4,
+     "type_counts": {
+      "demand_change": 2,
+      "add": 2
+     },
+     "add_count": 2,
+     "add_by_owner_depot": {
+      "D_guangzhou": 2
+     },
+     "adds": [
+      {
+       "customer_id": "N1",
+       "owner_depot": "D_guangzhou",
+       "donor": "C003",
+       "t_appear": 52313.537780837854,
+       "ready": 52313.537780837854,
+       "due": 53801.26062,
+       "service": 360.0,
+       "demand": 139.0,
+       "slack_trigger_to_due": -198.73937999999907,
+       "due_before_trigger": true
+      },
+      {
+       "customer_id": "N3",
+       "owner_depot": "D_guangzhou",
+       "donor": "C005",
+       "t_appear": 53420.987611429795,
+       "ready": 53825.577659999995,
+       "due": 57124.17966,
+       "service": 720.0,
+       "demand": 278.0,
+       "slack_trigger_to_due": 3124.1796600000016,
+       "due_before_trigger": false
+      }
+     ]
+    },
+    {
+     "stage": 4,
+     "trigger_time": 64800.0,
+     "trigger_reason": "delta_t",
+     "event_count": 6,
+     "type_counts": {
+      "add": 2,
+      "demand_change": 2,
+      "cancel": 2
+     },
+     "add_count": 2,
+     "add_by_owner_depot": {
+      "D_guangzhou": 2
+     },
+     "adds": [
+      {
+       "customer_id": "N4",
+       "owner_depot": "D_guangzhou",
+       "donor": "C006",
+       "t_appear": 54465.38814451336,
+       "ready": 61672.727100000004,
+       "due": 64755.311579999994,
+       "service": 720.0,
+       "demand": 278.0,
+       "slack_trigger_to_due": -44.68842000000586,
+       "due_before_trigger": true
+      },
+      {
+       "customer_id": "N2",
+       "owner_depot": "D_guangzhou",
+       "donor": "C004",
+       "t_appear": 59008.36110801717,
+       "ready": 59008.36110801717,
+       "due": 60316.76064,
+       "service": 540.0,
+       "demand": 208.0,
+       "slack_trigger_to_due": -4483.23936,
+       "due_before_trigger": true
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "scale": "50c",
+   "instance": "cn-prd-50c-01-V2-LOCATIONS",
+   "stream_seed": 3,
+   "rolling_parameters": {
+    "add_ratio": 0.1,
+    "cancel_ratio": 0.05,
+    "delta_t_seconds": 10800.0,
+    "demand_change_ratio": 0.1,
+    "q_bar": 8,
+    "stages": 4
+   },
+   "total_events": 12,
+   "total_adds": 5,
+   "batch_count": 4,
+   "stages": [
+    {
+     "stage": 1,
+     "trigger_time": 32400.0,
+     "trigger_reason": "delta_t",
+     "event_count": 1,
+     "type_counts": {
+      "add": 1
+     },
+     "add_count": 1,
+     "add_by_owner_depot": {
+      "D_guangzhou": 1
+     },
+     "adds": [
+      {
+       "customer_id": "N1",
+       "owner_depot": "D_guangzhou",
+       "donor": "C004",
+       "t_appear": 25155.272229958093,
+       "ready": 57066.73872,
+       "due": 60316.76064,
+       "service": 540.0,
+       "demand": 208.0,
+       "slack_trigger_to_due": 27916.76064,
+       "due_before_trigger": false
+      }
+     ]
+    },
+    {
+     "stage": 2,
+     "trigger_time": 43200.0,
+     "trigger_reason": "delta_t",
+     "event_count": 5,
+     "type_counts": {
+      "demand_change": 2,
+      "add": 2,
+      "cancel": 1
+     },
+     "add_count": 2,
+     "add_by_owner_depot": {
+      "D_guangzhou": 2
+     },
+     "adds": [
+      {
+       "customer_id": "N3",
+       "owner_depot": "D_guangzhou",
+       "donor": "C006",
+       "t_appear": 33790.31005097827,
+       "ready": 61672.727100000004,
+       "due": 64755.311579999994,
+       "service": 720.0,
+       "demand": 278.0,
+       "slack_trigger_to_due": 21555.311579999994,
+       "due_before_trigger": false
+      },
+      {
+       "customer_id": "N2",
+       "owner_depot": "D_guangzhou",
+       "donor": "C005",
+       "t_appear": 43001.067068252356,
+       "ready": 53825.577659999995,
+       "due": 57124.17966,
+       "service": 720.0,
+       "demand": 278.0,
+       "slack_trigger_to_due": 13924.179660000002,
+       "due_before_trigger": false
+      }
+     ]
+    },
+    {
+     "stage": 3,
+     "trigger_time": 54000.0,
+     "trigger_reason": "delta_t",
+     "event_count": 2,
+     "type_counts": {
+      "demand_change": 1,
+      "add": 1
+     },
+     "add_count": 1,
+     "add_by_owner_depot": {
+      "D_guangzhou": 1
+     },
+     "adds": [
+      {
+       "customer_id": "N4",
+       "owner_depot": "D_guangzhou",
+       "donor": "C007",
+       "t_appear": 49888.96314500252,
+       "ready": 53463.85458,
+       "due": 56468.373419999996,
+       "service": 540.0,
+       "demand": 208.0,
+       "slack_trigger_to_due": 2468.3734199999963,
+       "due_before_trigger": false
+      }
+     ]
+    },
+    {
+     "stage": 4,
+     "trigger_time": 64800.0,
+     "trigger_reason": "delta_t",
+     "event_count": 4,
+     "type_counts": {
+      "add": 1,
+      "demand_change": 2,
+      "cancel": 1
+     },
+     "add_count": 1,
+     "add_by_owner_depot": {
+      "D_guangzhou": 1
+     },
+     "adds": [
+      {
+       "customer_id": "N5",
+       "owner_depot": "D_guangzhou",
+       "donor": "C008",
+       "t_appear": 54046.4541319317,
+       "ready": 54046.4541319317,
+       "due": 54046.4541319317,
+       "service": 540.0,
+       "demand": 208.0,
+       "slack_trigger_to_due": -10753.5458680683,
+       "due_before_trigger": true
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "scale": "50c",
+   "instance": "cn-prd-50c-01-V2-LOCATIONS",
+   "stream_seed": 4,
+   "rolling_parameters": {
+    "add_ratio": 0.1,
+    "cancel_ratio": 0.05,
+    "delta_t_seconds": 10800.0,
+    "demand_change_ratio": 0.1,
+    "q_bar": 8,
+    "stages": 4
+   },
+   "total_events": 12,
+   "total_adds": 5,
+   "batch_count": 4,
+   "stages": [
+    {
+     "stage": 1,
+     "trigger_time": 32400.0,
+     "trigger_reason": "delta_t",
+     "event_count": 3,
+     "type_counts": {
+      "cancel": 1,
+      "demand_change": 1,
+      "add": 1
+     },
+     "add_count": 1,
+     "add_by_owner_depot": {
+      "D_guangzhou": 1
+     },
+     "adds": [
+      {
+       "customer_id": "N4",
+       "owner_depot": "D_guangzhou",
+       "donor": "C008",
+       "t_appear": 30032.145166008137,
+       "ready": 45856.232939999994,
+       "due": 48101.645699999994,
+       "service": 540.0,
+       "demand": 208.0,
+       "slack_trigger_to_due": 15701.645699999994,
+       "due_before_trigger": false
+      }
+     ]
+    },
+    {
+     "stage": 2,
+     "trigger_time": 43200.0,
+     "trigger_reason": "delta_t",
+     "event_count": 6,
+     "type_counts": {
+      "demand_change": 3,
+      "add": 3
+     },
+     "add_count": 3,
+     "add_by_owner_depot": {
+      "D_guangzhou": 3
+     },
+     "adds": [
+      {
+       "customer_id": "N5",
+       "owner_depot": "D_guangzhou",
+       "donor": "C009",
+       "t_appear": 35622.73886930489,
+       "ready": 45714.39402,
+       "due": 49162.43436,
+       "service": 540.0,
+       "demand": 208.0,
+       "slack_trigger_to_due": 5962.434359999999,
+       "due_before_trigger": false
+      },
+      {
+       "customer_id": "N1",
+       "owner_depot": "D_guangzhou",
+       "donor": "C005",
+       "t_appear": 39854.22215696174,
+       "ready": 53825.577659999995,
+       "due": 57124.17966,
+       "service": 720.0,
+       "demand": 278.0,
+       "slack_trigger_to_due": 13924.179660000002,
+       "due_before_trigger": false
+      },
+      {
+       "customer_id": "N3",
+       "owner_depot": "D_guangzhou",
+       "donor": "C007",
+       "t_appear": 40518.95251236378,
+       "ready": 53463.85458,
+       "due": 56468.373419999996,
+       "service": 540.0,
+       "demand": 208.0,
+       "slack_trigger_to_due": 13268.373419999996,
+       "due_before_trigger": false
+      }
+     ]
+    },
+    {
+     "stage": 3,
+     "trigger_time": 54000.0,
+     "trigger_reason": "delta_t",
+     "event_count": 1,
+     "type_counts": {
+      "add": 1
+     },
+     "add_count": 1,
+     "add_by_owner_depot": {
+      "D_guangzhou": 1
+     },
+     "adds": [
+      {
+       "customer_id": "N2",
+       "owner_depot": "D_guangzhou",
+       "donor": "C006",
+       "t_appear": 47045.71691874679,
+       "ready": 61672.727100000004,
+       "due": 64755.311579999994,
+       "service": 720.0,
+       "demand": 278.0,
+       "slack_trigger_to_due": 10755.311579999994,
+       "due_before_trigger": false
+      }
+     ]
+    },
+    {
+     "stage": 4,
+     "trigger_time": 64800.0,
+     "trigger_reason": "delta_t",
+     "event_count": 2,
+     "type_counts": {
+      "cancel": 1,
+      "demand_change": 1
+     },
+     "add_count": 0,
+     "add_by_owner_depot": {},
+     "adds": []
+    }
+   ]
+  },
+  {
+   "scale": "50c",
+   "instance": "cn-prd-50c-01-V2-LOCATIONS",
+   "stream_seed": 5,
+   "rolling_parameters": {
+    "add_ratio": 0.1,
+    "cancel_ratio": 0.05,
+    "delta_t_seconds": 10800.0,
+    "demand_change_ratio": 0.1,
+    "q_bar": 8,
+    "stages": 4
+   },
+   "total_events": 12,
+   "total_adds": 5,
+   "batch_count": 3,
+   "stages": [
+    {
+     "stage": 1,
+     "trigger_time": 32400.0,
+     "trigger_reason": "delta_t",
+     "event_count": 4,
+     "type_counts": {
+      "demand_change": 1,
+      "cancel": 2,
+      "add": 1
+     },
+     "add_count": 1,
+     "add_by_owner_depot": {
+      "D_guangzhou": 1
+     },
+     "adds": [
+      {
+       "customer_id": "N5",
+       "owner_depot": "D_guangzhou",
+       "donor": "C010",
+       "t_appear": 30212.371501204507,
+       "ready": 58718.4072,
+       "due": 61686.704880000005,
+       "service": 540.0,
+       "demand": 208.0,
+       "slack_trigger_to_due": 29286.704880000005,
+       "due_before_trigger": false
+      }
+     ]
+    },
+    {
+     "stage": 2,
+     "trigger_time": 43200.0,
+     "trigger_reason": "delta_t",
+     "event_count": 5,
+     "type_counts": {
+      "add": 2,
+      "demand_change": 3
+     },
+     "add_count": 2,
+     "add_by_owner_depot": {
+      "D_guangzhou": 2
+     },
+     "adds": [
+      {
+       "customer_id": "N3",
+       "owner_depot": "D_guangzhou",
+       "donor": "C008",
+       "t_appear": 35376.91234855838,
+       "ready": 45856.232939999994,
+       "due": 48101.645699999994,
+       "service": 540.0,
+       "demand": 208.0,
+       "slack_trigger_to_due": 4901.645699999994,
+       "due_before_trigger": false
+      },
+      {
+       "customer_id": "N4",
+       "owner_depot": "D_guangzhou",
+       "donor": "C009",
+       "t_appear": 37803.0646620063,
+       "ready": 45714.39402,
+       "due": 49162.43436,
+       "service": 540.0,
+       "demand": 208.0,
+       "slack_trigger_to_due": 5962.434359999999,
+       "due_before_trigger": false
+      }
+     ]
+    },
+    {
+     "stage": 3,
+     "trigger_time": 64800.0,
+     "trigger_reason": "delta_t",
+     "event_count": 3,
+     "type_counts": {
+      "demand_change": 1,
+      "add": 2
+     },
+     "add_count": 2,
+     "add_by_owner_depot": {
+      "D_guangzhou": 2
+     },
+     "adds": [
+      {
+       "customer_id": "N2",
+       "owner_depot": "D_guangzhou",
+       "donor": "C007",
+       "t_appear": 58508.676424173485,
+       "ready": 58508.676424173485,
+       "due": 58508.676424173485,
+       "service": 540.0,
+       "demand": 208.0,
+       "slack_trigger_to_due": -6291.323575826515,
+       "due_before_trigger": true
+      },
+      {
+       "customer_id": "N1",
+       "owner_depot": "D_guangzhou",
+       "donor": "C006",
+       "t_appear": 61340.02046289256,
+       "ready": 61672.727100000004,
+       "due": 64755.311579999994,
+       "service": 720.0,
+       "demand": 278.0,
+       "slack_trigger_to_due": -44.68842000000586,
+       "due_before_trigger": true
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "scale": "100c",
+   "instance": "cn-prd-100c-02-V2-LOCATIONS",
+   "stream_seed": 1,
+   "rolling_parameters": {
+    "add_ratio": 0.1,
+    "cancel_ratio": 0.05,
+    "delta_t_seconds": 10800.0,
+    "demand_change_ratio": 0.1,
+    "q_bar": 8,
+    "stages": 4
+   },
+   "total_events": 25,
+   "total_adds": 10,
+   "batch_count": 4,
+   "stages": [
+    {
+     "stage": 1,
+     "trigger_time": 32400.0,
+     "trigger_reason": "delta_t",
+     "event_count": 5,
+     "type_counts": {
+      "add": 3,
+      "demand_change": 2
+     },
+     "add_count": 3,
+     "add_by_owner_depot": {
+      "D_guangzhou": 3
+     },
+     "adds": [
+      {
+       "customer_id": "N3",
+       "owner_depot": "D_guangzhou",
+       "donor": "C004",
+       "t_appear": 24238.285619303133,
+       "ready": 55339.03134,
+       "due": 58096.530900000005,
+       "service": 360.0,
+       "demand": 139.0,
+       "slack_trigger_to_due": 25696.530900000005,
+       "due_before_trigger": false
+      },
+      {
+       "customer_id": "N1",
+       "owner_depot": "D_guangzhou",
+       "donor": "C002",
+       "t_appear": 30314.946268849337,
+       "ready": 51607.61538,
+       "due": 53518.411739999996,
+       "service": 360.0,
+       "demand": 139.0,
+       "slack_trigger_to_due": 21118.411739999996,
+       "due_before_trigger": false
+      },
+      {
+       "customer_id": "N4",
+       "owner_depot": "D_guangzhou",
+       "donor": "C005",
+       "t_appear": 31517.196366938395,
+       "ready": 46809.08274,
+       "due": 49998.48738,
+       "service": 360.0,
+       "demand": 139.0,
+       "slack_trigger_to_due": 17598.48738,
+       "due_before_trigger": false
+      }
+     ]
+    },
+    {
+     "stage": 2,
+     "trigger_time": 39872.82529246442,
+     "trigger_reason": "q_bar",
+     "event_count": 8,
+     "type_counts": {
+      "add": 4,
+      "demand_change": 3,
+      "cancel": 1
+     },
+     "add_count": 4,
+     "add_by_owner_depot": {
+      "D_guangzhou": 4
+     },
+     "adds": [
+      {
+       "customer_id": "N2",
+       "owner_depot": "D_guangzhou",
+       "donor": "C003",
+       "t_appear": 32583.324013524798,
+       "ready": 46300.48032,
+       "due": 49782.70524,
+       "service": 900.0,
+       "demand": 347.0,
+       "slack_trigger_to_due": 9909.879947535585,
+       "due_before_trigger": false
+      },
+      {
+       "customer_id": "N8",
+       "owner_depot": "D_guangzhou",
+       "donor": "C009",
+       "t_appear": 37127.95065218159,
+       "ready": 44671.92744,
+       "due": 47857.549439999995,
+       "service": 1080.0,
+       "demand": 417.0,
+       "slack_trigger_to_due": 7984.724147535577,
+       "due_before_trigger": false
+      },
+      {
+       "customer_id": "N10",
+       "owner_depot": "D_guangzhou",
+       "donor": "C011",
+       "t_appear": 37495.299440108545,
+       "ready": 48629.82378,
+       "due": 50786.07714,
+       "service": 900.0,
+       "demand": 347.0,
+       "slack_trigger_to_due": 10913.251847535583,
+       "due_before_trigger": false
+      },
+      {
+       "customer_id": "N7",
+       "owner_depot": "D_guangzhou",
+       "donor": "C008",
+       "t_appear": 39485.205282982,
+       "ready": 48131.73732,
+       "due": 50269.10832,
+       "service": 360.0,
+       "demand": 139.0,
+       "slack_trigger_to_due": 10396.283027535581,
+       "due_before_trigger": false
+      }
+     ]
+    },
+    {
+     "stage": 3,
+     "trigger_time": 50672.82529246442,
+     "trigger_reason": "delta_t",
+     "event_count": 6,
+     "type_counts": {
+      "demand_change": 3,
+      "add": 1,
+      "cancel": 2
+     },
+     "add_count": 1,
+     "add_by_owner_depot": {
+      "D_guangzhou": 1
+     },
+     "adds": [
+      {
+       "customer_id": "N6",
+       "owner_depot": "D_guangzhou",
+       "donor": "C007",
+       "t_appear": 45079.39960172033,
+       "ready": 53557.93872,
+       "due": 55517.87922,
+       "service": 900.0,
+       "demand": 347.0,
+       "slack_trigger_to_due": 4845.053927535584,
+       "due_before_trigger": false
+      }
+     ]
+    },
+    {
+     "stage": 4,
+     "trigger_time": 61472.82529246442,
+     "trigger_reason": "delta_t",
+     "event_count": 6,
+     "type_counts": {
+      "cancel": 2,
+      "add": 2,
+      "demand_change": 2
+     },
+     "add_count": 2,
+     "add_by_owner_depot": {
+      "D_guangzhou": 2
+     },
+     "adds": [
+      {
+       "customer_id": "N9",
+       "owner_depot": "D_guangzhou",
+       "donor": "C010",
+       "t_appear": 56709.28327131765,
+       "ready": 56709.28327131765,
+       "due": 56709.28327131765,
+       "service": 360.0,
+       "demand": 139.0,
+       "slack_trigger_to_due": -4763.542021146772,
+       "due_before_trigger": true
+      },
+      {
+       "customer_id": "N5",
+       "owner_depot": "D_guangzhou",
+       "donor": "C006",
+       "t_appear": 59532.96059018423,
+       "ready": 59532.96059018423,
+       "due": 59532.96059018423,
+       "service": 540.0,
+       "demand": 208.0,
+       "slack_trigger_to_due": -1939.8647022801888,
+       "due_before_trigger": true
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "scale": "100c",
+   "instance": "cn-prd-100c-02-V2-LOCATIONS",
+   "stream_seed": 2,
+   "rolling_parameters": {
+    "add_ratio": 0.1,
+    "cancel_ratio": 0.05,
+    "delta_t_seconds": 10800.0,
+    "demand_change_ratio": 0.1,
+    "q_bar": 8,
+    "stages": 4
+   },
+   "total_events": 25,
+   "total_adds": 10,
+   "batch_count": 4,
+   "stages": [
+    {
+     "stage": 1,
+     "trigger_time": 30442.732973848477,
+     "trigger_reason": "q_bar",
+     "event_count": 8,
+     "type_counts": {
+      "demand_change": 5,
+      "add": 2,
+      "cancel": 1
+     },
+     "add_count": 2,
+     "add_by_owner_depot": {
+      "D_guangzhou": 2
+     },
+     "adds": [
+      {
+       "customer_id": "N9",
+       "owner_depot": "D_guangzhou",
+       "donor": "C011",
+       "t_appear": 26044.545891979735,
+       "ready": 48629.82378,
+       "due": 50786.07714,
+       "service": 900.0,
+       "demand": 347.0,
+       "slack_trigger_to_due": 20343.344166151524,
+       "due_before_trigger": false
+      },
+      {
+       "customer_id": "N3",
+       "owner_depot": "D_guangzhou",
+       "donor": "C005",
+       "t_appear": 26690.594349598883,
+       "ready": 46809.08274,
+       "due": 49998.48738,
+       "service": 360.0,
+       "demand": 139.0,
+       "slack_trigger_to_due": 19555.754406151522,
+       "due_before_trigger": false
+      }
+     ]
+    },
+    {
+     "stage": 2,
+     "trigger_time": 41242.73297384848,
+     "trigger_reason": "delta_t",
+     "event_count": 6,
+     "type_counts": {
+      "demand_change": 3,
+      "add": 1,
+      "cancel": 2
+     },
+     "add_count": 1,
+     "add_by_owner_depot": {
+      "D_guangzhou": 1
+     },
+     "adds": [
+      {
+       "customer_id": "N7",
+       "owner_depot": "D_guangzhou",
+       "donor": "C009",
+       "t_appear": 31201.738270864087,
+       "ready": 44671.92744,
+       "due": 47857.549439999995,
+       "service": 1080.0,
+       "demand": 417.0,
+       "slack_trigger_to_due": 6614.816466151518,
+       "due_before_trigger": false
+      }
+     ]
+    },
+    {
+     "stage": 3,
+     "trigger_time": 52042.73297384848,
+     "trigger_reason": "delta_t",
+     "event_count": 4,
+     "type_counts": {
+      "cancel": 1,
+      "add": 3
+     },
+     "add_count": 3,
+     "add_by_owner_depot": {
+      "D_guangzhou": 3
+     },
+     "adds": [
+      {
+       "customer_id": "N2",
+       "owner_depot": "D_guangzhou",
+       "donor": "C004",
+       "t_appear": 47992.54657190191,
+       "ready": 55339.03134,
+       "due": 58096.530900000005,
+       "service": 360.0,
+       "demand": 139.0,
+       "slack_trigger_to_due": 6053.797926151528,
+       "due_before_trigger": false
+      },
+      {
+       "customer_id": "N10",
+       "owner_depot": "D_guangzhou",
+       "donor": "C012",
+       "t_appear": 49145.137978655286,
+       "ready": 49145.137978655286,
+       "due": 50277.164399999994,
+       "service": 360.0,
+       "demand": 139.0,
+       "slack_trigger_to_due": -1765.5685738484826,
+       "due_before_trigger": true
+      },
+      {
+       "customer_id": "N5",
+       "owner_depot": "D_guangzhou",
+       "donor": "C007",
+       "t_appear": 51984.90829711735,
+       "ready": 53557.93872,
+       "due": 55517.87922,
+       "service": 900.0,
+       "demand": 347.0,
+       "slack_trigger_to_due": 3475.1462461515257,
+       "due_before_trigger": false
+      }
+     ]
+    },
+    {
+     "stage": 4,
+     "trigger_time": 62842.73297384848,
+     "trigger_reason": "delta_t",
+     "event_count": 7,
+     "type_counts": {
+      "add": 4,
+      "demand_change": 2,
+      "cancel": 1
+     },
+     "add_count": 4,
+     "add_by_owner_depot": {
+      "D_guangzhou": 4
+     },
+     "adds": [
+      {
+       "customer_id": "N8",
+       "owner_depot": "D_guangzhou",
+       "donor": "C010",
+       "t_appear": 52717.15231990353,
+       "ready": 52717.15231990353,
+       "due": 52717.15231990353,
+       "service": 360.0,
+       "demand": 139.0,
+       "slack_trigger_to_due": -10125.580653944948,
+       "due_before_trigger": true
+      },
+      {
+       "customer_id": "N4",
+       "owner_depot": "D_guangzhou",
+       "donor": "C006",
+       "t_appear": 55657.15179440322,
+       "ready": 55657.15179440322,
+       "due": 56946.05646,
+       "service": 540.0,
+       "demand": 208.0,
+       "slack_trigger_to_due": -5896.676513848477,
+       "due_before_trigger": true
+      },
+      {
+       "customer_id": "N6",
+       "owner_depot": "D_guangzhou",
+       "donor": "C008",
+       "t_appear": 59049.572782587355,
+       "ready": 59049.572782587355,
+       "due": 59049.572782587355,
+       "service": 360.0,
+       "demand": 139.0,
+       "slack_trigger_to_due": -3793.1601912611222,
+       "due_before_trigger": true
+      },
+      {
+       "customer_id": "N1",
+       "owner_depot": "D_guangzhou",
+       "donor": "C003",
+       "t_appear": 60079.92148312131,
+       "ready": 60079.92148312131,
+       "due": 60079.92148312131,
+       "service": 900.0,
+       "demand": 347.0,
+       "slack_trigger_to_due": -2762.8114907271665,
+       "due_before_trigger": true
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "scale": "100c",
+   "instance": "cn-prd-100c-02-V2-LOCATIONS",
+   "stream_seed": 3,
+   "rolling_parameters": {
+    "add_ratio": 0.1,
+    "cancel_ratio": 0.05,
+    "delta_t_seconds": 10800.0,
+    "demand_change_ratio": 0.1,
+    "q_bar": 8,
+    "stages": 4
+   },
+   "total_events": 25,
+   "total_adds": 10,
+   "batch_count": 5,
+   "stages": [
+    {
+     "stage": 1,
+     "trigger_time": 32400.0,
+     "trigger_reason": "delta_t",
+     "event_count": 4,
+     "type_counts": {
+      "add": 2,
+      "demand_change": 1,
+      "cancel": 1
+     },
+     "add_count": 2,
+     "add_by_owner_depot": {
+      "D_guangzhou": 2
+     },
+     "adds": [
+      {
+       "customer_id": "N10",
+       "owner_depot": "D_guangzhou",
+       "donor": "C013",
+       "t_appear": 24041.208684091423,
+       "ready": 48526.52334,
+       "due": 50461.1691,
+       "service": 540.0,
+       "demand": 208.0,
+       "slack_trigger_to_due": 18061.1691,
+       "due_before_trigger": false
+      },
+      {
+       "customer_id": "N9",
+       "owner_depot": "D_guangzhou",
+       "donor": "C012",
+       "t_appear": 25160.17914563396,
+       "ready": 47761.5852,
+       "due": 50277.164399999994,
+       "service": 360.0,
+       "demand": 139.0,
+       "slack_trigger_to_due": 17877.164399999994,
+       "due_before_trigger": false
+      }
+     ]
+    },
+    {
+     "stage": 2,
+     "trigger_time": 43200.0,
+     "trigger_reason": "delta_t",
+     "event_count": 6,
+     "type_counts": {
+      "add": 3,
+      "demand_change": 2,
+      "cancel": 1
+     },
+     "add_count": 3,
+     "add_by_owner_depot": {
+      "D_guangzhou": 3
+     },
+     "adds": [
+      {
+       "customer_id": "N8",
+       "owner_depot": "D_guangzhou",
+       "donor": "C011",
+       "t_appear": 32933.796565100754,
+       "ready": 48629.82378,
+       "due": 50786.07714,
+       "service": 900.0,
+       "demand": 347.0,
+       "slack_trigger_to_due": 7586.077140000001,
+       "due_before_trigger": false
+      },
+      {
+       "customer_id": "N7",
+       "owner_depot": "D_guangzhou",
+       "donor": "C010",
+       "t_appear": 34610.377503415526,
+       "ready": 46281.4377,
+       "due": 48545.393339999995,
+       "service": 360.0,
+       "demand": 139.0,
+       "slack_trigger_to_due": 5345.393339999995,
+       "due_before_trigger": false
+      },
+      {
+       "customer_id": "N3",
+       "owner_depot": "D_guangzhou",
+       "donor": "C006",
+       "t_appear": 38449.04941747312,
+       "ready": 54709.34166,
+       "due": 56946.05646,
+       "service": 540.0,
+       "demand": 208.0,
+       "slack_trigger_to_due": 13746.05646,
+       "due_before_trigger": false
+      }
+     ]
+    },
+    {
+     "stage": 3,
+     "trigger_time": 54000.0,
+     "trigger_reason": "delta_t",
+     "event_count": 6,
+     "type_counts": {
+      "cancel": 1,
+      "add": 4,
+      "demand_change": 1
+     },
+     "add_count": 4,
+     "add_by_owner_depot": {
+      "D_guangzhou": 4
+     },
+     "adds": [
+      {
+       "customer_id": "N5",
+       "owner_depot": "D_guangzhou",
+       "donor": "C008",
+       "t_appear": 45177.10402734278,
+       "ready": 48131.73732,
+       "due": 50269.10832,
+       "service": 360.0,
+       "demand": 139.0,
+       "slack_trigger_to_due": -3730.8916800000006,
+       "due_before_trigger": true
+      },
+      {
+       "customer_id": "N4",
+       "owner_depot": "D_guangzhou",
+       "donor": "C007",
+       "t_appear": 46558.26378753406,
+       "ready": 53557.93872,
+       "due": 55517.87922,
+       "service": 900.0,
+       "demand": 347.0,
+       "slack_trigger_to_due": 1517.8792200000025,
+       "due_before_trigger": false
+      },
+      {
+       "customer_id": "N1",
+       "owner_depot": "D_guangzhou",
+       "donor": "C004",
+       "t_appear": 47281.95046941209,
+       "ready": 55339.03134,
+       "due": 58096.530900000005,
+       "service": 360.0,
+       "demand": 139.0,
+       "slack_trigger_to_due": 4096.530900000005,
+       "due_before_trigger": false
+      },
+      {
+       "customer_id": "N2",
+       "owner_depot": "D_guangzhou",
+       "donor": "C005",
+       "t_appear": 53372.350486422154,
+       "ready": 53372.350486422154,
+       "due": 53372.350486422154,
+       "service": 360.0,
+       "demand": 139.0,
+       "slack_trigger_to_due": -627.6495135778459,
+       "due_before_trigger": true
+      }
+     ]
+    },
+    {
+     "stage": 4,
+     "trigger_time": 61529.14622798977,
+     "trigger_reason": "q_bar",
+     "event_count": 8,
+     "type_counts": {
+      "demand_change": 5,
+      "add": 1,
+      "cancel": 2
+     },
+     "add_count": 1,
+     "add_by_owner_depot": {
+      "D_guangzhou": 1
+     },
+     "adds": [
+      {
+       "customer_id": "N6",
+       "owner_depot": "D_guangzhou",
+       "donor": "C009",
+       "t_appear": 59602.7853277856,
+       "ready": 59602.7853277856,
+       "due": 59602.7853277856,
+       "service": 1080.0,
+       "demand": 417.0,
+       "slack_trigger_to_due": -1926.3609002041703,
+       "due_before_trigger": true
+      }
+     ]
+    },
+    {
+     "stage": 5,
+     "trigger_time": 72329.14622798977,
+     "trigger_reason": "delta_t",
+     "event_count": 1,
+     "type_counts": {
+      "demand_change": 1
+     },
+     "add_count": 0,
+     "add_by_owner_depot": {},
+     "adds": []
+    }
+   ]
+  },
+  {
+   "scale": "100c",
+   "instance": "cn-prd-100c-02-V2-LOCATIONS",
+   "stream_seed": 4,
+   "rolling_parameters": {
+    "add_ratio": 0.1,
+    "cancel_ratio": 0.05,
+    "delta_t_seconds": 10800.0,
+    "demand_change_ratio": 0.1,
+    "q_bar": 8,
+    "stages": 4
+   },
+   "total_events": 25,
+   "total_adds": 10,
+   "batch_count": 5,
+   "stages": [
+    {
+     "stage": 1,
+     "trigger_time": 32400.0,
+     "trigger_reason": "delta_t",
+     "event_count": 6,
+     "type_counts": {
+      "add": 3,
+      "demand_change": 2,
+      "cancel": 1
+     },
+     "add_count": 3,
+     "add_by_owner_depot": {
+      "D_guangzhou": 3
+     },
+     "adds": [
+      {
+       "customer_id": "N4",
+       "owner_depot": "D_guangzhou",
+       "donor": "C008",
+       "t_appear": 24758.285967592143,
+       "ready": 48131.73732,
+       "due": 50269.10832,
+       "service": 360.0,
+       "demand": 139.0,
+       "slack_trigger_to_due": 17869.10832,
+       "due_before_trigger": false
+      },
+      {
+       "customer_id": "N6",
+       "owner_depot": "D_guangzhou",
+       "donor": "C010",
+       "t_appear": 26971.889947307645,
+       "ready": 46281.4377,
+       "due": 48545.393339999995,
+       "service": 360.0,
+       "demand": 139.0,
+       "slack_trigger_to_due": 16145.393339999995,
+       "due_before_trigger": false
+      },
+      {
+       "customer_id": "N1",
+       "owner_depot": "D_guangzhou",
+       "donor": "C005",
+       "t_appear": 28509.013226567837,
+       "ready": 46809.08274,
+       "due": 49998.48738,
+       "service": 360.0,
+       "demand": 139.0,
+       "slack_trigger_to_due": 17598.48738,
+       "due_before_trigger": false
+      }
+     ]
+    },
+    {
+     "stage": 2,
+     "trigger_time": 37886.069632632396,
+     "trigger_reason": "q_bar",
+     "event_count": 8,
+     "type_counts": {
+      "demand_change": 2,
+      "add": 4,
+      "cancel": 2
+     },
+     "add_count": 4,
+     "add_by_owner_depot": {
+      "D_guangzhou": 4
+     },
+     "adds": [
+      {
+       "customer_id": "N8",
+       "owner_depot": "D_guangzhou",
+       "donor": "C012",
+       "t_appear": 34867.47657367628,
+       "ready": 47761.5852,
+       "due": 50277.164399999994,
+       "service": 360.0,
+       "demand": 139.0,
+       "slack_trigger_to_due": 12391.094767367598,
+       "due_before_trigger": false
+      },
+      {
+       "customer_id": "N3",
+       "owner_depot": "D_guangzhou",
+       "donor": "C007",
+       "t_appear": 35071.13501494117,
+       "ready": 53557.93872,
+       "due": 55517.87922,
+       "service": 900.0,
+       "demand": 347.0,
+       "slack_trigger_to_due": 17631.809587367607,
+       "due_before_trigger": false
+      },
+      {
+       "customer_id": "N10",
+       "owner_depot": "D_guangzhou",
+       "donor": "C014",
+       "t_appear": 36478.50955893942,
+       "ready": 64326.07116000001,
+       "due": 67362.89214,
+       "service": 360.0,
+       "demand": 139.0,
+       "slack_trigger_to_due": 29476.8225073676,
+       "due_before_trigger": false
+      },
+      {
+       "customer_id": "N5",
+       "owner_depot": "D_guangzhou",
+       "donor": "C009",
+       "t_appear": 37643.42780642739,
+       "ready": 44671.92744,
+       "due": 47857.549439999995,
+       "service": 1080.0,
+       "demand": 417.0,
+       "slack_trigger_to_due": 9971.4798073676,
+       "due_before_trigger": false
+      }
+     ]
+    },
+    {
+     "stage": 3,
+     "trigger_time": 48686.069632632396,
+     "trigger_reason": "delta_t",
+     "event_count": 2,
+     "type_counts": {
+      "demand_change": 2
+     },
+     "add_count": 0,
+     "add_by_owner_depot": {},
+     "adds": []
+    },
+    {
+     "stage": 4,
+     "trigger_time": 59486.069632632396,
+     "trigger_reason": "delta_t",
+     "event_count": 6,
+     "type_counts": {
+      "cancel": 2,
+      "add": 1,
+      "demand_change": 3
+     },
+     "add_count": 1,
+     "add_by_owner_depot": {
+      "D_guangzhou": 1
+     },
+     "adds": [
+      {
+       "customer_id": "N9",
+       "owner_depot": "D_guangzhou",
+       "donor": "C013",
+       "t_appear": 50012.290183601166,
+       "ready": 50012.290183601166,
+       "due": 50461.1691,
+       "service": 540.0,
+       "demand": 208.0,
+       "slack_trigger_to_due": -9024.900532632397,
+       "due_before_trigger": true
+      }
+     ]
+    },
+    {
+     "stage": 5,
+     "trigger_time": 70286.0696326324,
+     "trigger_reason": "delta_t",
+     "event_count": 3,
+     "type_counts": {
+      "add": 2,
+      "demand_change": 1
+     },
+     "add_count": 2,
+     "add_by_owner_depot": {
+      "D_guangzhou": 2
+     },
+     "adds": [
+      {
+       "customer_id": "N2",
+       "owner_depot": "D_guangzhou",
+       "donor": "C006",
+       "t_appear": 60096.49964111107,
+       "ready": 60096.49964111107,
+       "due": 60096.49964111107,
+       "service": 540.0,
+       "demand": 208.0,
+       "slack_trigger_to_due": -10189.569991521326,
+       "due_before_trigger": true
+      },
+      {
+       "customer_id": "N7",
+       "owner_depot": "D_guangzhou",
+       "donor": "C011",
+       "t_appear": 61258.77662778048,
+       "ready": 61258.77662778048,
+       "due": 61258.77662778048,
+       "service": 900.0,
+       "demand": 347.0,
+       "slack_trigger_to_due": -9027.29300485192,
+       "due_before_trigger": true
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "scale": "100c",
+   "instance": "cn-prd-100c-02-V2-LOCATIONS",
+   "stream_seed": 5,
+   "rolling_parameters": {
+    "add_ratio": 0.1,
+    "cancel_ratio": 0.05,
+    "delta_t_seconds": 10800.0,
+    "demand_change_ratio": 0.1,
+    "q_bar": 8,
+    "stages": 4
+   },
+   "total_events": 25,
+   "total_adds": 10,
+   "batch_count": 5,
+   "stages": [
+    {
+     "stage": 1,
+     "trigger_time": 32400.0,
+     "trigger_reason": "delta_t",
+     "event_count": 6,
+     "type_counts": {
+      "cancel": 2,
+      "demand_change": 3,
+      "add": 1
+     },
+     "add_count": 1,
+     "add_by_owner_depot": {
+      "D_guangzhou": 1
+     },
+     "adds": [
+      {
+       "customer_id": "N7",
+       "owner_depot": "D_guangzhou",
+       "donor": "C012",
+       "t_appear": 27961.095549240705,
+       "ready": 47761.5852,
+       "due": 50277.164399999994,
+       "service": 360.0,
+       "demand": 139.0,
+       "slack_trigger_to_due": 17877.164399999994,
+       "due_before_trigger": false
+      }
+     ]
+    },
+    {
+     "stage": 2,
+     "trigger_time": 43200.0,
+     "trigger_reason": "delta_t",
+     "event_count": 5,
+     "type_counts": {
+      "demand_change": 2,
+      "cancel": 1,
+      "add": 2
+     },
+     "add_count": 2,
+     "add_by_owner_depot": {
+      "D_guangzhou": 2
+     },
+     "adds": [
+      {
+       "customer_id": "N3",
+       "owner_depot": "D_guangzhou",
+       "donor": "C008",
+       "t_appear": 37149.564891501104,
+       "ready": 48131.73732,
+       "due": 50269.10832,
+       "service": 360.0,
+       "demand": 139.0,
+       "slack_trigger_to_due": 7069.108319999999,
+       "due_before_trigger": false
+      },
+      {
+       "customer_id": "N4",
+       "owner_depot": "D_guangzhou",
+       "donor": "C009",
+       "t_appear": 37554.35981265163,
+       "ready": 44671.92744,
+       "due": 47857.549439999995,
+       "service": 1080.0,
+       "demand": 417.0,
+       "slack_trigger_to_due": 4657.549439999995,
+       "due_before_trigger": false
+      }
+     ]
+    },
+    {
+     "stage": 3,
+     "trigger_time": 54000.0,
+     "trigger_reason": "delta_t",
+     "event_count": 5,
+     "type_counts": {
+      "add": 3,
+      "demand_change": 1,
+      "cancel": 1
+     },
+     "add_count": 3,
+     "add_by_owner_depot": {
+      "D_guangzhou": 3
+     },
+     "adds": [
+      {
+       "customer_id": "N5",
+       "owner_depot": "D_guangzhou",
+       "donor": "C010",
+       "t_appear": 44160.406788548506,
+       "ready": 46281.4377,
+       "due": 48545.393339999995,
+       "service": 360.0,
+       "demand": 139.0,
+       "slack_trigger_to_due": -5454.606660000005,
+       "due_before_trigger": true
+      },
+      {
+       "customer_id": "N8",
+       "owner_depot": "D_guangzhou",
+       "donor": "C013",
+       "t_appear": 52857.7164361237,
+       "ready": 52857.7164361237,
+       "due": 52857.7164361237,
+       "service": 540.0,
+       "demand": 208.0,
+       "slack_trigger_to_due": -1142.283563876299,
+       "due_before_trigger": true
+      },
+      {
+       "customer_id": "N6",
+       "owner_depot": "D_guangzhou",
+       "donor": "C011",
+       "t_appear": 53915.44521149693,
+       "ready": 53915.44521149693,
+       "due": 53915.44521149693,
+       "service": 900.0,
+       "demand": 347.0,
+       "slack_trigger_to_due": -84.55478850306827,
+       "due_before_trigger": true
+      }
+     ]
+    },
+    {
+     "stage": 4,
+     "trigger_time": 60532.711194440104,
+     "trigger_reason": "q_bar",
+     "event_count": 8,
+     "type_counts": {
+      "add": 4,
+      "demand_change": 3,
+      "cancel": 1
+     },
+     "add_count": 4,
+     "add_by_owner_depot": {
+      "D_guangzhou": 4
+     },
+     "adds": [
+      {
+       "customer_id": "N9",
+       "owner_depot": "D_guangzhou",
+       "donor": "C014",
+       "t_appear": 54756.17322475102,
+       "ready": 64326.07116000001,
+       "due": 67362.89214,
+       "service": 360.0,
+       "demand": 139.0,
+       "slack_trigger_to_due": 6830.180945559892,
+       "due_before_trigger": false
+      },
+      {
+       "customer_id": "N10",
+       "owner_depot": "D_guangzhou",
+       "donor": "C015",
+       "t_appear": 57184.91513001311,
+       "ready": 57184.91513001311,
+       "due": 57184.91513001311,
+       "service": 1080.0,
+       "demand": 417.0,
+       "slack_trigger_to_due": -3347.7960644269915,
+       "due_before_trigger": true
+      },
+      {
+       "customer_id": "N1",
+       "owner_depot": "D_guangzhou",
+       "donor": "C006",
+       "t_appear": 59904.998825951625,
+       "ready": 59904.998825951625,
+       "due": 59904.998825951625,
+       "service": 540.0,
+       "demand": 208.0,
+       "slack_trigger_to_due": -627.7123684884791,
+       "due_before_trigger": true
+      },
+      {
+       "customer_id": "N2",
+       "owner_depot": "D_guangzhou",
+       "donor": "C007",
+       "t_appear": 60386.66408814895,
+       "ready": 60386.66408814895,
+       "due": 60386.66408814895,
+       "service": 900.0,
+       "demand": 347.0,
+       "slack_trigger_to_due": -146.0471062911529,
+       "due_before_trigger": true
+      }
+     ]
+    },
+    {
+     "stage": 5,
+     "trigger_time": 71332.71119444011,
+     "trigger_reason": "delta_t",
+     "event_count": 1,
+     "type_counts": {
+      "demand_change": 1
+     },
+     "add_count": 0,
+     "add_by_owner_depot": {},
+     "adds": []
+    }
+   ]
+  },
+  {
+   "scale": "150c",
+   "instance": "cn-prd-150c-01-V2-LOCATIONS",
+   "stream_seed": 1,
+   "rolling_parameters": {
+    "add_ratio": 0.1,
+    "cancel_ratio": 0.05,
+    "delta_t_seconds": 10800.0,
+    "demand_change_ratio": 0.1,
+    "q_bar": 8,
+    "stages": 4
+   },
+   "total_events": 38,
+   "total_adds": 15,
+   "batch_count": 5,
+   "stages": [
+    {
+     "stage": 1,
+     "trigger_time": 30937.643919819304,
+     "trigger_reason": "q_bar",
+     "event_count": 8,
+     "type_counts": {
+      "demand_change": 2,
+      "add": 4,
+      "cancel": 2
+     },
+     "add_count": 4,
+     "add_by_owner_depot": {
+      "D_dongguan": 4
+     },
+     "adds": [
+      {
+       "customer_id": "N7",
+       "owner_depot": "D_dongguan",
+       "donor": "C008",
+       "t_appear": 25022.011020832055,
+       "ready": 43981.97466,
+       "due": 46022.70828,
+       "service": 1080.0,
+       "demand": 417.0,
+       "slack_trigger_to_due": 15085.064360180695,
+       "due_before_trigger": false
+      },
+      {
+       "customer_id": "N9",
+       "owner_depot": "D_dongguan",
+       "donor": "C010",
+       "t_appear": 26499.23103240239,
+       "ready": 45163.1256,
+       "due": 48151.03602,
+       "service": 360.0,
+       "demand": 139.0,
+       "slack_trigger_to_due": 17213.392100180696,
+       "due_before_trigger": false
+      },
+      {
+       "customer_id": "N3",
+       "owner_depot": "D_dongguan",
+       "donor": "C004",
+       "t_appear": 27321.46272423346,
+       "ready": 44792.13384,
+       "due": 47274.65952,
+       "service": 360.0,
+       "demand": 139.0,
+       "slack_trigger_to_due": 16337.015600180697,
+       "due_before_trigger": false
+      },
+      {
+       "customer_id": "N2",
+       "owner_depot": "D_dongguan",
+       "donor": "C003",
+       "t_appear": 30788.88166573662,
+       "ready": 47302.949519999995,
+       "due": 49743.64458,
+       "service": 540.0,
+       "demand": 208.0,
+       "slack_trigger_to_due": 18806.000660180696,
+       "due_before_trigger": false
+      }
+     ]
+    },
+    {
+     "stage": 2,
+     "trigger_time": 39207.62155245567,
+     "trigger_reason": "q_bar",
+     "event_count": 8,
+     "type_counts": {
+      "cancel": 3,
+      "demand_change": 3,
+      "add": 2
+     },
+     "add_count": 2,
+     "add_by_owner_depot": {
+      "D_dongguan": 2
+     },
+     "adds": [
+      {
+       "customer_id": "N14",
+       "owner_depot": "D_dongguan",
+       "donor": "C015",
+       "t_appear": 34204.79059649198,
+       "ready": 50301.64062,
+       "due": 52441.61274,
+       "service": 360.0,
+       "demand": 139.0,
+       "slack_trigger_to_due": 13233.991187544329,
+       "due_before_trigger": false
+      },
+      {
+       "customer_id": "N13",
+       "owner_depot": "D_dongguan",
+       "donor": "C014",
+       "t_appear": 34692.92684274064,
+       "ready": 59297.71338,
+       "due": 62627.74308000001,
+       "service": 900.0,
+       "demand": 347.0,
+       "slack_trigger_to_due": 23420.12152754434,
+       "due_before_trigger": false
+      }
+     ]
+    },
+    {
+     "stage": 3,
+     "trigger_time": 49290.80494203353,
+     "trigger_reason": "q_bar",
+     "event_count": 8,
+     "type_counts": {
+      "demand_change": 3,
+      "add": 3,
+      "cancel": 2
+     },
+     "add_count": 3,
+     "add_by_owner_depot": {
+      "D_dongguan": 3
+     },
+     "adds": [
+      {
+       "customer_id": "N11",
+       "owner_depot": "D_dongguan",
+       "donor": "C012",
+       "t_appear": 41372.592849180786,
+       "ready": 58611.6813,
+       "due": 61114.98588,
+       "service": 900.0,
+       "demand": 347.0,
+       "slack_trigger_to_due": 11824.18093796647,
+       "due_before_trigger": false
+      },
+      {
+       "customer_id": "N1",
+       "owner_depot": "D_dongguan",
+       "donor": "C002",
+       "t_appear": 45173.4035873699,
+       "ready": 49262.4414,
+       "due": 51678.59466,
+       "service": 1080.0,
+       "demand": 417.0,
+       "slack_trigger_to_due": 2387.7897179664724,
+       "due_before_trigger": false
+      },
+      {
+       "customer_id": "N4",
+       "owner_depot": "D_dongguan",
+       "donor": "C005",
+       "t_appear": 45184.01283704603,
+       "ready": 54611.47992,
+       "due": 57679.93566,
+       "service": 720.0,
+       "demand": 278.0,
+       "slack_trigger_to_due": 8389.130717966473,
+       "due_before_trigger": false
+      }
+     ]
+    },
+    {
+     "stage": 4,
+     "trigger_time": 57510.87615377405,
+     "trigger_reason": "q_bar",
+     "event_count": 8,
+     "type_counts": {
+      "demand_change": 4,
+      "add": 4
+     },
+     "add_count": 4,
+     "add_by_owner_depot": {
+      "D_dongguan": 4
+     },
+     "adds": [
+      {
+       "customer_id": "N12",
+       "owner_depot": "D_dongguan",
+       "donor": "C013",
+       "t_appear": 53081.168686875804,
+       "ready": 53081.168686875804,
+       "due": 53086.95564,
+       "service": 900.0,
+       "demand": 347.0,
+       "slack_trigger_to_due": -4423.92051377405,
+       "due_before_trigger": true
+      },
+      {
+       "customer_id": "N15",
+       "owner_depot": "D_dongguan",
+       "donor": "C016",
+       "t_appear": 54758.546346219664,
+       "ready": 54758.546346219664,
+       "due": 54758.546346219664,
+       "service": 360.0,
+       "demand": 139.0,
+       "slack_trigger_to_due": -2752.329807554386,
+       "due_before_trigger": true
+      },
+      {
+       "customer_id": "N5",
+       "owner_depot": "D_dongguan",
+       "donor": "C006",
+       "t_appear": 56857.53359245572,
+       "ready": 56857.53359245572,
+       "due": 56857.53359245572,
+       "service": 540.0,
+       "demand": 208.0,
+       "slack_trigger_to_due": -653.3425613183281,
+       "due_before_trigger": true
+      },
+      {
+       "customer_id": "N10",
+       "owner_depot": "D_dongguan",
+       "donor": "C011",
+       "t_appear": 57510.87615377405,
+       "ready": 57510.87615377405,
+       "due": 60435.57582,
+       "service": 1080.0,
+       "demand": 417.0,
+       "slack_trigger_to_due": 2924.699666225948,
+       "due_before_trigger": false
+      }
+     ]
+    },
+    {
+     "stage": 5,
+     "trigger_time": 68310.87615377405,
+     "trigger_reason": "delta_t",
+     "event_count": 6,
+     "type_counts": {
+      "add": 2,
+      "cancel": 1,
+      "demand_change": 3
+     },
+     "add_count": 2,
+     "add_by_owner_depot": {
+      "D_dongguan": 2
+     },
+     "adds": [
+      {
+       "customer_id": "N6",
+       "owner_depot": "D_dongguan",
+       "donor": "C007",
+       "t_appear": 59955.336977286875,
+       "ready": 60396.615300000005,
+       "due": 62328.345420000005,
+       "service": 720.0,
+       "demand": 278.0,
+       "slack_trigger_to_due": -5982.530733774045,
+       "due_before_trigger": true
+      },
+      {
+       "customer_id": "N8",
+       "owner_depot": "D_dongguan",
+       "donor": "C009",
+       "t_appear": 60446.01146765541,
+       "ready": 60888.66732,
+       "due": 63510.58284,
+       "service": 900.0,
+       "demand": 347.0,
+       "slack_trigger_to_due": -4800.293313774047,
+       "due_before_trigger": true
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "scale": "150c",
+   "instance": "cn-prd-150c-01-V2-LOCATIONS",
+   "stream_seed": 2,
+   "rolling_parameters": {
+    "add_ratio": 0.1,
+    "cancel_ratio": 0.05,
+    "delta_t_seconds": 10800.0,
+    "demand_change_ratio": 0.1,
+    "q_bar": 8,
+    "stages": 4
+   },
+   "total_events": 38,
+   "total_adds": 15,
+   "batch_count": 5,
+   "stages": [
+    {
+     "stage": 1,
+     "trigger_time": 29726.35213242223,
+     "trigger_reason": "q_bar",
+     "event_count": 8,
+     "type_counts": {
+      "cancel": 1,
+      "demand_change": 4,
+      "add": 3
+     },
+     "add_count": 3,
+     "add_by_owner_depot": {
+      "D_dongguan": 3
+     },
+     "adds": [
+      {
+       "customer_id": "N9",
+       "owner_depot": "D_dongguan",
+       "donor": "C011",
+       "t_appear": 25539.63333629477,
+       "ready": 57353.3121,
+       "due": 60435.57582,
+       "service": 1080.0,
+       "demand": 417.0,
+       "slack_trigger_to_due": 30709.223687577767,
+       "due_before_trigger": false
+      },
+      {
+       "customer_id": "N15",
+       "owner_depot": "D_dongguan",
+       "donor": "C017",
+       "t_appear": 27393.477936484007,
+       "ready": 45399.43914,
+       "due": 48375.749339999995,
+       "service": 720.0,
+       "demand": 278.0,
+       "slack_trigger_to_due": 18649.397207577764,
+       "due_before_trigger": false
+      },
+      {
+       "customer_id": "N13",
+       "owner_depot": "D_dongguan",
+       "donor": "C015",
+       "t_appear": 29726.35213242223,
+       "ready": 50301.64062,
+       "due": 52441.61274,
+       "service": 360.0,
+       "demand": 139.0,
+       "slack_trigger_to_due": 22715.260607577766,
+       "due_before_trigger": false
+      }
+     ]
+    },
+    {
+     "stage": 2,
+     "trigger_time": 39384.08293911734,
+     "trigger_reason": "q_bar",
+     "event_count": 8,
+     "type_counts": {
+      "add": 4,
+      "demand_change": 4
+     },
+     "add_count": 4,
+     "add_by_owner_depot": {
+      "D_dongguan": 4
+     },
+     "adds": [
+      {
+       "customer_id": "N10",
+       "owner_depot": "D_dongguan",
+       "donor": "C012",
+       "t_appear": 34022.071967871074,
+       "ready": 58611.6813,
+       "due": 61114.98588,
+       "service": 900.0,
+       "demand": 347.0,
+       "slack_trigger_to_due": 21730.90294088266,
+       "due_before_trigger": false
+      },
+      {
+       "customer_id": "N4",
+       "owner_depot": "D_dongguan",
+       "donor": "C006",
+       "t_appear": 34880.71563833111,
+       "ready": 43514.5188,
+       "due": 46293.74316,
+       "service": 540.0,
+       "demand": 208.0,
+       "slack_trigger_to_due": 6909.660220882659,
+       "due_before_trigger": false
+      },
+      {
+       "customer_id": "N6",
+       "owner_depot": "D_dongguan",
+       "donor": "C008",
+       "t_appear": 35750.03266933291,
+       "ready": 43981.97466,
+       "due": 46022.70828,
+       "service": 1080.0,
+       "demand": 417.0,
+       "slack_trigger_to_due": 6638.62534088266,
+       "due_before_trigger": false
+      },
+      {
+       "customer_id": "N11",
+       "owner_depot": "D_dongguan",
+       "donor": "C013",
+       "t_appear": 39384.08293911734,
+       "ready": 49504.72206,
+       "due": 53086.95564,
+       "service": 900.0,
+       "demand": 347.0,
+       "slack_trigger_to_due": 13702.87270088266,
+       "due_before_trigger": false
+      }
+     ]
+    },
+    {
+     "stage": 3,
+     "trigger_time": 48167.163906595335,
+     "trigger_reason": "q_bar",
+     "event_count": 8,
+     "type_counts": {
+      "demand_change": 1,
+      "cancel": 2,
+      "add": 5
+     },
+     "add_count": 5,
+     "add_by_owner_depot": {
+      "D_dongguan": 5
+     },
+     "adds": [
+      {
+       "customer_id": "N5",
+       "owner_depot": "D_dongguan",
+       "donor": "C007",
+       "t_appear": 42763.02857099418,
+       "ready": 60396.615300000005,
+       "due": 62328.345420000005,
+       "service": 720.0,
+       "demand": 278.0,
+       "slack_trigger_to_due": 14161.18151340467,
+       "due_before_trigger": false
+      },
+      {
+       "customer_id": "N7",
+       "owner_depot": "D_dongguan",
+       "donor": "C009",
+       "t_appear": 45202.44942084634,
+       "ready": 60888.66732,
+       "due": 63510.58284,
+       "service": 900.0,
+       "demand": 347.0,
+       "slack_trigger_to_due": 15343.418933404668,
+       "due_before_trigger": false
+      },
+      {
+       "customer_id": "N8",
+       "owner_depot": "D_dongguan",
+       "donor": "C010",
+       "t_appear": 47288.4624800766,
+       "ready": 47288.4624800766,
+       "due": 48151.03602,
+       "service": 360.0,
+       "demand": 139.0,
+       "slack_trigger_to_due": -16.12788659533544,
+       "due_before_trigger": true
+      },
+      {
+       "customer_id": "N12",
+       "owner_depot": "D_dongguan",
+       "donor": "C014",
+       "t_appear": 47927.6185445772,
+       "ready": 59297.71338,
+       "due": 62627.74308000001,
+       "service": 900.0,
+       "demand": 347.0,
+       "slack_trigger_to_due": 14460.579173404672,
+       "due_before_trigger": false
+      },
+      {
+       "customer_id": "N2",
+       "owner_depot": "D_dongguan",
+       "donor": "C004",
+       "t_appear": 48167.163906595335,
+       "ready": 48167.163906595335,
+       "due": 48167.163906595335,
+       "service": 360.0,
+       "demand": 139.0,
+       "slack_trigger_to_due": 0.0,
+       "due_before_trigger": false
+      }
+     ]
+    },
+    {
+     "stage": 4,
+     "trigger_time": 54536.76963979055,
+     "trigger_reason": "q_bar",
+     "event_count": 8,
+     "type_counts": {
+      "demand_change": 4,
+      "cancel": 3,
+      "add": 1
+     },
+     "add_count": 1,
+     "add_by_owner_depot": {
+      "D_dongguan": 1
+     },
+     "adds": [
+      {
+       "customer_id": "N3",
+       "owner_depot": "D_dongguan",
+       "donor": "C005",
+       "t_appear": 52829.736189230585,
+       "ready": 54611.47992,
+       "due": 57679.93566,
+       "service": 720.0,
+       "demand": 278.0,
+       "slack_trigger_to_due": 3143.16602020945,
+       "due_before_trigger": false
+      }
+     ]
+    },
+    {
+     "stage": 5,
+     "trigger_time": 65336.76963979055,
+     "trigger_reason": "delta_t",
+     "event_count": 6,
+     "type_counts": {
+      "cancel": 2,
+      "demand_change": 2,
+      "add": 2
+     },
+     "add_count": 2,
+     "add_by_owner_depot": {
+      "D_dongguan": 2
+     },
+     "adds": [
+      {
+       "customer_id": "N1",
+       "owner_depot": "D_dongguan",
+       "donor": "C003",
+       "t_appear": 60247.48081982516,
+       "ready": 60247.48081982516,
+       "due": 60247.48081982516,
+       "service": 540.0,
+       "demand": 208.0,
+       "slack_trigger_to_due": -5089.28881996539,
+       "due_before_trigger": true
+      },
+      {
+       "customer_id": "N14",
+       "owner_depot": "D_dongguan",
+       "donor": "C016",
+       "t_appear": 61037.52368784332,
+       "ready": 61037.52368784332,
+       "due": 61037.52368784332,
+       "service": 360.0,
+       "demand": 139.0,
+       "slack_trigger_to_due": -4299.245951947232,
+       "due_before_trigger": true
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "scale": "150c",
+   "instance": "cn-prd-150c-01-V2-LOCATIONS",
+   "stream_seed": 3,
+   "rolling_parameters": {
+    "add_ratio": 0.1,
+    "cancel_ratio": 0.05,
+    "delta_t_seconds": 10800.0,
+    "demand_change_ratio": 0.1,
+    "q_bar": 8,
+    "stages": 4
+   },
+   "total_events": 38,
+   "total_adds": 15,
+   "batch_count": 5,
+   "stages": [
+    {
+     "stage": 1,
+     "trigger_time": 30962.3662388074,
+     "trigger_reason": "q_bar",
+     "event_count": 8,
+     "type_counts": {
+      "add": 2,
+      "demand_change": 4,
+      "cancel": 2
+     },
+     "add_count": 2,
+     "add_by_owner_depot": {
+      "D_dongguan": 2
+     },
+     "adds": [
+      {
+       "customer_id": "N15",
+       "owner_depot": "D_dongguan",
+       "donor": "C018",
+       "t_appear": 24586.300009588307,
+       "ready": 41028.110459999996,
+       "due": 43143.95826,
+       "service": 1080.0,
+       "demand": 417.0,
+       "slack_trigger_to_due": 12181.592021192599,
+       "due_before_trigger": false
+      },
+      {
+       "customer_id": "N5",
+       "owner_depot": "D_dongguan",
+       "donor": "C008",
+       "t_appear": 28941.476028680278,
+       "ready": 43981.97466,
+       "due": 46022.70828,
+       "service": 1080.0,
+       "demand": 417.0,
+       "slack_trigger_to_due": 15060.342041192598,
+       "due_before_trigger": false
+      }
+     ]
+    },
+    {
+     "stage": 2,
+     "trigger_time": 36504.33648054221,
+     "trigger_reason": "q_bar",
+     "event_count": 8,
+     "type_counts": {
+      "demand_change": 5,
+      "add": 2,
+      "cancel": 1
+     },
+     "add_count": 2,
+     "add_by_owner_depot": {
+      "D_dongguan": 2
+     },
+     "adds": [
+      {
+       "customer_id": "N11",
+       "owner_depot": "D_dongguan",
+       "donor": "C014",
+       "t_appear": 34604.581102540884,
+       "ready": 59297.71338,
+       "due": 62627.74308000001,
+       "service": 900.0,
+       "demand": 347.0,
+       "slack_trigger_to_due": 26123.406599457798,
+       "due_before_trigger": false
+      },
+      {
+       "customer_id": "N2",
+       "owner_depot": "D_dongguan",
+       "donor": "C005",
+       "t_appear": 36002.394145575585,
+       "ready": 54611.47992,
+       "due": 57679.93566,
+       "service": 720.0,
+       "demand": 278.0,
+       "slack_trigger_to_due": 21175.599179457793,
+       "due_before_trigger": false
+      }
+     ]
+    },
+    {
+     "stage": 3,
+     "trigger_time": 47116.15430144993,
+     "trigger_reason": "q_bar",
+     "event_count": 8,
+     "type_counts": {
+      "add": 6,
+      "cancel": 1,
+      "demand_change": 1
+     },
+     "add_count": 6,
+     "add_by_owner_depot": {
+      "D_dongguan": 6
+     },
+     "adds": [
+      {
+       "customer_id": "N7",
+       "owner_depot": "D_dongguan",
+       "donor": "C010",
+       "t_appear": 36685.68867361409,
+       "ready": 45163.1256,
+       "due": 48151.03602,
+       "service": 360.0,
+       "demand": 139.0,
+       "slack_trigger_to_due": 1034.8817185500666,
+       "due_before_trigger": false
+      },
+      {
+       "customer_id": "N8",
+       "owner_depot": "D_dongguan",
+       "donor": "C011",
+       "t_appear": 37481.368571597784,
+       "ready": 57353.3121,
+       "due": 60435.57582,
+       "service": 1080.0,
+       "demand": 417.0,
+       "slack_trigger_to_due": 13319.421518550065,
+       "due_before_trigger": false
+      },
+      {
+       "customer_id": "N3",
+       "owner_depot": "D_dongguan",
+       "donor": "C006",
+       "t_appear": 38398.96396236288,
+       "ready": 43514.5188,
+       "due": 46293.74316,
+       "service": 540.0,
+       "demand": 208.0,
+       "slack_trigger_to_due": -822.4111414499348,
+       "due_before_trigger": true
+      },
+      {
+       "customer_id": "N12",
+       "owner_depot": "D_dongguan",
+       "donor": "C015",
+       "t_appear": 42791.87157439034,
+       "ready": 50301.64062,
+       "due": 52441.61274,
+       "service": 360.0,
+       "demand": 139.0,
+       "slack_trigger_to_due": 5325.458438550064,
+       "due_before_trigger": false
+      },
+      {
+       "customer_id": "N4",
+       "owner_depot": "D_dongguan",
+       "donor": "C007",
+       "t_appear": 46668.21832969173,
+       "ready": 60396.615300000005,
+       "due": 62328.345420000005,
+       "service": 720.0,
+       "demand": 278.0,
+       "slack_trigger_to_due": 15212.191118550072,
+       "due_before_trigger": false
+      },
+      {
+       "customer_id": "N13",
+       "owner_depot": "D_dongguan",
+       "donor": "C016",
+       "t_appear": 46674.97607555409,
+       "ready": 46674.97607555409,
+       "due": 48744.22758,
+       "service": 360.0,
+       "demand": 139.0,
+       "slack_trigger_to_due": 1628.0732785500659,
+       "due_before_trigger": false
+      }
+     ]
+    },
+    {
+     "stage": 4,
+     "trigger_time": 53235.205156450764,
+     "trigger_reason": "q_bar",
+     "event_count": 8,
+     "type_counts": {
+      "cancel": 3,
+      "add": 2,
+      "demand_change": 3
+     },
+     "add_count": 2,
+     "add_by_owner_depot": {
+      "D_dongguan": 2
+     },
+     "adds": [
+      {
+       "customer_id": "N10",
+       "owner_depot": "D_dongguan",
+       "donor": "C013",
+       "t_appear": 47432.629123674524,
+       "ready": 49504.72206,
+       "due": 53086.95564,
+       "service": 900.0,
+       "demand": 347.0,
+       "slack_trigger_to_due": -148.24951645076362,
+       "due_before_trigger": true
+      },
+      {
+       "customer_id": "N6",
+       "owner_depot": "D_dongguan",
+       "donor": "C009",
+       "t_appear": 48391.75717525946,
+       "ready": 60888.66732,
+       "due": 63510.58284,
+       "service": 900.0,
+       "demand": 347.0,
+       "slack_trigger_to_due": 10275.377683549239,
+       "due_before_trigger": false
+      }
+     ]
+    },
+    {
+     "stage": 5,
+     "trigger_time": 64035.205156450764,
+     "trigger_reason": "delta_t",
+     "event_count": 6,
+     "type_counts": {
+      "demand_change": 2,
+      "cancel": 1,
+      "add": 3
+     },
+     "add_count": 3,
+     "add_by_owner_depot": {
+      "D_dongguan": 3
+     },
+     "adds": [
+      {
+       "customer_id": "N9",
+       "owner_depot": "D_dongguan",
+       "donor": "C012",
+       "t_appear": 59426.12466773534,
+       "ready": 59426.12466773534,
+       "due": 61114.98588,
+       "service": 900.0,
+       "demand": 347.0,
+       "slack_trigger_to_due": -2920.2192764507636,
+       "due_before_trigger": true
+      },
+      {
+       "customer_id": "N14",
+       "owner_depot": "D_dongguan",
+       "donor": "C017",
+       "t_appear": 60884.219544259235,
+       "ready": 60884.219544259235,
+       "due": 60884.219544259235,
+       "service": 720.0,
+       "demand": 278.0,
+       "slack_trigger_to_due": -3150.985612191529,
+       "due_before_trigger": true
+      },
+      {
+       "customer_id": "N1",
+       "owner_depot": "D_dongguan",
+       "donor": "C004",
+       "t_appear": 62152.28660336917,
+       "ready": 62152.28660336917,
+       "due": 62152.28660336917,
+       "service": 360.0,
+       "demand": 139.0,
+       "slack_trigger_to_due": -1882.9185530815957,
+       "due_before_trigger": true
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "scale": "150c",
+   "instance": "cn-prd-150c-01-V2-LOCATIONS",
+   "stream_seed": 4,
+   "rolling_parameters": {
+    "add_ratio": 0.1,
+    "cancel_ratio": 0.05,
+    "delta_t_seconds": 10800.0,
+    "demand_change_ratio": 0.1,
+    "q_bar": 8,
+    "stages": 4
+   },
+   "total_events": 38,
+   "total_adds": 15,
+   "batch_count": 5,
+   "stages": [
+    {
+     "stage": 1,
+     "trigger_time": 31604.924277988084,
+     "trigger_reason": "q_bar",
+     "event_count": 8,
+     "type_counts": {
+      "add": 3,
+      "cancel": 2,
+      "demand_change": 3
+     },
+     "add_count": 3,
+     "add_by_owner_depot": {
+      "D_dongguan": 3
+     },
+     "adds": [
+      {
+       "customer_id": "N8",
+       "owner_depot": "D_dongguan",
+       "donor": "C012",
+       "t_appear": 25143.115285292148,
+       "ready": 58611.6813,
+       "due": 61114.98588,
+       "service": 900.0,
+       "demand": 347.0,
+       "slack_trigger_to_due": 29510.061602011916,
+       "due_before_trigger": false
+      },
+      {
+       "customer_id": "N13",
+       "owner_depot": "D_dongguan",
+       "donor": "C017",
+       "t_appear": 31546.16420638103,
+       "ready": 45399.43914,
+       "due": 48375.749339999995,
+       "service": 720.0,
+       "demand": 278.0,
+       "slack_trigger_to_due": 16770.82506201191,
+       "due_before_trigger": false
+      },
+      {
+       "customer_id": "N14",
+       "owner_depot": "D_dongguan",
+       "donor": "C018",
+       "t_appear": 31604.924277988084,
+       "ready": 41028.110459999996,
+       "due": 43143.95826,
+       "service": 1080.0,
+       "demand": 417.0,
+       "slack_trigger_to_due": 11539.033982011915,
+       "due_before_trigger": false
+      }
+     ]
+    },
+    {
+     "stage": 2,
+     "trigger_time": 36257.31331160745,
+     "trigger_reason": "q_bar",
+     "event_count": 8,
+     "type_counts": {
+      "demand_change": 4,
+      "cancel": 2,
+      "add": 2
+     },
+     "add_count": 2,
+     "add_by_owner_depot": {
+      "D_dongguan": 2
+     },
+     "adds": [
+      {
+       "customer_id": "N10",
+       "owner_depot": "D_dongguan",
+       "donor": "C014",
+       "t_appear": 35148.240300454476,
+       "ready": 59297.71338,
+       "due": 62627.74308000001,
+       "service": 900.0,
+       "demand": 347.0,
+       "slack_trigger_to_due": 26370.429768392554,
+       "due_before_trigger": false
+      },
+      {
+       "customer_id": "N7",
+       "owner_depot": "D_dongguan",
+       "donor": "C011",
+       "t_appear": 36257.31331160745,
+       "ready": 57353.3121,
+       "due": 60435.57582,
+       "service": 1080.0,
+       "demand": 417.0,
+       "slack_trigger_to_due": 24178.262508392545,
+       "due_before_trigger": false
+      }
+     ]
+    },
+    {
+     "stage": 3,
+     "trigger_time": 46011.21233897463,
+     "trigger_reason": "q_bar",
+     "event_count": 8,
+     "type_counts": {
+      "cancel": 3,
+      "demand_change": 3,
+      "add": 2
+     },
+     "add_count": 2,
+     "add_by_owner_depot": {
+      "D_dongguan": 2
+     },
+     "adds": [
+      {
+       "customer_id": "N15",
+       "owner_depot": "D_dongguan",
+       "donor": "C019",
+       "t_appear": 40821.0956535116,
+       "ready": 60471.29946,
+       "due": 64002.357659999994,
+       "service": 540.0,
+       "demand": 208.0,
+       "slack_trigger_to_due": 17991.145321025368,
+       "due_before_trigger": false
+      },
+      {
+       "customer_id": "N5",
+       "owner_depot": "D_dongguan",
+       "donor": "C009",
+       "t_appear": 44997.42411641148,
+       "ready": 60888.66732,
+       "due": 63510.58284,
+       "service": 900.0,
+       "demand": 347.0,
+       "slack_trigger_to_due": 17499.370501025376,
+       "due_before_trigger": false
+      }
+     ]
+    },
+    {
+     "stage": 4,
+     "trigger_time": 54906.93785810073,
+     "trigger_reason": "q_bar",
+     "event_count": 8,
+     "type_counts": {
+      "add": 5,
+      "cancel": 1,
+      "demand_change": 2
+     },
+     "add_count": 5,
+     "add_by_owner_depot": {
+      "D_dongguan": 5
+     },
+     "adds": [
+      {
+       "customer_id": "N6",
+       "owner_depot": "D_dongguan",
+       "donor": "C010",
+       "t_appear": 46414.01802840382,
+       "ready": 46414.01802840382,
+       "due": 48151.03602,
+       "service": 360.0,
+       "demand": 139.0,
+       "slack_trigger_to_due": -6755.901838100734,
+       "due_before_trigger": true
+      },
+      {
+       "customer_id": "N2",
+       "owner_depot": "D_dongguan",
+       "donor": "C006",
+       "t_appear": 46914.39443644164,
+       "ready": 46914.39443644164,
+       "due": 46914.39443644164,
+       "service": 540.0,
+       "demand": 208.0,
+       "slack_trigger_to_due": -7992.543421659095,
+       "due_before_trigger": true
+      },
+      {
+       "customer_id": "N4",
+       "owner_depot": "D_dongguan",
+       "donor": "C008",
+       "t_appear": 47341.39987818818,
+       "ready": 47341.39987818818,
+       "due": 47341.39987818818,
+       "service": 1080.0,
+       "demand": 417.0,
+       "slack_trigger_to_due": -7565.537979912551,
+       "due_before_trigger": true
+      },
+      {
+       "customer_id": "N12",
+       "owner_depot": "D_dongguan",
+       "donor": "C016",
+       "t_appear": 49094.681457282,
+       "ready": 49094.681457282,
+       "due": 49094.681457282,
+       "service": 360.0,
+       "demand": 139.0,
+       "slack_trigger_to_due": -5812.256400818733,
+       "due_before_trigger": true
+      },
+      {
+       "customer_id": "N1",
+       "owner_depot": "D_dongguan",
+       "donor": "C005",
+       "t_appear": 52419.280785306546,
+       "ready": 54611.47992,
+       "due": 57679.93566,
+       "service": 720.0,
+       "demand": 278.0,
+       "slack_trigger_to_due": 2772.9978018992697,
+       "due_before_trigger": false
+      }
+     ]
+    },
+    {
+     "stage": 5,
+     "trigger_time": 65706.93785810073,
+     "trigger_reason": "delta_t",
+     "event_count": 6,
+     "type_counts": {
+      "add": 3,
+      "demand_change": 3
+     },
+     "add_count": 3,
+     "add_by_owner_depot": {
+      "D_dongguan": 3
+     },
+     "adds": [
+      {
+       "customer_id": "N9",
+       "owner_depot": "D_dongguan",
+       "donor": "C013",
+       "t_appear": 56218.98547006333,
+       "ready": 56218.98547006333,
+       "due": 56218.98547006333,
+       "service": 900.0,
+       "demand": 347.0,
+       "slack_trigger_to_due": -9487.952388037404,
+       "due_before_trigger": true
+      },
+      {
+       "customer_id": "N3",
+       "owner_depot": "D_dongguan",
+       "donor": "C007",
+       "t_appear": 61497.659250930126,
+       "ready": 61497.659250930126,
+       "due": 62328.345420000005,
+       "service": 720.0,
+       "demand": 278.0,
+       "slack_trigger_to_due": -3378.592438100728,
+       "due_before_trigger": true
+      },
+      {
+       "customer_id": "N11",
+       "owner_depot": "D_dongguan",
+       "donor": "C015",
+       "t_appear": 62519.6957379163,
+       "ready": 62519.6957379163,
+       "due": 62519.6957379163,
+       "service": 360.0,
+       "demand": 139.0,
+       "slack_trigger_to_due": -3187.2421201844336,
+       "due_before_trigger": true
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "scale": "150c",
+   "instance": "cn-prd-150c-01-V2-LOCATIONS",
+   "stream_seed": 5,
+   "rolling_parameters": {
+    "add_ratio": 0.1,
+    "cancel_ratio": 0.05,
+    "delta_t_seconds": 10800.0,
+    "demand_change_ratio": 0.1,
+    "q_bar": 8,
+    "stages": 4
+   },
+   "total_events": 38,
+   "total_adds": 15,
+   "batch_count": 6,
+   "stages": [
+    {
+     "stage": 1,
+     "trigger_time": 32400.0,
+     "trigger_reason": "delta_t",
+     "event_count": 6,
+     "type_counts": {
+      "demand_change": 2,
+      "add": 3,
+      "cancel": 1
+     },
+     "add_count": 3,
+     "add_by_owner_depot": {
+      "D_dongguan": 3
+     },
+     "adds": [
+      {
+       "customer_id": "N6",
+       "owner_depot": "D_dongguan",
+       "donor": "C011",
+       "t_appear": 27905.798105029426,
+       "ready": 57353.3121,
+       "due": 60435.57582,
+       "service": 1080.0,
+       "demand": 417.0,
+       "slack_trigger_to_due": 28035.57582,
+       "due_before_trigger": false
+      },
+      {
+       "customer_id": "N1",
+       "owner_depot": "D_dongguan",
+       "donor": "C006",
+       "t_appear": 28836.632639713305,
+       "ready": 43514.5188,
+       "due": 46293.74316,
+       "service": 540.0,
+       "demand": 208.0,
+       "slack_trigger_to_due": 13893.743159999998,
+       "due_before_trigger": false
+      },
+      {
+       "customer_id": "N8",
+       "owner_depot": "D_dongguan",
+       "donor": "C013",
+       "t_appear": 29562.658995725225,
+       "ready": 49504.72206,
+       "due": 53086.95564,
+       "service": 900.0,
+       "demand": 347.0,
+       "slack_trigger_to_due": 20686.95564,
+       "due_before_trigger": false
+      }
+     ]
+    },
+    {
+     "stage": 2,
+     "trigger_time": 38417.78907389565,
+     "trigger_reason": "q_bar",
+     "event_count": 8,
+     "type_counts": {
+      "demand_change": 5,
+      "cancel": 2,
+      "add": 1
+     },
+     "add_count": 1,
+     "add_by_owner_depot": {
+      "D_dongguan": 1
+     },
+     "adds": [
+      {
+       "customer_id": "N10",
+       "owner_depot": "D_dongguan",
+       "donor": "C015",
+       "t_appear": 35222.32657112143,
+       "ready": 50301.64062,
+       "due": 52441.61274,
+       "service": 360.0,
+       "demand": 139.0,
+       "slack_trigger_to_due": 14023.823666104348,
+       "due_before_trigger": false
+      }
+     ]
+    },
+    {
+     "stage": 3,
+     "trigger_time": 43173.6568818988,
+     "trigger_reason": "q_bar",
+     "event_count": 8,
+     "type_counts": {
+      "cancel": 3,
+      "add": 3,
+      "demand_change": 2
+     },
+     "add_count": 3,
+     "add_by_owner_depot": {
+      "D_dongguan": 3
+     },
+     "adds": [
+      {
+       "customer_id": "N7",
+       "owner_depot": "D_dongguan",
+       "donor": "C012",
+       "t_appear": 40655.505810545,
+       "ready": 58611.6813,
+       "due": 61114.98588,
+       "service": 900.0,
+       "demand": 347.0,
+       "slack_trigger_to_due": 17941.3289981012,
+       "due_before_trigger": false
+      },
+      {
+       "customer_id": "N11",
+       "owner_depot": "D_dongguan",
+       "donor": "C016",
+       "t_appear": 41378.66303687907,
+       "ready": 45739.01196,
+       "due": 48744.22758,
+       "service": 360.0,
+       "demand": 139.0,
+       "slack_trigger_to_due": 5570.570698101197,
+       "due_before_trigger": false
+      },
+      {
+       "customer_id": "N15",
+       "owner_depot": "D_dongguan",
+       "donor": "C020",
+       "t_appear": 41393.634795322316,
+       "ready": 49368.2652,
+       "due": 51814.64238,
+       "service": 540.0,
+       "demand": 208.0,
+       "slack_trigger_to_due": 8640.985498101196,
+       "due_before_trigger": false
+      }
+     ]
+    },
+    {
+     "stage": 4,
+     "trigger_time": 53973.6568818988,
+     "trigger_reason": "delta_t",
+     "event_count": 7,
+     "type_counts": {
+      "add": 2,
+      "demand_change": 4,
+      "cancel": 1
+     },
+     "add_count": 2,
+     "add_by_owner_depot": {
+      "D_dongguan": 2
+     },
+     "adds": [
+      {
+       "customer_id": "N4",
+       "owner_depot": "D_dongguan",
+       "donor": "C009",
+       "t_appear": 48269.924528418225,
+       "ready": 60888.66732,
+       "due": 63510.58284,
+       "service": 900.0,
+       "demand": 347.0,
+       "slack_trigger_to_due": 9536.925958101201,
+       "due_before_trigger": false
+      },
+      {
+       "customer_id": "N2",
+       "owner_depot": "D_dongguan",
+       "donor": "C007",
+       "t_appear": 52207.11278088518,
+       "ready": 60396.615300000005,
+       "due": 62328.345420000005,
+       "service": 720.0,
+       "demand": 278.0,
+       "slack_trigger_to_due": 8354.688538101203,
+       "due_before_trigger": false
+      }
+     ]
+    },
+    {
+     "stage": 5,
+     "trigger_time": 62188.51379181826,
+     "trigger_reason": "q_bar",
+     "event_count": 8,
+     "type_counts": {
+      "demand_change": 2,
+      "add": 5,
+      "cancel": 1
+     },
+     "add_count": 5,
+     "add_by_owner_depot": {
+      "D_dongguan": 5
+     },
+     "adds": [
+      {
+       "customer_id": "N5",
+       "owner_depot": "D_dongguan",
+       "donor": "C010",
+       "t_appear": 54397.811295460284,
+       "ready": 54397.811295460284,
+       "due": 54397.811295460284,
+       "service": 360.0,
+       "demand": 139.0,
+       "slack_trigger_to_due": -7790.702496357975,
+       "due_before_trigger": true
+      },
+      {
+       "customer_id": "N9",
+       "owner_depot": "D_dongguan",
+       "donor": "C014",
+       "t_appear": 56603.25391556851,
+       "ready": 59297.71338,
+       "due": 62627.74308000001,
+       "service": 900.0,
+       "demand": 347.0,
+       "slack_trigger_to_due": 439.2292881817484,
+       "due_before_trigger": false
+      },
+      {
+       "customer_id": "N13",
+       "owner_depot": "D_dongguan",
+       "donor": "C018",
+       "t_appear": 56895.58384434872,
+       "ready": 56895.58384434872,
+       "due": 56895.58384434872,
+       "service": 1080.0,
+       "demand": 417.0,
+       "slack_trigger_to_due": -5292.929947469536,
+       "due_before_trigger": true
+      },
+      {
+       "customer_id": "N3",
+       "owner_depot": "D_dongguan",
+       "donor": "C008",
+       "t_appear": 60688.16811473943,
+       "ready": 60688.16811473943,
+       "due": 60688.16811473943,
+       "service": 1080.0,
+       "demand": 417.0,
+       "slack_trigger_to_due": -1500.3456770788325,
+       "due_before_trigger": true
+      },
+      {
+       "customer_id": "N14",
+       "owner_depot": "D_dongguan",
+       "donor": "C019",
+       "t_appear": 61707.17431174901,
+       "ready": 61707.17431174901,
+       "due": 64002.357659999994,
+       "service": 540.0,
+       "demand": 208.0,
+       "slack_trigger_to_due": 1813.8438681817352,
+       "due_before_trigger": false
+      }
+     ]
+    },
+    {
+     "stage": 6,
+     "trigger_time": 72988.51379181826,
+     "trigger_reason": "delta_t",
+     "event_count": 1,
+     "type_counts": {
+      "add": 1
+     },
+     "add_count": 1,
+     "add_by_owner_depot": {
+      "D_dongguan": 1
+     },
+     "adds": [
+      {
+       "customer_id": "N12",
+       "owner_depot": "D_dongguan",
+       "donor": "C017",
+       "t_appear": 62612.78198094091,
+       "ready": 62612.78198094091,
+       "due": 62612.78198094091,
+       "service": 720.0,
+       "demand": 278.0,
+       "slack_trigger_to_due": -10375.731810877347,
+       "due_before_trigger": true
+      }
+     ]
+    }
+   ]
+  }
+ ],
+ "fleet_caps": {
+  "50c": {
+   "D_guangzhou": {
+    "cv": 4,
+    "ev": 1,
+    "total": 5
+   },
+   "D_shenzhen": {
+    "cv": 5,
+    "ev": 2,
+    "total": 7
+   }
+  },
+  "100c": {
+   "D_guangzhou": {
+    "cv": 8,
+    "ev": 2,
+    "total": 10
+   },
+   "D_shenzhen": {
+    "cv": 10,
+    "ev": 3,
+    "total": 13
+   }
+  },
+  "150c": {
+   "D_dongguan": {
+    "cv": 4,
+    "ev": 1,
+    "total": 5
+   },
+   "D_foshan": {
+    "cv": 4,
+    "ev": 1,
+    "total": 5
+   },
+   "D_guangzhou": {
+    "cv": 9,
+    "ev": 3,
+    "total": 12
+   },
+   "D_shenzhen": {
+    "cv": 10,
+    "ev": 3,
+    "total": 13
+   }
+  }
+ },
+ "nominal_plan_assets": {
+  "100c|seed01": {
+   "path": "baselines/china_e3_e7/e3_zone_joint_20260731/formal/plans/cn-prd-100c-02-V2-LOCATIONS__seed01__JOINT.json",
+   "route_count": 17,
+   "by_depot_type": {
+    "D_guangzhou|cv": 5,
+    "D_guangzhou|ev": 2,
+    "D_shenzhen|cv": 7,
+    "D_shenzhen|ev": 3
+   }
+  },
+  "100c|seed02": {
+   "path": "baselines/china_e3_e7/e3_zone_joint_20260731/formal/plans/cn-prd-100c-02-V2-LOCATIONS__seed02__JOINT.json",
+   "route_count": 17,
+   "by_depot_type": {
+    "D_guangzhou|cv": 5,
+    "D_guangzhou|ev": 2,
+    "D_shenzhen|cv": 7,
+    "D_shenzhen|ev": 3
+   }
+  },
+  "100c|seed03": {
+   "path": "baselines/china_e3_e7/e3_zone_joint_20260731/formal/plans/cn-prd-100c-02-V2-LOCATIONS__seed03__JOINT.json",
+   "route_count": 17,
+   "by_depot_type": {
+    "D_guangzhou|cv": 5,
+    "D_guangzhou|ev": 2,
+    "D_shenzhen|cv": 7,
+    "D_shenzhen|ev": 3
+   }
+  },
+  "100c|seed04": {
+   "path": "baselines/china_e3_e7/e3_zone_joint_20260731/formal/plans/cn-prd-100c-02-V2-LOCATIONS__seed04__JOINT.json",
+   "route_count": 18,
+   "by_depot_type": {
+    "D_guangzhou|cv": 6,
+    "D_guangzhou|ev": 2,
+    "D_shenzhen|cv": 7,
+    "D_shenzhen|ev": 3
+   }
+  },
+  "100c|seed05": {
+   "path": "baselines/china_e3_e7/e3_zone_joint_20260731/formal/plans/cn-prd-100c-02-V2-LOCATIONS__seed05__JOINT.json",
+   "route_count": 17,
+   "by_depot_type": {
+    "D_guangzhou|cv": 6,
+    "D_guangzhou|ev": 2,
+    "D_shenzhen|cv": 6,
+    "D_shenzhen|ev": 3
+   }
+  },
+  "100c|seed06": {
+   "path": "baselines/china_e3_e7/e3_zone_joint_20260731/formal/plans/cn-prd-100c-02-V2-LOCATIONS__seed06__JOINT.json",
+   "route_count": 17,
+   "by_depot_type": {
+    "D_guangzhou|cv": 5,
+    "D_guangzhou|ev": 2,
+    "D_shenzhen|cv": 7,
+    "D_shenzhen|ev": 3
+   }
+  },
+  "100c|seed07": {
+   "path": "baselines/china_e3_e7/e3_zone_joint_20260731/formal/plans/cn-prd-100c-02-V2-LOCATIONS__seed07__JOINT.json",
+   "route_count": 17,
+   "by_depot_type": {
+    "D_guangzhou|cv": 5,
+    "D_guangzhou|ev": 2,
+    "D_shenzhen|cv": 7,
+    "D_shenzhen|ev": 3
+   }
+  },
+  "100c|seed08": {
+   "path": "baselines/china_e3_e7/e3_zone_joint_20260731/formal/plans/cn-prd-100c-02-V2-LOCATIONS__seed08__JOINT.json",
+   "route_count": 17,
+   "by_depot_type": {
+    "D_guangzhou|cv": 5,
+    "D_guangzhou|ev": 2,
+    "D_shenzhen|cv": 7,
+    "D_shenzhen|ev": 3
+   }
+  },
+  "100c|seed09": {
+   "path": "baselines/china_e3_e7/e3_zone_joint_20260731/formal/plans/cn-prd-100c-02-V2-LOCATIONS__seed09__JOINT.json",
+   "route_count": 17,
+   "by_depot_type": {
+    "D_guangzhou|cv": 5,
+    "D_guangzhou|ev": 2,
+    "D_shenzhen|cv": 7,
+    "D_shenzhen|ev": 3
+   }
+  },
+  "100c|seed10": {
+   "path": "baselines/china_e3_e7/e3_zone_joint_20260731/formal/plans/cn-prd-100c-02-V2-LOCATIONS__seed10__JOINT.json",
+   "route_count": 18,
+   "by_depot_type": {
+    "D_guangzhou|cv": 6,
+    "D_guangzhou|ev": 2,
+    "D_shenzhen|cv": 7,
+    "D_shenzhen|ev": 3
+   }
+  },
+  "150c|seed01": {
+   "path": "baselines/china_e3_e7/mechanism_foundation_20260730/inputs/e6/cn-prd-150c-01-V2-LOCATIONS__mismatch00/initial_solution.json",
+   "route_count": 27,
+   "by_depot_type": {
+    "D_dongguan|cv": 3,
+    "D_dongguan|ev": 1,
+    "D_foshan|cv": 3,
+    "D_foshan|ev": 1,
+    "D_guangzhou|cv": 6,
+    "D_guangzhou|ev": 3,
+    "D_shenzhen|cv": 7,
+    "D_shenzhen|ev": 3
+   }
+  },
+  "150c|seed02": {
+   "path": "baselines/china_e3_e7/mechanism_foundation_20260730/inputs/e6/cn-prd-150c-01-V2-LOCATIONS__mismatch00/initial_solution.json",
+   "route_count": 27,
+   "by_depot_type": {
+    "D_dongguan|cv": 3,
+    "D_dongguan|ev": 1,
+    "D_foshan|cv": 3,
+    "D_foshan|ev": 1,
+    "D_guangzhou|cv": 6,
+    "D_guangzhou|ev": 3,
+    "D_shenzhen|cv": 7,
+    "D_shenzhen|ev": 3
+   }
+  },
+  "150c|seed03": {
+   "path": "baselines/china_e3_e7/mechanism_foundation_20260730/inputs/e6/cn-prd-150c-01-V2-LOCATIONS__mismatch00/initial_solution.json",
+   "route_count": 27,
+   "by_depot_type": {
+    "D_dongguan|cv": 3,
+    "D_dongguan|ev": 1,
+    "D_foshan|cv": 3,
+    "D_foshan|ev": 1,
+    "D_guangzhou|cv": 6,
+    "D_guangzhou|ev": 3,
+    "D_shenzhen|cv": 7,
+    "D_shenzhen|ev": 3
+   }
+  },
+  "150c|seed04": {
+   "path": "baselines/china_e3_e7/mechanism_foundation_20260730/inputs/e6/cn-prd-150c-01-V2-LOCATIONS__mismatch00/initial_solution.json",
+   "route_count": 27,
+   "by_depot_type": {
+    "D_dongguan|cv": 3,
+    "D_dongguan|ev": 1,
+    "D_foshan|cv": 3,
+    "D_foshan|ev": 1,
+    "D_guangzhou|cv": 6,
+    "D_guangzhou|ev": 3,
+    "D_shenzhen|cv": 7,
+    "D_shenzhen|ev": 3
+   }
+  },
+  "150c|seed05": {
+   "path": "baselines/china_e3_e7/mechanism_foundation_20260730/inputs/e6/cn-prd-150c-01-V2-LOCATIONS__mismatch00/initial_solution.json",
+   "route_count": 27,
+   "by_depot_type": {
+    "D_dongguan|cv": 3,
+    "D_dongguan|ev": 1,
+    "D_foshan|cv": 3,
+    "D_foshan|ev": 1,
+    "D_guangzhou|cv": 6,
+    "D_guangzhou|ev": 3,
+    "D_shenzhen|cv": 7,
+    "D_shenzhen|ev": 3
+   }
+  },
+  "150c|seed06": {
+   "path": "baselines/china_e3_e7/mechanism_foundation_20260730/inputs/e6/cn-prd-150c-01-V2-LOCATIONS__mismatch00/initial_solution.json",
+   "route_count": 27,
+   "by_depot_type": {
+    "D_dongguan|cv": 3,
+    "D_dongguan|ev": 1,
+    "D_foshan|cv": 3,
+    "D_foshan|ev": 1,
+    "D_guangzhou|cv": 6,
+    "D_guangzhou|ev": 3,
+    "D_shenzhen|cv": 7,
+    "D_shenzhen|ev": 3
+   }
+  },
+  "150c|seed07": {
+   "path": "baselines/china_e3_e7/mechanism_foundation_20260730/inputs/e6/cn-prd-150c-01-V2-LOCATIONS__mismatch00/initial_solution.json",
+   "route_count": 27,
+   "by_depot_type": {
+    "D_dongguan|cv": 3,
+    "D_dongguan|ev": 1,
+    "D_foshan|cv": 3,
+    "D_foshan|ev": 1,
+    "D_guangzhou|cv": 6,
+    "D_guangzhou|ev": 3,
+    "D_shenzhen|cv": 7,
+    "D_shenzhen|ev": 3
+   }
+  },
+  "150c|seed08": {
+   "path": "baselines/china_e3_e7/mechanism_foundation_20260730/inputs/e6/cn-prd-150c-01-V2-LOCATIONS__mismatch00/initial_solution.json",
+   "route_count": 27,
+   "by_depot_type": {
+    "D_dongguan|cv": 3,
+    "D_dongguan|ev": 1,
+    "D_foshan|cv": 3,
+    "D_foshan|ev": 1,
+    "D_guangzhou|cv": 6,
+    "D_guangzhou|ev": 3,
+    "D_shenzhen|cv": 7,
+    "D_shenzhen|ev": 3
+   }
+  },
+  "150c|seed09": {
+   "path": "baselines/china_e3_e7/mechanism_foundation_20260730/inputs/e6/cn-prd-150c-01-V2-LOCATIONS__mismatch00/initial_solution.json",
+   "route_count": 27,
+   "by_depot_type": {
+    "D_dongguan|cv": 3,
+    "D_dongguan|ev": 1,
+    "D_foshan|cv": 3,
+    "D_foshan|ev": 1,
+    "D_guangzhou|cv": 6,
+    "D_guangzhou|ev": 3,
+    "D_shenzhen|cv": 7,
+    "D_shenzhen|ev": 3
+   }
+  },
+  "150c|seed10": {
+   "path": "baselines/china_e3_e7/mechanism_foundation_20260730/inputs/e6/cn-prd-150c-01-V2-LOCATIONS__mismatch00/initial_solution.json",
+   "route_count": 27,
+   "by_depot_type": {
+    "D_dongguan|cv": 3,
+    "D_dongguan|ev": 1,
+    "D_foshan|cv": 3,
+    "D_foshan|ev": 1,
+    "D_guangzhou|cv": 6,
+    "D_guangzhou|ev": 3,
+    "D_shenzhen|cv": 7,
+    "D_shenzhen|ev": 3
+   }
+  },
+  "50c|seed01": {
+   "path": "baselines/china_e3_e7/e3_zone_joint_20260731/formal/plans/cn-prd-50c-01-V2-LOCATIONS__seed01__JOINT.json",
+   "route_count": 8,
+   "by_depot_type": {
+    "D_guangzhou|cv": 2,
+    "D_guangzhou|ev": 1,
+    "D_shenzhen|cv": 3,
+    "D_shenzhen|ev": 2
+   }
+  },
+  "50c|seed02": {
+   "path": "baselines/china_e3_e7/e3_zone_joint_20260731/formal/plans/cn-prd-50c-01-V2-LOCATIONS__seed02__JOINT.json",
+   "route_count": 8,
+   "by_depot_type": {
+    "D_guangzhou|cv": 2,
+    "D_guangzhou|ev": 1,
+    "D_shenzhen|cv": 3,
+    "D_shenzhen|ev": 2
+   }
+  },
+  "50c|seed03": {
+   "path": "baselines/china_e3_e7/e3_zone_joint_20260731/formal/plans/cn-prd-50c-01-V2-LOCATIONS__seed03__JOINT.json",
+   "route_count": 8,
+   "by_depot_type": {
+    "D_guangzhou|cv": 2,
+    "D_guangzhou|ev": 1,
+    "D_shenzhen|cv": 3,
+    "D_shenzhen|ev": 2
+   }
+  },
+  "50c|seed04": {
+   "path": "baselines/china_e3_e7/e3_zone_joint_20260731/formal/plans/cn-prd-50c-01-V2-LOCATIONS__seed04__JOINT.json",
+   "route_count": 8,
+   "by_depot_type": {
+    "D_guangzhou|cv": 2,
+    "D_guangzhou|ev": 1,
+    "D_shenzhen|cv": 3,
+    "D_shenzhen|ev": 2
+   }
+  },
+  "50c|seed05": {
+   "path": "baselines/china_e3_e7/e3_zone_joint_20260731/formal/plans/cn-prd-50c-01-V2-LOCATIONS__seed05__JOINT.json",
+   "route_count": 8,
+   "by_depot_type": {
+    "D_guangzhou|cv": 2,
+    "D_guangzhou|ev": 1,
+    "D_shenzhen|cv": 3,
+    "D_shenzhen|ev": 2
+   }
+  },
+  "50c|seed06": {
+   "path": "baselines/china_e3_e7/e3_zone_joint_20260731/formal/plans/cn-prd-50c-01-V2-LOCATIONS__seed06__JOINT.json",
+   "route_count": 8,
+   "by_depot_type": {
+    "D_guangzhou|cv": 2,
+    "D_guangzhou|ev": 1,
+    "D_shenzhen|cv": 3,
+    "D_shenzhen|ev": 2
+   }
+  },
+  "50c|seed07": {
+   "path": "baselines/china_e3_e7/e3_zone_joint_20260731/formal/plans/cn-prd-50c-01-V2-LOCATIONS__seed07__JOINT.json",
+   "route_count": 8,
+   "by_depot_type": {
+    "D_guangzhou|cv": 2,
+    "D_guangzhou|ev": 1,
+    "D_shenzhen|cv": 3,
+    "D_shenzhen|ev": 2
+   }
+  },
+  "50c|seed08": {
+   "path": "baselines/china_e3_e7/e3_zone_joint_20260731/formal/plans/cn-prd-50c-01-V2-LOCATIONS__seed08__JOINT.json",
+   "route_count": 8,
+   "by_depot_type": {
+    "D_guangzhou|cv": 2,
+    "D_guangzhou|ev": 1,
+    "D_shenzhen|cv": 3,
+    "D_shenzhen|ev": 2
+   }
+  },
+  "50c|seed09": {
+   "path": "baselines/china_e3_e7/e3_zone_joint_20260731/formal/plans/cn-prd-50c-01-V2-LOCATIONS__seed09__JOINT.json",
+   "route_count": 8,
+   "by_depot_type": {
+    "D_guangzhou|cv": 2,
+    "D_guangzhou|ev": 1,
+    "D_shenzhen|cv": 3,
+    "D_shenzhen|ev": 2
+   }
+  },
+  "50c|seed10": {
+   "path": "baselines/china_e3_e7/e3_zone_joint_20260731/formal/plans/cn-prd-50c-01-V2-LOCATIONS__seed10__JOINT.json",
+   "route_count": 8,
+   "by_depot_type": {
+    "D_guangzhou|cv": 2,
+    "D_guangzhou|ev": 1,
+    "D_shenzhen|cv": 3,
+    "D_shenzhen|ev": 2
+   }
+  }
+ }
+}

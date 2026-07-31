@@ -1,0 +1,16 @@
+Traceback (most recent call last):
+  File "/Volumes/移动硬盘（512G）/ReSETP/baselines/china_e3_e7/e6_fairness_v2_20260731/run_e6_fairness_v2.py", line 1859, in <module>
+    raise SystemExit(main())
+                     ~~~~^^
+  File "/Volumes/移动硬盘（512G）/ReSETP/baselines/china_e3_e7/e6_fairness_v2_20260731/run_e6_fairness_v2.py", line 1851, in main
+    run_all(args.workers)
+    ~~~~~~~^^^^^^^^^^^^^^
+  File "/Volumes/移动硬盘（512G）/ReSETP/baselines/china_e3_e7/e6_fairness_v2_20260731/run_e6_fairness_v2.py", line 1825, in run_all
+    run_formal(workers)
+    ~~~~~~~~~~^^^^^^^^^
+  File "/Volumes/移动硬盘（512G）/ReSETP/baselines/china_e3_e7/e6_fairness_v2_20260731/run_e6_fairness_v2.py", line 803, in run_formal
+    preflight(workers)
+    ~~~~~~~~~^^^^^^^^^
+  File "/Volumes/移动硬盘（512G）/ReSETP/baselines/china_e3_e7/e6_fairness_v2_20260731/run_e6_fairness_v2.py", line 216, in preflight
+    raise RuntimeError(f"HALT_THREAD_ENV_NOT_FROZEN:{wrong}")
+RuntimeError: HALT_THREAD_ENV_NOT_FROZEN:{'OMP_NUM_THREADS': None, 'OPENBLAS_NUM_THREADS': None, 'MKL_NUM_THREADS': None, 'VECLIB_MAXIMUM_THREADS': None}

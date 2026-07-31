@@ -1,0 +1,44 @@
+{
+  "status": "HALT_DIAGNOSIS_COMPLETE_ZERO_SEARCH",
+  "search_evaluations": 0,
+  "failed_startup": {
+    "phase": "shared initial plan before probe.run_probe_arm",
+    "exception": "ValueError",
+    "message": "E3_STRICT_MULTITRIP_V3_NL: certificate curve id disagrees with prices",
+    "call_site": "baselines/e7_dynamic/e7_full_mechanism_probe_20260714.py:_initial_plan",
+    "missing_argument": "prices=sources['prices']"
+  },
+  "observed_curve_contract": {
+    "certificate_contract_id": "E3_STRICT_MULTITRIP_V3_NL",
+    "certificate_curve_id": "NL90_mild",
+    "certificate_curve_parameter_sha256": "605f66b161bb16e9383ceec724d10ec09c6033eb9e600f11b64e5af9b8fd1e54",
+    "certificate_curve_physical_sha256": "3350c2624f438a01779dcebc5ac058a851ea7ba6a4f0322dd0bf07951ddd4de6",
+    "certificate_battery_kwh": 77.28,
+    "china81_prices_curve_id": "NL90_mild",
+    "china81_prices_curve_parameter_sha256": "605f66b161bb16e9383ceec724d10ec09c6033eb9e600f11b64e5af9b8fd1e54",
+    "china81_prices_curve_physical_sha256": "3350c2624f438a01779dcebc5ac058a851ea7ba6a4f0322dd0bf07951ddd4de6",
+    "china81_prices_battery_kwh": 77.28,
+    "conclusion": "The certificate and China81 prices agree. The failure occurs because _initial_plan omits the prices argument and reschedule_between_trip_charging therefore uses its legacy DEFAULT_PRICES."
+  },
+  "explicit_prices_diagnostic": {
+    "naive": {
+      "status": "PASS",
+      "route_count": 8,
+      "charging_action_count": 4
+    },
+    "aware": {
+      "status": "HALT_MISSING_PREHORIZON_CARBON_PROFILE",
+      "exception": "ValueError",
+      "message": "missing carbon profile for charge_day_offset=-1"
+    },
+    "provided_profile_day_offsets": [
+      0
+    ],
+    "required_additional_day_offset": -1
+  },
+  "changes_not_applied": [
+    "No patch was made to the shared E7 probe _initial_plan.",
+    "No previous-day carbon profile was invented or substituted.",
+    "No search, arm, event stream, seed, budget rule, or search semantic was changed."
+  ]
+}

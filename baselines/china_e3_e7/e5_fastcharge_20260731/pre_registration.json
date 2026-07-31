@@ -1,0 +1,208 @@
+{
+  "schema_version": "E5-FASTCHARGE-PREREG-v1",
+  "task_id": "E5-FASTCHARGE-PROBE-20260731",
+  "written_at_utc": "2026-07-30T07:22:29Z",
+  "study_status": "EXPLORATORY_PROBE_NOT_FOR_MAIN_TEXT",
+  "promotion_boundary": "Only a result meeting the frozen material-effect rule may be proposed for promotion; promotion and any TeX change require a separate user decision.",
+  "decision_timing": {
+    "parameters_frozen_before_new_search": true,
+    "new_fastcharge_target_values_observed": false,
+    "new_fastcharge_search_started": false,
+    "post_result_power_or_curve_change_allowed": false
+  },
+  "charger": {
+    "scenario_id": "CN_DEPOT_DC_120KW_TWO_SEPARATE_UNITS_PROBE",
+    "charger_power_kw_per_charge_action": 120.0,
+    "existing_depot_service_positions": 2,
+    "maximum_simultaneous_depot_power_kw_if_both_positions_are_used": 240.0,
+    "topology_interpretation": "Two separate 120 kW units. It is not interpreted as two guns each drawing 120 kW from one shared 120 kW dual-gun unit.",
+    "unchanged_public_station_power_kw": 60.0,
+    "source_class": "CONSTRUCTED_SENSITIVITY_SCENARIO",
+    "power_evidence": [
+      {
+        "source": "中国南方电网供应链统一服务平台，广东电网电动汽车服务有限公司120kW欧标双枪直流充电桩设备（珠海横琴专项）采购项目澄清公告（一），2024-06-17",
+        "url": "https://www.bidding.csg.cn/zbhxrgs/1200360903.jhtml",
+        "evidence": "A discrete 120 kW DC charger procurement specification exists.",
+        "boundary": "The procurement is a project-specific equipment specification, not a national default and not evidence for this depot's charger count."
+      },
+      {
+        "source": "国家能源局官网转载中国石化站点实例，2024-03-08",
+        "url": "https://www.nea.gov.cn/2024-03/08/c_1310766945.htm",
+        "evidence": "A discrete 60 kW fast-charge gun example exists.",
+        "boundary": "Station-level equipment evidence does not establish a national deployment share."
+      }
+    ],
+    "selection_rationale": "120 kW is the upper discrete value already preregistered for the project's high-power DC sensitivity and is directly supported by an official procurement notice. It is frozen without reading any new fast-charge result."
+  },
+  "curve": {
+    "curve_name": "M17_FAST_SHAPE_SCALED_120KW_PWL",
+    "description": "Montoya et al. (2017) fast charging function, transferred as a dimensionless piecewise-linear SOC shape and scaled to the selected 120 kW reference power.",
+    "source_citation": "Montoya, Guéret, Mendoza, and Villegas (2017), The electric vehicle routing problem with nonlinear charging function, Transportation Research Part B 103:87-110, doi:10.1016/j.trb.2017.02.004",
+    "source_pdf": "/Users/zhouleixishu/Zotero/storage/72THJGSQ/Montoya 等 _ 2017 _ The electric vehicle routing problem with nonlinear charging function.pdf",
+    "source_pdf_sha256": "a790a183866c008840da369da3d0bd60eca03a0689708a3f35068795211ff60c",
+    "source_page": 13,
+    "source_battery_capacity_kwh": 16.0,
+    "source_nominal_fast_power_kw": 44.0,
+    "source_points_time_hours_and_energy_kwh": [
+      [0.0, 0.0],
+      [0.31, 13.6],
+      [0.39, 15.2],
+      [0.51, 16.0]
+    ],
+    "source_segment_powers_kw": [
+      43.87096774193549,
+      19.999999999999996,
+      6.666666666666667
+    ],
+    "soc_breakpoints": [
+      0.0,
+      0.85,
+      0.95,
+      1.0
+    ],
+    "relative_powers_against_source_44kw_nominal": [
+      0.997067448680352,
+      0.45454545454545453,
+      0.15151515151515152
+    ],
+    "scaled_segment_powers_kw_at_120kw_reference": [
+      119.64809384164224,
+      54.54545454545455,
+      18.181818181818183
+    ],
+    "first_taper_soc_pct": 85.0,
+    "machine_crosscheck": {
+      "dataset": "VRP-REP data set 2016-0020, montoya-et-al-2017.zip",
+      "dataset_sha256": "f345235bd4338f9c7bcbd65ab7c2a4d436b88c2aa780c6fe193efd736fb07a80",
+      "real_xml_files": 120,
+      "fast_function_occurrences": 106,
+      "unique_fast_function_point_sets": 1
+    },
+    "transfer_boundary": "The published curve is not a calibration of the project's 77.28 kWh vehicle. Only its normalized SOC shape is transferred; the first-segment scale is the preregistered 120 kW scenario power."
+  },
+  "tariff": {
+    "scenario": "AT_OR_ABOVE_315_KVA_TWO_PART_HIGH_POWER_DC_DEPOT_CHARGING",
+    "legal_rule": "发改价格〔2023〕526号 requires two-part pricing at 315 kVA and above, subject to the notice's transition clause.",
+    "energy_price_treatment": "Replace depot energy prices with the sealed 2025-02 two-part or applicable independently metered EV-facility row. Public-station prices and service fees remain unchanged.",
+    "guangzhou": {
+      "price_area": "guangdong_prd_five_city",
+      "voltage_class": "1-10(20) kV",
+      "sharp_peak_cny_per_kwh": 1.49606875,
+      "peak_cny_per_kwh": 1.20236875,
+      "flat_cny_per_kwh": 0.71866875,
+      "valley_cny_per_kwh": 0.29026875,
+      "maximum_demand_cny_per_kw_month": 36.1,
+      "transformer_capacity_cny_per_kva_month": 22.6,
+      "basic_fee_formula": "monthly basic fee = 36.1 × declared maximum demand kW, or 22.6 × contract transformer capacity kVA, according to the elected billing basis.",
+      "illustrative_fixed_315kva_capacity_fee_cny_per_month": 7119.0,
+      "illustrative_240kw_maximum_demand_fee_cny_per_month": 8664.0
+    },
+    "shenzhen": {
+      "row": "independently metered EV charging facility, 101-3000 kVA, 10 kV high-supply high-metering, at or below 250 kWh/(kVA month)",
+      "sharp_peak_cny_per_kwh": 1.43716875,
+      "peak_cny_per_kwh": 1.15526875,
+      "flat_cny_per_kwh": 0.75776875,
+      "valley_cny_per_kwh": 0.25716875,
+      "table_reference_maximum_demand_cny_per_kw_month": 48.0,
+      "table_reference_transformer_capacity_cny_per_kva_month": 22.0,
+      "applied_basic_fee_cny_per_month": 0.0,
+      "reason": "The sealed Shenzhen independently metered EV-facility scenario applies the corresponding capacity class energy price and exempts the basic fee."
+    },
+    "route_objective_basic_fee_treatment": "Fixed monthly basic fees are excluded from both arms' marginal route objective because installed capacity and billing basis are held identical across the pair. They are reported separately and would have to enter a facility-investment or maximum-demand model if those decisions were optimized.",
+    "numeric_sources": [
+      {
+        "path": "data/ChinaPrices/china_2025_02_tariff_register_v2.json",
+        "sha256": "d76c7d53537a3817e8c89c113b419e9149e5e3aa7992ba6911b422b695abb20e"
+      },
+      {
+        "path": "data/ChinaPrices/china_2025_02_tariff_register_v3.json",
+        "sha256": "b1239013d37fcf68f171443e84b500ff5bbba2a4b5e68c8309e2335f199c55b9"
+      },
+      {
+        "path": "data/ChinaPrices/official_snapshots/china_2025_02_nine_city/guangdong_2025_02_api.json",
+        "sha256": "c68aeae058990f2060cd40f370730759de300e5cf75b55b9f572dfb00b5fe2f4"
+      },
+      {
+        "path": "data/ChinaPrices/official_snapshots/china_2025_02_nine_city/shenzhen_2025_02_api.json",
+        "sha256": "3e823735df693d99606257be25f377915283f3f91434f8d30d8a59ac1d5df839"
+      }
+    ]
+  },
+  "pre_search_exposure_budget": {
+    "source": "baselines/china_e3_e7/e5_nonlinear_final_20260730/charging_sessions.csv",
+    "source_sha256": "256533d709fc4f41baa6f84e9240313cefe132a877c7051d069520a4d770f67b",
+    "denominator_session_rows": 196,
+    "unit_boundary": "Session rows are nested descriptive observations from both completed arms, not independent experimental replicates.",
+    "taper_exposure_definition": "end SOC is strictly above the first 85% taper breakpoint and exceeds start SOC",
+    "predicted_exposed_sessions": 36,
+    "predicted_exposed_session_pct": 18.367346938775512,
+    "by_instance": {
+      "cn-prd-50c-01-V2-LOCATIONS": {
+        "exposed_sessions": 20,
+        "session_rows": 80,
+        "pct": 25.0
+      },
+      "cn-prd-100c-02-V2-LOCATIONS": {
+        "exposed_sessions": 16,
+        "session_rows": 116,
+        "pct": 13.793103448275861
+      }
+    },
+    "predicted_duration_perturbation_under_frozen_curve_and_power": {
+      "all_session_mean_nonlinear_minus_linear_seconds": 173.3047395060281,
+      "all_session_median_nonlinear_minus_linear_seconds": 2.5252019523946387,
+      "maximum_nonlinear_minus_linear_seconds": 933.156,
+      "taper_exposed_session_mean_nonlinear_minus_linear_seconds": 933.1559999999998,
+      "note": "All sessions have a small positive difference because the published first segment is 43.871 kW rather than exactly 44 kW. Taper exposure is therefore counted only by crossing 85% SOC."
+    },
+    "search_decision": "RUN",
+    "reason": "The taper zone remains sparse but nonzero, and the frozen fast curve predicts a materially larger per-exposed-session schedule perturbation. The user explicitly authorized this fast-charge probe."
+  },
+  "run_design": {
+    "instances": [
+      "cn-prd-50c-01-V2-LOCATIONS",
+      "cn-prd-100c-02-V2-LOCATIONS"
+    ],
+    "seeds": [1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
+    "arms": [
+      {
+        "arm": "L100_control",
+        "curve": "constant power",
+        "depot_power_kw": 120.0,
+        "tariff": "frozen fast-charge tariff overlay"
+      },
+      {
+        "arm": "M17_FAST_SHAPE_SCALED_120KW_PWL",
+        "curve": "frozen Montoya fast shape",
+        "depot_power_kw": 120.0,
+        "tariff": "same frozen fast-charge tariff overlay"
+      }
+    ],
+    "power_matched_control_required": true,
+    "common_initial_solution_with_completed_e5": true,
+    "common_seed_within_pair": true,
+    "complete_candidate_budget_cap": 400,
+    "budget_semantics": "UPPER_CAP_NOT_QUOTA",
+    "null_objective_treatment": "Allow-listed complete-model infeasibility consumes budget normally; only a technical error halts.",
+    "initial_worker_plan": "At most one E5 worker while E7 remains active. Start 50c only after load falls; wait for E7 resource release before 100c.",
+    "thread_environment": {
+      "OMP_NUM_THREADS": "1",
+      "OPENBLAS_NUM_THREADS": "1",
+      "MKL_NUM_THREADS": "1",
+      "VECLIB_MAXIMUM_THREADS": "1"
+    }
+  },
+  "endpoints": {
+    "1": "Complete-physics feasibility rate of the fast nonlinear arm.",
+    "2": "Count and causes of fast L100 plans that become infeasible under fixed-decision fast nonlinear replay.",
+    "3": "Per-seed percentage cost difference between the fast nonlinear plan and the fast L100 plan, both evaluated under common fast nonlinear physics, for common-feasible pairs.",
+    "4": "Per-session start/end SOC, linear and nonlinear durations, duration difference, and actual 85% taper exposure rate."
+  },
+  "effect_rule": {
+    "source": "data/ChinaInstances/china81_stage2_static_inputs_corrected_v3_20260723/effect_thresholds.json",
+    "effect_observed_if": "false-feasible count is at least 2 of 20 paired units (10 percentage points), or the common-feasible unweighted mean nonlinear-minus-linear cost effect is at most -2.0%.",
+    "false_feasible_count_min": 2,
+    "paired_feasible_cost_reduction_pct_min": 2.0,
+    "descriptive_nonzero_duration_change_alone_is_not_sufficient_for_promotion": true
+  }
+}

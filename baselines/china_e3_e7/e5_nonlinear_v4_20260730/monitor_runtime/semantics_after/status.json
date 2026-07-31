@@ -1,0 +1,107 @@
+{
+  "ai_diagnosis": {
+    "invoked": false,
+    "reason": "disabled"
+  },
+  "checked_at": "2026-07-29T19:40:57+00:00",
+  "checkpoint_inventory": [],
+  "csv_summaries": [],
+  "files": {
+    "/Volumes/移动硬盘（512G）/ReSETP/baselines/china_e3_e7/e5_nonlinear_v4_20260730/diagnostics/search_semantics_after.json": {
+      "age_seconds": 2.195422887802124,
+      "exists": true,
+      "mtime": 1785354055.72,
+      "path": "/Volumes/移动硬盘（512G）/ReSETP/baselines/china_e3_e7/e5_nonlinear_v4_20260730/diagnostics/search_semantics_after.json",
+      "size": 55184
+    },
+    "/Volumes/移动硬盘（512G）/ReSETP/baselines/china_e3_e7/e5_nonlinear_v4_20260730/semantics_after.log": {
+      "age_seconds": 2.1154088973999023,
+      "exists": true,
+      "mtime": 1785354055.8,
+      "path": "/Volumes/移动硬盘（512G）/ReSETP/baselines/china_e3_e7/e5_nonlinear_v4_20260730/semantics_after.log",
+      "size": 346
+    }
+  },
+  "findings": [],
+  "log_paths": [
+    "/Volumes/移动硬盘（512G）/ReSETP/baselines/china_e3_e7/e5_nonlinear_v4_20260730/semantics_after.log"
+  ],
+  "name": "e5-v4-search-semantics-after",
+  "paused": false,
+  "process": {
+    "alive": false,
+    "cpu_percent": 0,
+    "members": [],
+    "pgid": 97337,
+    "root_pid": 97337,
+    "rss_mb": 0.0
+  },
+  "protected_files": {
+    "/Volumes/移动硬盘（512G）/ReSETP/baselines/algorithm_prototypes/china81_mechanism_hybrid_20260720/epochal_hgs.py": {
+      "age_seconds": 99.86857104301453,
+      "exists": true,
+      "kind": "search_semantics",
+      "mtime": 1785353958.05,
+      "path": "/Volumes/移动硬盘（512G）/ReSETP/baselines/algorithm_prototypes/china81_mechanism_hybrid_20260720/epochal_hgs.py",
+      "sha256": "fc4f4fa63e69a413aac9a36ca8e3d10fb359d4365c4365b83e474d1db3fc8808",
+      "size": 31213
+    },
+    "/Volumes/移动硬盘（512G）/ReSETP/baselines/algorithm_prototypes/china81_mechanism_hybrid_20260720/route_pool_sp.py": {
+      "age_seconds": 49160.0484931469,
+      "exists": true,
+      "kind": "search_semantics",
+      "mtime": 1785304897.87,
+      "path": "/Volumes/移动硬盘（512G）/ReSETP/baselines/algorithm_prototypes/china81_mechanism_hybrid_20260720/route_pool_sp.py",
+      "sha256": "976ef21d4952b3c488300de9a8d3e351411305d26f1e2601ca17c15185d462c1",
+      "size": 28203
+    },
+    "/Volumes/移动硬盘（512G）/ReSETP/baselines/china_e3_e7/e5_v4_semantics_fingerprint_20260730.py": {
+      "age_seconds": 278.4789319038391,
+      "exists": true,
+      "kind": "primary_config",
+      "mtime": 1785353779.44,
+      "path": "/Volumes/移动硬盘（512G）/ReSETP/baselines/china_e3_e7/e5_v4_semantics_fingerprint_20260730.py",
+      "sha256": "44d211ec7c7430e9e357fbe47664b82079d922bc331bc6bfb2114a920b5cf64e",
+      "size": 4146
+    },
+    "/Volumes/移动硬盘（512G）/ReSETP/solver/src/setp_solver/check.py": {
+      "age_seconds": 529705.9374220371,
+      "exists": true,
+      "kind": "evaluator",
+      "mtime": 1784824351.98,
+      "path": "/Volumes/移动硬盘（512G）/ReSETP/solver/src/setp_solver/check.py",
+      "sha256": "9c81e254e05591667c8225965bb9d0ba4e8bbfc53eb0f8c61ffdb4325a1403a8",
+      "size": 44701
+    },
+    "/Volumes/移动硬盘（512G）/ReSETP/solver/src/setp_solver/cost.py": {
+      "age_seconds": 551661.0766689777,
+      "exists": true,
+      "kind": "cost_function",
+      "mtime": 1784802396.84,
+      "path": "/Volumes/移动硬盘（512G）/ReSETP/solver/src/setp_solver/cost.py",
+      "sha256": "2717b4b4de39bb4c2a9a1bda602f4420cb3e3b1e87faa83678dfa64f88fc80be",
+      "size": 44794
+    },
+    "/Volumes/移动硬盘（512G）/ReSETP/solver/src/setp_solver/search/evaluation.py": {
+      "age_seconds": 1349912.6181361675,
+      "exists": true,
+      "kind": "evaluator",
+      "mtime": 1784004145.3,
+      "path": "/Volumes/移动硬盘（512G）/ReSETP/solver/src/setp_solver/search/evaluation.py",
+      "sha256": "c7215263c39d1d5a1429b41ca8ac40d950dbdf2bdc288337e56fbe9733406fc3",
+      "size": 7609
+    }
+  },
+  "runtime_seconds": 60.39254093170166,
+  "schema_version": 1,
+  "state": "COMPLETED",
+  "system": {
+    "free_memory_mb": 188.765625,
+    "load_average_15m": 3.3427734375,
+    "load_average_1m": 3.14990234375,
+    "load_average_5m": 2.79443359375,
+    "logical_cpus": 8,
+    "memory_pressure_free_percent": 42.0,
+    "swapouts": 4104060
+  }
+}

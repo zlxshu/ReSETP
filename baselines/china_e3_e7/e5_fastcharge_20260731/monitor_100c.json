@@ -1,0 +1,84 @@
+{
+  "schema_version": 1,
+  "name": "e5-fastcharge-100c-one-worker",
+  "objective": "Complete all 20 preregistered 100c E5 fast-charge task cells",
+  "workdir": ".",
+  "poll_seconds": 30,
+  "stale_seconds": 1800,
+  "max_runtime_seconds": 28800,
+  "pause_on_anomaly": true,
+  "required_command_substrings": [
+    "run_e5_fastcharge_20260731.py",
+    "formal",
+    "--instance-id",
+    "cn-prd-100c-02-V2-LOCATIONS",
+    "--workers",
+    "1"
+  ],
+  "forbidden_command_substrings": [
+    "--debug",
+    "--smoke"
+  ],
+  "min_cpu_percent_when_active": 1,
+  "cpu_grace_seconds": 300,
+  "low_cpu_consecutive_checks": 3,
+  "max_rss_mb": 6500,
+  "min_system_free_memory_mb": 256,
+  "min_system_memory_free_percent": 3,
+  "progress_files": [
+    "progress.jsonl"
+  ],
+  "result_files": [
+    "phase_100c_complete.json"
+  ],
+  "completion_files": [
+    "phase_100c_complete.json"
+  ],
+  "checkpoint_paths": [
+    "formal/task_status",
+    "formal/plans",
+    "formal/search_traces"
+  ],
+  "protected_files": [
+    {
+      "path": "../run_e5_fastcharge_20260731.py",
+      "kind": "experiment_contract"
+    },
+    {
+      "path": "../e5_fastcharge_config_20260731.py",
+      "kind": "primary_config"
+    },
+    {
+      "path": "pre_registration.json",
+      "kind": "research_question"
+    },
+    {
+      "path": "../../../solver/src/setp_solver/cost.py",
+      "kind": "cost_function"
+    },
+    {
+      "path": "../../../solver/src/setp_solver/check.py",
+      "kind": "evaluator"
+    },
+    {
+      "path": "../../../solver/src/setp_solver/search/evaluation.py",
+      "kind": "evaluator"
+    },
+    {
+      "path": "../../../solver/src/setp_solver/profit.py",
+      "kind": "evaluator"
+    },
+    {
+      "path": "../../algorithm_prototypes/china81_mechanism_hybrid_20260720/route_pool_sp.py",
+      "kind": "search_semantics"
+    },
+    {
+      "path": "../../algorithm_prototypes/china81_mechanism_hybrid_20260720/epochal_hgs.py",
+      "kind": "search_semantics"
+    }
+  ],
+  "ai": {
+    "enabled": false,
+    "timeout_seconds": 180
+  }
+}

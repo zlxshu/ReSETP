@@ -1,0 +1,118 @@
+{
+ "task_id": "E7-INFEASIBILITY-DIAGNOSIS-20260731",
+ "status": "COMPLETE_READ_ONLY_DIAGNOSIS",
+ "completed_at_local": "2026-07-31",
+ "mode": "read_only",
+ "wrote_no_code": true,
+ "ran_no_experiments": true,
+ "modified_no_sealed_artifacts": true,
+ "questions_answered": {
+  "q1_event_intensity_vs_fleet_slack": "partial",
+  "q2_asset_inheritance_rule": "answered",
+  "q3_can_a_new_physical_vehicle_be_opened": "answered",
+  "q4_why_static_arm_fails_on_stream4": "answered",
+  "q5_why_three_rolling_arms_give_identical_cost": "answered",
+  "q6_attribution_split": "partial"
+ },
+ "unresolved": [
+  {
+   "id": "Q1_IDLE_AT_TRIGGER_DENOMINATOR",
+   "what": "任务要求的分母是『该阶段名义方案里处于空闲/可继承状态的实体车辆数』；本诊断用的是该车场名义方案全部资产（天花板口径）",
+   "blocked_by": "空闲口径需按触发时刻重放证书执行账（build_certificate_execution_ledger）；失败单元未落盘 asset_states，重放等同跑实验，本任务禁止",
+   "effect": "§3.3 全部比值是低估；§8(a) 的『数量维度不成立』是条件性否定，真实空闲口径下 150c stream1 stage1 的 1.00 可能越过 1.0"
+  },
+  {
+   "id": "Q1_STAGE1_100C_150C_BINDING_CONDITION",
+   "what": "100c/150c 阶段 1 的候选被 _dynamic_assignment_candidates 四个条件中的哪一个拒绝（车型/车场/最晚发车/EV 电量）",
+   "blocked_by": "落盘只保留 top-3 被拒路线名与计数，未保留条件级分解；定位需重跑，本任务禁止跑实验"
+  },
+  {
+   "id": "Q6_BUDGET_VS_STRUCTURAL_AT_100C_150C",
+   "what": "100c/150c 阶段 1 的 changed=600 / executable=0 究竟是预算 600 不足还是结构性无解",
+   "blocked_by": "预算 600 只在 50c seed1 stream1 单阶段探针上标定，100c/150c 从未做预算探针；现有落盘数据两种解释都兼容"
+  }
+ ],
+ "primary_attribution": {
+  "headline": "114/114 失败都由同一条判定语句 dynamic_multitrip_schedule.py:466-469 触发，但下面是三块不同机制（A/B/C）；用户的『屎山代码』假设部分成立，不是失败主因",
+  "blocks": [
+   {
+    "block": "A_EXPIRED_NEW_ORDER_TIME_WINDOWS",
+    "units": 24,
+    "share_of_114": 0.2105,
+    "scope": "50c 三个滚动臂",
+    "evidence": "5/5 条流的『首个含到期时刻早于自身触发时刻的 add 的阶段』与滚动臂实际失败阶段精确相等；唯一无过期订单的 stream4 是唯一 PASS 的流；最极端 due−trigger = −5415.4 s",
+    "label": "FACT"
+   },
+   {
+    "block": "B_STATIC_ARM_ZERO_DEGREES_OF_FREEDOM",
+    "units": 30,
+    "share_of_114": 0.2632,
+    "scope": "三规模 STATIC_FIXED_RECOURSE 全部",
+    "evidence": "static_fixed_stage 唯一自由度是新增趟次的 cv/ev 选择，evaluations=0；且该失败在正式跑前已被写进接线自检的通过条件（v3 run_e7_dynamic.py:1364-1377，report.md 第 22 行）",
+    "label": "FACT"
+   },
+   {
+    "block": "C_STAGE1_NO_EXECUTABLE_CONTINUATION",
+    "units": 60,
+    "share_of_114": 0.5263,
+    "scope": "100c 与 150c 三个滚动臂",
+    "evidence": "全部 attempted=1/completed=0/failure_stage=1，initial_feasible=False，changed=600(594)，executable=0；该阶段的 add 订单没有一个过期，机制与 A 块不同",
+    "label": "FACT（机制未定位到条件级）"
+   }
+  ],
+  "by_user_dimension": {
+   "a_event_intensity_too_high_vs_fleet": "数量口径在天花板分母下不成立（单阶段最大 add/全部名义资产比值 = 1.00，其余 ≤0.67），但任务要求的空闲/可继承分母在只读条件下算不出，故这是条件性否定；时间窗口径成立且是 50c 滚动臂的唯一原因（事件生成与 delta_t=10800 分批粒度的时钟口径未对齐，最极端 due−trigger = −5415.4 s）；归属集中确有结构性问题（150c 全部 75 个新增订单 100% 落在最小车场 D_dongguan）",
+   "b_inheritance_rule_too_strict": "成立并已量化。动态续排的资产池封闭在名义方案实际动用的实体车上；合法车队上限高于名义用量（50c 12 vs 8、100c 23 vs 17、150c 35 vs 27），且新增订单落点车场都存在未动用的合法 CV。但对 A 块无效——过期订单加多少车都无解",
+   "c_arm_switch_not_wired_integration_layer": "部分成立，且不是 114 个失败的原因。已证实的接线缺陷只有一处：碳开关的日初那一半没接（corrected_initial_plan 收下 arm 后弃之不用、硬写 aware）。另有文档性缺陷：ARM_CONFIGS 的 route_policy/cooperation/participation/charging 四键全仓库无读取点，只进自检报告行",
+   "d_other": "150c 的 40 个单元共用 1 个名义方案，种子维度退化；预算 600 只在 50c 上标定过，100c/150c 直接套用"
+  },
+  "most_consequential_finding": "30 个滚动臂 (规模,种子) 组中 29 组三臂逐字段完全相同（status/final_total_cost/actual_evaluations/completed/attempted/failure_stage/reason 全部）；整个 120 单元矩阵里臂开关改变过结果的观测只有一个——50c seed4 的 NO_COOPERATION（比 FULL_ROLLING 贵 20.786545%，成本/利润/排放/充电量/两车场分账全部分化）。60/90 滚动臂单元（100c+150c）在失败阶段连臂特定搜索都没执行到（84/84 满足 actual_evaluations = completed×1200+600，即只烧掉那趟与臂无关的共享影子基准）；另 24 个 50c 单元跑过 2–3 个完整阶段、臂特定搜索确实运行过，却每阶段都选回同一个解。加上碳开关日初半边未接线，当前 E7 无法支撑四臂对照。"
+ },
+ "key_numbers": {
+  "units_total": 120,
+  "pass": 6,
+  "legal_infeasible": 114,
+  "pass_units": [
+   "50c|seed04|stream4|FULL_ROLLING",
+   "50c|seed04|stream4|NO_COOPERATION",
+   "50c|seed04|stream4|CARBON_BLIND",
+   "50c|seed09|stream4|FULL_ROLLING",
+   "50c|seed09|stream4|NO_COOPERATION",
+   "50c|seed09|stream4|CARBON_BLIND"
+  ],
+  "rolling_failures_matching_completed_x1200_plus_600": "84/84",
+  "seed_groups_with_byte_identical_three_arm_reason": "28/28",
+  "no_cooperation_vs_full_rolling_cost_delta_pct_seed04": 20.786545,
+  "carbon_blind_equals_full_rolling_all_fields": "2/2 PASS 种子",
+  "moved_charge_actions_after_event_in_pass_units": 0,
+  "nominal_timing_strategy_all_four_arms": "aware",
+  "distinct_nominal_plan_sha256": {
+   "50c": 10,
+   "100c": 10,
+   "150c": 1
+  },
+  "seed_groups_with_all_fields_identical_across_three_rolling_arms": "29/30",
+  "only_arm_divergence_in_whole_matrix": "50c seed04 NO_COOPERATION",
+  "failing_groups_that_completed_2_to_3_stages_before_dying": 8
+ },
+ "files_written": [
+  "docs/handoff/e7_infeasibility_diagnosis_20260731/diagnosis_numbers.json",
+  "docs/handoff/e7_infeasibility_diagnosis_20260731/done.json",
+  "docs/handoff/e7_infeasibility_diagnosis_20260731/report.md",
+  "docs/handoff/e7_infeasibility_diagnosis_20260731/scripts/build_numbers.py",
+  "docs/handoff/e7_infeasibility_diagnosis_20260731/scripts/collect_units.py",
+  "docs/handoff/e7_infeasibility_diagnosis_20260731/scripts/q1_event_vs_fleet.json",
+  "docs/handoff/e7_infeasibility_diagnosis_20260731/scripts/q1_event_vs_fleet.py",
+  "docs/handoff/e7_infeasibility_diagnosis_20260731/scripts/q1_expired_vs_failstage.json",
+  "docs/handoff/e7_infeasibility_diagnosis_20260731/scripts/units_table.json"
+ ],
+ "post_task_sync_pending": {
+  "status": "NOT_DONE_AWAITING_USER_DECISION",
+  "why": "本任务只授权三个交付物；但 CLAUDE.md / READ_ME_FIRST §3 的四同步链适用于会改论文结论的发现，本诊断确实改（E7 无法产出四臂对照、碳臂半边未接线）",
+  "targets": [
+   "HANDOFF.md 变更日志",
+   "docs/handoff/memory/MEMORY.md",
+   "docs/handoff/memory/dynamic-demand-integration.md"
+  ]
+ }
+}

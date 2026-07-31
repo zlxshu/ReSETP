@@ -1,0 +1,138 @@
+第 4 2 卷 第 1 0 期  
+2 0 2 2 年 1 0 月
+系 统 工 程 理 论 与 实 践  
+S y s t e m s  E n g i n e e r i n g   T h e o r y  &  P r a c t i c e
+Vo l . 4 2
+,  N o . 1 0
+Oct .
+,  2 0 2 2
+d o i :  1 0 . 1 2 0 1 1 / S E T P 2 0 2 1 3 2 8 2   中 图 法 分 类 号 : C 9 3 文 献 标 志 码 : A
+考虑 企业 服务 质 量 差 异 的 协 作配送 问 题 及 成本 分 摊 方 法研 究
+饶 卫振 \ 苗 晓 河 \ 朱庆华 2
+, 姜 力 文 1  
+(
+1
+. 山 东 科技大 学 经 济 管理 学 院 , 青 岛 266590
+;2 . 上 海 交 通 大 学 安 泰 经 济 管 理 学 院 , 上 海 2 0 0 0 3 0
+)  
+摘 要 传 统 协 作 配 送 成 本 分 摊 假 设 所 有 联 盟 企 业 的 服 务 质 量 无 差 异 , 以 边 际 贡 献 作 为 分 摊 依 据 ,
+但 实 际 协 作 过 程 中 企 业 间 服 务 质 量 具 有 差 异 性 . 基 于 此 , 本 文 首 先 提 出 包 含 关 系 绩 效 、 运 营 绩 效 、  
+成 本 绩 效 及 协 作 绩 效 四 个 维 度 的 协 作 配 送 服 务 质 量 评 价 层 次 框 架 . 其 次 , 构 建 考 虑 客 户 时 间 窗 的 协
+作 配 送 车 辆 路 径 问 题 模 型 , 并 结 合 S h a p l e y 值 法 求 解 规 则 , 提 出 成 本 分 摊 结 果 调 整 思 路 . 最 后 , 通 过
+数值 实 验对调 整 思 路 的 有 效 性进 行 验证 . 实 验 结 果表 明 : 1
+) 根 据 实 际 数 据 测 算 , 若 顺 丰 、 中 通 、 圆
+通
+、 申 通 四 家企业协作, 忽 略企业 间 服务质 量差 异 会造 成 16. 38% 左 右 的 成本偏 差 ;
+2
+) 车 辆 投 入 量 、  
+准 时送达 率 及价格水平在 协作 配送服务质 量 评价 中 尤 为 重 要 ;
+3
+) 为 规 避 服 务 质 量 差 距 造 成 的 惩 罚 ,
+联 盟 成 员 会 倾 向 于 提 高 服 务 水 准 , 缩 小 成 员 间 差 距 , 最 终 实 现 联 盟 整 体 服 务 质 量 提 升 . 本 文 提 出 的
+成 本 分 摊 调 整 思 路 能 够 客 观 反 映 企 业 服 务 质 量 差 异 对 分 摊 成 本 的 影 响 , 实 现 服 务 质 量 较 高 的 企 业  
+获 得 更 多 的 成 本 节 约 , 服 务 质 量 较 低 的 企 业 承 担 相 应 惩 罚 , 有 助 于 实 现 分 摊 公 平 , 并 可 达 到 激 励 成
+员 提 高 服 务 质 量 的 目 的 .
+关键词 协 作 配 送 车 辆 路 径 问 题 ; 服 务 质 量 差 异 ;
+S h a p l e y 值 法 ; 成 本 分 摊 值
+R e s e a r c h o n c o l l a b o r at i v ed i s t r i b u t i o n p r o b l e m s a n d  c o s t
+a l l o c a t i o n m e t h o d s c o n s i d e r i n g d i ffe r e n c e si n s e r v i c eq u a l i t y o f
+l o g i s t i c s e n t e r p r i s e s
+(
+1
+. C o l l e g e  o f  Ec o n o m i c s  a n d  M a n a ge me nt
+, S h a n d o n g U n i ve r s i t y  of  S c i e n c e  a n d Te c h n o l o gy ,  Q i n g d a o 2 6 6 5 9 0
+,C h i n a
+;  
+2
+. A nt a i  C o l l e g e o f  E c o n o m i c s  a n d M a n a ge me nt
+,  S h a n g h a i J i a oTo n g U n i v e r s i t y ,  S h a n g h a i  2 0 0 0 3 0
+,C h i n a
+)
+A b s t r a c t  T h e  t r a d i t i o n a l  c o l l a b o r a t i v e  d i s t r i b u t i o n  c o s t  a l l o c a t i o n  a s s u m e s  t h a t  t h e r e  i s  n o  d i f f e r e n c e
+i n t h e  q u a l i t y  o f s e r v i c e s  a c r o s s  al l a l l i a nc e e nt e r p r i s e s
+,  a n d  t a k e s  t h e  m a r g i n a l  c o n t r i b u t i o n  a s  t h e  b a s i s .  
+H owe v e r
+,  t h e r e  a r e  o b v i o u s  d i f fe r e n c e s  i n  t h e  s e r v i c e  q u a l i t y  o f  e n t e r p r i s e s  d u r i n g  t h e  p r a c t i c a l  c o o p e r a t i o n  
+pr o c ess .Ont hi sb asi s
+,  t h i s  s t u d y  fi r s t  p r o p o s e s  a  h i e r a r c h i c a l  f r a m e w o r k  fo r  s e r v i c e  q u a l i t y  e v a l u a t i o n  
+underac ol l ab or at i vec i rc um st anc e
+,  w h i c h  i n c l u d e s  fo u r  d i m e n s i o n s :  R e l a t i o n s h i p  p e r fo r m a n c e
+,  o p e r a t i o n  
+p e r fo r m a n c e
+,  c o s t  p e r fo r m a n c e  a n d  c o l l a b o r a t i v e  p e r fo r m a n c e .  T h e n
+,  a  m u l t i o w n e r  c o l l a b o r a t i v e  d e l i v e r y  
+v e h i c l e  r o u t i n g  p r o b l e m  m o d e l  i s  c o n s t r u c t e d  g i v e n  t h e  c u s t o m e r  t i m e  w i n d o w .  C o m b i n e d  w i t h  t h e  s o l u t i o n  
+r u lesoft hec l as s i c alS h ap leyvalu emet ho d
+,  t h e  p r o c e s s  o f  a d j u s t i n g  t h e  c o s t  a l l o c a t i o n  r e s u l t s  i s  p r o p o s e d
+Ift fl i B W :  2 0 2 2 0 1 1 3
+作者简介: 饶卫振 (
+1 98 1 )
+, 男 , 汉, 江西丰城人, 教授, 博士, 研究方 向 : 物 流协作配送 ,
+E m a i l : m owe i z h e n @ 1 6 3 . c o m
+; 苗 K 河
+(
+I "8 ) , 女, 汉, 山 东青岛人 硕士研究生, 研究方 向 : 物流协作配送 ,
+E m a i l : mi a 〇x i a〇 h e l l 4 @ l 6 3 . C 〇 m
+; 朱庆华 (
+1 9 7 〇 ) , 女 , 汉 ,  
+江苏太仓人, 教授, 博士, 研究方 向 : 绿色供应链,
+E m a i l :q h z h u @ sj t u . ed u . c n
+; 通信作者: 姜力文 (
+1 988 )
+, 女 , 满 族 , 辽 宁 抚 顺 人 ,   讲师 , 博士 , 研究方 向 : 物 流与供应链管理 ,
+E m a i l :  j i a n g l i w e n @ s d u s t . e d u . c n .
+基金项 国 家 自 然科学基金重大项 目 ( 72 1 9 2830
+,72 1 9 2 8 3 3
+)
+; 泰 山 学者工程专项经费 (
+t sqn 20 1 90 9 1 1 1
+)
+; 教育部人文社会 科学 研究规划基金 (
+2 1 YG A6 300 75
+)
+; 山 东 省 自 然科学基金 ( ZR20 1 9P G00 1
+)
+Fo u n d a t i o n  i t e m :  N a t i o n a l  N a t u r a l  S c i e n c e  Fo u n d a t i o n  o f  C h i n a  (
+72 1 9 28 30
+,7 2 1 9 28 3 3
+)
+;  S p e c i a l  F u n d i n g  o f  C o n s t r u c t i o n  
+P r o j e c t  fo r  Ta i s h a n  S c h o l a r s  o f  S h a n d o n g  P r o v i n c e  (
+t sqn 20 1 90 9 1 1 1
+)
+;  H u m a n i t i e s  a n d  S o c i a l  S c i e n c e s  Fo u n d a t i o n  o f  M i n i s t r y  
+ofEd u cat i o nofC h i n a(
+2 1 YG A6 30075
+)
+;  N a t u r a l  S c i e n c e  Fo u n d a t i o n  o f  S h a n d o n g  P r o v i n c e  ( Z R 2 0 1 9 P G 0 0 1
+)
+中 文 引 用格式: 饶卫振, 苗曉河, 朱庆华, 等. 考虑企业服务 质量差异的协作配送 问题及成本分摊方法研究 [
+J
+]
+. 系 统工 程 理论 与 实践 ,
+20 22
+,4 2
+(
+1 0)
+:  2 7 2 1 2 7 3 9 .
+英文 引 用 格式 :RaoWZ
+,M i aoXH
+,Z huQH
+,  e t  a l .  R e s e a r c h  o n  c o l l a b o r a t i v e  d i s t r i b u t i o n  p r o b l e m s  a n d  c o s t  a l l o c a t i o n  
+me t h o d s  c o n s i d e r i n g  d i fe r e n c e s  i n  s e r v i c e  q u a l i t y  o f  l o g i s t i c s  e nt e r p r i s e s
+[
+J
+]
+.S yst emsE ng i n eer i n g T h eor y&P r act i c e
+,20 2 2
+,  
+42 (
+10 )
+:  2 7 2 1 2 7 3 9 .
+R A O  We i z h e n 1
+,M I AOX i aohe
+1
+,Z H UQ i nghu a 2
+,  J I A N G  L i w e n 1
+
+

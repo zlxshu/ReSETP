@@ -1,0 +1,71 @@
+[50c] 1/40 seed=1 arm=STATIC_FIXED_RECOURSE status=LEGAL_INFEASIBLE cost=INFEASIBLE
+concurrent.futures.process._RemoteTraceback: 
+"""
+Traceback (most recent call last):
+  File "/opt/anaconda3/lib/python3.13/concurrent/futures/process.py", line 254, in _process_worker
+    r = call_item.fn(*call_item.args, **call_item.kwargs)
+  File "/Volumes/移动硬盘（512G）/ReSETP/baselines/china_e3_e7/e7_dynamic_v3_20260731/run_e7_dynamic.py", line 1820, in formal_worker
+    result = run_task_with_legal_infeasibility(
+        scale,
+    ...<3 lines>...
+        max_stages=max_stages,
+    )
+  File "/Volumes/移动硬盘（512G）/ReSETP/baselines/china_e3_e7/e7_dynamic_v3_20260731/run_e7_dynamic.py", line 1766, in run_task_with_legal_infeasibility
+    result = ORIGINAL_RUN_TASK(
+        scale,
+    ...<4 lines>...
+        trace_mode=trace_mode,
+    )
+  File "/Volumes/移动硬盘（512G）/ReSETP/baselines/china_e3_e7/e7_dynamic_20260731/run_e7_dynamic.py", line 989, in run_task
+    payload = probe.run_probe_arm(
+        arm,
+    ...<4 lines>...
+        network=scale,
+    )
+  File "/Volumes/移动硬盘（512G）/ReSETP/baselines/e7_dynamic/e7_full_mechanism_probe_20260714.py", line 1155, in run_probe_arm
+    result = _controlled_stage(
+        arm,
+    ...<16 lines>...
+        ),
+    )
+  File "/Volumes/移动硬盘（512G）/ReSETP/baselines/china_e3_e7/e7_dynamic_v3_20260731/run_e7_dynamic.py", line 951, in guarded_controlled_stage_dispatch
+    result = ORIGINAL_CONTROLLED_STAGE_DISPATCH(*args, **kwargs)
+  File "/Volumes/移动硬盘（512G）/ReSETP/baselines/china_e3_e7/e7_dynamic_20260731/run_e7_dynamic.py", line 846, in controlled_stage_dispatch
+    result = _ORIGINAL_CONTROLLED_STAGE(
+        "full",
+    ...<10 lines>...
+        stage_new_customer_ids=stage_new_customer_ids,
+    )
+  File "/Volumes/移动硬盘（512G）/ReSETP/baselines/e7_dynamic/e7_full_mechanism_probe_20260714.py", line 839, in _controlled_stage
+    baseline = _same_state_no_cooperation(
+        construction,
+    ...<7 lines>...
+        stage_new_customer_ids=stage_new_customer_ids,
+    )
+  File "/Volumes/移动硬盘（512G）/ReSETP/baselines/e7_dynamic/e7_full_mechanism_probe_20260714.py", line 740, in _same_state_no_cooperation
+    result = base.search_stage(
+        controlled,
+    ...<9 lines>...
+        candidate_best_gate=no_cross_gate,
+    )
+  File "/Volumes/移动硬盘（512G）/ReSETP/baselines/china_e3_e7/e7_dynamic_v3_20260731/run_e7_dynamic.py", line 873, in traced_search_stage_v3
+    raise RuntimeError("HALT_CONVERGENCE_TRACE_ACCOUNTING")
+RuntimeError: HALT_CONVERGENCE_TRACE_ACCOUNTING
+"""
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/Volumes/移动硬盘（512G）/ReSETP/baselines/china_e3_e7/e7_dynamic_v3_20260731/run_e7_dynamic.py", line 2545, in <module>
+    raise SystemExit(main())
+                     ~~~~^^
+  File "/Volumes/移动硬盘（512G）/ReSETP/baselines/china_e3_e7/e7_dynamic_v3_20260731/run_e7_dynamic.py", line 2533, in main
+    output = run_formal(args.scale, args.workers)
+  File "/Volumes/移动硬盘（512G）/ReSETP/baselines/china_e3_e7/e7_dynamic_v3_20260731/run_e7_dynamic.py", line 1870, in run_formal
+    result = future.result()
+  File "/opt/anaconda3/lib/python3.13/concurrent/futures/_base.py", line 449, in result
+    return self.__get_result()
+           ~~~~~~~~~~~~~~~~~^^
+  File "/opt/anaconda3/lib/python3.13/concurrent/futures/_base.py", line 401, in __get_result
+    raise self._exception
+RuntimeError: HALT_CONVERGENCE_TRACE_ACCOUNTING

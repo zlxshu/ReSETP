@@ -1,0 +1,308 @@
+{
+  "E2-1": {
+    "verdict": "CONFIRMED",
+    "note": "FACT: 重算得到 MV 对 O 为 354 胜、46 平、5 负，405 个配对单元，2025 行；按原始序列化成本使用 Decimal(prec=80) 的均值为 1.9191180150258946598389658589611319611881610827997480087735944506479096704125813%，按运行器的 Python float 口径为 1.919118015025895%，与 decision 差 0.0。"
+  },
+  "E2-2": {
+    "verdict": "CONFIRMED",
+    "note": "FACT: 从 405 个 O/F/E/M/MV 配对单元重算，完整非增阶梯为 299。"
+  },
+  "E2-3": {
+    "verdict": "CONFIRMED",
+    "note": "FACT: 重算转移为 O→F 268/22/115，F→E 290/29/86，E→M 79/77/249，M→MV 114/0/291（改善/回退/平）。"
+  },
+  "E2-4": {
+    "verdict": "CONFIRMED",
+    "note": "FACT: raw_runs.json 中 O 的 405 行均为 NoImprovement(3000)，F/E/M/MV 的 1620 行均为 V7_FIXED_25000_ITERATIONS_PER_VIEW；decision 中两个边界布尔值均为 false。"
+  },
+  "E2-5": {
+    "verdict": "CONFIRMED",
+    "note": "FACT: 从公开侧原始 decision.json 重读为 13/18 通过、5 失败，失败集合恰为 PR14A、PR15A、PR15B、PR16A、PR24A，verdict=STOP_NOT_ALL_TARGETS_REPRODUCED。"
+  },
+  "E2-结论": {
+    "verdict": "PARTIAL",
+    "note": "FACT: 非同批同机与阶梯仅 299/405 完整单调均成立。INFERENCE: ‘不是实验失败’没有可操作的判定定义，不能与前两个可核事实合并为 CONFIRMED。"
+  },
+  "E4-1": {
+    "verdict": "CONFIRMED",
+    "note": "FACT: decision.json 直接记录 evidence_status=PASS_COMPLETE_ZERO_SEARCH_REPLAY 与 verdict=POSITIVE。"
+  },
+  "E4-2": {
+    "verdict": "CONFIRMED",
+    "note": "FACT: raw_runs.csv 的 ASAP 总排放 475317.3345401612233375 kg，CARBON 总排放 214033.62756881424449620 kg；Decimal(prec=80) 重算为 54.970371998766269479158016226285610269243598705559989050207423850540349165485621%，按运行器 float 口径为 54.97037199876627%，与 decision 差 0.0。"
+  },
+  "E4-3": {
+    "verdict": "CONFIRMED",
+    "note": "FACT: raw_runs.csv 有 11340 个数据行，与 observed_pair_rows 和 expected_pair_rows 同为 11340；all_rows_retained=true。"
+  },
+  "E4-4": {
+    "verdict": "CONFIRMED",
+    "note": "FACT: decision 为 search_candidate_count=0、rescue_tuning=false，原始 11340 行的 search_candidate_count 唯一值也是 0。"
+  },
+  "E4-结论": {
+    "verdict": "NOT_CHECKABLE",
+    "note": "INFERENCE: ‘无问题’和‘六组里最完整’没有定义检查项或比较准则。FACT: 同一 raw_runs.csv 还显示充电电费从 528422.7924061140473160 增至 1241158.274937080238615 元，变化 +134.87977671924500770846579549446712206689298059785331205088354716868489299668737%。"
+  },
+  "E5-1": {
+    "verdict": "CONFIRMED",
+    "note": "FACT: 原始 decision.json 的四个终点为 20/20、0/20，以及共同可行配对成本变化 min/mean/median/max 全为 0.0%。"
+  },
+  "E5-2": {
+    "verdict": "CONFIRMED",
+    "note": "FACT: charging_sessions.csv 有 196 个数据行，两臂各98行。"
+  },
+  "E5-3": {
+    "verdict": "CONFIRMED",
+    "note": "FACT: 按 (instance_id,seed,vehicle_id,session_index) 构造的两臂键集相等，start_soc_pct、end_soc_pct、energy_kwh 的序列化字符串逐条相等。"
+  },
+  "E5-4": {
+    "verdict": "CONFIRMED",
+    "note": "FACT: start_soc_pct 精确等于 0.0 的行数为 160/196。"
+  },
+  "E5-5": {
+    "verdict": "CONFIRMED",
+    "note": "FACT: charge_start_second 精确等于 0.0 的行数为 140/196。"
+  },
+  "E5-6": {
+    "verdict": "PARTIAL",
+    "correct_value": {
+      "median_end_soc_pct": "37.032809860860496",
+      "mean_end_soc_pct_decimal_prec80": "46.953234940037198438775510204081632653061224489795918367346938775510204081632653"
+    },
+    "note": "FACT: 37.03 和 46.95 只是四舍五入显示值；两臂分布相同，但按任务的完整精度规则不能判 CONFIRMED。"
+  },
+  "E5-7": {
+    "verdict": "PARTIAL",
+    "correct_value": {
+      "end_soc_ge_99_9": 36,
+      "delta_literal_nonzero": 68,
+      "delta_positive": 38,
+      "delta_abs_gt_1e_minus_9": 36
+    },
+    "note": "FACT: 36 个高 SOC 行与 |delta|>1e-9 的 36 行完全同集；但字面 delta!=0 有68行，delta>0 有38行，多出的是 ±2.2737367544323206e-13 或 -4.547473508864641e-13 级浮点尾差。台账把‘非零’写成36，字面不成立。"
+  },
+  "E5-8": {
+    "verdict": "CONFIRMED",
+    "note": "FACT: 上述36行的 nonlinear_minus_linear_seconds 唯一序列化值是 1264.5818181818177，因此 min=median=max。"
+  },
+  "E5-9": {
+    "verdict": "PARTIAL",
+    "correct_value": {
+      "affected_rows": 36,
+      "denominator": 196,
+      "serialized_pct": "18.36734693877551",
+      "new_units_run": 0,
+      "status": "SKIPPED_CURVE_ALSO_UNEXPOSED"
+    },
+    "note": "FACT: 曲线名、计数、分母、new_units_run 和 status 都一致；18.37% 是舍入显示，原始序列化值为 18.36734693877551%。"
+  },
+  "E5-原因": {
+    "verdict": "CONFIRMED",
+    "note": "FACT: 36 行对应 18 个物理会话的两臂重复；这18个会话的 start_soc=0.0、end_soc=100.0、charge_start=0.0、linear_duration=12645.818181818182、nonlinear_duration=13910.4，首趟发车=21600.0，非线性充电结束到发车的余量全为 7689.6 秒；逐计划复核的 departure_second/return_second/recharge_end_second 改变数为0。INFERENCE: 这些原始时序事实支持当前20个计划中‘不与后续约束竞争’与成本效应为0的解释。"
+  },
+  "E3-1": {
+    "verdict": "CONFIRMED",
+    "note": "FACT: input_assignments.csv 有300个数据行；50c 每臂50行，100c 每臂100行。"
+  },
+  "E3-2": {
+    "verdict": "CONFIRMED",
+    "note": "FACT: 300行 registered_differs_from_nearest 全为 False；去除臂重复后为150个客户、0个错配。"
+  },
+  "E3-3": {
+    "verdict": "CONFIRMED",
+    "note": "FACT: china81.py 先建立每城市唯一车场映射，然后按 customer.city 索引；正式 decision 为 literal_registered_depot_column_found=false。"
+  },
+  "E3-4": {
+    "verdict": "CONFIRMED",
+    "note": "FACT: 两个形式算例的车场集均为 D_guangzhou/D_shenzhen；50c 是23/27，100c 是46/54，两臂一致。"
+  },
+  "E3-5": {
+    "verdict": "CONFIRMED",
+    "note": "FACT: decision.json 为 ind_arm_run=false，ind_arm_reason=IND_AND_ZONE_INPUTS_IDENTICAL_BY_PRE_SEARCH_FACT，正式 raw_runs.csv 只有ZONE与JOINT两臂。"
+  },
+  "E3-6": {
+    "verdict": "CONFIRMED",
+    "note": "FACT: decision 序列化值为 50c 2.2727594138817997%、100c 0.693114675203723%、等权总体1.4829370445427614%；distance_reduction 和 carbon_reduction 均为负，车辆数变化为 -1.0 与 -0.8000000000000007。"
+  },
+  "E3-7": {
+    "verdict": "PARTIAL",
+    "correct_value": {
+      "seed1_reduction_pct_decimal_prec80": "-0.037878246955829594133777123656432411602271472065776787447318692454698548704779797",
+      "seed2_reduction_pct": "0",
+      "seed3_reduction_pct_decimal_prec80": "-0.036211861828123646599618404414946075433591965759208016901323155969932889485586445",
+      "seed1_joint": "2289.318598837748",
+      "seed1_pooled": "2290.1857525902215",
+      "seed2_joint_and_pooled": "2288.011934963608",
+      "seed3_joint": "2288.011934963608",
+      "seed3_pooled": "2288.840466684108",
+      "zone_all_seeds": "2341.446789956353"
+    },
+    "note": "FACT: 方向和数值量级一致，但台账将成本与百分比都四舍五入，不符合完整精度比对。"
+  },
+  "E3-原因": {
+    "verdict": "PARTIAL",
+    "note": "FACT: 两个形式算例的错配确为0，但81个算例中有6个错配非零，合24/5805个客户。INFERENCE: 因此‘按构造恒为零’只对这两个形式输入成立；而‘1.4829%全部来自路径合并’没有独立变量隔离，无法从两臂结果唯一归因。"
+  },
+  "E6-1": {
+    "verdict": "CONFIRMED",
+    "note": "FACT: 20行候选池摘要重算得 participation_satisfying_candidates_total=0、units_naturally_pareto=0、units_f_equals_i=20。"
+  },
+  "E6-2": {
+    "verdict": "CONFIRMED",
+    "note": "FACT: 两个 instance_summary 行的等权均值按序列化十进制重算为 1.5117836668756319%；运行器 float/decision 序列化为 1.511783666875632%。"
+  },
+  "E6-3": {
+    "verdict": "CONFIRMED",
+    "note": "FACT: allocation decision 为 route_search_executed=false、search_reruns=0，data_source 指向已认证 I/U 行，因此 Shapley 计算是结果后分配。"
+  },
+  "E6-4": {
+    "verdict": "PARTIAL",
+    "correct_value": {
+      "feasible_units": "19/20",
+      "mean_transfer_cny": "817.374756596798",
+      "mean_system_saving_cny_decimal_prec80": "45.358150991979578947368421052631578947368421052631578947368421052631578947368421",
+      "ratio_of_means_decimal_prec80": "18.020460241894112454059203056845544273000131774231069099252819558967864994682451",
+      "pooled_mean_net_gain_per_member_cny_decimal_prec80": "22.679075495989210526315789473684210526315789473684210526315789473684210526315789"
+    },
+    "note": "FACT: 19/20和平均转移完整值一致；其余三个数在台账中是四舍五入值。"
+  },
+  "E6-5": {
+    "verdict": "CONFIRMED",
+    "note": "FACT: 唯一不可行单元为 cn-prd-100c-02-V2-LOCATIONS seed 4，系统节省 -1.135377416539，core lower=1.135377416540、upper=0.000000000000。"
+  },
+  "E6-结论": {
+    "verdict": "PARTIAL",
+    "note": "FACT: 公平机制未参与路线搜索、是事后核算已确认。INFERENCE: ‘不是失败’缺少可核的定义，不与该事实等价。"
+  },
+  "E7-1": {
+    "verdict": "CONFIRMED",
+    "note": "FACT: 逐一读取120个task JSON，114个LEGAL_INFEASIBLE、6个PASS；50c为34/6，100c与150c址为40/0。"
+  },
+  "E7-2": {
+    "verdict": "CONFIRMED",
+    "note": "FACT: 6个PASS均无feasible键且final_total_cost为数值；114个失败均feasible=false、final_total_cost=null。"
+  },
+  "E7-3": {
+    "verdict": "CONFIRMED",
+    "note": "FACT: 120个单元全部满足 stream_seed=((algorithm_seed-1) mod 5)+1，10个算法种子映射到5条流。"
+  },
+  "E7-4": {
+    "verdict": "CONFIRMED",
+    "note": "FACT: 6个PASS均是50c，algorithm_seed仅4或9，stream_seed均为4，每个种子包含CARBON_BLIND、FULL_ROLLING、NO_COOPERATION。"
+  },
+  "E7-5": {
+    "verdict": "REFUTED",
+    "correct_value": {
+      "50c_static_units": 10,
+      "50c_static_legal_infeasible": 10,
+      "all_scales_static_units": 30,
+      "all_scales_static_legal_infeasible": 30
+    },
+    "note": "FACT: 50c的40个单元由10种子×4臂构成，STATIC_FIXED_RECOURSE每种子仅1个，所以50c静态臂是10个而非40个。全部三个尺度才是30个静态臂，30个均为LEGAL_INFEASIBLE。"
+  },
+  "E7-6": {
+    "verdict": "CONFIRMED",
+    "note": "FACT: seed9三个滚动臂的final_total_cost均为5462.484679661239；seed4的CARBON_BLIND与FULL_ROLLING均为5975.267331229614，NO_COOPERATION为7217.318971600578。"
+  },
+  "E7-7": {
+    "verdict": "CONFIRMED",
+    "note": "FACT: 6个PASS的carbon_aware_charging_shift_after_event=false、moved_charge_actions_after_event=0、cross_depot_reassignment_after_event=false。"
+  },
+  "E7-8": {
+    "verdict": "CONFIRMED",
+    "note": "FACT: 对84个失败滚动臂逐一重算，actual_evaluations=completed_stage_count*1200+600的不符行为0。"
+  },
+  "E7-9": {
+    "verdict": "CONFIRMED",
+    "note": "FACT: 84个失败滚动臂按(scale,algorithm_seed)分成28组，每组3臂；28/28组的legal_infeasibility_reason字节完全相同，top_rejections嵌入文本因此也完全相同。"
+  },
+  "E7-10": {
+    "verdict": "PARTIAL",
+    "correct_value": {
+      "failed_50c_rolling_rows_with_expiry_pattern": 24,
+      "defined_stream_stage_matches": "4/4",
+      "matches_if_absent_absent_is_counted": "5/5",
+      "most_negative_due_minus_trigger_seconds": "-10753.5458680683",
+      "most_negative_location": "50c stream 3 stage 4 customer N5"
+    },
+    "note": "FACT: 50c的24个失败滚动行对应stream 1/2/3/5，首个过期阶段与失败阶段分别为4/3/4/3，即定义值4/4一致；stream4两者都缺席时可记5/5模式一致。台账的最极端-5415.4秒错误，真值是-10753.5458680683秒。"
+  },
+  "E7-11": {
+    "verdict": "CONFIRMED",
+    "note": "FACT: 代码确由路线时间窗反推latest departure，在_dynamic_assignment_candidates中按车型/归属车场、可充至电量、最晚发车过滤，候选为空则返回no inherited asset。"
+  },
+  "E7-12": {
+    "verdict": "CONFIRMED",
+    "note": "FACT: corrected_initial_plan中arm只用于合法性检查；无条件将aware送入prepare_multitrip_solution，并序列化strategy=aware。"
+  },
+  "E7-13": {
+    "verdict": "PARTIAL",
+    "correct_value": "四个语义键没有逐键查询来驱动执行；但ARM_CONFIGS[arm]被整体展开到自检行并整体序列化，而真实臂行为由arm字符的硬编码分支实现。",
+    "note": "FACT: ‘全仓库无读取点’字面过强；v3在1351行读ARM_CONFIGS[arm]，1510行序列化整表，旧主运行器在833-895行根据arm分支实现四臂。INFERENCE: 这四个声明键本身不是执行接线。"
+  },
+  "E7-14": {
+    "verdict": "CONFIRMED",
+    "note": "FACT: 从120个任务的nominal_plan_sha256去重，50c=10、100c=10、150c=1；150c的40个单元共用同一SHA-256。"
+  },
+  "E7-15": {
+    "verdict": "CONFIRMED",
+    "note": "FACT: v3在首阶段从名义方案certificate ledger的assets构造base_states，未向合法车队上限补充未用车；重算合法上限/名义已用实体车为50c 12/8、100c 23/17、150c 35/27。"
+  },
+  "E7-U1": {
+    "verdict": "NOT_CHECKABLE",
+    "note": "FACT: 100c/150c的60个失败滚动行均failure_stage=1、payload=null、physical_vehicle_ids=[]、vehicle_count=null；每条reason保留可解析的top_rejections，结构是长度3的Python字面量list，元素为(full reason string, integer rejection-event count)。60行共20个不同reason字符串，聚合类别计数为NO_INHERITED_ASSET=10797、BACKTRACKING_LIMIT=297、ROUTE_CAPACITY=246。INFERENCE: no inherited asset文本不能反推是车型、车场、最晚发车或EV电量中的哪一条过滤；彻底查清还缺每次候选的asset/profile状态与四个条件的分项拒绝计数或追踪。"
+  },
+  "E7-U2": {
+    "verdict": "NOT_CHECKABLE",
+    "note": "FACT: 预算探针代码只调用50c、algorithm seed 1、FULL_ROLLING、max_stages=1；实际仅做了1次cap=800尝试，latest improvement=505、plateau=true，选定600/1200。未见100c/150c探针。INFERENCE: 现有产物无法区分100c/150c是预算不足还是结构性无解；还缺这两个尺度的候选耗尽证书或更大cap下的完整收敛/拒绝追踪。"
+  },
+  "E7-U3": {
+    "verdict": "PARTIAL",
+    "correct_value": "自检仅运行并断言50c seed1 STATIC_FIXED_RECOURSE的stage1、per_pass_cap=1这一个单元，不是B块30个静态单元。",
+    "note": "FACT: 形式结果中30/30静态臂确为LEGAL_INFEASIBLE；但run_e7_dynamic.py:1364-1377只自检一个50c seed1样例，1463-1469的自检证据文本也只声明该样例。‘30个都在跑前写进自检通过条件’不成立。"
+  },
+  "INF-1": {
+    "verdict": "CONFIRMED",
+    "note": "FACT: _route_feasible构造vehicle_type=cv的路线，只用CV载重、路网和时间窗；num_ev=max(1,ceil((1.25-1)*R_d))，EV载重和电池未进入R_d构造。"
+  },
+  "INF-2": {
+    "verdict": "CONFIRMED",
+    "note": "FACT: 直接比较Git对象54d78421的父版本与该版本，diff只变更EV车型参数；CV字段无diff。当前CV载重为1735.0，EV为1700.0、电池77.28。"
+  },
+  "INF-3": {
+    "verdict": "CONFIRMED",
+    "note": "FACT: 独立比较v1/v2的144行fleet_caps，键集相等且逐行差异为0；两者总R_d=1040、num_cv=1040、num_ev=309。比较81个witness并排除schema键后，81/81完全相等。"
+  },
+  "INF-4": {
+    "verdict": "CONFIRMED",
+    "note": "INFERENCE: INF-1显示EV参数未进入R_d，INF-3的v1/v2全等与此一致；因此‘旧EV载重推出R_d’的前提不成立。"
+  },
+  "INF-5": {
+    "verdict": "CONFIRMED",
+    "note": "FACT: 构建器显式设MAIN_RESERVE_FACTOR=1.25，并以其增量0.25构造num_ev；路线封装与定容没有EV能量检查。本次事后只读核查发现：81算例、144车场、1040条witness路线中，路线EV能耗范围9.094221001679287–66.29088100604332 kWh，每个车场的能量且载重可行路线数都不少于num_ev，‘任一路线都跑不完’的车场数为0。"
+  },
+  "INF-6": {
+    "verdict": "CONFIRMED",
+    "note": "FACT: CSV有12096个数据行，数值碳因子列只有carbon_factor_kgco2e_per_kwh（另有来源标识列carbon_source_column）；china81.py将该数值同时复制给actual与forecast。"
+  },
+  "INF-7": {
+    "verdict": "CONFIRMED",
+    "note": "FACT: 调度侧默认forecast、排放核算侧读actual，E4同时指定两字段重算，机制确实存在。其他forecast读取点还有instance_loader.py:548、formal_runner.py:1061、search/carbon_operators.py:209、algorithms/resetp_alns/support/mechanism_prescription.py:758、algorithms/resetp_alns/operators/carbon_operators.py:372与E7 v3的521/531/1327。E2/E3/E5/E6正式结果链未显式以forecast作为调度输入；其排放核算走actual。"
+  },
+  "INF-8": {
+    "verdict": "CONFIRMED",
+    "note": "FACT: 原始Figshare article JSON列出7个文件及MD5；对本地7个文件重算MD5，7/7与公布值字符串相等。"
+  },
+  "INF-9": {
+    "verdict": "CONFIRMED",
+    "note": "FACT: Annotation_of_the_dataset.pdf第1页明言projected、planning scenarios、2025–2060；第4页明言小时数是电力系统运行模拟计算的平均排放强度，不是瞬时值。"
+  },
+  "COR-1": {
+    "verdict": "CONFIRMED",
+    "note": "FACT: 代码中forecast/actual分工真实存在，E4按两字段各算一次；GB原始数据1393行中1337行actual!=forecast，差值范围[-48,52]，NESO方法文档第1页也分别定义了48小时预测和半小时末估计值。中国实验日历则把同一投影序列复制到两字段。INFERENCE: 因此建模章保留两端机制、实验章如实写中国算例两端同值，在代码与文献两侧均有原始依据。"
+  },
+  "COR-2": {
+    "verdict": "PARTIAL",
+    "note": "FACT: v1/v2全等成立，但这只因为EV参数未进入定容；生成器也确实未做EV续航检查。INFERENCE: ‘25%无依据’过于绝对；代码上的明示构造依据是reserve factor 1.25，但未找到该0.25的外部或经验车队依据。"
+  }
+}

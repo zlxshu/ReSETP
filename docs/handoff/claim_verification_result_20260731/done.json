@@ -1,0 +1,26 @@
+{
+  "task_id": "CLAIM-VERIFICATION-20260731",
+  "status": "COMPLETE",
+  "completed_at": "2026-07-31T20:30:21+08:00",
+  "counts": {
+    "CONFIRMED": 48,
+    "PARTIAL": 12,
+    "REFUTED": 1,
+    "NOT_CHECKABLE": 3,
+    "TOTAL": 64
+  },
+  "new_findings_count": 6,
+  "highest_severity_finding": {
+    "id": "E7-5",
+    "verdict": "REFUTED",
+    "summary": "50c 的 STATIC_FIXED_RECOURSE 单元数是 10，不是台账所称的 40。"
+  },
+  "experiments_run": 0,
+  "protected_artifacts_modified": false,
+  "files_written": [
+    "docs/handoff/claim_verification_result_20260731/report.md",
+    "docs/handoff/claim_verification_result_20260731/verdicts.json",
+    "docs/handoff/claim_verification_result_20260731/scripts/recompute_claims.py",
+    "docs/handoff/claim_verification_result_20260731/done.json"
+  ]
+}

@@ -1,0 +1,72 @@
+{
+  "arm": "ZONE",
+  "carbon_emissions_kg": 311.2842698091199,
+  "complete_candidate_budget_cap": 400,
+  "complete_candidate_evaluations_consumed": 354,
+  "configured_complete_candidate_budget_expected": 400,
+  "constraint_filtered_candidates": 0,
+  "cpu_system_seconds": 0.26919099999999996,
+  "cpu_user_seconds": 114.91676200000006,
+  "cross_site_service_count": 0,
+  "distance_total_m": 1148053.141793334,
+  "elapsed_wall_seconds": 115.11320395901566,
+  "error_candidates": 0,
+  "feasible_candidates": 147,
+  "hard_home_depot_lock": true,
+  "infeasible_candidates": 207,
+  "instance_id": "cn-prd-100c-02-V2-LOCATIONS",
+  "last_strict_improvement_evaluation": 110,
+  "phase": "formal",
+  "plan_path": "baselines/china_e3_e7/e3_zone_joint_20260731/formal/plans/cn-prd-100c-02-V2-LOCATIONS__seed07__ZONE.json",
+  "plan_sha256": "28e6982844df59e4c8ca04783a0b45f73649fc1532ea45b685f8cc457da59ff3",
+  "route_count": 18,
+  "sample_role": "ROBUSTNESS",
+  "schema": "resetp.e3-structural.formal-unit.v1",
+  "search_trace_path": "baselines/china_e3_e7/e3_zone_joint_20260731/formal/search_traces/cn-prd-100c-02-V2-LOCATIONS__seed07__ZONE.json",
+  "search_trace_sha256": "934f42ca1ff58209684a16a86ff6a1cb8c23e3fdab6cb91004b872c1cf14a48f",
+  "seed": 7,
+  "solution_sha256": "d5c2fb570f9bed0e22908f9d87d34d65c77bc41cef5320a28a3a0f8940d150a3",
+  "source_lock_id": "9cc2e20dc365f6e7bd03511367f0cba39aacbe9cd1e7f8da9697c2703b11483d",
+  "status": "PASS",
+  "task_id": "E3-ZONE-JOINT-COMPARISON-20260731",
+  "termination_evidence": {
+    "cv_only": {
+      "archive_candidate_limit": 131,
+      "archive_completion_attempts": 107,
+      "archive_unique_native_candidates": 107,
+      "hgs_stop_mode": "DETERMINISTIC_ITERATIONS_WITH_WALLCLOCK_SAFETY",
+      "wallclock_safety_triggered": false
+    },
+    "exhausted_modes": [
+      "cv_only",
+      "naive_ev",
+      "mechanism_ev"
+    ],
+    "mechanism_ev": {
+      "archive_candidate_limit": 130,
+      "archive_completion_attempts": 119,
+      "archive_unique_native_candidates": 119,
+      "hgs_stop_mode": "DETERMINISTIC_ITERATIONS_WITH_WALLCLOCK_SAFETY",
+      "wallclock_safety_triggered": false
+    },
+    "naive_ev": {
+      "archive_candidate_limit": 131,
+      "archive_completion_attempts": 120,
+      "archive_unique_native_candidates": 120,
+      "hgs_stop_mode": "DETERMINISTIC_ITERATIONS_WITH_WALLCLOCK_SAFETY",
+      "wallclock_safety_triggered": false
+    },
+    "shortfall_modes": [
+      "cv_only",
+      "naive_ev",
+      "mechanism_ev"
+    ]
+  },
+  "termination_reason": "CANDIDATES_EXHAUSTED",
+  "time_window_satisfied_customer_count": 100,
+  "total_cost_cny": 4739.791127781742,
+  "validated_at_utc": "2026-07-30T01:08:10.981847+00:00",
+  "vehicle_count": 18,
+  "violation_count": 0,
+  "wallclock_safety_triggered": false
+}

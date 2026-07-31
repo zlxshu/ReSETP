@@ -1,0 +1,187 @@
+{
+  "created_at": "2026-07-29T19:46:12+00:00",
+  "current_status": {
+    "checked_at": "2026-07-29T19:46:12+00:00",
+    "checkpoint_inventory": [],
+    "csv_summaries": [],
+    "files": {
+      "/Volumes/移动硬盘（512G）/ReSETP/baselines/china_e3_e7/e5_nonlinear_v4_20260730/budget_lock.json": {
+        "exists": false,
+        "path": "/Volumes/移动硬盘（512G）/ReSETP/baselines/china_e3_e7/e5_nonlinear_v4_20260730/budget_lock.json"
+      },
+      "/Volumes/移动硬盘（512G）/ReSETP/baselines/china_e3_e7/e5_nonlinear_v4_20260730/probe.log": {
+        "age_seconds": 29.131947994232178,
+        "exists": true,
+        "mtime": 1785354343.58,
+        "path": "/Volumes/移动硬盘（512G）/ReSETP/baselines/china_e3_e7/e5_nonlinear_v4_20260730/probe.log",
+        "size": 1161
+      },
+      "/Volumes/移动硬盘（512G）/ReSETP/baselines/china_e3_e7/e5_nonlinear_v4_20260730/probe/convergence_curve.csv": {
+        "exists": false,
+        "path": "/Volumes/移动硬盘（512G）/ReSETP/baselines/china_e3_e7/e5_nonlinear_v4_20260730/probe/convergence_curve.csv"
+      },
+      "/Volumes/移动硬盘（512G）/ReSETP/baselines/china_e3_e7/e5_nonlinear_v4_20260730/probe/null_objective_diagnosis.json": {
+        "exists": false,
+        "path": "/Volumes/移动硬盘（512G）/ReSETP/baselines/china_e3_e7/e5_nonlinear_v4_20260730/probe/null_objective_diagnosis.json"
+      },
+      "/Volumes/移动硬盘（512G）/ReSETP/baselines/china_e3_e7/e5_nonlinear_v4_20260730/probe/summary.json": {
+        "exists": false,
+        "path": "/Volumes/移动硬盘（512G）/ReSETP/baselines/china_e3_e7/e5_nonlinear_v4_20260730/probe/summary.json"
+      }
+    },
+    "findings": [
+      {
+        "code": "FATAL_LOG_PATTERN",
+        "details": {},
+        "message": "matched fatal pattern: \\bTraceback \\(most recent call last\\):",
+        "severity": "critical"
+      },
+      {
+        "code": "PROCESS_EXITED_WITHOUT_COMPLETION",
+        "details": {},
+        "message": "process ended without completion evidence",
+        "severity": "critical"
+      }
+    ],
+    "log_paths": [
+      "/Volumes/移动硬盘（512G）/ReSETP/baselines/china_e3_e7/e5_nonlinear_v4_20260730/probe.log"
+    ],
+    "name": "e5-v4-null-objective-two-arm-probe",
+    "paused": false,
+    "process": {
+      "alive": false,
+      "cpu_percent": 0,
+      "members": [],
+      "pgid": 98494,
+      "root_pid": 98494,
+      "rss_mb": 0.0
+    },
+    "protected_files": {
+      "/Volumes/移动硬盘（512G）/ReSETP/baselines/algorithm_prototypes/china81_mechanism_hybrid_20260720/epochal_hgs.py": {
+        "age_seconds": 414.6746370792389,
+        "exists": true,
+        "kind": "search_semantics",
+        "mtime": 1785353958.05,
+        "path": "/Volumes/移动硬盘（512G）/ReSETP/baselines/algorithm_prototypes/china81_mechanism_hybrid_20260720/epochal_hgs.py",
+        "sha256": "fc4f4fa63e69a413aac9a36ca8e3d10fb359d4365c4365b83e474d1db3fc8808",
+        "size": 31213
+      },
+      "/Volumes/移动硬盘（512G）/ReSETP/baselines/algorithm_prototypes/china81_mechanism_hybrid_20260720/route_pool_sp.py": {
+        "age_seconds": 49474.854111909866,
+        "exists": true,
+        "kind": "search_semantics",
+        "mtime": 1785304897.87,
+        "path": "/Volumes/移动硬盘（512G）/ReSETP/baselines/algorithm_prototypes/china81_mechanism_hybrid_20260720/route_pool_sp.py",
+        "sha256": "976ef21d4952b3c488300de9a8d3e351411305d26f1e2601ca17c15185d462c1",
+        "size": 28203
+      },
+      "/Volumes/移动硬盘（512G）/ReSETP/baselines/china_e3_e7/check_e5_nonlinear_v4_20260730.py": {
+        "age_seconds": 314.70569610595703,
+        "exists": true,
+        "kind": "evaluator",
+        "mtime": 1785354058.02,
+        "path": "/Volumes/移动硬盘（512G）/ReSETP/baselines/china_e3_e7/check_e5_nonlinear_v4_20260730.py",
+        "sha256": "7d8894476cac922371c15dda1fe53e8ccf9af87cc36ac5236f8b9601d0435be3",
+        "size": 300
+      },
+      "/Volumes/移动硬盘（512G）/ReSETP/baselines/china_e3_e7/e5_nonlinear_v4_20260730/diagnostics/search_semantics_unchanged_proof.json": {
+        "age_seconds": 65.2760238647461,
+        "exists": true,
+        "kind": "semantic_proof",
+        "mtime": 1785354307.45,
+        "path": "/Volumes/移动硬盘（512G）/ReSETP/baselines/china_e3_e7/e5_nonlinear_v4_20260730/diagnostics/search_semantics_unchanged_proof.json",
+        "sha256": "a7e67f6ff9bdfc64a8ae6ebad43dd177e3434664e3cc6a9ec9af62d4ab2ea5c1",
+        "size": 1284
+      },
+      "/Volumes/移动硬盘（512G）/ReSETP/baselines/china_e3_e7/run_e5_nonlinear_v4_20260730.py": {
+        "age_seconds": 94.94513893127441,
+        "exists": true,
+        "kind": "primary_config",
+        "mtime": 1785354277.78,
+        "path": "/Volumes/移动硬盘（512G）/ReSETP/baselines/china_e3_e7/run_e5_nonlinear_v4_20260730.py",
+        "sha256": "617be6a277625fce6845515b4c97cb8d45aaf600afd20b6138b7a312c5a33d1c",
+        "size": 40549
+      },
+      "/Volumes/移动硬盘（512G）/ReSETP/solver/src/setp_solver/check.py": {
+        "age_seconds": 530020.742527008,
+        "exists": true,
+        "kind": "evaluator",
+        "mtime": 1784824351.98,
+        "path": "/Volumes/移动硬盘（512G）/ReSETP/solver/src/setp_solver/check.py",
+        "sha256": "9c81e254e05591667c8225965bb9d0ba4e8bbfc53eb0f8c61ffdb4325a1403a8",
+        "size": 44701
+      },
+      "/Volumes/移动硬盘（512G）/ReSETP/solver/src/setp_solver/cost.py": {
+        "age_seconds": 551975.8733570576,
+        "exists": true,
+        "kind": "cost_function",
+        "mtime": 1784802396.84,
+        "path": "/Volumes/移动硬盘（512G）/ReSETP/solver/src/setp_solver/cost.py",
+        "sha256": "2717b4b4de39bb4c2a9a1bda602f4420cb3e3b1e87faa83678dfa64f88fc80be",
+        "size": 44794
+      },
+      "/Volumes/移动硬盘（512G）/ReSETP/solver/src/setp_solver/search/evaluation.py": {
+        "age_seconds": 1350227.4233579636,
+        "exists": true,
+        "kind": "evaluator",
+        "mtime": 1784004145.3,
+        "path": "/Volumes/移动硬盘（512G）/ReSETP/solver/src/setp_solver/search/evaluation.py",
+        "sha256": "c7215263c39d1d5a1429b41ca8ac40d950dbdf2bdc288337e56fbe9733406fc3",
+        "size": 7609
+      }
+    },
+    "runtime_seconds": 30.1370050907135,
+    "scene_path": "/Volumes/移动硬盘（512G）/ReSETP/baselines/china_e3_e7/e5_nonlinear_v4_20260730/monitor_runtime/probe/scenes/20260730-034612-anomaly",
+    "schema_version": 1,
+    "state": "ANOMALY",
+    "system": {
+      "free_memory_mb": 127.703125,
+      "load_average_15m": 3.4716796875,
+      "load_average_1m": 3.1943359375,
+      "load_average_5m": 3.4833984375,
+      "logical_cpus": 8,
+      "memory_pressure_free_percent": 41.0,
+      "swapouts": 4104060
+    }
+  },
+  "experiment": {
+    "allowed_ai_actions": [
+      "continue",
+      "pause_for_read_only_diagnosis",
+      "keep_paused_and_preserve_scene",
+      "recommend_safe_stop",
+      "recommend_checkpoint_restart",
+      "escalate_research_contract_change_to_user"
+    ],
+    "expected_contract": {},
+    "forbidden_ai_actions": [
+      "change_model_or_research_question",
+      "change_evaluator_or_cost_function",
+      "change_experiment_contract_or_core_data",
+      "change_primary_config_or_paper_conclusion",
+      "resume_paused_job_without_explicit_human_command"
+    ],
+    "name": "e5-v4-null-objective-two-arm-probe",
+    "objective": "Persist and classify every null-objective complete evaluation before selecting the formal cap"
+  },
+  "minimal_log_tails": {
+    "/Volumes/移动硬盘（512G）/ReSETP/baselines/china_e3_e7/e5_nonlinear_v4_20260730/probe.log": [
+      "Traceback (most recent call last):",
+      "  File \"/Volumes/移动硬盘（512G）/ReSETP/baselines/china_e3_e7/run_e5_nonlinear_v4_20260730.py\", line 1067, in <module>",
+      "    raise SystemExit(main())",
+      "                     ~~~~^^",
+      "  File \"/Volumes/移动硬盘（512G）/ReSETP/baselines/china_e3_e7/run_e5_nonlinear_v4_20260730.py\", line 1052, in main",
+      "    base.run_probe(args.complete_eval_budget, args.workers)",
+      "    ~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^",
+      "  File \"/Volumes/移动硬盘（512G）/ReSETP/baselines/china_e3_e7/run_e5_nonlinear_v2_20260730.py\", line 798, in run_probe",
+      "    lock = prepare(budget, workers)",
+      "  File \"/Volumes/移动硬盘（512G）/ReSETP/baselines/china_e3_e7/run_e5_nonlinear_v2_20260730.py\", line 308, in prepare",
+      "    environment = preflight_environment(workers)",
+      "  File \"/Volumes/移动硬盘（512G）/ReSETP/baselines/china_e3_e7/run_e5_nonlinear_v2_20260730.py\", line 284, in preflight_environment",
+      "    raise RuntimeError(f\"HALT_E5_V2_THREAD_ENV_NOT_FROZEN:{wrong}\")",
+      "RuntimeError: HALT_E5_V2_THREAD_ENV_NOT_FROZEN:{'OMP_NUM_THREADS': None, 'OPENBLAS_NUM_THREADS': None, 'MKL_NUM_THREADS': None, 'VECLIB_MAXIMUM_THREADS': None}"
+    ]
+  },
+  "reason": "ANOMALY",
+  "schema_version": 1
+}

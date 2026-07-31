@@ -1,0 +1,108 @@
+{
+  "ai_diagnosis": {
+    "invoked": false,
+    "reason": "disabled"
+  },
+  "checked_at": "2026-07-30T02:49:39+00:00",
+  "checkpoint_inventory": [],
+  "csv_summaries": [],
+  "files": {
+    "/Volumes/移动硬盘（512G）/ReSETP/baselines/china_e3_e7/e7_dynamic_20260731/baselines/china_e3_e7/e7_dynamic_20260731/budget_lock.json": {
+      "exists": false,
+      "path": "/Volumes/移动硬盘（512G）/ReSETP/baselines/china_e3_e7/e7_dynamic_20260731/baselines/china_e3_e7/e7_dynamic_20260731/budget_lock.json"
+    },
+    "/Volumes/移动硬盘（512G）/ReSETP/baselines/china_e3_e7/e7_dynamic_20260731/baselines/china_e3_e7/e7_dynamic_20260731/progress.jsonl": {
+      "exists": false,
+      "path": "/Volumes/移动硬盘（512G）/ReSETP/baselines/china_e3_e7/e7_dynamic_20260731/baselines/china_e3_e7/e7_dynamic_20260731/progress.jsonl"
+    },
+    "/Volumes/移动硬盘（512G）/ReSETP/baselines/china_e3_e7/e7_dynamic_20260731/monitor_runtime/probe/experiment.stdout.log": {
+      "age_seconds": 18.923677921295166,
+      "exists": true,
+      "mtime": 1785379760.67,
+      "path": "/Volumes/移动硬盘（512G）/ReSETP/baselines/china_e3_e7/e7_dynamic_20260731/monitor_runtime/probe/experiment.stdout.log",
+      "size": 1219
+    }
+  },
+  "findings": [
+    {
+      "code": "FATAL_LOG_PATTERN",
+      "details": {},
+      "message": "matched fatal pattern: \\bTraceback \\(most recent call last\\):",
+      "severity": "critical"
+    },
+    {
+      "code": "PROCESS_EXITED_WITHOUT_COMPLETION",
+      "details": {},
+      "message": "process ended without completion evidence",
+      "severity": "critical"
+    }
+  ],
+  "log_paths": [
+    "/Volumes/移动硬盘（512G）/ReSETP/baselines/china_e3_e7/e7_dynamic_20260731/monitor_runtime/probe/experiment.stdout.log"
+  ],
+  "name": "e7-dynamic-budget-probe",
+  "paused": false,
+  "process": {
+    "alive": false,
+    "cpu_percent": 0,
+    "members": [],
+    "pgid": 48136,
+    "root_pid": 48136,
+    "rss_mb": 0.0
+  },
+  "protected_files": {
+    "/Volumes/移动硬盘（512G）/ReSETP/baselines/china_e3_e7/e7_dynamic_20260731/baselines/algorithm_prototypes/china81_mechanism_hybrid_20260720/epochal_hgs.py": {
+      "exists": false,
+      "kind": "search_semantics",
+      "path": "/Volumes/移动硬盘（512G）/ReSETP/baselines/china_e3_e7/e7_dynamic_20260731/baselines/algorithm_prototypes/china81_mechanism_hybrid_20260720/epochal_hgs.py"
+    },
+    "/Volumes/移动硬盘（512G）/ReSETP/baselines/china_e3_e7/e7_dynamic_20260731/baselines/algorithm_prototypes/china81_mechanism_hybrid_20260720/route_pool_sp.py": {
+      "exists": false,
+      "kind": "search_semantics",
+      "path": "/Volumes/移动硬盘（512G）/ReSETP/baselines/china_e3_e7/e7_dynamic_20260731/baselines/algorithm_prototypes/china81_mechanism_hybrid_20260720/route_pool_sp.py"
+    },
+    "/Volumes/移动硬盘（512G）/ReSETP/baselines/china_e3_e7/e7_dynamic_20260731/baselines/china_e3_e7/e7_dynamic_20260731/pre_registration.json": {
+      "exists": false,
+      "kind": "experiment_contract",
+      "path": "/Volumes/移动硬盘（512G）/ReSETP/baselines/china_e3_e7/e7_dynamic_20260731/baselines/china_e3_e7/e7_dynamic_20260731/pre_registration.json"
+    },
+    "/Volumes/移动硬盘（512G）/ReSETP/baselines/china_e3_e7/e7_dynamic_20260731/solver/src/setp_solver/check.py": {
+      "exists": false,
+      "kind": "evaluator",
+      "path": "/Volumes/移动硬盘（512G）/ReSETP/baselines/china_e3_e7/e7_dynamic_20260731/solver/src/setp_solver/check.py"
+    },
+    "/Volumes/移动硬盘（512G）/ReSETP/baselines/china_e3_e7/e7_dynamic_20260731/solver/src/setp_solver/cost.py": {
+      "exists": false,
+      "kind": "cost_function",
+      "path": "/Volumes/移动硬盘（512G）/ReSETP/baselines/china_e3_e7/e7_dynamic_20260731/solver/src/setp_solver/cost.py"
+    },
+    "/Volumes/移动硬盘（512G）/ReSETP/baselines/china_e3_e7/e7_dynamic_20260731/solver/src/setp_solver/profit.py": {
+      "exists": false,
+      "kind": "evaluator",
+      "path": "/Volumes/移动硬盘（512G）/ReSETP/baselines/china_e3_e7/e7_dynamic_20260731/solver/src/setp_solver/profit.py"
+    },
+    "/Volumes/移动硬盘（512G）/ReSETP/baselines/china_e3_e7/e7_dynamic_20260731/solver/src/setp_solver/search/dynamic_multitrip_schedule.py": {
+      "exists": false,
+      "kind": "dynamic_scheduler",
+      "path": "/Volumes/移动硬盘（512G）/ReSETP/baselines/china_e3_e7/e7_dynamic_20260731/solver/src/setp_solver/search/dynamic_multitrip_schedule.py"
+    },
+    "/Volumes/移动硬盘（512G）/ReSETP/baselines/china_e3_e7/e7_dynamic_20260731/solver/src/setp_solver/search/evaluation.py": {
+      "exists": false,
+      "kind": "evaluator",
+      "path": "/Volumes/移动硬盘（512G）/ReSETP/baselines/china_e3_e7/e7_dynamic_20260731/solver/src/setp_solver/search/evaluation.py"
+    }
+  },
+  "runtime_seconds": 20.11459517478943,
+  "scene_path": "/Volumes/移动硬盘（512G）/ReSETP/baselines/china_e3_e7/e7_dynamic_20260731/monitor_runtime/probe/scenes/20260730-104939-anomaly",
+  "schema_version": 1,
+  "state": "ANOMALY",
+  "system": {
+    "free_memory_mb": 160.484375,
+    "load_average_15m": 2.40673828125,
+    "load_average_1m": 1.9462890625,
+    "load_average_5m": 2.28515625,
+    "logical_cpus": 8,
+    "memory_pressure_free_percent": 57.0,
+    "swapouts": 4212356
+  }
+}

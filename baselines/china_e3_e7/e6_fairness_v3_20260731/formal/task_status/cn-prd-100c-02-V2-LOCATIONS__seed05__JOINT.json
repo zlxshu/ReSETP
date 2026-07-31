@@ -1,0 +1,66 @@
+{
+  "bitwise_comparisons": {
+    "classified_trace_identical": true,
+    "complete_evaluation_count_identical": true,
+    "objective_float_bits_identical": true,
+    "solution_sha256_identical": true,
+    "termination_reason_identical": true
+  },
+  "candidate_pool_path": "baselines/china_e3_e7/e6_fairness_v3_20260731/formal/candidate_pools/cn-prd-100c-02-V2-LOCATIONS__seed05__JOINT.json",
+  "candidate_pool_persisted": true,
+  "candidate_pool_sha256": "be88304cec8a84967706a4ff56f4c8f7b1923d7ec404bd7f00a17f4bb5041d81",
+  "complete_candidate_budget_cap": 400,
+  "complete_candidate_evaluations_consumed": 396,
+  "cpu_system_seconds": 1.0024790000000001,
+  "cpu_user_seconds": 125.84099900000001,
+  "created_at_utc": "2026-07-30T02:17:35.742125+00:00",
+  "elapsed_wall_seconds": 128.64115520799533,
+  "f_fallback_to_I": true,
+  "full_evaluation_event_count": 170,
+  "instance_id": "cn-prd-100c-02-V2-LOCATIONS",
+  "objective": 4710.635724956914,
+  "objective_float_hex": "0x1.266a2bedeeb32p+12",
+  "participation_satisfying_candidate_count": 0,
+  "sample_role": "ROBUSTNESS",
+  "schema": "resetp.e6-fairness-v3.unit-status.v1",
+  "sealed_e3_elapsed_wall_seconds": 115.00917737500276,
+  "search_semantics_unchanged": true,
+  "seed": 5,
+  "selected_f_candidate_id": null,
+  "selected_f_solution_sha256": null,
+  "solution_sha256": "1396f181c1288680632430d9821a3bd1ea6d9bf7d399f076139f6a102ed24659",
+  "source_arm": "JOINT",
+  "status": "PASS",
+  "task_id": "E6-FAIRNESS-V3-20260731",
+  "termination_evidence": {
+    "cv_only": {
+      "archive_candidate_limit": 131,
+      "archive_completion_attempts": 131,
+      "archive_unique_native_candidates": 149,
+      "hgs_stop_mode": "DETERMINISTIC_ITERATIONS_WITH_WALLCLOCK_SAFETY",
+      "wallclock_safety_triggered": false
+    },
+    "exhausted_modes": [
+      "naive_ev"
+    ],
+    "mechanism_ev": {
+      "archive_candidate_limit": 130,
+      "archive_completion_attempts": 130,
+      "archive_unique_native_candidates": 131,
+      "hgs_stop_mode": "DETERMINISTIC_ITERATIONS_WITH_WALLCLOCK_SAFETY",
+      "wallclock_safety_triggered": false
+    },
+    "naive_ev": {
+      "archive_candidate_limit": 131,
+      "archive_completion_attempts": 127,
+      "archive_unique_native_candidates": 127,
+      "hgs_stop_mode": "DETERMINISTIC_ITERATIONS_WITH_WALLCLOCK_SAFETY",
+      "wallclock_safety_triggered": false
+    },
+    "shortfall_modes": [
+      "naive_ev"
+    ]
+  },
+  "termination_reason": "CANDIDATES_EXHAUSTED",
+  "unique_candidate_pool_size": 163
+}

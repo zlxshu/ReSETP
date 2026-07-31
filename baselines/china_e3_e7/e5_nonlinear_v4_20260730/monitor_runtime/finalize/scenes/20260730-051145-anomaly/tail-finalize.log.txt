@@ -1,0 +1,13 @@
+INDEPENDENT_CHECK_PASS certificates=40/40
+Traceback (most recent call last):
+  File "/Volumes/移动硬盘（512G）/ReSETP/baselines/china_e3_e7/run_e5_nonlinear_v4_20260730.py", line 1067, in <module>
+    raise SystemExit(main())
+                     ~~~~^^
+  File "/Volumes/移动硬盘（512G）/ReSETP/baselines/china_e3_e7/run_e5_nonlinear_v4_20260730.py", line 1062, in main
+    base.aggregate_and_close(args.complete_eval_budget, args.workers)
+    ~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Volumes/移动硬盘（512G）/ReSETP/baselines/china_e3_e7/run_e5_nonlinear_v2_20260730.py", line 1285, in aggregate_and_close
+    certs = load_certificates()
+  File "/Volumes/移动硬盘（512G）/ReSETP/baselines/china_e3_e7/run_e5_nonlinear_v2_20260730.py", line 960, in load_certificates
+    raise RuntimeError(f"HALT_E5_V2_CERTIFICATE_DENOMINATOR:{len(paths)}!=40")
+RuntimeError: HALT_E5_V2_CERTIFICATE_DENOMINATOR:80!=40

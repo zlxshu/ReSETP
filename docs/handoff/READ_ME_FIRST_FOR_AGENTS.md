@@ -8,7 +8,13 @@
 
 每次新对话、恢复上下文、切换机器、切换分支、执行实验、写报告、改代码、生成 Codex 提示词前，必须按顺序读取：
 
-0. **`docs/handoff/session_handoff_20260730_codex_to_new_claude.md`（先读，当前状态与决策边界）**，随后完整读
+0. **`docs/handoff/diagnosis_and_remediation_master_20260731.md`（最新且最高优先级，必须第一个读：
+   六组实验终态 / E3-E5-E7 三条根因确诊 / 43 项输入台账复查 / 三份文献取证合并裁定 /
+   用户 2026-07-31 三条整改裁决 / 六条执行方案 / 七条未查清台账。**
+   **它是 2026-07-31 之后 E3/E5/E7 整改工作的唯一入口，与之冲突的更早文档一律以它为准）**，随后读
+   `docs/handoff/session_handoff_20260731_claude_night_shift.md`（前一夜状态：E2/E4/E5/E6 完成、
+   TeX 僵尸内容修复、Codex 配额耗尽至 2026-08-05），随后读
+   `docs/handoff/session_handoff_20260730_codex_to_new_claude.md`（前一夜状态与决策边界），随后完整读
    `docs/handoff/session_handoff_20260729_document_hierarchy_and_e5_e3e6_state.md`（老 Claude 完整历史、故障现场与文档层级校正）
 1. `HANDOFF.md`
 2. `docs/handoff/READ_ME_FIRST_FOR_AGENTS.md`

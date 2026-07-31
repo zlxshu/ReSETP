@@ -1,0 +1,373 @@
+{
+  "schema": "resetp.e2-v2-validation-summary.v1",
+  "new_experiments_run": 0,
+  "source_boundaries": [
+    "baselines/algorithm_prototypes/china81_vs_opensource_20260727",
+    "baselines/e2_final_campaign_20260720/corrected_china81_rerun_v7_small_archive_ledger_20260724"
+  ],
+  "excluded_sources": [
+    "baselines/e2_alns/",
+    "baselines/e2_final_campaign_20260720/p2p3_threeview/",
+    "all earlier E2 batches"
+  ],
+  "source_hashes": {
+    "baselines/algorithm_prototypes/china81_vs_opensource_20260727/raw_runs.json": "4291ee24707bcf834c6cf6ff6b308a14eab4b4a6a3011681408935e8693e070c",
+    "baselines/algorithm_prototypes/china81_vs_opensource_20260727/artifact_hashes.json": "510b6896bb3add63b953892bc2644302028fbc795bc19e7c352b7189766b1f72",
+    "baselines/e2_final_campaign_20260720/corrected_china81_rerun_v7_small_archive_ledger_20260724/full_gate/artifact_hashes.json": "de26ec4c01b19bb9e6e523976d24c6494c205e90775bc43feb491292b167b609"
+  },
+  "final_ledger": {
+    "row_count": 2025,
+    "unit_count": 405,
+    "arm_count": 5,
+    "instance_count": 81,
+    "seeds": [
+      1,
+      2,
+      3,
+      4,
+      5
+    ]
+  },
+  "trajectory_integrity": {
+    "trajectory_file_count": 405,
+    "trajectory_unit_count": 405,
+    "trajectory_observed_point_count": 99151,
+    "trajectory_endpoint_matches_final_ledger": 1620,
+    "trajectory_minimum_matches_final_ledger": 1620,
+    "normalization_reference_equals_mv_final_count": 405,
+    "point_count_distribution_by_arm": {
+      "F": {
+        "39": 1,
+        "40": 3,
+        "41": 401
+      },
+      "E": {
+        "36": 1,
+        "39": 1,
+        "40": 3,
+        "41": 400
+      },
+      "M": {
+        "32": 1,
+        "33": 1,
+        "38": 1,
+        "40": 2,
+        "41": 400
+      },
+      "MV": {
+        "113": 2,
+        "116": 1,
+        "118": 1,
+        "119": 1,
+        "120": 2,
+        "121": 2,
+        "122": 396
+      }
+    },
+    "first_observation_seconds_by_arm": {
+      "F": {
+        "minimum": 0.15274433299782686,
+        "median": 0.7743018339970149,
+        "maximum": 15.271891125012187
+      },
+      "E": {
+        "minimum": 0.1548865829827264,
+        "median": 0.8350547089939937,
+        "maximum": 6.379634832992451
+      },
+      "M": {
+        "minimum": 0.14670762501191348,
+        "median": 0.846615041984478,
+        "maximum": 11.741031624987954
+      },
+      "MV": {
+        "minimum": 0.15274433299782686,
+        "median": 0.7743018339970149,
+        "maximum": 15.271891125012187
+      }
+    },
+    "trajectory_end_minutes_by_arm": {
+      "F": {
+        "minimum": 0.3323404555500019,
+        "median": 1.6035810152835135,
+        "maximum": 5.792401645833646
+      },
+      "E": {
+        "minimum": 0.365211806249863,
+        "median": 1.5381808701335102,
+        "maximum": 7.377645244450347
+      },
+      "M": {
+        "minimum": 0.3553004652834109,
+        "median": 1.526343013900623,
+        "maximum": 7.770070533333637
+      },
+      "MV": {
+        "minimum": 1.0944917923668982,
+        "median": 4.625927231250292,
+        "maximum": 21.262836363183062
+      }
+    },
+    "initial_objective": {
+      "minimum": 525.2605410513846,
+      "median": 3052.5531851499504,
+      "maximum": 12055.204971780875
+    },
+    "normalization_reference": {
+      "minimum": 493.6879527458795,
+      "median": 2554.9626718192767,
+      "maximum": 10001.533906631263
+    }
+  },
+  "aggregate_convergence": {
+    "time_grid_step_minutes": 0.05,
+    "time_grid_end_minutes": 21.3,
+    "time_grid_point_count": 427,
+    "selected_time_metrics": {
+      "0.00": {
+        "F": {
+          "mean_gap_pct": 17.53077792404031,
+          "median_gap_pct": 17.214653585901818,
+          "active_only_n": 405,
+          "active_only_mean_gap_pct": 17.53077792404031
+        },
+        "E": {
+          "mean_gap_pct": 17.53077792404031,
+          "median_gap_pct": 17.214653585901818,
+          "active_only_n": 405,
+          "active_only_mean_gap_pct": 17.53077792404031
+        },
+        "M": {
+          "mean_gap_pct": 17.53077792404031,
+          "median_gap_pct": 17.214653585901818,
+          "active_only_n": 405,
+          "active_only_mean_gap_pct": 17.53077792404031
+        },
+        "MV": {
+          "mean_gap_pct": 17.53077792404031,
+          "median_gap_pct": 17.214653585901818,
+          "active_only_n": 405,
+          "active_only_mean_gap_pct": 17.53077792404031
+        }
+      },
+      "0.25": {
+        "F": {
+          "mean_gap_pct": 1.800627666054463,
+          "median_gap_pct": 1.0993580998815977,
+          "active_only_n": 405,
+          "active_only_mean_gap_pct": 1.800627666054463
+        },
+        "E": {
+          "mean_gap_pct": 0.7363622870489286,
+          "median_gap_pct": 0.03783478439056687,
+          "active_only_n": 405,
+          "active_only_mean_gap_pct": 0.7363622870489286
+        },
+        "M": {
+          "mean_gap_pct": 0.824822613586159,
+          "median_gap_pct": 0.0,
+          "active_only_n": 405,
+          "active_only_mean_gap_pct": 0.824822613586159
+        },
+        "MV": {
+          "mean_gap_pct": 0.9671718690299692,
+          "median_gap_pct": 0.17646594552234163,
+          "active_only_n": 405,
+          "active_only_mean_gap_pct": 0.9671718690299692
+        }
+      },
+      "0.50": {
+        "F": {
+          "mean_gap_pct": 1.560059877603428,
+          "median_gap_pct": 0.7139040893356485,
+          "active_only_n": 331,
+          "active_only_mean_gap_pct": 1.7225545514124654
+        },
+        "E": {
+          "mean_gap_pct": 0.47404874042775447,
+          "median_gap_pct": 0.0017770173601050487,
+          "active_only_n": 336,
+          "active_only_mean_gap_pct": 0.5696075922326992
+        },
+        "M": {
+          "mean_gap_pct": 0.545165132614835,
+          "median_gap_pct": 0.0,
+          "active_only_n": 334,
+          "active_only_mean_gap_pct": 0.6610535290688867
+        },
+        "MV": {
+          "mean_gap_pct": 0.5542369427950093,
+          "median_gap_pct": 0.018253181688532294,
+          "active_only_n": 405,
+          "active_only_mean_gap_pct": 0.5542369427950093
+        }
+      },
+      "1.00": {
+        "F": {
+          "mean_gap_pct": 1.2344872206364463,
+          "median_gap_pct": 0.4669889197445043,
+          "active_only_n": 227,
+          "active_only_mean_gap_pct": 1.358135290989625
+        },
+        "E": {
+          "mean_gap_pct": 0.29669562563006174,
+          "median_gap_pct": 0.0,
+          "active_only_n": 225,
+          "active_only_mean_gap_pct": 0.49320527838035716
+        },
+        "M": {
+          "mean_gap_pct": 0.36568871905103756,
+          "median_gap_pct": 0.0,
+          "active_only_n": 226,
+          "active_only_mean_gap_pct": 0.6507737598691438
+        },
+        "MV": {
+          "mean_gap_pct": 0.2884767888797104,
+          "median_gap_pct": 0.0,
+          "active_only_n": 405,
+          "active_only_mean_gap_pct": 0.2884767888797104
+        }
+      },
+      "2.00": {
+        "F": {
+          "mean_gap_pct": 1.1369708690093527,
+          "median_gap_pct": 0.46190820406517563,
+          "active_only_n": 158,
+          "active_only_mean_gap_pct": 0.9114340987536692
+        },
+        "E": {
+          "mean_gap_pct": 0.19354012895180042,
+          "median_gap_pct": 0.0,
+          "active_only_n": 162,
+          "active_only_mean_gap_pct": 0.42534823477353784
+        },
+        "M": {
+          "mean_gap_pct": 0.2384070229849613,
+          "median_gap_pct": 0.0,
+          "active_only_n": 160,
+          "active_only_mean_gap_pct": 0.5963719225541302
+        },
+        "MV": {
+          "mean_gap_pct": 0.14405865658160277,
+          "median_gap_pct": 0.0,
+          "active_only_n": 263,
+          "active_only_mean_gap_pct": 0.22183937610474952
+        }
+      },
+      "5.00": {
+        "F": {
+          "mean_gap_pct": 1.0912887214464937,
+          "median_gap_pct": 0.3673539648334945,
+          "active_only_n": 20,
+          "active_only_mean_gap_pct": 0.528817173899383
+        },
+        "E": {
+          "mean_gap_pct": 0.08623678633320331,
+          "median_gap_pct": 0.0,
+          "active_only_n": 43,
+          "active_only_mean_gap_pct": 0.3143921840220111
+        },
+        "M": {
+          "mean_gap_pct": 0.09739193792739753,
+          "median_gap_pct": 0.0,
+          "active_only_n": 45,
+          "active_only_mean_gap_pct": 0.32677698503907227
+        },
+        "MV": {
+          "mean_gap_pct": 0.07528114358245012,
+          "median_gap_pct": 0.0,
+          "active_only_n": 191,
+          "active_only_mean_gap_pct": 0.15962755576383403
+        }
+      },
+      "21.30": {
+        "F": {
+          "mean_gap_pct": 1.091171991626808,
+          "median_gap_pct": 0.3673539648334945,
+          "active_only_n": 0,
+          "active_only_mean_gap_pct": null
+        },
+        "E": {
+          "mean_gap_pct": 0.07010838674227154,
+          "median_gap_pct": 0.0,
+          "active_only_n": 0,
+          "active_only_mean_gap_pct": null
+        },
+        "M": {
+          "mean_gap_pct": 0.08580772956783345,
+          "median_gap_pct": 0.0,
+          "active_only_n": 0,
+          "active_only_mean_gap_pct": null
+        },
+        "MV": {
+          "mean_gap_pct": 0.0,
+          "median_gap_pct": 0.0,
+          "active_only_n": 0,
+          "active_only_mean_gap_pct": null
+        }
+      }
+    },
+    "normalization": "For each instance-seed unit, divide each plotted arm's cumulative best complete-model checkpoint cost by the minimum complete-model cost observed across F/E/M/MV at any recorded time, then subtract one and multiply by 100.",
+    "time_zero": "The sealed trajectory field initial_objective is assigned to all four arms at t=0; it is their shared complete-model initial solution.",
+    "after_termination": "Last observation carried forward; no interpolation or smoothing."
+  },
+  "performance_profile": {
+    "tau_grid_step": 0.0001,
+    "tau_axis_max": 1.12,
+    "maximum_observed_tau": 1.118656816443582,
+    "best_unit_counts": {
+      "O": 51,
+      "F": 97,
+      "E": 279,
+      "M": 290,
+      "MV": 400
+    },
+    "best_unit_shares": {
+      "O": 0.1259259259259259,
+      "F": 0.23950617283950618,
+      "E": 0.6888888888888889,
+      "M": 0.7160493827160493,
+      "MV": 0.9876543209876543
+    },
+    "definition": "tau = arm final complete-model cost / minimum final complete-model cost among O/F/E/M/MV in the same instance-seed unit.",
+    "tie_rule": "Absolute cost tolerance 1e-09."
+  },
+  "final_comparison": {
+    "mv_vs_arm": {
+      "O": {
+        "wins": 354,
+        "ties": 46,
+        "losses": 5,
+        "paired_mean_improvement_pct": 1.919118015025895
+      },
+      "F": {
+        "wins": 307,
+        "ties": 98,
+        "losses": 0,
+        "paired_mean_improvement_pct": 1.0591664996166361
+      },
+      "E": {
+        "wins": 125,
+        "ties": 280,
+        "losses": 0,
+        "paired_mean_improvement_pct": 0.06913279492043457
+      },
+      "M": {
+        "wins": 114,
+        "ties": 291,
+        "losses": 0,
+        "paired_mean_improvement_pct": 0.084730340546756
+      }
+    },
+    "complete_nonincreasing_staircase_units": 299,
+    "total_units": 405,
+    "batch_boundary": {
+      "O": "NoImprovement(3000) new batch",
+      "F_E_M_MV": "2026-07-24 sealed v7 fixed 25000 iterations per view",
+      "same_batch": false,
+      "same_machine": false,
+      "same_stopping_rule": false,
+      "equal_compute": false
+    }
+  }
+}

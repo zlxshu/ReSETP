@@ -1,0 +1,59 @@
+{
+  "arm": "ZONE",
+  "complete_candidate_budget_cap": 400,
+  "complete_candidate_evaluations_consumed": 288,
+  "configured_complete_candidate_budget_expected": 400,
+  "cpu_system_seconds": 0.06053699999999995,
+  "cpu_user_seconds": 52.860479,
+  "elapsed_wall_seconds": 52.89140966697596,
+  "error_candidates": 1,
+  "feasible_candidates": 118,
+  "hard_home_depot_lock": true,
+  "infeasible_candidates": 169,
+  "instance_id": "cn-prd-50c-01-V2-LOCATIONS",
+  "last_strict_improvement_evaluation": 104,
+  "phase": "formal",
+  "sample_role": "MAIN_EXHIBIT",
+  "schema": "resetp.e3-structural.formal-unit.v1",
+  "search_trace_path": "baselines/china_e3_e7/e3_structural_20260731/formal/search_traces/cn-prd-50c-01-V2-LOCATIONS__seed05__ZONE.json",
+  "search_trace_sha256": "1e9917c58ef6216d5e88ada9a33497957736f10086e7a18e09ed85b32ead67ac",
+  "seed": 5,
+  "source_lock_id": "21fc3c2661c7655a8eb0c954d28cabbca99557e7453df71242bacc5cfe94bb53",
+  "status": "TRACE_PERSISTED_PENDING_VALIDATION",
+  "task_id": "E3-STRUCTURAL-COMPARISON-20260731",
+  "termination_evidence": {
+    "cv_only": {
+      "archive_candidate_limit": 131,
+      "archive_completion_attempts": 100,
+      "archive_unique_native_candidates": 100,
+      "hgs_stop_mode": "DETERMINISTIC_ITERATIONS_WITH_WALLCLOCK_SAFETY",
+      "wallclock_safety_triggered": false
+    },
+    "exhausted_modes": [
+      "cv_only",
+      "naive_ev",
+      "mechanism_ev"
+    ],
+    "mechanism_ev": {
+      "archive_candidate_limit": 130,
+      "archive_completion_attempts": 101,
+      "archive_unique_native_candidates": 101,
+      "hgs_stop_mode": "DETERMINISTIC_ITERATIONS_WITH_WALLCLOCK_SAFETY",
+      "wallclock_safety_triggered": false
+    },
+    "naive_ev": {
+      "archive_candidate_limit": 131,
+      "archive_completion_attempts": 79,
+      "archive_unique_native_candidates": 79,
+      "hgs_stop_mode": "DETERMINISTIC_ITERATIONS_WITH_WALLCLOCK_SAFETY",
+      "wallclock_safety_triggered": false
+    },
+    "shortfall_modes": [
+      "cv_only",
+      "naive_ev",
+      "mechanism_ev"
+    ]
+  },
+  "termination_reason": "CANDIDATES_EXHAUSTED",
+  "wallclock_safety_triggered": false
+}

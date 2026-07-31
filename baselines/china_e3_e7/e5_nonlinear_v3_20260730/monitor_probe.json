@@ -1,0 +1,80 @@
+{
+  "schema_version": 1,
+  "name": "e5-v3-convergence-probe",
+  "objective": "Run the frozen two-arm 1500-cap convergence probe and atomically write the selected common formal cap",
+  "workdir": "/Volumes/移动硬盘（512G）/ReSETP",
+  "poll_seconds": 20,
+  "stale_seconds": 900,
+  "max_runtime_seconds": 3600,
+  "pause_on_anomaly": true,
+  "required_command_substrings": [
+    "run_e5_nonlinear_v3_20260730.py",
+    "probe",
+    "--complete-eval-budget",
+    "1500",
+    "--workers",
+    "1"
+  ],
+  "forbidden_command_substrings": [
+    "--smoke",
+    "--debug"
+  ],
+  "min_cpu_percent_when_active": 1,
+  "low_cpu_consecutive_checks": 5,
+  "max_rss_mb": 7000,
+  "min_system_free_memory_mb": 256,
+  "min_system_memory_free_percent": 5,
+  "logs": [],
+  "progress_files": [
+    "/Volumes/移动硬盘（512G）/ReSETP/baselines/china_e3_e7/e5_nonlinear_v3_20260730/probe/tasks"
+  ],
+  "result_files": [
+    "/Volumes/移动硬盘（512G）/ReSETP/baselines/china_e3_e7/e5_nonlinear_v3_20260730/probe/summary.json",
+    "/Volumes/移动硬盘（512G）/ReSETP/baselines/china_e3_e7/e5_nonlinear_v3_20260730/probe/convergence_curve.csv",
+    "/Volumes/移动硬盘（512G）/ReSETP/baselines/china_e3_e7/e5_nonlinear_v3_20260730/probe/convergence_summary.csv"
+  ],
+  "completion_files": [
+    "/Volumes/移动硬盘（512G）/ReSETP/baselines/china_e3_e7/e5_nonlinear_v3_20260730/budget_lock.json"
+  ],
+  "checkpoint_paths": [],
+  "protected_files": [
+    {
+      "path": "/Volumes/移动硬盘（512G）/ReSETP/baselines/china_e3_e7/run_e5_nonlinear_v3_20260730.py",
+      "kind": "primary_config"
+    },
+    {
+      "path": "/Volumes/移动硬盘（512G）/ReSETP/baselines/china_e3_e7/check_e5_nonlinear_v3_20260730.py",
+      "kind": "evaluator"
+    },
+    {
+      "path": "/Volumes/移动硬盘（512G）/ReSETP/docs/handoff/experiment_contract_v2_journal_aligned_20260730.md",
+      "kind": "experiment_contract"
+    },
+    {
+      "path": "/Volumes/移动硬盘（512G）/ReSETP/solver/src/setp_solver/cost.py",
+      "kind": "cost_function"
+    },
+    {
+      "path": "/Volumes/移动硬盘（512G）/ReSETP/solver/src/setp_solver/check.py",
+      "kind": "evaluator"
+    },
+    {
+      "path": "/Volumes/移动硬盘（512G）/ReSETP/solver/src/setp_solver/search/evaluation.py",
+      "kind": "evaluator"
+    },
+    {
+      "path": "/Volumes/移动硬盘（512G）/ReSETP/baselines/algorithm_prototypes/china81_mechanism_hybrid_20260720/route_pool_sp.py",
+      "kind": "search_semantics"
+    },
+    {
+      "path": "/Volumes/移动硬盘（512G）/ReSETP/baselines/algorithm_prototypes/china81_mechanism_hybrid_20260720/epochal_hgs.py",
+      "kind": "search_semantics"
+    }
+  ],
+  "csv_rules": [],
+  "milestones": [],
+  "ai": {
+    "enabled": false,
+    "timeout_seconds": 180
+  }
+}

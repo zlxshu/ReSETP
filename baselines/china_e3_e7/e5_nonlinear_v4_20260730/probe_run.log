@@ -1,0 +1,5 @@
+PREPARED task=E5-NONLINEAR-CHARGING-V4-20260730 probe_budget=1500 old_sealed_files=201
+PREFLIGHT_PASS phase=probe python=3.13.9 pyvrp=0.12.2 workers=1 budget=1500
+UNIT_COMPLETE instance=cn-prd-50c-01-V2-LOCATIONS seed=1 arm=L100_control status=PASS elapsed_seconds=60.105 feasible=147 infeasible=184 errors=0 progress=1/2
+UNIT_COMPLETE instance=cn-prd-50c-01-V2-LOCATIONS seed=1 arm=NL90_mild status=PASS elapsed_seconds=54.893 feasible=147 infeasible=184 errors=0 progress=2/2
+PROBE_COMPLETE selected_common_formal_budget=400

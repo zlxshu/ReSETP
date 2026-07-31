@@ -1,0 +1,50 @@
+{
+  "created_at_utc": "2026-07-30T00:39:49.530086+00:00",
+  "evidence_id": "f55e2a7046e5ffb7b186e43c1b6f4faa3a55f063d7c9c0ec09519dfa428a8074",
+  "fix": {
+    "file": "baselines/algorithm_prototypes/china81_mechanism_hybrid_20260720/epochal_hgs.py",
+    "hard_lock_filter_status_lines": [
+      341,
+      500,
+      600,
+      607
+    ],
+    "route_pool_sp_search_semantics_changed": false,
+    "semantics": "after full completion, a hard-lock cross-site candidate is counted against the cap and normally filtered before elite selection; no search operator is changed"
+  },
+  "hard_lock_encoding": {
+    "customer_ownership_dimension_start_line": 146,
+    "description": "customer ownership is encoded as depot-specific delivery dimensions and matching per-depot vehicle capacities",
+    "file": "baselines/algorithm_prototypes/china81_mechanism_hybrid_20260720/pyvrp_adapter.py",
+    "vehicle_capacity_dimension_start_line": 261
+  },
+  "joint_semantics_proof": "baselines/china_e3_e7/e3_zone_joint_20260731/joint_semantics_proof.json",
+  "leak_path_before_fix": {
+    "file": "baselines/algorithm_prototypes/china81_mechanism_hybrid_20260720/epochal_hgs.py",
+    "function": "_run_exact_epoch",
+    "path": "native HGS terminal population archive -> full China81 completion -> post-completion cross-site ValueError",
+    "pre_fix_source_sha256": "fc4f4fa63e69a413aac9a36ca8e3d10fb359d4365c4365b83e474d1db3fc8808",
+    "pre_fix_terminal_archive_block_lines": "448-510",
+    "reason": "the persisted terminal archive trace records the path and view but not the ancestry of an individual HGS move",
+    "single_operator_attribution_available": false
+  },
+  "lock_regression": {
+    "filtered_candidates": 2,
+    "final_cross_site_service_count": 0,
+    "final_violation_count": 0,
+    "instance_id": "cn-prd-50c-01-V2-LOCATIONS",
+    "path": "baselines/china_e3_e7/e3_zone_joint_20260731/regression/zone_lock_filter_seed03.json",
+    "seed": 3
+  },
+  "old_error_message": "hard home-depot control candidate contains cross-site service",
+  "old_halt_trace_count": 14,
+  "old_halt_trace_source_counts": {
+    "terminal_population_archive": 14
+  },
+  "old_halt_trace_view_counts": {
+    "mechanism_ev": 2,
+    "naive_ev": 12
+  },
+  "schema": "resetp.e3-zone-joint.cross-site-bug-fix.v1",
+  "status": "PASS_CROSS_SITE_BUG_FIXED"
+}

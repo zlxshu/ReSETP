@@ -1,0 +1,80 @@
+{
+  "schema_version": 1,
+  "name": "e3-structural-convergence-probe",
+  "objective": "Run the frozen JOINT main-instance seed-1 convergence probe and atomically freeze the shared formal evaluation cap.",
+  "workdir": "../..",
+  "poll_seconds": 10,
+  "stale_seconds": 1200,
+  "max_runtime_seconds": 1800,
+  "pause_on_anomaly": true,
+  "required_command_substrings": [
+    "run_e3_structural.py",
+    "probe",
+    "--complete-eval-budget",
+    "1500",
+    "--workers",
+    "1"
+  ],
+  "forbidden_command_substrings": [
+    "formal",
+    "--workers 2",
+    "--debug",
+    "--smoke"
+  ],
+  "min_cpu_percent_when_active": 0.1,
+  "low_cpu_consecutive_checks": 6,
+  "max_rss_mb": 7000,
+  "min_system_free_memory_mb": 256,
+  "min_system_memory_free_percent": 5,
+  "logs": [],
+  "progress_files": [
+    "../../baselines/china_e3_e7/e3_structural_20260731/probe_progress.log"
+  ],
+  "result_files": [
+    "../../baselines/china_e3_e7/e3_structural_20260731/probe/summary.json",
+    "../../baselines/china_e3_e7/e3_structural_20260731/budget_lock.json"
+  ],
+  "completion_files": [
+    "../../baselines/china_e3_e7/e3_structural_20260731/probe/summary.json"
+  ],
+  "checkpoint_paths": [
+    "../../baselines/china_e3_e7/e3_structural_20260731/probe/task_status",
+    "../../baselines/china_e3_e7/e3_structural_20260731/probe/search_traces"
+  ],
+  "protected_files": [
+    {
+      "path": "../../docs/handoff/experiment_contract_v2_journal_aligned_20260730.md",
+      "kind": "experiment_contract"
+    },
+    {
+      "path": "../../baselines/china_e3_e7/e3_structural_20260731/source_lock.json",
+      "kind": "primary_config"
+    },
+    {
+      "path": "../../baselines/china_e3_e7/e3_structural_20260731/run_e3_structural.py",
+      "kind": "primary_config"
+    },
+    {
+      "path": "../../solver/src/setp_solver/cost.py",
+      "kind": "cost_function"
+    },
+    {
+      "path": "../../solver/src/setp_solver/check.py",
+      "kind": "evaluator"
+    },
+    {
+      "path": "../../solver/src/setp_solver/search/evaluation.py",
+      "kind": "evaluator"
+    },
+    {
+      "path": "../../baselines/algorithm_prototypes/china81_mechanism_hybrid_20260720/route_pool_sp.py",
+      "kind": "evaluator"
+    }
+  ],
+  "csv_rules": [],
+  "milestones": [],
+  "ai": {
+    "enabled": false,
+    "timeout_seconds": 180
+  }
+}

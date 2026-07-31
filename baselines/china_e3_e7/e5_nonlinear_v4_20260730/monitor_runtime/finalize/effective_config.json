@@ -1,0 +1,88 @@
+{
+  "ai": {
+    "enabled": false,
+    "timeout_seconds": 180
+  },
+  "checkpoint_paths": [
+    "/Volumes/移动硬盘（512G）/ReSETP/baselines/china_e3_e7/e5_nonlinear_v4_20260730/independent_certificates"
+  ],
+  "completion_files": [
+    "/Volumes/移动硬盘（512G）/ReSETP/baselines/china_e3_e7/e5_nonlinear_v4_20260730/done.json"
+  ],
+  "config_path": "/Volumes/移动硬盘（512G）/ReSETP/baselines/china_e3_e7/e5_nonlinear_v4_20260730/monitor_finalize.json",
+  "csv_rules": [],
+  "forbidden_command_substrings": [],
+  "logs": [],
+  "low_cpu_consecutive_checks": 10,
+  "max_rss_mb": 3072,
+  "max_runtime_seconds": 1800,
+  "milestones": [],
+  "min_cpu_percent_when_active": 1,
+  "min_system_memory_free_percent": 5,
+  "name": "e5-v4-independent-closeout",
+  "objective": "Independently replay 40 plans, compute four endpoints, hash artifacts, and write done.json last",
+  "pause_on_anomaly": true,
+  "poll_seconds": 30,
+  "progress_files": [],
+  "protected_files": [
+    {
+      "kind": "cost_function",
+      "path": "/Volumes/移动硬盘（512G）/ReSETP/solver/src/setp_solver/cost.py"
+    },
+    {
+      "kind": "evaluator",
+      "path": "/Volumes/移动硬盘（512G）/ReSETP/solver/src/setp_solver/check.py"
+    },
+    {
+      "kind": "evaluator",
+      "path": "/Volumes/移动硬盘（512G）/ReSETP/solver/src/setp_solver/search/evaluation.py"
+    },
+    {
+      "kind": "search_semantics",
+      "path": "/Volumes/移动硬盘（512G）/ReSETP/baselines/algorithm_prototypes/china81_mechanism_hybrid_20260720/route_pool_sp.py"
+    },
+    {
+      "kind": "search_semantics",
+      "path": "/Volumes/移动硬盘（512G）/ReSETP/baselines/algorithm_prototypes/china81_mechanism_hybrid_20260720/epochal_hgs.py"
+    },
+    {
+      "kind": "primary_config",
+      "path": "/Volumes/移动硬盘（512G）/ReSETP/baselines/china_e3_e7/run_e5_nonlinear_v4_20260730.py"
+    },
+    {
+      "kind": "independent_checker",
+      "path": "/Volumes/移动硬盘（512G）/ReSETP/baselines/china_e3_e7/check_e5_nonlinear_v4_20260730.py"
+    },
+    {
+      "kind": "budget_lock",
+      "path": "/Volumes/移动硬盘（512G）/ReSETP/baselines/china_e3_e7/e5_nonlinear_v4_20260730/budget_lock.json"
+    },
+    {
+      "kind": "upstream_completion",
+      "path": "/Volumes/移动硬盘（512G）/ReSETP/baselines/china_e3_e7/e5_nonlinear_v4_20260730/formal/manifests/cn-prd-50c-01-V2-LOCATIONS__manifest.csv"
+    },
+    {
+      "kind": "upstream_completion",
+      "path": "/Volumes/移动硬盘（512G）/ReSETP/baselines/china_e3_e7/e5_nonlinear_v4_20260730/formal/manifests/cn-prd-100c-02-V2-LOCATIONS__manifest.csv"
+    }
+  ],
+  "required_command_substrings": [
+    "run_e5_nonlinear_v4_20260730.py",
+    "finalize",
+    "--complete-eval-budget",
+    "400",
+    "--workers",
+    "1"
+  ],
+  "result_files": [
+    "/Volumes/移动硬盘（512G）/ReSETP/baselines/china_e3_e7/e5_nonlinear_v4_20260730/metadata.json",
+    "/Volumes/移动硬盘（512G）/ReSETP/baselines/china_e3_e7/e5_nonlinear_v4_20260730/raw_runs.csv",
+    "/Volumes/移动硬盘（512G）/ReSETP/baselines/china_e3_e7/e5_nonlinear_v4_20260730/decision.json",
+    "/Volumes/移动硬盘（512G）/ReSETP/baselines/china_e3_e7/e5_nonlinear_v4_20260730/artifact_hashes.json",
+    "/Volumes/移动硬盘（512G）/ReSETP/baselines/china_e3_e7/e5_nonlinear_v4_20260730/report.md",
+    "/Volumes/移动硬盘（512G）/ReSETP/baselines/china_e3_e7/e5_nonlinear_v4_20260730/done.json"
+  ],
+  "schema_version": 1,
+  "stale_seconds": 600,
+  "workdir": "/Volumes/移动硬盘（512G）/ReSETP"
+}

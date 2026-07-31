@@ -1,0 +1,67 @@
+{
+  "ai": {
+    "enabled": false,
+    "timeout_seconds": 180
+  },
+  "checkpoint_paths": [],
+  "completion_files": [
+    "/Volumes/移动硬盘（512G）/ReSETP/baselines/china_e3_e7/e5_nonlinear_v4_20260730/diagnostics/search_semantics_before.json"
+  ],
+  "config_path": "/Volumes/移动硬盘（512G）/ReSETP/baselines/china_e3_e7/e5_nonlinear_v4_20260730/monitor_semantics_before.json",
+  "csv_rules": [],
+  "forbidden_command_substrings": [
+    "--arm",
+    "NL90_mild"
+  ],
+  "logs": [],
+  "low_cpu_consecutive_checks": 6,
+  "max_rss_mb": 3072,
+  "max_runtime_seconds": 900,
+  "milestones": [],
+  "min_cpu_percent_when_active": 1,
+  "min_system_memory_free_percent": 5,
+  "name": "e5-v4-search-semantics-before",
+  "objective": "Capture the pre-diagnostic-change E5 seed-1 L100 search fingerprint",
+  "pause_on_anomaly": true,
+  "poll_seconds": 15,
+  "progress_files": [],
+  "protected_files": [
+    {
+      "kind": "cost_function",
+      "path": "/Volumes/移动硬盘（512G）/ReSETP/solver/src/setp_solver/cost.py"
+    },
+    {
+      "kind": "evaluator",
+      "path": "/Volumes/移动硬盘（512G）/ReSETP/solver/src/setp_solver/check.py"
+    },
+    {
+      "kind": "evaluator",
+      "path": "/Volumes/移动硬盘（512G）/ReSETP/solver/src/setp_solver/search/evaluation.py"
+    },
+    {
+      "kind": "search_semantics",
+      "path": "/Volumes/移动硬盘（512G）/ReSETP/baselines/algorithm_prototypes/china81_mechanism_hybrid_20260720/route_pool_sp.py"
+    },
+    {
+      "kind": "search_semantics",
+      "path": "/Volumes/移动硬盘（512G）/ReSETP/baselines/algorithm_prototypes/china81_mechanism_hybrid_20260720/epochal_hgs.py"
+    },
+    {
+      "kind": "primary_config",
+      "path": "/Volumes/移动硬盘（512G）/ReSETP/baselines/china_e3_e7/e5_v4_semantics_fingerprint_20260730.py"
+    }
+  ],
+  "required_command_substrings": [
+    "e5_v4_semantics_fingerprint_20260730.py",
+    "--label",
+    "before",
+    "--complete-eval-budget",
+    "1500"
+  ],
+  "result_files": [
+    "/Volumes/移动硬盘（512G）/ReSETP/baselines/china_e3_e7/e5_nonlinear_v4_20260730/diagnostics/search_semantics_before.json"
+  ],
+  "schema_version": 1,
+  "stale_seconds": 600,
+  "workdir": "/Volumes/移动硬盘（512G）/ReSETP"
+}

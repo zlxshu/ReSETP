@@ -1,0 +1,108 @@
+{
+  "schema": "resetp.china81.e7.pre-registration.v3",
+  "task_id": "E7-DYNAMIC-V3-20260731",
+  "status": "INHERITED_FROZEN_DESIGN_WITH_STARTUP_WIRING_GATE",
+  "frozen_before_search": true,
+  "scientific_design_authority": "baselines/china_e3_e7/e7_dynamic_20260731/pre_registration.json",
+  "scientific_design_changes": [],
+  "arms": [
+    "STATIC_FIXED_RECOURSE",
+    "FULL_ROLLING",
+    "NO_COOPERATION",
+    "CARBON_BLIND"
+  ],
+  "instances": {
+    "50c": "cn-prd-50c-01-V2-LOCATIONS",
+    "100c": "cn-prd-100c-02-V2-LOCATIONS",
+    "150c": "cn-prd-150c-01-V2-LOCATIONS"
+  },
+  "seeds": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9,
+    10
+  ],
+  "event_streams": {
+    "count": 15,
+    "streams_per_scale": 5,
+    "assignment": "stream_seed = 1 + ((algorithm_seed - 1) mod 5)",
+    "frozen": true
+  },
+  "wiring_gate": {
+    "search_evaluations": 0,
+    "all_green_required_before_probe": true,
+    "required_inputs": [
+      "China81 instance source files",
+      "15 frozen event streams",
+      "E4-aligned v3 timing calendar",
+      "approved v4 China81 wrapper calendar",
+      "China81 PriceParameters",
+      "E3 sealed JOINT plans for 50c and 100c",
+      "foundation frozen common initial solution for 150c",
+      "responsibility maps"
+    ],
+    "calendar_offset_rule": {
+      "-1": "2025-02-11",
+      "0": "2025-02-12"
+    },
+    "minimum_complete_model_evaluation": "one deterministic feasibility and objective evaluation for every arm; no candidate search",
+    "whole_trip_release_state": "before the probe, cut the initial certificate at the first trigger for all three scales; an in-progress whole trip releases at its certified return time and terminal battery, with all of its charging actions locked",
+    "in_progress_route_charging_witness": "a future charging action carried by an already-departed immutable trip is retained in the committed ledger and witnessed at its observed certified start",
+    "alns_current_objective_binding": "before the long probe, construct the first event stage and bind a finite reference-channel objective to every search-enabled arm without consuming a candidate evaluation",
+    "spawn_worker_serialization": "before formal execution, serialize the inherited worker under a stable registered module identity",
+    "legal_infeasible_classification": "retain a frozen-fleet event-stage infeasibility as LEGAL_INFEASIBLE with a null objective, exact candidate consumption and failure stage; every other exception remains a technical HALT",
+    "trace_mode_guard": "convergence-trace accounting is active only for the preregistered probe; formal tasks execute the same search without trace-row assertions",
+    "no_executable_continuation_classification": "the dedicated NoExecutableContinuation terminal is retained as LEGAL_INFEASIBLE with its candidate rejection summary and exact candidate consumption"
+  },
+  "budget": {
+    "unit": "complete candidate evaluations per rolling stage across shadow and released search",
+    "semantics": "UPPER_CAP_NOT_QUOTA",
+    "probe_instance": "cn-prd-50c-01-V2-LOCATIONS",
+    "probe_algorithm_seed": 1,
+    "probe_stream_seed": 1,
+    "probe_arm": "FULL_ROLLING",
+    "probe_stages": 1,
+    "initial_cap_per_search_pass": 800,
+    "extension_cap_per_search_pass": 1600,
+    "selection": "candidate exhaustion point when both passes exhaust, otherwise later strict-improvement point after a 10 percent plateau; round upward to a hundred with positive margin"
+  },
+  "execution_order": [
+    "zero_search_wiring_selfcheck",
+    "convergence_probe",
+    "50c",
+    "100c",
+    "150c",
+    "independent_recomputation",
+    "finalization",
+    "done_json_last"
+  ],
+  "workers_maximum": 2,
+  "thread_environment": {
+    "OMP_NUM_THREADS": "1",
+    "OPENBLAS_NUM_THREADS": "1",
+    "MKL_NUM_THREADS": "1",
+    "VECLIB_MAXIMUM_THREADS": "1"
+  },
+  "protected_sha256": {
+    "solver/src/setp_solver/cost.py": "2717b4b4de39bb4c2a9a1bda602f4420cb3e3b1e87faa83678dfa64f88fc80be",
+    "solver/src/setp_solver/check.py": "9c81e254e05591667c8225965bb9d0ba4e8bbfc53eb0f8c61ffdb4325a1403a8",
+    "solver/src/setp_solver/search/evaluation.py": "c7215263c39d1d5a1429b41ca8ac40d950dbdf2bdc288337e56fbe9733406fc3",
+    "solver/src/setp_solver/profit.py": "216c4f16f2e26f1c2840fa272adbf1e3ccb056c3de9403dd15b71fa5edfef1dc",
+    "baselines/algorithm_prototypes/china81_mechanism_hybrid_20260720/route_pool_sp.py": "976ef21d4952b3c488300de9a8d3e351411305d26f1e2601ca17c15185d462c1",
+    "baselines/algorithm_prototypes/china81_mechanism_hybrid_20260720/epochal_hgs.py": "655fa347b52a3e8ac20c5da6213c84b09ac90f96c1513ca95554753aad3f8a91"
+  },
+  "formal_outputs": [
+    "metadata.json",
+    "raw_runs.csv",
+    "decision.json",
+    "artifact_hashes.json",
+    "report.md",
+    "done.json"
+  ]
+}

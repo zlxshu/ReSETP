@@ -1,0 +1,231 @@
+{
+  "task_id": "DYNAMIC-REPLANNING-LITERATURE-20260731",
+  "date": "2026-07-31",
+  "status": "COMPLETED_READ_ONLY",
+  "scope_note": "只读文献取证。未改代码、未改 TeX、未跑实验、未动封存产物。本报告不设通过门、不设阈值、不做预注册、不给合格线。",
+
+  "infeasible_order_outlet_found": true,
+  "outlet_practices": [
+    {
+      "practice": "拒单（rejection），可带惩罚，或以最大化被接受订单数/收益体现",
+      "sources": [
+        "Zhang & Van Woensel 2023, IJPE 256:108751, pp.5, 6, 14, 21, 29",
+        "Ojeda Rios 等 2021, C&IE 160:107604, pp.4, 8",
+        "邱晗光等 2020,《中国管理科学》28(8), p.115（判据）、pp.121-122（拒绝订单数量作为常规报告指标）",
+        "葛显龙等 2022,《运筹与管理》31(8), p.59"
+      ],
+      "key_rule": "Zhang & Van Woensel 2023 p.14：a dynamic request is rejected only if it cannot be feasibly inserted into any vehicle's route",
+      "prevalence": "Ojeda Rios 2021 p.8：25 篇允许拒客 / 55 篇不允许；Zhang & Van Woensel 2023 p.29：约 36% 明确考虑拒单，其中 55% 到达即刻决定；p.14：28% 的 DPDP 允许拒单；p.21：13 篇 SDDP 中 9 篇对不可行请求拒单"
+    },
+    {
+      "practice": "外包 / 第三方承运（outsourcing、subcontracting）",
+      "sources": [
+        "Voccia 等 2019, Transportation Science Articles in Advance pp.1-18, p.4",
+        "Zhang & Van Woensel 2023, pp.14, 26"
+      ],
+      "key_rule": "Voccia 2019 p.4：本车队保持硬时间窗不许违反；当确定现有车队无法可行完成交付时，该订单转第三方",
+      "note": "与 E7 最直接对位：失败单位是订单，不是实验单元"
+    },
+    {
+      "practice": "软时间窗 / 迟到惩罚（把不可行降级为成本）",
+      "sources": [
+        "徐小峰等 2021,《管理科学学报》24(10), p.111（晚到机会成本项）、p.122（梯形模糊时间窗数据）",
+        "贾永基等 2022,《工业工程与管理》27(2), p.61（提前/延迟惩罚成本）、p.64",
+        "张晓楠等 2025,《系统工程理论与实践》45(1), p.272（假设所有订单均被服务，目标为最小化延迟）",
+        "Ojeda Rios 等 2021, p.8（17 篇用软时间窗 / 19 篇用硬时间窗）"
+      ],
+      "key_rule": "贾永基 2022 p.64：批处理间隔 Δ 变大会造成部分动态新增客户处理时刻晚于其最早服务时刻，代价是时间窗违反惩罚成本上升，而不是不可行"
+    },
+    {
+      "practice": "推迟到下一个规划周期 / 下一服务日",
+      "sources": [
+        "李阳等 2022,《中国管理科学》30(8), p.256（= ref:18）",
+        "张晓楠等 2025, SETP 45(1), pp.272-273、p.282（延迟分配为决策动作，σ=25min，μ_max=3）",
+        "葛显龙等 2022,《运筹与管理》31(8), p.59（推迟到下一服务日）",
+        "Zhang & Van Woensel 2023, p.21"
+      ]
+    },
+    {
+      "practice": "在重规划时刻新增/增派车辆（E7 当前做不到）",
+      "sources": [
+        "张金良、李超 2022,《中国管理科学》30(9), pp.186-187（车辆集合在重规划时扩充为 K={1..h, h+1..m}）",
+        "姜广田等 2024,《系统工程理论与实践》44(7), pp.2365, 2374, 2377（同一篇三次）",
+        "邱莹莹 学位论文（= ref:71）, pp.48, 50（两次重新派出电动汽车）",
+        "徐小峰等 2021,《管理科学学报》24(10), p.117（增配车辆）"
+      ],
+      "note": "E7 动态续排的资产池封闭在名义方案已动用的实体车上（见 e7_infeasibility_diagnosis_20260731 §5），核对到的动态重规划文献中未找到对应先例"
+    },
+    {
+      "practice": "判定整个算例不可行",
+      "found": false,
+      "sources": [],
+      "note": "19 篇逐段核对 0 篇、15 篇关键词扫描 0 篇。唯一提到 instance infeasible 的是 Ojeda Rios 2021 p.8，且是作为建模缺陷叙述：'the combination of hard time windows, no possibility of customer rejection and a finite number of vehicles may render problem instances infeasible'"
+    }
+  ],
+
+  "expired_order_treatment": "not_found_as_either",
+  "expired_order_treatment_detail": "19 篇逐段核对论文中没有一篇讨论『到达即已过期』的订单——既未列为合法情形，也未称作数据错误。该情形不发生，因为算例生成规则一律把时间窗从到达时刻向后构造（8 条规则见 report.md §1.2）。INFERENCE：Pillac 等 2013 p.3 的带时间窗有效动态度 de^TW 取值区间为 [0,1]，在定义上排除 l_i < t_i，故此类订单落在通行度量的定义域之外；这是推导，不是原文判定。",
+
+  "event_generation_rules_found": true,
+  "event_generation_rules": {
+    "arrival_to_window_construction": [
+      "Voccia 等 2019 p.10：TW.d1 e_n=r_n, l_n=e_n+1h；TW.d2 l_n=e_n+2h；TW.f e_n=r_n+1h；TW.h/TW.r e_n 自当日剩余时段抽取",
+      "Voccia 等 2019 p.10 兜底：最小时间窗宽度 1 小时；7.5h 生成的 TW.f 请求整体后移至 e_n=8, l_n=9；TW.d2 中当日末尾到达的请求至少有 1 小时期限",
+      "张晓楠等 2025 SETP p.272：交付期限 = t_r + t̄，实验 t̄ = 50 min（p.282）",
+      "张晓楠等 2025 SETP p.282：基本流覆盖整个运营期，但最后一小时不放单，因为所有订单需在 T 内完成",
+      "李阳等 2022 p.256（ref:18）：订单截止时间 T_co，已有研究多设 T_co=T/2；t_i > T/2 的动态客户改按静态客户处理；约束式(10) 0 ≤ t_i < T",
+      "邱莹莹 学位论文 p.10（ref:71）：动态信息接收时间窗结束时不再接收新的顾客需求；实验 [t_0,t_n]=[08:00,10:00]（p.47）",
+      "邱晗光等 2020 pp.114-115、p.122：时间窗自供应商预定义的候选时段集合 SLOT 中由顾客选择；时刻 T 停止接受本批次订单"
+    ],
+    "explicit_inequality_constraint_found": false,
+    "explicit_inequality_note": "19 篇中没有一篇写出形如 l_i − t_i ≥ 某下界 的显式不等式；留余量靠生成规则实现",
+    "empirical_arrival_vs_window": "贾永基等 2022 p.65 表 5：9 个动态新增客户 9/9 在其时间窗开启之前到达；最紧一单（客户 32）到达 174 min、窗 [180,240]，距窗左端 +6 min、距窗右端 +66 min",
+    "degree_of_dynamism": {
+      "definitions": [
+        "Pillac 等 2013 p.3：Lund 等 d = n_d/n_tot；Larsen 有效动态度 d_e = (1/n_tot)Σ t_i/T；带时间窗 de^TW = (1/n_tot)Σ(1 − (l_i − t_i)/T)",
+        "Pillac 等 2013 p.3 分级：弱 <0.3，中 0.3–0.8，强 >0.8",
+        "林明锦等 2022 p.1872：动态度 = 动态客户与所有客户的比例",
+        "贾永基等 2022 p.64：动态率 = 动态客户数量 / 总客户数量"
+      ],
+      "values_used": "贾永基 2022 表 3：0/10/20/40/60/80%（与静态口径差距 0/1.4/1.7/2.5/4.0/7.6%）；同文 4.5 节另用 50%；林明锦 2022 案例 32/132≈24%；Dong 2023 p.8：τ∈{50,100,150} 代、φ∈{0.1,0.5,1.0}，共 9 条动态序列"
+    },
+    "events_per_day": "邱莹莹（ref:71）20 客户 / 8 事件 / 5 新增（25%）/ 4 次触发；姜广田 2024 SETP 实验1 21 店铺 / 10 事件 / 3 新增（14.3%）/ 3 次触发，实验2 60 店铺 / 13 事件 / 3 新增（5.0%）/ 5 次触发；贾永基 2022 25 静态 / 9 新增（36%）/ 3 次触发；徐小峰 2021 27 静态 / 28 动态 / 1 次触发；林明锦 2022 100 静态 / 32 动态 / 1 次触发"
+  },
+
+  "replanning_trigger_sources_verified": {
+    "tex_claim": "paper_main.tex:632 『参照动态需求批处理研究 \\cite{ref:18,ref:71}，本文同时考虑定时和定量两种批事件触发策略』",
+    "ref:18": {
+      "citation": "李阳, 范厚明, 张晓楠.《中国管理科学》30(8): 254-266, 2022",
+      "supports_timed_trigger": true,
+      "timed_evidence": "p.256：引入时间片数目 n_ts，[0,T] 为配送中心时间窗，每时间片时长 T/n_ts；p.260 取 n_ts=25",
+      "supports_quantity_trigger": false,
+      "quantity_negative_evidence": "全文去空白计数：触发 0、累计 0、阈值 0、达到 0、定量 0、批量 0、满足条件 0；上限 1、个数 1（均与触发无关）。正面一侧：时间片 70、周期性 25、连续性 3",
+      "verdict": "只支持定时那一半"
+    },
+    "ref:71": {
+      "citation": "邱莹莹. 低碳背景下考虑动态需求的混合车队物流配送路径问题研究[D]. 上海理工大学, 2024",
+      "supports_timed_trigger": true,
+      "supports_quantity_trigger": true,
+      "evidence": "学位论文 p.24 §3.3.2：『该策略包含定时优化和定量优化』『本文的动态需求处理策略同时考虑了定时和定量两种批事件处理策略』；式(3-2) u(t)=min{u_q, u(t−1)+T, t_n}，式(3-3) u_q=min{u_q | q(u(t−1),u_q) ≥ q, u(t−1) ≤ u_q}",
+      "parameters": "p.47：[t_0,t_n]=[08:00,10:00]，q=500 kg，T=30 min；实际触发 4 次（08:30/09:00/09:30/10:00）",
+      "verdict": "两半都支持"
+    },
+    "formula_difference_found": true,
+    "formula_difference": "ref:71 式(3-2) 是三项取小，第三项 t_n 为动态信息接收窗右端；本项目 eq:trigger（paper_main.tex:634-639）是两项取小，无该项。ref:71 对 t_n 的作用另有正文说明（学位论文 p.10）：『在动态信息接收时间窗结束时，不再接收新的顾客需求』",
+    "e7_correspondence_INFERENCE": "E7 事件流中 new_due_time 早于其批次 trigger_time 的订单（e7_infeasibility_diagnosis_20260731 §3.4，最极端 −5415.4 s）发生在 t_n 这一项所治的区间。仅陈述对应关系，不给判据、不给取值建议。",
+    "other_trigger_parameter_values": [
+      "贾永基等 2022 p.64 表 4：时域长度 Δ ∈ {10,20,30,60,90} min，动态算例取 Δ=30 min",
+      "徐小峰等 2021 p.113、p.116：固定时间间隔 t，实验 t=100",
+      "姜广田等 2024 SETP p.2375：周期性优化事件 0.5 h",
+      "林明锦等 2022 p.1883：在配送周期中点 (T_i+T_{i+1})/2 触发",
+      "张晓楠等 2025 SETP pp.272-273、p.282：事件驱动（t_k=t_new）+ 定时兜底（t_k=t_{k−1}+σ），σ=25 min"
+    ]
+  },
+
+  "arm_design_precedents_found": true,
+  "arm_design_precedents": [
+    {
+      "type": "触发策略互比（周期性 / 连续性 / 本文策略）",
+      "source": "姜广田等 2024,《系统工程理论与实践》44(7), p.2377 表 14",
+      "metrics": "车辆使用数、方案调整次数、行驶距离、总成本、动态响应率",
+      "values": "周期性 5/3/429.08km/1421.29元/90%；连续性 5/10/436.16km/1446.51元/100%；本文 5/4/429.08km/1407.57元/100%"
+    },
+    {
+      "type": "有动态处理策略 vs 无（把动态需求当已知加入原客户集）",
+      "source": "邱莹莹 学位论文 p.55 §5.4.2",
+      "metrics": "车辆数量、平均负载率"
+    },
+    {
+      "type": "全部接受基线 + 两种接受策略（三臂）",
+      "source": "邱晗光等 2020,《中国管理科学》28(8), pp.121-122",
+      "metrics": "RB/AHD 总收益、行驶距离、订单数量、拒绝订单数量、车辆数量、三类耗时、利润"
+    },
+    {
+      "type": "机制盲 / 机制感知（碳）三臂：ordinary VRP / ordinary EVRP（碳盲）/ 低碳 EVRP",
+      "source": "Miyabe 等 2025, Journal of Energy Storage 132:117626, p.12",
+      "metrics": "总 CO2 排放（主指标），按季节拆分；Wilcoxon 检验 p=6.099e-7"
+    },
+    {
+      "type": "短视策略（myopic policy）作对照",
+      "source": "Zhang & Van Woensel 2023, p.28"
+    },
+    {
+      "type": "算法在同一动态触发时刻互比（逐时刻一行）",
+      "source": "姜广田等 2024 SETP pp.2378 表 16/17；徐小峰等 2021 p.118 表 6"
+    }
+  ],
+  "arm_design_not_found": "核对到的动态重规划论文中未出现『静态方案完全不调整』这种臂；最接近的是邱莹莹的『把动态需求当已知的全知静态』，不是冻结原方案硬扛",
+  "recovery_metrics_reported": "总成本 + 车辆使用数 + 一个『动态到底被吃下多少』的量（动态响应率 / 拒绝订单数量 / 完成请求数 / 与静态口径的差距 %）",
+
+  "statistical_unit_and_presentation": {
+    "event_streams_per_instance": "Voccia 2019 p.10：每个地理×时间窗类型 25 条随机请求流，报流间均值；Goodson 2013 p.148：216 个算例每个 500 条实现（共 108,000 条）",
+    "runs_per_instance_cn": "10 次为通例（李阳 2022 p.260、姜广田 2024 p.2378、贾永基 2022 p.63、林明锦 2022 p.1879、邱莹莹 p.36、Dong 2023 p.8）；邱晗光 2020 p.121 对计算耗时用 20 次箱型图",
+    "aggregation": "Best/Ave（部分加 %Dev），基本不报标准差、多数不做假设检验；与 journal_convention_alignment_20260730 对目标期刊的结论一致",
+    "presentation": "以表为主；姜广田 2024 另有收敛图（图 18、19）"
+  },
+
+  "carbon_forecast_vs_actual_precedent_found": "partial",
+  "carbon_forecast_vs_actual_detail": {
+    "in_vehicle_routing_papers": "未找到。没有任何一篇车辆路径论文同时定义『调度用预测碳强度』与『事后结算实际碳强度』两个符号；也未找到对电网碳强度预测误差建模并评估其对路径决策影响的论文。",
+    "in_charging_scheduling_papers": [
+      {
+        "paper": "Cheng, Bian, Shi, Chen (2022) Carbon-Aware EV Charging, arXiv:2209.12373",
+        "what": "显式区分 day-ahead 预测碳强度 Ĉ(t) 与 ground truth 碳强度（p.4 图 4）",
+        "forecast_generation": "线性回归 Ĉ(t)=β0+β1·Minute+β2·Hour+β3·Day+β4·Month+β5·Load(t)+β6·MA(C)_24+β7·MA(C)_12+β8·MA(C)_1（p.4 式(3)），输入 2021 CAISO 数据与 CAISO 日前负荷预测",
+        "error_reported": "testing mean squared absolute error = 0.0085（p.4）",
+        "caveat": "计算的是 average carbon intensity 而非 marginal（p.4）；是充电站调度，不含路径决策"
+      },
+      {
+        "paper": "Wang, Cui, Cui 等 (2026) Energy Engineering 123(1), doi:10.32604/ee.2025.069576",
+        "what": "改进 Crossformer 预测碳排放因子，再做多目标充电优化（摘要 p.1、p.2）",
+        "caveat": "同样是充电负荷调度，不含路径决策"
+      }
+    ],
+    "counter_precedent_in_routing": {
+      "paper": "Miyabe, Fujimoto, Hayashi (2025) Journal of Energy Storage 132:117626, p.12",
+      "quote": "While the planning phase employed the predicted PV surplus data, CO2 emissions were computed using the actual surplus PV values, thus reflecting a realistic emission comparison. On the other hand, the same pre-calculated values were used for the emission factors of the grid at both the planning and evaluation stages.",
+      "meaning": "该路径优化论文对光伏余电走『预测调度/实际结算』，但电网排放因子在规划与评估两端使用同一组预计算值，并在正文写明这一点",
+      "forecast_error_reporting": "MAE 式(20)（p.12）；表 5（p.13）5 个充电站基线 MAE 2.48/0.74/1.03/1.45/3.03 vs 本文 1.95/0.51/0.76/1.20/2.55，改进率 27.0/44.9/36.5/21.1/18.8%，Diebold-Mariano p 值 2.05e-3/9.33e-8/9.67e-6/5.60e-3/1.58e-2；附录 B 另用 MAPE；§4.4.6（p.17）以实际余电相差<9% 但预测精度差近一倍的两天做控制对照，低精度日 8.73 kg-CO2 vs 高精度日 5.57 kg-CO2"
+    },
+    "negative_evidence_basis": {
+      "denominator": "Zotero 全库 399 个 PDF 逐篇 pdftotext + 精确正则（scripts/q6_library_sweep.py）",
+      "hits_A_carbon_intensity_terms": 24,
+      "hits_B_forecast_terms": 117,
+      "hits_A_and_B_same_paper": 15,
+      "hits_C_strict_cooccurrence": 1,
+      "hits_C_files": ["57ITRNUI/Cheng 等 _ 2022 _ Carbon-Aware EV Charging.pdf"],
+      "blind_spots": "3 个 PDF 完全无文本层（多仓库带时间窗的车辆路径问题及智能优化算法研究 / 衣霄翔 2012 / mnsc.6.1.80.pdf）；191 个中文标题 PDF 中 13 个抽不出中文正文（CAJ 自造字或扫描件），其中邱晗光 2020 已视觉读取，其余 12 篇仅按标题判断与本节无关、未逐页核对"
+    }
+  },
+
+  "papers_full_text_checked": 34,
+  "papers_abstract_only": 0,
+  "papers_passage_verified": 19,
+  "papers_keyword_scan_only": 15,
+  "library_wide_pdfs_swept": 399,
+  "pdfs_with_broken_text_layer": {
+    "handled_visually": ["邱晗光 等 _ 2020 _ 顾客可选末端交付方式和时间窗的城市配送动态订单接受优化研究.pdf"],
+    "no_text_layer_total_in_library": 3,
+    "chinese_title_pdfs_without_extractable_cjk": 13
+  },
+
+  "files_written": [
+    "docs/handoff/dynamic_replanning_literature_20260731/report.md",
+    "docs/handoff/dynamic_replanning_literature_20260731/scripts/extract_corpus.py",
+    "docs/handoff/dynamic_replanning_literature_20260731/scripts/grep_pages.py",
+    "docs/handoff/dynamic_replanning_literature_20260731/scripts/q6_library_sweep.py",
+    "docs/handoff/dynamic_replanning_literature_20260731/done.json"
+  ],
+
+  "discipline_checks": {
+    "read_only": true,
+    "code_modified": false,
+    "tex_modified": false,
+    "experiments_run": false,
+    "sealed_artifacts_touched": false,
+    "gates_or_thresholds_proposed": false,
+    "prereg_or_pass_criteria_proposed": false,
+    "every_claim_has_source_and_page": true,
+    "demand_forecasting_route_recommended": false
+  }
+}

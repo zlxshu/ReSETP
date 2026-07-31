@@ -1,0 +1,119 @@
+{
+  "ai": {
+    "enabled": false,
+    "timeout_seconds": 180
+  },
+  "checkpoint_paths": [
+    "/Volumes/移动硬盘（512G）/ReSETP/baselines/china_e3_e7/e6_fairness_v3_20260731/formal/task_status",
+    "/Volumes/移动硬盘（512G）/ReSETP/baselines/china_e3_e7/e6_fairness_v3_20260731/formal/candidate_pools"
+  ],
+  "completion_files": [
+    "/Volumes/移动硬盘（512G）/ReSETP/baselines/china_e3_e7/e6_fairness_v3_20260731/done.json"
+  ],
+  "config_path": "/Volumes/移动硬盘（512G）/ReSETP/baselines/china_e3_e7/e6_fairness_v3_20260731/monitor.json",
+  "forbidden_command_substrings": [
+    "--smoke",
+    "--debug",
+    "--workers 3"
+  ],
+  "logs": [
+    "/Volumes/移动硬盘（512G）/ReSETP/baselines/china_e3_e7/e6_fairness_v3_20260731/progress.log"
+  ],
+  "low_cpu_consecutive_checks": 3,
+  "max_rss_mb": 7000,
+  "max_runtime_seconds": 7200,
+  "milestones": [
+    {
+      "min_size": 1024,
+      "path": "/Volumes/移动硬盘（512G）/ReSETP/baselines/china_e3_e7/e6_fairness_v3_20260731/progress.log"
+    }
+  ],
+  "min_cpu_percent_when_active": 1,
+  "min_system_free_memory_mb": 256,
+  "min_system_memory_free_percent": 5,
+  "name": "e6-fairness-v3-joint-candidate-persistence-corrected",
+  "objective": "完成20个冻结JOINT单元的逐位一致回放、候选池持久化和E6 I/U/F验收",
+  "pause_on_anomaly": true,
+  "poll_seconds": 30,
+  "progress_files": [
+    "/Volumes/移动硬盘（512G）/ReSETP/baselines/china_e3_e7/e6_fairness_v3_20260731/progress.log"
+  ],
+  "protected_files": [
+    {
+      "kind": "experiment_contract",
+      "path": "/Volumes/移动硬盘（512G）/ReSETP/docs/handoff/experiment_contract_v2_journal_aligned_20260730.md"
+    },
+    {
+      "kind": "cost_function",
+      "path": "/Volumes/移动硬盘（512G）/ReSETP/solver/src/setp_solver/cost.py"
+    },
+    {
+      "kind": "evaluator",
+      "path": "/Volumes/移动硬盘（512G）/ReSETP/solver/src/setp_solver/check.py"
+    },
+    {
+      "kind": "evaluator",
+      "path": "/Volumes/移动硬盘（512G）/ReSETP/solver/src/setp_solver/search/evaluation.py"
+    },
+    {
+      "kind": "research_question",
+      "path": "/Volumes/移动硬盘（512G）/ReSETP/solver/src/setp_solver/profit.py"
+    },
+    {
+      "kind": "search_semantics",
+      "path": "/Volumes/移动硬盘（512G）/ReSETP/baselines/algorithm_prototypes/china81_mechanism_hybrid_20260720/route_pool_sp.py"
+    },
+    {
+      "kind": "search_semantics",
+      "path": "/Volumes/移动硬盘（512G）/ReSETP/baselines/algorithm_prototypes/china81_mechanism_hybrid_20260720/epochal_hgs.py"
+    },
+    {
+      "kind": "primary_config",
+      "path": "/Volumes/移动硬盘（512G）/ReSETP/baselines/china_e3_e7/e3_zone_joint_20260731/source_lock.json"
+    },
+    {
+      "kind": "core_data",
+      "path": "/Volumes/移动硬盘（512G）/ReSETP/baselines/china_e3_e7/e3_zone_joint_20260731/artifact_hashes.json"
+    },
+    {
+      "kind": "core_data",
+      "path": "/Volumes/移动硬盘（512G）/ReSETP/baselines/china_e3_e7/e3_zone_joint_20260731/done.json"
+    },
+    {
+      "kind": "core_data",
+      "path": "/Volumes/移动硬盘（512G）/ReSETP/baselines/china_e3_e7/e6_fairness_20260731/artifact_hashes.json"
+    },
+    {
+      "kind": "core_data",
+      "path": "/Volumes/移动硬盘（512G）/ReSETP/baselines/china_e3_e7/e6_fairness_20260731/done.json"
+    },
+    {
+      "kind": "primary_config",
+      "path": "/Volumes/移动硬盘（512G）/ReSETP/baselines/china_e3_e7/e6_fairness_v3_20260731/run_e6_fairness_v3.py"
+    },
+    {
+      "kind": "evaluator",
+      "path": "/Volumes/移动硬盘（512G）/ReSETP/baselines/china_e3_e7/e6_fairness_v3_20260731/check_e6_fairness_v3.py"
+    },
+    {
+      "kind": "research_question",
+      "path": "/Volumes/移动硬盘（512G）/ReSETP/baselines/china_e3_e7/e6_fairness_v3_20260731/task_card.md"
+    }
+  ],
+  "required_command_substrings": [
+    "run_e6_fairness_v3.py",
+    "all",
+    "--workers",
+    "2"
+  ],
+  "result_files": [
+    "/Volumes/移动硬盘（512G）/ReSETP/baselines/china_e3_e7/e6_fairness_v3_20260731/raw_runs.csv",
+    "/Volumes/移动硬盘（512G）/ReSETP/baselines/china_e3_e7/e6_fairness_v3_20260731/metadata.json",
+    "/Volumes/移动硬盘（512G）/ReSETP/baselines/china_e3_e7/e6_fairness_v3_20260731/decision.json",
+    "/Volumes/移动硬盘（512G）/ReSETP/baselines/china_e3_e7/e6_fairness_v3_20260731/artifact_hashes.json",
+    "/Volumes/移动硬盘（512G）/ReSETP/baselines/china_e3_e7/e6_fairness_v3_20260731/report.md"
+  ],
+  "schema_version": 1,
+  "stale_seconds": 900,
+  "workdir": "/Volumes/移动硬盘（512G）/ReSETP"
+}

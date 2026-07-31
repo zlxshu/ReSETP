@@ -1,0 +1,46 @@
+{
+  "budget_cap": 1500,
+  "budget_cap_role": "PROBE_CAP_ONLY",
+  "budget_source": "convergence_probe",
+  "decision": "STOP_NO_REPAIR_NO_RETRY_NO_FORMAL_RUN",
+  "endpoints": {
+    "l100_feasible_nl90_physics_infeasible_count_and_causes": {
+      "status": "NOT_RUN_UPSTREAM_PROBE_HALT",
+      "value": null
+    },
+    "nl90_complete_feasibility_rate": {
+      "status": "NOT_RUN_UPSTREAM_PROBE_HALT",
+      "value": null
+    },
+    "paired_complete_model_cost_change_percent": {
+      "status": "NOT_RUN_UPSTREAM_PROBE_HALT",
+      "value": null
+    },
+    "session_soc_and_linear_nonlinear_duration_difference": {
+      "status": "NOT_RUN_UPSTREAM_PROBE_HALT",
+      "value": null
+    }
+  },
+  "endpoints_answered": 0,
+  "formal_budget_selected": false,
+  "formal_seeds_planned": 10,
+  "instances_completed": [],
+  "interpretations": [
+    {
+      "case": "LEGITIMATE_INFEASIBLE_CANDIDATE_ATTEMPT",
+      "classification": "RUNNER_CRITERION_FALSE_POSITIVE",
+      "consequence": "A future approved runner revision should retain the row in the consumed-attempt count, exclude its null objective from incumbent-curve updates, preserve the status/failure reason, and rerun from a new version."
+    },
+    {
+      "case": "CAUGHT_TRANSLATION_OR_DATA_ERROR",
+      "classification": "TRUE_TECHNICAL_FAULT",
+      "consequence": "The upstream cause must be independently diagnosed and authorized before any rerun; continuing would contaminate the experiment."
+    }
+  ],
+  "median_evaluations_consumed": null,
+  "median_evaluations_consumed_status": "NA_NO_PERSISTED_COMPLETE_UNIT",
+  "schema_version": "E5-DECISION-v3-halt",
+  "status": "HALT_PROBE_AMBIGUOUS_NULL_OBJECTIVE_TRACE",
+  "task_id": "E5-NONLINEAR-CHARGING-V3-20260730",
+  "why_unresolved": "The upstream status INFEASIBLE_OR_ERROR conflates the two cases, and the runner raised before persisting the trace and failure strings."
+}

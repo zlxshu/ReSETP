@@ -1,0 +1,30 @@
+{
+  "artifacts": {
+    "compile.after.log": "4a29e18de9e859f109a7e8410d4934f73d34b76b4c50b46d73796f1dfe491fb9",
+    "compile.before.log": "88f8f0be155b3e33e3ed47f1b33ee7db7f157fd89b75d63b2d2a2921fc4e1911",
+    "paper_main.after.pdf": "ccc89e0c55f98ceb061088d64f0e59e13747b13af806a37624076a9e13522a3b",
+    "paper_main.after.tex": "ecff28babf113c23a18174a192fd00860cb3750de37a4ef94d046269a58bfa00",
+    "paper_main.before.tex": "64b40408988d3d3c3555cf520a7253daa79067061df7978b8e4adfa82cf7b453",
+    "report.md": "2efd7db670aa7b3f06efede1373b1f59b4677c15008a1fbc7f037e14ef3f4fdc"
+  },
+  "authorization": "用户 2026-07-31 裁决：碳强度学文献做法，最小化改动；并当轮明确指示 Claude 直接执行",
+  "compile": {
+    "engine": "latexmk -xelatex",
+    "latex_warnings": 0,
+    "overfull_underfull_after": 2,
+    "overfull_underfull_before": 2,
+    "pages": 25,
+    "pages_baseline": 25,
+    "undefined_references": 0
+  },
+  "computation_affected": false,
+  "edits_applied": 12,
+  "literature_basis": "Miyabe, Fujimoto, Hayashi (2025) Journal of Energy Storage 132:117626 p.12",
+  "open_item": "solver/src/setp_solver/china81.py:817 字段名仍为 forecast_gco2_per_kwh，未改（改名触及受保护源码哈希）",
+  "residual_forecast_mentions": "仅 :1628 未来工作句（展望，非对本文数据的断言）",
+  "sealed_results_invalidated": false,
+  "solver_files_touched": false,
+  "status": "COMPLETE",
+  "task_id": "CARBON-FORECAST-MINIMAL-FIX-20260731",
+  "tex_only": true
+}

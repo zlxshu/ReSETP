@@ -150,6 +150,22 @@ gap和最大负例均独立复算通过。新BKS为0，因此本门只证明一�
 
 未经批准时，证据包可以写 `PASS_EVIDENCE_AUDIT`，方法探针可以写 `PROBE_COMPLETED`，但机器合同必须保持 `HALT_*_AWAITING_USER_APPROVAL` 或 `DRAFT_METHOD_AWAITING_USER_APPROVAL`，`formal_search_allowed=false`，代码默认值、正式方法入口和实验合同不得改变。
 
+## E5-BUDGET-CAP-20260730：完整候选预算上限语义
+
+状态：`APPROVED_CAP_SEMANTICS__EXECUTION_HALTED_ON_AMBIGUOUS_TRACE`。
+
+用户于 2026-07-30 明确批准：E5 的完整候选评价预算是上限而不是必须耗尽的配额；
+实际消费小于等于上限可因预算到顶、候选耗尽或不再改进正常终止，实际消费超过上限
+才是预算控制故障。用户同时授权以 50c-01/seed1/两臂/cap=1500 重跑收敛探针，并在
+探针选出的共同上限下依次执行 50c-01 和 100c-02 正式实验。
+
+v3 runner 已实现该语义且未改搜索内核；但探针首个 L100 单元因 trace 包含 null
+objective 在原子落盘前 HALT。上游 `INFEASIBLE_OR_ERROR` 无法区分合法不可行候选
+和捕获到的翻译/数据错误。依照同一用户提示中的“不确定则停止”规则，正式执行授权
+未继续使用；任何“先持久化并细分 null trace”的 v4 诊断/运行入口或上游错误修复，
+都须新的明确批准。权威现场：
+`baselines/china_e3_e7/e5_nonlinear_v3_20260730/`。
+
 ## G1-DEV-001：Homberger通用组件阶段一
 
 状态：`STAGE1_COMPLETE_TRUE_SWAPSTAR_STOPPED_BEFORE_FORMAL_G1`（2026-07-18）。
@@ -2255,3 +2271,105 @@ AppleDouble、临时文件、`__pycache__` 和受污染诊断归档。保护文�
   论文与 report.md 须如实写明该变更、变更时点与判断依据，不得隐去。
 - **数据完整性**：runner 具备断点续跑（`run_unified_campaign.py:435`，`result.json` 存在即跳过），
   重启前后 `tasks/*/result.json` 均为 2242 个，零丢失；停机窗口约 2 分钟。
+
+## 2026-07-30 E5 v4 纯诊断字段与 runner 判据（用户本轮明确授权）
+
+- **授权范围**：允许在 `epochal_hgs.py` 既有异常捕获记录中增加异常类名和消息，
+  禁止改变搜索、候选生成、接受规则和评价逻辑；允许在证据确认 null 主要为合法
+  不可行后，把 runner 改为合法 null 正常消费、incumbent 跳过 null、
+  `error_candidates>0` 才 HALT，并运行正式 E5。
+- **执行证据**：同 seed 改前/改后最终方案、完整目标和去诊断字段 trace 逐位一致；
+  双臂探针 technical error=0。该改动是诊断/编排判据修正，不是充电物理、成本、
+  可行性、搜索机制或论文模型变更。
+- **终态边界**：正式搜索与独立 checker 已完成，但终端聚合因 AppleDouble 分母
+  崩溃而按用户规则停止。没有批准代理自行修复 glob 后继续；四端点未签发。
+
+## E6-POSTHOC-ALLOCATION-20260731：两中心 Shapley 事后结算
+
+状态：`APPROVED_BY_USER__EXECUTED_COMPLETE`。
+
+- **批准范围**：用户明确批准在 `e6_fairness_v3_20260731` 的 40 个已认证 I/U
+  状态行上逐单元计算系统节省、成员利润变化、核内转移区间、两人 Shapley 转移、
+  结算利润和参与可行性，并把无转移与允许转移两种制度口径并列报告。
+- **方法边界**：事后结算不改变路线、系统成本或搜索模型；搜索重跑数固定为 0。
+  转移只允许单元内预算平衡，不使用外部补贴或跨单元补偿。负系统节省单元直接判
+  核为空。
+- **执行结果**：20 个配对单元中 19 个核非空，100c seed 4 因
+  \(\Delta=-1.135377\) 元不可行；可行单元 Shapley 转移均值 817.374757 元，
+  每名成员相对 I 的净改善均值 22.679075 元。无转移口径保持 0/20 自然帕累托、
+  20/20 F 回退 I 和 1.511784% 行等权公平代价。
+- **权威证据**：`baselines/china_e3_e7/e6_allocation_20260731/`。
+- **论文应用复核**：用户批准的 11 处转移支付修订已应用到
+  `docs/paper_v2/paper_main.tex`。独立数学复核 6/6 通过，XeLaTeX 编译生成
+  25 页 PDF；交付为
+  `docs/handoff/transfer_payment_applied_20260731/`。
+
+## E3-MISMATCH-RESTART-20260731：恢复自然错配研究问题
+
+状态：`APPROVED_BY_USER__EXECUTION_HALTED_BEFORE_SEARCH`。
+
+- **批准范围**：用户明确批准全量复核 China81 行政责任与有向道路最近车场错配，
+  在全部自然非零错配实例上运行 IND/ZONE/JOINT 三臂、种子 1--10，并用结果前
+  收敛探针锁定共同预算上限。
+- **搜索前锁定**：六个非零错配实例全部入选；IND→ZONE、ZONE→JOINT、
+  IND→JOINT 分别定义为空间组织、剩余协同和总价值。完整预注册已在搜索前写入。
+- **执行终态**：等待算力期间预注册源合同发生外部 SHA-256 漂移，监控按硬门
+  `SIGSTOP`。probe/formal/search evaluations 均为 0，三项效应为 null；
+  输入审计与 HALT 四件套已封存。
+- **后续授权边界**：按当前合同新哈希重锁，或恢复旧合同字节，均需用户明确指定
+  权威版本；重启必须使用新 sibling 目录，不覆盖
+  `e3_mismatch_20260731/`。
+
+---
+
+## 2026-07-31 执行登记（两项，均由用户当轮明确指示 Claude 直接执行）
+
+### REG-20260731-A：`D2-A` 附加条件的执行 —— 车队权威在新车型对下重算
+
+- **依据**：本登记册 `D2-A` 附加条件（2026-07-27）：「`R_d` 必须在**新车型对**
+  （EV 1700 kg / 77.28 kWh）下重算，旧 1000 kg 车型推出的车队权威一律作废，不得复用。」
+  以及 `ledger_input_provenance_01_20260728` 的 L33（标为"当前输入链最高优先级缺口之一"）。
+- **执行**：新建 `baselines/china_instances/build_china81_finite_fleet_authority_v2_20260731.py`
+  （规则与 v1 逐字相同，仅改输出目录、批准依据串与 schema 版本号；
+  `MAIN_RESERVE_FACTOR=1.25`、`SENSITIVITY_FACTORS=(1.10,1.25,1.50)`、
+  `DEPOT_CHARGER_COUNT=2`、`DEPOT_CHARGE_POWER_KW=22.0` 全部保持 v1 取值——
+  这是重算，不是新情景），产出
+  `data/ChinaInstances/china81_finite_fleet_authority_v2_20260731/`。
+- **结果（FACT）**：与 v1 **逐行全等**。144 行车队上限**差异数 0**；
+  总 `R_d` 1040 = 1040；总 `num_cv` 1040 = 1040；总 `num_ev` 309 = 309；
+  81 个 witness 的目标值与路线**逐个全等**，唯一不同的字段是 `schema`（本次改的版本号字符串）。
+- **原因（FACT）**：装箱可行性判据 `_route_feasible` 只用 `payload_capacity_kg("cv")`
+  （1735 kg，本次未变）与时间窗/路网；`num_ev(d)=max(1,ceil(0.25 R_d))` 由 `R_d` 派生。
+  **EV 载重与电池不进入车队定容。** 核对提交 `54d78421`（2026-07-28）：改动的全部是 EV 字段，
+  **CV 侧一个字段都没动**。
+- **处置**：**L33 缺口以执行方式关闭**；v1 权威在新车型对下依然有效，既有封存结果
+  **不因本次重算作废**。
+- **未做的事**：`solver/src/setp_solver/china81.py:55` 仍指向 v1，**代码默认未切换**。
+  因两版数值全等，切与不切不影响任何计算，是否切换留给用户。
+- 证据：`data/ChinaInstances/china81_finite_fleet_authority_v2_20260731/`
+  （`report.md`、`comparison_vs_v1.json`、四件套齐全，`._*` 已排除出哈希）。
+
+### REG-20260731-B：碳强度"预测/实际"最小化改动（纯 TeX）
+
+- **依据**：用户 2026-07-31 裁决「碳强度可以学习文献的做法，如果建模本身就是预测或者说
+  不需要怎么改，那就做最小化改动即可」。
+- **事实基础（FACT）**：正文 `:360/:456/:1040` 声明预测与实际两条碳强度序列，
+  但数据只有一列 `carbon_factor_kgco2e_per_kwh`，`china81.py:817` 把同一值标成
+  `forecast_gco2_per_kwh`；且该序列本身是 Li 等 S1-2025 省级情景投影，非实测
+  （溯源台账 L24/L25，两条均登记"正文未披露来源类型"）。
+- **文献依据（FACT）**：车辆路径论文中未找到"调度用预测 / 结算用实际"碳强度的先例
+  （Zotero 全库 399 PDF 扫描，严格共现仅 1 篇且为充电站调度）；
+  Miyabe, Fujimoto, Hayashi (2025) JES 132:117626 第 12 页给出可照抄的写法——
+  电网排放因子在规划与评估两端使用同一组预计算值，并在正文写明。
+- **执行**：`docs/paper_v2/paper_main.tex` 12 处改动——删去 $\widehat\gamma_t$ 与
+  $\widehat E_{kp}$ 的"预测"语义，统一为 $\gamma_t$ 与 $E_{kp}$；
+  `:456` 改为"两端使用同一组预先给定的值"；`:1040` 补上 L24 要求的来源类型披露
+  （省级情景投影，非官方实测/实时/边际）；`:1627` 局限句同步。
+- **影响面**：**纯文字与符号，不触及任何计算，不使任何结果作废**。E4 的 −54.9704% 不变。
+  未改 `solver/` 下任何文件。
+- **验证**：latexmk -xelatex 编译成功，**25 页**（与基线一致），未定义引用 0，无 Warning，
+  Overfull/Underfull 计数 2 与改前一致。
+- **遗留**：`china81.py:817` 字段名仍为 `forecast_gco2_per_kwh`（改名触及受保护源码哈希，
+  与论文表述无关），是否重命名留给后续决定。
+- 证据：`docs/handoff/carbon_forecast_minimal_fix_20260731/`（改前/改后 tex、改后 pdf、
+  两份编译日志、`report.md`、`done.json`）。

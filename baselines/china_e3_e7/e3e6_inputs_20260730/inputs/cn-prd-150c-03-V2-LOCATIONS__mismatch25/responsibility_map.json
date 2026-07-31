@@ -1,0 +1,422 @@
+{
+  "destination_rule": "absolute second-nearest depot by directed depot-to-customer road distance; advance to third/fourth only when frozen First-Fit D2-A cap blocks a complete mapping; never return to original owner",
+  "formal_effect_search_started": false,
+  "input_only": true,
+  "instance_id": "cn-prd-150c-03-V2-LOCATIONS",
+  "map_audit": {
+    "actual_reassigned": 38,
+    "customers_ineligible_because_second_nearest_is_original_owner": 4,
+    "fallback_steps_beyond_second_nearest": 0,
+    "final_fleet_probe": {
+      "depot_counts": {
+        "D_dongguan": {
+          "d2a_total_cap": 5,
+          "packed_routes": 5
+        },
+        "D_foshan": {
+          "d2a_total_cap": 5,
+          "packed_routes": 5
+        },
+        "D_guangzhou": {
+          "d2a_total_cap": 10,
+          "packed_routes": 9
+        },
+        "D_shenzhen": {
+          "d2a_total_cap": 13,
+          "packed_routes": 7
+        }
+      },
+      "feasible": true,
+      "reason": "PASS_EXACT_FROZEN_FIRST_FIT_D2A_CAP"
+    },
+    "global_search_audit": {
+      "algorithm": "EXACT_LEXICOGRAPHIC_DFS_FROZEN_FIRST_FIT_CPP_V1",
+      "conflict_backjumps": 0,
+      "d2a_cap_prunes": 0,
+      "demand_hall_prunes": 0,
+      "destination_order": "directed-distance absolute rank, second then third/fourth, original owner skipped",
+      "feasibility_search_order": "frozen due_time, ready_time, customer_id order used by D2-A First-Fit packer",
+      "fixed_customer_order": "result-blind SHA-256 order for lexicographic destination decisions",
+      "global_feasible_completion_found": true,
+      "heuristic_checker_calls": 30,
+      "infeasible_prefix_attempts": 0,
+      "nodes_visited": 0,
+      "nonmonotone_hash_prefix_pruning": false,
+      "pairwise_clique_prunes": 0,
+      "prefix_oracle_calls": 30,
+      "route_feasibility_checker_calls": 0,
+      "route_groups_by_depot": {
+        "D_dongguan": [
+          [
+            "C005",
+            "C006",
+            "C003",
+            "C002",
+            "C017",
+            "C011",
+            "C109"
+          ],
+          [
+            "C133",
+            "C124",
+            "C143",
+            "C107",
+            "C121",
+            "C144",
+            "C139"
+          ],
+          [
+            "C012",
+            "C016",
+            "C020",
+            "C001",
+            "C019",
+            "C008"
+          ],
+          [
+            "C149",
+            "C129",
+            "C115",
+            "C013",
+            "C014"
+          ],
+          [
+            "C018",
+            "C105",
+            "C145",
+            "C103",
+            "C146"
+          ]
+        ],
+        "D_foshan": [
+          [
+            "C031",
+            "C041",
+            "C039",
+            "C071",
+            "C088",
+            "C083",
+            "C068"
+          ],
+          [
+            "C026",
+            "C028",
+            "C021",
+            "C086",
+            "C075",
+            "C059",
+            "C035"
+          ],
+          [
+            "C033",
+            "C058",
+            "C040",
+            "C038",
+            "C084"
+          ],
+          [
+            "C025",
+            "C029",
+            "C087",
+            "C027",
+            "C034",
+            "C032"
+          ],
+          [
+            "C053",
+            "C022",
+            "C077",
+            "C060"
+          ]
+        ],
+        "D_guangzhou": [
+          [
+            "C055",
+            "C030",
+            "C046",
+            "C074",
+            "C067",
+            "C081",
+            "C044",
+            "C045"
+          ],
+          [
+            "C010",
+            "C052",
+            "C069",
+            "C073",
+            "C078",
+            "C064"
+          ],
+          [
+            "C042",
+            "C051",
+            "C057",
+            "C024",
+            "C063",
+            "C085",
+            "C090"
+          ],
+          [
+            "C004",
+            "C054",
+            "C061",
+            "C079",
+            "C056",
+            "C023"
+          ],
+          [
+            "C036",
+            "C007",
+            "C080",
+            "C089",
+            "C050",
+            "C072"
+          ],
+          [
+            "C066",
+            "C047",
+            "C082",
+            "C070",
+            "C049",
+            "C037",
+            "C076"
+          ],
+          [
+            "C009",
+            "C065",
+            "C062",
+            "C043"
+          ],
+          [
+            "C048",
+            "C091"
+          ],
+          [
+            "C015"
+          ]
+        ],
+        "D_shenzhen": [
+          [
+            "C093",
+            "C122",
+            "C147",
+            "C111",
+            "C106",
+            "C100",
+            "C112"
+          ],
+          [
+            "C141",
+            "C138",
+            "C136",
+            "C132",
+            "C104",
+            "C127",
+            "C125",
+            "C140"
+          ],
+          [
+            "C108",
+            "C126",
+            "C110",
+            "C135",
+            "C114",
+            "C113"
+          ],
+          [
+            "C142",
+            "C102",
+            "C096",
+            "C130",
+            "C097",
+            "C148"
+          ],
+          [
+            "C134",
+            "C119",
+            "C092",
+            "C094",
+            "C098",
+            "C150"
+          ],
+          [
+            "C120",
+            "C118",
+            "C095",
+            "C123",
+            "C116"
+          ],
+          [
+            "C128",
+            "C131",
+            "C101",
+            "C099",
+            "C137",
+            "C117"
+          ]
+        ]
+      }
+    },
+    "status": "PASS",
+    "target_reassigned": 38
+  },
+  "mapping": {
+    "C001": "D_dongguan",
+    "C002": "D_dongguan",
+    "C003": "D_dongguan",
+    "C004": "D_guangzhou",
+    "C005": "D_dongguan",
+    "C006": "D_dongguan",
+    "C007": "D_guangzhou",
+    "C008": "D_dongguan",
+    "C009": "D_guangzhou",
+    "C010": "D_guangzhou",
+    "C011": "D_dongguan",
+    "C012": "D_dongguan",
+    "C013": "D_dongguan",
+    "C014": "D_dongguan",
+    "C015": "D_guangzhou",
+    "C016": "D_dongguan",
+    "C017": "D_dongguan",
+    "C018": "D_dongguan",
+    "C019": "D_dongguan",
+    "C020": "D_dongguan",
+    "C021": "D_foshan",
+    "C022": "D_foshan",
+    "C023": "D_guangzhou",
+    "C024": "D_guangzhou",
+    "C025": "D_foshan",
+    "C026": "D_foshan",
+    "C027": "D_foshan",
+    "C028": "D_foshan",
+    "C029": "D_foshan",
+    "C030": "D_guangzhou",
+    "C031": "D_foshan",
+    "C032": "D_foshan",
+    "C033": "D_foshan",
+    "C034": "D_foshan",
+    "C035": "D_foshan",
+    "C036": "D_guangzhou",
+    "C037": "D_guangzhou",
+    "C038": "D_foshan",
+    "C039": "D_foshan",
+    "C040": "D_foshan",
+    "C041": "D_foshan",
+    "C042": "D_guangzhou",
+    "C043": "D_guangzhou",
+    "C044": "D_guangzhou",
+    "C045": "D_guangzhou",
+    "C046": "D_guangzhou",
+    "C047": "D_guangzhou",
+    "C048": "D_guangzhou",
+    "C049": "D_guangzhou",
+    "C050": "D_guangzhou",
+    "C051": "D_guangzhou",
+    "C052": "D_guangzhou",
+    "C053": "D_foshan",
+    "C054": "D_guangzhou",
+    "C055": "D_guangzhou",
+    "C056": "D_guangzhou",
+    "C057": "D_guangzhou",
+    "C058": "D_foshan",
+    "C059": "D_foshan",
+    "C060": "D_foshan",
+    "C061": "D_guangzhou",
+    "C062": "D_guangzhou",
+    "C063": "D_guangzhou",
+    "C064": "D_guangzhou",
+    "C065": "D_guangzhou",
+    "C066": "D_guangzhou",
+    "C067": "D_guangzhou",
+    "C068": "D_foshan",
+    "C069": "D_guangzhou",
+    "C070": "D_guangzhou",
+    "C071": "D_foshan",
+    "C072": "D_guangzhou",
+    "C073": "D_guangzhou",
+    "C074": "D_guangzhou",
+    "C075": "D_foshan",
+    "C076": "D_guangzhou",
+    "C077": "D_foshan",
+    "C078": "D_guangzhou",
+    "C079": "D_guangzhou",
+    "C080": "D_guangzhou",
+    "C081": "D_guangzhou",
+    "C082": "D_guangzhou",
+    "C083": "D_foshan",
+    "C084": "D_foshan",
+    "C085": "D_guangzhou",
+    "C086": "D_foshan",
+    "C087": "D_foshan",
+    "C088": "D_foshan",
+    "C089": "D_guangzhou",
+    "C090": "D_guangzhou",
+    "C091": "D_guangzhou",
+    "C092": "D_shenzhen",
+    "C093": "D_shenzhen",
+    "C094": "D_shenzhen",
+    "C095": "D_shenzhen",
+    "C096": "D_shenzhen",
+    "C097": "D_shenzhen",
+    "C098": "D_shenzhen",
+    "C099": "D_shenzhen",
+    "C100": "D_shenzhen",
+    "C101": "D_shenzhen",
+    "C102": "D_shenzhen",
+    "C103": "D_dongguan",
+    "C104": "D_shenzhen",
+    "C105": "D_dongguan",
+    "C106": "D_shenzhen",
+    "C107": "D_dongguan",
+    "C108": "D_shenzhen",
+    "C109": "D_dongguan",
+    "C110": "D_shenzhen",
+    "C111": "D_shenzhen",
+    "C112": "D_shenzhen",
+    "C113": "D_shenzhen",
+    "C114": "D_shenzhen",
+    "C115": "D_dongguan",
+    "C116": "D_shenzhen",
+    "C117": "D_shenzhen",
+    "C118": "D_shenzhen",
+    "C119": "D_shenzhen",
+    "C120": "D_shenzhen",
+    "C121": "D_dongguan",
+    "C122": "D_shenzhen",
+    "C123": "D_shenzhen",
+    "C124": "D_dongguan",
+    "C125": "D_shenzhen",
+    "C126": "D_shenzhen",
+    "C127": "D_shenzhen",
+    "C128": "D_shenzhen",
+    "C129": "D_dongguan",
+    "C130": "D_shenzhen",
+    "C131": "D_shenzhen",
+    "C132": "D_shenzhen",
+    "C133": "D_dongguan",
+    "C134": "D_shenzhen",
+    "C135": "D_shenzhen",
+    "C136": "D_shenzhen",
+    "C137": "D_shenzhen",
+    "C138": "D_shenzhen",
+    "C139": "D_dongguan",
+    "C140": "D_shenzhen",
+    "C141": "D_shenzhen",
+    "C142": "D_shenzhen",
+    "C143": "D_dongguan",
+    "C144": "D_dongguan",
+    "C145": "D_dongguan",
+    "C146": "D_dongguan",
+    "C147": "D_shenzhen",
+    "C148": "D_shenzhen",
+    "C149": "D_dongguan",
+    "C150": "D_shenzhen"
+  },
+  "mapping_sha256": "a65a50caa44877cf29cbdd526df69aa85932670022ceddc2ee78ba36030f82b6",
+  "mismatch_intensity_nominal_pct": 25,
+  "objective_evaluations": 0,
+  "schema": "resetp.e3e6.responsibility-map.input-only.v2",
+  "selection_rule": "proportional largest-remainder allocation within original owner strata; frozen SHA-256 rank",
+  "task_id": "E3E6-MISMATCH-FAIRNESS-01"
+}

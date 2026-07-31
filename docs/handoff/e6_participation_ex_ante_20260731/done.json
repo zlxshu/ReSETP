@@ -1,0 +1,38 @@
+{
+  "task_id": "E6-PARTICIPATION-EX-ANTE-20260731",
+  "status": "COMPLETE_READ_ONLY",
+  "created_at_utc": "2026-07-31T00:00:00Z",
+  "executor": "claude_terminal_temp_authorized_codex_quota_exhausted_until_20260805T1339",
+  "scope": "read-only literature forensics + read-only code hook-point survey; no code changed, no experiments run, no mechanism implemented",
+  "soriano_argument_found": true,
+  "soriano_source": "Soriano, Gansterer, Hartl (2023), IJPE 255:108669; local PDF /Users/zhouleixishu/Zotero/storage/PLSR8GG4/; all 13 pages read",
+  "ex_ante_contract_precedent_found": true,
+  "ex_ante_contract_sources": [
+    "Ahn, Cetinkaya, Duenyas, Zhang (2024), Production and Operations Management 33(1):128-145, /Users/zhouleixishu/Zotero/storage/ETUZRJK4/",
+    "Dong & Li (2025), Production and Operations Management 34(7):1632-1649, /Users/zhouleixishu/Zotero/storage/2JIJNEAP/"
+  ],
+  "ex_ante_contract_precedent_note": "both are supply-chain contracting papers, not VRP/multi-depot routing papers; no direct VRP-scenario ex-ante-contract precedent found in this search",
+  "journal_posthoc_justification_found": false,
+  "journal_posthoc_justification_note": "Rao 2022 (SETP 42(10):2721-2739) and Rao 2019 (SETP 39(6):1517-1534) full text not accessible this session: not present in local Zotero library (423 items checked via SQLite + Spotlight), and the journal site sysengi.cjoe.ac.cn is client-side JS rendered so WebFetch only retrieves template placeholders, not rendered abstract/body text. Marked as not-found due to tool access limitation, not as an examined-and-absent finding.",
+  "hook_points_identified": true,
+  "hook_points_summary": {
+    "call_chain": "run_e6_fairness_v3.py:625 run_unit() -> run_e3_zone_joint.py:235 load_e3() -> e3_mismatch_20260729/run_e3_mismatch.py:1131 -> route_pool_sp.py:56 run_hgs_route_pool_recombination() -> route_pool_sp.py:587 _solve_set_partitioning() (scipy.optimize.milp set-partitioning over RoutePoolRecord, already grouped by depot_id at lines 670-689)",
+    "profit_computation": "solver/src/setp_solver/profit.py calculate_depot_profits(), called only from run_e6_fairness_v3.py:263-276 member_breakdowns(), which requires a fully generated and cross-site-annotated Solution; profit is not available mid-search in the current architecture",
+    "posthoc_filter_location": "run_e6_fairness_v3.py:persist_candidate_pool() lines 361-587; per-candidate profit computed at line 406, participation flag at lines 429-431, filter applied post-hoc at line 538 after the full candidate pool already exists",
+    "minimal_change_target": "route_pool_sp.py _solve_set_partitioning() (line 587) is the earliest point with both per-depot route attribution and pre-selection timing; adding a per-depot profit-floor linear constraint there is the smallest architectural change identified",
+    "protected_files_named_by_user_affected": false,
+    "protected_files_note": "cost.py, check.py, search/evaluation.py, profit.py need not be edited; profit.py's calculate_depot_profits can be called (not modified) to compute stand-alone baselines",
+    "hash_locked_but_unnamed_files_affected": true,
+    "hash_locked_files": [
+      "baselines/algorithm_prototypes/china81_mechanism_hybrid_20260720/route_pool_sp.py",
+      "baselines/algorithm_prototypes/china81_mechanism_hybrid_20260720/epochal_hgs.py"
+    ],
+    "hash_locked_note": "both are hash-verified by run_e3_zone_joint.py PROTECTED/EXPECTED_PROTECTED_HASHES (lines 93-108) and LOCKED_SOURCES (lines 124-125), and by run_e6_fairness_v3.py PROTECTED_HASHES (lines 61-76); editing route_pool_sp.py trips HALT_PROTECTED_HASH_DRIFT in the current sealed E3/E6 runners, requiring a new experiment identity, not merely a technical edit",
+    "unverified_assumption": "the minimal-change design assumes per-route revenue and cross-site fee are additively decomposable across selected routes in the MILP; this was not verified against china81_completion.py / profit.py internals in this task, and the repo has a prior finding (cross-site fee gap, 2026-07-11) showing cross-site accounting has been subtly wrong before",
+    "effort_estimate_days": "2-4 person-days if the additive-decomposability assumption holds; 4-8 person-days if it does not and a generate-then-repair architecture is needed instead; consistent with the independent 3-8 person-day estimate in docs/handoff/allocation_mechanism_survey_20260731/report.md section 6.1"
+  },
+  "files_written": [
+    "docs/handoff/e6_participation_ex_ante_20260731/report.md",
+    "docs/handoff/e6_participation_ex_ante_20260731/done.json"
+  ]
+}

@@ -1,0 +1,85 @@
+\documentclass[tikz,border=3pt]{standalone}
+\usepackage{fontspec}
+\usepackage{xeCJK}
+\usepackage{pgfplots}
+\usepgfplotslibrary{groupplots}
+\pgfplotsset{compat=1.18}
+\setmainfont[Path=/System/Library/Fonts/Supplemental/,BoldFont={Arial Bold.ttf}]{Arial.ttf}
+\setsansfont[Path=/System/Library/Fonts/Supplemental/,BoldFont={Arial Bold.ttf}]{Arial.ttf}
+\setCJKmainfont[Path=/System/Library/Fonts/,BoldFont={STHeiti Medium.ttc}]{STHeiti Light.ttc}
+\setCJKsansfont[Path=/System/Library/Fonts/,BoldFont={STHeiti Medium.ttc}]{STHeiti Light.ttc}
+\renewcommand{\familydefault}{\sfdefault}
+\definecolor{EBlue}{HTML}{1F77B4}
+\definecolor{ERed}{HTML}{D62728}
+\definecolor{EGreen}{HTML}{2CA02C}
+\definecolor{EGray}{HTML}{666666}
+\begin{document}
+\begin{tikzpicture}
+\begin{groupplot}[
+  group style={group size=1 by 2, vertical sep=1.05cm},
+  width=15.1cm,
+  height=6.0cm,
+  xmin=0,
+  xmax=24,
+  xtick={0,4,8,12,16,20,24},
+  tick align=outside,
+  tick style={black, line width=0.45pt},
+  axis line style={black, line width=0.55pt},
+  axis x line*=bottom,
+  axis y line*=left,
+  scaled ticks=false,
+  label style={font=\small},
+  tick label style={font=\small},
+  legend style={draw=none, fill=none, font=\small, cells={anchor=west}},
+  clip=false,
+]
+\nextgroupplot[
+  ylabel={碳强度（g CO\textsubscript{2}e/kWh）},
+  ymin=0,
+  ymax=700,
+  ytick={0,100,200,300,400,500,600,700},
+  xticklabels={},
+  legend columns=3,
+  legend style={at={(0.02,0.96)}, anchor=north west, column sep=6pt},
+]
+\addplot+[const plot mark right, no marks, color=EBlue, line width=1.05pt]
+  table[x=start_hour,y=jjj_carbon_gco2e_per_kwh,col sep=comma] {e4_typical_day_carbon.csv};
+\addlegendentry{京津冀（北京）}
+\addplot+[no marks, color=EBlue, line width=1.05pt, forget plot]
+  coordinates {(23.5,615.5000) (24,615.5000)};
+\addplot+[const plot mark right, no marks, color=ERed, densely dashed, line width=1.05pt]
+  table[x=start_hour,y=prd_carbon_gco2e_per_kwh,col sep=comma] {e4_typical_day_carbon.csv};
+\addlegendentry{珠三角（广东）}
+\addplot+[no marks, color=ERed, densely dashed, line width=1.05pt, forget plot]
+  coordinates {(23.5,158.3000) (24,158.3000)};
+\addplot+[const plot mark right, no marks, color=EGreen, dotted, line width=1.25pt]
+  table[x=start_hour,y=cy_carbon_gco2e_per_kwh,col sep=comma] {e4_typical_day_carbon.csv};
+\addlegendentry{成渝（重庆）}
+\addplot+[no marks, color=EGreen, dotted, line width=1.25pt, forget plot]
+  coordinates {(23.5,4.8000) (24,4.8000)};
+\node[anchor=south west,font=\small] at (rel axis cs:0,1.015) {(a)};
+\node[anchor=north east,font=\footnotesize,text=EGray] at (rel axis cs:0.995,0.965) {2025-02-12};
+
+\nextgroupplot[
+  xlabel={充电开始时刻（h）},
+  ylabel={充电电量占比（\%）},
+  ymin=0,
+  legend columns=2,
+  legend style={at={(0.98,0.96)}, anchor=north east, column sep=8pt},
+]
+\addplot+[const plot mark right, no marks, color=EGray, densely dashed, line width=1.05pt]
+  table[x=start_hour,y=asap_energy_share_pct,col sep=comma] {e4_energy_weighted_start_distribution.csv};
+\addlegendentry{ASAP}
+\addplot+[no marks, color=EGray, densely dashed, line width=1.05pt, forget plot]
+  coordinates {(23.5,0.000000000) (24,0.000000000)};
+\addplot+[const plot mark right, no marks, color=ERed, line width=1.20pt]
+  table[x=start_hour,y=carbon_energy_share_pct,col sep=comma] {e4_energy_weighted_start_distribution.csv};
+\addlegendentry{CARBON}
+\addplot+[no marks, color=ERed, line width=1.20pt, forget plot]
+  coordinates {(23.5,0.000000000) (24,0.000000000)};
+\node[anchor=south west,font=\small] at (rel axis cs:0,1.015) {(b)};
+\node[anchor=north west,font=\footnotesize,text=EGray] at (rel axis cs:0.02,0.965)
+  {44,072 个会话日；1,234,753.936 kWh};
+\end{groupplot}
+\end{tikzpicture}
+\end{document}

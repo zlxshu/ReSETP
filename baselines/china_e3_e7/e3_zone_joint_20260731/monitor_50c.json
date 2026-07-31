@@ -1,0 +1,46 @@
+{
+  "schema_version": 1,
+  "name": "e3-zone-joint-50c",
+  "objective": "complete all 20 ZONE and JOINT units for the frozen 50-customer instance",
+  "workdir": "/Volumes/移动硬盘（512G）/ReSETP",
+  "poll_seconds": 30,
+  "stale_seconds": 900,
+  "max_runtime_seconds": 7200,
+  "pause_on_anomaly": true,
+  "required_command_substrings": [
+    "run_e3_zone_joint.py",
+    "formal-50c",
+    "--complete-eval-budget 400",
+    "--workers 2"
+  ],
+  "forbidden_command_substrings": ["--workers 3", "--workers 4"],
+  "min_cpu_percent_when_active": 1,
+  "low_cpu_consecutive_checks": 5,
+  "max_rss_mb": 6500,
+  "min_system_free_memory_mb": 256,
+  "min_system_memory_free_percent": 5,
+  "logs": ["formal_progress.log"],
+  "progress_files": ["formal_progress.log"],
+  "result_files": [
+    "formal/stages/cn-prd-50c-01-V2-LOCATIONS.json"
+  ],
+  "completion_files": [
+    "formal/stages/cn-prd-50c-01-V2-LOCATIONS.json"
+  ],
+  "checkpoint_paths": ["formal/task_status", "formal/search_traces"],
+  "protected_files": [
+    {"path": "source_lock.json", "kind": "primary_config"},
+    {"path": "budget_lock.json", "kind": "primary_config"},
+    {"path": "run_e3_zone_joint.py", "kind": "experiment_contract"},
+    {"path": "../../algorithm_prototypes/china81_mechanism_hybrid_20260720/epochal_hgs.py", "kind": "search_candidate_filter"},
+    {"path": "../../algorithm_prototypes/china81_mechanism_hybrid_20260720/route_pool_sp.py", "kind": "search_semantics"},
+    {"path": "../../../solver/src/setp_solver/cost.py", "kind": "cost_function"},
+    {"path": "../../../solver/src/setp_solver/check.py", "kind": "evaluator"},
+    {"path": "../../../solver/src/setp_solver/search/evaluation.py", "kind": "evaluator"},
+    {"path": "../../../docs/handoff/experiment_contract_v2_journal_aligned_20260730.md", "kind": "experiment_contract"}
+  ],
+  "milestones": [
+    {"path": "formal_progress.log", "min_size": 4096}
+  ],
+  "ai": {"enabled": false, "timeout_seconds": 180}
+}

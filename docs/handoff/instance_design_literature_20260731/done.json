@@ -1,0 +1,65 @@
+{
+  "task_id": "INSTANCE-DESIGN-LITERATURE-20260731",
+  "status": "COMPLETED",
+  "date": "2026-07-31",
+  "mode": "READ_ONLY_LITERATURE_FORENSICS",
+  "executed_by": "terminal Claude Code (Codex quota exhausted until 2026-08-05; per-task user authorization)",
+
+  "depot_assignment_practices_found": true,
+  "depot_assignment_practices_note": "两条传统。国际 MDVRP 主流不预设归属、归属是决策变量（Vidal et al. 2014 摘要；Crevier et al. 2007 印刷第757/761页；Sadati & Catay 2021 PDF 第4-5页；Dondo & Cerda 2007 印刷第1478页）。中文共同配送流派用聚类确定归属（王勇 2023 3D-K-means 印刷第1132页；陈婉茹 2023 最近距离聚类 印刷第3326页；Wang 2023 高斯混合 PDF 第1-2页；Wang 2024 谱聚类 PDF 第14页）。陈雨蝶 2025 用就近原则但只在解码阶段（PDF 第9页）。按行政区划派生登记车场（本项目 china81.py:355）在本轮 11 篇多车场论文中未找到先例。",
+
+  "mismatch_concept_found_in_literature": true,
+  "mismatch_concept_note": "有，术语为 customer reassignment / reallocation of customer service。Wang et al. 2024 PDF 第22页原句 'Some customers that are spatially far away from their initial DC are reassigned to a new closer DC'，并有决策变量 delta_{i,d,d'}（PDF 第9页）。Wang et al. 2023 PDF 第18页报告 22/143 客户改变归属。Soriano et al. 2023 PDF 第9页报告 'rate of original customers kept' 从 100% 到 0%。未找到任何论文把错配率当作算例入参；文献中的比例全是优化结果的事后统计。",
+
+  "mismatch_construction_method_found": "partial",
+  "mismatch_construction_method_note": "找到的：Soriano et al. 2023（PDF 第7页）的 clustered vs. uniform 双类客户布点构造，配 balanced/unbalanced 收益分布，规模 2D_100C / 3D_150C / 4D_200C，算例已公开发布（Soriano et al. 2020），且原文自己解释了聚集类为何 '几乎没有改进空间'。Crevier et al. 2007（印刷第767页）给出 Cordeau 生成配方，含控制聚集紧密程度的参数 beta=0.05、车场域 [-50,50]^2、客户域 [-100,100]^2。未找到的：任何显式的'先按规则指定登记车场、再驱动错配率达到目标值 Z%'的构造算法；Wang et al. 2023/2024 的重庆案例均未说明初始归属如何得来，只称是真实网络现状。",
+
+  "instance_scale_table_built": true,
+  "instance_scale_note": "12 行对照表（report.md §2.3）。车场数区间 1-6（多车场论文集中在 4 或 6），客户数 10-320，车场:客户 1:9 到 1:72。参考母版全部 >= 4 个中心。本项目 2 车场处在区间下界。",
+
+  "nonlinear_charging_parameter_table_built": true,
+  "nonlinear_charging_parameter_note": "10 行对照表（report.md §3.1），覆盖电池容量、充电功率、等效倍率（推算）、里程/时长约束、时间窗。关键取值：Montoya/Froger 16 kWh + 11/22/44 kW；Xiao 2021 敏感性 16/20/24/32 kWh；Wang 2023 60 kWh + 30 kW；陈婉茹 2023 80 kW·h；Schneider/Keskin/Hiermann/Nafstad 不以 kWh 计。",
+
+  "charging_timing_practice_found": true,
+  "charging_timing_practice_note": "本轮核对的全部非线性/部分充电文献均假定车辆离场时满电，被建模的充电决策全在途中充电站：Montoya PDF 第4页、Froger PDF 第10页、Keskin & Catay PDF 第3页、Zhen 2020 PDF 第4页、陈婉茹 印刷第3322页。最关键的是 Keskin & Catay 2016 命题1（PDF 第5页）：'Since fully recharging the battery at the depot does not delay the departure time of the EV'——文献本身认定车场行前充电在时间维度上没有决策含量。Froger version D（PDF 第24页）是唯一把车场出发时刻放开为决策的。SOC 统计只有 Montoya PDF 第17-18页给出（>90% 部分充电、约 12% 中途充电补到 80% 以上）；到站 SOC 分布各篇均未找到。",
+
+  "nonlinear_necessity_evidence_found": true,
+  "nonlinear_necessity_note": "Montoya 2017 PDF 第14-15页：FS 近似下 9/20 算例不可行、3/20 增加路线数、平均贵 2.70%；L1 有 14 个算例实际不可行；L2 平均贵 1.45%。Froger 2022 PDF 第3页：每站 1 把充电枪时 55/120 已知最优解不可行，2 把时 23 个。Nafstad 2025 印刷第644页：线性简化产生不可行解的算例中近 80% 路线所服务客户不同，平均 >10% 客户换路线；但印刷第643页宽时间窗算例目标值最大只增 1.42%。指标次序：可行性 > 解结构 > 车辆数 > 成本；成本差异是最小的一项。",
+
+  "directions_with_sources": 5,
+  "directions_list": [
+    "A 收紧时间窗/压缩可用时间 — Nafstad 2025 印刷第643页；Keskin & Catay 2016 PDF 第15页（type-1 窄窗改进 2.89% vs type-2 宽窗 0.66%）；Montoya 2017 PDF 第14页（10 h 时长上限）",
+    "B 把充电放进与其他资源竞争的时段 — Froger 2022 PDF 第3、24页（充电桩数量约束致 55/120 不可行）；反向证据 Keskin & Catay 命题1 PDF 第5页",
+    "C 降低充电功率档位 — Montoya 2017 PDF 第4页（11/22/44 kW，实测数据拟合误差 0.90/1.24/1.90%）；Nafstad 2025 印刷第639页沿用同一映射",
+    "D 把电池容量当作敏感性轴 — Xiao et al. 2021 PDF 第18页（16/20/24/32 kWh 四档；证据方向是容量越小影响越大）",
+    "E 算例地理尺度与最大路线时长设定 — Montoya 2017 PDF 第13页（120x120 km semi-urban + 10 h；算例已公开 VRP-REP:2016-0020）"
+  ],
+  "directions_explicitly_not_supported": [
+    "SOC 阈值触发式充电策略 — 未找到出处；所有核对论文的充电量与地点均为决策变量",
+    "提高单日里程以迫使深度充电 — 未找到以此为直接论证的论文"
+  ],
+
+  "project_positioning_done": true,
+  "project_positioning_note": "report.md §4 逐项定位 11 条。要点：2 车场处在文献区间下界；77.28 kWh 在纯 EVRP 非线性文献里偏高约 4.8 倍，但在中国多中心混合车队文献里几乎正中（陈婉茹 80 kW·h、Wang 2023 60 kWh）；22 kW 正好是 Montoya 三档的中档；0.28C 低于所有报了 kWh+kW 的文献；initial_ev_battery_kwh=0.0 的行前从 0% 起充在全部核对文献中无同类设定；16 h 运营时域宽于 Montoya 的 10 h 与陈婉茹的 8 h；两车场大圆距离 64.3 km、节点包围盒约 71x88 km，与 Montoya 的 120x120 km 同量级。",
+  "correction_to_prior_report": "mechanism_lever_rethink_20260731/report.md §3.3 以 16 kWh 单一对照得出'本项目电池是文献的 4.83 倍'。该倍数对 Montoya/Froger 成立，但把对照面扩到陈婉茹（80 kW·h）与 Wang et al. 2023（60 kWh）后，77.28 kWh 落在区间之内。同报告称 Schneider 系算例可比 kWh 亦不成立：Schneider et al. 2014 印刷第12页的电池容量由算例推导（h=1.0，Q=max{BKS 平均路线长度 60% 所需电量, 2x 最长客户-站弧电量}），是无量纲量。",
+
+  "papers_full_text_checked": 19,
+  "papers_abstract_only": 1,
+  "papers_abstract_only_list": ["Vidal, Crainic, Gendreau & Prins 2014, EJOR 237(1):15-28 [MQZKQ5IK] — 本地 Zotero 无 PDF 附件，仅元数据与摘要"],
+
+  "gates_or_thresholds_proposed": 0,
+  "code_changed": false,
+  "instances_changed": false,
+  "parameters_changed": false,
+  "experiments_run": false,
+  "sealed_artifacts_touched": false,
+
+  "files_written": [
+    "docs/handoff/instance_design_literature_20260731/report.md",
+    "docs/handoff/instance_design_literature_20260731/scripts/zot_lookup.py",
+    "docs/handoff/instance_design_literature_20260731/scripts/pdfgrep.py",
+    "docs/handoff/instance_design_literature_20260731/scripts/batch_grep.sh",
+    "docs/handoff/instance_design_literature_20260731/scripts/instance_geometry.py",
+    "docs/handoff/instance_design_literature_20260731/done.json"
+  ]
+}

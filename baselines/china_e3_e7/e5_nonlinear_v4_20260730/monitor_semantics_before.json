@@ -1,0 +1,66 @@
+{
+  "schema_version": 1,
+  "name": "e5-v4-search-semantics-before",
+  "objective": "Capture the pre-diagnostic-change E5 seed-1 L100 search fingerprint",
+  "workdir": "../../..",
+  "poll_seconds": 15,
+  "stale_seconds": 600,
+  "max_runtime_seconds": 900,
+  "pause_on_anomaly": true,
+  "required_command_substrings": [
+    "e5_v4_semantics_fingerprint_20260730.py",
+    "--label",
+    "before",
+    "--complete-eval-budget",
+    "1500"
+  ],
+  "forbidden_command_substrings": [
+    "--arm",
+    "NL90_mild"
+  ],
+  "min_cpu_percent_when_active": 1,
+  "low_cpu_consecutive_checks": 6,
+  "max_rss_mb": 3072,
+  "min_system_memory_free_percent": 5,
+  "logs": [],
+  "progress_files": [],
+  "result_files": [
+    "diagnostics/search_semantics_before.json"
+  ],
+  "completion_files": [
+    "diagnostics/search_semantics_before.json"
+  ],
+  "checkpoint_paths": [],
+  "protected_files": [
+    {
+      "path": "../../../solver/src/setp_solver/cost.py",
+      "kind": "cost_function"
+    },
+    {
+      "path": "../../../solver/src/setp_solver/check.py",
+      "kind": "evaluator"
+    },
+    {
+      "path": "../../../solver/src/setp_solver/search/evaluation.py",
+      "kind": "evaluator"
+    },
+    {
+      "path": "../../algorithm_prototypes/china81_mechanism_hybrid_20260720/route_pool_sp.py",
+      "kind": "search_semantics"
+    },
+    {
+      "path": "../../algorithm_prototypes/china81_mechanism_hybrid_20260720/epochal_hgs.py",
+      "kind": "search_semantics"
+    },
+    {
+      "path": "../e5_v4_semantics_fingerprint_20260730.py",
+      "kind": "primary_config"
+    }
+  ],
+  "csv_rules": [],
+  "milestones": [],
+  "ai": {
+    "enabled": false,
+    "timeout_seconds": 180
+  }
+}
