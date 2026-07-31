@@ -36,3 +36,7 @@ augmentation rule adds `ceil(0.25 * 40) = 10` EVs per depot.  This keeps the
 E3 comparison about customer ownership and routing, instead of carrying over
 the old administrative-region fleet caps that are incompatible with a newly
 scattered historical portfolio.
+
+`40 CV + 10 EV` is only the completed mechanism-pilot setting.  The formal
+fleet is `FORMAL_PENDING_USER_APPROVAL`; this runner does not promote the
+temporary setting into a formal experiment.

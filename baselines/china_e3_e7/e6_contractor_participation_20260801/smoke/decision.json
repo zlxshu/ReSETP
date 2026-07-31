@@ -1,0 +1,65 @@
+{
+  "account_closure": {
+    "method_B_max_cost_abs_cny": 0.0,
+    "method_B_max_profit_abs_cny": 0.0,
+    "operational_cost_abs_cny": 0.0,
+    "operational_profit_abs_cny": 0.0,
+    "settlement_balance_abs_cny": 0.0,
+    "shapley_efficiency_abs_cny": 0.0
+  },
+  "cross_site_cost_cny_per_customer": 0.0,
+  "instance_id": "cn-prd-150c-01-V2-LOCATIONS",
+  "method_A": {
+    "coalitions_solved": 15,
+    "core_nonempty": false,
+    "grand_profit_cny": 52505.94058047392,
+    "one_core_profit_allocation_cny": null,
+    "operational_profit_cny": {
+      "D_dongguan": 7406.608966094951,
+      "D_foshan": 6450.721938881425,
+      "D_guangzhou": 17632.926510224912,
+      "D_shenzhen": 21015.683165272636
+    },
+    "shapley_core_violations_cny": {
+      "D_dongguan": 134.7582039369945,
+      "D_dongguan+D_foshan": 212.0225886715998,
+      "D_dongguan+D_foshan+D_guangzhou": 106.0112943357999,
+      "D_dongguan+D_foshan+D_shenzhen": 106.01129433579626,
+      "D_dongguan+D_guangzhou": 28.74690960119551,
+      "D_dongguan+D_guangzhou+D_shenzhen": 327.3578489453721,
+      "D_dongguan+D_shenzhen": 28.74690960119551,
+      "D_foshan": 77.2643847346053,
+      "D_foshan+D_guangzhou+D_shenzhen": 442.34548735015414,
+      "D_guangzhou+D_shenzhen": 78.38701839085843
+    },
+    "shapley_cost_share_cny": {
+      "D_dongguan": 1270.649237842044,
+      "D_foshan": 1335.04244585318,
+      "D_guangzhou": 2472.06219543929,
+      "D_shenzhen": 2732.8055403915637
+    },
+    "shapley_in_core": false,
+    "shapley_individually_rational": false,
+    "shapley_profit_cny": {
+      "D_dongguan": 7271.8507621579565,
+      "D_foshan": 6373.457554146819,
+      "D_guangzhou": 17738.93780456071,
+      "D_shenzhen": 21121.694459608436
+    },
+    "transfer_to_shapley_cny": {
+      "D_dongguan": -134.7582039369945,
+      "D_foshan": -77.2643847346053,
+      "D_guangzhou": 106.0112943357999,
+      "D_shenzhen": 106.0112943357999
+    }
+  },
+  "method_B": {
+    "feasible_points": 22,
+    "highest_feasible_theta": 1.0,
+    "route_pool_size": 27,
+    "tested_points": 22,
+    "theta_step": 0.05
+  },
+  "scientific_role": "MECHANISM_SMOKE_NOT_FORMAL_RESULT",
+  "status": "PASS_SMOKE_BOTH_METHODS"
+}

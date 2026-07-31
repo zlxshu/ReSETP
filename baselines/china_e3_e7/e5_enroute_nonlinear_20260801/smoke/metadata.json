@@ -1,0 +1,60 @@
+{
+  "task_id": "E5-ENROUTE-NONLINEAR-PILOT-20260801",
+  "created_at_utc": "2026-07-31T17:53:21.580342+00:00",
+  "status": "TECHNICAL_SMOKE_ONLY",
+  "instance_id": "cn-prd-50c-01-V2-LOCATIONS",
+  "seed": 1,
+  "capacities_run_kwh": [
+    16.0
+  ],
+  "approved_capacity_axis_kwh": [
+    16.0,
+    20.0,
+    24.0,
+    32.0
+  ],
+  "curves": {
+    "L100_control": {
+      "curve_id": "L100_control",
+      "soc_breakpoints": [
+        0.0,
+        1.0
+      ],
+      "relative_powers": [
+        1.0
+      ]
+    },
+    "M17_22KW_NORMAL_PWL": {
+      "curve_id": "M17_22KW_NORMAL_PWL",
+      "soc_breakpoints": [
+        0.0,
+        0.85,
+        0.95,
+        1.0
+      ],
+      "relative_powers": [
+        0.9970674486803518,
+        0.484848484848485,
+        0.1515151515151515
+      ]
+    }
+  },
+  "full_battery_departure": true,
+  "smoke_search_settings": {
+    "archive_candidates_per_view": 2,
+    "hgs_iterations_per_view": 40,
+    "wallclock_seconds_per_view": 120.0,
+    "set_partitioning_seconds": 2.0,
+    "role": "implementation smoke cap, not a scientific threshold"
+  },
+  "unchanged_public_station_power_kw": {
+    "S_guangzhou": 60.0,
+    "S_shenzhen": 60.0
+  },
+  "curve_power_note": "The published M17 curve supplies normalized segment shape. The unchanged China81 public-station rating multiplies that shape.",
+  "sources": [
+    "Montoya et al. (2017), PDF pp.3-4 and 13",
+    "Froger et al. (2019), author manuscript p.4 Fig.1",
+    "Xiao (2021), p.18 for 16/20/24/32 kWh scenarios"
+  ]
+}
