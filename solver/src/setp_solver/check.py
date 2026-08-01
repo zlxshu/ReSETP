@@ -19,6 +19,7 @@ from .cost import (
 from .instance_loader import Instance, Node
 from .prices import DEFAULT_PRICES, PriceParameters
 from .solution import ChargingAction, Route, Solution, physical_vehicle_id
+from .station_copies import physical_station_id
 
 
 # v2026-06-11: expose paper-facing hard-constraint names through Violation.type.
@@ -528,8 +529,9 @@ def _check_station_capacity(
                 )
             )
             continue
+        station_id = physical_station_id(node)
         for slot in slots:
-            occupied[(action.station_id, int(action.charge_day_offset), slot.slot_index)].add(action.vehicle_id)
+            occupied[(station_id, int(action.charge_day_offset), slot.slot_index)].add(action.vehicle_id)
 
     for (station_id, day_offset, slot_index), vehicle_ids in sorted(occupied.items()):
         station = node_lookup[station_id]

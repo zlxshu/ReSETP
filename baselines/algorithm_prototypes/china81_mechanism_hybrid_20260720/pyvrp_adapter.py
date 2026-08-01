@@ -245,6 +245,11 @@ def build_pyvrp_problem(
     ] = {}
     route_type_by_vehicle_type: dict[int, str] = {}
     vehicle_type_index = 0
+    unit_duration_cost = round(
+        float(bundle.prices.route_time_cost_per_hour)
+        * COST_SCALE
+        / 3600.0
+    )
     for depot in depots:
         depot_caps = bundle.fleet_caps_by_depot.get(depot.node_id)
         if depot_caps is None:
@@ -281,7 +286,7 @@ def build_pyvrp_problem(
             tw_early=round(depot.ready_time),
             tw_late=round(depot.due_time),
             unit_distance_cost=1,
-            unit_duration_cost=0,
+            unit_duration_cost=unit_duration_cost,
             profile=cv_road_profiles[depot.node_id],
             name=f"CV@{depot.node_id}",
         )
@@ -315,7 +320,7 @@ def build_pyvrp_problem(
                 tw_early=round(depot.ready_time),
                 tw_late=round(depot.due_time),
                 unit_distance_cost=1,
-                unit_duration_cost=0,
+                unit_duration_cost=unit_duration_cost,
                 profile=ev_road_profiles[depot.node_id],
                 name=f"EV@{depot.node_id}",
             )

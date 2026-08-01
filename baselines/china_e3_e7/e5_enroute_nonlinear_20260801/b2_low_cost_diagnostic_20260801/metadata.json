@@ -1,0 +1,29 @@
+{
+  "task_id": "E5-B2-LOW-COST-DIAGNOSTIC-20260801",
+  "created_at_utc": "2026-08-01T15:17:57.783288+00:00",
+  "formal_result": false,
+  "instance_ids": [
+    "cn-prd-50c-01-V2-LOCATIONS",
+    "cn-prd-100c-02-V2-LOCATIONS"
+  ],
+  "seed": 1,
+  "curve_ids": [
+    "L100_control",
+    "M17_22KW_NORMAL_PWL"
+  ],
+  "charge_amount_strategies": [
+    "just_enough",
+    "max_coverage",
+    "soc_85",
+    "soc_95",
+    "full"
+  ],
+  "battery_capacity_kwh": 77.28,
+  "initial_ev_battery_kwh": 0.0,
+  "search": {
+    "archive_per_view": 2,
+    "hgs_iterations_per_view": 40,
+    "wallclock_seconds_per_view": 120.0,
+    "set_partitioning_seconds": 2.0
+  }
+}

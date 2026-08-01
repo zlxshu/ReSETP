@@ -1,0 +1,64 @@
+{
+  "comparison": [
+    "HISTORICAL_STANDALONE",
+    "JOINT_OPTIMIZED"
+  ],
+  "derivation": "read-only aggregation of existing raw_runs.csv files; no search",
+  "evidence_role": "FORMAL_PANEL_AGGREGATE",
+  "formal_adoption": "USER_APPROVED",
+  "instances": [
+    "cn-prd-150c-01-V2-LOCATIONS",
+    "cn-prd-150c-02-V2-LOCATIONS",
+    "cn-prd-150c-03-V2-LOCATIONS",
+    "cn-prd-200c-01-V2-LOCATIONS",
+    "cn-prd-200c-02-V2-LOCATIONS",
+    "cn-prd-200c-03-V2-LOCATIONS"
+  ],
+  "pairing_unit": "instance_id and seed",
+  "schema": "resetp.e3-capacity-rank-aligned-formal-panel-aggregate.metadata.v1",
+  "seeds": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9,
+    10
+  ],
+  "source_packages": {
+    "cn-prd-150c-01-V2-LOCATIONS": {
+      "artifact_hashes_sha256": "4fdab0d0bb7fad70b80a1585e40af808ff37784cc03d64ad61a008468a940ef6",
+      "path": "baselines/china_e3_e7/e3_scattered_ownership_20260801/formal_panel_solomon_i1_20260801/cn-prd-150c-01-V2-LOCATIONS",
+      "raw_runs_sha256": "8cf92930b26390604b58f3e87896f66fc2b39c14d5266ad00086aad4db99a43d"
+    },
+    "cn-prd-150c-02-V2-LOCATIONS": {
+      "artifact_hashes_sha256": "02b238458f879597591ab862606742899ca4376956636fbcef012f69a47f65e4",
+      "path": "baselines/china_e3_e7/e3_scattered_ownership_20260801/formal_panel_solomon_i1_20260801/cn-prd-150c-02-V2-LOCATIONS",
+      "raw_runs_sha256": "1b463d107a8d11090f81bf707bc2ea4555c9e46f04b48b4db65495868d04107e"
+    },
+    "cn-prd-150c-03-V2-LOCATIONS": {
+      "artifact_hashes_sha256": "8f506c752e19bde58585282359d9340a58a5b284618d4e7277f47bd180e7d98b",
+      "path": "baselines/china_e3_e7/e3_scattered_ownership_20260801/formal_panel_solomon_i1_20260801/cn-prd-150c-03-V2-LOCATIONS",
+      "raw_runs_sha256": "42daaaad7e214d77cb2db87d58c3902313a11565ea71f724582d9d9854db530a"
+    },
+    "cn-prd-200c-01-V2-LOCATIONS": {
+      "artifact_hashes_sha256": "97a515c28dfb6e7159d1ef636094a3e90f71091c869090c4905fb62081e5638e",
+      "path": "baselines/china_e3_e7/e3_scattered_ownership_20260801/formal_panel_solomon_i1_20260801/cn-prd-200c-01-V2-LOCATIONS",
+      "raw_runs_sha256": "86e731a982cfe1e00b11cba2eeeaeb19d592d0d551cc9408c31c7ad26c74a208"
+    },
+    "cn-prd-200c-02-V2-LOCATIONS": {
+      "artifact_hashes_sha256": "53d6174d727a04a4950e98d04f52cbaa148571b9d31bcc1b119f2247a2df168e",
+      "path": "baselines/china_e3_e7/e3_scattered_ownership_20260801/formal_panel_solomon_i1_20260801/cn-prd-200c-02-V2-LOCATIONS",
+      "raw_runs_sha256": "ca192318a2790802072def76e5d1617cd1f4047aa9de98ce2b21cac23c7905bf"
+    },
+    "cn-prd-200c-03-V2-LOCATIONS": {
+      "artifact_hashes_sha256": "8e1daa0dfa4ddc281a5522872a8bc47d619bff4ee53359bf8a854c0efe784e2f",
+      "path": "baselines/china_e3_e7/e3_scattered_ownership_20260801/formal_panel_solomon_i1_20260801/cn-prd-200c-03-V2-LOCATIONS",
+      "raw_runs_sha256": "33feb43d9f355874c336cfe886eecc554242c552f9162a5b33123c9e7791483a"
+    }
+  },
+  "source_panel": "baselines/china_e3_e7/e3_scattered_ownership_20260801/formal_panel_solomon_i1_20260801"
+}

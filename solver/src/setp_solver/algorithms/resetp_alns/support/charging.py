@@ -26,10 +26,57 @@ from setp_solver.instance_loader import Instance, Node
 from setp_solver.prices import DEFAULT_PRICES, PriceParameters
 from setp_solver.search.charging import _curve_aware_action
 from setp_solver.solution import ChargingAction, Route, Solution
+from setp_solver.station_copies import physical_station_id
 from setp_solver.algorithms.resetp_alns.support.carbon_charging import (
     ChargeOption,
     select_charge_option,
 )
+
+
+CHARGE_AMOUNT_STRATEGIES = (
+    "just_enough",
+    "max_coverage",
+    "soc_85",
+    "soc_95",
+    "full",
+)
+
+
+def normalize_charge_amount_strategies(
+    strategies: tuple[str, ...] | list[str],
+) -> tuple[str, ...]:
+    """Return a unique ordered tuple of supported charge targets."""
+
+    normalized = tuple(str(value).strip().lower() for value in strategies)
+    if not normalized or len(set(normalized)) != len(normalized):
+        raise ValueError("charge amount strategies must be non-empty and unique")
+    unknown = set(normalized) - set(CHARGE_AMOUNT_STRATEGIES)
+    if unknown:
+        raise ValueError(f"unknown charge amount strategies: {sorted(unknown)}")
+    return normalized
+
+
+def charge_amount_target_kwh(
+    strategy: str,
+    *,
+    just_enough_kwh: float,
+    max_coverage_kwh: float,
+    capacity_kwh: float,
+) -> float:
+    """Map one shared physical charge target to an end-of-charge energy."""
+
+    name = normalize_charge_amount_strategies((strategy,))[0]
+    capacity = float(capacity_kwh)
+    just_enough = min(capacity, float(just_enough_kwh))
+    if name == "just_enough":
+        return just_enough
+    if name == "max_coverage":
+        return min(capacity, float(max_coverage_kwh))
+    if name == "soc_85":
+        return max(just_enough, 0.85 * capacity)
+    if name == "soc_95":
+        return max(just_enough, 0.95 * capacity)
+    return capacity
 
 
 def solve_charging(
@@ -192,6 +239,7 @@ def repair_route_charging(
     strategy: str = "legacy",
     carbon_weight: float = 1.0,
     depot_charge_window_mode: str = "cyclic_overnight",
+    charge_amount_strategy: str = "just_enough",
 ) -> tuple[Route, list[ChargingAction]]:
     """Insert station visits and actions sufficient for battery feasibility.
 
@@ -210,6 +258,9 @@ def repair_route_charging(
             "unknown depot charging window mode: "
             f"{depot_charge_window_mode}"
         )
+    charge_amount_strategy = normalize_charge_amount_strategies(
+        (charge_amount_strategy,)
+    )[0]
 
     if route.vehicle_type.lower() != "ev":
         return route, []
@@ -234,6 +285,7 @@ def repair_route_charging(
         strategy=strategy,
         carbon_weight=carbon_weight,
         depot_charge_window_mode=depot_charge_window_mode,
+        charge_amount_strategy=charge_amount_strategy,
     )
     if depot_action is not None:
         actions.append(depot_action)
@@ -265,7 +317,7 @@ def repair_route_charging(
         should_insert = failure_offset is not None
         if should_insert:
             coverage_targets = future_targets[: int(failure_offset) + 1] if failure_offset is not None else [target]
-            available_stations = [station for station in stations if station.node_id not in repaired]
+            available_stations = _available_station_visits(stations, repaired)
             if not available_stations and battery + 1e-9 < needed_direct:
                 raise ValueError("No charging stations available for EV charging repair")
             candidate = _best_station_insert(
@@ -285,6 +337,7 @@ def repair_route_charging(
                 route.vehicle_id,
                 strategy=strategy,
                 carbon_weight=carbon_weight,
+                charge_amount_strategy=charge_amount_strategy,
             )
             if candidate is None:
                 if battery + 1e-9 < needed_direct:
@@ -317,6 +370,23 @@ def repair_route_charging(
         current = target
 
     return replace(route, node_sequence=repaired), actions
+
+
+def _available_station_visits(
+    stations: list[Node], repaired: list[str]
+) -> list[Node]:
+    """Expose one unused visit identity per physical station."""
+
+    used = set(repaired)
+    physical_seen: set[str] = set()
+    available: list[Node] = []
+    for station in stations:
+        physical = physical_station_id(station)
+        if station.node_id in used or physical in physical_seen:
+            continue
+        physical_seen.add(physical)
+        available.append(station)
+    return available
 
 
 def _energy_to_next_chargeable(
@@ -495,6 +565,7 @@ def _depot_precharge_action(
     strategy: str = "legacy",
     carbon_weight: float = 1.0,
     depot_charge_window_mode: str = "cyclic_overnight",
+    charge_amount_strategy: str = "just_enough",
 ) -> ChargingAction | None:
     depot_id = route.node_sequence[0]
     depot = node_lookup[depot_id]
@@ -505,7 +576,13 @@ def _depot_precharge_action(
     )
     initial_battery = _price(prices, "initial_ev_battery_kwh")
     route_need = _direct_route_energy_need(depot_id, original_targets, node_lookup, instance, prices)
-    energy_needed = min(max(0.0, battery_cap - initial_battery), max(0.0, route_need - initial_battery))
+    target_charge_level = charge_amount_target_kwh(
+        charge_amount_strategy,
+        just_enough_kwh=route_need,
+        max_coverage_kwh=route_need,
+        capacity_kwh=battery_cap,
+    )
+    energy_needed = max(0.0, target_charge_level - initial_battery)
     if energy_needed <= 1e-9:
         return None
     power_kw = _price(prices, "depot_charge_power_kw")
@@ -708,6 +785,7 @@ def _best_station_insert(
     *,
     strategy: str = "legacy",
     carbon_weight: float = 1.0,
+    charge_amount_strategy: str = "just_enough",
 ) -> tuple[str, ChargingAction, float, float, float] | None:
     best: tuple[float, float, str, ChargingAction, float, float, float] | None = None
     refined: list[tuple[ChargeOption, float, float]] = []
@@ -768,7 +846,20 @@ def _best_station_insert(
         )
         if segment_need_from_station > battery_cap + 1e-9:
             continue
-        target_charge_level = segment_need_from_station
+        max_coverage_need = _direct_route_energy_need(
+            station.node_id,
+            future_targets,
+            node_lookup,
+            instance,
+            prices,
+            remaining_customers=remaining_customers,
+        )
+        target_charge_level = charge_amount_target_kwh(
+            charge_amount_strategy,
+            just_enough_kwh=segment_need_from_station,
+            max_coverage_kwh=max_coverage_need,
+            capacity_kwh=battery_cap,
+        )
         energy_needed = max(0.0, target_charge_level - battery_at_station)
         if energy_needed <= 1e-9:
             continue
@@ -812,6 +903,11 @@ def _best_station_insert(
             + station_to_target
             - _ev_distance(instance, current, target, prices)
         )
+        detour_seconds = (
+            time_to_station
+            + time_station_to_target
+            - _ev_travel_time(instance, current, target, prices)
+        )
         if strategy == "integrated":
             refined.append(
                 (
@@ -823,6 +919,7 @@ def _best_station_insert(
                         energy_kwh=energy_needed,
                         power_kw=float(station.charge_power_kw),
                         detour_m=detour,
+                        detour_seconds=detour_seconds,
                         occupancy_seconds_override=occupancy_sec,
                         start_energy_kwh=action.start_energy_kwh,
                         end_energy_kwh=action.end_energy_kwh,

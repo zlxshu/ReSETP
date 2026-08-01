@@ -21,7 +21,9 @@ from setp_solver.search.charging import _curve_aware_action
 
 from baselines.china_e3_e7.e5_enroute_nonlinear_20260801.runtime_overlay import (
     CAPACITY_SCENARIOS_KWH,
+    E5_P1_TIME_VALUE_CNY_PER_HOUR,
     M17_22KW_NORMAL_PWL,
+    apply_b2_sensitivity_foundation,
     apply_runtime_overlay,
 )
 
@@ -103,6 +105,23 @@ def test_overlay_changes_only_approved_runtime_fields() -> None:
             else original
         )
         assert current == expected
+
+
+def test_b2_foundation_preserves_vehicle_and_adds_p1_r2_only() -> None:
+    base = load_china81_bundle(REPO, INSTANCE_ID)
+    bundle = apply_b2_sensitivity_foundation(
+        base,
+        curve_id=M17_22KW_NORMAL_PWL.curve_id,
+    )
+    assert bundle.instance.vehicle_parameters == base.instance.vehicle_parameters
+    assert bundle.prices.B_battery_kwh == base.prices.B_battery_kwh
+    assert bundle.prices.initial_ev_battery_kwh == base.prices.initial_ev_battery_kwh
+    assert bundle.prices.route_time_cost_per_hour == E5_P1_TIME_VALUE_CNY_PER_HOUR
+    assert len(bundle.instance.nodes) > len(base.instance.nodes)
+    copy = next(
+        node for node in bundle.instance.nodes if node.physical_station_id is not None
+    )
+    assert bundle.charger_scenario_by_node[copy.node_id] == bundle.charger_scenario_by_node[copy.physical_station_id]
 
 
 def test_public_power_reaches_node_and_actual_curve_reference() -> None:

@@ -7,6 +7,7 @@ from types import MappingProxyType
 
 from setp_solver.charging_curve import ChargingCurveSpec, L100_CONTROL
 from setp_solver.china81 import China81Bundle
+from setp_solver.station_copies import physical_station_id, with_station_visit_copies
 
 
 CAPACITY_SCENARIOS_KWH = (16.0, 20.0, 24.0, 28.0, 32.0)
@@ -26,6 +27,47 @@ CURVES = {
     L100_CONTROL.curve_id: L100_CONTROL,
     M17_22KW_NORMAL_PWL.curve_id: M17_22KW_NORMAL_PWL,
 }
+
+E5_P1_TIME_VALUE_CNY_PER_HOUR = 75.0
+
+
+def apply_b2_sensitivity_foundation(
+    bundle: China81Bundle,
+    *,
+    curve_id: str,
+) -> China81Bundle:
+    """Apply approved E5-P1/R2 without changing the original vehicle."""
+
+    if curve_id not in CURVES:
+        raise ValueError(f"unknown E5-B curve: {curve_id}")
+    curve = CURVES[curve_id]
+    instance = with_station_visit_copies(bundle.instance)
+    prices = replace(
+        bundle.prices,
+        route_time_cost_per_hour=E5_P1_TIME_VALUE_CNY_PER_HOUR,
+        charging_curve_id=curve.curve_id,
+        charging_soc_breakpoints=curve.soc_breakpoints,
+        charging_relative_powers=curve.relative_powers,
+    )
+    charger_scenario = {
+        node_id: dict(values)
+        for node_id, values in bundle.charger_scenario_by_node.items()
+    }
+    for node in instance.nodes:
+        physical = physical_station_id(node)
+        if physical != node.node_id:
+            charger_scenario[node.node_id] = dict(charger_scenario[physical])
+    return replace(
+        bundle,
+        instance=instance,
+        prices=prices,
+        charger_scenario_by_node=MappingProxyType(
+            {
+                node_id: MappingProxyType(values)
+                for node_id, values in charger_scenario.items()
+            }
+        ),
+    )
 
 def apply_runtime_overlay(
     bundle: China81Bundle,

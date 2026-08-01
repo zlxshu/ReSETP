@@ -189,6 +189,12 @@ def evaluate(
         prices,
     )
     cost_occ = _charging_occupancy_cost(solution, node_lookup, prices)
+    route_time_seconds = _e5_route_time_seconds(solution, instance, node_lookup, prices)
+    cost_time = (
+        route_time_seconds
+        / 3600.0
+        * _optional_price(prices, "route_time_cost_per_hour")
+    )
     cost_transship = len(solution.cross_site_services) * _price(prices, "cross_site_cost")
 
     e_cv_direct = fuel_liters * _price(prices, "diesel_ef")
@@ -203,7 +209,7 @@ def evaluate(
     # and treats CE=inf as the no-quota baseline with a zero carbon-cost term.
     quota = float(carbon_quota_kg)
     cost_carbon = 0.0 if math.isinf(quota) else (e_total - quota) * _price(prices, "carbon_price")
-    total_cost = cost_fix + cost_km + cost_fuel + cost_elec + cost_occ + cost_transship + cost_carbon
+    total_cost = cost_fix + cost_km + cost_fuel + cost_elec + cost_occ + cost_time + cost_transship + cost_carbon
 
     return {
         "total_cost": total_cost,
@@ -212,6 +218,7 @@ def evaluate(
         "cost_fuel": cost_fuel,
         "cost_elec": cost_elec,
         "cost_occ": cost_occ,
+        "cost_time": cost_time,
         "cost_transship": cost_transship,
         "cost_carbon": cost_carbon,
         "E_total": e_total,
@@ -224,6 +231,7 @@ def evaluate(
         "distance_ev": distance_ev,
         "fuel_liters": fuel_liters,
         "electricity_kwh": electricity_kwh,
+        "route_time_hours": route_time_seconds / 3600.0,
         "depot_charging_kwh": _charging_energy_by_node_type(solution, node_lookup, {"d"}),
         "station_charging_kwh": _charging_energy_by_node_type(solution, node_lookup, {"f"}),
         "carbon_quota_kg": quota,
@@ -1205,6 +1213,31 @@ def _charging_occupancy_cost(
     return total
 
 
+def _e5_route_time_seconds(
+    solution: Solution,
+    instance: Instance,
+    node_lookup: dict[str, Node],
+    prices: PriceParameters | dict[str, float] | Any,
+) -> float:
+    travel = sum(
+        instance.arc_metrics(
+            left,
+            right,
+            route.vehicle_type,
+            fallback_speed_mps=_price(prices, "v_speed_ms"),
+        )[1]
+        for route in solution.routes
+        for left, right in zip(route.node_sequence, route.node_sequence[1:])
+    )
+    enroute_charge = sum(
+        float(action.occupancy_minutes) * 60.0
+        for action in solution.charging_actions
+        if node_lookup.get(action.station_id) is not None
+        and node_lookup[action.station_id].node_type.lower() == "f"
+    )
+    return travel + enroute_charge
+
+
 def _charging_energy_by_node_type(
     solution: Solution,
     node_lookup: dict[str, Node],
@@ -1246,3 +1279,12 @@ def _price(prices: PriceParameters | dict[str, float] | Any, name: str) -> float
     if isinstance(prices, dict):
         return float(prices[name])
     return float(getattr(prices, name))
+
+
+def _optional_price(
+    prices: PriceParameters | dict[str, float] | Any,
+    name: str,
+) -> float:
+    if isinstance(prices, dict):
+        return float(prices.get(name, 0.0))
+    return float(getattr(prices, name, 0.0))

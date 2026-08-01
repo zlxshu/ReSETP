@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Candidate E3 pilot: align public owner labels with existing depot capacity."""
+"""E3 capacity-rank-aligned ownership experiment and formal panel runner."""
 
 from __future__ import annotations
 
@@ -214,8 +214,13 @@ def run_arm(
 def _report(
     decision: dict[str, Any], info: dict[str, Any], rows: list[dict[str, Any]]
 ) -> str:
+    title = (
+        "# E3 capacity-rank-aligned formal panel member"
+        if decision["formal_adoption"] == "USER_APPROVED"
+        else "# E3 capacity-rank-aligned candidate pilot"
+    )
     lines = [
-        "# E3 capacity-rank-aligned candidate pilot",
+        title,
         "",
         f"**状态：{decision['status']}。**",
         "",
@@ -368,7 +373,11 @@ def run_pilot(
         REPO / "baselines/china_e3_e7/e3e6_gates_01_20260729/gate1_d2a/fleet_caps.csv"
     )
     metadata = {
-        "schema": "resetp.e3-capacity-rank-aligned-candidate.v1",
+        "schema": (
+            "resetp.e3-capacity-rank-aligned-formal-panel-member.v1"
+            if formal
+            else "resetp.e3-capacity-rank-aligned-candidate.v1"
+        ),
         "created_at_utc": datetime.now(UTC).isoformat(),
         "evidence_role": "FORMAL_PANEL_MEMBER" if formal else "CANDIDATE_PILOT",
         "seeds": list(seeds),

@@ -1,0 +1,18 @@
+{
+  "aggregation_command": "python3 baselines/china_e3_e7/e4_joint_routing_20260801/aggregate_formal_panel.py --panel baselines/china_e3_e7/e4_joint_routing_20260801/formal_panel_20260801",
+  "aggregation_rule": "concatenate all source rows and pair by instance_id plus seed",
+  "aggregation_script_sha256": "3d729f559d8a38b99552540d911a4ba554b2dafa7ed7c6e08b8525dab887b30a",
+  "created_at_utc": "2026-08-01T14:26:03.344303+00:00",
+  "percentage_rule": "simple mean of 30 paired percentage changes",
+  "route_change_rule": "typed_path_hash differs from paired COST_ONLY",
+  "route_search_executed": false,
+  "schema": "resetp.e4-formal-panel-metadata.v1",
+  "solver_reruns": 0,
+  "source_artifacts_all_match": true,
+  "source_member_manifest_sha256": {
+    "cn-prd-50c-01-V2-LOCATIONS": "8ec548577bd7c4e4792f719548aa9cd82c70ae20ac8eca39b7b54454c65cd13e",
+    "cn-prd-50c-02-V2-LOCATIONS": "0a950fc47f44bf9425107c8d98b2d9e243fc569c13a1bf2e08f6e0e75e8e2aa8",
+    "cn-prd-50c-03-V2-LOCATIONS": "e2239714ddaf7547b7c07bf673c80e6f92d1ec6e159555bbf5115d9cfd1379df"
+  },
+  "source_members_modified": false
+}

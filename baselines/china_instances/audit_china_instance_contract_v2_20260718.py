@@ -138,12 +138,12 @@ def audit_instance(
             errors.append(_error("SERVICE_TIME_NOT_WITHIN_WINDOW", node_id))
 
     window_mode = str(metadata.get("customer_contract", {}).get("service_window_mode", ""))
-    if window_mode == "city_06_22":
+    if window_mode != "city_06_22":
+        errors.append(_error("TIME_WINDOW_MODE_UNDECLARED", window_mode or "missing"))
+    else:
         for node in customers:
             if float(node.get("ready_time", -1)) < CITY_START_SECONDS or float(node.get("due_time", -1)) > CITY_END_SECONDS:
                 errors.append(_error("CITY_WINDOW_OUTSIDE_06_22", str(node.get("node_id", "?"))))
-    elif window_mode != "regional_24h":
-        errors.append(_error("TIME_WINDOW_MODE_UNDECLARED", window_mode or "missing"))
     if len(customers) >= 2 and len({round(width, 6) for width in widths}) < 2:
         errors.append(_error("TIME_WINDOW_WIDTH_NOT_VARIED", "all customer windows have the same width"))
     metrics.update(

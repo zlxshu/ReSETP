@@ -2,33 +2,21 @@
 
 from __future__ import annotations
 
-import itertools
 import math
 from dataclasses import replace
 from types import MappingProxyType
-from typing import Any, Iterable
+from typing import Any
 
 import numpy as np
-from scipy.optimize import Bounds, LinearConstraint, linprog, milp
+from scipy.optimize import Bounds, LinearConstraint, milp
 
+from e6_cooperative_game import Coalition, coalitions, core_allocation, core_violations, nucleolus, shapley
 from route_pool_sp import RoutePoolRecord
 from setp_solver.china81 import China81Bundle
 from setp_solver.china81_completion import annotate_cross_site_services, exact_china81_score
 from setp_solver.instance_loader import Instance, RoadProfileMatrices
 from setp_solver.profit import calculate_depot_profits
 from setp_solver.solution import ChargingAction, Route, Solution
-
-
-Coalition = tuple[str, ...]
-
-
-def coalitions(members: Iterable[str]) -> tuple[Coalition, ...]:
-    ordered = tuple(sorted(members))
-    return tuple(
-        group
-        for size in range(1, len(ordered) + 1)
-        for group in itertools.combinations(ordered, size)
-    )
 
 
 def subset_bundle(bundle: China81Bundle, members: Coalition) -> China81Bundle:
@@ -100,51 +88,6 @@ def coalition_revenue(bundle: China81Bundle) -> float:
         if node.node_id in customers
     )
     return demand * float(bundle.prices.revenue_per_kg)
-
-
-def shapley(values: dict[Coalition, float], members: Coalition) -> dict[str, float]:
-    n = len(members)
-    output = {member: 0.0 for member in members}
-    for member in members:
-        others = tuple(item for item in members if item != member)
-        for size in range(n):
-            weight = math.factorial(size) * math.factorial(n - size - 1) / math.factorial(n)
-            for group in itertools.combinations(others, size):
-                base = tuple(sorted(group))
-                joined = tuple(sorted((*group, member)))
-                output[member] += weight * (values[joined] - values.get(base, 0.0))
-    return output
-
-
-def core_allocation(
-    values: dict[Coalition, float], members: Coalition
-) -> tuple[bool, dict[str, float] | None]:
-    proper = [group for group in coalitions(members) if len(group) < len(members)]
-    matrix = np.array(
-        [[-1.0 if member in group else 0.0 for member in members] for group in proper]
-    )
-    result = linprog(
-        np.zeros(len(members)),
-        A_ub=matrix,
-        b_ub=np.array([-values[group] for group in proper]),
-        A_eq=np.ones((1, len(members))),
-        b_eq=np.array([values[members]]),
-        bounds=[(None, None)] * len(members),
-        method="highs",
-    )
-    if not result.success:
-        return False, None
-    return True, {member: float(result.x[index]) for index, member in enumerate(members)}
-
-
-def core_violations(
-    allocation: dict[str, float], values: dict[Coalition, float], members: Coalition
-) -> dict[Coalition, float]:
-    return {
-        group: values[group] - sum(allocation[member] for member in group)
-        for group in coalitions(members)
-        if values[group] - sum(allocation[member] for member in group) > 1e-7
-    }
 
 
 def route_profit(record: RoutePoolRecord, bundle: China81Bundle) -> float:

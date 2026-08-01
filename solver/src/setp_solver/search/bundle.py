@@ -58,6 +58,11 @@ def load_search_bundle(bundle_dir: str | Path) -> SearchBundle:
             # static route-count upper bound so depot overnight charging is
             # capacity-checked but not made artificially scarce.
             station_chargers=_station_chargers(row, customer_count),
+            physical_station_id=(
+                None
+                if row.get("physical_station_id") is None
+                else str(row["physical_station_id"])
+            ),
         )
         for row in raw_nodes
     ]

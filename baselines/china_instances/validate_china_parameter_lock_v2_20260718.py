@@ -164,8 +164,11 @@ def validate_order_contract(
     witness = contract.get("witness_contract", {})
     if witness.get("algorithm_search_evaluations") != 0 or witness.get("regeneration_after_failure_allowed") is not False:
         errors.append(_error("ORDER_ATTRIBUTE_WITNESS_GOVERNANCE_INVALID", repr(witness)))
-    if customer_contract.get("regional_24h_extension_allowed") is not False:
-        errors.append(_error("ORDER_ATTRIBUTE_24H_EXTENSION_NOT_DISABLED", "formal urban family is 06:00--22:00"))
+    if (
+        customer_contract.get("urban_service_start_hour") != 6
+        or customer_contract.get("urban_service_end_hour") != 22
+    ):
+        errors.append(_error("ORDER_ATTRIBUTE_SERVICE_WINDOW_INVALID", "formal urban family is 06:00--22:00"))
     warnings.append(
         {
             "code": "ORDER_ATTRIBUTE_DESIGN_NOT_APPLIED",

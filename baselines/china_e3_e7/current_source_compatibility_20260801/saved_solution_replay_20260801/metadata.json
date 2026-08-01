@@ -1,0 +1,43 @@
+{
+  "created_at_utc": "2026-08-01T16:14:22.745456+00:00",
+  "diagnostic_scope": [
+    "E2",
+    "E4",
+    "E6"
+  ],
+  "e2_halt_root_cause": {
+    "code": "E2_LOCKED_140_41KWH_VS_CURRENT_77_28KWH_CONTRACT_DRIFT",
+    "current_battery_kwh": 77.28,
+    "current_curve_min_duration_abs_error_seconds": 36.94538214829845,
+    "formal_result_changed": false,
+    "halt_solution_count": 6,
+    "locked_battery_kwh": 140.41,
+    "locked_charging_curve_sha256": "158cc9f9e50645692bfb0ceb218745e3c73d58dd5a6e44282a0bda7f0edfec70",
+    "locked_china81_commit": "e99901854ee10af77d42c3e5e152ef79a806c8d1",
+    "locked_china81_sha256": "df082b6a0e108aa5462b74048fcca7a63fdb7eaafb9e61f2dcdd787e3d9fcedd",
+    "not_attributed_to_e5": true,
+    "old_curve_max_duration_abs_error_seconds": 0.0,
+    "witness_repair_performed": false
+  },
+  "formal_result": false,
+  "frozen_parameters_reused": true,
+  "purpose": "test current E5 default-zero and no-copy compatibility against saved formal solutions",
+  "schema": "resetp.current-source-saved-solution-replay.metadata.v1",
+  "source_hashes": {
+    "baselines/algorithm_prototypes/china81_vs_opensource_20260727/raw_runs.json": "4291ee24707bcf834c6cf6ff6b308a14eab4b4a6a3011681408935e8693e070c",
+    "baselines/china_e3_e7/current_source_compatibility_20260801/run_saved_solution_replay.py": "aa54ae6835366a58a39950156d5a19b168b81e869fc7e9d67e9b7076956644a7",
+    "baselines/china_e3_e7/e4_joint_routing_20260801/formal_panel_20260801/raw_runs.csv": "2896b504633f1d1d1ac19610cc258c8f8810dd045a059a79eb9cddd645c4ca83",
+    "baselines/china_e3_e7/e4_joint_routing_20260801/joint_soc_wrapper.py": "bb3b3f97abb4f2a545adfd3f72c55ca0ce71d9b82fa9a2aff3c841d71ea74f5b",
+    "baselines/china_e3_e7/e4_joint_routing_20260801/run_probe.py": "7cb7c1f7692c5f8ac80e44cfae91f4a7e2b862f8a16b767db4831e0933b113a6",
+    "baselines/china_e3_e7/e6_contractor_participation_20260801/e6_methods.py": "0adaaf2b26860d3211ad775d46f56c1cdb1e0e4de538a1c3f6133f282b7031e6",
+    "baselines/china_e3_e7/e6_contractor_participation_20260801/formal_e6a_panel_20260801/panel_raw_runs.csv": "55860dc8a0ea34c946a754a302d3eaddc780aa851346346c6d1cac91e8a3e3f5",
+    "baselines/china_e3_e7/e6_contractor_participation_20260801/run_pilot06_direct_15.py": "ec749c79687068c673c69accdedac91aade605fbd7ae3716e2422c6d52fdbc18",
+    "solver/src/setp_solver/charging_curve.py": "158cc9f9e50645692bfb0ceb218745e3c73d58dd5a6e44282a0bda7f0edfec70",
+    "solver/src/setp_solver/check.py": "86b813152b2fc7f89500468cc3d73178cb1bdafe9dc659852b437c5fdb07702b",
+    "solver/src/setp_solver/china81.py": "c70133cf59e33f6331a1fafb95188430615472974c2a1e3d2e838f822a09e79e",
+    "solver/src/setp_solver/cost.py": "7f59a47a3aab9b582b17e29d7e9dc13f16f892fc7b5ae7b54eec84412aa77333",
+    "solver/src/setp_solver/search/evaluation.py": "c7215263c39d1d5a1429b41ca8ac40d950dbdf2bdc288337e56fbe9733406fc3"
+  },
+  "tolerance_absolute": 1e-06,
+  "zero_search": true
+}

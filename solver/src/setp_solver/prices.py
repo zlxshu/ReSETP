@@ -144,6 +144,8 @@ class PriceParameters:
     carbon_price_low: float = carbon_price_low
     diesel_ef: float = diesel_ef
     vehicle_fixed_cost: float = vehicle_fixed_cost
+    # Disabled by default. E5-P1 sets 75 CNY/h only in its sensitivity bundle.
+    route_time_cost_per_hour: float = 0.0
     occupancy_fee: float = occupancy_fee
     cross_site_cost: float = cross_site_cost
     revenue_per_kg: float = revenue_per_kg

@@ -1,0 +1,37 @@
+{
+  "created_at_utc": "2026-08-01T13:33:35.692197+00:00",
+  "dynamic_order_share": 0.2,
+  "horizon": "06:00--22:00",
+  "instances": [
+    "cn-prd-50c-01-V2-LOCATIONS",
+    "cn-prd-100c-02-V2-LOCATIONS",
+    "cn-prd-150c-01-V2-LOCATIONS"
+  ],
+  "maximum_wait_minutes": 30,
+  "policies": [
+    "per_order",
+    "fixed_30_minutes",
+    "hybrid_two_mean_orders_or_30_minutes"
+  ],
+  "route_search_executed": true,
+  "schema": "resetp.e7-o1-low-cost.v1",
+  "source_sha256": {
+    "policy.py": "af0f2b30367a2a88da20961a655c4a5bf39168c870c4c69ca627dc10d12e7f22",
+    "run_low_cost.py": "dd9d9f5be992757406a84571aead4dd51ca3e6459574814148123367bf82356f",
+    "run_qiu_accept_all_diagnostic.py": "6da084044b159e280e322e58399047a48fbd14808ce8822f8cb8b9b7de9a652b"
+  },
+  "stage_budget_role": "diagnostic_only_not_formal",
+  "stage_evaluations": 8,
+  "stream_seeds": [
+    1,
+    2,
+    3
+  ],
+  "threshold_formula": "2 * mean demand of all customers in the instance",
+  "threshold_kg_by_instance": {
+    "cn-prd-100c-02-V2-LOCATIONS": 559.82,
+    "cn-prd-150c-01-V2-LOCATIONS": 536.1466666666666,
+    "cn-prd-50c-01-V2-LOCATIONS": 488.92
+  },
+  "wall_seconds": 56.97038254106883
+}

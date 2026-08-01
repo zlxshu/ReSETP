@@ -1,0 +1,335 @@
+{
+  "accounting_function": "setp_solver.profit.calculate_depot_profits",
+  "allocation_recomputed": false,
+  "created_at_utc": "2026-08-01T14:21:09.685295+00:00",
+  "formal_run_source_hashes": {
+    "baselines/algorithm_prototypes/china81_mechanism_hybrid_20260720/route_pool_sp.py": "976ef21d4952b3c488300de9a8d3e351411305d26f1e2601ca17c15185d462c1",
+    "baselines/china_e3_e7/e3_scattered_ownership_20260801/run_e3_capacity_rank_aligned.py": "6fb8687808c6d60a4679b6e80458b2d2f82cd3c1602516b77e2637a54aecd5ba",
+    "baselines/china_e3_e7/e3_scattered_ownership_20260801/run_e3_scattered_ownership.py": "5cf2554c3c7db7ef78d32d68f609ae1b6637a635242022e6f943c326c98bc336",
+    "baselines/china_e3_e7/e3_scattered_ownership_20260801/shared_runtime.py": "7661e904d6ebe3c43e6f5fdf26537e9302610e33bd532ed0efb56eeda8a72459",
+    "baselines/china_e3_e7/e3_scattered_ownership_20260801/source_p_sequences.csv": "ba1226f149b04678487879640d5123413a35fe3b5bf37715127d3c76f70283c3",
+    "baselines/china_e3_e7/e3e6_gates_01_20260729/gate1_d2a/fleet_caps.csv": "48fcf934e480504d22981e850e24ce0daa7ff11b2f73d4f806b6396cd9fcd367",
+    "baselines/china_e3_e7/e6_contractor_participation_20260801/e6_methods.py": "7b51b2b644b880935c1e8f912b56d4a031de134eb0250e7820bba3e55f001449",
+    "solver/src/setp_solver/check.py": "9c81e254e05591667c8225965bb9d0ba4e8bbfc53eb0f8c61ffdb4325a1403a8",
+    "solver/src/setp_solver/cost.py": "2717b4b4de39bb4c2a9a1bda602f4420cb3e3b1e87faa83678dfa64f88fc80be",
+    "solver/src/setp_solver/search/evaluation.py": "c7215263c39d1d5a1429b41ca8ac40d950dbdf2bdc288337e56fbe9733406fc3"
+  },
+  "input_panel": "baselines/china_e3_e7/e6_contractor_participation_20260801/formal_e6a_panel_20260801",
+  "input_panel_artifact_hashes_sha256": "e0de7aa95c189b9230c7a6bafc59b13b131a204f2d8d1c28a7e4962e26a8131b",
+  "input_units": {
+    "units/cn-prd-150c-01-V2-LOCATIONS/seed_01": {
+      "grand_solution_sha256": "6fae15ed93a380e738751cf8e2e04c3b663bcba12ec3b0b3d41288e3894d2f20",
+      "settlement_results_sha256": "2bac4aee48bcd08f000d222b22e04b50ef121353f6af55864c351e67ffcc5a97",
+      "unit_artifact_hashes_sha256": "07d552a0cf93bbfe78b3af23fed9d894e9d03532496955ea5b46ea255c904fa1"
+    },
+    "units/cn-prd-150c-01-V2-LOCATIONS/seed_02": {
+      "grand_solution_sha256": "68b8f06c15174e2f330bcfcd0459d75649c948366c2b6baa0c3952e016f2b7e2",
+      "settlement_results_sha256": "17ea0b94201ef299d1bc6cdeac923dcd33b2f6555dfc6970af8f97a4ae135e78",
+      "unit_artifact_hashes_sha256": "f24cddcc756d02f3b9227751e1c802dc2c81fc18a76f564d459fc369d0affe8f"
+    },
+    "units/cn-prd-150c-01-V2-LOCATIONS/seed_03": {
+      "grand_solution_sha256": "a48eb0162ba661489d5b19a4d2d22df2d4d33431e4e37e023e3832bac51f8460",
+      "settlement_results_sha256": "376b4cf1ae6f49446011413951750926366e7fe5926541b51bad37a6c7a5145d",
+      "unit_artifact_hashes_sha256": "f2e98ccb7aaa1b0df472c25e54992dc19177bac18046d135c19adda6c34a5d2d"
+    },
+    "units/cn-prd-150c-01-V2-LOCATIONS/seed_04": {
+      "grand_solution_sha256": "cb9ad448f77edc741357d2e889aa177cbedc941312b7cd6d36b7526d6baece0c",
+      "settlement_results_sha256": "92f2e02c3e949445a0b1cfb1aeb7ca7da83b709513f5fc12deea5f797d29e74e",
+      "unit_artifact_hashes_sha256": "39d3692579aa54324e353c7b4191b680d2164c4031e30c055c0b77935e879bd3"
+    },
+    "units/cn-prd-150c-01-V2-LOCATIONS/seed_05": {
+      "grand_solution_sha256": "96245e0ac9409b13df54f6f12696c1473370dff5c6fbab3c5bb98dbd6129ba69",
+      "settlement_results_sha256": "cc7d296830df7df871e96df6ae6d653f98c213ab0fbbab2c878681235def509b",
+      "unit_artifact_hashes_sha256": "51396b1fe2fd27eca4be4803ee6d112df6fc65a98104b6c9dc15dfa56ccef933"
+    },
+    "units/cn-prd-150c-01-V2-LOCATIONS/seed_06": {
+      "grand_solution_sha256": "4dc3fdd8f03024b76b11e4a64515dd1f841156c7339adaafaeabc1db0188041d",
+      "settlement_results_sha256": "6ebe11287ce517a1bee7d54a54de73e903c27f0f7982cefe8d16b7f6e5925efb",
+      "unit_artifact_hashes_sha256": "e969258b57992718eaeb16ae90ec80d1f3675787bf71a469121771464174a7f8"
+    },
+    "units/cn-prd-150c-01-V2-LOCATIONS/seed_07": {
+      "grand_solution_sha256": "859d8a7c5ec740cfa4345428c2b7aa714383b72ae2b34b410d025055be316b3d",
+      "settlement_results_sha256": "cf987ef582cbf8716dc893f52f0f4602b17eb3627e69373ccdb3905a9f4467b0",
+      "unit_artifact_hashes_sha256": "aa0229d6e387399e142bb7074b5d243d1d959551cf3b6a05158a4e3c8eeec170"
+    },
+    "units/cn-prd-150c-01-V2-LOCATIONS/seed_08": {
+      "grand_solution_sha256": "bd950eb3ad616224c405bc8457bce3b042f6d622a51337977194ceff36ed046d",
+      "settlement_results_sha256": "3f7c4d7f62c9e00b44ce3e31712b465e1ddaa3b165d4f2f1d0d9f40ff98d9591",
+      "unit_artifact_hashes_sha256": "2294eb48f4890f9f08b16fe573bc8fd5d14b082dc330958d0c0619ce51907830"
+    },
+    "units/cn-prd-150c-01-V2-LOCATIONS/seed_09": {
+      "grand_solution_sha256": "12c2145c258def8c6dc52071c9212f1dc4223cccebddbb6988cfa9b5eb51270c",
+      "settlement_results_sha256": "58b6a2ff73fd367fce576c0d9dd9601f42d9500c2e58a0551f4c225b50aee60d",
+      "unit_artifact_hashes_sha256": "97853f657b693b8835e27d4dcbe88759a6a6da7fb97063f786a9a88978e83878"
+    },
+    "units/cn-prd-150c-01-V2-LOCATIONS/seed_10": {
+      "grand_solution_sha256": "81c3ea706582a9d22f95faab2f16b73164461a8e8dfb339d99b0dd445ab2a829",
+      "settlement_results_sha256": "ebe1ec08d195899c3f625181a9d97cc341de6b70dc0bb5453271e7127053ee98",
+      "unit_artifact_hashes_sha256": "9822e621a4c0ecfc4cb8d64555c03683cee81704a8a670f4ef038ef7d590a234"
+    },
+    "units/cn-prd-150c-02-V2-LOCATIONS/seed_01": {
+      "grand_solution_sha256": "c4acb0eaa32f6f33c8ad3b982668d8e8a974b5bfe4c912d0952aec4008686fee",
+      "settlement_results_sha256": "0a8e10e9ac4c10e245acaca9303ea3ffb47b7535715f42efc9376011906dbec2",
+      "unit_artifact_hashes_sha256": "a0afeeba25d70b2a842bb62b35f2d0cddd4e8ba39fcee04a5a40c9270662a37f"
+    },
+    "units/cn-prd-150c-02-V2-LOCATIONS/seed_02": {
+      "grand_solution_sha256": "e8299570ea5bf48e09ef6c9b1c02b512b1bac9e02da3a3a249faaaa05a2b3925",
+      "settlement_results_sha256": "0a9a8e39eef4f7193c5e85600bdb63d11f21e4bc3089002a4cb76d16117f7951",
+      "unit_artifact_hashes_sha256": "49e98a9072bec0ed1421c0be90dab4718b9126413bcb1f08439cf9eb0c21f5fa"
+    },
+    "units/cn-prd-150c-02-V2-LOCATIONS/seed_03": {
+      "grand_solution_sha256": "093646826c3adc491742654e61d6bef1153cd2e5233faf48b25e5e82a19dd72a",
+      "settlement_results_sha256": "ae87fce643611069aca1f2609ce8fb77141bdbc31799f1e542e3cff0c1e17214",
+      "unit_artifact_hashes_sha256": "4c5dd4db2bf076d82fcf8f72f7e26050fc184330d969d844f7d518baf933b0ca"
+    },
+    "units/cn-prd-150c-02-V2-LOCATIONS/seed_04": {
+      "grand_solution_sha256": "5026f862153cdb139d4757291cfe0426260f45a7b56cac7be4e9cc8fbeaee891",
+      "settlement_results_sha256": "72b362deed4ef66c4d54538c955f893996834965fb95fcb247cba5fe3e86d577",
+      "unit_artifact_hashes_sha256": "5418ac2a236363ed8a7d0ab27b0b0abd408ab4b54cb44ac49d31403f23ecacf2"
+    },
+    "units/cn-prd-150c-02-V2-LOCATIONS/seed_05": {
+      "grand_solution_sha256": "2a02b0f2b86047f94fedd089d09e62a048c12349853a3e98765cd8fc74353e2a",
+      "settlement_results_sha256": "88859ffcf7eb2201ba8242a772c7042a7398be57235d020d78c10747ff6b2d29",
+      "unit_artifact_hashes_sha256": "0e0013a440a59aee1ccba8c1322e91d17eaa27b977f727a966f72afb7175cf2b"
+    },
+    "units/cn-prd-150c-02-V2-LOCATIONS/seed_06": {
+      "grand_solution_sha256": "d1ad6caeec8bee3335dbfa20273122003a9973777a80a261948659eb703fe48d",
+      "settlement_results_sha256": "73b650ffc9368fe5a75595cdaebd9d61fe62f80a4885d56876a5e9021fea2d3c",
+      "unit_artifact_hashes_sha256": "9dd908f736df54ceda57c988b340a848cce4e847cd55f0cb2624e249a43d8db9"
+    },
+    "units/cn-prd-150c-02-V2-LOCATIONS/seed_07": {
+      "grand_solution_sha256": "c39e1b43ee1171b906aad34f1496e056f81c3b64fd170229e846a8e4e0671548",
+      "settlement_results_sha256": "411e888876706ee030165219add98ea39df56900aa62dd471ee13233c6717dc2",
+      "unit_artifact_hashes_sha256": "d8fe6d783b1f1101c94c347209d9a5fe5bf3c313b526b89bbf4d126dfb57729e"
+    },
+    "units/cn-prd-150c-02-V2-LOCATIONS/seed_08": {
+      "grand_solution_sha256": "b21835a348b4cb0286a981add9694e9198c83fe9277d9c2022d84c9de3a3cf66",
+      "settlement_results_sha256": "8baa71e1d6e5762ca12b5ed353899621457b137b22b6d5507bc2c67894190950",
+      "unit_artifact_hashes_sha256": "a5cad0df1a22918c194670ef691d4ea89882f68fe92f21a7852c46f85d9f5ae5"
+    },
+    "units/cn-prd-150c-02-V2-LOCATIONS/seed_09": {
+      "grand_solution_sha256": "64f1da95f24673d42f7456bdf18a002240a0daa8d5ba7688a2d015039bd3e637",
+      "settlement_results_sha256": "377e1ba9166924bb4aebdf13dc72c170046373240f1bc7a55c8f79702e20952d",
+      "unit_artifact_hashes_sha256": "a965b7f88aa836c0ce24046f25289a22374b9e81493584a526b4dcbf0acc7acf"
+    },
+    "units/cn-prd-150c-02-V2-LOCATIONS/seed_10": {
+      "grand_solution_sha256": "ce8b29686077508ad080bf748d25bb068aaa5567ba520d75549dd9673251030f",
+      "settlement_results_sha256": "dece25a6276fe288e323a1e603246480d562bed1a529f67399f1558e327869dd",
+      "unit_artifact_hashes_sha256": "c1765079b9010e308c36df72eabb800316c6bac729a778c23a5b719bb5a451c5"
+    },
+    "units/cn-prd-150c-03-V2-LOCATIONS/seed_01": {
+      "grand_solution_sha256": "1175541b6167101330dfc781a4c8ca063813e462136efba58623b81dd0557fe3",
+      "settlement_results_sha256": "66ae53a0b2690100368a96aca247a43a53f82c495bf1392495eab7b5ad5430a8",
+      "unit_artifact_hashes_sha256": "61263563a6716a2a81680847af8ef2d93fc3ff19dca22cb50bddb557526bee07"
+    },
+    "units/cn-prd-150c-03-V2-LOCATIONS/seed_02": {
+      "grand_solution_sha256": "3f4f7328b05d5b72c50123d3973296596ebd17c549df1ff9785e1c1bc5ae4323",
+      "settlement_results_sha256": "19ed602d3eb0fa5767c161ac3a76e56829c1f250bd847cd0af10fb3cac0c7a3b",
+      "unit_artifact_hashes_sha256": "56f1cd6464ef9b7cf034c2ca8707103ea1597267ea66414acd13ac394a664275"
+    },
+    "units/cn-prd-150c-03-V2-LOCATIONS/seed_03": {
+      "grand_solution_sha256": "4a3e8774b5501fed9340d1cec7670997166801046a89377b46db6d72a6f4d67c",
+      "settlement_results_sha256": "00aa733a31ded0db215fa5c5eea42f46d108e9ce5440eb1f989ada25b284b502",
+      "unit_artifact_hashes_sha256": "72adfd683b07e8acf9ab3bbde8efa00c6fcc9888559181e6899a5d5b4999e093"
+    },
+    "units/cn-prd-150c-03-V2-LOCATIONS/seed_04": {
+      "grand_solution_sha256": "163181a2c43222af38269bcc0804a04c5358cbf6d761449f829ae9beafc23482",
+      "settlement_results_sha256": "1e86252b4ec46d5cd1bbfd1b780ab8e18be803cf3e3403900c9aaa406971fa58",
+      "unit_artifact_hashes_sha256": "80c469252e7d7e2e5c2fb485ce218be55867b6f6f3d6e3006b0d6aad6a2d9c14"
+    },
+    "units/cn-prd-150c-03-V2-LOCATIONS/seed_05": {
+      "grand_solution_sha256": "2e9707b9df2bc49012852cc9cad08383d7e46a7523b8fda6f8f35d0b7e45bfdf",
+      "settlement_results_sha256": "30fd4fb83dea6437e7b42372217203da76924db98f9b30b7055227c8e810b01e",
+      "unit_artifact_hashes_sha256": "c8178c560a1d8b7dac0e47ffe6da49a3f06886416172dd9a59fbb04402d5fbfd"
+    },
+    "units/cn-prd-150c-03-V2-LOCATIONS/seed_06": {
+      "grand_solution_sha256": "a919fec113b92f217bd25e1e27b2a5858f911250f6d26ca6f242cdde911da0b6",
+      "settlement_results_sha256": "4d75bac66910beb7d33a1625cd65c19afbeb9e42a4c63e9ce5a41a93eabed971",
+      "unit_artifact_hashes_sha256": "5d37f5da08d27d2d08da3685049aa71fd7096b862c69ab30ff2a5825805c3eb7"
+    },
+    "units/cn-prd-150c-03-V2-LOCATIONS/seed_07": {
+      "grand_solution_sha256": "b2dbd86698de6e8a4a6b43834866766348934f9132074ea89df8d66c5c11ab49",
+      "settlement_results_sha256": "487d3fd630d9dabaab32911fdd99c369bf761dc863725e73ad12bb37effd4cf4",
+      "unit_artifact_hashes_sha256": "c58a2c9e6c2921d4d2e3d8c65b24451b63250414a10e3140e84db56913e4f237"
+    },
+    "units/cn-prd-150c-03-V2-LOCATIONS/seed_08": {
+      "grand_solution_sha256": "d72f60fd7c5ddeedde268a86cfa57d323c20089cf1ad58fc9244f9c6e7818463",
+      "settlement_results_sha256": "0adad84ea8fb8303d235a644b7b21f34d7e96189290ff375abcd9c8f5839bd4a",
+      "unit_artifact_hashes_sha256": "9fd6285630478081984f3257f130c3727fea5e35e76abb6176adc7dcba311450"
+    },
+    "units/cn-prd-150c-03-V2-LOCATIONS/seed_09": {
+      "grand_solution_sha256": "9c5a386fc21d4567a9ef01b60cc76ca999314f4ba90d8912e35b4aebb261f7c5",
+      "settlement_results_sha256": "cbb09b9e2b3b3d1bc61ab050c6b0fe537592463a589ebf218723c8f476737fd8",
+      "unit_artifact_hashes_sha256": "7c46a3ddc8e4ed3a244e33711f047a32f45fe41d64cbc7f9b5cde25b46deb2cd"
+    },
+    "units/cn-prd-150c-03-V2-LOCATIONS/seed_10": {
+      "grand_solution_sha256": "351c9965d1ae72c7beea41cba856f9a9d1a6bd6405f56ce77cf417f1537c3f0f",
+      "settlement_results_sha256": "525d45b491c9773022ab4e57e8464cadc1cb0ad7e41903888c7138c00c9d0fa0",
+      "unit_artifact_hashes_sha256": "828bd36c278852af33209446935f3ec778f81eb2b40b959a8da9fe7c2adb9cf3"
+    },
+    "units/cn-prd-200c-01-V2-LOCATIONS/seed_01": {
+      "grand_solution_sha256": "39764f3d0f2059f4624ac24feaa5f8a47f554d5d6aab35b175ea17022cb44dd0",
+      "settlement_results_sha256": "306a7594bae6970cb57cc78b1a1ee036ab948fa4f92a1a04f8ef65ab4d541d24",
+      "unit_artifact_hashes_sha256": "f5a06789f4940d9151b011d88f0c1b5452551313a666d4eb89029f2bf62cb5f0"
+    },
+    "units/cn-prd-200c-01-V2-LOCATIONS/seed_02": {
+      "grand_solution_sha256": "4c76a569c45f8e87ce6d55f98e3d12d37f816d6e816ba247d33d2f2d2546a001",
+      "settlement_results_sha256": "82c390505bbd117845e4e0921bb971bf0e095194ef26808effb2003fab0280be",
+      "unit_artifact_hashes_sha256": "f670dfc1c9b59682273c1b7d6eb89be34853f07184d184fb112206f69a58f010"
+    },
+    "units/cn-prd-200c-01-V2-LOCATIONS/seed_03": {
+      "grand_solution_sha256": "d7fc7c14a1a4944d814192ae5a384dbea730591920aff719f4bd5b1c37863c40",
+      "settlement_results_sha256": "0b47f67b7f4a522660125a3e3f7056287c5dafb61026d7e07ceb7b561f971c5d",
+      "unit_artifact_hashes_sha256": "d86d0aaf32ff2d0ac38a519a5040bcf3c0a5fdf7fd79363a991daf0e8b8db5bd"
+    },
+    "units/cn-prd-200c-01-V2-LOCATIONS/seed_04": {
+      "grand_solution_sha256": "82f0567f21c707279856510ce6c44c71f6f3857b96c913025b31d2446d8aa6f8",
+      "settlement_results_sha256": "4945d7246b79ddcc3cac74820df654d1949d4b794f7299d60360c568c1213826",
+      "unit_artifact_hashes_sha256": "619ecf42439bab97a7ad66025c1f5e87ceb094a664ed1eca797ae07df46e84b7"
+    },
+    "units/cn-prd-200c-01-V2-LOCATIONS/seed_05": {
+      "grand_solution_sha256": "bf1653d0a96069ed15e8ac625d871711f010a084963580127350d45ba08698c8",
+      "settlement_results_sha256": "edf204a06907444dda520277220109f6027d3acb01fa281abc6d1c8a08ba2689",
+      "unit_artifact_hashes_sha256": "223368c72714124241251430f813ba17089ce51a0451fd91a6c48a03c0c3d17b"
+    },
+    "units/cn-prd-200c-01-V2-LOCATIONS/seed_06": {
+      "grand_solution_sha256": "6b714d57bb828a46ca5cdc40b96c885d4dca5983131ab5251f20829c6a56c872",
+      "settlement_results_sha256": "42bb5744f7926fca72e6278fcd9be64367d425535ad780ea8ae72bc4af7ae2f3",
+      "unit_artifact_hashes_sha256": "aea9859dda31dd5ce5d2a01b64f5c7cefdf29288f4d668c242259f9f26220c22"
+    },
+    "units/cn-prd-200c-01-V2-LOCATIONS/seed_07": {
+      "grand_solution_sha256": "af5e4f40b16d5e90618d43701e49469b67860986433085fc381aa7b18dd85305",
+      "settlement_results_sha256": "25acca1c5e9ef42db9da253ebed30cd04cb11d3239e4b0c74a7cb6d30233866f",
+      "unit_artifact_hashes_sha256": "02de3d824b01f1e5d0ede55a1dd739711cbe8712f4e66061dc1df2b1bc617969"
+    },
+    "units/cn-prd-200c-01-V2-LOCATIONS/seed_08": {
+      "grand_solution_sha256": "a1fcf75bec73f86c48c6f17eec28301e7c2a905f0b5389ddc8bb93f03efc50df",
+      "settlement_results_sha256": "71b52707dab7a259bc45a20af566f1308cd7d8f1d0bbc6ec5cb6daa9c17f4b20",
+      "unit_artifact_hashes_sha256": "6ad1563ead2b6d2a253149135925f2898bc664f1d5b35798885ad8f1902804cf"
+    },
+    "units/cn-prd-200c-01-V2-LOCATIONS/seed_09": {
+      "grand_solution_sha256": "891a58c36e199ef4ed298fa22b84519ea9d357baf20989a483151ea7a5dad37c",
+      "settlement_results_sha256": "eee49b6a9410327b9823c67398c69f96fa818a27d7e12b3bcfc507d87a33ac11",
+      "unit_artifact_hashes_sha256": "8fe822aff3f45f3237be2b6d15c08115b51a8f344b2890140f64a8d1b8f04179"
+    },
+    "units/cn-prd-200c-01-V2-LOCATIONS/seed_10": {
+      "grand_solution_sha256": "ba6250ca7cdca1006d7d226a81ca36221c2459b37ec1397f00f78e5a2c3b62ae",
+      "settlement_results_sha256": "921af3b62eb93e84098986505e22363585a8339605203dbbe76147dd890db4c9",
+      "unit_artifact_hashes_sha256": "27a9b8f3827df6f0ff72917c3e2f39dd17612993398e2f2a58c61815b77921e4"
+    },
+    "units/cn-prd-200c-02-V2-LOCATIONS/seed_01": {
+      "grand_solution_sha256": "d0c4c2433254940a04640d7ff9a7299267b6c7adfdaaca89ff31a25c1f027c3d",
+      "settlement_results_sha256": "15e9b3ba97b5ab234c7fbad024e27ab9e53bf3646fd2668f595ca92a9f791204",
+      "unit_artifact_hashes_sha256": "e477f04a5322f9e70642e4fca2634d1e02b39fcd8133f805915dea84648feb4d"
+    },
+    "units/cn-prd-200c-02-V2-LOCATIONS/seed_02": {
+      "grand_solution_sha256": "ad0bead5337d7d74c2ab193036010475653847d7f461878931d19c02b63dc993",
+      "settlement_results_sha256": "052f1b0d48a193802c2b1343433141036c3d45da2486c02c25eae55b65cb842b",
+      "unit_artifact_hashes_sha256": "f1267b2ccecc653b994fa9492827008d4952c617d011ba8a4fbf14a80e21eff3"
+    },
+    "units/cn-prd-200c-02-V2-LOCATIONS/seed_03": {
+      "grand_solution_sha256": "a7961e0679f4f94a93c607005d5b035973f8dfc06644e13257c68a9b04b9840e",
+      "settlement_results_sha256": "1d9238095e010a14fb2d94644ddb25db4ef7ea657e341276eab423ab0f79aced",
+      "unit_artifact_hashes_sha256": "be7c04749cbe51b1e3e6120d4d1a79e6f83612a2eeb43cb807ca2d782b23bfba"
+    },
+    "units/cn-prd-200c-02-V2-LOCATIONS/seed_04": {
+      "grand_solution_sha256": "8916111492bf255c93b0009a69a55470a89a7cddb3392c6f3729cc93e8c948f8",
+      "settlement_results_sha256": "8f66c9d1b69a8730358d7055b8d4cf59dacb0b840bbc8a8e9b71ac0b25195a52",
+      "unit_artifact_hashes_sha256": "45a3659c1c6370282cfecea87cb5142fc379f0da7491aa3a6aefa97ba5044998"
+    },
+    "units/cn-prd-200c-02-V2-LOCATIONS/seed_05": {
+      "grand_solution_sha256": "5c7bcc7ebc9d16b969c0536fcbb60a206a82d0b7507581706e7e567a81079916",
+      "settlement_results_sha256": "72d182947bd4083f4138e741c3ea76e06fd9e3af9d28544228fe16a3bc99f8b7",
+      "unit_artifact_hashes_sha256": "1de1c1334337a9ff01a7c502be6c98dd8927df43f25b8e1631a382cf1a0fb552"
+    },
+    "units/cn-prd-200c-02-V2-LOCATIONS/seed_06": {
+      "grand_solution_sha256": "0dc926afbbc2a543f254e9ac0a7e11f066abb27ea6217895dfb6c0b100a8563b",
+      "settlement_results_sha256": "fd2ffdc03012bdf6fd8190e15c2d0af54b19e93a3b2669395588b5694a8f24db",
+      "unit_artifact_hashes_sha256": "00de0b627d36dd6c73e01e3b0e40fd4c29bbbeed56792a71bdce443f72ddaece"
+    },
+    "units/cn-prd-200c-02-V2-LOCATIONS/seed_07": {
+      "grand_solution_sha256": "39bf84cf54bafb48cde9c8cacd0f06b357d9c238d477238558693f94733561d4",
+      "settlement_results_sha256": "3526069e9936fd684a83e765e5a80ac820287efd5dff7f1df2f2b1fab7dda74e",
+      "unit_artifact_hashes_sha256": "f4b67aa1bc47d2feb52dae2f0325f409f3699cb6f2d118641470f5d232ae6b12"
+    },
+    "units/cn-prd-200c-02-V2-LOCATIONS/seed_08": {
+      "grand_solution_sha256": "acae058685208164ccbec8d04bddf4d4acedb32ae23767dee1afd0024d1ec70f",
+      "settlement_results_sha256": "2d560ae228da7e2be6eda3e1b5a1ac28e59405aee1f044b7e5fec856e7648014",
+      "unit_artifact_hashes_sha256": "147ac4b659349260610fbade8c2e82d7d86381b550267670a9d5049a4e1ed9d2"
+    },
+    "units/cn-prd-200c-02-V2-LOCATIONS/seed_09": {
+      "grand_solution_sha256": "a34eab21f74d1ce34f98827da8f45962eb482168801bac0a158842af956c36e2",
+      "settlement_results_sha256": "0a6d921d3f082a61be241ac67a3449b6b8765cf3a4b12ebe05d2a941e07063e1",
+      "unit_artifact_hashes_sha256": "7288578c5d9d601a588c6fc2eea42ddf21a59747e4df0442e3edf715db815192"
+    },
+    "units/cn-prd-200c-02-V2-LOCATIONS/seed_10": {
+      "grand_solution_sha256": "2e52ca34b5119aa23bdca22a924596d8ad371df4d18d5f6f99818415b8258a6c",
+      "settlement_results_sha256": "301e87c84caa439199bee632737a6fbcdfb5cbf90f9e1aedff52b499d5bca80c",
+      "unit_artifact_hashes_sha256": "907e3cbda16a863b033f2101e7b06a595393b02edf5265973407ccaa2b17a7d0"
+    },
+    "units/cn-prd-200c-03-V2-LOCATIONS/seed_01": {
+      "grand_solution_sha256": "b127547e5bceca1f537cdaed96b0531dba954163f83ab5a45d94b6773dd81897",
+      "settlement_results_sha256": "e416663c260dcfaed917c7cc666ab8af4b4efafc154e2c79a972e74921f19392",
+      "unit_artifact_hashes_sha256": "a4acc308647075ee21872f6a483a7f184c205e3f7544f9dc3cc13b81287e8d9b"
+    },
+    "units/cn-prd-200c-03-V2-LOCATIONS/seed_02": {
+      "grand_solution_sha256": "87f073199f67075f11de9cb3c1f039664f4bfcbf79dc97635a833a0cf029d2cc",
+      "settlement_results_sha256": "ad08e50dc47de233ef2fa7bcce395537a179c98204415c4aa9cc05a817ae34d7",
+      "unit_artifact_hashes_sha256": "7eb1650353b26100f20c16eabe2287feaa38bfdb29077b0746c9cd44c7d35a06"
+    },
+    "units/cn-prd-200c-03-V2-LOCATIONS/seed_03": {
+      "grand_solution_sha256": "0c9a5f37ed0af503748a79031bd0fb481325902bc0d50fc1208817c1ebef18e9",
+      "settlement_results_sha256": "712554663d4b698c5dba436f92f8c4f29d4247d414f0e88f1b1ffa39ac397745",
+      "unit_artifact_hashes_sha256": "663c78e9fccbe50f8a6ea3279195640c96f33abdaa781b8704df23d39e91f8f0"
+    },
+    "units/cn-prd-200c-03-V2-LOCATIONS/seed_04": {
+      "grand_solution_sha256": "7d40abb631a9ed45c73a12e15e134a2077b77fc92a5c4c5c2ef7de41945898c5",
+      "settlement_results_sha256": "56d9fe24efd265ee74482a15e57dba465817a39f256f3ad97710ccd47ed2fa00",
+      "unit_artifact_hashes_sha256": "f0fe8c10e857bb7b04a274c1d72f78442fa9a7bf27030ebc2d45e9cea3c0c1ed"
+    },
+    "units/cn-prd-200c-03-V2-LOCATIONS/seed_05": {
+      "grand_solution_sha256": "abd24b057a108e919133effacad28c7937ff21e0e38e6b7a4064bf5f96fd2392",
+      "settlement_results_sha256": "74bd1e3c54f1550bea713fdc82f29442c89c7254b63ed323a42fcc07b9d6d295",
+      "unit_artifact_hashes_sha256": "dc530f1ceccd99973b9c8a57ffc8c583f7951998e84f2dda22c3b9d838503770"
+    },
+    "units/cn-prd-200c-03-V2-LOCATIONS/seed_06": {
+      "grand_solution_sha256": "c2ed100c8ed9a7f94041660199b68f50a8db7c304c25c91ebe214753a4b1e80d",
+      "settlement_results_sha256": "76c87759b08ae329e8b1632b488ce80ab2d020f0cea87a3a44cf13b789dd5cb0",
+      "unit_artifact_hashes_sha256": "4ef9ec4f20c5b7b8d656b13834087bccc825880a4a8b952f657d4dd7c5dd841b"
+    },
+    "units/cn-prd-200c-03-V2-LOCATIONS/seed_07": {
+      "grand_solution_sha256": "31d6f558ba8b0affcbca85bf8046a281380ba97fa78fbd923a8126f4768f8f98",
+      "settlement_results_sha256": "f2fc11e69a06fcb24ca09e549b3404558436ae1c863df874f165d61bbad1aea0",
+      "unit_artifact_hashes_sha256": "f3ca48da5be7759efd4136b254026b35fd100061e7f598676c4421e6f71dc07a"
+    },
+    "units/cn-prd-200c-03-V2-LOCATIONS/seed_08": {
+      "grand_solution_sha256": "9084a1d17d46df4faff85f57bffc6371657827b4a1ac93eb004710f1ff38e475",
+      "settlement_results_sha256": "d406fc0555366cad4ff2d6a8218442867fe5165fcb86dc9a42545c4d4530a0c3",
+      "unit_artifact_hashes_sha256": "1620d38a199da048d84c7b6d1f91ef508b706ab07fb860ed894e496d62fcfb48"
+    },
+    "units/cn-prd-200c-03-V2-LOCATIONS/seed_09": {
+      "grand_solution_sha256": "cc238a36b7e060493bc0a333f1c9c48f21c65dcc92bd2f189dbb4375b25ed9c1",
+      "settlement_results_sha256": "f422bfd849c5ea9267bcc2ba116cf8d3ba6f684591daf3eb39f445bfa6366dbc",
+      "unit_artifact_hashes_sha256": "6db3421489b33e5d4c0f23575cc37de6c065521931166ed52395dfc46994559e"
+    },
+    "units/cn-prd-200c-03-V2-LOCATIONS/seed_10": {
+      "grand_solution_sha256": "3ba8c4e8e0cf59e28916b97a692c45a654946a620387b5b2d557729ceb0b9aac",
+      "settlement_results_sha256": "3812a0ff0ecaa9260f87f4fc6f2ef8e12ee6bd9b6e08fad26a1671ce9e18aabf",
+      "unit_artifact_hashes_sha256": "68f43ba5204146cb2d19648558bf041fc7d9a57ebbc7e19bbce02583fe48ac0b"
+    }
+  },
+  "postprocess_source_hashes": {
+    "baselines/china_e3_e7/e3_scattered_ownership_20260801/run_e3_capacity_rank_aligned.py": "c00ebdf48d4bb26b0ae68c207cacac9b4c9fb74b0bbb2f4b1321a28a2426e28a",
+    "baselines/china_e3_e7/e3_scattered_ownership_20260801/run_e3_scattered_ownership.py": "5cf2554c3c7db7ef78d32d68f609ae1b6637a635242022e6f943c326c98bc336",
+    "baselines/china_e3_e7/e6_contractor_participation_20260801/run_e6_serving_revenue_ledger_postprocess.py": "13a2340bf3f1c1fc7e23c7d2286bb73e766d3be9c85655a92ea9fa48f89b57c6",
+    "solver/src/setp_solver/cost.py": "7f59a47a3aab9b582b17e29d7e9dc13f16f892fc7b5ae7b54eec84412aa77333",
+    "solver/src/setp_solver/profit.py": "216c4f16f2e26f1c2840fa272adbf1e3ccb056c3de9403dd15b71fa5edfef1dc",
+    "solver/src/setp_solver/solution.py": "636b08d9434aebaf8d507f71fae70e71a977b7bdd1656673217fd1993feb1bbd"
+  },
+  "revenue_assignment": "REVENUE_TO_SERVING_CONTRACTOR",
+  "route_search_executed": false,
+  "route_solutions_modified": false,
+  "schema": "resetp.e6-serving-revenue-ledger-metadata.v2",
+  "solver_reruns": 0,
+  "standalone_profit_source": "each formal unit settlement_results.json"
+}

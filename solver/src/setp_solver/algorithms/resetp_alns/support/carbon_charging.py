@@ -48,6 +48,7 @@ class ChargeOption:
     energy_kwh: float
     power_kw: float
     detour_m: float = 0.0
+    detour_seconds: float = 0.0
     occupancy_seconds_override: float | None = None
     start_energy_kwh: float | None = None
     end_energy_kwh: float | None = None
@@ -97,6 +98,7 @@ class ScoredChargeOption:
     detour_cost: float
     carbon_cost: float
     total_incremental_cost: float
+    time_cost: float = 0.0
 
 
 @dataclass(frozen=True)
@@ -308,8 +310,23 @@ def score_charge_option(
     )
     occupancy_cost = 0.0 if is_depot else option.occupancy_seconds / 60.0 * float(prices.occupancy_fee)
     detour_cost = float(option.detour_m) / 1000.0 * float(prices.c_km)
+    time_cost = (
+        0.0
+        if is_depot
+        else (
+            option.occupancy_seconds + float(option.detour_seconds)
+        )
+        / 3600.0
+        * float(prices.route_time_cost_per_hour)
+    )
     carbon_cost = float(timing.carbon_kg) * float(prices.carbon_price) * float(carbon_weight)
-    total = electricity_cost + occupancy_cost + detour_cost + carbon_cost
+    total = (
+        electricity_cost
+        + occupancy_cost
+        + detour_cost
+        + time_cost
+        + carbon_cost
+    )
     return ScoredChargeOption(
         option=option,
         timing=timing,
@@ -318,6 +335,7 @@ def score_charge_option(
         detour_cost=detour_cost,
         carbon_cost=carbon_cost,
         total_incremental_cost=float(total),
+        time_cost=float(time_cost),
     )
 
 

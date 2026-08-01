@@ -1,0 +1,80 @@
+{
+  "schema_version": 1,
+  "name": "e7-o1-count-low-cost-20260801",
+  "objective": "完成获批 H0/G2 场景下 E7-O1 四种订单数量触发方案的36单元低成本检验",
+  "workdir": "/Volumes/移动硬盘（512G）/ReSETP",
+  "poll_seconds": 30,
+  "stale_seconds": 900,
+  "max_runtime_seconds": 43200,
+  "pause_on_anomaly": true,
+  "required_command_substrings": [
+    "baselines.china_e3_e7.e7_o1_replanning_20260801.run_low_cost",
+    "--policy-set",
+    "count"
+  ],
+  "forbidden_command_substrings": [
+    "--policy-set mass",
+    "--smoke",
+    "--debug"
+  ],
+  "min_cpu_percent_when_active": 0.5,
+  "low_cpu_consecutive_checks": 5,
+  "max_rss_mb": 7000,
+  "min_system_free_memory_mb": 256,
+  "min_system_memory_free_percent": 5,
+  "logs": [],
+  "progress_files": [],
+  "result_files": [
+    "probe_three_sizes_seeds1to3_eval8_count_20260801/metadata.json",
+    "probe_three_sizes_seeds1to3_eval8_count_20260801/raw_runs.csv",
+    "probe_three_sizes_seeds1to3_eval8_count_20260801/stage_runs.csv",
+    "probe_three_sizes_seeds1to3_eval8_count_20260801/event_stream.csv",
+    "probe_three_sizes_seeds1to3_eval8_count_20260801/paired_results.csv",
+    "probe_three_sizes_seeds1to3_eval8_count_20260801/decision.json",
+    "probe_three_sizes_seeds1to3_eval8_count_20260801/report.md"
+  ],
+  "completion_files": [
+    "probe_three_sizes_seeds1to3_eval8_count_20260801/artifact_hashes.json"
+  ],
+  "checkpoint_paths": [],
+  "protected_files": [
+    {
+      "path": "run_low_cost.py",
+      "kind": "experiment_contract"
+    },
+    {
+      "path": "policy.py",
+      "kind": "dynamic_scheduler"
+    },
+    {
+      "path": "../e7_h0_g2_foundation_20260801/stream.py",
+      "kind": "core_data"
+    },
+    {
+      "path": "../../e7_dynamic/e7_full_mechanism_probe_20260714.py",
+      "kind": "dynamic_scheduler"
+    },
+    {
+      "path": "../e7_trigger_policies_20260801/run_qiu_accept_all_diagnostic.py",
+      "kind": "dynamic_scheduler"
+    },
+    {
+      "path": "../../../solver/src/setp_solver/cost.py",
+      "kind": "cost_function"
+    },
+    {
+      "path": "../../../solver/src/setp_solver/check.py",
+      "kind": "evaluator"
+    },
+    {
+      "path": "../../../solver/src/setp_solver/search/evaluation.py",
+      "kind": "evaluator"
+    }
+  ],
+  "csv_rules": [],
+  "milestones": [],
+  "ai": {
+    "enabled": false,
+    "timeout_seconds": 180
+  }
+}

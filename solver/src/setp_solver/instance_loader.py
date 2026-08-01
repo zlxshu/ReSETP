@@ -29,6 +29,9 @@ class Node:
     # China81 uses city-specific road, tariff, and carbon rows. Historical
     # instances leave this unset and retain their single-profile semantics.
     city: str | None = None
+    # E5 station-copy nodes have distinct route identities while sharing one
+    # physical facility and its charger capacity.
+    physical_station_id: str | None = None
 
 
 @dataclass(frozen=True)

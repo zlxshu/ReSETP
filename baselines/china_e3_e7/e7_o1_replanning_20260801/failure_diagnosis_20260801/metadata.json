@@ -1,0 +1,30 @@
+{
+  "batch_actual_sha256": "d8a5acc07f9651ea126f8a1f110c88d9211c92299ab6fcc275e64ceea203e26e",
+  "check_command": "PYTHONPATH=solver/src:. build/python_envs/pyvrp-hgs-0.12.2/bin/python baselines/china_e3_e7/e7_o1_replanning_20260801/diagnose_fixed30_count20_failure.py --check",
+  "created_at_utc": "2026-08-01T15:04:34.697636+00:00",
+  "formal_result": false,
+  "generation_command": "PYTHONPATH=solver/src:. build/python_envs/pyvrp-hgs-0.12.2/bin/python baselines/china_e3_e7/e7_o1_replanning_20260801/diagnose_fixed30_count20_failure.py",
+  "instance_id": "cn-prd-150c-01-V2-LOCATIONS",
+  "method": "same-eval8 replay plus exhaustive depot-type clock check",
+  "original_result_directory": "baselines/china_e3_e7/e7_o1_replanning_20260801/probe_three_sizes_seeds1to3_eval8_count_20260801",
+  "original_result_files_sha256": {
+    "artifact_hashes.json": "10fdb5fbf6f27d9a2e95a4c18e3d3d836e0fef536f28739c05c72f2d0dde19af",
+    "decision.json": "45e09b65916014301f907ebf1ea59ba07e83a48eed9ac3dea4622999de8ea830",
+    "event_stream.csv": "8f1d5ea6680da8882678f586ea237cae7264b3ea80956108baa55e7a00566d73",
+    "metadata.json": "21e9566e4f0563efaff0d308ae065855371f235ac1eedecf3d38b91849709d20",
+    "paired_results.csv": "4038a9badc29daa6357b789803f8d6d920cb24d873deb520d26e9cdc091b861e",
+    "raw_runs.csv": "6bf64d71e0f522cf762974ce0fb408a422a1a6faad6669613f1acbdf0c672058",
+    "report.md": "e13fb967f8f5acd6fbe6939c0722039cb955974224419e34eb8f0527ddab69e7",
+    "stage_runs.csv": "aa228ad51a5895a51223a7be3298f0e5507972061c7034f96d683b378d5b843c"
+  },
+  "original_result_modified": false,
+  "policies": [
+    "fixed_30_minutes",
+    "hybrid_count_20_percent_or_30_minutes"
+  ],
+  "raw_row_count": 38,
+  "schema": "resetp.e7-o1-failure-diagnosis.v1",
+  "script_sha256": "d75f3ec0dd54a8feab1dfba0dee4bf2aa4685a1ac2266ded0168f5cf3c0bd929",
+  "stage_evaluations": 8,
+  "stream_seed": 3
+}

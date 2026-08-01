@@ -1,4 +1,4 @@
-# E3 capacity-rank-aligned candidate pilot
+# E3 capacity-rank-aligned formal panel member
 
 **状态：PASS_FORMAL_PANEL_MEMBER。**
 

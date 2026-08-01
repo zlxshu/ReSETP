@@ -17,6 +17,7 @@ from dataclasses import dataclass
 from typing import Any
 
 from setp_solver.algorithms.resetp_alns.support.charging import (
+    normalize_charge_amount_strategies,
     repair_route_charging,
 )
 from setp_solver.check import FLEET_SIZE, Violation, check_solution
@@ -31,6 +32,7 @@ from setp_solver.solution import (
 
 
 TOL = 1.0e-9
+DEFAULT_CHARGE_AMOUNT_STRATEGIES = ("just_enough",)
 
 
 @dataclass(frozen=True)
@@ -43,6 +45,7 @@ class RouteCompletionVariant:
     actions: tuple[ChargingAction, ...]
     route_cost: float
     saving_from_cv: float
+    charge_amount_strategy: str = "just_enough"
 
 
 @dataclass(frozen=True)
@@ -105,6 +108,8 @@ def exact_china81_score(
 def complete_china81_route_skeleton(
     skeleton: Solution,
     bundle: China81Bundle,
+    *,
+    charge_amount_strategies: tuple[str, ...] = DEFAULT_CHARGE_AMOUNT_STRATEGIES,
 ) -> China81CompletionResult:
     """Complete one route skeleton with a common monotone physics decoder.
 
@@ -114,6 +119,9 @@ def complete_china81_route_skeleton(
     change is replayed through the complete checker and evaluator.
     """
 
+    charge_amount_strategies = normalize_charge_amount_strategies(
+        charge_amount_strategies
+    )
     baseline = _canonical_all_cv_solution(skeleton, bundle)
     baseline_obj, baseline_breakdown, baseline_violations = exact_china81_score(
         baseline,
@@ -139,46 +147,63 @@ def complete_china81_route_skeleton(
             ("ev_low_carbon", "legacy", 1.0),
             ("ev_immediate", "integrated", 0.0),
         ):
-            ev_route = Route(
-                vehicle_id=route.vehicle_id,
-                vehicle_type="ev",
-                home_depot_id=route.home_depot_id,
-                node_sequence=list(route.node_sequence),
-            )
-            try:
-                repaired, actions = repair_route_charging(
-                    ev_route,
-                    bundle.instance,
-                    bundle.time_profile,
-                    bundle.prices,
-                    strategy=strategy,
-                    carbon_weight=carbon_weight,
-                    depot_charge_window_mode="same_day_predeparture",
+            for charge_amount_strategy in charge_amount_strategies:
+                ev_route = Route(
+                    vehicle_id=route.vehicle_id,
+                    vehicle_type="ev",
+                    home_depot_id=route.home_depot_id,
+                    node_sequence=list(route.node_sequence),
                 )
-                route_cost = _single_route_cost(
-                    repaired,
-                    tuple(actions),
-                    bundle,
+                try:
+                    repaired, actions = repair_route_charging(
+                        ev_route,
+                        bundle.instance,
+                        bundle.time_profile,
+                        bundle.prices,
+                        strategy=strategy,
+                        carbon_weight=carbon_weight,
+                        depot_charge_window_mode=(
+                            "same_day_predeparture"
+                        ),
+                        charge_amount_strategy=(
+                            charge_amount_strategy
+                        ),
+                    )
+                    route_cost = _single_route_cost(
+                        repaired,
+                        tuple(actions),
+                        bundle,
+                    )
+                except (TypeError, ValueError) as exc:
+                    generation_failures.append(
+                        {
+                            "route_index": route_index,
+                            "label": label,
+                            "charge_amount_strategy": (
+                                charge_amount_strategy
+                            ),
+                            "reason": str(exc),
+                        }
+                    )
+                    continue
+                variant_label = (
+                    label
+                    if charge_amount_strategy == "just_enough"
+                    else f"{label}__{charge_amount_strategy}"
                 )
-            except (TypeError, ValueError) as exc:
-                generation_failures.append(
-                    {
-                        "route_index": route_index,
-                        "label": label,
-                        "reason": str(exc),
-                    }
+                all_variants.append(
+                    RouteCompletionVariant(
+                        route_index=route_index,
+                        label=variant_label,
+                        route=repaired,
+                        actions=tuple(actions),
+                        route_cost=route_cost,
+                        saving_from_cv=float(cv_cost - route_cost),
+                        charge_amount_strategy=(
+                            charge_amount_strategy
+                        ),
+                    )
                 )
-                continue
-            all_variants.append(
-                RouteCompletionVariant(
-                    route_index=route_index,
-                    label=label,
-                    route=repaired,
-                    actions=tuple(actions),
-                    route_cost=route_cost,
-                    saving_from_cv=float(cv_cost - route_cost),
-                )
-            )
 
     ranked = sorted(
         all_variants,
@@ -255,6 +280,9 @@ def complete_china81_route_skeleton(
                         "depot_id": depot_id,
                         "route_index": variant.route_index,
                         "label": variant.label,
+                        "charge_amount_strategy": (
+                            variant.charge_amount_strategy
+                        ),
                         "before_cost": float(current_obj),
                         "after_cost": float(candidate_obj),
                         "cost_change": float(
@@ -311,6 +339,9 @@ def complete_china81_route_skeleton(
             {
                 "route_index": variant.route_index,
                 "label": variant.label,
+                "charge_amount_strategy": (
+                    variant.charge_amount_strategy
+                ),
                 "before_cost": float(current_obj),
                 "after_cost": float(candidate_obj),
                 "improvement": float(current_obj - candidate_obj),
@@ -363,6 +394,32 @@ def complete_china81_route_skeleton(
             "multi_depot_responsibility_accounting",
         ],
         "variant_count": len(all_variants),
+        "charge_amount_strategies": list(
+            charge_amount_strategies
+        ),
+        "charge_amount_strategy_generation": {
+            name: {
+                "generated": sum(
+                    item.charge_amount_strategy == name
+                    for item in all_variants
+                ),
+                "failed": sum(
+                    item["charge_amount_strategy"] == name
+                    for item in generation_failures
+                ),
+            }
+            for name in charge_amount_strategies
+        },
+        "charge_amount_strategy_acceptance": {
+            name: sum(
+                item["charge_amount_strategy"] == name
+                for item in (
+                    *mandatory_fleet_assignments,
+                    *accepted,
+                )
+            )
+            for name in charge_amount_strategies
+        },
         "variant_attempts": attempted,
         "variant_generation_failures": generation_failures,
         "mandatory_fleet_assignment_count": len(
