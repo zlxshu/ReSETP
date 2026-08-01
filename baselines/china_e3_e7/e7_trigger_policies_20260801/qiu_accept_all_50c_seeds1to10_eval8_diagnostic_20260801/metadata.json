@@ -1,0 +1,44 @@
+{
+  "actual_route_adjustment_definition": "count one stage when the pre-trigger editable future-route signature differs from the post-stage future-route signature; signature is physical vehicle id plus ordered customer visits and ignores depots, charging stations, and trip ids",
+  "admission_rule": "accept_every_addition_in_each_trigger_batch",
+  "completion_rate_definition": "accepted dynamic additions divided by 10 generated dynamic additions; initial customers are excluded",
+  "created_at_utc": "2026-08-01T08:46:23.294063+00:00",
+  "deferral": false,
+  "economic_rejection": false,
+  "instance_id": "cn-prd-50c-01-V2-LOCATIONS",
+  "policy": "hybrid_500kg_or_30_minutes",
+  "schema": "resetp.e7.qiu-accept-all-diagnostic.v1",
+  "source_sha256": {
+    "dynamic_adapter.py": "1bfda9e1d3c5ddf0df6c16b9c53e99e04b786eb4bf01a697be319424a5594d61",
+    "run_pilot.py": "c096f5a192a8219fc6b61d5c159bde3e7738d761a93f19e948252bf33bcaa3ef",
+    "run_qiu_accept_all_diagnostic.py": "6da084044b159e280e322e58399047a48fbd14808ce8822f8cb8b9b7de9a652b",
+    "trigger_policies.py": "2ad5198c32f3ed1b117b76a431240d4d316be4d819865c420a79ff7323033d49"
+  },
+  "stage_budget_role": "diagnostic_only_not_formal",
+  "stage_evaluations": 8,
+  "stream_seeds": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9,
+    10
+  ],
+  "stream_sha256_by_seed": {
+    "1": "41966e62009e6b9a64959b525e29f3c99d7cb8128c33f1c20279f46c9e5f13c4",
+    "10": "fa6a0508c1cb0707b50575f559a7659af2eea01a5c270b10f1d969c651233824",
+    "2": "587e683b67eb00609c4b874e0e5e414ea0b3196808149c2c6dad9636bb385ee7",
+    "3": "ae4cec9ec5fd0de97bbc5c98589c5fb14cd046ae1e9a0368f647ce8a5f024598",
+    "4": "ed9fcbb5c27da6a6c4ad2893bc3fbe40991f4a803ed0349402558b3995e1f93d",
+    "5": "fd2572329e3156876ae057feab74bfcbefe58de6ba23993182dc9232d6d6716d",
+    "6": "d0975c88e595598a69fe80578fa89de3475a9db67dbce7cd59f75ee9fbb9c695",
+    "7": "a659e2f022130ede085917e1d12f37126f0b0b832f018c61f1c952499aaa2a01",
+    "8": "8e198b0db8ad3728364bb9a46961ebda7a5e315cc28a61b5ae2b907437dd1895",
+    "9": "776ba463327ce00e3fb9e5f21bcfed76999277b7d21f99fd5b08c034c7896fb6"
+  },
+  "wall_seconds": 3.0524378339760005
+}

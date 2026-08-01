@@ -11,6 +11,7 @@ import json
 import math
 import sys
 from collections import Counter
+from collections.abc import Callable
 from dataclasses import asdict, replace
 from datetime import UTC, datetime
 from pathlib import Path
@@ -129,17 +130,25 @@ def source_audit() -> dict[str, Any]:
     }
 
 
-def load_base() -> tuple[Any, dict[str, Any]]:
-    bundle, info = e3.prepare(INSTANCE)
+def load_base(
+    instance_id: str = INSTANCE,
+    expected_mapping_sha256: str | None = None,
+) -> tuple[Any, dict[str, Any]]:
+    bundle, info = e3.prepare(instance_id)
     bundle = replace(bundle, prices=replace(bundle.prices, cross_site_cost=0.0))
-    with E3_RAW.open(encoding="utf-8", newline="") as handle:
-        expected_mapping = {row["mapping_sha256"] for row in csv.DictReader(handle)}
-    if expected_mapping != {info["mapping_sha256"]}:
+    if expected_mapping_sha256 is None and instance_id == INSTANCE:
+        with E3_RAW.open(encoding="utf-8", newline="") as handle:
+            expected_mapping = {row["mapping_sha256"] for row in csv.DictReader(handle)}
+        expected_mapping_sha256 = (
+            next(iter(expected_mapping)) if len(expected_mapping) == 1 else ""
+        )
+    if (
+        expected_mapping_sha256 is not None
+        and expected_mapping_sha256 != info["mapping_sha256"]
+    ):
         raise RuntimeError("mapping hash differs from E3-02")
-    original = e3.base.load_bundle(INSTANCE)
-    if {
-        depot: dict(row) for depot, row in bundle.fleet_caps_by_depot.items()
-    } != {
+    original = e3.base.load_bundle(instance_id)
+    if {depot: dict(row) for depot, row in bundle.fleet_caps_by_depot.items()} != {
         depot: dict(row) for depot, row in original.fleet_caps_by_depot.items()
     }:
         raise RuntimeError("fleet differs from original China81 caps")
@@ -252,20 +261,28 @@ def augmented_records(
     return tuple(unique.values())
 
 
-def run_search(bundle: Any, initial: Solution) -> dict[str, Any]:
+def run_search(
+    bundle: Any,
+    initial: Solution,
+    *,
+    seed: int = SEED,
+    iterations: int = ITERATIONS,
+    archive: int = ARCHIVE,
+    sp_seconds: float = SP_SECONDS,
+) -> dict[str, Any]:
     initial_cost, _, initial_violations = exact_china81_score(initial, bundle)
     if initial_violations:
-        raise RuntimeError("coalition incumbent union is not legal")
+        raise RuntimeError("coalition initial solution is not legal")
     run = run_hgs_route_pool_recombination(
         bundle,
         initial,
-        seed=SEED,
+        seed=seed,
         hgs_seconds_per_view=None,
-        exact_elites_per_view=ARCHIVE,
-        max_archive_candidates_per_view=ARCHIVE,
-        sp_time_limit_seconds=SP_SECONDS,
+        exact_elites_per_view=archive,
+        max_archive_candidates_per_view=archive,
+        sp_time_limit_seconds=sp_seconds,
         hard_home_depot_lock=False,
-        max_hgs_iterations_per_view=ITERATIONS,
+        max_hgs_iterations_per_view=iterations,
         wallclock_safety_seconds_per_view=180.0,
         exact_checkpoint_interval_iterations=None,
     )
@@ -275,7 +292,11 @@ def run_search(bundle: Any, initial: Solution) -> dict[str, Any]:
     ):
         raise RuntimeError("search result failed complete-model verification")
     if search_cost < initial_cost:
-        final, final_cost, selected = run.solution, search_cost, "SEARCH_STRICT_IMPROVEMENT"
+        final, final_cost, selected = (
+            run.solution,
+            search_cost,
+            "SEARCH_STRICT_IMPROVEMENT",
+        )
     else:
         final, final_cost, selected = initial, initial_cost, "INCUMBENT_RETAINED"
     checked_cost, breakdown, violations = exact_china81_score(final, bundle)
@@ -295,14 +316,19 @@ def run_search(bundle: Any, initial: Solution) -> dict[str, Any]:
 
 
 def solution_payload(
-    bundle: Any, group: tuple[str, ...], result: dict[str, Any]
+    bundle: Any,
+    group: tuple[str, ...],
+    result: dict[str, Any],
+    *,
+    instance_id: str = INSTANCE,
+    seed: int = SEED,
 ) -> dict[str, Any]:
     _, breakdown, violations = exact_china81_score(result["solution"], bundle)
     return {
         "schema": "resetp.e6-direct-coalition-solution.v1",
-        "instance_id": INSTANCE,
+        "instance_id": instance_id,
         "coalition": list(group),
-        "seed": SEED,
+        "seed": seed,
         "objective_cny": result["cost"],
         "selected_source": result["selected_source"],
         "solution_sha256": e3.base.solution_sha256(result["solution"]),
@@ -392,8 +418,7 @@ def permutation_shapley(
 
 def theta_values() -> tuple[float, ...]:
     return tuple(
-        round(index * THETA_STEP, 10)
-        for index in range(round(1.0 / THETA_STEP) + 1)
+        round(index * THETA_STEP, 10) for index in range(round(1.0 / THETA_STEP) + 1)
     )
 
 
@@ -450,9 +475,7 @@ def solve_profit_floor(
                 for record in records
             ]
         )
-        constraints.append(
-            LinearConstraint(margin, theta * standalone[depot], np.inf)
-        )
+        constraints.append(LinearConstraint(margin, theta * standalone[depot], np.inf))
 
     costs = np.array([record.route_cost for record in records])
     result = milp(
@@ -508,11 +531,11 @@ def solve_profit_floor(
     return solution, stats
 
 
-def method_results(
+def method_a_results(
     bundle: Any,
     members: tuple[str, ...],
     coalition_results: dict[tuple[str, ...], dict[str, Any]],
-) -> tuple[dict[str, Any], list[dict[str, Any]], Solution | None]:
+) -> dict[str, Any]:
     costs = {group: result["cost"] for group, result in coalition_results.items()}
     values = {
         group: coalition_revenue(result["bundle"]) - result["cost"]
@@ -535,13 +558,49 @@ def method_results(
     if core_witness is not None and core_violations(core_witness, values, members):
         raise RuntimeError("reported core witness violates a coalition bound")
 
-    grand = coalition_results[members]
     owned = owned_revenue(bundle)
     relation_gap = max(
         abs(profit_shapley[m] - (owned[m] - cost_shapley[m])) for m in members
     )
     if relation_gap > 1e-7:
         raise RuntimeError("profit and cost Shapley identities do not close")
+    return {
+        "standalone_profit_cny": standalone,
+        "coalition_cost_cny": {
+            "+".join(group): value for group, value in costs.items()
+        },
+        "coalition_profit_cny": {
+            "+".join(group): value for group, value in values.items()
+        },
+        "method_A": {
+            "shapley_cost_share_cny": cost_shapley,
+            "shapley_profit_cny": profit_shapley,
+            "independent_profit_shapley_max_abs_gap_cny": max_shapley_gap,
+            "independent_cost_shapley_max_abs_gap_cny": max_cost_shapley_gap,
+            "profit_cost_identity_max_abs_gap_cny": relation_gap,
+            "core_nonempty": core_nonempty,
+            "one_core_profit_allocation_cny": core_witness,
+            "shapley_in_core": not core_violations(profit_shapley, values, members),
+            "shapley_core_violations_cny": {
+                "+".join(group): gap
+                for group, gap in core_violations(
+                    profit_shapley, values, members
+                ).items()
+            },
+        },
+        "revenue_assignment": REVENUE_ASSIGNMENT,
+    }
+
+
+def method_results(
+    bundle: Any,
+    members: tuple[str, ...],
+    coalition_results: dict[tuple[str, ...], dict[str, Any]],
+) -> tuple[dict[str, Any], list[dict[str, Any]], Solution | None]:
+    settlement = method_a_results(bundle, members, coalition_results)
+    standalone = settlement["standalone_profit_cny"]
+    profit_shapley = settlement["method_A"]["shapley_profit_cny"]
+    grand = coalition_results[members]
     natural = contractor_profits(bundle, grand["solution"])
     serving_assignment = {
         "natural_profit_cny": natural,
@@ -553,12 +612,10 @@ def method_results(
         ),
         "method_A_target_shapley_profit_cny": profit_shapley,
         "method_A_internal_settlement_cny": {
-            member: profit_shapley[member] - natural[member]
-            for member in members
+            member: profit_shapley[member] - natural[member] for member in members
         },
         "method_A_all_members_meet_standalone": all(
-            profit_shapley[member] >= standalone[member] - 1e-7
-            for member in members
+            profit_shapley[member] >= standalone[member] - 1e-7 for member in members
         ),
     }
 
@@ -588,9 +645,7 @@ def method_results(
         "theta_step": THETA_STEP,
         "tested_points": len(diagnostic_trace),
         "feasible_points": len(feasible),
-        "highest_feasible_theta": max(
-            (row["theta"] for row in feasible), default=None
-        ),
+        "highest_feasible_theta": max((row["theta"] for row in feasible), default=None),
         "minimum_system_cost_cny": min(
             (row["system_cost_cny"] for row in feasible), default=None
         ),
@@ -604,43 +659,20 @@ def method_results(
         ),
     }
 
-    return (
-        {
-            "standalone_profit_cny": standalone,
-            "coalition_cost_cny": {
-                "+".join(group): value for group, value in costs.items()
-            },
-            "coalition_profit_cny": {
-                "+".join(group): value for group, value in values.items()
-            },
-            "method_A": {
-                "shapley_cost_share_cny": cost_shapley,
-                "shapley_profit_cny": profit_shapley,
-                "independent_profit_shapley_max_abs_gap_cny": max_shapley_gap,
-                "independent_cost_shapley_max_abs_gap_cny": max_cost_shapley_gap,
-                "profit_cost_identity_max_abs_gap_cny": relation_gap,
-                "core_nonempty": core_nonempty,
-                "one_core_profit_allocation_cny": core_witness,
-                "shapley_in_core": not core_violations(
-                    profit_shapley, values, members
-                ),
-                "shapley_core_violations_cny": {
-                    "+".join(group): gap
-                    for group, gap in core_violations(
-                        profit_shapley, values, members
-                    ).items()
-                },
-            },
-            "revenue_assignment": REVENUE_ASSIGNMENT,
-            "serving_assignment": serving_assignment,
-        },
-        diagnostic_trace,
-        theta_one_solution,
-    )
+    settlement["serving_assignment"] = serving_assignment
+    return settlement, diagnostic_trace, theta_one_solution
 
 
 def report_text(
-    decision: dict[str, Any], settlement: dict[str, Any], multi_member_initial: str
+    decision: dict[str, Any],
+    settlement: dict[str, Any],
+    multi_member_initial: str,
+    *,
+    seed: int = SEED,
+    iterations: int = ITERATIONS,
+    archive: int = ARCHIVE,
+    sp_seconds: float = SP_SECONDS,
+    evidence_role: str = "PILOT",
 ) -> str:
     if multi_member_initial == MULTI_MEMBER_INITIAL_COMMON:
         initial_text = (
@@ -651,17 +683,23 @@ def report_text(
             "不是 Shapley 结算或合作博弈本身的要求。"
         )
     else:
-        initial_text = (
-            "多成员联盟以成员单干最终方案的合法并集为起点。"
-        )
+        initial_text = "多成员联盟以成员单干最终方案的合法并集为起点。"
     lines = [
-        "# E6 direct-order 15-coalition pilot",
+        (
+            "# E6-A formal unit"
+            if evidence_role == "FORMAL_PANEL_UNIT"
+            else (
+                "# E6-A smoke"
+                if evidence_role == "SMOKE_ONLY"
+                else "# E6 direct-order 15-coalition pilot"
+            )
+        ),
         "",
         f"状态：{decision['status']}。",
         "",
         (
-            f"15 个非空联盟均使用 seed {SEED}、100 次/视角、archive 8 与 "
-            "5 s 路线池组合。"
+            f"15 个非空联盟均使用 seed {seed}、{iterations} 次/视角、"
+            f"archive {archive} 与 {sp_seconds:g} s 路线池组合。"
             "只保留合法且严格更便宜的搜索结果。"
         ),
         initial_text,
@@ -679,20 +717,30 @@ def report_text(
             f"利润博弈的核={'非空' if settlement['method_A']['core_nonempty'] else '为空'}；"
             f"Shapley {'在核内' if settlement['method_A']['shapley_in_core'] else '不在核内'}。"
         ),
-        "",
-        "| 收入归属 | 不结算时低于单干的承包商数 | 方法A全员达到单干 | 方法B诊断可行点/全部点 | theta=1成本/元 |",
-        "|---|---:|---|---:|---:|",
     ]
+    if "serving_assignment" not in settlement:
+        lines.extend(
+            [
+                "",
+                "合作系统节省按 Shapley 分配，核用于检验联盟稳定性。",
+            ]
+        )
+        return "\n".join(lines) + "\n"
+
     row = settlement["serving_assignment"]
     method_b = row["method_B"]
-    lines.append(
-        f"| {REVENUE_ASSIGNMENT} | {row['members_below_standalone_without_settlement']} | "
-        f"{'yes' if row['method_A_all_members_meet_standalone'] else 'no'} | "
-        f"{method_b['feasible_points']}/{method_b['tested_points']} | "
-        f"{method_b['theta_1_system_cost_cny']} |"
-    )
     lines.extend(
         [
+            "",
+            "| 收入归属 | 不结算时低于单干的承包商数 | 方法A全员达到单干 | 方法B诊断可行点/全部点 | theta=1成本/元 |",
+            "|---|---:|---|---:|---:|",
+            (
+                f"| {REVENUE_ASSIGNMENT} | "
+                f"{row['members_below_standalone_without_settlement']} | "
+                f"{'yes' if row['method_A_all_members_meet_standalone'] else 'no'} | "
+                f"{method_b['feasible_points']}/{method_b['tested_points']} | "
+                f"{method_b['theta_1_system_cost_cny']} |"
+            ),
             "",
             (
                 "收入按实际配送方归属。方法A事后 Shapley 结算与方法B搜索内利润底线均已核算；"
@@ -712,9 +760,7 @@ def preflight_union() -> dict[str, Any]:
         bundle = subset_bundle(base, (member,))
         singleton_solutions[member] = e3.base.build_common_initial(bundle)[0]
     coalition_bundle = subset_bundle(base, members)
-    union = union_singleton_solutions(
-        coalition_bundle, singleton_solutions, members
-    )
+    union = union_singleton_solutions(coalition_bundle, singleton_solutions, members)
     cost, _, violations = exact_china81_score(union, coalition_bundle)
     return {
         "mapping_sha256": info["mapping_sha256"],
@@ -729,18 +775,92 @@ def preflight_union() -> dict[str, Any]:
 def run(
     output: Path = OUTPUT,
     multi_member_initial: str = MULTI_MEMBER_INITIAL_UNION,
+    *,
+    instance_id: str = INSTANCE,
+    seed: int = SEED,
+    iterations: int = ITERATIONS,
+    archive: int = ARCHIVE,
+    sp_seconds: float = SP_SECONDS,
+    audit_fn: Callable[[], dict[str, Any]] | None = None,
+    expected_mapping_sha256: str | None = None,
+    include_method_b: bool = True,
+    evidence_role: str = "PILOT",
+    resume: bool = False,
 ) -> dict[str, Any]:
     output.mkdir(parents=True, exist_ok=True)
-    audit = source_audit()
-    base, info = load_base()
+    audit = (audit_fn or source_audit)()
+    base, info = load_base(instance_id, expected_mapping_sha256)
     members = tuple(sorted(base.fleet_caps_by_depot))
     groups = coalitions(members)
+    run_config = {
+        "instance_id": instance_id,
+        "seed": seed,
+        "iterations_per_view": iterations,
+        "archive_candidates_per_view": archive,
+        "route_pool_sp_seconds": sp_seconds,
+        "multi_member_initial": multi_member_initial,
+        "settlement_method": (
+            "A_POSTHOC_SHAPLEY_WITH_CORE_CHECK"
+            if not include_method_b
+            else "A_AND_B_PILOT_DIAGNOSTIC"
+        ),
+        "evidence_role": evidence_role,
+    }
     singleton_solutions: dict[str, Solution] = {}
     coalition_results: dict[tuple[str, ...], dict[str, Any]] = {}
     raw_rows: list[dict[str, Any]] = []
+    completed: dict[str, dict[str, Any]] = {}
+    progress_path = output / "progress.json"
+    raw_path = output / "raw_runs.csv"
+
+    if resume and progress_path.exists():
+        progress = json.loads(progress_path.read_text(encoding="utf-8"))
+        if progress.get("run_config") != run_config:
+            raise RuntimeError("existing partial output uses a different run config")
+        if raw_path.exists():
+            with raw_path.open(encoding="utf-8", newline="") as handle:
+                completed = {row["coalition"]: row for row in csv.DictReader(handle)}
+        if completed and include_method_b:
+            raise RuntimeError("pilot Method B does not support coalition resume")
+    elif resume and any(output.iterdir()):
+        raise RuntimeError("existing output has no resumable progress record")
+
+    def write_progress(settlement_complete: bool = False) -> None:
+        write_json(
+            progress_path,
+            {
+                "run_config": run_config,
+                "completed_coalitions": [row["coalition"] for row in raw_rows],
+                "completed_count": len(raw_rows),
+                "total_count": len(groups),
+                "settlement_complete": settlement_complete,
+            },
+        )
+
+    if resume and not progress_path.exists():
+        write_progress()
 
     for group in groups:
         bundle = subset_bundle(base, group)
+        coalition_name = "+".join(group)
+        slug = coalition_slug(group)
+        if coalition_name in completed:
+            if not all(
+                path.exists()
+                for path in (
+                    output / "solutions" / f"{slug}.json",
+                    output / "route_pools" / f"{slug}.json",
+                )
+            ):
+                raise RuntimeError(f"incomplete saved coalition: {coalition_name}")
+            row = completed[coalition_name]
+            coalition_results[group] = {
+                "bundle": bundle,
+                "cost": float(row["final_cost_cny"]),
+            }
+            raw_rows.append(row)
+            continue
+
         if len(group) == 1:
             initial, _ = e3.base.build_common_initial(bundle)
             initial_source = "SINGLETON_COMMON_INITIAL"
@@ -748,26 +868,36 @@ def run(
             initial, initial_source = build_multi_member_initial(
                 bundle, singleton_solutions, group, multi_member_initial
             )
-        result = run_search(bundle, initial)
+        result = run_search(
+            bundle,
+            initial,
+            seed=seed,
+            iterations=iterations,
+            archive=archive,
+            sp_seconds=sp_seconds,
+        )
         result["bundle"] = bundle
         coalition_results[group] = result
         if len(group) == 1:
             singleton_solutions[group[0]] = result["solution"]
 
-        slug = coalition_slug(group)
-        solution = solution_payload(bundle, group, result)
+        solution = solution_payload(
+            bundle,
+            group,
+            result,
+            instance_id=instance_id,
+            seed=seed,
+        )
         pool = route_pool_payload(group, result["records"])
         write_json(output / "solutions" / f"{slug}.json", solution)
         write_json(output / "route_pools" / f"{slug}.json", pool)
-        cross_customers, cross_quantity = transfer_metrics(
-            bundle, result["solution"]
-        )
+        cross_customers, cross_quantity = transfer_metrics(bundle, result["solution"])
         raw_rows.append(
             {
-                "instance_id": INSTANCE,
-                "seed": SEED,
+                "instance_id": instance_id,
+                "seed": seed,
                 "mapping_sha256": info["mapping_sha256"],
-                "coalition": "+".join(group),
+                "coalition": coalition_name,
                 "coalition_member_count": len(group),
                 "initial_source": initial_source,
                 "initial_sha256": e3.base.solution_sha256(initial),
@@ -790,20 +920,20 @@ def run(
                 "violation_count": 0,
             }
         )
-        write_json(
-            output / "progress.json",
-            {
-                "completed_coalitions": [row["coalition"] for row in raw_rows],
-                "completed_count": len(raw_rows),
-                "total_count": len(groups),
-            },
-        )
+        write_rows(raw_path, raw_rows)
+        write_progress()
 
-    settlement, diagnostic_trace, theta_one_solution = method_results(
-        base, members, coalition_results
-    )
+    if include_method_b:
+        settlement, diagnostic_trace, theta_one_solution = method_results(
+            base, members, coalition_results
+        )
+    else:
+        settlement = method_a_results(base, members, coalition_results)
+        diagnostic_trace = []
+        theta_one_solution = None
     write_json(output / "settlement_results.json", settlement)
-    write_rows(output / "profit_floor_diagnostic_trace.csv", diagnostic_trace)
+    if diagnostic_trace:
+        write_rows(output / "profit_floor_diagnostic_trace.csv", diagnostic_trace)
     if theta_one_solution is not None:
         cost, breakdown, violations = exact_china81_score(theta_one_solution, base)
         write_json(
@@ -822,18 +952,36 @@ def run(
 
     singleton_cost_sum = sum(coalition_results[(member,)]["cost"] for member in members)
     grand = coalition_results[members]
-    grand_cross, grand_quantity = transfer_metrics(base, grand["solution"])
+    grand_row = next(row for row in raw_rows if row["coalition"] == "+".join(members))
+    grand_cross = int(float(grand_row["cross_contractor_customers"]))
+    grand_quantity = float(grand_row["cross_contractor_quantity_kg"])
     monotone_to_singletons = {
         "+".join(group): coalition_results[group]["cost"]
         <= sum(coalition_results[(member,)]["cost"] for member in group) + 1e-7
         for group in groups
     }
     decision = {
-        "status": "PASS_E6_DIRECT_15_CREDIBLE_COSTS",
-        "formal_story": "AWAITING_USER_DECISION",
+        "status": (
+            "PASS_E6A_FORMAL_UNIT"
+            if evidence_role == "FORMAL_PANEL_UNIT"
+            else (
+                "PASS_E6A_SMOKE_ONLY"
+                if evidence_role == "SMOKE_ONLY"
+                else "PASS_E6_DIRECT_15_CREDIBLE_COSTS"
+            )
+        ),
+        "formal_story": (
+            "USER_APPROVED_COLLABORATIVE_SURPLUS_ALLOCATION"
+            if evidence_role == "FORMAL_PANEL_UNIT"
+            else (
+                "NOT_FORMAL_EVIDENCE"
+                if evidence_role == "SMOKE_ONLY"
+                else "AWAITING_USER_DECISION"
+            )
+        ),
         "multi_member_initial": multi_member_initial,
-        "instance_id": INSTANCE,
-        "seed": SEED,
+        "instance_id": instance_id,
+        "seed": seed,
         "mapping_sha256": info["mapping_sha256"],
         "coalitions_solved": len(coalition_results),
         "all_coalitions_legal": all(row["status"] == "PASS" for row in raw_rows),
@@ -851,17 +999,26 @@ def run(
         "grand_cross_contractor_quantity_kg": grand_quantity,
         "method_A_core_nonempty": settlement["method_A"]["core_nonempty"],
         "method_A_shapley_in_core": settlement["method_A"]["shapley_in_core"],
-        "method_B_diagnostic": settlement["serving_assignment"]["method_B"],
     }
+    if include_method_b:
+        decision["method_B_diagnostic"] = settlement["serving_assignment"]["method_B"]
     metadata = {
-        "schema": "resetp.e6-direct-15.v2",
+        "schema": (
+            "resetp.e6a-formal-unit.v1"
+            if evidence_role == "FORMAL_PANEL_UNIT"
+            else (
+                "resetp.e6a-smoke.v1"
+                if evidence_role == "SMOKE_ONLY"
+                else "resetp.e6-direct-15.v2"
+            )
+        ),
         "created_at_utc": datetime.now(UTC).isoformat(),
-        "instance_id": INSTANCE,
-        "seed": SEED,
-        "iterations_per_view": ITERATIONS,
-        "archive_candidates_per_view": ARCHIVE,
-        "route_pool_sp_seconds": SP_SECONDS,
-        "profit_floor_diagnostic_theta_step": THETA_STEP,
+        "evidence_role": evidence_role,
+        "instance_id": instance_id,
+        "seed": seed,
+        "iterations_per_view": iterations,
+        "archive_candidates_per_view": archive,
+        "route_pool_sp_seconds": sp_seconds,
         "cross_site_system_cost_cny": base.prices.cross_site_cost,
         "mapping_sha256": info["mapping_sha256"],
         "label_to_depot": info["label_to_depot"],
@@ -871,30 +1028,35 @@ def run(
         "multi_member_initial": multi_member_initial,
         "incumbent_rule": "retain search result only when legal and strictly cheaper",
         "revenue_assignment": REVENUE_ASSIGNMENT,
-        "settlement_methods": [
-            "A_POSTHOC_SHAPLEY",
-            "B_IN_SEARCH_PROFIT_FLOOR",
-        ],
+        "settlement_methods": (
+            ["A_POSTHOC_SHAPLEY_WITH_CORE_CHECK"]
+            if not include_method_b
+            else ["A_POSTHOC_SHAPLEY", "B_IN_SEARCH_PROFIT_FLOOR"]
+        ),
         "hash_audit": audit,
         "protected_hashes": {
             str(path.relative_to(REPO)): sha256(path) for path in PROTECTED
         },
     }
-    write_rows(output / "raw_runs.csv", raw_rows)
+    if include_method_b:
+        metadata["profit_floor_diagnostic_theta_step"] = THETA_STEP
+    write_rows(raw_path, raw_rows)
     write_json(output / "decision.json", decision)
     write_json(output / "metadata.json", metadata)
     (output / "report.md").write_text(
-        report_text(decision, settlement, multi_member_initial), encoding="utf-8"
+        report_text(
+            decision,
+            settlement,
+            multi_member_initial,
+            seed=seed,
+            iterations=iterations,
+            archive=archive,
+            sp_seconds=sp_seconds,
+            evidence_role=evidence_role,
+        ),
+        encoding="utf-8",
     )
-    write_json(
-        output / "progress.json",
-        {
-            "completed_coalitions": [row["coalition"] for row in raw_rows],
-            "completed_count": len(raw_rows),
-            "total_count": len(groups),
-            "settlement_complete": True,
-        },
-    )
+    write_progress(settlement_complete=True)
     artifacts = {
         str(path.relative_to(output)): sha256(path)
         for path in sorted(output.rglob("*"))

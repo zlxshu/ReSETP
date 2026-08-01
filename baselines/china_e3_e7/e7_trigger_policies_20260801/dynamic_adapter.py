@@ -1,4 +1,4 @@
-"""Full-fleet handoff and per-order rejection for rebuilt E7."""
+"""Full-fleet handoff and order admission for rebuilt E7."""
 
 from __future__ import annotations
 
@@ -32,6 +32,31 @@ class AdmissionResult:
 
 
 Planner = Callable[[tuple[str, ...], Mapping[str, DynamicAssetState]], PlanAttempt]
+
+
+def accept_new_orders_as_full_batch(
+    new_orders: Sequence[str],
+    full_asset_states: Mapping[str, DynamicAssetState],
+    planner: Planner,
+) -> AdmissionResult:
+    """Plan the whole batch once; never turn a feasible order into an economic rejection."""
+
+    accepted = tuple(sorted(map(str, new_orders)))
+    if len(set(accepted)) != len(accepted):
+        raise ValueError("order ids repeat")
+    attempt = planner(accepted, full_asset_states)
+    if not attempt.feasible:
+        raise RuntimeError(attempt.reason or "full batch is infeasible")
+    return AdmissionResult(
+        accepted,
+        (),
+        0.0,
+        attempt.payload,
+        1,
+        float(attempt.delivery_cost),
+        float(attempt.delivery_cost),
+        1,
+    )
 
 
 def inject_full_fleet_asset_states(

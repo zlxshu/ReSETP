@@ -222,6 +222,7 @@ def _report(
         "映射在搜索前固定：源标签按其承接的 China81 总需求量从大到小排序，",
         "原车场按 CV/EV 原始上限形成的总载重从大到小排序，再一一对应；",
         "同值分别按标签号和 depot_id 排序。客户、需求、时窗、车型和车辆上限均未改变。",
+        "两种方案从同一份 Solomon I1 合法初始路线出发；该初始路线允许把客户插入路线中间，不改变正式比较目标。",
         "",
         "| 车场 | 源标签 | 客户数 | 需求/kg | 原运力/kg | CV上限 | EV上限 |",
         "|---|---:|---:|---:|---:|---:|---:|",
@@ -256,17 +257,27 @@ def _report(
     lines.extend(
         [
             "",
-            "这是候选小试；是否作为正式 E3 设计由用户决定。旧排序与 Uniform_Balanced 的 v1 容量失败证据保持原样。",
+            (
+                "这是用户批准后的正式面板成员。"
+                if not decision["candidate_only"]
+                else "这是候选小试；是否作为正式 E3 设计由用户决定。"
+            )
+            + "旧排序与 Uniform_Balanced 的 v1 容量失败证据保持原样。",
         ]
     )
     return "\n".join(lines) + "\n"
 
 
 def run_pilot(
-    output: Path = OUTPUT, iterations: int = 100, archive: int = 8
+    output: Path = OUTPUT,
+    iterations: int = 100,
+    archive: int = 8,
+    instance_id: str = INSTANCE,
+    seeds: tuple[int, ...] = SEEDS,
+    formal: bool = False,
 ) -> dict[str, Any]:
     output.mkdir(parents=True, exist_ok=True)
-    bundle, info = prepare()
+    bundle, info = prepare(instance_id)
     rows: list[dict[str, Any]] = []
     attempted: list[int] = []
     completed: list[int] = []
@@ -288,7 +299,7 @@ def run_pilot(
         except Exception as exc:  # noqa: BLE001 - preserve the failed pilot row
             failure = f"initial route construction failed: {type(exc).__name__}: {exc}"
         else:
-            for seed in SEEDS:
+            for seed in seeds:
                 attempted.append(seed)
                 pair: list[dict[str, Any]] = []
                 for arm in ARMS:
@@ -331,24 +342,23 @@ def run_pilot(
 
     if failure and not rows:
         for arm in ARMS:
-            row = _base_row(info, SEEDS[0], arm)
+            row = _base_row(info, seeds[0], arm)
             row.update(status="NOT_RUN_INPUT_OR_INITIAL_HALT", status_reason=failure)
             rows.append(row)
 
-    status = (
-        "PASS_CANDIDATE_PILOT_SEEDS_1_TO_3"
-        if completed == list(SEEDS)
-        else "HALT_CAPACITY_RANK_ALIGNED_CANDIDATE"
-    )
+    if completed != list(seeds):
+        status = "HALT_CAPACITY_RANK_ALIGNED_CANDIDATE"
+    else:
+        status = "PASS_FORMAL_PANEL_MEMBER" if formal else "PASS_CANDIDATE_PILOT"
     decision = {
         "status": status,
-        "candidate_only": True,
-        "formal_adoption": "AWAITING_USER_DECISION",
-        "instance_id": INSTANCE,
+        "candidate_only": not formal,
+        "formal_adoption": "USER_APPROVED" if formal else "AWAITING_USER_DECISION",
+        "instance_id": instance_id,
         "family": FAMILY,
         "attempted_seeds": attempted,
         "completed_seeds": completed,
-        "not_started_seeds": [seed for seed in SEEDS if seed not in attempted],
+        "not_started_seeds": [seed for seed in seeds if seed not in attempted],
         "iterations_per_view": iterations,
         "archive_candidates_per_view": archive,
         "search_started": search_started,
@@ -360,6 +370,8 @@ def run_pilot(
     metadata = {
         "schema": "resetp.e3-capacity-rank-aligned-candidate.v1",
         "created_at_utc": datetime.now(UTC).isoformat(),
+        "evidence_role": "FORMAL_PANEL_MEMBER" if formal else "CANDIDATE_PILOT",
+        "seeds": list(seeds),
         "comparison": list(ARMS),
         "mapping_rule": "descending source-label China81 demand aligned one-to-one with descending original depot payload capacity; ties by label/depot_id",
         "unchanged_inputs": [
@@ -370,6 +382,11 @@ def run_pilot(
             "vehicle_types",
         ],
         "optimizer_vehicle_choice": "actual CV/EV use within each original per-depot type cap",
+        "initial_solution": {
+            "method": "Solomon I1 insertion",
+            "parameters": "farthest seed; mu=1; lambda=1; distance criterion",
+            "source": "Solomon (1987), Operations Research 35(2), pp.257,259",
+        },
         "source_hashes": {
             str(path.relative_to(REPO)): base._sha256(path)
             for path in (
@@ -407,8 +424,22 @@ def run_pilot(
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--output", type=Path, default=OUTPUT)
+    parser.add_argument("--instance", default=INSTANCE)
+    parser.add_argument("--seeds", type=int, nargs="+", default=list(SEEDS))
+    parser.add_argument("--formal", action="store_true")
     args = parser.parse_args()
-    print(json.dumps(run_pilot(args.output), ensure_ascii=False, sort_keys=True))
+    print(
+        json.dumps(
+            run_pilot(
+                args.output,
+                instance_id=args.instance,
+                seeds=tuple(args.seeds),
+                formal=args.formal,
+            ),
+            ensure_ascii=False,
+            sort_keys=True,
+        )
+    )
     return 0
 
 

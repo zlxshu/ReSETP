@@ -1,0 +1,603 @@
+{
+  "breakdown": {
+    "E_cv_direct": 129.83093018504363,
+    "E_ev_indirect": 23.215437882462155,
+    "E_total": 153.0463680675058,
+    "carbon_quota_kg": Infinity,
+    "cost_carbon": 11.481538532424285,
+    "cost_elec": 18.067455033645643,
+    "cost_fix": 1530.0,
+    "cost_fuel": 357.12075330963546,
+    "cost_km": 430.2694588752493,
+    "cost_occ": 0.0,
+    "cost_plus_carbon_cny": 2346.9392057509544,
+    "cost_transship": 0.0,
+    "depot_charging_kwh": 63.6131960514209,
+    "distance_cv": 364615.988940509,
+    "distance_ev": 217714.906718884,
+    "distance_total": 582330.895659393,
+    "electricity_kwh": 63.6131960514209,
+    "ev_drive_kwh": 63.61319605142091,
+    "fuel_liters": 48.000101251295085,
+    "n_veh_cv": 6,
+    "n_veh_ev": 3,
+    "objective_value": 2335.4576672185303,
+    "operating_cost_cny": 2335.4576672185303,
+    "station_charging_kwh": 0,
+    "terminal_charging_cost_cny": 18.067455033645643,
+    "terminal_charging_emissions_kg": 23.215437882462155,
+    "total_cost": 2346.9392057509544
+  },
+  "final_objective": 2335.4576672185303,
+  "initial_objective": 2529.8603362469607,
+  "instance_id": "cn-prd-50c-03-V2-LOCATIONS",
+  "objective_mode": "COST_ONLY",
+  "search_stats": {
+    "algorithm": "MV-HGS-SP",
+    "algorithm_name_en": "Multi-View Hybrid Genetic Search with Time-Limited MIP Route-Pool Recombination",
+    "algorithm_name_zh": "多视角混合遗传搜索—限时MIP路线池重组算法",
+    "archive_candidates_per_view": {
+      "cv_only": 8,
+      "mechanism_ev": 8,
+      "naive_ev": 8
+    },
+    "base_route_pool_mip": null,
+    "best_parent_objective": 2337.6873065373443,
+    "complete_candidate_budget_exactly_consumed": true,
+    "complete_candidate_budget_expected": 32,
+    "complete_candidate_evaluation_attempts": 32,
+    "complete_candidate_evaluation_trace": [
+      {
+        "complete_objective": 2339.8631018668507,
+        "evaluation_index": 1,
+        "iteration": null,
+        "source": "terminal_population_archive",
+        "status": "PASS",
+        "view": "cv_only"
+      },
+      {
+        "complete_objective": 2344.441523605088,
+        "evaluation_index": 2,
+        "iteration": null,
+        "source": "terminal_population_archive",
+        "status": "PASS",
+        "view": "cv_only"
+      },
+      {
+        "complete_objective": 2342.0999053119585,
+        "evaluation_index": 3,
+        "iteration": null,
+        "source": "terminal_population_archive",
+        "status": "PASS",
+        "view": "cv_only"
+      },
+      {
+        "complete_objective": 2345.9754709905683,
+        "evaluation_index": 4,
+        "iteration": null,
+        "source": "terminal_population_archive",
+        "status": "PASS",
+        "view": "cv_only"
+      },
+      {
+        "complete_objective": 2346.371202241059,
+        "evaluation_index": 5,
+        "iteration": null,
+        "source": "terminal_population_archive",
+        "status": "PASS",
+        "view": "cv_only"
+      },
+      {
+        "complete_objective": 2342.5495869040697,
+        "evaluation_index": 6,
+        "iteration": null,
+        "source": "terminal_population_archive",
+        "status": "PASS",
+        "view": "cv_only"
+      },
+      {
+        "complete_objective": 2344.3899705971066,
+        "evaluation_index": 7,
+        "iteration": null,
+        "source": "terminal_population_archive",
+        "status": "PASS",
+        "view": "cv_only"
+      },
+      {
+        "complete_objective": 2350.214203220771,
+        "evaluation_index": 8,
+        "iteration": null,
+        "source": "terminal_population_archive",
+        "status": "PASS",
+        "view": "cv_only"
+      },
+      {
+        "complete_objective": 2529.8603362469607,
+        "evaluation_index": 9,
+        "iteration": null,
+        "source": "common_initial_solution",
+        "status": "PASS",
+        "view": "cv_only"
+      },
+      {
+        "complete_objective": 2339.8631018668507,
+        "evaluation_index": 10,
+        "iteration": 100,
+        "source": "proxy_best_solution",
+        "status": "PASS",
+        "view": "cv_only"
+      },
+      {
+        "complete_objective": 2337.6873065373443,
+        "evaluation_index": 11,
+        "iteration": null,
+        "source": "terminal_population_archive",
+        "status": "PASS",
+        "view": "naive_ev"
+      },
+      {
+        "complete_objective": 2340.5236442322457,
+        "evaluation_index": 12,
+        "iteration": null,
+        "source": "terminal_population_archive",
+        "status": "PASS",
+        "view": "naive_ev"
+      },
+      {
+        "complete_objective": 2340.9179485431973,
+        "evaluation_index": 13,
+        "iteration": null,
+        "source": "terminal_population_archive",
+        "status": "PASS",
+        "view": "naive_ev"
+      },
+      {
+        "complete_objective": 2342.2930477487084,
+        "evaluation_index": 14,
+        "iteration": null,
+        "source": "terminal_population_archive",
+        "status": "PASS",
+        "view": "naive_ev"
+      },
+      {
+        "complete_objective": 2344.550774245056,
+        "evaluation_index": 15,
+        "iteration": null,
+        "source": "terminal_population_archive",
+        "status": "PASS",
+        "view": "naive_ev"
+      },
+      {
+        "complete_objective": 2345.7249777900147,
+        "evaluation_index": 16,
+        "iteration": null,
+        "source": "terminal_population_archive",
+        "status": "PASS",
+        "view": "naive_ev"
+      },
+      {
+        "complete_objective": 2346.5064476938287,
+        "evaluation_index": 17,
+        "iteration": null,
+        "source": "terminal_population_archive",
+        "status": "PASS",
+        "view": "naive_ev"
+      },
+      {
+        "complete_objective": 2346.523976460209,
+        "evaluation_index": 18,
+        "iteration": null,
+        "source": "terminal_population_archive",
+        "status": "PASS",
+        "view": "naive_ev"
+      },
+      {
+        "complete_objective": 2529.8603362469607,
+        "evaluation_index": 19,
+        "iteration": null,
+        "source": "common_initial_solution",
+        "status": "PASS",
+        "view": "naive_ev"
+      },
+      {
+        "complete_objective": 2337.6873065373443,
+        "evaluation_index": 20,
+        "iteration": 100,
+        "source": "proxy_best_solution",
+        "status": "PASS",
+        "view": "naive_ev"
+      },
+      {
+        "complete_objective": 2340.58378385688,
+        "evaluation_index": 21,
+        "iteration": null,
+        "source": "terminal_population_archive",
+        "status": "PASS",
+        "view": "mechanism_ev"
+      },
+      {
+        "complete_objective": 2347.7951305001875,
+        "evaluation_index": 22,
+        "iteration": null,
+        "source": "terminal_population_archive",
+        "status": "PASS",
+        "view": "mechanism_ev"
+      },
+      {
+        "complete_objective": 2344.714147117897,
+        "evaluation_index": 23,
+        "iteration": null,
+        "source": "terminal_population_archive",
+        "status": "PASS",
+        "view": "mechanism_ev"
+      },
+      {
+        "complete_objective": 2350.6966575769807,
+        "evaluation_index": 24,
+        "iteration": null,
+        "source": "terminal_population_archive",
+        "status": "PASS",
+        "view": "mechanism_ev"
+      },
+      {
+        "complete_objective": 2351.8169579920045,
+        "evaluation_index": 25,
+        "iteration": null,
+        "source": "terminal_population_archive",
+        "status": "PASS",
+        "view": "mechanism_ev"
+      },
+      {
+        "complete_objective": 2347.691064063294,
+        "evaluation_index": 26,
+        "iteration": null,
+        "source": "terminal_population_archive",
+        "status": "PASS",
+        "view": "mechanism_ev"
+      },
+      {
+        "complete_objective": 2347.312953061262,
+        "evaluation_index": 27,
+        "iteration": null,
+        "source": "terminal_population_archive",
+        "status": "PASS",
+        "view": "mechanism_ev"
+      },
+      {
+        "complete_objective": 2348.0688604075262,
+        "evaluation_index": 28,
+        "iteration": null,
+        "source": "terminal_population_archive",
+        "status": "PASS",
+        "view": "mechanism_ev"
+      },
+      {
+        "complete_objective": 2529.8603362469607,
+        "evaluation_index": 29,
+        "iteration": null,
+        "source": "common_initial_solution",
+        "status": "PASS",
+        "view": "mechanism_ev"
+      },
+      {
+        "complete_objective": 2340.58378385688,
+        "evaluation_index": 30,
+        "iteration": 100,
+        "source": "proxy_best_solution",
+        "status": "PASS",
+        "view": "mechanism_ev"
+      },
+      {
+        "complete_objective": 2335.4576672185303,
+        "evaluation_index": 31,
+        "iteration": null,
+        "source": "route_pool_candidate_or_parent",
+        "status": "PASS",
+        "view": "route_pool"
+      },
+      {
+        "complete_objective": 2335.4576672185303,
+        "evaluation_index": 32,
+        "iteration": null,
+        "source": "final_independent_certificate",
+        "status": "PASS",
+        "view": "route_pool"
+      }
+    ],
+    "exact_checkpoint_attempts_by_view": {
+      "cv_only": 0,
+      "mechanism_ev": 0,
+      "naive_ev": 0
+    },
+    "exact_checkpoint_interval_iterations": {
+      "cv_only": null,
+      "mechanism_ev": null,
+      "naive_ev": null
+    },
+    "exact_elites_per_view": 8,
+    "final_objective": 2335.4576672185303,
+    "hard_home_depot_lock": false,
+    "hgs_seconds_per_view": null,
+    "improvement_over_best_parent": 2.229639318813952,
+    "last_strict_improvement_evaluation": 31,
+    "last_strict_improvement_fraction": 0.96875,
+    "max_hgs_iterations_per_view": 100,
+    "measured_elapsed_seconds": 4.373489874997176,
+    "parent_solution_count": 24,
+    "preserve_base_pool_recombination": false,
+    "primary_budget_unit": "complete_candidate_evaluation_attempt",
+    "route_pool_candidate_solution_count": 27,
+    "route_pool_mip": {
+      "component": "time-limited MIP route-pool recombination",
+      "dual_bound": 2335.4576672185303,
+      "incumbent_available": true,
+      "incumbent_cover_exact": true,
+      "incumbent_vector_integral": true,
+      "independent_complete_candidate_evaluation_attempts": 1,
+      "independent_exact_objective": 2335.4576672185303,
+      "independent_violation_count": 0,
+      "message": "Optimization terminated successfully. (HiGHS Status 7: Optimal)",
+      "mip_gap": 0.0,
+      "mip_node_count": 1,
+      "objective": 2335.4576672185303,
+      "objective_closes_under_complete_model": true,
+      "optimality_proven": true,
+      "recombined_exact_objective": 2335.4576672185303,
+      "selected_route_count": 9,
+      "solver": "scipy.optimize.milp/HiGHS",
+      "status": 0,
+      "status_class": "OPTIMAL",
+      "success": true,
+      "time_limit_seconds": 5.0
+    },
+    "route_pool_size": 113,
+    "seed": 10,
+    "selected_source": "history_expanded_time_limited_mip_recombination",
+    "set_partitioning": {
+      "component": "time-limited MIP route-pool recombination",
+      "dual_bound": 2335.4576672185303,
+      "incumbent_available": true,
+      "incumbent_cover_exact": true,
+      "incumbent_vector_integral": true,
+      "independent_complete_candidate_evaluation_attempts": 1,
+      "independent_exact_objective": 2335.4576672185303,
+      "independent_violation_count": 0,
+      "legacy_key_name_only": true,
+      "message": "Optimization terminated successfully. (HiGHS Status 7: Optimal)",
+      "mip_gap": 0.0,
+      "mip_node_count": 1,
+      "objective": 2335.4576672185303,
+      "objective_closes_under_complete_model": true,
+      "optimality_proven": true,
+      "recombined_exact_objective": 2335.4576672185303,
+      "selected_route_count": 9,
+      "solver": "scipy.optimize.milp/HiGHS",
+      "status": 0,
+      "status_class": "OPTIMAL",
+      "success": true,
+      "time_limit_seconds": 5.0
+    },
+    "story": "three genuine HGS populations generate complementary routes; the full nonlinear ReSETP model selects elites; an audited time-limited MIP layer recombines routes across views",
+    "strict_recombination_improvement": true,
+    "view_count": 3,
+    "wallclock_safety_seconds_per_view": 180.0,
+    "wallclock_safety_triggered": false
+  },
+  "seed": 10,
+  "soc_rows": [
+    {
+      "departure_soc": 0.6,
+      "final_soc_after_terminal_charge": 0.6,
+      "maximum_soc": 0.6,
+      "minimum_soc": 0.23765381122153087,
+      "return_soc_before_terminal_charge": 0.23765381122153087,
+      "vehicle_id": "SP-EV-0002"
+    },
+    {
+      "departure_soc": 0.6,
+      "final_soc_after_terminal_charge": 0.6,
+      "maximum_soc": 0.6,
+      "minimum_soc": 0.36881429576923724,
+      "return_soc_before_terminal_charge": 0.36881429576923724,
+      "vehicle_id": "SP-EV-0008"
+    },
+    {
+      "departure_soc": 0.6,
+      "final_soc_after_terminal_charge": 0.6,
+      "maximum_soc": 0.6,
+      "minimum_soc": 0.3703797701906385,
+      "return_soc_before_terminal_charge": 0.3703797701906385,
+      "vehicle_id": "SP-EV-0009"
+    }
+  ],
+  "solution": {
+    "charging_actions": [],
+    "cross_site_services": [],
+    "routes": [
+      {
+        "home_depot_id": "D_guangzhou",
+        "node_sequence": [
+          "D_guangzhou",
+          "C020",
+          "C022",
+          "C001",
+          "C004",
+          "C013",
+          "C016",
+          "D_guangzhou"
+        ],
+        "vehicle_id": "SP-CV-0001",
+        "vehicle_type": "cv"
+      },
+      {
+        "home_depot_id": "D_guangzhou",
+        "node_sequence": [
+          "D_guangzhou",
+          "C011",
+          "C010",
+          "C023",
+          "C009",
+          "C005",
+          "C012",
+          "C017",
+          "D_guangzhou"
+        ],
+        "vehicle_id": "SP-EV-0002",
+        "vehicle_type": "ev"
+      },
+      {
+        "home_depot_id": "D_guangzhou",
+        "node_sequence": [
+          "D_guangzhou",
+          "C007",
+          "C008",
+          "C015",
+          "C019",
+          "C006",
+          "D_guangzhou"
+        ],
+        "vehicle_id": "SP-CV-0003",
+        "vehicle_type": "cv"
+      },
+      {
+        "home_depot_id": "D_guangzhou",
+        "node_sequence": [
+          "D_guangzhou",
+          "C021",
+          "C014",
+          "C018",
+          "C002",
+          "C003",
+          "D_guangzhou"
+        ],
+        "vehicle_id": "SP-CV-0004",
+        "vehicle_type": "cv"
+      },
+      {
+        "home_depot_id": "D_shenzhen",
+        "node_sequence": [
+          "D_shenzhen",
+          "C040",
+          "C024",
+          "C037",
+          "C041",
+          "C036",
+          "C048",
+          "D_shenzhen"
+        ],
+        "vehicle_id": "SP-CV-0005",
+        "vehicle_type": "cv"
+      },
+      {
+        "home_depot_id": "D_shenzhen",
+        "node_sequence": [
+          "D_shenzhen",
+          "C030",
+          "C027",
+          "C046",
+          "C031",
+          "C029",
+          "D_shenzhen"
+        ],
+        "vehicle_id": "SP-CV-0006",
+        "vehicle_type": "cv"
+      },
+      {
+        "home_depot_id": "D_shenzhen",
+        "node_sequence": [
+          "D_shenzhen",
+          "C047",
+          "C049",
+          "C035",
+          "C050",
+          "D_shenzhen"
+        ],
+        "vehicle_id": "SP-CV-0007",
+        "vehicle_type": "cv"
+      },
+      {
+        "home_depot_id": "D_shenzhen",
+        "node_sequence": [
+          "D_shenzhen",
+          "C028",
+          "C025",
+          "C034",
+          "C039",
+          "C033",
+          "D_shenzhen"
+        ],
+        "vehicle_id": "SP-EV-0008",
+        "vehicle_type": "ev"
+      },
+      {
+        "home_depot_id": "D_shenzhen",
+        "node_sequence": [
+          "D_shenzhen",
+          "C026",
+          "C032",
+          "C043",
+          "C042",
+          "C038",
+          "C045",
+          "C044",
+          "D_shenzhen"
+        ],
+        "vehicle_id": "SP-EV-0009",
+        "vehicle_type": "ev"
+      }
+    ]
+  },
+  "terminal_charges": [
+    {
+      "day_offset": 1,
+      "earliest_second_absolute": 61396.04214,
+      "electricity_cost_cny": 8.909397439726286,
+      "emissions_kg": 10.149731682898587,
+      "end_second_absolute": 90982.16402216729,
+      "end_soc": 0.6,
+      "energy_kwh": 28.002113468800093,
+      "latest_second_absolute": 123885.60877783272,
+      "occupancy_minutes": 76.3694003694548,
+      "power_kw": 22.0,
+      "start_clock_second": 0.0,
+      "start_second_absolute": 86400.0,
+      "start_soc": 0.23765381122153087,
+      "station_id": "D_guangzhou",
+      "vehicle_id": "SP-EV-0002"
+    },
+    {
+      "day_offset": 1,
+      "earliest_second_absolute": 60279.25788,
+      "electricity_cost_cny": 4.594584917067889,
+      "emissions_kg": 6.555046855701592,
+      "end_second_absolute": 89323.53238193782,
+      "end_soc": 0.6,
+      "energy_kwh": 17.866031222953346,
+      "latest_second_absolute": 127568.65517806217,
+      "occupancy_minutes": 48.72553969896367,
+      "power_kw": 22.0,
+      "start_clock_second": 0.0,
+      "start_second_absolute": 86400.0,
+      "start_soc": 0.36881429576923724,
+      "station_id": "D_shenzhen",
+      "vehicle_id": "SP-EV-0008"
+    },
+    {
+      "day_offset": 1,
+      "earliest_second_absolute": 62148.90258,
+      "electricity_cost_cny": 4.563472676851469,
+      "emissions_kg": 6.510659343861974,
+      "end_second_absolute": 89303.73567703649,
+      "end_soc": 0.6,
+      "energy_kwh": 17.745051359667457,
+      "latest_second_absolute": 123547.59764296352,
+      "occupancy_minutes": 48.39559461727489,
+      "power_kw": 22.0,
+      "start_clock_second": 0.0,
+      "start_second_absolute": 86400.0,
+      "start_soc": 0.3703797701906385,
+      "station_id": "D_shenzhen",
+      "vehicle_id": "SP-EV-0009"
+    }
+  ]
+}

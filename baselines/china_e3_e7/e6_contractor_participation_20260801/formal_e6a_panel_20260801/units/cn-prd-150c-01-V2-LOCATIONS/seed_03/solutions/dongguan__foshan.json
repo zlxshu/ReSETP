@@ -1,0 +1,244 @@
+{
+  "breakdown": {
+    "E_cv_direct": 159.50013052655717,
+    "E_ev_indirect": 56.30378670195285,
+    "E_total": 215.80391722851002,
+    "carbon_quota_kg": 0.0,
+    "cost_carbon": 16.189609870482823,
+    "cost_elec": 81.28894544340949,
+    "cost_fix": 1020.0,
+    "cost_fuel": 438.730637494817,
+    "cost_km": 660.9631312051363,
+    "cost_occ": 16.409913275690784,
+    "cost_transship": 0.0,
+    "depot_charging_kwh": 142.96353904594275,
+    "distance_cv": 436892.379452217,
+    "distance_ev": 477891.15706329397,
+    "distance_total": 914783.536515511,
+    "electricity_kwh": 175.78336559732432,
+    "ev_drive_kwh": 175.7833655973243,
+    "fuel_liters": 58.96917170629261,
+    "n_veh_cv": 4,
+    "n_veh_ev": 2,
+    "station_charging_kwh": 32.81982655138157,
+    "total_cost": 2233.5822372895364
+  },
+  "coalition": [
+    "D_dongguan",
+    "D_foshan"
+  ],
+  "instance_id": "cn-prd-150c-01-V2-LOCATIONS",
+  "objective_cny": 2233.5822372895364,
+  "schema": "resetp.e6-direct-coalition-solution.v1",
+  "seed": 3,
+  "selected_source": "SEARCH_STRICT_IMPROVEMENT",
+  "solution": {
+    "charging_actions": [
+      {
+        "charge_day_offset": 0,
+        "charge_start_second": 0.0,
+        "charging_curve_id": "NL90_mild",
+        "end_energy_kwh": 77.28,
+        "energy_kwh": 77.28,
+        "occupancy_minutes": 231.84,
+        "start_energy_kwh": 0.0,
+        "station_id": "D_foshan",
+        "vehicle_id": "CH81-0006"
+      },
+      {
+        "charge_day_offset": 0,
+        "charge_start_second": 26010.9,
+        "charging_curve_id": "NL90_mild",
+        "end_energy_kwh": 54.96375986320851,
+        "energy_kwh": 19.516788663907214,
+        "occupancy_minutes": 19.51678866390721,
+        "start_energy_kwh": 35.446971199301295,
+        "station_id": "S_shenzhen",
+        "vehicle_id": "CH81-0006"
+      },
+      {
+        "charge_day_offset": 0,
+        "charge_start_second": 56397.95408,
+        "charging_curve_id": "NL90_mild",
+        "end_energy_kwh": 14.284825695427857,
+        "energy_kwh": 13.303037887474355,
+        "occupancy_minutes": 13.303037887474355,
+        "start_energy_kwh": 0.9817878079535021,
+        "station_id": "S_foshan",
+        "vehicle_id": "CH81-0006"
+      },
+      {
+        "charge_day_offset": 0,
+        "charge_start_second": 0.0,
+        "charging_curve_id": "NL90_mild",
+        "end_energy_kwh": 65.68353904594274,
+        "energy_kwh": 65.68353904594274,
+        "occupancy_minutes": 179.1369246707529,
+        "start_energy_kwh": 0.0,
+        "station_id": "D_dongguan",
+        "vehicle_id": "CH81-0003"
+      }
+    ],
+    "cross_site_services": [
+      {
+        "customer_id": "C018",
+        "served_by_depot_id": "D_dongguan"
+      },
+      {
+        "customer_id": "C004",
+        "served_by_depot_id": "D_dongguan"
+      },
+      {
+        "customer_id": "C013",
+        "served_by_depot_id": "D_dongguan"
+      },
+      {
+        "customer_id": "C134",
+        "served_by_depot_id": "D_dongguan"
+      },
+      {
+        "customer_id": "C094",
+        "served_by_depot_id": "D_dongguan"
+      },
+      {
+        "customer_id": "C129",
+        "served_by_depot_id": "D_dongguan"
+      },
+      {
+        "customer_id": "C097",
+        "served_by_depot_id": "D_dongguan"
+      },
+      {
+        "customer_id": "C046",
+        "served_by_depot_id": "D_foshan"
+      },
+      {
+        "customer_id": "C056",
+        "served_by_depot_id": "D_foshan"
+      },
+      {
+        "customer_id": "C089",
+        "served_by_depot_id": "D_foshan"
+      },
+      {
+        "customer_id": "C075",
+        "served_by_depot_id": "D_foshan"
+      },
+      {
+        "customer_id": "C077",
+        "served_by_depot_id": "D_foshan"
+      },
+      {
+        "customer_id": "C060",
+        "served_by_depot_id": "D_foshan"
+      },
+      {
+        "customer_id": "C063",
+        "served_by_depot_id": "D_foshan"
+      },
+      {
+        "customer_id": "C096",
+        "served_by_depot_id": "D_foshan"
+      },
+      {
+        "customer_id": "C095",
+        "served_by_depot_id": "D_foshan"
+      },
+      {
+        "customer_id": "C121",
+        "served_by_depot_id": "D_foshan"
+      }
+    ],
+    "routes": [
+      {
+        "home_depot_id": "D_dongguan",
+        "node_sequence": [
+          "D_dongguan",
+          "C018",
+          "C004",
+          "C013",
+          "C009",
+          "D_dongguan"
+        ],
+        "vehicle_id": "CH81-0001",
+        "vehicle_type": "cv"
+      },
+      {
+        "home_depot_id": "D_dongguan",
+        "node_sequence": [
+          "D_dongguan",
+          "C130",
+          "C098",
+          "C125",
+          "C105",
+          "D_dongguan"
+        ],
+        "vehicle_id": "CH81-0002",
+        "vehicle_type": "cv"
+      },
+      {
+        "home_depot_id": "D_dongguan",
+        "node_sequence": [
+          "D_dongguan",
+          "C134",
+          "C094",
+          "C104",
+          "C129",
+          "C097",
+          "C148",
+          "D_dongguan"
+        ],
+        "vehicle_id": "CH81-0003",
+        "vehicle_type": "ev"
+      },
+      {
+        "home_depot_id": "D_foshan",
+        "node_sequence": [
+          "D_foshan",
+          "C046",
+          "C083",
+          "C056",
+          "C089",
+          "C073",
+          "D_foshan"
+        ],
+        "vehicle_id": "CH81-0004",
+        "vehicle_type": "cv"
+      },
+      {
+        "home_depot_id": "D_foshan",
+        "node_sequence": [
+          "D_foshan",
+          "C075",
+          "C077",
+          "C051",
+          "C070",
+          "C060",
+          "C054",
+          "C063",
+          "D_foshan"
+        ],
+        "vehicle_id": "CH81-0005",
+        "vehicle_type": "cv"
+      },
+      {
+        "home_depot_id": "D_foshan",
+        "node_sequence": [
+          "D_foshan",
+          "S_shenzhen",
+          "C096",
+          "C095",
+          "C121",
+          "C109",
+          "S_foshan",
+          "C041",
+          "D_foshan"
+        ],
+        "vehicle_id": "CH81-0006",
+        "vehicle_type": "ev"
+      }
+    ]
+  },
+  "solution_sha256": "3c82e62da5a677834d362efaa294b7a64eb958462d258a09ce9b81ec528521ef",
+  "violations": []
+}

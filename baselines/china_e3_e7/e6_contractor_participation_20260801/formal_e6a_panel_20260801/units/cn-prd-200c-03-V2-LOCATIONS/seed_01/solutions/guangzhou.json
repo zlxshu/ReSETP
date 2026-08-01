@@ -1,0 +1,318 @@
+{
+  "breakdown": {
+    "E_cv_direct": 453.8634255495116,
+    "E_ev_indirect": 79.93928886596964,
+    "E_total": 533.8027144154812,
+    "carbon_quota_kg": 0.0,
+    "cost_carbon": 40.0458796354494,
+    "cost_elec": 104.54626189004051,
+    "cost_fix": 2380.0,
+    "cost_fuel": 1248.423994197071,
+    "cost_km": 1423.6879899760263,
+    "cost_occ": 10.160955899784334,
+    "cost_transship": 0.0,
+    "depot_charging_kwh": 231.84,
+    "distance_cv": 1257101.396209915,
+    "distance_ev": 661416.270048198,
+    "distance_total": 1918517.666258113,
+    "electricity_kwh": 250.6994802434093,
+    "ev_drive_kwh": 250.6994802434093,
+    "fuel_liters": 167.7989239512192,
+    "n_veh_cv": 11,
+    "n_veh_ev": 3,
+    "station_charging_kwh": 18.85948024340931,
+    "total_cost": 5206.865081598371
+  },
+  "coalition": [
+    "D_guangzhou"
+  ],
+  "instance_id": "cn-prd-200c-03-V2-LOCATIONS",
+  "objective_cny": 5206.865081598371,
+  "schema": "resetp.e6-direct-coalition-solution.v1",
+  "seed": 1,
+  "selected_source": "SEARCH_STRICT_IMPROVEMENT",
+  "solution": {
+    "charging_actions": [
+      {
+        "charge_day_offset": 0,
+        "charge_start_second": 0.0,
+        "charging_curve_id": "NL90_mild",
+        "end_energy_kwh": 77.28,
+        "energy_kwh": 77.28,
+        "occupancy_minutes": 231.84,
+        "start_energy_kwh": 0.0,
+        "station_id": "D_guangzhou",
+        "vehicle_id": "CH81-0012"
+      },
+      {
+        "charge_day_offset": 0,
+        "charge_start_second": 25983.1,
+        "charging_curve_id": "NL90_mild",
+        "end_energy_kwh": 37.86434113555777,
+        "energy_kwh": 6.896513079777364,
+        "occupancy_minutes": 6.8965130797773595,
+        "start_energy_kwh": 30.96782805578041,
+        "station_id": "S_shenzhen",
+        "vehicle_id": "CH81-0012"
+      },
+      {
+        "charge_day_offset": 0,
+        "charge_start_second": 0.0,
+        "charging_curve_id": "NL90_mild",
+        "end_energy_kwh": 77.28,
+        "energy_kwh": 77.28,
+        "occupancy_minutes": 231.84,
+        "start_energy_kwh": 0.0,
+        "station_id": "D_guangzhou",
+        "vehicle_id": "CH81-0013"
+      },
+      {
+        "charge_day_offset": 0,
+        "charge_start_second": 23238.9,
+        "charging_curve_id": "NL90_mild",
+        "end_energy_kwh": 71.01443155615937,
+        "energy_kwh": 7.670371995643009,
+        "occupancy_minutes": 9.13280355180237,
+        "start_energy_kwh": 63.34405956051636,
+        "station_id": "S_dongguan",
+        "vehicle_id": "CH81-0013"
+      },
+      {
+        "charge_day_offset": 0,
+        "charge_start_second": 21600.0,
+        "charging_curve_id": "NL90_mild",
+        "end_energy_kwh": 77.28,
+        "energy_kwh": 77.28,
+        "occupancy_minutes": 231.84,
+        "start_energy_kwh": 0.0,
+        "station_id": "D_guangzhou",
+        "vehicle_id": "CH81-0006"
+      },
+      {
+        "charge_day_offset": 0,
+        "charge_start_second": 43200.0,
+        "charging_curve_id": "NL90_mild",
+        "end_energy_kwh": 35.00108320797585,
+        "energy_kwh": 4.292595167988935,
+        "occupancy_minutes": 4.292595167988937,
+        "start_energy_kwh": 30.708488039986918,
+        "station_id": "S_shenzhen",
+        "vehicle_id": "CH81-0006"
+      }
+    ],
+    "cross_site_services": [],
+    "routes": [
+      {
+        "home_depot_id": "D_guangzhou",
+        "node_sequence": [
+          "D_guangzhou",
+          "C062",
+          "C117",
+          "C114",
+          "C093",
+          "C115",
+          "D_guangzhou"
+        ],
+        "vehicle_id": "CH81-0001",
+        "vehicle_type": "cv"
+      },
+      {
+        "home_depot_id": "D_guangzhou",
+        "node_sequence": [
+          "D_guangzhou",
+          "C017",
+          "C007",
+          "C014",
+          "C006",
+          "C016",
+          "C010",
+          "C018",
+          "D_guangzhou"
+        ],
+        "vehicle_id": "CH81-0002",
+        "vehicle_type": "cv"
+      },
+      {
+        "home_depot_id": "D_guangzhou",
+        "node_sequence": [
+          "D_guangzhou",
+          "C066",
+          "C087",
+          "C095",
+          "C103",
+          "C075",
+          "C100",
+          "D_guangzhou"
+        ],
+        "vehicle_id": "CH81-0003",
+        "vehicle_type": "cv"
+      },
+      {
+        "home_depot_id": "D_guangzhou",
+        "node_sequence": [
+          "D_guangzhou",
+          "C118",
+          "C071",
+          "C082",
+          "C110",
+          "C023",
+          "D_guangzhou"
+        ],
+        "vehicle_id": "CH81-0004",
+        "vehicle_type": "cv"
+      },
+      {
+        "home_depot_id": "D_guangzhou",
+        "node_sequence": [
+          "D_guangzhou",
+          "C053",
+          "C043",
+          "C027",
+          "C032",
+          "C046",
+          "D_guangzhou"
+        ],
+        "vehicle_id": "CH81-0005",
+        "vehicle_type": "cv"
+      },
+      {
+        "home_depot_id": "D_guangzhou",
+        "node_sequence": [
+          "D_guangzhou",
+          "S_shenzhen",
+          "C136",
+          "C140",
+          "C178",
+          "C184",
+          "C148",
+          "C188",
+          "D_guangzhou"
+        ],
+        "vehicle_id": "CH81-0006",
+        "vehicle_type": "ev"
+      },
+      {
+        "home_depot_id": "D_guangzhou",
+        "node_sequence": [
+          "D_guangzhou",
+          "C008",
+          "C013",
+          "C019",
+          "C152",
+          "C135",
+          "C151",
+          "C132",
+          "D_guangzhou"
+        ],
+        "vehicle_id": "CH81-0007",
+        "vehicle_type": "cv"
+      },
+      {
+        "home_depot_id": "D_guangzhou",
+        "node_sequence": [
+          "D_guangzhou",
+          "C091",
+          "C112",
+          "C049",
+          "C052",
+          "C035",
+          "C054",
+          "D_guangzhou"
+        ],
+        "vehicle_id": "CH81-0008",
+        "vehicle_type": "cv"
+      },
+      {
+        "home_depot_id": "D_guangzhou",
+        "node_sequence": [
+          "D_guangzhou",
+          "C069",
+          "C121",
+          "C086",
+          "C099",
+          "C084",
+          "C077",
+          "D_guangzhou"
+        ],
+        "vehicle_id": "CH81-0009",
+        "vehicle_type": "cv"
+      },
+      {
+        "home_depot_id": "D_guangzhou",
+        "node_sequence": [
+          "D_guangzhou",
+          "C056",
+          "C074",
+          "C079",
+          "D_guangzhou"
+        ],
+        "vehicle_id": "CH81-0010",
+        "vehicle_type": "cv"
+      },
+      {
+        "home_depot_id": "D_guangzhou",
+        "node_sequence": [
+          "D_guangzhou",
+          "C028",
+          "C051",
+          "C037",
+          "C050",
+          "C055",
+          "C048",
+          "D_guangzhou"
+        ],
+        "vehicle_id": "CH81-0011",
+        "vehicle_type": "cv"
+      },
+      {
+        "home_depot_id": "D_guangzhou",
+        "node_sequence": [
+          "D_guangzhou",
+          "S_shenzhen",
+          "C169",
+          "C191",
+          "C166",
+          "C123",
+          "C142",
+          "C176",
+          "D_guangzhou"
+        ],
+        "vehicle_id": "CH81-0012",
+        "vehicle_type": "ev"
+      },
+      {
+        "home_depot_id": "D_guangzhou",
+        "node_sequence": [
+          "D_guangzhou",
+          "S_dongguan",
+          "C187",
+          "C165",
+          "C200",
+          "C154",
+          "C170",
+          "C139",
+          "D_guangzhou"
+        ],
+        "vehicle_id": "CH81-0013",
+        "vehicle_type": "ev"
+      },
+      {
+        "home_depot_id": "D_guangzhou",
+        "node_sequence": [
+          "D_guangzhou",
+          "C156",
+          "C198",
+          "C193",
+          "C192",
+          "C162",
+          "C147",
+          "D_guangzhou"
+        ],
+        "vehicle_id": "CH81-0014",
+        "vehicle_type": "cv"
+      }
+    ]
+  },
+  "solution_sha256": "9fcf819c5ec3fb8de4e5f4767f9b85d1b6cafc8e6b48265ae005f760d8283085",
+  "violations": []
+}

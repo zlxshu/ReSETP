@@ -1,0 +1,69 @@
+{
+  "coalition_cost_cny": {
+    "D_dongguan": 1578.3942076506735,
+    "D_dongguan+D_foshan": 2237.4957999973244,
+    "D_dongguan+D_foshan+D_guangzhou": 5279.724218178299,
+    "D_dongguan+D_foshan+D_guangzhou+D_shenzhen": 6855.191602585168,
+    "D_dongguan+D_foshan+D_shenzhen": 4764.678761390572,
+    "D_dongguan+D_guangzhou": 4564.482427302491,
+    "D_dongguan+D_guangzhou+D_shenzhen": 6335.394626511298,
+    "D_dongguan+D_shenzhen": 4646.072457361846,
+    "D_foshan": 1184.9679555469893,
+    "D_foshan+D_guangzhou": 4277.16269504766,
+    "D_foshan+D_guangzhou+D_shenzhen": 6057.80536113911,
+    "D_foshan+D_shenzhen": 3730.080756388778,
+    "D_guangzhou": 3720.4150408914384,
+    "D_guangzhou+D_shenzhen": 5347.241492820207,
+    "D_shenzhen": 4043.479034332684
+  },
+  "coalition_profit_cny": {
+    "D_dongguan": 5816.605792349326,
+    "D_dongguan+D_foshan": 10889.004200002675,
+    "D_dongguan+D_foshan+D_guangzhou": 30871.7757818217,
+    "D_dongguan+D_foshan+D_guangzhou+D_shenzhen": 53461.30839741483,
+    "D_dongguan+D_foshan+D_shenzhen": 32526.821238609427,
+    "D_dongguan+D_guangzhou": 25855.51757269751,
+    "D_dongguan+D_guangzhou+D_shenzhen": 48249.6053734887,
+    "D_dongguan+D_shenzhen": 26913.927542638154,
+    "D_foshan": 4546.532044453011,
+    "D_foshan+D_guangzhou": 24479.33730495234,
+    "D_foshan+D_guangzhou+D_shenzhen": 46863.69463886089,
+    "D_foshan+D_shenzhen": 26166.41924361122,
+    "D_guangzhou": 19304.58495910856,
+    "D_guangzhou+D_shenzhen": 41842.758507179795,
+    "D_shenzhen": 20121.520965667318
+  },
+  "method_A": {
+    "core_nonempty": true,
+    "independent_cost_shapley_max_abs_gap_cny": 4.547473508864641e-13,
+    "independent_profit_shapley_max_abs_gap_cny": 3.637978807091713e-12,
+    "one_core_profit_allocation_cny": {
+      "D_dongguan": 6392.43847686936,
+      "D_foshan": 4546.532044453011,
+      "D_guangzhou": 19932.805260499328,
+      "D_shenzhen": 22589.532615593136
+    },
+    "profit_cost_identity_max_abs_gap_cny": 0.0,
+    "shapley_core_violations_cny": {},
+    "shapley_cost_share_cny": {
+      "D_dongguan": 1054.3202219170225,
+      "D_foshan": 630.096477220415,
+      "D_guangzhou": 2656.175354664906,
+      "D_shenzhen": 2514.599548782824
+    },
+    "shapley_in_core": true,
+    "shapley_profit_cny": {
+      "D_dongguan": 6340.6797780829775,
+      "D_foshan": 5101.403522779585,
+      "D_guangzhou": 20368.824645335095,
+      "D_shenzhen": 21650.400451217174
+    }
+  },
+  "revenue_assignment": "REVENUE_TO_SERVING_CONTRACTOR",
+  "standalone_profit_cny": {
+    "D_dongguan": 5816.605792349326,
+    "D_foshan": 4546.532044453011,
+    "D_guangzhou": 19304.58495910856,
+    "D_shenzhen": 20121.520965667318
+  }
+}

@@ -1,0 +1,240 @@
+{
+  "coalition": [
+    "D_foshan"
+  ],
+  "records": [
+    {
+      "charging_actions": [
+        {
+          "charge_day_offset": 0,
+          "charge_start_second": 0.0,
+          "charging_curve_id": "NL90_mild",
+          "end_energy_kwh": 77.28,
+          "energy_kwh": 77.28,
+          "occupancy_minutes": 231.84,
+          "start_energy_kwh": 0.0,
+          "station_id": "D_foshan",
+          "vehicle_id": "CH81-0001"
+        },
+        {
+          "charge_day_offset": 0,
+          "charge_start_second": 26010.9,
+          "charging_curve_id": "NL90_mild",
+          "end_energy_kwh": 41.241683218557284,
+          "energy_kwh": 6.293860426468555,
+          "occupancy_minutes": 6.293860426468556,
+          "start_energy_kwh": 34.94782279208873,
+          "station_id": "S_shenzhen",
+          "vehicle_id": "CH81-0001"
+        }
+      ],
+      "customers": [
+        "C101",
+        "C116",
+        "C117",
+        "C110",
+        "C139",
+        "C112"
+      ],
+      "route": {
+        "home_depot_id": "D_foshan",
+        "node_sequence": [
+          "D_foshan",
+          "S_shenzhen",
+          "C101",
+          "C116",
+          "C117",
+          "C110",
+          "C139",
+          "C112",
+          "D_foshan"
+        ],
+        "vehicle_id": "CH81-0001",
+        "vehicle_type": "ev"
+      },
+      "route_cost_cny": 352.5294052512019,
+      "source_rank": 0,
+      "source_view": "cv_only"
+    },
+    {
+      "charging_actions": [],
+      "customers": [
+        "C010",
+        "C136",
+        "C019",
+        "C088"
+      ],
+      "route": {
+        "home_depot_id": "D_foshan",
+        "node_sequence": [
+          "D_foshan",
+          "C010",
+          "C136",
+          "C019",
+          "C088",
+          "D_foshan"
+        ],
+        "vehicle_id": "CH81-0002",
+        "vehicle_type": "cv"
+      },
+      "route_cost_cny": 733.9904483433766,
+      "source_rank": 0,
+      "source_view": "cv_only"
+    },
+    {
+      "charging_actions": [],
+      "customers": [
+        "C080",
+        "C065",
+        "C073",
+        "C091"
+      ],
+      "route": {
+        "home_depot_id": "D_foshan",
+        "node_sequence": [
+          "D_foshan",
+          "C080",
+          "C065",
+          "C073",
+          "C091",
+          "D_foshan"
+        ],
+        "vehicle_id": "CH81-0003",
+        "vehicle_type": "cv"
+      },
+      "route_cost_cny": 347.25908175207076,
+      "source_rank": 0,
+      "source_view": "cv_only"
+    },
+    {
+      "charging_actions": [],
+      "customers": [
+        "C080",
+        "C091"
+      ],
+      "route": {
+        "home_depot_id": "D_foshan",
+        "node_sequence": [
+          "D_foshan",
+          "C080",
+          "C091",
+          "D_foshan"
+        ],
+        "vehicle_id": "CH81-0001",
+        "vehicle_type": "cv"
+      },
+      "route_cost_cny": 313.3153909914797,
+      "source_rank": 1,
+      "source_view": "naive_ev"
+    },
+    {
+      "charging_actions": [],
+      "customers": [
+        "C065",
+        "C073",
+        "C088"
+      ],
+      "route": {
+        "home_depot_id": "D_foshan",
+        "node_sequence": [
+          "D_foshan",
+          "C065",
+          "C073",
+          "C088",
+          "D_foshan"
+        ],
+        "vehicle_id": "CH81-0002",
+        "vehicle_type": "cv"
+      },
+      "route_cost_cny": 345.328258395254,
+      "source_rank": 1,
+      "source_view": "naive_ev"
+    },
+    {
+      "charging_actions": [],
+      "customers": [
+        "C101",
+        "C136",
+        "C112"
+      ],
+      "route": {
+        "home_depot_id": "D_foshan",
+        "node_sequence": [
+          "D_foshan",
+          "C101",
+          "C136",
+          "C112",
+          "D_foshan"
+        ],
+        "vehicle_id": "CH81-0003",
+        "vehicle_type": "cv"
+      },
+      "route_cost_cny": 525.2667874199558,
+      "source_rank": 1,
+      "source_view": "naive_ev"
+    },
+    {
+      "charging_actions": [
+        {
+          "charge_day_offset": 0,
+          "charge_start_second": 0.0,
+          "charging_curve_id": "NL90_mild",
+          "end_energy_kwh": 77.28,
+          "energy_kwh": 77.28,
+          "occupancy_minutes": 231.84,
+          "start_energy_kwh": 0.0,
+          "station_id": "D_foshan",
+          "vehicle_id": "CH81-0004"
+        },
+        {
+          "charge_day_offset": 0,
+          "charge_start_second": 24545.8,
+          "charging_curve_id": "NL90_mild",
+          "end_energy_kwh": 67.70013714477295,
+          "energy_kwh": 8.83921315208508,
+          "occupancy_minutes": 8.839213152085085,
+          "start_energy_kwh": 58.86092399268787,
+          "station_id": "S_dongguan",
+          "vehicle_id": "CH81-0004"
+        }
+      ],
+      "customers": [
+        "C010",
+        "C019",
+        "C116",
+        "C117",
+        "C110",
+        "C139"
+      ],
+      "route": {
+        "home_depot_id": "D_foshan",
+        "node_sequence": [
+          "D_foshan",
+          "S_dongguan",
+          "C010",
+          "C019",
+          "C116",
+          "C117",
+          "C110",
+          "C139",
+          "D_foshan"
+        ],
+        "vehicle_id": "CH81-0004",
+        "vehicle_type": "ev"
+      },
+      "route_cost_cny": 369.143646783148,
+      "source_rank": 1,
+      "source_view": "naive_ev"
+    }
+  ],
+  "schema": "resetp.e6-direct-coalition-route-pool.v1",
+  "summary": {
+    "maximum_route_cost_cny": 733.9904483433766,
+    "minimum_route_cost_cny": 313.3153909914797,
+    "record_count": 7,
+    "records_by_source": {
+      "cv_only": 3,
+      "naive_ev": 4
+    }
+  }
+}

@@ -1,0 +1,76 @@
+{
+  "archive_candidates_per_view": 8,
+  "command": "PYTHONPATH=solver/src:baselines/algorithm_prototypes/china81_mechanism_hybrid_20260720:. build/python_envs/pyvrp-hgs-0.12.2/bin/python baselines/china_e3_e7/e4_joint_routing_20260801/run_probe.py",
+  "created_at_utc": "2026-08-01T05:57:20.117311+00:00",
+  "evidence_role": "FORMAL_PANEL_MEMBER",
+  "fleet_caps_by_depot": {
+    "D_guangzhou": {
+      "num_cv": 4,
+      "num_ev": 1,
+      "total_fleet_cap": 5
+    },
+    "D_shenzhen": {
+      "num_cv": 5,
+      "num_ev": 2,
+      "total_fleet_cap": 7
+    }
+  },
+  "instance_id": "cn-prd-50c-02-V2-LOCATIONS",
+  "iterations_per_hgs_view": 100,
+  "native_engine_gap": {
+    "battery_ledger_gap": "check.py _check_battery applies every depot action before route travel",
+    "implementation": "terminal restoration is kept in an isolated independently checked ledger",
+    "time_window_support": "check.py recognizes post-route depot charging"
+  },
+  "objective_modes": {
+    "COST_ONLY": "operating cost; carbon price exactly zero in the objective",
+    "COST_PLUS_CARBON": "operating cost plus current China81 carbon price",
+    "PURE_CARBON": "system kgCO2e only"
+  },
+  "old_fixed_route_reference": {
+    "charging_emissions_reduction_pct": 54.97037199876627,
+    "overwritten": false,
+    "path": "baselines/china_e3_e7/e4_carbon_timing_20260729",
+    "status": "PASS_COMPLETE_ZERO_SEARCH_REPLAY"
+  },
+  "protected_sha256_after": {
+    "solver/src/setp_solver/check.py": "9c81e254e05591667c8225965bb9d0ba4e8bbfc53eb0f8c61ffdb4325a1403a8",
+    "solver/src/setp_solver/cost.py": "2717b4b4de39bb4c2a9a1bda602f4420cb3e3b1e87faa83678dfa64f88fc80be",
+    "solver/src/setp_solver/search/evaluation.py": "c7215263c39d1d5a1429b41ca8ac40d950dbdf2bdc288337e56fbe9733406fc3"
+  },
+  "protected_sha256_before": {
+    "solver/src/setp_solver/check.py": "9c81e254e05591667c8225965bb9d0ba4e8bbfc53eb0f8c61ffdb4325a1403a8",
+    "solver/src/setp_solver/cost.py": "2717b4b4de39bb4c2a9a1bda602f4420cb3e3b1e87faa83678dfa64f88fc80be",
+    "solver/src/setp_solver/search/evaluation.py": "c7215263c39d1d5a1429b41ca8ac40d950dbdf2bdc288337e56fbe9733406fc3"
+  },
+  "python": "/Volumes/移动硬盘（512G）/ReSETP/build/python_envs/pyvrp-hgs-0.12.2/bin/python",
+  "python_version": "3.13.9",
+  "schema": "resetp.e4-joint-routing-probe.v1",
+  "seeds": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9,
+    10
+  ],
+  "soc_contract": {
+    "final_minimum": 0.6,
+    "initial": 0.6,
+    "maximum": 0.8,
+    "minimum": 0.2
+  },
+  "source_sha256": {
+    "baselines/china_e3_e7/e4_carbon_timing_20260729/decision.json": "3a45b5dfe60735eb5542193c14e5602b6d9b75036e22e48a6c1665e722b4cc61",
+    "baselines/china_e3_e7/e4_joint_routing_20260801/joint_soc_wrapper.py": "bb3b3f97abb4f2a545adfd3f72c55ca0ce71d9b82fa9a2aff3c841d71ea74f5b",
+    "baselines/china_e3_e7/e4_joint_routing_20260801/run_probe.py": "7cb7c1f7692c5f8ac80e44cfae91f4a7e2b862f8a16b767db4831e0933b113a6",
+    "solver/src/setp_solver/check.py": "9c81e254e05591667c8225965bb9d0ba4e8bbfc53eb0f8c61ffdb4325a1403a8",
+    "solver/src/setp_solver/cost.py": "2717b4b4de39bb4c2a9a1bda602f4420cb3e3b1e87faa83678dfa64f88fc80be",
+    "solver/src/setp_solver/search/evaluation.py": "c7215263c39d1d5a1429b41ca8ac40d950dbdf2bdc288337e56fbe9733406fc3"
+  },
+  "vehicle_ratio_constraint": null
+}

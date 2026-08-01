@@ -77,11 +77,11 @@ def write_csv(path: Path, rows: list[dict[str, Any]]) -> None:
         writer.writerows(rows)
 
 
-def load_bundle() -> Any:
+def load_bundle(instance_id: str = INSTANCE_ID) -> Any:
     data = REPO / "data/ChinaInstances"
     base = load_china81_bundle(
         REPO,
-        INSTANCE_ID,
+        instance_id,
         static_input_authority=data / "china81_stage2_static_inputs_corrected_v3_20260723",
         road_matrix_authority=data / "china81_local_directed_matrices_corrected_v10_20260723",
         runtime_parameter_authority=data / "china81_runtime_parameter_authority_v4_20260723",
@@ -127,7 +127,15 @@ def route_signature(solution: Solution, *, typed: bool) -> list[Any]:
     return sorted(rows)
 
 
-def run_one(bundle: Any, initial: Solution, seed: int, mode: str) -> tuple[dict[str, Any], dict[str, Any]]:
+def run_one(
+    bundle: Any,
+    initial: Solution,
+    instance_id: str,
+    seed: int,
+    mode: str,
+    iterations: int,
+    archive: int,
+) -> tuple[dict[str, Any], dict[str, Any]]:
     register_objective(bundle, mode)
     start = score_fixed_solution(
         complete_route_skeleton(initial, bundle).solution,
@@ -141,10 +149,10 @@ def run_one(bundle: Any, initial: Solution, seed: int, mode: str) -> tuple[dict[
         initial,
         seed=seed,
         hgs_seconds_per_view=None,
-        exact_elites_per_view=ARCHIVE,
-        max_archive_candidates_per_view=ARCHIVE,
+        exact_elites_per_view=archive,
+        max_archive_candidates_per_view=archive,
         sp_time_limit_seconds=5.0,
-        max_hgs_iterations_per_view=ITERATIONS,
+        max_hgs_iterations_per_view=iterations,
         wallclock_safety_seconds_per_view=180.0,
         exact_checkpoint_interval_iterations=None,
     )
@@ -157,7 +165,7 @@ def run_one(bundle: Any, initial: Solution, seed: int, mode: str) -> tuple[dict[
     path_hash = canonical_sha(route_signature(final.solution, typed=False))
     typed_hash = canonical_sha(route_signature(final.solution, typed=True))
     row = {
-        "instance_id": INSTANCE_ID,
+        "instance_id": instance_id,
         "seed": seed,
         "objective_mode": mode,
         "objective_value": final.objective,
@@ -191,7 +199,7 @@ def run_one(bundle: Any, initial: Solution, seed: int, mode: str) -> tuple[dict[
         "failure_reason": "",
     }
     payload = {
-        "instance_id": INSTANCE_ID,
+        "instance_id": instance_id,
         "seed": seed,
         "objective_mode": mode,
         "solution": asdict(final.solution),
@@ -220,7 +228,9 @@ def finalize_hashes(output: Path) -> None:
     write_json(output / "artifact_hashes.json", rows)
 
 
-def report_text(decision: dict[str, Any], rows: list[dict[str, Any]]) -> str:
+def report_text(
+    decision: dict[str, Any], rows: list[dict[str, Any]], seeds: tuple[int, ...]
+) -> str:
     capacity_text = "、".join(
         f"{depot} 最多 {values['ev_cap']} 辆电车/{values['chargers']} 支枪"
         for depot, values in decision["terminal_capacity_basis"].items()
@@ -230,7 +240,7 @@ def report_text(decision: dict[str, Any], rows: list[dict[str, Any]]) -> str:
         "",
         f"**终态：`{decision['status']}`。**",
         "",
-        "本轮在 50 客户珠三角算例上执行日初 60%、最低 20%、最高 80%、日末至少 60% 的电量循环。",
+        f"本轮在 {decision['instance_id']} 上执行日初 60%、最低 20%、最高 80%、日末至少 60% 的电量循环。",
         "客户路径、车辆类型、途中充电站和充电时刻都进入同一候选评价；算法仍受原算例逐车场油车、电车上限约束，没有另设车型比例。",
         "",
         "| seed | 目标 | 运营成本/元 | 含碳成本/元 | 系统排放/kg | 电费/元 | 油车 | 电车 | 途中充电 | 最低SOC |",
@@ -256,7 +266,7 @@ def report_text(decision: dict[str, Any], rows: list[dict[str, Any]]) -> str:
             for row in passed
             if int(row["seed"]) == seed
         }
-        for seed in SEEDS
+        for seed in seeds
     }
     lines.extend(
         [
@@ -324,7 +334,14 @@ def report_text(decision: dict[str, Any], rows: list[dict[str, Any]]) -> str:
     return "\n".join(lines) + "\n"
 
 
-def run(output: Path) -> dict[str, Any]:
+def run(
+    output: Path,
+    instance_id: str = INSTANCE_ID,
+    seeds: tuple[int, ...] = SEEDS,
+    iterations: int = ITERATIONS,
+    archive: int = ARCHIVE,
+    formal: bool = False,
+) -> dict[str, Any]:
     output.mkdir(parents=True, exist_ok=True)
     (output / "solutions").mkdir(exist_ok=True)
     protected_before = {str(path.relative_to(REPO)): sha256(path) for path in PROTECTED}
@@ -332,13 +349,15 @@ def run(output: Path) -> dict[str, Any]:
     failure = ""
     completed_seeds: list[int] = []
     with route_pool_hooks():
-        bundle = load_bundle()
+        bundle = load_bundle(instance_id)
         initial = initial_skeleton(bundle)
-        for seed in SEEDS:
+        for seed in seeds:
             seed_rows: list[dict[str, Any]] = []
             try:
                 for mode in MODES:
-                    row, payload = run_one(bundle, initial, seed, mode)
+                    row, payload = run_one(
+                        bundle, initial, instance_id, seed, mode, iterations, archive
+                    )
                     seed_rows.append(row)
                     rows.append(row)
                     write_json(output / "solutions" / f"seed{seed}_{mode.lower()}.json", payload)
@@ -353,7 +372,7 @@ def run(output: Path) -> dict[str, Any]:
                 failure = f"{type(exc).__name__}: {exc}"
                 rows.append(
                     {
-                        "instance_id": INSTANCE_ID,
+                        "instance_id": instance_id,
                         "seed": seed,
                         "objective_mode": mode,
                         **{key: "" for key in (
@@ -376,16 +395,22 @@ def run(output: Path) -> dict[str, Any]:
 
     protected_after = {str(path.relative_to(REPO)): sha256(path) for path in PROTECTED}
     protected_unchanged = protected_before == protected_after
-    all_pass = len(rows) == 9 and all(row["status"] == "PASS" for row in rows)
-    status = (
-        "PASS_TECHNICAL_JOINT_SOC_WRAPPER_SEEDS_1_TO_3"
-        if all_pass and protected_unchanged
-        else "HALT_E4_JOINT_SOC_TECHNICAL"
+    all_pass = len(rows) == 3 * len(seeds) and all(
+        row["status"] == "PASS" for row in rows
     )
+    if not all_pass or not protected_unchanged:
+        status = "HALT_E4_JOINT_SOC_TECHNICAL"
+    else:
+        status = (
+            "PASS_FORMAL_PANEL_MEMBER"
+            if formal
+            else "PASS_TECHNICAL_JOINT_SOC_WRAPPER"
+        )
     nodes = {node.node_id: node for node in bundle.instance.nodes}
     decision = {
         "status": status,
-        "instance_id": INSTANCE_ID,
+        "instance_id": instance_id,
+        "formal_adoption": "USER_APPROVED" if formal else "TECHNICAL_PROBE",
         "completed_seeds": completed_seeds,
         "objective_modes": list(MODES),
         "failure_reason": failure,
@@ -418,10 +443,11 @@ def run(output: Path) -> dict[str, Any]:
             "build/python_envs/pyvrp-hgs-0.12.2/bin/python "
             "baselines/china_e3_e7/e4_joint_routing_20260801/run_probe.py"
         ),
-        "instance_id": INSTANCE_ID,
-        "seeds": list(SEEDS),
-        "iterations_per_hgs_view": ITERATIONS,
-        "archive_candidates_per_view": ARCHIVE,
+        "instance_id": instance_id,
+        "seeds": list(seeds),
+        "evidence_role": "FORMAL_PANEL_MEMBER" if formal else "TECHNICAL_PROBE",
+        "iterations_per_hgs_view": iterations,
+        "archive_candidates_per_view": archive,
         "soc_contract": {"initial": 0.60, "minimum": 0.20, "maximum": 0.80, "final_minimum": 0.60},
         "fleet_caps_by_depot": {
             depot: dict(caps) for depot, caps in bundle.fleet_caps_by_depot.items()
@@ -457,14 +483,30 @@ def run(output: Path) -> dict[str, Any]:
     }
     write_json(output / "metadata.json", metadata)
     write_json(output / "decision.json", decision)
-    (output / "report.md").write_text(report_text(decision, rows), encoding="utf-8")
+    (output / "report.md").write_text(
+        report_text(decision, rows, seeds), encoding="utf-8"
+    )
     finalize_hashes(output)
     return decision
 
 
 def main() -> None:
-    output = HERE / "probe_v2_hook_restore_20260801"
-    decision = run(output)
+    import argparse
+
+    parser = argparse.ArgumentParser()
+    parser.add_argument(
+        "--output", type=Path, default=HERE / "probe_v2_hook_restore_20260801"
+    )
+    parser.add_argument("--instance", default=INSTANCE_ID)
+    parser.add_argument("--seeds", type=int, nargs="+", default=list(SEEDS))
+    parser.add_argument("--formal", action="store_true")
+    args = parser.parse_args()
+    decision = run(
+        args.output,
+        instance_id=args.instance,
+        seeds=tuple(args.seeds),
+        formal=args.formal,
+    )
     print(json.dumps(decision, ensure_ascii=False, indent=2))
 
 

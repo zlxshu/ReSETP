@@ -17,7 +17,7 @@ from setp_solver.china81_completion import (
 from setp_solver.solution import Route, Solution
 
 from baselines.china_instances.build_china81_finite_fleet_authority_v1_20260723 import (
-    _pack_depot,
+    _route_feasible,
 )
 
 REPO = Path(__file__).resolve().parents[3]
@@ -60,11 +60,57 @@ def load_bundle(instance_id: str) -> China81Bundle:
     )
 
 
+def solomon_i1_routes(bundle: China81Bundle, depot: str) -> list[list[str]]:
+    """Solomon I1: farthest seed, mu=lambda=1, distance insertion criterion."""
+    unrouted = {
+        node.node_id
+        for node in bundle.instance.nodes
+        if node.node_type.lower() == "c"
+        and bundle.customer_home_depot[node.node_id] == depot
+    }
+    routes: list[list[str]] = []
+    while unrouted:
+        seed = max(
+            unrouted,
+            key=lambda customer: (bundle.instance.distance(depot, customer), customer),
+        )
+        route = [seed]
+        unrouted.remove(seed)
+        while True:
+            insertions = []
+            for customer in sorted(unrouted):
+                positions = []
+                for position in range(len(route) + 1):
+                    left = depot if position == 0 else route[position - 1]
+                    right = depot if position == len(route) else route[position]
+                    candidate = [*route[:position], customer, *route[position:]]
+                    if not _route_feasible(bundle, depot, candidate):
+                        continue
+                    extra_distance = (
+                        bundle.instance.distance(left, customer)
+                        + bundle.instance.distance(customer, right)
+                        - bundle.instance.distance(left, right)
+                    )
+                    positions.append((extra_distance, position, candidate))
+                if positions:
+                    extra_distance, _, candidate = min(positions)
+                    benefit = (
+                        bundle.instance.distance(depot, customer) - extra_distance
+                    )
+                    insertions.append((-benefit, customer, candidate))
+            if not insertions:
+                break
+            _, customer, route = min(insertions)
+            unrouted.remove(customer)
+        routes.append(route)
+    return routes
+
+
 def build_common_initial(bundle: China81Bundle) -> tuple[Solution, dict[str, int]]:
     routes: list[Route] = []
     counts: dict[str, int] = {}
     for depot in sorted(set(bundle.customer_home_depot.values())):
-        groups = _pack_depot(bundle, depot)
+        groups = solomon_i1_routes(bundle, depot)
         counts[depot] = len(groups)
         if len(groups) > int(bundle.fleet_caps_by_depot[depot]["total_fleet_cap"]):
             raise RuntimeError(f"initial fleet exceeded at {depot}")
