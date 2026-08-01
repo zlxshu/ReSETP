@@ -1,0 +1,46 @@
+{
+  "all_candidate_rows_retained": true,
+  "archive_candidates_per_view": 8,
+  "attempted_seeds": [
+    1
+  ],
+  "capacity_bound_semantics": "current static E3 HGS-SP: one selected route consumes one vehicle slot",
+  "capacity_shortfalls": {
+    "Uniform_Balanced": {
+      "D_dongguan": {
+        "assigned_demand_kg": 9164.0,
+        "available_payload_kg": 8640.0,
+        "capacity_shortfall_kg": 524.0
+      },
+      "D_foshan": {
+        "assigned_demand_kg": 9446.0,
+        "available_payload_kg": 8640.0,
+        "capacity_shortfall_kg": 806.0
+      }
+    },
+    "Uniform_Unbalanced": {
+      "D_dongguan": {
+        "assigned_demand_kg": 16110.0,
+        "available_payload_kg": 8640.0,
+        "capacity_shortfall_kg": 7470.0
+      },
+      "D_foshan": {
+        "assigned_demand_kg": 15350.0,
+        "available_payload_kg": 8640.0,
+        "capacity_shortfall_kg": 6710.0
+      }
+    }
+  },
+  "families": [
+    "Uniform_Balanced",
+    "Uniform_Unbalanced"
+  ],
+  "instance_id": "cn-prd-150c-01-V2-LOCATIONS",
+  "iterations_per_view": 100,
+  "not_started_seeds": [
+    2,
+    3
+  ],
+  "search_started": false,
+  "status": "HALT_ORIGINAL_FLEET_STANDALONE_CAPACITY_INFEASIBLE"
+}

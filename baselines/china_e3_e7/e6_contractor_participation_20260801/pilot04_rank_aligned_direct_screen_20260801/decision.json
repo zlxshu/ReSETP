@@ -1,0 +1,126 @@
+{
+  "account_closure": {
+    "natural_cost_abs_cny": 1.8189894035458565e-12,
+    "natural_profit_abs_cny": 0.0,
+    "settlement_balance_abs_cny": 3.637978807091713e-12,
+    "shapley_efficiency_abs_cny": 0.0
+  },
+  "candidate_screen_only": true,
+  "coalitions_solved": 15,
+  "failure": "",
+  "formal_story": "AWAITING_USER_DECISION",
+  "grand_coalition_diagnostic": {
+    "cross_contractor_customers": 0,
+    "cross_contractor_quantity_kg": 0.0,
+    "grand_cost_cny": 15898.889260884183,
+    "grand_cost_increase_percent": 45.499966544778346,
+    "grand_minus_standalone_cost_cny": 4971.815091426406,
+    "grand_minus_standalone_profit_cny": -4971.8150914264115,
+    "grand_profit_cny": 44417.610739115815,
+    "standalone_cost_sum_cny": 10927.074169457777,
+    "standalone_profit_sum_cny": 49389.425830542226
+  },
+  "instance_id": "cn-prd-150c-01-V2-LOCATIONS",
+  "mapping_sha256": "962c926f1d0b702f9b6a27d7b8e130691a86f2ba272f5c211d8b9abd57c0a8ab",
+  "members": [
+    "D_dongguan",
+    "D_foshan",
+    "D_guangzhou",
+    "D_shenzhen"
+  ],
+  "method_A": {
+    "core_nonempty": false,
+    "members_below_standalone": 4,
+    "natural_minus_standalone_cny": {
+      "D_dongguan": -758.6159497600047,
+      "D_foshan": -800.7297387895969,
+      "D_guangzhou": -2088.5555682347913,
+      "D_shenzhen": -1323.9138346420186
+    },
+    "natural_profit_cny": {
+      "D_dongguan": 4872.94171126938,
+      "D_foshan": 3745.802305663414,
+      "D_guangzhou": 16999.74676625555,
+      "D_shenzhen": 18799.11995592747
+    },
+    "one_core_profit_allocation_cny": null,
+    "settlement_cny": {
+      "D_dongguan": -1160.4865479864611,
+      "D_foshan": -1365.9796312377903,
+      "D_guangzhou": 629.9825117001747,
+      "D_shenzhen": 1896.4836675240804
+    },
+    "shapley_core_violations_cny": {
+      "D_dongguan": 1919.1024977464658,
+      "D_dongguan+D_foshan": 4796.454500337361,
+      "D_dongguan+D_foshan+D_guangzhou": 1896.4836675240804,
+      "D_dongguan+D_foshan+D_shenzhen": 5746.346892408532,
+      "D_dongguan+D_guangzhou": 4424.149687038469,
+      "D_dongguan+D_guangzhou+D_shenzhen": 6147.036481748553,
+      "D_dongguan+D_shenzhen": 2414.94443016054,
+      "D_foshan": 2166.709370027387,
+      "D_foshan+D_guangzhou": 4111.607556578747,
+      "D_foshan+D_guangzhou+D_shenzhen": 6021.48681851718,
+      "D_foshan+D_shenzhen": 2483.372142521148,
+      "D_guangzhou": 1458.5730565346166,
+      "D_guangzhou+D_shenzhen": 3470.5704041255303
+    },
+    "shapley_in_core": false,
+    "shapley_individually_rational": false,
+    "shapley_profit_cny": {
+      "D_dongguan": 3712.455163282919,
+      "D_foshan": 2379.8226744256235,
+      "D_guangzhou": 17629.729277955725,
+      "D_shenzhen": 20695.60362345155
+    },
+    "standalone_profit_cny": {
+      "D_dongguan": 5631.557661029385,
+      "D_foshan": 4546.532044453011,
+      "D_guangzhou": 19088.30233449034,
+      "D_shenzhen": 20123.033790569487
+    }
+  },
+  "method_B": {
+    "feasible_points": 17,
+    "highest_feasible_theta": 0.8,
+    "route_pool_size": 29,
+    "theta_values": [
+      0.0,
+      0.05,
+      0.1,
+      0.15,
+      0.2,
+      0.25,
+      0.3,
+      0.35,
+      0.4,
+      0.45,
+      0.5,
+      0.55,
+      0.6,
+      0.65,
+      0.7,
+      0.75,
+      0.8,
+      0.85,
+      0.9,
+      0.95,
+      1.0
+    ]
+  },
+  "quick_check": {
+    "failure": "",
+    "solved": [
+      "D_dongguan",
+      "D_foshan",
+      "D_guangzhou",
+      "D_shenzhen",
+      "D_dongguan+D_foshan+D_guangzhou+D_shenzhen"
+    ],
+    "status": "PASS_FIVE_QUICK_COALITIONS"
+  },
+  "scientific_candidate_success": false,
+  "scientific_status": "HALT_NO_CROSS_CONTRACTOR_ACTION_AND_DOMINATED_GRAND_COALITION",
+  "seed": 1,
+  "status": "PASS_E6_C2_DIRECT_SCREEN"
+}

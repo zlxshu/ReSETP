@@ -1,0 +1,128 @@
+{
+  "approximations": {
+    "L1": {
+      "curve_id": "M17_L1_FIRST_SEGMENT_LINEAR",
+      "relative_powers": [
+        0.9970674486803518
+      ],
+      "soc_breakpoints": [
+        0.0,
+        1.0
+      ]
+    },
+    "L2": {
+      "curve_id": "M17_L2_ENDPOINT_LINEAR",
+      "relative_powers": [
+        0.7200720072007201
+      ],
+      "soc_breakpoints": [
+        0.0,
+        1.0
+      ]
+    },
+    "PL": {
+      "curve_id": "M17_22KW_NORMAL_PWL",
+      "relative_powers": [
+        0.9970674486803518,
+        0.484848484848485,
+        0.1515151515151515
+      ],
+      "soc_breakpoints": [
+        0.0,
+        0.85,
+        0.95,
+        1.0
+      ]
+    }
+  },
+  "capacities_kwh": [
+    16.0,
+    20.0,
+    24.0,
+    28.0,
+    32.0
+  ],
+  "created_at_utc": "2026-07-31T20:48:04.483948+00:00",
+  "evidence_role": "LOW_COST_SYMMETRIC_PILOT",
+  "fixed_pl_replay": {
+    "changed": [
+      "occupancy_minutes",
+      "charging_curve_id"
+    ],
+    "frozen": [
+      "routes",
+      "vehicle_type",
+      "station_id",
+      "charge_start_second",
+      "charge_day_offset",
+      "energy_kwh",
+      "start_energy_kwh",
+      "end_energy_kwh"
+    ]
+  },
+  "history_difference": "pilot07 optimized L100 and PL but its old recheck cleared and rescheduled actions. pilot08 overturned that strong claim. This pilot independently optimizes L1/L2/PL and keeps every fixed charging decision during PL execution replay.",
+  "instance_ids": [
+    "cn-prd-50c-01-V2-LOCATIONS",
+    "cn-prd-100c-02-V2-LOCATIONS"
+  ],
+  "literature": [
+    {
+      "item": "Montoya et al. (2017)",
+      "pages": "PDF 2-4, 13-15",
+      "use": "definitions, full-departure assumption, comparison and PL execution recheck",
+      "zotero_item_key": "GJB373Y4"
+    },
+    {
+      "item": "Froger et al. author manuscript",
+      "page": "PDF 4, Figure 1",
+      "use": "exact 22 kW normal-curve points already used by M17"
+    }
+  ],
+  "parameter_derivation": {
+    "FS_public_station_soc_cap": 0.85,
+    "L1_formula": "13.6 kWh / 0.62 h",
+    "L1_power_kw": 21.93548387096774,
+    "L2_formula": "16 kWh / 1.01 h",
+    "L2_power_kw": 15.841584158415841
+  },
+  "public_charge_power_kw": 22.0,
+  "published_reference_points_h_kwh": [
+    [
+      0.0,
+      0.0
+    ],
+    [
+      0.62,
+      13.6
+    ],
+    [
+      0.77,
+      15.2
+    ],
+    [
+      1.01,
+      16.0
+    ]
+  ],
+  "runner_sha256": "216505cb4c04056a3babf89d4fea87a6a9e791aa2194d881c2115e623bfcb661",
+  "search": {
+    "archive_per_view": 2,
+    "hgs_iterations_per_view": 40,
+    "set_partitioning_seconds": 2.0,
+    "wallclock_seconds_per_view": 120.0,
+    "workers": 6
+  },
+  "seeds": [
+    1,
+    2,
+    3
+  ],
+  "source_sha256": {
+    "charging_curve.py": "158cc9f9e50645692bfb0ceb218745e3c73d58dd5a6e44282a0bda7f0edfec70",
+    "check.py": "9c81e254e05591667c8225965bb9d0ba4e8bbfc53eb0f8c61ffdb4325a1403a8",
+    "cost.py": "2717b4b4de39bb4c2a9a1bda602f4420cb3e3b1e87faa83678dfa64f88fc80be",
+    "runtime_overlay.py": "3966dd70ef4f124ee53146fe2a52c69ab1577859df939142c8c38ae32cb55fc8",
+    "search/evaluation.py": "c7215263c39d1d5a1429b41ca8ac40d950dbdf2bdc288337e56fbe9733406fc3"
+  },
+  "task_id": "E5-MONTOYA-4APPROX-01"
+}

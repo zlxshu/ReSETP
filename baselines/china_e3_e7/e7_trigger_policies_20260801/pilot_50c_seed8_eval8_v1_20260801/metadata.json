@@ -1,0 +1,129 @@
+{
+  "addition_count": 10,
+  "created_at_utc": "2026-07-31T21:34:10.965893+00:00",
+  "event_count": 16,
+  "first_trigger_initial_ev_count": 3,
+  "first_trigger_injected_cv_count": 7,
+  "first_trigger_injected_ev_count": 0,
+  "first_trigger_second": 28980.0,
+  "fleet_caps_by_depot": {
+    "D_guangzhou": {
+      "num_cv": 4,
+      "num_ev": 1,
+      "total_fleet_cap": 5
+    },
+    "D_shenzhen": {
+      "num_cv": 5,
+      "num_ev": 2,
+      "total_fleet_cap": 7
+    }
+  },
+  "initial_completion_activity": {
+    "accepted_variants": [
+      {
+        "after_cost": 2135.1667567701475,
+        "before_cost": 2256.520538466919,
+        "charging_action_count": 1,
+        "improvement": 121.35378169677142,
+        "label": "ev_immediate",
+        "route_index": 1
+      },
+      {
+        "after_cost": 2043.87565005197,
+        "before_cost": 2135.1667567701475,
+        "charging_action_count": 1,
+        "improvement": 91.29110671817739,
+        "label": "ev_immediate",
+        "route_index": 4
+      },
+      {
+        "after_cost": 1954.238136210805,
+        "before_cost": 2043.87565005197,
+        "charging_action_count": 1,
+        "improvement": 89.63751384116517,
+        "label": "ev_immediate",
+        "route_index": 5
+      }
+    ],
+    "baseline_all_cv_cost": 2256.520538466919,
+    "baseline_breakdown": {
+      "E_cv_direct": 212.2676378805794,
+      "E_ev_indirect": 0.0,
+      "E_total": 212.2676378805794,
+      "carbon_quota_kg": 0.0,
+      "cost_carbon": 15.924318193801067,
+      "cost_elec": 0,
+      "cost_fix": 1190.0,
+      "cost_fuel": 583.8761120722687,
+      "cost_km": 466.7201082008493,
+      "cost_occ": 0.0,
+      "cost_transship": 0.0,
+      "depot_charging_kwh": 0,
+      "distance_cv": 598359.113078012,
+      "distance_ev": 0,
+      "distance_total": 598359.113078012,
+      "electricity_kwh": 0,
+      "ev_drive_kwh": 0,
+      "fuel_liters": 78.47797205272428,
+      "n_veh_cv": 7,
+      "n_veh_ev": 0,
+      "station_charging_kwh": 0,
+      "total_cost": 2256.520538466919
+    },
+    "charging_action_count": 3,
+    "cross_site_service_count": 0,
+    "ev_route_count": 3,
+    "final_breakdown": {
+      "E_cv_direct": 107.35552256171653,
+      "E_ev_indirect": 31.224826514374612,
+      "E_total": 138.58034907609112,
+      "carbon_quota_kg": 0.0,
+      "cost_carbon": 10.396297787688356,
+      "cost_elec": 24.445290311808478,
+      "cost_fix": 1190.0,
+      "cost_fuel": 295.2985473842532,
+      "cost_km": 434.09800072705474,
+      "cost_occ": 0.0,
+      "cost_transship": 0.0,
+      "depot_charging_kwh": 86.24675480755232,
+      "distance_cv": 301794.499679879,
+      "distance_ev": 296564.61339813296,
+      "distance_total": 598359.113078012,
+      "electricity_kwh": 86.24675480755232,
+      "ev_drive_kwh": 86.24675480755232,
+      "fuel_liters": 39.690664971001766,
+      "n_veh_cv": 4,
+      "n_veh_ev": 3,
+      "station_charging_kwh": 0,
+      "total_cost": 1954.238136210805
+    },
+    "final_cost": 1954.238136210805,
+    "finite_fleet_reference_cost": 2256.520538466919,
+    "improvement": 302.282402256114,
+    "mandatory_fleet_assignment_count": 0,
+    "mandatory_fleet_assignments": [],
+    "mechanism_experts_queried": [
+      "vehicle_type_and_nonlinear_charging",
+      "time_varying_electricity_and_carbon",
+      "multi_depot_responsibility_accounting"
+    ],
+    "rejected_infeasible": 0,
+    "rejected_non_improving": 0,
+    "route_count": 7,
+    "schema_version": "resetp.china81-shared-completion.v1",
+    "strict_improvement": true,
+    "variant_attempts": 3,
+    "variant_count": 21,
+    "variant_generation_failures": []
+  },
+  "initial_customer_count": 40,
+  "instance_id": "cn-prd-50c-01-V2-LOCATIONS",
+  "revenue_per_kg_cny": 1.5,
+  "schema": "resetp.e7.qiu-trigger-pilot.v1",
+  "stage_budget_source": "existing E7 low-cost probe default",
+  "stage_evaluations_per_subset": 8,
+  "static_subset_candidate_count": 1024,
+  "stream_seed": 8,
+  "stream_sha256": "8e198b0db8ad3728364bb9a46961ebda7a5e315cc28a61b5ae2b907437dd1895",
+  "wall_seconds": 47.09893179195933
+}

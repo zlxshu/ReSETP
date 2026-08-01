@@ -1,4 +1,4 @@
-"""Approved E7 order-reveal and trigger mechanics; stream selection stays external."""
+"""Approved E7 dynamic-demand stream and trigger mechanics."""
 
 from __future__ import annotations
 
@@ -6,6 +6,7 @@ from dataclasses import asdict, dataclass
 import hashlib
 import json
 import math
+import random
 from typing import Mapping, Sequence
 
 from setp_solver.instance_loader import Instance
@@ -22,6 +23,16 @@ RECEPTION_END_SECOND = 10.0 * 3600.0
 FIXED_INTERVAL_SECONDS = 30.0 * 60.0
 HYBRID_DEMAND_THRESHOLD_KG = 500.0
 _TOL = 1.0e-9
+
+QIU_ADD_MINUTES = (8 * 60 + 3, 8 * 60 + 17, 8 * 60 + 59, 9 * 60 + 14, 9 * 60 + 43)
+QIU_CANCEL_MINUTES = (8 * 60 + 35, 9 * 60 + 50)
+QIU_REDUCE_MINUTE = 8 * 60 + 50
+QIU_REDUCED_DEMAND_FACTOR = 180.0 / 215.0
+SCALED_EVENT_COUNTS = {
+    50: {"add": 10, "cancel": 4, "demand_change": 2},
+    100: {"add": 20, "cancel": 8, "demand_change": 4},
+    150: {"add": 30, "cancel": 12, "demand_change": 6},
+}
 
 
 @dataclass(frozen=True)
@@ -59,6 +70,43 @@ class DynamicOrder:
 
 
 @dataclass(frozen=True)
+class DynamicUpdate:
+    event_id: str
+    event_type: str
+    customer_id: str
+    appearance_second: float
+    old_demand_kg: float
+    new_demand_kg: float
+
+    def as_solver_event(self) -> DynamicEvent:
+        return DynamicEvent(
+            event_id=self.event_id,
+            event_type=self.event_type,
+            t_appear=self.appearance_second,
+            customer_id=self.customer_id,
+            old_demand=self.old_demand_kg,
+            new_demand=self.new_demand_kg,
+            delta_demand=self.new_demand_kg - self.old_demand_kg,
+            demand_source="qiu_scaled_existing_order",
+            source="qiu_yingying_scaled_event",
+        )
+
+
+DemandEvent = DynamicOrder | DynamicUpdate
+
+
+@dataclass(frozen=True)
+class DynamicStream:
+    instance_id: str
+    stream_seed: int
+    initial_customer_ids: tuple[str, ...]
+    events: tuple[DemandEvent, ...]
+
+    def as_solver_events(self) -> tuple[DynamicEvent, ...]:
+        return tuple(event.as_solver_event() for event in self.events)
+
+
+@dataclass(frozen=True)
 class TriggerBatch:
     policy: str
     batch_index: int
@@ -66,6 +114,7 @@ class TriggerBatch:
     cause: str
     event_ids: tuple[str, ...]
     customer_ids: tuple[str, ...]
+    event_types: tuple[str, ...]
     demand_kg: float
 
 
@@ -117,18 +166,116 @@ def dynamic_order_sha256(orders: Sequence[DynamicOrder]) -> str:
     return hashlib.sha256(encoded).hexdigest()
 
 
+def build_qiu_scaled_stream(
+    instance: Instance,
+    *,
+    instance_id: str,
+    stream_seed: int,
+) -> DynamicStream:
+    """Scale Qiu Yingying's 25-customer event pattern without changing the instance."""
+
+    customers = sorted(
+        (node for node in instance.nodes if node.node_type.lower() == "c"),
+        key=lambda node: node.node_id,
+    )
+    counts = SCALED_EVENT_COUNTS.get(len(customers))
+    if counts is None:
+        raise ValueError("Qiu scaling is defined only for 50, 100, or 150 customers")
+
+    seed_material = f"{instance_id}:{int(stream_seed)}".encode("utf-8")
+    rng = random.Random(int.from_bytes(hashlib.sha256(seed_material).digest()[:8], "big"))
+    pool = list(customers)
+    rng.shuffle(pool)
+
+    factor = counts["add"] // len(QIU_ADD_MINUTES)
+    add_times = [minute * 60.0 for minute in QIU_ADD_MINUTES for _ in range(factor)]
+    additions: list[DynamicOrder] = []
+    for appearance in sorted(add_times, reverse=True):
+        chosen_index = next(
+            (
+                index
+                for index, node in enumerate(pool)
+                if appearance < float(node.due_time) - _TOL
+            ),
+            None,
+        )
+        if chosen_index is None:
+            raise ValueError("not enough customers whose due time follows their reveal time")
+        node = pool.pop(chosen_index)
+        additions.append(
+            DynamicOrder(
+                event_id=f"ADD_{node.node_id}",
+                customer_id=node.node_id,
+                appearance_second=appearance,
+                demand_kg=float(node.demand),
+                x=float(node.x),
+                y=float(node.y),
+                ready_second=float(node.ready_time),
+                due_second=float(node.due_time),
+                service_second=float(node.service_time),
+                city=node.city,
+            )
+        )
+
+    cancel_times = [minute * 60.0 for minute in QIU_CANCEL_MINUTES for _ in range(factor)]
+    cancellations = [
+        DynamicUpdate(
+            event_id=f"CANCEL_{node.node_id}",
+            event_type="cancel",
+            customer_id=node.node_id,
+            appearance_second=appearance,
+            old_demand_kg=float(node.demand),
+            new_demand_kg=0.0,
+        )
+        for node, appearance in zip(pool[: counts["cancel"]], cancel_times, strict=True)
+    ]
+    del pool[: counts["cancel"]]
+
+    reductions = [
+        DynamicUpdate(
+            event_id=f"REDUCE_{node.node_id}",
+            event_type="demand_change",
+            customer_id=node.node_id,
+            appearance_second=QIU_REDUCE_MINUTE * 60.0,
+            old_demand_kg=float(node.demand),
+            new_demand_kg=float(node.demand) * QIU_REDUCED_DEMAND_FACTOR,
+        )
+        for node in pool[: counts["demand_change"]]
+    ]
+
+    events: tuple[DemandEvent, ...] = tuple(
+        sorted((*additions, *cancellations, *reductions), key=_event_key)
+    )
+    added_ids = {event.customer_id for event in additions}
+    return DynamicStream(
+        instance_id=str(instance_id),
+        stream_seed=int(stream_seed),
+        initial_customer_ids=tuple(
+            node.node_id for node in customers if node.node_id not in added_ids
+        ),
+        events=events,
+    )
+
+
+def dynamic_stream_sha256(stream: DynamicStream) -> str:
+    encoded = json.dumps(
+        asdict(stream),
+        ensure_ascii=False,
+        sort_keys=True,
+        separators=(",", ":"),
+    ).encode("utf-8")
+    return hashlib.sha256(encoded).hexdigest()
+
+
 def build_trigger_batches(
-    orders: Sequence[DynamicOrder],
+    orders: Sequence[DemandEvent],
     policy: str,
 ) -> tuple[TriggerBatch, ...]:
     """Partition one immutable order stream under an approved trigger policy."""
 
-    ordered = _checked_orders(orders)
+    ordered = _checked_events(orders)
     if policy == PER_ORDER:
-        batches = [
-            _batch(policy, index + 1, order.appearance_second, "new_order", [order])
-            for index, order in enumerate(ordered)
-        ]
+        batches = _arrival_batches(ordered)
     elif policy == FIXED_30_MINUTES:
         batches = _fixed_batches(ordered)
     elif policy == HYBRID_500KG_OR_30_MINUTES:
@@ -137,17 +284,30 @@ def build_trigger_batches(
         raise ValueError(f"unknown trigger policy {policy!r}")
 
     seen = [event_id for batch in batches for event_id in batch.event_ids]
-    if sorted(seen) != sorted(order.event_id for order in ordered):
+    if sorted(seen) != sorted(event.event_id for event in ordered):
         raise AssertionError("trigger policy did not consume each event exactly once")
     return tuple(batches)
 
 
-def _fixed_batches(orders: Sequence[DynamicOrder]) -> list[TriggerBatch]:
+def _arrival_batches(events: Sequence[DemandEvent]) -> list[TriggerBatch]:
+    batches: list[TriggerBatch] = []
+    cursor = 0
+    while cursor < len(events):
+        appearance = events[cursor].appearance_second
+        end = cursor + 1
+        while end < len(events) and events[end].appearance_second == appearance:
+            end += 1
+        batches.append(_batch(PER_ORDER, len(batches) + 1, appearance, "new_information", events[cursor:end]))
+        cursor = end
+    return batches
+
+
+def _fixed_batches(orders: Sequence[DemandEvent]) -> list[TriggerBatch]:
     batches: list[TriggerBatch] = []
     cursor = 0
     trigger = RECEPTION_START_SECOND + FIXED_INTERVAL_SECONDS
     while trigger <= RECEPTION_END_SECOND:
-        pending: list[DynamicOrder] = []
+        pending: list[DemandEvent] = []
         while cursor < len(orders) and orders[cursor].appearance_second <= trigger:
             pending.append(orders[cursor])
             cursor += 1
@@ -158,9 +318,9 @@ def _fixed_batches(orders: Sequence[DynamicOrder]) -> list[TriggerBatch]:
     return batches
 
 
-def _hybrid_batches(orders: Sequence[DynamicOrder]) -> list[TriggerBatch]:
+def _hybrid_batches(orders: Sequence[DemandEvent]) -> list[TriggerBatch]:
     batches: list[TriggerBatch] = []
-    pending: list[DynamicOrder] = []
+    pending: list[DemandEvent] = []
     cursor = 0
     deadline = RECEPTION_START_SECOND + FIXED_INTERVAL_SECONDS
 
@@ -175,7 +335,7 @@ def _hybrid_batches(orders: Sequence[DynamicOrder]) -> list[TriggerBatch]:
         while cursor < len(orders) and orders[cursor].appearance_second == appearance:
             pending.append(orders[cursor])
             cursor += 1
-        demand = sum(order.demand_kg for order in pending)
+        demand = sum(_added_demand(event) for event in pending)
         if demand >= HYBRID_DEMAND_THRESHOLD_KG:
             batches.append(_batch(HYBRID_500KG_OR_30_MINUTES, len(batches) + 1, appearance, "demand_threshold", pending))
             pending = []
@@ -196,9 +356,9 @@ def _batch(
     index: int,
     trigger: float,
     cause: str,
-    orders: Sequence[DynamicOrder],
+    orders: Sequence[DemandEvent],
 ) -> TriggerBatch:
-    ordered = sorted(orders, key=_order_key)
+    ordered = sorted(orders, key=_event_key)
     return TriggerBatch(
         policy,
         index,
@@ -206,27 +366,41 @@ def _batch(
         cause,
         tuple(order.event_id for order in ordered),
         tuple(order.customer_id for order in ordered),
-        sum(order.demand_kg for order in ordered),
+        tuple(_event_type(order) for order in ordered),
+        sum(_added_demand(order) for order in ordered),
     )
 
 
-def _checked_orders(orders: Sequence[DynamicOrder]) -> list[DynamicOrder]:
-    ordered = sorted(orders, key=_order_key)
-    if len({order.event_id for order in ordered}) != len(ordered) or len(
-        {order.customer_id for order in ordered}
-    ) != len(ordered):
-        raise ValueError("dynamic order ids are not unique")
-    for order in ordered:
-        if not math.isfinite(order.appearance_second) or not (
-            RECEPTION_START_SECOND <= order.appearance_second < RECEPTION_END_SECOND
+def _checked_events(events: Sequence[DemandEvent]) -> list[DemandEvent]:
+    ordered = sorted(events, key=_event_key)
+    if len({event.event_id for event in ordered}) != len(ordered):
+        raise ValueError("dynamic event ids are not unique")
+    for event in ordered:
+        if not math.isfinite(event.appearance_second) or not (
+            RECEPTION_START_SECOND <= event.appearance_second < RECEPTION_END_SECOND
         ):
-            raise ValueError(f"order {order.customer_id} appears outside [08:00, 10:00)")
-        if order.appearance_second >= order.due_second - _TOL:
-            raise ValueError(f"order {order.customer_id} is born expired")
-        if not math.isfinite(order.demand_kg) or order.demand_kg <= 0.0:
-            raise ValueError(f"order {order.customer_id} has invalid demand")
+            raise ValueError(f"event {event.event_id} appears outside [08:00, 10:00)")
+        if isinstance(event, DynamicOrder):
+            if event.appearance_second >= event.due_second - _TOL:
+                raise ValueError(f"order {event.customer_id} is born expired")
+            if not math.isfinite(event.demand_kg) or event.demand_kg <= 0.0:
+                raise ValueError(f"order {event.customer_id} has invalid demand")
+        elif event.event_type not in {"cancel", "demand_change"}:
+            raise ValueError(f"unsupported update type {event.event_type!r}")
     return ordered
 
 
 def _order_key(order: DynamicOrder) -> tuple[float, str, str]:
     return (order.appearance_second, order.event_id, order.customer_id)
+
+
+def _event_key(event: DemandEvent) -> tuple[float, str, str]:
+    return (event.appearance_second, event.event_id, event.customer_id)
+
+
+def _event_type(event: DemandEvent) -> str:
+    return "add" if isinstance(event, DynamicOrder) else event.event_type
+
+
+def _added_demand(event: DemandEvent) -> float:
+    return event.demand_kg if isinstance(event, DynamicOrder) else 0.0

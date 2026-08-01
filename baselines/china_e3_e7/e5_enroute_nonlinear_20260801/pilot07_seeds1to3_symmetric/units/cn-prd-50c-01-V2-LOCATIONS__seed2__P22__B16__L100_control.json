@@ -1,0 +1,437 @@
+{
+  "row": {
+    "instance_id": "cn-prd-50c-01-V2-LOCATIONS",
+    "seed": 2,
+    "capacity_kwh": 16.0,
+    "public_charge_power_kw": 22.0,
+    "curve_id": "L100_control",
+    "feasible": true,
+    "total_cost_cny": 2405.3637915558056,
+    "route_hash": "914ad02d52290a41b95d5ae2365d2e66e21a80e745b08109600a7254240b8f92",
+    "route_count": 9,
+    "ev_route_count": 3,
+    "depot_charging_session_count": 0,
+    "public_charging_session_count": 2,
+    "public_charging_minutes_total": 41.4487570172581,
+    "public_charging_minutes_max": 31.263050613823474,
+    "max_public_charge_end_soc_pct": 88.42435960566723,
+    "taper_entered_session_count": 1,
+    "station_charging_kwh": 15.197877572994638,
+    "depot_charging_kwh": 0.0,
+    "complete_candidate_evaluations": 14,
+    "elapsed_seconds": 0.9401992498897016,
+    "independent_check_completed": true,
+    "violation_count": 0,
+    "station_capacity_conflict_count": 0,
+    "linear_routes_m17_recheck_feasible": true,
+    "linear_routes_m17_recheck_total_cost_cny": 2413.1828461203704,
+    "linear_routes_m17_recheck_violation_count": 0,
+    "linear_routes_m17_recheck_violation_types": "",
+    "linear_routes_m17_recheck_station_capacity_conflict_count": 0,
+    "linear_routes_m17_recheck_public_charging_session_count": 2,
+    "linear_routes_m17_recheck_public_charging_minutes_total": 43.15392786145854,
+    "linear_routes_m17_recheck_public_charging_minutes_max": 32.938263498013804,
+    "linear_routes_m17_recheck_max_public_charge_end_soc_pct": 88.42435960566723,
+    "linear_routes_m17_recheck_taper_entered_session_count": 1
+  },
+  "violations": [],
+  "cost_breakdown": {
+    "total_cost": 2405.3637915558056,
+    "cost_fix": 1530.0,
+    "cost_km": 449.9831440323745,
+    "cost_fuel": 383.15866802319306,
+    "cost_elec": 10.686820439360446,
+    "cost_occ": 20.72437850862905,
+    "cost_transship": 0.0,
+    "cost_carbon": 10.81078055224876,
+    "E_total": 144.10531261328657,
+    "E_cv_direct": 139.29699077102416,
+    "E_ev_indirect": 4.8083218422624245,
+    "n_veh_cv": 6,
+    "n_veh_ev": 3,
+    "distance_total": 607515.042096439,
+    "distance_cv": 390436.96207054897,
+    "distance_ev": 217078.08002589,
+    "fuel_liters": 51.499820970859275,
+    "electricity_kwh": 15.197877572994638,
+    "depot_charging_kwh": 0,
+    "station_charging_kwh": 15.197877572994638,
+    "carbon_quota_kg": 0.0,
+    "ev_drive_kwh": 62.63122329151693
+  },
+  "completion_activity": {
+    "schema_version": "resetp.china81-accepted-mip-completion.v1",
+    "source": "time_limited_mip_route_pool_incumbent",
+    "route_count": 9,
+    "ev_route_count": 3,
+    "charging_action_count": 2,
+    "mip_status_class": "OPTIMAL",
+    "mip_objective": 2405.3637915558056,
+    "mip_dual_bound": 2405.3637915558056,
+    "mip_gap": 0.0,
+    "complete_model_recheck": "PASS"
+  },
+  "solution": {
+    "routes": [
+      {
+        "vehicle_id": "SP-EV-0001",
+        "vehicle_type": "ev",
+        "home_depot_id": "D_shenzhen",
+        "node_sequence": [
+          "D_shenzhen",
+          "C043",
+          "C028",
+          "C040",
+          "C038",
+          "C049",
+          "C025",
+          "D_shenzhen"
+        ]
+      },
+      {
+        "vehicle_id": "SP-EV-0002",
+        "vehicle_type": "ev",
+        "home_depot_id": "D_shenzhen",
+        "node_sequence": [
+          "D_shenzhen",
+          "S_shenzhen",
+          "C041",
+          "C036",
+          "C047",
+          "C035",
+          "C045",
+          "C044",
+          "C042",
+          "D_shenzhen"
+        ]
+      },
+      {
+        "vehicle_id": "SP-CV-0003",
+        "vehicle_type": "cv",
+        "home_depot_id": "D_shenzhen",
+        "node_sequence": [
+          "D_shenzhen",
+          "C037",
+          "C030",
+          "C033",
+          "C029",
+          "C024",
+          "D_shenzhen"
+        ]
+      },
+      {
+        "vehicle_id": "SP-CV-0004",
+        "vehicle_type": "cv",
+        "home_depot_id": "D_shenzhen",
+        "node_sequence": [
+          "D_shenzhen",
+          "C046",
+          "C032",
+          "C034",
+          "C026",
+          "C048",
+          "C027",
+          "C031",
+          "D_shenzhen"
+        ]
+      },
+      {
+        "vehicle_id": "SP-CV-0005",
+        "vehicle_type": "cv",
+        "home_depot_id": "D_shenzhen",
+        "node_sequence": [
+          "D_shenzhen",
+          "C039",
+          "C050",
+          "D_shenzhen"
+        ]
+      },
+      {
+        "vehicle_id": "SP-CV-0006",
+        "vehicle_type": "cv",
+        "home_depot_id": "D_guangzhou",
+        "node_sequence": [
+          "D_guangzhou",
+          "C002",
+          "C008",
+          "C019",
+          "D_guangzhou"
+        ]
+      },
+      {
+        "vehicle_id": "SP-CV-0007",
+        "vehicle_type": "cv",
+        "home_depot_id": "D_guangzhou",
+        "node_sequence": [
+          "D_guangzhou",
+          "C020",
+          "C022",
+          "C015",
+          "C014",
+          "C011",
+          "C001",
+          "D_guangzhou"
+        ]
+      },
+      {
+        "vehicle_id": "SP-CV-0008",
+        "vehicle_type": "cv",
+        "home_depot_id": "D_guangzhou",
+        "node_sequence": [
+          "D_guangzhou",
+          "C016",
+          "C021",
+          "C003",
+          "C023",
+          "C005",
+          "C004",
+          "C012",
+          "C006",
+          "D_guangzhou"
+        ]
+      },
+      {
+        "vehicle_id": "SP-EV-0009",
+        "vehicle_type": "ev",
+        "home_depot_id": "D_guangzhou",
+        "node_sequence": [
+          "D_guangzhou",
+          "S_guangzhou",
+          "C009",
+          "C007",
+          "C013",
+          "C017",
+          "C018",
+          "C010",
+          "D_guangzhou"
+        ]
+      }
+    ],
+    "charging_actions": [
+      {
+        "vehicle_id": "SP-EV-0002",
+        "station_id": "S_shenzhen",
+        "energy_kwh": 3.734759014592699,
+        "occupancy_minutes": 10.185706403434631,
+        "charge_start_second": 22899.3,
+        "charge_day_offset": 0,
+        "start_energy_kwh": 7.546616786341817,
+        "end_energy_kwh": 11.281375800934516,
+        "charging_curve_id": "L100_control"
+      },
+      {
+        "vehicle_id": "SP-EV-0009",
+        "station_id": "S_guangzhou",
+        "energy_kwh": 11.46311855840194,
+        "occupancy_minutes": 31.263050613823474,
+        "charge_start_second": 23498.9,
+        "charge_day_offset": 0,
+        "start_energy_kwh": 2.684778978504818,
+        "end_energy_kwh": 14.147897536906758,
+        "charging_curve_id": "L100_control"
+      }
+    ],
+    "cross_site_services": []
+  },
+  "linear_routes_m17_recheck": {
+    "summary": {
+      "linear_routes_m17_recheck_feasible": true,
+      "linear_routes_m17_recheck_total_cost_cny": 2413.1828461203704,
+      "linear_routes_m17_recheck_violation_count": 0,
+      "linear_routes_m17_recheck_violation_types": "",
+      "linear_routes_m17_recheck_station_capacity_conflict_count": 0,
+      "linear_routes_m17_recheck_public_charging_session_count": 2,
+      "linear_routes_m17_recheck_public_charging_minutes_total": 43.15392786145854,
+      "linear_routes_m17_recheck_public_charging_minutes_max": 32.938263498013804,
+      "linear_routes_m17_recheck_max_public_charge_end_soc_pct": 88.42435960566723,
+      "linear_routes_m17_recheck_taper_entered_session_count": 1
+    },
+    "violations": [],
+    "cost_breakdown": {
+      "total_cost": 2413.1828461203704,
+      "cost_fix": 1530.0,
+      "cost_km": 449.9831440323745,
+      "cost_fuel": 383.15866802319306,
+      "cost_elec": 17.988812686892224,
+      "cost_occ": 21.57696393072927,
+      "cost_transship": 0.0,
+      "cost_carbon": 10.47525744718136,
+      "E_total": 139.63286386538735,
+      "E_cv_direct": 139.29699077102416,
+      "E_ev_indirect": 0.3358730943631816,
+      "n_veh_cv": 6,
+      "n_veh_ev": 3,
+      "distance_total": 607515.042096439,
+      "distance_cv": 390436.96207054897,
+      "distance_ev": 217078.08002589,
+      "fuel_liters": 51.499820970859275,
+      "electricity_kwh": 15.197877572994638,
+      "depot_charging_kwh": 0,
+      "station_charging_kwh": 15.197877572994638,
+      "carbon_quota_kg": 0.0,
+      "ev_drive_kwh": 62.63122329151693
+    },
+    "solution": {
+      "routes": [
+        {
+          "vehicle_id": "SP-EV-0001",
+          "vehicle_type": "ev",
+          "home_depot_id": "D_shenzhen",
+          "node_sequence": [
+            "D_shenzhen",
+            "C043",
+            "C028",
+            "C040",
+            "C038",
+            "C049",
+            "C025",
+            "D_shenzhen"
+          ]
+        },
+        {
+          "vehicle_id": "SP-EV-0002",
+          "vehicle_type": "ev",
+          "home_depot_id": "D_shenzhen",
+          "node_sequence": [
+            "D_shenzhen",
+            "S_shenzhen",
+            "C041",
+            "C036",
+            "C047",
+            "C035",
+            "C045",
+            "C044",
+            "C042",
+            "D_shenzhen"
+          ]
+        },
+        {
+          "vehicle_id": "SP-CV-0003",
+          "vehicle_type": "cv",
+          "home_depot_id": "D_shenzhen",
+          "node_sequence": [
+            "D_shenzhen",
+            "C037",
+            "C030",
+            "C033",
+            "C029",
+            "C024",
+            "D_shenzhen"
+          ]
+        },
+        {
+          "vehicle_id": "SP-CV-0004",
+          "vehicle_type": "cv",
+          "home_depot_id": "D_shenzhen",
+          "node_sequence": [
+            "D_shenzhen",
+            "C046",
+            "C032",
+            "C034",
+            "C026",
+            "C048",
+            "C027",
+            "C031",
+            "D_shenzhen"
+          ]
+        },
+        {
+          "vehicle_id": "SP-CV-0005",
+          "vehicle_type": "cv",
+          "home_depot_id": "D_shenzhen",
+          "node_sequence": [
+            "D_shenzhen",
+            "C039",
+            "C050",
+            "D_shenzhen"
+          ]
+        },
+        {
+          "vehicle_id": "SP-CV-0006",
+          "vehicle_type": "cv",
+          "home_depot_id": "D_guangzhou",
+          "node_sequence": [
+            "D_guangzhou",
+            "C002",
+            "C008",
+            "C019",
+            "D_guangzhou"
+          ]
+        },
+        {
+          "vehicle_id": "SP-CV-0007",
+          "vehicle_type": "cv",
+          "home_depot_id": "D_guangzhou",
+          "node_sequence": [
+            "D_guangzhou",
+            "C020",
+            "C022",
+            "C015",
+            "C014",
+            "C011",
+            "C001",
+            "D_guangzhou"
+          ]
+        },
+        {
+          "vehicle_id": "SP-CV-0008",
+          "vehicle_type": "cv",
+          "home_depot_id": "D_guangzhou",
+          "node_sequence": [
+            "D_guangzhou",
+            "C016",
+            "C021",
+            "C003",
+            "C023",
+            "C005",
+            "C004",
+            "C012",
+            "C006",
+            "D_guangzhou"
+          ]
+        },
+        {
+          "vehicle_id": "SP-EV-0009",
+          "vehicle_type": "ev",
+          "home_depot_id": "D_guangzhou",
+          "node_sequence": [
+            "D_guangzhou",
+            "S_guangzhou",
+            "C009",
+            "C007",
+            "C013",
+            "C017",
+            "C018",
+            "C010",
+            "D_guangzhou"
+          ]
+        }
+      ],
+      "charging_actions": [
+        {
+          "vehicle_id": "SP-EV-0002",
+          "station_id": "S_shenzhen",
+          "energy_kwh": 3.734759014592699,
+          "occupancy_minutes": 10.215664363444736,
+          "charge_start_second": 43200.0,
+          "charge_day_offset": 0,
+          "start_energy_kwh": 7.546616786341817,
+          "end_energy_kwh": 11.281375800934516,
+          "charging_curve_id": "M17_22KW_NORMAL_PWL"
+        },
+        {
+          "vehicle_id": "SP-EV-0009",
+          "station_id": "S_guangzhou",
+          "energy_kwh": 11.46311855840194,
+          "occupancy_minutes": 32.938263498013804,
+          "charge_start_second": 43200.0,
+          "charge_day_offset": 0,
+          "start_energy_kwh": 2.684778978504818,
+          "end_energy_kwh": 14.147897536906758,
+          "charging_curve_id": "M17_22KW_NORMAL_PWL"
+        }
+      ],
+      "cross_site_services": []
+    }
+  }
+}

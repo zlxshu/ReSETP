@@ -20,6 +20,7 @@ from setp_solver.solution import Route, Solution
 from setp_solver.search.charging import _curve_aware_action
 
 from baselines.china_e3_e7.e5_enroute_nonlinear_20260801.runtime_overlay import (
+    CAPACITY_SCENARIOS_KWH,
     M17_22KW_NORMAL_PWL,
     apply_runtime_overlay,
 )
@@ -45,6 +46,7 @@ def _initial_solution() -> Solution:
         ]
     )
 def test_overlay_changes_only_approved_runtime_fields() -> None:
+    assert CAPACITY_SCENARIOS_KWH == (16.0, 20.0, 24.0, 28.0, 32.0)
     base = load_china81_bundle(REPO, INSTANCE_ID)
     linear = apply_runtime_overlay(
         base,
@@ -63,6 +65,11 @@ def test_overlay_changes_only_approved_runtime_fields() -> None:
     assert nonlinear.instance.battery_capacity_kwh(
         fallback=nonlinear.prices.B_battery_kwh
     ) == 20.0
+    assert apply_runtime_overlay(
+        base,
+        capacity_kwh=28.0,
+        curve_id=M17_22KW_NORMAL_PWL.curve_id,
+    ).prices.B_battery_kwh == 28.0
     assert linear.prices.charging_soc_breakpoints == (0.0, 1.0)
     assert nonlinear.prices.charging_soc_breakpoints == (0.0, 0.85, 0.95, 1.0)
     assert linear.prices.charging_relative_powers != (

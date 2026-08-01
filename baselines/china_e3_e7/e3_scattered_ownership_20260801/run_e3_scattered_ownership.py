@@ -5,18 +5,18 @@ from __future__ import annotations
 
 import argparse
 import csv
+import hashlib
 import json
 import sys
 from dataclasses import replace
+from datetime import UTC, datetime
 from pathlib import Path
 from types import MappingProxyType
 from typing import Any
 
 HERE = Path(__file__).resolve().parent
 REPO = Path(__file__).resolve().parents[3]
-PROTOTYPE = (
-    REPO / "baselines/algorithm_prototypes/china81_mechanism_hybrid_20260720"
-)
+PROTOTYPE = REPO / "baselines/algorithm_prototypes/china81_mechanism_hybrid_20260720"
 for path in (REPO, REPO / "solver/src", PROTOTYPE):
     if str(path) not in sys.path:
         sys.path.insert(0, str(path))
@@ -25,8 +25,6 @@ from route_pool_sp import run_hgs_route_pool_recombination
 from setp_solver.china81_completion import exact_china81_score
 
 from baselines.china_e3_e7.e3_scattered_ownership_20260801.shared_runtime import (
-    CV_PER_DEPOT,
-    EV_PER_DEPOT,
     build_common_initial,
     canonical_sha256,
     load_bundle,
@@ -36,15 +34,16 @@ from baselines.china_e3_e7.e3_scattered_ownership_20260801.shared_runtime import
 )
 
 SOURCE = HERE / "source_p_sequences.csv"
-PILOT = HERE / "pilot"
-
+PILOT = HERE / "pilot_existing_fleet_v1_20260801"
 FAMILIES = ("Uniform_Balanced", "Uniform_Unbalanced")
-INSTANCES = tuple(
-    f"cn-prd-{size}c-{rep}-V2-LOCATIONS"
-    for size in (150, 200)
-    for rep in ("01", "02", "03")
+INSTANCE = "cn-prd-150c-01-V2-LOCATIONS"
+ARMS = ("HISTORICAL_STANDALONE", "JOINT_OPTIMIZED")
+SEEDS = (1, 2, 3)
+PROTECTED = (
+    REPO / "solver/src/setp_solver/cost.py",
+    REPO / "solver/src/setp_solver/check.py",
+    REPO / "solver/src/setp_solver/search/evaluation.py",
 )
-FORMAL_STATUS = "FORMAL_PENDING_USER_APPROVAL"
 
 
 def sequences() -> dict[tuple[str, str], tuple[int, ...]]:
@@ -64,10 +63,34 @@ def replicate(instance_id: str) -> str:
     return next(rep for rep in ("01", "02", "03") if f"c-{rep}-" in instance_id)
 
 
-def prepare(instance_id: str, family: str) -> tuple[Any, Any, dict[str, Any]]:
+def capacity_audit(bundle: Any) -> dict[str, dict[str, float]]:
+    nodes = {node.node_id: node for node in bundle.instance.nodes}
+    cv_payload = bundle.instance.payload_capacity_kg(
+        "cv", fallback=float(bundle.prices.Q_capacity)
+    )
+    ev_payload = bundle.instance.payload_capacity_kg(
+        "ev", fallback=float(bundle.prices.Q_capacity)
+    )
+    rows: dict[str, dict[str, float]] = {}
+    for depot, caps in sorted(bundle.fleet_caps_by_depot.items()):
+        demand = sum(
+            float(nodes[customer].demand)
+            for customer, owner in bundle.customer_home_depot.items()
+            if owner == depot
+        )
+        capacity = int(caps["num_cv"]) * cv_payload + int(caps["num_ev"]) * ev_payload
+        rows[depot] = {
+            "assigned_demand_kg": demand,
+            "available_payload_kg": capacity,
+            "capacity_shortfall_kg": max(0.0, demand - capacity),
+        }
+    return rows
+
+
+def prepare(instance_id: str, family: str) -> tuple[Any, Any | None, dict[str, Any]]:
     base = load_bundle(instance_id)
     customers = sorted(base.customer_home_depot)
-    depots = sorted(set(base.customer_home_depot.values()))
+    depots = sorted(base.fleet_caps_by_depot)
     if family not in FAMILIES or len(depots) != 4 or len(customers) not in {150, 200}:
         raise ValueError("E3 transfer requires an approved family and 4-depot 150/200c input")
 
@@ -76,86 +99,30 @@ def prepare(instance_id: str, family: str) -> tuple[Any, Any, dict[str, Any]]:
         customer: depots[label]
         for customer, label in zip(customers, labels, strict=True)
     }
-    caps = MappingProxyType(
-        {
-            depot: MappingProxyType(
-                {"num_cv": CV_PER_DEPOT, "num_ev": EV_PER_DEPOT,
-                 "total_fleet_cap": CV_PER_DEPOT + EV_PER_DEPOT}
-            )
-            for depot in depots
-        }
-    )
-    bundle = replace(base, customer_home_depot=MappingProxyType(mapping))
     bundle = replace(
-        bundle,
-        instance=replace(
-            bundle.instance,
-            num_cv=CV_PER_DEPOT * 4,
-            num_ev=EV_PER_DEPOT * 4,
-        ),
-        fleet_caps_by_depot=caps,
-        fleet_cap_semantics=(
-            "Soriano 40 CV per depot plus temporary ceil(0.25*R_d) EV rule"
-        ),
-        fleet_authority="E3_SCATTERED_REFERENCE_TRANSFER_20260801",
+        base,
+        customer_home_depot=MappingProxyType(mapping),
         formal_search_allowed=True,
     )
-    initial, route_counts = build_common_initial(bundle)
-    info = {
+    audit = capacity_audit(bundle)
+    has_shortfall = any(row["capacity_shortfall_kg"] > 0 for row in audit.values())
+    initial, route_counts = (None, {}) if has_shortfall else build_common_initial(bundle)
+    caps = {depot: dict(values) for depot, values in bundle.fleet_caps_by_depot.items()}
+    return bundle, initial, {
         "instance_id": instance_id,
         "source_family": family,
         "source_replicate": replicate(instance_id),
-        "mapping_rule": "sorted customers + sorted depots; 150c uses first 150 labels",
         "owner_counts": {
-            depot: sum(owner == depot for owner in mapping.values())
-            for depot in depots
+            depot: sum(owner == depot for owner in mapping.values()) for depot in depots
         },
+        "fleet_caps_by_depot": caps,
+        "available_cv_total": sum(int(row["num_cv"]) for row in caps.values()),
+        "available_ev_total": sum(int(row["num_ev"]) for row in caps.values()),
+        "capacity_audit": audit,
         "initial_route_counts": route_counts,
         "mapping_sha256": canonical_sha256(mapping),
-        "initial_sha256": solution_sha256(initial),
+        "initial_sha256": "" if initial is None else solution_sha256(initial),
     }
-    return bundle, initial, info
-
-
-def preflight() -> dict[str, Any]:
-    summaries: list[dict[str, Any]] = []
-    assignments: list[dict[str, Any]] = []
-    for instance_id in INSTANCES:
-        for family in FAMILIES:
-            bundle, _, info = prepare(instance_id, family)
-            summaries.append(
-                {
-                    **info,
-                    "owner_counts": json.dumps(info["owner_counts"], sort_keys=True),
-                    "initial_route_counts": json.dumps(
-                        info["initial_route_counts"], sort_keys=True
-                    ),
-                    "status": "PASS_INPUT_CONSTRUCTED",
-                }
-            )
-            assignments.extend(
-                {
-                    "instance_id": instance_id,
-                    "source_family": family,
-                    "customer_id": customer,
-                    "historical_owner_depot": owner,
-                }
-                for customer, owner in sorted(bundle.customer_home_depot.items())
-            )
-    write_csv(PILOT / "preflight_runs.csv", summaries)
-    write_csv(PILOT / "input_assignments.csv", assignments)
-    decision = {
-        "status": "PASS_12_INPUTS_CONSTRUCTED",
-        "scientific_result": False,
-        "formal_status": FORMAL_STATUS,
-        "inputs": len(summaries),
-        "source": "https://data.mendeley.com/datasets/rhgk26ngs8/1",
-        "source_archive_sha256": (
-            "b7c217d2af44506138b8c536c989a5758461534471daf3b3c002214d8609fea3"
-        ),
-    }
-    write_json(PILOT / "preflight_decision.json", decision)
-    return decision
 
 
 def run_arm(
@@ -183,71 +150,237 @@ def run_arm(
     if violations or (
         arm == "HISTORICAL_STANDALONE" and run.solution.cross_site_services
     ):
-        raise RuntimeError(f"invalid {arm} solution")
+        raise RuntimeError(f"invalid {arm} solution: violations={len(violations)}")
     return {
-        "arm": arm,
+        "used_cv_total": int(breakdown["n_veh_cv"]),
+        "used_ev_total": int(breakdown["n_veh_ev"]),
         "total_cost_cny": objective,
-        "total_emissions_kg": breakdown["E_total"],
-        "route_count": len(run.solution.routes),
-        "cross_site_service_count": len(run.solution.cross_site_services),
+        "total_distance_km": float(breakdown["distance_total"]) / 1000.0,
+        "total_emissions_kg": float(breakdown["E_total"]),
+        "cross_contractor_service_count": len(run.solution.cross_site_services),
+        "joint_relative_cost_change_pct": "",
         "complete_candidate_evaluations": run.stats[
             "complete_candidate_evaluation_attempts"
         ],
         "elapsed_seconds": run.elapsed_seconds,
         "solution_sha256": solution_sha256(run.solution),
-        "status": "PASS_SMOKE",
+        "status": "PASS",
+        "status_reason": "",
     }
 
 
-def smoke(
-    instance_id: str, family: str, seed: int, iterations: int, archive: int
-) -> dict[str, Any]:
-    bundle, initial, info = prepare(instance_id, family)
+def _base_row(info: dict[str, Any], arm: str, seed: int) -> dict[str, Any]:
+    caps = info["fleet_caps_by_depot"]
+    audit = info["capacity_audit"]
+    return {
+        "instance_id": info["instance_id"],
+        "source_family": info["source_family"],
+        "seed": seed,
+        "arm": arm,
+        "available_cv_total": info["available_cv_total"],
+        "available_ev_total": info["available_ev_total"],
+        "available_cv_by_depot": json.dumps(
+            {depot: row["num_cv"] for depot, row in caps.items()}, sort_keys=True
+        ),
+        "available_ev_by_depot": json.dumps(
+            {depot: row["num_ev"] for depot, row in caps.items()}, sort_keys=True
+        ),
+        "used_cv_total": "",
+        "used_ev_total": "",
+        "assigned_demand_by_depot_kg": json.dumps(
+            {depot: row["assigned_demand_kg"] for depot, row in audit.items()},
+            sort_keys=True,
+        ),
+        "available_payload_by_depot_kg": json.dumps(
+            {depot: row["available_payload_kg"] for depot, row in audit.items()},
+            sort_keys=True,
+        ),
+        "capacity_shortfall_by_depot_kg": json.dumps(
+            {depot: row["capacity_shortfall_kg"] for depot, row in audit.items()},
+            sort_keys=True,
+        ),
+        "total_cost_cny": "",
+        "total_distance_km": "",
+        "total_emissions_kg": "",
+        "cross_contractor_service_count": "",
+        "joint_relative_cost_change_pct": "",
+        "complete_candidate_evaluations": 0,
+        "elapsed_seconds": 0.0,
+        "mapping_sha256": info["mapping_sha256"],
+        "initial_sha256": info["initial_sha256"],
+        "solution_sha256": "",
+        "status": "",
+        "status_reason": "",
+    }
+
+
+def _run_pair(
+    bundle: Any,
+    initial: Any,
+    info: dict[str, Any],
+    seed: int,
+    iterations: int,
+    archive: int,
+) -> list[dict[str, Any]]:
     rows = [
         {
-            **info,
-            "seed": seed,
-            "iterations_per_view": iterations,
-            "archive_candidates_per_view": archive,
+            **_base_row(info, arm, seed),
             **run_arm(bundle, initial, arm, seed, iterations, archive),
         }
-        for arm in ("HISTORICAL_STANDALONE", "JOINT_OPTIMIZED")
+        for arm in ARMS
     ]
-    costs = {row["arm"]: row["total_cost_cny"] for row in rows}
-    baseline = costs["HISTORICAL_STANDALONE"]
+    costs = {row["arm"]: float(row["total_cost_cny"]) for row in rows}
+    change = 100.0 * (
+        costs["JOINT_OPTIMIZED"] - costs["HISTORICAL_STANDALONE"]
+    ) / costs["HISTORICAL_STANDALONE"]
+    for row in rows:
+        row["joint_relative_cost_change_pct"] = change
+    return rows
+
+
+def _capacity_halt_rows(info: dict[str, Any], seed: int) -> list[dict[str, Any]]:
+    reason = "assigned demand exceeds the original fleet's total payload capacity"
+    standalone = _base_row(info, "HISTORICAL_STANDALONE", seed)
+    standalone.update(status="PROVEN_INFEASIBLE_CAPACITY_LOWER_BOUND", status_reason=reason)
+    joint = _base_row(info, "JOINT_OPTIMIZED", seed)
+    joint.update(status="NOT_RUN_STOP_RULE", status_reason="standalone infeasibility triggered the user stop rule")
+    return [standalone, joint]
+
+
+def _sha256(path: Path) -> str:
+    return hashlib.sha256(path.read_bytes()).hexdigest()
+
+
+def _report(decision: dict[str, Any], rows: list[dict[str, Any]]) -> str:
+    lines = [
+        "# E3 existing-fleet pilot v1",
+        "",
+        f"**结论：{decision['status']}。**",
+        "",
+        "本轮保留 China81 原有的逐车场、逐车型最高数量，没有设置油电比例或新增车辆。",
+        "当前 E3 静态 HGS-SP 中一条入选路线占用一个车辆名额。",
+        "容量下界按 source family 独立判定：某一 family 触发下界时，只保留该 family 的 HALT 行。",
+        "不触发下界的 family 仍按全部预定 seeds 运行；一个 family 的 HALT 不阻断另一个 family。",
+        "",
+        "| 分布 | 车场 | 客户需求/kg | 可用运力/kg | 硬缺口/kg |",
+        "|---|---:|---:|---:|---:|",
+    ]
+    seen: set[tuple[str, str]] = set()
+    for row in rows:
+        if row["arm"] != "HISTORICAL_STANDALONE":
+            continue
+        demand = json.loads(row["assigned_demand_by_depot_kg"])
+        capacity = json.loads(row["available_payload_by_depot_kg"])
+        shortfall = json.loads(row["capacity_shortfall_by_depot_kg"])
+        for depot, gap in shortfall.items():
+            if gap <= 0 or (row["source_family"], depot) in seen:
+                continue
+            seen.add((row["source_family"], depot))
+            lines.append(
+                f"| {row['source_family']} | {depot} | {demand[depot]:.0f} | "
+                f"{capacity[depot]:.0f} | {gap:.0f} |"
+            )
+    lines.extend(
+        [
+            "",
+            "`raw_runs.csv` 保留每个触发容量下界 family 的单干失败行和联合方案未运行行；其他 family 的全部预定 seeds 照常保留。",
+        ]
+    )
+    return "\n".join(lines) + "\n"
+
+
+def run_pilot(output: Path, iterations: int = 100, archive: int = 8) -> dict[str, Any]:
+    output.mkdir(parents=True, exist_ok=True)
+    rows: list[dict[str, Any]] = []
+    inputs: dict[str, tuple[Any, Any | None, dict[str, Any]]] = {}
+    capacity_halts: dict[str, Any] = {}
+    for family in FAMILIES:
+        bundle, initial, info = prepare(INSTANCE, family)
+        inputs[family] = (bundle, initial, info)
+        shortfalls = {
+            depot: row
+            for depot, row in info["capacity_audit"].items()
+            if row["capacity_shortfall_kg"] > 0
+        }
+        if shortfalls:
+            capacity_halts[family] = shortfalls
+            rows.extend(_capacity_halt_rows(info, SEEDS[0]))
+
+    runnable_families = [family for family in FAMILIES if family not in capacity_halts]
+    for family in runnable_families:
+        bundle, initial, info = inputs[family]
+        for seed in SEEDS:
+            rows.extend(_run_pair(bundle, initial, info, seed, iterations, archive))
+
+    status = (
+        "HALT_ORIGINAL_FLEET_STANDALONE_CAPACITY_INFEASIBLE"
+        if len(capacity_halts) == len(FAMILIES)
+        else (
+            "PARTIAL_HALT_ORIGINAL_FLEET_STANDALONE_CAPACITY_INFEASIBLE"
+            if capacity_halts
+            else "PASS_EXISTING_FLEET_PILOT_SEEDS_1_TO_3"
+        )
+    )
     decision = {
-        "status": "PASS_SMOKE_BOTH_ARMS",
-        "scientific_role": "MECHANISM_SMOKE_NOT_FORMAL_RESULT",
-        "formal_status": FORMAL_STATUS,
-        "instance_id": instance_id,
-        "source_family": family,
-        "seed": seed,
-        "joint_cost_change_pct": 100
-        * (costs["JOINT_OPTIMIZED"] - baseline)
-        / baseline,
-        "common_initial_solution_sha256": info["initial_sha256"],
+        "status": status,
+        "instance_id": INSTANCE,
+        "families": list(FAMILIES),
+        "attempted_seeds_by_family": {
+            family: [SEEDS[0]] if family in capacity_halts else list(SEEDS)
+            for family in FAMILIES
+        },
+        "not_started_seeds_by_family": {
+            family: list(SEEDS[1:]) if family in capacity_halts else []
+            for family in FAMILIES
+        },
+        "iterations_per_view": iterations,
+        "archive_candidates_per_view": archive,
+        "capacity_bound_semantics": (
+            "current static E3 HGS-SP: one selected route consumes one vehicle slot"
+        ),
+        "capacity_shortfalls": capacity_halts,
+        "search_started": bool(runnable_families),
+        "search_started_families": runnable_families,
+        "all_candidate_rows_retained": True,
     }
-    stem = f"{instance_id}__{family}__seed-{seed:02d}"
-    write_csv(PILOT / f"{stem}__raw_runs.csv", rows)
-    write_json(PILOT / f"{stem}__decision.json", decision)
+    fleet_path = REPO / "baselines/china_e3_e7/e3e6_gates_01_20260729/gate1_d2a/fleet_caps.csv"
+    metadata = {
+        "schema": "resetp.e3-existing-fleet-pilot.v1",
+        "created_at_utc": datetime.now(UTC).isoformat(),
+        "comparison": list(ARMS),
+        "fleet_rule": "use each China81 depot's existing CV and EV maxima",
+        "vehicle_mix_rule": "optimizer chooses actual use; no ratio or type quota",
+        "route_fleet_semantics": (
+            "current static E3 HGS-SP: one selected route consumes one vehicle slot"
+        ),
+        "ownership_source": "Soriano public Uniform_Balanced and Uniform_Unbalanced p sequences",
+        "source_hashes": {
+            str(path.relative_to(REPO)): _sha256(path)
+            for path in (Path(__file__), HERE / "shared_runtime.py", SOURCE, fleet_path, *PROTECTED)
+        },
+    }
+    write_json(output / "metadata.json", metadata)
+    write_csv(output / "raw_runs.csv", rows)
+    write_json(output / "decision.json", decision)
+    (output / "report.md").write_text(_report(decision, rows), encoding="utf-8")
+    write_json(
+        output / "artifact_hashes.json",
+        {
+            "schema": "resetp.artifact-hashes.v1",
+            "artifacts": {
+                name: _sha256(output / name)
+                for name in ("metadata.json", "raw_runs.csv", "decision.json", "report.md")
+            },
+        },
+    )
     return decision
 
 
 def main() -> int:
     parser = argparse.ArgumentParser()
-    commands = parser.add_subparsers(dest="command", required=True)
-    commands.add_parser("preflight")
-    run = commands.add_parser("smoke")
-    run.add_argument("--instance", default=INSTANCES[0], choices=INSTANCES)
-    run.add_argument("--family", default=FAMILIES[0], choices=FAMILIES)
-    run.add_argument("--seed", type=int, default=1)
-    run.add_argument("--iterations", type=int, default=300)
-    run.add_argument("--archive", type=int, default=8)
+    parser.add_argument("--output", type=Path, default=PILOT)
     args = parser.parse_args()
-    result = preflight() if args.command == "preflight" else smoke(
-        args.instance, args.family, args.seed, args.iterations, args.archive
-    )
-    print(json.dumps(result, ensure_ascii=False, sort_keys=True))
+    print(json.dumps(run_pilot(args.output), ensure_ascii=False, sort_keys=True))
     return 0
 
 

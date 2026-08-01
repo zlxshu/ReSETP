@@ -1,0 +1,81 @@
+{
+  "task_id": "E5-ENROUTE-NONLINEAR-SYMMETRIC-PILOT-20260801",
+  "created_at_utc": "2026-07-31T19:41:34.129285+00:00",
+  "evidence_role": "LOW_COST_SYMMETRIC_PILOT",
+  "instance_ids": [
+    "cn-prd-50c-01-V2-LOCATIONS",
+    "cn-prd-100c-02-V2-LOCATIONS"
+  ],
+  "seeds": [
+    1,
+    2,
+    3
+  ],
+  "capacities_kwh": [
+    16.0,
+    20.0,
+    24.0,
+    28.0,
+    32.0
+  ],
+  "public_power_kw": [
+    22.0
+  ],
+  "main_anchor": {
+    "public_power_kw": 22.0,
+    "capacity_kwh": 16.0
+  },
+  "vehicle_interpretation": "experimental capacity-sensitivity vehicle; not a claim about the 77.28 kWh FOTON production vehicle",
+  "power_roles": {
+    "22.0": "Montoya/Froger absolute-power main scenario",
+    "60.0": "unchanged China81 public-power sensitivity"
+  },
+  "curves": {
+    "L100_control": {
+      "curve_id": "L100_control",
+      "soc_breakpoints": [
+        0.0,
+        1.0
+      ],
+      "relative_powers": [
+        1.0
+      ]
+    },
+    "M17_22KW_NORMAL_PWL": {
+      "curve_id": "M17_22KW_NORMAL_PWL",
+      "soc_breakpoints": [
+        0.0,
+        0.85,
+        0.95,
+        1.0
+      ],
+      "relative_powers": [
+        0.9970674486803518,
+        0.484848484848485,
+        0.1515151515151515
+      ]
+    }
+  },
+  "full_battery_departure": true,
+  "search": {
+    "archive_per_view": 2,
+    "hgs_iterations_per_view": 40,
+    "wallclock_seconds_per_view": 120.0,
+    "set_partitioning_seconds": 2.0
+  },
+  "original_public_station_power_kw": {
+    "cn-prd-50c-01-V2-LOCATIONS": {
+      "S_guangzhou": 60.0,
+      "S_shenzhen": 60.0
+    },
+    "cn-prd-100c-02-V2-LOCATIONS": {
+      "S_guangzhou": 60.0,
+      "S_shenzhen": 60.0
+    }
+  },
+  "sources": [
+    "Montoya et al. (2017), PDF pp.3-4 and 13",
+    "Froger et al. (2019), author manuscript p.4 Fig.1",
+    "Xiao (2021), p.18"
+  ]
+}

@@ -1,0 +1,127 @@
+{
+  "created_at_utc": "2026-07-31T20:09:41.516597+00:00",
+  "event_count": 16,
+  "first_trigger_initial_ev_count": 3,
+  "first_trigger_injected_cv_count": 6,
+  "first_trigger_injected_ev_count": 0,
+  "first_trigger_second": 28980.0,
+  "fleet_caps_by_depot": {
+    "D_guangzhou": {
+      "num_cv": 4,
+      "num_ev": 1,
+      "total_fleet_cap": 5
+    },
+    "D_shenzhen": {
+      "num_cv": 5,
+      "num_ev": 2,
+      "total_fleet_cap": 7
+    }
+  },
+  "initial_completion_activity": {
+    "accepted_variants": [
+      {
+        "after_cost": 2155.907127307332,
+        "before_cost": 2266.3159099259597,
+        "charging_action_count": 1,
+        "improvement": 110.40878261862781,
+        "label": "ev_immediate",
+        "route_index": 1
+      },
+      {
+        "after_cost": 2066.3546954164617,
+        "before_cost": 2155.907127307332,
+        "charging_action_count": 1,
+        "improvement": 89.55243189087014,
+        "label": "ev_immediate",
+        "route_index": 5
+      },
+      {
+        "after_cost": 1984.624527078987,
+        "before_cost": 2066.3546954164617,
+        "charging_action_count": 1,
+        "improvement": 81.73016833747465,
+        "label": "ev_immediate",
+        "route_index": 4
+      }
+    ],
+    "baseline_all_cv_cost": 2266.3159099259597,
+    "baseline_breakdown": {
+      "E_cv_direct": 214.61091050817672,
+      "E_ev_indirect": 0.0,
+      "E_total": 214.61091050817672,
+      "carbon_quota_kg": 0.0,
+      "cost_carbon": 16.100110506323418,
+      "cost_elec": 0,
+      "cost_fix": 1190.0,
+      "cost_fuel": 590.3216584823937,
+      "cost_km": 469.89414093724287,
+      "cost_occ": 0.0,
+      "cost_transship": 0.0,
+      "depot_charging_kwh": 0,
+      "distance_cv": 602428.3858169779,
+      "distance_ev": 0,
+      "distance_total": 602428.3858169779,
+      "electricity_kwh": 0,
+      "ev_drive_kwh": 0,
+      "fuel_liters": 79.3443089358056,
+      "n_veh_cv": 7,
+      "n_veh_ev": 0,
+      "station_charging_kwh": 0,
+      "total_cost": 2266.3159099259597
+    },
+    "charging_action_count": 3,
+    "cross_site_service_count": 0,
+    "ev_route_count": 3,
+    "final_breakdown": {
+      "E_cv_direct": 116.63011818737635,
+      "E_ev_indirect": 29.614588895011003,
+      "E_total": 146.24470708238735,
+      "carbon_quota_kg": 0.0,
+      "cost_carbon": 10.971277925320699,
+      "cost_elec": 23.06169234938472,
+      "cost_fix": 1190.0,
+      "cost_fuel": 320.8098070798988,
+      "cost_km": 439.78174972438296,
+      "cost_occ": 0.0,
+      "cost_transship": 0.0,
+      "depot_charging_kwh": 81.59557739748992,
+      "distance_cv": 328679.374790979,
+      "distance_ev": 273749.011025999,
+      "distance_total": 602428.3858169779,
+      "electricity_kwh": 81.59557739748992,
+      "ev_drive_kwh": 81.59557739748992,
+      "fuel_liters": 43.11959772579285,
+      "n_veh_cv": 4,
+      "n_veh_ev": 3,
+      "station_charging_kwh": 0,
+      "total_cost": 1984.624527078987
+    },
+    "final_cost": 1984.624527078987,
+    "finite_fleet_reference_cost": 2266.3159099259597,
+    "improvement": 281.6913828469726,
+    "mandatory_fleet_assignment_count": 0,
+    "mandatory_fleet_assignments": [],
+    "mechanism_experts_queried": [
+      "vehicle_type_and_nonlinear_charging",
+      "time_varying_electricity_and_carbon",
+      "multi_depot_responsibility_accounting"
+    ],
+    "rejected_infeasible": 0,
+    "rejected_non_improving": 0,
+    "route_count": 7,
+    "schema_version": "resetp.china81-shared-completion.v1",
+    "strict_improvement": true,
+    "variant_attempts": 3,
+    "variant_count": 21,
+    "variant_generation_failures": []
+  },
+  "initial_customer_count": 40,
+  "instance_id": "cn-prd-50c-01-V2-LOCATIONS",
+  "revenue_per_kg_cny": 1.5,
+  "schema": "resetp.e7.qiu-trigger-pilot.v1",
+  "stage_budget_source": "existing E7 low-cost probe default",
+  "stage_evaluations_per_subset": 8,
+  "stream_seed": 1,
+  "stream_sha256": "41966e62009e6b9a64959b525e29f3c99d7cb8128c33f1c20279f46c9e5f13c4",
+  "wall_seconds": 49.03499370790087
+}

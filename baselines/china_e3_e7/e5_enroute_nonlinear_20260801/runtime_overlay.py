@@ -9,7 +9,7 @@ from setp_solver.charging_curve import ChargingCurveSpec, L100_CONTROL
 from setp_solver.china81 import China81Bundle
 
 
-CAPACITY_SCENARIOS_KWH = (16.0, 20.0, 24.0, 32.0)
+CAPACITY_SCENARIOS_KWH = (16.0, 20.0, 24.0, 28.0, 32.0)
 PUBLIC_POWER_SCENARIOS_KW = (22.0, 60.0)
 
 M17_22KW_NORMAL_PWL = ChargingCurveSpec(

@@ -1,0 +1,98 @@
+{
+  "breakdown": {
+    "E_cv_direct": 187.2357757793494,
+    "E_ev_indirect": 21.99213410207063,
+    "E_total": 209.22790988142003,
+    "carbon_quota_kg": 0.0,
+    "cost_carbon": 15.69627779930413,
+    "cost_elec": 19.841880092741583,
+    "cost_fix": 510.0,
+    "cost_fuel": 515.0219689370916,
+    "cost_km": 517.8340808215363,
+    "cost_occ": 0.0,
+    "cost_transship": 0.0,
+    "depot_charging_kwh": 62.36275590466249,
+    "distance_cv": 516009.846853405,
+    "distance_ev": 172158.80638191098,
+    "distance_total": 688168.653235316,
+    "electricity_kwh": 62.36275590466249,
+    "ev_drive_kwh": 62.36275590466249,
+    "fuel_liters": 69.2233829216521,
+    "n_veh_cv": 2,
+    "n_veh_ev": 1,
+    "station_charging_kwh": 0,
+    "total_cost": 1578.3942076506735
+  },
+  "coalition": [
+    "D_dongguan"
+  ],
+  "instance_id": "cn-prd-150c-01-V2-LOCATIONS",
+  "objective_cny": 1578.3942076506735,
+  "schema": "resetp.e6-direct-coalition-solution.v1",
+  "seed": 1,
+  "selected_source": "SEARCH_STRICT_IMPROVEMENT",
+  "solution": {
+    "charging_actions": [
+      {
+        "charge_day_offset": 0,
+        "charge_start_second": 0.0,
+        "charging_curve_id": "NL90_mild",
+        "end_energy_kwh": 62.36275590466249,
+        "energy_kwh": 62.36275590466249,
+        "occupancy_minutes": 170.08024337635226,
+        "start_energy_kwh": 0.0,
+        "station_id": "D_dongguan",
+        "vehicle_id": "CH81-0001"
+      }
+    ],
+    "cross_site_services": [],
+    "routes": [
+      {
+        "home_depot_id": "D_dongguan",
+        "node_sequence": [
+          "D_dongguan",
+          "C130",
+          "C096",
+          "C095",
+          "C098",
+          "C125",
+          "D_dongguan"
+        ],
+        "vehicle_id": "CH81-0001",
+        "vehicle_type": "ev"
+      },
+      {
+        "home_depot_id": "D_dongguan",
+        "node_sequence": [
+          "D_dongguan",
+          "C077",
+          "C056",
+          "C060",
+          "C089",
+          "C063",
+          "C009",
+          "D_dongguan"
+        ],
+        "vehicle_id": "CH81-0002",
+        "vehicle_type": "cv"
+      },
+      {
+        "home_depot_id": "D_dongguan",
+        "node_sequence": [
+          "D_dongguan",
+          "C046",
+          "C075",
+          "C121",
+          "C105",
+          "C104",
+          "C148",
+          "D_dongguan"
+        ],
+        "vehicle_id": "CH81-0003",
+        "vehicle_type": "cv"
+      }
+    ]
+  },
+  "solution_sha256": "d0b5764a58152581669b301ce270aff1c4a2cc53f827b5ae08c30da00215622a",
+  "violations": []
+}

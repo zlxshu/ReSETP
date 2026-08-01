@@ -21,10 +21,6 @@ from baselines.china_instances.build_china81_finite_fleet_authority_v1_20260723 
 )
 
 REPO = Path(__file__).resolve().parents[3]
-# These two values reproduce the completed mechanism pilot only.
-# The formal fleet remains FORMAL_PENDING_USER_APPROVAL.
-CV_PER_DEPOT = 40
-EV_PER_DEPOT = 10
 
 
 def write_json(path: Path, payload: Any) -> None:
@@ -70,7 +66,7 @@ def build_common_initial(bundle: China81Bundle) -> tuple[Solution, dict[str, int
     for depot in sorted(set(bundle.customer_home_depot.values())):
         groups = _pack_depot(bundle, depot)
         counts[depot] = len(groups)
-        if len(groups) > CV_PER_DEPOT + EV_PER_DEPOT:
+        if len(groups) > int(bundle.fleet_caps_by_depot[depot]["total_fleet_cap"]):
             raise RuntimeError(f"initial fleet exceeded at {depot}")
         routes.extend(
             Route(f"INIT-{depot}-CV-{i:03d}", "cv", depot, [depot, *group, depot])

@@ -29,14 +29,14 @@ the geometry of the public instances.  Both balanced and unbalanced source
 sequences are retained; no instance, replicate or seed is selected after
 observing an effect.
 
-The source first row declares 40 homogeneous vehicles per depot.  For this
-China81 transfer, 40 conventional vehicles per depot are used as the
-non-binding reference fleet, and the project’s user-approved temporary EV
-augmentation rule adds `ceil(0.25 * 40) = 10` EVs per depot.  This keeps the
-E3 comparison about customer ownership and routing, instead of carrying over
-the old administrative-region fleet caps that are incompatible with a newly
-scattered historical portfolio.
+Capacity infeasibility is evaluated separately for each source family. A
+family that breaches its original-fleet payload lower bound records its own
+HALT rows and does not prevent every predeclared seed of another feasible
+family from running.
 
-`40 CV + 10 EV` is only the completed mechanism-pilot setting.  The formal
-fleet is `FORMAL_PENDING_USER_APPROVAL`; this runner does not promote the
-temporary setting into a formal experiment.
+Only the public customer-owner sequence is transferred.  Vehicle availability
+is not transferred from Soriano: every China81 case keeps its existing maximum
+CV and EV counts at each depot.  No fleet ratio, minimum vehicle-type share or
+extra vehicle quota is imposed; the optimizer chooses actual vehicle use within
+those maxima.  The earlier unversioned pilot is retained only as superseded
+history and is not reused by the existing-fleet pilot.

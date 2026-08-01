@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from itertools import combinations
 import math
 from types import MappingProxyType
 from typing import Any, Callable, Mapping, Sequence
@@ -15,6 +16,7 @@ class PlanAttempt:
     feasible: bool
     payload: Any = None
     reason: str = ""
+    delivery_cost: float = 0.0
 
 
 @dataclass(frozen=True)
@@ -24,6 +26,9 @@ class AdmissionResult:
     rejected_revenue: float
     plan_payload: Any
     planner_call_count: int
+    delivery_cost: float
+    total_cost: float
+    optimal_tie_count: int
 
 
 Planner = Callable[[tuple[str, ...], Mapping[str, DynamicAssetState]], PlanAttempt]
@@ -89,10 +94,10 @@ def admit_new_orders_or_reject_individually(
     full_asset_states: Mapping[str, DynamicAssetState],
     planner: Planner,
 ) -> AdmissionResult:
-    """Try the full batch, then reject only individually infeasible orders."""
+    """Enumerate the batch and minimise delivery cost plus lost revenue."""
 
-    accepted = tuple(map(str, already_accepted))
-    new = tuple(map(str, new_orders))
+    accepted = tuple(sorted(map(str, already_accepted)))
+    new = tuple(sorted(map(str, new_orders)))
     if len(set((*accepted, *new))) != len(accepted) + len(new):
         raise ValueError("order ids overlap or repeat")
     rho = float(revenue_per_kg)
@@ -105,27 +110,38 @@ def admit_new_orders_or_reject_individually(
     ):
         raise ValueError("new-order demand must be positive")
 
-    base = planner(accepted, full_asset_states)
-    if not base.feasible:
-        raise RuntimeError(f"accepted orders are already infeasible: {base.reason}")
-    if not new:
-        return AdmissionResult(accepted, (), 0.0, base.payload, 1)
+    candidates: list[tuple[tuple[float, float, int, float], tuple[str, ...], tuple[str, ...], PlanAttempt]] = []
+    calls = 0
+    for size in range(len(new) + 1):
+        for subset in combinations(new, size):
+            attempt = planner((*accepted, *subset), full_asset_states)
+            calls += 1
+            if not attempt.feasible:
+                continue
+            delivery_cost = float(attempt.delivery_cost)
+            if not math.isfinite(delivery_cost):
+                raise ValueError("feasible plan has non-finite delivery cost")
+            rejected = tuple(customer_id for customer_id in new if customer_id not in subset)
+            lost = sum(rho * float(demand_kg[customer_id]) for customer_id in rejected)
+            score = (delivery_cost + lost, lost, -len(subset), delivery_cost)
+            candidates.append((score, subset, rejected, attempt))
 
-    whole = planner((*accepted, *new), full_asset_states)
-    if whole.feasible:
-        return AdmissionResult((*accepted, *new), (), 0.0, whole.payload, 2)
-
-    current = list(accepted)
-    rejected: list[str] = []
-    payload = base.payload
-    calls = 2
-    for customer_id in new:
-        attempt = planner((*current, customer_id), full_asset_states)
-        calls += 1
-        if attempt.feasible:
-            current.append(customer_id)
-            payload = attempt.payload
-        else:
-            rejected.append(customer_id)
-    lost_revenue = sum(rho * float(demand_kg[customer_id]) for customer_id in rejected)
-    return AdmissionResult(tuple(current), tuple(rejected), lost_revenue, payload, calls)
+    if not candidates:
+        raise RuntimeError("accepted orders are already infeasible")
+    best = min(candidates, key=lambda item: item[0])
+    score, subset, rejected, attempt = best
+    ties = sum(
+        math.isclose(item[0][0], score[0], rel_tol=0.0, abs_tol=1.0e-9)
+        and item[0][1:] == score[1:]
+        for item in candidates
+    )
+    return AdmissionResult(
+        (*accepted, *subset),
+        rejected,
+        score[1],
+        attempt.payload,
+        calls,
+        float(attempt.delivery_cost),
+        score[0],
+        ties,
+    )
